@@ -1,0 +1,186 @@
+### API Testing mit IntelliJ IDEA / VS Code HTTP Client
+
+### 1. Benutzer registrieren
+POST http://localhost:8080/auth/register
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "Test123!"
+}
+
+###
+
+### 2. Benutzer anmelden
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "Test123!"
+}
+
+> {%
+    client.global.set("auth_token", response.body.token);
+    client.global.set("user_id", response.body.userId);
+%}
+
+###
+
+### 3. Aktuellen Benutzer abrufen
+GET http://localhost:8080/auth/me
+Authorization: Bearer {{auth_token}}
+
+###
+
+### 4. Store erstellen
+POST http://localhost:8080/me/stores
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "name": "Mein Test Shop",
+  "slug": "mein-test-shop"
+}
+
+> {%
+    client.global.set("store_id", response.body.id);
+%}
+
+###
+
+### 5. Eigene Stores auflisten
+GET http://localhost:8080/me/stores
+Authorization: Bearer {{auth_token}}
+
+###
+
+### 6. Domain zu Store hinzufügen
+POST http://localhost:8080/stores/{{store_id}}/domains
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "host": "myshop.myplatform.com",
+  "type": "SUBDOMAIN"
+}
+
+###
+
+### 7. Domains eines Stores auflisten
+GET http://localhost:8080/stores/{{store_id}}/domains
+Authorization: Bearer {{auth_token}}
+
+###
+
+### 8. Produkt erstellen
+POST http://localhost:8080/stores/{{store_id}}/products
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "title": "T-Shirt Premium",
+  "description": "Hochwertiges Baumwoll-Shirt",
+  "basePrice": 29.99,
+  "status": "ACTIVE"
+}
+
+> {%
+    client.global.set("product_id", response.body.id);
+%}
+
+###
+
+### 9. Alle Produkte eines Stores auflisten
+GET http://localhost:8080/stores/{{store_id}}/products
+Authorization: Bearer {{auth_token}}
+
+###
+
+### 10. Einzelnes Produkt abrufen
+GET http://localhost:8080/stores/{{store_id}}/products/{{product_id}}
+Authorization: Bearer {{auth_token}}
+
+###
+
+### 11. Produkt aktualisieren
+PUT http://localhost:8080/stores/{{store_id}}/products/{{product_id}}
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "title": "T-Shirt Premium (Aktualisiert)",
+  "description": "Neuer Preis!",
+  "basePrice": 24.99,
+  "status": "ACTIVE"
+}
+
+###
+
+### 12. Produkt löschen
+DELETE http://localhost:8080/stores/{{store_id}}/products/{{product_id}}
+Authorization: Bearer {{auth_token}}
+
+###
+
+### 13. Store per Domain auflösen (Public API - Kein Token nötig)
+GET http://localhost:8080/public/store/resolve?host=myshop.myplatform.com
+
+###
+
+### 14. Custom Domain hinzufügen
+POST http://localhost:8080/stores/{{store_id}}/domains
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "host": "www.meinshop.de",
+  "type": "CUSTOM"
+}
+
+###
+
+### Weitere Test-Szenarien
+
+### Test: Zweiten Store erstellen (Free Plan hat Limit von 1)
+POST http://localhost:8080/me/stores
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "name": "Zweiter Shop",
+  "slug": "zweiter-shop"
+}
+
+# Erwartete Antwort: 500 - "Maximum stores limit reached for your plan"
+
+###
+
+### Test: Store mit existierendem Slug erstellen
+POST http://localhost:8080/me/stores
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "name": "Duplizierter Shop",
+  "slug": "mein-test-shop"
+}
+
+# Erwartete Antwort: 500 - "Slug already exists"
+
+###
+
+### Test: Ohne Token zugreifen
+GET http://localhost:8080/me/stores
+
+# Erwartete Antwort: 403 Forbidden
+
+###
+
+### Test: Store per nicht-existierendem Host auflösen
+GET http://localhost:8080/public/store/resolve?host=gibts-nicht.com
+
+# Erwartete Antwort: 404 Not Found
+
+###
+

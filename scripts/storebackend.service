@@ -1,0 +1,44 @@
+[Unit]
+Description=Store Backend Spring Boot Application
+After=network.target postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=simple
+User=storebackend
+Group=storebackend
+WorkingDirectory=/opt/storebackend
+
+# Java Options
+Environment="JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC"
+
+# Spring Boot Configuration
+Environment="SPRING_PROFILES_ACTIVE=production"
+Environment="SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/storedb"
+Environment="SPRING_DATASOURCE_USERNAME=postgres"
+Environment="SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}"
+Environment="JWT_SECRET=${JWT_SECRET}"
+Environment="SERVER_PORT=8080"
+
+# Security
+Environment="LOGGING_LEVEL_ROOT=INFO"
+Environment="LOGGING_FILE_NAME=/var/log/storebackend/app.log"
+
+ExecStart=/usr/bin/java $JAVA_OPTS -jar /opt/storebackend/app.jar
+
+# Restart on failure
+Restart=on-failure
+RestartSec=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=storebackend
+
+# Limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target
+

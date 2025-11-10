@@ -23,38 +23,4 @@ jwt:
 
 server:
   port: 8080
-package storebackend.config;
-
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import storebackend.entity.Plan;
-import storebackend.repository.PlanRepository;
-
-@Configuration
-public class DataInitializer {
-
-    @Bean
-    public CommandLineRunner initPlans(PlanRepository planRepository) {
-        return args -> {
-            if (planRepository.count() == 0) {
-                Plan freePlan = new Plan();
-                freePlan.setName("FREE");
-                freePlan.setMaxStores(1);
-                freePlan.setMaxCustomDomains(0);
-                freePlan.setMaxStorageMb(100);
-                planRepository.save(freePlan);
-
-                Plan proPlan = new Plan();
-                proPlan.setName("PRO");
-                proPlan.setMaxStores(10);
-                proPlan.setMaxCustomDomains(5);
-                proPlan.setMaxStorageMb(10000);
-                planRepository.save(proPlan);
-
-                System.out.println("Plans initialized: FREE and PRO");
-            }
-        };
-    }
-}
 
