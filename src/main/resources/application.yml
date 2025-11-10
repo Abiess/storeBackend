@@ -1,0 +1,60 @@
+spring:
+  application:
+    name: storeBackend
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/storedb
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+jwt:
+  secret: mySecretKeyForJWTTokenGenerationThatIsAtLeast256BitsLongForHS256Algorithm
+  expiration: 86400000
+
+server:
+  port: 8080
+package storebackend.config;
+
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import storebackend.entity.Plan;
+import storebackend.repository.PlanRepository;
+
+@Configuration
+public class DataInitializer {
+
+    @Bean
+    public CommandLineRunner initPlans(PlanRepository planRepository) {
+        return args -> {
+            if (planRepository.count() == 0) {
+                Plan freePlan = new Plan();
+                freePlan.setName("FREE");
+                freePlan.setMaxStores(1);
+                freePlan.setMaxCustomDomains(0);
+                freePlan.setMaxStorageMb(100);
+                planRepository.save(freePlan);
+
+                Plan proPlan = new Plan();
+                proPlan.setName("PRO");
+                proPlan.setMaxStores(10);
+                proPlan.setMaxCustomDomains(5);
+                proPlan.setMaxStorageMb(10000);
+                planRepository.save(proPlan);
+
+                System.out.println("Plans initialized: FREE and PRO");
+            }
+        };
+    }
+}
+
