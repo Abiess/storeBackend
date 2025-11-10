@@ -24,3 +24,11 @@ jwt:
 server:
   port: 8080
 
+# SaaS Multi-Tenant Configuration
+saas:
+  baseDomain: markt.ma
+  platformDomain: app.markt.ma
+  subdomainPattern: "{slug}.markt.ma"
+  domainVerification:
+    txtRecordPrefix: "_marktma-verification"
+    tokenLength: 32

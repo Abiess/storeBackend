@@ -1,66 +1,211 @@
 package storebackend.service;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import storebackend.dto.CreateDomainRequest;
-import storebackend.dto.DomainDTO;
+import org.springframework.transaction.annotation.Transactional;
+import storebackend.config.SaasProperties;
 import storebackend.entity.Domain;
 import storebackend.entity.Store;
 import storebackend.entity.User;
+import storebackend.enums.DomainType;
 import storebackend.repository.DomainRepository;
+import storebackend.repository.StoreRepository;
 
+import java.security.SecureRandom;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
+@Transactional
 public class DomainService {
 
     private final DomainRepository domainRepository;
+    private final StoreRepository storeRepository;
+    private final SaasProperties saasProperties;
+    private final SecureRandom secureRandom = new SecureRandom();
 
-    public DomainService(DomainRepository domainRepository) {
-        this.domainRepository = domainRepository;
-    }
+    public List<Domain> getDomainsForStore(Long storeId, User currentUser) {
+        Store store = storeRepository.findById(storeId)
+            .orElseThrow(() -> new IllegalArgumentException("Store not found"));
 
-    public List<DomainDTO> getDomainsByStore(Store store) {
-        return domainRepository.findByStore(store).stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
-    }
-
-    public DomainDTO createDomain(CreateDomainRequest request, Store store, User owner) {
-        // Check max custom domains limit
-        if (owner.getPlan() != null) {
-            long customDomainCount = domainRepository.findByStore(store).stream()
-                    .filter(d -> d.getType() == storebackend.enums.DomainType.CUSTOM)
-                    .count();
-
-            if (customDomainCount >= owner.getPlan().getMaxCustomDomains()) {
-                throw new RuntimeException("Maximum custom domains limit reached for your plan");
-            }
+        if (!store.getOwner().getId().equals(currentUser.getId())) {
+            throw new SecurityException("Access denied");
         }
 
-        // Check if host already exists
-        if (domainRepository.existsByHost(request.getHost())) {
-            throw new RuntimeException("Domain host already exists");
+        return domainRepository.findByStore(store);
+    }
+
+    public Domain createSubdomain(Long storeId, User currentUser) {
+        Store store = storeRepository.findById(storeId)
+            .orElseThrow(() -> new IllegalArgumentException("Store not found"));
+
+        if (!store.getOwner().getId().equals(currentUser.getId())) {
+            throw new SecurityException("Access denied");
+        }
+
+        // Prüfe Plan-Limits
+        long existingSubdomains = domainRepository.countByStoreAndType(store, DomainType.SUBDOMAIN);
+        if (existingSubdomains >= currentUser.getPlan().getMaxSubdomains()) {
+            throw new IllegalStateException("Maximum number of subdomains reached for your plan");
+        }
+
+        String subdomain = saasProperties.generateSubdomain(store.getSlug());
+
+        if (domainRepository.existsByHost(subdomain)) {
+            throw new IllegalStateException("Subdomain already exists");
         }
 
         Domain domain = new Domain();
         domain.setStore(store);
-        domain.setHost(request.getHost());
-        domain.setType(request.getType());
-        domain.setIsVerified(false);
+        domain.setHost(subdomain);
+        domain.setType(DomainType.SUBDOMAIN);
+        domain.setIsVerified(true); // Subdomains sind automatisch verifiziert
+        domain.setIsPrimary(existingSubdomains == 0); // Erste Domain wird primary
 
-        domain = domainRepository.save(domain);
-        return toDTO(domain);
+        return domainRepository.save(domain);
     }
 
-    private DomainDTO toDTO(Domain domain) {
-        DomainDTO dto = new DomainDTO();
-        dto.setId(domain.getId());
-        dto.setHost(domain.getHost());
-        dto.setType(domain.getType());
-        dto.setIsVerified(domain.getIsVerified());
-        dto.setCreatedAt(domain.getCreatedAt());
-        return dto;
+    public Domain createCustomDomain(Long storeId, String customHost, User currentUser) {
+        Store store = storeRepository.findById(storeId)
+            .orElseThrow(() -> new IllegalArgumentException("Store not found"));
+
+        if (!store.getOwner().getId().equals(currentUser.getId())) {
+            throw new SecurityException("Access denied");
+        }
+
+        // Prüfe Plan-Limits
+        long existingCustomDomains = domainRepository.countByStoreAndType(store, DomainType.CUSTOM);
+        if (existingCustomDomains >= currentUser.getPlan().getMaxCustomDomains()) {
+            throw new IllegalStateException("Maximum number of custom domains reached for your plan");
+        }
+
+        if (domainRepository.existsByHost(customHost)) {
+            throw new IllegalStateException("Domain already exists");
+        }
+
+        // Validiere dass es keine Subdomain unserer Platform ist
+        if (saasProperties.isSubdomainOfBaseDomain(customHost)) {
+            throw new IllegalArgumentException("Cannot use subdomain of platform domain as custom domain");
+        }
+
+        Domain domain = new Domain();
+        domain.setStore(store);
+        domain.setHost(customHost);
+        domain.setType(DomainType.CUSTOM);
+        domain.setIsVerified(false);
+        domain.setVerificationToken(generateVerificationToken());
+        domain.setIsPrimary(false);
+
+        return domainRepository.save(domain);
+    }
+
+    public Optional<Domain> resolveDomainByHost(String host) {
+        return domainRepository.findActiveVerifiedDomainByHost(host);
+    }
+
+    public String getVerificationInstructions(Long domainId, User currentUser) {
+        Domain domain = domainRepository.findById(domainId)
+            .orElseThrow(() -> new IllegalArgumentException("Domain not found"));
+
+        if (!domain.getStore().getOwner().getId().equals(currentUser.getId())) {
+            throw new SecurityException("Access denied");
+        }
+
+        if (domain.getType() == DomainType.SUBDOMAIN) {
+            return "Subdomains are automatically verified";
+        }
+
+        return String.format(
+            "Add a TXT record to your DNS:\n" +
+            "Name: %s.%s\n" +
+            "Value: %s\n" +
+            "Then call the verification endpoint.",
+            saasProperties.getDomainVerification().getTxtRecordPrefix(),
+            domain.getHost(),
+            domain.getVerificationToken()
+        );
+    }
+
+    public boolean verifyDomain(Long domainId, User currentUser) {
+        Domain domain = domainRepository.findById(domainId)
+            .orElseThrow(() -> new IllegalArgumentException("Domain not found"));
+
+        if (!domain.getStore().getOwner().getId().equals(currentUser.getId())) {
+            throw new SecurityException("Access denied");
+        }
+
+        if (domain.getType() == DomainType.SUBDOMAIN) {
+            return true; // Subdomains sind bereits verifiziert
+        }
+
+        // Hier würde die tatsächliche DNS-Verifikation stattfinden
+        // Für jetzt simulieren wir es
+        boolean verified = performDnsVerification(domain);
+
+        if (verified) {
+            domain.setIsVerified(true);
+            domainRepository.save(domain);
+            log.info("Domain {} verified successfully", domain.getHost());
+        }
+
+        return verified;
+    }
+
+    public void setPrimaryDomain(Long domainId, User currentUser) {
+        Domain domain = domainRepository.findById(domainId)
+            .orElseThrow(() -> new IllegalArgumentException("Domain not found"));
+
+        if (!domain.getStore().getOwner().getId().equals(currentUser.getId())) {
+            throw new SecurityException("Access denied");
+        }
+
+        if (!domain.getIsVerified()) {
+            throw new IllegalStateException("Cannot set unverified domain as primary");
+        }
+
+        // Entferne primary flag von anderen domains
+        domainRepository.findByStoreAndIsPrimary(domain.getStore(), true)
+            .ifPresent(primaryDomain -> {
+                primaryDomain.setIsPrimary(false);
+                domainRepository.save(primaryDomain);
+            });
+
+        domain.setIsPrimary(true);
+        domainRepository.save(domain);
+    }
+
+    public void deleteDomain(Long domainId, User currentUser) {
+        Domain domain = domainRepository.findById(domainId)
+            .orElseThrow(() -> new IllegalArgumentException("Domain not found"));
+
+        if (!domain.getStore().getOwner().getId().equals(currentUser.getId())) {
+            throw new SecurityException("Access denied");
+        }
+
+        if (domain.getIsPrimary()) {
+            throw new IllegalStateException("Cannot delete primary domain");
+        }
+
+        domainRepository.delete(domain);
+    }
+
+    private String generateVerificationToken() {
+        byte[] token = new byte[saasProperties.getDomainVerification().getTokenLength()];
+        secureRandom.nextBytes(token);
+        StringBuilder sb = new StringBuilder();
+        for (byte b : token) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
+    }
+
+    private boolean performDnsVerification(Domain domain) {
+        // TODO: Implementiere tatsächliche DNS-Verifikation
+        // Für jetzt return true zur Demonstration
+        log.info("Performing DNS verification for domain: {}", domain.getHost());
+        return true;
     }
 }
-

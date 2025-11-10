@@ -1,0 +1,48 @@
+# Test Configuration für Multi-Tenant SaaS Testing
+
+spring:
+  application:
+    name: storeBackend-test
+
+  # H2 In-Memory Database für Tests
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: false
+
+  # H2 Console für Test-Debugging (nur in Tests)
+  h2:
+    console:
+      enabled: true
+
+# Test-spezifische SaaS Konfiguration
+saas:
+  baseDomain: test.local
+  platformDomain: app.test.local
+  subdomainPattern: "{slug}.test.local"
+  domainVerification:
+    txtRecordPrefix: "_test-verification"
+    tokenLength: 16
+
+# JWT für Tests
+jwt:
+  secret: testSecretKeyForJWTTokenGenerationInTestEnvironment123456789
+  expiration: 3600000 # 1 Stunde für Tests
+
+# Logging für Tests
+logging:
+  level:
+    storebackend: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN

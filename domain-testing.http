@@ -1,0 +1,70 @@
+### Multi-Tenant Domain Testing
+
+### 1. Register User with FREE plan
+POST http://localhost:8080/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "testuser@example.com",
+  "password": "password123"
+}
+
+### 2. Login
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "testuser@example.com",
+  "password": "password123"
+}
+
+### 3. Create Store (automatically creates subdomain)
+POST http://localhost:8080/api/me/stores
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "name": "Cool Shop",
+  "slug": "coolshop"
+}
+
+### 4. Get Domains for Store
+GET http://localhost:8080/api/stores/1/domains
+Authorization: Bearer {{auth_token}}
+
+### 5. Create Custom Domain
+POST http://localhost:8080/api/stores/1/domains/custom
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "host": "shop.customer-domain.com"
+}
+
+### 6. Get Domain Verification Instructions
+GET http://localhost:8080/api/stores/1/domains/2/verification-instructions
+Authorization: Bearer {{auth_token}}
+
+### 7. Verify Domain
+POST http://localhost:8080/api/stores/1/domains/2/verify
+Authorization: Bearer {{auth_token}}
+
+### 8. Set Primary Domain
+POST http://localhost:8080/api/stores/1/domains/2/set-primary
+Authorization: Bearer {{auth_token}}
+
+### 9. Public Store Resolution by Host
+GET http://localhost:8080/api/public/store/resolve?host=coolshop.markt.ma
+
+### 10. Public Store Resolution by Slug
+GET http://localhost:8080/api/public/store/by-slug/coolshop
+
+### 11. Check Domain Availability
+GET http://localhost:8080/api/public/domain/check-availability?host=newshop.markt.ma
+
+### 12. Check Custom Domain Availability
+GET http://localhost:8080/api/public/domain/check-availability?host=my-custom-shop.com
+
+### Testing with Host Header (simulates real subdomain request)
+GET http://localhost:8080/api/public/store/resolve
+Host: coolshop.markt.ma

@@ -1,24 +1,31 @@
 package storebackend.service;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import storebackend.config.SaasProperties;
 import storebackend.dto.CreateStoreRequest;
 import storebackend.dto.StoreDTO;
+import storebackend.entity.Domain;
 import storebackend.entity.Store;
 import storebackend.entity.User;
+import storebackend.enums.DomainType;
 import storebackend.enums.StoreStatus;
+import storebackend.repository.DomainRepository;
 import storebackend.repository.StoreRepository;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class StoreService {
 
     private final StoreRepository storeRepository;
-
-    public StoreService(StoreRepository storeRepository) {
-        this.storeRepository = storeRepository;
-    }
+    private final DomainRepository domainRepository;
+    private final SaasProperties saasProperties;
 
     public List<StoreDTO> getStoresByOwner(User owner) {
         return storeRepository.findByOwner(owner).stream()
@@ -26,6 +33,7 @@ public class StoreService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public StoreDTO createStore(CreateStoreRequest request, User owner) {
         // Check max stores limit
         long currentStoreCount = storeRepository.countByOwner(owner);
@@ -38,6 +46,11 @@ public class StoreService {
             throw new RuntimeException("Slug already exists");
         }
 
+        // Validiere Slug Format (nur alphanumerisch und Bindestriche)
+        if (!request.getSlug().matches("^[a-z0-9-]+$")) {
+            throw new RuntimeException("Slug can only contain lowercase letters, numbers and hyphens");
+        }
+
         Store store = new Store();
         store.setOwner(owner);
         store.setName(request.getName());
@@ -45,7 +58,39 @@ public class StoreService {
         store.setStatus(StoreStatus.ACTIVE);
 
         store = storeRepository.save(store);
+
+        // Automatisch Subdomain erstellen
+        createDefaultSubdomain(store);
+
+        log.info("Store created successfully: {} with subdomain {}.{}",
+                store.getName(), store.getSlug(), saasProperties.getBaseDomain());
+
         return toDTO(store);
+    }
+
+    private void createDefaultSubdomain(Store store) {
+        try {
+            String subdomain = saasProperties.generateSubdomain(store.getSlug());
+
+            if (domainRepository.existsByHost(subdomain)) {
+                log.warn("Subdomain {} already exists, skipping creation", subdomain);
+                return;
+            }
+
+            Domain domain = new Domain();
+            domain.setStore(store);
+            domain.setHost(subdomain);
+            domain.setType(DomainType.SUBDOMAIN);
+            domain.setIsVerified(true); // Subdomains sind automatisch verifiziert
+            domain.setIsPrimary(true); // Erste Domain ist primary
+
+            domainRepository.save(domain);
+            log.info("Default subdomain created: {}", subdomain);
+
+        } catch (Exception e) {
+            log.error("Failed to create default subdomain for store {}: {}", store.getSlug(), e.getMessage());
+            // Subdomain-Erstellung sollte Store-Erstellung nicht blockieren
+        }
     }
 
     public Store getStoreById(Long storeId) {
@@ -63,4 +108,3 @@ public class StoreService {
         return dto;
     }
 }
-

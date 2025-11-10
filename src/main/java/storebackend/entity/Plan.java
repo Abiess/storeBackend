@@ -25,6 +25,8 @@ public class Plan {
     private Integer maxCustomDomains;
 
     @Column(nullable = false)
+    private Integer maxSubdomains;
+
+    @Column(nullable = false)
     private Integer maxStorageMb;
 }
-

@@ -1,7 +1,7 @@
-### API Testing mit IntelliJ IDEA / VS Code HTTP Client
+### API Testing mit IntelliJ IDEA / VS Code HTTP Client - Multi-Tenant SaaS
 
-### 1. Benutzer registrieren
-POST http://localhost:8080/auth/register
+### 1. Benutzer registrieren (bekommt automatisch FREE Plan)
+POST http://localhost:8080/api/auth/register
 Content-Type: application/json
 
 {
@@ -12,7 +12,7 @@ Content-Type: application/json
 ###
 
 ### 2. Benutzer anmelden
-POST http://localhost:8080/auth/login
+POST http://localhost:8080/api/auth/login
 Content-Type: application/json
 
 {
@@ -28,19 +28,19 @@ Content-Type: application/json
 ###
 
 ### 3. Aktuellen Benutzer abrufen
-GET http://localhost:8080/auth/me
+GET http://localhost:8080/api/auth/me
 Authorization: Bearer {{auth_token}}
 
 ###
 
-### 4. Store erstellen
-POST http://localhost:8080/me/stores
+### 4. Store erstellen (erstellt automatisch Subdomain coolshop.markt.ma)
+POST http://localhost:8080/api/me/stores
 Content-Type: application/json
 Authorization: Bearer {{auth_token}}
 
 {
-  "name": "Mein Test Shop",
-  "slug": "mein-test-shop"
+  "name": "Cool Shop",
+  "slug": "coolshop"
 }
 
 > {%
@@ -49,38 +49,97 @@ Authorization: Bearer {{auth_token}}
 
 ###
 
-### 5. Eigene Stores auflisten
-GET http://localhost:8080/me/stores
+### 5. Alle Stores des Benutzers abrufen
+GET http://localhost:8080/api/me/stores
 Authorization: Bearer {{auth_token}}
 
 ###
 
-### 6. Domain zu Store hinzufügen
-POST http://localhost:8080/stores/{{store_id}}/domains
+### === DOMAIN MANAGEMENT (NEU) ===
+
+### 6. Domains des Stores abrufen (sollte automatisch erstellte Subdomain zeigen)
+GET http://localhost:8080/api/stores/{{store_id}}/domains
+Authorization: Bearer {{auth_token}}
+
+###
+
+### 7. Zusätzliche Subdomain erstellen
+POST http://localhost:8080/api/stores/{{store_id}}/domains/subdomain
+Authorization: Bearer {{auth_token}}
+
+###
+
+### 8. Custom Domain hinzufügen
+POST http://localhost:8080/api/stores/{{store_id}}/domains/custom
 Content-Type: application/json
 Authorization: Bearer {{auth_token}}
 
 {
-  "host": "myshop.myplatform.com",
-  "type": "SUBDOMAIN"
+  "host": "shop.customer-domain.com"
 }
 
+> {%
+    client.global.set("custom_domain_id", response.body.id);
+%}
+
 ###
 
-### 7. Domains eines Stores auflisten
-GET http://localhost:8080/stores/{{store_id}}/domains
+### 9. Verifikations-Anweisungen für Custom Domain abrufen
+GET http://localhost:8080/api/stores/{{store_id}}/domains/{{custom_domain_id}}/verification-instructions
 Authorization: Bearer {{auth_token}}
 
 ###
 
-### 8. Produkt erstellen
-POST http://localhost:8080/stores/{{store_id}}/products
+### 10. Custom Domain verifizieren (simuliert DNS-Check)
+POST http://localhost:8080/api/stores/{{store_id}}/domains/{{custom_domain_id}}/verify
+Authorization: Bearer {{auth_token}}
+
+###
+
+### 11. Custom Domain als Primary setzen
+POST http://localhost:8080/api/stores/{{store_id}}/domains/{{custom_domain_id}}/set-primary
+Authorization: Bearer {{auth_token}}
+
+###
+
+### === PUBLIC STORE RESOLUTION (für Frontend) ===
+
+### 12. Store über Host auflösen (für Subdomain)
+GET http://localhost:8080/api/public/store/resolve?host=coolshop.markt.ma
+
+###
+
+### 13. Store über Slug auflösen
+GET http://localhost:8080/api/public/store/by-slug/coolshop
+
+###
+
+### 14. Store Resolution mit Host Header (simuliert echte Browser-Anfrage)
+GET http://localhost:8080/api/public/store/resolve
+Host: coolshop.markt.ma
+
+###
+
+### 15. Domain-Verfügbarkeit prüfen (Subdomain)
+GET http://localhost:8080/api/public/domain/check-availability?host=newshop.markt.ma
+
+###
+
+### 16. Domain-Verfügbarkeit prüfen (Custom Domain)
+GET http://localhost:8080/api/public/domain/check-availability?host=my-custom-shop.com
+
+###
+
+### === PRODUCT MANAGEMENT ===
+
+### 17. Produkt erstellen
+POST http://localhost:8080/api/stores/{{store_id}}/products
 Content-Type: application/json
 Authorization: Bearer {{auth_token}}
 
 {
-  "title": "T-Shirt Premium",
-  "description": "Hochwertiges Baumwoll-Shirt",
+  "title": "Test Produkt",
+  "description": "Ein tolles Test-Produkt",
   "basePrice": 29.99,
   "status": "ACTIVE"
 }
@@ -91,96 +150,71 @@ Authorization: Bearer {{auth_token}}
 
 ###
 
-### 9. Alle Produkte eines Stores auflisten
-GET http://localhost:8080/stores/{{store_id}}/products
+### 18. Alle Produkte des Stores abrufen
+GET http://localhost:8080/api/stores/{{store_id}}/products
 Authorization: Bearer {{auth_token}}
 
 ###
 
-### 10. Einzelnes Produkt abrufen
-GET http://localhost:8080/stores/{{store_id}}/products/{{product_id}}
+### 19. Einzelnes Produkt abrufen
+GET http://localhost:8080/api/stores/{{store_id}}/products/{{product_id}}
 Authorization: Bearer {{auth_token}}
 
 ###
 
-### 11. Produkt aktualisieren
-PUT http://localhost:8080/stores/{{store_id}}/products/{{product_id}}
+### 20. Produkt aktualisieren
+PUT http://localhost:8080/api/stores/{{store_id}}/products/{{product_id}}
 Content-Type: application/json
 Authorization: Bearer {{auth_token}}
 
 {
-  "title": "T-Shirt Premium (Aktualisiert)",
-  "description": "Neuer Preis!",
-  "basePrice": 24.99,
+  "title": "Aktualisiertes Test Produkt",
+  "description": "Ein noch tolleres Test-Produkt",
+  "basePrice": 39.99,
   "status": "ACTIVE"
 }
 
 ###
 
-### 12. Produkt löschen
-DELETE http://localhost:8080/stores/{{store_id}}/products/{{product_id}}
-Authorization: Bearer {{auth_token}}
+### === ERROR TESTING ===
 
-###
-
-### 13. Store per Domain auflösen (Public API - Kein Token nötig)
-GET http://localhost:8080/public/store/resolve?host=myshop.myplatform.com
-
-###
-
-### 14. Custom Domain hinzufügen
-POST http://localhost:8080/stores/{{store_id}}/domains
+### 21. Fehler: Store ohne gültigen JWT erstellen
+POST http://localhost:8080/api/me/stores
 Content-Type: application/json
-Authorization: Bearer {{auth_token}}
 
 {
-  "host": "www.meinshop.de",
-  "type": "CUSTOM"
+  "name": "Unauthorized Shop",
+  "slug": "unauthorized"
 }
 
 ###
 
-### Weitere Test-Szenarien
+### 22. Fehler: Domain für fremden Store verwalten
+GET http://localhost:8080/api/stores/999/domains
+Authorization: Bearer {{auth_token}}
 
-### Test: Zweiten Store erstellen (Free Plan hat Limit von 1)
-POST http://localhost:8080/me/stores
+###
+
+### 23. Fehler: Ungültigen Slug verwenden
+POST http://localhost:8080/api/me/stores
 Content-Type: application/json
 Authorization: Bearer {{auth_token}}
 
 {
-  "name": "Zweiter Shop",
-  "slug": "zweiter-shop"
+  "name": "Invalid Slug Shop",
+  "slug": "invalid_slug_with_underscores!"
 }
-
-# Erwartete Antwort: 500 - "Maximum stores limit reached for your plan"
 
 ###
 
-### Test: Store mit existierendem Slug erstellen
-POST http://localhost:8080/me/stores
+### 24. Fehler: Bereits existierende Subdomain
+POST http://localhost:8080/api/me/stores
 Content-Type: application/json
 Authorization: Bearer {{auth_token}}
 
 {
-  "name": "Duplizierter Shop",
-  "slug": "mein-test-shop"
+  "name": "Duplicate Shop",
+  "slug": "coolshop"
 }
 
-# Erwartete Antwort: 500 - "Slug already exists"
-
 ###
-
-### Test: Ohne Token zugreifen
-GET http://localhost:8080/me/stores
-
-# Erwartete Antwort: 403 Forbidden
-
-###
-
-### Test: Store per nicht-existierendem Host auflösen
-GET http://localhost:8080/public/store/resolve?host=gibts-nicht.com
-
-# Erwartete Antwort: 404 Not Found
-
-###
-

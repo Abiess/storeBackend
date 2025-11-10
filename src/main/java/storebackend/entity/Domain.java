@@ -30,7 +30,13 @@ public class Domain {
     private DomainType type;
 
     @Column(nullable = false)
+    private Boolean isPrimary = false;
+
+    @Column(nullable = false)
     private Boolean isVerified = false;
+
+    @Column
+    private String verificationToken;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -40,4 +46,3 @@ public class Domain {
         createdAt = LocalDateTime.now();
     }
 }
-
