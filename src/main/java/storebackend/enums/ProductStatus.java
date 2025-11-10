@@ -5,10 +5,4 @@ public enum ProductStatus {
     ACTIVE,
     ARCHIVED
 }
-package storebackend.enums;
-
-public enum Role {
-    ROLE_PLATFORM_ADMIN,
-    ROLE_STORE_OWNER
-}
 
