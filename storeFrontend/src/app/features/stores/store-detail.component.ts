@@ -1,0 +1,1015 @@
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule, ActivatedRoute } from '@angular/router';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { ProductService } from '@app/core/services/product.service';
+import { OrderService } from '@app/core/services/order.service';
+import { DomainService } from '@app/core/services/domain.service';
+import { Product, Order, Domain, DomainType } from '@app/core/models';
+import { LanguageSwitcherComponent } from '../../shared/components/language-switcher.component';
+
+@Component({
+  selector: 'app-store-detail',
+  standalone: true,
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, LanguageSwitcherComponent],
+  template: `
+    <div class="store-detail">
+      <div class="container">
+        <div class="breadcrumb">
+          <a routerLink="/dashboard">← Zurück zum Dashboard</a>
+          <app-language-switcher></app-language-switcher>
+        </div>
+
+        <div class="store-header">
+          <h1>Store Management</h1>
+          <div class="tabs">
+            <button [class.active]="activeTab === 'products'" (click)="switchTab('products')">
+              📦 Produkte
+            </button>
+            <button [class.active]="activeTab === 'orders'" (click)="switchTab('orders')">
+              📋 Bestellungen
+            </button>
+            <button [class.active]="activeTab === 'domains'" (click)="switchTab('domains')">
+              🌐 Domains
+            </button>
+          </div>
+        </div>
+
+        <!-- Products Tab -->
+        <div *ngIf="activeTab === 'products'" class="tab-content">
+          <div class="section-header">
+            <h2>Produkte</h2>
+            <div class="header-actions">
+              <button class="btn btn-secondary" [routerLink]="['/dashboard/stores', storeId, 'categories', 'new']">
+                + Kategorie
+              </button>
+              <button class="btn btn-primary" [routerLink]="['/dashboard/stores', storeId, 'products', 'new']">
+                + Produkt
+              </button>
+            </div>
+          </div>
+
+          <div *ngIf="productsLoading" class="loading-state">
+            <div class="spinner"></div>
+            <p>Produkte werden geladen...</p>
+          </div>
+
+          <div *ngIf="!productsLoading && products.length === 0" class="empty-state">
+            <div class="empty-icon">📦</div>
+            <p>Noch keine Produkte vorhanden</p>
+            <button class="btn btn-primary" [routerLink]="['/dashboard/stores', storeId, 'products', 'new']">
+              Erstes Produkt erstellen
+            </button>
+          </div>
+
+          <div *ngIf="!productsLoading && products.length > 0">
+            <div class="products-actions">
+              <button class="btn btn-link" [routerLink]="['/dashboard/stores', storeId, 'products']">
+                Alle Produkte anzeigen ({{ products.length }}) →
+              </button>
+            </div>
+            
+            <div class="products-grid">
+              <div *ngFor="let product of products.slice(0, 6)" class="product-card">
+                <div class="product-header">
+                  <h3>{{ product.title }}</h3>
+                  <span [class]="'badge badge-' + getProductStatusClass(product.status)">
+                    {{ product.status }}
+                  </span>
+                </div>
+                <p class="product-description">{{ product.description }}</p>
+                <div class="product-footer">
+                  <span class="product-price">{{ product.basePrice }} €</span>
+                  <span class="product-date">{{ product.createdAt | date:'dd.MM.yyyy' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Orders Tab -->
+        <div *ngIf="activeTab === 'orders'" class="tab-content">
+          <div class="section-header">
+            <h2>Bestellungen</h2>
+          </div>
+          
+          <div *ngIf="ordersLoading" class="loading-state">
+            <div class="spinner"></div>
+            <p>Bestellungen werden geladen...</p>
+          </div>
+
+          <div *ngIf="!ordersLoading && orders.length === 0" class="empty-state">
+            <div class="empty-icon">📋</div>
+            <p>Noch keine Bestellungen vorhanden</p>
+          </div>
+
+          <div *ngIf="!ordersLoading && orders.length > 0" class="orders-list">
+            <div *ngFor="let order of orders" class="order-card">
+              <div class="order-header">
+                <div>
+                  <strong>{{ order.orderNumber }}</strong>
+                  <span class="order-email">{{ order.customerEmail }}</span>
+                </div>
+                <span [class]="'badge badge-' + getOrderStatusClass(order.status)">
+                  {{ order.status }}
+                </span>
+              </div>
+              <div class="order-footer">
+                <span class="order-amount">{{ order.totalAmount }} €</span>
+                <span class="order-date">{{ order.createdAt | date:'dd.MM.yyyy HH:mm' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Domains Tab -->
+        <div *ngIf="activeTab === 'domains'" class="tab-content">
+          <div class="section-header">
+            <h2>Domains</h2>
+            <button class="btn btn-primary" (click)="toggleAddDomain()" *ngIf="!showAddDomain">
+              + Domain hinzufügen
+            </button>
+          </div>
+
+          <!-- Add Domain Form -->
+          <div *ngIf="showAddDomain" class="domain-form-card">
+            <div class="form-header">
+              <h3>Neue Domain hinzufügen</h3>
+              <button class="btn-close" (click)="cancelAddDomain()">✕</button>
+            </div>
+            
+            <form [formGroup]="domainForm" (ngSubmit)="onSubmitDomain()">
+              <div class="form-group">
+                <label for="domainType">Domain-Typ</label>
+                <select id="domainType" formControlName="type" class="form-control">
+                  <option value="SUBDOMAIN">Subdomain (*.markt.ma)</option>
+                  <option value="CUSTOM">Custom Domain</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="domainHost">Domain</label>
+                <input 
+                  id="domainHost" 
+                  type="text" 
+                  formControlName="host" 
+                  class="form-control"
+                  [placeholder]="domainForm.get('type')?.value === 'SUBDOMAIN' ? 'meinshop.markt.ma' : 'shop.meine-domain.de'"
+                />
+                <small class="form-hint" *ngIf="domainForm.get('type')?.value === 'SUBDOMAIN'">
+                  Geben Sie die vollständige Subdomain ein (z.B. meinshop.markt.ma)
+                </small>
+                <small class="form-hint" *ngIf="domainForm.get('type')?.value === 'CUSTOM'">
+                  Geben Sie Ihre eigene Domain ein (z.B. shop.meine-domain.de)
+                </small>
+                <div *ngIf="domainForm.get('host')?.invalid && domainForm.get('host')?.touched" class="error">
+                  Bitte geben Sie eine gültige Domain ein
+                </div>
+              </div>
+
+              <div class="form-group" *ngIf="domainForm.get('type')?.value === 'CUSTOM'">
+                <label class="checkbox-label">
+                  <input type="checkbox" formControlName="isPrimary" />
+                  Als primäre Domain festlegen
+                </label>
+              </div>
+
+              <div class="form-actions">
+                <button type="button" class="btn btn-secondary" (click)="cancelAddDomain()">
+                  Abbrechen
+                </button>
+                <button type="submit" class="btn btn-success" [disabled]="domainForm.invalid || savingDomain">
+                  {{ savingDomain ? 'Wird gespeichert...' : 'Domain hinzufügen' }}
+                </button>
+              </div>
+
+              <div *ngIf="domainError" class="alert alert-error">
+                {{ domainError }}
+              </div>
+              <div *ngIf="domainSuccess" class="alert alert-success">
+                {{ domainSuccess }}
+              </div>
+            </form>
+          </div>
+
+          <div *ngIf="domainsLoading" class="loading-state">
+            <div class="spinner"></div>
+            <p>Domains werden geladen...</p>
+          </div>
+
+          <div *ngIf="!domainsLoading && domains.length === 0 && !showAddDomain" class="empty-state">
+            <div class="empty-icon">🌐</div>
+            <p>Noch keine Domains konfiguriert</p>
+          </div>
+
+          <div *ngIf="!domainsLoading && domains.length > 0" class="domains-list">
+            <div *ngFor="let domain of domains" class="domain-card">
+              <div class="domain-main">
+                <div class="domain-info">
+                  <strong class="domain-host">{{ domain.host }}</strong>
+                  <div class="domain-badges">
+                    <span [class]="'badge badge-' + (domain.type === 'SUBDOMAIN' ? 'info' : 'warning')">
+                      {{ domain.type === 'SUBDOMAIN' ? 'Subdomain' : 'Custom' }}
+                    </span>
+                    <span *ngIf="domain.isPrimary" class="badge badge-success">Primär</span>
+                    <span [class]="'badge badge-' + (domain.isVerified ? 'success' : 'warning')">
+                      {{ domain.isVerified ? '✓ Verifiziert' : '⏳ Nicht verifiziert' }}
+                    </span>
+                  </div>
+                  <small class="domain-date">Hinzugefügt: {{ domain.createdAt | date:'dd.MM.yyyy' }}</small>
+                </div>
+                <div class="domain-actions">
+                  <button 
+                    *ngIf="!domain.isVerified && domain.type === 'CUSTOM'" 
+                    class="btn btn-info btn-sm"
+                    (click)="verifyDomain(domain.id)"
+                  >
+                    Verifizieren
+                  </button>
+                  <button class="btn btn-danger btn-sm" (click)="confirmDeleteDomain(domain)">
+                    Löschen
+                  </button>
+                </div>
+              </div>
+              
+              <div *ngIf="!domain.isVerified && domain.verificationToken" class="verification-info">
+                <strong>DNS-Verifizierung erforderlich:</strong>
+                <code>{{ domain.verificationToken }}</code>
+                <small>Fügen Sie diesen TXT-Record zu Ihrer Domain hinzu</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .store-detail {
+      min-height: 100vh;
+      background: #f5f7fa;
+      padding: 2rem 0;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+
+    .breadcrumb {
+      margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .breadcrumb a {
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.3s;
+    }
+
+    .breadcrumb a:hover {
+      color: #764ba2;
+    }
+
+    .store-header {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 2rem;
+    }
+
+    .store-header h1 {
+      margin: 0 0 1rem;
+      font-size: 1.75rem;
+      color: #333;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .tabs button {
+      padding: 0.75rem 1.25rem;
+      border: 2px solid transparent;
+      background: #f5f5f5;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s;
+      font-size: 0.9375rem;
+    }
+
+    .tabs button:hover {
+      background: #e8e8e8;
+    }
+
+    .tabs button.active {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border-color: #667eea;
+    }
+
+    .tab-content {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      min-height: 400px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .section-header h2 {
+      margin: 0;
+      font-size: 1.5rem;
+      color: #333;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .products-actions {
+      margin-bottom: 1rem;
+    }
+
+    .btn-link {
+      background: transparent;
+      color: #667eea;
+      border: none;
+      padding: 0.5rem;
+      cursor: pointer;
+      font-weight: 500;
+      text-decoration: none;
+    }
+
+    .btn-link:hover {
+      color: #764ba2;
+      text-decoration: underline;
+    }
+
+    .loading-state, .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+    }
+
+    .empty-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Products Grid */
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .product-card {
+      background: #f8f9fa;
+      padding: 1.25rem;
+      border-radius: 8px;
+      border: 1px solid #e9ecef;
+    }
+
+    .product-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 0.75rem;
+      gap: 0.5rem;
+    }
+
+    .product-header h3 {
+      margin: 0;
+      font-size: 1.125rem;
+      color: #333;
+    }
+
+    .product-description {
+      color: #666;
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
+      line-height: 1.5;
+    }
+
+    .product-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 0.75rem;
+      border-top: 1px solid #dee2e6;
+    }
+
+    .product-price {
+      font-weight: 600;
+      color: #667eea;
+      font-size: 1.125rem;
+    }
+
+    .product-date {
+      font-size: 0.8125rem;
+      color: #999;
+    }
+
+    /* Orders List */
+    .orders-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .order-card {
+      background: #f8f9fa;
+      padding: 1.25rem;
+      border-radius: 8px;
+      border: 1px solid #e9ecef;
+    }
+
+    .order-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 0.75rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .order-email {
+      display: block;
+      color: #666;
+      font-size: 0.875rem;
+      margin-top: 0.25rem;
+    }
+
+    .order-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .order-amount {
+      font-weight: 600;
+      color: #28a745;
+      font-size: 1.125rem;
+    }
+
+    .order-date {
+      font-size: 0.8125rem;
+      color: #999;
+    }
+
+    /* Domain Form */
+    .domain-form-card {
+      background: #f8f9fa;
+      padding: 1.5rem;
+      border-radius: 8px;
+      border: 2px solid #667eea;
+      margin-bottom: 1.5rem;
+    }
+
+    .form-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .form-header h3 {
+      margin: 0;
+      color: #333;
+    }
+
+    .btn-close {
+      background: transparent;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #999;
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+    }
+
+    .btn-close:hover {
+      background: #e9ecef;
+      color: #333;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: #555;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.9375rem;
+      transition: border-color 0.3s;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .form-hint {
+      display: block;
+      margin-top: 0.5rem;
+      font-size: 0.8125rem;
+      color: #666;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      font-weight: normal;
+    }
+
+    .checkbox-label input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: flex-end;
+      margin-top: 1.5rem;
+    }
+
+    .error {
+      color: #dc3545;
+      font-size: 0.8125rem;
+      margin-top: 0.5rem;
+    }
+
+    /* Domains List */
+    .domains-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .domain-card {
+      background: #f8f9fa;
+      padding: 1.25rem;
+      border-radius: 8px;
+      border: 1px solid #e9ecef;
+    }
+
+    .domain-main {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .domain-info {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .domain-host {
+      display: block;
+      font-size: 1.125rem;
+      color: #333;
+      margin-bottom: 0.5rem;
+      word-break: break-all;
+    }
+
+    .domain-badges {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.5rem;
+    }
+
+    .domain-date {
+      display: block;
+      color: #999;
+      font-size: 0.8125rem;
+    }
+
+    .domain-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .verification-info {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #fff3cd;
+      border-radius: 6px;
+      border: 1px solid #ffc107;
+    }
+
+    .verification-info strong {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: #856404;
+    }
+
+    .verification-info code {
+      display: block;
+      padding: 0.5rem;
+      background: white;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      font-family: monospace;
+      word-break: break-all;
+    }
+
+    .verification-info small {
+      display: block;
+      color: #856404;
+      font-size: 0.8125rem;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 0.625rem 1.25rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-sm {
+      padding: 0.5rem 1rem;
+      font-size: 0.8125rem;
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #5a6268;
+    }
+
+    .btn-success {
+      background: #28a745;
+      color: white;
+    }
+
+    .btn-success:hover:not(:disabled) {
+      background: #218838;
+    }
+
+    .btn-danger {
+      background: #dc3545;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #c82333;
+    }
+
+    .btn-info {
+      background: #17a2b8;
+      color: white;
+    }
+
+    .btn-info:hover {
+      background: #138496;
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.625rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border-radius: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .badge-success {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .badge-warning {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .badge-danger {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .badge-info {
+      background: #d1ecf1;
+      color: #0c5460;
+    }
+
+    /* Alerts */
+    .alert {
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      margin-top: 1rem;
+    }
+
+    .alert-success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .alert-error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 0 0.75rem;
+      }
+
+      .store-header h1 {
+        font-size: 1.5rem;
+      }
+
+      .tabs button {
+        font-size: 0.875rem;
+        padding: 0.625rem 1rem;
+      }
+
+      .domain-main {
+        flex-direction: column;
+      }
+
+      .domain-actions {
+        width: 100%;
+      }
+
+      .form-actions {
+        flex-direction: column;
+      }
+
+      .form-actions .btn {
+        width: 100%;
+      }
+    }
+  `]
+})
+export class StoreDetailComponent implements OnInit {
+  storeId!: number;
+  activeTab = 'products';
+
+  products: Product[] = [];
+  orders: Order[] = [];
+  domains: Domain[] = [];
+
+  productsLoading = false;
+  ordersLoading = false;
+  domainsLoading = false;
+
+  showAddDomain = false;
+  savingDomain = false;
+  domainError = '';
+  domainSuccess = '';
+
+  domainForm: FormGroup;
+
+  constructor(
+    private route: ActivatedRoute,
+    private productService: ProductService,
+    private orderService: OrderService,
+    private domainService: DomainService,
+    private fb: FormBuilder
+  ) {
+    this.domainForm = this.fb.group({
+      type: ['SUBDOMAIN', Validators.required],
+      host: ['', [Validators.required, Validators.pattern(/^[a-zA-Z0-9][a-zA-Z0-9-_.]*\.[a-zA-Z]{2,}$/)]],
+      isPrimary: [false]
+    });
+  }
+
+  ngOnInit(): void {
+    this.storeId = Number(this.route.snapshot.paramMap.get('id'));
+    this.loadProducts();
+    this.loadOrders();
+    this.loadDomains();
+  }
+
+  switchTab(tab: string): void {
+    this.activeTab = tab;
+  }
+
+  loadProducts(): void {
+    this.productsLoading = true;
+    this.productService.getProducts(this.storeId).subscribe({
+      next: (products) => {
+        this.products = products;
+        this.productsLoading = false;
+      },
+      error: (error) => {
+        console.error('Fehler beim Laden der Produkte:', error);
+        this.productsLoading = false;
+      }
+    });
+  }
+
+  loadOrders(): void {
+    this.ordersLoading = true;
+    this.orderService.getOrders(this.storeId).subscribe({
+      next: (orders) => {
+        this.orders = orders;
+        this.ordersLoading = false;
+      },
+      error: (error) => {
+        console.error('Fehler beim Laden der Bestellungen:', error);
+        this.ordersLoading = false;
+      }
+    });
+  }
+
+  loadDomains(): void {
+    this.domainsLoading = true;
+    this.domainService.getDomains(this.storeId).subscribe({
+      next: (domains) => {
+        this.domains = domains;
+        this.domainsLoading = false;
+      },
+      error: (error) => {
+        console.error('Fehler beim Laden der Domains:', error);
+        this.domainsLoading = false;
+      }
+    });
+  }
+
+  toggleAddDomain(): void {
+    this.showAddDomain = true;
+    this.domainError = '';
+    this.domainSuccess = '';
+  }
+
+  cancelAddDomain(): void {
+    this.showAddDomain = false;
+    this.domainForm.reset({
+      type: 'SUBDOMAIN',
+      host: '',
+      isPrimary: false
+    });
+    this.domainError = '';
+    this.domainSuccess = '';
+  }
+
+  onSubmitDomain(): void {
+    if (this.domainForm.valid) {
+      this.savingDomain = true;
+      this.domainError = '';
+      this.domainSuccess = '';
+
+      const formValue = this.domainForm.value;
+      const request = {
+        host: formValue.host,
+        type: formValue.type as DomainType,
+        isPrimary: formValue.isPrimary
+      };
+
+      this.domainService.createDomain(this.storeId, request).subscribe({
+        next: (domain) => {
+          this.domainSuccess = `Domain "${domain.host}" wurde erfolgreich hinzugefügt!`;
+          this.savingDomain = false;
+          this.loadDomains();
+
+          setTimeout(() => {
+            this.cancelAddDomain();
+          }, 2000);
+        },
+        error: (error) => {
+          this.savingDomain = false;
+          this.domainError = error.error?.message || 'Fehler beim Hinzufügen der Domain. Bitte versuchen Sie es erneut.';
+        }
+      });
+    }
+  }
+
+  verifyDomain(domainId: number): void {
+    this.domainService.verifyDomain(this.storeId, domainId).subscribe({
+      next: () => {
+        this.loadDomains();
+        alert('Domain-Verifizierung gestartet!');
+      },
+      error: (error) => {
+        alert('Fehler bei der Verifizierung: ' + (error.error?.message || 'Unbekannter Fehler'));
+      }
+    });
+  }
+
+  confirmDeleteDomain(domain: Domain): void {
+    if (confirm(`Möchten Sie die Domain "${domain.host}" wirklich löschen?`)) {
+      this.deleteDomain(domain.id);
+    }
+  }
+
+  deleteDomain(domainId: number): void {
+    this.domainService.deleteDomain(this.storeId, domainId).subscribe({
+      next: () => {
+        this.loadDomains();
+      },
+      error: (error) => {
+        console.error('Fehler beim Löschen der Domain:', error);
+        alert('Fehler beim Löschen der Domain');
+      }
+    });
+  }
+
+  getProductStatusClass(status: string): string {
+    switch (status) {
+      case 'ACTIVE': return 'success';
+      case 'DRAFT': return 'warning';
+      case 'ARCHIVED': return 'danger';
+      default: return 'info';
+    }
+  }
+
+  getOrderStatusClass(status: string): string {
+    switch (status) {
+      case 'PENDING': return 'warning';
+      case 'CONFIRMED': return 'info';
+      case 'PROCESSING': return 'info';
+      case 'SHIPPED': return 'success';
+      case 'DELIVERED': return 'success';
+      case 'CANCELLED': return 'danger';
+      default: return 'info';
+    }
+  }
+}

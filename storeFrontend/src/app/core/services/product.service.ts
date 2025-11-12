@@ -1,0 +1,83 @@
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { environment } from '@env/environment';
+import { Product, CreateProductRequest, ProductVariant } from '../models';
+import { MockProductService } from '../mocks/mock-product.service';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class ProductService {
+  private mockService = new MockProductService();
+
+  constructor(private http: HttpClient) {}
+
+  getProducts(storeId: number, status?: string): Observable<Product[]> {
+    if (environment.useMockData) {
+      return this.mockService.getProducts(storeId, status);
+    }
+    let params = new HttpParams();
+    if (status) {
+      params = params.set('status', status);
+    }
+    return this.http.get<Product[]>(`${environment.apiUrl}/stores/${storeId}/products`, { params });
+  }
+
+  getProduct(storeId: number, productId: number): Observable<Product> {
+    if (environment.useMockData) {
+      return this.mockService.getProduct(storeId, productId);
+    }
+    return this.http.get<Product>(`${environment.apiUrl}/stores/${storeId}/products/${productId}`);
+  }
+
+  createProduct(storeId: number, request: CreateProductRequest): Observable<Product> {
+    if (environment.useMockData) {
+      return this.mockService.createProduct(storeId, request);
+    }
+    return this.http.post<Product>(`${environment.apiUrl}/stores/${storeId}/products`, request);
+  }
+
+  updateProduct(storeId: number, productId: number, request: Partial<CreateProductRequest>): Observable<Product> {
+    if (environment.useMockData) {
+      return this.mockService.updateProduct(storeId, productId, request);
+    }
+    return this.http.put<Product>(`${environment.apiUrl}/stores/${storeId}/products/${productId}`, request);
+  }
+
+  deleteProduct(storeId: number, productId: number): Observable<void> {
+    if (environment.useMockData) {
+      return this.mockService.deleteProduct(storeId, productId);
+    }
+    return this.http.delete<void>(`${environment.apiUrl}/stores/${storeId}/products/${productId}`);
+  }
+
+  // Variants
+  getVariants(storeId: number, productId: number): Observable<ProductVariant[]> {
+    if (environment.useMockData) {
+      return this.mockService.getVariants(storeId, productId);
+    }
+    return this.http.get<ProductVariant[]>(`${environment.apiUrl}/stores/${storeId}/products/${productId}/variants`);
+  }
+
+  createVariant(storeId: number, productId: number, variant: Partial<ProductVariant>): Observable<ProductVariant> {
+    if (environment.useMockData) {
+      return this.mockService.createVariant(storeId, productId, variant);
+    }
+    return this.http.post<ProductVariant>(`${environment.apiUrl}/stores/${storeId}/products/${productId}/variants`, variant);
+  }
+
+  updateVariant(storeId: number, productId: number, variantId: number, variant: Partial<ProductVariant>): Observable<ProductVariant> {
+    if (environment.useMockData) {
+      return this.mockService.updateVariant(storeId, productId, variantId, variant);
+    }
+    return this.http.put<ProductVariant>(`${environment.apiUrl}/stores/${storeId}/products/${productId}/variants/${variantId}`, variant);
+  }
+
+  deleteVariant(storeId: number, productId: number, variantId: number): Observable<void> {
+    if (environment.useMockData) {
+      return this.mockService.deleteVariant(storeId, productId, variantId);
+    }
+    return this.http.delete<void>(`${environment.apiUrl}/stores/${storeId}/products/${productId}/variants/${variantId}`);
+  }
+}

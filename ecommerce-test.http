@@ -1,0 +1,531 @@
+### ===========================================
+### E-COMMERCE API TESTING
+### markt.ma - Multi-Tenant E-Commerce SaaS
+### ===========================================
+
+### Variables
+@baseUrl = http://localhost:8080
+@token = YOUR_TOKEN_HERE
+@storeId = 1
+@productId = 1
+@variantId = 1
+@categoryId = 1
+@sessionId = guest-{{$timestamp}}-{{$randomInt}}
+
+### ===========================================
+### 1. AUTHENTICATION
+### ===========================================
+
+### Login as Store Owner
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "shop@example.com",
+  "password": "shop123"
+}
+
+### ===========================================
+### 2. CATEGORIES
+### ===========================================
+
+### Get all categories for a store
+GET {{baseUrl}}/api/stores/{{storeId}}/categories
+Authorization: Bearer {{token}}
+
+### Get root categories only
+GET {{baseUrl}}/api/stores/{{storeId}}/categories/root
+Authorization: Bearer {{token}}
+
+### Get subcategories
+GET {{baseUrl}}/api/stores/{{storeId}}/categories/{{categoryId}}/subcategories
+Authorization: Bearer {{token}}
+
+### Create category
+POST {{baseUrl}}/api/stores/{{storeId}}/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Elektronik",
+  "slug": "elektronik",
+  "description": "Alle elektronischen Geräte",
+  "sortOrder": 1
+}
+
+### Create subcategory
+POST {{baseUrl}}/api/stores/{{storeId}}/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Smartphones",
+  "slug": "smartphones",
+  "description": "Alle Smartphones und Handys",
+  "parentId": 1,
+  "sortOrder": 1
+}
+
+### Update category
+PUT {{baseUrl}}/api/stores/{{storeId}}/categories/{{categoryId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Elektronik & Zubehör",
+  "slug": "elektronik-zubehoer",
+  "description": "Alle elektronischen Geräte und Zubehör",
+  "sortOrder": 1
+}
+
+### Delete category
+DELETE {{baseUrl}}/api/stores/{{storeId}}/categories/{{categoryId}}
+Authorization: Bearer {{token}}
+
+### ===========================================
+### 3. PRODUCT OPTIONS (Variants)
+### ===========================================
+
+### Get product options
+GET {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}/options
+Authorization: Bearer {{token}}
+
+### Create product option - Color
+POST {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}/options
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Farbe",
+  "values": ["Schwarz", "Weiß", "Blau", "Rot"],
+  "sortOrder": 1
+}
+
+### Create product option - Size
+POST {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}/options
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Größe",
+  "values": ["S", "M", "L", "XL"],
+  "sortOrder": 2
+}
+
+### Create product option - Storage
+POST {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}/options
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Speicher",
+  "values": ["128GB", "256GB", "512GB", "1TB"],
+  "sortOrder": 3
+}
+
+### Update product option
+PUT {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}/options/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Farbe",
+  "values": ["Schwarz", "Weiß", "Blau", "Rot", "Grün"],
+  "sortOrder": 1
+}
+
+### Delete product option
+DELETE {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}/options/1
+Authorization: Bearer {{token}}
+
+### ===========================================
+### 4. PRODUCT MEDIA (Gallery)
+### ===========================================
+
+### Get product media
+GET {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}/media
+Authorization: Bearer {{token}}
+
+### Add media to product
+POST {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}/media
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "mediaId": 1,
+  "isPrimary": true,
+  "sortOrder": 1
+}
+
+### Add another image
+POST {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}/media
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "mediaId": 2,
+  "isPrimary": false,
+  "sortOrder": 2
+}
+
+### Set primary image
+POST {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}/media/2/set-primary
+Authorization: Bearer {{token}}
+
+### Update product media
+PUT {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}/media/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "sortOrder": 3,
+  "isPrimary": false
+}
+
+### Delete product media
+DELETE {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}/media/1
+Authorization: Bearer {{token}}
+
+### ===========================================
+### 5. INVENTORY MANAGEMENT
+### ===========================================
+
+### Get all inventory logs for a store
+GET {{baseUrl}}/api/stores/{{storeId}}/inventory/logs
+Authorization: Bearer {{token}}
+
+### Get inventory logs for specific variant
+GET {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}/variants/{{variantId}}/inventory/logs
+Authorization: Bearer {{token}}
+
+### Adjust inventory - Restock
+POST {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}/variants/{{variantId}}/inventory/adjust
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "quantityChange": 100,
+  "reason": "RESTOCK",
+  "notes": "Neue Lieferung vom Lieferanten ABC GmbH, Lieferschein Nr. 12345"
+}
+
+### Adjust inventory - Damaged goods
+POST {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}/variants/{{variantId}}/inventory/adjust
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "quantityChange": -5,
+  "reason": "DAMAGED",
+  "notes": "5 Stück durch Transportschaden beschädigt"
+}
+
+### Adjust inventory - Return
+POST {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}/variants/{{variantId}}/inventory/adjust
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "quantityChange": 3,
+  "reason": "RETURN",
+  "notes": "Kundenretoure, Ware einwandfrei"
+}
+
+### Adjust inventory - Manual adjustment
+POST {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}/variants/{{variantId}}/inventory/adjust
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "quantityChange": -2,
+  "reason": "ADJUSTMENT",
+  "notes": "Inventurkorrektur nach physischer Bestandsaufnahme"
+}
+
+### ===========================================
+### 6. SHOPPING CART (Guest)
+### ===========================================
+
+### Get cart (Guest)
+GET {{baseUrl}}/api/public/cart?sessionId={{sessionId}}
+
+### Add item to cart (Guest)
+POST {{baseUrl}}/api/public/cart/items
+Content-Type: application/json
+
+{
+  "sessionId": "{{sessionId}}",
+  "storeId": 1,
+  "variantId": 1,
+  "quantity": 2
+}
+
+### Add another item to cart
+POST {{baseUrl}}/api/public/cart/items
+Content-Type: application/json
+
+{
+  "sessionId": "{{sessionId}}",
+  "storeId": 1,
+  "variantId": 2,
+  "quantity": 1
+}
+
+### Update cart item quantity
+PUT {{baseUrl}}/api/public/cart/items/1
+Content-Type: application/json
+
+{
+  "quantity": 5
+}
+
+### Remove item from cart
+DELETE {{baseUrl}}/api/public/cart/items/1
+
+### Clear cart
+DELETE {{baseUrl}}/api/public/cart/clear?sessionId={{sessionId}}
+
+### ===========================================
+### 7. CHECKOUT (Guest)
+### ===========================================
+
+### Checkout
+POST {{baseUrl}}/api/public/orders/checkout
+Content-Type: application/json
+
+{
+  "sessionId": "{{sessionId}}",
+  "storeId": 1,
+  "customerEmail": "kunde@example.com",
+  "shippingAddress": {
+    "firstName": "Max",
+    "lastName": "Mustermann",
+    "address1": "Musterstraße 123",
+    "address2": "Wohnung 4B",
+    "city": "Berlin",
+    "postalCode": "10115",
+    "country": "DE",
+    "phone": "+49 30 12345678"
+  },
+  "billingAddress": {
+    "firstName": "Max",
+    "lastName": "Mustermann",
+    "address1": "Musterstraße 123",
+    "city": "Berlin",
+    "postalCode": "10115",
+    "country": "DE"
+  },
+  "notes": "Bitte bei Nachbar Müller abgeben falls nicht zu Hause"
+}
+
+### Get order by number (Guest)
+GET {{baseUrl}}/api/public/orders/ORD-1234567890?email=kunde@example.com
+
+### ===========================================
+### 8. ORDER MANAGEMENT (Store Owner)
+### ===========================================
+
+### Get all orders
+GET {{baseUrl}}/api/stores/{{storeId}}/orders
+Authorization: Bearer {{token}}
+
+### Get pending orders only
+GET {{baseUrl}}/api/stores/{{storeId}}/orders?status=PENDING
+Authorization: Bearer {{token}}
+
+### Get confirmed orders
+GET {{baseUrl}}/api/stores/{{storeId}}/orders?status=CONFIRMED
+Authorization: Bearer {{token}}
+
+### Get order details
+GET {{baseUrl}}/api/stores/{{storeId}}/orders/1
+Authorization: Bearer {{token}}
+
+### Update order status - Confirm
+PUT {{baseUrl}}/api/stores/{{storeId}}/orders/1/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "CONFIRMED",
+  "note": "Zahlung eingegangen, Bestellung wird bearbeitet"
+}
+
+### Update order status - Processing
+PUT {{baseUrl}}/api/stores/{{storeId}}/orders/1/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "PROCESSING",
+  "note": "Ware wird kommissioniert und verpackt"
+}
+
+### Update order status - Shipped
+PUT {{baseUrl}}/api/stores/{{storeId}}/orders/1/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "SHIPPED",
+  "note": "Versandt mit DHL, Tracking-Nummer: JJD000123456789"
+}
+
+### Update order status - Delivered
+PUT {{baseUrl}}/api/stores/{{storeId}}/orders/1/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "DELIVERED",
+  "note": "Bestellung erfolgreich zugestellt"
+}
+
+### Update order status - Cancelled
+PUT {{baseUrl}}/api/stores/{{storeId}}/orders/1/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "CANCELLED",
+  "note": "Auf Kundenwunsch storniert"
+}
+
+### Get order history
+GET {{baseUrl}}/api/stores/{{storeId}}/orders/1/history
+Authorization: Bearer {{token}}
+
+### ===========================================
+### 9. COMPLETE WORKFLOW TEST
+### ===========================================
+
+### STEP 1: Create category
+POST {{baseUrl}}/api/stores/{{storeId}}/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "T-Shirts",
+  "slug": "t-shirts",
+  "description": "Alle T-Shirts",
+  "sortOrder": 1
+}
+
+### STEP 2: Create product
+POST {{baseUrl}}/api/stores/{{storeId}}/products
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Premium T-Shirt",
+  "description": "Hochwertiges Baumwoll-T-Shirt",
+  "basePrice": 29.99,
+  "status": "DRAFT"
+}
+
+### STEP 3: Add color option
+POST {{baseUrl}}/api/stores/{{storeId}}/products/1/options
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Farbe",
+  "values": ["Schwarz", "Weiß", "Rot"],
+  "sortOrder": 1
+}
+
+### STEP 4: Add size option
+POST {{baseUrl}}/api/stores/{{storeId}}/products/1/options
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Größe",
+  "values": ["S", "M", "L", "XL"],
+  "sortOrder": 2
+}
+
+### STEP 5: Create variant (Black, M)
+POST {{baseUrl}}/api/stores/{{storeId}}/products/1/variants
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "sku": "TSHIRT-BLACK-M",
+  "price": 29.99,
+  "stockQuantity": 50,
+  "attributesJson": "{\"color\":\"Schwarz\",\"size\":\"M\"}"
+}
+
+### STEP 6: Upload and add product image (after uploading via /media/upload)
+POST {{baseUrl}}/api/stores/{{storeId}}/products/1/media
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "mediaId": 1,
+  "isPrimary": true,
+  "sortOrder": 1
+}
+
+### STEP 7: Activate product
+PUT {{baseUrl}}/api/stores/{{storeId}}/products/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "ACTIVE"
+}
+
+### STEP 8: Customer adds to cart
+POST {{baseUrl}}/api/public/cart/items
+Content-Type: application/json
+
+{
+  "sessionId": "test-session-123",
+  "storeId": 1,
+  "variantId": 1,
+  "quantity": 2
+}
+
+### STEP 9: Customer checks out
+POST {{baseUrl}}/api/public/orders/checkout
+Content-Type: application/json
+
+{
+  "sessionId": "test-session-123",
+  "storeId": 1,
+  "customerEmail": "kunde@example.com",
+  "shippingAddress": {
+    "firstName": "Max",
+    "lastName": "Mustermann",
+    "address1": "Teststraße 1",
+    "city": "Berlin",
+    "postalCode": "10115",
+    "country": "DE",
+    "phone": "+49 30 12345678"
+  },
+  "billingAddress": {
+    "firstName": "Max",
+    "lastName": "Mustermann",
+    "address1": "Teststraße 1",
+    "city": "Berlin",
+    "postalCode": "10115",
+    "country": "DE"
+  }
+}
+
+### STEP 10: Store owner confirms order
+PUT {{baseUrl}}/api/stores/{{storeId}}/orders/1/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "CONFIRMED",
+  "note": "Bestellung bestätigt und in Bearbeitung"
+}
+
+### ===========================================
+### END OF E-COMMERCE API TESTS
+### ===========================================
+
