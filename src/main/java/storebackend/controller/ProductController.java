@@ -63,7 +63,7 @@ public class ProductController {
             return ResponseEntity.status(403).build();
         }
 
-        return ResponseEntity.ok(productService.createProduct(request, store));
+        return ResponseEntity.ok(productService.createProduct(request, store, user));
     }
 
     @PutMapping("/{productId}")
@@ -96,4 +96,3 @@ public class ProductController {
         return ResponseEntity.noContent().build();
     }
 }
-

@@ -1,23 +1,23 @@
 package storebackend.service;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import storebackend.dto.CreateProductRequest;
 import storebackend.dto.ProductDTO;
 import storebackend.entity.Product;
 import storebackend.entity.Store;
+import storebackend.entity.User;
 import storebackend.repository.ProductRepository;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class ProductService {
 
     private final ProductRepository productRepository;
-
-    public ProductService(ProductRepository productRepository) {
-        this.productRepository = productRepository;
-    }
+    private final StoreUsageService storeUsageService;
 
     public List<ProductDTO> getProductsByStore(Store store) {
         return productRepository.findByStore(store).stream()
@@ -31,7 +31,12 @@ public class ProductService {
         return toDTO(product);
     }
 
-    public ProductDTO createProduct(CreateProductRequest request, Store store) {
+    public ProductDTO createProduct(CreateProductRequest request, Store store, User owner) {
+        // Check product limit
+        if (!storeUsageService.canCreateProduct(store, owner)) {
+            throw new RuntimeException("Product limit reached. Please upgrade your plan.");
+        }
+
         Product product = new Product();
         product.setStore(store);
         product.setTitle(request.getTitle());
@@ -40,6 +45,10 @@ public class ProductService {
         product.setStatus(request.getStatus());
 
         product = productRepository.save(product);
+
+        // Increment product count
+        storeUsageService.incrementProductCount(store);
+
         return toDTO(product);
     }
 
@@ -60,6 +69,9 @@ public class ProductService {
         Product product = productRepository.findByIdAndStore(productId, store)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
         productRepository.delete(product);
+
+        // Decrement product count
+        storeUsageService.decrementProductCount(store);
     }
 
     private ProductDTO toDTO(Product product) {
@@ -74,4 +86,3 @@ public class ProductService {
         return dto;
     }
 }
-

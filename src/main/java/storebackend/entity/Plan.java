@@ -29,4 +29,10 @@ public class Plan {
 
     @Column(nullable = false)
     private Integer maxStorageMb;
+
+    @Column(nullable = false)
+    private Integer maxProducts;
+
+    @Column(nullable = false)
+    private Integer maxImageCount;
 }

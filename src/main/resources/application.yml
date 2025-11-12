@@ -17,6 +17,11 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
 jwt:
   secret: mySecretKeyForJWTTokenGenerationThatIsAtLeast256BitsLongForHS256Algorithm
   expiration: 86400000
@@ -32,3 +37,12 @@ saas:
   domainVerification:
     txtRecordPrefix: "_marktma-verification"
     tokenLength: 32
+
+# MinIO S3-Compatible Storage Configuration
+minio:
+  endpoint: http://localhost:9000
+  accessKey: minioadmin
+  secretKey: minioadmin
+  bucket: markt-media
+  region: us-east-1
+  secure: false

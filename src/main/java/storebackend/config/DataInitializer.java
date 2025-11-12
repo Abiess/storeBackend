@@ -32,6 +32,8 @@ public class DataInitializer implements CommandLineRunner {
         freePlan.setMaxCustomDomains(0);
         freePlan.setMaxSubdomains(1);
         freePlan.setMaxStorageMb(100);
+        freePlan.setMaxProducts(50);
+        freePlan.setMaxImageCount(100);
         planRepository.save(freePlan);
 
         // PRO Plan
@@ -41,6 +43,8 @@ public class DataInitializer implements CommandLineRunner {
         proPlan.setMaxCustomDomains(5);
         proPlan.setMaxSubdomains(10);
         proPlan.setMaxStorageMb(10000);
+        proPlan.setMaxProducts(1000);
+        proPlan.setMaxImageCount(5000);
         planRepository.save(proPlan);
 
         // ENTERPRISE Plan
@@ -50,6 +54,8 @@ public class DataInitializer implements CommandLineRunner {
         enterprisePlan.setMaxCustomDomains(50);
         enterprisePlan.setMaxSubdomains(100);
         enterprisePlan.setMaxStorageMb(100000);
+        enterprisePlan.setMaxProducts(-1); // Unlimited
+        enterprisePlan.setMaxImageCount(-1); // Unlimited
         planRepository.save(enterprisePlan);
 
         log.info("Plans initialized successfully: FREE, PRO, ENTERPRISE");
