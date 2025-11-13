@@ -12,10 +12,13 @@ export class MockDomainService {
   createDomain(storeId: number, request: CreateDomainRequest): Observable<Domain> {
     const newDomain: Domain = {
       id: this.domains.length + 1,
-      host: request.host,
+      domain: request.domain || request.host || '',
+      host: request.host || request.domain || '',
       type: request.type,
-      isPrimary: request.isPrimary || false,
+      verified: request.type === DomainType.SUBDOMAIN,
       isVerified: request.type === DomainType.SUBDOMAIN,
+      isPrimary: request.isPrimary || false,
+      storeId: storeId,
       verificationToken: request.type === DomainType.CUSTOM
         ? 'markt-verify-' + Math.random().toString(36).substring(7)
         : undefined,
@@ -38,4 +41,3 @@ export class MockDomainService {
     return of(domain!).pipe(delay(1000));
   }
 }
-

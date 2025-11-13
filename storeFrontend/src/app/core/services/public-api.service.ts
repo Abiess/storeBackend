@@ -1,3 +1,20 @@
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { environment } from '@env/environment';
+import { Cart, AddToCartRequest, CheckoutRequest, Order, PublicStore } from '../models/index';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class PublicApiService {
+  constructor(private http: HttpClient) {}
+
+  // Store Resolution
+  resolveStore(host: string): Observable<PublicStore> {
+    const params = new HttpParams().set('host', host);
+    return this.http.get<PublicStore>(`${environment.publicApiUrl}/store/resolve`, { params });
+  }
 
   // Cart Management
   getCart(sessionId: string): Observable<Cart> {
@@ -30,83 +47,6 @@
   getOrderByNumber(orderNumber: string, email: string): Observable<Order> {
     const params = new HttpParams().set('email', email);
     return this.http.get<Order>(`${environment.publicApiUrl}/orders/${orderNumber}`, { params });
-  }
-}
-import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { environment } from '@env/environment';
-import { Cart, AddToCartRequest, CheckoutRequest, Order, PublicStore } from '../models';
-
-@Injectable({
-  providedIn: 'root'
-})
-export class PublicApiService {
-  constructor(private http: HttpClient) {}
-
-  // Store Resolution
-  resolveStore(host: string): Observable<PublicStore> {
-    const params = new HttpParams().set('host', host);
-    return this.http.get<PublicStore>(`${environment.publicApiUrl}/store/resolve`, { params });
-  }
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, tap } from 'rxjs';
-import { environment } from '@env/environment';
-import { AuthResponse, LoginRequest, RegisterRequest, User } from '../models';
-
-@Injectable({
-  providedIn: 'root'
-})
-export class AuthService {
-  private currentUserSubject = new BehaviorSubject<User | null>(null);
-  public currentUser$ = this.currentUserSubject.asObservable();
-
-  private tokenKey = 'markt_ma_token';
-
-  constructor(private http: HttpClient) {
-    this.loadUserFromStorage();
-  }
-
-  register(request: RegisterRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${environment.apiUrl}/auth/register`, request)
-      .pipe(tap(response => this.handleAuthResponse(response)));
-  }
-
-  login(request: LoginRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${environment.apiUrl}/auth/login`, request)
-      .pipe(tap(response => this.handleAuthResponse(response)));
-  }
-
-  logout(): void {
-    localStorage.removeItem(this.tokenKey);
-    this.currentUserSubject.next(null);
-  }
-
-  getMe(): Observable<User> {
-    return this.http.get<User>(`${environment.apiUrl}/auth/me`)
-      .pipe(tap(user => this.currentUserSubject.next(user)));
-  }
-
-  getToken(): string | null {
-    return localStorage.getItem(this.tokenKey);
-  }
-
-  isAuthenticated(): boolean {
-    return !!this.getToken();
-  }
-
-  private handleAuthResponse(response: AuthResponse): void {
-    localStorage.setItem(this.tokenKey, response.token);
-    this.currentUserSubject.next(response.user);
-  }
-
-  private loadUserFromStorage(): void {
-    if (this.isAuthenticated()) {
-      this.getMe().subscribe({
-        error: () => this.logout()
-      });
-    }
   }
 }
 

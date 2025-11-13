@@ -17,7 +17,8 @@ import {
 export const MOCK_USER: User = {
   id: 1,
   email: 'demo@markt.ma',
-  roles: ['ROLE_STORE_OWNER'],
+  name: 'Demo User',
+  role: 'ROLE_STORE_OWNER',
   createdAt: '2024-01-15T10:00:00',
   updatedAt: '2024-01-15T10:00:00'
 };
@@ -28,6 +29,7 @@ export const MOCK_STORES: Store[] = [
     name: 'TechShop Demo',
     slug: 'techshop',
     status: StoreStatus.ACTIVE,
+    userId: 1,
     createdAt: '2024-01-15T10:30:00',
     updatedAt: '2024-01-15T10:30:00'
   },
@@ -36,6 +38,7 @@ export const MOCK_STORES: Store[] = [
     name: 'Fashion Store',
     slug: 'fashion',
     status: StoreStatus.ACTIVE,
+    userId: 1,
     createdAt: '2024-02-01T14:20:00',
     updatedAt: '2024-02-01T14:20:00'
   },
@@ -43,7 +46,8 @@ export const MOCK_STORES: Store[] = [
     id: 3,
     name: 'Food & Drinks',
     slug: 'fooddrinks',
-    status: StoreStatus.PENDING_DOMAIN_VERIFICATION,
+    status: StoreStatus.INACTIVE,
+    userId: 1,
     createdAt: '2024-03-10T09:15:00',
     updatedAt: '2024-03-10T09:15:00'
   }
@@ -52,24 +56,31 @@ export const MOCK_STORES: Store[] = [
 export const MOCK_PRODUCTS: Product[] = [
   {
     id: 1,
+    name: 'Premium Laptop',
     title: 'Premium Laptop',
     description: 'High-performance laptop mit 16GB RAM und 512GB SSD',
+    price: 1299.99,
     basePrice: 1299.99,
+    stock: 23,
     status: ProductStatus.ACTIVE,
     createdAt: '2024-01-20T11:00:00',
     updatedAt: '2024-01-20T11:00:00',
     variants: [
       {
         id: 1,
+        name: 'Silver 512GB',
         sku: 'LAPTOP-001-SILVER',
         price: 1299.99,
+        stock: 15,
         stockQuantity: 15,
         attributesJson: JSON.stringify({ color: 'Silver', storage: '512GB' })
       },
       {
         id: 2,
+        name: 'Black 512GB',
         sku: 'LAPTOP-001-BLACK',
         price: 1299.99,
+        stock: 8,
         stockQuantity: 8,
         attributesJson: JSON.stringify({ color: 'Black', storage: '512GB' })
       }
@@ -77,17 +88,22 @@ export const MOCK_PRODUCTS: Product[] = [
   },
   {
     id: 2,
+    name: 'Wireless Mouse',
     title: 'Wireless Mouse',
     description: 'Ergonomische kabellose Maus mit 5 Tasten',
+    price: 29.99,
     basePrice: 29.99,
+    stock: 50,
     status: ProductStatus.ACTIVE,
     createdAt: '2024-01-22T14:30:00',
     updatedAt: '2024-01-22T14:30:00',
     variants: [
       {
         id: 3,
+        name: 'Black',
         sku: 'MOUSE-002-BLACK',
         price: 29.99,
+        stock: 50,
         stockQuantity: 50,
         attributesJson: JSON.stringify({ color: 'Black' })
       }
@@ -95,9 +111,12 @@ export const MOCK_PRODUCTS: Product[] = [
   },
   {
     id: 3,
+    name: 'USB-C Kabel',
     title: 'USB-C Kabel',
     description: '2m langes USB-C zu USB-C Kabel, schnellladefähig',
+    price: 14.99,
     basePrice: 14.99,
+    stock: 0,
     status: ProductStatus.DRAFT,
     createdAt: '2024-02-05T09:00:00',
     updatedAt: '2024-02-05T09:00:00',
@@ -105,24 +124,31 @@ export const MOCK_PRODUCTS: Product[] = [
   },
   {
     id: 4,
+    name: 'Bluetooth Kopfhörer',
     title: 'Bluetooth Kopfhörer',
     description: 'Over-Ear Kopfhörer mit Active Noise Cancelling',
+    price: 199.99,
     basePrice: 199.99,
+    stock: 45,
     status: ProductStatus.ACTIVE,
     createdAt: '2024-02-10T16:45:00',
     updatedAt: '2024-02-10T16:45:00',
     variants: [
       {
         id: 4,
+        name: 'White',
         sku: 'HEADPHONE-004-WHITE',
         price: 199.99,
+        stock: 20,
         stockQuantity: 20,
         attributesJson: JSON.stringify({ color: 'White' })
       },
       {
         id: 5,
+        name: 'Black',
         sku: 'HEADPHONE-004-BLACK',
         price: 199.99,
+        stock: 25,
         stockQuantity: 25,
         attributesJson: JSON.stringify({ color: 'Black' })
       }
@@ -252,18 +278,24 @@ export const MOCK_ORDERS: Order[] = [
 export const MOCK_DOMAINS: Domain[] = [
   {
     id: 1,
+    domain: 'techshop.markt.ma',
     host: 'techshop.markt.ma',
     type: DomainType.SUBDOMAIN,
-    isPrimary: true,
+    verified: true,
     isVerified: true,
+    isPrimary: true,
+    storeId: 1,
     createdAt: '2024-01-15T10:30:00'
   },
   {
     id: 2,
+    domain: 'shop.techexample.com',
     host: 'shop.techexample.com',
     type: DomainType.CUSTOM,
-    isPrimary: false,
+    verified: false,
     isVerified: false,
+    isPrimary: false,
+    storeId: 1,
     verificationToken: 'markt-verify-abc123def456',
     createdAt: '2024-02-20T11:00:00'
   }
@@ -330,4 +362,3 @@ export const MOCK_MEDIA: Media[] = [
     createdAt: '2024-02-10T16:45:00'
   }
 ];
-

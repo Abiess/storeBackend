@@ -20,6 +20,9 @@ import { LanguageSwitcherComponent } from '../../shared/components/language-swit
           </div>
           <div class="nav-right">
             <app-language-switcher></app-language-switcher>
+            <a routerLink="/settings" class="btn btn-settings" title="Einstellungen">
+              <span class="settings-icon">⚙️</span>
+            </a>
             <div class="user-info">
               <span class="user-avatar">{{ getUserInitials() }}</span>
               <span class="user-email" *ngIf="currentUser">{{ currentUser.email }}</span>
@@ -233,6 +236,33 @@ import { LanguageSwitcherComponent } from '../../shared/components/language-swit
       background: #f5f5f5;
       color: #333;
       border-color: #999;
+    }
+
+    .btn-settings {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.5rem;
+      background: transparent;
+      color: #666;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      transition: all 0.3s;
+      font-size: 1.25rem;
+      text-decoration: none;
+      width: 40px;
+      height: 40px;
+    }
+
+    .btn-settings:hover {
+      background: #f5f5f5;
+      color: #667eea;
+      border-color: #667eea;
+      transform: rotate(90deg);
+    }
+
+    .settings-icon {
+      display: block;
     }
 
     .container {

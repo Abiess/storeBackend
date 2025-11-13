@@ -21,6 +21,11 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'settings',
+    loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'stores/:id',
     loadComponent: () => import('./features/stores/store-detail.component').then(m => m.StoreDetailComponent),
     canActivate: [authGuard]
@@ -53,6 +58,22 @@ export const routes: Routes = [
   {
     path: 'storefront/:id',
     loadComponent: () => import('./features/storefront/storefront.component').then(m => m.StorefrontComponent)
+  },
+  {
+    path: 'storefront',
+    loadComponent: () => import('./features/storefront/storefront.component').then(m => m.StorefrontComponent)
+  },
+  {
+    path: 'cart',
+    loadComponent: () => import('./features/storefront/cart.component').then(m => m.CartComponent)
+  },
+  {
+    path: 'checkout',
+    loadComponent: () => import('./features/storefront/checkout.component').then(m => m.CheckoutComponent)
+  },
+  {
+    path: 'order-confirmation',
+    loadComponent: () => import('./features/storefront/order-confirmation.component').then(m => m.OrderConfirmationComponent)
   },
   {
     path: '**',

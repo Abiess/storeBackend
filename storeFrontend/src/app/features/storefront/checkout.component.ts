@@ -1,0 +1,582 @@
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { CartService, Cart } from '../../core/services/cart.service';
+import { CheckoutService, CheckoutRequest } from '../../core/services/checkout.service';
+
+@Component({
+  selector: 'app-checkout',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
+  template: `
+    <div class="checkout-container">
+      <div class="checkout-header">
+        <h1>Kasse</h1>
+        <button class="btn-back" (click)="goBack()">← Zurück zum Warenkorb</button>
+      </div>
+
+      <div *ngIf="loading" class="loading">
+        <div class="spinner"></div>
+        Warenkorb wird geladen...
+      </div>
+
+      <div *ngIf="!loading && (!cart || cart.items.length === 0)" class="empty-cart">
+        <h2>Ihr Warenkorb ist leer</h2>
+        <p>Bitte fügen Sie Artikel hinzu, bevor Sie zur Kasse gehen</p>
+        <button class="btn btn-primary" (click)="goToShop()">Zum Shop</button>
+      </div>
+
+      <div *ngIf="!loading && cart && cart.items.length > 0" class="checkout-content">
+        <div class="checkout-form">
+          <form [formGroup]="checkoutForm" (ngSubmit)="submitOrder()">
+            <!-- Kontaktinformationen -->
+            <section class="form-section">
+              <h2>Kontaktinformationen</h2>
+              <div class="form-group">
+                <label for="email">E-Mail-Adresse *</label>
+                <input 
+                  id="email" 
+                  type="email" 
+                  formControlName="customerEmail"
+                  placeholder="ihre@email.de"
+                />
+                <div *ngIf="checkoutForm.get('customerEmail')?.invalid && checkoutForm.get('customerEmail')?.touched" class="error">
+                  Bitte geben Sie eine gültige E-Mail-Adresse ein
+                </div>
+              </div>
+            </section>
+
+            <!-- Lieferadresse -->
+            <section class="form-section" formGroupName="shippingAddress">
+              <h2>Lieferadresse</h2>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="firstName">Vorname *</label>
+                  <input id="firstName" type="text" formControlName="firstName" />
+                  <div *ngIf="isFieldInvalid('shippingAddress.firstName')" class="error">
+                    Vorname ist erforderlich
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="lastName">Nachname *</label>
+                  <input id="lastName" type="text" formControlName="lastName" />
+                  <div *ngIf="isFieldInvalid('shippingAddress.lastName')" class="error">
+                    Nachname ist erforderlich
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="address1">Straße und Hausnummer *</label>
+                <input id="address1" type="text" formControlName="address1" />
+                <div *ngIf="isFieldInvalid('shippingAddress.address1')" class="error">
+                  Adresse ist erforderlich
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="address2">Adresszusatz (optional)</label>
+                <input id="address2" type="text" formControlName="address2" />
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="postalCode">PLZ *</label>
+                  <input id="postalCode" type="text" formControlName="postalCode" />
+                  <div *ngIf="isFieldInvalid('shippingAddress.postalCode')" class="error">
+                    PLZ ist erforderlich
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="city">Stadt *</label>
+                  <input id="city" type="text" formControlName="city" />
+                  <div *ngIf="isFieldInvalid('shippingAddress.city')" class="error">
+                    Stadt ist erforderlich
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="country">Land *</label>
+                <select id="country" formControlName="country">
+                  <option value="">Bitte wählen</option>
+                  <option value="Deutschland">Deutschland</option>
+                  <option value="Österreich">Österreich</option>
+                  <option value="Schweiz">Schweiz</option>
+                </select>
+                <div *ngIf="isFieldInvalid('shippingAddress.country')" class="error">
+                  Land ist erforderlich
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="phone">Telefon (optional)</label>
+                <input id="phone" type="tel" formControlName="phone" />
+              </div>
+            </section>
+
+            <!-- Rechnungsadresse -->
+            <section class="form-section">
+              <div class="checkbox-wrapper">
+                <label>
+                  <input type="checkbox" [checked]="sameAsShipping" (change)="toggleBillingAddress($event)" />
+                  Rechnungsadresse ist identisch mit Lieferadresse
+                </label>
+              </div>
+
+              <div *ngIf="!sameAsShipping" formGroupName="billingAddress">
+                <h2>Rechnungsadresse</h2>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="billFirstName">Vorname *</label>
+                    <input id="billFirstName" type="text" formControlName="firstName" />
+                  </div>
+                  <div class="form-group">
+                    <label for="billLastName">Nachname *</label>
+                    <input id="billLastName" type="text" formControlName="lastName" />
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="billAddress1">Straße und Hausnummer *</label>
+                  <input id="billAddress1" type="text" formControlName="address1" />
+                </div>
+
+                <div class="form-group">
+                  <label for="billAddress2">Adresszusatz (optional)</label>
+                  <input id="billAddress2" type="text" formControlName="address2" />
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="billPostalCode">PLZ *</label>
+                    <input id="billPostalCode" type="text" formControlName="postalCode" />
+                  </div>
+                  <div class="form-group">
+                    <label for="billCity">Stadt *</label>
+                    <input id="billCity" type="text" formControlName="city" />
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="billCountry">Land *</label>
+                  <select id="billCountry" formControlName="country">
+                    <option value="">Bitte wählen</option>
+                    <option value="Deutschland">Deutschland</option>
+                    <option value="Österreich">Österreich</option>
+                    <option value="Schweiz">Schweiz</option>
+                  </select>
+                </div>
+              </div>
+            </section>
+
+            <!-- Anmerkungen -->
+            <section class="form-section">
+              <h2>Anmerkungen (optional)</h2>
+              <div class="form-group">
+                <textarea 
+                  formControlName="notes" 
+                  rows="4" 
+                  placeholder="Besondere Wünsche oder Anmerkungen zur Bestellung..."
+                ></textarea>
+              </div>
+            </section>
+
+            <div *ngIf="errorMessage" class="alert alert-error">
+              {{ errorMessage }}
+            </div>
+
+            <button 
+              type="submit" 
+              class="btn btn-primary btn-submit" 
+              [disabled]="checkoutForm.invalid || submitting"
+            >
+              {{ submitting ? 'Bestellung wird aufgegeben...' : 'Zahlungspflichtig bestellen' }}
+            </button>
+          </form>
+        </div>
+
+        <div class="order-summary">
+          <h2>Bestellübersicht</h2>
+          
+          <div class="summary-items">
+            <div class="summary-item" *ngFor="let item of cart.items">
+              <img [src]="item.imageUrl || 'https://via.placeholder.com/60'" [alt]="item.productName">
+              <div class="item-info">
+                <h4>{{ item.productName }}</h4>
+                <p>{{ item.variantName }}</p>
+                <p class="quantity">Menge: {{ item.quantity }}</p>
+              </div>
+              <div class="item-price">
+                {{ (item.priceSnapshot * item.quantity) | number:'1.2-2' }} €
+              </div>
+            </div>
+          </div>
+
+          <div class="summary-totals">
+            <div class="summary-row">
+              <span>Zwischensumme</span>
+              <span>{{ cart.subtotal | number:'1.2-2' }} €</span>
+            </div>
+            <div class="summary-row">
+              <span>Versand</span>
+              <span>{{ shipping | number:'1.2-2' }} €</span>
+            </div>
+            <div class="summary-row total">
+              <strong>Gesamt</strong>
+              <strong>{{ (cart.subtotal + shipping) | number:'1.2-2' }} €</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .checkout-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .checkout-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+
+    .btn-back {
+      background: #6c757d;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .checkout-content {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 30px;
+    }
+
+    @media (max-width: 968px) {
+      .checkout-content {
+        grid-template-columns: 1fr;
+      }
+
+      .order-summary {
+        order: -1;
+      }
+    }
+
+    .checkout-form {
+      background: white;
+      border-radius: 8px;
+      padding: 30px;
+    }
+
+    .form-section {
+      margin-bottom: 30px;
+      padding-bottom: 30px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .form-section:last-of-type {
+      border-bottom: none;
+    }
+
+    .form-section h2 {
+      margin-top: 0;
+      margin-bottom: 20px;
+      font-size: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: #333;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 576px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .checkbox-wrapper {
+      margin-bottom: 20px;
+    }
+
+    .checkbox-wrapper label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .checkbox-wrapper input[type="checkbox"] {
+      width: auto;
+      cursor: pointer;
+    }
+
+    .error {
+      color: #dc3545;
+      font-size: 12px;
+      margin-top: 5px;
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 15px;
+      font-size: 16px;
+      margin-top: 20px;
+    }
+
+    .order-summary {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      height: fit-content;
+      position: sticky;
+      top: 20px;
+    }
+
+    .order-summary h2 {
+      margin-top: 0;
+      margin-bottom: 20px;
+    }
+
+    .summary-items {
+      border-bottom: 1px solid #e0e0e0;
+      padding-bottom: 20px;
+      margin-bottom: 20px;
+    }
+
+    .summary-item {
+      display: grid;
+      grid-template-columns: 60px 1fr auto;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    .summary-item img {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 6px;
+    }
+
+    .item-info h4 {
+      margin: 0 0 5px 0;
+      font-size: 14px;
+    }
+
+    .item-info p {
+      margin: 0;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .item-price {
+      font-weight: 600;
+      text-align: right;
+    }
+
+    .summary-totals {
+      margin-top: 20px;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .summary-row.total {
+      border-top: 2px solid #333;
+      border-bottom: none;
+      padding-top: 15px;
+      margin-top: 10px;
+      font-size: 18px;
+    }
+
+    .loading, .empty-cart {
+      text-align: center;
+      padding: 60px 20px;
+    }
+
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  `]
+})
+export class CheckoutComponent implements OnInit {
+  checkoutForm: FormGroup;
+  cart: Cart | null = null;
+  loading = false;
+  submitting = false;
+  errorMessage = '';
+  sameAsShipping = true;
+  shipping = 4.99;
+  sessionId = '';
+
+  constructor(
+    private fb: FormBuilder,
+    private cartService: CartService,
+    private checkoutService: CheckoutService,
+    private router: Router
+  ) {
+    this.checkoutForm = this.fb.group({
+      customerEmail: ['', [Validators.required, Validators.email]],
+      shippingAddress: this.fb.group({
+        firstName: ['', Validators.required],
+        lastName: ['', Validators.required],
+        address1: ['', Validators.required],
+        address2: [''],
+        city: ['', Validators.required],
+        postalCode: ['', Validators.required],
+        country: ['Deutschland', Validators.required],
+        phone: ['']
+      }),
+      billingAddress: this.fb.group({
+        firstName: [''],
+        lastName: [''],
+        address1: [''],
+        address2: [''],
+        city: [''],
+        postalCode: [''],
+        country: ['Deutschland']
+      }),
+      notes: ['']
+    });
+  }
+
+  ngOnInit(): void {
+    this.sessionId = this.cartService.getOrCreateSessionId();
+    this.loadCart();
+  }
+
+  loadCart(): void {
+    this.loading = true;
+    this.cartService.getCart(this.sessionId).subscribe({
+      next: (cart: Cart) => {
+        this.cart = cart;
+        this.loading = false;
+      },
+      error: (error: any) => {
+        console.error('Fehler beim Laden des Warenkorbs:', error);
+        this.loading = false;
+      }
+    });
+  }
+
+  toggleBillingAddress(event: any): void {
+    this.sameAsShipping = event.target.checked;
+
+    if (this.sameAsShipping) {
+      this.checkoutForm.get('billingAddress')?.clearValidators();
+    } else {
+      const billingAddress = this.checkoutForm.get('billingAddress');
+      billingAddress?.get('firstName')?.setValidators([Validators.required]);
+      billingAddress?.get('lastName')?.setValidators([Validators.required]);
+      billingAddress?.get('address1')?.setValidators([Validators.required]);
+      billingAddress?.get('city')?.setValidators([Validators.required]);
+      billingAddress?.get('postalCode')?.setValidators([Validators.required]);
+      billingAddress?.get('country')?.setValidators([Validators.required]);
+    }
+    this.checkoutForm.get('billingAddress')?.updateValueAndValidity();
+  }
+
+  isFieldInvalid(fieldName: string): boolean {
+    const field = this.checkoutForm.get(fieldName);
+    return !!(field?.invalid && field?.touched);
+  }
+
+  submitOrder(): void {
+    if (this.checkoutForm.invalid || !this.cart) {
+      return;
+    }
+
+    this.submitting = true;
+    this.errorMessage = '';
+
+    const formValue = this.checkoutForm.value;
+
+    const request: CheckoutRequest = {
+      sessionId: this.sessionId,
+      storeId: this.cart.storeId,
+      customerEmail: formValue.customerEmail,
+      shippingAddress: formValue.shippingAddress,
+      billingAddress: this.sameAsShipping ? formValue.shippingAddress : formValue.billingAddress,
+      notes: formValue.notes
+    };
+
+    this.checkoutService.checkout(request).subscribe({
+      next: (response) => {
+        console.log('Bestellung erfolgreich:', response);
+        this.router.navigate(['/order-confirmation'], {
+          queryParams: {
+            orderNumber: response.orderNumber,
+            email: response.customerEmail
+          }
+        });
+      },
+      error: (error) => {
+        this.submitting = false;
+        this.errorMessage = error.message || 'Fehler beim Aufgeben der Bestellung. Bitte versuchen Sie es erneut.';
+        console.error('Checkout-Fehler:', error);
+      }
+    });
+  }
+
+  goBack(): void {
+    this.router.navigate(['/cart']);
+  }
+
+  goToShop(): void {
+    this.router.navigate(['/storefront']);
+  }
+}
+

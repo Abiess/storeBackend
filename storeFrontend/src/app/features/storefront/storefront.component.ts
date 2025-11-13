@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule, Router } from '@angular/router';
 import { ProductService } from '@app/core/services/product.service';
 import { CategoryService } from '@app/core/services/category.service';
+import { CartService } from '@app/core/services/cart.service';
 import { Product, Category, PublicStore } from '@app/core/models';
 
 @Component({
@@ -581,7 +582,9 @@ export class StorefrontComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private productService: ProductService,
-    private categoryService: CategoryService
+    private categoryService: CategoryService,
+    private router: Router,
+    private cartService: CartService
   ) {}
 
   ngOnInit(): void {
@@ -650,4 +653,3 @@ export class StorefrontComponent implements OnInit {
     alert(`"${product.title}" wurde zum Warenkorb hinzugefügt! 🛒\n\nPreis: ${product.basePrice} €`);
   }
 }
-

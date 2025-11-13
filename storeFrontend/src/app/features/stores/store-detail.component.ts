@@ -939,9 +939,9 @@ export class StoreDetailComponent implements OnInit {
 
       const formValue = this.domainForm.value;
       const request = {
-        host: formValue.host,
+        domain: formValue.host,
         type: formValue.type as DomainType,
-        isPrimary: formValue.isPrimary
+        storeId: this.storeId
       };
 
       this.domainService.createDomain(this.storeId, request).subscribe({

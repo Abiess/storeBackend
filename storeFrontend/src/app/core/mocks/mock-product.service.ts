@@ -21,9 +21,12 @@ export class MockProductService {
   createProduct(storeId: number, request: CreateProductRequest): Observable<Product> {
     const newProduct: Product = {
       id: this.products.length + 1,
+      name: request.name,
       title: request.title,
       description: request.description,
+      price: request.price,
       basePrice: request.basePrice,
+      stock: request.stock,
       status: request.status || ProductStatus.DRAFT,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -58,9 +61,11 @@ export class MockProductService {
   createVariant(storeId: number, productId: number, variant: Partial<ProductVariant>): Observable<ProductVariant> {
     const newVariant: ProductVariant = {
       id: Math.floor(Math.random() * 10000),
+      name: variant.name || 'Variant',
       sku: variant.sku || '',
       price: variant.price || 0,
-      stockQuantity: variant.stockQuantity || 0,
+      stock: variant.stock || variant.stockQuantity || 0,
+      stockQuantity: variant.stockQuantity || variant.stock || 0,
       attributesJson: variant.attributesJson || '{}'
     };
     const product = this.products.find(p => p.id === productId);
@@ -74,24 +79,24 @@ export class MockProductService {
   updateVariant(storeId: number, productId: number, variantId: number, variant: Partial<ProductVariant>): Observable<ProductVariant> {
     const product = this.products.find(p => p.id === productId);
     if (product && product.variants) {
-      const v = product.variants.find(v => v.id === variantId);
+      const v = product.variants.find((v: ProductVariant) => v.id === variantId);
       if (v) {
+        if (variant.name) v.name = variant.name;
+        if (variant.price) v.price = variant.price;
         if (variant.sku) v.sku = variant.sku;
-        if (variant.price !== undefined) v.price = variant.price;
         if (variant.stockQuantity !== undefined) v.stockQuantity = variant.stockQuantity;
         if (variant.attributesJson) v.attributesJson = variant.attributesJson;
-        return of(v).pipe(delay(500));
       }
+      return of(v!).pipe(delay(500));
     }
-    return of({} as ProductVariant);
+    return of(null as any).pipe(delay(500));
   }
 
   deleteVariant(storeId: number, productId: number, variantId: number): Observable<void> {
     const product = this.products.find(p => p.id === productId);
     if (product && product.variants) {
-      product.variants = product.variants.filter(v => v.id !== variantId);
+      product.variants = product.variants.filter((v: ProductVariant) => v.id !== variantId);
     }
     return of(void 0).pipe(delay(500));
   }
 }
-

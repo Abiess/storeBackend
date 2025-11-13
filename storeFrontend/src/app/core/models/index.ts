@@ -1,70 +1,103 @@
-// User Model
-export interface User {
+export interface Cart {
+  items: any[];
+  total: number;
+}
+
+export interface AddToCartRequest {
+  productId: number;
+  quantity: number;
+}
+
+export interface CheckoutRequest {
+  sessionId: string;
+  address: string;
+}
+
+export interface Order {
   id: number;
-  email: string;
-  roles: string[];
+  orderNumber: string;
+  status: string;
+  customerEmail: string;
+  totalAmount: number;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
+  notes?: string;
+  shippingAddress?: {
+    firstName: string;
+    lastName: string;
+    address1: string;
+    city: string;
+    postalCode: string;
+    country: string;
+    phone?: string;
+  };
+  billingAddress?: {
+    firstName: string;
+    lastName: string;
+    address1: string;
+    city: string;
+    postalCode: string;
+    country: string;
+  };
+  items?: any[];
 }
 
-// Auth Models
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface RegisterRequest {
-  email: string;
-  password: string;
-}
-
-export interface AuthResponse {
-  token: string;
-  user: User;
-}
-
-// Plan Model
-export interface Plan {
+export interface PublicStore {
   id: number;
   name: string;
-  maxStores: number;
-  maxCustomDomains: number;
-  maxSubdomains: number;
-  maxStorageMb: number;
-  maxProducts: number;
-  maxImageCount?: number;
-}
-
-// Store Models
-export interface Store {
-  id: number;
-  name: string;
-  slug: string;
-  status: StoreStatus;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export enum StoreStatus {
-  ACTIVE = 'ACTIVE',
-  SUSPENDED = 'SUSPENDED',
-  PENDING_DOMAIN_VERIFICATION = 'PENDING_DOMAIN_VERIFICATION'
-}
-
-export interface CreateStoreRequest {
-  name: string;
+  domain: string;
   slug: string;
 }
 
-// Domain Models
+export interface Product {
+  id: number;
+  name: string;
+  title: string;
+  description: string;
+  price: number;
+  basePrice: number;
+  imageUrl?: string;
+  stock: number;
+  status: string;
+  categoryId?: number;
+  categories?: Category[];
+  variants?: ProductVariant[];
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface ProductVariant {
+  id: number;
+  name: string;
+  price: number;
+  stock: number;
+  stockQuantity?: number;
+  sku?: string;
+  attributesJson?: string;
+}
+
+export interface Category {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string;
+  parentId?: number;
+  sortOrder?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface Domain {
   id: number;
+  domain: string;
   host: string;
   type: DomainType;
-  isPrimary: boolean;
+  verified: boolean;
   isVerified: boolean;
-  verificationToken?: string;
+  isPrimary: boolean;
+  storeId: number;
   createdAt: string;
+  verificationToken?: string;
 }
 
 export enum DomainType {
@@ -72,57 +105,55 @@ export enum DomainType {
   CUSTOM = 'CUSTOM'
 }
 
-export interface CreateDomainRequest {
-  host: string;
-  type: DomainType;
-  isPrimary?: boolean;
-}
-
-// Product Models
-export interface Product {
-  id: number;
-  title: string;
-  description: string;
-  basePrice: number;
-  status: ProductStatus;
-  createdAt: string;
-  updatedAt: string;
-  variants?: ProductVariant[];
-  categories?: Category[];
-  media?: ProductMedia[];
-}
-
-export enum ProductStatus {
-  DRAFT = 'DRAFT',
-  ACTIVE = 'ACTIVE',
-  ARCHIVED = 'ARCHIVED'
-}
-
-export interface ProductVariant {
-  id: number;
-  sku: string;
-  price: number;
-  stockQuantity: number;
-  attributesJson: string;
-}
-
-export interface CreateProductRequest {
-  title: string;
-  description: string;
-  basePrice: number;
-  status?: ProductStatus;
-}
-
-// Category Models
-export interface Category {
+export interface Store {
   id: number;
   name: string;
   slug: string;
   description?: string;
-  parentId?: number;
-  sortOrder: number;
+  status: StoreStatus;
+  userId: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export enum StoreStatus {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  SUSPENDED = 'SUSPENDED'
+}
+
+export enum ProductStatus {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  DRAFT = 'DRAFT',
+  OUT_OF_STOCK = 'OUT_OF_STOCK'
+}
+
+export enum OrderStatus {
+  PENDING = 'PENDING',
+  CONFIRMED = 'CONFIRMED',
+  PROCESSING = 'PROCESSING',
+  SHIPPED = 'SHIPPED',
+  DELIVERED = 'DELIVERED',
+  CANCELLED = 'CANCELLED'
+}
+
+export interface CreateStoreRequest {
+  name: string;
+  slug: string;
+  description?: string;
+}
+
+export interface CreateProductRequest {
+  name: string;
+  title: string;
+  description: string;
+  price: number;
+  basePrice: number;
+  stock: number;
+  categoryId?: number;
+  imageUrl?: string;
+  status?: string;
 }
 
 export interface CreateCategoryRequest {
@@ -133,7 +164,24 @@ export interface CreateCategoryRequest {
   sortOrder?: number;
 }
 
-// Media Models
+export interface CreateDomainRequest {
+  domain: string;
+  host?: string;
+  type: DomainType;
+  storeId: number;
+  isPrimary?: boolean;
+}
+
+export interface User {
+  id: number;
+  email: string;
+  name: string;
+  role: string;
+  roles?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface Media {
   id: number;
   filename: string;
@@ -150,105 +198,18 @@ export enum MediaType {
   DOCUMENT = 'DOCUMENT'
 }
 
-export interface ProductMedia {
-  id: number;
-  mediaId: number;
-  isPrimary: boolean;
-  sortOrder: number;
-  media?: Media;
+export interface AuthResponse {
+  token: string;
+  user: User;
 }
 
-// Order Models
-export interface Order {
-  id: number;
-  orderNumber: string;
-  customerEmail: string;
-  status: OrderStatus;
-  totalAmount: number;
-  shippingAddress: Address;
-  billingAddress: Address;
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
-  items?: OrderItem[];
+export interface LoginRequest {
+  email: string;
+  password: string;
 }
 
-export enum OrderStatus {
-  PENDING = 'PENDING',
-  CONFIRMED = 'CONFIRMED',
-  PROCESSING = 'PROCESSING',
-  SHIPPED = 'SHIPPED',
-  DELIVERED = 'DELIVERED',
-  CANCELLED = 'CANCELLED'
-}
-
-export interface OrderItem {
-  id: number;
-  variantId: number;
-  quantity: number;
-  priceAtOrder: number;
-  productTitle: string;
-  variantSku: string;
-}
-
-export interface Address {
-  firstName: string;
-  lastName: string;
-  address1: string;
-  address2?: string;
-  city: string;
-  postalCode: string;
-  country: string;
-  phone?: string;
-}
-
-export interface CheckoutRequest {
-  sessionId: string;
-  storeId: number;
-  customerEmail: string;
-  shippingAddress: Address;
-  billingAddress: Address;
-  notes?: string;
-}
-
-// Cart Models
-export interface Cart {
-  id: number;
-  sessionId: string;
-  storeId: number;
-  items: CartItem[];
-  totalAmount: number;
-}
-
-export interface CartItem {
-  id: number;
-  variantId: number;
-  quantity: number;
-  price: number;
-  productTitle: string;
-  variantSku: string;
-}
-
-export interface AddToCartRequest {
-  sessionId: string;
-  storeId: number;
-  variantId: number;
-  quantity: number;
-}
-
-// Public Store Models
-export interface PublicStore {
-  storeId: number;
+export interface RegisterRequest {
+  email: string;
+  password: string;
   name: string;
-  slug: string;
-  primaryDomain: string;
-  status: string;
 }
-
-// API Response wrapper
-export interface ApiResponse<T> {
-  data: T;
-  message?: string;
-  success: boolean;
-}
-

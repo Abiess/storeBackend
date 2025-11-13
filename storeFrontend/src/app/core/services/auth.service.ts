@@ -29,10 +29,16 @@ export class AuthService {
   }
 
   login(request: LoginRequest): Observable<AuthResponse> {
+    console.log('AuthService.login aufgerufen');
+    console.log('useMockData:', environment.useMockData);
+    console.log('Login Request:', request);
+
     if (environment.useMockData) {
+      console.log('Verwende MockAuthService für Login');
       return this.mockService.login(request)
         .pipe(tap(response => this.handleAuthResponse(response)));
     }
+    console.log('Verwende echtes Backend für Login');
     return this.http.post<AuthResponse>(`${environment.apiUrl}/auth/login`, request)
       .pipe(tap(response => this.handleAuthResponse(response)));
   }
@@ -72,4 +78,3 @@ export class AuthService {
     }
   }
 }
-

@@ -14,7 +14,9 @@ export class MockStoreService {
       id: this.stores.length + 1,
       name: request.name,
       slug: request.slug,
+      description: request.description,
       status: StoreStatus.ACTIVE,
+      userId: 1, // Default user ID for mock
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -42,4 +44,3 @@ export class MockStoreService {
     return of(void 0).pipe(delay(500));
   }
 }
-
