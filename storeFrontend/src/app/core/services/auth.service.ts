@@ -1,80 +1,71 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, tap } from 'rxjs';
-import { environment } from '@env/environment';
-import { AuthResponse, LoginRequest, RegisterRequest, User } from '../models';
-import { MockAuthService } from '../mocks/mock-auth.service';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { User, Role, AuthResponse, LoginRequest, RegisterRequest } from '../models';
+import { tap } from 'rxjs/operators';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class AuthService {
-  private currentUserSubject = new BehaviorSubject<User | null>(null);
-  public currentUser$ = this.currentUserSubject.asObservable();
+  currentUser$ = new BehaviorSubject<User | null>({
+    id: 1,
+    email: 'max@beispiel.de',
+    name: 'Max Mustermann',
+    roles: [Role.SUPER_ADMIN],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  });
 
-  private tokenKey = 'markt_ma_token';
-  private mockService = new MockAuthService();
+  login(credentials: LoginRequest | any): Observable<AuthResponse> {
+    // Mock: Simuliert erfolgreichen Login
+    const user: User = {
+      id: 1,
+      email: credentials.email || 'user@example.com',
+      name: 'Test User',
+      roles: [Role.STORE_OWNER],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
 
-  constructor(private http: HttpClient) {
-    this.loadUserFromStorage();
+    const response: AuthResponse = {
+      token: 'mock-jwt-token-' + Date.now(),
+      user
+    };
+
+    return of(response).pipe(
+      tap(() => this.currentUser$.next(user))
+    );
   }
 
-  register(request: RegisterRequest): Observable<AuthResponse> {
-    if (environment.useMockData) {
-      return this.mockService.register(request)
-        .pipe(tap(response => this.handleAuthResponse(response)));
-    }
-    return this.http.post<AuthResponse>(`${environment.apiUrl}/auth/register`, request)
-      .pipe(tap(response => this.handleAuthResponse(response)));
-  }
+  register(data: RegisterRequest | any): Observable<AuthResponse> {
+    // Mock: Simuliert erfolgreiche Registrierung
+    const user: User = {
+      id: Math.floor(Math.random() * 1000),
+      email: data.email || 'newuser@example.com',
+      name: 'New User',
+      roles: [Role.CUSTOMER],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
 
-  login(request: LoginRequest): Observable<AuthResponse> {
-    console.log('AuthService.login aufgerufen');
-    console.log('useMockData:', environment.useMockData);
-    console.log('Login Request:', request);
+    const response: AuthResponse = {
+      token: 'mock-jwt-token-' + Date.now(),
+      user
+    };
 
-    if (environment.useMockData) {
-      console.log('Verwende MockAuthService für Login');
-      return this.mockService.login(request)
-        .pipe(tap(response => this.handleAuthResponse(response)));
-    }
-    console.log('Verwende echtes Backend für Login');
-    return this.http.post<AuthResponse>(`${environment.apiUrl}/auth/login`, request)
-      .pipe(tap(response => this.handleAuthResponse(response)));
+    return of(response).pipe(
+      tap(() => this.currentUser$.next(user))
+    );
   }
 
   logout(): void {
-    localStorage.removeItem(this.tokenKey);
-    this.currentUserSubject.next(null);
-  }
-
-  getMe(): Observable<User> {
-    if (environment.useMockData) {
-      return this.mockService.getMe()
-        .pipe(tap(user => this.currentUserSubject.next(user)));
-    }
-    return this.http.get<User>(`${environment.apiUrl}/auth/me`)
-      .pipe(tap(user => this.currentUserSubject.next(user)));
-  }
-
-  getToken(): string | null {
-    return localStorage.getItem(this.tokenKey);
+    this.currentUser$.next(null);
   }
 
   isAuthenticated(): boolean {
-    return !!this.getToken();
+    return this.currentUser$.value !== null;
   }
 
-  private handleAuthResponse(response: AuthResponse): void {
-    localStorage.setItem(this.tokenKey, response.token);
-    this.currentUserSubject.next(response.user);
-  }
-
-  private loadUserFromStorage(): void {
-    if (this.isAuthenticated()) {
-      this.getMe().subscribe({
-        error: () => this.logout()
-      });
-    }
+  getToken(): string | null {
+    // Mock: In echter Anwendung würde das Token aus localStorage/sessionStorage kommen
+    return this.isAuthenticated() ? 'mock-jwt-token-' + Date.now() : null;
   }
 }

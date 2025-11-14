@@ -8,12 +8,14 @@ import { Category, CreateCategoryRequest } from '../models';
 })
 export class MockCategoryService {
   private categories: Category[] = [
+    // Kategorien für Store 1 (TechShop)
     {
       id: 1,
       name: 'إلكترونيات',
       slug: 'electronics',
       description: 'الأجهزة الإلكترونية والإكسسوارات',
       parentId: undefined,
+      storeId: 1,
       sortOrder: 1,
       createdAt: '2024-01-15T10:00:00Z',
       updatedAt: '2024-01-15T10:00:00Z'
@@ -24,6 +26,7 @@ export class MockCategoryService {
       slug: 'smartphones',
       description: 'الهواتف المحمولة والهواتف الذكية',
       parentId: 1,
+      storeId: 1,
       sortOrder: 1,
       createdAt: '2024-01-15T10:30:00Z',
       updatedAt: '2024-01-15T10:30:00Z'
@@ -34,6 +37,7 @@ export class MockCategoryService {
       slug: 'laptops',
       description: 'أجهزة الكمبيوتر المحمولة واللابتوب',
       parentId: 1,
+      storeId: 1,
       sortOrder: 2,
       createdAt: '2024-01-15T11:00:00Z',
       updatedAt: '2024-01-15T11:00:00Z'
@@ -44,6 +48,7 @@ export class MockCategoryService {
       slug: 'clothing',
       description: 'ملابس للرجال والنساء',
       parentId: undefined,
+      storeId: 1,
       sortOrder: 2,
       createdAt: '2024-01-16T09:00:00Z',
       updatedAt: '2024-01-16T09:00:00Z'
@@ -54,6 +59,7 @@ export class MockCategoryService {
       slug: 'mens-clothing',
       description: 'ملابس للرجال',
       parentId: 4,
+      storeId: 1,
       sortOrder: 1,
       createdAt: '2024-01-16T09:30:00Z',
       updatedAt: '2024-01-16T09:30:00Z'
@@ -64,6 +70,7 @@ export class MockCategoryService {
       slug: 'womens-clothing',
       description: 'ملابس للنساء',
       parentId: 4,
+      storeId: 1,
       sortOrder: 2,
       createdAt: '2024-01-16T10:00:00Z',
       updatedAt: '2024-01-16T10:00:00Z'
@@ -74,6 +81,7 @@ export class MockCategoryService {
       slug: 'home-kitchen',
       description: 'أدوات منزلية ومطبخ',
       parentId: undefined,
+      storeId: 1,
       sortOrder: 3,
       createdAt: '2024-01-17T08:00:00Z',
       updatedAt: '2024-01-17T08:00:00Z'
@@ -84,6 +92,7 @@ export class MockCategoryService {
       slug: 'sports-leisure',
       description: 'مستلزمات رياضية وترفيهية',
       parentId: undefined,
+      storeId: 1,
       sortOrder: 4,
       createdAt: '2024-01-18T08:00:00Z',
       updatedAt: '2024-01-18T08:00:00Z'
@@ -94,6 +103,7 @@ export class MockCategoryService {
       slug: 'books-stationery',
       description: 'كتب ومواد قرطاسية',
       parentId: undefined,
+      storeId: 1,
       sortOrder: 5,
       createdAt: '2024-01-19T08:00:00Z',
       updatedAt: '2024-01-19T08:00:00Z'
@@ -104,6 +114,7 @@ export class MockCategoryService {
       slug: 'jewelry-accessories',
       description: 'مجوهرات وإكسسوارات',
       parentId: undefined,
+      storeId: 1,
       sortOrder: 6,
       createdAt: '2024-01-20T08:00:00Z',
       updatedAt: '2024-01-20T08:00:00Z'
@@ -114,6 +125,7 @@ export class MockCategoryService {
       slug: 'toys',
       description: 'ألعاب وأنشطة للأطفال',
       parentId: undefined,
+      storeId: 1,
       sortOrder: 7,
       createdAt: '2024-01-21T08:00:00Z',
       updatedAt: '2024-01-21T08:00:00Z'
@@ -124,22 +136,60 @@ export class MockCategoryService {
       slug: 'beauty-personal-care',
       description: 'منتجات التجميل والعناية الشخصية',
       parentId: undefined,
+      storeId: 1,
       sortOrder: 8,
       createdAt: '2024-01-22T08:00:00Z',
       updatedAt: '2024-01-22T08:00:00Z'
+    },
+    // Neue Kategorien für Store 3 (Food & Drinks)
+    {
+      id: 13,
+      name: 'Getränke',
+      slug: 'beverages',
+      description: 'Kaffee, Tee, Bier und mehr',
+      parentId: undefined,
+      storeId: 3,
+      sortOrder: 1,
+      createdAt: '2024-03-10T09:00:00Z',
+      updatedAt: '2024-03-10T09:00:00Z'
+    },
+    {
+      id: 14,
+      name: 'Süßigkeiten',
+      slug: 'sweets',
+      description: 'Schokolade, Honig und mehr',
+      parentId: undefined,
+      storeId: 3,
+      sortOrder: 2,
+      createdAt: '2024-03-10T09:10:00Z',
+      updatedAt: '2024-03-10T09:10:00Z'
+    },
+    {
+      id: 15,
+      name: 'Pasta & Öle',
+      slug: 'pasta-oils',
+      description: 'Pasta, Olivenöl und mehr',
+      parentId: undefined,
+      storeId: 3,
+      sortOrder: 3,
+      createdAt: '2024-03-10T09:20:00Z',
+      updatedAt: '2024-03-10T09:20:00Z'
     }
   ];
 
-  private nextId = 13;
+  private nextId = 16;
 
   getCategories(storeId: number): Observable<Category[]> {
     console.log('🎭 Mock: Loading categories for store', storeId);
-    return of([...this.categories]).pipe(delay(300));
+    const filtered = this.categories.filter(cat => cat.storeId === storeId);
+    console.log('🎭 Mock: Found', filtered.length, 'categories for store', storeId);
+    return of([...filtered]).pipe(delay(300));
   }
 
   getRootCategories(storeId: number): Observable<Category[]> {
     console.log('🎭 Mock: Loading root categories for store', storeId);
-    const rootCategories = this.categories.filter(cat => !cat.parentId);
+    const rootCategories = this.categories.filter(cat => cat.storeId === storeId && !cat.parentId);
+    console.log('🎭 Mock: Found', rootCategories.length, 'root categories for store', storeId);
     return of([...rootCategories]).pipe(delay(300));
   }
 
@@ -159,11 +209,11 @@ export class MockCategoryService {
   }
 
   createCategory(storeId: number, request: CreateCategoryRequest): Observable<Category> {
-    console.log('🎭 Mock: Creating category', request);
     const newCategory: Category = {
       id: this.nextId++,
+      storeId: storeId,
       name: request.name,
-      slug: request.slug,
+      slug: request.slug || request.name.toLowerCase().replace(/\s+/g, '-'),
       description: request.description,
       parentId: request.parentId,
       sortOrder: request.sortOrder || 0,

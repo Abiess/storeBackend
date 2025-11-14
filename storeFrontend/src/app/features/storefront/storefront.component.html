@@ -1,0 +1,77 @@
+<div class="storefront">
+  <app-storefront-header
+    [storeName]="store?.name || 'Online Shop'"
+    [storeSlug]="store?.slug || ''"
+    [cartItemCount]="cartItemCount"
+    (cartClick)="goToCart()">
+  </app-storefront-header>
+
+  <app-storefront-nav
+    [categories]="categories"
+    [selectedCategory]="selectedCategory"
+    (categorySelect)="selectCategory($event)">
+  </app-storefront-nav>
+
+  <main class="store-main">
+    <div class="container">
+      <div *ngIf="loading" class="loading-state">
+        <div class="spinner"></div>
+        <p>Produkte werden geladen...</p>
+      </div>
+
+      <div *ngIf="!loading && filteredProducts.length === 0" class="empty-state">
+        <div class="empty-icon">📦</div>
+        <h2>Keine Produkte gefunden</h2>
+        <p *ngIf="selectedCategory">In dieser Kategorie gibt es aktuell keine Produkte.</p>
+        <p *ngIf="!selectedCategory">Dieser Shop hat noch keine Produkte.</p>
+      </div>
+
+      <div *ngIf="!loading && filteredProducts.length > 0" class="products-section">
+        <div class="section-header">
+          <h2>{{ selectedCategory ? selectedCategory.name : 'Alle Produkte' }}</h2>
+          <span class="products-count">{{ filteredProducts.length }} Produkte</span>
+        </div>
+
+        <div class="products-grid">
+          <app-product-card
+            *ngFor="let product of filteredProducts"
+            [product]="product"
+            [isAddingToCart]="addingToCart"
+            (addToCart)="addToCart($event)">
+          </app-product-card>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="store-footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h4>{{ store?.name || 'Online Shop' }}</h4>
+          <p>Powered by markt.ma</p>
+        </div>
+        <div class="footer-section">
+          <h4>Kategorien</h4>
+          <ul>
+            <li *ngFor="let category of categories">
+              <a (click)="selectCategory(category)">{{ category.name }}</a>
+            </li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4>Informationen</h4>
+          <ul>
+            <li><a>Impressum</a></li>
+            <li><a>Datenschutz</a></li>
+            <li><a>AGB</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2025 {{ store?.name || 'markt.ma' }}. Alle Rechte vorbehalten.</p>
+      </div>
+    </div>
+  </footer>
+</div>
+

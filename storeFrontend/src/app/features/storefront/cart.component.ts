@@ -419,5 +419,12 @@ export class CartComponent implements OnInit {
   goBack(): void {
     this.router.navigate(['/storefront']);
   }
-}
 
+  get cartItemCount(): number {
+    return this.cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+  }
+
+  goToCart() {
+    this.router.navigate(['/cart']);
+  }
+}

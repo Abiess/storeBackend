@@ -1,0 +1,261 @@
+<div class="theme-customizer">
+  <div class="customizer-header">
+    <button class="btn-back" (click)="goBack()">
+      <span class="icon">←</span> Zurück
+    </button>
+    <h1>Theme & Design anpassen</h1>
+    <p>Wählen Sie ein vordefiniertes Theme und passen Sie es an Ihre Marke an</p>
+  </div>
+
+  <div class="customizer-content">
+    <!-- Theme Presets Sidebar -->
+    <div class="presets-sidebar">
+      <h2>Vordefinierte Themes</h2>
+      <div class="presets-list">
+        <div *ngFor="let preset of themePresets"
+             class="preset-card"
+             [class.selected]="selectedPreset?.type === preset.type"
+             (click)="selectPreset(preset)">
+          <div class="preset-preview">
+            <div class="preview-image" [style.background]="'linear-gradient(135deg, ' + preset.colors.primary + ', ' + preset.colors.secondary + ')'">
+              <span class="preview-icon">🎨</span>
+            </div>
+          </div>
+          <div class="preset-info">
+            <h3>{{ preset.name }}</h3>
+            <p>{{ preset.description }}</p>
+          </div>
+          <div class="preset-badge" *ngIf="currentTheme?.type === preset.type">
+            <span class="badge-active">Aktiv</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Customization Panel -->
+    <div class="customization-panel" *ngIf="selectedPreset">
+      <div class="panel-header">
+        <h2>{{ selectedPreset.name }} anpassen</h2>
+        <div class="header-actions">
+          <button class="btn btn-secondary" (click)="resetToDefault()">
+            <span class="icon">↺</span> Zurücksetzen
+          </button>
+          <button class="btn btn-primary" (click)="saveTheme()" [disabled]="saving">
+            <span class="icon">💾</span> {{ saving ? 'Wird gespeichert...' : 'Theme speichern' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="customization-sections">
+        <!-- Farben -->
+        <div class="section">
+          <h3>🎨 Farben</h3>
+          <div class="color-grid">
+            <div class="color-input">
+              <label>Primärfarbe</label>
+              <input type="color"
+                     [(ngModel)]="customColors.primary"
+                     (change)="applyPreview()">
+              <input type="text"
+                     [(ngModel)]="customColors.primary"
+                     (change)="applyPreview()"
+                     placeholder="#667eea">
+            </div>
+
+            <div class="color-input">
+              <label>Sekundärfarbe</label>
+              <input type="color"
+                     [(ngModel)]="customColors.secondary"
+                     (change)="applyPreview()">
+              <input type="text"
+                     [(ngModel)]="customColors.secondary"
+                     (change)="applyPreview()"
+                     placeholder="#764ba2">
+            </div>
+
+            <div class="color-input">
+              <label>Akzentfarbe</label>
+              <input type="color"
+                     [(ngModel)]="customColors.accent"
+                     (change)="applyPreview()">
+              <input type="text"
+                     [(ngModel)]="customColors.accent"
+                     (change)="applyPreview()"
+                     placeholder="#f093fb">
+            </div>
+
+            <div class="color-input">
+              <label>Hintergrund</label>
+              <input type="color"
+                     [(ngModel)]="customColors.background"
+                     (change)="applyPreview()">
+              <input type="text"
+                     [(ngModel)]="customColors.background"
+                     (change)="applyPreview()"
+                     placeholder="#ffffff">
+            </div>
+
+            <div class="color-input">
+              <label>Textfarbe</label>
+              <input type="color"
+                     [(ngModel)]="customColors.text"
+                     (change)="applyPreview()">
+              <input type="text"
+                     [(ngModel)]="customColors.text"
+                     (change)="applyPreview()"
+                     placeholder="#1a202c">
+            </div>
+          </div>
+        </div>
+
+        <!-- Layout -->
+        <div class="section">
+          <h3>📐 Layout</h3>
+
+          <div class="layout-option">
+            <label>Header-Stil</label>
+            <select [(ngModel)]="customLayout.headerStyle" (change)="applyPreview()">
+              <option value="fixed">Fixiert (bleibt beim Scrollen oben)</option>
+              <option value="static">Statisch</option>
+              <option value="transparent">Transparent</option>
+            </select>
+          </div>
+
+          <div class="layout-option">
+            <label>Produkt-Grid Spalten</label>
+            <div class="radio-group">
+              <label class="radio-option">
+                <input type="radio"
+                       name="gridColumns"
+                       [value]="2"
+                       [(ngModel)]="customLayout.productGridColumns"
+                       (change)="applyPreview()">
+                <span>2 Spalten</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio"
+                       name="gridColumns"
+                       [value]="3"
+                       [(ngModel)]="customLayout.productGridColumns"
+                       (change)="applyPreview()">
+                <span>3 Spalten</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio"
+                       name="gridColumns"
+                       [value]="4"
+                       [(ngModel)]="customLayout.productGridColumns"
+                       (change)="applyPreview()">
+                <span>4 Spalten</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="layout-option">
+            <label>Ecken-Radius</label>
+            <select [(ngModel)]="customLayout.borderRadius" (change)="applyPreview()">
+              <option value="none">Keine (Eckig)</option>
+              <option value="small">Klein</option>
+              <option value="medium">Mittel</option>
+              <option value="large">Groß</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Custom CSS -->
+        <div class="section">
+          <h3>💻 Eigenes CSS (Erweitert)</h3>
+          <p class="section-description">Fügen Sie eigenes CSS hinzu, um das Theme weiter anzupassen</p>
+          <textarea
+            [(ngModel)]="customCss"
+            (change)="applyPreview()"
+            placeholder="/* Ihr eigenes CSS hier */"
+            rows="10"></textarea>
+          <p class="help-text">
+            <span class="icon">ℹ️</span>
+            Sie können CSS-Variablen wie --theme-primary verwenden
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Preview -->
+    <div class="preview-panel" *ngIf="selectedPreset">
+      <div class="preview-header">
+        <h3>Live-Vorschau</h3>
+        <span class="preview-badge">{{ selectedPreset.name }}</span>
+      </div>
+
+      <div class="preview-container">
+        <div class="preview-mockup">
+          <!-- Simulated Store Preview -->
+          <div class="mock-header" [style.background]="customColors.primary">
+            <div class="mock-logo">Ihr Shop</div>
+            <div class="mock-nav">
+              <span>Produkte</span>
+              <span>Kategorien</span>
+              <span>Kontakt</span>
+            </div>
+          </div>
+
+          <div class="mock-content" [style.background]="customColors.background">
+            <div class="mock-product-grid" [class.columns-2]="customLayout.productGridColumns === 2"
+                                          [class.columns-3]="customLayout.productGridColumns === 3"
+                                          [class.columns-4]="customLayout.productGridColumns === 4">
+              <div class="mock-product"
+                   [style.border-radius]="customLayout.borderRadius === 'none' ? '0' :
+                                         customLayout.borderRadius === 'small' ? '4px' :
+                                         customLayout.borderRadius === 'medium' ? '8px' : '16px'">
+                <div class="mock-product-image" [style.background]="customColors.secondary"></div>
+                <div class="mock-product-info">
+                  <div class="mock-product-title" [style.color]="customColors.text">Produkt 1</div>
+                  <div class="mock-product-price" [style.color]="customColors.primary">29.99 €</div>
+                  <button class="mock-btn" [style.background]="customColors.accent">In den Warenkorb</button>
+                </div>
+              </div>
+
+              <div class="mock-product"
+                   [style.border-radius]="customLayout.borderRadius === 'none' ? '0' :
+                                         customLayout.borderRadius === 'small' ? '4px' :
+                                         customLayout.borderRadius === 'medium' ? '8px' : '16px'">
+                <div class="mock-product-image" [style.background]="customColors.secondary"></div>
+                <div class="mock-product-info">
+                  <div class="mock-product-title" [style.color]="customColors.text">Produkt 2</div>
+                  <div class="mock-product-price" [style.color]="customColors.primary">49.99 €</div>
+                  <button class="mock-btn" [style.background]="customColors.accent">In den Warenkorb</button>
+                </div>
+              </div>
+
+              <div class="mock-product"
+                   [style.border-radius]="customLayout.borderRadius === 'none' ? '0' :
+                                         customLayout.borderRadius === 'small' ? '4px' :
+                                         customLayout.borderRadius === 'medium' ? '8px' : '16px'">
+                <div class="mock-product-image" [style.background]="customColors.secondary"></div>
+                <div class="mock-product-info">
+                  <div class="mock-product-title" [style.color]="customColors.text">Produkt 3</div>
+                  <div class="mock-product-price" [style.color]="customColors.primary">39.99 €</div>
+                  <button class="mock-btn" [style.background]="customColors.accent">In den Warenkorb</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="preview-info">
+        <p>
+          <span class="icon">ℹ️</span>
+          Dies ist eine Live-Vorschau Ihrer Anpassungen. Speichern Sie das Theme, um es auf Ihren Shop anzuwenden.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="!selectedPreset">
+    <div class="empty-icon">🎨</div>
+    <h2>Wählen Sie ein Theme aus</h2>
+    <p>Klicken Sie auf eines der vordefinierten Themes links, um mit der Anpassung zu beginnen</p>
+  </div>
+</div>
+

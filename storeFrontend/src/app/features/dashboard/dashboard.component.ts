@@ -1,10 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { StoreService } from '../../core/services/store.service';
-import { AuthService } from '../../core/services/auth.service';
-import { Store, User } from '../../core/models';
-import { LanguageSwitcherComponent } from '../../shared/components/language-switcher.component';
+import { StoreService } from '@app/core/services/store.service';
+import { AuthService } from '@app/core/services/auth.service';
+import { Store, User } from '@app/core/models';
+import { LanguageSwitcherComponent } from '@app/shared/components/language-switcher.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -20,6 +20,9 @@ import { LanguageSwitcherComponent } from '../../shared/components/language-swit
           </div>
           <div class="nav-right">
             <app-language-switcher></app-language-switcher>
+            <a routerLink="/subscription" class="btn btn-subscription" title="Abonnement">
+              <span class="subscription-icon">💎</span>
+            </a>
             <a routerLink="/settings" class="btn btn-settings" title="Einstellungen">
               <span class="settings-icon">⚙️</span>
             </a>

@@ -1,0 +1,104 @@
+import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { CommonModule } from '@angular/common';
+
+@Component({
+  selector: 'app-storefront-header',
+  standalone: true,
+  imports: [CommonModule],
+  template: `
+    <header class="store-header">
+      <div class="container">
+        <div class="header-content">
+          <h1 class="store-name">{{ storeName }}</h1>
+          <p class="store-tagline">{{ storeSlug }}.markt.ma</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-cart" (click)="cartClick.emit()">
+            🛒 Warenkorb <span class="cart-badge">{{ cartItemCount }}</span>
+          </button>
+        </div>
+      </div>
+    </header>
+  `,
+  styles: [`
+    .store-header {
+      background: linear-gradient(135deg, var(--theme-primary, #667eea) 0%, var(--theme-secondary, #764ba2) 100%);
+      color: white;
+      padding: 2rem 0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    
+    .header-content { 
+      flex: 1; 
+    }
+    
+    .store-name {
+      margin: 0 0 0.5rem;
+      font-size: 2rem;
+      font-weight: 700;
+      font-family: var(--theme-heading-font-family, var(--theme-font-family, inherit));
+    }
+    
+    .store-tagline { 
+      margin: 0; 
+      opacity: 0.9; 
+      font-size: 0.9375rem; 
+    }
+    
+    .btn-cart {
+      background: white;
+      color: var(--theme-primary, #667eea);
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: var(--theme-border-radius, 8px);
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.3s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .btn-cart:hover { 
+      transform: translateY(-2px); 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2); 
+    }
+    
+    .cart-badge {
+      background: var(--theme-primary, #667eea);
+      color: white;
+      padding: 0.125rem 0.5rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+    }
+    
+    @media (max-width: 768px) {
+      .store-name { 
+        font-size: 1.5rem; 
+      }
+      
+      .store-header { 
+        padding: 1.5rem 0; 
+      }
+    }
+  `]
+})
+export class StorefrontHeaderComponent {
+  @Input() storeName = '';
+  @Input() storeSlug = '';
+  @Input() cartItemCount = 0;
+  @Output() cartClick = new EventEmitter<void>();
+}
+

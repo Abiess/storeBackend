@@ -65,15 +65,15 @@ export class MockCartService {
       return of(existingItem).pipe(delay(300));
     }
 
-    const newItem: CartItem = {
+    const newItem = {
       id: nextItemId++,
       variantId: request.variantId,
-      productName: product.name,
-      variantName: variant.name,
+      productName: product.name || 'Unknown Product',
+      variantName: variant.name || 'Default Variant',
       quantity: request.quantity,
       price: variant.price,
       priceSnapshot: variant.price,
-      imageUrl: product.imageUrl
+      imageUrl: product.imageUrl || '/assets/placeholder.jpg'
     };
 
     cart.items.push(newItem);
@@ -120,4 +120,3 @@ export class MockCartService {
     cart.subtotal = cart.items.reduce((sum, item) => sum + (item.priceSnapshot * item.quantity), 0);
   }
 }
-

@@ -4,8 +4,7 @@ import { authGuard } from './core/guards/auth.guard';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: '/dashboard',
-    pathMatch: 'full'
+    loadComponent: () => import('./features/landing/landing.component').then(m => m.LandingComponent)
   },
   {
     path: 'login',
@@ -23,6 +22,11 @@ export const routes: Routes = [
   {
     path: 'settings',
     loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'subscription',
+    loadComponent: () => import('./features/settings/subscription.component').then(m => m.SubscriptionComponent),
     canActivate: [authGuard]
   },
   {
@@ -56,6 +60,11 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'stores/:storeId/theme',
+    loadComponent: () => import('./features/settings/theme-customizer.component').then(m => m.ThemeCustomizerComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'storefront/:id',
     loadComponent: () => import('./features/storefront/storefront.component').then(m => m.StorefrontComponent)
   },
@@ -74,6 +83,14 @@ export const routes: Routes = [
   {
     path: 'order-confirmation',
     loadComponent: () => import('./features/storefront/order-confirmation.component').then(m => m.OrderConfirmationComponent)
+  },
+  {
+    path: 'test-dashboard',
+    loadComponent: () => import('./features/testing/test-dashboard.component').then(m => m.TestDashboardComponent)
+  },
+  {
+    path: 'role-management',
+    loadComponent: () => import('./features/settings/role-management.component').then(m => m.RoleManagementComponent)
   },
   {
     path: '**',

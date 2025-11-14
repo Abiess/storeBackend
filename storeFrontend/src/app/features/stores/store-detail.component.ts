@@ -1,17 +1,17 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { ProductService } from '@app/core/services/product.service';
 import { OrderService } from '@app/core/services/order.service';
 import { DomainService } from '@app/core/services/domain.service';
 import { Product, Order, Domain, DomainType } from '@app/core/models';
-import { LanguageSwitcherComponent } from '../../shared/components/language-switcher.component';
+import { LanguageSwitcherComponent } from '@app/shared/components/language-switcher.component';
 
 @Component({
   selector: 'app-store-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule, LanguageSwitcherComponent],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, FormsModule, LanguageSwitcherComponent],
   template: `
     <div class="store-detail">
       <div class="container">
@@ -31,6 +31,9 @@ import { LanguageSwitcherComponent } from '../../shared/components/language-swit
             </button>
             <button [class.active]="activeTab === 'domains'" (click)="switchTab('domains')">
               🌐 Domains
+            </button>
+            <button [class.active]="activeTab === 'theme'" (click)="switchTab('theme')">
+              🎨 Design & Theme
             </button>
           </div>
         </div>
@@ -236,6 +239,143 @@ import { LanguageSwitcherComponent } from '../../shared/components/language-swit
                 <strong>DNS-Verifizierung erforderlich:</strong>
                 <code>{{ domain.verificationToken }}</code>
                 <small>Fügen Sie diesen TXT-Record zu Ihrer Domain hinzu</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Theme Tab -->
+        <div *ngIf="activeTab === 'theme'" class="tab-content">
+          <div class="section-header">
+            <h2>Design & Theme</h2>
+          </div>
+
+          <div class="theme-intro">
+            <div class="intro-card">
+              <div class="intro-icon">🎨</div>
+              <h3>Wählen Sie ein vordefiniertes Theme</h3>
+              <p>
+                Starten Sie schnell mit einem unserer professionell gestalteten Themes. 
+                Sie können aus 5 verschiedenen Designs wählen: Modern, Klassisch, Minimalistisch, Elegant und Dunkel.
+              </p>
+              <button 
+                class="btn btn-primary btn-large" 
+                [routerLink]="['/stores', storeId, 'theme']"
+              >
+                🎨 Theme-Galerie öffnen
+              </button>
+            </div>
+
+            <div class="theme-features">
+              <h4>Was Sie anpassen können:</h4>
+              <ul>
+                <li>✓ Farben (Primär, Sekundär, Akzent, Hintergrund, Text)</li>
+                <li>✓ Layout (Header-Stil, Produkt-Grid, Eckenradius)</li>
+                <li>✓ Typografie (Schriftarten und Größen)</li>
+                <li>✓ Eigenes CSS für erweiterte Anpassungen</li>
+                <li>✓ Live-Vorschau aller Änderungen</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="theme-settings">
+            <h3>Allgemeine Shop-Einstellungen</h3>
+            <div class="form-group">
+              <label for="storeName">Shop-Name</label>
+              <input 
+                id="storeName" 
+                type="text" 
+                [(ngModel)]="storeName" 
+                class="form-control"
+                placeholder="Geben Sie den Namen Ihres Shops ein"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="storeDescription">Shop-Beschreibung</label>
+              <textarea 
+                id="storeDescription" 
+                [(ngModel)]="storeDescription" 
+                class="form-control"
+                rows="3"
+                placeholder="Geben Sie eine kurze Beschreibung Ihres Shops ein"
+              ></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="storeLogo">Shop-Logo</label>
+              <input 
+                id="storeLogo" 
+                type="file" 
+                (change)="onLogoSelected($event)" 
+                class="form-control"
+                accept="image/*"
+              />
+              <small class="form-hint">
+                Empfohlene Größe: 250x250px. Unterstützte Formate: JPG, PNG.
+              </small>
+            </div>
+
+            <div class="form-group">
+              <label for="storeBanner">Shop-Banner</label>
+              <input 
+                id="storeBanner" 
+                type="file" 
+                (change)="onBannerSelected($event)" 
+                class="form-control"
+                accept="image/*"
+              />
+              <small class="form-hint">
+                Empfohlene Größe: 1920x500px. Unterstützte Formate: JPG, PNG.
+              </small>
+            </div>
+
+            <div class="form-actions">
+              <button class="btn btn-primary" (click)="saveThemeSettings()">
+                Änderungen speichern
+              </button>
+            </div>
+
+            <div *ngIf="themeError" class="alert alert-error">
+              {{ themeError }}
+            </div>
+            <div *ngIf="themeSuccess" class="alert alert-success">
+              {{ themeSuccess }}
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="theme-preview">
+            <h3>Vorschau</h3>
+            <div class="preview-card">
+              <div class="preview-header">
+                <img 
+                  *ngIf="logoUrl" 
+                  [src]="logoUrl" 
+                  alt="Shop-Logo" 
+                  class="preview-logo"
+                />
+                <h4 class="preview-store-name">{{ storeName }}</h4>
+              </div>
+              <div class="preview-banner">
+                <img 
+                  *ngIf="bannerUrl" 
+                  [src]="bannerUrl" 
+                  alt="Shop-Banner" 
+                  class="banner-image"
+                />
+              </div>
+              <div class="preview-content">
+                <p class="preview-description">{{ storeDescription }}</p>
+                <a 
+                  [routerLink]="['/storefront', storeId]" 
+                  class="btn btn-success btn-block"
+                >
+                  Zum Shop
+                </a>
               </div>
             </div>
           </div>
@@ -796,6 +936,151 @@ import { LanguageSwitcherComponent } from '../../shared/components/language-swit
       border: 1px solid #f5c6cb;
     }
 
+    /* Theme Tab Styles */
+    .theme-intro {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    @media (min-width: 768px) {
+      .theme-intro {
+        grid-template-columns: 2fr 1fr;
+      }
+    }
+
+    .intro-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 2rem;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    .intro-icon {
+      font-size: 3.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .intro-card h3 {
+      margin: 0 0 1rem;
+      font-size: 1.5rem;
+    }
+
+    .intro-card p {
+      margin: 0 0 1.5rem;
+      opacity: 0.95;
+      line-height: 1.6;
+    }
+
+    .btn-large {
+      padding: 1rem 2rem;
+      font-size: 1.125rem;
+    }
+
+    .theme-features {
+      background: #f8f9fa;
+      padding: 1.5rem;
+      border-radius: 12px;
+      border: 2px solid #e9ecef;
+    }
+
+    .theme-features h4 {
+      margin: 0 0 1rem;
+      color: #333;
+      font-size: 1.125rem;
+    }
+
+    .theme-features ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .theme-features li {
+      padding: 0.5rem 0;
+      color: #555;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+    }
+
+    .divider {
+      height: 1px;
+      background: #e9ecef;
+      margin: 2rem 0;
+    }
+
+    .theme-settings h3 {
+      margin: 0 0 1.5rem;
+      color: #333;
+      font-size: 1.25rem;
+    }
+
+    .theme-preview {
+      margin-top: 2rem;
+    }
+
+    .theme-preview h3 {
+      margin: 0 0 1rem;
+      color: #333;
+      font-size: 1.25rem;
+    }
+
+    .preview-card {
+      background: #f8f9fa;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 2px solid #e9ecef;
+    }
+
+    .preview-header {
+      padding: 1.5rem;
+      text-align: center;
+      background: white;
+      border-bottom: 1px solid #e9ecef;
+    }
+
+    .preview-logo {
+      max-width: 120px;
+      max-height: 120px;
+      margin-bottom: 1rem;
+      border-radius: 8px;
+    }
+
+    .preview-store-name {
+      margin: 0;
+      color: #333;
+      font-size: 1.5rem;
+    }
+
+    .preview-banner {
+      max-height: 200px;
+      overflow: hidden;
+      background: #e9ecef;
+    }
+
+    .banner-image {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .preview-content {
+      padding: 1.5rem;
+    }
+
+    .preview-description {
+      margin: 0 0 1.5rem;
+      color: #666;
+      line-height: 1.6;
+    }
+
+    .btn-block {
+      width: 100%;
+      justify-content: center;
+    }
+
     @media (max-width: 768px) {
       .container {
         padding: 0 0.75rem;
@@ -825,6 +1110,22 @@ import { LanguageSwitcherComponent } from '../../shared/components/language-swit
       .form-actions .btn {
         width: 100%;
       }
+
+      .intro-card {
+        padding: 1.5rem;
+      }
+
+      .intro-icon {
+        font-size: 2.5rem;
+      }
+
+      .intro-card h3 {
+        font-size: 1.25rem;
+      }
+
+      .btn-large {
+        width: 100%;
+      }
     }
   `]
 })
@@ -846,6 +1147,13 @@ export class StoreDetailComponent implements OnInit {
   domainSuccess = '';
 
   domainForm: FormGroup;
+
+  storeName = 'Mein Shop';
+  storeDescription = 'Willkommen in meinem Shop!';
+  logoUrl?: string;
+  bannerUrl?: string;
+  themeError = '';
+  themeSuccess = '';
 
   constructor(
     private route: ActivatedRoute,
@@ -1011,5 +1319,33 @@ export class StoreDetailComponent implements OnInit {
       case 'CANCELLED': return 'danger';
       default: return 'info';
     }
+  }
+
+  onLogoSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.logoUrl = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  onBannerSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.bannerUrl = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  saveThemeSettings(): void {
+    // Hier können Sie die Logik zum Speichern der Theme-Einstellungen hinzufügen
+    this.themeSuccess = 'Theme-Einstellungen wurden erfolgreich gespeichert!';
+    this.themeError = '';
   }
 }

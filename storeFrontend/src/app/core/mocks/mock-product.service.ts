@@ -4,12 +4,27 @@ import { MOCK_PRODUCTS } from './mock-data';
 
 export class MockProductService {
   private products: Product[] = [...MOCK_PRODUCTS];
+  private nextProductId = 1;
+  private nextVariantId = 1;
 
   getProducts(storeId: number, status?: string): Observable<Product[]> {
-    let filtered = this.products;
+    console.log('🎭 Mock: Loading products for store', storeId, 'with status filter:', status);
+
+    // Zuerst nach Store-ID filtern
+    let filtered = this.products.filter(p => p.storeId === storeId);
+    console.log('🎭 Mock: Found', filtered.length, 'products for store', storeId);
+
+    // Dann nach Status filtern, falls angegeben
     if (status) {
-      filtered = this.products.filter(p => p.status === status);
+      // Akzeptiere sowohl 'ACTIVE' als auch 'PUBLISHED' für die Storefront
+      if (status === 'ACTIVE' || status === 'PUBLISHED') {
+        filtered = filtered.filter(p => p.status === ProductStatus.PUBLISHED);
+      } else {
+        filtered = filtered.filter(p => p.status === status);
+      }
+      console.log('🎭 Mock: After status filter:', filtered.length, 'products');
     }
+
     return of(filtered).pipe(delay(500));
   }
 
@@ -20,12 +35,13 @@ export class MockProductService {
 
   createProduct(storeId: number, request: CreateProductRequest): Observable<Product> {
     const newProduct: Product = {
-      id: this.products.length + 1,
+      id: this.nextProductId++,
+      storeId: storeId,
       name: request.name,
-      title: request.title,
+      title: request.title || 'New Product',
       description: request.description,
       price: request.price,
-      basePrice: request.basePrice,
+      basePrice: request.basePrice || 0,
       stock: request.stock,
       status: request.status || ProductStatus.DRAFT,
       createdAt: new Date().toISOString(),
@@ -60,9 +76,10 @@ export class MockProductService {
 
   createVariant(storeId: number, productId: number, variant: Partial<ProductVariant>): Observable<ProductVariant> {
     const newVariant: ProductVariant = {
-      id: Math.floor(Math.random() * 10000),
+      id: this.nextVariantId++,
+      productId: productId,
       name: variant.name || 'Variant',
-      sku: variant.sku || '',
+      sku: 'VAR-' + this.nextVariantId,
       price: variant.price || 0,
       stock: variant.stock || variant.stockQuantity || 0,
       stockQuantity: variant.stockQuantity || variant.stock || 0,

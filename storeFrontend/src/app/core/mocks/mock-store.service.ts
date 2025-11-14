@@ -4,6 +4,7 @@ import { MOCK_STORES } from './mock-data';
 
 export class MockStoreService {
   private stores: Store[] = [...MOCK_STORES];
+  private nextStoreId = this.stores.length + 1;
 
   getMyStores(): Observable<Store[]> {
     return of(this.stores).pipe(delay(500));
@@ -11,12 +12,13 @@ export class MockStoreService {
 
   createStore(request: CreateStoreRequest): Observable<Store> {
     const newStore: Store = {
-      id: this.stores.length + 1,
+      id: this.nextStoreId++,
       name: request.name,
-      slug: request.slug,
+      slug: request.slug || request.name.toLowerCase().replace(/\s+/g, '-'),
       description: request.description,
       status: StoreStatus.ACTIVE,
-      userId: 1, // Default user ID for mock
+      ownerId: 1,
+      userId: 1,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };

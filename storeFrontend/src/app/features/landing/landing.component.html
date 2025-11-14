@@ -1,0 +1,214 @@
+<div class="landing-page">
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <div class="nav-brand">
+        <h1>🛍️ markt.ma</h1>
+      </div>
+      <div class="nav-links">
+        <a (click)="scrollToSection('features')">Features</a>
+        <a (click)="scrollToSection('demo')">Demo</a>
+        <a (click)="scrollToSection('pricing')">Preise</a>
+        <button class="btn btn-secondary" (click)="navigateToLogin()">Anmelden</button>
+        <button class="btn btn-primary" (click)="navigateToRegister()">Kostenlos starten</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-content">
+        <h1 class="hero-title">
+          Starten Sie Ihren Online-Shop <span class="gradient-text">in Minuten</span>
+        </h1>
+        <p class="hero-subtitle">
+          Die All-in-One E-Commerce-Plattform für Unternehmen jeder Größe.
+          Keine Programmierkenntnisse erforderlich.
+        </p>
+        <div class="hero-actions">
+          <button class="btn btn-hero-primary" (click)="navigateToRegister()">
+            🚀 Jetzt kostenlos starten
+          </button>
+          <button class="btn btn-hero-secondary" (click)="scrollToSection('demo')">
+            📹 Demo ansehen
+          </button>
+        </div>
+        <div class="hero-stats">
+          <div class="stat" *ngFor="let stat of stats">
+            <div class="stat-value">{{ stat.value }}</div>
+            <div class="stat-label">{{ stat.label }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-image">
+        <div class="mockup-browser">
+          <div class="browser-header">
+            <div class="browser-dots">
+              <span></span><span></span><span></span>
+            </div>
+            <div class="browser-url">https://ihr-shop.markt.ma</div>
+          </div>
+          <div class="browser-content">
+            <div class="shop-preview">
+              <div class="preview-header"></div>
+              <div class="preview-products">
+                <div class="preview-card"></div>
+                <div class="preview-card"></div>
+                <div class="preview-card"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section id="features" class="features-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>Alles was Sie brauchen, um erfolgreich zu verkaufen</h2>
+        <p>Professionelle Tools für Ihren E-Commerce-Erfolg</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card" *ngFor="let feature of features">
+          <div class="feature-icon">{{ feature.icon }}</div>
+          <h3>{{ feature.title }}</h3>
+          <p>{{ feature.description }}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Video Demo Section -->
+  <section id="demo" class="video-demo-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>Sehen Sie markt.ma in Aktion</h2>
+        <p>Entdecken Sie, wie einfach es ist, Ihren eigenen Online-Shop zu erstellen</p>
+      </div>
+
+      <!-- Main Demo Video -->
+      <div class="main-video-container">
+        <div class="video-wrapper">
+          <video controls class="demo-video">
+            <source src="assets/videos/01-landing-demo.cy.ts.mp4" type="video/mp4">
+            Ihr Browser unterstützt das Video-Tag nicht.
+          </video>
+        </div>
+        <div class="video-info">
+          <h3>🎥 Vollständige Plattform-Demo</h3>
+          <p>Sehen Sie alle Features von markt.ma in weniger als 2 Minuten</p>
+        </div>
+      </div>
+
+      <!-- Tutorial Videos -->
+      <div class="tutorials-section">
+        <h3 class="tutorials-title">📚 Schritt-für-Schritt Anleitungen</h3>
+        <div class="tutorials-grid">
+          <div class="tutorial-card" *ngFor="let tutorial of tutorials">
+            <div class="tutorial-video">
+              <video controls preload="metadata">
+                <source [src]="tutorial.videoUrl" type="video/mp4">
+              </video>
+              <div class="tutorial-duration">{{ tutorial.duration }}</div>
+            </div>
+            <div class="tutorial-content">
+              <div class="tutorial-icon">{{ tutorial.icon }}</div>
+              <h4>{{ tutorial.title }}</h4>
+              <p>{{ tutorial.description }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Video CTA -->
+      <div class="video-cta">
+        <p>Bereit anzufangen?</p>
+        <button class="btn btn-hero-primary" (click)="navigateToRegister()">
+          Jetzt kostenlos starten
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Section -->
+  <section id="pricing" class="pricing-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>Transparente Preise für jedes Budget</h2>
+        <p>Keine versteckten Kosten, jederzeit kündbar</p>
+      </div>
+      <div class="pricing-grid">
+        <div class="pricing-card"
+             *ngFor="let plan of plans"
+             [class.highlighted]="plan.highlighted">
+          <div class="pricing-badge" *ngIf="plan.highlighted">⭐ Beliebt</div>
+          <h3 class="plan-name">{{ plan.name }}</h3>
+          <p class="plan-description">{{ plan.description }}</p>
+          <div class="plan-price">
+            <span class="price-amount">{{ plan.price }}€</span>
+            <span class="price-period">{{ plan.period }}</span>
+          </div>
+          <ul class="plan-features">
+            <li *ngFor="let feature of plan.features">
+              <span class="check-icon">✓</span> {{ feature }}
+            </li>
+          </ul>
+          <button class="btn btn-plan"
+                  [class.btn-plan-highlighted]="plan.highlighted"
+                  (click)="navigateToRegister()">
+            {{ plan.cta }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <div class="container">
+      <div class="cta-content">
+        <h2>Bereit, Ihren Online-Shop zu starten?</h2>
+        <p>Schließen Sie sich tausenden erfolgreichen Händlern an</p>
+        <button class="btn btn-cta" (click)="navigateToRegister()">
+          🚀 Jetzt kostenlos loslegen
+        </button>
+        <p class="cta-note">Keine Kreditkarte erforderlich • Jederzeit kündbar</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h3>🛍️ markt.ma</h3>
+          <p>Die moderne E-Commerce-Plattform für Deutschland</p>
+        </div>
+        <div class="footer-section">
+          <h4>Produkt</h4>
+          <ul>
+            <li><a (click)="scrollToSection('features')">Features</a></li>
+            <li><a (click)="scrollToSection('demo')">Demo</a></li>
+            <li><a (click)="scrollToSection('pricing')">Preise</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4>Legal</h4>
+          <ul>
+            <li><a>Impressum</a></li>
+            <li><a>Datenschutz</a></li>
+            <li><a>AGB</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2025 markt.ma. Alle Rechte vorbehalten.</p>
+      </div>
+    </div>
+  </footer>
+</div>
+
