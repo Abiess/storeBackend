@@ -1,0 +1,53 @@
+<div class="coupon-input-container">
+  <div class="coupon-input-section">
+    <mat-form-field appearance="outline" class="coupon-field">
+      <mat-label>Gutscheincode</mat-label>
+      <input matInput
+             [(ngModel)]="couponCode"
+             (keyup.enter)="onApplyCoupon()"
+             placeholder="z.B. SAVE20"
+             [disabled]="validating">
+      <mat-icon matPrefix>local_offer</mat-icon>
+      <mat-hint>Geben Sie Ihren Gutscheincode ein</mat-hint>
+    </mat-form-field>
+
+    <button mat-raised-button
+            color="primary"
+            (click)="onApplyCoupon()"
+            [disabled]="!couponCode.trim() || validating">
+      <mat-spinner diameter="20" *ngIf="validating"></mat-spinner>
+      <span *ngIf="!validating">Anwenden</span>
+    </button>
+  </div>
+
+  <!-- Applied Coupons -->
+  <div class="applied-coupons" *ngIf="appliedCoupons.length > 0">
+    <h4>✅ Angewendete Gutscheine</h4>
+    <div class="coupon-list">
+      <div *ngFor="let coupon of appliedCoupons" class="coupon-chip">
+        <div class="chip-content">
+          <mat-icon>check_circle</mat-icon>
+          <strong>{{ coupon.code }}</strong>
+          <span class="discount-amount">-{{ formatCents(coupon.discountCents) }} €</span>
+        </div>
+        <button mat-icon-button (click)="onRemoveCoupon(coupon)" class="remove-btn">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <div class="total-discount">
+      <strong>Gesamtrabatt:</strong>
+      <span class="amount">-{{ formatCents(getTotalDiscount()) }} €</span>
+    </div>
+  </div>
+
+  <!-- Invalid Coupons -->
+  <div class="invalid-coupons" *ngIf="invalidCoupons.length > 0">
+    <div *ngFor="let invalid of invalidCoupons" class="error-message">
+      <mat-icon>error</mat-icon>
+      <span><strong>{{ invalid.code }}:</strong> {{ invalid.reason }}</span>
+    </div>
+  </div>
+</div>
+

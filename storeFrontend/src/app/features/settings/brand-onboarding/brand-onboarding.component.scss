@@ -1,0 +1,315 @@
+.brand-onboarding-container {
+  padding: 24px;
+  max-width: 1600px;
+  margin: 0 auto;
+
+  h1 {
+    margin-bottom: 24px;
+    color: #333;
+  }
+
+  // SAFETY RULE: No global pseudo-elements or absolute positioning on container
+  // All decorative elements scoped to .brand-preview .brand-decor
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-section,
+.preview-section {
+  height: fit-content;
+}
+
+.full-width {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.color-section {
+  margin-bottom: 24px;
+
+  h3 {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 12px;
+    color: #555;
+  }
+}
+
+.color-input-group {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+
+  .color-input {
+    flex: 1;
+    margin-bottom: 0;
+  }
+
+  button {
+    margin-top: 8px;
+  }
+}
+
+.chip-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.color-swatch {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+mat-card-actions {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  flex-wrap: wrap;
+
+  button {
+    position: relative;
+    z-index: 2; // Interactive priority
+  }
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  text-align: center;
+
+  p {
+    margin-top: 16px;
+    color: #666;
+  }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  text-align: center;
+  color: #999;
+
+  mat-icon {
+    font-size: 64px;
+    width: 64px;
+    height: 64px;
+    margin-bottom: 16px;
+  }
+}
+
+.brand-preview {
+  // SAFETY RULE 2: Stacking context and isolation
+  position: relative;
+  isolation: isolate; // Prevent z-index leakage
+  min-height: 400px;
+
+  // SAFETY RULE 1: Decorative layer (background, non-interactive)
+  .brand-decor {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none; // CRITICAL: No interaction blocking
+    overflow: hidden;
+
+    // Any SVG/canvas decorations must be scoped here
+    svg,
+    canvas {
+      pointer-events: none;
+      user-select: none;
+    }
+  }
+
+  // SAFETY RULE 2: Content layer (interactive, on top)
+  .brand-content {
+    position: relative;
+    z-index: 1;
+    padding: 0; // No padding needed, content manages its own spacing
+  }
+
+  .palette-display {
+    margin-bottom: 32px;
+    position: relative; // Establish stacking context
+    z-index: 1;
+
+    h3 {
+      font-size: 18px;
+      font-weight: 500;
+      margin-bottom: 16px;
+      color: #333;
+    }
+
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 16px;
+    }
+
+    .color-item {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .color-box {
+      width: 100%;
+      height: 80px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      // SAFETY: No neon colors enforced in backend
+    }
+
+    .color-label {
+      display: flex;
+      flex-direction: column;
+      font-size: 12px;
+
+      strong {
+        color: #333;
+      }
+
+      span {
+        color: #666;
+      }
+    }
+  }
+
+  .initials-display {
+    margin-bottom: 32px;
+    position: relative;
+    z-index: 1;
+
+    h3 {
+      font-size: 18px;
+      font-weight: 500;
+      margin-bottom: 16px;
+      color: #333;
+    }
+
+    .initials-box {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      font-weight: bold;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  .assets-display {
+    margin-bottom: 32px;
+    position: relative;
+    z-index: 1;
+
+    h3 {
+      font-size: 18px;
+      font-weight: 500;
+      margin-bottom: 16px;
+      color: #333;
+    }
+
+    .assets-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .asset-item {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      background: #fff;
+      position: relative;
+      z-index: 1;
+
+      strong {
+        font-size: 14px;
+        color: #333;
+      }
+    }
+
+    .asset-preview {
+      max-width: 100%;
+      max-height: 200px;
+      object-fit: contain;
+      border-radius: 4px;
+    }
+
+    .asset-link {
+      color: #1976d2;
+      text-decoration: none;
+      font-size: 14px;
+      position: relative;
+      z-index: 1;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+
+  // SAFETY RULE 3: Interactive elements have highest z-index
+  .preview-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 2; // Above content layer
+
+    button {
+      position: relative;
+      z-index: 2;
+      // SAFETY: No global Material button pseudo-element overrides
+      // All scoped within .brand-onboarding-container
+    }
+  }
+}
+
+// SAFETY RULE 5: No global leaks - scope Material overrides to component
+.brand-onboarding-container {
+  // Only override Material components within this component
+  .mat-mdc-raised-button {
+    // Scoped button styles if needed
+  }
+
+  mat-card-actions {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+    flex-wrap: wrap;
+
+    button {
+      position: relative;
+      z-index: 2; // Interactive priority
+    }
+  }
+}
+
+// SAFETY RULE 4: No global pseudo-elements
+// NO body::before, NO *::before for decorations
+// All decorations in .brand-preview .brand-decor only

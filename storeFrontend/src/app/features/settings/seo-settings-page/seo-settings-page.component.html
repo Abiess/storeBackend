@@ -1,0 +1,172 @@
+<div class="seo-settings-container">
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>search</mat-icon>
+        SEO Einstellungen
+      </mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content>
+      <div *ngIf="loading" class="loading-spinner">
+        <mat-spinner diameter="40"></mat-spinner>
+      </div>
+
+      <form [formGroup]="settingsForm" *ngIf="!loading">
+        <!-- Basic Settings -->
+        <section class="settings-section">
+          <h3>Grundeinstellungen</h3>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Site Name</mat-label>
+            <input matInput formControlName="siteName" placeholder="Mein Shop" data-testid="seo-site-name">
+            <mat-error>Site Name ist erforderlich</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Standard Title Template</mat-label>
+            <input matInput formControlName="defaultTitleTemplate"
+                   placeholder="Beispiel: Seitentitel | Shopname"
+                   data-testid="seo-title-template">
+            <mat-hint>Verfügbare Platzhalter: page.title, store.siteName, product.title</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Standard Meta Description</mat-label>
+            <textarea matInput formControlName="defaultMetaDescription"
+                      rows="3"
+                      placeholder="Willkommen in unserem Shop..."
+                      data-testid="seo-meta-description"></textarea>
+            <mat-hint>Empfohlen: 150-160 Zeichen</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Canonical Base URL</mat-label>
+            <input matInput formControlName="canonicalBaseUrl"
+                   placeholder="https://mein-shop.markt.ma"
+                   data-testid="seo-canonical-url">
+            <mat-error>Muss eine absolute HTTPS URL sein</mat-error>
+          </mat-form-field>
+
+          <mat-slide-toggle formControlName="robotsIndex" data-testid="seo-robots-toggle">
+            Suchmaschinen-Indexierung aktivieren
+          </mat-slide-toggle>
+        </section>
+
+        <!-- Social Media -->
+        <section class="settings-section">
+          <h3>
+            <mat-icon>share</mat-icon>
+            Social Media
+          </h3>
+
+          <div class="image-upload-section">
+            <label>Open Graph Standard-Bild</label>
+            <div class="image-preview" *ngIf="ogImagePreview">
+              <img [src]="ogImagePreview" alt="OG Image Preview">
+            </div>
+            <input type="file"
+                   accept="image/*"
+                   (change)="onImageSelect($event)"
+                   #fileInput
+                   style="display: none"
+                   data-testid="seo-og-image-input">
+            <button mat-raised-button type="button" (click)="fileInput.click()" data-testid="seo-og-image-upload">
+              <mat-icon>upload</mat-icon>
+              Bild hochladen
+            </button>
+            <mat-hint>Empfohlen: 1200x630px (Open Graph)</mat-hint>
+          </div>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Twitter Handle</mat-label>
+            <input matInput formControlName="twitterHandle" placeholder="@meinshop" data-testid="seo-twitter">
+            <mat-icon matPrefix>alternate_email</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Facebook Seite</mat-label>
+            <input matInput formControlName="facebookPageUrl"
+                   placeholder="https://facebook.com/meinshop"
+                   data-testid="seo-facebook">
+            <mat-icon matPrefix>link</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Instagram</mat-label>
+            <input matInput formControlName="instagramUrl"
+                   placeholder="https://instagram.com/meinshop"
+                   data-testid="seo-instagram">
+            <mat-icon matPrefix>link</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>YouTube</mat-label>
+            <input matInput formControlName="youtubeUrl" data-testid="seo-youtube">
+            <mat-icon matPrefix>link</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>LinkedIn</mat-label>
+            <input matInput formControlName="linkedinUrl" data-testid="seo-linkedin">
+            <mat-icon matPrefix>link</mat-icon>
+          </mat-form-field>
+        </section>
+
+        <!-- Hreflang -->
+        <section class="settings-section">
+          <h3>
+            <mat-icon>language</mat-icon>
+            Hreflang (Mehrsprachigkeit)
+          </h3>
+
+          <div class="hreflang-list">
+            <div class="hreflang-entry" *ngFor="let entry of hreflangEntries; let i = index; trackBy: trackByIndex">
+              <mat-form-field appearance="outline" class="lang-code">
+                <mat-label>Sprachcode</mat-label>
+                <input matInput [(ngModel)]="entry.langCode"
+                       [ngModelOptions]="{standalone: true}"
+                       placeholder="de"
+                       [attr.data-testid]="'hreflang-code-' + i">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="lang-url">
+                <mat-label>URL</mat-label>
+                <input matInput [(ngModel)]="entry.absoluteUrlBase"
+                       [ngModelOptions]="{standalone: true}"
+                       placeholder="https://mein-shop.de"
+                       [attr.data-testid]="'hreflang-url-' + i">
+              </mat-form-field>
+
+              <button mat-icon-button color="warn" (click)="removeHreflang(i)" type="button" [attr.data-testid]="'hreflang-remove-' + i">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </div>
+
+          <button mat-stroked-button (click)="addHreflang()" type="button" data-testid="hreflang-add">
+            <mat-icon>add</mat-icon>
+            Sprache hinzufügen
+          </button>
+        </section>
+
+        <!-- Actions -->
+        <div class="actions">
+          <button mat-raised-button color="primary"
+                  (click)="onSave()"
+                  [disabled]="saving || settingsForm.invalid"
+                  data-testid="seo-save">
+            <mat-icon>save</mat-icon>
+            <span *ngIf="!saving">Speichern</span>
+            <span *ngIf="saving">Speichern...</span>
+          </button>
+
+          <button mat-stroked-button (click)="onReset()" [disabled]="saving" data-testid="seo-reset">
+            <mat-icon>refresh</mat-icon>
+            Zurücksetzen
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

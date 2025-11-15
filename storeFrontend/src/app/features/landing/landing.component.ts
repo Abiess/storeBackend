@@ -1,11 +1,12 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { VideoPlaceholderComponent } from './video-placeholder.component';
 
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, VideoPlaceholderComponent],
   templateUrl: './landing.component.html',
   styleUrls: ['./landing.component.scss']
 })
@@ -144,4 +145,3 @@ export class LandingComponent {
     this.router.navigate(['/login']);
   }
 }
-

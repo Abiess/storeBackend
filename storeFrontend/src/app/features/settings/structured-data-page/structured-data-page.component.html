@@ -1,0 +1,83 @@
+<div class="structured-data-container">
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>code</mat-icon>
+        Structured Data (JSON-LD)
+      </mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content>
+      <mat-tab-group [(selectedIndex)]="activeType" animationDuration="0ms">
+        <mat-tab *ngFor="let type of types" [label]="type">
+          <div class="tab-content">
+            <!-- Editor Section -->
+            <div class="editor-section">
+              <div class="editor-header">
+                <h3>Template Editor</h3>
+                <div class="editor-actions">
+                  <button mat-raised-button color="primary"
+                          (click)="onSave(type)"
+                          [disabled]="saving"
+                          [attr.data-testid]="'jsonld-save-' + type">
+                    <mat-icon>save</mat-icon>
+                    Speichern
+                  </button>
+                  <button mat-stroked-button
+                          (click)="onPreview(type)"
+                          [attr.data-testid]="'jsonld-preview-' + type">
+                    <mat-icon>visibility</mat-icon>
+                    Vorschau
+                  </button>
+                </div>
+              </div>
+
+              <textarea class="json-editor"
+                        [value]="getTemplate(type).templateJson"
+                        (input)="updateTemplateJson(type, $any($event.target).value)"
+                        placeholder="JSON-LD Template hier eingeben..."
+                        [attr.data-testid]="'jsonld-editor-' + type"></textarea>
+            </div>
+
+            <!-- Variables Helper -->
+            <mat-expansion-panel class="variables-panel">
+              <mat-expansion-panel-header>
+                <mat-panel-title>
+                  <mat-icon>help_outline</mat-icon>
+                  Verfügbare Variablen
+                </mat-panel-title>
+              </mat-expansion-panel-header>
+              <div class="variables-list">
+                <div *ngFor="let variable of getVariables(type)" class="variable-item">
+                  <code>{{ variable.split(' - ')[0] }}</code>
+                  <span class="variable-desc">{{ variable.split(' - ')[1] }}</span>
+                </div>
+              </div>
+            </mat-expansion-panel>
+
+            <!-- Preview Section -->
+            <div class="preview-section" *ngIf="previewResult" data-testid="seo-jsonld-preview">
+              <h3>
+                <mat-icon>preview</mat-icon>
+                Vorschau (gerendert)
+              </h3>
+              <pre class="preview-content">{{ previewResult }}</pre>
+            </div>
+
+            <!-- Example Templates -->
+            <mat-expansion-panel class="example-panel">
+              <mat-expansion-panel-header>
+                <mat-panel-title>
+                  <mat-icon>lightbulb</mat-icon>
+                  Beispiel-Template
+                </mat-panel-title>
+              </mat-expansion-panel-header>
+              <pre class="example-content">{{ getExampleTemplate(type) }}</pre>
+            </mat-expansion-panel>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    </mat-card-content>
+  </mat-card>
+</div>
+

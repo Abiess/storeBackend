@@ -4,11 +4,13 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { Router } from '@angular/router';
 import { CartService, Cart } from '../../core/services/cart.service';
 import { CheckoutService, CheckoutRequest } from '../../core/services/checkout.service';
+import { CouponInputComponent } from '../../shared/components/coupon-input/coupon-input.component';
+import { ValidateCouponsResponse } from '../../core/services/coupon.service';
 
 @Component({
   selector: 'app-checkout',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, CouponInputComponent],
   template: `
     <div class="checkout-container">
       <div class="checkout-header">
@@ -214,18 +216,32 @@ import { CheckoutService, CheckoutRequest } from '../../core/services/checkout.s
             </div>
           </div>
 
+          <!-- Gutschein-Eingabe -->
+          <div class="coupon-section">
+            <app-coupon-input
+              [storeId]="cart.storeId"
+              [cart]="getCartData()"
+              [domainHost]="getDomainHost()"
+              (couponsApplied)="onCouponsApplied($event)">
+            </app-coupon-input>
+          </div>
+
           <div class="summary-totals">
             <div class="summary-row">
               <span>Zwischensumme</span>
               <span>{{ cart.subtotal | number:'1.2-2' }} €</span>
             </div>
+            <div class="summary-row discount" *ngIf="discountAmount > 0">
+              <span>🎉 Rabatt</span>
+              <span class="discount-value">-{{ discountAmount | number:'1.2-2' }} €</span>
+            </div>
             <div class="summary-row">
               <span>Versand</span>
-              <span>{{ shipping | number:'1.2-2' }} €</span>
+              <span>{{ (hasFreeShipping ? 0 : shipping) | number:'1.2-2' }} €</span>
             </div>
             <div class="summary-row total">
               <strong>Gesamt</strong>
-              <strong>{{ (cart.subtotal + shipping) | number:'1.2-2' }} €</strong>
+              <strong>{{ getFinalTotal() | number:'1.2-2' }} €</strong>
             </div>
           </div>
         </div>
@@ -450,6 +466,23 @@ import { CheckoutService, CheckoutRequest } from '../../core/services/checkout.s
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+
+    .coupon-section {
+      margin: 20px 0;
+      padding: 20px 0;
+      border-top: 1px solid #e0e0e0;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .summary-row.discount {
+      color: #4caf50;
+      font-weight: 600;
+      
+      .discount-value {
+        font-size: 18px;
+        font-weight: 700;
+      }
+    }
   `]
 })
 export class CheckoutComponent implements OnInit {
@@ -461,6 +494,8 @@ export class CheckoutComponent implements OnInit {
   sameAsShipping = true;
   shipping = 4.99;
   sessionId = '';
+  discountAmount = 0;
+  hasFreeShipping = false;
 
   constructor(
     private fb: FormBuilder,
@@ -571,6 +606,41 @@ export class CheckoutComponent implements OnInit {
     });
   }
 
+  onCouponsApplied(response: ValidateCouponsResponse): void {
+    console.log('✅ Gutscheine angewendet:', response);
+    this.discountAmount = response.cartTotals.discountCents / 100;
+    this.hasFreeShipping = response.validCoupons.some(c => c.type === 'FREE_SHIPPING');
+  }
+
+  getCartData(): any {
+    if (!this.cart) return null;
+
+    return {
+      currency: 'EUR',
+      subtotalCents: Math.round(this.cart.subtotal * 100),
+      customerEmail: this.checkoutForm.get('customerEmail')?.value || '',
+      items: this.cart.items.map(item => ({
+        productId: item.variantId, // Use variantId as productId
+        productName: item.productName,
+        priceCents: Math.round(item.priceSnapshot * 100),
+        quantity: item.quantity,
+        categoryIds: [],
+        collectionIds: []
+      }))
+    };
+  }
+
+  getDomainHost(): string {
+    return window.location.hostname;
+  }
+
+  getFinalTotal(): number {
+    if (!this.cart) return 0;
+    const subtotal = this.cart.subtotal;
+    const shippingCost = this.hasFreeShipping ? 0 : this.shipping;
+    return Math.max(0, subtotal - this.discountAmount + shippingCost);
+  }
+
   goBack(): void {
     this.router.navigate(['/cart']);
   }
@@ -579,4 +649,3 @@ export class CheckoutComponent implements OnInit {
     this.router.navigate(['/storefront']);
   }
 }
-

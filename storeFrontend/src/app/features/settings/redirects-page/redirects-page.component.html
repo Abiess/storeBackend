@@ -1,0 +1,125 @@
+<div class="redirects-container">
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>call_split</mat-icon>
+        URL Redirects
+      </mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content>
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Suchen</mat-label>
+          <input matInput (input)="onSearch($event)" placeholder="Pfad oder URL suchen...">
+          <mat-icon matPrefix>search</mat-icon>
+        </mat-form-field>
+
+        <div class="toolbar-actions">
+          <button mat-raised-button color="primary" (click)="onAdd()" data-testid="seo-redirect-add">
+            <mat-icon>add</mat-icon>
+            Neu
+          </button>
+
+          <input type="file" accept=".csv" (change)="onImport($event)" #fileInput style="display: none">
+          <button mat-stroked-button (click)="fileInput.click()" data-testid="redirect-import">
+            <mat-icon>upload</mat-icon>
+            Importieren
+          </button>
+
+          <button mat-stroked-button (click)="onExport()" data-testid="redirect-export">
+            <mat-icon>download</mat-icon>
+            Exportieren
+          </button>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-container">
+        <table mat-table [dataSource]="dataSource" matSort class="redirects-table">
+          <!-- Source Path -->
+          <ng-container matColumnDef="sourcePath">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Quellpfad</th>
+            <td mat-cell *matCellDef="let row">
+              <code>{{ row.sourcePath }}</code>
+            </td>
+          </ng-container>
+
+          <!-- Target URL -->
+          <ng-container matColumnDef="targetUrl">
+            <th mat-header-cell *matHeaderCellDef>Ziel-URL</th>
+            <td mat-cell *matCellDef="let row">
+              <code>{{ row.targetUrl }}</code>
+            </td>
+          </ng-container>
+
+          <!-- HTTP Code -->
+          <ng-container matColumnDef="httpCode">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Code</th>
+            <td mat-cell *matCellDef="let row">
+              <mat-chip [class.code-301]="row.httpCode === 301"
+                        [class.code-302]="row.httpCode === 302">
+                {{ row.httpCode }}
+              </mat-chip>
+            </td>
+          </ng-container>
+
+          <!-- Is Regex -->
+          <ng-container matColumnDef="isRegex">
+            <th mat-header-cell *matHeaderCellDef>Typ</th>
+            <td mat-cell *matCellDef="let row">
+              <mat-chip *ngIf="row.isRegex" color="accent">
+                <mat-icon>code</mat-icon>
+                Regex
+              </mat-chip>
+              <span *ngIf="!row.isRegex" class="type-exact">Exakt</span>
+            </td>
+          </ng-container>
+
+          <!-- Priority -->
+          <ng-container matColumnDef="priority">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Priorität</th>
+            <td mat-cell *matCellDef="let row">{{ row.priority }}</td>
+          </ng-container>
+
+          <!-- Is Active -->
+          <ng-container matColumnDef="isActive">
+            <th mat-header-cell *matHeaderCellDef>Aktiv</th>
+            <td mat-cell *matCellDef="let row">
+              <mat-slide-toggle [checked]="row.isActive"
+                                (change)="onToggleActive(row)"
+                                [attr.data-testid]="'redirect-toggle-' + row.id">
+              </mat-slide-toggle>
+            </td>
+          </ng-container>
+
+          <!-- Actions -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Aktionen</th>
+            <td mat-cell *matCellDef="let row">
+              <button mat-icon-button (click)="onEdit(row)"
+                      matTooltip="Bearbeiten"
+                      [attr.data-testid]="'redirect-edit-' + row.id">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button color="warn" (click)="onDelete(row)"
+                      matTooltip="Löschen"
+                      [attr.data-testid]="'redirect-delete-' + row.id">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+      </div>
+
+      <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]"
+                     showFirstLastButtons>
+      </mat-paginator>
+    </mat-card-content>
+  </mat-card>
+</div>
+

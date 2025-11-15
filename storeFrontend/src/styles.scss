@@ -1,3 +1,6 @@
+/* Import Angular Material Theme */
+@import '@angular/material/prebuilt-themes/indigo-pink.css';
+
 /* Global Styles for markt.ma */
 * {
   margin: 0;
@@ -200,32 +203,8 @@ button {
   }
 }
 
-/* Utility Classes */
-.text-center {
-  text-align: center;
-}
-
-.mt-20 {
-  margin-top: 20px;
-}
-
-.mb-20 {
-  margin-bottom: 20px;
-}
-
-.flex {
-  display: flex;
-}
-
-.justify-between {
-  justify-content: space-between;
-}
-
-.items-center {
-  align-items: center;
-}
-
-.gap-10 {
-  gap: 10px;
+/* Material Icon Font Family Fix */
+.mat-icon {
+  font-family: 'Material Icons' !important;
 }
 

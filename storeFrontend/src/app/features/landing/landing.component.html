@@ -89,29 +89,37 @@
         <p>Entdecken Sie, wie einfach es ist, Ihren eigenen Online-Shop zu erstellen</p>
       </div>
 
-      <!-- Main Demo Video -->
+      <!-- Main Demo Video mit Platzhalter -->
       <div class="main-video-container">
         <div class="video-wrapper">
-          <video controls class="demo-video">
-            <source src="assets/videos/01-landing-demo.cy.ts.mp4" type="video/mp4">
-            Ihr Browser unterstützt das Video-Tag nicht.
-          </video>
+          <!-- Animierter Platzhalter - funktioniert SOFORT ohne Video-Datei! -->
+          <app-video-placeholder
+            size="large"
+            icon="🎥"
+            title="PLATTFORM DEMO">
+          </app-video-placeholder>
         </div>
         <div class="video-info">
           <h3>🎥 Vollständige Plattform-Demo</h3>
           <p>Sehen Sie alle Features von markt.ma in weniger als 2 Minuten</p>
+          <small style="color: #7f8c8d; margin-top: 0.5rem; display: block;">
+            💡 Klicken Sie auf ▶ um direkt zur Live-Demo zu gelangen
+          </small>
         </div>
       </div>
 
-      <!-- Tutorial Videos -->
+      <!-- Tutorial Videos mit Platzhaltern -->
       <div class="tutorials-section">
         <h3 class="tutorials-title">📚 Schritt-für-Schritt Anleitungen</h3>
         <div class="tutorials-grid">
           <div class="tutorial-card" *ngFor="let tutorial of tutorials">
             <div class="tutorial-video">
-              <video controls preload="metadata">
-                <source [src]="tutorial.videoUrl" type="video/mp4">
-              </video>
+              <!-- Animierte Platzhalter - funktionieren SOFORT! -->
+              <app-video-placeholder
+                size="small"
+                [icon]="tutorial.icon"
+                [title]="tutorial.title">
+              </app-video-placeholder>
               <div class="tutorial-duration">{{ tutorial.duration }}</div>
             </div>
             <div class="tutorial-content">

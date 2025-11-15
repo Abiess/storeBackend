@@ -64,6 +64,47 @@ export const routes: Routes = [
     loadComponent: () => import('./features/settings/theme-customizer.component').then(m => m.ThemeCustomizerComponent),
     canActivate: [authGuard]
   },
+  // SEO Management Routes
+  {
+    path: 'admin/store/:storeId/seo',
+    loadComponent: () => import('./features/settings/seo-settings-page/seo-settings-page.component').then(m => m.SeoSettingsPageComponent),
+    //canActivate: [authGuard]
+  },
+  // Brand Kit Generator Route
+  {
+    path: 'admin/store/:storeId/brand',
+    loadComponent: () => import('./features/settings/brand-onboarding/brand-onboarding.component').then(m => m.BrandOnboardingComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'admin/store/:storeId/seo/redirects',
+    loadComponent: () => import('./features/settings/redirects-page/redirects-page.component').then(m => m.RedirectsPageComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'admin/store/:storeId/seo/structured-data',
+    loadComponent: () => import('./features/settings/structured-data-page/structured-data-page.component').then(m => m.StructuredDataPageComponent),
+    canActivate: [authGuard]
+  },
+  // Coupon Management Routes
+  {
+    path: 'dashboard/:storeId/coupons',
+    loadComponent: () => import('./features/coupons/coupons-list/coupons-list.component').then(m => m.CouponsListComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'dashboard/:storeId/coupons/:id',
+    loadComponent: () => import('./features/coupons/coupon-editor/coupon-editor.component').then(m => m.CouponEditorComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'coupon-demo',
+    loadComponent: () => import('./features/coupons/coupon-demo/coupon-demo.component').then(m => m.CouponDemoComponent)
+  },
+  {
+    path: 'checkout-demo',
+    loadComponent: () => import('./features/coupons/checkout-demo/checkout-demo.component').then(m => m.CheckoutDemoComponent)
+  },
   {
     path: 'storefront/:id',
     loadComponent: () => import('./features/storefront/storefront.component').then(m => m.StorefrontComponent)
