@@ -9,7 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import storebackend.dto.seo.RedirectResolveResponse;
-import storebackend.service.StoreService;
+import storebackend.service.PublicStoreService;
 import storebackend.service.seo.RedirectService;
 
 import java.io.IOException;
@@ -25,7 +25,7 @@ import java.io.IOException;
 public class RedirectFilter extends OncePerRequestFilter {
 
     private final RedirectService redirectService;
-    private final StoreService storeService;
+    private final PublicStoreService publicStoreService;
 
     @Override
     protected void doFilterInternal(
@@ -51,7 +51,7 @@ public class RedirectFilter extends OncePerRequestFilter {
         }
 
         try {
-            var storeConfig = storeService.resolveStoreByHost(host);
+            var storeConfig = publicStoreService.resolveStoreByHost(host);
             if (storeConfig == null) {
                 filterChain.doFilter(request, response);
                 return;
@@ -81,4 +81,3 @@ public class RedirectFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 }
-

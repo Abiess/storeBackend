@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class PublicStoreDTO {
     private Long storeId;
+    private Long domainId;
     private String name;
     private String slug;
     private String primaryDomain;

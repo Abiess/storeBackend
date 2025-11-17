@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import storebackend.dto.seo.RedirectResolveResponse;
-import storebackend.service.StoreService;
+import storebackend.service.PublicStoreService;
 import storebackend.service.seo.RedirectService;
 import storebackend.service.seo.SitemapService;
 
@@ -19,7 +19,7 @@ public class PublicSeoController {
 
     private final RedirectService redirectService;
     private final SitemapService sitemapService;
-    private final StoreService storeService;
+    private final PublicStoreService publicStoreService;
 
     /**
      * GET /public/redirect/resolve?host=myshop.markt.ma&path=/old-product
@@ -32,7 +32,7 @@ public class PublicSeoController {
             @RequestParam String path) {
 
         // Resolve store from host (existing method)
-        var storeConfig = storeService.resolveStoreByHost(host);
+        var storeConfig = publicStoreService.resolveStoreByHost(host);
         if (storeConfig == null) {
             return ResponseEntity.notFound().build();
         }
@@ -56,7 +56,7 @@ public class PublicSeoController {
      */
     @GetMapping(value = "/robots.txt", produces = "text/plain")
     public ResponseEntity<String> robotsTxt(@RequestHeader("Host") String host) {
-        var storeConfig = storeService.resolveStoreByHost(host);
+        var storeConfig = publicStoreService.resolveStoreByHost(host);
         if (storeConfig == null) {
             return ResponseEntity.notFound().build();
         }
@@ -79,7 +79,7 @@ public class PublicSeoController {
      */
     @GetMapping(value = "/sitemap.xml", produces = "application/xml")
     public ResponseEntity<String> sitemapIndex(@RequestHeader("Host") String host) {
-        var storeConfig = storeService.resolveStoreByHost(host);
+        var storeConfig = publicStoreService.resolveStoreByHost(host);
         if (storeConfig == null) {
             return ResponseEntity.notFound().build();
         }
@@ -105,7 +105,7 @@ public class PublicSeoController {
             @RequestHeader("Host") String host,
             @RequestParam(defaultValue = "1") int page) {
 
-        var storeConfig = storeService.resolveStoreByHost(host);
+        var storeConfig = publicStoreService.resolveStoreByHost(host);
         if (storeConfig == null) {
             return ResponseEntity.notFound().build();
         }
@@ -122,4 +122,3 @@ public class PublicSeoController {
                 .body(sitemap);
     }
 }
-

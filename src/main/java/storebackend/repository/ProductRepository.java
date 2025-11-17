@@ -12,5 +12,8 @@ import java.util.Optional;
 public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findByStore(Store store);
     Optional<Product> findByIdAndStore(Long id, Store store);
-}
 
+    // For SEO sitemap generation
+    long countByStoreId(Long storeId);
+    List<Product> findByStoreId(Long storeId);
+}

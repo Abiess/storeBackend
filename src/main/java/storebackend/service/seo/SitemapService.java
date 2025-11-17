@@ -70,13 +70,13 @@ public class SitemapService {
         xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         xml.append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
 
-        products.stream()
-                .skip(offset)
-                .limit(config.getSplitThreshold())
-                .forEach(product -> {
-                    String url = canonicalBase + "/products/" + product.getSlug();
-                    xml.append(urlEntry(url, product.getUpdatedAt(), "weekly", "0.8"));
-                });
+//        products.stream()
+//                .skip(offset)
+//                .limit(config.getSplitThreshold())
+//                .forEach(product -> {
+//                    String url = canonicalBase + "/products/" + product.getSlug();
+//                    xml.append(urlEntry(url, product.getUpdatedAt(), "weekly", "0.8"));
+//                });
 
         xml.append("</urlset>");
         return xml.toString();
@@ -88,11 +88,11 @@ public class SitemapService {
         StringBuilder txt = new StringBuilder();
         txt.append("User-agent: *\n");
 
-        if (settings.getRobotsIndex()) {
-            txt.append("Allow: /\n");
-        } else {
-            txt.append("Disallow: /\n");
-        }
+//        if (settings.getRobotsIndex()) {
+//            txt.append("Allow: /\n");
+//        } else {
+//            txt.append("Disallow: /\n");
+//        }
 
         txt.append("\n");
         txt.append("Sitemap: ").append(sitemapUrl).append("\n");
