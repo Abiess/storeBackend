@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class BrandKitService {
 
-    @Autowired
+    @Autowired(required = false)
     private MinioClient minioClient;
 
     @Autowired
@@ -176,4 +176,3 @@ public class BrandKitService {
         }
     }
 }
-

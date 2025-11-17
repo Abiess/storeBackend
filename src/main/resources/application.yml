@@ -2,19 +2,25 @@ spring:
   application:
     name: storeBackend
 
+  # H2 In-Memory Database (für lokale Entwicklung ohne PostgreSQL)
   datasource:
-    url: jdbc:postgresql://localhost:5432/storedb
-    username: postgres
-    password: postgres
-    driver-class-name: org.postgresql.Driver
+    url: jdbc:h2:mem:storedb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create-drop
     show-sql: true
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+        dialect: org.hibernate.dialect.H2Dialect
         format_sql: true
 
   servlet:
@@ -29,20 +35,27 @@ jwt:
 server:
   port: 8080
 
-# SaaS Multi-Tenant Configuration
-saas:
-  baseDomain: markt.ma
-  platformDomain: app.markt.ma
-  subdomainPattern: "{slug}.markt.ma"
-  domainVerification:
-    txtRecordPrefix: "_marktma-verification"
-    tokenLength: 32
-
-# MinIO S3-Compatible Storage Configuration
+# MinIO Configuration (lokal)
+# Setzen Sie enabled: true wenn Sie MinIO lokal verwenden möchten
 minio:
+  enabled: false
   endpoint: http://localhost:9000
-  accessKey: minioadmin
-  secretKey: minioadmin
-  bucket: markt-media
+  access-key: minioadmin
+  secret-key: minioadmin
+  bucket: store-assets
   region: us-east-1
   secure: false
+
+# Für PostgreSQL auskommentiert:
+#  datasource:
+#    url: jdbc:postgresql://localhost:5432/storedb
+#    username: postgres
+#    password: postgres
+#    driver-class-name: org.postgresql.Driver
+#
+#  jpa:
+#    hibernate:
+#      ddl-auto: update
+#    properties:
+#      hibernate:
+#        dialect: org.hibernate.dialect.PostgreSQLDialect

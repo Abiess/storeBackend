@@ -2,8 +2,8 @@ package storebackend.service;
 
 import io.minio.*;
 import io.minio.http.Method;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import storebackend.config.MinioProperties;
@@ -14,17 +14,32 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class MinioService {
 
     private final MinioClient minioClient;
     private final MinioProperties minioProperties;
 
+    @Autowired
+    public MinioService(@Autowired(required = false) MinioClient minioClient, MinioProperties minioProperties) {
+        this.minioClient = minioClient;
+        this.minioProperties = minioProperties;
+        if (minioClient == null) {
+            log.warn("MinIO client is not available. File upload features will be disabled.");
+        }
+    }
+
+    private void checkMinioAvailable() {
+        if (minioClient == null) {
+            throw new RuntimeException("MinIO is not configured. Please enable MinIO in application.yml");
+        }
+    }
+
     /**
      * Upload file to MinIO
      */
     public String uploadFile(MultipartFile file, Long storeId, String folder) throws IOException {
+        checkMinioAvailable();
         String objectName = generateObjectName(storeId, folder, file.getOriginalFilename());
 
         try (InputStream inputStream = file.getInputStream()) {
@@ -49,6 +64,7 @@ public class MinioService {
      * Delete file from MinIO
      */
     public void deleteFile(String objectName) {
+        checkMinioAvailable();
         try {
             minioClient.removeObject(
                     RemoveObjectArgs.builder()
@@ -67,6 +83,7 @@ public class MinioService {
      * Get presigned URL for file access
      */
     public String getPresignedUrl(String objectName, int expiryMinutes) {
+        checkMinioAvailable();
         try {
             return minioClient.getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()
@@ -86,6 +103,7 @@ public class MinioService {
      * Get file as InputStream
      */
     public InputStream getFile(String objectName) {
+        checkMinioAvailable();
         try {
             return minioClient.getObject(
                     GetObjectArgs.builder()
@@ -113,4 +131,3 @@ public class MinioService {
         return String.format("stores/%d/%s/%s%s", storeId, folder, uuid, extension);
     }
 }
-

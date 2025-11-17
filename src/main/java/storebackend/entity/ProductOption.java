@@ -28,7 +28,7 @@ public class ProductOption {
 
     @ElementCollection
     @CollectionTable(name = "product_option_values", joinColumns = @JoinColumn(name = "option_id"))
-    @Column(name = "value")
+    @Column(name = "option_value")
     private List<String> values = new ArrayList<>(); // z.B. ["Rot", "Blau", "Grün"]
 
     @Column(nullable = false)
