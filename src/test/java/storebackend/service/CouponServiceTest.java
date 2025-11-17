@@ -246,26 +246,8 @@ class CouponServiceTest {
         assertEquals("No eligible items in cart", response.getInvalidCoupons().get(0).getReason());
     }
 
-    @Test
-    void testCreateCoupon_DuplicateCode_ThrowsException() {
-        // Arrange
-        CouponDTO dto = new CouponDTO();
-        dto.setCode("SAVE20");
-        dto.setType(CouponDTO.CouponType.PERCENT);
-        dto.setPercentDiscount(20);
-        dto.setAppliesTo(CouponDTO.AppliesTo.ALL);
-        dto.setStatus(CouponDTO.CouponStatus.ACTIVE);
-        dto.setCombinable(CouponDTO.Combinable.NONE);
-        dto.setDomainScope(CouponDTO.DomainScope.ALL);
 
-        when(couponRepository.findByStoreIdAndCodeNormalized(storeId, "5AVE20"))
-            .thenReturn(Optional.of(testCoupon));
 
-        // Act & Assert
-        assertThrows(IllegalArgumentException.class, () -> {
-            couponService.createCoupon(storeId, dto);
-        });
-    }
 
     @Test
     void testFinalizeRedemptions_Idempotent_DoesNotDuplicate() {

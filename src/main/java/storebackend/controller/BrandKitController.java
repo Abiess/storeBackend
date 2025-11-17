@@ -48,30 +48,4 @@ public class BrandKitController {
         return ResponseEntity.ok(paletteTokens);
     }
 }
-package storebackend.dto;
-
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import lombok.Data;
-
-import java.util.List;
-
-@Data
-public class BrandGenerateRequest {
-    @NotBlank
-    private String shopName;
-
-    private String slogan;
-
-    private String industry;
-
-    @NotNull
-    private String style; // minimal, playful, geometric, organic
-
-    private List<String> preferredColors; // hex codes
-
-    private List<String> forbiddenColors; // hex codes
-
-    private String salt; // for regeneration
-}
 

@@ -9,13 +9,7 @@ import storebackend.repository.SitemapConfigRepository;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
 
-/**
- * Service for generating XML sitemaps per store/domain.
- * Supports pagination and multiple content types.
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -25,9 +19,6 @@ public class SitemapService {
     private final ProductRepository productRepository;
     private final SeoSettingsService seoSettingsService;
 
-    /**
-     * Get or create sitemap configuration.
-     */
     public SitemapConfig getConfig(Long storeId, Long domainId) {
         if (domainId != null) {
             return sitemapConfigRepository.findByStoreIdAndDomainId(storeId, domainId)
@@ -38,9 +29,6 @@ public class SitemapService {
                 .orElse(createDefaultConfig(storeId));
     }
 
-    /**
-     * Generate sitemap index XML.
-     */
     public String generateSitemapIndex(Long storeId, Long domainId, String baseUrl) {
         SitemapConfig config = getConfig(storeId, domainId);
         StringBuilder xml = new StringBuilder();
@@ -72,15 +60,11 @@ public class SitemapService {
         return xml.toString();
     }
 
-    /**
-     * Generate product sitemap page.
-     */
     public String generateProductSitemap(Long storeId, int page, String canonicalBase) {
         SitemapConfig config = getConfig(storeId, null);
         int offset = (page - 1) * config.getSplitThreshold();
 
-        // Fetch products with pagination
-        var products = productRepository.findByStoreId(storeId); // Add pagination in real implementation
+        var products = productRepository.findByStoreId(storeId);
 
         StringBuilder xml = new StringBuilder();
         xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
@@ -98,9 +82,6 @@ public class SitemapService {
         return xml.toString();
     }
 
-    /**
-     * Generate robots.txt based on SEO settings.
-     */
     public String generateRobotsTxt(Long storeId, Long domainId, String sitemapUrl) {
         var settings = seoSettingsService.getEffectiveSettings(storeId, domainId);
 
@@ -160,202 +141,6 @@ public class SitemapService {
                    .replace(">", "&gt;")
                    .replace("\"", "&quot;")
                    .replace("'", "&apos;");
-    }
-}
-package storebackend.service.seo;
-
-import com.github.mustachejava.DefaultMustacheFactory;
-import com.github.mustachejava.Mustache;
-import com.github.mustachejava.MustacheFactory;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import storebackend.dto.seo.StructuredDataTemplateDTO;
-import storebackend.entity.StructuredDataTemplate;
-import storebackend.repository.StructuredDataTemplateRepository;
-
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-/**
- * Service for managing JSON-LD structured data templates.
- * Uses Mustache for variable substitution (e.g., {{product.title}}).
- */
-@Service
-@RequiredArgsConstructor
-@Slf4j
-public class StructuredDataService {
-
-    private final StructuredDataTemplateRepository templateRepository;
-    private final MustacheFactory mustacheFactory = new DefaultMustacheFactory();
-
-    /**
-     * Get all templates for a store.
-     */
-    public List<StructuredDataTemplateDTO> getTemplates(Long storeId) {
-        return templateRepository.findByStoreIdOrderByTypeAsc(storeId).stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Get active templates only.
-     */
-    public List<StructuredDataTemplateDTO> getActiveTemplates(Long storeId) {
-        return templateRepository.findByStoreIdAndIsActiveTrue(storeId).stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Create or update template.
-     */
-    @Transactional
-    public StructuredDataTemplateDTO saveTemplate(StructuredDataTemplateDTO dto) {
-        StructuredDataTemplate entity;
-
-        if (dto.getId() != null) {
-            entity = templateRepository.findById(dto.getId())
-                    .orElseThrow(() -> new IllegalArgumentException("Template not found"));
-        } else {
-            entity = new StructuredDataTemplate();
-        }
-
-        entity.setStoreId(dto.getStoreId());
-        entity.setType(dto.getType());
-        entity.setTemplateJson(dto.getTemplateJson());
-        entity.setIsActive(dto.getIsActive());
-
-        entity = templateRepository.save(entity);
-        return mapToDTO(entity);
-    }
-
-    /**
-     * Delete template.
-     */
-    @Transactional
-    public void deleteTemplate(Long id) {
-        templateRepository.deleteById(id);
-    }
-
-    /**
-     * Render template with context variables using Mustache.
-     * Example: {{product.title}} -> "Cool Hoodie"
-     */
-    public String render(String templateJson, Map<String, Object> context) {
-        try {
-            Mustache mustache = mustacheFactory.compile(new StringReader(templateJson), "template");
-            StringWriter writer = new StringWriter();
-            mustache.execute(writer, context);
-            return writer.toString();
-        } catch (Exception e) {
-            log.error("Failed to render structured data template", e);
-            throw new RuntimeException("Template rendering failed: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Create default templates for a new store.
-     */
-    @Transactional
-    public void createDefaultTemplates(Long storeId) {
-        // Product template
-        templateRepository.save(StructuredDataTemplate.builder()
-                .storeId(storeId)
-                .type(StructuredDataTemplate.TemplateType.PRODUCT)
-                .templateJson(getDefaultProductTemplate())
-                .isActive(true)
-                .build());
-
-        // Organization template
-        templateRepository.save(StructuredDataTemplate.builder()
-                .storeId(storeId)
-                .type(StructuredDataTemplate.TemplateType.ORGANIZATION)
-                .templateJson(getDefaultOrganizationTemplate())
-                .isActive(true)
-                .build());
-
-        // Breadcrumb template
-        templateRepository.save(StructuredDataTemplate.builder()
-                .storeId(storeId)
-                .type(StructuredDataTemplate.TemplateType.BREADCRUMB)
-                .templateJson(getDefaultBreadcrumbTemplate())
-                .isActive(true)
-                .build());
-    }
-
-    private String getDefaultProductTemplate() {
-        return """
-        {
-          "@context": "https://schema.org",
-          "@type": "Product",
-          "name": "{{product.title}}",
-          "description": "{{product.description}}",
-          "image": ["{{product.imageUrl}}"],
-          "sku": "{{product.sku}}",
-          "offers": {
-            "@type": "Offer",
-            "priceCurrency": "{{currency}}",
-            "price": "{{price}}",
-            "availability": "https://schema.org/{{availability}}",
-            "url": "{{absoluteUrl}}"
-          },
-          "brand": {
-            "@type": "Brand",
-            "name": "{{store.siteName}}"
-          }
-        }
-        """;
-    }
-
-    private String getDefaultOrganizationTemplate() {
-        return """
-        {
-          "@context": "https://schema.org",
-          "@type": "Organization",
-          "name": "{{store.siteName}}",
-          "url": "{{store.url}}",
-          "logo": "{{store.logoUrl}}",
-          "sameAs": [
-            "{{social.facebook}}",
-            "{{social.instagram}}",
-            "{{social.twitter}}"
-          ]
-        }
-        """;
-    }
-
-    private String getDefaultBreadcrumbTemplate() {
-        return """
-        {
-          "@context": "https://schema.org",
-          "@type": "BreadcrumbList",
-          "itemListElement": [
-            {{#breadcrumbs}}
-            {
-              "@type": "ListItem",
-              "position": {{position}},
-              "name": "{{name}}",
-              "item": "{{url}}"
-            }{{^last}},{{/last}}
-            {{/breadcrumbs}}
-          ]
-        }
-        """;
-    }
-
-    private StructuredDataTemplateDTO mapToDTO(StructuredDataTemplate entity) {
-        return StructuredDataTemplateDTO.builder()
-                .id(entity.getId())
-                .storeId(entity.getStoreId())
-                .type(entity.getType())
-                .templateJson(entity.getTemplateJson())
-                .isActive(entity.getIsActive())
-                .build();
     }
 }
 

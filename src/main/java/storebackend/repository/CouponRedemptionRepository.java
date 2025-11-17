@@ -21,27 +21,4 @@ public interface CouponRedemptionRepository extends JpaRepository<CouponRedempti
     @Query("SELECT SUM(r.appliedCents) FROM CouponRedemption r WHERE r.storeId = :storeId AND r.couponId = :couponId")
     Long sumAppliedCentsByCouponId(Long storeId, Long couponId);
 }
-package storebackend.repository;
-
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.stereotype.Repository;
-import storebackend.entity.Coupon;
-
-import java.util.List;
-import java.util.Optional;
-
-@Repository
-public interface CouponRepository extends JpaRepository<Coupon, Long>, JpaSpecificationExecutor<Coupon> {
-
-    List<Coupon> findByStoreIdAndStatus(Long storeId, Coupon.CouponStatus status);
-
-    Optional<Coupon> findByStoreIdAndCodeNormalized(Long storeId, String codeNormalized);
-
-    Optional<Coupon> findByStoreIdAndId(Long storeId, Long id);
-
-    List<Coupon> findByStoreIdAndAutoApplyTrue(Long storeId);
-
-    long countByStoreId(Long storeId);
-}
 
