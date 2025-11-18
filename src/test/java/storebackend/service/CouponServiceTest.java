@@ -42,7 +42,7 @@ class CouponServiceTest {
         testCoupon.setId(1L);
         testCoupon.setStoreId(storeId);
         testCoupon.setCode("SAVE20");
-        testCoupon.setCodeNormalized("5AVE20");
+        testCoupon.setCodeNormalized("SAVE20");
         testCoupon.setType(Coupon.CouponType.PERCENT);
         testCoupon.setPercentDiscount(20);
         testCoupon.setCurrency("USD");
@@ -73,7 +73,7 @@ class CouponServiceTest {
         request.setCart(testCart);
         request.setAppliedCodes(List.of("SAVE20"));
 
-        when(couponRepository.findByStoreIdAndCodeNormalized(storeId, "5AVE20"))
+        when(couponRepository.findByStoreIdAndCodeNormalized(storeId, "SAVE20"))
             .thenReturn(Optional.of(testCoupon));
         when(couponRepository.findByStoreIdAndAutoApplyTrue(storeId))
             .thenReturn(List.of());
@@ -103,7 +103,7 @@ class CouponServiceTest {
         request.setCart(testCart);
         request.setAppliedCodes(List.of("SAVE20"));
 
-        when(couponRepository.findByStoreIdAndCodeNormalized(storeId, "5AVE20"))
+        when(couponRepository.findByStoreIdAndCodeNormalized(storeId, "SAVE20"))
             .thenReturn(Optional.of(testCoupon));
         when(couponRepository.findByStoreIdAndAutoApplyTrue(storeId))
             .thenReturn(List.of());
@@ -129,7 +129,7 @@ class CouponServiceTest {
         request.setCart(testCart);
         request.setAppliedCodes(List.of("SAVE20"));
 
-        when(couponRepository.findByStoreIdAndCodeNormalized(storeId, "5AVE20"))
+        when(couponRepository.findByStoreIdAndCodeNormalized(storeId, "SAVE20"))
             .thenReturn(Optional.of(testCoupon));
         when(couponRepository.findByStoreIdAndAutoApplyTrue(storeId))
             .thenReturn(List.of());
@@ -154,7 +154,7 @@ class CouponServiceTest {
         request.setCart(testCart);
         request.setAppliedCodes(List.of("SAVE20"));
 
-        when(couponRepository.findByStoreIdAndCodeNormalized(storeId, "5AVE20"))
+        when(couponRepository.findByStoreIdAndCodeNormalized(storeId, "SAVE20"))
             .thenReturn(Optional.of(testCoupon));
         when(couponRepository.findByStoreIdAndAutoApplyTrue(storeId))
             .thenReturn(List.of());
@@ -178,7 +178,7 @@ class CouponServiceTest {
         request.setCart(testCart);
         request.setAppliedCodes(List.of("SAVE20"));
 
-        when(couponRepository.findByStoreIdAndCodeNormalized(storeId, "5AVE20"))
+        when(couponRepository.findByStoreIdAndCodeNormalized(storeId, "SAVE20"))
             .thenReturn(Optional.of(testCoupon));
         when(couponRepository.findByStoreIdAndAutoApplyTrue(storeId))
             .thenReturn(List.of());
@@ -206,7 +206,7 @@ class CouponServiceTest {
         request.setCart(testCart);
         request.setAppliedCodes(List.of("SAVE20"));
 
-        when(couponRepository.findByStoreIdAndCodeNormalized(storeId, "5AVE20"))
+        when(couponRepository.findByStoreIdAndCodeNormalized(storeId, "SAVE20"))
             .thenReturn(Optional.of(testCoupon));
         when(couponRepository.findByStoreIdAndAutoApplyTrue(storeId))
             .thenReturn(List.of());
@@ -232,7 +232,7 @@ class CouponServiceTest {
         request.setCart(testCart);
         request.setAppliedCodes(List.of("SAVE20"));
 
-        when(couponRepository.findByStoreIdAndCodeNormalized(storeId, "5AVE20"))
+        when(couponRepository.findByStoreIdAndCodeNormalized(storeId, "SAVE20"))
             .thenReturn(Optional.of(testCoupon));
         when(couponRepository.findByStoreIdAndAutoApplyTrue(storeId))
             .thenReturn(List.of());
@@ -269,4 +269,3 @@ class CouponServiceTest {
         verify(couponRepository, never()).save(any());
     }
 }
-
