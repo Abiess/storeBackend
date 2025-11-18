@@ -9,7 +9,7 @@ import storebackend.dto.ValidateCouponsResponse;
 import storebackend.service.CouponService;
 
 @RestController
-@RequestMapping("/public/stores/{storeId}")
+@RequestMapping("/api/public/stores/{storeId}")
 @RequiredArgsConstructor
 @Slf4j
 public class PublicCouponController {
@@ -41,4 +41,3 @@ public class PublicCouponController {
         return ResponseEntity.ok().build();
     }
 }
-

@@ -12,7 +12,7 @@ import storebackend.service.StoreService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/me/stores")
+@RequestMapping("/api/me/stores")
 public class StoreController {
 
     private final StoreService storeService;
@@ -33,4 +33,3 @@ public class StoreController {
         return ResponseEntity.ok(storeService.createStore(request, user));
     }
 }
-

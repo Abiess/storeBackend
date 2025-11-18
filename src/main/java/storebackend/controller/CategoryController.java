@@ -11,6 +11,7 @@ import storebackend.entity.User;
 import storebackend.repository.StoreRepository;
 import storebackend.repository.UserRepository;
 import storebackend.service.CategoryService;
+import storebackend.service.StoreService;
 
 import java.util.List;
 
@@ -19,6 +20,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CategoryController {
     private final CategoryService categoryService;
+    private final StoreService storeService;
     private final StoreRepository storeRepository;
     private final UserRepository userRepository;
 
@@ -46,9 +48,9 @@ public class CategoryController {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        Store store = storeRepository.findById(storeId)
-                .orElseThrow(() -> new RuntimeException("Store not found"));
+        Store store = storeService.getStoreById(storeId);
 
+        // Prüfe Berechtigung direkt über Owner-ID
         if (!store.getOwner().getId().equals(user.getId())) {
             return ResponseEntity.status(403).build();
         }
@@ -67,8 +69,7 @@ public class CategoryController {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        Store store = storeRepository.findById(storeId)
-                .orElseThrow(() -> new RuntimeException("Store not found"));
+        Store store = storeService.getStoreById(storeId);
 
         if (!store.getOwner().getId().equals(user.getId())) {
             return ResponseEntity.status(403).build();
@@ -86,8 +87,7 @@ public class CategoryController {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        Store store = storeRepository.findById(storeId)
-                .orElseThrow(() -> new RuntimeException("Store not found"));
+        Store store = storeService.getStoreById(storeId);
 
         if (!store.getOwner().getId().equals(user.getId())) {
             return ResponseEntity.status(403).build();
@@ -97,4 +97,3 @@ public class CategoryController {
         return ResponseEntity.noContent().build();
     }
 }
-

@@ -94,7 +94,7 @@ public class StoreService {
     }
 
     public Store getStoreById(Long storeId) {
-        return storeRepository.findById(storeId)
+        return storeRepository.findByIdWithOwner(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
     }
 

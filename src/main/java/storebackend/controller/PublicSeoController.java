@@ -13,7 +13,7 @@ import storebackend.service.seo.SitemapService;
  * No authentication required - host-based resolution.
  */
 @RestController
-@RequestMapping("/public")
+@RequestMapping("/api/public")
 @RequiredArgsConstructor
 public class PublicSeoController {
 
