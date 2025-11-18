@@ -2,23 +2,30 @@ package storebackend.config;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import storebackend.entity.Plan;
 import storebackend.repository.PlanRepository;
+
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class DataInitializer implements CommandLineRunner {
+public class DataInitializer {
 
     private final PlanRepository planRepository;
 
-    @Override
-    public void run(String... args) throws Exception {
+    @EventListener(ApplicationReadyEvent.class)
+    public void initializeData() {
+        log.info("Starting data initialization...");
         initializePlans();
+        log.info("Data initialization completed - Application is ready!");
     }
 
+    @Transactional
     private void initializePlans() {
         if (planRepository.count() > 0) {
             log.info("Plans already initialized");
@@ -34,7 +41,6 @@ public class DataInitializer implements CommandLineRunner {
         freePlan.setMaxStorageMb(100);
         freePlan.setMaxProducts(50);
         freePlan.setMaxImageCount(100);
-        planRepository.save(freePlan);
 
         // PRO Plan
         Plan proPlan = new Plan();
@@ -45,7 +51,6 @@ public class DataInitializer implements CommandLineRunner {
         proPlan.setMaxStorageMb(10000);
         proPlan.setMaxProducts(1000);
         proPlan.setMaxImageCount(5000);
-        planRepository.save(proPlan);
 
         // ENTERPRISE Plan
         Plan enterprisePlan = new Plan();
@@ -56,7 +61,9 @@ public class DataInitializer implements CommandLineRunner {
         enterprisePlan.setMaxStorageMb(100000);
         enterprisePlan.setMaxProducts(-1); // Unlimited
         enterprisePlan.setMaxImageCount(-1); // Unlimited
-        planRepository.save(enterprisePlan);
+
+        // Batch-Insert für bessere Performance
+        planRepository.saveAll(List.of(freePlan, proPlan, enterprisePlan));
 
         log.info("Plans initialized successfully: FREE, PRO, ENTERPRISE");
     }

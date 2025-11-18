@@ -8,6 +8,11 @@ spring:
     driver-class-name: org.h2.Driver
     username: sa
     password:
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
+      connection-timeout: 20000
+      idle-timeout: 300000
 
   h2:
     console:
@@ -17,11 +22,15 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
-        format_sql: true
+        format_sql: false
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
 
   servlet:
     multipart:
@@ -34,6 +43,10 @@ jwt:
 
 server:
   port: 8080
+  tomcat:
+    threads:
+      max: 50
+      min-spare: 10
 
 # MinIO Configuration (lokal)
 # Setzen Sie enabled: true wenn Sie MinIO lokal verwenden möchten

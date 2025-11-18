@@ -18,20 +18,20 @@ if %ERRORLEVEL% NEQ 0 (
 
 REM Zeige Maven Version
 echo [INFO] Maven Version:
-mvn --version
+call mvn --version
 echo.
 
-REM Starte das Backend
-echo [INFO] Starte Backend auf http://localhost:8081
+REM Starte das Backend mit optimierten JVM-Parametern
+echo [INFO] Starte Backend auf http://localhost:8080
 echo [INFO] MinIO ist DEAKTIVIERT (nur lokale Entwicklung)
 echo [INFO] H2 Datenbank im Speicher
+echo [INFO] Optimiert fuer schnellen Start
 echo.
 echo [TIPP] Druecken Sie Strg+C um das Backend zu stoppen
 echo.
 echo ========================================
 echo.
 
-mvn spring-boot:run
+call mvn spring-boot:run -Dspring-boot.run.jvmArguments="-Xms256m -Xmx512m -XX:TieredStopAtLevel=1 -noverify"
 
 pause
-
