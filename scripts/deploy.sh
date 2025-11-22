@@ -29,13 +29,26 @@ sudo -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname = 'storedb'" 
 echo "✅ Database ready"
 
 # Neue JAR Datei verschieben
-if [ -f /tmp/app.jar ]; then
-    echo "📦 Installing new version..."
-    sudo mv /tmp/app.jar /opt/storebackend/app.jar
-    sudo chown storebackend:storebackend /opt/storebackend/app.jar
-    sudo chmod 755 /opt/storebackend/app.jar
-else
-    echo -e "${RED}❌ No app.jar found in /tmp/${NC}"
+# Find the JAR file (could be app.jar or storeBackend-*.jar)
+JAR_FILE=$(find /tmp -maxdepth 1 -name "*.jar" -type f | head -n 1)
+
+if [ -z "$JAR_FILE" ]; then
+    echo -e "${RED}❌ No JAR file found in /tmp/${NC}"
+    echo "Available files in /tmp:"
+    ls -la /tmp/ | grep -E "\.jar|app|store"
+    exit 1
+fi
+
+echo "📦 Installing new version..."
+echo "   Source: $JAR_FILE"
+echo "   Target: /opt/storebackend/app.jar"
+
+sudo mv "$JAR_FILE" /opt/storebackend/app.jar
+sudo chown storebackend:storebackend /opt/storebackend/app.jar
+sudo chmod 755 /opt/storebackend/app.jar
+
+if [ ! -f /opt/storebackend/app.jar ]; then
+    echo -e "${RED}❌ Failed to move JAR to /opt/storebackend/app.jar${NC}"
     exit 1
 fi
 

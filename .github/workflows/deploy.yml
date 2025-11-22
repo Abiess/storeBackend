@@ -27,13 +27,18 @@ jobs:
           chmod +x ./mvnw
           ./mvnw clean package -DskipTests
 
-      - name: 📦 Verify JAR exists
+      - name: 📦 Prepare JAR for Deployment
         run: |
-          if [ ! -f target/*.jar ]; then
-            echo "❌ JAR file not found!"
+          # Find the built JAR file and rename it to app.jar for consistency
+          JAR_FILE=$(find target -name "*.jar" -type f | head -n 1)
+          if [ -z "$JAR_FILE" ]; then
+            echo "❌ No JAR file found in target directory!"
+            ls -la target/
             exit 1
           fi
-          ls -lh target/*.jar
+          echo "Found JAR: $JAR_FILE"
+          cp "$JAR_FILE" target/app.jar
+          ls -lh target/app.jar
 
       - name: 🚀 Deploy to VPS
         uses: appleboy/scp-action@master
@@ -42,9 +47,8 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          source: "target/*.jar"
+          source: "target/app.jar"
           target: "/tmp/"
-          strip_components: 1
 
       - name: 📋 Copy Deploy Script
         uses: appleboy/scp-action@master
@@ -56,6 +60,51 @@ jobs:
           source: "scripts/deploy.sh"
           target: "/opt/storebackend/"
           strip_components: 1
+
+      - name: ✅ Verify JAR Transfer
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            echo "🔍 Checking for JAR file in /tmp..."
+            if [ -f /tmp/app.jar ]; then
+              echo "✅ JAR file found!"
+              ls -lh /tmp/app.jar
+            else
+              echo "❌ JAR file not found in /tmp"
+              echo "Files in /tmp:"
+              ls -lh /tmp/ | head -20
+              exit 1
+            fi
+
+      - name: 🔧 Setup VPS Environment
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            echo "🔧 Preparing VPS environment..."
+
+            # Create directories if they don't exist
+            sudo mkdir -p /opt/storebackend/backups
+            sudo mkdir -p /opt/storebackend/logs
+
+            # Create storebackend user if it doesn't exist
+            if ! id -u storebackend > /dev/null 2>&1; then
+              echo "Creating storebackend user..."
+              sudo useradd -r -s /bin/bash storebackend
+            fi
+
+            # Set permissions
+            sudo chown -R storebackend:storebackend /opt/storebackend
+            sudo chmod 755 /opt/storebackend
+
+            echo "✅ VPS environment ready"
 
       - name: 🔄 Execute Deployment
         uses: appleboy/ssh-action@master
@@ -72,10 +121,10 @@ jobs:
             # Environment Variables exportieren
             export DB_PASSWORD="${DB_PASSWORD}"
             export JWT_SECRET="${JWT_SECRET}"
-            
+
             # Deploy Script ausführbar machen
             chmod +x /opt/storebackend/deploy.sh
-            
+
             # Deployment starten
             cd /opt/storebackend
             ./deploy.sh
