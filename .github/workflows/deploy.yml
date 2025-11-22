@@ -63,6 +63,8 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           source: "target/app.jar"
           target: "/tmp/"
+          # remove the leading "target/" folder on extraction → /tmp/app.jar
+          strip_components: 1
 
       - name: 📋 Copy Deploy Script to VPS (/tmp)
         uses: appleboy/scp-action@master
@@ -73,6 +75,8 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           source: "scripts/deploy.sh"
           target: "/tmp/"
+          # remove the leading "scripts/" folder → /tmp/deploy.sh
+          strip_components: 1
 
       - name: ✅ Verify JAR Transfer
         uses: appleboy/ssh-action@master
@@ -131,7 +135,7 @@ jobs:
             # Ensure deploy.sh is executable
             if [ -f /opt/storebackend/deploy.sh ]; then
               sudo chmod +x /opt/storebackend/deploy.sh
-            else:
+            else
               echo "⚠️  /opt/storebackend/deploy.sh not found!"
             fi
 
