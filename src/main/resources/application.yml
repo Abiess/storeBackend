@@ -2,7 +2,7 @@ spring:
   application:
     name: storeBackend
 
-  # H2 In-Memory Database (für lokale Entwicklung ohne PostgreSQL)
+  # H2 In-Memory Database (lokale Entwicklung ohne PostgreSQL)
   datasource:
     url: jdbc:h2:mem:storedb
     driver-class-name: org.h2.Driver
@@ -37,10 +37,6 @@ spring:
       max-file-size: 10MB
       max-request-size: 10MB
 
-jwt:
-  secret: mySecretKeyForJWTTokenGenerationThatIsAtLeast256BitsLongForHS256Algorithm
-  expiration: 86400000
-
 server:
   port: 8080
   tomcat:
@@ -48,8 +44,12 @@ server:
       max: 50
       min-spare: 10
 
-# MinIO Configuration (lokal)
-# Setzen Sie enabled: true wenn Sie MinIO lokal verwenden möchten
+jwt:
+  # nur lokal hardcodiert – in production bitte über ENV (siehe unten)
+  secret: mySecretKeyForJWTTokenGenerationThatIsAtLeast256BitsLongForHS256Algorithm
+  expiration: 86400000
+
+# MinIO lokal standardmäßig deaktiviert
 minio:
   enabled: false
   endpoint: http://localhost:9000
@@ -58,17 +58,3 @@ minio:
   bucket: store-assets
   region: us-east-1
   secure: false
-
-# Für PostgreSQL auskommentiert:
-#  datasource:
-#    url: jdbc:postgresql://localhost:5432/storedb
-#    username: postgres
-#    password: postgres
-#    driver-class-name: org.postgresql.Driver
-#
-#  jpa:
-#    hibernate:
-#      ddl-auto: update
-#    properties:
-#      hibernate:
-#        dialect: org.hibernate.dialect.PostgreSQLDialect

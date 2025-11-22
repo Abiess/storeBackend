@@ -12,16 +12,19 @@ TMP_JAR="/tmp/app.jar"
 LOG_DIR="/var/log/storebackend"
 LOG_FILE="$LOG_DIR/app.log"
 
+# systemd EnvironmentFile
 ENV_FILE="/etc/storebackend.env"
+
+# Healthcheck-URL (Spring Boot Actuator)
 HEALTH_URL="http://localhost:8080/actuator/health"
 
 MAX_RETRIES=30
 SLEEP_SECONDS=2
 
-echo "================ Store Backend Deployment ================"
+echo "================ Store Backend Deployment (production) ================"
 echo "🚀 Starting deployment..."
 
-echo "⏹️  Stopping old application..."
+echo "⏹️  Stopping old application (systemd service: $SERVICE_NAME)..."
 if sudo systemctl list-unit-files | grep -q "^${SERVICE_NAME}.service"; then
   sudo systemctl stop "$SERVICE_NAME" || echo "⚠️  Service not running (ok)"
 else
@@ -38,10 +41,6 @@ if [ -f "$JAR_PATH" ]; then
 else
   echo "   No existing $JAR_PATH found. Skipping backup."
 fi
-
-echo "🗄️  Setting up database..."
-# (hier könntest du ggf. noch DB-Migrations-Tools aufrufen)
-echo "✅ Database ready"
 
 echo "📦 Checking for JAR in /tmp..."
 if [ ! -f "$TMP_JAR" ]; then
@@ -66,7 +65,8 @@ echo "🧾 Ensuring log directory exists..."
 sudo mkdir -p "$LOG_DIR"
 sudo chown -R "$APP_USER:$APP_USER" "$LOG_DIR"
 
-echo "🔧 Configuring environment..."
+echo "🔧 Configuring environment for PRODUCTION..."
+
 if [ -z "${DB_PASSWORD:-}" ] || [ -z "${JWT_SECRET:-}" ]; then
   echo "⚠️  DB_PASSWORD or JWT_SECRET is not set in the environment."
   echo "    The application may fail to connect to the DB or validate tokens."
@@ -74,20 +74,41 @@ fi
 
 echo "🔐 Writing environment file for systemd: $ENV_FILE"
 sudo bash -c "cat > '$ENV_FILE' <<EOF
+# JVM
 JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC
 
+# Spring profile
 SPRING_PROFILES_ACTIVE=production
+
+# PostgreSQL (Production)
 SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/storedb
 SPRING_DATASOURCE_USERNAME=postgres
 SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-}
-JWT_SECRET=${JWT_SECRET:-}
+SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+
+# JWT
+JWT_SECRET=${JWT_SECRET:-change-me}
+# optional: falls du mal den Expiry per Env steuern willst
+# JWT_EXPIRATION=86400000
+
+# Server / Port
 SERVER_PORT=8080
 
+# Logging
 LOGGING_LEVEL_ROOT=INFO
 LOGGING_FILE_NAME=$LOG_FILE
+
+# MinIO (Production) – Werte bei Bedarf in CI/Server-Env überschreiben
+MINIO_ENABLED=true
+MINIO_ENDPOINT=http://localhost:9000
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin
+MINIO_BUCKET=store-assets
+MINIO_REGION=us-east-1
+MINIO_SECURE=false
 EOF"
 
-sudo chown storebackend:storebackend "$ENV_FILE"
+sudo chown "$APP_USER:$APP_USER" "$ENV_FILE"
 sudo chmod 600 "$ENV_FILE"
 echo "✅ Environment file written."
 
