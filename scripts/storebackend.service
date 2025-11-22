@@ -9,21 +9,10 @@ User=storebackend
 Group=storebackend
 WorkingDirectory=/opt/storebackend
 
-# Java Options
-Environment="JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC"
+# Load all app config + secrets from this file (written by deploy.sh)
+EnvironmentFile=/etc/storebackend.env
 
-# Spring Boot Configuration
-Environment="SPRING_PROFILES_ACTIVE=production"
-Environment="SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/storedb"
-Environment="SPRING_DATASOURCE_USERNAME=postgres"
-Environment="SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}"
-Environment="JWT_SECRET=${JWT_SECRET}"
-Environment="SERVER_PORT=8080"
-
-# Security
-Environment="LOGGING_LEVEL_ROOT=INFO"
-Environment="LOGGING_FILE_NAME=/var/log/storebackend/app.log"
-
+# Start the Spring Boot JAR
 ExecStart=/usr/bin/java $JAVA_OPTS -jar /opt/storebackend/app.jar
 
 # Restart on failure
@@ -41,4 +30,3 @@ LimitNPROC=4096
 
 [Install]
 WantedBy=multi-user.target
-
