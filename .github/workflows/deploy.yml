@@ -40,18 +40,13 @@ jobs:
           fi
 
           JAR_SIZE=$(stat --format=%s "$JAR_FILE" 2>/dev/null || stat -f%z "$JAR_FILE" 2>/dev/null)
-          echo "Found JAR: $(basename $JAR_FILE) ($(numfmt --to=iec $JAR_SIZE 2>/dev/null || du -h "$JAR_FILE" | cut -f1))"
+          echo "Found JAR: $(basename "$JAR_FILE") ($(numfmt --to=iec $JAR_SIZE 2>/dev/null || du -h "$JAR_FILE" | cut -f1))"
 
-          # Create app.jar as a copy
-          cp "$JAR_FILE" target/app.jar
+          # Create app.jar as a copy (stable name, but we will also handle dynamic names)
+          cp "$JAR_FILE" target/app.jar || true
 
-          if [ ! -f target/app.jar ]; then
-            echo "❌ Failed to create target/app.jar"
-            exit 1
-          fi
-
-          echo "✅ Created target/app.jar for deployment"
-          ls -lh target/app.jar
+          echo "Contents of target after build:"
+          ls -lah target/
 
       - name: 🚀 Deploy JAR to VPS (/tmp)
         uses: appleboy/scp-action@master
@@ -60,7 +55,8 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          source: "target/app.jar"
+          # Send all relevant jars to be safe
+          source: "target/*.jar"
           target: "/tmp/"
 
       - name: 📋 Copy Deploy Script to VPS (/tmp)
@@ -83,20 +79,21 @@ jobs:
           script: |
             echo "🔍 Checking for JAR file in /tmp..."
 
-            # Check for app.jar first
+            # Prefer app.jar if it exists
             if [ -f /tmp/app.jar ]; then
               APP_SIZE=$(stat --format=%s /tmp/app.jar 2>/dev/null || stat -f%z /tmp/app.jar 2>/dev/null)
               echo "✅ app.jar found! Size: $(numfmt --to=iec $APP_SIZE 2>/dev/null || du -h /tmp/app.jar | cut -f1)"
               exit 0
             fi
 
-            # Check for any jar file
+            # Otherwise, accept any JAR file
             JAR_FILE=$(find /tmp -maxdepth 1 -name "*.jar" -type f 2>/dev/null | head -n 1)
             if [ -n "$JAR_FILE" ]; then
-              echo "⚠️  app.jar not found, but found: $(basename $JAR_FILE)"
-              echo "📁 Files in /tmp:"
+              JAR_SIZE=$(stat --format=%s "$JAR_FILE" 2>/dev/null || stat -f%z "$JAR_FILE" 2>/dev/null)
+              echo "✅ Found JAR: $(basename "$JAR_FILE") (Size: $(numfmt --to=iec $JAR_SIZE 2>/dev/null || du -h "$JAR_FILE" | cut -f1))"
+              echo "📁 All JAR files in /tmp:"
               find /tmp -maxdepth 1 -name "*.jar" -type f 2>/dev/null
-              exit 1
+              exit 0
             fi
 
             echo "❌ No JAR file found in /tmp!"
@@ -120,6 +117,77 @@ jobs:
             sudo mkdir -p /opt/storebackend/logs
 
             # Create storebackend user if it doesn't exist
-            if ! id -u storebackend > /dev/null 2>&1; then
+            if ! id -u storebackend > 4 /dev/null 2>&1; then
               echo "Creating storebackend user..."
-              sudo useradd -r -s /bin/bash
+              sudo useradd -r -s /bin/bash storebackend
+            fi
+
+            # Move deploy.sh to /opt/storebackend if present
+            if [ -f /tmp/deploy.sh ]; then
+              echo "Moving deploy.sh to /opt/storebackend..."
+              sudo mv /tmp/deploy.sh /opt/storebackend/deploy.sh
+            else
+              echo "⚠️  /tmp/deploy.sh not found!"
+            fi
+
+            # Find any JAR in /tmp and move it as app.jar
+            JAR_FILE=$(find /tmp -maxdepth 1 -name "*.jar" -type f 2>/dev/null | head -n 1)
+            if [ -n "$JAR_FILE" ]; then
+              echo "Moving $(basename "$JAR_FILE") to /opt/storebackend/app.jar..."
+              sudo mv "$JAR_FILE" /opt/storebackend/app.jar
+            else
+              echo "⚠️  No JAR file found in /tmp to move!"
+            fi
+
+            # Set permissions and ownership
+            sudo chown -R storebackend:storebackend /opt/storebackend
+            sudo chmod 755 /opt/storebackend
+
+            # Ensure deploy.sh is executable
+            if [ -f /opt/storebackend/deploy.sh ]; then
+              sudo chmod +x /opt/storebackend/deploy.sh
+            else
+              echo "⚠️  /opt/storebackend/deploy.sh not found!"
+            fi
+
+            echo "✅ VPS environment ready"
+
+      - name: 🔄 Execute Deployment
+        uses: appleboy/ssh-action@master
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          envs: DB_PASSWORD,JWT_SECRET
+          script: |
+            # Export environment variables
+            export DB_PASSWORD="${DB_PASSWORD}"
+            export JWT_SECRET="${JWT_SECRET}"
+
+            # Start deployment
+            cd /opt/storebackend
+
+            if [ ! -x ./deploy.sh ]; then
+              echo "❌ /opt/storebackend/deploy.sh is missing or not executable"
+              ls -lah .
+              exit 1
+            fi
+
+            ./deploy.sh
+
+      - name: 🏥 Final Health Check
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            echo "Checking application health..."
+            sleep 5
+            curl -f http://localhost:8080/actuator/health || exit 1
+            echo "✅ Application is ru
