@@ -2,7 +2,7 @@
 set -euo pipefail
 
 APP_USER="storebackend"
-SERVICE_NAME="storeservice.backend"
+SERVICE_NAME="storebackend"
 
 APP_DIR="/opt/storebackend"
 BACKUP_DIR="$APP_DIR/backups"
@@ -40,7 +40,10 @@ else
   echo "   No existing $JAR_PATH found. Skipping backup."
 fi
 
-echo "📦 Deploying new JAR..."
+echo "📦 Installing new version..."
+echo "   Source: $TMP_JAR"
+echo "   Target: $JAR_PATH"
+
 if [ ! -f "$TMP_JAR" ]; then
   echo "❌ No JAR file found at $TMP_JAR"
   exit 1
@@ -49,17 +52,19 @@ fi
 sudo mv "$TMP_JAR" "$JAR_PATH"
 sudo chown "$APP_USER:$APP_USER" "$JAR_PATH"
 
+echo "✅ JAR installed successfully (verified)"
+
 echo "🧾 Ensuring log directory exists..."
 sudo mkdir -p "$LOG_DIR"
 sudo chown -R "$APP_USER:$APP_USER" "$LOG_DIR"
 
-echo "🔐 Writing environment file for systemd: $ENV_FILE"
-
+echo "🔧 Configuring environment..."
 if [ -z "${DB_PASSWORD:-}" ] || [ -z "${JWT_SECRET:-}" ]; then
   echo "⚠️  DB_PASSWORD or JWT_SECRET is not set in the environment."
   echo "    The application may fail to connect to the DB or validate tokens."
 fi
 
+echo "🔐 Writing environment file for systemd: $ENV_FILE"
 sudo bash -c "cat > '$ENV_FILE' <<EOF
 JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC
 
@@ -74,7 +79,7 @@ LOGGING_LEVEL_ROOT=INFO
 LOGGING_FILE_NAME=$LOG_FILE
 EOF"
 
-sudo chown root:root "$ENV_FILE"
+sudo chown storebackend:storebackend "$ENV_FILE"
 sudo chmod 600 "$ENV_FILE"
 echo "✅ Environment file written."
 
