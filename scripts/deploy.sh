@@ -30,27 +30,37 @@ echo "✅ Database ready"
 
 # Neue JAR Datei verschieben
 # Find the JAR file (could be app.jar or storeBackend-*.jar)
-JAR_FILE=$(find /tmp -maxdepth 1 -name "*.jar" -type f | head -n 1)
+JAR_FILE=$(find /tmp -maxdepth 1 -name "*.jar" -type f 2>/dev/null | grep -v "java" | head -n 1)
 
 if [ -z "$JAR_FILE" ]; then
     echo -e "${RED}❌ No JAR file found in /tmp/${NC}"
     echo "Available files in /tmp:"
-    ls -la /tmp/ | grep -E "\.jar|app|store"
+    ls -lah /tmp/ 2>/dev/null | grep -E "\.jar|app|store" || echo "No jar files found"
     exit 1
 fi
 
+echo "📦 Found JAR file: $(basename $JAR_FILE) ($(du -h $JAR_FILE | cut -f1))"
 echo "📦 Installing new version..."
 echo "   Source: $JAR_FILE"
 echo "   Target: /opt/storebackend/app.jar"
 
-sudo mv "$JAR_FILE" /opt/storebackend/app.jar
-sudo chown storebackend:storebackend /opt/storebackend/app.jar
-sudo chmod 755 /opt/storebackend/app.jar
+# Move to target location
+sudo mv "$JAR_FILE" /opt/storebackend/app.jar 2>/dev/null || {
+    echo -e "${RED}❌ Failed to move JAR file${NC}"
+    exit 1
+}
 
+# Verify move was successful
 if [ ! -f /opt/storebackend/app.jar ]; then
-    echo -e "${RED}❌ Failed to move JAR to /opt/storebackend/app.jar${NC}"
+    echo -e "${RED}❌ JAR file not found at /opt/storebackend/app.jar after move${NC}"
     exit 1
 fi
+
+# Set permissions
+sudo chown storebackend:storebackend /opt/storebackend/app.jar 2>/dev/null || true
+sudo chmod 755 /opt/storebackend/app.jar 2>/dev/null || true
+
+echo -e "${GREEN}✅ JAR installed successfully$([ -f /opt/storebackend/app.jar ] && echo " (verified)" || echo " (unverified)")${NC}"
 
 # Environment Variables setzen (werden vom Service geladen)
 echo "🔧 Configuring environment..."
