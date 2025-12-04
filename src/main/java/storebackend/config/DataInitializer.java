@@ -38,14 +38,20 @@ public class DataInitializer {
     @EventListener(ApplicationReadyEvent.class)
     public void initializeData() {
         log.info("Starting data initialization...");
-        initializePlans();
 
-        // Nur in lokaler Entwicklung (H2) Testdaten anlegen
-        if (isLocalDevelopment()) {
-            initializeTestData();
+        try {
+            // In Production werden Pläne über data.sql initialisiert
+            if (isLocalDevelopment()) {
+                initializePlans();
+                initializeTestData();
+            }
+
+            log.info("Data initialization completed - Application is ready!");
+        } catch (Exception e) {
+            log.error("Failed to initialize data: {}", e.getMessage());
+            log.warn("This is normal on first deployment when tables are being created.");
+            log.warn("The application will work after tables are created and service is restarted.");
         }
-
-        log.info("Data initialization completed - Application is ready!");
     }
 
     private boolean isLocalDevelopment() {
@@ -55,8 +61,13 @@ public class DataInitializer {
 
     @Transactional
     private void initializePlans() {
-        if (planRepository.count() > 0) {
-            log.info("Plans already initialized");
+        try {
+            if (planRepository.count() > 0) {
+                log.info("Plans already initialized");
+                return;
+            }
+        } catch (Exception e) {
+            log.warn("Cannot check plan count - tables may not exist yet: {}", e.getMessage());
             return;
         }
 
@@ -98,8 +109,13 @@ public class DataInitializer {
 
     @Transactional
     private void initializeTestData() {
-        if (userRepository.count() > 0) {
-            log.info("Test data already initialized");
+        try {
+            if (userRepository.count() > 0) {
+                log.info("Test data already initialized");
+                return;
+            }
+        } catch (Exception e) {
+            log.warn("Cannot check user count - skipping test data initialization");
             return;
         }
 

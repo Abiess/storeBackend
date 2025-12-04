@@ -17,7 +17,7 @@ spring:
   jpa:
     hibernate:
       # TEMPORÄR auf 'create' für Erstinitialisierung - danach wieder auf 'update' ändern!
-      ddl-auto: create
+      ddl-auto: update
     show-sql: false
     properties:
       hibernate:
@@ -27,6 +27,8 @@ spring:
           batch_size: 50
         order_inserts: true
         order_updates: true
+
+
 
   servlet:
     multipart:
