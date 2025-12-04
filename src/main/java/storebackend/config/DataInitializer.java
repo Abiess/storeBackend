@@ -40,8 +40,9 @@ public class DataInitializer {
         log.info("Starting data initialization...");
 
         try {
+            // PLAN-INITIALISIERUNG VORÜBERGEHEND DEAKTIVIERT
             // Pläne werden immer initialisiert (lokal und production)
-            initializePlans();
+            // initializePlans();
 
             // Testdaten nur lokal anlegen
             if (isLocalDevelopment()) {

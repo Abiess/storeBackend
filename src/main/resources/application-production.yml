@@ -16,8 +16,8 @@ spring:
 
   jpa:
     hibernate:
-      # TEMPORÄR auf 'create' um Tabellen neu zu erstellen - danach wieder auf 'update' ändern!
-      ddl-auto: create
+      # Auf 'update' - Datenbank wird nicht gelöscht, nur aktualisiert
+      ddl-auto: update
     show-sql: false
     properties:
       hibernate:
