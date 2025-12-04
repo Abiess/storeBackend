@@ -33,7 +33,7 @@ public class User {
     private Set<Role> roles = new HashSet<>();
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "plan_id")
+    @JoinColumn(name = "plan_id", nullable = true)  // Plan ist optional
     private Plan plan;
 
     @Column(nullable = false, updatable = false)
@@ -53,4 +53,3 @@ public class User {
         updatedAt = LocalDateTime.now();
     }
 }
-
