@@ -16,7 +16,6 @@ spring:
 
   jpa:
     hibernate:
-      # TEMPORÄR auf 'create' für Erstinitialisierung - danach wieder auf 'update' ändern!
       ddl-auto: update
     show-sql: false
     properties:
@@ -27,8 +26,6 @@ spring:
           batch_size: 50
         order_inserts: true
         order_updates: true
-
-
 
   servlet:
     multipart:
@@ -42,6 +39,17 @@ server:
     threads:
       max: 100
       min-spare: 20
+
+# Swagger/OpenAPI Configuration
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operationsSorter: method
+    tagsSorter: alpha
+    tryItOutEnabled: true
 
 jwt:
   # hier aus ENV – passt zu deinem deploy.sh (/etc/storebackend.env → JWT_SECRET)
@@ -58,3 +66,4 @@ minio:
   bucket: ${MINIO_BUCKET:store-assets}
   region: ${MINIO_REGION:us-east-1}
   secure: ${MINIO_SECURE:false}
+

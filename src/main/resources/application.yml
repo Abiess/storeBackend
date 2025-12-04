@@ -44,6 +44,17 @@ server:
       max: 50
       min-spare: 10
 
+# Swagger/OpenAPI Configuration
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operationsSorter: method
+    tagsSorter: alpha
+    tryItOutEnabled: true
+
 jwt:
   # nur lokal hardcodiert – in production bitte über ENV (siehe unten)
   secret: mySecretKeyForJWTTokenGenerationThatIsAtLeast256BitsLongForHS256Algorithm
