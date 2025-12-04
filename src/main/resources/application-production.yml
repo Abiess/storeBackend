@@ -27,12 +27,6 @@ spring:
           batch_size: 50
         order_inserts: true
         order_updates: true
-    # data.sql wird NACH DDL ausgeführt
-    defer-datasource-initialization: true
-
-  sql:
-    init:
-      mode: always
 
   servlet:
     multipart:
