@@ -31,6 +31,14 @@ spring:
           batch_size: 20
         order_inserts: true
         order_updates: true
+    # Stelle sicher, dass data.sql NACH DDL ausgeführt wird
+    defer-datasource-initialization: true
+
+  sql:
+    init:
+      mode: always
+      # data.sql wird nach DDL-Generierung ausgeführt
+      continue-on-error: false
 
   servlet:
     multipart:

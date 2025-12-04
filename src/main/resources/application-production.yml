@@ -16,7 +16,8 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      # TEMPORÄR auf 'create' um Tabellen neu zu erstellen - danach wieder auf 'update' ändern!
+      ddl-auto: create
     show-sql: false
     properties:
       hibernate:
@@ -26,6 +27,12 @@ spring:
           batch_size: 50
         order_inserts: true
         order_updates: true
+    # data.sql wird NACH DDL ausgeführt
+    defer-datasource-initialization: true
+
+  sql:
+    init:
+      mode: always
 
   servlet:
     multipart:
@@ -66,4 +73,3 @@ minio:
   bucket: ${MINIO_BUCKET:store-assets}
   region: ${MINIO_REGION:us-east-1}
   secure: ${MINIO_SECURE:false}
-
