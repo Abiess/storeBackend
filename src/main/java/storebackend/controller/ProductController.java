@@ -65,26 +65,13 @@ public class ProductController {
 
         log.info("Creating product - Store ID: {}, User ID: {}", storeId, user.getId());
 
-        // Hole den Store und prüfe dann den Owner
-        Store store;
-        try {
-            store = storeService.getStoreById(storeId);
-        } catch (Exception e) {
-            log.error("Store not found: {}", storeId);
-            return ResponseEntity.notFound().build();
-        }
-
-        // Prüfe Berechtigung - vergleiche Owner ID mit User ID
-        Long ownerId = store.getOwner().getId();
-        Long userId = user.getId();
-
-        log.info("Owner ID: {}, User ID: {}", ownerId, userId);
-
-        if (!ownerId.equals(userId)) {
-            log.warn("Access denied - User {} does not own Store {} (Owner: {})", userId, storeId, ownerId);
+        // Verwende die Repository-Methode für Owner-Check (direkter SQL-Query)
+        if (!storeRepository.isStoreOwnedByUser(storeId, user.getId())) {
+            log.warn("Access denied - User {} does not own Store {}", user.getId(), storeId);
             return ResponseEntity.status(403).build();
         }
 
+        Store store = storeService.getStoreById(storeId);
         log.info("Permission granted - creating product");
         return ResponseEntity.ok(productService.createProduct(request, store, user));
     }

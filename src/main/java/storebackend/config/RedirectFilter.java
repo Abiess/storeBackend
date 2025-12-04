@@ -35,10 +35,12 @@ public class RedirectFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
-        // Skip API, admin, and public endpoints
+        // Skip API, admin, actuator, h2-console and public endpoints
         if (path.startsWith("/api/") ||
             path.startsWith("/admin/") ||
-            path.startsWith("/public/")) {
+            path.startsWith("/public/") ||
+            path.startsWith("/actuator/") ||
+            path.startsWith("/h2-console")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -48,6 +50,11 @@ public class RedirectFilter extends OncePerRequestFilter {
         if (host == null) {
             filterChain.doFilter(request, response);
             return;
+        }
+
+        // Remove port from host if present (e.g., localhost:8080 -> localhost)
+        if (host.contains(":")) {
+            host = host.substring(0, host.indexOf(":"));
         }
 
         try {
@@ -73,6 +80,9 @@ public class RedirectFilter extends OncePerRequestFilter {
                 response.setHeader("Cache-Control", "no-cache");
                 return;
             }
+        } catch (RuntimeException e) {
+            // Store not found for this host - that's okay, just continue
+            log.debug("No store found for host: {} - continuing with request", host);
         } catch (Exception e) {
             log.error("Error checking redirects for path: {}", path, e);
         }
@@ -81,3 +91,4 @@ public class RedirectFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 }
+
