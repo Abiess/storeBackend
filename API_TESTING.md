@@ -23,8 +23,8 @@ Das Backend läuft auf: **http://localhost:8080**
 
 #### 1. Benutzer registrieren
 ```bash
-curl -X POST http://localhost:8080/auth/register ^
-  -H "Content-Type: application/json" ^
+curl -X POST http://localhost:8080/auth/register 
+  -H "Content-Type: application/json" 
   -d "{\"email\":\"test@example.com\",\"password\":\"Test123!\"}"
 ```
 

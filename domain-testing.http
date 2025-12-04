@@ -19,6 +19,7 @@ Content-Type: application/json
 }
 
 ### 3. Create Store (automatically creates subdomain)
+
 POST http://localhost:8080/api/me/stores
 Content-Type: application/json
 Authorization: Bearer {{auth_token}}
