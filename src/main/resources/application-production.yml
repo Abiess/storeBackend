@@ -16,7 +16,8 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      # TEMPORÄR auf 'create' für Erstinitialisierung - danach wieder auf 'update' ändern!
+      ddl-auto: create
     show-sql: false
     properties:
       hibernate:
