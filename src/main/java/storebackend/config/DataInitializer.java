@@ -3,6 +3,7 @@ package storebackend.config;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -35,7 +36,7 @@ public class DataInitializer {
     private final PasswordEncoder passwordEncoder;
     private final Environment environment;
 
-    @EventListener(ApplicationReadyEvent.class)
+  @EventListener(ContextRefreshedEvent.class)
     public void initializeData() {
         log.info("Starting data initialization...");
 
@@ -63,7 +64,7 @@ public class DataInitializer {
     }
 
     @Transactional
-    private void initializePlans() {
+    protected void initializePlans() {
         try {
             if (planRepository.count() > 0) {
                 log.info("Plans already initialized");
