@@ -112,7 +112,7 @@ public class DataInitializer {
     }
 
     @Transactional
-    private void initializeTestData() {
+    protected void initializeTestData() {
         try {
             if (userRepository.count() > 0) {
                 log.info("Test data already initialized");
