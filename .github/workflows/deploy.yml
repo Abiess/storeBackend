@@ -78,6 +78,18 @@ jobs:
           # remove the leading "scripts/" folder → /tmp/deploy.sh
           strip_components: 1
 
+      - name: 📋 Copy Database Diagnostics Script to VPS (/tmp)
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          source: "scripts/diagnose-database.sh"
+          target: "/tmp/"
+          # remove the leading "scripts/" folder → /tmp/diagnose-database.sh
+          strip_components: 1
+
       - name: ✅ Verify JAR Transfer
         uses: appleboy/ssh-action@master
         with:
@@ -128,6 +140,14 @@ jobs:
               echo "⚠️  /tmp/deploy.sh not found!"
             fi
 
+            # Move diagnose-database.sh from /tmp to /opt/storebackend
+            if [ -f /tmp/diagnose-database.sh ]; then
+              echo "Moving diagnose-database.sh to /opt/storebackend..."
+              sudo mv /tmp/diagnose-database.sh /opt/storebackend/diagnose-database.sh
+            else
+              echo "⚠️  /tmp/diagnose-database.sh not found!"
+            fi
+
             # Set permissions and ownership
             sudo chown -R storebackend:storebackend /opt/storebackend
             sudo chmod 755 /opt/storebackend
@@ -137,6 +157,13 @@ jobs:
               sudo chmod +x /opt/storebackend/deploy.sh
             else
               echo "⚠️  /opt/storebackend/deploy.sh not found!"
+            fi
+
+            # Ensure diagnose-database.sh is executable
+            if [ -f /opt/storebackend/diagnose-database.sh ]; then
+              sudo chmod +x /opt/storebackend/diagnose-database.sh
+            else
+              echo "⚠️  /opt/storebackend/diagnose-database.sh not found!"
             fi
 
             echo "✅ VPS environment ready"

@@ -21,8 +21,8 @@ HEALTH_URL="http://localhost:8080/actuator/health"
 MAX_RETRIES=30
 SLEEP_SECONDS=2
 
-# Datenbank-Diagnose Script
-DIAGNOSE_SCRIPT="$(dirname "$0")/diagnose-database.sh"
+# Datenbank-Diagnose Script (im selben Verzeichnis wie deploy.sh)
+DIAGNOSE_SCRIPT="$APP_DIR/diagnose-database.sh"
 
 echo "================ Store Backend Deployment (production) ================"
 echo "🚀 Starting deployment..."
