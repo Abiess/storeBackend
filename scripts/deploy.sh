@@ -21,6 +21,9 @@ HEALTH_URL="http://localhost:8080/actuator/health"
 MAX_RETRIES=30
 SLEEP_SECONDS=2
 
+# Datenbank-Diagnose Script
+DIAGNOSE_SCRIPT="$(dirname "$0")/diagnose-database.sh"
+
 echo "================ Store Backend Deployment (production) ================"
 echo "🚀 Starting deployment..."
 
@@ -131,6 +134,27 @@ while [ $i -le $MAX_RETRIES ]; do
   echo "🏥 Waiting for health check... ($i/$MAX_RETRIES)"
   if curl -fsS "$HEALTH_URL" > /dev/null 2>&1; then
     echo "✅ Application is healthy!"
+
+    # Datenbank-Diagnose nach erfolgreichem Start
+    echo ""
+    echo "🔍 Running database diagnostics..."
+    if [ -f "$DIAGNOSE_SCRIPT" ]; then
+      export DB_PASSWORD="${DB_PASSWORD:-}"
+      if bash "$DIAGNOSE_SCRIPT"; then
+        echo "✅ Database tables verified successfully!"
+      else
+        echo "⚠️  Database diagnostics failed - tables may be missing!"
+        echo "    Check logs and application configuration."
+        echo ""
+        echo "📋 Application startup logs (last 100 lines):"
+        sudo journalctl -u "$SERVICE_NAME" -n 100 --no-pager || true
+        exit 1
+      fi
+    else
+      echo "⚠️  Diagnose script not found: $DIAGNOSE_SCRIPT"
+      echo "    Skipping database verification."
+    fi
+
     exit 0
   fi
   sleep "$SLEEP_SECONDS"
