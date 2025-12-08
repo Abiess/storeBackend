@@ -136,6 +136,24 @@ echo "✅ Environment file written."
 echo "🔄 Reloading systemd daemon..."
 sudo systemctl daemon-reload
 
+# Schema-Initialisierung VOR dem App-Start
+echo ""
+echo "🗃️  Initializing database schema..."
+INIT_SCHEMA_SCRIPT="$APP_DIR/init-schema.sh"
+if [ -f "$INIT_SCHEMA_SCRIPT" ]; then
+  export DB_PASSWORD="${DB_PASSWORD:-}"
+  if bash "$INIT_SCHEMA_SCRIPT"; then
+    echo "✅ Database schema initialized successfully!"
+  else
+    echo "⚠️  Schema initialization failed, but continuing..."
+    echo "    The application may fail to start if tables don't exist."
+  fi
+else
+  echo "⚠️  Schema init script not found: $INIT_SCHEMA_SCRIPT"
+  echo "    Skipping schema initialization - relying on Hibernate DDL."
+fi
+echo ""
+
 echo "🚀 Starting new application via systemd ($SERVICE_NAME)..."
 if ! sudo systemctl start "$SERVICE_NAME"; then
   echo "❌ Failed to start $SERVICE_NAME"
