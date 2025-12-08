@@ -29,12 +29,12 @@ fi
 export PGPASSWORD="$DB_PASSWORD"
 
 echo "🗃️  Executing schema initialization..."
-if psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$SQL_FILE"; then
+if sudo -u postgres psql -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -f "$SQL_FILE"; then
     echo ""
     echo "✅ Schema initialized successfully!"
 
     # Prüfe Tabellen
-    TABLE_COUNT=$(psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -t -c "SELECT COUNT(*) FROM pg_tables WHERE schemaname = 'public';" 2>/dev/null | tr -d ' ')
+    TABLE_COUNT=$(sudo -u postgres psql -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -t -c "SELECT COUNT(*) FROM pg_tables WHERE schemaname = 'public';" 2>/dev/null | tr -d ' ')
     echo "📊 Created $TABLE_COUNT tables"
 
     exit 0
@@ -43,4 +43,3 @@ else
     echo "❌ Schema initialization failed!"
     exit 1
 fi
-
