@@ -2,6 +2,23 @@
 
 Ein leistungsstarkes Multi-Tenant E-Commerce System ähnlich Shopify, entwickelt mit Spring Boot 3 und PostgreSQL.
 
+## 🌐 Production
+
+**Status**: 🟢 **LIVE**  
+**Backend API**: https://api.markt.ma  
+**Swagger UI**: https://api.markt.ma/swagger-ui.html  
+**Health Check**: https://api.markt.ma/actuator/health
+
+### Technologie-Stack (Production)
+- **Backend**: Spring Boot 3.5.7 + Java 17
+- **Datenbank**: PostgreSQL 14
+- **Server**: Ubuntu VPS (212.227.58.56)
+- **Deployment**: GitHub Actions CI/CD
+- **Proxy**: Nginx mit SSL/TLS
+- **Schema-Management**: SQL-basierte Initialisierung
+
+---
+
 ## 🚀 Features
 
 ### Phase 1: E-Commerce Essentials ✅

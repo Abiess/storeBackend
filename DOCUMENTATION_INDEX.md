@@ -1,18 +1,48 @@
 # 📚 Deployment Documentation Index
 
+**Letztes Update**: 8. Dezember 2025  
+**Status**: 🟢 Production-Ready
+
 Your deployment has been fixed! Use this index to find the right documentation for your needs.
 
 ## 🎯 Start Here
 
 **🏃 In a Hurry?** → Start with `QUICK_REFERENCE.md` (2 min read)
 
-**📖 Want the Full Story?** → Start with `AUTOMATED_DEPLOYMENT.md` (5 min read)
+**📖 Want the Full Story?** → Start with `DEPLOYMENT_STATUS.md` (Aktueller Status)
+
+**🗃️ Database Problems?** → Start with `DATABASE_SETUP.md` ⭐ NEU
 
 **✅ Ready to Follow Steps?** → Start with `DEPLOYMENT_CHECKLIST.md` (follow along)
 
 ---
 
 ## 📂 Documentation Files
+
+### ⭐ **DATABASE_SETUP.md** 🗃️ NEU!
+*Best for: Datenbank-Setup und Troubleshooting*
+- Problem: Berechtigungsfehler und fehlende Tabellen
+- Lösung: SQL-basierte Schema-Initialisierung
+- 16 Tabellen-Struktur erklärt
+- Diagnose- und Reset-Scripts
+- Häufige Probleme und Lösungen
+
+**When to use:** Bei Datenbank-Problemen oder zum Verstehen des Schema-Setups
+
+---
+
+### ✅ **DEPLOYMENT_STATUS.md** 📊 AKTUALISIERT
+*Best for: Aktueller Production-Status*
+- 🟢 Live Status: https://api.markt.ma
+- Erfolgreich erstellte Tabellen (16)
+- Behobene Probleme im Detail
+- Deployment-Prozess erklärt
+- Verifizierung und Health Checks
+- Nächste Schritte
+
+**When to use:** Um den aktuellen Status zu prüfen oder Erfolg zu verifizieren
+
+---
 
 ### 1. **QUICK_REFERENCE.md** ⚡
 *Best for: Quick lookup and reminders*
@@ -25,14 +55,15 @@ Your deployment has been fixed! Use this index to find the right documentation f
 
 ---
 
-### 2. **DEPLOYMENT_FIX_SUMMARY.md** 📝
-*Best for: Understanding what changed*
-- The problem that was fixed
-- Before/after code comparison
-- How it works now
-- Changes overview
+### 2. **README.md** 📖 AKTUALISIERT
+*Best for: Projekt-Übersicht*
+- Production Status und URLs
+- Feature-Liste und Roadmap
+- API-Dokumentation
+- Technologie-Stack
+- Installation und Setup
 
-**When to use:** To understand the technical details of what was fixed
+**When to use:** Für einen Gesamtüberblick des Projekts
 
 ---
 
@@ -62,7 +93,19 @@ Your deployment has been fixed! Use this index to find the right documentation f
 
 ---
 
-### 5. **GITHUB_SECRETS_SETUP.md** 🔐
+### 5. **VPS_DEPLOYMENT_GUIDE.md** 🖥️
+*Best for: Server-Setup*
+- VPS Vorbereitung
+- PostgreSQL Installation
+- Nginx Konfiguration
+- SSL/TLS Setup
+- Domain-Konfiguration
+
+**When to use:** Beim ersten Server-Setup
+
+---
+
+### 6. **GITHUB_SECRETS_SETUP.md** 🔐
 *Best for: GitHub Secrets configuration*
 - What each secret is
 - How to generate values
@@ -75,7 +118,7 @@ Your deployment has been fixed! Use this index to find the right documentation f
 
 ---
 
-### 6. **GITHUB_ACTIONS_SETUP.md** 🔧
+### 7. **GITHUB_ACTIONS_SETUP.md** 🔧
 *Best for: Detailed technical setup*
 - Complete VPS prerequisites
 - PostgreSQL setup
@@ -97,210 +140,130 @@ Your deployment has been fixed! Use this index to find the right documentation f
 3. Deploy: `git push origin main`
 
 ### "I want to understand everything"
-1. Read: `AUTOMATED_DEPLOYMENT.md` (5 min)
-2. Read: `DEPLOYMENT_FIX_SUMMARY.md` (technical details)
-3. Read: `GITHUB_ACTIONS_SETUP.md` (if needed)
+1. Read: `DEPLOYMENT_STATUS.md` (Aktueller Status)
+2. Read: `AUTOMATED_DEPLOYMENT.md` (5 min)
+3. Read: `DATABASE_SETUP.md` (Datenbank-Details)
 
-### "I have SSH/authentication issues"
-1. Check: `QUICK_REFERENCE.md` troubleshooting
-2. Read: `GITHUB_SECRETS_SETUP.md`
-3. Read: `GITHUB_ACTIONS_SETUP.md` SSH section
+### "I have database problems"
+1. Read: `DATABASE_SETUP.md` (Problem-Lösung)
+2. Run: `./diagnose-database.sh` (Diagnose)
+3. Check: `DEPLOYMENT_STATUS.md` (Erwartete Tabellen)
 
-### "I have deployment failures"
-1. Check: `QUICK_REFERENCE.md` troubleshooting
-2. Check: `AUTOMATED_DEPLOYMENT.md` troubleshooting
-3. Check: `GITHUB_ACTIONS_SETUP.md` troubleshooting
+### "I need to troubleshoot"
+1. Check: `DEPLOYMENT_STATUS.md` (Aktuelle Probleme?)
+2. Read: `DATABASE_SETUP.md` (Datenbank-Troubleshooting)
+3. Run: Health Check: `curl https://api.markt.ma/actuator/health`
+4. Check Logs: `sudo journalctl -u storebackend -f`
 
-### "I want to understand what changed"
-1. Read: `DEPLOYMENT_FIX_SUMMARY.md` (problem & solution)
-2. Review: Code changes in `.github/workflows/deploy.yml`
-3. Review: Changes in `scripts/deploy.sh`
-
----
-
-## 🔍 Find Help By Topic
-
-### VPS Setup
-- Start: `DEPLOYMENT_CHECKLIST.md` Step 1
-- Detailed: `GITHUB_ACTIONS_SETUP.md` "On Your VPS"
-- Script: `scripts/vps-prepare.sh`
-
-### GitHub Secrets
-- Start: `DEPLOYMENT_CHECKLIST.md` Step 7
-- Detailed: `GITHUB_SECRETS_SETUP.md`
-- Examples: `GITHUB_SECRETS_SETUP.md` "Required Secrets"
-
-### SSH Authentication
-- Start: `DEPLOYMENT_CHECKLIST.md` Step 2-3
-- Detailed: `GITHUB_ACTIONS_SETUP.md` "VPS SSH Key Setup"
-- Examples: `GITHUB_SECRETS_SETUP.md`
-
-### Testing Deployment
-- Start: `DEPLOYMENT_CHECKLIST.md` Step 9
-- Detailed: `AUTOMATED_DEPLOYMENT.md` "Testing Your Deployment"
-
-### Troubleshooting
-- Quick: `QUICK_REFERENCE.md` Troubleshooting
-- Detailed: `AUTOMATED_DEPLOYMENT.md` Troubleshooting
-- Technical: `GITHUB_ACTIONS_SETUP.md` Troubleshooting
+### "I want to see the technical details"
+1. Read: `DATABASE_SETUP.md` (Schema & SQL)
+2. Review: `scripts/init-schema.sql` (Tabellendefinitionen)
+3. Check: `application-production.yml` (Hibernate-Config)
 
 ---
 
-## 📋 Scripts Reference
+## 📊 Quick Status Check
 
-### `scripts/vps-prepare.sh`
-**Purpose:** One-command VPS setup
-**Run on:** Your VPS
-**Usage:** `bash vps-prepare.sh`
-**Does:** 
-- Installs Java, PostgreSQL
-- Creates database user
-- Creates deploy user
-- Creates directories
-- Sets up systemd service
+### Production URLs
+- **API**: https://api.markt.ma
+- **Swagger**: https://api.markt.ma/swagger-ui.html
+- **Health**: https://api.markt.ma/actuator/health
 
-### `scripts/deploy.sh`
-**Purpose:** Deployment execution on VPS
-**Run on:** VPS (via GitHub Actions)
-**Does:**
-- Stops old service
-- Backs up old JAR
-- Verifies database
-- Installs new JAR
-- Starts service
-- Health checks
-- Rollback on failure
-
-### `.github/workflows/deploy.yml`
-**Purpose:** GitHub Actions automation
-**Run on:** GitHub servers
-**Triggers:** On push to main/master
-**Does:**
-- Builds with Maven
-- Prepares JAR
-- Transfers files
-- Verifies transfer
-- Prepares VPS
-- Runs deploy script
-- Health checks
-
----
-
-## 🎯 Quick Links Within Docs
-
-### AUTOMATED_DEPLOYMENT.md
-- What was fixed → Search "What We Fixed"
-- Quick start → Search "Quick Start"
-- How it works → Search "How It Works Now"
-- Testing → Search "Testing Your Deployment"
-- Troubleshooting → Search "Troubleshooting"
-
-### GITHUB_ACTIONS_SETUP.md
-- VPS setup → Search "On Your VPS"
-- GitHub setup → Search "On GitHub"
-- How it works → Search "How It Works"
-- Troubleshooting → Search "Troubleshooting"
-
-### DEPLOYMENT_CHECKLIST.md
-- Each step is clearly marked
-- All tests in Step 9
-
----
-
-## ✅ Checklist: Documentation Coverage
-
-- ✅ Overview of changes
-- ✅ Quick start guide
-- ✅ Step-by-step checklist
-- ✅ GitHub Secrets configuration
-- ✅ Detailed technical setup
-- ✅ VPS automation script
-- ✅ Troubleshooting for each section
-- ✅ Security best practices
-- ✅ Testing procedures
-- ✅ Monitoring guide
-
----
-
-## 📞 If You Still Need Help
-
-1. **Check the right documentation file above**
-2. **Search within the file** (Ctrl+F)
-3. **Check troubleshooting sections**
-4. **Review the scripts** (they have comments)
-5. **Check GitHub Actions logs** (for deployment errors)
-6. **Check VPS logs**: `sudo journalctl -u storebackend -n 100`
-
----
-
-## 🎓 Learning Path
-
-### Beginner
-1. `QUICK_REFERENCE.md` (understand basics)
-2. `DEPLOYMENT_CHECKLIST.md` (follow steps)
-3. Deploy and celebrate! 🎉
-
-### Intermediate
-1. `AUTOMATED_DEPLOYMENT.md` (full overview)
-2. `DEPLOYMENT_FIX_SUMMARY.md` (understand changes)
-3. Review the code in `.github/workflows/deploy.yml`
-4. Review the code in `scripts/deploy.sh`
-
-### Advanced
-1. All of the above +
-2. `GITHUB_ACTIONS_SETUP.md` (technical deep dive)
-3. Modify scripts to fit your needs
-4. Set up monitoring and alerts
-
----
-
-## 📊 File Organization
-
+### Database Status
+```bash
+# Auf dem Server
+cd /opt/storebackend
+./diagnose-database.sh
 ```
-storeBackend/
-├── 📖 Documentation (read first)
-│   ├── QUICK_REFERENCE.md           ← Start here! (2 min)
-│   ├── DEPLOYMENT_FIX_SUMMARY.md    ← Understand changes
-│   ├── AUTOMATED_DEPLOYMENT.md      ← Full guide (5 min)
-│   ├── DEPLOYMENT_CHECKLIST.md      ← Follow steps
-│   ├── GITHUB_SECRETS_SETUP.md      ← Configure secrets
-│   ├── GITHUB_ACTIONS_SETUP.md      ← Technical deep dive
-│   └── DOCUMENTATION_INDEX.md       ← You are here!
-│
-├── 🔧 Configuration (modified/new)
-│   ├── .github/workflows/deploy.yml ✏️ UPDATED
-│   └── scripts/
-│       ├── deploy.sh                ✏️ UPDATED
-│       └── vps-prepare.sh           ✨ NEW
-│
-└── 📝 Other files
-    └── (unchanged)
+
+Erwartetes Ergebnis: ✅ 16 Tabellen gefunden
+
+---
+
+## 🛠️ Quick Commands Reference
+
+### Deployment
+```bash
+git add .
+git commit -m "Your changes"
+git push origin main
+```
+
+### Check Status (auf Server)
+```bash
+# Service Status
+sudo systemctl status storebackend
+
+# Logs anzeigen
+sudo journalctl -u storebackend -f
+
+# Datenbank prüfen
+cd /opt/storebackend
+./diagnose-database.sh
+
+# Health Check
+curl http://localhost:8080/actuator/health
+```
+
+### Troubleshooting (auf Server)
+```bash
+# Service neu starten
+sudo systemctl restart storebackend
+
+# Schema neu initialisieren
+cd /opt/storebackend
+./init-schema.sh
+
+# Datenbank zurücksetzen (WARNUNG: Löscht Daten!)
+cd /opt/storebackend
+./reset-database.sh
 ```
 
 ---
 
-## 🚀 Ready to Deploy?
+## 📚 Additional Resources
 
-1. **Pick your documentation**: Choose from the list above based on your needs
-2. **Follow the steps**: Work through at your own pace
-3. **Run the script**: `bash vps-prepare.sh` on your VPS
-4. **Add secrets**: Configure GitHub Secrets
-5. **Deploy**: `git push origin main`
+### API Documentation
+- Swagger UI: https://api.markt.ma/swagger-ui.html
+- OpenAPI JSON: https://api.markt.ma/v3/api-docs
 
-**It's that simple!** ✨
+### Logs & Monitoring
+- Application Logs: `/var/log/storebackend/app.log`
+- System Logs: `sudo journalctl -u storebackend`
+- PostgreSQL Logs: `sudo journalctl -u postgresql`
 
----
-
-## 📝 Notes
-
-- All documentation is markdown (easy to read in any text editor)
-- All scripts are bash (compatible with Linux/macOS)
-- The solution is production-ready with automatic rollback
-- Everything is commented for easy understanding
+### Scripts Location (Server)
+- Deployment: `/opt/storebackend/deploy.sh`
+- Schema Init: `/opt/storebackend/init-schema.sh`
+- Diagnose: `/opt/storebackend/diagnose-database.sh`
+- Reset: `/opt/storebackend/reset-database.sh`
 
 ---
 
-**Happy deploying! 🚀**
+## 🎯 Document Status
 
-For the quickest start, see: **`QUICK_REFERENCE.md`**
+| Document | Status | Last Updated |
+|----------|--------|--------------|
+| DATABASE_SETUP.md | ✅ NEU | 8. Dez 2025 |
+| DEPLOYMENT_STATUS.md | ✅ AKTUALISIERT | 8. Dez 2025 |
+| README.md | ✅ AKTUALISIERT | 8. Dez 2025 |
+| VPS_DEPLOYMENT_GUIDE.md | ✅ CURRENT | - |
+| QUICK_REFERENCE.md | ✅ CURRENT | - |
+| AUTOMATED_DEPLOYMENT.md | ✅ CURRENT | - |
+| GITHUB_ACTIONS_SETUP.md | ✅ CURRENT | - |
 
+---
+
+## 💡 Tips
+
+- **Bookmark this index** for quick navigation
+- **Start with DEPLOYMENT_STATUS.md** to see current production status
+- **Check DATABASE_SETUP.md** for any database-related issues
+- **Use QUICK_REFERENCE.md** for quick commands and reminders
+- **Keep GitHub Secrets secure** - never commit them to the repository
+
+---
+
+**Happy Deploying! 🚀**
+
+For urgent issues, check `DEPLOYMENT_STATUS.md` first for the current status and known issues.

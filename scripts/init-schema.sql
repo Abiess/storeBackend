@@ -210,5 +210,12 @@ CREATE INDEX idx_orders_store ON orders(store_id);
 CREATE INDEX idx_orders_customer ON orders(customer_id);
 CREATE INDEX idx_user_roles_user ON user_roles(user_id);
 
-COMMIT;
+-- Grant permissions to storeapp user
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO storeapp;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO storeapp;
 
+-- Set default privileges for future tables
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO storeapp;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO storeapp;
+
+COMMIT;
