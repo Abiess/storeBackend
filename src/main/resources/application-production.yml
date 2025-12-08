@@ -16,8 +16,8 @@ spring:
 
   jpa:
     hibernate:
-      # UPDATE statt CREATE - Tabellen werden beim ersten Start erstellt und dann beibehalten
-      ddl-auto: update
+      # create-drop für initiale Erstellung, dann manuelle Änderung auf update
+      ddl-auto: create
     show-sql: true
     properties:
       hibernate:
@@ -32,6 +32,12 @@ spring:
         use_sql_comments: true
     # Stelle sicher, dass Hibernate die Tabellen erstellt
     generate-ddl: true
+  sql:
+    init:
+      # Führe data.sql NACH Hibernate DDL aus
+      mode: never
+      # Verhindere dass data.sql VOR Hibernate läuft
+      defer-datasource-initialization: false
 
   servlet:
     multipart:
