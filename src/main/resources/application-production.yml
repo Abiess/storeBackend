@@ -16,8 +16,8 @@ spring:
 
   jpa:
     hibernate:
-      # TEMPORÄR auf 'create' für initiale Tabellenerstellung - danach auf 'update' ändern!
-      ddl-auto: create
+      # UPDATE statt CREATE - Tabellen werden beim ersten Start erstellt und dann beibehalten
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
