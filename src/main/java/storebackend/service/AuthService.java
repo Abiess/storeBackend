@@ -1,11 +1,6 @@
 package storebackend.service;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -18,10 +13,8 @@ import storebackend.dto.RegisterRequest;
 import storebackend.entity.User;
 import storebackend.enums.Role;
 import storebackend.repository.UserRepository;
+import storebackend.security.JwtUtil;
 
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -32,12 +25,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
-
-    @Value("${jwt.secret:defaultSecretKeyThatShouldBeChangedInProduction1234567890}")
-    private String jwtSecret;
-
-    @Value("${jwt.expiration:86400000}") // 24 hours in milliseconds
-    private long jwtExpiration;
+    private final JwtUtil jwtUtil;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -58,8 +46,8 @@ public class AuthService {
 
         user = userRepository.save(user);
 
-        // Generate JWT token
-        String token = generateToken(user);
+        // Generate JWT token using JwtUtil
+        String token = jwtUtil.generateToken(user.getEmail(), user.getId());
 
         return new AuthResponse(token, user.getEmail(), user.getId());
     }
@@ -77,49 +65,17 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail())
             .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Generate JWT token
-        String token = generateToken(user);
+        // Generate JWT token using JwtUtil
+        String token = jwtUtil.generateToken(user.getEmail(), user.getId());
 
         return new AuthResponse(token, user.getEmail(), user.getId());
     }
 
-    public String generateToken(User user) {
-        Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtExpiration);
-
-        SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
-
-        return Jwts.builder()
-            .setSubject(user.getEmail())
-            .setIssuedAt(now)
-            .setExpiration(expiryDate)
-            .claim("userId", user.getId())
-            .claim("roles", user.getRoles())
-            .signWith(key, SignatureAlgorithm.HS512)
-            .compact();
-    }
-
-    public Claims validateToken(String token) {
-        try {
-            SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
-
-            return Jwts.parser()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-        } catch (Exception e) {
-            throw new RuntimeException("Invalid JWT token: " + e.getMessage());
-        }
-    }
-
     public String getEmailFromToken(String token) {
-        Claims claims = validateToken(token);
-        return claims.getSubject();
+        return jwtUtil.extractEmail(token);
     }
 
     public Long getUserIdFromToken(String token) {
-        Claims claims = validateToken(token);
-        return claims.get("userId", Long.class);
+        return jwtUtil.extractUserId(token);
     }
 }
