@@ -34,6 +34,24 @@ else
   echo "⚠️  Service $SERVICE_NAME not found (maybe first deployment)"
 fi
 
+# Optional: Datenbank zurücksetzen, wenn RESET_DATABASE=true gesetzt ist
+if [ "${RESET_DATABASE:-false}" = "true" ]; then
+  echo ""
+  echo "🗑️  Database reset requested..."
+  RESET_SCRIPT="$APP_DIR/reset-database.sh"
+  if [ -f "$RESET_SCRIPT" ]; then
+    export DB_PASSWORD="${DB_PASSWORD:-}"
+    if bash "$RESET_SCRIPT"; then
+      echo "✅ Database reset completed"
+    else
+      echo "⚠️  Database reset failed, but continuing..."
+    fi
+  else
+    echo "⚠️  Reset script not found: $RESET_SCRIPT"
+  fi
+  echo ""
+fi
+
 echo "💾 Backing up old version..."
 sudo mkdir -p "$BACKUP_DIR"
 if [ -f "$JAR_PATH" ]; then

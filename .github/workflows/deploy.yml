@@ -90,6 +90,17 @@ jobs:
           # remove the leading "scripts/" folder → /tmp/diagnose-database.sh
           strip_components: 1
 
+      - name: 📋 Copy Database Reset Script to VPS (/tmp)
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          source: "scripts/reset-database.sh"
+          target: "/tmp/"
+          strip_components: 1
+
       - name: ✅ Verify JAR Transfer
         uses: appleboy/ssh-action@master
         with:
@@ -148,6 +159,14 @@ jobs:
               echo "⚠️  /tmp/diagnose-database.sh not found!"
             fi
 
+            # Move reset-database.sh from /tmp to /opt/storebackend
+            if [ -f /tmp/reset-database.sh ]; then
+              echo "Moving reset-database.sh to /opt/storebackend..."
+              sudo mv /tmp/reset-database.sh /opt/storebackend/reset-database.sh
+            else
+              echo "⚠️  /tmp/reset-database.sh not found!"
+            fi
+
             # Set permissions and ownership
             sudo chown -R storebackend:storebackend /opt/storebackend
             sudo chmod 755 /opt/storebackend
@@ -166,7 +185,39 @@ jobs:
               echo "⚠️  /opt/storebackend/diagnose-database.sh not found!"
             fi
 
+            # Ensure reset-database.sh is executable
+            if [ -f /opt/storebackend/reset-database.sh ]; then
+              sudo chmod +x /opt/storebackend/reset-database.sh
+            else
+              echo "⚠️  /opt/storebackend/reset-database.sh not found!"
+            fi
+
             echo "✅ VPS environment ready"
+
+      - name: 🗑️ Reset Database (One-Time for ddl-auto=create)
+        uses: appleboy/ssh-action@master
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          envs: DB_PASSWORD
+          script: |
+            echo "🗑️  Resetting database for clean initialization..."
+            cd /opt/storebackend
+            
+            if [ -f ./reset-database.sh ]; then
+              export DB_PASSWORD="${DB_PASSWORD}"
+              if bash ./reset-database.sh; then
+                echo "✅ Database reset successful"
+              else
+                echo "⚠️  Database reset failed, but continuing with deployment..."
+              fi
+            else
+              echo "⚠️  reset-database.sh not found, skipping reset"
+            fi
 
       - name: 🔄 Execute Deployment
         uses: appleboy/ssh-action@master
