@@ -93,6 +93,13 @@ if [ -z "${DB_PASSWORD:-}" ] || [ -z "${JWT_SECRET:-}" ]; then
   echo "    The application may fail to connect to the DB or validate tokens."
 fi
 
+# Generiere einen sicheren JWT_SECRET falls nicht gesetzt (mindestens 256 Bits)
+if [ -z "${JWT_SECRET:-}" ]; then
+  echo "⚠️  JWT_SECRET not provided - generating secure random secret..."
+  JWT_SECRET=$(openssl rand -base64 64 | tr -d '\n')
+  echo "✅ Generated secure JWT_SECRET (512 bits)"
+fi
+
 echo "🔐 Writing environment file for systemd: $ENV_FILE"
 sudo bash -c "cat > '$ENV_FILE' <<EOF
 # JVM
@@ -107,8 +114,8 @@ SPRING_DATASOURCE_USERNAME=storeapp
 SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-}
 SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
 
-# JWT
-JWT_SECRET=${JWT_SECRET:-change-me}
+# JWT (mindestens 256 Bits erforderlich)
+JWT_SECRET=${JWT_SECRET}
 # optional: falls du mal den Expiry per Env steuern willst
 # JWT_EXPIRATION=86400000
 
