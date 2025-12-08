@@ -1,0 +1,214 @@
+-- Database Schema Creation Script
+-- Erstellt alle benötigten Tabellen für das Store Backend
+
+-- Lösche existierende Tabellen (CASCADE löscht auch Foreign Keys)
+DROP TABLE IF EXISTS order_items CASCADE;
+DROP TABLE IF EXISTS order_status_history CASCADE;
+DROP TABLE IF EXISTS orders CASCADE;
+DROP TABLE IF EXISTS product_media CASCADE;
+DROP TABLE IF EXISTS product_variants CASCADE;
+DROP TABLE IF EXISTS product_option_values CASCADE;
+DROP TABLE IF EXISTS product_options CASCADE;
+DROP TABLE IF EXISTS products CASCADE;
+DROP TABLE IF EXISTS media CASCADE;
+DROP TABLE IF EXISTS domains CASCADE;
+DROP TABLE IF EXISTS store_usage CASCADE;
+DROP TABLE IF EXISTS stores CASCADE;
+DROP TABLE IF EXISTS user_roles CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS plans CASCADE;
+DROP TABLE IF EXISTS audit_logs CASCADE;
+
+-- Plans Tabelle (muss zuerst erstellt werden wegen FK)
+CREATE TABLE plans (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    max_stores INTEGER NOT NULL,
+    max_custom_domains INTEGER NOT NULL,
+    max_subdomains INTEGER NOT NULL,
+    max_storage_mb BIGINT NOT NULL,
+    max_products INTEGER NOT NULL,
+    max_image_count INTEGER NOT NULL
+);
+
+-- Users Tabelle
+CREATE TABLE users (
+    id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    plan_id BIGINT,
+    FOREIGN KEY (plan_id) REFERENCES plans(id)
+);
+
+-- User Roles (Join-Tabelle)
+CREATE TABLE user_roles (
+    user_id BIGINT NOT NULL,
+    role VARCHAR(50) NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Stores Tabelle
+CREATE TABLE stores (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    subdomain VARCHAR(100) UNIQUE,
+    owner_id BIGINT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    FOREIGN KEY (owner_id) REFERENCES users(id)
+);
+
+-- Domains Tabelle
+CREATE TABLE domains (
+    id BIGSERIAL PRIMARY KEY,
+    domain VARCHAR(255) NOT NULL UNIQUE,
+    store_id BIGINT NOT NULL,
+    verified BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
+);
+
+-- Store Usage Tracking
+CREATE TABLE store_usage (
+    id BIGSERIAL PRIMARY KEY,
+    store_id BIGINT NOT NULL UNIQUE,
+    storage_used_mb BIGINT NOT NULL DEFAULT 0,
+    product_count INTEGER NOT NULL DEFAULT 0,
+    image_count INTEGER NOT NULL DEFAULT 0,
+    last_updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
+);
+
+-- Media Tabelle
+CREATE TABLE media (
+    id BIGSERIAL PRIMARY KEY,
+    store_id BIGINT NOT NULL,
+    file_name VARCHAR(255) NOT NULL,
+    file_path VARCHAR(500) NOT NULL,
+    file_size BIGINT NOT NULL,
+    mime_type VARCHAR(100),
+    uploaded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
+);
+
+-- Products Tabelle
+CREATE TABLE products (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    price DECIMAL(10, 2) NOT NULL,
+    store_id BIGINT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    stock_quantity INTEGER NOT NULL DEFAULT 0,
+    FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
+);
+
+-- Product Options (z.B. Größe, Farbe)
+CREATE TABLE product_options (
+    id BIGSERIAL PRIMARY KEY,
+    product_id BIGINT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    display_order INTEGER NOT NULL DEFAULT 0,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+);
+
+-- Product Option Values (z.B. S, M, L für Größe)
+CREATE TABLE product_option_values (
+    id BIGSERIAL PRIMARY KEY,
+    option_id BIGINT NOT NULL,
+    value VARCHAR(100) NOT NULL,
+    display_order INTEGER NOT NULL DEFAULT 0,
+    FOREIGN KEY (option_id) REFERENCES product_options(id) ON DELETE CASCADE
+);
+
+-- Product Variants (Kombinationen von Options)
+CREATE TABLE product_variants (
+    id BIGSERIAL PRIMARY KEY,
+    product_id BIGINT NOT NULL,
+    sku VARCHAR(100) UNIQUE,
+    price DECIMAL(10, 2),
+    stock_quantity INTEGER NOT NULL DEFAULT 0,
+    option_values TEXT,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+);
+
+-- Product Media (Join-Tabelle)
+CREATE TABLE product_media (
+    product_id BIGINT NOT NULL,
+    media_id BIGINT NOT NULL,
+    display_order INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (product_id, media_id),
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    FOREIGN KEY (media_id) REFERENCES media(id) ON DELETE CASCADE
+);
+
+-- Orders Tabelle
+CREATE TABLE orders (
+    id BIGSERIAL PRIMARY KEY,
+    order_number VARCHAR(50) NOT NULL UNIQUE,
+    store_id BIGINT NOT NULL,
+    customer_id BIGINT,
+    status VARCHAR(50) NOT NULL,
+    total_amount DECIMAL(10, 2) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (store_id) REFERENCES stores(id),
+    FOREIGN KEY (customer_id) REFERENCES users(id)
+);
+
+-- Order Items
+CREATE TABLE order_items (
+    id BIGSERIAL PRIMARY KEY,
+    order_id BIGINT NOT NULL,
+    variant_id BIGINT,
+    product_name VARCHAR(255) NOT NULL,
+    quantity INTEGER NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    FOREIGN KEY (variant_id) REFERENCES product_variants(id)
+);
+
+-- Order Status History
+CREATE TABLE order_status_history (
+    id BIGSERIAL PRIMARY KEY,
+    order_id BIGINT NOT NULL,
+    status VARCHAR(50) NOT NULL,
+    changed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_by BIGINT,
+    notes TEXT,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    FOREIGN KEY (updated_by) REFERENCES users(id)
+);
+
+-- Audit Logs
+CREATE TABLE audit_logs (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT,
+    action VARCHAR(100) NOT NULL,
+    entity_type VARCHAR(100),
+    entity_id BIGINT,
+    details TEXT,
+    ip_address VARCHAR(50),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- Initiale Daten: FREE Plan
+INSERT INTO plans (name, max_stores, max_custom_domains, max_subdomains, max_storage_mb, max_products, max_image_count)
+VALUES ('FREE', 1, 0, 1, 100, 50, 100)
+ON CONFLICT (name) DO NOTHING;
+
+-- Erstelle Indizes für Performance
+CREATE INDEX idx_stores_subdomain ON stores(subdomain);
+CREATE INDEX idx_stores_owner ON stores(owner_id);
+CREATE INDEX idx_domains_domain ON domains(domain);
+CREATE INDEX idx_domains_store ON domains(store_id);
+CREATE INDEX idx_products_store ON products(store_id);
+CREATE INDEX idx_orders_store ON orders(store_id);
+CREATE INDEX idx_orders_customer ON orders(customer_id);
+CREATE INDEX idx_user_roles_user ON user_roles(user_id);
+
+COMMIT;
+

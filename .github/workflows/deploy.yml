@@ -101,6 +101,28 @@ jobs:
           target: "/tmp/"
           strip_components: 1
 
+      - name: 📋 Copy Database Schema SQL to VPS (/tmp)
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          source: "scripts/init-schema.sql"
+          target: "/tmp/"
+          strip_components: 1
+
+      - name: 📋 Copy Schema Init Script to VPS (/tmp)
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          source: "scripts/init-schema.sh"
+          target: "/tmp/"
+          strip_components: 1
+
       - name: ✅ Verify JAR Transfer
         uses: appleboy/ssh-action@master
         with:
@@ -167,6 +189,22 @@ jobs:
               echo "⚠️  /tmp/reset-database.sh not found!"
             fi
 
+            # Move init-schema.sql from /tmp to /opt/storebackend
+            if [ -f /tmp/init-schema.sql ]; then
+              echo "Moving init-schema.sql to /opt/storebackend..."
+              sudo mv /tmp/init-schema.sql /opt/storebackend/init-schema.sql
+            else
+              echo "⚠️  /tmp/init-schema.sql not found!"
+            fi
+
+            # Move init-schema.sh from /tmp to /opt/storebackend
+            if [ -f /tmp/init-schema.sh ]; then
+              echo "Moving init-schema.sh to /opt/storebackend..."
+              sudo mv /tmp/init-schema.sh /opt/storebackend/init-schema.sh
+            else
+              echo "⚠️  /tmp/init-schema.sh not found!"
+            fi
+
             # Set permissions and ownership
             sudo chown -R storebackend:storebackend /opt/storebackend
             sudo chmod 755 /opt/storebackend
@@ -192,9 +230,16 @@ jobs:
               echo "⚠️  /opt/storebackend/reset-database.sh not found!"
             fi
 
+            # Ensure init-schema.sh is executable
+            if [ -f /opt/storebackend/init-schema.sh ]; then
+              sudo chmod +x /opt/storebackend/init-schema.sh
+            else
+              echo "⚠️  /opt/storebackend/init-schema.sh not found!"
+            fi
+
             echo "✅ VPS environment ready"
 
-      - name: 🗑️ Reset Database (One-Time for ddl-auto=create)
+      - name: 🗃️ Initialize Database Schema
         uses: appleboy/ssh-action@master
         env:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
@@ -205,18 +250,20 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           envs: DB_PASSWORD
           script: |
-            echo "🗑️  Resetting database for clean initialization..."
+            echo "🗃️  Initializing database schema with SQL..."
             cd /opt/storebackend
             
-            if [ -f ./reset-database.sh ]; then
+            if [ -f ./init-schema.sh ]; then
               export DB_PASSWORD="${DB_PASSWORD}"
-              if bash ./reset-database.sh; then
-                echo "✅ Database reset successful"
+              if bash ./init-schema.sh; then
+                echo "✅ Database schema initialized successfully!"
               else
-                echo "⚠️  Database reset failed, but continuing with deployment..."
+                echo "❌ Schema initialization failed!"
+                exit 1
               fi
             else
-              echo "⚠️  reset-database.sh not found, skipping reset"
+              echo "❌ init-schema.sh not found!"
+              exit 1
             fi
 
       - name: 🔄 Execute Deployment
