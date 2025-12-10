@@ -54,10 +54,11 @@ CREATE TABLE user_roles (
 CREATE TABLE stores (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    subdomain VARCHAR(100) UNIQUE,
+    slug VARCHAR(255) NOT NULL UNIQUE,
     owner_id BIGINT NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    active BOOLEAN NOT NULL DEFAULT TRUE,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (owner_id) REFERENCES users(id)
 );
 
@@ -97,13 +98,13 @@ CREATE TABLE media (
 -- Products Tabelle
 CREATE TABLE products (
     id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    price DECIMAL(10, 2) NOT NULL,
     store_id BIGINT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    base_price DECIMAL(10, 2) NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'DRAFT',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    active BOOLEAN NOT NULL DEFAULT TRUE,
-    stock_quantity INTEGER NOT NULL DEFAULT 0,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
 );
 
@@ -202,7 +203,7 @@ VALUES ('FREE', 1, 0, 1, 100, 50, 100)
 ON CONFLICT (name) DO NOTHING;
 
 -- Erstelle Indizes für Performance
-CREATE INDEX idx_stores_subdomain ON stores(subdomain);
+CREATE INDEX idx_stores_slug ON stores(slug);
 CREATE INDEX idx_stores_owner ON stores(owner_id);
 CREATE INDEX idx_domains_domain ON domains(domain);
 CREATE INDEX idx_domains_store ON domains(store_id);
