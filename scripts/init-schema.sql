@@ -65,9 +65,12 @@ CREATE TABLE stores (
 -- Domains Tabelle
 CREATE TABLE domains (
     id BIGSERIAL PRIMARY KEY,
-    domain VARCHAR(255) NOT NULL UNIQUE,
     store_id BIGINT NOT NULL,
-    verified BOOLEAN NOT NULL DEFAULT FALSE,
+    host VARCHAR(255) NOT NULL UNIQUE,
+    type VARCHAR(50) NOT NULL,
+    is_primary BOOLEAN NOT NULL DEFAULT FALSE,
+    is_verified BOOLEAN NOT NULL DEFAULT FALSE,
+    verification_token VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
 );
@@ -205,7 +208,7 @@ ON CONFLICT (name) DO NOTHING;
 -- Erstelle Indizes für Performance
 CREATE INDEX idx_stores_slug ON stores(slug);
 CREATE INDEX idx_stores_owner ON stores(owner_id);
-CREATE INDEX idx_domains_domain ON domains(domain);
+CREATE INDEX idx_domains_host ON domains(host);
 CREATE INDEX idx_domains_store ON domains(store_id);
 CREATE INDEX idx_products_store ON products(store_id);
 CREATE INDEX idx_orders_store ON orders(store_id);
