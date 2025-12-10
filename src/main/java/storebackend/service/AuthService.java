@@ -10,8 +10,10 @@ import org.springframework.transaction.annotation.Transactional;
 import storebackend.dto.AuthResponse;
 import storebackend.dto.LoginRequest;
 import storebackend.dto.RegisterRequest;
+import storebackend.entity.Plan;
 import storebackend.entity.User;
 import storebackend.enums.Role;
+import storebackend.repository.PlanRepository;
 import storebackend.repository.UserRepository;
 import storebackend.security.JwtUtil;
 
@@ -26,6 +28,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
+    private final PlanRepository planRepository;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -43,6 +46,11 @@ public class AuthService {
         Set<Role> roles = new HashSet<>();
         roles.add(Role.USER);
         user.setRoles(roles);
+
+        // Assign FREE plan by default
+        Plan freePlan = planRepository.findByName("FREE")
+                .orElseThrow(() -> new RuntimeException("FREE plan not found in database. Please run database initialization."));
+        user.setPlan(freePlan);
 
         user = userRepository.save(user);
 

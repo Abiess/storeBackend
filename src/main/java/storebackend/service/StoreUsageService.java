@@ -113,6 +113,12 @@ public class StoreUsageService {
         StoreUsage usage = getOrCreateStoreUsage(store);
         Plan plan = owner.getPlan();
 
+        // Default: FREE plan limits if no plan assigned
+        if (plan == null) {
+            log.warn("User {} has no plan assigned, using FREE plan limits", owner.getId());
+            return usage.getImageCount() < 100; // FREE plan default
+        }
+
         if (plan.getMaxImageCount() == -1) {
             return true; // Unlimited
         }
@@ -126,6 +132,13 @@ public class StoreUsageService {
     public boolean hasEnoughStorage(Store store, User owner, long requiredBytes) {
         StoreUsage usage = getOrCreateStoreUsage(store);
         Plan plan = owner.getPlan();
+
+        // Default: FREE plan limits if no plan assigned
+        if (plan == null) {
+            log.warn("User {} has no plan assigned, using FREE plan limits", owner.getId());
+            long maxBytes = 100 * 1024L * 1024L; // 100 MB default
+            return (usage.getStorageBytes() + requiredBytes) <= maxBytes;
+        }
 
         if (plan.getMaxStorageMb() == -1) {
             return true; // Unlimited
@@ -141,6 +154,12 @@ public class StoreUsageService {
     public boolean canCreateProduct(Store store, User owner) {
         StoreUsage usage = getOrCreateStoreUsage(store);
         Plan plan = owner.getPlan();
+
+        // Default: FREE plan limits if no plan assigned
+        if (plan == null) {
+            log.warn("User {} has no plan assigned, using FREE plan limits", owner.getId());
+            return usage.getProductCount() < 50; // FREE plan default
+        }
 
         if (plan.getMaxProducts() == -1) {
             return true; // Unlimited
@@ -163,25 +182,33 @@ public class StoreUsageService {
         dto.setStorageMb(usage.getStorageBytes() / (1024L * 1024L));
         dto.setImageCount(usage.getImageCount());
         dto.setProductCount(usage.getProductCount());
-        dto.setMaxStorageMb((long) plan.getMaxStorageMb());
-        dto.setMaxImageCount(plan.getMaxImageCount());
-        dto.setMaxProducts(plan.getMaxProducts());
+
+        // Default: FREE plan limits if no plan assigned
+        if (plan == null) {
+            log.warn("User {} has no plan assigned, using FREE plan limits", owner.getId());
+            dto.setMaxStorageMb(100L);
+            dto.setMaxImageCount(100);
+            dto.setMaxProducts(50);
+        } else {
+            dto.setMaxStorageMb((long) plan.getMaxStorageMb());
+            dto.setMaxImageCount(plan.getMaxImageCount());
+            dto.setMaxProducts(plan.getMaxProducts());
+        }
 
         // Calculate usage percentages
-        if (plan.getMaxStorageMb() > 0) {
-            long maxBytes = plan.getMaxStorageMb() * 1024L * 1024L;
+        if (dto.getMaxStorageMb() > 0) {
+            long maxBytes = dto.getMaxStorageMb() * 1024L * 1024L;
             dto.setStorageUsagePercent((double) usage.getStorageBytes() / maxBytes * 100);
         }
 
-        if (plan.getMaxImageCount() > 0) {
-            dto.setImageUsagePercent((double) usage.getImageCount() / plan.getMaxImageCount() * 100);
+        if (dto.getMaxImageCount() > 0) {
+            dto.setImageUsagePercent((double) usage.getImageCount() / dto.getMaxImageCount() * 100);
         }
 
-        if (plan.getMaxProducts() > 0) {
-            dto.setProductUsagePercent((double) usage.getProductCount() / plan.getMaxProducts() * 100);
+        if (dto.getMaxProducts() > 0) {
+            dto.setProductUsagePercent((double) usage.getProductCount() / dto.getMaxProducts() * 100);
         }
 
         return dto;
     }
 }
-
