@@ -91,11 +91,27 @@ public class AuthController {
         }
     }
 
+    @GetMapping("/debug/jwt-config")
+    public ResponseEntity<?> debugJwtConfig() {
+        try {
+            String secretLength = String.valueOf(authService.getJwtSecretLength());
+            return ResponseEntity.ok(new DebugResponse(
+                    "JWT Configuration",
+                    "JWT Secret length (bytes): " + secretLength,
+                    "Minimum required: 32 bytes (256 bits)"
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse("Error checking JWT config: " + e.getMessage()));
+        }
+    }
+
     // Inner classes for responses
     private record ErrorResponse(String message) {}
 
     private record ValidateResponse(boolean valid, String email, Long userId) {}
 
     private record UserInfoResponse(Long id, String email, java.util.List<String> roles) {}
-}
 
+    private record DebugResponse(String title, String secretInfo, String requirement) {}
+}

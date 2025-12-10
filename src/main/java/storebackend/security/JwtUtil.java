@@ -78,4 +78,8 @@ public class JwtUtil {
                 .parseSignedClaims(token)
                 .getPayload();
     }
+
+    public int getSecretLength() {
+        return secret.getBytes(StandardCharsets.UTF_8).length;
+    }
 }

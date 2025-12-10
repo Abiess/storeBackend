@@ -78,4 +78,8 @@ public class AuthService {
     public Long getUserIdFromToken(String token) {
         return jwtUtil.extractUserId(token);
     }
+
+    public int getJwtSecretLength() {
+        return jwtUtil.getSecretLength();
+    }
 }

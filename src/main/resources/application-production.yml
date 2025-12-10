@@ -52,6 +52,14 @@ server:
       max: 100
       min-spare: 20
 
+# Logging für Debugging
+logging:
+  level:
+    root: INFO
+    storebackend.security: DEBUG
+    storebackend.controller: DEBUG
+    org.springframework.security: DEBUG
+
 # Swagger/OpenAPI Configuration
 springdoc:
   api-docs:
