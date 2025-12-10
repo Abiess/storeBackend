@@ -5,17 +5,20 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import storebackend.enums.Role;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtUtil {
 
-    @Value("${jwt.secret:mySecretKeyForJWTTokenGenerationThatIsAtLeast256BitsLong}")
+    @Value("${jwt.secret:mySecretKeyForJWTTokenGenerationThatIsAtLeast256BitsLongForHS256Algorithm}")
     private String secret;
 
     @Value("${jwt.expiration:86400000}")
@@ -28,6 +31,13 @@ public class JwtUtil {
     public String generateToken(String email, Long userId) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
+        return createToken(claims, email);
+    }
+
+    public String generateToken(String email, Long userId, Set<Role> roles) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", userId);
+        claims.put("roles", roles.stream().map(Enum::name).collect(Collectors.toList()));
         return createToken(claims, email);
     }
 
@@ -69,4 +79,3 @@ public class JwtUtil {
                 .getPayload();
     }
 }
-
