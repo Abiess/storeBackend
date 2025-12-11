@@ -156,17 +156,29 @@ Zeigt alle deine Stores.
 ```json
 {
   "name": "Elektronik",
-  "slug": "elektronik",
+  "description": "Alle elektronischen Geräte"
+}
+```
+
+**Optional: Eigenen Slug setzen:**
+```json
+{
+  "name": "Elektronik",
+  "slug": "elektronik-kategorie",
   "description": "Alle elektronischen Geräte",
   "parentId": null
 }
 ```
 
+**Hinweis:** 
+- Der `slug` wird automatisch aus dem `name` generiert, falls nicht angegeben
+- Beispiel: "Elektronik & Zubehör" wird zu "elektronik-zubehoer"
+- Der `slug` muss eindeutig sein
+
 **Für Unterkategorie:**
 ```json
 {
   "name": "Smartphones",
-  "slug": "smartphones",
   "description": "Mobile Telefone",
   "parentId": 1
 }

@@ -47,11 +47,30 @@ public class Category {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+
+        // Auto-generate slug from name if not provided
+        if (slug == null || slug.isEmpty()) {
+            slug = generateSlug(name);
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-}
 
+    private String generateSlug(String text) {
+        if (text == null || text.isEmpty()) {
+            return "";
+        }
+        return text.toLowerCase()
+                .replaceAll("[äÄ]", "ae")
+                .replaceAll("[öÖ]", "oe")
+                .replaceAll("[üÜ]", "ue")
+                .replaceAll("[ß]", "ss")
+                .replaceAll("[^a-z0-9\\s-]", "")
+                .replaceAll("\\s+", "-")
+                .replaceAll("-+", "-")
+                .replaceAll("^-|-$", "");
+    }
+}
