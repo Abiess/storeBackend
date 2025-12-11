@@ -785,4 +785,3 @@ Du kannst jetzt:
 ✅ Lagerbestände tracken  
 
 **Viel Erfolg mit deinem Store!** 🚀
-

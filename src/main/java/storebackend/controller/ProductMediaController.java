@@ -3,7 +3,6 @@ package storebackend.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import storebackend.entity.*;
 import storebackend.repository.*;
@@ -32,10 +31,11 @@ public class ProductMediaController {
             @PathVariable Long storeId,
             @PathVariable Long productId,
             @RequestBody Map<String, Object> request,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal User user) {
 
-        User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
 
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
@@ -66,10 +66,11 @@ public class ProductMediaController {
             @PathVariable Long productId,
             @PathVariable Long mediaId,
             @RequestBody Map<String, Object> request,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal User user) {
 
-        User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
 
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
@@ -94,10 +95,11 @@ public class ProductMediaController {
             @PathVariable Long storeId,
             @PathVariable Long productId,
             @PathVariable Long mediaId,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal User user) {
 
-        User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
 
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
@@ -114,10 +116,11 @@ public class ProductMediaController {
             @PathVariable Long storeId,
             @PathVariable Long productId,
             @PathVariable Long mediaId,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal User user) {
 
-        User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
 
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
@@ -130,4 +133,3 @@ public class ProductMediaController {
         return ResponseEntity.noContent().build();
     }
 }
-

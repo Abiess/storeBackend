@@ -3,13 +3,11 @@ package storebackend.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import storebackend.entity.InventoryLog;
 import storebackend.entity.Store;
 import storebackend.entity.User;
 import storebackend.repository.StoreRepository;
-import storebackend.repository.UserRepository;
 import storebackend.service.InventoryService;
 
 import java.util.HashMap;
@@ -22,15 +20,15 @@ import java.util.Map;
 public class InventoryController {
     private final InventoryService inventoryService;
     private final StoreRepository storeRepository;
-    private final UserRepository userRepository;
 
     @GetMapping("/inventory/logs")
     public ResponseEntity<List<InventoryLog>> getAllInventoryLogs(
             @PathVariable Long storeId,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal User user) {
 
-        User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
 
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
@@ -46,10 +44,11 @@ public class InventoryController {
     public ResponseEntity<List<InventoryLog>> getVariantInventoryLogs(
             @PathVariable Long storeId,
             @PathVariable Long variantId,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal User user) {
 
-        User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
 
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
@@ -66,10 +65,11 @@ public class InventoryController {
             @PathVariable Long storeId,
             @PathVariable Long variantId,
             @RequestBody Map<String, Object> request,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal User user) {
 
-        User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
 
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
@@ -99,4 +99,3 @@ public class InventoryController {
         }
     }
 }
-
