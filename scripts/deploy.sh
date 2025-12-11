@@ -198,6 +198,38 @@ while [ $i -le $MAX_RETRIES ]; do
       echo "    Skipping database verification."
     fi
 
+    echo "✅ Application is healthy and running!"
+    echo ""
+    echo "================ Deployment Complete ================"
+    echo "🎉 Store Backend successfully deployed"
+    echo "📍 Application URL: http://localhost:8080"
+    echo "💚 Health Check: $HEALTH_URL"
+    echo "📋 Logs: sudo journalctl -u $SERVICE_NAME -f"
+    echo "===================================================="
+
+    # Cleanup old rollback files
+    echo ""
+    echo "🧹 Cleaning up old rollback files..."
+    ROLLBACK_DIR="$APP_DIR/rollback"
+    KEEP_COUNT=5
+
+    if [ -d "$ROLLBACK_DIR" ]; then
+        CURRENT_COUNT=$(ls -1 "$ROLLBACK_DIR"/*.jar 2>/dev/null | wc -l)
+        if [ "$CURRENT_COUNT" -gt "$KEEP_COUNT" ]; then
+            echo "   Found $CURRENT_COUNT rollback files, keeping only $KEEP_COUNT newest..."
+            ls -t "$ROLLBACK_DIR"/*.jar | tail -n +$((KEEP_COUNT + 1)) | while read -r file; do
+                echo "   Deleting: $(basename "$file")"
+                sudo rm -f "$file"
+            done
+            REMAINING_COUNT=$(ls -1 "$ROLLBACK_DIR"/*.jar 2>/dev/null | wc -l)
+            echo "   ✅ Cleanup complete! Remaining rollback files: $REMAINING_COUNT"
+        else
+            echo "   ✅ Only $CURRENT_COUNT rollback files found, no cleanup needed"
+        fi
+    else
+        echo "   ⚠️  Rollback directory not found: $ROLLBACK_DIR"
+    fi
+
     exit 0
   fi
   sleep "$SLEEP_SECONDS"
