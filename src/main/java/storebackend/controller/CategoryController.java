@@ -14,6 +14,7 @@ import storebackend.service.StoreService;
 
 import java.util.List;
 
+// Fixed: Use @AuthenticationPrincipal User instead of UserDetails - 2025-12-11
 @RestController
 @RequestMapping("/api/stores/{storeId}/categories")
 @RequiredArgsConstructor
