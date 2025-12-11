@@ -101,6 +101,39 @@ jobs:
           target: "/tmp/"
           strip_components: 1
 
+      - name: 📋 Copy MinIO Installation Script to VPS (/tmp)
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          source: "scripts/install-minio.sh"
+          target: "/tmp/"
+          strip_components: 1
+
+      - name: 📋 Copy Smart DB Migration Script to VPS (/tmp)
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          source: "scripts/smart-db-migration.sh"
+          target: "/tmp/"
+          strip_components: 1
+
+      - name: 📋 Copy Database Migration SQL to VPS (/tmp)
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          source: "scripts/migrate-database.sql"
+          target: "/tmp/"
+          strip_components: 1
+
       - name: 📋 Copy Database Schema SQL to VPS (/tmp)
         uses: appleboy/scp-action@master
         with:
@@ -189,20 +222,28 @@ jobs:
               echo "⚠️  /tmp/reset-database.sh not found!"
             fi
 
-            # Move init-schema.sql from /tmp to /opt/storebackend
-            if [ -f /tmp/init-schema.sql ]; then
-              echo "Moving init-schema.sql to /opt/storebackend..."
-              sudo mv /tmp/init-schema.sql /opt/storebackend/init-schema.sql
+            # Move install-minio.sh from /tmp to /opt/storebackend
+            if [ -f /tmp/install-minio.sh ]; then
+              echo "Moving install-minio.sh to /opt/storebackend..."
+              sudo mv /tmp/install-minio.sh /opt/storebackend/install-minio.sh
             else
-              echo "⚠️  /tmp/init-schema.sql not found!"
+              echo "⚠️  /tmp/install-minio.sh not found!"
             fi
 
-            # Move init-schema.sh from /tmp to /opt/storebackend
-            if [ -f /tmp/init-schema.sh ]; then
-              echo "Moving init-schema.sh to /opt/storebackend..."
-              sudo mv /tmp/init-schema.sh /opt/storebackend/init-schema.sh
+            # Move smart-db-migration.sh from /tmp to /opt/storebackend
+            if [ -f /tmp/smart-db-migration.sh ]; then
+              echo "Moving smart-db-migration.sh to /opt/storebackend..."
+              sudo mv /tmp/smart-db-migration.sh /opt/storebackend/smart-db-migration.sh
             else
-              echo "⚠️  /tmp/init-schema.sh not found!"
+              echo "⚠️  /tmp/smart-db-migration.sh not found!"
+            fi
+
+            # Move migrate-database.sql from /tmp to /opt/storebackend
+            if [ -f /tmp/migrate-database.sql ]; then
+              echo "Moving migrate-database.sql to /opt/storebackend..."
+              sudo mv /tmp/migrate-database.sql /opt/storebackend/migrate-database.sql
+            else
+              echo "⚠️  /tmp/migrate-database.sql not found!"
             fi
 
             # Set permissions and ownership
@@ -230,11 +271,18 @@ jobs:
               echo "⚠️  /opt/storebackend/reset-database.sh not found!"
             fi
 
-            # Ensure init-schema.sh is executable
-            if [ -f /opt/storebackend/init-schema.sh ]; then
-              sudo chmod +x /opt/storebackend/init-schema.sh
+            # Ensure install-minio.sh is executable
+            if [ -f /opt/storebackend/install-minio.sh ]; then
+              sudo chmod +x /opt/storebackend/install-minio.sh
             else
-              echo "⚠️  /opt/storebackend/init-schema.sh not found!"
+              echo "⚠️  /opt/storebackend/install-minio.sh not found!"
+            fi
+
+            # Ensure smart-db-migration.sh is executable
+            if [ -f /opt/storebackend/smart-db-migration.sh ]; then
+              sudo chmod +x /opt/storebackend/smart-db-migration.sh
+            else
+              echo "⚠️  /opt/storebackend/smart-db-migration.sh not found!"
             fi
 
             echo "✅ VPS environment ready"
