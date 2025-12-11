@@ -10,6 +10,7 @@ DROP TABLE IF EXISTS product_variants CASCADE;
 DROP TABLE IF EXISTS product_option_values CASCADE;
 DROP TABLE IF EXISTS product_options CASCADE;
 DROP TABLE IF EXISTS products CASCADE;
+DROP TABLE IF EXISTS categories CASCADE;
 DROP TABLE IF EXISTS media CASCADE;
 DROP TABLE IF EXISTS domains CASCADE;
 DROP TABLE IF EXISTS store_usage CASCADE;
@@ -96,6 +97,22 @@ CREATE TABLE media (
     mime_type VARCHAR(100),
     uploaded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
+);
+
+-- Categories Tabelle
+CREATE TABLE categories (
+    id BIGSERIAL PRIMARY KEY,
+    store_id BIGINT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) NOT NULL,
+    parent_id BIGINT,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    description TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE,
+    FOREIGN KEY (parent_id) REFERENCES categories(id) ON DELETE CASCADE,
+    CONSTRAINT uk_category_slug_per_store UNIQUE (store_id, slug)
 );
 
 -- Products Tabelle
@@ -210,6 +227,9 @@ CREATE INDEX idx_stores_slug ON stores(slug);
 CREATE INDEX idx_stores_owner ON stores(owner_id);
 CREATE INDEX idx_domains_host ON domains(host);
 CREATE INDEX idx_domains_store ON domains(store_id);
+CREATE INDEX idx_categories_store ON categories(store_id);
+CREATE INDEX idx_categories_parent ON categories(parent_id);
+CREATE INDEX idx_categories_slug ON categories(slug);
 CREATE INDEX idx_products_store ON products(store_id);
 CREATE INDEX idx_orders_store ON orders(store_id);
 CREATE INDEX idx_orders_customer ON orders(customer_id);

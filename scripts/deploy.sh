@@ -143,21 +143,24 @@ echo "✅ Environment file written."
 echo "🔄 Reloading systemd daemon..."
 sudo systemctl daemon-reload
 
-# Schema-Initialisierung VOR dem App-Start
+# Smart Database Migration VOR dem App-Start
 echo ""
-echo "🗃️  Initializing database schema..."
-INIT_SCHEMA_SCRIPT="$APP_DIR/init-schema.sh"
-if [ -f "$INIT_SCHEMA_SCRIPT" ]; then
+echo "🗃️  Running smart database migration..."
+MIGRATION_SCRIPT="$APP_DIR/scripts/smart-db-migration.sh"
+if [ -f "$MIGRATION_SCRIPT" ]; then
   export DB_PASSWORD="${DB_PASSWORD:-}"
-  if bash "$INIT_SCHEMA_SCRIPT"; then
-    echo "✅ Database schema initialized successfully!"
+  export AUTO_DEPLOY=true  # Automatisch Migration wählen (keine Daten löschen)
+  chmod +x "$MIGRATION_SCRIPT"
+  if bash "$MIGRATION_SCRIPT"; then
+    echo "✅ Database migration completed successfully!"
   else
-    echo "⚠️  Schema initialization failed, but continuing..."
+    echo "❌ Migration failed!"
     echo "    The application may fail to start if tables don't exist."
+    exit 1
   fi
 else
-  echo "⚠️  Schema init script not found: $INIT_SCHEMA_SCRIPT"
-  echo "    Skipping schema initialization - relying on Hibernate DDL."
+  echo "⚠️  Migration script not found: $MIGRATION_SCRIPT"
+  echo "    Skipping migration - relying on Hibernate DDL."
 fi
 echo ""
 

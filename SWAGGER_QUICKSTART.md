@@ -9,6 +9,36 @@
 
 ---
 
+## ⚠️ WICHTIG: Store Ownership
+
+**🔴 Du kannst nur auf DEINE eigenen Stores zugreifen!**
+
+### So findest du deine Store-ID:
+1. **Authentifizieren** (Token setzen)
+2. **GET /api/me/stores** aufrufen
+3. **Store-ID aus der Response** verwenden
+
+**Beispiel:**
+```json
+[
+  {
+    "id": 2,  👈 DIESE ID verwenden!
+    "name": "Mein Shop",
+    "slug": "mein-shop",
+    "ownerId": 4,
+    "status": "ACTIVE"
+  }
+]
+```
+
+**❌ FEHLER:** Wenn du versuchst, auf Store 1 zuzugreifen, aber Store 2 gehört dir:
+```
+POST /api/stores/1/products ❌ 403 Forbidden
+POST /api/stores/2/products ✅ Funktioniert!
+```
+
+---
+
 ## 🔐 1. AUTHENTIFIZIERUNG
 
 ### 1.1 Registrieren (kein Token nötig)
@@ -757,22 +787,71 @@ Zeigt alle Lagerbestand-Änderungen.
 
 ## 🐛 DEBUGGING TIPPS
 
-### 403 Forbidden?
-- Token in "Authorize" gesetzt?
-- Token noch gültig? (24h Gültigkeit)
-- Bist du Owner des Stores?
+### ❌ 403 Forbidden - "Access denied"?
 
-### 404 Not Found?
+**Häufigster Fehler:** Du versuchst auf einen Store zuzugreifen, der dir nicht gehört!
+
+**Lösung:**
+1. **Rufe zuerst deine Stores ab:**
+   ```
+   GET /api/me/stores
+   ```
+
+2. **Verwende NUR deine eigene Store-ID:**
+   ```json
+   Response:
+   [
+     {
+       "id": 2,  👈 Nur DIESE ID verwenden!
+       "name": "dddddddddddddd",
+       "ownerId": 4
+     }
+   ]
+   ```
+
+3. **Beispiel:**
+   - ✅ `POST /api/stores/2/products` (dein Store)
+   - ❌ `POST /api/stores/1/products` (fremder Store → 403 Forbidden)
+
+**Weitere 403-Ursachen:**
+- Token nicht in "Authorize" gesetzt?
+- Token abgelaufen? (24h Gültigkeit)
+- Token falsch kopiert? (ohne "Bearer" einfügen)
+
+### ❌ 404 Not Found?
 - Ist die storeId korrekt?
 - Existiert das Produkt/die Kategorie?
+- Hast du `GET /api/me/stores` vorher aufgerufen?
 
-### 500 Internal Server Error?
-- Logs prüfen: `ssh root@api.markt.ma "sudo journalctl -u storebackend -n 50"`
+### ❌ 500 Internal Server Error?
+- **Logs prüfen auf VPS:**
+  ```bash
+  ssh root@api.markt.ma "sudo journalctl -u storebackend -n 100 --no-pager"
+  ```
+- Prüfe ob alle Pflichtfelder vorhanden sind
+- Prüfe Datentypen (z.B. basePrice muss Zahl sein)
 
-### Bild-Upload schlägt fehl?
+### ❌ Bild-Upload schlägt fehl?
 - Datei zu groß? (Max: 10MB)
 - Format unterstützt? (JPEG, PNG, WebP)
-- Speicherplatz verfügbar? → `/media/usage` prüfen
+- **Speicherplatz prüfen:**
+  ```
+  GET /api/stores/{storeId}/media/usage
+  ```
+
+### ❌ NullPointerException: "Cannot invoke getMaxProducts() because plan is null"?
+- Benutzer hat keinen Plan zugewiesen
+- **Fix auf VPS:**
+  ```bash
+  ssh root@api.markt.ma "sudo -u postgres psql storedb -c \"UPDATE users SET plan_id = (SELECT id FROM plans WHERE name = 'FREE' LIMIT 1) WHERE plan_id IS NULL;\""
+  ```
+
+### ❌ Database Error: "column does not exist"?
+- Schema ist veraltet
+- **Fix auf VPS:**
+  ```bash
+  ssh root@api.markt.ma "sudo systemctl restart storebackend"
+  ```
 
 ---
 

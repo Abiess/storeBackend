@@ -8,7 +8,9 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "categories")
+@Table(name = "categories",
+    uniqueConstraints = @UniqueConstraint(columnNames = {"store_id", "slug"})
+)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -24,7 +26,7 @@ public class Category {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String slug;
 
     @ManyToOne(fetch = FetchType.LAZY)
