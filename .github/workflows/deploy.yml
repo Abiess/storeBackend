@@ -191,6 +191,7 @@ jobs:
             sudo mkdir -p /opt/storebackend
             sudo mkdir -p /opt/storebackend/backups
             sudo mkdir -p /opt/storebackend/logs
+            sudo mkdir -p /opt/storebackend/scripts
 
             # Create storebackend user if it doesn't exist
             if ! id -u storebackend > /dev/null 2>&1; then
@@ -206,44 +207,60 @@ jobs:
               echo "⚠️  /tmp/deploy.sh not found!"
             fi
 
-            # Move diagnose-database.sh from /tmp to /opt/storebackend
+            # Move diagnose-database.sh from /tmp to /opt/storebackend/scripts
             if [ -f /tmp/diagnose-database.sh ]; then
-              echo "Moving diagnose-database.sh to /opt/storebackend..."
-              sudo mv /tmp/diagnose-database.sh /opt/storebackend/diagnose-database.sh
+              echo "Moving diagnose-database.sh to /opt/storebackend/scripts..."
+              sudo mv /tmp/diagnose-database.sh /opt/storebackend/scripts/diagnose-database.sh
             else
               echo "⚠️  /tmp/diagnose-database.sh not found!"
             fi
 
-            # Move reset-database.sh from /tmp to /opt/storebackend
+            # Move reset-database.sh from /tmp to /opt/storebackend/scripts
             if [ -f /tmp/reset-database.sh ]; then
-              echo "Moving reset-database.sh to /opt/storebackend..."
-              sudo mv /tmp/reset-database.sh /opt/storebackend/reset-database.sh
+              echo "Moving reset-database.sh to /opt/storebackend/scripts..."
+              sudo mv /tmp/reset-database.sh /opt/storebackend/scripts/reset-database.sh
             else
               echo "⚠️  /tmp/reset-database.sh not found!"
             fi
 
-            # Move install-minio.sh from /tmp to /opt/storebackend
+            # Move install-minio.sh from /tmp to /opt/storebackend/scripts
             if [ -f /tmp/install-minio.sh ]; then
-              echo "Moving install-minio.sh to /opt/storebackend..."
-              sudo mv /tmp/install-minio.sh /opt/storebackend/install-minio.sh
+              echo "Moving install-minio.sh to /opt/storebackend/scripts..."
+              sudo mv /tmp/install-minio.sh /opt/storebackend/scripts/install-minio.sh
             else
               echo "⚠️  /tmp/install-minio.sh not found!"
             fi
 
-            # Move smart-db-migration.sh from /tmp to /opt/storebackend
+            # Move smart-db-migration.sh from /tmp to /opt/storebackend/scripts
             if [ -f /tmp/smart-db-migration.sh ]; then
-              echo "Moving smart-db-migration.sh to /opt/storebackend..."
-              sudo mv /tmp/smart-db-migration.sh /opt/storebackend/smart-db-migration.sh
+              echo "Moving smart-db-migration.sh to /opt/storebackend/scripts..."
+              sudo mv /tmp/smart-db-migration.sh /opt/storebackend/scripts/smart-db-migration.sh
             else
               echo "⚠️  /tmp/smart-db-migration.sh not found!"
             fi
 
-            # Move migrate-database.sql from /tmp to /opt/storebackend
+            # Move migrate-database.sql from /tmp to /opt/storebackend/scripts
             if [ -f /tmp/migrate-database.sql ]; then
-              echo "Moving migrate-database.sql to /opt/storebackend..."
-              sudo mv /tmp/migrate-database.sql /opt/storebackend/migrate-database.sql
+              echo "Moving migrate-database.sql to /opt/storebackend/scripts..."
+              sudo mv /tmp/migrate-database.sql /opt/storebackend/scripts/migrate-database.sql
             else
               echo "⚠️  /tmp/migrate-database.sql not found!"
+            fi
+
+            # Move init-schema.sql from /tmp to /opt/storebackend/scripts
+            if [ -f /tmp/init-schema.sql ]; then
+              echo "Moving init-schema.sql to /opt/storebackend/scripts..."
+              sudo mv /tmp/init-schema.sql /opt/storebackend/scripts/init-schema.sql
+            else
+              echo "⚠️  /tmp/init-schema.sql not found!"
+            fi
+
+            # Move init-schema.sh from /tmp to /opt/storebackend/scripts
+            if [ -f /tmp/init-schema.sh ]; then
+              echo "Moving init-schema.sh to /opt/storebackend/scripts..."
+              sudo mv /tmp/init-schema.sh /opt/storebackend/scripts/init-schema.sh
+            else
+              echo "⚠️  /tmp/init-schema.sh not found!"
             fi
 
             # Set permissions and ownership

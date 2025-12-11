@@ -21,8 +21,8 @@ HEALTH_URL="http://localhost:8080/actuator/health"
 MAX_RETRIES=30
 SLEEP_SECONDS=2
 
-# Datenbank-Diagnose Script (im selben Verzeichnis wie deploy.sh)
-DIAGNOSE_SCRIPT="$APP_DIR/diagnose-database.sh"
+# Datenbank-Diagnose Script (im scripts Verzeichnis)
+DIAGNOSE_SCRIPT="$APP_DIR/scripts/diagnose-database.sh"
 
 echo "================ Store Backend Deployment (production) ================"
 echo "🚀 Starting deployment..."
@@ -38,7 +38,7 @@ fi
 if [ "${RESET_DATABASE:-false}" = "true" ]; then
   echo ""
   echo "🗑️  Database reset requested..."
-  RESET_SCRIPT="$APP_DIR/reset-database.sh"
+  RESET_SCRIPT="$APP_DIR/scripts/reset-database.sh"
   if [ -f "$RESET_SCRIPT" ]; then
     export DB_PASSWORD="${DB_PASSWORD:-}"
     if bash "$RESET_SCRIPT"; then
