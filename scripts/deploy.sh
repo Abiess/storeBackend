@@ -143,6 +143,40 @@ echo "✅ Environment file written."
 echo "🔄 Reloading systemd daemon..."
 sudo systemctl daemon-reload
 
+# Check and install MinIO if needed
+echo ""
+echo "🗄️  Checking MinIO..."
+if systemctl is-active --quiet minio 2>/dev/null; then
+    echo "   ✅ MinIO is already running"
+elif systemctl list-unit-files | grep -q "^minio.service"; then
+    echo "   ⚠️  MinIO service exists but not running - starting..."
+    sudo systemctl start minio
+    sleep 2
+    if systemctl is-active --quiet minio; then
+        echo "   ✅ MinIO started successfully"
+    else
+        echo "   ❌ MinIO failed to start - check logs: sudo journalctl -u minio -n 50"
+    fi
+else
+    echo "   ⚠️  MinIO not installed - installing now..."
+    INSTALL_SCRIPT="$APP_DIR/scripts/install-minio.sh"
+    if [ -f "$INSTALL_SCRIPT" ]; then
+        chmod +x "$INSTALL_SCRIPT"
+        if bash "$INSTALL_SCRIPT"; then
+            echo "   ✅ MinIO installed and started successfully!"
+        else
+            echo "   ❌ MinIO installation failed"
+            echo "   ⚠️  Application may not be able to upload images"
+            echo "   💡 Install manually: sudo $INSTALL_SCRIPT"
+        fi
+    else
+        echo "   ❌ MinIO installation script not found: $INSTALL_SCRIPT"
+        echo "   ⚠️  Application may not be able to upload images"
+        echo "   💡 Download script from repository"
+    fi
+fi
+echo ""
+
 # Smart Database Migration VOR dem App-Start
 echo ""
 echo "🗃️  Running smart database migration..."
