@@ -1,6 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
@@ -121,7 +121,7 @@ import { LanguageSwitcherComponent } from '../../shared/components/language-swit
     }
   `]
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   loginForm: FormGroup;
   loading = false;
   errorMessage = '';
@@ -129,11 +129,23 @@ export class LoginComponent {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]]
+    });
+  }
+
+  ngOnInit(): void {
+    // Prüfe auf Fehlerparameter in der URL
+    this.route.queryParams.subscribe(params => {
+      if (params['error'] === 'session_expired') {
+        this.errorMessage = 'Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.';
+      } else if (params['error'] === 'auth_required') {
+        this.errorMessage = 'Bitte melden Sie sich an, um auf diese Seite zuzugreifen.';
+      }
     });
   }
 
@@ -144,7 +156,9 @@ export class LoginComponent {
 
       this.authService.login(this.loginForm.value).subscribe({
         next: () => {
-          this.router.navigate(['/dashboard']);
+          // Prüfe auf returnUrl und leite dorthin weiter
+          const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
+          this.router.navigate([returnUrl]);
         },
         error: (error) => {
           this.loading = false;

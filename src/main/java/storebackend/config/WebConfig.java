@@ -17,13 +17,14 @@ public class WebConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         // Erlaubte Origins - Frontend-Domains
-        configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:4200",           // Local development
-            "http://localhost:8080",           // Local backend
+        configuration.setAllowedOriginPatterns(Arrays.asList(
+            "http://localhost:*",              // Local development (alle Ports)
             "https://markt.ma",                // Production frontend
             "http://markt.ma",                 // Production frontend (HTTP)
             "https://www.markt.ma",            // Production frontend with www
             "http://www.markt.ma",             // Production frontend with www (HTTP)
+            "https://*.markt.ma",              // Alle Subdomains von markt.ma
+            "http://*.markt.ma",               // Alle Subdomains von markt.ma (HTTP)
             "https://api.markt.ma",            // Backend domain
             "http://api.markt.ma"              // Backend domain (HTTP)
         ));
@@ -63,4 +64,3 @@ public class WebConfig {
         return source;
     }
 }
-

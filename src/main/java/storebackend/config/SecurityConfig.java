@@ -37,15 +37,29 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource))  // Verwende das injizierte Feld
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // Auth endpoints
                 .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/validate").permitAll()
+                // Public API endpoints
                 .requestMatchers("/api/public/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/public/**").permitAll()
+                // Storefront public endpoints - Stores und Produkte können öffentlich angesehen werden
+                .requestMatchers(HttpMethod.GET, "/api/stores/*/public/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/stores/public/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/stores/*/products").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/stores/*/products/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/stores/by-domain/**").permitAll()
+                // Cart and Checkout - können öffentlich sein (verwenden Session)
+                .requestMatchers("/api/cart/**").permitAll()
+                .requestMatchers("/api/checkout/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/orders/create").permitAll()
+                // Health check
                 .requestMatchers("/actuator/**").permitAll()
                 // Swagger UI Endpunkte
                 .requestMatchers("/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/v3/api-docs").permitAll()
                 .requestMatchers("/swagger-resources/**").permitAll()
                 .requestMatchers("/webjars/**").permitAll()
+                // Alle anderen Anfragen benötigen Authentifizierung
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authenticationProvider())
