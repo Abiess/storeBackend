@@ -22,6 +22,17 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '20'
+          always-auth: false
+
+      - name: Remove any npm auth config
+        working-directory: storeFrontend
+        run: |
+          # Remove any .npmrc files that might exist
+          rm -f .npmrc ~/.npmrc 2>/dev/null || true
+          # Clear npm config
+          npm config delete //registry.npmjs.org/:_authToken 2>/dev/null || true
+          npm config set registry https://registry.npmjs.org/
+          echo "npm config cleared"
 
       - name: Clean npm cache (optional)
         working-directory: storeFrontend
