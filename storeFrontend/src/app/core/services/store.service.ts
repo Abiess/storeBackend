@@ -47,4 +47,17 @@ export class StoreService {
     }
     return this.http.delete<void>(`${environment.apiUrl}/stores/${storeId}`);
   }
+
+  checkSlugAvailability(slug: string): Observable<boolean> {
+    if (environment.useMockData) {
+      // Mock: Slugs mit 'test' sind bereits vergeben
+      return new Observable(observer => {
+        setTimeout(() => {
+          observer.next(!slug.includes('test'));
+          observer.complete();
+        }, 300);
+      });
+    }
+    return this.http.get<boolean>(`${environment.apiUrl}/stores/check-slug/${slug}`);
+  }
 }

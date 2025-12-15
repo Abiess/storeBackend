@@ -1,15 +1,16 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { StoreService } from '@app/core/services/store.service';
 import { AuthService } from '@app/core/services/auth.service';
-import { Store, User } from '@app/core/models';
+import { Store, User, CreateStoreRequest } from '@app/core/models';
 import { LanguageSwitcherComponent } from '@app/shared/components/language-switcher.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, LanguageSwitcherComponent],
+  imports: [CommonModule, RouterModule, FormsModule, LanguageSwitcherComponent],
   template: `
     <div class="dashboard">
       <nav class="navbar">
@@ -44,6 +45,10 @@ import { LanguageSwitcherComponent } from '@app/shared/components/language-switc
             <h2>Meine Stores</h2>
             <p class="subtitle">Verwalten Sie Ihre Online-Shops</p>
           </div>
+          <button class="btn btn-create-store" (click)="openCreateStoreModal()">
+            <span class="icon">➕</span>
+            Neuer Store
+          </button>
         </div>
 
         <div *ngIf="loading" class="loading-container">
@@ -54,7 +59,11 @@ import { LanguageSwitcherComponent } from '@app/shared/components/language-switc
         <div *ngIf="!loading && stores.length === 0" class="empty-state">
           <div class="empty-icon">🏪</div>
           <h3>Noch keine Stores vorhanden</h3>
-          <p>Kontaktieren Sie den Administrator, um einen Store zu erhalten.</p>
+          <p>Erstellen Sie Ihren ersten Store und starten Sie mit dem Verkauf!</p>
+          <button class="btn btn-primary btn-large" (click)="openCreateStoreModal()">
+            <span>➕</span>
+            Ersten Store erstellen
+          </button>
         </div>
 
         <div *ngIf="!loading && stores.length > 0" class="stores-grid">
@@ -87,6 +96,98 @@ import { LanguageSwitcherComponent } from '@app/shared/components/language-switc
                 <span>📊</span>
                 Store verwalten
               </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Create Store Modal -->
+      <div class="modal-overlay" *ngIf="showCreateModal" (click)="closeCreateStoreModal()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h2>Neuen Store erstellen</h2>
+            <button class="close-btn" (click)="closeCreateStoreModal()">×</button>
+          </div>
+
+          <div class="modal-body">
+            <form #storeForm="ngForm" (ngSubmit)="createStore()">
+              <div class="form-group">
+                <label for="storeName">Store Name *</label>
+                <input
+                  type="text"
+                  id="storeName"
+                  name="storeName"
+                  [(ngModel)]="newStore.name"
+                  required
+                  placeholder="z.B. Mein Online Shop"
+                  class="form-control"
+                  [class.error]="storeForm.submitted && !newStore.name"
+                  (input)="generateSlug()"
+                />
+                <small class="form-hint">Der Name Ihres Stores, wie er Kunden angezeigt wird</small>
+                <div class="error-message" *ngIf="storeForm.submitted && !newStore.name">
+                  Bitte geben Sie einen Store-Namen ein
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="storeSlug">URL-Slug *</label>
+                <div class="slug-input-group">
+                  <input
+                    type="text"
+                    id="storeSlug"
+                    name="storeSlug"
+                    [(ngModel)]="newStore.slug"
+                    required
+                    placeholder="mein-shop"
+                    class="form-control"
+                    [class.error]="storeForm.submitted && !newStore.slug"
+                    pattern="^[a-z0-9-]+$"
+                  />
+                  <span class="slug-suffix">.markt.ma</span>
+                </div>
+                <small class="form-hint">
+                  Nur Kleinbuchstaben, Zahlen und Bindestriche. Dies wird Ihre Shop-URL: 
+                  <strong>{{ newStore.slug || 'mein-shop' }}.markt.ma</strong>
+                </small>
+                <div class="error-message" *ngIf="storeForm.submitted && !newStore.slug">
+                  Bitte geben Sie einen URL-Slug ein
+                </div>
+                <div class="error-message" *ngIf="slugError">
+                  {{ slugError }}
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="storeDescription">Beschreibung (optional)</label>
+                <textarea
+                  id="storeDescription"
+                  name="storeDescription"
+                  [(ngModel)]="newStore.description"
+                  placeholder="Beschreiben Sie Ihren Store..."
+                  class="form-control"
+                  rows="4"
+                ></textarea>
+                <small class="form-hint">Eine kurze Beschreibung Ihres Stores für Kunden und Suchmaschinen</small>
+              </div>
+
+              <div class="form-actions">
+                <button type="button" class="btn btn-secondary" (click)="closeCreateStoreModal()" [disabled]="creating">
+                  Abbrechen
+                </button>
+                <button type="submit" class="btn btn-primary" [disabled]="creating || !storeForm.valid">
+                  <span *ngIf="!creating">✓ Store erstellen</span>
+                  <span *ngIf="creating">
+                    <span class="spinner-small"></span>
+                    Wird erstellt...
+                  </span>
+                </button>
+              </div>
+            </form>
+
+            <div class="error-alert" *ngIf="createError">
+              <span class="icon">⚠️</span>
+              <p>{{ createError }}</p>
             </div>
           </div>
         </div>
@@ -282,11 +383,17 @@ import { LanguageSwitcherComponent } from '@app/shared/components/language-switc
 
     .dashboard-header {
       padding: 1.5rem 0 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      flex-wrap: wrap;
     }
 
     @media (min-width: 768px) {
       .dashboard-header {
         padding: 2rem 0 1.5rem;
+        align-items: center;
       }
     }
 
@@ -303,346 +410,266 @@ import { LanguageSwitcherComponent } from '@app/shared/components/language-switc
       }
     }
 
-    .subtitle {
-      color: rgba(255, 255, 255, 0.9);
-      font-size: 0.875rem;
-      margin: 0;
-    }
-
-    @media (min-width: 768px) {
-      .subtitle {
-        font-size: 1rem;
-      }
-    }
-
-    .loading-container {
-      text-align: center;
-      padding: 3rem 1rem;
-    }
-
-    @media (min-width: 768px) {
-      .loading-container {
-        padding: 4rem 1rem;
-      }
-    }
-
-    .loading-container p {
-      color: white;
-      margin-top: 1rem;
-      font-size: 0.875rem;
-    }
-
-    @media (min-width: 768px) {
-      .loading-container p {
-        font-size: 1rem;
-      }
-    }
-
-    .spinner {
-      border: 4px solid rgba(255, 255, 255, 0.3);
-      border-top: 4px solid white;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-      margin: 0 auto;
-    }
-
-    @media (min-width: 768px) {
-      .spinner {
-        width: 50px;
-        height: 50px;
-      }
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 3rem 1.5rem;
+    .btn-create-store {
       background: white;
-      border-radius: 12px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-      max-width: 500px;
-      margin: 2rem auto;
-    }
-
-    @media (min-width: 768px) {
-      .empty-state {
-        padding: 4rem 2rem;
-        border-radius: 16px;
-      }
-    }
-
-    .empty-icon {
-      font-size: 3rem;
-      margin-bottom: 1rem;
-    }
-
-    @media (min-width: 768px) {
-      .empty-icon {
-        font-size: 4rem;
-        margin-bottom: 1.5rem;
-      }
-    }
-
-    .empty-state h3 {
-      font-size: 1.25rem;
-      margin-bottom: 0.75rem;
-      color: #333;
-    }
-
-    @media (min-width: 768px) {
-      .empty-state h3 {
-        font-size: 1.5rem;
-      }
-    }
-
-    .empty-state p {
-      color: #666;
-      font-size: 0.875rem;
-      margin-bottom: 0;
-    }
-
-    @media (min-width: 768px) {
-      .empty-state p {
-        font-size: 1rem;
-      }
-    }
-
-    .stores-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 1rem;
-      padding: 1rem 0 2rem;
-    }
-
-    @media (min-width: 640px) {
-      .stores-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1.25rem;
-      }
-    }
-
-    @media (min-width: 1024px) {
-      .stores-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1.5rem;
-      }
-    }
-
-    .store-card {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-      transition: all 0.3s ease;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-
-    @media (min-width: 768px) {
-      .store-card {
-        border-radius: 16px;
-      }
-    }
-
-    .store-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 40px rgba(0,0,0,0.15);
-    }
-
-    .store-card.inactive {
-      opacity: 0.7;
-    }
-
-    .store-card-header {
-      padding: 1rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid #f0f0f0;
-    }
-
-    @media (min-width: 768px) {
-      .store-card-header {
-        padding: 1.25rem;
-      }
-    }
-
-    .store-icon {
-      font-size: 2rem;
-    }
-
-    @media (min-width: 768px) {
-      .store-icon {
-        font-size: 2.5rem;
-      }
-    }
-
-    .store-card-body {
-      padding: 1rem;
-      flex: 1;
-    }
-
-    @media (min-width: 768px) {
-      .store-card-body {
-        padding: 1.25rem;
-      }
-    }
-
-    .store-card-body h3 {
-      font-size: 1.125rem;
-      margin: 0 0 0.75rem;
-      color: #333;
-      font-weight: 600;
-    }
-
-    @media (min-width: 768px) {
-      .store-card-body h3 {
-        font-size: 1.25rem;
-      }
-    }
-
-    .store-url {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.8125rem;
-      margin: 0 0 1rem;
-      font-weight: 500;
-      word-break: break-all;
-    }
-
-    @media (min-width: 768px) {
-      .store-url {
-        font-size: 0.875rem;
-      }
-    }
-
-    .domain-link {
       color: #667eea;
-      text-decoration: none;
-      transition: all 0.3s;
-      border-bottom: 1px solid transparent;
-    }
-
-    .domain-link:hover {
-      color: #764ba2;
-      border-bottom-color: #764ba2;
-    }
-
-    .store-meta {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .meta-item {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      color: #666;
-      font-size: 0.75rem;
-    }
-
-    @media (min-width: 768px) {
-      .meta-item {
-        font-size: 0.8125rem;
-      }
-    }
-
-    .meta-icon {
-      flex-shrink: 0;
-    }
-
-    .store-card-footer {
-      padding: 0.875rem 1rem;
-      background: #f8f9fa;
-      border-top: 1px solid #f0f0f0;
-    }
-
-    @media (min-width: 768px) {
-      .store-card-footer {
-        padding: 1rem 1.25rem;
-      }
-    }
-
-    .btn {
-      padding: 0.625rem 1rem;
-      border: none;
+      border: 2px solid white;
+      padding: 0.75rem 1.5rem;
       border-radius: 8px;
-      font-size: 0.8125rem;
       font-weight: 600;
-      transition: all 0.3s ease;
+      cursor: pointer;
+      transition: all 0.3s;
       display: inline-flex;
       align-items: center;
-      justify-content: center;
       gap: 0.5rem;
-      cursor: pointer;
+      font-size: 0.875rem;
+      white-space: nowrap;
     }
 
     @media (min-width: 768px) {
-      .btn {
-        padding: 0.75rem 1.25rem;
-        font-size: 0.875rem;
+      .btn-create-store {
+        padding: 0.875rem 1.75rem;
+        font-size: 1rem;
       }
     }
 
-    .btn-block {
-      width: 100%;
+    .btn-create-store:hover {
+      background: #667eea;
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255, 255, 255, 0.3);
     }
 
-    .btn-primary {
+    .btn-create-store .icon {
+      font-size: 1.25rem;
+    }
+
+    .btn-large {
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    @media (min-width: 768px) {
+      .btn-large {
+        padding: 1.125rem 2.5rem;
+        font-size: 1.125rem;
+      }
+    }
+
+    .btn-subscription {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.5rem;
       background: linear-gradient(135deg, #667eea, #764ba2);
       color: white;
+      border: none;
+      border-radius: 8px;
+      transition: all 0.3s;
+      font-size: 1.25rem;
+      text-decoration: none;
+      width: 40px;
+      height: 40px;
     }
 
-    .btn-primary:hover {
-      transform: translateY(-2px);
+    .btn-subscription:hover {
+      transform: scale(1.1);
       box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
     }
 
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 0.25rem 0.625rem;
-      font-size: 0.6875rem;
-      font-weight: 600;
-      border-radius: 20px;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
+    .subscription-icon {
+      display: block;
     }
 
-    @media (min-width: 768px) {
-      .badge {
-        padding: 0.375rem 0.75rem;
-        font-size: 0.75rem;
-        letter-spacing: 0.5px;
+    .form-control.error {
+      border-color: #e74c3c;
+    }
+
+    .error-alert {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-top: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .error-alert .icon {
+      font-size: 1.5rem;
+    }
+
+    .error-alert p {
+      margin: 0;
+      color: #856404;
+      font-size: 0.875rem;
+    }
+
+    .form-hint strong {
+      color: #667eea;
+    }
+
+    textarea.form-control {
+      resize: vertical;
+      min-height: 100px;
+      font-family: inherit;
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    @media (max-width: 639px) {
+      .dashboard-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .btn-create-store {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .modal-content {
+        width: 95%;
+        padding: 1.5rem;
       }
     }
 
-    .badge-success {
-      background-color: #d4edda;
-      color: #155724;
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
     }
 
-    .badge-danger {
-      background-color: #f8d7da;
-      color: #721c24;
+    .modal-content {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      max-width: 600px;
+      width: 90%;
+      padding: 2rem;
+      position: relative;
     }
 
-    .badge-warning {
-      background-color: #fff3cd;
-      color: #856404;
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
     }
 
-    .badge-info {
-      background-color: #d1ecf1;
-      color: #0c5460;
+    .modal-header h2 {
+      font-size: 1.5rem;
+      margin: 0;
+      color: #333;
+    }
+
+    .close-btn {
+      background: transparent;
+      border: none;
+      color: #666;
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: color 0.3s;
+    }
+
+    .close-btn:hover {
+      color: #333;
+    }
+
+    .modal-body {
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: #333;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      color: #333;
+      transition: border-color 0.3s;
+    }
+
+    .form-control:focus {
+      border-color: #667eea;
+      outline: none;
+    }
+
+    .form-hint {
+      font-size: 0.75rem;
+      color: #666;
+      margin-top: 0.25rem;
+    }
+
+    .error-message {
+      color: #e74c3c;
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+    }
+
+    .slug-input-group {
+      display: flex;
+      align-items: center;
+    }
+
+    .slug-input-group .form-control {
+      flex: 1;
+      margin-right: 0.5rem;
+    }
+
+    .slug-suffix {
+      font-size: 0.875rem;
+      color: #666;
+    }
+
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+    }
+
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #333;
+    }
+
+    .btn-secondary:hover {
+      background: #e0e0e0;
+    }
+
+    .spinner-small {
+      width: 16px;
+      height: 16px;
+      border: 3px solid rgba(102, 126, 234, 0.3);
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      display: inline-block;
+      margin-right: 0.5rem;
     }
   `]
 })
@@ -650,6 +677,15 @@ export class DashboardComponent implements OnInit {
   stores: Store[] = [];
   currentUser: User | null = null;
   loading = true;
+  showCreateModal = false;
+  newStore: CreateStoreRequest = {
+    name: '',
+    slug: '',
+    description: ''
+  };
+  creating = false;
+  slugError: string | null = null;
+  createError: string | null = null;
 
   constructor(
     private storeService: StoreService,
@@ -704,5 +740,65 @@ export class DashboardComponent implements OnInit {
       case 'PENDING_DOMAIN_VERIFICATION': return 'Verifizierung';
       default: return status;
     }
+  }
+
+  openCreateStoreModal(): void {
+    this.showCreateModal = true;
+    this.resetNewStore();
+  }
+
+  closeCreateStoreModal(): void {
+    this.showCreateModal = false;
+    this.createError = null;
+  }
+
+  resetNewStore(): void {
+    this.newStore = {
+      name: '',
+      slug: '',
+      description: ''
+    };
+    this.slugError = null;
+  }
+
+  generateSlug(): void {
+    if (!this.newStore.name) {
+      this.newStore.slug = '';
+      return;
+    }
+    const slug = this.newStore.name
+      .toLowerCase()
+      .replace(/[^a-z0-9- ]/g, '')
+      .trim()
+      .replace(/ +/g, '-');
+    this.newStore.slug = slug;
+    this.checkSlugAvailability(slug);
+  }
+
+  checkSlugAvailability(slug: string): void {
+    this.storeService.checkSlugAvailability(slug).subscribe({
+      next: (available) => {
+        this.slugError = available ? null : 'Dieser Slug ist bereits vergeben';
+      },
+      error: () => {
+        this.slugError = 'Fehler bei der Überprüfung der Slug-Verfügbarkeit';
+      }
+    });
+  }
+
+  createStore(): void {
+    this.creating = true;
+    this.storeService.createStore(this.newStore).subscribe({
+      next: () => {
+        this.creating = false;
+        this.closeCreateStoreModal();
+        this.loadStores();
+      },
+      error: (error) => {
+        this.creating = false;
+        this.createError = 'Fehler beim Erstellen des Stores';
+        console.error('Fehler beim Erstellen des Stores:', error);
+      }
+    });
   }
 }
