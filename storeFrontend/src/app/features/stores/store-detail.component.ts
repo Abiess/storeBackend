@@ -547,7 +547,7 @@ import { LanguageSwitcherComponent } from '@app/shared/components/language-switc
     .product-header {
       display: flex;
       justify-content: space-between;
-      align-items: start;
+      align-items: flex-start;
       margin-bottom: 0.75rem;
       gap: 0.5rem;
     }
@@ -601,7 +601,7 @@ import { LanguageSwitcherComponent } from '@app/shared/components/language-switc
     .order-header {
       display: flex;
       justify-content: space-between;
-      align-items: start;
+      align-items: flex-start;
       margin-bottom: 0.75rem;
       flex-wrap: wrap;
       gap: 0.5rem;
@@ -749,7 +749,7 @@ import { LanguageSwitcherComponent } from '@app/shared/components/language-switc
     .domain-main {
       display: flex;
       justify-content: space-between;
-      align-items: start;
+      align-items: flex-start;
       gap: 1rem;
       flex-wrap: wrap;
     }

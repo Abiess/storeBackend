@@ -42,7 +42,7 @@ export class SubscriptionComponent implements OnInit {
   }
 
   loadCurrentSubscription(): void {
-    const user = this.authService.currentUser$.value;
+    const user = this.authService.getCurrentUser();
     if (user) {
       this.subscriptionService.getCurrentSubscription(user.id).subscribe({
         next: (subscription) => {
