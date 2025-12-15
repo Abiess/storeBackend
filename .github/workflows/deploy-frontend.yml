@@ -33,9 +33,18 @@ jobs:
       - name: Install dependencies (without auth)
         working-directory: storeFrontend
         run: |
-          # Remove local .npmrc if exists
-          rm -f .npmrc 2>/dev/null || true
-          # Use npm install instead of npm ci to avoid auth issues
+          # Create a clean .npmrc that explicitly disables auth
+          cat > .npmrc << 'NPMRC_EOF'
+registry=https://registry.npmjs.org/
+//registry.npmjs.org/:_authToken=
+always-auth=false
+NPMRC_EOF
+          
+          # Show what we created
+          echo "Created .npmrc:"
+          cat .npmrc
+          
+          # Install dependencies
           npm install --legacy-peer-deps
         env:
           npm_config_registry: https://registry.npmjs.org/
