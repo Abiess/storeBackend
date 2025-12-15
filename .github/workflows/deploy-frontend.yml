@@ -7,7 +7,7 @@ on:
       - main
     paths:
       - 'storeFrontend/**'
-      - '.github/workflows/deploy-frontend.yml'  # Auch bei Workflow-Änderungen triggern
+      - '.github/workflows/deploy-frontend.yml'
   workflow_dispatch:
 
 jobs:
@@ -18,34 +18,37 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup Node.js (without cache)
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
-      - name: Clean all npm auth
+      - name: Clean npm config (no auth, public registry)
         run: |
-          # Remove ALL npmrc files
+          echo ">>> Removing all npmrc files (global + project)"
           rm -f ~/.npmrc 2>/dev/null || true
           rm -f /etc/npmrc 2>/dev/null || true
           rm -f /usr/local/etc/npmrc 2>/dev/null || true
+          rm -f .npmrc 2>/dev/null || true
+          rm -f storeFrontend/.npmrc 2>/dev/null || true
 
-      - name: Install dependencies (without auth)
+      - name: Debug npm config before install
         working-directory: storeFrontend
         run: |
-          # Create a clean .npmrc that explicitly disables auth
-          cat > .npmrc << 'NPMRC_EOF'
-          registry=https://registry.npmjs.org/
-          //registry.npmjs.org/:_authToken=
-          always-auth=false
-          NPMRC_EOF
-          
-          # Show what we created
-          echo "Created .npmrc:"
-          cat .npmrc
-          
-          # Install dependencies
-          npm install --legacy-peer-deps
+          echo ">>> NPM env:"
+          echo "NPM_CONFIG_USERCONFIG=${NPM_CONFIG_USERCONFIG:-<not set>}"
+          echo "NODE_AUTH_TOKEN=${NODE_AUTH_TOKEN:+<set but hidden>}"
+
+          echo ">>> Existing .npmrc files:"
+          find .. -name ".npmrc" -print || true
+
+          echo ">>> Forcing public npm registry:"
+          npm config set registry https://registry.npmjs.org/
+          npm config list -l
+
+      - name: Install dependencies (public registry, no auth)
+        working-directory: storeFrontend
+        run: npm ci --legacy-peer-deps
         env:
           npm_config_registry: https://registry.npmjs.org/
 
