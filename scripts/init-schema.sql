@@ -91,11 +91,14 @@ CREATE TABLE store_usage (
 CREATE TABLE media (
     id BIGSERIAL PRIMARY KEY,
     store_id BIGINT NOT NULL,
-    file_name VARCHAR(255) NOT NULL,
-    file_path VARCHAR(500) NOT NULL,
-    file_size BIGINT NOT NULL,
-    mime_type VARCHAR(100),
-    uploaded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    filename VARCHAR(255) NOT NULL,
+    original_filename VARCHAR(255) NOT NULL,
+    content_type VARCHAR(100) NOT NULL,
+    size_bytes BIGINT NOT NULL,
+    minio_object_name VARCHAR(500) NOT NULL,
+    media_type VARCHAR(50) NOT NULL,
+    alt_text VARCHAR(500),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
 );
 
