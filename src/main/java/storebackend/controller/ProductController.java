@@ -1,5 +1,10 @@
 package storebackend.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +22,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/stores/{storeId}/products")
+@Tag(name = "Products", description = "Product management APIs")
 @Slf4j
 public class ProductController {
 
@@ -30,9 +36,14 @@ public class ProductController {
         this.storeRepository = storeRepository;
     }
 
+    @Operation(summary = "Get all products", description = "Returns all products for a specific store")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved products"),
+            @ApiResponse(responseCode = "403", description = "Not authorized to access this store")
+    })
     @GetMapping
     public ResponseEntity<List<ProductDTO>> getProducts(
-            @PathVariable Long storeId,
+            @Parameter(description = "Store ID") @PathVariable Long storeId,
             @AuthenticationPrincipal User user) {
 
         if (!storeRepository.isStoreOwnedByUser(storeId, user.getId())) {
@@ -43,10 +54,11 @@ public class ProductController {
         return ResponseEntity.ok(productService.getProductsByStore(store));
     }
 
+    @Operation(summary = "Get product by ID", description = "Returns a single product")
     @GetMapping("/{productId}")
     public ResponseEntity<ProductDTO> getProduct(
-            @PathVariable Long storeId,
-            @PathVariable Long productId,
+            @Parameter(description = "Store ID") @PathVariable Long storeId,
+            @Parameter(description = "Product ID") @PathVariable Long productId,
             @AuthenticationPrincipal User user) {
 
         if (!storeRepository.isStoreOwnedByUser(storeId, user.getId())) {
@@ -57,9 +69,14 @@ public class ProductController {
         return ResponseEntity.ok(productService.getProductById(productId, store));
     }
 
+    @Operation(summary = "Create a new product", description = "Creates a new product with optional category assignment")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Product created successfully"),
+            @ApiResponse(responseCode = "403", description = "Not authorized")
+    })
     @PostMapping
     public ResponseEntity<ProductDTO> createProduct(
-            @PathVariable Long storeId,
+            @Parameter(description = "Store ID") @PathVariable Long storeId,
             @Valid @RequestBody CreateProductRequest request,
             @AuthenticationPrincipal User user) {
 
@@ -76,10 +93,11 @@ public class ProductController {
         return ResponseEntity.ok(productService.createProduct(request, store, user));
     }
 
+    @Operation(summary = "Update product", description = "Updates an existing product including category assignment")
     @PutMapping("/{productId}")
     public ResponseEntity<ProductDTO> updateProduct(
-            @PathVariable Long storeId,
-            @PathVariable Long productId,
+            @Parameter(description = "Store ID") @PathVariable Long storeId,
+            @Parameter(description = "Product ID") @PathVariable Long productId,
             @Valid @RequestBody CreateProductRequest request,
             @AuthenticationPrincipal User user) {
 
@@ -91,10 +109,11 @@ public class ProductController {
         return ResponseEntity.ok(productService.updateProduct(productId, request, store));
     }
 
+    @Operation(summary = "Delete product", description = "Deletes a product")
     @DeleteMapping("/{productId}")
     public ResponseEntity<Void> deleteProduct(
-            @PathVariable Long storeId,
-            @PathVariable Long productId,
+            @Parameter(description = "Store ID") @PathVariable Long storeId,
+            @Parameter(description = "Product ID") @PathVariable Long productId,
             @AuthenticationPrincipal User user) {
 
         if (!storeRepository.isStoreOwnedByUser(storeId, user.getId())) {

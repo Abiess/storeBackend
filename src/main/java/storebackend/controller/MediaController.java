@@ -1,5 +1,10 @@
 package storebackend.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +24,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/stores/{storeId}/media")
+@Tag(name = "Media", description = "Media upload and management APIs - Upload images to MinIO")
 @RequiredArgsConstructor
 public class MediaController {
 
@@ -29,11 +35,19 @@ public class MediaController {
     /**
      * Upload media file
      */
+    @Operation(
+            summary = "Upload media file",
+            description = "Upload an image or video to MinIO storage. Supported types: PRODUCT_IMAGE, LOGO, BANNER"
+    )
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadMedia(
-            @PathVariable Long storeId,
+            @Parameter(description = "Store ID") @PathVariable Long storeId,
+            @Parameter(description = "Media file to upload", required = true,
+                    content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))
             @RequestParam("file") MultipartFile file,
+            @Parameter(description = "Media type (PRODUCT_IMAGE, LOGO, BANNER)")
             @RequestParam(required = false, defaultValue = "PRODUCT_IMAGE") String mediaType,
+            @Parameter(description = "Alternative text for accessibility")
             @RequestParam(required = false) String altText,
             @AuthenticationPrincipal User user
     ) {
