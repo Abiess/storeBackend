@@ -1,71 +1,66 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of } from 'rxjs';
-import { User, Role, AuthResponse, LoginRequest, RegisterRequest } from '../models';
+import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { User, AuthResponse, LoginRequest, RegisterRequest } from '../models';
 import { tap } from 'rxjs/operators';
+import { environment } from '@env/environment';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  currentUser$ = new BehaviorSubject<User | null>({
-    id: 1,
-    email: 'max@beispiel.de',
-    name: 'Max Mustermann',
-    roles: [Role.SUPER_ADMIN],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  });
+  private currentUserSubject = new BehaviorSubject<User | null>(null);
+  public currentUser$ = this.currentUserSubject.asObservable();
 
-  login(credentials: LoginRequest | any): Observable<AuthResponse> {
-    // Mock: Simuliert erfolgreichen Login
-    const user: User = {
-      id: 1,
-      email: credentials.email || 'user@example.com',
-      name: 'Test User',
-      roles: [Role.STORE_OWNER],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    const response: AuthResponse = {
-      token: 'mock-jwt-token-' + Date.now(),
-      user
-    };
-
-    return of(response).pipe(
-      tap(() => this.currentUser$.next(user))
-    );
+  constructor(private http: HttpClient) {
+    // Load user from localStorage if exists
+    const token = this.getToken();
+    if (token) {
+      // Could validate token with backend here
+      const storedUser = localStorage.getItem('currentUser');
+      if (storedUser) {
+        this.currentUserSubject.next(JSON.parse(storedUser));
+      }
+    }
   }
 
-  register(data: RegisterRequest | any): Observable<AuthResponse> {
-    // Mock: Simuliert erfolgreiche Registrierung
-    const user: User = {
-      id: Math.floor(Math.random() * 1000),
-      email: data.email || 'newuser@example.com',
-      name: 'New User',
-      roles: [Role.CUSTOMER],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
+  login(credentials: LoginRequest): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${environment.apiUrl}/auth/login`, credentials)
+      .pipe(
+        tap(response => {
+          // Store token and user
+          localStorage.setItem('authToken', response.token);
+          localStorage.setItem('currentUser', JSON.stringify(response.user));
+          this.currentUserSubject.next(response.user);
+        })
+      );
+  }
 
-    const response: AuthResponse = {
-      token: 'mock-jwt-token-' + Date.now(),
-      user
-    };
-
-    return of(response).pipe(
-      tap(() => this.currentUser$.next(user))
-    );
+  register(data: RegisterRequest): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${environment.apiUrl}/auth/register`, data)
+      .pipe(
+        tap(response => {
+          // Store token and user after successful registration
+          localStorage.setItem('authToken', response.token);
+          localStorage.setItem('currentUser', JSON.stringify(response.user));
+          this.currentUserSubject.next(response.user);
+        })
+      );
   }
 
   logout(): void {
-    this.currentUser$.next(null);
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('currentUser');
+    this.currentUserSubject.next(null);
   }
 
   isAuthenticated(): boolean {
-    return this.currentUser$.value !== null;
+    return this.currentUserSubject.value !== null && !!this.getToken();
   }
 
   getToken(): string | null {
-    // Mock: In echter Anwendung würde das Token aus localStorage/sessionStorage kommen
-    return this.isAuthenticated() ? 'mock-jwt-token-' + Date.now() : null;
+    return localStorage.getItem('authToken');
+  }
+
+  getCurrentUser(): User | null {
+    return this.currentUserSubject.value;
   }
 }
