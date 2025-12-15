@@ -7,12 +7,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import storebackend.dto.UpgradeRequest;
 import storebackend.dto.PaymentIntentResponse;
+import storebackend.dto.PlanDetails;
 import storebackend.entity.Subscription;
 import storebackend.enums.PaymentMethod;
 import storebackend.service.SubscriptionService;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Arrays;
 
 @RestController
 @RequestMapping("/api/subscriptions")
@@ -22,6 +26,78 @@ import java.util.UUID;
 public class SubscriptionController {
 
     private final SubscriptionService subscriptionService;
+
+    /**
+     * Hole alle verfügbaren Subscription-Pläne
+     */
+    @GetMapping("/plans")
+    public ResponseEntity<List<PlanDetails>> getAvailablePlans() {
+        log.info("GET /api/subscriptions/plans");
+
+        List<PlanDetails> plans = Arrays.asList(
+            PlanDetails.builder()
+                .plan("FREE")
+                .name("Free")
+                .description("Perfekt für den Start")
+                .monthlyPrice(0.0)
+                .yearlyPrice(0.0)
+                .popular(false)
+                .features(Map.of(
+                    "maxStores", 1,
+                    "maxProducts", 10,
+                    "maxOrders", 50,
+                    "customDomain", false,
+                    "analytics", false,
+                    "priority_support", false,
+                    "api_access", false,
+                    "multiLanguage", false,
+                    "customBranding", false
+                ))
+                .build(),
+
+            PlanDetails.builder()
+                .plan("PRO")
+                .name("Pro")
+                .description("Für wachsende Unternehmen")
+                .monthlyPrice(29.99)
+                .yearlyPrice(299.99)
+                .popular(true)
+                .features(Map.of(
+                    "maxStores", 3,
+                    "maxProducts", 1000,
+                    "maxOrders", -1,
+                    "customDomain", true,
+                    "analytics", true,
+                    "priority_support", true,
+                    "api_access", true,
+                    "multiLanguage", true,
+                    "customBranding", false
+                ))
+                .build(),
+
+            PlanDetails.builder()
+                .plan("ENTERPRISE")
+                .name("Enterprise")
+                .description("Für große Unternehmen")
+                .monthlyPrice(99.99)
+                .yearlyPrice(999.99)
+                .popular(false)
+                .features(Map.of(
+                    "maxStores", -1,
+                    "maxProducts", -1,
+                    "maxOrders", -1,
+                    "customDomain", true,
+                    "analytics", true,
+                    "priority_support", true,
+                    "api_access", true,
+                    "multiLanguage", true,
+                    "customBranding", true
+                ))
+                .build()
+        );
+
+        return ResponseEntity.ok(plans);
+    }
 
     /**
      * Hole aktuelle Subscription eines Benutzers
@@ -171,4 +247,3 @@ public class SubscriptionController {
         }
     }
 }
-
