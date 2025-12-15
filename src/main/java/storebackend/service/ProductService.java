@@ -4,9 +4,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import storebackend.dto.CreateProductRequest;
 import storebackend.dto.ProductDTO;
+import storebackend.entity.Category;
 import storebackend.entity.Product;
 import storebackend.entity.Store;
 import storebackend.entity.User;
+import storebackend.repository.CategoryRepository;
 import storebackend.repository.ProductRepository;
 
 import java.util.List;
@@ -17,6 +19,7 @@ import java.util.stream.Collectors;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
     private final StoreUsageService storeUsageService;
 
     public List<ProductDTO> getProductsByStore(Store store) {
@@ -44,6 +47,17 @@ public class ProductService {
         product.setBasePrice(request.getBasePrice());
         product.setStatus(request.getStatus());
 
+        // Set category if provided
+        if (request.getCategoryId() != null) {
+            Category category = categoryRepository.findById(request.getCategoryId())
+                    .orElseThrow(() -> new RuntimeException("Category not found"));
+            // Verify category belongs to same store
+            if (!category.getStore().getId().equals(store.getId())) {
+                throw new RuntimeException("Category does not belong to this store");
+            }
+            product.setCategory(category);
+        }
+
         product = productRepository.save(product);
 
         // Increment product count
@@ -60,6 +74,18 @@ public class ProductService {
         product.setDescription(request.getDescription());
         product.setBasePrice(request.getBasePrice());
         product.setStatus(request.getStatus());
+
+        // Update category if provided
+        if (request.getCategoryId() != null) {
+            Category category = categoryRepository.findById(request.getCategoryId())
+                    .orElseThrow(() -> new RuntimeException("Category not found"));
+            if (!category.getStore().getId().equals(store.getId())) {
+                throw new RuntimeException("Category does not belong to this store");
+            }
+            product.setCategory(category);
+        } else {
+            product.setCategory(null);
+        }
 
         product = productRepository.save(product);
         return toDTO(product);
@@ -83,6 +109,13 @@ public class ProductService {
         dto.setStatus(product.getStatus());
         dto.setCreatedAt(product.getCreatedAt());
         dto.setUpdatedAt(product.getUpdatedAt());
+
+        // Add category information
+        if (product.getCategory() != null) {
+            dto.setCategoryId(product.getCategory().getId());
+            dto.setCategoryName(product.getCategory().getName());
+        }
+
         return dto;
     }
 }

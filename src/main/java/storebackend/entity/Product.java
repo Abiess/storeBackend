@@ -23,6 +23,10 @@ public class Product {
     @JoinColumn(name = "store_id", nullable = false)
     private Store store;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private Category category;
+
     @Column(nullable = false)
     private String title;
 
@@ -53,4 +57,3 @@ public class Product {
         updatedAt = LocalDateTime.now();
     }
 }
-

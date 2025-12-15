@@ -122,13 +122,15 @@ CREATE TABLE categories (
 CREATE TABLE products (
     id BIGSERIAL PRIMARY KEY,
     store_id BIGINT NOT NULL,
+    category_id BIGINT,
     title VARCHAR(255) NOT NULL,
     description TEXT,
     base_price DECIMAL(10, 2) NOT NULL,
     status VARCHAR(50) NOT NULL DEFAULT 'DRAFT',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
+    FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
 );
 
 -- Product Options (z.B. Größe, Farbe)
@@ -234,6 +236,7 @@ CREATE INDEX idx_categories_store ON categories(store_id);
 CREATE INDEX idx_categories_parent ON categories(parent_id);
 CREATE INDEX idx_categories_slug ON categories(slug);
 CREATE INDEX idx_products_store ON products(store_id);
+CREATE INDEX idx_products_category ON products(category_id);
 CREATE INDEX idx_orders_store ON orders(store_id);
 CREATE INDEX idx_orders_customer ON orders(customer_id);
 CREATE INDEX idx_user_roles_user ON user_roles(user_id);

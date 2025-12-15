@@ -18,5 +18,6 @@ public class CreateProductRequest {
     private BigDecimal basePrice;
 
     private ProductStatus status = ProductStatus.DRAFT;
-}
 
+    private Long categoryId;
+}

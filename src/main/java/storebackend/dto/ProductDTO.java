@@ -13,7 +13,8 @@ public class ProductDTO {
     private String description;
     private BigDecimal basePrice;
     private ProductStatus status;
+    private Long categoryId;
+    private String categoryName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
-
