@@ -169,6 +169,7 @@ export interface Product {
   stock?: number;
   status: ProductStatus;
   categoryId?: number;
+  categoryName?: string;
   category?: Category;
   categories?: Category[];
   variants?: ProductVariant[];
