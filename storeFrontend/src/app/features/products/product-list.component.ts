@@ -36,6 +36,7 @@ import { Product } from '@app/core/models';
           <thead>
             <tr>
               <th>Produkt</th>
+              <th>Kategorie</th>
               <th>Beschreibung</th>
               <th>Preis</th>
               <th>Status</th>
@@ -46,6 +47,11 @@ import { Product } from '@app/core/models';
             <tr *ngFor="let product of products">
               <td>
                 <div class="product-name">{{ product.title }}</div>
+              </td>
+              <td>
+                <div class="product-category">
+                  {{ product.categoryName || product.category?.name || '-' }}
+                </div>
               </td>
               <td>
                 <div class="product-desc">{{ product.description }}</div>
@@ -186,6 +192,11 @@ import { Product } from '@app/core/models';
     .product-name {
       font-weight: 600;
       color: #333;
+    }
+
+    .product-category {
+      color: #666;
+      font-size: 0.875rem;
     }
 
     .product-desc {

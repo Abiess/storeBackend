@@ -75,23 +75,19 @@ import { Category, ProductStatus } from '@app/core/models';
               </select>
             </div>
           </div>
-        </div>
 
-        <div class="form-card" *ngIf="categories.length > 0">
-          <h2>الفئات</h2>
-          <div class="categories-list">
-            <label *ngFor="let category of categories" class="category-checkbox">
-              <input 
-                type="checkbox" 
-                [checked]="selectedCategories.has(category.id)"
-                (change)="toggleCategory(category.id)"
-              />
-              <span>{{ category.name }}</span>
-            </label>
+          <div class="form-group">
+            <label for="categoryId">الفئة *</label>
+            <select id="categoryId" formControlName="categoryId" [class.error]="productForm.get('categoryId')?.invalid && productForm.get('categoryId')?.touched">
+              <option value="">اختر فئة</option>
+              <option *ngFor="let category of categories" [value]="category.id">
+                {{ category.name }}
+              </option>
+            </select>
+            <div class="error-message" *ngIf="productForm.get('categoryId')?.invalid && productForm.get('categoryId')?.touched">
+              الفئة مطلوبة
+            </div>
           </div>
-          <p class="hint" *ngIf="categories.length === 0">
-            لا توجد فئات متاحة. أنشئ فئة أولاً.
-          </p>
         </div>
 
         <div class="form-actions">
@@ -347,7 +343,6 @@ import { Category, ProductStatus } from '@app/core/models';
 export class ProductFormComponent implements OnInit {
   productForm: FormGroup;
   categories: Category[] = [];
-  selectedCategories = new Set<number>();
   storeId!: number;
   productId?: number;
   isEditMode = false;
@@ -366,7 +361,8 @@ export class ProductFormComponent implements OnInit {
       title: ['', Validators.required],
       description: ['', Validators.required],
       basePrice: [0, [Validators.required, Validators.min(0.01)]],
-      status: [ProductStatus.DRAFT]
+      status: [ProductStatus.DRAFT],
+      categoryId: [null]  // Single category selection
     });
   }
 
@@ -403,26 +399,15 @@ export class ProductFormComponent implements OnInit {
           title: product.title,
           description: product.description,
           basePrice: product.basePrice,
-          status: product.status
+          status: product.status,
+          categoryId: product.categoryId || null
         });
-
-        if (product.categories) {
-          product.categories.forEach(cat => this.selectedCategories.add(cat.id));
-        }
       },
       error: (error) => {
         console.error('خطأ في تحميل المنتج:', error);
         this.errorMessage = 'تعذر تحميل المنتج';
       }
     });
-  }
-
-  toggleCategory(categoryId: number): void {
-    if (this.selectedCategories.has(categoryId)) {
-      this.selectedCategories.delete(categoryId);
-    } else {
-      this.selectedCategories.add(categoryId);
-    }
   }
 
   onSubmit(): void {
@@ -437,7 +422,10 @@ export class ProductFormComponent implements OnInit {
     this.errorMessage = '';
     this.successMessage = '';
 
-    const formData = this.productForm.value;
+    const formData = {
+      ...this.productForm.value,
+      storeId: this.storeId
+    };
 
     if (this.isEditMode && this.productId) {
       this.productService.updateProduct(this.storeId, this.productId, formData).subscribe({
@@ -472,4 +460,3 @@ export class ProductFormComponent implements OnInit {
     this.router.navigate(['/dashboard/stores', this.storeId, 'products']);
   }
 }
-

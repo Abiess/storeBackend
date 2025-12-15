@@ -1,0 +1,177 @@
+name: Deploy Frontend to VPS
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'storeFrontend/**'
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: storeFrontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: storeFrontend
+        run: npm ci
+
+      - name: Build Angular app
+        working-directory: storeFrontend
+        run: npm run build:prod
+
+      - name: Create deployment package
+        working-directory: storeFrontend
+        run: |
+          cd dist/markt-ma-frontend
+          tar -czf ../../frontend-dist.tar.gz *
+
+      - name: Deploy to VPS
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "storeFrontend/frontend-dist.tar.gz"
+          target: "/tmp/"
+          strip_components: 1
+
+      - name: Extract and setup on VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            echo "🚀 Deploying Frontend to markt.ma..."
+            
+            # Create frontend directory if not exists
+            sudo mkdir -p /var/www/markt.ma
+            
+            # Backup old version
+            if [ -d "/var/www/markt.ma/current" ]; then
+              echo "📦 Backing up old version..."
+              sudo mv /var/www/markt.ma/current /var/www/markt.ma/backup-$(date +%Y%m%d-%H%M%S) || true
+            fi
+            
+            # Create new directory
+            sudo mkdir -p /var/www/markt.ma/current
+            
+            # Extract new build
+            echo "📂 Extracting new build..."
+            sudo tar -xzf /tmp/frontend-dist.tar.gz -C /var/www/markt.ma/current
+            
+            # Set permissions
+            echo "🔒 Setting permissions..."
+            sudo chown -R www-data:www-data /var/www/markt.ma/current
+            sudo chmod -R 755 /var/www/markt.ma/current
+            
+            # Cleanup
+            rm /tmp/frontend-dist.tar.gz
+            
+            # Keep only last 3 backups
+            cd /var/www/markt.ma
+            sudo ls -t | grep backup | tail -n +4 | xargs -r sudo rm -rf || true
+            
+            echo "✅ Frontend deployment complete!"
+            echo "📍 Location: /var/www/markt.ma/current"
+
+      - name: Configure Nginx for markt.ma
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            echo "📝 Configuring Nginx for markt.ma..."
+            
+            # Create Nginx config
+            sudo tee /etc/nginx/sites-available/markt.ma > /dev/null <<'EOF'
+            server {
+                listen 80;
+                server_name markt.ma www.markt.ma;
+                
+                root /var/www/markt.ma/current;
+                index index.html;
+                
+                # Gzip compression
+                gzip on;
+                gzip_vary on;
+                gzip_min_length 1024;
+                gzip_proxied any;
+                gzip_types text/plain text/css text/xml text/javascript application/javascript application/xml+rss application/json;
+                
+                # Security headers
+                add_header X-Frame-Options "SAMEORIGIN" always;
+                add_header X-Content-Type-Options "nosniff" always;
+                add_header X-XSS-Protection "1; mode=block" always;
+                add_header Referrer-Policy "no-referrer-when-downgrade" always;
+                
+                # Angular routing - all requests go to index.html
+                location / {
+                    try_files $uri $uri/ /index.html;
+                }
+                
+                # Cache static assets
+                location ~* \.(jpg|jpeg|png|gif|ico|svg|woff|woff2|ttf|eot)$ {
+                    expires 1y;
+                    add_header Cache-Control "public, immutable";
+                }
+                
+                # Cache CSS and JS
+                location ~* \.(css|js)$ {
+                    expires 1y;
+                    add_header Cache-Control "public, immutable";
+                }
+                
+                # Prevent access to hidden files
+                location ~ /\. {
+                    deny all;
+                    access_log off;
+                    log_not_found off;
+                }
+            }
+            EOF
+            
+            # Enable site
+            sudo ln -sf /etc/nginx/sites-available/markt.ma /etc/nginx/sites-enabled/
+            
+            # Remove default site if exists
+            sudo rm -f /etc/nginx/sites-enabled/default
+            
+            # Test and reload Nginx
+            echo "🔍 Testing Nginx configuration..."
+            if sudo nginx -t; then
+              echo "✅ Nginx configuration is valid"
+              sudo systemctl reload nginx
+              echo "✅ Nginx reloaded successfully"
+            else
+              echo "❌ Nginx configuration test failed"
+              exit 1
+            fi
+
+      - name: Deployment summary
+        run: |
+          echo "## 🎉 Frontend Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Frontend built successfully" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Deployed to VPS" >> $GITHUB_STEP_SUMMARY
+          echo "- 📍 Location: /var/www/markt.ma/current" >> $GITHUB_STEP_SUMMARY
+          echo "- 🌐 Domain: http://markt.ma" >> $GITHUB_STEP_SUMMARY
+          echo "- 🌐 WWW: http://www.markt.ma" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps:" >> $GITHUB_STEP_SUMMARY
+          echo "1. Configure DNS A-Record for markt.ma → VPS IP" >> $GITHUB_STEP_SUMMARY
+          echo "2. Configure DNS A-Record for www.markt.ma → VPS IP" >> $GITHUB_STEP_SUMMARY
+          echo "3. Setup SSL with: sudo certbot --nginx -d markt.ma -d www.markt.ma" >> $GITHUB_STEP_SUMMARY
