@@ -36,6 +36,33 @@ public class ProductController {
         this.storeRepository = storeRepository;
     }
 
+    /**
+     * Prüft, ob der Benutzer Zugriff auf den Store hat
+     */
+    private boolean hasStoreAccess(Long storeId, User user) {
+        if (user == null) {
+            return false;
+        }
+
+        Store store = storeRepository.findById(storeId).orElse(null);
+        if (store == null) {
+            return false;
+        }
+
+        // Owner hat immer Zugriff
+        if (store.getOwner().getId().equals(user.getId())) {
+            return true;
+        }
+
+        // Prüfe, ob der User über StoreService Zugriff hat
+        try {
+            List<Store> userStores = storeService.getStoresByUserId(user.getId());
+            return userStores.stream().anyMatch(s -> s.getId().equals(storeId));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     @Operation(summary = "Get all products", description = "Returns all products for a specific store")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved products"),
@@ -46,7 +73,11 @@ public class ProductController {
             @Parameter(description = "Store ID") @PathVariable Long storeId,
             @AuthenticationPrincipal User user) {
 
-        if (!storeRepository.isStoreOwnedByUser(storeId, user.getId())) {
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        if (!hasStoreAccess(storeId, user)) {
             return ResponseEntity.status(403).build();
         }
 
@@ -61,7 +92,11 @@ public class ProductController {
             @Parameter(description = "Product ID") @PathVariable Long productId,
             @AuthenticationPrincipal User user) {
 
-        if (!storeRepository.isStoreOwnedByUser(storeId, user.getId())) {
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        if (!hasStoreAccess(storeId, user)) {
             return ResponseEntity.status(403).build();
         }
 
@@ -82,9 +117,12 @@ public class ProductController {
 
         log.info("Creating product - Store ID: {}, User ID: {}", storeId, user.getId());
 
-        // Verwende die Repository-Methode für Owner-Check (direkter SQL-Query)
-        if (!storeRepository.isStoreOwnedByUser(storeId, user.getId())) {
-            log.warn("Access denied - User {} does not own Store {}", user.getId(), storeId);
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        if (!hasStoreAccess(storeId, user)) {
+            log.warn("Access denied - User {} does not have access to Store {}", user.getId(), storeId);
             return ResponseEntity.status(403).build();
         }
 
@@ -101,7 +139,11 @@ public class ProductController {
             @Valid @RequestBody CreateProductRequest request,
             @AuthenticationPrincipal User user) {
 
-        if (!storeRepository.isStoreOwnedByUser(storeId, user.getId())) {
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        if (!hasStoreAccess(storeId, user)) {
             return ResponseEntity.status(403).build();
         }
 
@@ -116,7 +158,11 @@ public class ProductController {
             @Parameter(description = "Product ID") @PathVariable Long productId,
             @AuthenticationPrincipal User user) {
 
-        if (!storeRepository.isStoreOwnedByUser(storeId, user.getId())) {
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        if (!hasStoreAccess(storeId, user)) {
             return ResponseEntity.status(403).build();
         }
 

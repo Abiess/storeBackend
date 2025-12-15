@@ -13,6 +13,9 @@ import java.util.Optional;
 @Repository
 public interface StoreRepository extends JpaRepository<Store, Long> {
     List<Store> findByOwner(User owner);
+
+    List<Store> findByOwnerId(Long ownerId);
+
     Optional<Store> findBySlug(String slug);
     boolean existsBySlug(String slug);
     long countByOwner(User owner);

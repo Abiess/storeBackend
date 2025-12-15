@@ -98,6 +98,10 @@ public class StoreService {
                 .orElseThrow(() -> new RuntimeException("Store not found"));
     }
 
+    public List<Store> getStoresByUserId(Long userId) {
+        return storeRepository.findByOwnerId(userId);
+    }
+
     private StoreDTO toDTO(Store store) {
         StoreDTO dto = new StoreDTO();
         dto.setId(store.getId());

@@ -28,17 +28,64 @@ public class CategoryController {
     private final StoreRepository storeRepository;
     private final UserRepository userRepository;
 
+    /**
+     * Prüft, ob der Benutzer Zugriff auf den Store hat
+     */
+    private boolean hasStoreAccess(Long storeId, User user) {
+        if (user == null) {
+            return false;
+        }
+
+        Store store = storeRepository.findById(storeId).orElse(null);
+        if (store == null) {
+            return false;
+        }
+
+        // Owner hat immer Zugriff
+        if (store.getOwner().getId().equals(user.getId())) {
+            return true;
+        }
+
+        // Prüfe, ob der User über StoreService Zugriff hat
+        try {
+            List<Store> userStores = storeService.getStoresByUserId(user.getId());
+            return userStores.stream().anyMatch(s -> s.getId().equals(storeId));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     @Operation(summary = "Get all categories", description = "Returns all categories for a store")
     @GetMapping
     public ResponseEntity<List<Category>> getAllCategories(
-            @Parameter(description = "Store ID") @PathVariable Long storeId) {
+            @Parameter(description = "Store ID") @PathVariable Long storeId,
+            @AuthenticationPrincipal User user) {
+
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        if (!hasStoreAccess(storeId, user)) {
+            return ResponseEntity.status(403).build();
+        }
+
         return ResponseEntity.ok(categoryService.getCategoriesByStore(storeId));
     }
 
     @Operation(summary = "Get root categories", description = "Returns only top-level categories (no parent)")
     @GetMapping("/root")
     public ResponseEntity<List<Category>> getRootCategories(
-            @Parameter(description = "Store ID") @PathVariable Long storeId) {
+            @Parameter(description = "Store ID") @PathVariable Long storeId,
+            @AuthenticationPrincipal User user) {
+
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        if (!hasStoreAccess(storeId, user)) {
+            return ResponseEntity.status(403).build();
+        }
+
         return ResponseEntity.ok(categoryService.getRootCategories(storeId));
     }
 
@@ -60,13 +107,11 @@ public class CategoryController {
             return ResponseEntity.status(401).build();
         }
 
-        Store store = storeService.getStoreById(storeId);
-
-        // Prüfe Berechtigung direkt über Owner-ID
-        if (!store.getOwner().getId().equals(user.getId())) {
+        if (!hasStoreAccess(storeId, user)) {
             return ResponseEntity.status(403).build();
         }
 
+        Store store = storeService.getStoreById(storeId);
         category.setStore(store);
         return ResponseEntity.ok(categoryService.createCategory(category));
     }
@@ -83,9 +128,7 @@ public class CategoryController {
             return ResponseEntity.status(401).build();
         }
 
-        Store store = storeService.getStoreById(storeId);
-
-        if (!store.getOwner().getId().equals(user.getId())) {
+        if (!hasStoreAccess(storeId, user)) {
             return ResponseEntity.status(403).build();
         }
 
@@ -103,9 +146,7 @@ public class CategoryController {
             return ResponseEntity.status(401).build();
         }
 
-        Store store = storeService.getStoreById(storeId);
-
-        if (!store.getOwner().getId().equals(user.getId())) {
+        if (!hasStoreAccess(storeId, user)) {
             return ResponseEntity.status(403).build();
         }
 

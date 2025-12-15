@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, of } from 'rxjs';
 import { User, AuthResponse, LoginRequest, RegisterRequest } from '../models';
-import { tap } from 'rxjs/operators';
+import { tap, catchError } from 'rxjs/operators';
 import { environment } from '@env/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -14,12 +14,41 @@ export class AuthService {
     // Load user from localStorage if exists
     const token = this.getToken();
     if (token) {
-      // Could validate token with backend here
       const storedUser = localStorage.getItem('currentUser');
-      if (storedUser) {
-        this.currentUserSubject.next(JSON.parse(storedUser));
+      if (storedUser && storedUser !== 'undefined') {
+        try {
+          const user = JSON.parse(storedUser);
+          this.currentUserSubject.next(user);
+        } catch (e) {
+          console.error('Fehler beim Parsen des gespeicherten Users:', e);
+          this.validateTokenWithBackend();
+        }
+      } else {
+        // Token vorhanden, aber kein User gespeichert - hole vom Backend
+        this.validateTokenWithBackend();
       }
     }
+  }
+
+  /**
+   * Validiert den Token mit dem Backend und lädt User-Daten
+   */
+  private validateTokenWithBackend(): void {
+    this.http.get<User>(`${environment.apiUrl}/auth/me`)
+      .pipe(
+        catchError(error => {
+          console.error('Token-Validierung fehlgeschlagen:', error);
+          this.logout();
+          return of(null);
+        })
+      )
+      .subscribe(user => {
+        if (user) {
+          localStorage.setItem('currentUser', JSON.stringify(user));
+          this.currentUserSubject.next(user);
+          console.log('User erfolgreich vom Backend geladen:', user.email);
+        }
+      });
   }
 
   login(credentials: LoginRequest): Observable<AuthResponse> {
@@ -62,5 +91,22 @@ export class AuthService {
 
   getCurrentUser(): User | null {
     return this.currentUserSubject.value;
+  }
+
+  /**
+   * Öffentliche Methode zum manuellen Neuladen des Users
+   */
+  reloadCurrentUser(): Observable<User | null> {
+    return this.http.get<User>(`${environment.apiUrl}/auth/me`)
+      .pipe(
+        tap(user => {
+          localStorage.setItem('currentUser', JSON.stringify(user));
+          this.currentUserSubject.next(user);
+        }),
+        catchError(error => {
+          console.error('Fehler beim Neuladen des Users:', error);
+          return of(null);
+        })
+      );
   }
 }

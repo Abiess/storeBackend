@@ -8,6 +8,7 @@ import storebackend.entity.*;
 import storebackend.enums.OrderStatus;
 import storebackend.repository.StoreRepository;
 import storebackend.service.OrderService;
+import storebackend.service.StoreService;
 
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +20,34 @@ import java.util.Map;
 public class OrderController {
     private final OrderService orderService;
     private final StoreRepository storeRepository;
+    private final StoreService storeService;
+
+    /**
+     * Prüft, ob der Benutzer Zugriff auf den Store hat
+     */
+    private boolean hasStoreAccess(Long storeId, User user) {
+        if (user == null) {
+            return false;
+        }
+
+        Store store = storeRepository.findById(storeId).orElse(null);
+        if (store == null) {
+            return false;
+        }
+
+        // Owner hat immer Zugriff
+        if (store.getOwner().getId().equals(user.getId())) {
+            return true;
+        }
+
+        // Prüfe, ob der User über StoreService Zugriff hat (z.B. als Mitarbeiter)
+        try {
+            List<Store> userStores = storeService.getStoresByUserId(user.getId());
+            return userStores.stream().anyMatch(s -> s.getId().equals(storeId));
+        } catch (Exception e) {
+            return false;
+        }
+    }
 
     @GetMapping
     public ResponseEntity<List<Order>> getOrders(
@@ -30,10 +59,7 @@ public class OrderController {
             return ResponseEntity.status(401).build();
         }
 
-        Store store = storeRepository.findById(storeId)
-                .orElseThrow(() -> new RuntimeException("Store not found"));
-
-        if (!store.getOwner().getId().equals(user.getId())) {
+        if (!hasStoreAccess(storeId, user)) {
             return ResponseEntity.status(403).build();
         }
 
@@ -55,10 +81,7 @@ public class OrderController {
             return ResponseEntity.status(401).build();
         }
 
-        Store store = storeRepository.findById(storeId)
-                .orElseThrow(() -> new RuntimeException("Store not found"));
-
-        if (!store.getOwner().getId().equals(user.getId())) {
+        if (!hasStoreAccess(storeId, user)) {
             return ResponseEntity.status(403).build();
         }
 
@@ -83,10 +106,7 @@ public class OrderController {
             return ResponseEntity.status(401).build();
         }
 
-        Store store = storeRepository.findById(storeId)
-                .orElseThrow(() -> new RuntimeException("Store not found"));
-
-        if (!store.getOwner().getId().equals(user.getId())) {
+        if (!hasStoreAccess(storeId, user)) {
             return ResponseEntity.status(403).build();
         }
 
@@ -107,10 +127,7 @@ public class OrderController {
             return ResponseEntity.status(401).build();
         }
 
-        Store store = storeRepository.findById(storeId)
-                .orElseThrow(() -> new RuntimeException("Store not found"));
-
-        if (!store.getOwner().getId().equals(user.getId())) {
+        if (!hasStoreAccess(storeId, user)) {
             return ResponseEntity.status(403).build();
         }
 
