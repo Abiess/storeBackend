@@ -18,31 +18,27 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
+      - name: Setup Node.js (without cache)
         uses: actions/setup-node@v3
         with:
           node-version: '20'
-          always-auth: false
 
-      - name: Remove any npm auth config
+      - name: Clean all npm auth
+        run: |
+          # Remove ALL npmrc files
+          rm -f ~/.npmrc 2>/dev/null || true
+          rm -f /etc/npmrc 2>/dev/null || true
+          rm -f /usr/local/etc/npmrc 2>/dev/null || true
+
+      - name: Install dependencies (without auth)
         working-directory: storeFrontend
         run: |
-          # Remove any .npmrc files that might exist
-          rm -f .npmrc ~/.npmrc 2>/dev/null || true
-          # Clear npm config
-          npm config delete //registry.npmjs.org/:_authToken 2>/dev/null || true
-          npm config set registry https://registry.npmjs.org/
-          echo "npm config cleared"
-
-      - name: Clean npm cache (optional)
-        working-directory: storeFrontend
-        run: |
-          rm -f .npmrc || true
-          npm cache clean --force || true
-
-      - name: Install dependencies
-        working-directory: storeFrontend
-        run: npm ci --legacy-peer-deps
+          # Remove local .npmrc if exists
+          rm -f .npmrc 2>/dev/null || true
+          # Use npm install instead of npm ci to avoid auth issues
+          npm install --legacy-peer-deps
+        env:
+          npm_config_registry: https://registry.npmjs.org/
 
       - name: Build Angular app
         working-directory: storeFrontend
