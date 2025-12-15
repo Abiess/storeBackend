@@ -20,12 +20,16 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '20'
+          registry-url: 'https://registry.npmjs.org/'
 
-      - name: Clean npm cache (optional)
+      - name: Clear npm config
         working-directory: storeFrontend
         run: |
           rm -f .npmrc || true
-          npm cache clean --force || true
+          npm config delete registry || true
+          npm config delete //registry.npmjs.org/:_authToken || true
+          npm config set registry https://registry.npmjs.org/
+          npm config list
 
       - name: Install dependencies
         working-directory: storeFrontend
@@ -105,40 +109,40 @@ jobs:
             server {
                 listen 80;
                 server_name markt.ma www.markt.ma;
-                
+            
                 root /var/www/markt.ma/current;
                 index index.html;
-                
+            
                 # Gzip compression
                 gzip on;
                 gzip_vary on;
                 gzip_min_length 1024;
                 gzip_proxied any;
                 gzip_types text/plain text/css text/xml text/javascript application/javascript application/xml+rss application/json;
-                
+            
                 # Security headers
                 add_header X-Frame-Options "SAMEORIGIN" always;
                 add_header X-Content-Type-Options "nosniff" always;
                 add_header X-XSS-Protection "1; mode=block" always;
                 add_header Referrer-Policy "no-referrer-when-downgrade" always;
-                
+            
                 # Angular routing - all requests go to index.html
                 location / {
                     try_files $uri $uri/ /index.html;
                 }
-                
+            
                 # Cache static assets
                 location ~* \.(jpg|jpeg|png|gif|ico|svg|woff|woff2|ttf|eot)$ {
                     expires 1y;
                     add_header Cache-Control "public, immutable";
                 }
-                
+            
                 # Cache CSS and JS
                 location ~* \.(css|js)$ {
                     expires 1y;
                     add_header Cache-Control "public, immutable";
                 }
-                
+            
                 # Prevent access to hidden files
                 location ~ /\. {
                     deny all;
@@ -150,11 +154,8 @@ jobs:
             
             # Enable site
             sudo ln -sf /etc/nginx/sites-available/markt.ma /etc/nginx/sites-enabled/
-            
-            # Remove default site if exists
             sudo rm -f /etc/nginx/sites-enabled/default
             
-            # Test and reload Nginx
             echo "🔍 Testing Nginx configuration..."
             if sudo nginx -t; then
               echo "✅ Nginx configuration is valid"
