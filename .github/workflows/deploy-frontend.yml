@@ -19,13 +19,20 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: storeFrontend/package-lock.json
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Configure npm
+        working-directory: storeFrontend
+        run: |
+          npm config set registry https://registry.npmjs.org/
+          npm config delete //registry.npmjs.org/:_authToken || true
 
       - name: Install dependencies
         working-directory: storeFrontend
-        run: npm ci
+        run: npm ci --legacy-peer-deps
+        env:
+          NODE_AUTH_TOKEN: ''
 
       - name: Build Angular app
         working-directory: storeFrontend
