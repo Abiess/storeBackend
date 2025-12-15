@@ -47,111 +47,140 @@
     </div>
   </div>
 
+  <!-- Keine Subscription vorhanden -->
+  <div class="no-subscription-section" *ngIf="!currentSubscription && !loadingSubscription">
+    <div class="info-box">
+      <span class="icon">ℹ️</span>
+      <p>Sie haben derzeit noch kein aktives Abonnement. Wählen Sie einen Plan aus, um zu starten!</p>
+    </div>
+  </div>
+
   <!-- Verfügbare Pläne -->
-  <div class="plans-section" *ngIf="showUpgradeOptions">
+  <div class="plans-section">
     <h2>Verfügbare Pläne</h2>
     <p class="section-description">Wählen Sie den Plan, der am besten zu Ihrem Geschäft passt</p>
 
-    <div class="billing-toggle">
-      <label class="toggle-label">
-        <span [class.active]="selectedBillingCycle === 'MONTHLY'">Monatlich</span>
-        <input type="checkbox"
-               [checked]="selectedBillingCycle === 'YEARLY'"
-               (change)="toggleBillingCycle()">
-        <span class="toggle-switch"></span>
-        <span [class.active]="selectedBillingCycle === 'YEARLY'">
-          Jährlich
-          <span class="savings-badge">Spare bis zu 20%</span>
-        </span>
-      </label>
+    <!-- Loading State -->
+    <div class="loading-state" *ngIf="loadingPlans">
+      <div class="spinner"></div>
+      <p>Pläne werden geladen...</p>
     </div>
 
-    <div class="plans-grid">
-      <div *ngFor="let plan of availablePlans"
-           class="plan-card"
-           [class.popular]="plan.popular"
-           [class.current]="currentSubscription?.plan === plan.plan">
+    <!-- Error State -->
+    <div class="error-state" *ngIf="plansError && !loadingPlans">
+      <span class="icon">⚠️</span>
+      <p>{{ plansError }}</p>
+      <button class="btn btn-secondary" (click)="loadAvailablePlans()">Erneut versuchen</button>
+    </div>
 
-        <div class="popular-badge" *ngIf="plan.popular">Am beliebtesten</div>
-        <div class="current-badge" *ngIf="currentSubscription?.plan === plan.plan">Aktueller Plan</div>
+    <!-- Plans Grid -->
+    <div *ngIf="!loadingPlans && !plansError && availablePlans.length > 0">
+      <div class="billing-toggle">
+        <label class="toggle-label">
+          <span [class.active]="selectedBillingCycle === 'MONTHLY'">Monatlich</span>
+          <input type="checkbox"
+                 [checked]="selectedBillingCycle === 'YEARLY'"
+                 (change)="toggleBillingCycle()">
+          <span class="toggle-switch"></span>
+          <span [class.active]="selectedBillingCycle === 'YEARLY'">
+            Jährlich
+            <span class="savings-badge">Spare bis zu 20%</span>
+          </span>
+        </label>
+      </div>
 
-        <div class="plan-header">
-          <h3>{{ plan.name }}</h3>
-          <p class="plan-description">{{ plan.description }}</p>
-        </div>
+      <div class="plans-grid">
+        <div *ngFor="let plan of availablePlans"
+             class="plan-card"
+             [class.popular]="plan.popular"
+             [class.current]="currentSubscription?.plan === plan.plan">
 
-        <div class="plan-pricing">
-          <div class="price">
-            <span class="amount">{{ (selectedBillingCycle === 'YEARLY' ? plan.yearlyPrice : plan.monthlyPrice) | number:'1.2-2' }}</span>
-            <span class="currency">€</span>
+          <div class="popular-badge" *ngIf="plan.popular">Am beliebtesten</div>
+          <div class="current-badge" *ngIf="currentSubscription?.plan === plan.plan">Aktueller Plan</div>
+
+          <div class="plan-header">
+            <h3>{{ plan.name }}</h3>
+            <p class="plan-description">{{ plan.description }}</p>
           </div>
-          <div class="billing-period">
-            pro {{ selectedBillingCycle === 'YEARLY' ? 'Jahr' : 'Monat' }}
-          </div>
-          <div class="yearly-savings" *ngIf="selectedBillingCycle === 'YEARLY' && plan.plan !== 'FREE'">
-            Ersparnis: {{ getYearlySavings(plan.plan) | number:'1.2-2' }} €
-          </div>
-        </div>
 
-        <div class="plan-features">
-          <ul>
-            <li>
-              <span class="icon">{{ plan.features.maxStores === -1 ? '∞' : plan.features.maxStores }}</span>
-              {{ plan.features.maxStores === -1 ? 'Unbegrenzte' : plan.features.maxStores }} Shops
-            </li>
-            <li>
-              <span class="icon">{{ plan.features.maxProducts === -1 ? '∞' : plan.features.maxProducts }}</span>
-              {{ plan.features.maxProducts === -1 ? 'Unbegrenzte' : plan.features.maxProducts }} Produkte
-            </li>
-            <li>
-              <span class="icon">{{ plan.features.maxOrders === -1 ? '∞' : plan.features.maxOrders }}</span>
-              {{ plan.features.maxOrders === -1 ? 'Unbegrenzte' : plan.features.maxOrders }} Bestellungen
-            </li>
-            <li [class.feature-disabled]="!plan.features.customDomain">
-              <span class="icon">{{ plan.features.customDomain ? '✓' : '✗' }}</span>
-              Custom Domain
-            </li>
-            <li [class.feature-disabled]="!plan.features.analytics">
-              <span class="icon">{{ plan.features.analytics ? '✓' : '✗' }}</span>
-              Analytics & Reports
-            </li>
-            <li [class.feature-disabled]="!plan.features.priority_support">
-              <span class="icon">{{ plan.features.priority_support ? '✓' : '✗' }}</span>
-              Priority Support
-            </li>
-            <li [class.feature-disabled]="!plan.features.api_access">
-              <span class="icon">{{ plan.features.api_access ? '✓' : '✗' }}</span>
-              API Zugang
-            </li>
-            <li [class.feature-disabled]="!plan.features.multiLanguage">
-              <span class="icon">{{ plan.features.multiLanguage ? '✓' : '✗' }}</span>
-              Mehrsprachig
-            </li>
-            <li [class.feature-disabled]="!plan.features.customBranding">
-              <span class="icon">{{ plan.features.customBranding ? '✓' : '✗' }}</span>
-              Custom Branding
-            </li>
-          </ul>
-        </div>
+          <div class="plan-pricing">
+            <div class="price">
+              <span class="amount">{{ (selectedBillingCycle === 'YEARLY' ? plan.yearlyPrice : plan.monthlyPrice) | number:'1.2-2' }}</span>
+              <span class="currency">€</span>
+            </div>
+            <div class="billing-period">
+              pro {{ selectedBillingCycle === 'YEARLY' ? 'Jahr' : 'Monat' }}
+            </div>
+            <div class="yearly-savings" *ngIf="selectedBillingCycle === 'YEARLY' && plan.plan !== 'FREE'">
+              Ersparnis: {{ getYearlySavings(plan.plan) | number:'1.2-2' }} €
+            </div>
+          </div>
 
-        <div class="plan-action">
-          <button *ngIf="canUpgradeToThisPlan(plan.plan)"
-                  class="btn btn-upgrade"
-                  [class.btn-primary]="plan.popular"
-                  (click)="selectPlanForUpgrade(plan)"
-                  [disabled]="upgrading">
-            {{ upgrading ? 'Wird verarbeitet...' : 'Jetzt upgraden' }}
-          </button>
-          <button *ngIf="currentSubscription?.plan === plan.plan"
-                  class="btn btn-current" disabled>
-            Aktueller Plan
-          </button>
-          <button *ngIf="!canUpgradeToThisPlan(plan.plan) && currentSubscription?.plan !== plan.plan"
-                  class="btn btn-disabled" disabled>
-            Downgrade nicht möglich
-          </button>
+          <div class="plan-features">
+            <ul>
+              <li>
+                <span class="icon">{{ plan.features.maxStores === -1 ? '∞' : plan.features.maxStores }}</span>
+                {{ plan.features.maxStores === -1 ? 'Unbegrenzte' : plan.features.maxStores }} Shops
+              </li>
+              <li>
+                <span class="icon">{{ plan.features.maxProducts === -1 ? '∞' : plan.features.maxProducts }}</span>
+                {{ plan.features.maxProducts === -1 ? 'Unbegrenzte' : plan.features.maxProducts }} Produkte
+              </li>
+              <li>
+                <span class="icon">{{ plan.features.maxOrders === -1 ? '∞' : plan.features.maxOrders }}</span>
+                {{ plan.features.maxOrders === -1 ? 'Unbegrenzte' : plan.features.maxOrders }} Bestellungen
+              </li>
+              <li [class.feature-disabled]="!plan.features.customDomain">
+                <span class="icon">{{ plan.features.customDomain ? '✓' : '✗' }}</span>
+                Custom Domain
+              </li>
+              <li [class.feature-disabled]="!plan.features.analytics">
+                <span class="icon">{{ plan.features.analytics ? '✓' : '✗' }}</span>
+                Analytics & Reports
+              </li>
+              <li [class.feature-disabled]="!plan.features.priority_support">
+                <span class="icon">{{ plan.features.priority_support ? '✓' : '✗' }}</span>
+                Priority Support
+              </li>
+              <li [class.feature-disabled]="!plan.features.api_access">
+                <span class="icon">{{ plan.features.api_access ? '✓' : '✗' }}</span>
+                API Zugang
+              </li>
+              <li [class.feature-disabled]="!plan.features.multiLanguage">
+                <span class="icon">{{ plan.features.multiLanguage ? '✓' : '✗' }}</span>
+                Mehrsprachig
+              </li>
+              <li [class.feature-disabled]="!plan.features.customBranding">
+                <span class="icon">{{ plan.features.customBranding ? '✓' : '✗' }}</span>
+                Custom Branding
+              </li>
+            </ul>
+          </div>
+
+          <div class="plan-action">
+            <button *ngIf="canUpgradeToThisPlan(plan.plan)"
+                    class="btn btn-upgrade"
+                    [class.btn-primary]="plan.popular"
+                    (click)="selectPlanForUpgrade(plan)"
+                    [disabled]="upgrading">
+              {{ upgrading ? 'Wird verarbeitet...' : 'Jetzt upgraden' }}
+            </button>
+            <button *ngIf="currentSubscription?.plan === plan.plan"
+                    class="btn btn-current" disabled>
+              Aktueller Plan
+            </button>
+            <button *ngIf="!canUpgradeToThisPlan(plan.plan) && currentSubscription?.plan !== plan.plan"
+                    class="btn btn-disabled" disabled>
+              Downgrade nicht möglich
+            </button>
+          </div>
         </div>
       </div>
+    </div>
+
+    <!-- No Plans Available -->
+    <div class="no-plans-state" *ngIf="!loadingPlans && !plansError && availablePlans.length === 0">
+      <p>Derzeit sind keine Pläne verfügbar.</p>
     </div>
   </div>
 

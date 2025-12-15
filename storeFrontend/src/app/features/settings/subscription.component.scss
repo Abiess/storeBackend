@@ -595,6 +595,97 @@
   }
 }
 
+.no-subscription-section {
+  margin-bottom: 3rem;
+}
+
+.info-box {
+  background: #e7f3ff;
+  border: 1px solid #b3d9ff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+
+  .icon {
+    font-size: 1.5rem;
+  }
+
+  p {
+    margin: 0;
+    color: #004085;
+  }
+}
+
+// Loading State
+.loading-state {
+  text-align: center;
+  padding: 3rem;
+
+  .spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    margin: 0 auto 1rem;
+    animation: spin 1s linear infinite;
+  }
+
+  p {
+    color: #666;
+    font-size: 1rem;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+// Error State
+.error-state {
+  text-align: center;
+  padding: 3rem;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 8px;
+  margin: 2rem 0;
+
+  .icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+
+  p {
+    color: #856404;
+    margin: 0 0 1rem;
+    font-size: 1rem;
+  }
+
+  .btn {
+    width: auto;
+    min-width: 200px;
+  }
+}
+
+// No Plans State
+.no-plans-state {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin: 2rem 0;
+
+  p {
+    margin: 0;
+    font-size: 1rem;
+  }
+}
+
 @media (max-width: 768px) {
   .subscription-page {
     padding: 1rem;
@@ -614,4 +705,3 @@
     margin-left: 0;
   }
 }
-

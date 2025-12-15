@@ -24,12 +24,15 @@ export class SubscriptionComponent implements OnInit {
   currentSubscription: Subscription | null = null;
   availablePlans: PlanDetails[] = [];
   selectedBillingCycle: 'MONTHLY' | 'YEARLY' = 'MONTHLY';
-  showUpgradeOptions = false;
+  showUpgradeOptions = true; // Geändert: Zeige Pläne immer an
   showPaymentModal = false;
   selectedPlan: PlanDetails | null = null;
   selectedPaymentMethod: PaymentMethod | null = null;
   paymentIntent: PaymentIntent | null = null;
   upgrading = false;
+  loadingPlans = false;
+  loadingSubscription = false;
+  plansError: string | null = null;
 
   constructor(
     private subscriptionService: SubscriptionService,
@@ -44,24 +47,34 @@ export class SubscriptionComponent implements OnInit {
   loadCurrentSubscription(): void {
     const user = this.authService.getCurrentUser();
     if (user) {
+      this.loadingSubscription = true;
       this.subscriptionService.getCurrentSubscription(user.id).subscribe({
         next: (subscription) => {
           this.currentSubscription = subscription;
+          this.loadingSubscription = false;
         },
         error: (error) => {
           console.error('Fehler beim Laden der Subscription:', error);
+          this.loadingSubscription = false;
+          // Kein Fehler anzeigen - Benutzer hat möglicherweise noch keine Subscription
         }
       });
     }
   }
 
   loadAvailablePlans(): void {
+    this.loadingPlans = true;
+    this.plansError = null;
     this.subscriptionService.getAvailablePlans().subscribe({
       next: (plans) => {
         this.availablePlans = plans;
+        this.loadingPlans = false;
+        console.log('Verfügbare Pläne geladen:', plans);
       },
       error: (error) => {
         console.error('Fehler beim Laden der Pläne:', error);
+        this.plansError = 'Die Pläne konnten nicht geladen werden. Bitte versuchen Sie es später erneut.';
+        this.loadingPlans = false;
       }
     });
   }
