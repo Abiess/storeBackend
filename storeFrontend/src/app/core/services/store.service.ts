@@ -58,6 +58,6 @@ export class StoreService {
         }, 300);
       });
     }
-    return this.http.get<boolean>(`${environment.apiUrl}/stores/check-slug/${slug}`);
+    return this.http.get<boolean>(`${environment.apiUrl}/me/stores/check-slug/${slug}`);
   }
 }
