@@ -19,6 +19,7 @@ import storebackend.security.JwtUtil;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -57,7 +58,14 @@ public class AuthService {
         // Generate JWT token using JwtUtil with roles
         String token = jwtUtil.generateToken(user.getEmail(), user.getId(), user.getRoles());
 
-        return new AuthResponse(token, user.getEmail(), user.getId());
+        // Create UserDTO
+        AuthResponse.UserDTO userDTO = new AuthResponse.UserDTO(
+            user.getId(),
+            user.getEmail(),
+            user.getRoles().stream().map(Enum::name).collect(Collectors.toList())
+        );
+
+        return new AuthResponse(token, userDTO);
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -76,7 +84,14 @@ public class AuthService {
         // Generate JWT token using JwtUtil with roles
         String token = jwtUtil.generateToken(user.getEmail(), user.getId(), user.getRoles());
 
-        return new AuthResponse(token, user.getEmail(), user.getId());
+        // Create UserDTO
+        AuthResponse.UserDTO userDTO = new AuthResponse.UserDTO(
+            user.getId(),
+            user.getEmail(),
+            user.getRoles().stream().map(Enum::name).collect(Collectors.toList())
+        );
+
+        return new AuthResponse(token, userDTO);
     }
 
     public String getEmailFromToken(String token) {
