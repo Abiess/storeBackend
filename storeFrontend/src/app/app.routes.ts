@@ -1,10 +1,17 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
+import { SubdomainRedirectGuard } from './core/guards/subdomain-redirect.guard';
 
 export const routes: Routes = [
+  // Storefront Landing Page für Subdomains (z.B. abc.markt.ma)
+  {
+    path: 'storefront-landing',
+    loadComponent: () => import('./features/storefront/storefront-landing.component').then(m => m.StorefrontLandingComponent)
+  },
   {
     path: '',
-    loadComponent: () => import('./features/landing/landing.component').then(m => m.LandingComponent)
+    loadComponent: () => import('./features/landing/landing.component').then(m => m.LandingComponent),
+    canActivate: [SubdomainRedirectGuard] // Prüft ob Subdomain und leitet um
   },
   {
     path: 'login',
