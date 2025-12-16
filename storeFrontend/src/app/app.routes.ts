@@ -3,15 +3,32 @@ import { authGuard } from './core/guards/auth.guard';
 import { SubdomainRedirectGuard } from './core/guards/subdomain-redirect.guard';
 
 export const routes: Routes = [
-  // Storefront Landing Page für Subdomains (z.B. abc.markt.ma)
+  // Root-Route lädt abhängig von Subdomain entweder Storefront oder Landing
+  {
+    path: '',
+    loadComponent: () => {
+      // Prüfe ob Subdomain
+      const hostname = window.location.hostname;
+      const isSubdomain = hostname.endsWith('.markt.ma') &&
+                         hostname !== 'markt.ma' &&
+                         hostname !== 'www.markt.ma' &&
+                         hostname !== 'api.markt.ma';
+
+      console.log('🌐 Routing - Hostname:', hostname, 'isSubdomain:', isSubdomain);
+
+      if (isSubdomain) {
+        // Lade Storefront für Subdomains (ÖFFENTLICH)
+        return import('./features/storefront/storefront-landing.component').then(m => m.StorefrontLandingComponent);
+      } else {
+        // Lade normale Landing Page für markt.ma
+        return import('./features/landing/landing.component').then(m => m.LandingComponent);
+      }
+    }
+  },
+  // Explizite Route für Storefront Landing (falls direkt aufgerufen)
   {
     path: 'storefront-landing',
     loadComponent: () => import('./features/storefront/storefront-landing.component').then(m => m.StorefrontLandingComponent)
-  },
-  {
-    path: '',
-    loadComponent: () => import('./features/landing/landing.component').then(m => m.LandingComponent),
-    canActivate: [SubdomainRedirectGuard] // Prüft ob Subdomain und leitet um
   },
   {
     path: 'login',

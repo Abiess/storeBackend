@@ -5,7 +5,8 @@ import { Observable } from 'rxjs';
 
 /**
  * Guard der prüft ob die aktuelle Domain eine Storefront-Subdomain ist
- * Falls ja, wird zur Storefront-Landing-Page weitergeleitet
+ * Falls JA, erlaubt direkten Zugriff (für öffentliche Storefront)
+ * Falls NEIN (normale markt.ma), erlaubt normalen Zugriff
  */
 @Injectable({
   providedIn: 'root'
@@ -16,18 +17,18 @@ export class SubdomainRedirectGuard implements CanActivate {
     private router: Router
   ) {}
 
-  canActivate(): Observable<boolean | UrlTree> | boolean | UrlTree {
+  canActivate(): boolean {
     const info = this.subdomainService.detectSubdomain();
 
     console.log('🔒 Subdomain Guard - Info:', info);
 
-    // Wenn es eine Subdomain ist, zur Storefront-Landing weiterleiten
+    // Subdomain erkannt - erlaube Zugriff auf alles (öffentlich)
     if (info.isSubdomain) {
-      console.log('✅ Subdomain erkannt - Leite zur Storefront weiter');
-      return this.router.parseUrl('/storefront-landing');
+      console.log('✅ Subdomain erkannt - Öffentlicher Zugriff erlaubt');
+      return true;
     }
 
-    // Normale markt.ma Domain - Zugriff erlaubt
+    // Normale markt.ma Domain - normale Route
     return true;
   }
 }
