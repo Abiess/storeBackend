@@ -115,6 +115,12 @@ export class MockCartService {
     return of(void 0).pipe(delay(200));
   }
 
+  getCartItemCount(storeId: number, sessionId: string): Observable<number> {
+    const cart = mockCarts.find(c => c.sessionId === sessionId && c.storeId === storeId);
+    const count = cart ? cart.itemCount : 0;
+    return of(count).pipe(delay(200));
+  }
+
   private updateCartTotals(cart: Cart): void {
     cart.itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
     cart.subtotal = cart.items.reduce((sum, item) => sum + (item.priceSnapshot * item.quantity), 0);

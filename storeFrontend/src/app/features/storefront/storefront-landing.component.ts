@@ -137,10 +137,10 @@ export class StorefrontLandingComponent implements OnInit {
     if (!this.storeId) return;
     
     this.cartService.getCartItemCount(this.storeId, this.sessionId).subscribe({
-      next: (count) => {
+      next: (count: number) => {
         this.cartItemCount = count;
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('❌ Fehler beim Laden des Warenkorbs:', error);
       }
     });

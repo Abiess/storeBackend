@@ -75,6 +75,13 @@ export class CartService {
     return this.http.delete<void>(`${environment.publicApiUrl}/cart/clear?sessionId=${sessionId}`);
   }
 
+  getCartItemCount(storeId: number, sessionId: string): Observable<number> {
+    if (environment.useMockData) {
+      return this.mockService.getCartItemCount(storeId, sessionId);
+    }
+    return this.http.get<number>(`${environment.publicApiUrl}/cart/count?storeId=${storeId}&sessionId=${sessionId}`);
+  }
+
   getOrCreateSessionId(): string {
     let sessionId = localStorage.getItem('cart_session_id');
     if (!sessionId) {

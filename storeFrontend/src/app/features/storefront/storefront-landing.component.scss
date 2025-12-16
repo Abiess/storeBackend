@@ -1,80 +1,3 @@
-  padding: 60px 20px;
-  color: #666;
-  font-size: 1.2rem;
-}
-
-.storefront-footer {
-  background: #2d3748;
-  color: white;
-  padding: 40px 20px;
-  text-align: center;
-  margin-top: auto;
-}
-
-.powered-by {
-  margin-top: 10px;
-  opacity: 0.7;
-  font-size: 0.9rem;
-}
-
-.powered-by a {
-  color: #667eea;
-  text-decoration: none;
-}
-
-.loading-container,
-.error-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 20px;
-}
-
-.spinner {
-  width: 50px;
-  height: 50px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #667eea;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.error-container h2 {
-  color: #e53e3e;
-  margin-bottom: 1rem;
-}
-
-.error-container a {
-  margin-top: 20px;
-  padding: 10px 30px;
-  background: #667eea;
-  color: white;
-  text-decoration: none;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-}
-
-.error-container a:hover {
-  background: #5568d3;
-}
 .storefront-wrapper {
   min-height: 100vh;
   display: flex;
@@ -177,88 +100,80 @@
 
 .no-products {
   text-align: center;
-<div class="storefront-wrapper" *ngIf="!loading && storeId">
-  <!-- Store Header mit Logo, Name, etc. -->
-  <app-storefront-header
-    [storeId]="storeId"
-    [storeName]="storeName"
-    [cartItemCount]="cartItemCount">
-  </app-storefront-header>
+  padding: 60px 20px;
+  color: #666;
+  font-size: 1.2rem;
+}
 
-  <!-- Navigation / Kategorien -->
-  <app-storefront-nav
-    [categories]="categories"
-    [storeId]="storeId">
-  </app-storefront-nav>
+.storefront-footer {
+  background: #2d3748;
+  color: white;
+  padding: 40px 20px;
+  text-align: center;
+  margin-top: auto;
+}
 
-  <!-- Hero Section -->
-  <section class="hero-section" *ngIf="storeName">
-    <div class="hero-content">
-      <h1 class="hero-title">Willkommen bei {{ storeName }}</h1>
-      <p class="hero-subtitle">Entdecken Sie unsere Produkte</p>
-      <button class="cta-button" (click)="scrollToProducts()">
-        Jetzt einkaufen
-      </button>
-    </div>
-  </section>
+.powered-by {
+  margin-top: 10px;
+  opacity: 0.7;
+  font-size: 0.9rem;
+}
 
-  <!-- Featured Products -->
-  <section class="products-section" id="products">
-    <div class="container">
-      <h2 class="section-title">Unsere Produkte</h2>
+.powered-by a {
+  color: #667eea;
+  text-decoration: none;
+}
 
-      <div class="products-grid" *ngIf="products.length > 0">
-        <app-product-card
-          *ngFor="let product of products"
-          [product]="product"
-          [storeId]="storeId"
-          (addToCart)="addToCart($event)">
-        </app-product-card>
-      </div>
+.loading-container,
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+}
 
-      <div class="no-products" *ngIf="products.length === 0">
-        <p>Noch keine Produkte verfügbar.</p>
-      </div>
-    </div>
-  </section>
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
 
-  <!-- Categories Preview -->
-  <section class="categories-section" *ngIf="categories.length > 0">
-    <div class="container">
-      <h2 class="section-title">Kategorien</h2>
-      <div class="categories-grid">
-        <div
-          *ngFor="let category of categories"
-          class="category-card"
-          (click)="filterByCategory(category)">
-          <h3>{{ category.name }}</h3>
-          <p>{{ category.description }}</p>
-        </div>
-      </div>
-    </div>
-  </section>
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 
-  <!-- Footer -->
-  <footer class="storefront-footer">
-    <div class="container">
-      <p>&copy; 2025 {{ storeName }}. Alle Rechte vorbehalten.</p>
-      <p class="powered-by">
-        Powered by <a href="https://markt.ma" target="_blank">markt.ma</a>
-      </p>
-    </div>
-  </footer>
-</div>
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
-<!-- Loading State -->
-<div class="loading-container" *ngIf="loading">
-  <div class="spinner"></div>
-  <p>Lade Store...</p>
-</div>
+.error-container h2 {
+  color: #e53e3e;
+  margin-bottom: 1rem;
+}
 
-<!-- Error State -->
-<div class="error-container" *ngIf="!loading && !storeId">
-  <h2>Store nicht gefunden</h2>
-  <p>Diese Subdomain ist keinem Store zugeordnet.</p>
-  <a href="https://markt.ma">Zurück zur Hauptseite</a>
-</div>
+.error-container a {
+  margin-top: 20px;
+  padding: 10px 30px;
+  background: #667eea;
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
 
+.error-container a:hover {
+  background: #5568d3;
+}

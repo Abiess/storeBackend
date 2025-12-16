@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core';
 import { CanActivate, Router, UrlTree } from '@angular/router';
 import { SubdomainService } from '../services/subdomain.service';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
 
 /**
  * Guard der prüft ob die aktuelle Domain eine Storefront-Subdomain ist
@@ -17,7 +16,7 @@ export class SubdomainRedirectGuard implements CanActivate {
     private router: Router
   ) {}
 
-  canActivate(): Observable<boolean | UrlTree> | boolean {
+  canActivate(): Observable<boolean | UrlTree> | boolean | UrlTree {
     const info = this.subdomainService.detectSubdomain();
 
     console.log('🔒 Subdomain Guard - Info:', info);
@@ -32,4 +31,3 @@ export class SubdomainRedirectGuard implements CanActivate {
     return true;
   }
 }
-
