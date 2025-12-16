@@ -17,7 +17,7 @@ export class SubdomainRedirectGuard implements CanActivate {
     private router: Router
   ) {}
 
-  canActivate(): boolean {
+  canActivate(): Observable<boolean | UrlTree> | boolean {
     const info = this.subdomainService.detectSubdomain();
 
     console.log('🔒 Subdomain Guard - Info:', info);
