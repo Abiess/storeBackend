@@ -796,7 +796,14 @@ export class DashboardComponent implements OnInit {
       },
       error: (error) => {
         this.creating = false;
-        this.createError = 'Fehler beim Erstellen des Stores';
+        if (error.status === 403) {
+          this.createError = 'Authentifizierungsproblem. Bitte melden Sie sich erneut an.';
+          console.error('403-Fehler beim Erstellen des Stores. Bitte Backend neu starten und erneut anmelden.');
+        } else if (error.error?.message) {
+          this.createError = error.error.message;
+        } else {
+          this.createError = 'Fehler beim Erstellen des Stores';
+        }
         console.error('Fehler beim Erstellen des Stores:', error);
       }
     });
