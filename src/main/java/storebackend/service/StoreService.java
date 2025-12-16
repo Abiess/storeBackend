@@ -33,6 +33,25 @@ public class StoreService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Prüft, ob ein Slug noch verfügbar ist
+     * @param slug Der zu prüfende Slug
+     * @return true wenn verfügbar, false wenn bereits vergeben
+     */
+    public boolean isSlugAvailable(String slug) {
+        if (slug == null || slug.trim().isEmpty()) {
+            return false;
+        }
+
+        // Validiere Slug Format
+        if (!slug.matches("^[a-z0-9-]+$")) {
+            return false;
+        }
+
+        // Prüfe ob Slug bereits existiert
+        return !storeRepository.existsBySlug(slug);
+    }
+
     @Transactional
     public StoreDTO createStore(CreateStoreRequest request, User owner) {
         // Check max stores limit

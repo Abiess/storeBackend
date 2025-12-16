@@ -42,6 +42,8 @@ public class SecurityConfig {
                 // Public API endpoints
                 .requestMatchers("/api/public/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/public/**").permitAll()
+                // Slug-Verfügbarkeitsprüfung - öffentlich zugänglich für Registrierung
+                .requestMatchers(HttpMethod.GET, "/api/me/stores/check-slug/**").permitAll()
                 // Subscription plans - öffentlich sichtbar
                 .requestMatchers(HttpMethod.GET, "/api/subscriptions/plans").permitAll()
                 // Storefront public endpoints - Stores und Produkte können öffentlich angesehen werden

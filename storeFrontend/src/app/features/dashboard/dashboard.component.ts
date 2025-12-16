@@ -776,12 +776,28 @@ export class DashboardComponent implements OnInit {
   }
 
   checkSlugAvailability(slug: string): void {
+    // Validiere Slug-Format zuerst
+    if (!slug || slug.trim().length === 0) {
+      this.slugError = null;
+      return;
+    }
+
+    // Prüfe Format mit Regex
+    if (!slug.match(/^[a-z0-9-]+$/)) {
+      this.slugError = 'Nur Kleinbuchstaben, Zahlen und Bindestriche erlaubt';
+      return;
+    }
+
+    // Slug ist gültig, prüfe Verfügbarkeit
     this.storeService.checkSlugAvailability(slug).subscribe({
       next: (available) => {
         this.slugError = available ? null : 'Dieser Slug ist bereits vergeben';
       },
-      error: () => {
-        this.slugError = 'Fehler bei der Überprüfung der Slug-Verfügbarkeit';
+      error: (error) => {
+        // Fehler nur loggen, nicht anzeigen - könnte am Backend liegen
+        console.error('Fehler bei der Slug-Prüfung:', error);
+        // Keine Fehlermeldung anzeigen, damit User trotzdem fortfahren kann
+        this.slugError = null;
       }
     });
   }

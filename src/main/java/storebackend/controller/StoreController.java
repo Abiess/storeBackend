@@ -32,4 +32,10 @@ public class StoreController {
             @AuthenticationPrincipal User user) {
         return ResponseEntity.ok(storeService.createStore(request, user));
     }
+
+    @GetMapping("/check-slug/{slug}")
+    public ResponseEntity<Boolean> checkSlugAvailability(@PathVariable String slug) {
+        boolean available = storeService.isSlugAvailable(slug);
+        return ResponseEntity.ok(available);
+    }
 }
