@@ -71,44 +71,46 @@ public class ProductController {
         }
     }
 
-    @Operation(summary = "Get all products", description = "Returns all products for a specific store")
+    @Operation(summary = "Get all products", description = "Returns all products for a specific store (public access)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved products"),
-            @ApiResponse(responseCode = "403", description = "Not authorized to access this store")
+            @ApiResponse(responseCode = "404", description = "Store not found")
     })
     @GetMapping
     public ResponseEntity<List<ProductDTO>> getProducts(
             @Parameter(description = "Store ID") @PathVariable Long storeId,
             @AuthenticationPrincipal User user) {
 
-        if (user == null) {
-            return ResponseEntity.status(401).build();
+        // GET-Requests auf Produkte sind öffentlich - kein Auth erforderlich!
+        log.info("Getting products for store {} (user: {})", storeId, user != null ? user.getId() : "anonymous");
+
+        // Prüfe nur, ob Store existiert
+        Store store = storeRepository.findById(storeId).orElse(null);
+        if (store == null) {
+            log.warn("Store {} not found", storeId);
+            return ResponseEntity.notFound().build();
         }
 
-        if (!hasStoreAccess(storeId, user)) {
-            return ResponseEntity.status(403).build();
-        }
-
-        Store store = storeService.getStoreById(storeId);
         return ResponseEntity.ok(productService.getProductsByStore(store));
     }
 
-    @Operation(summary = "Get product by ID", description = "Returns a single product")
+    @Operation(summary = "Get product by ID", description = "Returns a single product (public access)")
     @GetMapping("/{productId}")
     public ResponseEntity<ProductDTO> getProduct(
             @Parameter(description = "Store ID") @PathVariable Long storeId,
             @Parameter(description = "Product ID") @PathVariable Long productId,
             @AuthenticationPrincipal User user) {
 
-        if (user == null) {
-            return ResponseEntity.status(401).build();
+        // GET-Requests auf einzelne Produkte sind öffentlich - kein Auth erforderlich!
+        log.info("Getting product {} from store {} (user: {})", productId, storeId, user != null ? user.getId() : "anonymous");
+
+        // Prüfe nur, ob Store existiert
+        Store store = storeRepository.findById(storeId).orElse(null);
+        if (store == null) {
+            log.warn("Store {} not found", storeId);
+            return ResponseEntity.notFound().build();
         }
 
-        if (!hasStoreAccess(storeId, user)) {
-            return ResponseEntity.status(403).build();
-        }
-
-        Store store = storeService.getStoreById(storeId);
         return ResponseEntity.ok(productService.getProductById(productId, store));
     }
 
