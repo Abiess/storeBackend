@@ -25,6 +25,7 @@ public class SimpleCartController {
     private final CartItemRepository cartItemRepository;
     private final ProductRepository productRepository;
     private final StoreRepository storeRepository;
+    private final ProductVariantRepository productVariantRepository;
 
     @GetMapping
     public ResponseEntity<Map<String, Object>> getCart(@RequestParam String sessionId) {
@@ -163,18 +164,35 @@ public class SimpleCartController {
 
     /**
      * Erstellt oder lädt die Default-Variante für ein Produkt
-     * Dies ist ein Workaround für Produkte ohne explizite Varianten
+     * Erstellt eine echte Variante in der Datenbank wenn keine existiert
      */
     private ProductVariant getOrCreateDefaultVariant(Product product) {
-        // Hier sollte man eigentlich nach existierenden Varianten suchen
-        // Für jetzt erstellen wir eine virtuelle "Default"-Variante im Speicher
+        // Prüfe ob bereits eine Default-Variante existiert
+        // Wir nutzen die Produkt-ID als Basis für die SKU
+        String defaultSku = "DEFAULT-" + product.getId();
+
+        // Suche nach existierender Default-Variante für dieses Produkt
+        List<ProductVariant> existingVariants = productVariantRepository.findAll();
+        Optional<ProductVariant> existing = existingVariants.stream()
+            .filter(v -> v.getProduct().getId().equals(product.getId()))
+            .filter(v -> v.getSku().equals(defaultSku))
+            .findFirst();
+
+        if (existing.isPresent()) {
+            log.debug("Found existing default variant for product {}", product.getId());
+            return existing.get();
+        }
+
+        // Erstelle neue Default-Variante in der Datenbank
+        log.info("Creating default variant for product {}", product.getId());
         ProductVariant variant = new ProductVariant();
-        variant.setId(product.getId()); // Trick: Verwende Produkt-ID als Varianten-ID
         variant.setProduct(product);
-        variant.setSku(product.getId().toString());
+        variant.setSku(defaultSku);
         variant.setPrice(product.getBasePrice());
-        variant.setStockQuantity(999); // Unlimited stock für Default-Variante
-        return variant;
+        variant.setStockQuantity(999); // Hoher Lagerbestand für Default-Varianten
+
+        // Speichere in Datenbank und gib zurück
+        return productVariantRepository.save(variant);
     }
 
     @PutMapping("/items/{itemId}")
