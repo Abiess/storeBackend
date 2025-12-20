@@ -69,7 +69,7 @@ export class MockCartService {
       quantity: request.quantity,
       price: price,
       priceSnapshot: price,
-      imageUrl: product.primaryImageUrl || product.imageUrl || '/assets/placeholder.jpg'
+      imageUrl: product.imageUrl || '/assets/placeholder.jpg'
     };
 
     cart.items.push(newItem);
