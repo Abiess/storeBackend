@@ -1,0 +1,102 @@
+<!-- Storefront Landing Page Template -->
+
+<!-- Header mit Store-Name und Warenkorb -->
+<app-storefront-header
+  [storeName]="storeName || 'Loading...'"
+  [storeSlug]="storeName || ''"
+  [cartItemCount]="cartItemCount"
+  (cartClick)="router.navigate(['/cart'])">
+</app-storefront-header>
+
+<!-- Navigation mit Kategorien -->
+<app-storefront-nav
+  *ngIf="categories.length > 0"
+  [categories]="categories"
+  (categoryClick)="filterByCategory($event)">
+</app-storefront-nav>
+
+<!-- Loading Indicator -->
+<div *ngIf="loading" class="loading-container">
+  <div class="spinner"></div>
+  <p>Store wird geladen...</p>
+</div>
+
+<!-- Main Content -->
+<main class="storefront-content" *ngIf="!loading">
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="container">
+      <h2>Willkommen bei {{ storeName }}</h2>
+      <p class="hero-description">Entdecke unsere Produkte</p>
+      <button class="btn btn-primary" (click)="scrollToProducts()">
+        Produkte ansehen
+      </button>
+    </div>
+  </section>
+
+  <!-- Products Section -->
+  <section id="products" class="products-section">
+    <div class="container">
+      <h3 class="section-title">Unsere Produkte</h3>
+
+      <!-- Keine Produkte vorhanden -->
+      <div *ngIf="products.length === 0" class="empty-state">
+        <div class="empty-icon">📦</div>
+        <h4>Noch keine Produkte verfügbar</h4>
+        <p>Der Store-Besitzer hat noch keine Produkte hinzugefügt.</p>
+      </div>
+
+      <!-- Produkte Grid -->
+      <div *ngIf="products.length > 0" class="products-grid">
+        <app-product-card
+          *ngFor="let product of products"
+          [product]="product"
+          (addToCart)="addToCart(product)">
+        </app-product-card>
+      </div>
+    </div>
+  </section>
+
+  <!-- Categories Section (wenn vorhanden) -->
+  <section *ngIf="categories.length > 0" class="categories-section">
+    <div class="container">
+      <h3 class="section-title">Kategorien</h3>
+      <div class="categories-grid">
+        <div
+          *ngFor="let category of categories"
+          class="category-card"
+          (click)="filterByCategory(category)">
+          <h4>{{ category.name }}</h4>
+          <p *ngIf="category.description">{{ category.description }}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Debug Info (nur für Entwicklung) -->
+  <section class="debug-section" *ngIf="false">
+    <div class="container">
+      <details>
+        <summary>🔧 Debug Info</summary>
+        <pre>{{ {
+          storeId: storeId,
+          storeName: storeName,
+          productsCount: products.length,
+          categoriesCount: categories.length,
+          cartItemCount: cartItemCount,
+          sessionId: sessionId
+        } | json }}</pre>
+      </details>
+    </div>
+  </section>
+
+</main>
+
+<!-- Footer -->
+<footer class="storefront-footer">
+  <div class="container">
+    <p>&copy; 2025 {{ storeName || 'Store' }} - Powered by Markt.ma</p>
+  </div>
+</footer>
+
