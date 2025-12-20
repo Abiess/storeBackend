@@ -215,10 +215,15 @@ export class StorefrontLandingComponent implements OnInit {
     });
   }
 
-  filterByCategory(category: Category): void {
-    console.log('🏷️ Filter nach Kategorie:', category.name);
-    // Filter-Logik hier implementieren
-    // TODO: Produkte nach Kategorie filtern
+  filterByCategory(category: Category | null): void {
+    if (category) {
+      console.log('🏷️ Filter nach Kategorie:', category.name);
+      // Filter-Logik hier implementieren
+      // TODO: Produkte nach Kategorie filtern
+    } else {
+      console.log('🏷️ Filter zurückgesetzt - zeige alle Produkte');
+      // TODO: Alle Produkte anzeigen
+    }
   }
 
   scrollToProducts(): void {

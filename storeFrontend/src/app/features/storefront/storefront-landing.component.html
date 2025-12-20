@@ -12,7 +12,7 @@
 <app-storefront-nav
   *ngIf="categories.length > 0"
   [categories]="categories"
-  (categoryClick)="filterByCategory($event)">
+  (categorySelect)="filterByCategory($event)">
 </app-storefront-nav>
 
 <!-- Loading Indicator -->
@@ -99,4 +99,3 @@
     <p>&copy; 2025 {{ storeName || 'Store' }} - Powered by Markt.ma</p>
   </div>
 </footer>
-
