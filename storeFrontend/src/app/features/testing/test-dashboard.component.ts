@@ -721,7 +721,9 @@ export class TestDashboardComponent implements OnInit {
   }
 
   goToStorefront(): void {
-    this.router.navigate(['/storefront/1']);
+    // Öffne die Storefront über die Subdomain (z.B. test-store.markt.ma)
+    // Annahme: Store mit ID 1 hat den Slug 'test-store'
+    window.open('https://test-store.markt.ma', '_blank');
   }
 
   goToCart(): void {

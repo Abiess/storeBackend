@@ -129,14 +129,21 @@ export const routes: Routes = [
     path: 'checkout-demo',
     loadComponent: () => import('./features/coupons/checkout-demo/checkout-demo.component').then(m => m.CheckoutDemoComponent)
   },
+  // Alte Storefront-Routen entfernt - nur noch Subdomain-Zugriff!
+  // Benutzer sollten slug.markt.ma verwenden, nicht markt.ma/storefront/id
+
+  // Fallback für alte Links - Redirect zur Subdomain
   {
     path: 'storefront/:id',
-    loadComponent: () => import('./features/storefront/storefront.component').then(m => m.StorefrontComponent)
+    redirectTo: '/',
+    pathMatch: 'full'
   },
   {
-    path: 'storefront',
-    loadComponent: () => import('./features/storefront/storefront.component').then(m => m.StorefrontComponent)
+    path: 'frontend/:id',
+    redirectTo: '/',
+    pathMatch: 'full'
   },
+  // Warenkorb und Checkout bleiben öffentlich zugänglich
   {
     path: 'cart',
     loadComponent: () => import('./features/storefront/cart.component').then(m => m.CartComponent)

@@ -79,7 +79,7 @@ import { LanguageSwitcherComponent } from '@app/shared/components/language-switc
               <h3>{{ store.name }}</h3>
               <p class="store-url">
                 <span class="link-icon">🔗</span>
-                <a [routerLink]="['/storefront', store.id]" class="domain-link" target="_blank">
+                <a [href]="getStorefrontUrl(store.slug)" class="domain-link" target="_blank">
                   {{ store.slug }}.markt.ma
                 </a>
               </p>
@@ -823,5 +823,9 @@ export class DashboardComponent implements OnInit {
         console.error('Fehler beim Erstellen des Stores:', error);
       }
     });
+  }
+
+  getStorefrontUrl(slug: string): string {
+    return `https://${slug}.markt.ma`;
   }
 }
