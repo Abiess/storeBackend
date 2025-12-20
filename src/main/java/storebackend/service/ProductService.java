@@ -6,9 +6,11 @@ import storebackend.dto.CreateProductRequest;
 import storebackend.dto.ProductDTO;
 import storebackend.entity.Category;
 import storebackend.entity.Product;
+import storebackend.entity.ProductMedia;
 import storebackend.entity.Store;
 import storebackend.entity.User;
 import storebackend.repository.CategoryRepository;
+import storebackend.repository.ProductMediaRepository;
 import storebackend.repository.ProductRepository;
 
 import java.util.List;
@@ -20,7 +22,9 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
+    private final ProductMediaRepository productMediaRepository;
     private final StoreUsageService storeUsageService;
+    private final MinioService minioService;
 
     public List<ProductDTO> getProductsByStore(Store store) {
         return productRepository.findByStore(store).stream()
@@ -114,6 +118,59 @@ public class ProductService {
         if (product.getCategory() != null) {
             dto.setCategoryId(product.getCategory().getId());
             dto.setCategoryName(product.getCategory().getName());
+        }
+
+        // Lade Bilder für das Produkt
+        List<ProductMedia> productMedia = productMediaRepository.findByProductIdOrderBySortOrderAsc(product.getId());
+
+        if (!productMedia.isEmpty()) {
+            // Konvertiere zu DTOs
+            List<ProductDTO.ProductMediaDTO> mediaList = productMedia.stream()
+                    .map(pm -> {
+                        ProductDTO.ProductMediaDTO mediaDTO = new ProductDTO.ProductMediaDTO();
+                        mediaDTO.setId(pm.getId());
+                        mediaDTO.setMediaId(pm.getMedia().getId());
+
+                        // Generiere URL über MinioService
+                        try {
+                            String url = minioService.getPresignedUrl(pm.getMedia().getMinioObjectName(), 60);
+                            mediaDTO.setUrl(url);
+                        } catch (Exception e) {
+                            // Fallback: leere URL
+                            mediaDTO.setUrl("");
+                        }
+
+                        mediaDTO.setFilename(pm.getMedia().getFilename());
+                        mediaDTO.setIsPrimary(pm.getIsPrimary());
+                        mediaDTO.setSortOrder(pm.getSortOrder());
+                        return mediaDTO;
+                    })
+                    .collect(Collectors.toList());
+
+            dto.setMedia(mediaList);
+
+            // Setze Primary Image URL
+            productMedia.stream()
+                    .filter(ProductMedia::getIsPrimary)
+                    .findFirst()
+                    .ifPresent(pm -> {
+                        try {
+                            String url = minioService.getPresignedUrl(pm.getMedia().getMinioObjectName(), 60);
+                            dto.setPrimaryImageUrl(url);
+                        } catch (Exception e) {
+                            dto.setPrimaryImageUrl("");
+                        }
+                    });
+
+            // Falls kein Primary-Bild, nimm das erste
+            if (dto.getPrimaryImageUrl() == null && !productMedia.isEmpty()) {
+                try {
+                    String url = minioService.getPresignedUrl(productMedia.get(0).getMedia().getMinioObjectName(), 60);
+                    dto.setPrimaryImageUrl(url);
+                } catch (Exception e) {
+                    dto.setPrimaryImageUrl("");
+                }
+            }
         }
 
         return dto;

@@ -11,11 +11,15 @@ import storebackend.entity.Domain;
 import storebackend.entity.Store;
 import storebackend.entity.User;
 import storebackend.enums.DomainType;
+import storebackend.enums.Role;
 import storebackend.enums.StoreStatus;
 import storebackend.repository.DomainRepository;
 import storebackend.repository.StoreRepository;
+import storebackend.repository.UserRepository;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,6 +29,7 @@ public class StoreService {
 
     private final StoreRepository storeRepository;
     private final DomainRepository domainRepository;
+    private final UserRepository userRepository;
     private final SaasProperties saasProperties;
 
     public List<StoreDTO> getStoresByOwner(User owner) {
@@ -77,6 +82,15 @@ public class StoreService {
         store.setStatus(StoreStatus.ACTIVE);
 
         store = storeRepository.save(store);
+
+        // Upgrade User zu STORE_OWNER Rolle wenn noch nicht vorhanden
+        if (!owner.getRoles().contains(Role.ROLE_STORE_OWNER)) {
+            Set<Role> roles = new HashSet<>(owner.getRoles());
+            roles.add(Role.ROLE_STORE_OWNER);
+            owner.setRoles(roles);
+            userRepository.save(owner);
+            log.info("User {} upgraded to STORE_OWNER role", owner.getEmail());
+        }
 
         // Automatisch Subdomain erstellen
         createDefaultSubdomain(store);

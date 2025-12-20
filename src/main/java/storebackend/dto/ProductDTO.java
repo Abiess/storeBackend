@@ -5,6 +5,7 @@ import storebackend.enums.ProductStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class ProductDTO {
@@ -17,4 +18,18 @@ public class ProductDTO {
     private String categoryName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    // Bilder-Informationen
+    private List<ProductMediaDTO> media;
+    private String primaryImageUrl;
+
+    @Data
+    public static class ProductMediaDTO {
+        private Long id;
+        private Long mediaId;
+        private String url;
+        private String filename;
+        private Boolean isPrimary;
+        private Integer sortOrder;
+    }
 }
