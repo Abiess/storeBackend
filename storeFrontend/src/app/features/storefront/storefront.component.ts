@@ -140,16 +140,13 @@ export class StorefrontComponent implements OnInit {
   }
 
   addToCart(product: Product): void {
-    if (!product.variants || product.variants.length === 0) {
-      alert('Dieses Produkt hat keine verfuegbaren Varianten.');
-      return;
-    }
-    const defaultVariant = product.variants[0];
+    // Vereinfachte Logik: Direkt mit Produkt arbeiten, ohne Varianten
     this.addingToCart = true;
+
     this.cartService.addItem({
       sessionId: this.sessionId,
       storeId: this.storeId,
-      variantId: defaultVariant.id,
+      productId: product.id, // Direkt Produkt-ID verwenden
       quantity: 1
     }).subscribe({
       next: () => {

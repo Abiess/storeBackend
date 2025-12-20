@@ -28,7 +28,7 @@ export interface Cart {
 export interface AddToCartRequest {
   sessionId: string;
   storeId: number;
-  variantId: number;
+  productId: number;  // Geändert von variantId zu productId
   quantity: number;
 }
 
@@ -37,6 +37,8 @@ export interface AddToCartRequest {
 })
 export class CartService {
   private mockService = new MockCartService();
+  // Verwende vereinfachten Warenkorb-Endpoint ohne Varianten
+  private cartApiUrl = `${environment.publicApiUrl}/simple-cart`;
 
   constructor(private http: HttpClient) {}
 
@@ -44,42 +46,42 @@ export class CartService {
     if (environment.useMockData) {
       return this.mockService.getCart(sessionId);
     }
-    return this.http.get<Cart>(`${environment.publicApiUrl}/cart?sessionId=${sessionId}`);
+    return this.http.get<Cart>(`${this.cartApiUrl}?sessionId=${sessionId}`);
   }
 
-  addItem(request: AddToCartRequest): Observable<CartItem> {
+  addItem(request: AddToCartRequest): Observable<any> {
     if (environment.useMockData) {
       return this.mockService.addItem(request);
     }
-    return this.http.post<CartItem>(`${environment.publicApiUrl}/cart/items`, request);
+    return this.http.post<any>(`${this.cartApiUrl}/items`, request);
   }
 
-  updateItem(itemId: number, quantity: number): Observable<CartItem> {
+  updateItem(itemId: number, quantity: number): Observable<any> {
     if (environment.useMockData) {
       return this.mockService.updateItem(itemId, quantity);
     }
-    return this.http.put<CartItem>(`${environment.publicApiUrl}/cart/items/${itemId}`, { quantity });
+    return this.http.put<any>(`${this.cartApiUrl}/items/${itemId}`, { quantity });
   }
 
   removeItem(itemId: number): Observable<void> {
     if (environment.useMockData) {
       return this.mockService.removeItem(itemId);
     }
-    return this.http.delete<void>(`${environment.publicApiUrl}/cart/items/${itemId}`);
+    return this.http.delete<void>(`${this.cartApiUrl}/items/${itemId}`);
   }
 
   clearCart(sessionId: string): Observable<void> {
     if (environment.useMockData) {
       return this.mockService.clearCart(sessionId);
     }
-    return this.http.delete<void>(`${environment.publicApiUrl}/cart/clear?sessionId=${sessionId}`);
+    return this.http.delete<void>(`${this.cartApiUrl}/clear?sessionId=${sessionId}`);
   }
 
   getCartItemCount(storeId: number, sessionId: string): Observable<number> {
     if (environment.useMockData) {
       return this.mockService.getCartItemCount(storeId, sessionId);
     }
-    return this.http.get<number>(`${environment.publicApiUrl}/cart/count?storeId=${storeId}&sessionId=${sessionId}`);
+    return this.http.get<number>(`${this.cartApiUrl}/count?storeId=${storeId}&sessionId=${sessionId}`);
   }
 
   getOrCreateSessionId(): string {
