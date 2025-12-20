@@ -538,7 +538,7 @@ export class TestDashboardComponent implements OnInit {
     this.cartService.addItem({
       sessionId,
       storeId: 1,
-      variantId: 1,
+      productId: 1,  // Geändert von variantId zu productId
       quantity: 1
     }).subscribe({
       next: (item) => {
@@ -728,4 +728,3 @@ export class TestDashboardComponent implements OnInit {
     this.router.navigate(['/cart']);
   }
 }
-

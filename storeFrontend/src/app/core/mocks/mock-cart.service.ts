@@ -42,22 +42,18 @@ export class MockCartService {
       mockCarts.push(cart);
     }
 
-    // Finde das Produkt und die Variante
-    const product = MOCK_PRODUCTS.find(p =>
-      p.variants?.some(v => v.id === request.variantId)
-    );
+    // Verwende productId statt variantId
+    const product = MOCK_PRODUCTS.find(p => p.id === request.productId);
 
     if (!product) {
       return throwError(() => new Error('Product not found'));
     }
 
-    const variant = product.variants?.find(v => v.id === request.variantId);
-    if (!variant) {
-      return throwError(() => new Error('Variant not found'));
-    }
+    // Verwende Produkt-Preis direkt (keine Varianten)
+    const price = product.basePrice || 0;
 
-    // Prüfe ob Item bereits im Warenkorb ist
-    const existingItem = cart.items.find(item => item.variantId === request.variantId);
+    // Prüfe ob Item bereits im Warenkorb ist (verwende productId)
+    const existingItem = cart.items.find(item => item.variantId === request.productId);
 
     if (existingItem) {
       existingItem.quantity += request.quantity;
@@ -67,13 +63,13 @@ export class MockCartService {
 
     const newItem = {
       id: nextItemId++,
-      variantId: request.variantId,
-      productName: product.name || 'Unknown Product',
-      variantName: variant.name || 'Default Variant',
+      variantId: request.productId, // Verwende productId als variantId für Kompatibilität
+      productName: product.title || product.name || 'Unknown Product',
+      variantName: 'Standard',
       quantity: request.quantity,
-      price: variant.price,
-      priceSnapshot: variant.price,
-      imageUrl: product.imageUrl || '/assets/placeholder.jpg'
+      price: price,
+      priceSnapshot: price,
+      imageUrl: product.primaryImageUrl || product.imageUrl || '/assets/placeholder.jpg'
     };
 
     cart.items.push(newItem);
