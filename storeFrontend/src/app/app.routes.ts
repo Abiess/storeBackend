@@ -1,6 +1,5 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
-import { SubdomainRedirectGuard } from './core/guards/subdomain-redirect.guard';
 
 export const routes: Routes = [
   // Root-Route lädt abhängig von Subdomain entweder Storefront oder Landing
@@ -164,8 +163,25 @@ export const routes: Routes = [
     path: 'role-management',
     loadComponent: () => import('./features/settings/role-management.component').then(m => m.RoleManagementComponent)
   },
+  // Wildcard Route - unterschiedliche Behandlung für Subdomains
   {
     path: '**',
-    redirectTo: '/dashboard'
+    loadComponent: () => {
+      const hostname = window.location.hostname;
+      const isSubdomain = hostname.endsWith('.markt.ma') &&
+                         hostname !== 'markt.ma' &&
+                         hostname !== 'www.markt.ma' &&
+                         hostname !== 'api.markt.ma';
+
+      console.log('🌐 Wildcard Route - Hostname:', hostname, 'isSubdomain:', isSubdomain);
+
+      if (isSubdomain) {
+        // Für Subdomains: Lade Storefront (öffentlich)
+        return import('./features/storefront/storefront-landing.component').then(m => m.StorefrontLandingComponent);
+      } else {
+        // Für markt.ma: Weiterleitung zum Dashboard würde Auth benötigen, also zur Landing Page
+        return import('./features/landing/landing.component').then(m => m.LandingComponent);
+      }
+    }
   }
 ];
