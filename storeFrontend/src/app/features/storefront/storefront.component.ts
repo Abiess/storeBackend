@@ -54,7 +54,10 @@ export class StorefrontComponent implements OnInit {
       this.storeId = 1; // Fallback
     }
 
-    this.sessionId = this.cartService.getOrCreateSessionId();
+    // Verwende store-spezifische Session-ID
+    this.sessionId = this.cartService.getOrCreateStoreSessionId(this.storeId);
+    console.log(`🛒 Session-ID für Store ${this.storeId}: ${this.sessionId}`);
+
     this.loadTheme();
     this.loadStoreData();
     this.loadCartCount();

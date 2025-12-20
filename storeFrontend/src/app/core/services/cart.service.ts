@@ -92,4 +92,52 @@ export class CartService {
     }
     return sessionId;
   }
+
+  /**
+   * Erstellt eine store-spezifische Session-ID
+   * Jeder Store hat seinen eigenen Warenkorb
+   */
+  getOrCreateStoreSessionId(storeId: number): string {
+    const sessionKey = `cart_session_store_${storeId}`;
+    let sessionId = localStorage.getItem(sessionKey);
+
+    if (!sessionId) {
+      sessionId = `store${storeId}-session-` + Math.random().toString(36).substring(7) + '-' + Date.now();
+      localStorage.setItem(sessionKey, sessionId);
+      console.log(`🛒 Neue Session für Store ${storeId}: ${sessionId}`);
+    } else {
+      console.log(`🛒 Bestehende Session für Store ${storeId}: ${sessionId}`);
+    }
+
+    return sessionId;
+  }
+
+  /**
+   * Gibt alle Warenkorb-Sessions zurück (für alle Stores)
+   */
+  getAllStoreSessions(): Map<number, string> {
+    const sessions = new Map<number, string>();
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('cart_session_store_')) {
+        const storeId = parseInt(key.replace('cart_session_store_', ''));
+        const sessionId = localStorage.getItem(key);
+        if (sessionId) {
+          sessions.set(storeId, sessionId);
+        }
+      }
+    }
+
+    return sessions;
+  }
+
+  /**
+   * Löscht die Session für einen bestimmten Store
+   */
+  clearStoreSession(storeId: number): void {
+    const sessionKey = `cart_session_store_${storeId}`;
+    localStorage.removeItem(sessionKey);
+    console.log(`🗑️ Session für Store ${storeId} gelöscht`);
+  }
 }
