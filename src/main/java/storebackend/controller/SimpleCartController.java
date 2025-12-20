@@ -62,6 +62,41 @@ public class SimpleCartController {
         }
     }
 
+    /**
+     * Gibt die Anzahl der Items im Warenkorb zurück (für Badge-Anzeige)
+     * Öffentlicher Endpoint - funktioniert auch ohne Authentifizierung
+     */
+    @GetMapping("/count")
+    public ResponseEntity<Map<String, Object>> getCartCount(
+            @RequestParam(required = false) Long storeId,
+            @RequestParam String sessionId) {
+        try {
+            Cart cart = cartRepository.findBySessionId(sessionId).orElse(null);
+
+            if (cart == null) {
+                // Keine Session gefunden -> leerer Warenkorb
+                return ResponseEntity.ok(Map.of("count", 0));
+            }
+
+            // Optional: Store-ID validieren wenn angegeben
+            if (storeId != null && !cart.getStore().getId().equals(storeId)) {
+                log.warn("StoreId mismatch: cart belongs to store {}, requested {}",
+                    cart.getStore().getId(), storeId);
+                return ResponseEntity.ok(Map.of("count", 0));
+            }
+
+            List<CartItem> items = cartItemRepository.findByCartId(cart.getId());
+            int itemCount = items.stream().mapToInt(CartItem::getQuantity).sum();
+
+            return ResponseEntity.ok(Map.of("count", itemCount));
+
+        } catch (Exception e) {
+            log.error("Error getting cart count for session {}: {}", sessionId, e.getMessage());
+            // Bei Fehler: Graceful degradation - gib 0 zurück statt Fehler
+            return ResponseEntity.ok(Map.of("count", 0));
+        }
+    }
+
     @PostMapping("/items")
     public ResponseEntity<?> addItemToCart(@RequestBody Map<String, Object> request) {
         try {
@@ -189,4 +224,3 @@ public class SimpleCartController {
         }
     }
 }
-

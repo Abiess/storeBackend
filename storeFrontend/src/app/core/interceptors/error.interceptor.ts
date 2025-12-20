@@ -25,26 +25,43 @@ export class ErrorInterceptor implements HttpInterceptor {
           message: error.message
         });
 
+        // Prüfe ob es sich um einen öffentlichen Storefront-Request handelt
+        const isPublicStorefrontRequest = this.isPublicStorefrontEndpoint(req.url);
+
         // Prüfe ob User eingeloggt ist
         const currentUser = this.authService.getCurrentUser();
         const token = this.authService.getToken();
         console.log('Current User:', currentUser);
         console.log('Token exists:', !!token);
+        console.log('Is public storefront request:', isPublicStorefrontRequest);
 
         if (error.status === 401) {
           // Unauthorized - Token abgelaufen oder ungültig
-          console.error('Authentifizierung fehlgeschlagen - bitte erneut anmelden');
-          this.authService.logout();
-          this.router.navigate(['/login'], {
-            queryParams: { returnUrl: this.router.url, error: 'session_expired' }
-          });
+          // Nur umleiten wenn es KEIN öffentlicher Storefront-Request ist
+          if (!isPublicStorefrontRequest) {
+            console.error('Authentifizierung fehlgeschlagen - bitte erneut anmelden');
+            this.authService.logout();
+            this.router.navigate(['/login'], {
+              queryParams: { returnUrl: this.router.url, error: 'session_expired' }
+            });
+          } else {
+            console.warn('401 auf öffentlichem Endpoint - ignoriere für Storefront:', req.url);
+          }
         } else if (error.status === 403) {
           // Forbidden - Keine Berechtigung
           console.error('Zugriff verweigert - fehlende Berechtigungen');
           console.error('User beim 403-Fehler:', currentUser);
           console.error('Token beim 403-Fehler:', token ? 'vorhanden' : 'fehlt');
 
-          // Wenn nicht eingeloggt, zur Login-Seite
+          // Wenn öffentlicher Storefront-Request: NICHT umleiten!
+          if (isPublicStorefrontRequest) {
+            console.warn('403 auf öffentlichem Storefront-Endpoint - keine Umleitung zum Login');
+            console.warn('Komponente sollte Fallback-Werte verwenden (z.B. count=0, leere Arrays)');
+            // Fehler wird an die Komponente weitergegeben, die ihn graceful handled
+            return throwError(() => error);
+          }
+
+          // Wenn nicht eingeloggt UND kein öffentlicher Request, zur Login-Seite
           if (!this.authService.isAuthenticated()) {
             console.error('User nicht authentifiziert - Weiterleitung zum Login');
             this.router.navigate(['/login'], {
@@ -82,5 +99,24 @@ export class ErrorInterceptor implements HttpInterceptor {
         return throwError(() => error);
       })
     );
+  }
+
+  /**
+   * Prüft ob es sich um einen öffentlichen Storefront-Endpoint handelt
+   * Diese Endpoints sollten NICHT zum Login umleiten bei 401/403
+   */
+  private isPublicStorefrontEndpoint(url: string): boolean {
+    const publicPatterns = [
+      '/api/public/',
+      '/api/stores/',
+      '/products',
+      '/categories',
+      '/api/cart/',
+      '/api/checkout/',
+      'by-domain',
+      'resolve?host='
+    ];
+
+    return publicPatterns.some(pattern => url.includes(pattern));
   }
 }

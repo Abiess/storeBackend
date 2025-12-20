@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { environment } from '@env/environment';
 import { MockCartService } from '../mocks/mock-cart.service';
+import { map, catchError } from 'rxjs/operators';
 
 export interface CartItem {
   id: number;
@@ -81,7 +82,16 @@ export class CartService {
     if (environment.useMockData) {
       return this.mockService.getCartItemCount(storeId, sessionId);
     }
-    return this.http.get<number>(`${this.cartApiUrl}/count?storeId=${storeId}&sessionId=${sessionId}`);
+    return this.http.get<{count: number}>(`${this.cartApiUrl}/count?storeId=${storeId}&sessionId=${sessionId}`)
+      .pipe(
+        map(response => response.count),
+        catchError(error => {
+          console.error('Fehler beim Laden des Warenkorb-Counts:', error);
+          console.warn('Fallback: Gebe count=0 zurück');
+          // Graceful degradation: Bei Fehler immer 0 zurückgeben
+          return of(0);
+        })
+      );
   }
 
   getOrCreateSessionId(): string {
