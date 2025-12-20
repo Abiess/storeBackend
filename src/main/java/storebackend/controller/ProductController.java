@@ -125,20 +125,38 @@ public class ProductController {
             @Valid @RequestBody CreateProductRequest request,
             @AuthenticationPrincipal User user) {
 
-        log.info("Creating product - Store ID: {}, User ID: {}", storeId, user.getId());
+        log.info("=== CREATE PRODUCT REQUEST ===");
+        log.info("Store ID: {}", storeId);
+        log.info("User: {}", user != null ? user.getId() + " (" + user.getEmail() + ")" : "NULL");
+        log.info("Request: title={}, price={}, status={}", request.getTitle(), request.getBasePrice(), request.getStatus());
 
         if (user == null) {
+            log.error("❌ User is null - authentication failed");
             return ResponseEntity.status(401).build();
         }
 
         if (!hasStoreAccess(storeId, user)) {
-            log.warn("Access denied - User {} does not have access to Store {}", user.getId(), storeId);
+            log.error("❌ ACCESS DENIED - User {} ({}) does not have access to Store {}",
+                user.getId(), user.getEmail(), storeId);
+
+            // Debug: Zeige welche Stores der User hat
+            try {
+                List<Store> userStores = storeService.getStoresByUserId(user.getId());
+                log.error("User's stores: {}", userStores.stream()
+                    .map(s -> s.getId() + " (" + s.getName() + ")")
+                    .collect(java.util.stream.Collectors.joining(", ")));
+            } catch (Exception e) {
+                log.error("Could not fetch user's stores: {}", e.getMessage());
+            }
+
             return ResponseEntity.status(403).build();
         }
 
         Store store = storeService.getStoreById(storeId);
-        log.info("Permission granted - creating product");
-        return ResponseEntity.ok(productService.createProduct(request, store, user));
+        log.info("✅ Permission granted - creating product for store: {}", store.getName());
+        ProductDTO created = productService.createProduct(request, store, user);
+        log.info("✅ Product created successfully: {} (ID: {})", created.getTitle(), created.getId());
+        return ResponseEntity.ok(created);
     }
 
     @Operation(summary = "Update product", description = "Updates an existing product including category assignment")
