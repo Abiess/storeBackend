@@ -41,24 +41,32 @@ public class ProductController {
      */
     private boolean hasStoreAccess(Long storeId, User user) {
         if (user == null) {
+            log.warn("hasStoreAccess: User is null");
             return false;
         }
 
         Store store = storeRepository.findById(storeId).orElse(null);
         if (store == null) {
+            log.warn("hasStoreAccess: Store {} not found", storeId);
             return false;
         }
 
         // Owner hat immer Zugriff
-        if (store.getOwner().getId().equals(user.getId())) {
+        boolean isOwner = store.getOwner().getId().equals(user.getId());
+        if (isOwner) {
+            log.info("hasStoreAccess: User {} is owner of store {}", user.getId(), storeId);
             return true;
         }
 
         // Prüfe, ob der User über StoreService Zugriff hat
         try {
             List<Store> userStores = storeService.getStoresByUserId(user.getId());
-            return userStores.stream().anyMatch(s -> s.getId().equals(storeId));
+            boolean hasAccess = userStores.stream().anyMatch(s -> s.getId().equals(storeId));
+            log.info("hasStoreAccess: User {} has access via StoreService: {}", user.getId(), hasAccess);
+            return hasAccess;
         } catch (Exception e) {
+            log.error("hasStoreAccess: Error checking access for user {} to store {}: {}",
+                user.getId(), storeId, e.getMessage());
             return false;
         }
     }
