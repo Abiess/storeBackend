@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +23,7 @@ import java.util.List;
 @RequestMapping("/api/stores/{storeId}/categories")
 @Tag(name = "Categories", description = "Category management APIs - Categories can have products assigned to them")
 @RequiredArgsConstructor
+@Slf4j
 public class CategoryController {
     private final CategoryService categoryService;
     private final StoreService storeService;
@@ -55,36 +57,26 @@ public class CategoryController {
         }
     }
 
-    @Operation(summary = "Get all categories", description = "Returns all categories for a store")
+    @Operation(summary = "Get all categories", description = "Returns all categories for a store (public access)")
     @GetMapping
     public ResponseEntity<List<Category>> getAllCategories(
             @Parameter(description = "Store ID") @PathVariable Long storeId,
             @AuthenticationPrincipal User user) {
 
-        if (user == null) {
-            return ResponseEntity.status(401).build();
-        }
-
-        if (!hasStoreAccess(storeId, user)) {
-            return ResponseEntity.status(403).build();
-        }
+        // GET-Requests auf Kategorien sind öffentlich für Storefront
+        log.info("Getting categories for store {} (user: {})", storeId, user != null ? user.getId() : "anonymous");
 
         return ResponseEntity.ok(categoryService.getCategoriesByStore(storeId));
     }
 
-    @Operation(summary = "Get root categories", description = "Returns only top-level categories (no parent)")
+    @Operation(summary = "Get root categories", description = "Returns only top-level categories (public access)")
     @GetMapping("/root")
     public ResponseEntity<List<Category>> getRootCategories(
             @Parameter(description = "Store ID") @PathVariable Long storeId,
             @AuthenticationPrincipal User user) {
 
-        if (user == null) {
-            return ResponseEntity.status(401).build();
-        }
-
-        if (!hasStoreAccess(storeId, user)) {
-            return ResponseEntity.status(403).build();
-        }
+        // GET-Requests auf Root-Kategorien sind öffentlich für Storefront
+        log.info("Getting root categories for store {} (user: {})", storeId, user != null ? user.getId() : "anonymous");
 
         return ResponseEntity.ok(categoryService.getRootCategories(storeId));
     }
