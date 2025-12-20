@@ -22,7 +22,22 @@ public class ProductMediaController {
     private final UserRepository userRepository;
 
     @GetMapping
-    public ResponseEntity<List<ProductMedia>> getProductMedia(@PathVariable Long productId) {
+    public ResponseEntity<List<ProductMedia>> getProductMedia(
+            @PathVariable Long storeId,
+            @PathVariable Long productId,
+            @AuthenticationPrincipal User user) {
+
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+
+        if (!store.getOwner().getId().equals(user.getId())) {
+            return ResponseEntity.status(403).build();
+        }
+
         return ResponseEntity.ok(productMediaService.getMediaByProduct(productId));
     }
 
