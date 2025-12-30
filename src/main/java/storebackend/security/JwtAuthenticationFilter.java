@@ -37,12 +37,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String authHeader = request.getHeader("Authorization");
         String requestURI = request.getRequestURI();
-        logger.info("=== JWT Filter - Processing request to: {} ===", requestURI);
-        logger.debug("Authorization header: {}", authHeader != null ? "Present (Bearer)" : "Missing");
+        String method = request.getMethod();
+
+        logger.info("=== JWT Filter - {} {} ===", method, requestURI);
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
-            logger.debug("Extracted token (first 20 chars): {}...", token.length() > 20 ? token.substring(0, 20) : token);
+            logger.debug("Bearer token present, length: {}", token.length());
+
             try {
                 String email = jwtUtil.extractEmail(token);
                 logger.info("Extracted email from token: {}", email);
@@ -52,40 +54,66 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                     if (user == null) {
                         logger.error("❌ User not found in database: {}", email);
+                        logger.error("❌ This will result in 401 Unauthorized");
                     } else {
                         logger.info("✅ Found user in database: {} (ID: {})", user.getEmail(), user.getId());
                         logger.debug("User roles from database: {}", user.getRoles());
 
-                        boolean isValid = jwtUtil.validateToken(token, email);
-                        logger.info("Token validation result: {}", isValid ? "VALID ✅" : "INVALID ❌");
+                        try {
+                            boolean isValid = jwtUtil.validateToken(token, email);
+                            logger.info("Token validation result: {}", isValid ? "VALID ✅" : "INVALID ❌");
 
-                        if (isValid) {
-                            var authorities = user.getRoles().stream()
-                                    .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
-                                    .collect(Collectors.toList());
+                            if (isValid) {
+                                var authorities = user.getRoles().stream()
+                                        .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
+                                        .collect(Collectors.toList());
 
-                            logger.info("Setting authorities: {}", authorities);
+                                logger.info("Setting authorities: {}", authorities);
 
-                            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                                    user, null, authorities);
-                            authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                            SecurityContextHolder.getContext().setAuthentication(authToken);
-                            logger.info("✅ Successfully authenticated user: {} with roles: {}", email, authorities);
-                        } else {
-                            logger.error("❌ Token validation failed for user: {}", email);
+                                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                                        user, null, authorities);
+                                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                                SecurityContextHolder.getContext().setAuthentication(authToken);
+
+                                logger.info("✅ Successfully authenticated user: {} with roles: {}", email, authorities);
+                                logger.info("✅ SecurityContext now contains: {}",
+                                    SecurityContextHolder.getContext().getAuthentication().getName());
+                            } else {
+                                logger.error("❌ Token validation failed for user: {}", email);
+                                logger.error("❌ This will result in 401 Unauthorized");
+                            }
+                        } catch (Exception validationEx) {
+                            logger.error("❌ Exception during token validation: {}", validationEx.getMessage());
+                            logger.error("❌ This will result in 401 Unauthorized");
                         }
                     }
                 } else if (email == null) {
                     logger.error("❌ Could not extract email from token");
+                    logger.error("❌ This will result in 401 Unauthorized");
                 } else {
-                    logger.debug("Authentication already exists in SecurityContext");
+                    logger.debug("Authentication already exists in SecurityContext: {}",
+                        SecurityContextHolder.getContext().getAuthentication().getName());
                 }
             } catch (Exception e) {
                 logger.error("❌ Error processing JWT token: {} - {}", e.getClass().getSimpleName(), e.getMessage());
-                logger.error("Full stack trace: ", e);
+                logger.error("❌ This will result in 401 Unauthorized");
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Full stack trace: ", e);
+                }
             }
         } else {
-            logger.debug("No Bearer token found in Authorization header for: {}", requestURI);
+            logger.debug("No Bearer token in Authorization header for {} {}", method, requestURI);
+            logger.debug("This endpoint will require authentication if not public");
+        }
+
+        // Überprüfe vor dem Weiterleiten den SecurityContext-Status
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            var auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated()) {
+                logger.info("✅ Proceeding with authenticated user: {}", auth.getName());
+            } else {
+                logger.warn("⚠️ Proceeding without authentication - may result in 401");
+            }
         }
 
         filterChain.doFilter(request, response);

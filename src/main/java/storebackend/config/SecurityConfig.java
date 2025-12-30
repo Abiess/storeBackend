@@ -71,6 +71,7 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-resources/**").permitAll()
                 .requestMatchers("/webjars/**").permitAll()
                 // Alle anderen Anfragen benötigen Authentifizierung
+                // POST/PUT/DELETE zu /api/stores/*/products erfordert Authentifizierung (wird im Controller geprüft)
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authenticationProvider())
