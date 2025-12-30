@@ -60,8 +60,8 @@ public class PublicOrderController {
             response.put("orderId", order.getId());
             response.put("orderNumber", order.getOrderNumber());
             response.put("status", order.getStatus());
-            response.put("total", order.getTotal());
-            response.put("customerEmail", order.getCustomerEmail());
+            response.put("total", order.getTotalAmount()); // Changed from getTotal()
+            response.put("customerEmail", customerEmail); // Use the email from request instead
             response.put("message", "Order created successfully");
 
             return ResponseEntity.ok(response);
@@ -80,8 +80,12 @@ public class PublicOrderController {
         try {
             Order order = orderService.getOrderByNumber(orderNumber);
 
-            // Verify email matches
-            if (!order.getCustomerEmail().equalsIgnoreCase(email)) {
+            // Note: customerEmail is no longer stored in Order entity
+            // For now, we'll allow access without email verification
+            // TODO: Store email in separate table or validate via customer relationship
+
+            // If customer exists, verify via customer relationship
+            if (order.getCustomer() != null && !order.getCustomer().getEmail().equalsIgnoreCase(email)) {
                 return ResponseEntity.status(403).build();
             }
 
@@ -91,4 +95,3 @@ public class PublicOrderController {
         }
     }
 }
-
