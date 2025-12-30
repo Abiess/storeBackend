@@ -431,6 +431,6 @@ export class CategoryFormComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/dashboard/stores', this.storeId]);
+    this.router.navigate(['/dashboard/stores', this.storeId, 'categories']);
   }
 }

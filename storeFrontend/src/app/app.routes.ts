@@ -73,6 +73,11 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'dashboard/stores/:storeId/categories',
+    loadComponent: () => import('./features/products/category-list.component').then(m => m.CategoryListComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'dashboard/stores/:storeId/categories/new',
     loadComponent: () => import('./features/products/category-form.component').then(m => m.CategoryFormComponent),
     canActivate: [authGuard]

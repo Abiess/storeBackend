@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -585,7 +585,7 @@ interface UploadedImage {
     }
   `]
 })
-export class ProductFormComponent implements OnInit {
+export class ProductFormComponent implements OnInit, OnDestroy {
   productForm: FormGroup;
   categories: Category[] = [];
   storeId!: number;
@@ -623,12 +623,26 @@ export class ProductFormComponent implements OnInit {
 
     this.isEditMode = !!this.productId;
 
+    // Kategorien immer laden (auch wenn von Kategorie-Erstellung zurückgekehrt)
     this.loadCategories();
 
     if (this.isEditMode && this.productId) {
       this.loadProduct(this.productId);
       this.loadProductImages(this.productId);
     }
+
+    // Kategorien neu laden, wenn die Seite wieder im Fokus ist
+    // (z.B. nach Rückkehr von Kategorie-Erstellung)
+    window.addEventListener('focus', () => {
+      this.loadCategories();
+    });
+  }
+
+  ngOnDestroy(): void {
+    // Event Listener aufräumen
+    window.removeEventListener('focus', () => {
+      this.loadCategories();
+    });
   }
 
   loadCategories(): void {
