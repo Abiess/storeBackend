@@ -67,46 +67,24 @@ public class OrderService {
             throw new RuntimeException("Cart is empty");
         }
 
-        // Calculate totals
-        BigDecimal subtotal = cartItems.stream()
+        // Calculate total (simplified - only total amount is stored now)
+        BigDecimal total = cartItems.stream()
                 .map(item -> item.getPriceSnapshot().multiply(BigDecimal.valueOf(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal tax = subtotal.multiply(BigDecimal.valueOf(0.19)); // 19% MwSt
+        // Add tax and shipping to total
+        BigDecimal tax = total.multiply(BigDecimal.valueOf(0.19)); // 19% MwSt
         BigDecimal shipping = BigDecimal.valueOf(5.00); // Fixed shipping
-        BigDecimal total = subtotal.add(tax).add(shipping);
+        total = total.add(tax).add(shipping);
 
-        // Create order
+        // Create order with only fields that exist in DB
         Order order = new Order();
         order.setStore(cart.getStore());
         order.setCustomer(customer);
-        order.setCustomerEmail(customerEmail);
         order.setStatus(OrderStatus.PENDING);
-        order.setSubtotal(subtotal);
-        order.setTax(tax);
-        order.setShipping(shipping);
-        order.setTotal(total);
-
-        // Shipping address
-        order.setShippingFirstName(shippingFirstName);
-        order.setShippingLastName(shippingLastName);
-        order.setShippingAddress1(shippingAddress1);
-        order.setShippingAddress2(shippingAddress2);
-        order.setShippingCity(shippingCity);
-        order.setShippingPostalCode(shippingPostalCode);
-        order.setShippingCountry(shippingCountry);
-        order.setShippingPhone(shippingPhone);
-
-        // Billing address
-        order.setBillingFirstName(billingFirstName);
-        order.setBillingLastName(billingLastName);
-        order.setBillingAddress1(billingAddress1);
-        order.setBillingAddress2(billingAddress2);
-        order.setBillingCity(billingCity);
-        order.setBillingPostalCode(billingPostalCode);
-        order.setBillingCountry(billingCountry);
-
-        order.setNotes(notes);
+        order.setTotalAmount(total);
+        // Note: Shipping/Billing address fields no longer stored in Order table
+        // Consider storing them in separate OrderAddress table if needed
 
         Order savedOrder = orderRepository.save(order);
 
@@ -180,4 +158,3 @@ public class OrderService {
                 variant.getAttributesJson());
     }
 }
-

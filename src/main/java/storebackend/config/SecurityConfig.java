@@ -43,6 +43,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Auth endpoints
                 .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/validate").permitAll()
+                // Error endpoint - muss öffentlich sein für Spring Boot Error Handling
+                .requestMatchers("/error").permitAll()
                 // Public API endpoints
                 .requestMatchers("/api/public/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/public/**").permitAll()
