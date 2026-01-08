@@ -65,7 +65,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                             if (isValid) {
                                 var authorities = user.getRoles().stream()
-                                        .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
+                                        .map(role -> {
+                                            String roleName = role.name();
+                                            // Nur ROLE_ hinzufügen, wenn es noch nicht vorhanden ist
+                                            return roleName.startsWith("ROLE_") ? roleName : "ROLE_" + roleName;
+                                        })
+                                        .map(SimpleGrantedAuthority::new)
                                         .collect(Collectors.toList());
 
                                 logger.info("Setting authorities: {}", authorities);
