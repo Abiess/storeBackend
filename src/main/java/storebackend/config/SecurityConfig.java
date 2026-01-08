@@ -55,6 +55,7 @@ public class SecurityConfig {
                 // Storefront public endpoints - Stores und Produkte können öffentlich angesehen werden
                 .requestMatchers(HttpMethod.GET, "/api/stores/*/public/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/stores/public/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/stores/*").permitAll() // Allow public access to store details
                 .requestMatchers(HttpMethod.GET, "/api/stores/*/products").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/stores/*/products/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/stores/*/categories").permitAll()

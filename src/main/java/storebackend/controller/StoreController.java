@@ -58,17 +58,16 @@ class StoreManagementController {
             @AuthenticationPrincipal User user) {
         Store store = storeService.getStoreById(storeId);
 
-        // Verify ownership
-        if (!store.getOwner().getId().equals(user.getId())) {
-            return ResponseEntity.status(403).build();
-        }
+        // Public access is allowed for basic store information
 
         StoreDTO dto = new StoreDTO();
         dto.setId(store.getId());
         dto.setName(store.getName());
         dto.setSlug(store.getSlug());
         dto.setStatus(store.getStatus());
-        dto.setDescription(store.getDescription());
+        if (store.getDescription() != null) {
+            dto.setDescription(store.getDescription());
+        }
         dto.setCreatedAt(store.getCreatedAt());
 
         return ResponseEntity.ok(dto);
