@@ -5,6 +5,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } 
 import { ProductService } from '@app/core/services/product.service';
 import { OrderService } from '@app/core/services/order.service';
 import { DomainService } from '@app/core/services/domain.service';
+import { StoreService } from '@app/core/services/store.service';
+import { MediaService } from '@app/core/services/media.service';
 import { Product, Order, Domain, DomainType } from '@app/core/models';
 import { LanguageSwitcherComponent } from '@app/shared/components/language-switcher.component';
 
@@ -1152,14 +1154,19 @@ export class StoreDetailComponent implements OnInit {
   storeDescription = 'Willkommen in meinem Shop!';
   logoUrl?: string;
   bannerUrl?: string;
+  logoFile?: File;
+  bannerFile?: File;
   themeError = '';
   themeSuccess = '';
+  savingTheme = false;
 
   constructor(
     private route: ActivatedRoute,
     private productService: ProductService,
     private orderService: OrderService,
     private domainService: DomainService,
+    private storeService: StoreService,
+    private mediaService: MediaService,
     private fb: FormBuilder
   ) {
     this.domainForm = this.fb.group({
@@ -1171,9 +1178,24 @@ export class StoreDetailComponent implements OnInit {
 
   ngOnInit(): void {
     this.storeId = Number(this.route.snapshot.paramMap.get('id'));
+    this.loadStoreData();
     this.loadProducts();
     this.loadOrders();
     this.loadDomains();
+  }
+
+  loadStoreData(): void {
+    this.storeService.getStoreById(this.storeId).subscribe({
+      next: (store) => {
+        this.storeName = store.name || 'Mein Shop';
+        this.storeDescription = store.description || 'Willkommen in meinem Shop!';
+        // Logo und Banner URLs laden wenn vorhanden
+        console.log('✅ Store-Daten geladen:', store);
+      },
+      error: (error) => {
+        console.error('❌ Fehler beim Laden der Store-Daten:', error);
+      }
+    });
   }
 
   switchTab(tab: string): void {
@@ -1324,6 +1346,7 @@ export class StoreDetailComponent implements OnInit {
   onLogoSelected(event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (file) {
+      this.logoFile = file;
       const reader = new FileReader();
       reader.onload = (e) => {
         this.logoUrl = e.target?.result as string;
@@ -1335,6 +1358,7 @@ export class StoreDetailComponent implements OnInit {
   onBannerSelected(event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (file) {
+      this.bannerFile = file;
       const reader = new FileReader();
       reader.onload = (e) => {
         this.bannerUrl = e.target?.result as string;
@@ -1343,9 +1367,95 @@ export class StoreDetailComponent implements OnInit {
     }
   }
 
-  saveThemeSettings(): void {
-    // Hier können Sie die Logik zum Speichern der Theme-Einstellungen hinzufügen
-    this.themeSuccess = 'Theme-Einstellungen wurden erfolgreich gespeichert!';
+  async saveThemeSettings(): Promise<void> {
+    this.savingTheme = true;
+    this.themeSuccess = '';
     this.themeError = '';
+
+    try {
+      // 1. Store-Grunddaten aktualisieren (Name & Beschreibung)
+      const storeUpdate = {
+        name: this.storeName,
+        description: this.storeDescription
+      };
+
+      await this.storeService.updateStore(this.storeId, storeUpdate).toPromise();
+      console.log('✅ Store-Daten gespeichert');
+
+      // 2. Logo hochladen falls vorhanden
+      if (this.logoFile) {
+        try {
+          const logoUpload$ = this.mediaService.uploadMediaWithProgress(
+            this.storeId,
+            this.logoFile,
+            'STORE_LOGO'
+          );
+
+          await new Promise<void>((resolve, reject) => {
+            logoUpload$.subscribe({
+              next: (event) => {
+                if (event.response) {
+                  console.log('✅ Logo hochgeladen:', event.response);
+                  this.logoUrl = event.response.url;
+                  resolve();
+                }
+              },
+              error: (error) => {
+                console.error('❌ Fehler beim Logo-Upload:', error);
+                reject(error);
+              }
+            });
+          });
+        } catch (error) {
+          console.error('❌ Logo-Upload fehlgeschlagen:', error);
+          // Weiter machen, auch wenn Logo-Upload fehlschlägt
+        }
+      }
+
+      // 3. Banner hochladen falls vorhanden
+      if (this.bannerFile) {
+        try {
+          const bannerUpload$ = this.mediaService.uploadMediaWithProgress(
+            this.storeId,
+            this.bannerFile,
+            'STORE_BANNER'
+          );
+
+          await new Promise<void>((resolve, reject) => {
+            bannerUpload$.subscribe({
+              next: (event) => {
+                if (event.response) {
+                  console.log('✅ Banner hochgeladen:', event.response);
+                  this.bannerUrl = event.response.url;
+                  resolve();
+                }
+              },
+              error: (error) => {
+                console.error('❌ Fehler beim Banner-Upload:', error);
+                reject(error);
+              }
+            });
+          });
+        } catch (error) {
+          console.error('❌ Banner-Upload fehlgeschlagen:', error);
+          // Weiter machen, auch wenn Banner-Upload fehlschlägt
+        }
+      }
+
+      this.themeSuccess = '✅ Änderungen wurden erfolgreich gespeichert! Die Änderungen sind jetzt auf Ihrer öffentlichen Storefront sichtbar.';
+      this.savingTheme = false;
+
+      // Reset der File-Inputs
+      this.logoFile = undefined;
+      this.bannerFile = undefined;
+
+      // Optional: Store-Daten neu laden um sicherzustellen, dass alles aktuell ist
+      this.loadStoreData();
+
+    } catch (error: any) {
+      console.error('❌ Fehler beim Speichern:', error);
+      this.themeError = error.error?.message || 'Fehler beim Speichern der Änderungen. Bitte versuchen Sie es erneut.';
+      this.savingTheme = false;
+    }
   }
 }
