@@ -1,16 +1,16 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import { LanguageService } from '../services/language.service';
-import { TranslationKey } from '../i18n/translations';
+import { TranslationService } from '../services/translation.service';
 
 @Pipe({
   name: 'translate',
   standalone: true,
-  pure: false // Make it impure so it updates when language changes
+  pure: false // Must be impure to react to language changes
 })
 export class TranslatePipe implements PipeTransform {
-  constructor(private languageService: LanguageService) {}
+  constructor(private translationService: TranslationService) {}
 
-  transform(key: TranslationKey, params?: Record<string, string | number>): string {
-    return this.languageService.translate(key, params);
+  transform(key: string, params?: Record<string, any>): string {
+    return this.translationService.translate(key, params);
   }
 }
+
