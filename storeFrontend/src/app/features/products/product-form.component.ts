@@ -6,6 +6,8 @@ import { ProductService } from '@app/core/services/product.service';
 import { CategoryService } from '@app/core/services/category.service';
 import { MediaService, UploadMediaResponse } from '@app/core/services/media.service';
 import { Category, ProductStatus } from '@app/core/models';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { TranslationService } from '@app/core/services/translation.service';
 
 interface UploadedImage {
   mediaId: number;
@@ -20,19 +22,19 @@ interface UploadedImage {
 @Component({
   selector: 'app-product-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, TranslatePipe],
   template: `
     <div class="product-form-container">
       <div class="form-header">
-        <h1>{{ isEditMode ? 'تعديل المنتج' : 'منتج جديد' }}</h1>
-        <button class="btn-back" (click)="goBack()">← رجوع</button>
+        <h1>{{ (isEditMode ? 'product.edit' : 'product.new') | translate }}</h1>
+        <button class="btn-back" (click)="goBack()">← {{ 'common.back' | translate }}</button>
       </div>
 
       <form [formGroup]="productForm" (ngSubmit)="onSubmit()" class="product-form">
         
         <!-- Foto-Upload Bereich -->
         <div class="form-card">
-          <h2>📷 صور المنتج</h2>
+          <h2>📷 {{ 'product.images' | translate }}</h2>
           
           <div class="upload-area">
             <input 
@@ -51,10 +53,10 @@ interface UploadedImage {
               [disabled]="uploading"
             >
               <span class="upload-icon">📁</span>
-              {{ uploading ? 'جاري الرفع...' : 'اختر صورًا' }}
+              {{ uploading ? ('common.loading' | translate) : ('media.uploadImages' | translate) }}
             </button>
             
-            <p class="upload-hint">PNG, JPG, WEBP حتى 5MB</p>
+            <p class="upload-hint">PNG, JPG, WEBP {{ 'messages.maxFileSize' | translate:  {size: '5MB'} }}</p>
           </div>
 
           <!-- Bildvorschau -->
@@ -75,7 +77,7 @@ interface UploadedImage {
                 
                 <!-- Primär-Badge -->
                 <div class="primary-badge" *ngIf="img.isPrimary">
-                  ⭐ الصورة الرئيسية
+                  ⭐ {{ 'media.primaryImage' | translate }}
                 </div>
               </div>
               
@@ -85,7 +87,7 @@ interface UploadedImage {
                   class="btn-icon"
                   (click)="setPrimaryImage(i)"
                   [disabled]="img.isPrimary"
-                  title="اجعلها الصورة الرئيسية"
+                  [title]="'media.setPrimary' | translate"
                 >
                   ⭐
                 </button>
@@ -93,7 +95,7 @@ interface UploadedImage {
                   type="button" 
                   class="btn-icon btn-danger"
                   (click)="removeImage(i)"
-                  title="حذف"
+                  [title]="'common.delete' | translate"
                 >
                   🗑️
                 </button>
@@ -104,44 +106,44 @@ interface UploadedImage {
           </div>
 
           <div class="upload-info" *ngIf="uploadedImages.length === 0">
-            <p>لم يتم رفع أي صورة بعد</p>
+            <p>{{ 'media.noMedia' | translate }}</p>
           </div>
         </div>
 
         <div class="form-card">
-          <h2>معلومات المنتج</h2>
+          <h2>{{ 'product.info' | translate }}</h2>
           
           <div class="form-group">
-            <label for="title">اسم المنتج *</label>
+            <label for="title">{{ 'product.name' | translate }} *</label>
             <input 
               id="title"
               type="text" 
               formControlName="title"
-              placeholder="مثل: هاتف ذكي XYZ"
+              [placeholder]="'product.placeholder.name' | translate"
               [class.error]="productForm.get('title')?.invalid && productForm.get('title')?.touched"
             />
             <div class="error-message" *ngIf="productForm.get('title')?.invalid && productForm.get('title')?.touched">
-              اسم المنتج مطلوب
+              {{ 'product.required.name' | translate }}
             </div>
           </div>
 
           <div class="form-group">
-            <label for="description">الوصف *</label>
+            <label for="description">{{ 'product.description' | translate }} *</label>
             <textarea 
               id="description"
               formControlName="description"
               rows="4"
-              placeholder="اوصف منتجك..."
+              [placeholder]="'product.placeholder.description' | translate"
               [class.error]="productForm.get('description')?.invalid && productForm.get('description')?.touched"
             ></textarea>
             <div class="error-message" *ngIf="productForm.get('description')?.invalid && productForm.get('description')?.touched">
-              الوصف مطلوب
+              {{ 'product.required.description' | translate }}
             </div>
           </div>
 
           <div class="form-row">
             <div class="form-group">
-              <label for="basePrice">السعر (€) *</label>
+              <label for="basePrice">{{ 'product.price' | translate }} (€) *</label>
               <input 
                 id="basePrice"
                 type="number" 
@@ -152,44 +154,44 @@ interface UploadedImage {
                 [class.error]="productForm.get('basePrice')?.invalid && productForm.get('basePrice')?.touched"
               />
               <div class="error-message" *ngIf="productForm.get('basePrice')?.invalid && productForm.get('basePrice')?.touched">
-                يجب أن يكون السعر أكبر من 0
+                {{ 'product.required.price' | translate }}
               </div>
             </div>
 
             <div class="form-group">
-              <label for="status">الحالة</label>
+              <label for="status">{{ 'product.status' | translate }}</label>
               <select id="status" formControlName="status">
-                <option value="DRAFT">مسودة</option>
-                <option value="ACTIVE">نشط</option>
-                <option value="ARCHIVED">مؤرشف</option>
+                <option value="DRAFT">{{ 'status.draft' | translate }}</option>
+                <option value="ACTIVE">{{ 'status.active' | translate }}</option>
+                <option value="ARCHIVED">{{ 'status.archived' | translate }}</option>
               </select>
             </div>
           </div>
 
           <div class="form-group">
-            <label for="categoryId">الفئة *</label>
+            <label for="categoryId">{{ 'product.category' | translate }} *</label>
             <select id="categoryId" formControlName="categoryId" [class.error]="productForm.get('categoryId')?.invalid && productForm.get('categoryId')?.touched">
-              <option value="">اختر فئة</option>
+              <option value="">{{ 'product.selectCategory' | translate }}</option>
               <option *ngFor="let category of categories" [value]="category.id">
                 {{ category.name }}
               </option>
             </select>
             <div class="error-message" *ngIf="productForm.get('categoryId')?.invalid && productForm.get('categoryId')?.touched">
-              الفئة مطلوبة
+              {{ 'validation.required' | translate }}
             </div>
           </div>
         </div>
 
         <div class="form-actions">
           <button type="button" class="btn-secondary" (click)="goBack()">
-            إلغاء
+            {{ 'common.cancel' | translate }}
           </button>
           <button 
             type="submit" 
             class="btn-primary"
             [disabled]="productForm.invalid || saving"
           >
-            {{ saving ? 'جاري الحفظ...' : (isEditMode ? 'حفظ التغييرات' : 'إنشاء المنتج') }}
+            {{ saving ? ('common.saving' | translate) : ((isEditMode ? 'product.update' : 'product.create') | translate) }}
           </button>
         </div>
 
@@ -604,7 +606,8 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     private router: Router,
     private productService: ProductService,
     private categoryService: CategoryService,
-    private mediaService: MediaService
+    private mediaService: MediaService,
+    private translationService: TranslationService
   ) {
     this.productForm = this.fb.group({
       title: ['', Validators.required],
@@ -651,7 +654,8 @@ export class ProductFormComponent implements OnInit, OnDestroy {
         this.categories = categories;
       },
       error: (error) => {
-        console.error('خطأ في تحميل الفئات:', error);
+        console.error(this.translationService.translate('category.error.load'), error);
+        this.errorMessage = this.translationService.translate('category.error.load');
       }
     });
   }
@@ -668,8 +672,8 @@ export class ProductFormComponent implements OnInit, OnDestroy {
         });
       },
       error: (error) => {
-        console.error('خطأ في تحميل المنتج:', error);
-        this.errorMessage = 'تعذر تحميل المنتج';
+        console.error(this.translationService.translate('product.error.load'), error);
+        this.errorMessage = this.translationService.translate('product.error.load');
       }
     });
   }
@@ -685,7 +689,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
         }));
       },
       error: (error) => {
-        console.error('خطأ في تحميل الصور:', error);
+        console.error(this.translationService.translate('media.uploadError'), error);
       }
     });
   }
@@ -699,12 +703,12 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     Array.from(files).forEach((file, index) => {
       // Validierung
       if (!file.type.startsWith('image/')) {
-        this.errorMessage = 'يرجى رفع صور فقط';
+        this.errorMessage = this.translationService.translate('media.onlyImages');
         return;
       }
 
       if (file.size > 5 * 1024 * 1024) {
-        this.errorMessage = 'حجم الصورة يجب أن يكون أقل من 5MB';
+        this.errorMessage = this.translationService.translate('media.maxFileSize');
         return;
       }
 
@@ -750,7 +754,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('❌ Upload-Fehler:', error);
-        this.errorMessage = 'Fehler beim Hochladen des Bildes';
+        this.errorMessage = this.translationService.translate('media.uploadError');
         this.uploadedImages.splice(index, 1);
       },
       complete: () => {
@@ -766,7 +770,8 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   }
 
   removeImage(index: number): void {
-    if (confirm('Möchten Sie dieses Bild wirklich entfernen?')) {
+    const confirmMessage = this.translationService.translate('media.confirmDelete');
+    if (confirm(confirmMessage)) {
       const removedImage = this.uploadedImages[index];
 
       // Falls es das Hauptbild war, setze ein neues
@@ -813,13 +818,13 @@ export class ProductFormComponent implements OnInit, OnDestroy {
           this.linkImagesToProduct(product.id);
         } else {
           this.saving = false;
-          this.successMessage = 'تم إنشاء المنتج بنجاح!';
+          this.successMessage = this.translationService.translate('product.created');
           setTimeout(() => this.goBack(), 1500);
         }
       },
       error: (error) => {
         this.saving = false;
-        this.errorMessage = 'خطأ في إنشاء المنتج';
+        this.errorMessage = this.translationService.translate('product.error.create');
         console.error(error);
       }
     });
@@ -836,13 +841,13 @@ export class ProductFormComponent implements OnInit, OnDestroy {
           this.linkImagesToProduct(product.id);
         } else {
           this.saving = false;
-          this.successMessage = 'تم تحديث المنتج بنجاح!';
+          this.successMessage = this.translationService.translate('product.updated');
           setTimeout(() => this.goBack(), 1500);
         }
       },
       error: (error) => {
         this.saving = false;
-        this.errorMessage = 'خطأ في تحديث المنتج';
+        this.errorMessage = this.translationService.translate('product.error.update');
         console.error(error);
       }
     });
@@ -854,7 +859,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
 
     if (total === 0) {
       this.saving = false;
-      this.successMessage = 'تم حفظ المنتج بنجاح!';
+      this.successMessage = this.translationService.translate('product.created');
       setTimeout(() => this.goBack(), 1500);
       return;
     }
@@ -872,7 +877,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
 
             if (completed === total) {
               this.saving = false;
-              this.successMessage = 'تم حفظ المنتج والصور بنجاح!';
+              this.successMessage = this.translationService.translate('product.created');
               setTimeout(() => this.goBack(), 1500);
             }
           },
@@ -882,7 +887,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
 
             if (completed === total) {
               this.saving = false;
-              this.successMessage = 'تم حفظ المنتج (بعض الصور قد فشلت)';
+              this.successMessage = this.translationService.translate('product.created');
               setTimeout(() => this.goBack(), 2000);
             }
           }

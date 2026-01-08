@@ -4,66 +4,68 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, Router } from '@angular/router';
 import { CategoryService } from '@app/core/services/category.service';
 import { Category } from '@app/core/models';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { TranslationService } from '@app/core/services/translation.service';
 
 @Component({
   selector: 'app-category-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, TranslatePipe],
   template: `
     <div class="category-form-container">
       <div class="form-header">
-        <h1>{{ isEditMode ? 'تعديل الفئة' : 'فئة جديدة' }}</h1>
-        <button class="btn-back" (click)="goBack()">رجوع</button>
+        <h1>{{ (isEditMode ? 'category.edit' : 'category.new') | translate }}</h1>
+        <button class="btn-back" (click)="goBack()">{{ 'common.back' | translate }}</button>
       </div>
 
       <form [formGroup]="categoryForm" (ngSubmit)="onSubmit()" class="category-form">
         <div class="form-card">
-          <h2>معلومات الفئة</h2>
+          <h2>{{ 'category.info' | translate }}</h2>
           
           <div class="form-group">
-            <label for="name">اسم الفئة *</label>
+            <label for="name">{{ 'category.name' | translate }} *</label>
             <input 
               id="name"
               type="text" 
               formControlName="name"
-              placeholder="مثل: إلكترونيات"
+              [placeholder]="'category.placeholder.name' | translate"
               [class.error]="categoryForm.get('name')?.invalid && categoryForm.get('name')?.touched"
             />
             <div class="error-message" *ngIf="categoryForm.get('name')?.invalid && categoryForm.get('name')?.touched">
-              اسم الفئة مطلوب
+              {{ 'category.required.name' | translate }}
             </div>
           </div>
 
           <div class="form-group">
-            <label for="slug">رابط URL *</label>
+            <label for="slug">{{ 'category.slug' | translate }} *</label>
             <input 
               id="slug"
               type="text" 
               formControlName="slug"
-              placeholder="مثل: electronics"
+              [placeholder]="'category.placeholder.slug' | translate"
               [class.error]="categoryForm.get('slug')?.invalid && categoryForm.get('slug')?.touched"
             />
-            <p class="hint">يسمح فقط بالأحرف الصغيرة والأرقام والشرطات</p>
+            <p class="hint">{{ 'category.hint.slug' | translate }}</p>
             <div class="error-message" *ngIf="categoryForm.get('slug')?.invalid && categoryForm.get('slug')?.touched">
-              الرابط مطلوب ويجب أن يحتوي فقط على أحرف صغيرة وأرقام وشرطات
+              {{ 'category.required.slug' | translate }}
             </div>
           </div>
 
           <div class="form-group">
-            <label for="description">الوصف</label>
+            <label for="description">{{ 'category.description' | translate }}</label>
             <textarea 
               id="description"
               formControlName="description"
               rows="3"
-              placeholder="وصف اختياري للفئة..."
+              [placeholder]="'category.placeholder.description' | translate"
             ></textarea>
           </div>
 
           <div class="form-row">
             <div class="form-group">
-              <label for="parentId">الفئة الأم</label>
+              <label for="parentId">{{ 'category.parent' | translate }}</label>
               <select id="parentId" formControlName="parentId">
-                <option [value]="null">لا يوجد (فئة رئيسية)</option>
+                <option [value]="null">{{ 'category.parent.none' | translate }}</option>
                 <option *ngFor="let cat of availableParentCategories" [value]="cat.id">
                   {{ cat.name }}
                 </option>
@@ -71,7 +73,7 @@ import { Category } from '@app/core/models';
             </div>
 
             <div class="form-group">
-              <label for="sortOrder">ترتيب الفرز</label>
+              <label for="sortOrder">{{ 'category.sortOrder' | translate }}</label>
               <input 
                 id="sortOrder"
                 type="number" 
@@ -79,21 +81,21 @@ import { Category } from '@app/core/models';
                 min="0"
                 placeholder="0"
               />
-              <p class="hint">الأرقام الأصغر تظهر أولاً</p>
+              <p class="hint">{{ 'category.hint.sortOrder' | translate }}</p>
             </div>
           </div>
         </div>
 
         <div class="form-actions">
           <button type="button" class="btn-secondary" (click)="goBack()">
-            إلغاء
+            {{ 'common.cancel' | translate }}
           </button>
           <button 
             type="submit" 
             class="btn-primary"
             [disabled]="categoryForm.invalid || saving"
           >
-            {{ saving ? 'جاري الحفظ...' : (isEditMode ? 'حفظ التغييرات' : 'إنشاء الفئة') }}
+            {{ saving ? ('common.saving' | translate) : ((isEditMode ? 'category.update' : 'category.create') | translate) }}
           </button>
         </div>
 
@@ -322,7 +324,8 @@ export class CategoryFormComponent implements OnInit {
     private fb: FormBuilder,
     private route: ActivatedRoute,
     private router: Router,
-    private categoryService: CategoryService
+    private categoryService: CategoryService,
+    private translationService: TranslationService
   ) {
     this.categoryForm = this.fb.group({
       name: ['', Validators.required],
@@ -356,7 +359,6 @@ export class CategoryFormComponent implements OnInit {
   loadCategories(): void {
     this.categoryService.getCategories(this.storeId).subscribe({
       next: (categories) => {
-        // Filter out current category if editing
         this.availableParentCategories = categories.filter(
           cat => !this.categoryId || cat.id !== this.categoryId
         );
@@ -366,7 +368,8 @@ export class CategoryFormComponent implements OnInit {
         }
       },
       error: (error) => {
-        console.error('خطأ في تحميل الفئات:', error);
+        console.error(this.translationService.translate('category.error.load'), error);
+        this.errorMessage = this.translationService.translate('category.error.load');
       }
     });
   }
@@ -405,12 +408,12 @@ export class CategoryFormComponent implements OnInit {
       this.categoryService.updateCategory(this.storeId, this.categoryId, formData).subscribe({
         next: () => {
           this.saving = false;
-          this.successMessage = 'Kategorie erfolgreich aktualisiert!';
+          this.successMessage = this.translationService.translate('category.updated');
           setTimeout(() => this.goBack(), 1500);
         },
         error: (error) => {
           this.saving = false;
-          this.errorMessage = 'Fehler beim Aktualisieren der Kategorie';
+          this.errorMessage = this.translationService.translate('category.error.update');
           console.error(error);
         }
       });
@@ -418,12 +421,12 @@ export class CategoryFormComponent implements OnInit {
       this.categoryService.createCategory(this.storeId, formData).subscribe({
         next: () => {
           this.saving = false;
-          this.successMessage = 'Kategorie erfolgreich erstellt!';
+          this.successMessage = this.translationService.translate('category.created');
           setTimeout(() => this.goBack(), 1500);
         },
         error: (error) => {
           this.saving = false;
-          this.errorMessage = 'Fehler beim Erstellen der Kategorie';
+          this.errorMessage = this.translationService.translate('category.error.create');
           console.error(error);
         }
       });

@@ -11,6 +11,7 @@
     "search": "Search",
     "filter": "Filter",
     "loading": "Loading...",
+    "saving": "Saving...",
     "error": "Error",
     "success": "Success",
     "confirm": "Confirm",
@@ -92,7 +93,30 @@
     "noCategory": "No Category",
     "inStock": "In Stock",
     "outOfStock": "Out of Stock",
-    "lowStock": "Low Stock"
+    "lowStock": "Low Stock",
+    "new": "New Product",
+    "edit": "Edit Product",
+    "info": "Product Information",
+    "status": "Status",
+    "create": "Create Product",
+    "update": "Save Changes",
+    "created": "Product created successfully!",
+    "updated": "Product updated successfully!",
+    "placeholder": {
+      "name": "e.g. Smartphone XYZ",
+      "description": "Describe your product..."
+    },
+    "required": {
+      "name": "Product name is required",
+      "description": "Description is required",
+      "price": "Price must be greater than 0"
+    },
+    "error": {
+      "create": "Error creating product",
+      "update": "Error updating product",
+      "delete": "Error deleting product",
+      "load": "Could not load product"
+    }
   },
   "category": {
     "title": "Category",
@@ -110,7 +134,39 @@
     "categoryDeleted": "Category deleted successfully",
     "selectParent": "Select Parent Category",
     "rootCategory": "Root Category",
-    "subcategories": "Subcategories"
+    "subcategories": "Subcategories",
+    "new": "New Category",
+    "edit": "Edit Category",
+    "info": "Category Information",
+    "sortOrder": "Sort Order",
+    "create": "Create Category",
+    "update": "Save Changes",
+    "created": "Category created successfully!",
+    "updated": "Category updated successfully!",
+    "deleted": "Category deleted successfully!",
+    "placeholder": {
+      "name": "e.g. Electronics",
+      "slug": "e.g. electronics",
+      "description": "Optional category description..."
+    },
+    "required": {
+      "name": "Category name is required",
+      "slug": "Slug is required and must contain only lowercase letters, numbers and dashes"
+    },
+    "hint": {
+      "slug": "Only lowercase letters, numbers and dashes allowed",
+      "sortOrder": "Lower numbers appear first"
+    },
+    "parent": {
+      "none": "None (Root Category)"
+    },
+    "noCategoriesAvailable": "No categories available. Create a category first.",
+    "error": {
+      "create": "Error creating category",
+      "update": "Error updating category",
+      "delete": "Error deleting category",
+      "load": "Error loading categories"
+    }
   },
   "order": {
     "title": "Order",
@@ -140,7 +196,12 @@
     "deleteMedia": "Delete Media",
     "mediaDeleted": "Media deleted successfully",
     "selectImage": "Select Image",
-    "noMedia": "No media available"
+    "noMedia": "No media available",
+    "primaryImage": "Primary Image",
+    "setPrimary": "Set as primary image",
+    "confirmDelete": "Are you sure you want to remove this image?",
+    "onlyImages": "Please upload only image files",
+    "maxFileSize": "File must be no larger than 5MB"
   },
   "validation": {
     "required": "This field is required",
@@ -165,7 +226,8 @@
     "deletingData": "Deleting data...",
     "unauthorized": "You are not authorized to perform this action",
     "sessionExpired": "Your session has expired. Please login again",
-    "networkError": "Network error. Please check your internet connection"
+    "networkError": "Network error. Please check your internet connection",
+    "maxFileSize": "up to {{size}}"
   },
   "dashboard": {
     "welcome": "Welcome back",
@@ -177,187 +239,23 @@
     "totalOrders": "Total Orders",
     "totalProducts": "Total Products",
     "totalCustomers": "Total Customers"
-  }
-}
-{
-  "common": {
-    "save": "Speichern",
-    "cancel": "Abbrechen",
-    "delete": "Löschen",
-    "edit": "Bearbeiten",
-    "create": "Erstellen",
-    "back": "Zurück",
-    "next": "Weiter",
-    "previous": "Zurück",
-    "search": "Suchen",
-    "filter": "Filtern",
-    "loading": "Lädt...",
-    "error": "Fehler",
-    "success": "Erfolgreich",
-    "confirm": "Bestätigen",
-    "yes": "Ja",
-    "no": "Nein",
-    "close": "Schließen",
-    "upload": "Hochladen",
-    "download": "Herunterladen",
-    "actions": "Aktionen",
-    "details": "Details",
-    "settings": "Einstellungen",
-    "logout": "Abmelden",
-    "login": "Anmelden",
-    "register": "Registrieren"
   },
-  "navigation": {
-    "dashboard": "Dashboard",
-    "stores": "Shops",
-    "products": "Produkte",
-    "categories": "Kategorien",
-    "orders": "Bestellungen",
-    "customers": "Kunden",
-    "media": "Medien",
-    "settings": "Einstellungen",
-    "profile": "Profil"
+  "status": {
+    "draft": "Draft",
+    "active": "Active",
+    "archived": "Archived",
+    "pending": "Pending",
+    "confirmed": "Confirmed",
+    "processing": "Processing",
+    "shipped": "Shipped",
+    "delivered": "Delivered",
+    "cancelled": "Cancelled"
   },
-  "auth": {
-    "email": "E-Mail",
-    "password": "Passwort",
-    "confirmPassword": "Passwort bestätigen",
-    "forgotPassword": "Passwort vergessen?",
-    "rememberMe": "Angemeldet bleiben",
-    "loginTitle": "Anmelden",
-    "registerTitle": "Registrieren",
-    "loginButton": "Anmelden",
-    "registerButton": "Konto erstellen",
-    "alreadyHaveAccount": "Bereits ein Konto?",
-    "dontHaveAccount": "Noch kein Konto?",
-    "loginSuccess": "Erfolgreich angemeldet",
-    "loginError": "Anmeldung fehlgeschlagen",
-    "registerSuccess": "Konto erfolgreich erstellt",
-    "registerError": "Registrierung fehlgeschlagen",
-    "logoutSuccess": "Erfolgreich abgemeldet"
-  },
-  "store": {
-    "title": "Shop",
-    "name": "Shop-Name",
-    "description": "Beschreibung",
-    "subdomain": "Subdomain",
-    "createStore": "Shop erstellen",
-    "editStore": "Shop bearbeiten",
-    "deleteStore": "Shop löschen",
-    "myStores": "Meine Shops",
-    "noStores": "Keine Shops vorhanden",
-    "createFirstStore": "Erstellen Sie Ihren ersten Shop",
-    "storeCreated": "Shop erfolgreich erstellt",
-    "storeUpdated": "Shop erfolgreich aktualisiert",
-    "storeDeleted": "Shop erfolgreich gelöscht",
-    "confirmDelete": "Möchten Sie diesen Shop wirklich löschen?"
-  },
-  "product": {
-    "title": "Produkt",
-    "name": "Produktname",
-    "description": "Beschreibung",
-    "price": "Preis",
-    "sku": "Artikelnummer (SKU)",
-    "stock": "Lagerbestand",
-    "category": "Kategorie",
-    "images": "Bilder",
-    "createProduct": "Produkt erstellen",
-    "editProduct": "Produkt bearbeiten",
-    "deleteProduct": "Produkt löschen",
-    "noProducts": "Keine Produkte vorhanden",
-    "addProduct": "Produkt hinzufügen",
-    "productCreated": "Produkt erfolgreich erstellt",
-    "productUpdated": "Produkt erfolgreich aktualisiert",
-    "productDeleted": "Produkt erfolgreich gelöscht",
-    "selectCategory": "Kategorie auswählen",
-    "noCategory": "Keine Kategorie",
-    "inStock": "Auf Lager",
-    "outOfStock": "Ausverkauft",
-    "lowStock": "Niedriger Lagerbestand"
-  },
-  "category": {
-    "title": "Kategorie",
-    "name": "Kategoriename",
-    "slug": "URL-Slug",
-    "description": "Beschreibung",
-    "parent": "Übergeordnete Kategorie",
-    "createCategory": "Kategorie erstellen",
-    "editCategory": "Kategorie bearbeiten",
-    "deleteCategory": "Kategorie löschen",
-    "noCategories": "Keine Kategorien vorhanden",
-    "addCategory": "Kategorie hinzufügen",
-    "categoryCreated": "Kategorie erfolgreich erstellt",
-    "categoryUpdated": "Kategorie erfolgreich aktualisiert",
-    "categoryDeleted": "Kategorie erfolgreich gelöscht",
-    "selectParent": "Übergeordnete Kategorie auswählen",
-    "rootCategory": "Hauptkategorie",
-    "subcategories": "Unterkategorien"
-  },
-  "order": {
-    "title": "Bestellung",
-    "orderNumber": "Bestellnummer",
-    "customer": "Kunde",
-    "date": "Datum",
-    "status": "Status",
-    "total": "Gesamt",
-    "items": "Artikel",
-    "noOrders": "Keine Bestellungen vorhanden",
-    "orderDetails": "Bestelldetails",
-    "statusPending": "Ausstehend",
-    "statusProcessing": "In Bearbeitung",
-    "statusShipped": "Versendet",
-    "statusDelivered": "Geliefert",
-    "statusCancelled": "Storniert",
-    "updateStatus": "Status aktualisieren",
-    "orderUpdated": "Bestellung erfolgreich aktualisiert"
-  },
-  "media": {
-    "title": "Medien",
-    "upload": "Datei hochladen",
-    "uploadImages": "Bilder hochladen",
-    "dragDrop": "Dateien hierher ziehen oder klicken zum Auswählen",
-    "uploadSuccess": "Datei erfolgreich hochgeladen",
-    "uploadError": "Fehler beim Hochladen",
-    "deleteMedia": "Medien löschen",
-    "mediaDeleted": "Medien erfolgreich gelöscht",
-    "selectImage": "Bild auswählen",
-    "noMedia": "Keine Medien vorhanden"
-  },
-  "validation": {
-    "required": "Dieses Feld ist erforderlich",
-    "email": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
-    "minLength": "Mindestens {{min}} Zeichen erforderlich",
-    "maxLength": "Maximal {{max}} Zeichen erlaubt",
-    "min": "Mindestwert ist {{min}}",
-    "max": "Maximalwert ist {{max}}",
-    "pattern": "Ungültiges Format",
-    "passwordMismatch": "Passwörter stimmen nicht überein",
-    "invalidNumber": "Bitte geben Sie eine gültige Zahl ein",
-    "invalidUrl": "Bitte geben Sie eine gültige URL ein"
-  },
-  "messages": {
-    "confirmDelete": "Möchten Sie dieses Element wirklich löschen?",
-    "unsavedChanges": "Sie haben ungespeicherte Änderungen. Möchten Sie fortfahren?",
-    "operationSuccess": "Vorgang erfolgreich durchgeführt",
-    "operationError": "Fehler beim Ausführen des Vorgangs",
-    "noDataAvailable": "Keine Daten verfügbar",
-    "loadingData": "Daten werden geladen...",
-    "savingData": "Daten werden gespeichert...",
-    "deletingData": "Daten werden gelöscht...",
-    "unauthorized": "Sie sind nicht berechtigt, diese Aktion auszuführen",
-    "sessionExpired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an",
-    "networkError": "Netzwerkfehler. Bitte überprüfen Sie Ihre Internetverbindung"
-  },
-  "dashboard": {
-    "welcome": "Willkommen zurück",
-    "overview": "Übersicht",
-    "recentOrders": "Letzte Bestellungen",
-    "recentProducts": "Neueste Produkte",
-    "statistics": "Statistiken",
-    "totalSales": "Gesamtumsatz",
-    "totalOrders": "Gesamtbestellungen",
-    "totalProducts": "Gesamtprodukte",
-    "totalCustomers": "Gesamtkunden"
+  "loading": {
+    "products": "Loading products...",
+    "categories": "Loading categories...",
+    "orders": "Loading orders...",
+    "stores": "Loading stores..."
   }
 }
 

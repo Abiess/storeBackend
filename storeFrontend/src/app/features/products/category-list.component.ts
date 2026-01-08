@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { TranslationService } from '@app/core/services/translation.service';
 
 interface Category {
   id: number;
@@ -15,27 +17,27 @@ interface Category {
 @Component({
   selector: 'app-category-list',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, TranslatePipe],
   template: `
     <div class="category-list-container">
       <div class="header">
-        <h1>Kategorien</h1>
+        <h1>{{ 'navigation.categories' | translate }}</h1>
         <button class="btn-primary" (click)="createCategory()">
-          + Neue Kategorie
+          + {{ 'category.addCategory' | translate }}
         </button>
       </div>
 
       <div *ngIf="loading" class="loading-state">
         <div class="spinner"></div>
-        <p>Kategorien werden geladen...</p>
+        <p>{{ 'loading.categories' | translate }}</p>
       </div>
 
       <div *ngIf="!loading && categories.length === 0" class="empty-state">
         <div class="empty-icon">🏷️</div>
-        <h2>Noch keine Kategorien</h2>
-        <p>Erstellen Sie Ihre erste Kategorie, um Produkte zu organisieren.</p>
+        <h2>{{ 'category.noCategories' | translate }}</h2>
+        <p>{{ 'category.noCategoriesAvailable' | translate }}</p>
         <button class="btn-primary" (click)="createCategory()">
-          Kategorie erstellen
+          {{ 'category.createCategory' | translate }}
         </button>
       </div>
 
@@ -44,7 +46,7 @@ interface Category {
           <div class="category-header">
             <h3>{{ category.name }}</h3>
             <span class="product-count" *ngIf="category.productCount !== undefined">
-              {{ category.productCount }} Produkte
+              {{ category.productCount }} {{ 'navigation.products' | translate }}
             </span>
           </div>
           
@@ -54,10 +56,10 @@ interface Category {
           
           <div class="category-actions">
             <button class="btn-secondary" (click)="editCategory(category.id)">
-              ✏️ Bearbeiten
+              ✏️ {{ 'common.edit' | translate }}
             </button>
             <button class="btn-danger" (click)="deleteCategory(category)">
-              🗑️ Löschen
+              🗑️ {{ 'common.delete' | translate }}
             </button>
           </div>
         </div>
@@ -249,7 +251,8 @@ export class CategoryListComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private http: HttpClient
+    private http: HttpClient,
+    private translationService: TranslationService
   ) {}
 
   ngOnInit() {
@@ -273,7 +276,7 @@ export class CategoryListComponent implements OnInit {
       },
       error: (err) => {
         console.error('❌ Fehler beim Laden der Kategorien:', err);
-        this.error = 'Fehler beim Laden der Kategorien';
+        this.error = this.translationService.translate('category.error.load');
         this.loading = false;
       }
     });
@@ -288,7 +291,8 @@ export class CategoryListComponent implements OnInit {
   }
 
   deleteCategory(category: Category) {
-    if (!confirm(`Möchten Sie die Kategorie "${category.name}" wirklich löschen?`)) {
+    const confirmMessage = this.translationService.translate('messages.confirmDelete');
+    if (!confirm(`${confirmMessage}`)) {
       return;
     }
 
@@ -301,9 +305,8 @@ export class CategoryListComponent implements OnInit {
       },
       error: (err) => {
         console.error('❌ Fehler beim Löschen:', err);
-        this.error = 'Fehler beim Löschen der Kategorie';
+        this.error = this.translationService.translate('category.error.delete');
       }
     });
   }
 }
-
