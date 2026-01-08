@@ -28,6 +28,9 @@ public class Store {
     @Column(nullable = false, unique = true)
     private String slug;
 
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private StoreStatus status = StoreStatus.ACTIVE;
@@ -49,4 +52,3 @@ public class Store {
         updatedAt = LocalDateTime.now();
     }
 }
-

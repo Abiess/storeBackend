@@ -131,6 +131,46 @@ public class StoreService {
                 .orElseThrow(() -> new RuntimeException("Store not found"));
     }
 
+    @Transactional
+    public StoreDTO updateStore(Long storeId, CreateStoreRequest request, User user) {
+        Store store = storeRepository.findByIdWithOwner(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+
+        // Verify ownership
+        if (!store.getOwner().getId().equals(user.getId())) {
+            throw new RuntimeException("You are not authorized to update this store");
+        }
+
+        // Update name if provided
+        if (request.getName() != null && !request.getName().isEmpty()) {
+            store.setName(request.getName());
+        }
+
+        // Update description if provided
+        if (request.getDescription() != null) {
+            store.setDescription(request.getDescription());
+        }
+
+        store = storeRepository.save(store);
+        log.info("Store {} updated by user {}", storeId, user.getEmail());
+
+        return toDTO(store);
+    }
+
+    @Transactional
+    public void deleteStore(Long storeId, User user) {
+        Store store = storeRepository.findByIdWithOwner(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+
+        // Verify ownership
+        if (!store.getOwner().getId().equals(user.getId())) {
+            throw new RuntimeException("You are not authorized to delete this store");
+        }
+
+        storeRepository.delete(store);
+        log.info("Store {} deleted by user {}", storeId, user.getEmail());
+    }
+
     public List<Store> getStoresByUserId(Long userId) {
         return storeRepository.findByOwnerId(userId);
     }
@@ -141,6 +181,7 @@ public class StoreService {
         dto.setName(store.getName());
         dto.setSlug(store.getSlug());
         dto.setStatus(store.getStatus());
+        dto.setDescription(store.getDescription());
         dto.setCreatedAt(store.getCreatedAt());
         return dto;
     }

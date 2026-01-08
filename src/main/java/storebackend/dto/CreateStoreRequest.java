@@ -10,5 +10,6 @@ public class CreateStoreRequest {
 
     @NotBlank
     private String slug;
-}
 
+    private String description;
+}
