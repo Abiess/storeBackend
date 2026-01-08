@@ -266,7 +266,7 @@ export class CategoryListComponent implements OnInit {
     this.loading = true;
     this.error = null;
 
-    const url = `${environment.apiUrl}/api/stores/${this.storeId}/categories`;
+    const url = `${environment.apiUrl}/stores/${this.storeId}/categories`;
 
     this.http.get<Category[]>(url).subscribe({
       next: (data) => {
@@ -296,7 +296,7 @@ export class CategoryListComponent implements OnInit {
       return;
     }
 
-    const url = `${environment.apiUrl}/api/stores/${this.storeId}/categories/${category.id}`;
+    const url = `${environment.apiUrl}/stores/${this.storeId}/categories/${category.id}`;
 
     this.http.delete(url).subscribe({
       next: () => {
