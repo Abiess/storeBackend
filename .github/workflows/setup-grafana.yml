@@ -22,93 +22,125 @@ jobs:
           cat > install-grafana.sh << 'SCRIPT_EOF'
           #!/bin/bash
           set -e
-          
+
           echo "🔧 Grafana Installation gestartet..."
-          
+
           # Grafana Repository hinzufügen
           apt-get update
           apt-get install -y apt-transport-https software-properties-common wget
           wget -q -O - https://packages.grafana.com/gpg.key | apt-key add -
           echo "deb https://packages.grafana.com/oss/deb stable main" | tee /etc/apt/sources.list.d/grafana.list
-          
+
           # Grafana installieren
           apt-get update
           apt-get install -y grafana
-          
-          # PostgreSQL User für Grafana erstellen
+
+          # PostgreSQL User für Grafana erstellen (KORREKTE SYNTAX)
           sudo -u postgres psql << 'SQL_EOF'
-          CREATE DATABASE IF NOT EXISTS grafana;
+          SELECT 'CREATE DATABASE grafana'
+          WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'grafana')\gexec
+
           DO $$
           BEGIN
             IF NOT EXISTS (SELECT FROM pg_user WHERE usename = 'grafana') THEN
               CREATE USER grafana WITH ENCRYPTED PASSWORD 'GRAFANA_DB_PASS_PLACEHOLDER';
             END IF;
-          END
-          $$;
+          END $$;
+
           GRANT ALL PRIVILEGES ON DATABASE grafana TO grafana;
+          \c grafana
+          GRANT ALL ON SCHEMA public TO grafana;
           SQL_EOF
-          
-          # Grafana konfigurieren
+
+          # Warte bis PostgreSQL bereit ist
+          sleep 2
+
+          # Grafana konfigurieren (OHNE PostgreSQL Backend - nutzt SQLite)
           cat > /etc/grafana/grafana.ini << 'GRAFANA_EOF'
           [server]
           protocol = http
           http_port = 3000
           domain = infra.markt.ma
           root_url = %(protocol)s://%(domain)s:%(http_port)s/
-          
+
           [security]
           admin_user = admin
           admin_password = GRAFANA_ADMIN_PASS_PLACEHOLDER
-          
+
           [database]
-          type = postgres
-          host = localhost:5432
-          name = grafana
-          user = grafana
-          password = GRAFANA_DB_PASS_PLACEHOLDER
+          type = sqlite3
+          path = /var/lib/grafana/grafana.db
+
+          [log]
+          mode = console file
+          level = info
           GRAFANA_EOF
-          
-          # Passwörter ersetzen
+
+          # Passwort ersetzen
           sed -i "s/GRAFANA_ADMIN_PASS_PLACEHOLDER/$1/g" /etc/grafana/grafana.ini
-          sed -i "s/GRAFANA_DB_PASS_PLACEHOLDER/$2/g" /etc/grafana/grafana.ini
-          
+
+          # Grafana Verzeichnis-Berechtigungen
+          chown -R grafana:grafana /var/lib/grafana
+          chown -R grafana:grafana /var/log/grafana
+          chmod 755 /var/lib/grafana
+
           # Grafana aktivieren und starten
           systemctl daemon-reload
           systemctl enable grafana-server
-          systemctl restart grafana-server
-          
+          systemctl start grafana-server
+
+          # Warte bis Grafana hochgefahren ist
+          sleep 5
+
+          # Prüfe ob Grafana läuft
+          if ! systemctl is-active --quiet grafana-server; then
+            echo "❌ Grafana konnte nicht gestartet werden!"
+            journalctl -u grafana-server -n 50 --no-pager
+            exit 1
+          fi
+
           # Nginx Konfiguration für Grafana
           cat > /etc/nginx/sites-available/grafana << 'NGINX_EOF'
           server {
               listen 80;
               server_name infra.markt.ma;
-          
+
               location / {
                   proxy_pass http://localhost:3000;
                   proxy_set_header Host $host;
                   proxy_set_header X-Real-IP $remote_addr;
                   proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                   proxy_set_header X-Forwarded-Proto $scheme;
+                  proxy_set_header Upgrade $http_upgrade;
+                  proxy_set_header Connection "upgrade";
               }
           }
           NGINX_EOF
-          
+
           ln -sf /etc/nginx/sites-available/grafana /etc/nginx/sites-enabled/
           nginx -t && systemctl reload nginx
-          
+
           # SSL mit Certbot
-          certbot --nginx -d infra.markt.ma --non-interactive --agree-tos --email "$3" || echo "⚠️ Certbot fehlgeschlagen - DNS prüfen"
-          
+          if certbot --nginx -d infra.markt.ma --non-interactive --agree-tos --email "$2" 2>&1; then
+            echo "✅ SSL erfolgreich konfiguriert"
+          else
+            echo "⚠️ Certbot fehlgeschlagen - DNS prüfen oder manuell ausführen"
+          fi
+
           echo "✅ Grafana Installation abgeschlossen!"
-          systemctl status grafana-server --no-pager
+          echo "📍 URL: https://infra.markt.ma"
+          echo "👤 User: admin"
+          echo "🔑 Pass: (siehe GRAFANA_ADMIN_PASSWORD Secret)"
+
+          systemctl status grafana-server --no-pager -l
           SCRIPT_EOF
-          
+
           scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no install-grafana.sh root@${{ secrets.VPS_HOST }}:/tmp/
 
       - name: Execute installation script
         run: |
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no root@${{ secrets.VPS_HOST }} \
-            "bash /tmp/install-grafana.sh '${{ secrets.GRAFANA_ADMIN_PASSWORD }}' '${{ secrets.GRAFANA_DB_PASSWORD }}' '${{ secrets.SSL_EMAIL }}'"
+            "bash /tmp/install-grafana.sh '${{ secrets.GRAFANA_ADMIN_PASSWORD }}' '${{ secrets.SSL_EMAIL }}'"
 
       - name: Verify installation
         run: |
