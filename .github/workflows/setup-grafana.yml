@@ -1,0 +1,82 @@
+name: Setup Grafana on VPS
+
+on:
+  workflow_dispatch:  # Manuell auslösbar
+
+jobs:
+  setup-grafana:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Grafana
+        run: |
+          ssh root@${{ secrets.VPS_HOST }} << 'EOF'
+          # Grafana Repository hinzufügen
+          apt-get update
+          apt-get install -y apt-transport-https software-properties-common wget
+          wget -q -O - https://packages.grafana.com/gpg.key | apt-key add -
+          echo "deb https://packages.grafana.com/oss/deb stable main" | tee /etc/apt/sources.list.d/grafana.list
+          
+          # Grafana installieren
+          apt-get update
+          apt-get install -y grafana
+          
+          # Grafana konfigurieren
+          cat > /etc/grafana/grafana.ini << 'GRAFANA_EOF'
+          [server]
+          protocol = http
+          http_port = 3000
+          domain = infra.markt.ma
+          root_url = %(protocol)s://%(domain)s:%(http_port)s/
+          
+          [security]
+          admin_user = admin
+          admin_password = ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+          
+          [database]
+          type = postgres
+          host = localhost:5432
+          name = grafana
+          user = grafana
+          password = ${{ secrets.GRAFANA_DB_PASSWORD }}
+          GRAFANA_EOF
+          
+          # PostgreSQL User für Grafana erstellen
+          sudo -u postgres psql << 'SQL_EOF'
+          CREATE DATABASE grafana;
+          CREATE USER grafana WITH ENCRYPTED PASSWORD '${{ secrets.GRAFANA_DB_PASSWORD }}';
+          GRANT ALL PRIVILEGES ON DATABASE grafana TO grafana;
+          SQL_EOF
+          
+          # Grafana aktivieren und starten
+          systemctl daemon-reload
+          systemctl enable grafana-server
+          systemctl start grafana-server
+          
+          # Nginx Konfiguration für Grafana
+          cat > /etc/nginx/sites-available/grafana << 'NGINX_EOF'
+          server {
+              listen 80;
+              server_name infra.markt.ma;
+          
+              location / {
+                  proxy_pass http://localhost:3000;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+              }
+          }
+          NGINX_EOF
+          
+          ln -sf /etc/nginx/sites-available/grafana /etc/nginx/sites-enabled/
+          nginx -t && systemctl reload nginx
+          
+          # SSL mit Certbot
+          certbot --nginx -d infra.markt.ma --non-interactive --agree-tos --email ${{ secrets.SSL_EMAIL }}
+          
+          echo "✅ Grafana läuft auf: https://infra.markt.ma"
+          systemctl status grafana-server
+          EOF
