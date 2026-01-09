@@ -1,7 +1,7 @@
 name: Setup Grafana on VPS
 
 on:
-  workflow_dispatch:  # Manuell auslösbar
+  workflow_dispatch:
 
 jobs:
   setup-grafana:
@@ -10,9 +10,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Grafana
+      - name: Setup SSH
         run: |
-          ssh root@${{ secrets.VPS_HOST }} << 'EOF'
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Copy installation script to VPS
+        run: |
+          cat > install-grafana.sh << 'SCRIPT_EOF'
+          #!/bin/bash
+          set -e
+          
+          echo "🔧 Grafana Installation gestartet..."
+          
           # Grafana Repository hinzufügen
           apt-get update
           apt-get install -y apt-transport-https software-properties-common wget
@@ -22,6 +34,19 @@ jobs:
           # Grafana installieren
           apt-get update
           apt-get install -y grafana
+          
+          # PostgreSQL User für Grafana erstellen
+          sudo -u postgres psql << 'SQL_EOF'
+          CREATE DATABASE IF NOT EXISTS grafana;
+          DO $$
+          BEGIN
+            IF NOT EXISTS (SELECT FROM pg_user WHERE usename = 'grafana') THEN
+              CREATE USER grafana WITH ENCRYPTED PASSWORD 'GRAFANA_DB_PASS_PLACEHOLDER';
+            END IF;
+          END
+          $$;
+          GRANT ALL PRIVILEGES ON DATABASE grafana TO grafana;
+          SQL_EOF
           
           # Grafana konfigurieren
           cat > /etc/grafana/grafana.ini << 'GRAFANA_EOF'
@@ -33,27 +58,24 @@ jobs:
           
           [security]
           admin_user = admin
-          admin_password = ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+          admin_password = GRAFANA_ADMIN_PASS_PLACEHOLDER
           
           [database]
           type = postgres
           host = localhost:5432
           name = grafana
           user = grafana
-          password = ${{ secrets.GRAFANA_DB_PASSWORD }}
+          password = GRAFANA_DB_PASS_PLACEHOLDER
           GRAFANA_EOF
           
-          # PostgreSQL User für Grafana erstellen
-          sudo -u postgres psql << 'SQL_EOF'
-          CREATE DATABASE grafana;
-          CREATE USER grafana WITH ENCRYPTED PASSWORD '${{ secrets.GRAFANA_DB_PASSWORD }}';
-          GRANT ALL PRIVILEGES ON DATABASE grafana TO grafana;
-          SQL_EOF
+          # Passwörter ersetzen
+          sed -i "s/GRAFANA_ADMIN_PASS_PLACEHOLDER/$1/g" /etc/grafana/grafana.ini
+          sed -i "s/GRAFANA_DB_PASS_PLACEHOLDER/$2/g" /etc/grafana/grafana.ini
           
           # Grafana aktivieren und starten
           systemctl daemon-reload
           systemctl enable grafana-server
-          systemctl start grafana-server
+          systemctl restart grafana-server
           
           # Nginx Konfiguration für Grafana
           cat > /etc/nginx/sites-available/grafana << 'NGINX_EOF'
@@ -75,8 +97,30 @@ jobs:
           nginx -t && systemctl reload nginx
           
           # SSL mit Certbot
-          certbot --nginx -d infra.markt.ma --non-interactive --agree-tos --email ${{ secrets.SSL_EMAIL }}
+          certbot --nginx -d infra.markt.ma --non-interactive --agree-tos --email "$3" || echo "⚠️ Certbot fehlgeschlagen - DNS prüfen"
           
-          echo "✅ Grafana läuft auf: https://infra.markt.ma"
-          systemctl status grafana-server
+          echo "✅ Grafana Installation abgeschlossen!"
+          systemctl status grafana-server --no-pager
+          SCRIPT_EOF
+          
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no install-grafana.sh root@${{ secrets.VPS_HOST }}:/tmp/
+
+      - name: Execute installation script
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no root@${{ secrets.VPS_HOST }} \
+            "bash /tmp/install-grafana.sh '${{ secrets.GRAFANA_ADMIN_PASSWORD }}' '${{ secrets.GRAFANA_DB_PASSWORD }}' '${{ secrets.SSL_EMAIL }}'"
+
+      - name: Verify installation
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no root@${{ secrets.VPS_HOST }} << 'EOF'
+          echo "🔍 Grafana Status:"
+          systemctl is-active grafana-server
+          
+          echo "🔍 Nginx Status:"
+          systemctl is-active nginx
+          
+          echo "🔍 Port 3000:"
+          netstat -tlnp | grep 3000 || echo "Port nicht offen"
+          
+          echo "✅ Grafana erreichbar unter: https://infra.markt.ma"
           EOF
