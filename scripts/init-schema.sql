@@ -2,6 +2,8 @@
 -- Erstellt alle benötigten Tabellen für das Store Backend
 
 -- Lösche existierende Tabellen (CASCADE löscht auch Foreign Keys)
+DROP TABLE IF EXISTS cart_items CASCADE;
+DROP TABLE IF EXISTS carts CASCADE;
 DROP TABLE IF EXISTS order_items CASCADE;
 DROP TABLE IF EXISTS order_status_history CASCADE;
 DROP TABLE IF EXISTS orders CASCADE;
@@ -163,14 +165,43 @@ CREATE TABLE product_variants (
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
 
--- Product Media (Join-Tabelle)
+-- Product Media (Join-Tabelle mit zusätzlichen Metadaten)
 CREATE TABLE product_media (
+    id BIGSERIAL PRIMARY KEY,
     product_id BIGINT NOT NULL,
     media_id BIGINT NOT NULL,
-    display_order INTEGER NOT NULL DEFAULT 0,
-    PRIMARY KEY (product_id, media_id),
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_primary BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT product_media_product_media_unique UNIQUE (product_id, media_id),
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
     FOREIGN KEY (media_id) REFERENCES media(id) ON DELETE CASCADE
+);
+
+-- Carts Tabelle (für Warenkorb-Funktionalität)
+CREATE TABLE carts (
+    id BIGSERIAL PRIMARY KEY,
+    session_id VARCHAR(255) UNIQUE,
+    user_id BIGINT,
+    store_id BIGINT NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
+);
+
+-- Cart Items Tabelle
+CREATE TABLE cart_items (
+    id BIGSERIAL PRIMARY KEY,
+    cart_id BIGINT NOT NULL,
+    variant_id BIGINT NOT NULL,
+    quantity INTEGER NOT NULL,
+    price_snapshot DECIMAL(10, 2) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (cart_id) REFERENCES carts(id) ON DELETE CASCADE,
+    FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE CASCADE
 );
 
 -- Orders Tabelle
@@ -238,6 +269,14 @@ CREATE INDEX idx_categories_parent ON categories(parent_id);
 CREATE INDEX idx_categories_slug ON categories(slug);
 CREATE INDEX idx_products_store ON products(store_id);
 CREATE INDEX idx_products_category ON products(category_id);
+CREATE INDEX idx_product_media_product ON product_media(product_id);
+CREATE INDEX idx_product_media_media ON product_media(media_id);
+CREATE INDEX idx_carts_session_id ON carts(session_id);
+CREATE INDEX idx_carts_user_id ON carts(user_id);
+CREATE INDEX idx_carts_store_id ON carts(store_id);
+CREATE INDEX idx_carts_expires_at ON carts(expires_at);
+CREATE INDEX idx_cart_items_cart_id ON cart_items(cart_id);
+CREATE INDEX idx_cart_items_variant_id ON cart_items(variant_id);
 CREATE INDEX idx_orders_store ON orders(store_id);
 CREATE INDEX idx_orders_customer ON orders(customer_id);
 CREATE INDEX idx_user_roles_user ON user_roles(user_id);

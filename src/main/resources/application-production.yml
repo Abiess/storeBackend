@@ -16,8 +16,9 @@ spring:
 
   jpa:
     hibernate:
-      # create-drop für initiale Erstellung, dann manuelle Änderung auf update
-      ddl-auto: update
+      # Temporär auf 'create' für Schema-Neuinitialisierung
+      # Danach zurück auf 'validate' setzen!
+      ddl-auto: create
     show-sql: true
     properties:
       hibernate:
