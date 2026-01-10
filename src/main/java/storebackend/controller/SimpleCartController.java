@@ -31,47 +31,28 @@ public class SimpleCartController {
     private final MinioService minioService;
 
     @GetMapping
-    public ResponseEntity<Map<String, Object>> getCart(
-            @RequestParam(required = false) String sessionId,
-            @RequestParam(required = false) Long storeId) {
+    public ResponseEntity<Map<String, Object>> getCart(@RequestParam Long storeId) {
         try {
-            log.info("🔍 Loading cart for sessionId: '{}' (storeId: {})", sessionId, storeId);
+            log.info("🔍 Loading cart for storeId: {}", storeId);
 
-            Cart cart = null;
+            // Finde den neuesten nicht-abgelaufenen Cart für diesen Store
+            List<Cart> storeCarts = cartRepository.findAll().stream()
+                .filter(c -> c.getStore() != null && c.getStore().getId().equals(storeId))
+                .filter(c -> c.getExpiresAt().isAfter(LocalDateTime.now()))
+                .sorted((c1, c2) -> c2.getUpdatedAt().compareTo(c1.getUpdatedAt()))
+                .collect(java.util.stream.Collectors.toList());
 
-            // Strategie 1: Exakte sessionId-Suche (wenn vorhanden)
-            if (sessionId != null && !sessionId.isEmpty()) {
-                cart = cartRepository.findBySessionId(sessionId).orElse(null);
-                if (cart != null) {
-                    log.info("✅ Found cart with exact sessionId match");
-                }
-            }
-
-            // Strategie 2: Fallback auf neuesten Cart für diesen Store
-            // Dies ist die Hauptstrategie, da Frontend oft verschiedene sessionIds sendet
-            if (cart == null && storeId != null) {
-                log.info("🔄 Searching for latest cart in store {} (sessionId failed or not provided)", storeId);
-                List<Cart> storeCarts = cartRepository.findAll().stream()
-                    .filter(c -> c.getStore() != null && c.getStore().getId().equals(storeId))
-                    .filter(c -> c.getExpiresAt().isAfter(LocalDateTime.now())) // Nur nicht-abgelaufene
-                    .sorted((c1, c2) -> c2.getUpdatedAt().compareTo(c1.getUpdatedAt())) // Neueste zuerst
-                    .collect(java.util.stream.Collectors.toList());
-
-                if (!storeCarts.isEmpty()) {
-                    cart = storeCarts.get(0); // Nimm den neuesten Cart
-                    log.info("✅ Found latest cart (id: {}, sessionId: '{}', updated: {})",
-                        cart.getId(), cart.getSessionId(), cart.getUpdatedAt());
-                }
-            }
-
-            if (cart == null) {
-                log.warn("❌ No cart found for sessionId: '{}' and storeId: {}", sessionId, storeId);
+            if (storeCarts.isEmpty()) {
+                log.warn("❌ No cart found for storeId: {}", storeId);
                 return ResponseEntity.ok(Map.of(
                     "items", List.of(),
                     "itemCount", 0,
                     "subtotal", 0
                 ));
             }
+
+            Cart cart = storeCarts.get(0);
+            log.info("✅ Found cart (id: {}, store: {})", cart.getId(), storeId);
 
             log.info("📦 Loading items for cart ID: {}", cart.getId());
             List<CartItem> items = cartItemRepository.findByCartId(cart.getId());
@@ -111,7 +92,7 @@ public class SimpleCartController {
                             }
                         } catch (Exception e) {
                             log.warn("Could not load image for product {}: {}", product.getId(), e.getMessage());
-                            dto.put("imageUrl", null); // Explizit null setzen
+                            dto.put("imageUrl", null);
                         }
 
                         return dto;
@@ -124,18 +105,17 @@ public class SimpleCartController {
 
             int itemCount = items.stream().mapToInt(CartItem::getQuantity).sum();
 
-            log.info("✅ Returning cart with {} items, subtotal: {}, sessionId: '{}'",
-                itemCount, subtotal, cart.getSessionId());
+            log.info("✅ Returning cart with {} items, subtotal: {}", itemCount, subtotal);
 
             return ResponseEntity.ok(Map.of(
                 "items", itemDTOs,
                 "itemCount", itemCount,
                 "subtotal", subtotal,
                 "cartId", cart.getId(),
-                "sessionId", cart.getSessionId() // Gib die echte sessionId zurück
+                "storeId", storeId
             ));
         } catch (Exception e) {
-            log.error("❌ Error loading cart for sessionId {}: {}", sessionId, e.getMessage(), e);
+            log.error("❌ Error loading cart for storeId {}: {}", storeId, e.getMessage(), e);
             return ResponseEntity.ok(Map.of(
                 "items", List.of(),
                 "itemCount", 0,
@@ -150,32 +130,26 @@ public class SimpleCartController {
      * Öffentlicher Endpoint - funktioniert auch ohne Authentifizierung
      */
     @GetMapping("/count")
-    public ResponseEntity<Map<String, Object>> getCartCount(
-            @RequestParam(required = false) Long storeId,
-            @RequestParam String sessionId) {
+    public ResponseEntity<Map<String, Object>> getCartCount(@RequestParam Long storeId) {
         try {
-            Cart cart = cartRepository.findBySessionId(sessionId).orElse(null);
+            List<Cart> storeCarts = cartRepository.findAll().stream()
+                .filter(c -> c.getStore() != null && c.getStore().getId().equals(storeId))
+                .filter(c -> c.getExpiresAt().isAfter(LocalDateTime.now()))
+                .sorted((c1, c2) -> c2.getUpdatedAt().compareTo(c1.getUpdatedAt()))
+                .collect(java.util.stream.Collectors.toList());
 
-            if (cart == null) {
-                // Keine Session gefunden -> leerer Warenkorb
+            if (storeCarts.isEmpty()) {
                 return ResponseEntity.ok(Map.of("count", 0));
             }
 
-            // Optional: Store-ID validieren wenn angegeben
-            if (storeId != null && !cart.getStore().getId().equals(storeId)) {
-                log.warn("StoreId mismatch: cart belongs to store {}, requested {}",
-                    cart.getStore().getId(), storeId);
-                return ResponseEntity.ok(Map.of("count", 0));
-            }
-
+            Cart cart = storeCarts.get(0);
             List<CartItem> items = cartItemRepository.findByCartId(cart.getId());
             int itemCount = items.stream().mapToInt(CartItem::getQuantity).sum();
 
             return ResponseEntity.ok(Map.of("count", itemCount));
 
         } catch (Exception e) {
-            log.error("Error getting cart count for session {}: {}", sessionId, e.getMessage());
-            // Bei Fehler: Graceful degradation - gib 0 zurück statt Fehler
+            log.error("Error getting cart count for storeId {}: {}", storeId, e.getMessage());
             return ResponseEntity.ok(Map.of("count", 0));
         }
     }
@@ -183,7 +157,6 @@ public class SimpleCartController {
     @PostMapping("/items")
     public ResponseEntity<?> addItemToCart(@RequestBody Map<String, Object> request) {
         try {
-            String sessionId = (String) request.get("sessionId");
             Long storeId = Long.valueOf(request.get("storeId").toString());
             Long productId = Long.valueOf(request.get("productId").toString());
             Integer quantity = Integer.valueOf(request.getOrDefault("quantity", 1).toString());
@@ -194,17 +167,29 @@ public class SimpleCartController {
             Product product = productRepository.findById(productId)
                     .orElseThrow(() -> new RuntimeException("Product not found"));
 
-            // Get or create cart
-            Cart cart = cartRepository.findBySessionId(sessionId)
-                    .orElseGet(() -> {
-                        Cart newCart = new Cart();
-                        newCart.setSessionId(sessionId);
-                        newCart.setStore(store);
-                        newCart.setCreatedAt(LocalDateTime.now());
-                        newCart.setUpdatedAt(LocalDateTime.now());
-                        newCart.setExpiresAt(LocalDateTime.now().plusDays(7)); // Warenkorb läuft nach 7 Tagen ab
-                        return cartRepository.save(newCart);
-                    });
+            // Finde oder erstelle Cart für diesen Store (ohne sessionId)
+            List<Cart> storeCarts = cartRepository.findAll().stream()
+                .filter(c -> c.getStore() != null && c.getStore().getId().equals(storeId))
+                .filter(c -> c.getExpiresAt().isAfter(LocalDateTime.now()))
+                .sorted((c1, c2) -> c2.getUpdatedAt().compareTo(c1.getUpdatedAt()))
+                .collect(java.util.stream.Collectors.toList());
+
+            Cart cart;
+            if (storeCarts.isEmpty()) {
+                // Erstelle neuen Cart für diesen Store
+                cart = new Cart();
+                cart.setSessionId("store-" + storeId + "-cart"); // Einfache eindeutige ID
+                cart.setStore(store);
+                cart.setCreatedAt(LocalDateTime.now());
+                cart.setUpdatedAt(LocalDateTime.now());
+                cart.setExpiresAt(LocalDateTime.now().plusDays(7));
+                cart = cartRepository.save(cart);
+                log.info("Created new cart for store {}", storeId);
+            } else {
+                cart = storeCarts.get(0);
+                cart.setUpdatedAt(LocalDateTime.now());
+                cart = cartRepository.save(cart);
+            }
 
             // Für Produkte ohne Varianten: Erstelle eine "Default-Variante"
             ProductVariant defaultVariant = getOrCreateDefaultVariant(product);
@@ -229,11 +214,12 @@ public class SimpleCartController {
 
             cartItemRepository.save(cartItem);
 
-            log.info("Added product {} to cart {}", productId, cart.getId());
+            log.info("Added product {} to cart {} (store {})", productId, cart.getId(), storeId);
 
             return ResponseEntity.ok(Map.of(
                 "success", true,
-                "message", "Product added to cart"
+                "message", "Product added to cart",
+                "cartId", cart.getId()
             ));
 
         } catch (Exception e) {
@@ -314,11 +300,16 @@ public class SimpleCartController {
     }
 
     @DeleteMapping("/clear")
-    public ResponseEntity<Void> clearCart(@RequestParam String sessionId) {
+    public ResponseEntity<Void> clearCart(@RequestParam Long storeId) {
         try {
-            Cart cart = cartRepository.findBySessionId(sessionId)
-                    .orElseThrow(() -> new RuntimeException("Cart not found"));
-            cartItemRepository.deleteByCartId(cart.getId());
+            List<Cart> storeCarts = cartRepository.findAll().stream()
+                .filter(c -> c.getStore() != null && c.getStore().getId().equals(storeId))
+                .collect(java.util.stream.Collectors.toList());
+
+            if (!storeCarts.isEmpty()) {
+                Cart cart = storeCarts.get(0);
+                cartItemRepository.deleteByCartId(cart.getId());
+            }
             return ResponseEntity.noContent().build();
         } catch (Exception e) {
             return ResponseEntity.notFound().build();

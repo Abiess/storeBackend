@@ -7,29 +7,27 @@ import { map, catchError } from 'rxjs/operators';
 
 export interface CartItem {
   id: number;
+  productId: number;
+  productTitle: string;
+  productDescription?: string;
   variantId: number;
-  productName: string;
-  variantName: string;
+  variantSku: string;
   quantity: number;
-  price: number;
   priceSnapshot: number;
   imageUrl?: string;
 }
 
 export interface Cart {
-  id: number;
-  sessionId: string;
+  cartId: number;
   storeId: number;
   items: CartItem[];
   itemCount: number;
   subtotal: number;
-  expiresAt: string;
 }
 
 export interface AddToCartRequest {
-  sessionId: string;
   storeId: number;
-  productId: number;  // Geändert von variantId zu productId
+  productId: number;
   quantity: number;
 }
 
@@ -38,16 +36,15 @@ export interface AddToCartRequest {
 })
 export class CartService {
   private mockService = new MockCartService();
-  // Verwende vereinfachten Warenkorb-Endpoint ohne Varianten
   private cartApiUrl = `${environment.publicApiUrl}/simple-cart`;
 
   constructor(private http: HttpClient) {}
 
-  getCart(sessionId: string): Observable<Cart> {
+  getCart(storeId: number): Observable<Cart> {
     if (environment.useMockData) {
-      return this.mockService.getCart(sessionId);
+      return this.mockService.getCart(storeId.toString());
     }
-    return this.http.get<Cart>(`${this.cartApiUrl}?sessionId=${sessionId}`);
+    return this.http.get<Cart>(`${this.cartApiUrl}?storeId=${storeId}`);
   }
 
   addItem(request: AddToCartRequest): Observable<any> {
@@ -71,83 +68,24 @@ export class CartService {
     return this.http.delete<void>(`${this.cartApiUrl}/items/${itemId}`);
   }
 
-  clearCart(sessionId: string): Observable<void> {
+  clearCart(storeId: number): Observable<void> {
     if (environment.useMockData) {
-      return this.mockService.clearCart(sessionId);
+      return this.mockService.clearCart(storeId.toString());
     }
-    return this.http.delete<void>(`${this.cartApiUrl}/clear?sessionId=${sessionId}`);
+    return this.http.delete<void>(`${this.cartApiUrl}/clear?storeId=${storeId}`);
   }
 
-  getCartItemCount(storeId: number, sessionId: string): Observable<number> {
+  getCartItemCount(storeId: number): Observable<number> {
     if (environment.useMockData) {
-      return this.mockService.getCartItemCount(storeId, sessionId);
+      return this.mockService.getCartItemCount(storeId, '');
     }
-    return this.http.get<{count: number}>(`${this.cartApiUrl}/count?storeId=${storeId}&sessionId=${sessionId}`)
+    return this.http.get<{count: number}>(`${this.cartApiUrl}/count?storeId=${storeId}`)
       .pipe(
         map(response => response.count),
         catchError(error => {
           console.error('Fehler beim Laden des Warenkorb-Counts:', error);
-          console.warn('Fallback: Gebe count=0 zurück');
-          // Graceful degradation: Bei Fehler immer 0 zurückgeben
           return of(0);
         })
       );
-  }
-
-  getOrCreateSessionId(): string {
-    let sessionId = localStorage.getItem('cart_session_id');
-    if (!sessionId) {
-      sessionId = 'session-' + Math.random().toString(36).substring(7) + '-' + Date.now();
-      localStorage.setItem('cart_session_id', sessionId);
-    }
-    return sessionId;
-  }
-
-  /**
-   * Erstellt eine store-spezifische Session-ID
-   * Jeder Store hat seinen eigenen Warenkorb
-   */
-  getOrCreateStoreSessionId(storeId: number): string {
-    const sessionKey = `cart_session_store_${storeId}`;
-    let sessionId = localStorage.getItem(sessionKey);
-
-    if (!sessionId) {
-      sessionId = `store${storeId}-session-` + Math.random().toString(36).substring(7) + '-' + Date.now();
-      localStorage.setItem(sessionKey, sessionId);
-      console.log(`🛒 Neue Session für Store ${storeId}: ${sessionId}`);
-    } else {
-      console.log(`🛒 Bestehende Session für Store ${storeId}: ${sessionId}`);
-    }
-
-    return sessionId;
-  }
-
-  /**
-   * Gibt alle Warenkorb-Sessions zurück (für alle Stores)
-   */
-  getAllStoreSessions(): Map<number, string> {
-    const sessions = new Map<number, string>();
-
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith('cart_session_store_')) {
-        const storeId = parseInt(key.replace('cart_session_store_', ''));
-        const sessionId = localStorage.getItem(key);
-        if (sessionId) {
-          sessions.set(storeId, sessionId);
-        }
-      }
-    }
-
-    return sessions;
-  }
-
-  /**
-   * Löscht die Session für einen bestimmten Store
-   */
-  clearStoreSession(storeId: number): void {
-    const sessionKey = `cart_session_store_${storeId}`;
-    localStorage.removeItem(sessionKey);
-    console.log(`🗑️ Session für Store ${storeId} gelöscht`);
   }
 }

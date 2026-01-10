@@ -318,7 +318,7 @@ export class CartComponent implements OnInit {
   loading = false;
   updatingItem: number | null = null;
   shipping = 4.99;
-  sessionId = '';
+  storeId: number = 1; // Wird aus Route/Service geladen
 
   constructor(
     private cartService: CartService,
@@ -326,13 +326,13 @@ export class CartComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.sessionId = this.cartService.getOrCreateSessionId();
+    // TODO: storeId aus Route oder Store-Service laden
     this.loadCart();
   }
 
   loadCart(): void {
     this.loading = true;
-    this.cartService.getCart(this.sessionId).subscribe({
+    this.cartService.getCart(this.storeId).subscribe({
       next: (cart) => {
         this.cart = cart;
         this.loading = false;
@@ -401,7 +401,7 @@ export class CartComponent implements OnInit {
     }
 
     this.loading = true;
-    this.cartService.clearCart(this.sessionId).subscribe({
+    this.cartService.clearCart(this.storeId).subscribe({
       next: () => {
         this.loadCart();
       },
