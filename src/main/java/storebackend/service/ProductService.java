@@ -32,6 +32,22 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Holt alle Produkte für einen Store, optional gefiltert nach Kategorie
+     */
+    public List<ProductDTO> getProductsByStoreAndCategory(Store store, Long categoryId) {
+        if (categoryId == null) {
+            // Alle Produkte zurückgeben
+            return getProductsByStore(store);
+        }
+
+        // Produkte nach Kategorie filtern
+        return productRepository.findByStore(store).stream()
+                .filter(p -> p.getCategory() != null && p.getCategory().getId().equals(categoryId))
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
     public ProductDTO getProductById(Long productId, Store store) {
         Product product = productRepository.findByIdAndStore(productId, store)
                 .orElseThrow(() -> new RuntimeException("Product not found"));

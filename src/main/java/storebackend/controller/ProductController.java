@@ -71,7 +71,7 @@ public class ProductController {
         }
     }
 
-    @Operation(summary = "Get all products", description = "Returns all products for a specific store (public access)")
+    @Operation(summary = "Get all products", description = "Returns all products for a specific store (public access), optionally filtered by category")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved products"),
             @ApiResponse(responseCode = "404", description = "Store not found")
@@ -79,10 +79,13 @@ public class ProductController {
     @GetMapping
     public ResponseEntity<List<ProductDTO>> getProducts(
             @Parameter(description = "Store ID") @PathVariable Long storeId,
+            @Parameter(description = "Category ID (optional) - wenn nicht angegeben, werden alle Produkte zurückgegeben")
+            @RequestParam(required = false) Long categoryId,
             @AuthenticationPrincipal User user) {
 
         // GET-Requests auf Produkte sind öffentlich - kein Auth erforderlich!
-        log.info("Getting products for store {} (user: {})", storeId, user != null ? user.getId() : "anonymous");
+        log.info("Getting products for store {} with categoryId={} (user: {})",
+            storeId, categoryId, user != null ? user.getId() : "anonymous");
 
         // Prüfe nur, ob Store existiert
         Store store = storeRepository.findById(storeId).orElse(null);
@@ -91,7 +94,13 @@ public class ProductController {
             return ResponseEntity.notFound().build();
         }
 
-        return ResponseEntity.ok(productService.getProductsByStore(store));
+        // Verwende die neue Methode mit Kategorie-Filter
+        List<ProductDTO> products = productService.getProductsByStoreAndCategory(store, categoryId);
+
+        log.info("Returning {} products for store {} (categoryId={})",
+            products.size(), storeId, categoryId);
+
+        return ResponseEntity.ok(products);
     }
 
     @Operation(summary = "Get product by ID", description = "Returns a single product (public access)")
