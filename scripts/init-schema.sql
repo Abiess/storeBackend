@@ -2,6 +2,13 @@
 -- Erstellt alle benötigten Tabellen für das Store Backend
 
 -- Lösche existierende Tabellen (CASCADE löscht auch Foreign Keys)
+DROP TABLE IF EXISTS coupon_redemptions CASCADE;
+DROP TABLE IF EXISTS coupon_domain_ids CASCADE;
+DROP TABLE IF EXISTS coupon_customer_emails CASCADE;
+DROP TABLE IF EXISTS coupon_collection_ids CASCADE;
+DROP TABLE IF EXISTS coupon_category_ids CASCADE;
+DROP TABLE IF EXISTS coupon_product_ids CASCADE;
+DROP TABLE IF EXISTS coupons CASCADE;
 DROP TABLE IF EXISTS cart_items CASCADE;
 DROP TABLE IF EXISTS carts CASCADE;
 DROP TABLE IF EXISTS order_items CASCADE;
@@ -280,6 +287,13 @@ CREATE INDEX idx_cart_items_variant_id ON cart_items(variant_id);
 CREATE INDEX idx_orders_store ON orders(store_id);
 CREATE INDEX idx_orders_customer ON orders(customer_id);
 CREATE INDEX idx_user_roles_user ON user_roles(user_id);
+CREATE INDEX idx_coupon_store ON coupons(store_id);
+CREATE INDEX idx_coupon_code ON coupons(store_id, code_normalized);
+CREATE INDEX idx_coupon_status ON coupons(status);
+CREATE INDEX idx_redemption_store ON coupon_redemptions(store_id);
+CREATE INDEX idx_redemption_coupon ON coupon_redemptions(coupon_id);
+CREATE INDEX idx_redemption_customer ON coupon_redemptions(customer_id);
+CREATE UNIQUE INDEX idx_redemption_order ON coupon_redemptions(order_id);
 
 -- Grant permissions to storeapp user
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO storeapp;
