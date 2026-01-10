@@ -32,34 +32,35 @@ public class SimpleCartController {
 
     @GetMapping
     public ResponseEntity<Map<String, Object>> getCart(
-            @RequestParam String sessionId,
+            @RequestParam(required = false) String sessionId,
             @RequestParam(required = false) Long storeId) {
         try {
             log.info("🔍 Loading cart for sessionId: '{}' (storeId: {})", sessionId, storeId);
 
-            // Versuche 1: Exakte Suche
-            Cart cart = cartRepository.findBySessionId(sessionId).orElse(null);
-            if (cart != null) {
-                log.info("✅ Found cart with exact sessionId match");
+            Cart cart = null;
+
+            // Strategie 1: Exakte sessionId-Suche (wenn vorhanden)
+            if (sessionId != null && !sessionId.isEmpty()) {
+                cart = cartRepository.findBySessionId(sessionId).orElse(null);
+                if (cart != null) {
+                    log.info("✅ Found cart with exact sessionId match");
+                }
             }
 
-            // Versuche 2: Suche nach neuester Session für diesen Store
-            // (Falls Frontend unterschiedliche sessionIds generiert)
+            // Strategie 2: Fallback auf neuesten Cart für diesen Store
+            // Dies ist die Hauptstrategie, da Frontend oft verschiedene sessionIds sendet
             if (cart == null && storeId != null) {
-                log.info("🔄 Searching for latest cart in store {}", storeId);
-                Store store = storeRepository.findById(storeId).orElse(null);
-                if (store != null) {
-                    List<Cart> storeCarts = cartRepository.findAll().stream()
-                        .filter(c -> c.getStore().getId().equals(storeId))
-                        .filter(c -> c.getExpiresAt().isAfter(LocalDateTime.now())) // Nur nicht-abgelaufene
-                        .sorted((c1, c2) -> c2.getUpdatedAt().compareTo(c1.getUpdatedAt())) // Neueste zuerst
-                        .collect(java.util.stream.Collectors.toList());
+                log.info("🔄 Searching for latest cart in store {} (sessionId failed or not provided)", storeId);
+                List<Cart> storeCarts = cartRepository.findAll().stream()
+                    .filter(c -> c.getStore() != null && c.getStore().getId().equals(storeId))
+                    .filter(c -> c.getExpiresAt().isAfter(LocalDateTime.now())) // Nur nicht-abgelaufene
+                    .sorted((c1, c2) -> c2.getUpdatedAt().compareTo(c1.getUpdatedAt())) // Neueste zuerst
+                    .collect(java.util.stream.Collectors.toList());
 
-                    if (!storeCarts.isEmpty()) {
-                        cart = storeCarts.get(0); // Nimm den neuesten Cart
-                        log.info("✅ Found latest cart (id: {}, sessionId: '{}', updated: {})",
-                            cart.getId(), cart.getSessionId(), cart.getUpdatedAt());
-                    }
+                if (!storeCarts.isEmpty()) {
+                    cart = storeCarts.get(0); // Nimm den neuesten Cart
+                    log.info("✅ Found latest cart (id: {}, sessionId: '{}', updated: {})",
+                        cart.getId(), cart.getSessionId(), cart.getUpdatedAt());
                 }
             }
 
