@@ -82,7 +82,7 @@ minio:
   # kannst du z.B. über ENV MINIO_ENABLED steuern
   enabled: ${MINIO_ENABLED:true}
   endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
-  public-endpoint: ${MINIO_PUBLIC_ENDPOINT:http://api.markt.ma:9001}
+  public-endpoint: ${MINIO_PUBLIC_ENDPOINT:https://api.markt.ma:9001}
   access-key: ${MINIO_ACCESS_KEY:minioadmin}
   secret-key: ${MINIO_SECRET_KEY:minioadmin}
   bucket: ${MINIO_BUCKET:store-assets}
