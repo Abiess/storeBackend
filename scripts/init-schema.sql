@@ -158,10 +158,10 @@ CREATE TABLE product_option_values (
 CREATE TABLE product_variants (
     id BIGSERIAL PRIMARY KEY,
     product_id BIGINT NOT NULL,
-    sku VARCHAR(100) UNIQUE,
-    price DECIMAL(10, 2),
+    sku VARCHAR(100) NOT NULL UNIQUE,
+    price DECIMAL(10, 2) NOT NULL,
     stock_quantity INTEGER NOT NULL DEFAULT 0,
-    option_values TEXT,
+    attributes_json TEXT,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
 
