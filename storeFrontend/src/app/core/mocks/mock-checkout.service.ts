@@ -9,9 +9,9 @@ let nextOrderId = 1000;
 
 export class MockCheckoutService {
   checkout(request: CheckoutRequest): Observable<CheckoutResponse> {
-    // Hole Warenkorb
+    // Hole Warenkorb mit storeId
     let cart: any;
-    mockCartService.getCart(request.sessionId).subscribe(c => cart = c);
+    mockCartService.getCart(request.storeId).subscribe(c => cart = c);
 
     if (!cart || cart.items.length === 0) {
       return throwError(() => new Error('Warenkorb ist leer'));
@@ -27,8 +27,8 @@ export class MockCheckoutService {
     // Erstelle Order-Items
     const items = cart.items.map((item: any) => ({
       id: item.id,
-      productName: item.productName,
-      variantName: item.variantName,
+      productName: item.productTitle || item.productName,
+      variantName: 'Standard',
       quantity: item.quantity,
       priceAtOrder: item.priceSnapshot,
       subtotal: item.priceSnapshot * item.quantity
@@ -50,8 +50,8 @@ export class MockCheckoutService {
 
     mockOrders.push(order);
 
-    // Leere Warenkorb
-    mockCartService.clearCart(request.sessionId).subscribe();
+    // Leere Warenkorb mit storeId
+    mockCartService.clearCart(request.storeId).subscribe();
 
     const response: CheckoutResponse = {
       orderId,
@@ -77,4 +77,3 @@ export class MockCheckoutService {
     return of(order).pipe(delay(300));
   }
 }
-

@@ -2,19 +2,28 @@ import { Observable, of, delay, throwError } from 'rxjs';
 import { Cart, CartItem, AddToCartRequest } from '../services/cart.service';
 import { MOCK_PRODUCTS } from './mock-data';
 
-let mockCarts: Cart[] = [];
+// Erweitertes Interface für Mock-Carts mit zusätzlichen Eigenschaften
+interface MockCart extends Cart {
+  id: number;
+  sessionId: string;
+  expiresAt: string;
+}
+
+let mockCarts: MockCart[] = [];
 let nextCartId = 1;
 let nextItemId = 1;
 
 export class MockCartService {
-  getCart(sessionId: string): Observable<Cart> {
-    let cart = mockCarts.find(c => c.sessionId === sessionId);
+  getCart(storeId: number): Observable<Cart> {
+    // Da wir keine sessionId haben, verwenden wir storeId als Identifikator
+    let cart = mockCarts.find(c => c.storeId === storeId);
 
     if (!cart) {
       cart = {
         id: nextCartId++,
-        sessionId,
-        storeId: 1,
+        sessionId: `store_${storeId}_${Date.now()}`,
+        cartId: nextCartId,
+        storeId: storeId,
         items: [],
         itemCount: 0,
         subtotal: 0,
@@ -26,13 +35,14 @@ export class MockCartService {
     return of(cart).pipe(delay(300));
   }
 
-  addItem(request: AddToCartRequest): Observable<CartItem> {
-    let cart = mockCarts.find(c => c.sessionId === request.sessionId);
+  addItem(request: AddToCartRequest): Observable<any> {
+    let cart = mockCarts.find(c => c.storeId === request.storeId);
 
     if (!cart) {
       cart = {
         id: nextCartId++,
-        sessionId: request.sessionId,
+        sessionId: `store_${request.storeId}_${Date.now()}`,
+        cartId: nextCartId,
         storeId: request.storeId,
         items: [],
         itemCount: 0,
@@ -42,32 +52,35 @@ export class MockCartService {
       mockCarts.push(cart);
     }
 
-    // Verwende productId statt variantId
     const product = MOCK_PRODUCTS.find(p => p.id === request.productId);
 
     if (!product) {
       return throwError(() => new Error('Product not found'));
     }
 
-    // Verwende Produkt-Preis direkt (keine Varianten)
     const price = product.basePrice || 0;
 
-    // Prüfe ob Item bereits im Warenkorb ist (verwende productId)
-    const existingItem = cart.items.find(item => item.variantId === request.productId);
+    // Prüfe ob Item bereits im Warenkorb ist
+    const existingItem = cart.items.find(item => item.productId === request.productId);
 
     if (existingItem) {
       existingItem.quantity += request.quantity;
       this.updateCartTotals(cart);
-      return of(existingItem).pipe(delay(300));
+      return of({
+        productName: existingItem.productTitle,
+        variantName: 'Standard',
+        ...existingItem
+      }).pipe(delay(300));
     }
 
-    const newItem = {
+    const newItem: CartItem = {
       id: nextItemId++,
-      variantId: request.productId, // Verwende productId als variantId für Kompatibilität
-      productName: product.title || product.name || 'Unknown Product',
-      variantName: 'Standard',
+      productId: request.productId,
+      productTitle: product.title || product.name || 'Unknown Product',
+      productDescription: product.description,
+      variantId: request.productId, // Verwende productId als variantId
+      variantSku: `SKU-${request.productId}`,
       quantity: request.quantity,
-      price: price,
       priceSnapshot: price,
       imageUrl: product.imageUrl || '/assets/placeholder.jpg'
     };
@@ -75,10 +88,14 @@ export class MockCartService {
     cart.items.push(newItem);
     this.updateCartTotals(cart);
 
-    return of(newItem).pipe(delay(300));
+    return of({
+      productName: newItem.productTitle,
+      variantName: 'Standard',
+      ...newItem
+    }).pipe(delay(300));
   }
 
-  updateItem(itemId: number, quantity: number): Observable<CartItem> {
+  updateItem(itemId: number, quantity: number): Observable<any> {
     for (const cart of mockCarts) {
       const item = cart.items.find(i => i.id === itemId);
       if (item) {
@@ -102,8 +119,8 @@ export class MockCartService {
     return throwError(() => new Error('Item not found'));
   }
 
-  clearCart(sessionId: string): Observable<void> {
-    const cart = mockCarts.find(c => c.sessionId === sessionId);
+  clearCart(storeId: number): Observable<void> {
+    const cart = mockCarts.find(c => c.storeId === storeId);
     if (cart) {
       cart.items = [];
       this.updateCartTotals(cart);
@@ -111,13 +128,13 @@ export class MockCartService {
     return of(void 0).pipe(delay(200));
   }
 
-  getCartItemCount(storeId: number, sessionId: string): Observable<number> {
-    const cart = mockCarts.find(c => c.sessionId === sessionId && c.storeId === storeId);
+  getCartItemCount(storeId: number, _sessionId: string): Observable<number> {
+    const cart = mockCarts.find(c => c.storeId === storeId);
     const count = cart ? cart.itemCount : 0;
     return of(count).pipe(delay(200));
   }
 
-  private updateCartTotals(cart: Cart): void {
+  private updateCartTotals(cart: MockCart): void {
     cart.itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
     cart.subtotal = cart.items.reduce((sum, item) => sum + (item.priceSnapshot * item.quantity), 0);
   }

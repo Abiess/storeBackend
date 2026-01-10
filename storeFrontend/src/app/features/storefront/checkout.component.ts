@@ -204,10 +204,10 @@ import { ValidateCouponsResponse } from '../../core/services/coupon.service';
           
           <div class="summary-items">
             <div class="summary-item" *ngFor="let item of cart.items">
-              <img [src]="item.imageUrl || 'https://via.placeholder.com/60'" [alt]="item.productName">
+              <img [src]="item.imageUrl || 'https://via.placeholder.com/60'" [alt]="item.productTitle">
               <div class="item-info">
-                <h4>{{ item.productName }}</h4>
-                <p>{{ item.variantName }}</p>
+                <h4>{{ item.productTitle }}</h4>
+                <p>{{ item.variantSku }}</p>
                 <p class="quantity">Menge: {{ item.quantity }}</p>
               </div>
               <div class="item-price">
@@ -535,7 +535,8 @@ export class CheckoutComponent implements OnInit {
 
   loadCart(): void {
     this.loading = true;
-    this.cartService.getCart(this.sessionId).subscribe({
+    const storeId = 1; // TODO: Aus Route oder Store-Service laden
+    this.cartService.getCart(storeId).subscribe({
       next: (cart: Cart) => {
         this.cart = cart;
         this.loading = false;
@@ -620,8 +621,8 @@ export class CheckoutComponent implements OnInit {
       subtotalCents: Math.round(this.cart.subtotal * 100),
       customerEmail: this.checkoutForm.get('customerEmail')?.value || '',
       items: this.cart.items.map(item => ({
-        productId: item.variantId, // Use variantId as productId
-        productName: item.productName,
+        productId: item.variantId,
+        productName: item.productTitle,
         priceCents: Math.round(item.priceSnapshot * 100),
         quantity: item.quantity,
         categoryIds: [],

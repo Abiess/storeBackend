@@ -57,7 +57,7 @@ export class StorefrontLandingComponent implements OnInit {
         if (info.isSubdomain && info.storeId) {
           this.storeId = info.storeId;
           this.storeName = info.storeName || `Store ${info.storeId}`;
-          this.sessionId = this.cartService.getOrCreateStoreSessionId(info.storeId);
+          this.sessionId = this.cartService.getOrCreateSessionId();
 
           console.log('📋 Store Details:', {
             storeId: this.storeId,
@@ -177,7 +177,7 @@ export class StorefrontLandingComponent implements OnInit {
     }
 
     console.log('🔄 Lade Warenkorb-Count für Store', this.storeId, 'Session:', this.sessionId);
-    this.cartService.getCartItemCount(this.storeId, this.sessionId).subscribe({
+    this.cartService.getCartItemCount(this.storeId).subscribe({
       next: (count: number) => {
         console.log('✅ Cart Count geladen:', count);
         this.cartItemCount = count;
@@ -199,7 +199,6 @@ export class StorefrontLandingComponent implements OnInit {
     console.log('🛒 Füge Produkt zum Warenkorb hinzu:', product.name);
 
     this.cartService.addItem({
-      sessionId: this.sessionId,
       storeId: this.storeId,
       productId: product.id,
       quantity: 1

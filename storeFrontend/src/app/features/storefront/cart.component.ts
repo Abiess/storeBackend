@@ -34,12 +34,12 @@ import { CartService, Cart, CartItem } from '../../core/services/cart.service';
         <div class="cart-items">
           <div class="cart-item" *ngFor="let item of cart.items">
             <img [src]="item.imageUrl || 'https://via.placeholder.com/100'" 
-                 [alt]="item.productName" 
+                 [alt]="item.productTitle" 
                  class="item-image">
             
             <div class="item-details">
-              <h3>{{ item.productName }}</h3>
-              <p class="variant-name">{{ item.variantName }}</p>
+              <h3>{{ item.productTitle }}</h3>
+              <p class="variant-name">{{ item.variantSku }}</p>
               <p class="item-price">{{ item.priceSnapshot | number:'1.2-2' }} €</p>
             </div>
 
@@ -378,7 +378,7 @@ export class CartComponent implements OnInit {
   }
 
   removeItem(item: CartItem): void {
-    if (!confirm(`${item.productName} aus dem Warenkorb entfernen?`)) {
+    if (!confirm(`${item.productTitle} aus dem Warenkorb entfernen?`)) {
       return;
     }
 

@@ -514,8 +514,8 @@ export class TestDashboardComponent implements OnInit {
   }
 
   testGetCart(): void {
-    const sessionId = this.cartService.getOrCreateSessionId();
-    this.cartService.getCart(sessionId).subscribe({
+    const storeId = 1;
+    this.cartService.getCart(storeId).subscribe({
       next: (cart) => {
         this.addResult({
           name: 'getCart',
@@ -534,11 +534,9 @@ export class TestDashboardComponent implements OnInit {
   }
 
   testAddToCart(): void {
-    const sessionId = this.cartService.getOrCreateSessionId();
     this.cartService.addItem({
-      sessionId,
       storeId: 1,
-      productId: 1,  // Geändert von variantId zu productId
+      productId: 1,
       quantity: 1
     }).subscribe({
       next: (item) => {
@@ -559,8 +557,8 @@ export class TestDashboardComponent implements OnInit {
   }
 
   testClearCart(): void {
-    const sessionId = this.cartService.getOrCreateSessionId();
-    this.cartService.clearCart(sessionId).subscribe({
+    const storeId = 1;
+    this.cartService.clearCart(storeId).subscribe({
       next: () => {
         this.addResult({
           name: 'clearCart',
@@ -682,7 +680,7 @@ export class TestDashboardComponent implements OnInit {
 
   testAssignRole(): void {
     this.roleService.assignStoreRole(this.testUserId, 1, this.testRole).subscribe({
-      next: (role) => {
+      next: () => {
         this.addResult({
           name: 'assignRole',
           status: 'success',

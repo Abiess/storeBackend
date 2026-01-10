@@ -37,12 +37,32 @@ export interface AddToCartRequest {
 export class CartService {
   private mockService = new MockCartService();
   private cartApiUrl = `${environment.publicApiUrl}/simple-cart`;
+  private readonly SESSION_ID_KEY = 'cart_session_id';
 
   constructor(private http: HttpClient) {}
 
+  /**
+   * Generiert oder lädt eine Session-ID für den Warenkorb
+   */
+  getOrCreateSessionId(): string {
+    let sessionId = localStorage.getItem(this.SESSION_ID_KEY);
+    if (!sessionId) {
+      sessionId = this.generateSessionId();
+      localStorage.setItem(this.SESSION_ID_KEY, sessionId);
+    }
+    return sessionId;
+  }
+
+  /**
+   * Generiert eine neue eindeutige Session-ID
+   */
+  private generateSessionId(): string {
+    return 'cart_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  }
+
   getCart(storeId: number): Observable<Cart> {
     if (environment.useMockData) {
-      return this.mockService.getCart(storeId.toString());
+      return this.mockService.getCart(storeId);
     }
     return this.http.get<Cart>(`${this.cartApiUrl}?storeId=${storeId}`);
   }
@@ -70,7 +90,7 @@ export class CartService {
 
   clearCart(storeId: number): Observable<void> {
     if (environment.useMockData) {
-      return this.mockService.clearCart(storeId.toString());
+      return this.mockService.clearCart(storeId);
     }
     return this.http.delete<void>(`${this.cartApiUrl}/clear?storeId=${storeId}`);
   }

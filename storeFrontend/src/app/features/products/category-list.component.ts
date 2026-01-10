@@ -171,7 +171,7 @@ interface Category {
     .category-header {
       display: flex;
       justify-content: space-between;
-      align-items: start;
+      align-items: flex-start;
       margin-bottom: 1rem;
     }
 
