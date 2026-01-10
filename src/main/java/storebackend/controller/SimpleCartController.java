@@ -120,6 +120,7 @@ public class SimpleCartController {
                         newCart.setStore(store);
                         newCart.setCreatedAt(LocalDateTime.now());
                         newCart.setUpdatedAt(LocalDateTime.now());
+                        newCart.setExpiresAt(LocalDateTime.now().plusDays(7)); // Warenkorb läuft nach 7 Tagen ab
                         return cartRepository.save(newCart);
                     });
 
