@@ -83,28 +83,34 @@ public class SimpleCartController {
                         dto.put("id", item.getId());
                         dto.put("quantity", item.getQuantity());
                         dto.put("priceSnapshot", item.getPriceSnapshot());
-                        dto.put("productId", item.getVariant().getProduct().getId());
-                        dto.put("productTitle", item.getVariant().getProduct().getTitle());
+
+                        // Lade Product explizit (verhindert LazyInitializationException)
+                        Product product = item.getVariant().getProduct();
+                        dto.put("productId", product.getId());
+                        dto.put("productTitle", product.getTitle());
+                        dto.put("productDescription", product.getDescription());
                         dto.put("variantId", item.getVariant().getId());
                         dto.put("variantSku", item.getVariant().getSku());
 
                         // Füge Produktbild hinzu wenn vorhanden
                         try {
-                            List<ProductMedia> media = productMediaRepository.findByProductIdOrderBySortOrderAsc(
-                                item.getVariant().getProduct().getId()
-                            );
+                            List<ProductMedia> media = productMediaRepository.findByProductIdOrderBySortOrderAsc(product.getId());
                             if (!media.isEmpty()) {
                                 ProductMedia primaryMedia = media.stream()
-                                    .filter(ProductMedia::getIsPrimary)
+                                    .filter(pm -> pm != null && pm.getIsPrimary() != null && pm.getIsPrimary())
                                     .findFirst()
                                     .orElse(media.get(0));
-                                String imageUrl = minioService.getPresignedUrl(
-                                    primaryMedia.getMedia().getMinioObjectName(), 60
-                                );
-                                dto.put("imageUrl", imageUrl);
+
+                                if (primaryMedia != null && primaryMedia.getMedia() != null) {
+                                    String imageUrl = minioService.getPresignedUrl(
+                                        primaryMedia.getMedia().getMinioObjectName(), 60
+                                    );
+                                    dto.put("imageUrl", imageUrl);
+                                }
                             }
                         } catch (Exception e) {
-                            log.warn("Could not load image for product {}", item.getVariant().getProduct().getId());
+                            log.warn("Could not load image for product {}: {}", product.getId(), e.getMessage());
+                            dto.put("imageUrl", null); // Explizit null setzen
                         }
 
                         return dto;
