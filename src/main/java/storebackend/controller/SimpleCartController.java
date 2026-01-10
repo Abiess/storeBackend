@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import storebackend.entity.*;
 import storebackend.repository.*;
+import storebackend.service.MinioService;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -26,14 +27,44 @@ public class SimpleCartController {
     private final ProductRepository productRepository;
     private final StoreRepository storeRepository;
     private final ProductVariantRepository productVariantRepository;
+    private final ProductMediaRepository productMediaRepository;
+    private final MinioService minioService;
 
     @GetMapping
-    public ResponseEntity<Map<String, Object>> getCart(@RequestParam String sessionId) {
+    public ResponseEntity<Map<String, Object>> getCart(
+            @RequestParam String sessionId,
+            @RequestParam(required = false) Long storeId) {
         try {
-            Cart cart = cartRepository.findBySessionId(sessionId)
-                    .orElse(null);
+            log.info("🔍 Loading cart for sessionId: '{}' (storeId: {})", sessionId, storeId);
+
+            // Versuche 1: Exakte Suche
+            Cart cart = cartRepository.findBySessionId(sessionId).orElse(null);
+            if (cart != null) {
+                log.info("✅ Found cart with exact sessionId match");
+            }
+
+            // Versuche 2: Suche nach neuester Session für diesen Store
+            // (Falls Frontend unterschiedliche sessionIds generiert)
+            if (cart == null && storeId != null) {
+                log.info("🔄 Searching for latest cart in store {}", storeId);
+                Store store = storeRepository.findById(storeId).orElse(null);
+                if (store != null) {
+                    List<Cart> storeCarts = cartRepository.findAll().stream()
+                        .filter(c -> c.getStore().getId().equals(storeId))
+                        .filter(c -> c.getExpiresAt().isAfter(LocalDateTime.now())) // Nur nicht-abgelaufene
+                        .sorted((c1, c2) -> c2.getUpdatedAt().compareTo(c1.getUpdatedAt())) // Neueste zuerst
+                        .collect(java.util.stream.Collectors.toList());
+
+                    if (!storeCarts.isEmpty()) {
+                        cart = storeCarts.get(0); // Nimm den neuesten Cart
+                        log.info("✅ Found latest cart (id: {}, sessionId: '{}', updated: {})",
+                            cart.getId(), cart.getSessionId(), cart.getUpdatedAt());
+                    }
+                }
+            }
 
             if (cart == null) {
+                log.warn("❌ No cart found for sessionId: '{}' and storeId: {}", sessionId, storeId);
                 return ResponseEntity.ok(Map.of(
                     "items", List.of(),
                     "itemCount", 0,
@@ -41,24 +72,68 @@ public class SimpleCartController {
                 ));
             }
 
+            log.info("📦 Loading items for cart ID: {}", cart.getId());
             List<CartItem> items = cartItemRepository.findByCartId(cart.getId());
+            log.info("📦 Found {} items in cart", items.size());
+
+            // Konvertiere CartItems zu DTOs (verhindert zirkuläre Referenzen)
+            List<Map<String, Object>> itemDTOs = items.stream()
+                    .map(item -> {
+                        Map<String, Object> dto = new java.util.HashMap<>();
+                        dto.put("id", item.getId());
+                        dto.put("quantity", item.getQuantity());
+                        dto.put("priceSnapshot", item.getPriceSnapshot());
+                        dto.put("productId", item.getVariant().getProduct().getId());
+                        dto.put("productTitle", item.getVariant().getProduct().getTitle());
+                        dto.put("variantId", item.getVariant().getId());
+                        dto.put("variantSku", item.getVariant().getSku());
+
+                        // Füge Produktbild hinzu wenn vorhanden
+                        try {
+                            List<ProductMedia> media = productMediaRepository.findByProductIdOrderBySortOrderAsc(
+                                item.getVariant().getProduct().getId()
+                            );
+                            if (!media.isEmpty()) {
+                                ProductMedia primaryMedia = media.stream()
+                                    .filter(ProductMedia::getIsPrimary)
+                                    .findFirst()
+                                    .orElse(media.get(0));
+                                String imageUrl = minioService.getPresignedUrl(
+                                    primaryMedia.getMedia().getMinioObjectName(), 60
+                                );
+                                dto.put("imageUrl", imageUrl);
+                            }
+                        } catch (Exception e) {
+                            log.warn("Could not load image for product {}", item.getVariant().getProduct().getId());
+                        }
+
+                        return dto;
+                    })
+                    .collect(java.util.stream.Collectors.toList());
+
             BigDecimal subtotal = items.stream()
                     .map(item -> item.getPriceSnapshot().multiply(BigDecimal.valueOf(item.getQuantity())))
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             int itemCount = items.stream().mapToInt(CartItem::getQuantity).sum();
 
+            log.info("✅ Returning cart with {} items, subtotal: {}, sessionId: '{}'",
+                itemCount, subtotal, cart.getSessionId());
+
             return ResponseEntity.ok(Map.of(
-                "items", items,
+                "items", itemDTOs,
                 "itemCount", itemCount,
-                "subtotal", subtotal
+                "subtotal", subtotal,
+                "cartId", cart.getId(),
+                "sessionId", cart.getSessionId() // Gib die echte sessionId zurück
             ));
         } catch (Exception e) {
-            log.error("Error loading cart: {}", e.getMessage());
+            log.error("❌ Error loading cart for sessionId {}: {}", sessionId, e.getMessage(), e);
             return ResponseEntity.ok(Map.of(
                 "items", List.of(),
                 "itemCount", 0,
-                "subtotal", 0
+                "subtotal", 0,
+                "error", e.getMessage()
             ));
         }
     }
