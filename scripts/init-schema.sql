@@ -261,6 +261,94 @@ CREATE TABLE audit_logs (
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
+-- ============================================
+-- COUPONS SYSTEM TABLES
+-- ============================================
+
+-- Coupons Haupttabelle
+CREATE TABLE coupons (
+    id BIGSERIAL PRIMARY KEY,
+    store_id BIGINT NOT NULL,
+    code VARCHAR(100) NOT NULL,
+    code_normalized VARCHAR(100) NOT NULL,
+    type VARCHAR(20) NOT NULL,
+    percent_discount INTEGER,
+    value_cents BIGINT,
+    currency VARCHAR(3),
+    starts_at TIMESTAMP,
+    ends_at TIMESTAMP,
+    min_subtotal_cents BIGINT,
+    applies_to VARCHAR(20) NOT NULL,
+    domain_scope VARCHAR(20) NOT NULL,
+    usage_limit_total INTEGER,
+    usage_limit_per_customer INTEGER,
+    times_used_total INTEGER NOT NULL DEFAULT 0,
+    combinable VARCHAR(30) NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    auto_apply BOOLEAN NOT NULL DEFAULT FALSE,
+    description VARCHAR(500),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
+);
+
+-- Coupon Product IDs (welche Produkte sind berechtigt)
+CREATE TABLE coupon_product_ids (
+    coupon_id BIGINT NOT NULL,
+    product_id BIGINT NOT NULL,
+    PRIMARY KEY (coupon_id, product_id),
+    FOREIGN KEY (coupon_id) REFERENCES coupons(id) ON DELETE CASCADE
+);
+
+-- Coupon Category IDs (welche Kategorien sind berechtigt)
+CREATE TABLE coupon_category_ids (
+    coupon_id BIGINT NOT NULL,
+    category_id BIGINT NOT NULL,
+    PRIMARY KEY (coupon_id, category_id),
+    FOREIGN KEY (coupon_id) REFERENCES coupons(id) ON DELETE CASCADE
+);
+
+-- Coupon Collection IDs (welche Collections sind berechtigt)
+CREATE TABLE coupon_collection_ids (
+    coupon_id BIGINT NOT NULL,
+    collection_id BIGINT NOT NULL,
+    PRIMARY KEY (coupon_id, collection_id),
+    FOREIGN KEY (coupon_id) REFERENCES coupons(id) ON DELETE CASCADE
+);
+
+-- Coupon Customer Emails (welche Kunden dürfen den Coupon verwenden)
+CREATE TABLE coupon_customer_emails (
+    coupon_id BIGINT NOT NULL,
+    customer_email VARCHAR(255) NOT NULL,
+    PRIMARY KEY (coupon_id, customer_email),
+    FOREIGN KEY (coupon_id) REFERENCES coupons(id) ON DELETE CASCADE
+);
+
+-- Coupon Domain IDs (auf welchen Domains ist der Coupon gültig)
+CREATE TABLE coupon_domain_ids (
+    coupon_id BIGINT NOT NULL,
+    domain_id BIGINT NOT NULL,
+    PRIMARY KEY (coupon_id, domain_id),
+    FOREIGN KEY (coupon_id) REFERENCES coupons(id) ON DELETE CASCADE
+);
+
+-- Coupon Redemptions (Einlösungen tracking)
+CREATE TABLE coupon_redemptions (
+    id BIGSERIAL PRIMARY KEY,
+    store_id BIGINT NOT NULL,
+    coupon_id BIGINT NOT NULL,
+    customer_id BIGINT,
+    customer_email VARCHAR(255),
+    order_id BIGINT NOT NULL,
+    applied_cents BIGINT NOT NULL,
+    currency VARCHAR(3) NOT NULL,
+    domain_host VARCHAR(255),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE,
+    FOREIGN KEY (coupon_id) REFERENCES coupons(id) ON DELETE CASCADE,
+    FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
 -- Initiale Daten: FREE Plan
 INSERT INTO plans (name, max_stores, max_custom_domains, max_subdomains, max_storage_mb, max_products, max_image_count)
 VALUES ('FREE', 1, 0, 1, 100, 50, 100)
