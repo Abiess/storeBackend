@@ -162,5 +162,12 @@ export class ThemeCustomizerComponent implements OnInit {
   goBack(): void {
     this.router.navigate(['/stores', this.storeId]);
   }
-}
 
+  /**
+   * Öffnet den Frontstore in einem neuen Tab zur Live-Vorschau
+   */
+  openStorefrontPreview(): void {
+    const url = `/storefront/${this.storeId}`;
+    window.open(url, '_blank');
+  }
+}

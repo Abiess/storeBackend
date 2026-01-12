@@ -32,7 +32,7 @@ import {
         <div class="active-theme-section" *ngIf="activeTheme">
           <h2>Aktives Theme</h2>
           <div class="theme-card active">
-            <div class="theme-preview" [style.background]="activeTheme.colors?.primary || '#667eea'">
+            <div class="theme-preview" [style.background]="activeTheme.colors.primary || '#667eea'">
               <div class="preview-content">
                 <h3>{{ activeTheme.name }}</h3>
                 <span class="theme-type">{{ getThemeTypeName(activeTheme.type) }}</span>
@@ -586,14 +586,21 @@ export class StoreThemeComponent implements OnInit {
   editTheme(theme: StoreTheme): void {
     const preset = this.presets.find(p => p.type === theme.type);
     if (preset) {
+      // ✅ Stelle sicher, dass colors, typography und layout existieren
       this.selectedPreset = {
         ...preset,
-        colors: theme.colors,
-        typography: theme.typography,
-        layout: theme.layout
+        colors: theme.colors || preset.colors,
+        typography: theme.typography || preset.typography,
+        layout: theme.layout || preset.layout
       };
       this.themeName = theme.name;
       this.selectedTemplate = theme.template;
+    } else {
+      console.warn('⚠️ Preset nicht gefunden für Theme-Typ:', theme.type);
+      // Fallback: Verwende das erste Preset
+      this.selectedPreset = JSON.parse(JSON.stringify(this.presets[0]));
+      this.themeName = theme.name || 'Custom Theme';
+      this.selectedTemplate = theme.template || ShopTemplate.CUSTOM;
     }
   }
 
@@ -624,10 +631,7 @@ export class StoreThemeComponent implements OnInit {
         // ✅ Theme sofort anwenden
         this.themeService.applyTheme(theme);
 
-        // ✅ Theme im LocalStorage speichern für Persistenz
-        this.saveThemeToLocalStorage(theme);
-
-        alert('✅ Theme erfolgreich gespeichert und angewendet!');
+        alert('✅ Theme erfolgreich in der Datenbank gespeichert!');
       },
       error: (error) => {
         this.error = 'Fehler beim Speichern des Themes';
@@ -635,16 +639,6 @@ export class StoreThemeComponent implements OnInit {
         this.saving = false;
       }
     });
-  }
-
-  private saveThemeToLocalStorage(theme: StoreTheme): void {
-    try {
-      const key = `store_${this.storeId}_theme`;
-      localStorage.setItem(key, JSON.stringify(theme));
-      console.log('💾 Theme im LocalStorage gespeichert:', key);
-    } catch (error) {
-      console.error('Fehler beim Speichern im LocalStorage:', error);
-    }
   }
 
   cancelEdit(): void {

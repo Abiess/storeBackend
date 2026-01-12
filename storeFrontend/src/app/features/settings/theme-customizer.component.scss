@@ -7,6 +7,7 @@
 .customizer-header {
   max-width: 1600px;
   margin: 0 auto 2rem;
+  position: relative;
 
   .btn-back {
     background: white;
@@ -23,6 +24,33 @@
     &:hover {
       background: #f7fafc;
       transform: translateX(-2px);
+    }
+
+    .icon {
+      font-size: 1.25rem;
+    }
+  }
+
+  .btn-preview-store {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
     }
 
     .icon {
@@ -559,4 +587,3 @@ textarea {
     grid-template-columns: repeat(2, 1fr);
   }
 }
-

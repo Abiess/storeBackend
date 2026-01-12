@@ -1,7 +1,6 @@
 export const environment = {
   production: false,
-  useMockData: true,  // 👈 Einfach auf false setzen für echtes Backend
+  useMockData: false,  // ✅ Verwende echtes Backend für Themes
   apiUrl: 'http://localhost:8080/api',
   publicApiUrl: 'http://localhost:8080/api/public'
 };
-

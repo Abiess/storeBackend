@@ -5,6 +5,9 @@
     </button>
     <h1>Theme & Design anpassen</h1>
     <p>Wählen Sie ein vordefiniertes Theme und passen Sie es an Ihre Marke an</p>
+    <button class="btn btn-info btn-preview-store" (click)="openStorefrontPreview()">
+      <span class="icon">🔍</span> Im Frontstore ansehen
+    </button>
   </div>
 
   <div class="customizer-content">
@@ -37,6 +40,9 @@
       <div class="panel-header">
         <h2>{{ selectedPreset.name }} anpassen</h2>
         <div class="header-actions">
+          <button class="btn btn-info" (click)="openStorefrontPreview()" title="Öffnet Ihren Shop in einem neuen Tab">
+            <span class="icon">👁️</span> Live ansehen
+          </button>
           <button class="btn btn-secondary" (click)="resetToDefault()">
             <span class="icon">↺</span> Zurücksetzen
           </button>
@@ -258,4 +264,3 @@
     <p>Klicken Sie auf eines der vordefinierten Themes links, um mit der Anpassung zu beginnen</p>
   </div>
 </div>
-

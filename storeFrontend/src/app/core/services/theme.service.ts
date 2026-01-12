@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, BehaviorSubject } from 'rxjs';
-import { delay, tap, catchError } from 'rxjs/operators';
+import { delay, tap, catchError, map } from 'rxjs/operators';
 import {
   StoreTheme,
   ThemePreset,
@@ -223,141 +223,83 @@ export class ThemeService {
   }
 
   /**
+   * Erstelle ein neues Theme
+   */
+  createTheme(request: CreateThemeRequest): Observable<StoreTheme> {
+    console.log('🎨 Creating theme', request);
+
+    // ✅ Serialisiere die komplexen Objekte zu JSON-Strings für das Backend
+    const backendRequest = {
+      storeId: request.storeId,
+      name: request.name,
+      type: request.type,
+      template: request.template,
+      colorsJson: JSON.stringify(request.colors),
+      typographyJson: JSON.stringify(request.typography),
+      layoutJson: JSON.stringify(request.layout),
+      customCss: request.customCss
+    };
+
+    return this.http.post<any>(this.API_URL, backendRequest).pipe(
+      map(dto => this.convertDTOtoTheme(dto)),
+      tap(theme => {
+        console.log('✅ Theme in Datenbank gespeichert:', theme);
+        this.currentTheme$.next(theme);
+      })
+    );
+  }
+
+  /**
+   * Konvertiere Backend-DTO zu Frontend-Theme
+   */
+  private convertDTOtoTheme(dto: any): StoreTheme {
+    return {
+      id: dto.id,
+      storeId: dto.storeId,
+      name: dto.name,
+      type: dto.type as ThemeType,
+      template: dto.template as ShopTemplate,
+      colors: typeof dto.colorsJson === 'string' ? JSON.parse(dto.colorsJson) : dto.colorsJson,
+      typography: typeof dto.typographyJson === 'string' ? JSON.parse(dto.typographyJson) : dto.typographyJson,
+      layout: typeof dto.layoutJson === 'string' ? JSON.parse(dto.layoutJson) : dto.layoutJson,
+      customCss: dto.customCss,
+      isActive: dto.isActive,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt
+    };
+  }
+
+  /**
    * Hole aktives Theme für einen Store
    */
   getActiveTheme(storeId: number): Observable<StoreTheme | null> {
-    if (environment.useMockData) {
-      // ✅ Zuerst im LocalStorage nachschauen
-      const savedTheme = this.loadThemeFromLocalStorage(storeId);
-      if (savedTheme) {
-        console.log('💾 Theme aus LocalStorage geladen:', savedTheme.name);
-        return of(savedTheme).pipe(
-          delay(100),
-          tap(theme => this.currentTheme$.next(theme))
-        );
-      }
-
-      // Fallback: Standard Mock-Theme
-      const mockTheme: StoreTheme = {
-        id: 1,
-        storeId: storeId,
-        name: 'Modern Theme',
-        type: ThemeType.MODERN,
-        template: ShopTemplate.ELECTRONICS,
-        colors: this.THEME_PRESETS[0].colors,
-        typography: this.THEME_PRESETS[0].typography,
-        layout: this.THEME_PRESETS[0].layout,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      return of(mockTheme).pipe(
-        delay(300),
-        tap(theme => this.currentTheme$.next(theme))
-      );
-    }
-    return this.http.get<StoreTheme>(`${this.API_URL}/store/${storeId}/active`).pipe(
-      tap(theme => this.currentTheme$.next(theme)),
+    return this.http.get<any>(`${this.API_URL}/store/${storeId}/active`).pipe(
+      map(dto => dto ? this.convertDTOtoTheme(dto) : null),
+      tap(theme => {
+        if (theme) {
+          console.log('✅ Theme aus Datenbank geladen:', theme.name);
+          this.currentTheme$.next(theme);
+        }
+      }),
       catchError(error => {
-        console.warn('Theme-Laden fehlgeschlagen, verwende Standard-Theme:', error);
+        console.warn('Theme-Laden fehlgeschlagen:', error);
         return of(null);
       })
     );
   }
 
   /**
-   * Speichere Theme im LocalStorage (für Mock-Modus)
-   */
-  private saveThemeToLocalStorage(storeId: number, theme: StoreTheme): void {
-    try {
-      const key = `store_${storeId}_theme`;
-      localStorage.setItem(key, JSON.stringify(theme));
-      console.log('💾 Theme im LocalStorage gespeichert:', key);
-    } catch (error) {
-      console.error('Fehler beim Speichern im LocalStorage:', error);
-    }
-  }
-
-  /**
-   * Lade Theme aus LocalStorage (für Mock-Modus)
-   */
-  private loadThemeFromLocalStorage(storeId: number): StoreTheme | null {
-    try {
-      const key = `store_${storeId}_theme`;
-      const saved = localStorage.getItem(key);
-      if (saved) {
-        return JSON.parse(saved);
-      }
-    } catch (error) {
-      console.error('Fehler beim Laden aus LocalStorage:', error);
-    }
-    return null;
-  }
-
-  /**
    * Hole alle Themes eines Stores
    */
   getStoreThemes(storeId: number): Observable<StoreTheme[]> {
-    if (environment.useMockData) {
-      return of([]).pipe(delay(300));
-    }
     return this.http.get<StoreTheme[]>(`${this.API_URL}/store/${storeId}`);
-  }
-
-  /**
-   * Erstelle ein neues Theme
-   */
-  createTheme(request: CreateThemeRequest): Observable<StoreTheme> {
-    if (environment.useMockData) {
-      console.log('🎨 Mock: Creating theme', request);
-      const preset = this.THEME_PRESETS.find(p => p.type === request.type);
-
-      const newTheme: StoreTheme = {
-        id: Date.now(),
-        storeId: request.storeId,
-        name: request.name,
-        type: request.type,
-        template: request.template,
-        colors: { ...preset!.colors, ...request.colors },
-        typography: { ...preset!.typography, ...request.typography },
-        layout: { ...preset!.layout, ...request.layout },
-        customCss: request.customCss,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-
-      // ✅ Im LocalStorage speichern für Persistenz
-      this.saveThemeToLocalStorage(request.storeId, newTheme);
-
-      return of(newTheme).pipe(
-        delay(500),
-        tap(theme => this.currentTheme$.next(theme))
-      );
-    }
-    return this.http.post<StoreTheme>(this.API_URL, request).pipe(
-      tap(theme => this.currentTheme$.next(theme))
-    );
   }
 
   /**
    * Aktualisiere ein Theme
    */
   updateTheme(themeId: number, updates: Partial<StoreTheme>): Observable<StoreTheme> {
-    if (environment.useMockData) {
-      console.log('🎨 Mock: Updating theme', themeId, updates);
-      const updatedTheme: StoreTheme = {
-        ...(this.currentTheme$.value || {} as StoreTheme),
-        ...updates,
-        id: themeId,
-        updatedAt: new Date().toISOString()
-      };
-
-      return of(updatedTheme).pipe(
-        delay(500),
-        tap(theme => this.currentTheme$.next(theme))
-      );
-    }
+    console.log('🎨 Updating theme', themeId, updates);
     return this.http.put<StoreTheme>(`${this.API_URL}/${themeId}`, updates).pipe(
       tap(theme => this.currentTheme$.next(theme))
     );
@@ -367,14 +309,7 @@ export class ThemeService {
    * Aktiviere ein Theme
    */
   activateTheme(storeId: number, themeId: number): Observable<StoreTheme> {
-    if (environment.useMockData) {
-      console.log('🎨 Mock: Activating theme', themeId);
-      const theme = this.currentTheme$.value!;
-      return of({ ...theme, isActive: true }).pipe(
-        delay(300),
-        tap(t => this.currentTheme$.next(t))
-      );
-    }
+    console.log('🎨 Activating theme', themeId);
     return this.http.post<StoreTheme>(`${this.API_URL}/${themeId}/activate`, { storeId }).pipe(
       tap(theme => this.currentTheme$.next(theme))
     );
@@ -384,10 +319,7 @@ export class ThemeService {
    * Lösche ein Theme
    */
   deleteTheme(themeId: number): Observable<void> {
-    if (environment.useMockData) {
-      console.log('🎨 Mock: Deleting theme', themeId);
-      return of(void 0).pipe(delay(300));
-    }
+    console.log('🎨 Deleting theme', themeId);
     return this.http.delete<void>(`${this.API_URL}/${themeId}`);
   }
 
@@ -395,44 +327,50 @@ export class ThemeService {
    * Wende Theme-CSS auf die Seite an
    */
   applyTheme(theme: StoreTheme): void {
+    // ✅ Validiere Theme-Struktur vor dem Anwenden
+    if (!theme || !theme.colors || !theme.typography || !theme.layout) {
+      console.error('❌ Ungültiges Theme kann nicht angewendet werden:', theme);
+      return;
+    }
+
     const root = document.documentElement;
 
     // Farben anwenden
-    root.style.setProperty('--theme-primary', theme.colors.primary);
-    root.style.setProperty('--theme-secondary', theme.colors.secondary);
-    root.style.setProperty('--theme-accent', theme.colors.accent);
-    root.style.setProperty('--theme-background', theme.colors.background);
-    root.style.setProperty('--theme-text', theme.colors.text);
-    root.style.setProperty('--theme-text-secondary', theme.colors.textSecondary);
-    root.style.setProperty('--theme-border', theme.colors.border);
-    root.style.setProperty('--theme-success', theme.colors.success);
-    root.style.setProperty('--theme-warning', theme.colors.warning);
-    root.style.setProperty('--theme-error', theme.colors.error);
+    root.style.setProperty('--theme-primary', theme.colors.primary || '#667eea');
+    root.style.setProperty('--theme-secondary', theme.colors.secondary || '#764ba2');
+    root.style.setProperty('--theme-accent', theme.colors.accent || '#f093fb');
+    root.style.setProperty('--theme-background', theme.colors.background || '#ffffff');
+    root.style.setProperty('--theme-text', theme.colors.text || '#1a202c');
+    root.style.setProperty('--theme-text-secondary', theme.colors.textSecondary || '#718096');
+    root.style.setProperty('--theme-border', theme.colors.border || '#e2e8f0');
+    root.style.setProperty('--theme-success', theme.colors.success || '#48bb78');
+    root.style.setProperty('--theme-warning', theme.colors.warning || '#ed8936');
+    root.style.setProperty('--theme-error', theme.colors.error || '#f56565');
 
     // Typografie anwenden
-    root.style.setProperty('--theme-font-family', theme.typography.fontFamily);
-    root.style.setProperty('--theme-heading-font-family', theme.typography.headingFontFamily || theme.typography.fontFamily);
-    root.style.setProperty('--theme-font-size-small', theme.typography.fontSize.small);
-    root.style.setProperty('--theme-font-size-base', theme.typography.fontSize.base);
-    root.style.setProperty('--theme-font-size-large', theme.typography.fontSize.large);
-    root.style.setProperty('--theme-font-size-xl', theme.typography.fontSize.xl);
-    root.style.setProperty('--theme-font-size-xxl', theme.typography.fontSize.xxl);
+    root.style.setProperty('--theme-font-family', theme.typography.fontFamily || 'Inter, sans-serif');
+    root.style.setProperty('--theme-heading-font-family', theme.typography.headingFontFamily || theme.typography.fontFamily || 'Poppins, sans-serif');
+    root.style.setProperty('--theme-font-size-small', theme.typography.fontSize?.small || '0.875rem');
+    root.style.setProperty('--theme-font-size-base', theme.typography.fontSize?.base || '1rem');
+    root.style.setProperty('--theme-font-size-large', theme.typography.fontSize?.large || '1.125rem');
+    root.style.setProperty('--theme-font-size-xl', theme.typography.fontSize?.xl || '1.5rem');
+    root.style.setProperty('--theme-font-size-xxl', theme.typography.fontSize?.xxl || '2.25rem');
 
     // Layout anwenden
-    const borderRadiusMap = {
+    const borderRadiusMap: Record<string, string> = {
       none: '0',
       small: '4px',
       medium: '8px',
       large: '16px'
     };
-    root.style.setProperty('--theme-border-radius', borderRadiusMap[theme.layout.borderRadius]);
+    root.style.setProperty('--theme-border-radius', borderRadiusMap[theme.layout.borderRadius] || '8px');
 
-    const spacingMap = {
+    const spacingMap: Record<string, string> = {
       compact: '0.5rem',
       normal: '1rem',
       spacious: '1.5rem'
     };
-    root.style.setProperty('--theme-spacing', spacingMap[theme.layout.spacing]);
+    root.style.setProperty('--theme-spacing', spacingMap[theme.layout.spacing] || '1rem');
 
     // Custom CSS anwenden
     if (theme.customCss) {
@@ -446,6 +384,7 @@ export class ThemeService {
     }
 
     this.currentTheme$.next(theme);
+    console.log('✅ Theme erfolgreich angewendet:', theme.name);
   }
 
   /**
