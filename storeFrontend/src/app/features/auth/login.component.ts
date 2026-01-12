@@ -56,7 +56,7 @@ import { LanguageSwitcherComponent } from '../../shared/components/language-swit
         </form>
 
         <p class="auth-footer">
-          Noch kein Konto? <a routerLink="/register">Jetzt registrieren</a>
+          Noch kein Konto? <a [routerLink]="['/register']" [queryParams]="{ returnUrl: returnUrl }">Jetzt registrieren</a>
         </p>
       </div>
     </div>
