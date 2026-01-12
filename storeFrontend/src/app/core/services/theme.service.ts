@@ -372,6 +372,10 @@ export class ThemeService {
     };
     root.style.setProperty('--theme-spacing', spacingMap[theme.layout.spacing] || '1rem');
 
+    // ✅ NEU: Produktraster-Spalten anwenden
+    root.style.setProperty('--theme-product-grid-columns', String(theme.layout.productGridColumns || 3));
+    console.log('🎨 Produktraster-Spalten gesetzt auf:', theme.layout.productGridColumns);
+
     // Custom CSS anwenden
     if (theme.customCss) {
       let styleEl = document.getElementById('custom-theme-css');

@@ -49,6 +49,9 @@ export class CartService {
     if (!sessionId) {
       sessionId = this.generateSessionId();
       localStorage.setItem(this.SESSION_ID_KEY, sessionId);
+      console.log('🆕 Neue Session-ID erstellt:', sessionId);
+    } else {
+      console.log('♻️ Bestehende Session-ID geladen:', sessionId);
     }
     return sessionId;
   }
@@ -64,42 +67,74 @@ export class CartService {
     if (environment.useMockData) {
       return this.mockService.getCart(storeId);
     }
-    return this.http.get<Cart>(`${this.cartApiUrl}?storeId=${storeId}`);
+    const sessionId = this.getOrCreateSessionId();
+    console.log('🛒 Lade Warenkorb für Store', storeId, 'mit Session', sessionId);
+    return this.http.get<Cart>(`${this.cartApiUrl}?storeId=${storeId}`, {
+      headers: {
+        'X-Session-Id': sessionId
+      }
+    });
   }
 
   addItem(request: AddToCartRequest): Observable<any> {
     if (environment.useMockData) {
       return this.mockService.addItem(request);
     }
-    return this.http.post<any>(`${this.cartApiUrl}/items`, request);
+    const sessionId = this.getOrCreateSessionId();
+    console.log('➕ Füge Produkt zum Warenkorb hinzu mit Session', sessionId);
+    return this.http.post<any>(`${this.cartApiUrl}/items`, request, {
+      headers: {
+        'X-Session-Id': sessionId
+      }
+    });
   }
 
   updateItem(itemId: number, quantity: number): Observable<any> {
     if (environment.useMockData) {
       return this.mockService.updateItem(itemId, quantity);
     }
-    return this.http.put<any>(`${this.cartApiUrl}/items/${itemId}`, { quantity });
+    const sessionId = this.getOrCreateSessionId();
+    return this.http.put<any>(`${this.cartApiUrl}/items/${itemId}`, { quantity }, {
+      headers: {
+        'X-Session-Id': sessionId
+      }
+    });
   }
 
   removeItem(itemId: number): Observable<void> {
     if (environment.useMockData) {
       return this.mockService.removeItem(itemId);
     }
-    return this.http.delete<void>(`${this.cartApiUrl}/items/${itemId}`);
+    const sessionId = this.getOrCreateSessionId();
+    return this.http.delete<void>(`${this.cartApiUrl}/items/${itemId}`, {
+      headers: {
+        'X-Session-Id': sessionId
+      }
+    });
   }
 
   clearCart(storeId: number): Observable<void> {
     if (environment.useMockData) {
       return this.mockService.clearCart(storeId);
     }
-    return this.http.delete<void>(`${this.cartApiUrl}/clear?storeId=${storeId}`);
+    const sessionId = this.getOrCreateSessionId();
+    return this.http.delete<void>(`${this.cartApiUrl}/clear?storeId=${storeId}`, {
+      headers: {
+        'X-Session-Id': sessionId
+      }
+    });
   }
 
   getCartItemCount(storeId: number): Observable<number> {
     if (environment.useMockData) {
       return this.mockService.getCartItemCount(storeId, '');
     }
-    return this.http.get<{count: number}>(`${this.cartApiUrl}/count?storeId=${storeId}`)
+    const sessionId = this.getOrCreateSessionId();
+    return this.http.get<{count: number}>(`${this.cartApiUrl}/count?storeId=${storeId}`, {
+      headers: {
+        'X-Session-Id': sessionId
+      }
+    })
       .pipe(
         map(response => response.count),
         catchError(error => {

@@ -81,7 +81,7 @@
 
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(var(--theme-product-grid-columns, 3), 1fr);
   gap: var(--theme-spacing, 1.5rem);
 }
 
@@ -160,4 +160,3 @@
     gap: 1rem;
   }
 }
-

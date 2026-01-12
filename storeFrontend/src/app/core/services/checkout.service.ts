@@ -67,7 +67,22 @@ export class CheckoutService {
     if (environment.useMockData) {
       return this.mockService.checkout(request);
     }
-    return this.http.post<CheckoutResponse>(`${environment.publicApiUrl}/orders/checkout`, request);
+
+    console.log('🛍️ Checkout-Request:', {
+      sessionId: request.sessionId,
+      storeId: request.storeId,
+      email: request.customerEmail
+    });
+
+    return this.http.post<CheckoutResponse>(
+      `${environment.publicApiUrl}/orders/checkout`,
+      request,
+      {
+        headers: {
+          'X-Session-Id': request.sessionId
+        }
+      }
+    );
   }
 
   getOrderByNumber(orderNumber: string, email: string): Observable<OrderDetails> {
@@ -79,4 +94,3 @@ export class CheckoutService {
     );
   }
 }
-
