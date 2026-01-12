@@ -619,7 +619,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-ayyy    // Unterstütze beide Route-Formate:
+   // Unterstütze beide Route-Formate:
     // /stores/:id/products/new und /dashboard/stores/:id/products/new
     const idParam = this.route.snapshot.paramMap.get('id');
     const storeIdParam = this.route.snapshot.paramMap.get('storeId');
