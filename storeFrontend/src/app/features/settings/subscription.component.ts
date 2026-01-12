@@ -57,8 +57,13 @@ export class SubscriptionComponent implements OnInit {
           console.error('Fehler beim Laden der Subscription:', error);
           this.loadingSubscription = false;
           // Kein Fehler anzeigen - Benutzer hat möglicherweise noch keine Subscription
+          // Automatisch FREE-Plan vorauswählen
+          this.autoSelectFreePlan();
         }
       });
+    } else {
+      // Auch wenn kein User eingeloggt ist, FREE-Plan vorauswählen
+      this.autoSelectFreePlan();
     }
   }
 
@@ -70,11 +75,58 @@ export class SubscriptionComponent implements OnInit {
         this.availablePlans = plans;
         this.loadingPlans = false;
         console.log('Verfügbare Pläne geladen:', plans);
+        // Wenn keine Subscription vorhanden, FREE-Plan vorauswählen
+        if (!this.currentSubscription && !this.selectedPlan) {
+          this.autoSelectFreePlan();
+        }
       },
       error: (error) => {
         console.error('Fehler beim Laden der Pläne:', error);
         this.plansError = 'Die Pläne konnten nicht geladen werden. Bitte versuchen Sie es später erneut.';
         this.loadingPlans = false;
+      }
+    });
+  }
+
+  private autoSelectFreePlan(): void {
+    // Finde den FREE-Plan in den verfügbaren Plänen
+    const freePlan = this.availablePlans.find(p => p.plan === Plan.FREE);
+    if (freePlan && !this.currentSubscription) {
+      console.log('🎁 FREE-Plan automatisch vorausgewählt');
+      this.selectedPlan = freePlan;
+      // Automatisch aktivieren ohne Modal für FREE-Plan
+      this.autoActivateFreePlan();
+    }
+  }
+
+  private autoActivateFreePlan(): void {
+    const user = this.authService.getCurrentUser();
+    if (!user || this.currentSubscription) {
+      return; // Nur aktivieren wenn User eingeloggt und keine Subscription vorhanden
+    }
+
+    const freePlan = this.availablePlans.find(p => p.plan === Plan.FREE);
+    if (!freePlan) {
+      return;
+    }
+
+    console.log('🎁 FREE-Plan wird automatisch aktiviert...');
+
+    const request: UpgradeRequest = {
+      userId: user.id,
+      targetPlan: Plan.FREE,
+      billingCycle: 'MONTHLY',
+      paymentMethod: PaymentMethod.BANK_TRANSFER // Dummy, wird nicht gebraucht für FREE
+    };
+
+    this.subscriptionService.subscribeToPlan(request).subscribe({
+      next: (paymentIntent) => {
+        console.log('✅ FREE-Plan erfolgreich aktiviert');
+        this.loadCurrentSubscription();
+      },
+      error: (error) => {
+        console.error('Fehler beim Aktivieren des FREE-Plans:', error);
+        // Fehler nicht anzeigen, Benutzer kann manuell wählen
       }
     });
   }
