@@ -36,7 +36,9 @@
     "customers": "Kunden",
     "media": "Medien",
     "settings": "Einstellungen",
-    "profile": "Profil"
+    "profile": "Profil",
+    "backToDashboard": "Zurück zum Dashboard",
+    "store": "Shop"
   },
   "auth": {
     "email": "E-Mail",
@@ -258,4 +260,3 @@
     "stores": "Shops werden geladen..."
   }
 }
-
