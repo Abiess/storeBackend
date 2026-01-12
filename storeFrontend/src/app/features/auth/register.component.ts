@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
@@ -123,7 +123,8 @@ export class RegisterComponent {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {
     this.registerForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -141,7 +142,10 @@ export class RegisterComponent {
         next: () => {
           this.successMessage = 'Registrierung erfolgreich! Sie werden weitergeleitet...';
           setTimeout(() => {
-            this.router.navigate(['/dashboard']);
+            // FIXED: Prüfe auf returnUrl und leite zurück zum Shop (nicht Dashboard!)
+            const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
+            console.log('🔄 Weiterleitung nach Registrierung zu:', returnUrl);
+            this.router.navigate([returnUrl]);
           }, 1500);
         },
         error: (error) => {
@@ -152,4 +156,3 @@ export class RegisterComponent {
     }
   }
 }
-

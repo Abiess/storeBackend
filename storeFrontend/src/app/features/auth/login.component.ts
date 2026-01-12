@@ -125,6 +125,7 @@ export class LoginComponent implements OnInit {
   loginForm: FormGroup;
   loading = false;
   errorMessage = '';
+  returnUrl = '/dashboard';
 
   constructor(
     private fb: FormBuilder,
@@ -139,6 +140,9 @@ export class LoginComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Speichere returnUrl für Template-Verwendung
+    this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
+
     // Prüfe auf Fehlerparameter in der URL
     this.route.queryParams.subscribe(params => {
       if (params['error'] === 'session_expired') {
@@ -157,8 +161,8 @@ export class LoginComponent implements OnInit {
       this.authService.login(this.loginForm.value).subscribe({
         next: () => {
           // Prüfe auf returnUrl und leite dorthin weiter
-          const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
-          this.router.navigate([returnUrl]);
+          console.log('🔄 Weiterleitung nach Login zu:', this.returnUrl);
+          this.router.navigate([this.returnUrl]);
         },
         error: (error) => {
           this.loading = false;
