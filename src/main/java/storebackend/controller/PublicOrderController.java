@@ -10,7 +10,6 @@ import storebackend.repository.CartItemRepository;
 import storebackend.repository.CartRepository;
 import storebackend.service.OrderService;
 
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +22,8 @@ public class PublicOrderController {
     private final OrderService orderService;
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
-    private final storebackend.repository.UserRepository userRepository; // FIXED: UserRepository hinzufügen
+    private final storebackend.repository.UserRepository userRepository;
+    private final storebackend.security.JwtUtil jwtUtil; // FIXED: JwtUtil für Token-Parsing
 
     @PostMapping("/checkout")
     public ResponseEntity<Map<String, Object>> checkout(
@@ -39,9 +39,22 @@ public class PublicOrderController {
 
             String token = authHeader.substring(7);
             Long userId;
+            String email;
 
             try {
-                userId = extractUserIdFromToken(token);
+                // FIXED: Nutze JwtUtil statt manuelles Parsing
+                userId = jwtUtil.extractUserId(token);
+                email = jwtUtil.extractEmail(token);
+
+                // FIXED: Validiere Token
+                if (!jwtUtil.validateToken(token, email)) {
+                    log.error("Token validation failed for email: {}", email);
+                    return ResponseEntity.status(401).body(Map.of(
+                        "error", "Invalid or expired token. Please login again."
+                    ));
+                }
+
+                log.info("✅ Token validated successfully for userId: {}, email: {}", userId, email);
             } catch (Exception e) {
                 log.error("Invalid token during checkout: {}", e.getMessage());
                 return ResponseEntity.status(401).body(Map.of(
@@ -171,27 +184,5 @@ public class PublicOrderController {
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
-    }
-
-    /**
-     * Extrahiert UserId aus JWT Token
-     */
-    private Long extractUserIdFromToken(String token) {
-        try {
-            // Parse JWT Token (Base64 decode des Payload)
-            String[] parts = token.split("\\.");
-            if (parts.length >= 2) {
-                String payload = new String(Base64.getDecoder().decode(parts[1]));
-                // Extrahiere userId aus JSON
-                // {"sub":"123","email":"user@test.de",...}
-                if (payload.contains("\"sub\":\"")) {
-                    String userIdStr = payload.split("\"sub\":\"")[1].split("\"")[0];
-                    return Long.parseLong(userIdStr);
-                }
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Could not extract userId from token: " + e.getMessage());
-        }
-        throw new RuntimeException("Invalid token format");
     }
 }
