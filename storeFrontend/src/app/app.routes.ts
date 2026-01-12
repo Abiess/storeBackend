@@ -2,29 +2,6 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
-  // Root-Route lädt abhängig von Subdomain entweder Storefront oder Landing
-  {
-    path: '',
-    loadComponent: () => {
-      // Prüfe ob Subdomain
-      const hostname = window.location.hostname;
-      const isSubdomain = hostname.endsWith('.markt.ma') &&
-                         hostname !== 'markt.ma' &&
-                         hostname !== 'www.markt.ma' &&
-                         hostname !== 'api.markt.ma';
-
-      console.log('🌐 Routing - Hostname:', hostname, 'isSubdomain:', isSubdomain);
-
-      if (isSubdomain) {
-        // Lade Storefront für Subdomains (ÖFFENTLICH)
-        return import('./features/storefront/storefront-landing.component').then(m => m.StorefrontLandingComponent);
-      } else {
-        // Lade normale Landing Page für markt.ma
-        return import('./features/landing/landing.component').then(m => m.LandingComponent);
-      }
-    }
-  },
-
   // ==================== Auth Routes ====================
   {
     path: 'login',
@@ -59,13 +36,62 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
 
-  // ==================== Store Management Routes ====================
-  // Format: /stores/:id/...
+  // ==================== Product Management ====================
+  // WICHTIG: Spezifische Routen (mit /new) müssen VOR allgemeinen Routen stehen!
   {
-    path: 'stores/:id',
-    loadComponent: () => import('./features/stores/store-detail.component').then(m => m.StoreDetailComponent),
+    path: 'stores/:id/products/new',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:id/products/new');
+      return import('./features/products/product-form.component').then(m => m.ProductFormComponent);
+    },
     canActivate: [authGuard]
   },
+  {
+    path: 'stores/:id/products/:productId/edit',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:id/products/:productId/edit');
+      return import('./features/products/product-form.component').then(m => m.ProductFormComponent);
+    },
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/products',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:id/products');
+      return import('./features/products/product-list.component').then(m => m.ProductListComponent);
+    },
+    canActivate: [authGuard]
+  },
+
+  // ==================== Category Management ====================
+  // WICHTIG: Spezifische Routen (mit /new) müssen VOR allgemeinen Routen stehen!
+  {
+    path: 'stores/:id/categories/new',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:id/categories/new');
+      return import('./features/products/category-form.component').then(m => m.CategoryFormComponent);
+    },
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/categories/:categoryId/edit',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:id/categories/:categoryId/edit');
+      return import('./features/products/category-form.component').then(m => m.CategoryFormComponent);
+    },
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/categories',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:id/categories');
+      return import('./features/products/category-list.component').then(m => m.CategoryListComponent);
+    },
+    canActivate: [authGuard]
+  },
+
+  // ==================== Store Management Routes ====================
+  // Format: /stores/:id/...
   {
     path: 'stores/:id/settings',
     loadComponent: () => import('./features/stores/store-settings.component').then(m => m.StoreSettingsComponent),
@@ -81,45 +107,13 @@ export const routes: Routes = [
     loadComponent: () => import('./features/stores/store-theme.component').then(m => m.StoreThemeComponent),
     canActivate: [authGuard]
   },
-
-  // ==================== Product Management ====================
-  // WICHTIG: Spezifische Routen (mit /new) müssen VOR allgemeinen Routen stehen!
   {
-    path: 'stores/:id/products/new',
-    loadComponent: () => import('./features/products/product-form.component').then(m => m.ProductFormComponent),
-    canActivate: [authGuard]
-  },
-  {
-    path: 'stores/:id/products/:productId/edit',
-    loadComponent: () => import('./features/products/product-form.component').then(m => m.ProductFormComponent),
-    canActivate: [authGuard]
-  },
-  {
-    path: 'stores/:id/products',
-    loadComponent: () => import('./features/products/product-list.component').then(m => m.ProductListComponent),
-    canActivate: [authGuard]
-  },
-
-  // ==================== Category Management ====================
-  // WICHTIG: Spezifische Routen (mit /new) müssen VOR allgemeinen Routen stehen!
-  {
-    path: 'stores/:id/categories/new',
-    loadComponent: () => import('./features/products/category-form.component').then(m => m.CategoryFormComponent),
-    canActivate: [authGuard]
-  },
-  {
-    path: 'stores/:id/categories/:categoryId/edit',
-    loadComponent: () => import('./features/products/category-form.component').then(m => m.CategoryFormComponent),
-    canActivate: [authGuard]
-  },
-  {
-    path: 'stores/:id/categories',
-    loadComponent: () => import('./features/products/category-list.component').then(m => m.CategoryListComponent),
+    path: 'stores/:id',
+    loadComponent: () => import('./features/stores/store-detail.component').then(m => m.StoreDetailComponent),
     canActivate: [authGuard]
   },
 
   // ==================== Coupon Management ====================
-  // WICHTIG: Spezifische Routen müssen VOR allgemeinen Routen stehen!
   {
     path: 'stores/:id/coupons/:couponId',
     loadComponent: () => import('./features/coupons/coupon-editor/coupon-editor.component').then(m => m.CouponEditorComponent),
@@ -185,6 +179,27 @@ export const routes: Routes = [
     loadComponent: () => import('./features/testing/test-dashboard.component').then(m => m.TestDashboardComponent)
   },
 
+  // ==================== Root Route ====================
+  // MUSS am Ende stehen, sonst matched es alles!
+  {
+    path: '',
+    loadComponent: () => {
+      const hostname = window.location.hostname;
+      const isSubdomain = hostname.endsWith('.markt.ma') &&
+                         hostname !== 'markt.ma' &&
+                         hostname !== 'www.markt.ma' &&
+                         hostname !== 'api.markt.ma';
+
+      console.log('🌐 Root Route - Hostname:', hostname, 'isSubdomain:', isSubdomain);
+
+      if (isSubdomain) {
+        return import('./features/storefront/storefront-landing.component').then(m => m.StorefrontLandingComponent);
+      } else {
+        return import('./features/landing/landing.component').then(m => m.LandingComponent);
+      }
+    }
+  },
+
   // ==================== Legacy/Deprecated Routes (Redirects) ====================
   {
     path: 'storefront/:id',
@@ -202,18 +217,17 @@ export const routes: Routes = [
     path: '**',
     loadComponent: () => {
       const hostname = window.location.hostname;
+      const path = window.location.pathname;
       const isSubdomain = hostname.endsWith('.markt.ma') &&
                          hostname !== 'markt.ma' &&
                          hostname !== 'www.markt.ma' &&
                          hostname !== 'api.markt.ma';
 
-      console.log('🌐 Wildcard Route (404) - Hostname:', hostname, 'isSubdomain:', isSubdomain);
+      console.log('❌ Wildcard Route (404) - Path:', path, 'Hostname:', hostname, 'isSubdomain:', isSubdomain);
 
       if (isSubdomain) {
-        // Für Subdomains: Lade Storefront (öffentlich)
         return import('./features/storefront/storefront-landing.component').then(m => m.StorefrontLandingComponent);
       } else {
-        // Für markt.ma: 404 Page oder Landing Page
         return import('./features/landing/landing.component').then(m => m.LandingComponent);
       }
     }
