@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import storebackend.dto.CreateStoreRequest;
+import storebackend.dto.UpdateStoreRequest;
 import storebackend.dto.StoreDTO;
 import storebackend.entity.Store;
 import storebackend.entity.User;
@@ -76,7 +77,7 @@ class StoreManagementController {
     @PutMapping("/{storeId}")
     public ResponseEntity<StoreDTO> updateStore(
             @PathVariable Long storeId,
-            @Valid @RequestBody CreateStoreRequest request,
+            @Valid @RequestBody UpdateStoreRequest request,
             @AuthenticationPrincipal User user) {
         return ResponseEntity.ok(storeService.updateStore(storeId, request, user));
     }

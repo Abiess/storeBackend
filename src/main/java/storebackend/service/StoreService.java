@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import storebackend.config.SaasProperties;
 import storebackend.dto.CreateStoreRequest;
+import storebackend.dto.UpdateStoreRequest;
 import storebackend.dto.StoreDTO;
 import storebackend.entity.Domain;
 import storebackend.entity.Store;
@@ -132,7 +133,7 @@ public class StoreService {
     }
 
     @Transactional
-    public StoreDTO updateStore(Long storeId, CreateStoreRequest request, User user) {
+    public StoreDTO updateStore(Long storeId, UpdateStoreRequest request, User user) {
         Store store = storeRepository.findByIdWithOwner(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
 
@@ -144,6 +145,21 @@ public class StoreService {
         // Update name if provided
         if (request.getName() != null && !request.getName().isEmpty()) {
             store.setName(request.getName());
+        }
+
+        // Update slug if provided (optional beim Update)
+        if (request.getSlug() != null && !request.getSlug().isEmpty()) {
+            // Prüfe ob der neue Slug bereits von einem anderen Store verwendet wird
+            if (!store.getSlug().equals(request.getSlug()) && storeRepository.existsBySlug(request.getSlug())) {
+                throw new RuntimeException("Slug already exists");
+            }
+
+            // Validiere Slug Format
+            if (!request.getSlug().matches("^[a-z0-9-]+$")) {
+                throw new RuntimeException("Slug can only contain lowercase letters, numbers and hyphens");
+            }
+
+            store.setSlug(request.getSlug());
         }
 
         // Update description if provided

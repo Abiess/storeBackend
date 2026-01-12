@@ -24,11 +24,8 @@ export const routes: Routes = [
       }
     }
   },
-  // Explizite Route für Storefront Landing (falls direkt aufgerufen)
-  {
-    path: 'storefront-landing',
-    loadComponent: () => import('./features/storefront/storefront-landing.component').then(m => m.StorefrontLandingComponent)
-  },
+
+  // ==================== Auth Routes ====================
   {
     path: 'login',
     loadComponent: () => import('./features/auth/login.component').then(m => m.LoginComponent)
@@ -37,16 +34,15 @@ export const routes: Routes = [
     path: 'register',
     loadComponent: () => import('./features/auth/register.component').then(m => m.RegisterComponent)
   },
+
+  // ==================== Dashboard ====================
   {
     path: 'dashboard',
     loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent),
     canActivate: [authGuard]
   },
-  {
-    path: 'dashboard/stores/:storeId',
-    loadComponent: () => import('./features/stores/store-detail.component').then(m => m.StoreDetailComponent),
-    canActivate: [authGuard]
-  },
+
+  // ==================== User Settings ====================
   {
     path: 'settings',
     loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent),
@@ -57,6 +53,14 @@ export const routes: Routes = [
     loadComponent: () => import('./features/settings/subscription.component').then(m => m.SubscriptionComponent),
     canActivate: [authGuard]
   },
+  {
+    path: 'role-management',
+    loadComponent: () => import('./features/settings/role-management.component').then(m => m.RoleManagementComponent),
+    canActivate: [authGuard]
+  },
+
+  // ==================== Store Management Routes ====================
+  // Format: /stores/:id/...
   {
     path: 'stores/:id',
     loadComponent: () => import('./features/stores/store-detail.component').then(m => m.StoreDetailComponent),
@@ -77,97 +81,80 @@ export const routes: Routes = [
     loadComponent: () => import('./features/stores/store-theme.component').then(m => m.StoreThemeComponent),
     canActivate: [authGuard]
   },
+
+  // ==================== Product Management ====================
   {
-    path: 'dashboard/stores/:storeId/products',
+    path: 'stores/:id/products',
     loadComponent: () => import('./features/products/product-list.component').then(m => m.ProductListComponent),
     canActivate: [authGuard]
   },
   {
-    path: 'dashboard/stores/:storeId/products/new',
+    path: 'stores/:id/products/new',
     loadComponent: () => import('./features/products/product-form.component').then(m => m.ProductFormComponent),
     canActivate: [authGuard]
   },
   {
-    path: 'dashboard/stores/:storeId/products/:id/edit',
+    path: 'stores/:id/products/:productId/edit',
     loadComponent: () => import('./features/products/product-form.component').then(m => m.ProductFormComponent),
     canActivate: [authGuard]
   },
+
+  // ==================== Category Management ====================
   {
-    path: 'dashboard/stores/:storeId/categories',
+    path: 'stores/:id/categories',
     loadComponent: () => import('./features/products/category-list.component').then(m => m.CategoryListComponent),
     canActivate: [authGuard]
   },
   {
-    path: 'dashboard/stores/:storeId/categories/new',
+    path: 'stores/:id/categories/new',
     loadComponent: () => import('./features/products/category-form.component').then(m => m.CategoryFormComponent),
     canActivate: [authGuard]
   },
   {
-    path: 'dashboard/stores/:storeId/categories/:id/edit',
+    path: 'stores/:id/categories/:categoryId/edit',
     loadComponent: () => import('./features/products/category-form.component').then(m => m.CategoryFormComponent),
     canActivate: [authGuard]
   },
+
+  // ==================== Coupon Management ====================
   {
-    path: 'stores/:storeId/theme',
-    loadComponent: () => import('./features/settings/theme-customizer.component').then(m => m.ThemeCustomizerComponent),
-    canActivate: [authGuard]
-  },
-  // SEO Management Routes
-  {
-    path: 'admin/store/:storeId/seo',
-    loadComponent: () => import('./features/settings/seo-settings-page/seo-settings-page.component').then(m => m.SeoSettingsPageComponent),
-    //canActivate: [authGuard]
-  },
-  // Brand Kit Generator Route
-  {
-    path: 'admin/store/:storeId/brand',
-    loadComponent: () => import('./features/settings/brand-onboarding/brand-onboarding.component').then(m => m.BrandOnboardingComponent),
-    canActivate: [authGuard]
-  },
-  {
-    path: 'admin/store/:storeId/seo/redirects',
-    loadComponent: () => import('./features/settings/redirects-page/redirects-page.component').then(m => m.RedirectsPageComponent),
-    canActivate: [authGuard]
-  },
-  {
-    path: 'admin/store/:storeId/seo/structured-data',
-    loadComponent: () => import('./features/settings/structured-data-page/structured-data-page.component').then(m => m.StructuredDataPageComponent),
-    canActivate: [authGuard]
-  },
-  // Coupon Management Routes
-  {
-    path: 'dashboard/:storeId/coupons',
+    path: 'stores/:id/coupons',
     loadComponent: () => import('./features/coupons/coupons-list/coupons-list.component').then(m => m.CouponsListComponent),
     canActivate: [authGuard]
   },
   {
-    path: 'dashboard/:storeId/coupons/:id',
+    path: 'stores/:id/coupons/:couponId',
     loadComponent: () => import('./features/coupons/coupon-editor/coupon-editor.component').then(m => m.CouponEditorComponent),
     canActivate: [authGuard]
   },
-  {
-    path: 'coupon-demo',
-    loadComponent: () => import('./features/coupons/coupon-demo/coupon-demo.component').then(m => m.CouponDemoComponent)
-  },
-  {
-    path: 'checkout-demo',
-    loadComponent: () => import('./features/coupons/checkout-demo/checkout-demo.component').then(m => m.CheckoutDemoComponent)
-  },
-  // Alte Storefront-Routen entfernt - nur noch Subdomain-Zugriff!
-  // Benutzer sollten slug.markt.ma verwenden, nicht markt.ma/storefront/id
 
-  // Fallback für alte Links - Redirect zur Subdomain
+  // ==================== SEO & Brand Management ====================
   {
-    path: 'storefront/:id',
-    redirectTo: '/',
-    pathMatch: 'full'
+    path: 'stores/:id/seo',
+    loadComponent: () => import('./features/settings/seo-settings-page/seo-settings-page.component').then(m => m.SeoSettingsPageComponent),
+    canActivate: [authGuard]
   },
   {
-    path: 'frontend/:id',
-    redirectTo: '/',
-    pathMatch: 'full'
+    path: 'stores/:id/seo/redirects',
+    loadComponent: () => import('./features/settings/redirects-page/redirects-page.component').then(m => m.RedirectsPageComponent),
+    canActivate: [authGuard]
   },
-  // Warenkorb und Checkout bleiben öffentlich zugänglich
+  {
+    path: 'stores/:id/seo/structured-data',
+    loadComponent: () => import('./features/settings/structured-data-page/structured-data-page.component').then(m => m.StructuredDataPageComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/brand',
+    loadComponent: () => import('./features/settings/brand-onboarding/brand-onboarding.component').then(m => m.BrandOnboardingComponent),
+    canActivate: [authGuard]
+  },
+
+  // ==================== Public Storefront Routes ====================
+  {
+    path: 'storefront-landing',
+    loadComponent: () => import('./features/storefront/storefront-landing.component').then(m => m.StorefrontLandingComponent)
+  },
   {
     path: 'cart',
     loadComponent: () => import('./features/storefront/cart.component').then(m => m.CartComponent)
@@ -180,15 +167,34 @@ export const routes: Routes = [
     path: 'order-confirmation',
     loadComponent: () => import('./features/storefront/order-confirmation.component').then(m => m.OrderConfirmationComponent)
   },
+
+  // ==================== Demo Routes ====================
+  {
+    path: 'coupon-demo',
+    loadComponent: () => import('./features/coupons/coupon-demo/coupon-demo.component').then(m => m.CouponDemoComponent)
+  },
+  {
+    path: 'checkout-demo',
+    loadComponent: () => import('./features/coupons/checkout-demo/checkout-demo.component').then(m => m.CheckoutDemoComponent)
+  },
   {
     path: 'test-dashboard',
     loadComponent: () => import('./features/testing/test-dashboard.component').then(m => m.TestDashboardComponent)
   },
+
+  // ==================== Legacy/Deprecated Routes (Redirects) ====================
   {
-    path: 'role-management',
-    loadComponent: () => import('./features/settings/role-management.component').then(m => m.RoleManagementComponent)
+    path: 'storefront/:id',
+    redirectTo: '/',
+    pathMatch: 'full'
   },
-  // Wildcard Route - unterschiedliche Behandlung für Subdomains
+  {
+    path: 'frontend/:id',
+    redirectTo: '/',
+    pathMatch: 'full'
+  },
+
+  // ==================== Wildcard (404) ====================
   {
     path: '**',
     loadComponent: () => {
@@ -198,13 +204,13 @@ export const routes: Routes = [
                          hostname !== 'www.markt.ma' &&
                          hostname !== 'api.markt.ma';
 
-      console.log('🌐 Wildcard Route - Hostname:', hostname, 'isSubdomain:', isSubdomain);
+      console.log('🌐 Wildcard Route (404) - Hostname:', hostname, 'isSubdomain:', isSubdomain);
 
       if (isSubdomain) {
         // Für Subdomains: Lade Storefront (öffentlich)
         return import('./features/storefront/storefront-landing.component').then(m => m.StorefrontLandingComponent);
       } else {
-        // Für markt.ma: Weiterleitung zum Dashboard würde Auth benötigen, also zur Landing Page
+        // Für markt.ma: 404 Page oder Landing Page
         return import('./features/landing/landing.component').then(m => m.LandingComponent);
       }
     }
