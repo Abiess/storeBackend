@@ -79,11 +79,13 @@ export class CartService {
 
   /**
    * Zeigt Login-Dialog und leitet zur Login-Seite
+   * FIXED: Speichert die aktuelle URL für Rückkehr nach Login/Registrierung
    */
   private requireAuth(): void {
-    console.log('🔐 Authentifizierung erforderlich - Weiterleitung zum Login');
+    const currentUrl = this.router.url;
+    console.log('🔐 Authentifizierung erforderlich - Weiterleitung zum Login von:', currentUrl);
     this.router.navigate(['/login'], {
-      queryParams: { returnUrl: this.router.url }
+      queryParams: { returnUrl: currentUrl }
     });
   }
 

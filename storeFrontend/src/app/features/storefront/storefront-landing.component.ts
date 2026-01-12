@@ -193,9 +193,16 @@ export class StorefrontLandingComponent implements OnInit {
       return;
     }
 
-    // FIXED: Besseres Logging und Fehlerbehandlung
-    console.log('🛒 Füge Produkt zum Warenkorb hinzu:', product.title || product.name);
-    console.log('📋 Produkt-Details:', { id: product.id, storeId: this.storeId });
+    // FIXED: Robusteres Logging - verwende alle verfügbaren Felder
+    const productName = product.title || product.name || product.description || `Produkt ${product.id}`;
+    console.log('🛒 Füge Produkt zum Warenkorb hinzu:', productName);
+    console.log('📋 Produkt-Details:', {
+      id: product.id,
+      storeId: this.storeId,
+      title: product.title,
+      name: product.name,
+      fullProduct: product
+    });
 
     this.cartService.addItem({
       storeId: this.storeId,
@@ -204,13 +211,11 @@ export class StorefrontLandingComponent implements OnInit {
     }).subscribe({
       next: (response) => {
         console.log('✅ Produkt erfolgreich hinzugefügt:', response);
-        this.loadCartCount();  // Count aktualisieren
-        // Zeige Erfolgs-Nachricht (optional)
-        alert('✅ Produkt wurde zum Warenkorb hinzugefügt!');
+        this.loadCartCount();
+        alert(`✅ ${productName} wurde zum Warenkorb hinzugefügt!`);
       },
       error: (error) => {
         console.error('❌ Fehler beim Hinzufügen zum Warenkorb:', error);
-        // Benutzer wird automatisch zum Login weitergeleitet (via CartService)
       }
     });
   }

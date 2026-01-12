@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -56,7 +56,7 @@ import { AuthService } from '../../core/services/auth.service';
         </form>
 
         <p class="auth-footer">
-          Bereits ein Konto? <a routerLink="/login">Jetzt anmelden</a>
+          Bereits ein Konto? <a [routerLink]="['/login']" [queryParams]="{ returnUrl: returnUrl }">Jetzt anmelden</a>
         </p>
       </div>
     </div>
@@ -114,11 +114,12 @@ import { AuthService } from '../../core/services/auth.service';
     }
   `]
 })
-export class RegisterComponent {
+export class RegisterComponent implements OnInit {
   registerForm: FormGroup;
   loading = false;
   errorMessage = '';
   successMessage = '';
+  returnUrl = '/dashboard';
 
   constructor(
     private fb: FormBuilder,
@@ -132,6 +133,11 @@ export class RegisterComponent {
     });
   }
 
+  ngOnInit(): void {
+    // FIXED: Speichere returnUrl für Template-Verwendung
+    this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
+  }
+
   onSubmit(): void {
     if (this.registerForm.valid) {
       this.loading = true;
@@ -142,10 +148,9 @@ export class RegisterComponent {
         next: () => {
           this.successMessage = 'Registrierung erfolgreich! Sie werden weitergeleitet...';
           setTimeout(() => {
-            // FIXED: Prüfe auf returnUrl und leite zurück zum Shop (nicht Dashboard!)
-            const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
-            console.log('🔄 Weiterleitung nach Registrierung zu:', returnUrl);
-            this.router.navigate([returnUrl]);
+            // FIXED: Nutze gespeicherte returnUrl
+            console.log('🔄 Weiterleitung nach Registrierung zu:', this.returnUrl);
+            this.router.navigate([this.returnUrl]);
           }, 1500);
         },
         error: (error) => {

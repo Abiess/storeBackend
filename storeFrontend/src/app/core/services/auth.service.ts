@@ -55,8 +55,8 @@ export class AuthService {
     return this.http.post<AuthResponse>(`${environment.apiUrl}/auth/login`, credentials)
       .pipe(
         tap(response => {
-          // Store token and user
-          localStorage.setItem('authToken', response.token);
+          // Store token and user - FIXED: use 'auth_token' everywhere
+          localStorage.setItem('auth_token', response.token);
           localStorage.setItem('currentUser', JSON.stringify(response.user));
           this.currentUserSubject.next(response.user);
         })
@@ -67,8 +67,8 @@ export class AuthService {
     return this.http.post<AuthResponse>(`${environment.apiUrl}/auth/register`, data)
       .pipe(
         tap(response => {
-          // Store token and user after successful registration
-          localStorage.setItem('authToken', response.token);
+          // Store token and user after successful registration - FIXED: use 'auth_token' everywhere
+          localStorage.setItem('auth_token', response.token);
           localStorage.setItem('currentUser', JSON.stringify(response.user));
           this.currentUserSubject.next(response.user);
         })
@@ -76,7 +76,7 @@ export class AuthService {
   }
 
   logout(): void {
-    localStorage.removeItem('authToken');
+    localStorage.removeItem('auth_token');
     localStorage.removeItem('currentUser');
     this.currentUserSubject.next(null);
   }
@@ -86,7 +86,7 @@ export class AuthService {
   }
 
   getToken(): string | null {
-    return localStorage.getItem('authToken');
+    return localStorage.getItem('auth_token');
   }
 
   getCurrentUser(): User | null {
