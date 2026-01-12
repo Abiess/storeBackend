@@ -31,7 +31,6 @@ export class StorefrontComponent implements OnInit {
   selectedCategory: Category | null = null;
   loading = true;
   cartItemCount = 0;
-  sessionId = '';
   addingToCart = false;
   readonly ProductStatus = ProductStatus;
 
@@ -54,9 +53,8 @@ export class StorefrontComponent implements OnInit {
       this.storeId = 1; // Fallback
     }
 
-    // Verwende store-spezifische Session-ID
-    this.sessionId = this.cartService.getOrCreateStoreSessionId(this.storeId);
-    console.log(`🛒 Session-ID für Store ${this.storeId}: ${this.sessionId}`);
+    // FIXED: Keine Session-ID mehr - JWT-basierte Authentifizierung
+    console.log(`🛒 Store ${this.storeId} - JWT-basierte Authentifizierung aktiv`);
 
     this.loadTheme();
     this.loadStoreData();
@@ -123,9 +121,16 @@ export class StorefrontComponent implements OnInit {
   }
 
   loadCartCount(): void {
-    this.cartService.getCart(this.sessionId).subscribe({
-      next: (cart) => { this.cartItemCount = cart.itemCount; },
-      error: (error) => { console.error('Fehler beim Laden des Warenkorbs:', error); }
+    // FIXED: Verwende storeId statt sessionId
+    this.cartService.getCart(this.storeId).subscribe({
+      next: (cart) => {
+        this.cartItemCount = cart.itemCount;
+        console.log('✅ Warenkorb geladen:', cart.itemCount, 'Artikel');
+      },
+      error: (error) => {
+        console.error('Fehler beim Laden des Warenkorbs:', error);
+        this.cartItemCount = 0;
+      }
     });
   }
 
@@ -147,13 +152,12 @@ export class StorefrontComponent implements OnInit {
   }
 
   addToCart(product: Product): void {
-    // Vereinfachte Logik: Direkt mit Produkt arbeiten, ohne Varianten
+    // FIXED: Kein sessionId mehr nötig
     this.addingToCart = true;
 
     this.cartService.addItem({
-      sessionId: this.sessionId,
       storeId: this.storeId,
-      productId: product.id, // Direkt Produkt-ID verwenden
+      productId: product.id,
       quantity: 1
     }).subscribe({
       next: () => {

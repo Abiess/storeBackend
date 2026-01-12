@@ -1,32 +1,72 @@
 package storebackend.controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import storebackend.entity.CartItem;
 import storebackend.entity.Order;
+import storebackend.repository.CartItemRepository;
 import storebackend.repository.CartRepository;
 import storebackend.service.OrderService;
 
+import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/public/orders")
 @RequiredArgsConstructor
+@Slf4j
 public class PublicOrderController {
     private final OrderService orderService;
     private final CartRepository cartRepository;
+    private final CartItemRepository cartItemRepository;
 
     @PostMapping("/checkout")
-    public ResponseEntity<Map<String, Object>> checkout(@RequestBody Map<String, Object> request) {
+    public ResponseEntity<Map<String, Object>> checkout(
+            @RequestBody Map<String, Object> request,
+            @RequestHeader(value = "Authorization", required = true) String authHeader) {
         try {
-            String sessionId = (String) request.get("sessionId");
+            // Extrahiere UserId aus JWT Token
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body(Map.of(
+                    "error", "Authentication required for checkout. Please login."
+                ));
+            }
+
+            String token = authHeader.substring(7);
+            Long userId;
+
+            try {
+                userId = extractUserIdFromToken(token);
+            } catch (Exception e) {
+                log.error("Invalid token during checkout: {}", e.getMessage());
+                return ResponseEntity.status(401).body(Map.of(
+                    "error", "Invalid or expired token. Please login again."
+                ));
+            }
+
             Long storeId = Long.valueOf(request.get("storeId").toString());
             String customerEmail = (String) request.get("customerEmail");
 
-            // Get cart
-            var cart = cartRepository.findBySessionId(sessionId)
-                    .orElseThrow(() -> new RuntimeException("Cart not found"));
+            log.info("🛍️ Checkout - userId: {}, storeId: {}, email: {}", userId, storeId, customerEmail);
+
+            // FIXED: Nutze findByUserId statt findBySessionId für angemeldete Benutzer
+            var cart = cartRepository.findByUserId(userId)
+                    .orElseThrow(() -> new RuntimeException("Cart not found for user. Please add items to cart first."));
+
+            // Verify cart belongs to the correct store
+            if (!cart.getStore().getId().equals(storeId)) {
+                throw new RuntimeException("Cart does not belong to store " + storeId);
+            }
+
+            // Verify cart is not empty
+            List<CartItem> items = cartItemRepository.findByCartId(cart.getId());
+            if (items.isEmpty()) {
+                throw new RuntimeException("Cart is empty. Please add items before checkout.");
+            }
 
             // Extract addresses
             Map<String, String> shippingAddress = (Map<String, String>) request.get("shippingAddress");
@@ -53,19 +93,22 @@ public class PublicOrderController {
                 billingAddress.get("postalCode"),
                 billingAddress.get("country"),
                 notes,
-                null // Guest checkout
+                null // Will be set by OrderService
             );
+
+            log.info("✅ Order created successfully: {} for userId: {}", order.getOrderNumber(), userId);
 
             Map<String, Object> response = new HashMap<>();
             response.put("orderId", order.getId());
             response.put("orderNumber", order.getOrderNumber());
             response.put("status", order.getStatus());
-            response.put("total", order.getTotalAmount()); // Changed from getTotal()
-            response.put("customerEmail", customerEmail); // Use the email from request instead
+            response.put("total", order.getTotalAmount());
+            response.put("customerEmail", customerEmail);
             response.put("message", "Order created successfully");
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
+            log.error("❌ Checkout error: {}", e.getMessage(), e);
             Map<String, Object> error = new HashMap<>();
             error.put("error", e.getMessage());
             return ResponseEntity.badRequest().body(error);
@@ -93,5 +136,27 @@ public class PublicOrderController {
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    /**
+     * Extrahiert UserId aus JWT Token
+     */
+    private Long extractUserIdFromToken(String token) {
+        try {
+            // Parse JWT Token (Base64 decode des Payload)
+            String[] parts = token.split("\\.");
+            if (parts.length >= 2) {
+                String payload = new String(Base64.getDecoder().decode(parts[1]));
+                // Extrahiere userId aus JSON
+                // {"sub":"123","email":"user@test.de",...}
+                if (payload.contains("\"sub\":\"")) {
+                    String userIdStr = payload.split("\"sub\":\"")[1].split("\"")[0];
+                    return Long.parseLong(userIdStr);
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Could not extract userId from token: " + e.getMessage());
+        }
+        throw new RuntimeException("Invalid token format");
     }
 }

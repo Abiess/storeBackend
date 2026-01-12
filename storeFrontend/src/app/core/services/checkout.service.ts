@@ -1,11 +1,12 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
 import { environment } from '@env/environment';
 import { MockCheckoutService } from '../mocks/mock-checkout.service';
+import { Router } from '@angular/router';
+import { catchError } from 'rxjs/operators';
 
 export interface CheckoutRequest {
-  sessionId: string;
   storeId: number;
   customerEmail: string;
   shippingAddress: Address;
@@ -61,15 +62,51 @@ export interface OrderItem {
 export class CheckoutService {
   private mockService = new MockCheckoutService();
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private router: Router
+  ) {}
+
+  /**
+   * Holt den JWT Token aus localStorage
+   */
+  private getAuthToken(): string | null {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      console.warn('⚠️ Kein Auth-Token gefunden - Login erforderlich');
+      return null;
+    }
+    return token;
+  }
+
+  /**
+   * Erstellt HTTP Headers mit Authorization Token
+   */
+  private getAuthHeaders(): HttpHeaders {
+    const token = this.getAuthToken();
+    if (!token) {
+      throw new Error('Authentication required for checkout');
+    }
+    return new HttpHeaders({
+      'Authorization': `Bearer ${token}`
+    });
+  }
 
   checkout(request: CheckoutRequest): Observable<CheckoutResponse> {
     if (environment.useMockData) {
       return this.mockService.checkout(request);
     }
 
+    const token = this.getAuthToken();
+    if (!token) {
+      console.error('❌ Checkout ohne Login nicht möglich');
+      this.router.navigate(['/login'], {
+        queryParams: { returnUrl: '/checkout' }
+      });
+      return throwError(() => new Error('Authentication required'));
+    }
+
     console.log('🛍️ Checkout-Request:', {
-      sessionId: request.sessionId,
       storeId: request.storeId,
       email: request.customerEmail
     });
@@ -78,10 +115,16 @@ export class CheckoutService {
       `${environment.publicApiUrl}/orders/checkout`,
       request,
       {
-        headers: {
-          'X-Session-Id': request.sessionId
-        }
+        headers: this.getAuthHeaders()
       }
+    ).pipe(
+      catchError(error => {
+        if (error.status === 401) {
+          console.error('❌ Token ungültig - Login erforderlich');
+          this.router.navigate(['/login']);
+        }
+        return throwError(() => error);
+      })
     );
   }
 

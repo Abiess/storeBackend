@@ -34,7 +34,6 @@ export class StorefrontLandingComponent implements OnInit {
   categories: Category[] = [];
   loading = true;
   cartItemCount = 0;
-  sessionId = '';
 
   constructor(
     private subdomainService: SubdomainService,
@@ -57,12 +56,10 @@ export class StorefrontLandingComponent implements OnInit {
         if (info.isSubdomain && info.storeId) {
           this.storeId = info.storeId;
           this.storeName = info.storeName || `Store ${info.storeId}`;
-          this.sessionId = this.cartService.getOrCreateSessionId();
 
           console.log('📋 Store Details:', {
             storeId: this.storeId,
-            storeName: this.storeName,
-            sessionId: this.sessionId
+            storeName: this.storeName
           });
 
           // Lade Theme, Produkte und Kategorien
@@ -171,12 +168,12 @@ export class StorefrontLandingComponent implements OnInit {
   }
 
   loadCartCount(): void {
-    if (!this.storeId || !this.sessionId) {
-      console.warn('⚠️ Keine Store-ID oder Session-ID vorhanden, überspringe Cart-Count');
+    if (!this.storeId) {
+      console.warn('⚠️ Keine Store-ID vorhanden, überspringe Cart-Count');
       return;
     }
 
-    console.log('🔄 Lade Warenkorb-Count für Store', this.storeId, 'Session:', this.sessionId);
+    console.log('🔄 Lade Warenkorb-Count für Store', this.storeId);
     this.cartService.getCartItemCount(this.storeId).subscribe({
       next: (count: number) => {
         console.log('✅ Cart Count geladen:', count);

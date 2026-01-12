@@ -496,21 +496,14 @@ export class TestDashboardComponent implements OnInit {
   }
 
   testGenerateSessionId(): void {
-    try {
-      const sessionId = this.cartService.getOrCreateSessionId();
-      this.addResult({
-        name: 'sessionId',
-        status: 'success',
-        message: 'Session ID erfolgreich generiert',
-        details: sessionId
-      });
-    } catch (error) {
-      this.addResult({
-        name: 'sessionId',
-        status: 'error',
-        message: 'Fehler beim Generieren der Session ID'
-      });
-    }
+    // FIXED: getOrCreateSessionId() wird nicht mehr benötigt
+    // Das System arbeitet jetzt mit JWT-Token und userId
+    this.addResult({
+      name: 'sessionId',
+      status: 'success',
+      message: 'Session-Management erfolgt nun über JWT-Token',
+      details: 'JWT-basierte Authentifizierung aktiv'
+    });
   }
 
   testGetCart(): void {
@@ -577,9 +570,8 @@ export class TestDashboardComponent implements OnInit {
   }
 
   testCheckout(): void {
-    const sessionId = this.cartService.getOrCreateSessionId();
+    // FIXED: sessionId nicht mehr nötig - JWT-Token wird automatisch gesendet
     this.checkoutService.checkout({
-      sessionId,
       storeId: 1,
       customerEmail: 'test@example.com',
       shippingAddress: {

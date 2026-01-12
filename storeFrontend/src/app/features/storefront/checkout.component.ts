@@ -496,7 +496,6 @@ export class CheckoutComponent implements OnInit {
   errorMessage = '';
   sameAsShipping = true;
   shipping = 4.99;
-  sessionId = '';
   discountAmount = 0;
   hasFreeShipping = false;
 
@@ -532,7 +531,6 @@ export class CheckoutComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.sessionId = this.cartService.getOrCreateSessionId();
     this.loadCart();
   }
 
@@ -583,8 +581,8 @@ export class CheckoutComponent implements OnInit {
 
     const formValue = this.checkoutForm.value;
 
+    // FIXED: sessionId nicht mehr nötig - JWT-Token wird automatisch im Header gesendet
     const request: CheckoutRequest = {
-      sessionId: this.sessionId,
       storeId: this.cart.storeId,
       customerEmail: formValue.customerEmail,
       shippingAddress: formValue.shippingAddress,
