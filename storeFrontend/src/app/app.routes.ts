@@ -83,11 +83,7 @@ export const routes: Routes = [
   },
 
   // ==================== Product Management ====================
-  {
-    path: 'stores/:id/products',
-    loadComponent: () => import('./features/products/product-list.component').then(m => m.ProductListComponent),
-    canActivate: [authGuard]
-  },
+  // WICHTIG: Spezifische Routen (mit /new) müssen VOR allgemeinen Routen stehen!
   {
     path: 'stores/:id/products/new',
     loadComponent: () => import('./features/products/product-form.component').then(m => m.ProductFormComponent),
@@ -98,13 +94,14 @@ export const routes: Routes = [
     loadComponent: () => import('./features/products/product-form.component').then(m => m.ProductFormComponent),
     canActivate: [authGuard]
   },
-
-  // ==================== Category Management ====================
   {
-    path: 'stores/:id/categories',
-    loadComponent: () => import('./features/products/category-list.component').then(m => m.CategoryListComponent),
+    path: 'stores/:id/products',
+    loadComponent: () => import('./features/products/product-list.component').then(m => m.ProductListComponent),
     canActivate: [authGuard]
   },
+
+  // ==================== Category Management ====================
+  // WICHTIG: Spezifische Routen (mit /new) müssen VOR allgemeinen Routen stehen!
   {
     path: 'stores/:id/categories/new',
     loadComponent: () => import('./features/products/category-form.component').then(m => m.CategoryFormComponent),
@@ -115,25 +112,26 @@ export const routes: Routes = [
     loadComponent: () => import('./features/products/category-form.component').then(m => m.CategoryFormComponent),
     canActivate: [authGuard]
   },
-
-  // ==================== Coupon Management ====================
   {
-    path: 'stores/:id/coupons',
-    loadComponent: () => import('./features/coupons/coupons-list/coupons-list.component').then(m => m.CouponsListComponent),
+    path: 'stores/:id/categories',
+    loadComponent: () => import('./features/products/category-list.component').then(m => m.CategoryListComponent),
     canActivate: [authGuard]
   },
+
+  // ==================== Coupon Management ====================
+  // WICHTIG: Spezifische Routen müssen VOR allgemeinen Routen stehen!
   {
     path: 'stores/:id/coupons/:couponId',
     loadComponent: () => import('./features/coupons/coupon-editor/coupon-editor.component').then(m => m.CouponEditorComponent),
     canActivate: [authGuard]
   },
-
-  // ==================== SEO & Brand Management ====================
   {
-    path: 'stores/:id/seo',
-    loadComponent: () => import('./features/settings/seo-settings-page/seo-settings-page.component').then(m => m.SeoSettingsPageComponent),
+    path: 'stores/:id/coupons',
+    loadComponent: () => import('./features/coupons/coupons-list/coupons-list.component').then(m => m.CouponsListComponent),
     canActivate: [authGuard]
   },
+
+  // ==================== SEO & Brand Management ====================
   {
     path: 'stores/:id/seo/redirects',
     loadComponent: () => import('./features/settings/redirects-page/redirects-page.component').then(m => m.RedirectsPageComponent),
@@ -142,6 +140,11 @@ export const routes: Routes = [
   {
     path: 'stores/:id/seo/structured-data',
     loadComponent: () => import('./features/settings/structured-data-page/structured-data-page.component').then(m => m.StructuredDataPageComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/seo',
+    loadComponent: () => import('./features/settings/seo-settings-page/seo-settings-page.component').then(m => m.SeoSettingsPageComponent),
     canActivate: [authGuard]
   },
   {
