@@ -99,9 +99,10 @@ export class CheckoutService {
 
     const token = this.getAuthToken();
     if (!token) {
-      console.error('❌ Checkout ohne Login nicht möglich');
+      console.error('❌ Checkout erfordert Login - Weiterleitung');
+      const currentUrl = this.router.url;
       this.router.navigate(['/login'], {
-        queryParams: { returnUrl: '/checkout' }
+        queryParams: { returnUrl: currentUrl }  // FIXED: Speichere aktuelle URL
       });
       return throwError(() => new Error('Authentication required'));
     }
@@ -121,7 +122,10 @@ export class CheckoutService {
       catchError(error => {
         if (error.status === 401) {
           console.error('❌ Token ungültig - Login erforderlich');
-          this.router.navigate(['/login']);
+          const currentUrl = this.router.url;
+          this.router.navigate(['/login'], {
+            queryParams: { returnUrl: currentUrl }  // FIXED: Speichere aktuelle URL
+          });
         }
         return throwError(() => error);
       })
