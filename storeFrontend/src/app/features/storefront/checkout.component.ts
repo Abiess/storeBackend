@@ -6,6 +6,7 @@ import { CartService, Cart } from '../../core/services/cart.service';
 import { CheckoutService, CheckoutRequest } from '../../core/services/checkout.service';
 import { CouponInputComponent } from '../../shared/components/coupon-input/coupon-input.component';
 import { ValidateCouponsResponse } from '../../core/services/coupon.service';
+import { PlaceholderImageUtil } from '../../shared/utils/placeholder-image.util';
 
 @Component({
   selector: 'app-checkout',
@@ -204,7 +205,9 @@ import { ValidateCouponsResponse } from '../../core/services/coupon.service';
           
           <div class="summary-items">
             <div class="summary-item" *ngFor="let item of cart.items">
-              <img [src]="item.imageUrl || 'https://via.placeholder.com/60'" [alt]="item.productTitle">
+              <img [src]="item.imageUrl || getProductPlaceholder()" 
+                   [alt]="item.productTitle"
+                   (error)="onImageError($event)">
               <div class="item-info">
                 <h4>{{ item.productTitle }}</h4>
                 <p>{{ item.variantSku }}</p>
@@ -648,5 +651,14 @@ export class CheckoutComponent implements OnInit {
 
   goToShop(): void {
     this.router.navigate(['/storefront']);
+  }
+
+  getProductPlaceholder(): string {
+    return PlaceholderImageUtil.getProductPlaceholder(60);
+  }
+
+  onImageError(event: Event): void {
+    const target = event.target as HTMLImageElement;
+    target.src = this.getProductPlaceholder();
   }
 }

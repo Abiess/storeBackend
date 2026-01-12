@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { CartService, Cart, CartItem } from '../../core/services/cart.service';
+import { PlaceholderImageUtil } from '../../shared/utils/placeholder-image.util';
 
 @Component({
   selector: 'app-cart',
@@ -33,9 +34,10 @@ import { CartService, Cart, CartItem } from '../../core/services/cart.service';
       <div *ngIf="!loading && cart && cart.items.length > 0" class="cart-content">
         <div class="cart-items">
           <div class="cart-item" *ngFor="let item of cart.items">
-            <img [src]="item.imageUrl || 'https://via.placeholder.com/100'" 
+            <img [src]="item.imageUrl || getProductPlaceholder()" 
                  [alt]="item.productTitle" 
-                 class="item-image">
+                 class="item-image"
+                 (error)="onImageError($event)">
             
             <div class="item-details">
               <h3>{{ item.productTitle }}</h3>
@@ -426,5 +428,14 @@ export class CartComponent implements OnInit {
 
   goToCart() {
     this.router.navigate(['/cart']);
+  }
+
+  getProductPlaceholder(): string {
+    return PlaceholderImageUtil.getProductPlaceholder();
+  }
+
+  onImageError(event: Event): void {
+    const target = event.target as HTMLImageElement;
+    target.src = this.getProductPlaceholder();
   }
 }
