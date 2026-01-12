@@ -23,6 +23,7 @@ public class PublicOrderController {
     private final OrderService orderService;
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
+    private final storebackend.repository.UserRepository userRepository; // FIXED: UserRepository hinzufügen
 
     @PostMapping("/checkout")
     public ResponseEntity<Map<String, Object>> checkout(
@@ -53,9 +54,34 @@ public class PublicOrderController {
 
             log.info("🛍️ Checkout - userId: {}, storeId: {}, email: {}", userId, storeId, customerEmail);
 
-            // FIXED: Nutze findByUserId statt findBySessionId für angemeldete Benutzer
-            var cart = cartRepository.findByUserId(userId)
-                    .orElseThrow(() -> new RuntimeException("Cart not found for user. Please add items to cart first."));
+            // FIXED: Suche zuerst nach userId, dann nach Guest-Cart für diesen Store
+            var cartOptional = cartRepository.findByUserId(userId);
+
+            if (cartOptional.isEmpty()) {
+                // Kein User-spezifischer Cart gefunden, suche Guest-Cart
+                log.info("🔍 Kein User-Cart gefunden, suche Guest-Cart für Store {}", storeId);
+
+                // Suche nach neuesten Guest-Cart für diesen Store
+                String guestSessionId = "store-" + storeId + "-cart";
+                cartOptional = cartRepository.findBySessionId(guestSessionId);
+
+                if (cartOptional.isEmpty()) {
+                    // Fallback: Suche ALLE Carts für diesen Store (sortiert nach Datum)
+                    List<storebackend.entity.Cart> storeCarts = cartRepository.findAll().stream()
+                        .filter(c -> c.getStore() != null && c.getStore().getId().equals(storeId))
+                        .filter(c -> c.getExpiresAt().isAfter(java.time.LocalDateTime.now()))
+                        .sorted((c1, c2) -> c2.getUpdatedAt().compareTo(c1.getUpdatedAt()))
+                        .toList();
+
+                    if (!storeCarts.isEmpty()) {
+                        cartOptional = java.util.Optional.of(storeCarts.get(0));
+                        log.info("✅ Guest-Cart gefunden für Store {}", storeId);
+                    }
+                }
+            }
+
+            var cart = cartOptional
+                    .orElseThrow(() -> new RuntimeException("Cart not found. Please add items to cart first."));
 
             // Verify cart belongs to the correct store
             if (!cart.getStore().getId().equals(storeId)) {
@@ -66,6 +92,15 @@ public class PublicOrderController {
             List<CartItem> items = cartItemRepository.findByCartId(cart.getId());
             if (items.isEmpty()) {
                 throw new RuntimeException("Cart is empty. Please add items before checkout.");
+            }
+
+            // FIXED: Verknüpfe Guest-Cart mit dem eingeloggten User
+            if (cart.getUser() == null) {
+                log.info("🔗 Verknüpfe Guest-Cart mit User {}", userId);
+                storebackend.entity.User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+                cart.setUser(user);
+                cartRepository.save(cart);
             }
 
             // Extract addresses
