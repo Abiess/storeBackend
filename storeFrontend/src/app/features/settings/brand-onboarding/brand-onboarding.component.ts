@@ -153,7 +153,6 @@ export class BrandOnboardingComponent implements OnInit {
     if (this.previewPalette) {
       this.brandService.savePalette(this.storeId, this.previewPalette).subscribe({
         next: () => {
-          alert('Palette saved successfully!');
         },
         error: (error: unknown) => {
           console.error('Failed to save palette', error);
@@ -164,7 +163,6 @@ export class BrandOnboardingComponent implements OnInit {
 
   downloadZip(): void {
     // Stub for downloading all assets as ZIP
-    alert('Download ZIP functionality - to be implemented');
   }
 
   private applyPaletteToPreview(): void {

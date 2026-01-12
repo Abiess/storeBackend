@@ -87,7 +87,6 @@ export class RoleManagementComponent {
 
   editStoreRole(role: StoreRole) {
     // Hier könnte ein Dialog/Feld zum Bearbeiten erscheinen
-    alert('Bearbeiten: ' + JSON.stringify(role));
   }
 
   deleteStoreRole(role: StoreRole) {
@@ -97,7 +96,6 @@ export class RoleManagementComponent {
   }
 
   editDomainRole(role: DomainRole) {
-    alert('Bearbeiten: ' + JSON.stringify(role));
   }
 
   deleteDomainRole(role: DomainRole) {

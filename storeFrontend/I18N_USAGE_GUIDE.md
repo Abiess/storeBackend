@@ -448,7 +448,6 @@ export class MultilingualComponent {
   
   save() {
     const message = this.translationService.translate('messages.operationSuccess');
-    alert(message);
   }
 }
 ```

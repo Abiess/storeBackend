@@ -375,16 +375,22 @@ export class CategoryFormComponent implements OnInit {
   }
 
   loadCategory(categoryId: number): void {
-    const category = this.availableParentCategories.find(c => c.id === categoryId);
-    if (category) {
-      this.categoryForm.patchValue({
-        name: category.name,
-        slug: category.slug,
-        description: category.description,
-        parentId: category.parentId,
-        sortOrder: category.sortOrder
-      });
-    }
+    // Lade die Kategorie direkt vom Service, nicht aus der gefilterten Liste
+    this.categoryService.getCategory(this.storeId, categoryId).subscribe({
+      next: (category) => {
+        this.categoryForm.patchValue({
+          name: category.name,
+          slug: category.slug,
+          description: category.description,
+          parentId: category.parentId,
+          sortOrder: category.sortOrder
+        });
+      },
+      error: (error) => {
+        console.error('Fehler beim Laden der Kategorie:', error);
+        this.errorMessage = this.translationService.translate('category.error.load');
+      }
+    });
   }
 
   onSubmit(): void {

@@ -209,7 +209,6 @@ export class StorefrontLandingComponent implements OnInit {
       },
       error: (error) => {
         console.error('❌ Fehler beim Hinzufügen zum Warenkorb:', error);
-        alert('Produkt konnte nicht zum Warenkorb hinzugefügt werden.');
       }
     });
   }

@@ -216,7 +216,6 @@ Frontend prüft Berechtigungen falsch - USER-Rolle sollte ausreichen.
 Suchen Sie im Frontend nach:
 ```typescript
 // Wo wird dieser Alert ausgelöst?
-alert('Sie haben keine Berechtigung für diese Aktion.');
 ```
 
 Möglicherweise in:

@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { TranslationService } from '@app/core/services/translation.service';
+import { StoreNavigationComponent } from '@app/shared/components/store-navigation.component';
 
 interface Category {
   id: number;
@@ -17,29 +18,14 @@ interface Category {
 @Component({
   selector: 'app-category-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, TranslatePipe],
+  imports: [CommonModule, RouterModule, TranslatePipe, StoreNavigationComponent],
   template: `
     <div class="category-list-container">
-      <!-- Breadcrumb Navigation -->
-      <nav class="breadcrumb">
-        <a [routerLink]="['/dashboard']">{{ 'navigation.dashboard' | translate }}</a>
-        <span class="separator">›</span>
-        <a [routerLink]="['/dashboard/stores', storeId]">{{ 'navigation.store' | translate }}</a>
-        <span class="separator">›</span>
-        <span class="current">{{ 'navigation.categories' | translate }}</span>
-      </nav>
-
-      <!-- Action Buttons -->
-      <div class="action-bar">
-        <div class="nav-buttons">
-          <button class="btn-back" (click)="goToDashboard()">
-            ← {{ 'navigation.backToDashboard' | translate }}
-          </button>
-          <button class="btn-secondary-nav" (click)="goToProducts()">
-            📦 {{ 'navigation.products' | translate }}
-          </button>
-        </div>
-      </div>
+      <!-- Einheitliche Navigation -->
+      <app-store-navigation 
+        [storeId]="storeId" 
+        [currentPage]="'navigation.categories' | translate">
+      </app-store-navigation>
 
       <div class="header">
         <h1>{{ 'navigation.categories' | translate }}</h1>
@@ -94,77 +80,8 @@ interface Category {
   styles: [`
     .category-list-container {
       padding: 2rem;
-      max-width: 1200px;
+      max-width: 1400px;
       margin: 0 auto;
-    }
-
-    .breadcrumb {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 1.5rem;
-      font-size: 0.875rem;
-    }
-
-    .breadcrumb a {
-      color: #3b82f6;
-      text-decoration: none;
-      transition: color 0.2s;
-    }
-
-    .breadcrumb a:hover {
-      color: #2563eb;
-      text-decoration: underline;
-    }
-
-    .breadcrumb .separator {
-      color: #9ca3af;
-    }
-
-    .breadcrumb .current {
-      color: #6b7280;
-      font-weight: 500;
-    }
-
-    .action-bar {
-      margin-bottom: 1.5rem;
-    }
-
-    .nav-buttons {
-      display: flex;
-      gap: 0.75rem;
-    }
-
-    .btn-back {
-      background: #f3f4f6;
-      color: #374151;
-      border: 1px solid #d1d5db;
-      padding: 0.625rem 1.25rem;
-      border-radius: 0.5rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .btn-back:hover {
-      background: #e5e7eb;
-      border-color: #9ca3af;
-    }
-
-    .btn-secondary-nav {
-      background: white;
-      color: #374151;
-      border: 1px solid #d1d5db;
-      padding: 0.625rem 1.25rem;
-      border-radius: 0.5rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .btn-secondary-nav:hover {
-      background: #f9fafb;
-      border-color: #9ca3af;
     }
 
     .header {

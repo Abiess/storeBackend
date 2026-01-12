@@ -155,12 +155,10 @@ export class StorefrontComponent implements OnInit {
       next: () => {
         this.addingToCart = false;
         this.loadCartCount();
-        alert(`"${product.title}" wurde zum Warenkorb hinzugefuegt!`);
       },
       error: (error) => {
         this.addingToCart = false;
         console.error('Fehler beim Hinzufuegen zum Warenkorb:', error);
-        alert('Fehler beim Hinzufuegen zum Warenkorb.');
       }
     });
   }

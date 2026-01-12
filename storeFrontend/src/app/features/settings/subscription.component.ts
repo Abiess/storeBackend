@@ -189,7 +189,6 @@ export class SubscriptionComponent implements OnInit {
 
     const user = this.authService.getCurrentUser();
     if (!user) {
-      alert('❌ Benutzer nicht gefunden. Bitte melden Sie sich erneut an.');
       this.upgrading = false;
       return;
     }
@@ -213,20 +212,16 @@ export class SubscriptionComponent implements OnInit {
 
         if (paymentIntent.amount === 0) {
           // FREE Plan - keine Zahlung erforderlich
-          alert('✅ Plan erfolgreich aktiviert!');
           this.closePaymentModal();
           this.loadCurrentSubscription();
         } else if (paymentIntent.paymentMethod === PaymentMethod.BANK_TRANSFER) {
-          alert('✅ Anfrage erfolgreich! Bitte überweisen Sie den Betrag mit dem angegebenen Verwendungszweck.');
         } else {
-          alert('✅ Erfolgreich! Ihr Plan wurde aktualisiert.');
           this.closePaymentModal();
           this.loadCurrentSubscription();
         }
       },
       error: (error) => {
         console.error('Fehler beim Verarbeiten:', error);
-        alert('❌ Fehler beim Verarbeiten. Bitte versuchen Sie es später erneut.');
         this.upgrading = false;
       }
     });

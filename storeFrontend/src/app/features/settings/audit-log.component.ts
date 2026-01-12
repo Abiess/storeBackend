@@ -142,7 +142,6 @@ export class AuditLogComponent implements OnInit {
       },
       error: (error) => {
         console.error('Fehler beim Exportieren:', error);
-        alert('Fehler beim Exportieren der Logs');
       }
     });
   }

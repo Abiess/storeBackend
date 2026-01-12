@@ -3,31 +3,39 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ProductService } from '@app/core/services/product.service';
 import { Product } from '@app/core/models';
+import { StoreNavigationComponent } from '@app/shared/components/store-navigation.component';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 @Component({
   selector: 'app-product-list',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, StoreNavigationComponent, TranslatePipe],
   template: `
     <div class="product-list-container">
+      <!-- Einheitliche Navigation -->
+      <app-store-navigation 
+        [storeId]="storeId" 
+        [currentPage]="'navigation.products' | translate">
+      </app-store-navigation>
+
       <div class="header">
-        <h1>Produkte</h1>
+        <h1>{{ 'navigation.products' | translate }}</h1>
         <button class="btn-primary" (click)="createProduct()">
-          + Neues Produkt
+          + {{ 'product.new' | translate }}
         </button>
       </div>
 
       <div *ngIf="loading" class="loading-state">
         <div class="spinner"></div>
-        <p>Produkte werden geladen...</p>
+        <p>{{ 'loading.products' | translate }}</p>
       </div>
 
       <div *ngIf="!loading && products.length === 0" class="empty-state">
         <div class="empty-icon">📦</div>
-        <h2>Noch keine Produkte</h2>
-        <p>Erstellen Sie Ihr erstes Produkt, um loszulegen.</p>
+        <h2>{{ 'product.noProducts' | translate }}</h2>
+        <p>{{ 'product.noProductsDesc' | translate }}</p>
         <button class="btn-primary" (click)="createProduct()">
-          Produkt erstellen
+          {{ 'product.create' | translate }}
         </button>
       </div>
 
@@ -35,12 +43,12 @@ import { Product } from '@app/core/models';
         <table>
           <thead>
             <tr>
-              <th>Produkt</th>
-              <th>Kategorie</th>
-              <th>Beschreibung</th>
-              <th>Preis</th>
-              <th>Status</th>
-              <th>Aktionen</th>
+              <th>{{ 'product.name' | translate }}</th>
+              <th>{{ 'product.category' | translate }}</th>
+              <th>{{ 'product.description' | translate }}</th>
+              <th>{{ 'product.price' | translate }}</th>
+              <th>{{ 'product.status' | translate }}</th>
+              <th>{{ 'common.actions' | translate }}</th>
             </tr>
           </thead>
           <tbody>
@@ -66,10 +74,10 @@ import { Product } from '@app/core/models';
               </td>
               <td>
                 <div class="actions">
-                  <button class="btn-action" (click)="editProduct(product.id)" title="Bearbeiten">
+                  <button class="btn-action" (click)="editProduct(product.id)" [title]="'common.edit' | translate">
                     ✏️
                   </button>
-                  <button class="btn-action btn-delete" (click)="deleteProduct(product)" title="Löschen">
+                  <button class="btn-action btn-delete" (click)="deleteProduct(product)" [title]="'common.delete' | translate">
                     🗑️
                   </button>
                 </div>
@@ -83,7 +91,7 @@ import { Product } from '@app/core/models';
   styles: [`
     .product-list-container {
       padding: 2rem;
-      max-width: 1200px;
+      max-width: 1400px;
       margin: 0 auto;
     }
 
@@ -329,7 +337,6 @@ export class ProductListComponent implements OnInit {
         },
         error: (error) => {
           console.error('خطأ في الحذف:', error);
-          alert('خطأ في حذف المنتج');
         }
       });
     }

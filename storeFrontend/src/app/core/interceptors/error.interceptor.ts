@@ -93,7 +93,6 @@ export class ErrorInterceptor implements HttpInterceptor {
         } else if (error.status >= 500) {
           // Server error
           console.error('Serverfehler:', error.message);
-          alert('Ein Serverfehler ist aufgetreten. Bitte versuchen Sie es später erneut.');
         }
 
         return throwError(() => error);
