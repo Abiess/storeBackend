@@ -41,6 +41,8 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource))  // Verwende das injizierte Feld
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // OPTIONS requests müssen immer durchgelassen werden (CORS Preflight)
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 // Auth endpoints
                 .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/validate").permitAll()
                 // Error endpoint - muss öffentlich sein für Spring Boot Error Handling

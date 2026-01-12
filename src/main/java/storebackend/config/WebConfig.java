@@ -38,10 +38,7 @@ public class WebConfig implements WebMvcConfigurer {
             "https://www.markt.ma",            // Production frontend with www
             "http://www.markt.ma",             // Production frontend with www (HTTP)
             "https://*.markt.ma",              // Alle Subdomains von markt.ma
-            "http://*.markt.ma",               // Alle Subdomains von markt.ma (HTTP)
-            "https://api.markt.ma",            // Backend domain
-            "http://api.markt.ma",             // Backend domain (HTTP)
-            "*"                                // Fallback für alle anderen (Development)
+            "http://*.markt.ma"                // Alle Subdomains von markt.ma (HTTP)
         ));
 
         // Erlaubte HTTP-Methoden
@@ -49,18 +46,18 @@ public class WebConfig implements WebMvcConfigurer {
             "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"
         ));
 
-        // Erlaubte Headers
+        // Erlaubte Headers - alle erlauben
         configuration.setAllowedHeaders(List.of("*"));
 
-        // Credentials erlauben (für Cookies/Auth-Headers)
-        configuration.setAllowCredentials(true);
+        // Credentials NICHT erlauben für öffentliche API-Endpunkte
+        // Dies ermöglicht breitere CORS-Unterstützung
+        configuration.setAllowCredentials(false);
 
         // Exposed Headers (für Client-Zugriff)
         configuration.setExposedHeaders(Arrays.asList(
             "Authorization",
             "Content-Type",
-            "Access-Control-Allow-Origin",
-            "Access-Control-Allow-Credentials"
+            "Access-Control-Allow-Origin"
         ));
 
         // Max Age für Preflight-Requests (1 Stunde)
