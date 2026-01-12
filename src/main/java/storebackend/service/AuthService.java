@@ -53,7 +53,8 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException("FREE plan not found in database. Please run database initialization."));
         user.setPlan(freePlan);
 
-        user = userRepository.save(user);
+        // FIXED: Save and flush to ensure user is immediately available in DB
+        user = userRepository.saveAndFlush(user);
 
         // Generate JWT token using JwtUtil with roles
         String token = jwtUtil.generateToken(user.getEmail(), user.getId(), user.getRoles());
