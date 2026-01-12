@@ -347,10 +347,24 @@ export class CategoryFormComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.storeId = Number(this.route.snapshot.paramMap.get('storeId'));
-    this.categoryId = this.route.snapshot.paramMap.get('id')
-      ? Number(this.route.snapshot.paramMap.get('id'))
-      : undefined;
+    // Unterstütze beide Route-Formate:
+    // /stores/:id/categories/new und /dashboard/stores/:id/categories/new
+    const idParam = this.route.snapshot.paramMap.get('id');
+    const storeIdParam = this.route.snapshot.paramMap.get('storeId');
+
+    // Verwende storeId wenn vorhanden, sonst id
+    this.storeId = storeIdParam ? Number(storeIdParam) : Number(idParam);
+
+    // categoryId ist nur gesetzt bei Edit-Routen (/categories/:categoryId/edit)
+    const categoryIdParam = this.route.snapshot.paramMap.get('categoryId');
+    this.categoryId = categoryIdParam ? Number(categoryIdParam) : undefined;
+
+    console.log('📋 Category Form Init:', {
+      storeId: this.storeId,
+      categoryId: this.categoryId,
+      isEditMode: !!this.categoryId,
+      route: window.location.pathname
+    });
 
     this.isEditMode = !!this.categoryId;
     this.loadCategories();

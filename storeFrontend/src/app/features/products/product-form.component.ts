@@ -619,10 +619,24 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.storeId = Number(this.route.snapshot.paramMap.get('storeId'));
-    this.productId = this.route.snapshot.paramMap.get('id')
-      ? Number(this.route.snapshot.paramMap.get('id'))
-      : undefined;
+    // Unterstütze beide Route-Formate:
+    // /stores/:id/products/new und /dashboard/stores/:id/products/new
+    const idParam = this.route.snapshot.paramMap.get('id');
+    const storeIdParam = this.route.snapshot.paramMap.get('storeId');
+
+    // Verwende storeId wenn vorhanden, sonst id
+    this.storeId = storeIdParam ? Number(storeIdParam) : Number(idParam);
+
+    // productId ist nur gesetzt bei Edit-Routen (/products/:productId/edit)
+    const productIdParam = this.route.snapshot.paramMap.get('productId');
+    this.productId = productIdParam ? Number(productIdParam) : undefined;
+
+    console.log('📦 Product Form Init:', {
+      storeId: this.storeId,
+      productId: this.productId,
+      isEditMode: !!this.productId,
+      route: window.location.pathname
+    });
 
     this.isEditMode = !!this.productId;
 

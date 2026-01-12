@@ -93,53 +93,53 @@ export const routes: Routes = [
   // ==================== Dashboard Routes (Legacy Support) ====================
   // Diese Routen unterstützen alte Links mit /dashboard/ Prefix
   {
-    path: 'dashboard/stores/:id',
+    path: 'dashboard/stores/:storeId',
     loadComponent: () => import('./features/stores/store-detail.component').then(m => m.StoreDetailComponent),
     canActivate: [authGuard]
   },
   {
-    path: 'dashboard/stores/:id/products/new',
+    path: 'dashboard/stores/:storeId/products/new',
     loadComponent: () => {
-      console.log('✅ Route matched: dashboard/stores/:id/products/new');
+      console.log('✅ Route matched: dashboard/stores/:storeId/products/new');
       return import('./features/products/product-form.component').then(m => m.ProductFormComponent);
     },
     canActivate: [authGuard]
   },
   {
-    path: 'dashboard/stores/:id/products/:productId/edit',
+    path: 'dashboard/stores/:storeId/products/:productId/edit',
     loadComponent: () => import('./features/products/product-form.component').then(m => m.ProductFormComponent),
     canActivate: [authGuard]
   },
   {
-    path: 'dashboard/stores/:id/products',
+    path: 'dashboard/stores/:storeId/products',
     loadComponent: () => import('./features/products/product-list.component').then(m => m.ProductListComponent),
     canActivate: [authGuard]
   },
   {
-    path: 'dashboard/stores/:id/categories/new',
+    path: 'dashboard/stores/:storeId/categories/new',
     loadComponent: () => {
-      console.log('✅ Route matched: dashboard/stores/:id/categories/new');
+      console.log('✅ Route matched: dashboard/stores/:storeId/categories/new');
       return import('./features/products/category-form.component').then(m => m.CategoryFormComponent);
     },
     canActivate: [authGuard]
   },
   {
-    path: 'dashboard/stores/:id/categories/:categoryId/edit',
+    path: 'dashboard/stores/:storeId/categories/:categoryId/edit',
     loadComponent: () => import('./features/products/category-form.component').then(m => m.CategoryFormComponent),
     canActivate: [authGuard]
   },
   {
-    path: 'dashboard/stores/:id/categories',
+    path: 'dashboard/stores/:storeId/categories',
     loadComponent: () => import('./features/products/category-list.component').then(m => m.CategoryListComponent),
     canActivate: [authGuard]
   },
   {
-    path: 'dashboard/stores/:id/coupons',
+    path: 'dashboard/stores/:storeId/coupons',
     loadComponent: () => import('./features/coupons/coupons-list/coupons-list.component').then(m => m.CouponsListComponent),
     canActivate: [authGuard]
   },
   {
-    path: 'dashboard/stores/:id/coupons/:couponId',
+    path: 'dashboard/stores/:storeId/coupons/:couponId',
     loadComponent: () => import('./features/coupons/coupon-editor/coupon-editor.component').then(m => m.CouponEditorComponent),
     canActivate: [authGuard]
   },
