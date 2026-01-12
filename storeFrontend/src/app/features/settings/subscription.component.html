@@ -158,18 +158,18 @@
           </div>
 
           <div class="plan-action">
-            <button *ngIf="canUpgradeToThisPlan(plan.plan)"
+            <button *ngIf="canSelectPlan(plan.plan)"
                     class="btn btn-upgrade"
                     [class.btn-primary]="plan.popular"
                     (click)="selectPlanForUpgrade(plan)"
-                    [disabled]="upgrading">
-              {{ upgrading ? 'Wird verarbeitet...' : 'Jetzt upgraden' }}
+                    [disabled]="upgrading || currentSubscription?.plan === plan.plan">
+              {{ upgrading ? 'Wird verarbeitet...' : getButtonLabel(plan.plan) }}
             </button>
             <button *ngIf="currentSubscription?.plan === plan.plan"
                     class="btn btn-current" disabled>
               Aktueller Plan
             </button>
-            <button *ngIf="!canUpgradeToThisPlan(plan.plan) && currentSubscription?.plan !== plan.plan"
+            <button *ngIf="!canSelectPlan(plan.plan) && currentSubscription?.plan !== plan.plan"
                     class="btn btn-disabled" disabled>
               Downgrade nicht möglich
             </button>

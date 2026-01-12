@@ -131,33 +131,50 @@ export class SubscriptionComponent implements OnInit {
   }
 
   confirmUpgrade(): void {
-    if (!this.selectedPlan || !this.selectedPaymentMethod || !this.currentSubscription) return;
+    if (!this.selectedPlan || !this.selectedPaymentMethod) return;
 
     this.upgrading = true;
 
-    const upgradeRequest: UpgradeRequest = {
-      userId: this.currentSubscription.userId,
+    const user = this.authService.getCurrentUser();
+    if (!user) {
+      alert('❌ Benutzer nicht gefunden. Bitte melden Sie sich erneut an.');
+      this.upgrading = false;
+      return;
+    }
+
+    const request: UpgradeRequest = {
+      userId: user.id,
       targetPlan: this.selectedPlan.plan,
       billingCycle: this.selectedBillingCycle,
       paymentMethod: this.selectedPaymentMethod
     };
 
-    this.subscriptionService.upgradePlan(upgradeRequest).subscribe({
+    // Unterscheide zwischen Upgrade (bestehende Subscription) und initialer Auswahl
+    const action$ = this.currentSubscription
+      ? this.subscriptionService.upgradePlan(request)
+      : this.subscriptionService.subscribeToPlan(request);
+
+    action$.subscribe({
       next: (paymentIntent) => {
         this.paymentIntent = paymentIntent;
         this.upgrading = false;
 
-        if (paymentIntent.paymentMethod === PaymentMethod.BANK_TRANSFER) {
-          alert('✅ Upgrade-Anfrage erfolgreich! Bitte überweisen Sie den Betrag mit dem angegebenen Verwendungszweck.');
+        if (paymentIntent.amount === 0) {
+          // FREE Plan - keine Zahlung erforderlich
+          alert('✅ Plan erfolgreich aktiviert!');
+          this.closePaymentModal();
+          this.loadCurrentSubscription();
+        } else if (paymentIntent.paymentMethod === PaymentMethod.BANK_TRANSFER) {
+          alert('✅ Anfrage erfolgreich! Bitte überweisen Sie den Betrag mit dem angegebenen Verwendungszweck.');
         } else {
-          alert('✅ Upgrade erfolgreich! Ihr Plan wurde aktualisiert.');
+          alert('✅ Erfolgreich! Ihr Plan wurde aktualisiert.');
           this.closePaymentModal();
           this.loadCurrentSubscription();
         }
       },
       error: (error) => {
-        console.error('Fehler beim Upgrade:', error);
-        alert('❌ Fehler beim Upgrade. Bitte versuchen Sie es später erneut.');
+        console.error('Fehler beim Verarbeiten:', error);
+        alert('❌ Fehler beim Verarbeiten. Bitte versuchen Sie es später erneut.');
         this.upgrading = false;
       }
     });
@@ -168,5 +185,24 @@ export class SubscriptionComponent implements OnInit {
     this.selectedPlan = null;
     this.selectedPaymentMethod = null;
     this.paymentIntent = null;
+  }
+
+  canSelectPlan(plan: Plan): boolean {
+    // Wenn keine Subscription vorhanden, kann jeder Plan gewählt werden
+    if (!this.currentSubscription) {
+      return true;
+    }
+    // Bei bestehender Subscription: Upgrade-Logik
+    return this.canUpgradeToThisPlan(plan);
+  }
+
+  getButtonLabel(plan: Plan): string {
+    if (this.currentSubscription?.plan === plan) {
+      return 'Aktueller Plan';
+    }
+    if (!this.currentSubscription) {
+      return plan === Plan.FREE ? 'Kostenlos starten' : 'Plan wählen';
+    }
+    return 'Jetzt upgraden';
   }
 }

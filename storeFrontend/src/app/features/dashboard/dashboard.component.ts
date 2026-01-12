@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { StoreService } from '@app/core/services/store.service';
 import { AuthService } from '@app/core/services/auth.service';
@@ -189,6 +189,29 @@ import { LanguageSwitcherComponent } from '@app/shared/components/language-switc
               <span class="icon">⚠️</span>
               <p>{{ createError }}</p>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Store Limit Modal -->
+      <div class="modal-overlay" *ngIf="showLimitModal" (click)="closeLimitModal()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h2>Store-Limit erreicht</h2>
+            <button class="close-btn" (click)="closeLimitModal()">×</button>
+          </div>
+
+          <div class="modal-body">
+            <p>Sie haben das maximale Limit an Stores erreicht. Bitte upgraden Sie Ihr Abonnement, um weitere Stores zu erstellen.</p>
+          </div>
+
+          <div class="modal-footer">
+            <button class="btn btn-secondary" (click)="closeLimitModal()">
+              Später erinnern
+            </button>
+            <button class="btn btn-primary" (click)="goToSubscription()">
+              Zum Abonnement
+            </button>
           </div>
         </div>
       </div>
@@ -671,6 +694,199 @@ import { LanguageSwitcherComponent } from '@app/shared/components/language-switc
       display: inline-block;
       margin-right: 0.5rem;
     }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .modal-body p {
+      font-size: 1rem;
+      line-height: 1.6;
+      color: #4b5563;
+      margin: 0;
+    }
+
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 0.875rem;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .loading-container {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: white;
+    }
+
+    .spinner {
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top: 4px solid white;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1.5rem;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: white;
+      border-radius: 12px;
+      margin-top: 2rem;
+    }
+
+    .empty-icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+
+    .empty-state h3 {
+      font-size: 1.5rem;
+      color: #333;
+      margin-bottom: 0.5rem;
+    }
+
+    .empty-state p {
+      color: #666;
+      margin-bottom: 1.5rem;
+    }
+
+    .stores-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+      padding-bottom: 2rem;
+    }
+
+    .store-card {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .store-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    .store-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .store-icon {
+      font-size: 2rem;
+    }
+
+    .badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .badge-success {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .badge-danger {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .badge-warning {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .store-card-body h3 {
+      font-size: 1.25rem;
+      color: #333;
+      margin: 0 0 0.5rem;
+    }
+
+    .store-url {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .link-icon {
+      font-size: 0.875rem;
+    }
+
+    .domain-link {
+      color: #667eea;
+      text-decoration: none;
+      font-size: 0.875rem;
+    }
+
+    .domain-link:hover {
+      text-decoration: underline;
+    }
+
+    .store-meta {
+      font-size: 0.75rem;
+      color: #666;
+    }
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .store-card-footer {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .btn-block {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .subtitle {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 0.875rem;
+      margin: 0;
+    }
   `]
 })
 export class DashboardComponent implements OnInit {
@@ -686,6 +902,7 @@ export class DashboardComponent implements OnInit {
   creating = false;
   slugError: string | null = null;
   createError: string | null = null;
+  showLimitModal = false;
 
   constructor(
     private storeService: StoreService,
@@ -812,6 +1029,14 @@ export class DashboardComponent implements OnInit {
       },
       error: (error) => {
         this.creating = false;
+
+        // Check if it's a store limit error
+        if (error.error?.message && error.error.message.includes('Maximum stores limit reached')) {
+          this.closeCreateStoreModal();
+          this.showLimitModal = true;
+          return;
+        }
+
         if (error.status === 403) {
           this.createError = 'Authentifizierungsproblem. Bitte melden Sie sich erneut an.';
           console.error('403-Fehler beim Erstellen des Stores. Bitte Backend neu starten und erneut anmelden.');
@@ -823,6 +1048,15 @@ export class DashboardComponent implements OnInit {
         console.error('Fehler beim Erstellen des Stores:', error);
       }
     });
+  }
+
+  closeLimitModal(): void {
+    this.showLimitModal = false;
+  }
+
+  goToSubscription(): void {
+    this.showLimitModal = false;
+    window.location.href = '/subscription';
   }
 
   getStorefrontUrl(slug: string): string {

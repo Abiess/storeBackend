@@ -11,7 +11,7 @@ import {
   SubscriptionStatus,
   PaymentMethod
 } from '../models';
-import { environment } from '../../../environments/environment';
+import { environment } from '@env/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -168,6 +168,40 @@ export class SubscriptionService {
   }
 
   /**
+   * Wähle initialen Plan (für neue Benutzer ohne Subscription)
+   */
+  subscribeToPlan(request: UpgradeRequest): Observable<PaymentIntent> {
+    if (environment.useMockData) {
+      console.log('🎭 Mock: Initiale Plan-Auswahl', request);
+
+      const planDetails = this.PLAN_DETAILS.find(p => p.plan === request.targetPlan);
+      const amount = request.billingCycle === 'YEARLY'
+        ? planDetails!.yearlyPrice
+        : planDetails!.monthlyPrice;
+
+      const mockPaymentIntent: PaymentIntent = {
+        id: 'pi_' + Date.now(),
+        amount: amount,
+        currency: 'EUR',
+        status: amount === 0 ? 'succeeded' : 'pending',
+        paymentMethod: request.paymentMethod,
+        bankTransferDetails: request.paymentMethod === PaymentMethod.BANK_TRANSFER && amount > 0 ? {
+          accountHolder: 'markt.ma GmbH',
+          iban: 'DE89 3704 0044 0532 0130 00',
+          bic: 'COBADEFFXXX',
+          reference: `SUB-${Date.now()}`,
+          amount: amount,
+          currency: 'EUR'
+        } : undefined,
+        createdAt: new Date().toISOString()
+      };
+
+      return of(mockPaymentIntent).pipe(delay(500));
+    }
+    return this.http.post<PaymentIntent>(`${this.API_URL}/subscribe`, request);
+  }
+
+  /**
    * Kündige Subscription
    */
   cancelSubscription(subscriptionId: number): Observable<void> {
@@ -247,4 +281,3 @@ export class SubscriptionService {
     return Math.round(yearlySavings * 100) / 100;
   }
 }
-
