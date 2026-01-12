@@ -110,8 +110,11 @@ export interface Store {
   name: string;
   slug: string;
   description?: string;
+  logoUrl?: string;
+  bannerUrl?: string;
   status: StoreStatus;
   userId: number;
+  ownerId?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -424,3 +427,100 @@ export const ROLE_PERMISSIONS_MAP: Record<UserRole, Permission[]> = {
     Permission.ORDER_CREATE
   ]
 };
+
+// Theme System Types
+export enum ThemeType {
+  MODERN = 'MODERN',
+  CLASSIC = 'CLASSIC',
+  MINIMAL = 'MINIMAL',
+  ELEGANT = 'ELEGANT',
+  DARK = 'DARK'
+}
+
+export enum ShopTemplate {
+  ELECTRONICS = 'ELECTRONICS',
+  FASHION = 'FASHION',
+  FOOD = 'FOOD',
+  BEAUTY = 'BEAUTY',
+  GENERAL = 'GENERAL'
+}
+
+export interface ThemeColors {
+  primary: string;
+  secondary: string;
+  accent: string;
+  background: string;
+  text: string;
+  textSecondary: string;
+  border: string;
+  success: string;
+  warning: string;
+  error: string;
+}
+
+export interface ThemeTypography {
+  fontFamily: string;
+  headingFontFamily: string;
+  fontSize: {
+    small: string;
+    base: string;
+    large: string;
+    xl: string;
+    xxl: string;
+  };
+}
+
+export interface ThemeLayout {
+  headerStyle: string;
+  footerStyle: string;
+  productGridColumns: number;
+  borderRadius: string;
+  spacing: string;
+}
+
+export interface StoreTheme {
+  id: number;
+  storeId: number;
+  name: string;
+  type: ThemeType;
+  template: ShopTemplate;
+  colors: ThemeColors;
+  typography: ThemeTypography;
+  layout: ThemeLayout;
+  customCss?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ThemePreset {
+  type: ThemeType;
+  name: string;
+  description: string;
+  preview: string;
+  colors: ThemeColors;
+  typography: ThemeTypography;
+  layout: ThemeLayout;
+}
+
+export interface CreateThemeRequest {
+  storeId: number;
+  name: string;
+  type: ThemeType;
+  template: ShopTemplate;
+  colors?: Partial<ThemeColors>;
+  typography?: Partial<ThemeTypography>;
+  layout?: Partial<ThemeLayout>;
+  customCss?: string;
+}
+
+export interface Address {
+  firstName: string;
+  lastName: string;
+  address1: string;
+  address2?: string;
+  city: string;
+  postalCode: string;
+  country: string;
+  phone?: string;
+}

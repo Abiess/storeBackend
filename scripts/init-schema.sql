@@ -2,6 +2,7 @@
 -- Erstellt alle benötigten Tabellen für das Store Backend
 
 -- Lösche existierende Tabellen (CASCADE löscht auch Foreign Keys)
+DROP TABLE IF EXISTS store_themes CASCADE;
 DROP TABLE IF EXISTS coupon_redemptions CASCADE;
 DROP TABLE IF EXISTS coupon_domain_ids CASCADE;
 DROP TABLE IF EXISTS coupon_customer_emails CASCADE;
@@ -349,6 +350,27 @@ CREATE TABLE coupon_redemptions (
     FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
+-- ============================================
+-- THEME SYSTEM TABLE
+-- ============================================
+
+-- Store Themes Tabelle
+CREATE TABLE store_themes (
+    id BIGSERIAL PRIMARY KEY,
+    store_id BIGINT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    template VARCHAR(50) NOT NULL,
+    colors_json TEXT,
+    typography_json TEXT,
+    layout_json TEXT,
+    custom_css TEXT,
+    is_active BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
+);
+
 -- Initiale Daten: FREE Plan
 INSERT INTO plans (name, max_stores, max_custom_domains, max_subdomains, max_storage_mb, max_products, max_image_count)
 VALUES ('FREE', 1, 0, 1, 100, 50, 100)
@@ -382,6 +404,8 @@ CREATE INDEX idx_redemption_store ON coupon_redemptions(store_id);
 CREATE INDEX idx_redemption_coupon ON coupon_redemptions(coupon_id);
 CREATE INDEX idx_redemption_customer ON coupon_redemptions(customer_id);
 CREATE UNIQUE INDEX idx_redemption_order ON coupon_redemptions(order_id);
+CREATE INDEX idx_theme_store ON store_themes(store_id);
+CREATE INDEX idx_theme_active ON store_themes(store_id, is_active);
 
 -- Grant permissions to storeapp user
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO storeapp;

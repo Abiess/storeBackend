@@ -63,6 +63,21 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'stores/:id/settings',
+    loadComponent: () => import('./features/stores/store-settings.component').then(m => m.StoreSettingsComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/orders',
+    loadComponent: () => import('./features/stores/store-orders.component').then(m => m.StoreOrdersComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/theme',
+    loadComponent: () => import('./features/stores/store-theme.component').then(m => m.StoreThemeComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'dashboard/stores/:storeId/products',
     loadComponent: () => import('./features/products/product-list.component').then(m => m.ProductListComponent),
     canActivate: [authGuard]

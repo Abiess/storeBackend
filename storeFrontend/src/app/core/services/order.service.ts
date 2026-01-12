@@ -24,6 +24,10 @@ export class OrderService {
     return this.http.get<Order[]>(`${environment.apiUrl}/stores/${storeId}/orders`, { params });
   }
 
+  getStoreOrders(storeId: number): Observable<Order[]> {
+    return this.getOrders(storeId);
+  }
+
   getOrder(storeId: number, orderId: number): Observable<Order> {
     if (environment.useMockData) {
       return this.mockService.getOrder(storeId, orderId);
