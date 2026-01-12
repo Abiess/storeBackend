@@ -29,16 +29,19 @@ public class WebConfig implements WebMvcConfigurer {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Erlaubte Origins - Frontend-Domains
+        // WICHTIG: Für Wildcard-Subdomains mit allowCredentials
+        // müssen wir setAllowedOriginPatterns verwenden
         configuration.setAllowedOriginPatterns(Arrays.asList(
             "http://localhost:*",              // Local development (alle Ports)
             "https://localhost:*",             // Local development HTTPS
+            "http://*.localhost:*",            // Local subdomains
+            "https://*.localhost:*",           // Local subdomains HTTPS
             "https://markt.ma",                // Production frontend
             "http://markt.ma",                 // Production frontend (HTTP)
             "https://www.markt.ma",            // Production frontend with www
             "http://www.markt.ma",             // Production frontend with www (HTTP)
-            "https://*.markt.ma",              // Alle Subdomains von markt.ma
-            "http://*.markt.ma"                // Alle Subdomains von markt.ma (HTTP)
+            "https://*.markt.ma",              // ALLE Subdomains von markt.ma (inkl. dsfsdfds.markt.ma)
+            "http://*.markt.ma"                // ALLE Subdomains von markt.ma (HTTP)
         ));
 
         // Erlaubte HTTP-Methoden
@@ -49,15 +52,15 @@ public class WebConfig implements WebMvcConfigurer {
         // Erlaubte Headers - alle erlauben
         configuration.setAllowedHeaders(List.of("*"));
 
-        // Credentials NICHT erlauben für öffentliche API-Endpunkte
-        // Dies ermöglicht breitere CORS-Unterstützung
-        configuration.setAllowCredentials(false);
+        // Credentials erlauben - funktioniert MIT allowedOriginPatterns
+        configuration.setAllowCredentials(true);
 
         // Exposed Headers (für Client-Zugriff)
         configuration.setExposedHeaders(Arrays.asList(
             "Authorization",
             "Content-Type",
-            "Access-Control-Allow-Origin"
+            "Access-Control-Allow-Origin",
+            "Access-Control-Allow-Credentials"
         ));
 
         // Max Age für Preflight-Requests (1 Stunde)
