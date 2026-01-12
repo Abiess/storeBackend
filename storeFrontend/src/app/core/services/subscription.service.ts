@@ -183,7 +183,7 @@ export class SubscriptionService {
         id: 'pi_' + Date.now(),
         amount: amount,
         currency: 'EUR',
-        status: amount === 0 ? 'succeeded' : 'pending',
+        status: amount === 0 ? 'completed' : 'pending',
         paymentMethod: request.paymentMethod,
         bankTransferDetails: request.paymentMethod === PaymentMethod.BANK_TRANSFER && amount > 0 ? {
           accountHolder: 'markt.ma GmbH',
