@@ -67,12 +67,16 @@ export class StorefrontComponent implements OnInit {
     this.themeService.getActiveTheme(this.storeId).subscribe({
       next: (theme) => {
         if (theme) {
-          console.log('Theme wird angewendet:', theme.name);
+          console.log('✅ Theme geladen und wird angewendet:', theme.name);
           this.themeService.applyTheme(theme);
+        } else {
+          console.log('ℹ️ Kein Theme gefunden - verwende Standard-Theme');
         }
       },
       error: (error) => {
-        console.error('Fehler beim Laden des Themes:', error);
+        console.warn('⚠️ Theme konnte nicht geladen werden - verwende Standard-Theme:', error);
+        // Fehler beim Laden des Themes sollte den Shop nicht blockieren
+        // Das Standard-Theme wird automatisch verwendet
       }
     });
   }

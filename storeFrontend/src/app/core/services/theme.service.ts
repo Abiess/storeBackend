@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, BehaviorSubject } from 'rxjs';
-import { delay, tap } from 'rxjs/operators';
+import { delay, tap, catchError } from 'rxjs/operators';
 import {
   StoreTheme,
   ThemePreset,
@@ -227,6 +227,17 @@ export class ThemeService {
    */
   getActiveTheme(storeId: number): Observable<StoreTheme | null> {
     if (environment.useMockData) {
+      // ✅ Zuerst im LocalStorage nachschauen
+      const savedTheme = this.loadThemeFromLocalStorage(storeId);
+      if (savedTheme) {
+        console.log('💾 Theme aus LocalStorage geladen:', savedTheme.name);
+        return of(savedTheme).pipe(
+          delay(100),
+          tap(theme => this.currentTheme$.next(theme))
+        );
+      }
+
+      // Fallback: Standard Mock-Theme
       const mockTheme: StoreTheme = {
         id: 1,
         storeId: storeId,
@@ -246,8 +257,41 @@ export class ThemeService {
       );
     }
     return this.http.get<StoreTheme>(`${this.API_URL}/store/${storeId}/active`).pipe(
-      tap(theme => this.currentTheme$.next(theme))
+      tap(theme => this.currentTheme$.next(theme)),
+      catchError(error => {
+        console.warn('Theme-Laden fehlgeschlagen, verwende Standard-Theme:', error);
+        return of(null);
+      })
     );
+  }
+
+  /**
+   * Speichere Theme im LocalStorage (für Mock-Modus)
+   */
+  private saveThemeToLocalStorage(storeId: number, theme: StoreTheme): void {
+    try {
+      const key = `store_${storeId}_theme`;
+      localStorage.setItem(key, JSON.stringify(theme));
+      console.log('💾 Theme im LocalStorage gespeichert:', key);
+    } catch (error) {
+      console.error('Fehler beim Speichern im LocalStorage:', error);
+    }
+  }
+
+  /**
+   * Lade Theme aus LocalStorage (für Mock-Modus)
+   */
+  private loadThemeFromLocalStorage(storeId: number): StoreTheme | null {
+    try {
+      const key = `store_${storeId}_theme`;
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (error) {
+      console.error('Fehler beim Laden aus LocalStorage:', error);
+    }
+    return null;
   }
 
   /**
@@ -282,6 +326,9 @@ export class ThemeService {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
+
+      // ✅ Im LocalStorage speichern für Persistenz
+      this.saveThemeToLocalStorage(request.storeId, newTheme);
 
       return of(newTheme).pipe(
         delay(500),
@@ -436,4 +483,3 @@ export class ThemeService {
     `.trim();
   }
 }
-

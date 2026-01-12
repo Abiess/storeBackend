@@ -620,7 +620,14 @@ export class StoreThemeComponent implements OnInit {
         this.activeTheme = theme;
         this.selectedPreset = null;
         this.saving = false;
-        alert('Theme erfolgreich gespeichert!');
+
+        // ✅ Theme sofort anwenden
+        this.themeService.applyTheme(theme);
+
+        // ✅ Theme im LocalStorage speichern für Persistenz
+        this.saveThemeToLocalStorage(theme);
+
+        alert('✅ Theme erfolgreich gespeichert und angewendet!');
       },
       error: (error) => {
         this.error = 'Fehler beim Speichern des Themes';
@@ -628,6 +635,16 @@ export class StoreThemeComponent implements OnInit {
         this.saving = false;
       }
     });
+  }
+
+  private saveThemeToLocalStorage(theme: StoreTheme): void {
+    try {
+      const key = `store_${this.storeId}_theme`;
+      localStorage.setItem(key, JSON.stringify(theme));
+      console.log('💾 Theme im LocalStorage gespeichert:', key);
+    } catch (error) {
+      console.error('Fehler beim Speichern im LocalStorage:', error);
+    }
   }
 
   cancelEdit(): void {
@@ -661,4 +678,3 @@ export class StoreThemeComponent implements OnInit {
     return names[template] || template;
   }
 }
-
