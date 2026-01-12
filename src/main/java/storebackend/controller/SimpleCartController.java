@@ -18,6 +18,7 @@ import java.util.*;
  */
 @RestController
 @RequestMapping("/api/public/simple-cart")
+@CrossOrigin(origins = "*", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS})
 @RequiredArgsConstructor
 @Slf4j
 public class SimpleCartController {
