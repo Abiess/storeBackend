@@ -26,14 +26,14 @@ public class OrderStatusHistory {
     @Column(nullable = false)
     private OrderStatus status;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "notes", columnDefinition = "TEXT")
     private String note;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "updated_by")
     private User updatedBy;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "changed_at", nullable = false, updatable = false)
     private LocalDateTime timestamp;
 
     @PrePersist
@@ -41,4 +41,3 @@ public class OrderStatusHistory {
         timestamp = LocalDateTime.now();
     }
 }
-

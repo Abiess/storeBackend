@@ -108,12 +108,15 @@ public class PublicOrderController {
             }
 
             // FIXED: Verknüpfe Guest-Cart mit dem eingeloggten User
+            storebackend.entity.User customer = null;
             if (cart.getUser() == null) {
                 log.info("🔗 Verknüpfe Guest-Cart mit User {}", userId);
-                storebackend.entity.User user = userRepository.findById(userId)
+                customer = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("User not found"));
-                cart.setUser(user);
+                cart.setUser(customer);
                 cartRepository.save(cart);
+            } else {
+                customer = cart.getUser();
             }
 
             // Extract addresses
@@ -141,7 +144,7 @@ public class PublicOrderController {
                 billingAddress.get("postalCode"),
                 billingAddress.get("country"),
                 notes,
-                null // Will be set by OrderService
+                customer  // Pass the actual customer
             );
 
             log.info("✅ Order created successfully: {} for userId: {}", order.getOrderNumber(), userId);
