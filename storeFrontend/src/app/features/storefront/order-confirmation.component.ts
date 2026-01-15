@@ -79,23 +79,23 @@ import { CheckoutService, OrderDetails } from '../../core/services/checkout.serv
           <section class="details-section" *ngIf="order.shippingAddress">
             <h2>Lieferadresse</h2>
             <address>
-              {{ order.shippingAddress.firstName }} {{ order.shippingAddress.lastName }}<br>
-              {{ order.shippingAddress.address1 }}<br>
-              <span *ngIf="order.shippingAddress.address2">{{ order.shippingAddress.address2 }}<br></span>
-              {{ order.shippingAddress.postalCode }} {{ order.shippingAddress.city }}<br>
-              {{ order.shippingAddress.country }}
-              <span *ngIf="order.shippingAddress.phone"><br>Tel: {{ order.shippingAddress.phone }}</span>
+              {{ order.shippingAddress?.firstName }} {{ order.shippingAddress?.lastName }}<br>
+              {{ order.shippingAddress?.address1 }}<br>
+              <span *ngIf="order.shippingAddress?.address2">{{ order.shippingAddress.address2 }}<br></span>
+              {{ order.shippingAddress?.postalCode }} {{ order.shippingAddress?.city }}<br>
+              {{ order.shippingAddress?.country }}
+              <span *ngIf="order.shippingAddress?.phone"><br>Tel: {{ order.shippingAddress.phone }}</span>
             </address>
           </section>
 
           <section class="details-section" *ngIf="order.billingAddress">
             <h2>Rechnungsadresse</h2>
             <address>
-              {{ order.billingAddress.firstName }} {{ order.billingAddress.lastName }}<br>
-              {{ order.billingAddress.address1 }}<br>
-              <span *ngIf="order.billingAddress.address2">{{ order.billingAddress.address2 }}<br></span>
-              {{ order.billingAddress.postalCode }} {{ order.billingAddress.city }}<br>
-              {{ order.billingAddress.country }}
+              {{ order.billingAddress?.firstName }} {{ order.billingAddress?.lastName }}<br>
+              {{ order.billingAddress?.address1 }}<br>
+              <span *ngIf="order.billingAddress?.address2">{{ order.billingAddress.address2 }}<br></span>
+              {{ order.billingAddress?.postalCode }} {{ order.billingAddress?.city }}<br>
+              {{ order.billingAddress?.country }}
             </address>
           </section>
 
