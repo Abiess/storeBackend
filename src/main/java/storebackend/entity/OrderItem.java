@@ -26,6 +26,9 @@ public class OrderItem {
     @JoinColumn(name = "variant_id", nullable = false)
     private ProductVariant variant;
 
+    @Column(name = "product_name", nullable = false)
+    private String productName;
+
     @Column(nullable = false)
     private Integer quantity;
 
@@ -43,4 +46,3 @@ public class OrderItem {
         createdAt = LocalDateTime.now();
     }
 }
-
