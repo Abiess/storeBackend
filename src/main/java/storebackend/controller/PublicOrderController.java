@@ -174,17 +174,24 @@ public class PublicOrderController {
         try {
             Order order = orderService.getOrderByNumber(orderNumber);
 
-            // Note: customerEmail is no longer stored in Order entity
-            // For now, we'll allow access without email verification
-            // TODO: Store email in separate table or validate via customer relationship
-
-            // If customer exists, verify via customer relationship
-            if (order.getCustomer() != null && !order.getCustomer().getEmail().equalsIgnoreCase(email)) {
-                return ResponseEntity.status(403).build();
+            // Verify email access - allow if:
+            // 1. Order has no customer (guest order)
+            // 2. Customer email matches the provided email
+            if (order.getCustomer() != null) {
+                String customerEmail = order.getCustomer().getEmail();
+                if (customerEmail != null && !customerEmail.equalsIgnoreCase(email)) {
+                    log.warn("❌ Email mismatch for order {}: expected {}, got {}",
+                        orderNumber, customerEmail, email);
+                    return ResponseEntity.status(403).build();
+                }
+            } else {
+                // Guest order - allow access (no customer associated)
+                log.info("✅ Allowing access to guest order {}", orderNumber);
             }
 
             return ResponseEntity.ok(order);
         } catch (RuntimeException e) {
+            log.error("❌ Order not found: {}", orderNumber);
             return ResponseEntity.notFound().build();
         }
     }
