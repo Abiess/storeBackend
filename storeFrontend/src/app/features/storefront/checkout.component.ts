@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { Router } from '@angular/router';
 import { CartService, Cart } from '../../core/services/cart.service';
 import { CheckoutService, CheckoutRequest } from '../../core/services/checkout.service';
+import { AuthService } from '../../core/services/auth.service';
 import { CouponInputComponent } from '../../shared/components/coupon-input/coupon-input.component';
 import { ValidateCouponsResponse } from '../../core/services/coupon.service';
 import { PlaceholderImageUtil } from '../../shared/utils/placeholder-image.util';
@@ -503,7 +504,8 @@ export class CheckoutComponent implements OnInit {
     private fb: FormBuilder,
     private cartService: CartService,
     private checkoutService: CheckoutService,
-    private router: Router
+    private router: Router,
+    private authService: AuthService
   ) {
     this.checkoutForm = this.fb.group({
       customerEmail: ['', [Validators.required, Validators.email]],
@@ -532,6 +534,20 @@ export class CheckoutComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadCart();
+    // FIXED: Setze E-Mail des eingeloggten Users automatisch
+    this.authService.currentUser$.subscribe(user => {
+      if (user && user.email) {
+        console.log('✅ Setze E-Mail des eingeloggten Users:', user.email);
+        this.checkoutForm.patchValue({
+          customerEmail: user.email
+        });
+        // Disable das Feld, damit der User es nicht ändern kann
+        this.checkoutForm.get('customerEmail')?.disable();
+      } else {
+        // User nicht eingeloggt - Feld aktivieren
+        this.checkoutForm.get('customerEmail')?.enable();
+      }
+    });
   }
 
   loadCart(): void {
@@ -581,18 +597,25 @@ export class CheckoutComponent implements OnInit {
 
     const formValue = this.checkoutForm.value;
 
+    // FIXED: Wenn E-Mail-Feld disabled ist, hole den Wert direkt
+    const customerEmail = this.checkoutForm.get('customerEmail')?.disabled
+      ? this.checkoutForm.get('customerEmail')?.value
+      : formValue.customerEmail;
+
     // FIXED: sessionId nicht mehr nötig - JWT-Token wird automatisch im Header gesendet
     const request: CheckoutRequest = {
       storeId: this.cart.storeId,
-      customerEmail: formValue.customerEmail,
+      customerEmail: customerEmail,
       shippingAddress: formValue.shippingAddress,
       billingAddress: this.sameAsShipping ? formValue.shippingAddress : formValue.billingAddress,
       notes: formValue.notes
     };
 
+    console.log('📦 Sende Checkout-Request mit E-Mail:', customerEmail);
+
     this.checkoutService.checkout(request).subscribe({
       next: (response) => {
-        console.log('Bestellung erfolgreich:', response);
+        console.log('✅ Bestellung erfolgreich:', response);
         this.router.navigate(['/order-confirmation'], {
           queryParams: {
             orderNumber: response.orderNumber,
@@ -603,7 +626,7 @@ export class CheckoutComponent implements OnInit {
       error: (error) => {
         this.submitting = false;
         this.errorMessage = error.message || 'Fehler beim Aufgeben der Bestellung. Bitte versuchen Sie es erneut.';
-        console.error('Checkout-Fehler:', error);
+        console.error('❌ Checkout-Fehler:', error);
       }
     });
   }
