@@ -3,12 +3,14 @@ package storebackend.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import storebackend.dto.OrderDetailsDTO;
 import storebackend.entity.*;
 import storebackend.enums.OrderStatus;
 import storebackend.repository.*;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -140,6 +142,48 @@ public class OrderService {
     @Transactional(readOnly = true)
     public List<OrderItem> getOrderItems(Long orderId) {
         return orderItemRepository.findByOrderId(orderId);
+    }
+
+    @Transactional(readOnly = true)
+    public OrderDetailsDTO getOrderDetailsByNumber(String orderNumber) {
+        Order order = orderRepository.findByOrderNumber(orderNumber)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        return convertToDTO(order);
+    }
+
+    private OrderDetailsDTO convertToDTO(Order order) {
+        OrderDetailsDTO dto = new OrderDetailsDTO();
+        dto.setId(order.getId());
+        dto.setOrderNumber(order.getOrderNumber());
+        dto.setStatus(order.getStatus());
+        dto.setTotalAmount(order.getTotalAmount());
+        dto.setCreatedAt(order.getCreatedAt());
+
+        // Customer Info
+        if (order.getCustomer() != null) {
+            OrderDetailsDTO.CustomerDTO customerDTO = new OrderDetailsDTO.CustomerDTO();
+            customerDTO.setId(order.getCustomer().getId());
+            customerDTO.setEmail(order.getCustomer().getEmail());
+            dto.setCustomer(customerDTO);
+        }
+
+        // Order Items
+        List<OrderItem> items = orderItemRepository.findByOrderId(order.getId());
+        List<OrderDetailsDTO.OrderItemDTO> itemDTOs = items.stream()
+            .map(item -> {
+                OrderDetailsDTO.OrderItemDTO itemDTO = new OrderDetailsDTO.OrderItemDTO();
+                itemDTO.setId(item.getId());
+                itemDTO.setProductName(item.getProductName());
+                itemDTO.setQuantity(item.getQuantity());
+                itemDTO.setPrice(item.getPrice());
+                itemDTO.setProductSnapshot(item.getProductSnapshot());
+                return itemDTO;
+            })
+            .collect(Collectors.toList());
+        dto.setItems(itemDTOs);
+
+        return dto;
     }
 
     private void createStatusHistory(Order order, OrderStatus status, String note, User updatedBy) {

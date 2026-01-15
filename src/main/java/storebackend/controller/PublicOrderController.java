@@ -167,32 +167,35 @@ public class PublicOrderController {
     }
 
     @GetMapping("/{orderNumber}")
-    public ResponseEntity<Order> getOrderByNumber(
+    public ResponseEntity<?> getOrderByNumber(
             @PathVariable String orderNumber,
             @RequestParam String email) {
 
         try {
-            Order order = orderService.getOrderByNumber(orderNumber);
+            log.info("🔍 Abrufen der Bestellung: {} mit E-Mail: {}", orderNumber, email);
+
+            OrderDetailsDTO orderDetails = orderService.getOrderDetailsByNumber(orderNumber);
 
             // Verify email access - allow if:
             // 1. Order has no customer (guest order)
             // 2. Customer email matches the provided email
-            if (order.getCustomer() != null) {
-                String customerEmail = order.getCustomer().getEmail();
+            if (orderDetails.getCustomer() != null) {
+                String customerEmail = orderDetails.getCustomer().getEmail();
                 if (customerEmail != null && !customerEmail.equalsIgnoreCase(email)) {
                     log.warn("❌ Email mismatch for order {}: expected {}, got {}",
                         orderNumber, customerEmail, email);
-                    return ResponseEntity.status(403).build();
+                    return ResponseEntity.status(403).body(Map.of("error", "Access denied"));
                 }
             } else {
                 // Guest order - allow access (no customer associated)
                 log.info("✅ Allowing access to guest order {}", orderNumber);
             }
 
-            return ResponseEntity.ok(order);
+            log.info("✅ Bestellung erfolgreich abgerufen: {}", orderNumber);
+            return ResponseEntity.ok(orderDetails);
         } catch (RuntimeException e) {
-            log.error("❌ Order not found: {}", orderNumber);
-            return ResponseEntity.notFound().build();
+            log.error("❌ Fehler beim Abrufen der Bestellung {}: {}", orderNumber, e.getMessage());
+            return ResponseEntity.status(500).body(Map.of("error", "Order not found or could not be loaded"));
         }
     }
 }
