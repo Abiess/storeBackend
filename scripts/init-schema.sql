@@ -15,6 +15,7 @@ DROP TABLE IF EXISTS carts CASCADE;
 DROP TABLE IF EXISTS order_items CASCADE;
 DROP TABLE IF EXISTS order_status_history CASCADE;
 DROP TABLE IF EXISTS orders CASCADE;
+DROP TABLE IF EXISTS inventory_logs CASCADE;
 DROP TABLE IF EXISTS product_media CASCADE;
 DROP TABLE IF EXISTS product_variants CASCADE;
 DROP TABLE IF EXISTS product_option_values CASCADE;
@@ -171,6 +172,19 @@ CREATE TABLE product_variants (
     stock_quantity INTEGER NOT NULL DEFAULT 0,
     attributes_json TEXT,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+);
+
+-- Inventory Logs (Bestandsverlauf)
+CREATE TABLE inventory_logs (
+    id BIGSERIAL PRIMARY KEY,
+    variant_id BIGINT NOT NULL,
+    quantity_change INTEGER NOT NULL,
+    reason VARCHAR(50) NOT NULL,
+    user_id BIGINT,
+    notes TEXT,
+    timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- Product Media (Join-Tabelle mit zusätzlichen Metadaten)
@@ -408,6 +422,8 @@ CREATE INDEX idx_redemption_customer ON coupon_redemptions(customer_id);
 CREATE UNIQUE INDEX idx_redemption_order ON coupon_redemptions(order_id);
 CREATE INDEX idx_theme_store ON store_themes(store_id);
 CREATE INDEX idx_theme_active ON store_themes(store_id, is_active);
+CREATE INDEX idx_inventory_logs_variant ON inventory_logs(variant_id);
+CREATE INDEX idx_inventory_logs_timestamp ON inventory_logs(timestamp);
 
 -- Grant permissions to storeapp user
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO storeapp;
