@@ -146,7 +146,7 @@ public class OrderService {
         OrderStatusHistory history = new OrderStatusHistory();
         history.setOrder(order);
         history.setStatus(status);
-        history.setNote(note);
+        history.setNotes(note);
         history.setUpdatedBy(updatedBy);
         orderStatusHistoryRepository.save(history);
     }

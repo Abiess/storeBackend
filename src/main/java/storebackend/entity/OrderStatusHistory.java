@@ -26,8 +26,8 @@ public class OrderStatusHistory {
     @Column(nullable = false)
     private OrderStatus status;
 
-    @Column(name = "notes", columnDefinition = "TEXT")
-    private String note;
+    @Column(columnDefinition = "TEXT")
+    private String notes;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "updated_by")
