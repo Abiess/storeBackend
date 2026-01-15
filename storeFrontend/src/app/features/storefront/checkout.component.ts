@@ -616,10 +616,18 @@ export class CheckoutComponent implements OnInit {
     this.checkoutService.checkout(request).subscribe({
       next: (response) => {
         console.log('✅ Bestellung erfolgreich:', response);
+
+        // FIXED: Verwende die E-Mail aus dem Formular (die des eingeloggten Users), nicht aus der Response
+        const emailForConfirmation = this.checkoutForm.get('customerEmail')?.disabled
+          ? this.checkoutForm.get('customerEmail')?.value
+          : formValue.customerEmail;
+
+        console.log('📧 Navigiere zur Confirmation mit E-Mail:', emailForConfirmation);
+
         this.router.navigate(['/order-confirmation'], {
           queryParams: {
             orderNumber: response.orderNumber,
-            email: response.customerEmail
+            email: emailForConfirmation  // Verwende die E-Mail des eingeloggten Users
           }
         });
       },
