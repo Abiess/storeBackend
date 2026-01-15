@@ -37,23 +37,25 @@ export interface CheckoutResponse {
 export interface OrderDetails {
   id: number;
   orderNumber: string;
-  customerEmail: string;
   status: string;
-  total: number;
-  shippingAddress: Address;
-  billingAddress: Address;
-  items: OrderItem[];
-  notes?: string;
+  totalAmount: number;  // FIXED: totalAmount statt total
   createdAt: string;
+  customer?: {  // FIXED: customer ist optional und verschachtelt
+    id: number;
+    email: string;
+  };
+  items: OrderItem[];
+  shippingAddress?: Address;  // Optional für die API-Antwort
+  billingAddress?: Address;   // Optional für die API-Antwort
+  notes?: string;
 }
 
 export interface OrderItem {
   id: number;
   productName: string;
-  variantName: string;
   quantity: number;
-  priceAtOrder: number;
-  subtotal: number;
+  price: number;  // FIXED: price statt priceAtOrder
+  productSnapshot?: string;  // FIXED: JSON-String mit zusätzlichen Produktdaten
 }
 
 @Injectable({

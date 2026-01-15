@@ -15,8 +15,9 @@ import java.util.List;
 public class OrderDetailsDTO {
     private Long id;
     private String orderNumber;
+    private String customerEmail;
     private OrderStatus status;
-    private BigDecimal totalAmount;
+    private BigDecimal total;
     private LocalDateTime createdAt;
     private CustomerDTO customer;
     private List<OrderItemDTO> items;
@@ -35,9 +36,9 @@ public class OrderDetailsDTO {
     public static class OrderItemDTO {
         private Long id;
         private String productName;
+        private String variantName;
         private Integer quantity;
-        private BigDecimal price;
-        private String productSnapshot;
+        private BigDecimal priceAtOrder;
+        private BigDecimal subtotal;
     }
 }
-

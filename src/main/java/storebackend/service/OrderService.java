@@ -157,7 +157,7 @@ public class OrderService {
         dto.setId(order.getId());
         dto.setOrderNumber(order.getOrderNumber());
         dto.setStatus(order.getStatus());
-        dto.setTotalAmount(order.getTotalAmount());
+        dto.setTotal(order.getTotalAmount());
         dto.setCreatedAt(order.getCreatedAt());
 
         // Customer Info
@@ -166,6 +166,7 @@ public class OrderService {
             customerDTO.setId(order.getCustomer().getId());
             customerDTO.setEmail(order.getCustomer().getEmail());
             dto.setCustomer(customerDTO);
+            dto.setCustomerEmail(order.getCustomer().getEmail());
         }
 
         // Order Items
@@ -175,9 +176,10 @@ public class OrderService {
                 OrderDetailsDTO.OrderItemDTO itemDTO = new OrderDetailsDTO.OrderItemDTO();
                 itemDTO.setId(item.getId());
                 itemDTO.setProductName(item.getProductName());
+                itemDTO.setVariantName(item.getProductName()); // Verwende productName auch als variantName
                 itemDTO.setQuantity(item.getQuantity());
-                itemDTO.setPrice(item.getPrice());
-                itemDTO.setProductSnapshot(item.getProductSnapshot());
+                itemDTO.setPriceAtOrder(item.getPrice());
+                itemDTO.setSubtotal(item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
                 return itemDTO;
             })
             .collect(Collectors.toList());

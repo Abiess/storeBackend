@@ -27,8 +27,10 @@ import { CheckoutService, OrderDetails } from '../../core/services/checkout.serv
           <h1>Vielen Dank für Ihre Bestellung!</h1>
           <p class="order-number">Bestellnummer: <strong>{{ order.orderNumber }}</strong></p>
           <p class="confirmation-text">
-            Wir haben Ihre Bestellung erhalten und werden sie schnellstmöglich bearbeiten.
-            Eine Bestätigungs-E-Mail wurde an <strong>{{ order.customerEmail }}</strong> gesendet.
+            Wir haben Ihre Bestellung erhalten und werden sie schnellstmöglichst bearbeiten.
+            <span *ngIf="order.customer?.email">
+              Eine Bestätigungs-E-Mail wurde an <strong>{{ order.customer?.email }}</strong> gesendet.
+            </span>
           </p>
         </div>
 
@@ -49,6 +51,10 @@ import { CheckoutService, OrderDetails } from '../../core/services/checkout.serv
                 {{ getStatusLabel(order.status) }}
               </span>
             </div>
+            <div class="detail-row" *ngIf="order.customer?.email">
+              <span>Kunden-E-Mail:</span>
+              <strong>{{ order.customer?.email }}</strong>
+            </div>
           </section>
 
           <section class="details-section">
@@ -57,17 +63,20 @@ import { CheckoutService, OrderDetails } from '../../core/services/checkout.serv
               <div class="order-item" *ngFor="let item of order.items">
                 <div class="item-info">
                   <h4>{{ item.productName }}</h4>
-                  <p>{{ item.variantName }}</p>
+                  <p *ngIf="getProductSnapshot(item.productSnapshot)?.sku" class="sku">
+                    SKU: {{ getProductSnapshot(item.productSnapshot)?.sku }}
+                  </p>
                   <p class="quantity">Menge: {{ item.quantity }}</p>
                 </div>
                 <div class="item-price">
-                  {{ item.subtotal | number:'1.2-2' }} €
+                  {{ item.price * item.quantity | number:'1.2-2' }} €
+                  <span class="unit-price">({{ item.price | number:'1.2-2' }} € / Stk.)</span>
                 </div>
               </div>
             </div>
           </section>
 
-          <section class="details-section">
+          <section class="details-section" *ngIf="order.shippingAddress">
             <h2>Lieferadresse</h2>
             <address>
               {{ order.shippingAddress.firstName }} {{ order.shippingAddress.lastName }}<br>
@@ -79,7 +88,7 @@ import { CheckoutService, OrderDetails } from '../../core/services/checkout.serv
             </address>
           </section>
 
-          <section class="details-section">
+          <section class="details-section" *ngIf="order.billingAddress">
             <h2>Rechnungsadresse</h2>
             <address>
               {{ order.billingAddress.firstName }} {{ order.billingAddress.lastName }}<br>
@@ -98,7 +107,7 @@ import { CheckoutService, OrderDetails } from '../../core/services/checkout.serv
           <section class="details-section total-section">
             <h2>Gesamtsumme</h2>
             <div class="total-amount">
-              {{ order.total | number:'1.2-2' }} €
+              {{ order.totalAmount | number:'1.2-2' }} €
             </div>
           </section>
         </div>
@@ -248,10 +257,27 @@ import { CheckoutService, OrderDetails } from '../../core/services/checkout.serv
       font-size: 14px;
     }
 
+    .item-info .sku {
+      color: #999;
+      font-size: 12px;
+      font-family: monospace;
+    }
+
     .item-price {
       font-weight: 600;
       font-size: 18px;
       color: #667eea;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      text-align: right;
+    }
+
+    .unit-price {
+      font-size: 12px;
+      font-weight: 400;
+      color: #999;
+      margin-top: 4px;
     }
 
     address {
@@ -345,6 +371,19 @@ export class OrderConfirmationComponent implements OnInit {
       'CANCELLED': 'Storniert'
     };
     return labels[status] || status;
+  }
+
+  /**
+   * Parse productSnapshot JSON string
+   */
+  getProductSnapshot(snapshot?: string): any {
+    if (!snapshot) return null;
+    try {
+      return JSON.parse(snapshot);
+    } catch (e) {
+      console.error('Error parsing product snapshot:', e);
+      return null;
+    }
   }
 
   printOrder(): void {
