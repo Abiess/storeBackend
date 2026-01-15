@@ -93,6 +93,7 @@ public class OrderService {
             OrderItem orderItem = new OrderItem();
             orderItem.setOrder(savedOrder);
             orderItem.setVariant(cartItem.getVariant());
+            orderItem.setProductName(cartItem.getVariant().getProduct().getTitle());
             orderItem.setQuantity(cartItem.getQuantity());
             orderItem.setPrice(cartItem.getPriceSnapshot());
             orderItem.setProductSnapshot(createProductSnapshot(cartItem.getVariant()));
