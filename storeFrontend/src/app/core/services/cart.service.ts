@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, of, throwError } from 'rxjs';
+import { Observable, of, throwError, BehaviorSubject } from 'rxjs';
 import { environment } from '@env/environment';
 import { MockCartService } from '../mocks/mock-cart.service';
-import { map, catchError } from 'rxjs/operators';
+import { map, catchError, tap } from 'rxjs/operators';
 import { Router } from '@angular/router';
 
 export interface CartItem {
@@ -38,6 +38,10 @@ export interface AddToCartRequest {
 export class CartService {
   private mockService = new MockCartService();
   private cartApiUrl = `${environment.publicApiUrl}/simple-cart`;
+
+  // FIXED: BehaviorSubject für Warenkorb-Updates
+  private cartUpdateSubject = new BehaviorSubject<void>(undefined);
+  public cartUpdate$ = this.cartUpdateSubject.asObservable();
 
   constructor(
     private http: HttpClient,
@@ -77,14 +81,15 @@ export class CartService {
       return this.mockService.getCart(storeId);
     }
 
-    // FIXED: Cart-Laden funktioniert jetzt auch ohne Login (Guest Cart)
     console.log('🛒 Lade Warenkorb für Store', storeId);
     return this.http.get<Cart>(`${this.cartApiUrl}?storeId=${storeId}`, {
-      headers: this.getAuthHeaders() // Token optional
+      headers: this.getAuthHeaders()
     }).pipe(
+      tap(cart => {
+        console.log('📦 Warenkorb geladen:', cart.itemCount, 'Items');
+      }),
       catchError(error => {
         console.warn('⚠️ Fehler beim Laden des Warenkorbs:', error);
-        // Returniere leeren Cart statt Fehler
         return of({
           cartId: 0,
           storeId: storeId,
@@ -101,11 +106,13 @@ export class CartService {
       return this.mockService.addItem(request);
     }
 
-    // FIXED: Produkt hinzufügen funktioniert jetzt auch ohne Login (Guest Cart)
     console.log('➕ Füge Produkt zum Warenkorb hinzu (Guest Cart unterstützt)');
     return this.http.post<any>(`${this.cartApiUrl}/items`, request, {
-      headers: this.getAuthHeaders() // Token optional
+      headers: this.getAuthHeaders()
     }).pipe(
+      tap(() => {
+        this.cartUpdateSubject.next(); // Trigger Update
+      }),
       catchError(error => {
         console.error('❌ Fehler beim Hinzufügen zum Warenkorb:', error);
         return throwError(() => error);
@@ -118,10 +125,12 @@ export class CartService {
       return this.mockService.updateItem(itemId, quantity);
     }
 
-    // FIXED: Update funktioniert auch ohne Login
     return this.http.put<any>(`${this.cartApiUrl}/items/${itemId}`, { quantity }, {
       headers: this.getAuthHeaders()
     }).pipe(
+      tap(() => {
+        this.cartUpdateSubject.next(); // Trigger Update
+      }),
       catchError(error => {
         console.error('❌ Fehler beim Aktualisieren des Warenkorbs:', error);
         return throwError(() => error);
@@ -134,10 +143,12 @@ export class CartService {
       return this.mockService.removeItem(itemId);
     }
 
-    // FIXED: Remove funktioniert auch ohne Login
     return this.http.delete<void>(`${this.cartApiUrl}/items/${itemId}`, {
       headers: this.getAuthHeaders()
     }).pipe(
+      tap(() => {
+        this.cartUpdateSubject.next(); // Trigger Update
+      }),
       catchError(error => {
         console.error('❌ Fehler beim Entfernen aus dem Warenkorb:', error);
         return throwError(() => error);
@@ -150,10 +161,13 @@ export class CartService {
       return this.mockService.clearCart(storeId);
     }
 
-    // FIXED: Clear funktioniert auch ohne Login
     return this.http.delete<void>(`${this.cartApiUrl}/clear?storeId=${storeId}`, {
       headers: this.getAuthHeaders()
     }).pipe(
+      tap(() => {
+        console.log('🗑️ Warenkorb geleert');
+        this.cartUpdateSubject.next(); // Trigger Update
+      }),
       catchError(error => {
         console.error('❌ Fehler beim Leeren des Warenkorbs:', error);
         return throwError(() => error);
@@ -182,5 +196,14 @@ export class CartService {
         return of(0);
       })
     );
+  }
+
+  /**
+   * FIXED: Bereinigt den lokalen Warenkorb-Cache beim Logout/User-Wechsel
+   * Triggert ein Update, damit alle Components den Warenkorb neu laden
+   */
+  clearLocalCart(): void {
+    console.log('🧹 Bereinige lokalen Warenkorb-Cache');
+    this.cartUpdateSubject.next();
   }
 }

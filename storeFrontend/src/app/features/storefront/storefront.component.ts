@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule, Router } from '@angular/router';
 import { ProductService } from '@app/core/services/product.service';
@@ -9,6 +9,7 @@ import { Product, Category, PublicStore, ProductStatus } from '@app/core/models'
 import { StorefrontHeaderComponent } from './storefront-header.component';
 import { StorefrontNavComponent } from './storefront-nav.component';
 import { ProductCardComponent } from './product-card.component';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-storefront',
@@ -23,7 +24,7 @@ import { ProductCardComponent } from './product-card.component';
   templateUrl: './storefront.component.html',
   styleUrls: ['./storefront.component.scss']
 })
-export class StorefrontComponent implements OnInit {
+export class StorefrontComponent implements OnInit, OnDestroy {
   storeId!: number;
   store: PublicStore | null = null;
   products: Product[] = [];
@@ -33,6 +34,9 @@ export class StorefrontComponent implements OnInit {
   cartItemCount = 0;
   addingToCart = false;
   readonly ProductStatus = ProductStatus;
+
+  // FIXED: Subscription für Warenkorb-Updates
+  private cartUpdateSubscription?: Subscription;
 
   constructor(
     private route: ActivatedRoute,
@@ -59,6 +63,19 @@ export class StorefrontComponent implements OnInit {
     this.loadTheme();
     this.loadStoreData();
     this.loadCartCount();
+
+    // FIXED: Höre auf Warenkorb-Updates (z.B. nach Logout/Login)
+    this.cartUpdateSubscription = this.cartService.cartUpdate$.subscribe(() => {
+      console.log('🔄 Warenkorb-Update erkannt - lade Counter neu');
+      this.loadCartCount();
+    });
+  }
+
+  ngOnDestroy(): void {
+    // FIXED: Cleanup Subscription
+    if (this.cartUpdateSubscription) {
+      this.cartUpdateSubscription.unsubscribe();
+    }
   }
 
   loadTheme(): void {

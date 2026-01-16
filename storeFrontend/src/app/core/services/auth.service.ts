@@ -10,6 +10,9 @@ export class AuthService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
+  // FIXED: CartService wird später injiziert um zirkuläre Abhängigkeit zu vermeiden
+  private cartService?: any;
+
   constructor(private http: HttpClient) {
     // Load user from localStorage if exists
     const token = this.getToken();
@@ -55,10 +58,16 @@ export class AuthService {
     return this.http.post<AuthResponse>(`${environment.apiUrl}/auth/login`, credentials)
       .pipe(
         tap(response => {
-          // Store token and user - FIXED: use 'auth_token' everywhere
+          // Store token and user
           localStorage.setItem('auth_token', response.token);
           localStorage.setItem('currentUser', JSON.stringify(response.user));
           this.currentUserSubject.next(response.user);
+
+          // FIXED: Nach Login - Warenkorb neu laden (für User-spezifischen Cart)
+          console.log('✅ Login erfolgreich - Warenkorb wird neu geladen');
+          if (this.cartService) {
+            this.cartService.clearLocalCart();
+          }
         })
       );
   }
@@ -81,14 +90,40 @@ export class AuthService {
           const storedToken = localStorage.getItem('auth_token');
           console.log('✅ Token gespeichert:', storedToken ? 'Ja (Länge: ' + storedToken.length + ')' : 'Nein');
           console.log('🔍 Token-Vergleich:', storedToken === response.token ? 'Identisch ✅' : 'UNTERSCHIEDLICH ❌');
+
+          console.log('✅ Registrierung erfolgreich - Warenkorb wird neu geladen');
+          if (this.cartService) {
+            this.cartService.clearLocalCart();
+          }
         })
       );
   }
 
+  /**
+   * Setzt CartService-Referenz (wird von AppComponent aufgerufen)
+   */
+  setCartService(cartService: any): void {
+    this.cartService = cartService;
+  }
+
   logout(): void {
+    console.log('🚪 Logout - Bereinige Session und Warenkorb');
+
+    // FIXED: Entferne alle benutzerspezifischen Daten
     localStorage.removeItem('auth_token');
     localStorage.removeItem('currentUser');
+
+    // FIXED: Setze sessionId zurück, damit neuer User neuen Warenkorb bekommt
+    localStorage.removeItem('cart_session_id');
+
     this.currentUserSubject.next(null);
+
+    // FIXED: Bereinige Warenkorb-Cache
+    if (this.cartService) {
+      this.cartService.clearLocalCart();
+    }
+
+    console.log('✅ Logout abgeschlossen - Session und Warenkorb bereinigt');
   }
 
   isAuthenticated(): boolean {

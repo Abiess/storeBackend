@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { CartService, Cart, CartItem } from '../../core/services/cart.service';
 import { PlaceholderImageUtil } from '../../shared/utils/placeholder-image.util';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-cart',
@@ -315,12 +316,14 @@ import { PlaceholderImageUtil } from '../../shared/utils/placeholder-image.util'
     }
   `]
 })
-export class CartComponent implements OnInit {
+export class CartComponent implements OnInit, OnDestroy {
   cart: Cart | null = null;
   loading = false;
   updatingItem: number | null = null;
   shipping = 4.99;
-  storeId: number = 1; // Wird aus Route/Service geladen
+  storeId: number = 1;
+
+  private cartUpdateSubscription?: Subscription;
 
   constructor(
     private cartService: CartService,
@@ -328,8 +331,18 @@ export class CartComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // TODO: storeId aus Route oder Store-Service laden
     this.loadCart();
+
+    this.cartUpdateSubscription = this.cartService.cartUpdate$.subscribe(() => {
+      console.log('🔄 Warenkorb-Update erkannt - lade neu');
+      this.loadCart();
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.cartUpdateSubscription) {
+      this.cartUpdateSubscription.unsubscribe();
+    }
   }
 
   loadCart(): void {
