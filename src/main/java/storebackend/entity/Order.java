@@ -66,7 +66,8 @@ public class Order {
         @AttributeOverride(name = "address2", column = @Column(name = "billing_address2")),
         @AttributeOverride(name = "city", column = @Column(name = "billing_city")),
         @AttributeOverride(name = "postalCode", column = @Column(name = "billing_postal_code")),
-        @AttributeOverride(name = "country", column = @Column(name = "billing_country"))
+        @AttributeOverride(name = "country", column = @Column(name = "billing_country")),
+        @AttributeOverride(name = "phone", column = @Column(name = "billing_phone"))  // FIXED: phone Mapping hinzugefügt
     })
     private Address billingAddress;
 
