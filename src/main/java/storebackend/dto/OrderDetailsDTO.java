@@ -3,6 +3,7 @@ package storebackend.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import storebackend.entity.Address;
 import storebackend.enums.OrderStatus;
 
 import java.math.BigDecimal;
@@ -17,10 +18,13 @@ public class OrderDetailsDTO {
     private String orderNumber;
     private String customerEmail;
     private OrderStatus status;
-    private BigDecimal total;
+    private BigDecimal totalAmount;  // FIXED: totalAmount statt total
     private LocalDateTime createdAt;
     private CustomerDTO customer;
     private List<OrderItemDTO> items;
+    private Address shippingAddress;  // FIXED: Hinzugefügt
+    private Address billingAddress;   // FIXED: Hinzugefügt
+    private String notes;             // FIXED: Hinzugefügt
 
     @Data
     @NoArgsConstructor
@@ -38,7 +42,7 @@ public class OrderDetailsDTO {
         private String productName;
         private String variantName;
         private Integer quantity;
-        private BigDecimal priceAtOrder;
+        private BigDecimal price;      // FIXED: price statt priceAtOrder
         private BigDecimal subtotal;
     }
 }

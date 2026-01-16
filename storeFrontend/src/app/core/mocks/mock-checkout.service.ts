@@ -38,6 +38,7 @@ export class MockCheckoutService {
     const order: OrderDetails = {
       id: orderId,
       orderNumber,
+      customerEmail: request.customerEmail,  // FIXED: customerEmail hinzugefügt
       customer: {
         id: 0, // Mock customer ID
         email: request.customerEmail
@@ -49,8 +50,10 @@ export class MockCheckoutService {
       items: items.map((item: any) => ({
         id: item.id,
         productName: item.productName,
+        variantName: 'Standard',
         quantity: item.quantity,
-        price: item.priceAtOrder
+        price: item.priceSnapshot,  // FIXED: price statt priceAtOrder
+        subtotal: item.priceSnapshot * item.quantity
       })),
       notes: request.notes,
       createdAt: new Date().toISOString()

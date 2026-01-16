@@ -157,8 +157,13 @@ public class OrderService {
         dto.setId(order.getId());
         dto.setOrderNumber(order.getOrderNumber());
         dto.setStatus(order.getStatus());
-        dto.setTotal(order.getTotalAmount());
+        dto.setTotalAmount(order.getTotalAmount());  // FIXED: totalAmount statt total
         dto.setCreatedAt(order.getCreatedAt());
+
+        // FIXED: Shipping und Billing Address hinzufügen
+        dto.setShippingAddress(order.getShippingAddress());
+        dto.setBillingAddress(order.getBillingAddress());
+        dto.setNotes(order.getNotes());
 
         // Customer Info
         if (order.getCustomer() != null) {
@@ -167,6 +172,9 @@ public class OrderService {
             customerDTO.setEmail(order.getCustomer().getEmail());
             dto.setCustomer(customerDTO);
             dto.setCustomerEmail(order.getCustomer().getEmail());
+        } else if (order.getCustomerEmail() != null) {
+            // FIXED: Für Gast-Bestellungen
+            dto.setCustomerEmail(order.getCustomerEmail());
         }
 
         // Order Items
@@ -178,7 +186,7 @@ public class OrderService {
                 itemDTO.setProductName(item.getProductName());
                 itemDTO.setVariantName(item.getProductName()); // Verwende productName auch als variantName
                 itemDTO.setQuantity(item.getQuantity());
-                itemDTO.setPriceAtOrder(item.getPrice());
+                itemDTO.setPrice(item.getPrice());  // FIXED: price statt priceAtOrder
                 itemDTO.setSubtotal(item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
                 return itemDTO;
             })
