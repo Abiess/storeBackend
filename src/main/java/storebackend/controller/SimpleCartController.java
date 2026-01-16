@@ -57,6 +57,8 @@ public class SimpleCartController {
 
     /**
      * FIXED: Findet oder erstellt Cart basierend auf User-ID oder Session-ID
+     * Für angemeldete User: Nur userId + storeId
+     * Für Gäste: sessionId + storeId (echte Browser-Session)
      */
     private Cart findOrCreateCart(Long userId, Long storeId, String sessionId) {
         Store store = storeRepository.findById(storeId)
@@ -65,7 +67,7 @@ public class SimpleCartController {
         List<Cart> existingCarts;
 
         if (userId != null) {
-            // USER CART: Suche nach User-spezifischem Cart
+            // USER CART: Suche NUR nach userId + storeId (KEINE sessionId!)
             log.info("🔍 Searching for user cart (userId: {}, storeId: {})", userId, storeId);
             User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -79,15 +81,15 @@ public class SimpleCartController {
 
             if (!existingCarts.isEmpty()) {
                 Cart cart = existingCarts.get(0);
-                log.info("✅ Found existing user cart: {}", cart.getId());
+                log.info("✅ Found existing user cart: {} (userId: {}, storeId: {})", cart.getId(), userId, storeId);
                 return cart;
             }
 
-            // Erstelle neuen User-Cart
-            log.info("➕ Creating new user cart for userId: {}", userId);
+            // Erstelle neuen User-Cart OHNE sessionId
+            log.info("➕ Creating new user cart for userId: {}, storeId: {}", userId, storeId);
             Cart cart = new Cart();
             cart.setUser(user);
-            cart.setSessionId("user-" + userId + "-store-" + storeId);
+            cart.setSessionId(null); // KEINE sessionId für angemeldete User!
             cart.setStore(store);
             cart.setCreatedAt(LocalDateTime.now());
             cart.setUpdatedAt(LocalDateTime.now());
@@ -95,19 +97,14 @@ public class SimpleCartController {
             return cartRepository.save(cart);
 
         } else {
-            // GUEST CART: Suche nach Session-spezifischem Cart
-            // FIXED: Verwende finale Variable für Lambda-Ausdruck
-            final String finalSessionId;
+            // GUEST CART: Nur für nicht-angemeldete User
             if (sessionId == null || sessionId.isEmpty()) {
-                finalSessionId = "guest-" + UUID.randomUUID().toString();
-                log.info("🆕 Generated new session ID: {}", finalSessionId);
-            } else {
-                finalSessionId = sessionId;
+                throw new RuntimeException("SessionId required for guest checkout");
             }
 
-            log.info("🔍 Searching for guest cart (sessionId: {}, storeId: {})", finalSessionId, storeId);
+            log.info("🔍 Searching for guest cart (sessionId: {}, storeId: {})", sessionId, storeId);
             existingCarts = cartRepository.findAll().stream()
-                .filter(c -> c.getSessionId() != null && c.getSessionId().equals(finalSessionId))
+                .filter(c -> c.getSessionId() != null && c.getSessionId().equals(sessionId))
                 .filter(c -> c.getStore() != null && c.getStore().getId().equals(storeId))
                 .filter(c -> c.getExpiresAt().isAfter(LocalDateTime.now()))
                 .sorted((c1, c2) -> c2.getUpdatedAt().compareTo(c1.getUpdatedAt()))
@@ -120,9 +117,9 @@ public class SimpleCartController {
             }
 
             // Erstelle neuen Guest-Cart
-            log.info("➕ Creating new guest cart for sessionId: {}", finalSessionId);
+            log.info("➕ Creating new guest cart for sessionId: {}", sessionId);
             Cart cart = new Cart();
-            cart.setSessionId(finalSessionId);
+            cart.setSessionId(sessionId);
             cart.setStore(store);
             cart.setCreatedAt(LocalDateTime.now());
             cart.setUpdatedAt(LocalDateTime.now());
@@ -223,12 +220,26 @@ public class SimpleCartController {
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
         try {
             Long userId = extractUserIdFromRequest(authHeader);
-            Cart cart = findOrCreateCart(userId, storeId, sessionId);
 
+            // Für angemeldete User: sessionId optional
+            if (userId != null) {
+                Cart cart = findOrCreateCart(userId, storeId, null);
+                List<CartItem> items = cartItemRepository.findByCartId(cart.getId());
+                int itemCount = items.stream().mapToInt(CartItem::getQuantity).sum();
+                log.info("✅ Cart count for userId: {}, storeId: {} = {}", userId, storeId, itemCount);
+                return ResponseEntity.ok(Map.of("count", itemCount));
+            }
+
+            // Für Gäste: sessionId erforderlich
+            if (sessionId == null || sessionId.isEmpty()) {
+                log.warn("⚠️ Guest user without sessionId");
+                return ResponseEntity.ok(Map.of("count", 0));
+            }
+
+            Cart cart = findOrCreateCart(null, storeId, sessionId);
             List<CartItem> items = cartItemRepository.findByCartId(cart.getId());
             int itemCount = items.stream().mapToInt(CartItem::getQuantity).sum();
-
-            log.info("✅ Cart count for userId: {}, storeId: {} = {}", userId, storeId, itemCount);
+            log.info("✅ Cart count for guest (sessionId: {}), storeId: {} = {}", sessionId, storeId, itemCount);
             return ResponseEntity.ok(Map.of("count", itemCount));
         } catch (Exception e) {
             log.error("Error getting cart count for storeId {}: {}", storeId, e.getMessage());
