@@ -5,6 +5,6 @@ import storebackend.entity.Address;
 
 @Data
 public class SaveAddressRequest {
-    private Address address;
-    private String type; // "shipping" or "billing"
+    private Address shippingAddress;
+    private Address billingAddress;
 }

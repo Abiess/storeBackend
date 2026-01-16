@@ -1,22 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
+import { Observable } from 'rxjs';
 import { environment } from '@env/environment';
-import { catchError } from 'rxjs/operators';
-
-export interface CustomerProfile {
-  id: number;
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  phone?: string;
-  defaultShippingAddress?: Address;
-  defaultBillingAddress?: Address;
-  createdAt: string;
-}
 
 export interface Address {
-  id?: number;
   firstName: string;
   lastName: string;
   address1: string;
@@ -27,137 +14,124 @@ export interface Address {
   phone?: string;
 }
 
-export interface OrderHistory {
+export interface CustomerProfile {
   id: number;
-  orderNumber: string;
-  status: string;
-  totalAmount: number;
-  createdAt: string;
-  itemCount: number;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  defaultShippingAddress?: Address;
+  defaultBillingAddress?: Address;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface SaveAddressRequest {
+  shippingAddress?: Address;
+  billingAddress?: Address;
+}
+
+export interface UpdateProfileRequest {
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  shippingAddress?: Address;
+  billingAddress?: Address;
 }
 
 export interface PasswordChangeRequest {
-  currentPassword: string;
+  oldPassword: string;
   newPassword: string;
+}
+
+export interface OrderHistory {
+  orderId: number;
+  orderNumber: string;
+  orderDate: string;
+  status: string;
+  total: number;
+  items: OrderHistoryItem[];
+}
+
+export interface OrderHistoryItem {
+  productName: string;
+  quantity: number;
+  price: number;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class CustomerProfileService {
+  private apiUrl = `${environment.publicApiUrl}/customer`;
+
   constructor(private http: HttpClient) {}
 
   /**
-   * Holt den JWT Token aus localStorage
-   */
-  private getAuthToken(): string | null {
-    return localStorage.getItem('auth_token');
-  }
-
-  /**
-   * Erstellt HTTP Headers mit Authorization Token
-   */
-  private getAuthHeaders(): HttpHeaders {
-    const token = this.getAuthToken();
-    if (!token) {
-      throw new Error('Authentication required');
-    }
-    return new HttpHeaders({
-      'Authorization': `Bearer ${token}`
-    });
-  }
-
-  /**
-   * Lädt das Kundenprofil
+   * Lädt das Customer Profile des eingeloggten Users
    */
   getProfile(): Observable<CustomerProfile> {
-    return this.http.get<CustomerProfile>(
-      `${environment.publicApiUrl}/customer/profile`,
-      { headers: this.getAuthHeaders() }
-    ).pipe(
-      catchError(error => {
-        console.error('❌ Fehler beim Laden des Profils:', error);
-        return throwError(() => error);
-      })
-    );
+    const token = localStorage.getItem('auth_token');
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`
+    });
+
+    console.log('📋 Lade Customer Profile');
+    return this.http.get<CustomerProfile>(`${this.apiUrl}/profile`, { headers });
   }
 
   /**
-   * Aktualisiert das Kundenprofil
+   * Speichert die Adressen des Customers
    */
-  updateProfile(profile: Partial<CustomerProfile>): Observable<CustomerProfile> {
-    return this.http.put<CustomerProfile>(
-      `${environment.publicApiUrl}/customer/profile`,
-      profile,
-      { headers: this.getAuthHeaders() }
-    ).pipe(
-      catchError(error => {
-        console.error('❌ Fehler beim Aktualisieren des Profils:', error);
-        return throwError(() => error);
-      })
-    );
+  saveAddress(request: SaveAddressRequest): Observable<CustomerProfile> {
+    const token = localStorage.getItem('auth_token');
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    });
+
+    console.log('💾 Speichere Adressen');
+    return this.http.post<CustomerProfile>(`${this.apiUrl}/profile/address`, request, { headers });
   }
 
   /**
-   * Ändert das Passwort
+   * Aktualisiert das Customer Profile
    */
-  changePassword(request: PasswordChangeRequest): Observable<{ message: string }> {
-    return this.http.post<{ message: string }>(
-      `${environment.publicApiUrl}/customer/change-password`,
-      request,
-      { headers: this.getAuthHeaders() }
-    ).pipe(
-      catchError(error => {
-        console.error('❌ Fehler beim Ändern des Passworts:', error);
-        return throwError(() => error);
-      })
-    );
+  updateProfile(request: UpdateProfileRequest): Observable<CustomerProfile> {
+    const token = localStorage.getItem('auth_token');
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    });
+
+    console.log('📝 Aktualisiere Customer Profile');
+    return this.http.put<CustomerProfile>(`${this.apiUrl}/profile`, request, { headers });
   }
 
   /**
-   * Lädt die Bestellhistorie des Kunden
+   * Ändert das Passwort des Customers
+   */
+  changePassword(request: PasswordChangeRequest): Observable<any> {
+    const token = localStorage.getItem('auth_token');
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    });
+
+    console.log('🔒 Ändere Passwort');
+    return this.http.post<any>(`${this.apiUrl}/change-password`, request, { headers });
+  }
+
+  /**
+   * Lädt die Bestellhistorie des Customers
    */
   getOrderHistory(email: string): Observable<OrderHistory[]> {
-    return this.http.get<OrderHistory[]>(
-      `${environment.publicApiUrl}/customer/orders?email=${email}`,
-      { headers: this.getAuthHeaders() }
-    ).pipe(
-      catchError(error => {
-        console.error('❌ Fehler beim Laden der Bestellhistorie:', error);
-        return throwError(() => error);
-      })
-    );
-  }
+    const token = localStorage.getItem('auth_token');
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`
+    });
 
-  /**
-   * Lädt eine spezifische Bestellung
-   */
-  getOrderDetails(orderNumber: string, email: string): Observable<any> {
-    return this.http.get(
-      `${environment.publicApiUrl}/orders/${orderNumber}?email=${email}`,
-      { headers: this.getAuthHeaders() }
-    ).pipe(
-      catchError(error => {
-        console.error('❌ Fehler beim Laden der Bestelldetails:', error);
-        return throwError(() => error);
-      })
-    );
-  }
-
-  /**
-   * Speichert eine Adresse
-   */
-  saveAddress(address: Address, type: 'shipping' | 'billing'): Observable<Address> {
-    return this.http.post<Address>(
-      `${environment.publicApiUrl}/customer/addresses/${type}`,
-      address,
-      { headers: this.getAuthHeaders() }
-    ).pipe(
-      catchError(error => {
-        console.error(`❌ Fehler beim Speichern der ${type}-Adresse:`, error);
-        return throwError(() => error);
-      })
-    );
+    console.log('📋 Lade Bestellhistorie für:', email);
+    return this.http.get<OrderHistory[]>(`${this.apiUrl}/orders?email=${encodeURIComponent(email)}`, { headers });
   }
 }
-

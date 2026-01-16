@@ -65,12 +65,13 @@ public class CustomerProfileService {
                 return newProfile;
             });
 
-        if ("shipping".equalsIgnoreCase(request.getType())) {
-            profile.setDefaultShippingAddress(request.getAddress());
-        } else if ("billing".equalsIgnoreCase(request.getType())) {
-            profile.setDefaultBillingAddress(request.getAddress());
-        } else {
-            throw new RuntimeException("Invalid address type. Must be 'shipping' or 'billing'");
+        // FIXED: Unterstütze beide Adressen gleichzeitig
+        if (request.getShippingAddress() != null) {
+            profile.setDefaultShippingAddress(request.getShippingAddress());
+        }
+
+        if (request.getBillingAddress() != null) {
+            profile.setDefaultBillingAddress(request.getBillingAddress());
         }
 
         profile = customerProfileRepository.save(profile);

@@ -502,7 +502,10 @@ export class CustomerAddressesComponent {
     this.savingShipping = true;
     this.shippingError = '';
 
-    this.customerService.saveAddress(this.shippingAddress, 'shipping').subscribe({
+    // FIXED: Sende als SaveAddressRequest Objekt
+    this.customerService.saveAddress({
+      shippingAddress: this.shippingAddress
+    }).subscribe({
       next: () => {
         this.savingShipping = false;
         this.editingShipping = false;
@@ -547,7 +550,10 @@ export class CustomerAddressesComponent {
     this.savingBilling = true;
     this.billingError = '';
 
-    this.customerService.saveAddress(this.billingAddress, 'billing').subscribe({
+    // FIXED: Sende als SaveAddressRequest Objekt
+    this.customerService.saveAddress({
+      billingAddress: this.billingAddress
+    }).subscribe({
       next: () => {
         this.savingBilling = false;
         this.editingBilling = false;

@@ -1,10 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CartService, Cart } from '../../core/services/cart.service';
 import { CheckoutService, CheckoutRequest } from '../../core/services/checkout.service';
 import { AuthService } from '../../core/services/auth.service';
+import { CustomerProfileService, SaveAddressRequest } from '../../core/services/customer-profile.service';
 import { CouponInputComponent } from '../../shared/components/coupon-input/coupon-input.component';
 import { ValidateCouponsResponse } from '../../core/services/coupon.service';
 import { PlaceholderImageUtil } from '../../shared/utils/placeholder-image.util';
@@ -12,7 +13,7 @@ import { PlaceholderImageUtil } from '../../shared/utils/placeholder-image.util'
 @Component({
   selector: 'app-checkout',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, CouponInputComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, CouponInputComponent],
   template: `
     <div class="checkout-container">
       <div class="checkout-header">
@@ -184,6 +185,17 @@ import { PlaceholderImageUtil } from '../../shared/utils/placeholder-image.util'
                   rows="4" 
                   placeholder="Besondere Wünsche oder Anmerkungen zur Bestellung..."
                 ></textarea>
+              </div>
+            </section>
+
+            <!-- Adresse speichern Checkbox (nur für eingeloggte User) -->
+            <section class="form-section" *ngIf="isUserLoggedIn()">
+              <div class="checkbox-wrapper">
+                <label>
+                  <input type="checkbox" [(ngModel)]="saveAddressForFuture" [ngModelOptions]="{standalone: true}" />
+                  💾 Diese Adresse für zukünftige Bestellungen speichern
+                </label>
+                <p class="help-text">Ihre Adresse wird beim nächsten Checkout automatisch ausgefüllt</p>
               </div>
             </section>
 
@@ -487,6 +499,12 @@ import { PlaceholderImageUtil } from '../../shared/utils/placeholder-image.util'
         font-weight: 700;
       }
     }
+
+    .help-text {
+      font-size: 12px;
+      color: #666;
+      margin-top: 5px;
+    }
   `]
 })
 export class CheckoutComponent implements OnInit {
@@ -499,13 +517,15 @@ export class CheckoutComponent implements OnInit {
   shipping = 4.99;
   discountAmount = 0;
   hasFreeShipping = false;
+  saveAddressForFuture = false;
 
   constructor(
     private fb: FormBuilder,
     private cartService: CartService,
     private checkoutService: CheckoutService,
     private router: Router,
-    private authService: AuthService
+    private authService: AuthService,
+    private customerProfileService: CustomerProfileService
   ) {
     this.checkoutForm = this.fb.group({
       customerEmail: ['', [Validators.required, Validators.email]],
@@ -534,6 +554,7 @@ export class CheckoutComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadCart();
+    this.loadSavedAddresses();
     // FIXED: Setze E-Mail des eingeloggten Users automatisch
     this.authService.currentUser$.subscribe(user => {
       if (user && user.email) {
@@ -546,6 +567,57 @@ export class CheckoutComponent implements OnInit {
       } else {
         // User nicht eingeloggt - Feld aktivieren
         this.checkoutForm.get('customerEmail')?.enable();
+      }
+    });
+  }
+
+  /**
+   * Lädt die gespeicherten Adressen des Kunden und füllt das Formular vor
+   */
+  loadSavedAddresses(): void {
+    // Nur laden wenn User eingeloggt ist
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      console.log('ℹ️ User nicht eingeloggt - keine gespeicherten Adressen');
+      return;
+    }
+
+    this.customerProfileService.getProfile().subscribe({
+      next: (profile) => {
+        console.log('✅ Customer Profile geladen:', profile);
+
+        // Fülle Shipping-Adresse wenn vorhanden
+        if (profile.defaultShippingAddress) {
+          console.log('📦 Fülle gespeicherte Lieferadresse ein');
+          this.checkoutForm.patchValue({
+            shippingAddress: profile.defaultShippingAddress
+          });
+        }
+
+        // Fülle Billing-Adresse wenn vorhanden
+        if (profile.defaultBillingAddress) {
+          console.log('💳 Fülle gespeicherte Rechnungsadresse ein');
+          this.checkoutForm.patchValue({
+            billingAddress: profile.defaultBillingAddress
+          });
+
+          // Prüfe ob Adressen identisch sind
+          const shipping = profile.defaultShippingAddress;
+          const billing = profile.defaultBillingAddress;
+
+          if (shipping && billing &&
+              shipping.address1 === billing.address1 &&
+              shipping.city === billing.city &&
+              shipping.postalCode === billing.postalCode) {
+            this.sameAsShipping = true;
+          } else {
+            this.sameAsShipping = false;
+          }
+        }
+      },
+      error: (error) => {
+        console.warn('⚠️ Fehler beim Laden der Adressen:', error);
+        // Kein Fehler anzeigen - User kann manuell eingeben
       }
     });
   }
@@ -617,6 +689,12 @@ export class CheckoutComponent implements OnInit {
       next: (response) => {
         console.log('✅ Bestellung erfolgreich:', response);
 
+        // Speichere Adresse wenn gewünscht und User eingeloggt ist
+        if (this.saveAddressForFuture && this.isUserLoggedIn()) {
+          this.saveAddressToProfile(formValue.shippingAddress,
+            this.sameAsShipping ? formValue.shippingAddress : formValue.billingAddress);
+        }
+
         // FIXED: Verwende die E-Mail aus dem Formular (die des eingeloggten Users), nicht aus der Response
         const emailForConfirmation = this.checkoutForm.get('customerEmail')?.disabled
           ? this.checkoutForm.get('customerEmail')?.value
@@ -635,6 +713,27 @@ export class CheckoutComponent implements OnInit {
         this.submitting = false;
         this.errorMessage = error.message || 'Fehler beim Aufgeben der Bestellung. Bitte versuchen Sie es erneut.';
         console.error('❌ Checkout-Fehler:', error);
+      }
+    });
+  }
+
+  /**
+   * Speichert die Adressen im Customer Profile
+   */
+  private saveAddressToProfile(shippingAddress: any, billingAddress: any): void {
+    const saveRequest: SaveAddressRequest = {
+      shippingAddress: shippingAddress,
+      billingAddress: billingAddress
+    };
+
+    console.log('💾 Speichere Adressen für zukünftige Bestellungen');
+    this.customerProfileService.saveAddress(saveRequest).subscribe({
+      next: () => {
+        console.log('✅ Adressen erfolgreich gespeichert');
+      },
+      error: (error) => {
+        console.warn('⚠️ Fehler beim Speichern der Adressen:', error);
+        // Fehler wird nicht angezeigt, da Bestellung bereits erfolgreich war
       }
     });
   }
@@ -689,5 +788,11 @@ export class CheckoutComponent implements OnInit {
   onImageError(event: Event): void {
     const target = event.target as HTMLImageElement;
     target.src = this.getProductPlaceholder();
+  }
+
+  isUserLoggedIn(): boolean {
+    // Überprüfen, ob der Benutzer eingeloggt ist (z.B. durch Vorhandensein eines Tokens im Local Storage)
+    const token = localStorage.getItem('auth_token');
+    return !!token;
   }
 }
