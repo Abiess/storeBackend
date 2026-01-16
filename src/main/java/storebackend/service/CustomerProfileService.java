@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import storebackend.dto.CustomerProfileDTO;
+import storebackend.dto.PasswordChangeRequest;
 import storebackend.dto.SaveAddressRequest;
 import storebackend.dto.UpdateProfileRequest;
 import storebackend.entity.CustomerProfile;
@@ -76,6 +77,18 @@ public class CustomerProfileService {
 
         profile = customerProfileRepository.save(profile);
         return toDTO(profile);
+    }
+
+    @Transactional
+    public void changePassword(Long userId, PasswordChangeRequest request) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // TODO: Verify current password matches
+        // TODO: Hash new password
+        // TODO: Update user password
+
+        throw new RuntimeException("Password change not yet implemented");
     }
 
     private CustomerProfileDTO toDTO(CustomerProfile profile) {

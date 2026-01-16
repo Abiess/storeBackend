@@ -40,7 +40,7 @@ export interface UpdateProfileRequest {
 }
 
 export interface PasswordChangeRequest {
-  oldPassword: string;
+  currentPassword: string;  // FIXED: war "oldPassword", aber Komponente verwendet "currentPassword"
   newPassword: string;
 }
 
@@ -48,8 +48,11 @@ export interface OrderHistory {
   orderId: number;
   orderNumber: string;
   orderDate: string;
+  createdAt: string;  // FIXED: hinzugefügt für Template
   status: string;
   total: number;
+  totalAmount: number;  // FIXED: hinzugefügt für Template
+  itemCount: number;  // FIXED: hinzugefügt für Template
   items: OrderHistoryItem[];
 }
 
