@@ -12,7 +12,6 @@ import storebackend.dto.PasswordChangeRequest;
 import storebackend.entity.User;
 import storebackend.service.CustomerProfileService;
 
-import java.util.List;
 import java.util.Map;
 
 
@@ -101,24 +100,6 @@ public class CustomerProfileController {
         } catch (Exception e) {
             return ResponseEntity.status(400)
                 .body(new ErrorResponse("Error changing password: " + e.getMessage()));
-        }
-    }
-
-    @GetMapping("/orders")
-    public ResponseEntity<?> getOrderHistory(@RequestParam String email) {
-        try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-            if (authentication == null || !authentication.isAuthenticated()) {
-                return ResponseEntity.status(401)
-                    .body(new ErrorResponse("User not authenticated"));
-            }
-
-            // TODO: Implement order history fetching
-            return ResponseEntity.ok(List.of());
-        } catch (Exception e) {
-            return ResponseEntity.status(500)
-                .body(new ErrorResponse("Error fetching order history: " + e.getMessage()));
         }
     }
 
