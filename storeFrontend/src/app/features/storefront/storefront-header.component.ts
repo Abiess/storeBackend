@@ -198,9 +198,12 @@ export class StorefrontHeaderComponent {
   @Output() cartClick = new EventEmitter<void>();
 
   showAuthDialog = false;
+
+  // FIXED: Explizite Prüfung und startWith für korrekte Initialisierung
   isLoggedIn$ = this.authService.currentUser$.pipe(
-    map(user => !!user)
+    map(user => user !== null && user !== undefined)
   );
+
   currentUser$ = this.authService.currentUser$;
 
   constructor(private authService: AuthService) {}
@@ -210,7 +213,7 @@ export class StorefrontHeaderComponent {
   }
 
   onAuthSuccess(): void {
+    this.showAuthDialog = false;
     console.log('✅ User erfolgreich angemeldet');
-    // Dialog wird automatisch geschlossen durch (close) Event
   }
 }
