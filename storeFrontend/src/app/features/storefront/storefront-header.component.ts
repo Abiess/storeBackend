@@ -1,5 +1,6 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { map } from 'rxjs/operators';
 import { AuthService } from '../../core/services/auth.service';
 import { StorefrontAuthDialogComponent } from './storefront-auth-dialog.component';
@@ -7,7 +8,7 @@ import { StorefrontAuthDialogComponent } from './storefront-auth-dialog.componen
 @Component({
   selector: 'app-storefront-header',
   standalone: true,
-  imports: [CommonModule, StorefrontAuthDialogComponent],
+  imports: [CommonModule, RouterModule, StorefrontAuthDialogComponent],
   template: `
     <header class="store-header">
       <div class="container">
@@ -25,10 +26,14 @@ import { StorefrontAuthDialogComponent } from './storefront-auth-dialog.componen
             👤 Anmelden
           </button>
           
-          <!-- User Info wenn eingeloggt -->
-          <div *ngIf="isLoggedIn$ | async" class="user-info">
-            <span class="user-email">{{ (currentUser$ | async)?.email }}</span>
-            <button class="btn btn-logout" (click)="logout()">Abmelden</button>
+          <!-- User Menu wenn eingeloggt -->
+          <div *ngIf="isLoggedIn$ | async" class="user-menu">
+            <a routerLink="/storefront/profile" class="btn btn-profile">
+              👤 Mein Konto
+            </a>
+            <button class="btn btn-logout" (click)="logout()">
+              🚪 Abmelden
+            </button>
           </div>
           
           <button class="btn btn-cart" (click)="cartClick.emit()">
@@ -134,21 +139,24 @@ import { StorefrontAuthDialogComponent } from './storefront-auth-dialog.componen
       font-size: 0.75rem;
     }
     
-    .user-info {
+    .user-menu {
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      background: rgba(255, 255, 255, 0.2);
-      padding: 0.5rem 1rem;
-      border-radius: var(--theme-border-radius, 8px);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.3);
     }
     
-    .user-email {
+    .btn-profile {
+      background: rgba(255, 255, 255, 0.2);
       color: white;
-      font-size: 0.875rem;
-      font-weight: 500;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      text-decoration: none;
+    }
+    
+    .btn-profile:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
     
     .btn-logout {
@@ -160,6 +168,7 @@ import { StorefrontAuthDialogComponent } from './storefront-auth-dialog.componen
     
     .btn-logout:hover {
       background: white;
+      transform: translateY(-2px);
     }
     
     @media (max-width: 768px) {

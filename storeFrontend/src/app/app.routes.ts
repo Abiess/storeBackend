@@ -207,6 +207,15 @@ export const routes: Routes = [
     loadComponent: () => import('./features/storefront/storefront-landing.component').then(m => m.StorefrontLandingComponent)
   },
   {
+    path: 'storefront/profile',
+    loadComponent: () => import('./features/storefront/customer-profile.component').then(m => m.CustomerProfileComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'storefront/order-confirmation',
+    loadComponent: () => import('./features/storefront/order-confirmation.component').then(m => m.OrderConfirmationComponent)
+  },
+  {
     path: 'cart',
     loadComponent: () => import('./features/storefront/cart.component').then(m => m.CartComponent)
   },

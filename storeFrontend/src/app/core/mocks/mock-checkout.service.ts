@@ -38,12 +38,20 @@ export class MockCheckoutService {
     const order: OrderDetails = {
       id: orderId,
       orderNumber,
-      customerEmail: request.customerEmail,
+      customer: {
+        id: 0, // Mock customer ID
+        email: request.customerEmail
+      },
       status: 'PENDING',
-      total,
+      totalAmount: total,
       shippingAddress: request.shippingAddress,
       billingAddress: request.billingAddress,
-      items,
+      items: items.map((item: any) => ({
+        id: item.id,
+        productName: item.productName,
+        quantity: item.quantity,
+        price: item.priceAtOrder
+      })),
       notes: request.notes,
       createdAt: new Date().toISOString()
     };
@@ -67,7 +75,7 @@ export class MockCheckoutService {
 
   getOrderByNumber(orderNumber: string, email: string): Observable<OrderDetails> {
     const order = mockOrders.find(
-      o => o.orderNumber === orderNumber && o.customerEmail.toLowerCase() === email.toLowerCase()
+      o => o.orderNumber === orderNumber && o.customer?.email.toLowerCase() === email.toLowerCase()
     );
 
     if (!order) {

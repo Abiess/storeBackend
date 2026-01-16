@@ -104,6 +104,14 @@ export class AuthService {
   }
 
   /**
+   * Gibt die E-Mail des aktuell eingeloggten Users zurück
+   */
+  getCurrentUserEmail(): string | null {
+    const user = this.currentUserSubject.value;
+    return user?.email || null;
+  }
+
+  /**
    * Öffentliche Methode zum manuellen Neuladen des Users
    */
   reloadCurrentUser(): Observable<User | null> {

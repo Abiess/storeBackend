@@ -78,10 +78,16 @@ public class AuthController {
                         .body(new ErrorResponse("User not found"));
             }
 
+            // Return full UserInfoResponse with name and primary role
+            String primaryRole = user.getRoles().isEmpty() ? "USER" : user.getRoles().iterator().next().name();
             UserInfoResponse userInfo = new UserInfoResponse(
                     user.getId(),
                     user.getEmail(),
-                    user.getRoles().stream().map(Enum::name).toList()
+                    user.getName() != null ? user.getName() : user.getEmail().split("@")[0],
+                    primaryRole,
+                    user.getRoles().stream().map(Enum::name).toList(),
+                    user.getCreatedAt().toString(),
+                    user.getUpdatedAt().toString()
             );
 
             return ResponseEntity.ok(userInfo);
@@ -111,7 +117,15 @@ public class AuthController {
 
     private record ValidateResponse(boolean valid, String email, Long userId) {}
 
-    private record UserInfoResponse(Long id, String email, java.util.List<String> roles) {}
+    private record UserInfoResponse(
+            Long id,
+            String email,
+            String name,
+            String role,
+            java.util.List<String> roles,
+            String createdAt,
+            String updatedAt
+    ) {}
 
     private record DebugResponse(String title, String secretInfo, String requirement) {}
 }

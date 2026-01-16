@@ -15,6 +15,8 @@ public class AuthResponse {
     public static class UserDTO {
         private Long id;
         private String email;
+        private String name;
+        private String role;  // Primary role for frontend compatibility
         private List<String> roles;
     }
 }

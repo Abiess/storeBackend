@@ -43,6 +43,9 @@ public class AuthService {
         user.setEmail(request.getEmail());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
 
+        // Set name from email if not provided
+        user.setName(request.getEmail().split("@")[0]);
+
         // Set default role
         Set<Role> roles = new HashSet<>();
         roles.add(Role.USER);
@@ -59,10 +62,13 @@ public class AuthService {
         // Generate JWT token using JwtUtil with roles
         String token = jwtUtil.generateToken(user.getEmail(), user.getId(), user.getRoles());
 
-        // Create UserDTO
+        // Create UserDTO with name and primary role
+        String primaryRole = user.getRoles().isEmpty() ? "USER" : user.getRoles().iterator().next().name();
         AuthResponse.UserDTO userDTO = new AuthResponse.UserDTO(
             user.getId(),
             user.getEmail(),
+            user.getName(),
+            primaryRole,
             user.getRoles().stream().map(Enum::name).collect(Collectors.toList())
         );
 
@@ -85,10 +91,13 @@ public class AuthService {
         // Generate JWT token using JwtUtil with roles
         String token = jwtUtil.generateToken(user.getEmail(), user.getId(), user.getRoles());
 
-        // Create UserDTO
+        // Create UserDTO with name and primary role
+        String primaryRole = user.getRoles().isEmpty() ? "USER" : user.getRoles().iterator().next().name();
         AuthResponse.UserDTO userDTO = new AuthResponse.UserDTO(
             user.getId(),
             user.getEmail(),
+            user.getName(),
+            primaryRole,
             user.getRoles().stream().map(Enum::name).collect(Collectors.toList())
         );
 
