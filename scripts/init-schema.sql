@@ -281,6 +281,7 @@ CREATE TABLE orders (
     billing_city VARCHAR(255),
     billing_postal_code VARCHAR(50),
     billing_country VARCHAR(100),
+    billing_phone VARCHAR(50),  -- FIXED: Fehlende billing_phone Spalte hinzugefügt
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP,
     FOREIGN KEY (store_id) REFERENCES stores(id),
