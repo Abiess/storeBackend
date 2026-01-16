@@ -25,5 +25,21 @@ public class RedirectRuleDTO {
     private String tag;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-}
 
+    // Explizite Getter für Boolean-Felder (Lombok generiert manchmal falsche Namen)
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public Boolean getIsRegex() {
+        return isRegex;
+    }
+
+    public String getComment() {
+        return comment;
+    }
+
+    public String getTag() {
+        return tag;
+    }
+}

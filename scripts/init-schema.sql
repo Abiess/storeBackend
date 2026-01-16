@@ -2,6 +2,7 @@
 -- Erstellt alle benötigten Tabellen für das Store Backend
 
 -- Lösche existierende Tabellen (CASCADE löscht auch Foreign Keys)
+DROP TABLE IF EXISTS customer_profiles CASCADE;
 DROP TABLE IF EXISTS store_themes CASCADE;
 DROP TABLE IF EXISTS coupon_redemptions CASCADE;
 DROP TABLE IF EXISTS coupon_domain_ids CASCADE;
@@ -60,6 +61,34 @@ CREATE TABLE users (
 CREATE TABLE user_roles (
     user_id BIGINT NOT NULL,
     role VARCHAR(50) NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Customer Profiles Tabelle
+CREATE TABLE customer_profiles (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL UNIQUE,
+    first_name VARCHAR(255),
+    last_name VARCHAR(255),
+    phone VARCHAR(50),
+    shipping_first_name VARCHAR(255),
+    shipping_last_name VARCHAR(255),
+    shipping_address1 VARCHAR(255),
+    shipping_address2 VARCHAR(255),
+    shipping_city VARCHAR(255),
+    shipping_postal_code VARCHAR(50),
+    shipping_country VARCHAR(100),
+    shipping_phone VARCHAR(50),
+    billing_first_name VARCHAR(255),
+    billing_last_name VARCHAR(255),
+    billing_address1 VARCHAR(255),
+    billing_address2 VARCHAR(255),
+    billing_city VARCHAR(255),
+    billing_postal_code VARCHAR(50),
+    billing_country VARCHAR(100),
+    billing_phone VARCHAR(50),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
@@ -414,6 +443,7 @@ CREATE INDEX idx_cart_items_variant_id ON cart_items(variant_id);
 CREATE INDEX idx_orders_store ON orders(store_id);
 CREATE INDEX idx_orders_customer ON orders(customer_id);
 CREATE INDEX idx_user_roles_user ON user_roles(user_id);
+CREATE INDEX idx_customer_profiles_user ON customer_profiles(user_id);
 CREATE INDEX idx_coupon_store ON coupons(store_id);
 CREATE INDEX idx_coupon_code ON coupons(store_id, code_normalized);
 CREATE INDEX idx_coupon_status ON coupons(status);
