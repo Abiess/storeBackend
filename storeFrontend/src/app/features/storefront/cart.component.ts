@@ -347,13 +347,30 @@ export class CartComponent implements OnInit, OnDestroy {
 
   loadCart(): void {
     this.loading = true;
+    console.log('🛒 Lade Warenkorb für Store:', this.storeId);
+
     this.cartService.getCart(this.storeId).subscribe({
       next: (cart) => {
         this.cart = cart;
         this.loading = false;
+
+        // Debug-Ausgabe
+        if (cart.items.length === 0) {
+          console.log('📦 Warenkorb ist leer');
+        } else {
+          console.log('📦 Warenkorb enthält', cart.items.length, 'Items:', cart.items);
+        }
       },
       error: (error) => {
-        console.error('Fehler beim Laden des Warenkorbs:', error);
+        console.error('❌ Fehler beim Laden des Warenkorbs:', error);
+        // FIXED: Setze leeren Cart bei Fehler
+        this.cart = {
+          cartId: 0,
+          storeId: this.storeId,
+          items: [],
+          itemCount: 0,
+          subtotal: 0
+        };
         this.loading = false;
       }
     });

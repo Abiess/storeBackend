@@ -138,14 +138,16 @@ export class StorefrontComponent implements OnInit, OnDestroy {
   }
 
   loadCartCount(): void {
-    // FIXED: Verwende storeId statt sessionId
-    this.cartService.getCart(this.storeId).subscribe({
-      next: (cart) => {
-        this.cartItemCount = cart.itemCount;
-        console.log('✅ Warenkorb geladen:', cart.itemCount, 'Artikel');
+    console.log('🔢 Lade Warenkorb-Anzahl für Store:', this.storeId);
+
+    // FIXED: Verwende getCartItemCount() statt getCart() für bessere Performance
+    this.cartService.getCartItemCount(this.storeId).subscribe({
+      next: (count) => {
+        this.cartItemCount = count;
+        console.log('✅ Warenkorb-Anzahl geladen:', count, 'Artikel');
       },
       error: (error) => {
-        console.error('Fehler beim Laden des Warenkorbs:', error);
+        console.error('❌ Fehler beim Laden der Warenkorb-Anzahl:', error);
         this.cartItemCount = 0;
       }
     });

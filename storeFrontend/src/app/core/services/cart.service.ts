@@ -203,7 +203,18 @@ export class CartService {
    * Triggert ein Update, damit alle Components den Warenkorb neu laden
    */
   clearLocalCart(): void {
-    console.log('🧹 Bereinige lokalen Warenkorb-Cache');
+    console.log('🧹 Bereinige lokalen Warenkorb-Cache (zwinge Neuladung)');
+
+    // Wichtig: Trigger zweimal für sofortiges Reset + Neuladung
+    // 1. Sofortiges Signal für Components, dass Cart leer ist
+    // 2. Nach kurzem Delay erneutes Signal zum Neuladen vom Server
     this.cartUpdateSubject.next();
+
+    // Kurze Verzögerung, dann nochmal triggern um sicherzustellen,
+    // dass alle Components den neuen User-Cart vom Server laden
+    setTimeout(() => {
+      console.log('🔄 Erzwinge finale Warenkorb-Neuladung');
+      this.cartUpdateSubject.next();
+    }, 100);
   }
 }
