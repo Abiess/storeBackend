@@ -156,8 +156,8 @@ public class OrderService {
         OrderDetailsDTO dto = new OrderDetailsDTO();
         dto.setId(order.getId());
         dto.setOrderNumber(order.getOrderNumber());
-        dto.setStatus(order.getStatus());
-        dto.setTotalAmount(order.getTotalAmount());  // FIXED: totalAmount statt total
+        dto.setStatus(order.getStatus().name()); // FIXED: Enum zu String konvertieren
+        dto.setTotalAmount(order.getTotalAmount());
         dto.setCreatedAt(order.getCreatedAt());
 
         // FIXED: Shipping und Billing Address hinzufügen

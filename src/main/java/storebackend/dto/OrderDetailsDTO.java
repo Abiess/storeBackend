@@ -1,48 +1,58 @@
 package storebackend.dto;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import storebackend.entity.Address;
-import storebackend.enums.OrderStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
+/**
+ * DTO für Bestelldetails (vollständige Ansicht)
+ */
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class OrderDetailsDTO {
     private Long id;
     private String orderNumber;
+    private String status;
+    private String trackingNumber;
+    private BigDecimal totalAmount;
+    private String notes;
     private String customerEmail;
-    private OrderStatus status;
-    private BigDecimal totalAmount;  // FIXED: totalAmount statt total
-    private LocalDateTime createdAt;
     private CustomerDTO customer;
+    private Address shippingAddress;
+    private Address billingAddress;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private LocalDateTime shippedAt;
+    private LocalDateTime deliveredAt;
+    private LocalDateTime cancelledAt;
     private List<OrderItemDTO> items;
-    private Address shippingAddress;  // FIXED: Hinzugefügt
-    private Address billingAddress;   // FIXED: Hinzugefügt
-    private String notes;             // FIXED: Hinzugefügt
+    private List<Map<String, Object>> statusHistory;
 
+    /**
+     * Innere Klasse für Kundeninformationen
+     */
     @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
     public static class CustomerDTO {
         private Long id;
         private String email;
+        private String firstName;
+        private String lastName;
     }
 
+    /**
+     * Innere Klasse für Bestellpositionen
+     */
     @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
     public static class OrderItemDTO {
         private Long id;
         private String productName;
         private String variantName;
         private Integer quantity;
-        private BigDecimal price;      // FIXED: price statt priceAtOrder
+        private BigDecimal price;
         private BigDecimal subtotal;
+        private String imageUrl;
     }
 }

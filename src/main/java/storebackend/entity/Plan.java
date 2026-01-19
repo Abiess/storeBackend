@@ -35,4 +35,33 @@ public class Plan {
 
     @Column(nullable = false)
     private Integer maxImageCount;
+
+    // Explizite Setter-Methoden (falls Lombok nicht korrekt funktioniert)
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setMaxStores(Integer maxStores) {
+        this.maxStores = maxStores;
+    }
+
+    public void setMaxCustomDomains(Integer maxCustomDomains) {
+        this.maxCustomDomains = maxCustomDomains;
+    }
+
+    public void setMaxSubdomains(Integer maxSubdomains) {
+        this.maxSubdomains = maxSubdomains;
+    }
+
+    public void setMaxStorageMb(Integer maxStorageMb) {
+        this.maxStorageMb = maxStorageMb;
+    }
+
+    public void setMaxProducts(Integer maxProducts) {
+        this.maxProducts = maxProducts;
+    }
+
+    public void setMaxImageCount(Integer maxImageCount) {
+        this.maxImageCount = maxImageCount;
+    }
 }
