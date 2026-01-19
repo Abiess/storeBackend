@@ -33,6 +33,35 @@ public class StoreService {
     private final UserRepository userRepository;
     private final SaasProperties saasProperties;
 
+    // NEUE: Liste der reservierten Slugs, die NICHT als Stores verwendet werden dürfen
+    private static final Set<String> RESERVED_SLUGS = Set.of(
+        // Technische Subdomains
+        "api", "www", "admin", "app", "mail", "smtp", "ftp", "cdn",
+        "static", "assets", "media", "images", "files",
+
+        // Service-Subdomains
+        "minio", "postgres", "redis", "mysql", "mongodb", "elasticsearch",
+
+        // System-Subdomains
+        "dashboard", "panel", "control", "status", "monitoring",
+        "grafana", "prometheus",
+
+        // Auth/Security
+        "auth", "login", "register", "oauth", "sso",
+
+        // Allgemeine reservierte
+        "store", "shop", "marketplace", "test", "demo", "dev",
+        "staging", "production", "beta", "alpha"
+    );
+
+    /**
+     * Prüft, ob ein Slug reserviert ist
+     */
+    public boolean isReservedSlug(String slug) {
+        if (slug == null) return true;
+        return RESERVED_SLUGS.contains(slug.toLowerCase());
+    }
+
     public List<StoreDTO> getStoresByOwner(User owner) {
         return storeRepository.findByOwner(owner).stream()
                 .map(this::toDTO)
@@ -49,6 +78,12 @@ public class StoreService {
             return false;
         }
 
+        // NEUE: Prüfe auf reservierte Slugs
+        if (isReservedSlug(slug)) {
+            log.warn("Slug '{}' ist reserviert und kann nicht verwendet werden", slug);
+            return false;
+        }
+
         // Validiere Slug Format
         if (!slug.matches("^[a-z0-9-]+$")) {
             return false;
@@ -60,6 +95,11 @@ public class StoreService {
 
     @Transactional
     public StoreDTO createStore(CreateStoreRequest request, User owner) {
+        // NEUE: Prüfe auf reservierte Slugs
+        if (isReservedSlug(request.getSlug())) {
+            throw new RuntimeException("Slug '" + request.getSlug() + "' is reserved for technical purposes and cannot be used");
+        }
+
         // Check max stores limit
         long currentStoreCount = storeRepository.countByOwner(owner);
         if (owner.getPlan() != null && currentStoreCount >= owner.getPlan().getMaxStores()) {

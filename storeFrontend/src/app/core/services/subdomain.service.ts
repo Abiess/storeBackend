@@ -19,6 +19,60 @@ export class SubdomainService {
   private baseDomain = 'markt.ma';
   private subdomainInfo: SubdomainInfo | null = null;
 
+  // NEUE: Liste der reservierten/technischen Subdomains, die NICHT als Stores erstellt werden können
+  private readonly RESERVED_SLUGS = [
+    // Technische Subdomains
+    'api',
+    'www',
+    'admin',
+    'app',
+    'mail',
+    'smtp',
+    'ftp',
+    'cdn',
+    'static',
+    'assets',
+    'media',
+    'images',
+    'files',
+
+    // Service-Subdomains
+    'minio',
+    'postgres',
+    'redis',
+    'mysql',
+    'mongodb',
+    'elasticsearch',
+
+    // System-Subdomains
+    'dashboard',
+    'panel',
+    'control',
+    'status',
+    'monitoring',
+    'grafana',
+    'prometheus',
+
+    // Auth/Security
+    'auth',
+    'login',
+    'register',
+    'oauth',
+    'sso',
+
+    // Allgemeine reservierte
+    'store',
+    'shop',
+    'marketplace',
+    'test',
+    'demo',
+    'dev',
+    'staging',
+    'production',
+    'beta',
+    'alpha'
+  ];
+
   constructor(private http: HttpClient) {}
 
   /**
@@ -156,5 +210,19 @@ export class SubdomainService {
   reset(): void {
     this.subdomainInfo = null;
   }
-}
 
+  /**
+   * Prüft, ob ein Slug reserviert/technisch ist und nicht verwendet werden darf
+   */
+  isReservedSlug(slug: string): boolean {
+    if (!slug) return true;
+    return this.RESERVED_SLUGS.includes(slug.toLowerCase());
+  }
+
+  /**
+   * Gibt die Liste aller reservierten Slugs zurück
+   */
+  getReservedSlugs(): string[] {
+    return [...this.RESERVED_SLUGS];
+  }
+}

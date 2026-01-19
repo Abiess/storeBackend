@@ -10,6 +10,7 @@ import { Product, Category } from '@app/core/models';
 import { StorefrontHeaderComponent } from './storefront-header.component';
 import { StorefrontNavComponent } from './storefront-nav.component';
 import { ProductCardComponent } from './product-card.component';
+import { StoreNotFoundComponent } from './store-not-found.component';
 
 /**
  * Dedizierte Storefront-Landing-Page für Subdomains (abc.markt.ma)
@@ -22,7 +23,8 @@ import { ProductCardComponent } from './product-card.component';
     CommonModule,
     StorefrontHeaderComponent,
     StorefrontNavComponent,
-    ProductCardComponent
+    ProductCardComponent,
+    StoreNotFoundComponent
   ],
   templateUrl: './storefront-landing.component.html',
   styleUrls: ['./storefront-landing.component.scss']
@@ -34,6 +36,8 @@ export class StorefrontLandingComponent implements OnInit {
   categories: Category[] = [];
   loading = true;
   cartItemCount = 0;
+  storeNotFound = false;  // NEUE: Flag für "Store nicht gefunden"
+  isReservedSlug = false;  // NEUE: Flag für reservierte Slugs
 
   constructor(
     private subdomainService: SubdomainService,
@@ -47,6 +51,16 @@ export class StorefrontLandingComponent implements OnInit {
   ngOnInit(): void {
     console.log('🏪 Storefront Landing: Initializing...');
     console.log('🌐 Current hostname:', window.location.hostname);
+
+    // NEUE: Prüfe zuerst, ob der Slug reserviert ist
+    const info = this.subdomainService.detectSubdomain();
+    if (info.slug && this.subdomainService.isReservedSlug(info.slug)) {
+      console.warn('⚠️ Reservierter Slug erkannt:', info.slug);
+      this.isReservedSlug = true;
+      this.storeNotFound = true;
+      this.loading = false;
+      return;
+    }
 
     // Lade Store-Informationen basierend auf Subdomain
     this.subdomainService.resolveStore().subscribe({
@@ -66,14 +80,20 @@ export class StorefrontLandingComponent implements OnInit {
           this.loadTheme();
           this.loadStoreData();
           this.loadCartCount();
+        } else if (info.isSubdomain && !info.storeId) {
+          // NEUE: Subdomain erkannt, aber kein Store gefunden
+          console.warn('⚠️ Subdomain erkannt, aber Store nicht gefunden');
+          this.storeNotFound = true;
+          this.loading = false;
         } else {
-          console.error('❌ Keine gültige Subdomain oder Store nicht gefunden');
-          console.error('Info:', info);
+          console.error('❌ Keine gültige Subdomain');
           this.loading = false;
         }
       },
       error: (error) => {
         console.error('❌ Fehler beim Laden der Store-Informationen:', error);
+        // NEUE: Bei Fehler "Store nicht gefunden" anzeigen
+        this.storeNotFound = true;
         this.loading = false;
       }
     });
