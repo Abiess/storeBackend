@@ -50,8 +50,8 @@ export interface OrderHistory {
   orderDate: string;
   createdAt: string;  // FIXED: hinzugefügt für Template
   status: string;
-  total: number;
-  totalAmount: number;  // FIXED: hinzugefügt für Template
+  total: number | null;
+  totalAmount: number | null;
   itemCount: number;  // FIXED: hinzugefügt für Template
   items: OrderHistoryItem[];
 }
