@@ -94,31 +94,50 @@ export class TranslationService {
    * Example: translate('auth.loginTitle')
    */
   translate(key: string, params?: Record<string, any>): string {
-    const translations = this.translationsSignal();
-    const keys = key.split('.');
+    // Safety check: Wenn key nicht vorhanden oder leer ist
+    if (!key || typeof key !== 'string') {
+      console.warn(`Invalid translation key:`, key);
+      return '';
+    }
 
-    let value: any = translations;
+    try {
+      const translations = this.translationsSignal();
 
-    for (const k of keys) {
-      if (value && typeof value === 'object' && k in value) {
-        value = value[k];
-      } else {
-        console.warn(`Translation key not found: ${key}`);
+      // Wenn noch keine Übersetzungen geladen wurden, gib den Key zurück
+      if (!translations || Object.keys(translations).length === 0) {
         return key;
       }
-    }
 
-    if (typeof value !== 'string') {
-      console.warn(`Translation value is not a string for key: ${key}`);
-      return key;
-    }
+      const keys = key.split('.');
+      let value: any = translations;
 
-    // Replace parameters in translation string
-    if (params) {
-      return this.replaceParams(value, params);
-    }
+      for (const k of keys) {
+        if (value && typeof value === 'object' && k in value) {
+          value = value[k];
+        } else {
+          // Nur einmal warnen, nicht bei jedem Render
+          if (Math.random() < 0.01) { // Nur 1% der Zeit loggen
+            console.warn(`Translation key not found: ${key}`);
+          }
+          return key;
+        }
+      }
 
-    return value;
+      if (typeof value !== 'string') {
+        console.warn(`Translation value is not a string for key: ${key}`);
+        return key;
+      }
+
+      // Replace parameters in translation string
+      if (params) {
+        return this.replaceParams(value, params);
+      }
+
+      return value;
+    } catch (error) {
+      console.error(`Error translating key "${key}":`, error);
+      return key; // Fallback zum Key bei Fehler
+    }
   }
 
   /**

@@ -36,61 +36,8 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
 
-  // ==================== Product Management (Primary Routes) ====================
-  // WICHTIG: Spezifische Routen (mit /new) müssen VOR allgemeinen Routen stehen!
-  {
-    path: 'stores/:id/products/new',
-    loadComponent: () => {
-      console.log('✅ Route matched: stores/:id/products/new');
-      return import('./features/products/product-form.component').then(m => m.ProductFormComponent);
-    },
-    canActivate: [authGuard]
-  },
-  {
-    path: 'stores/:id/products/:productId/edit',
-    loadComponent: () => {
-      console.log('✅ Route matched: stores/:id/products/:productId/edit');
-      return import('./features/products/product-form.component').then(m => m.ProductFormComponent);
-    },
-    canActivate: [authGuard]
-  },
-  {
-    path: 'stores/:id/products',
-    loadComponent: () => {
-      console.log('✅ Route matched: stores/:id/products');
-      return import('./features/products/product-list.component').then(m => m.ProductListComponent);
-    },
-    canActivate: [authGuard]
-  },
-
-  // ==================== Category Management (Primary Routes) ====================
-  // WICHTIG: Spezifische Routen (mit /new) müssen VOR allgemeinen Routen stehen!
-  {
-    path: 'stores/:id/categories/new',
-    loadComponent: () => {
-      console.log('✅ Route matched: stores/:id/categories/new');
-      return import('./features/products/category-form.component').then(m => m.CategoryFormComponent);
-    },
-    canActivate: [authGuard]
-  },
-  {
-    path: 'stores/:id/categories/:categoryId/edit',
-    loadComponent: () => {
-      console.log('✅ Route matched: stores/:id/categories/:categoryId/edit');
-      return import('./features/products/category-form.component').then(m => m.CategoryFormComponent);
-    },
-    canActivate: [authGuard]
-  },
-  {
-    path: 'stores/:id/categories',
-    loadComponent: () => {
-      console.log('✅ Route matched: stores/:id/categories');
-      return import('./features/products/category-list.component').then(m => m.CategoryListComponent);
-    },
-    canActivate: [authGuard]
-  },
-
   // ==================== Dashboard Routes (Legacy Support) ====================
+  // WICHTIG: Diese müssen VOR den primären Store-Routen stehen!
   // Diese Routen unterstützen alte Links mit /dashboard/ Prefix
   {
     path: 'dashboard/stores/:storeId',
@@ -104,7 +51,10 @@ export const routes: Routes = [
   },
   {
     path: 'dashboard/stores/:storeId/orders',
-    loadComponent: () => import('./features/stores/store-orders.component').then(m => m.StoreOrdersComponent),
+    loadComponent: () => {
+      console.log('✅ Route matched: dashboard/stores/:storeId/orders');
+      return import('./features/stores/store-orders.component').then(m => m.StoreOrdersComponent);
+    },
     canActivate: [authGuard]
   },
   {
@@ -176,6 +126,60 @@ export const routes: Routes = [
   {
     path: 'dashboard/stores/:storeId/brand',
     loadComponent: () => import('./features/settings/brand-onboarding/brand-onboarding.component').then(m => m.BrandOnboardingComponent),
+    canActivate: [authGuard]
+  },
+
+  // ==================== Product Management (Primary Routes) ====================
+  // WICHTIG: Spezifische Routen (mit /new) müssen VOR allgemeinen Routen stehen!
+  {
+    path: 'stores/:id/products/new',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:id/products/new');
+      return import('./features/products/product-form.component').then(m => m.ProductFormComponent);
+    },
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/products/:productId/edit',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:id/products/:productId/edit');
+      return import('./features/products/product-form.component').then(m => m.ProductFormComponent);
+    },
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/products',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:id/products');
+      return import('./features/products/product-list.component').then(m => m.ProductListComponent);
+    },
+    canActivate: [authGuard]
+  },
+
+  // ==================== Category Management (Primary Routes) ====================
+  // WICHTIG: Spezifische Routen (mit /new) müssen VOR allgemeinen Routen stehen!
+  {
+    path: 'stores/:id/categories/new',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:id/categories/new');
+      return import('./features/products/category-form.component').then(m => m.CategoryFormComponent);
+    },
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/categories/:categoryId/edit',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:id/categories/:categoryId/edit');
+      return import('./features/products/category-form.component').then(m => m.CategoryFormComponent);
+    },
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/categories',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:id/categories');
+      return import('./features/products/category-list.component').then(m => m.CategoryListComponent);
+    },
     canActivate: [authGuard]
   },
 

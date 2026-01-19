@@ -34,6 +34,7 @@ public class OrderTrackingController {
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
     private final AuthService authService;
+    private final storebackend.repository.OrderItemRepository orderItemRepository;
 
     /**
      * Holt alle Bestellungen des aktuell eingeloggten Kunden
@@ -208,7 +209,14 @@ public class OrderTrackingController {
         dto.setCreatedAt(order.getCreatedAt());
         dto.setShippedAt(order.getShippedAt());
         dto.setDeliveredAt(order.getDeliveredAt());
-        dto.setItemCount(0); // TODO: Load from order_items if needed
+
+        // FIXED: Berechne tatsächliche Artikel-Anzahl aus der Datenbank
+        int itemCount = orderItemRepository.findByOrderId(order.getId())
+            .stream()
+            .mapToInt(item -> item.getQuantity())
+            .sum();
+        dto.setItemCount(itemCount);
+
         return dto;
     }
 
@@ -249,4 +257,3 @@ public class OrderTrackingController {
         return dto;
     }
 }
-

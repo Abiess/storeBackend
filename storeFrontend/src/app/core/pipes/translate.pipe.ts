@@ -10,7 +10,17 @@ export class TranslatePipe implements PipeTransform {
   constructor(private translationService: TranslationService) {}
 
   transform(key: string, params?: Record<string, any>): string {
-    return this.translationService.translate(key, params);
+    try {
+      // Safety check: Wenn key nicht vorhanden ist
+      if (!key) {
+        return '';
+      }
+
+      return this.translationService.translate(key, params);
+    } catch (error) {
+      // Fehler abfangen und Key zurückgeben statt Exception zu werfen
+      console.error('TranslatePipe error:', error);
+      return key || '';
+    }
   }
 }
-
