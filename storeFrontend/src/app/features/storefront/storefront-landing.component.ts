@@ -213,6 +213,9 @@ export class StorefrontLandingComponent implements OnInit {
       return;
     }
 
+    // NEUE: Speichere Store-ID in localStorage für späteren Zugriff
+    localStorage.setItem('last_store_id', this.storeId.toString());
+
     // FIXED: Robusteres Logging - verwende alle verfügbaren Felder
     const productName = product.title || product.name || product.description || `Produkt ${product.id}`;
     console.log('🛒 Füge Produkt zum Warenkorb hinzu:', productName);
@@ -236,6 +239,7 @@ export class StorefrontLandingComponent implements OnInit {
       },
       error: (error) => {
         console.error('❌ Fehler beim Hinzufügen zum Warenkorb:', error);
+        alert('❌ Fehler beim Hinzufügen zum Warenkorb. Bitte versuchen Sie es erneut.');
       }
     });
   }

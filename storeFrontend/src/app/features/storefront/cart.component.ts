@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { CartService, Cart, CartItem } from '../../core/services/cart.service';
+import { SubdomainService } from '../../core/services/subdomain.service';
 import { PlaceholderImageUtil } from '../../shared/utils/placeholder-image.util';
 import { Subscription } from 'rxjs';
 
@@ -11,6 +12,11 @@ import { Subscription } from 'rxjs';
   imports: [CommonModule],
   template: `
     <div class="cart-container">
+      <!-- NEUE: Warnung wenn keine Store-ID gefunden wurde -->
+      <div *ngIf="!storeId" class="alert alert-warning">
+        ⚠️ Keine Store-ID gefunden. Bitte öffnen Sie den Warenkorb über eine Store-Subdomain.
+      </div>
+
       <div class="cart-header">
         <h1>Warenkorb</h1>
         <button class="btn-back" (click)="goBack()">
@@ -314,6 +320,18 @@ import { Subscription } from 'rxjs';
     .btn-secondary:hover {
       background: #5a6268;
     }
+
+    .alert {
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .alert-warning {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      color: #856404;
+    }
   `]
 })
 export class CartComponent implements OnInit, OnDestroy {
@@ -321,16 +339,34 @@ export class CartComponent implements OnInit, OnDestroy {
   loading = false;
   updatingItem: number | null = null;
   shipping = 4.99;
-  storeId: number = 1;
+  storeId: number | null = null; // FIXED: Nicht mehr hart codiert!
 
   private cartUpdateSubscription?: Subscription;
 
   constructor(
     private cartService: CartService,
+    private subdomainService: SubdomainService, // NEUE: SubdomainService injiziert
     private router: Router
   ) {}
 
   ngOnInit(): void {
+    // FIXED: Hole Store-ID aus der aktuellen Subdomain
+    const subdomainInfo = this.subdomainService.getSubdomainInfo();
+    if (subdomainInfo && subdomainInfo.storeId) {
+      this.storeId = subdomainInfo.storeId;
+      console.log('🏪 Warenkorb für Store-ID:', this.storeId);
+    } else {
+      // Fallback: Versuche Store-ID aus localStorage zu holen
+      const lastStoreId = localStorage.getItem('last_store_id');
+      if (lastStoreId) {
+        this.storeId = parseInt(lastStoreId, 10);
+        console.warn('⚠️ Keine Subdomain-Info, verwende letzte Store-ID:', this.storeId);
+      } else {
+        console.error('❌ Keine Store-ID gefunden! Warenkorb kann nicht geladen werden.');
+        return;
+      }
+    }
+
     this.loadCart();
 
     this.cartUpdateSubscription = this.cartService.cartUpdate$.subscribe(() => {
@@ -346,6 +382,12 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   loadCart(): void {
+    // FIXED: Prüfe ob Store-ID vorhanden ist
+    if (!this.storeId) {
+      console.error('❌ Keine Store-ID vorhanden, kann Warenkorb nicht laden');
+      return;
+    }
+
     this.loading = true;
     console.log('🛒 Lade Warenkorb für Store:', this.storeId);
 
@@ -366,7 +408,7 @@ export class CartComponent implements OnInit, OnDestroy {
         // FIXED: Setze leeren Cart bei Fehler
         this.cart = {
           cartId: 0,
-          storeId: this.storeId,
+          storeId: this.storeId!,
           items: [],
           itemCount: 0,
           subtotal: 0
@@ -429,6 +471,12 @@ export class CartComponent implements OnInit, OnDestroy {
 
   clearCart(): void {
     if (!confirm('Möchten Sie den gesamten Warenkorb leeren?')) {
+      return;
+    }
+
+    // FIXED: Null-Check für storeId
+    if (!this.storeId) {
+      console.error('❌ Keine Store-ID vorhanden, kann Warenkorb nicht leeren');
       return;
     }
 
