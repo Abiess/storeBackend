@@ -15,8 +15,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@RestController
-@RequestMapping("/api/public/customer")
+/**
+ * DEPRECATED: Dieser Controller ist deaktiviert wegen Konflikt mit OrderTrackingController.
+ * Beide Controller verwenden denselben Pfad /api/public/customer/orders
+ * Bitte OrderTrackingController verwenden!
+ */
+//@RestController
+//@RequestMapping("/api/public/customer")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class CustomerOrderController {
@@ -116,4 +121,3 @@ public class CustomerOrderController {
 
     private record ErrorResponse(String message) {}
 }
-

@@ -98,6 +98,21 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'dashboard/stores/:storeId/settings',
+    loadComponent: () => import('./features/stores/store-settings.component').then(m => m.StoreSettingsComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'dashboard/stores/:storeId/orders',
+    loadComponent: () => import('./features/stores/store-orders.component').then(m => m.StoreOrdersComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'dashboard/stores/:storeId/theme',
+    loadComponent: () => import('./features/stores/store-theme.component').then(m => m.StoreThemeComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'dashboard/stores/:storeId/products/new',
     loadComponent: () => {
       console.log('✅ Route matched: dashboard/stores/:storeId/products/new');
@@ -141,6 +156,26 @@ export const routes: Routes = [
   {
     path: 'dashboard/stores/:storeId/coupons/:couponId',
     loadComponent: () => import('./features/coupons/coupon-editor/coupon-editor.component').then(m => m.CouponEditorComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'dashboard/stores/:storeId/seo/redirects',
+    loadComponent: () => import('./features/settings/redirects-page/redirects-page.component').then(m => m.RedirectsPageComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'dashboard/stores/:storeId/seo/structured-data',
+    loadComponent: () => import('./features/settings/structured-data-page/structured-data-page.component').then(m => m.StructuredDataPageComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'dashboard/stores/:storeId/seo',
+    loadComponent: () => import('./features/settings/seo-settings-page/seo-settings-page.component').then(m => m.SeoSettingsPageComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'dashboard/stores/:storeId/brand',
+    loadComponent: () => import('./features/settings/brand-onboarding/brand-onboarding.component').then(m => m.BrandOnboardingComponent),
     canActivate: [authGuard]
   },
 
