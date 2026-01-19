@@ -57,6 +57,22 @@ export class CartService {
   }
 
   /**
+   * Generiert oder holt eine Session-ID für Guest-User
+   * Diese ID wird im localStorage gespeichert und für alle Guest-Cart-Operationen verwendet
+   */
+  private getOrCreateSessionId(): string {
+    let sessionId = localStorage.getItem('cart_session_id');
+    if (!sessionId) {
+      // Generiere eine zufällige Session-ID für Guests
+      sessionId = 'guest-' + Math.random().toString(36).substring(2, 15) +
+                  Math.random().toString(36).substring(2, 15);
+      localStorage.setItem('cart_session_id', sessionId);
+      console.log('🆕 Neue Guest-Session-ID erstellt:', sessionId);
+    }
+    return sessionId;
+  }
+
+  /**
    * Erstellt HTTP Headers mit Authorization Token (falls vorhanden)
    */
   private getAuthHeaders(): HttpHeaders {
@@ -82,7 +98,14 @@ export class CartService {
     }
 
     console.log('🛒 Lade Warenkorb für Store', storeId);
-    return this.http.get<Cart>(`${this.cartApiUrl}?storeId=${storeId}`, {
+
+    // Für Guests: Füge sessionId als Query-Parameter hinzu
+    const sessionId = this.isAuthenticated() ? null : this.getOrCreateSessionId();
+    const url = sessionId
+      ? `${this.cartApiUrl}?storeId=${storeId}&sessionId=${sessionId}`
+      : `${this.cartApiUrl}?storeId=${storeId}`;
+
+    return this.http.get<Cart>(url, {
       headers: this.getAuthHeaders()
     }).pipe(
       tap(cart => {
@@ -107,7 +130,13 @@ export class CartService {
     }
 
     console.log('➕ Füge Produkt zum Warenkorb hinzu (Guest Cart unterstützt)');
-    return this.http.post<any>(`${this.cartApiUrl}/items`, request, {
+
+    // FIXED: Füge sessionId für Guests automatisch hinzu
+    const requestBody = this.isAuthenticated()
+      ? request
+      : { ...request, sessionId: this.getOrCreateSessionId() };
+
+    return this.http.post<any>(`${this.cartApiUrl}/items`, requestBody, {
       headers: this.getAuthHeaders()
     }).pipe(
       tap(() => {
@@ -177,7 +206,7 @@ export class CartService {
 
   /**
    * Gibt die Anzahl der Items im Warenkorb zurück
-   * FIXED: Funktioniert jetzt auch ohne Login
+   * FIXED: Funktioniert jetzt auch ohne Login (mit sessionId für Guests)
    */
   getCartItemCount(storeId: number): Observable<number> {
     if (environment.useMockData) {
@@ -186,8 +215,13 @@ export class CartService {
       );
     }
 
-    // FIXED: Count funktioniert auch ohne Token
-    return this.http.get<any>(`${this.cartApiUrl}/count?storeId=${storeId}`, {
+    // FIXED: Füge sessionId für Guests hinzu
+    const sessionId = this.isAuthenticated() ? null : this.getOrCreateSessionId();
+    const url = sessionId
+      ? `${this.cartApiUrl}/count?storeId=${storeId}&sessionId=${sessionId}`
+      : `${this.cartApiUrl}/count?storeId=${storeId}`;
+
+    return this.http.get<any>(url, {
       headers: this.getAuthHeaders()
     }).pipe(
       map(response => response.count || 0),
