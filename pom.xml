@@ -85,10 +85,16 @@
             <version>2.3.0</version>
         </dependency>
 
-        <!-- Jackson Hibernate5 Module - Fix für Lazy Loading Serialization -->
+        <!-- Jackson Hibernate6 Module - Fix für Lazy Loading Serialization (Spring Boot 3.x) -->
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-hibernate5</artifactId>
+            <artifactId>jackson-datatype-hibernate6</artifactId>
+        </dependency>
+
+        <!-- Explizite Jakarta Persistence API für Spring Boot 3.x -->
+        <dependency>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
         </dependency>
 
         <dependency>
