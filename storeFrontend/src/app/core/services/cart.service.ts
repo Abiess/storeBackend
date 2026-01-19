@@ -99,8 +99,9 @@ export class CartService {
 
     console.log('🛒 Lade Warenkorb für Store', storeId);
 
-    // Für Guests: Füge sessionId als Query-Parameter hinzu
-    const sessionId = this.isAuthenticated() ? null : this.getOrCreateSessionId();
+    // FIXED: Sende sessionId auch für eingeloggte User (für Cart-Migration!)
+    // Das Backend prüft ob ein Guest-Cart migriert werden muss
+    const sessionId = localStorage.getItem('cart_session_id'); // Hole IMMER die sessionId
     const url = sessionId
       ? `${this.cartApiUrl}?storeId=${storeId}&sessionId=${sessionId}`
       : `${this.cartApiUrl}?storeId=${storeId}`;
@@ -131,10 +132,11 @@ export class CartService {
 
     console.log('➕ Füge Produkt zum Warenkorb hinzu (Guest Cart unterstützt)');
 
-    // FIXED: Füge sessionId für Guests automatisch hinzu
-    const requestBody = this.isAuthenticated()
-      ? request
-      : { ...request, sessionId: this.getOrCreateSessionId() };
+    // FIXED: Sende sessionId IMMER (auch für eingeloggte User, für Migration)
+    const sessionId = localStorage.getItem('cart_session_id');
+    const requestBody = sessionId
+      ? { ...request, sessionId }
+      : request;
 
     return this.http.post<any>(`${this.cartApiUrl}/items`, requestBody, {
       headers: this.getAuthHeaders()
@@ -239,9 +241,10 @@ export class CartService {
   clearLocalCart(): void {
     console.log('🧹 Bereinige lokalen Warenkorb-Cache (zwinge Neuladung)');
 
-    // Wichtig: Trigger zweimal für sofortiges Reset + Neuladung
-    // 1. Sofortiges Signal für Components, dass Cart leer ist
-    // 2. Nach kurzem Delay erneutes Signal zum Neuladen vom Server
+    // Entferne die Guest-Session-ID, damit ein neuer Guest-Cart erstellt wird
+    localStorage.removeItem('cart_session_id');
+
+    // Trigger Update für alle Components
     this.cartUpdateSubject.next();
 
     // Kurze Verzögerung, dann nochmal triggern um sicherzustellen,
@@ -249,6 +252,32 @@ export class CartService {
     setTimeout(() => {
       console.log('🔄 Erzwinge finale Warenkorb-Neuladung');
       this.cartUpdateSubject.next();
+    }, 100);
+  }
+
+  /**
+   * Triggert ein Warenkorb-Update OHNE die Session-ID zu löschen
+   * Wird beim Login/Registrierung verwendet, damit der Guest-Cart migriert wird
+   */
+  triggerCartUpdate(): void {
+    console.log('🔄 Trigger Warenkorb-Update (für Cart-Migration)');
+
+    // WICHTIG: Wir löschen die cart_session_id NICHT, damit das Backend sie für die Migration nutzen kann
+    // Das Backend wird den Guest-Cart automatisch mit dem User-Cart mergen
+
+    // Trigger Update für alle Components
+    this.cartUpdateSubject.next();
+
+    // Nach kurzer Verzögerung nochmal triggern
+    setTimeout(() => {
+      console.log('🔄 Erzwinge Warenkorb-Neuladung nach Migration');
+      this.cartUpdateSubject.next();
+
+      // JETZT können wir die cart_session_id entfernen, nachdem die Migration erfolgt ist
+      setTimeout(() => {
+        localStorage.removeItem('cart_session_id');
+        console.log('🧹 Guest-Session-ID entfernt nach erfolgreicher Migration');
+      }, 500);
     }, 100);
   }
 }

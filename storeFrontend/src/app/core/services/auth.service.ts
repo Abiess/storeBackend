@@ -63,10 +63,12 @@ export class AuthService {
           localStorage.setItem('currentUser', JSON.stringify(response.user));
           this.currentUserSubject.next(response.user);
 
-          // FIXED: Nach Login - Warenkorb neu laden (für User-spezifischen Cart)
-          console.log('✅ Login erfolgreich - Warenkorb wird neu geladen');
+          // FIXED: Nach Login - Trigger Warenkorb-Update (Guest-Cart wird migriert!)
+          // WICHTIG: Wir rufen NICHT clearLocalCart() auf, weil das den Warenkorb leert
+          // Stattdessen triggern wir nur ein Update, damit der migrierte Cart geladen wird
+          console.log('✅ Login erfolgreich - Trigger Warenkorb-Update für Migration');
           if (this.cartService) {
-            this.cartService.clearLocalCart();
+            this.cartService.triggerCartUpdate();
           }
         })
       );
@@ -91,9 +93,10 @@ export class AuthService {
           console.log('✅ Token gespeichert:', storedToken ? 'Ja (Länge: ' + storedToken.length + ')' : 'Nein');
           console.log('🔍 Token-Vergleich:', storedToken === response.token ? 'Identisch ✅' : 'UNTERSCHIEDLICH ❌');
 
-          console.log('✅ Registrierung erfolgreich - Warenkorb wird neu geladen');
+          // FIXED: Nach Registrierung - Trigger Warenkorb-Update (Guest-Cart wird migriert!)
+          console.log('✅ Registrierung erfolgreich - Trigger Warenkorb-Update für Migration');
           if (this.cartService) {
-            this.cartService.clearLocalCart();
+            this.cartService.triggerCartUpdate();
           }
         })
       );

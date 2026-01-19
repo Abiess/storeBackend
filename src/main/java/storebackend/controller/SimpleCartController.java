@@ -56,8 +56,108 @@ public class SimpleCartController {
     }
 
     /**
+     * Migriert einen Guest-Cart zu einem User-Cart
+     * Wird aufgerufen, wenn sich ein Guest nach dem Hinzufügen von Items anmeldet
+     */
+    private void migrateGuestCartToUser(String guestSessionId, Long userId, Long storeId) {
+        if (guestSessionId == null || guestSessionId.isEmpty()) {
+            log.info("⚠️ Keine Guest-Session vorhanden - keine Migration nötig");
+            return;
+        }
+
+        // Finde Guest-Cart
+        List<Cart> guestCarts = cartRepository.findBySessionIdAndStoreIdAndNotExpired(
+            guestSessionId, storeId, LocalDateTime.now()
+        );
+
+        if (guestCarts.isEmpty()) {
+            log.info("⚠️ Kein Guest-Cart gefunden für sessionId: {}", guestSessionId);
+            return;
+        }
+
+        Cart guestCart = guestCarts.get(0);
+        List<CartItem> guestItems = cartItemRepository.findByCartId(guestCart.getId());
+
+        if (guestItems.isEmpty()) {
+            log.info("⚠️ Guest-Cart ist leer - keine Migration nötig");
+            cartRepository.delete(guestCart); // Lösche leeren Guest-Cart
+            return;
+        }
+
+        log.info("🔄 Migriere Guest-Cart (sessionId: {}) zu User-Cart (userId: {})", guestSessionId, userId);
+        log.info("📦 Guest-Cart hat {} Items", guestItems.size());
+
+        // Finde oder erstelle User-Cart
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        List<Cart> userCarts = cartRepository.findByUserIdAndStoreIdAndNotExpired(
+            userId, storeId, LocalDateTime.now()
+        );
+
+        Cart userCart;
+        if (userCarts.isEmpty()) {
+            // Erstelle neuen User-Cart
+            log.info("➕ Erstelle neuen User-Cart für Migration");
+            userCart = new Cart();
+            userCart.setUser(user);
+            userCart.setSessionId(null);
+            userCart.setStore(storeRepository.findById(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found")));
+            userCart.setCreatedAt(LocalDateTime.now());
+            userCart.setUpdatedAt(LocalDateTime.now());
+            userCart.setExpiresAt(LocalDateTime.now().plusDays(30));
+            userCart = cartRepository.save(userCart);
+        } else {
+            userCart = userCarts.get(0);
+            log.info("✅ User-Cart existiert bereits: {}", userCart.getId());
+        }
+
+        // Migriere Items vom Guest-Cart zum User-Cart
+        int mergedCount = 0;
+        int addedCount = 0;
+
+        for (CartItem guestItem : guestItems) {
+            // Prüfe ob Item bereits im User-Cart existiert
+            Optional<CartItem> existingUserItem = cartItemRepository
+                .findByCartIdAndVariantId(userCart.getId(), guestItem.getVariant().getId());
+
+            if (existingUserItem.isPresent()) {
+                // Merge: Addiere Mengen
+                CartItem userItem = existingUserItem.get();
+                userItem.setQuantity(userItem.getQuantity() + guestItem.getQuantity());
+                userItem.setUpdatedAt(LocalDateTime.now());
+                cartItemRepository.save(userItem);
+                mergedCount++;
+                log.info("🔀 Merged Item: {} (Neue Menge: {})",
+                    guestItem.getVariant().getSku(), userItem.getQuantity());
+            } else {
+                // Neu: Erstelle Item im User-Cart
+                CartItem newUserItem = new CartItem();
+                newUserItem.setCart(userCart);
+                newUserItem.setVariant(guestItem.getVariant());
+                newUserItem.setQuantity(guestItem.getQuantity());
+                newUserItem.setPriceSnapshot(guestItem.getPriceSnapshot());
+                newUserItem.setCreatedAt(LocalDateTime.now());
+                newUserItem.setUpdatedAt(LocalDateTime.now());
+                cartItemRepository.save(newUserItem);
+                addedCount++;
+                log.info("➕ Added Item: {} (Menge: {})",
+                    guestItem.getVariant().getSku(), guestItem.getQuantity());
+            }
+        }
+
+        // Lösche Guest-Cart und seine Items
+        cartItemRepository.deleteByCartId(guestCart.getId());
+        cartRepository.delete(guestCart);
+
+        log.info("✅ Cart-Migration abgeschlossen: {} Items gemerged, {} Items hinzugefügt",
+            mergedCount, addedCount);
+    }
+
+    /**
      * FIXED: Findet oder erstellt Cart basierend auf User-ID oder Session-ID
-     * Für angemeldete User: Nur userId + storeId (sessionId ist OPTIONAL)
+     * Für angemeldete User: Nur userId + storeId (sessionId ist OPTIONAL für Migration)
      * Für Gäste: sessionId + storeId
      */
     private Cart findOrCreateCart(Long userId, Long storeId, String sessionId) {
@@ -65,6 +165,12 @@ public class SimpleCartController {
             .orElseThrow(() -> new RuntimeException("Store not found"));
 
         if (userId != null) {
+            // USER CART: Prüfe ob Guest-Cart migriert werden muss
+            if (sessionId != null && !sessionId.isEmpty()) {
+                log.info("🔍 Prüfe Guest-Cart-Migration für sessionId: {}", sessionId);
+                migrateGuestCartToUser(sessionId, userId, storeId);
+            }
+
             // USER CART: Nutze optimierte Query
             log.info("🔍 Searching for user cart (userId: {}, storeId: {})", userId, storeId);
             User user = userRepository.findById(userId)
