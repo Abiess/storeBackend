@@ -1,5 +1,6 @@
 package storebackend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -26,6 +27,7 @@ public class User {
     @Column(name = "name")
     private String name;
 
+    @JsonIgnore  // SECURITY: Niemals den Password-Hash in API-Responses zurückgeben!
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 

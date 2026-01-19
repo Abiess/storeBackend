@@ -541,12 +541,28 @@ export class StoreOrdersComponent implements OnInit {
 
   ngOnInit(): void {
     this.route.params.subscribe(params => {
-      this.storeId = +params['id'];
+      // FIXED: Unterstütze beide Parameter-Namen: 'id' und 'storeId'
+      const storeIdParam = params['id'] || params['storeId'];
+
+      if (!storeIdParam || isNaN(+storeIdParam)) {
+        console.error('❌ StoreOrdersComponent: Keine gültige storeId gefunden in Route-Parametern:', params);
+        this.error = 'Ungültige Store-ID';
+        return;
+      }
+
+      this.storeId = +storeIdParam;
       this.loadOrders();
     });
   }
 
   loadOrders(): void {
+    // FIXED: Validiere storeId vor API-Call
+    if (!this.storeId || isNaN(this.storeId)) {
+      console.error('❌ StoreOrdersComponent: Ungültige storeId, API-Call wird abgebrochen:', this.storeId);
+      this.error = 'Ungültige Store-ID';
+      return;
+    }
+
     this.loading = true;
     this.error = null;
 

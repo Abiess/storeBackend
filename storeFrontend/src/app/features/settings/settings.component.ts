@@ -138,7 +138,7 @@ import { AuthService } from '@app/core/services/auth.service';
 })
 export class SettingsComponent implements OnInit {
   activeTab: 'roles' | 'permissions' | 'audit' = 'roles';
-  currentStoreId: number = 1; // Default, wird dynamisch gesetzt
+  currentStoreId: number | null = null; // FIXED: Kann null sein, wenn keine Store-ID vorhanden ist
 
   constructor(
     private route: ActivatedRoute,
@@ -148,11 +148,12 @@ export class SettingsComponent implements OnInit {
   ngOnInit(): void {
     // Hole die aktuelle Store-ID aus dem Store-Context oder Route
     const storeId = this.route.snapshot.paramMap.get('storeId');
-    if (storeId) {
+    if (storeId && !isNaN(Number(storeId))) {
       this.currentStoreId = Number(storeId);
     } else {
-      // Fallback: Hole den ersten Store des eingeloggten Users
-      this.currentStoreId = 1; // TODO: Aus Store-Service holen
+      // FIXED: Keine Store-ID verfügbar - AuditLog sollte nicht geladen werden
+      this.currentStoreId = null;
+      console.warn('⚠️ Keine gültige Store-ID in /settings Route. Audit-Log wird nicht geladen.');
     }
   }
 }

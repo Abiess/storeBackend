@@ -12,7 +12,7 @@ import { AuditLog, AuditAction, AuditEntityType, AuditLogFilter, Role } from '@a
   styleUrls: ['./audit-log.component.scss']
 })
 export class AuditLogComponent implements OnInit {
-  @Input() storeId!: number;
+  @Input() storeId!: number | null; // FIXED: Kann null sein
 
   auditLogs: AuditLog[] = [];
   loading = false;
@@ -42,10 +42,21 @@ export class AuditLogComponent implements OnInit {
   constructor(private auditLogService: AuditLogService) {}
 
   ngOnInit(): void {
-    this.loadAuditLogs();
+    // FIXED: Nur laden, wenn eine gültige storeId vorhanden ist
+    if (this.storeId != null && !isNaN(this.storeId)) {
+      this.loadAuditLogs();
+    } else {
+      console.warn('⚠️ AuditLogComponent: Keine gültige storeId, Logs werden nicht geladen.');
+    }
   }
 
   loadAuditLogs(): void {
+    // FIXED: Sicherheitscheck vor API-Call
+    if (this.storeId == null || isNaN(this.storeId)) {
+      console.error('❌ AuditLogComponent: Ungültige storeId, API-Call wird abgebrochen.');
+      return;
+    }
+
     this.loading = true;
 
     const filter: AuditLogFilter = {
@@ -122,6 +133,12 @@ export class AuditLogComponent implements OnInit {
   }
 
   exportLogs(): void {
+    // FIXED: Sicherheitscheck vor Export
+    if (this.storeId == null || isNaN(this.storeId)) {
+      console.error('❌ AuditLogComponent: Ungültige storeId, Export wird abgebrochen.');
+      return;
+    }
+
     const filter: AuditLogFilter = {
       storeId: this.storeId
     };
@@ -231,4 +248,3 @@ export class AuditLogComponent implements OnInit {
     return String(value);
   }
 }
-
