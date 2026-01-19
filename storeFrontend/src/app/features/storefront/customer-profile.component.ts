@@ -13,19 +13,17 @@ import { CustomerPasswordChangeComponent } from './customer-password-change.comp
 
 type CustomerTab = 'overview' | 'orders' | 'profile' | 'addresses' | 'password';
 
-/**
- * Sicheres ViewModel für die UI:
- * - createdAt ist immer Date | null (DatePipe-safe)
- * - totalAmount/itemCount sind immer number (DecimalPipe-safe)
- * - status ist immer string (toLowerCase-safe)
- */
+/** UI-sicheres ViewModel (DatePipe/NumberPipe-safe) */
 interface OrderHistoryVM {
+    orderId: number;
     orderNumber: string;
-    createdAt: Date | null;
+    orderDate: string;
+    createdAt: Date | null; // <-- wichtig: DatePipe-sicher
+    status: string;
+    total: number;
     totalAmount: number;
     itemCount: number;
-    status: string;
-    raw: OrderHistory; // optional: Originalobjekt behalten (debug/Details)
+    items: OrderHistory['items'];
 }
 
 @Component({
@@ -48,6 +46,7 @@ interface OrderHistoryVM {
       </div>
 
       <div class="profile-content">
+        <!-- Navigation Sidebar -->
         <nav class="profile-nav">
           <button
             class="nav-item"
@@ -91,8 +90,10 @@ interface OrderHistoryVM {
           </button>
         </nav>
 
+        <!-- Content Area -->
         <div class="profile-main">
-          <!-- Overview -->
+
+          <!-- Overview Tab -->
           <div *ngIf="activeTab === 'overview'" class="tab-content">
             <h2>Willkommen zurück, {{ profile?.email || 'Kunde' }}!</h2>
 
@@ -104,6 +105,7 @@ interface OrderHistoryVM {
                   <p>Bestellungen</p>
                 </div>
               </div>
+
               <div class="overview-card">
                 <div class="card-icon">✅</div>
                 <div class="card-content">
@@ -111,6 +113,7 @@ interface OrderHistoryVM {
                   <p>Abgeschlossen</p>
                 </div>
               </div>
+
               <div class="overview-card">
                 <div class="card-icon">🚚</div>
                 <div class="card-content">
@@ -133,12 +136,12 @@ interface OrderHistoryVM {
                     </span>
                   </div>
 
-                  <span class="status-badge" [class]="'status-' + order.status.toLowerCase()">
+                  <span class="status-badge" [class]="'status-' + (order.status || 'PENDING').toLowerCase()">
                     {{ getStatusLabel(order.status) }}
                   </span>
 
                   <strong class="order-total">
-                    {{ order.totalAmount | number:'1.2-2' }} €
+                    {{ (order.totalAmount ?? order.total ?? 0) | number:'1.2-2' }} €
                   </strong>
                 </div>
               </div>
@@ -149,7 +152,7 @@ interface OrderHistoryVM {
             </div>
           </div>
 
-          <!-- Orders -->
+          <!-- Orders Tab -->
           <div *ngIf="activeTab === 'orders'" class="tab-content">
             <h2>Meine Bestellungen</h2>
 
@@ -170,12 +173,13 @@ interface OrderHistoryVM {
                 <div class="order-header">
                   <div>
                     <h3>Bestellung {{ order.orderNumber }}</h3>
+
                     <p class="order-date">
                       {{ order.createdAt ? (order.createdAt | date:'dd.MM.yyyy HH:mm') : '-' }}
                     </p>
                   </div>
 
-                  <span class="status-badge" [class]="'status-' + order.status.toLowerCase()">
+                  <span class="status-badge" [class]="'status-' + (order.status || 'PENDING').toLowerCase()">
                     {{ getStatusLabel(order.status) }}
                   </span>
                 </div>
@@ -183,12 +187,12 @@ interface OrderHistoryVM {
                 <div class="order-body">
                   <div class="order-detail">
                     <span class="label">Artikel:</span>
-                    <span>{{ order.itemCount }} Stück</span>
+                    <span>{{ order.itemCount ?? 0 }} Stück</span>
                   </div>
 
                   <div class="order-detail">
                     <span class="label">Gesamtsumme:</span>
-                    <strong class="total">{{ order.totalAmount | number:'1.2-2' }} €</strong>
+                    <strong class="total">{{ (order.totalAmount ?? order.total ?? 0) | number:'1.2-2' }} €</strong>
                   </div>
                 </div>
 
@@ -201,7 +205,7 @@ interface OrderHistoryVM {
             </div>
           </div>
 
-          <!-- Profile -->
+          <!-- Profile Tab -->
           <div *ngIf="activeTab === 'profile'" class="tab-content">
             <app-customer-profile-edit
               [profile]="profile"
@@ -209,7 +213,7 @@ interface OrderHistoryVM {
             </app-customer-profile-edit>
           </div>
 
-          <!-- Addresses -->
+          <!-- Addresses Tab -->
           <div *ngIf="activeTab === 'addresses'" class="tab-content">
             <app-customer-addresses
               [profile]="profile"
@@ -217,7 +221,7 @@ interface OrderHistoryVM {
             </app-customer-addresses>
           </div>
 
-          <!-- Password -->
+          <!-- Password Tab -->
           <div *ngIf="activeTab === 'password'" class="tab-content">
             <app-customer-password-change></app-customer-password-change>
           </div>
@@ -225,14 +229,14 @@ interface OrderHistoryVM {
       </div>
     </div>
   `,
-    styles: [``] // deine Styles kannst du wie gehabt lassen
+    styles: [``] // deine Styles bleiben wie bei dir (hier weggelassen)
 })
 export class CustomerProfileComponent implements OnInit {
     activeTab: CustomerTab = 'overview';
 
     profile: CustomerProfile | null = null;
 
-    // Wichtig: UI arbeitet nur noch mit VM
+    // WICHTIG: UI arbeitet mit VM (createdAt = Date | null)
     orderHistory: OrderHistoryVM[] = [];
 
     loadingOrders = false;
@@ -270,9 +274,8 @@ export class CustomerProfileComponent implements OnInit {
         this.loadingOrders = true;
 
         this.customerService.getOrderHistory(email).subscribe({
-            next: (orders) => {
-                const safeOrders = (orders ?? []).map(o => this.toOrderVM(o));
-                this.orderHistory = safeOrders;
+            next: (orders: OrderHistory[]) => {
+                this.orderHistory = (orders ?? []).map(o => this.toOrderVM(o));
                 this.loadingOrders = false;
             },
             error: (error) => {
@@ -283,31 +286,23 @@ export class CustomerProfileComponent implements OnInit {
         });
     }
 
-    private toOrderVM(order: OrderHistory): OrderHistoryVM {
-        // Achtung: weil wir dein echtes Interface nicht sehen, greifen wir defensiv zu.
-        const anyOrder = order as any;
+    private toOrderVM(o: OrderHistory): OrderHistoryVM {
+        // createdAt bevorzugen, sonst fallback auf orderDate
+        const createdAt = this.toDateOrNull(o.createdAt) ?? this.toDateOrNull(o.orderDate);
 
-        // Falls deine API andere Feldnamen hat, kannst du hier sehr leicht anpassen:
-        const orderNumber = String(anyOrder?.orderNumber ?? anyOrder?.orderNo ?? anyOrder?.number ?? '');
-        const status = String(anyOrder?.status ?? 'PENDING');
-
-        // createdAt: kann Date | ISO | timestamp | sonstwas sein
-        const createdAt = this.toDateOrNull(anyOrder?.createdAt ?? anyOrder?.created_at ?? anyOrder?.created);
-
-        // Zahlen: kann number | "12.34" | "12,34" | null sein
-        const totalAmount =
-            this.toNumberOrNull(anyOrder?.totalAmount ?? anyOrder?.total ?? anyOrder?.amount) ?? 0;
-
-        const itemCount =
-            this.toNumberOrNull(anyOrder?.itemCount ?? anyOrder?.items ?? anyOrder?.quantity) ?? 0;
+        // totalAmount bevorzugen, sonst fallback auf total
+        const totalAmount = this.toNumberOrZero(o.totalAmount) || this.toNumberOrZero(o.total);
 
         return {
-            orderNumber: orderNumber || '(ohne Nummer)',
+            orderId: this.toIntOrZero(o.orderId),
+            orderNumber: String(o.orderNumber ?? ''),
+            orderDate: String(o.orderDate ?? ''),
             createdAt,
+            status: String(o.status ?? 'PENDING'),
+            total: this.toNumberOrZero(o.total),
             totalAmount,
-            itemCount,
-            status,
-            raw: order
+            itemCount: this.toIntOrZero(o.itemCount),
+            items: o.items ?? ([] as any)
         };
     }
 
@@ -324,7 +319,8 @@ export class CustomerProfileComponent implements OnInit {
         }
 
         if (typeof value === 'string') {
-            // ISO klappt direkt. Nicht-ISO probieren wir trotzdem.
+            // Wenn Backend ISO liefert -> ok.
+            // Wenn Backend z.B. "19.01.2026" liefert, kann new Date() je nach Browser scheitern -> dann null
             const d = new Date(value);
             return isNaN(d.getTime()) ? null : d;
         }
@@ -332,21 +328,26 @@ export class CustomerProfileComponent implements OnInit {
         return null;
     }
 
-    private toNumberOrNull(value: unknown): number | null {
-        if (value === null || value === undefined || value === '') return null;
+    private toNumberOrZero(value: unknown): number {
+        if (value === null || value === undefined || value === '') return 0;
 
         if (typeof value === 'number') {
-            return Number.isFinite(value) ? value : null;
+            return Number.isFinite(value) ? value : 0;
         }
 
         if (typeof value === 'string') {
             // "12,34" -> "12.34"
             const normalized = value.replace(/\s/g, '').replace(',', '.');
             const n = Number(normalized);
-            return Number.isFinite(n) ? n : null;
+            return Number.isFinite(n) ? n : 0;
         }
 
-        return null;
+        return 0;
+    }
+
+    private toIntOrZero(value: unknown): number {
+        const n = this.toNumberOrZero(value);
+        return Number.isFinite(n) ? Math.trunc(n) : 0;
     }
 
     getStatusLabel(status: string): string {
@@ -359,7 +360,6 @@ export class CustomerProfileComponent implements OnInit {
             CANCELLED: 'Storniert'
         };
 
-        // falls Status schon klein ist oder anders kommt
         const key = (status ?? '').toUpperCase();
         return labels[key] || status || 'Ausstehend';
     }
@@ -373,7 +373,6 @@ export class CustomerProfileComponent implements OnInit {
         return this.orderHistory.filter(o => pending.has((o.status ?? '').toUpperCase())).length;
     }
 
-    // wichtig: nimmt jetzt OrderHistoryVM
     viewOrderDetails(order: OrderHistoryVM): void {
         const email = this.authService.getCurrentUserEmail();
         this.router.navigate(['/storefront/order-confirmation'], {
