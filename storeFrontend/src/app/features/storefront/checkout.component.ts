@@ -21,6 +21,33 @@ import { PlaceholderImageUtil } from '../../shared/utils/placeholder-image.util'
         <button class="btn-back" (click)="goBack()">← Zurück zum Warenkorb</button>
       </div>
 
+      <!-- Login-Hinweis für Guests (oberhalb des Formulars) -->
+      <div *ngIf="!isUserLoggedIn() && !loading && cart && cart.items.length > 0" class="guest-login-hint">
+        <div class="hint-content">
+          <div class="hint-icon">👤</div>
+          <div class="hint-text">
+            <h3>Bereits Kunde?</h3>
+            <p>Melden Sie sich an, um Ihre gespeicherten Adressen zu nutzen und Bestellungen zu verfolgen.</p>
+          </div>
+          <div class="hint-actions">
+            <button class="btn btn-secondary" (click)="showLoginModal()">🔐 Anmelden</button>
+            <button class="btn btn-outline" (click)="showRegisterModal()">📝 Registrieren</button>
+          </div>
+        </div>
+        <div class="hint-guest">
+          <p><strong>Neu hier?</strong> Bestellen Sie einfach als Gast weiter unten.</p>
+        </div>
+      </div>
+
+      <!-- Erfolgs-Nachricht für eingeloggte User -->
+      <div *ngIf="isUserLoggedIn() && !loading && cart && cart.items.length > 0" class="logged-in-banner">
+        <div class="banner-content">
+          <span class="banner-icon">✅</span>
+          <span class="banner-text">Angemeldet als <strong>{{ getCurrentUserEmail() }}</strong></span>
+          <button class="btn-link" (click)="logout()">Abmelden</button>
+        </div>
+      </div>
+
       <div *ngIf="loading" class="loading">
         <div class="spinner"></div>
         Warenkorb wird geladen...
@@ -505,6 +532,65 @@ import { PlaceholderImageUtil } from '../../shared/utils/placeholder-image.util'
       color: #666;
       margin-top: 5px;
     }
+
+    .guest-login-hint {
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+
+    .hint-content {
+      display: flex;
+      align-items: flex-start;
+      gap: 15px;
+    }
+
+    .hint-icon {
+      font-size: 28px;
+      color: #667eea;
+    }
+
+    .hint-text {
+      flex: 1;
+    }
+
+    .hint-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .logged-in-banner {
+      background: #e1f5fe;
+      border: 1px solid #b3e5fc;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .banner-content {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .banner-icon {
+      font-size: 24px;
+      color: #4caf50;
+    }
+
+    .btn-link {
+      background: none;
+      color: #007bff;
+      border: none;
+      padding: 0;
+      font-size: 14px;
+      cursor: pointer;
+    }
   `]
 })
 export class CheckoutComponent implements OnInit {
@@ -554,7 +640,12 @@ export class CheckoutComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadCart();
+
+    // FIXED: Stelle gespeicherte Formular-Daten wieder her (falls User von Login zurückkommt)
+    this.restoreFormData();
+
     this.loadSavedAddresses();
+
     // FIXED: Setze E-Mail des eingeloggten Users automatisch
     this.authService.currentUser$.subscribe(user => {
       if (user && user.email) {
@@ -791,8 +882,87 @@ export class CheckoutComponent implements OnInit {
   }
 
   isUserLoggedIn(): boolean {
-    // Überprüfen, ob der Benutzer eingeloggt ist (z.B. durch Vorhandensein eines Tokens im Local Storage)
-    const token = localStorage.getItem('auth_token');
-    return !!token;
+    return this.authService.isAuthenticated();
+  }
+
+  getCurrentUserEmail(): string {
+    return this.authService.getCurrentUserEmail() || 'Gast';
+  }
+
+  showLoginModal(): void {
+    console.log('🔐 Weiterleitung zum Login');
+    // Speichere aktuelle Formular-Daten im localStorage
+    this.saveFormData();
+    // Leite zum Login weiter mit Rückkehr-URL
+    this.router.navigate(['/login'], {
+      queryParams: { returnUrl: '/checkout' }
+    });
+  }
+
+  showRegisterModal(): void {
+    console.log('📝 Weiterleitung zur Registrierung');
+    // Speichere aktuelle Formular-Daten im localStorage
+    this.saveFormData();
+    // Leite zur Registrierung weiter mit Rückkehr-URL
+    this.router.navigate(['/register'], {
+      queryParams: { returnUrl: '/checkout' }
+    });
+  }
+
+  logout(): void {
+    if (confirm('Möchten Sie sich wirklich abmelden? Ihre Formular-Daten bleiben erhalten.')) {
+      this.authService.logout();
+      // Formular bleibt ausgefüllt, nur E-Mail-Feld wird freigegeben
+      this.checkoutForm.get('customerEmail')?.enable();
+      // Trigger Warenkorb-Update
+      this.loadCart();
+    }
+  }
+
+  /**
+   * Speichert die aktuellen Formular-Daten im localStorage
+   * um sie nach Login/Registrierung wiederherzustellen
+   */
+  private saveFormData(): void {
+    const formData = {
+      customerEmail: this.checkoutForm.get('customerEmail')?.value,
+      shippingAddress: this.checkoutForm.get('shippingAddress')?.value,
+      billingAddress: this.checkoutForm.get('billingAddress')?.value,
+      notes: this.checkoutForm.get('notes')?.value,
+      sameAsShipping: this.sameAsShipping
+    };
+    localStorage.setItem('checkout_form_data', JSON.stringify(formData));
+    console.log('💾 Formular-Daten für Login/Register gespeichert');
+  }
+
+  /**
+   * Stellt gespeicherte Formular-Daten wieder her (nach Login/Register)
+   */
+  private restoreFormData(): void {
+    const savedData = localStorage.getItem('checkout_form_data');
+    if (savedData) {
+      try {
+        const formData = JSON.parse(savedData);
+        console.log('📂 Stelle gespeicherte Formular-Daten wieder her');
+
+        // Setze nur die Felder, die noch leer sind (gespeicherte Adressen haben Vorrang)
+        if (!this.checkoutForm.get('shippingAddress.firstName')?.value) {
+          this.checkoutForm.patchValue({
+            shippingAddress: formData.shippingAddress,
+            billingAddress: formData.billingAddress,
+            notes: formData.notes
+          });
+        }
+
+        this.sameAsShipping = formData.sameAsShipping;
+
+        // Entferne gespeicherte Daten nach Wiederherstellung
+        localStorage.removeItem('checkout_form_data');
+        console.log('✅ Formular-Daten wiederhergestellt und bereinigt');
+      } catch (e) {
+        console.error('❌ Fehler beim Wiederherstellen der Formular-Daten:', e);
+        localStorage.removeItem('checkout_form_data');
+      }
+    }
   }
 }
