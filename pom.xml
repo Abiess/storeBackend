@@ -85,6 +85,12 @@
             <version>2.3.0</version>
         </dependency>
 
+        <!-- Jackson Hibernate5 Module - Fix für Lazy Loading Serialization -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-hibernate5</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-jackson</artifactId>
