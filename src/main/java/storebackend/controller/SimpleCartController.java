@@ -57,8 +57,8 @@ public class SimpleCartController {
 
     /**
      * FIXED: Findet oder erstellt Cart basierend auf User-ID oder Session-ID
-     * Für angemeldete User: Nur userId + storeId
-     * Für Gäste: sessionId + storeId (echte Browser-Session)
+     * Für angemeldete User: Nur userId + storeId (sessionId ist OPTIONAL)
+     * Für Gäste: sessionId + storeId
      */
     private Cart findOrCreateCart(Long userId, Long storeId, String sessionId) {
         Store store = storeRepository.findById(storeId)
@@ -98,7 +98,9 @@ public class SimpleCartController {
 
         } else {
             // GUEST CART: Nur für nicht-angemeldete User
+            // Für Gäste ist sessionId ERFORDERLICH
             if (sessionId == null || sessionId.isEmpty()) {
+                log.error("❌ Guest user without sessionId - cannot create cart");
                 throw new RuntimeException("SessionId required for guest checkout");
             }
 
