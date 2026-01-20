@@ -12,6 +12,8 @@ import storebackend.dto.LoginRequest;
 import storebackend.dto.RegisterRequest;
 import storebackend.entity.User;
 import storebackend.service.AuthService;
+import storebackend.service.CartService;
+import storebackend.repository.UserRepository;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -20,11 +22,22 @@ import storebackend.service.AuthService;
 public class AuthController {
 
     private final AuthService authService;
+    private final CartService cartService;
+    private final UserRepository userRepository;
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request,
+                                     @RequestParam(required = false) String sessionId) {
         try {
             AuthResponse response = authService.register(request);
+
+            // Migriere Gast-Warenkorb wenn sessionId vorhanden
+            if (sessionId != null && !sessionId.isEmpty()) {
+                User user = userRepository.findById(response.getUser().getId())
+                        .orElseThrow(() -> new RuntimeException("User not found"));
+                cartService.mergeGuestCartToUser(sessionId, user);
+            }
+
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -33,9 +46,18 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request,
+                                   @RequestParam(required = false) String sessionId) {
         try {
             AuthResponse response = authService.login(request);
+
+            // Migriere Gast-Warenkorb wenn sessionId vorhanden
+            if (sessionId != null && !sessionId.isEmpty()) {
+                User user = userRepository.findById(response.getUser().getId())
+                        .orElseThrow(() -> new RuntimeException("User not found"));
+                cartService.mergeGuestCartToUser(sessionId, user);
+            }
+
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
