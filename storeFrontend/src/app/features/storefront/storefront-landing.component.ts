@@ -235,11 +235,9 @@ export class StorefrontLandingComponent implements OnInit {
       next: (response) => {
         console.log('✅ Produkt erfolgreich hinzugefügt:', response);
         this.loadCartCount();
-        alert(`✅ ${productName} wurde zum Warenkorb hinzugefügt!`);
       },
       error: (error) => {
         console.error('❌ Fehler beim Hinzufügen zum Warenkorb:', error);
-        alert('❌ Fehler beim Hinzufügen zum Warenkorb. Bitte versuchen Sie es erneut.');
       }
     });
   }

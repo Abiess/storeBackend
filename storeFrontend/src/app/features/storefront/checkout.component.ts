@@ -6,6 +6,7 @@ import { CartService, Cart } from '../../core/services/cart.service';
 import { CheckoutService, CheckoutRequest } from '../../core/services/checkout.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CustomerProfileService, SaveAddressRequest } from '../../core/services/customer-profile.service';
+import { SubdomainService } from '../../core/services/subdomain.service'; // NEUE: Import hinzugefügt
 import { CouponInputComponent } from '../../shared/components/coupon-input/coupon-input.component';
 import { ValidateCouponsResponse } from '../../core/services/coupon.service';
 import { PlaceholderImageUtil } from '../../shared/utils/placeholder-image.util';
@@ -604,6 +605,7 @@ export class CheckoutComponent implements OnInit {
   discountAmount = 0;
   hasFreeShipping = false;
   saveAddressForFuture = false;
+  storeId: number | null = null; // NEUE: Store-ID aus Subdomain
 
   constructor(
     private fb: FormBuilder,
@@ -611,7 +613,8 @@ export class CheckoutComponent implements OnInit {
     private checkoutService: CheckoutService,
     private router: Router,
     private authService: AuthService,
-    private customerProfileService: CustomerProfileService
+    private customerProfileService: CustomerProfileService,
+    private subdomainService: SubdomainService // NEUE: SubdomainService injiziert
   ) {
     this.checkoutForm = this.fb.group({
       customerEmail: ['', [Validators.required, Validators.email]],
