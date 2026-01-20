@@ -262,14 +262,24 @@ export class CategoryListComponent implements OnInit {
     private translationService: TranslationService
   ) {}
 
-  ngOnInit() {
-    this.route.params.subscribe(params => {
-      this.storeId = +params['storeId'];
-      this.loadCategories();
-    });
-  }
+    ngOnInit() {
+        this.route.params.subscribe(params => {
+            const storeIdParam = params['storeId'];
+            this.storeId = storeIdParam ? Number(storeIdParam) : 0;
 
-  loadCategories() {
+            if (!this.storeId || isNaN(this.storeId)) {
+                console.error('❌ Ungültige Store-ID:', storeIdParam);
+                this.router.navigate(['/dashboard']);
+                return;
+            }
+
+            console.log('✅ Store-ID geladen:', this.storeId);
+            this.loadCategories();
+        });
+    }
+
+
+    loadCategories() {
     this.loading = true;
     this.error = null;
 

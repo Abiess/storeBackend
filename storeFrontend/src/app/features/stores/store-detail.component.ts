@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, ActivatedRoute } from '@angular/router';
+import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { ProductService } from '@app/core/services/product.service';
 import { OrderService } from '@app/core/services/order.service';
@@ -1167,7 +1167,8 @@ export class StoreDetailComponent implements OnInit {
     private domainService: DomainService,
     private storeService: StoreService,
     private mediaService: MediaService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private router: Router
   ) {
     this.domainForm = this.fb.group({
       type: ['SUBDOMAIN', Validators.required],
@@ -1177,7 +1178,16 @@ export class StoreDetailComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.storeId = Number(this.route.snapshot.paramMap.get('id'));
+    const storeIdParam = this.route.snapshot.paramMap.get('id');
+    this.storeId = storeIdParam ? Number(storeIdParam) : 0;
+
+    if (!this.storeId || isNaN(this.storeId)) {
+      console.error('❌ Ungültige Store-ID:', storeIdParam);
+      this.router.navigate(['/dashboard']);
+      return;
+    }
+
+    console.log('✅ Store-ID geladen:', this.storeId);
     this.loadStoreData();
     this.loadProducts();
     this.loadOrders();

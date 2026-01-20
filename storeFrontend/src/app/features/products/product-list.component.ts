@@ -303,7 +303,16 @@ export class ProductListComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.storeId = Number(this.route.snapshot.paramMap.get('storeId'));
+    const storeIdParam = this.route.snapshot.paramMap.get('storeId');
+    this.storeId = storeIdParam ? Number(storeIdParam) : 0;
+
+    if (!this.storeId || isNaN(this.storeId)) {
+      console.error('❌ Ungültige Store-ID:', storeIdParam);
+      this.router.navigate(['/dashboard']);
+      return;
+    }
+
+    console.log('✅ Store-ID geladen:', this.storeId);
     this.loadProducts();
   }
 
