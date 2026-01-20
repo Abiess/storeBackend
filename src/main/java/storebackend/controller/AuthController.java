@@ -31,11 +31,13 @@ public class AuthController {
         try {
             AuthResponse response = authService.register(request);
 
-            // Migriere Gast-Warenkorb wenn sessionId vorhanden
-            if (sessionId != null && !sessionId.isEmpty()) {
+            // Migriere Gast-Warenkorb wenn sessionId vorhanden (aus Body oder Query-Param)
+            String cartSessionId = request.getSessionId() != null ? request.getSessionId() : sessionId;
+
+            if (cartSessionId != null && !cartSessionId.isEmpty()) {
                 User user = userRepository.findById(response.getUser().getId())
                         .orElseThrow(() -> new RuntimeException("User not found"));
-                cartService.mergeGuestCartToUser(sessionId, user);
+                cartService.mergeGuestCartToUser(cartSessionId, user);
             }
 
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -51,11 +53,13 @@ public class AuthController {
         try {
             AuthResponse response = authService.login(request);
 
-            // Migriere Gast-Warenkorb wenn sessionId vorhanden
-            if (sessionId != null && !sessionId.isEmpty()) {
+            // Migriere Gast-Warenkorb wenn sessionId vorhanden (aus Body oder Query-Param)
+            String cartSessionId = request.getSessionId() != null ? request.getSessionId() : sessionId;
+
+            if (cartSessionId != null && !cartSessionId.isEmpty()) {
                 User user = userRepository.findById(response.getUser().getId())
                         .orElseThrow(() -> new RuntimeException("User not found"));
-                cartService.mergeGuestCartToUser(sessionId, user);
+                cartService.mergeGuestCartToUser(cartSessionId, user);
             }
 
             return ResponseEntity.ok(response);

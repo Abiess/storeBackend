@@ -12,5 +12,7 @@ public class LoginRequest {
 
     @NotBlank
     private String password;
-}
 
+    // Optional: Für Warenkorb-Migration von Gast zu User
+    private String sessionId;
+}

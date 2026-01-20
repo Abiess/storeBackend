@@ -14,5 +14,7 @@ public class RegisterRequest {
     @NotBlank(message = "Password is required")
     @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
-}
 
+    // Optional: Für Warenkorb-Migration von Gast zu User
+    private String sessionId;
+}
