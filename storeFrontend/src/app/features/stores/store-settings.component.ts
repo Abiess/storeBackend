@@ -4,45 +4,48 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { StoreService } from '../../core/services/store.service';
 import { Store } from '../../core/models';
+import { StoreNavigationComponent } from '../../shared/components/store-navigation.component';
+import { TranslatePipe } from '../../core/pipes/translate.pipe';
 
 @Component({
   selector: 'app-store-settings',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, StoreNavigationComponent, TranslatePipe],
   template: `
     <div class="store-settings-container">
-      <div class="settings-header">
-        <button class="back-button" (click)="goBack()">
-          ← Zurück zum Store
-        </button>
-        <h1>Store Einstellungen</h1>
-      </div>
+      <!-- Einheitliche Navigation -->
+      <app-store-navigation 
+        [storeId]="storeId" 
+        [currentPage]="'navigation.settings' | translate">
+      </app-store-navigation>
 
       <div class="settings-content" *ngIf="store">
+        <h1>{{ 'navigation.settings' | translate }}</h1>
+        
         <div class="settings-tabs">
           <button 
             class="tab-button" 
             [class.active]="activeTab === 'general'"
             (click)="activeTab = 'general'">
-            Allgemein
+            {{ 'settings.general' | translate }}
           </button>
           <button 
             class="tab-button" 
             [class.active]="activeTab === 'branding'"
             (click)="activeTab = 'branding'">
-            Branding
+            {{ 'settings.branding' | translate }}
           </button>
           <button 
             class="tab-button" 
             [class.active]="activeTab === 'domain'"
             (click)="activeTab = 'domain'">
-            Domain
+            {{ 'settings.domain' | translate }}
           </button>
           <button 
             class="tab-button" 
             [class.active]="activeTab === 'advanced'"
             (click)="activeTab = 'advanced'">
-            Erweitert
+            {{ 'settings.advanced' | translate }}
           </button>
         </div>
 
@@ -433,7 +436,16 @@ export class StoreSettingsComponent implements OnInit {
 
   ngOnInit(): void {
     this.route.params.subscribe(params => {
-      this.storeId = +params['id'];
+      const storeIdParam = params['id'] || params['storeId'];
+      this.storeId = storeIdParam ? Number(storeIdParam) : 0;
+
+      if (!this.storeId || isNaN(this.storeId)) {
+        console.error('❌ Ungültige Store-ID:', storeIdParam);
+        this.router.navigate(['/dashboard']);
+        return;
+      }
+
+      console.log('✅ Store-ID geladen:', this.storeId);
       this.loadStore();
     });
   }
@@ -521,4 +533,3 @@ export class StoreSettingsComponent implements OnInit {
     this.router.navigate(['/stores', this.storeId]);
   }
 }
-

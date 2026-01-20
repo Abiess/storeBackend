@@ -4,47 +4,50 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { OrderService } from '../../core/services/order.service';
 import { Order, OrderStatus, Address } from '../../core/models';
+import { StoreNavigationComponent } from '../../shared/components/store-navigation.component';
+import { TranslatePipe } from '../../core/pipes/translate.pipe';
 
 @Component({
   selector: 'app-store-orders',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, StoreNavigationComponent, TranslatePipe],
   template: `
     <div class="store-orders-container">
-      <div class="orders-header">
-        <button class="back-button" (click)="goBack()">
-          ← Zurück zum Store
-        </button>
-        <div class="header-content">
-          <h1>Bestellungen</h1>
-          <div class="header-actions">
-            <button class="btn btn-secondary" (click)="loadOrders()">
-              🔄 Aktualisieren
-            </button>
-          </div>
+      <!-- Einheitliche Navigation -->
+      <app-store-navigation 
+        [storeId]="storeId" 
+        [currentPage]="'navigation.orders' | translate">
+      </app-store-navigation>
+
+      <div class="header-content">
+        <h1>{{ 'navigation.orders' | translate }}</h1>
+        <div class="header-actions">
+          <button class="btn btn-secondary" (click)="loadOrders()">
+            🔄 {{ 'common.refresh' | translate }}
+          </button>
         </div>
       </div>
 
       <div class="orders-filters">
         <div class="filter-group">
-          <label>Status:</label>
+          <label>{{ 'order.status' | translate }}:</label>
           <select [(ngModel)]="filterStatus" (change)="applyFilters()" class="form-control">
-            <option value="">Alle</option>
-            <option value="PENDING">Ausstehend</option>
-            <option value="CONFIRMED">Bestätigt</option>
-            <option value="PROCESSING">In Bearbeitung</option>
-            <option value="SHIPPED">Versandt</option>
-            <option value="DELIVERED">Zugestellt</option>
-            <option value="CANCELLED">Storniert</option>
+            <option value="">{{ 'common.all' | translate }}</option>
+            <option value="PENDING">{{ 'order.pending' | translate }}</option>
+            <option value="CONFIRMED">{{ 'order.confirmed' | translate }}</option>
+            <option value="PROCESSING">{{ 'order.processing' | translate }}</option>
+            <option value="SHIPPED">{{ 'order.shipped' | translate }}</option>
+            <option value="DELIVERED">{{ 'order.delivered' | translate }}</option>
+            <option value="CANCELLED">{{ 'order.cancelled' | translate }}</option>
           </select>
         </div>
         <div class="filter-group">
-          <label>Suche:</label>
+          <label>{{ 'common.search' | translate }}:</label>
           <input
             type="text"
             [(ngModel)]="searchTerm"
             (input)="applyFilters()"
-            placeholder="Bestellnummer oder Email..."
+            placeholder="{{ 'order.searchPlaceholder' | translate }}"
             class="form-control">
         </div>
       </div>
@@ -52,19 +55,19 @@ import { Order, OrderStatus, Address } from '../../core/models';
       <div class="orders-stats" *ngIf="!loading">
         <div class="stat-card">
           <h3>{{ orders.length }}</h3>
-          <p>Gesamt Bestellungen</p>
+          <p>{{ 'order.totalOrders' | translate }}</p>
         </div>
         <div class="stat-card">
           <h3>{{ getPendingCount() }}</h3>
-          <p>Ausstehend</p>
+          <p>{{ 'order.pending' | translate }}</p>
         </div>
         <div class="stat-card">
           <h3>{{ getProcessingCount() }}</h3>
-          <p>In Bearbeitung</p>
+          <p>{{ 'order.processing' | translate }}</p>
         </div>
         <div class="stat-card">
           <h3>{{ getTotalRevenue() | currency:'EUR' }}</h3>
-          <p>Gesamtumsatz</p>
+          <p>{{ 'order.totalRevenue' | translate }}</p>
         </div>
       </div>
 
@@ -72,12 +75,12 @@ import { Order, OrderStatus, Address } from '../../core/models';
         <table>
           <thead>
             <tr>
-              <th>Bestellnummer</th>
-              <th>Kunde</th>
-              <th>Datum</th>
-              <th>Betrag</th>
-              <th>Status</th>
-              <th>Aktionen</th>
+              <th>{{ 'order.orderNumber' | translate }}</th>
+              <th>{{ 'order.customer' | translate }}</th>
+              <th>{{ 'order.date' | translate }}</th>
+              <th>{{ 'order.amount' | translate }}</th>
+              <th>{{ 'order.status' | translate }}</th>
+              <th>{{ 'common.actions' | translate }}</th>
             </tr>
           </thead>
           <tbody>
@@ -92,10 +95,10 @@ import { Order, OrderStatus, Address } from '../../core/models';
                 </span>
               </td>
               <td class="actions">
-                <button class="btn-icon" (click)="viewOrder(order.id)" title="Details anzeigen">
+                <button class="btn-icon" (click)="viewOrder(order.id)" [title]="'order.viewDetails' | translate">
                   👁️
                 </button>
-                <button class="btn-icon" (click)="updateOrderStatus(order)" title="Status ändern">
+                <button class="btn-icon" (click)="updateOrderStatus(order)" [title]="'order.changeStatus' | translate">
                   ✏️
                 </button>
               </td>
@@ -106,34 +109,35 @@ import { Order, OrderStatus, Address } from '../../core/models';
 
       <div class="empty-state" *ngIf="!loading && filteredOrders.length === 0">
         <div class="empty-icon">📦</div>
-        <h2>Keine Bestellungen gefunden</h2>
-        <p *ngIf="searchTerm || filterStatus">Versuchen Sie, die Filter zu ändern</p>
-        <p *ngIf="!searchTerm && !filterStatus">Ihr Store hat noch keine Bestellungen erhalten.</p>
+        <h2>{{ 'order.noOrders' | translate }}</h2>
+        <p *ngIf="searchTerm || filterStatus">{{ 'order.tryDifferentFilters' | translate }}</p>
+        <p *ngIf="!searchTerm && !filterStatus">{{ 'order.noOrdersYet' | translate }}</p>
       </div>
 
       <div class="loading" *ngIf="loading">
         <div class="spinner"></div>
-        <p>Lade Bestellungen...</p>
+        <p>{{ 'loading.orders' | translate }}</p>
       </div>
 
       <div class="error" *ngIf="error">
         <p>{{ error }}</p>
-        <button class="btn btn-primary" (click)="loadOrders()">Erneut versuchen</button>
+        <button class="btn btn-primary" (click)="loadOrders()">{{ 'common.retry' | translate }}</button>
       </div>
     </div>
 
+    <!-- Modal für Bestelldetails -->
     <div class="modal" *ngIf="selectedOrder" (click)="closeModal()">
       <div class="modal-content" (click)="$event.stopPropagation()">
         <div class="modal-header">
-          <h2>Bestellung {{ selectedOrder.orderNumber }}</h2>
+          <h2>{{ 'order.orderDetails' | translate }} {{ selectedOrder.orderNumber }}</h2>
           <button class="close-button" (click)="closeModal()">×</button>
         </div>
         <div class="modal-body">
           <div class="order-info">
-            <h3>Kundeninformation</h3>
+            <h3>{{ 'order.customerInfo' | translate }}</h3>
             <p><strong>Email:</strong> {{ selectedOrder.customerEmail }}</p>
-            <p><strong>Datum:</strong> {{ selectedOrder.createdAt | date:'dd.MM.yyyy HH:mm' }}</p>
-            <p><strong>Status:</strong>
+            <p><strong>{{ 'order.date' | translate }}:</strong> {{ selectedOrder.createdAt | date:'dd.MM.yyyy HH:mm' }}</p>
+            <p><strong>{{ 'order.status' | translate }}:</strong>
               <span class="status-badge" [ngClass]="'status-' + selectedOrder.status.toLowerCase()">
                 {{ getStatusLabel(selectedOrder.status) }}
               </span>
@@ -141,7 +145,7 @@ import { Order, OrderStatus, Address } from '../../core/models';
           </div>
 
           <div class="order-info" *ngIf="getAddressObject(selectedOrder.shippingAddress) as address">
-            <h3>Lieferadresse</h3>
+            <h3>{{ 'order.shippingAddress' | translate }}</h3>
             <p>{{ address.firstName }} {{ address.lastName }}</p>
             <p>{{ address.address1 }}</p>
             <p *ngIf="address.address2">{{ address.address2 }}</p>
@@ -151,14 +155,14 @@ import { Order, OrderStatus, Address } from '../../core/models';
           </div>
 
           <div class="order-info" *ngIf="selectedOrder.items && selectedOrder.items.length > 0">
-            <h3>Bestellte Artikel</h3>
+            <h3>{{ 'order.orderedItems' | translate }}</h3>
             <table class="items-table">
               <thead>
                 <tr>
-                  <th>Artikel</th>
-                  <th>Menge</th>
-                  <th>Preis</th>
-                  <th>Gesamt</th>
+                  <th>{{ 'order.item' | translate }}</th>
+                  <th>{{ 'order.quantity' | translate }}</th>
+                  <th>{{ 'order.price' | translate }}</th>
+                  <th>{{ 'order.total' | translate }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -171,7 +175,7 @@ import { Order, OrderStatus, Address } from '../../core/models';
               </tbody>
               <tfoot>
                 <tr>
-                  <td colspan="3"><strong>Gesamt:</strong></td>
+                  <td colspan="3"><strong>{{ 'order.grandTotal' | translate }}:</strong></td>
                   <td><strong>{{ selectedOrder.totalAmount | currency:'EUR' }}</strong></td>
                 </tr>
               </tfoot>
@@ -179,13 +183,13 @@ import { Order, OrderStatus, Address } from '../../core/models';
           </div>
 
           <div class="order-info" *ngIf="selectedOrder.notes">
-            <h3>Notizen</h3>
+            <h3>{{ 'order.notes' | translate }}</h3>
             <p>{{ selectedOrder.notes }}</p>
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-secondary" (click)="closeModal()">Schließen</button>
-          <button class="btn btn-primary" (click)="updateOrderStatus(selectedOrder)">Status ändern</button>
+          <button class="btn btn-secondary" (click)="closeModal()">{{ 'common.close' | translate }}</button>
+          <button class="btn btn-primary" (click)="updateOrderStatus(selectedOrder)">{{ 'order.changeStatus' | translate }}</button>
         </div>
       </div>
     </div>

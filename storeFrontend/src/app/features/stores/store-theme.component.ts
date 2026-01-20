@@ -105,7 +105,7 @@ import {
                   <span>{{ selectedPreset.colors.primary }}</span>
                 </div>
                 <div class="color-input">
-                  <label>Sekundärfarbe</label>
+                  <label>Sekund��rfarbe</label>
                   <input type="color" [(ngModel)]="selectedPreset.colors.secondary" name="secondary">
                   <span>{{ selectedPreset.colors.secondary }}</span>
                 </div>
@@ -543,7 +543,16 @@ export class StoreThemeComponent implements OnInit {
 
   ngOnInit(): void {
     this.route.params.subscribe(params => {
-      this.storeId = +params['id'];
+      const storeIdParam = params['id'] || params['storeId'];
+      this.storeId = storeIdParam ? Number(storeIdParam) : 0;
+
+      if (!this.storeId || isNaN(this.storeId)) {
+        console.error('❌ Ungültige Store-ID:', storeIdParam);
+        this.router.navigate(['/dashboard']);
+        return;
+      }
+
+      console.log('✅ Store-ID geladen:', this.storeId);
       this.loadThemes();
       this.loadPresets();
     });
