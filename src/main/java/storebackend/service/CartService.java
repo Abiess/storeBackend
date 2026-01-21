@@ -113,76 +113,84 @@ public class CartService {
 
     /**
      * Migriert einen Gast-Warenkorb zu einem Benutzer-Warenkorb
+     * REQUIRES_NEW sorgt dafür, dass diese Methode in einer separaten Transaktion läuft
+     * und Fehler nicht die übergeordnete Transaktion beeinflussen
      * @param sessionId Die Session-ID des Gast-Warenkorbs
      * @param user Der Benutzer, zu dem der Warenkorb migriert werden soll
      * @return Der migrierte oder zusammengeführte Warenkorb
      */
-    @Transactional
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public Cart mergeGuestCartToUser(String sessionId, User user) {
         if (sessionId == null || user == null) {
             log.warn("⚠️ Warenkorb-Migration abgebrochen: sessionId oder user ist null");
             return null;
         }
 
-        // Finde den Gast-Warenkorb
-        Optional<Cart> guestCartOpt = cartRepository.findBySessionId(sessionId);
-        if (guestCartOpt.isEmpty()) {
-            log.info("ℹ️ Kein Gast-Warenkorb gefunden für sessionId: {}", sessionId);
-            return null;
-        }
-
-        Cart guestCart = guestCartOpt.get();
-        List<CartItem> guestItems = cartItemRepository.findByCartId(guestCart.getId());
-
-        if (guestItems.isEmpty()) {
-            log.info("ℹ️ Gast-Warenkorb ist leer, lösche ihn");
-            cartRepository.delete(guestCart);
-            return null;
-        }
-
-        // Prüfe ob der Benutzer bereits einen Warenkorb hat
-        Optional<Cart> userCartOpt = cartRepository.findByUserId(user.getId());
-        Cart userCart;
-
-        if (userCartOpt.isPresent()) {
-            // Benutzer hat bereits einen Warenkorb - Artikel zusammenführen
-            userCart = userCartOpt.get();
-            log.info("🔄 Führe Gast-Warenkorb ({} Artikel) mit Benutzer-Warenkorb zusammen", guestItems.size());
-
-            for (CartItem guestItem : guestItems) {
-                Optional<CartItem> existingItem = cartItemRepository.findByCartIdAndVariantId(
-                        userCart.getId(),
-                        guestItem.getVariant().getId()
-                );
-
-                if (existingItem.isPresent()) {
-                    // Artikel existiert bereits - erhöhe die Menge
-                    CartItem item = existingItem.get();
-                    item.setQuantity(item.getQuantity() + guestItem.getQuantity());
-                    cartItemRepository.save(item);
-                    log.info("➕ Menge erhöht für Artikel-ID: {}", item.getId());
-                } else {
-                    // Artikel existiert noch nicht - verschiebe ihn
-                    guestItem.setCart(userCart);
-                    cartItemRepository.save(guestItem);
-                    log.info("📦 Artikel verschoben: {}", guestItem.getId());
-                }
+        try {
+            // Finde den Gast-Warenkorb
+            Optional<Cart> guestCartOpt = cartRepository.findBySessionId(sessionId);
+            if (guestCartOpt.isEmpty()) {
+                log.info("ℹ️ Kein Gast-Warenkorb gefunden für sessionId: {}", sessionId);
+                return null;
             }
-        } else {
-            // Benutzer hat noch keinen Warenkorb - konvertiere den Gast-Warenkorb
-            log.info("🔄 Konvertiere Gast-Warenkorb zu Benutzer-Warenkorb");
-            guestCart.setUser(user);
-            guestCart.setSessionId(null); // Entferne die sessionId
-            userCart = cartRepository.save(guestCart);
-            log.info("✅ Warenkorb konvertiert für User-ID: {}", user.getId());
+
+            Cart guestCart = guestCartOpt.get();
+            List<CartItem> guestItems = cartItemRepository.findByCartId(guestCart.getId());
+
+            if (guestItems.isEmpty()) {
+                log.info("ℹ️ Gast-Warenkorb ist leer, lösche ihn");
+                cartRepository.delete(guestCart);
+                return null;
+            }
+
+            // Prüfe ob der Benutzer bereits einen Warenkorb hat
+            Optional<Cart> userCartOpt = cartRepository.findByUserId(user.getId());
+            Cart userCart;
+
+            if (userCartOpt.isPresent()) {
+                // Benutzer hat bereits einen Warenkorb - Artikel zusammenführen
+                userCart = userCartOpt.get();
+                log.info("🔄 Führe Gast-Warenkorb ({} Artikel) mit Benutzer-Warenkorb zusammen", guestItems.size());
+
+                for (CartItem guestItem : guestItems) {
+                    Optional<CartItem> existingItem = cartItemRepository.findByCartIdAndVariantId(
+                            userCart.getId(),
+                            guestItem.getVariant().getId()
+                    );
+
+                    if (existingItem.isPresent()) {
+                        // Artikel existiert bereits - erhöhe die Menge
+                        CartItem item = existingItem.get();
+                        item.setQuantity(item.getQuantity() + guestItem.getQuantity());
+                        cartItemRepository.save(item);
+                        log.info("➕ Menge erhöht für Artikel-ID: {}", item.getId());
+                    } else {
+                        // Artikel existiert noch nicht - verschiebe ihn
+                        guestItem.setCart(userCart);
+                        cartItemRepository.save(guestItem);
+                        log.info("📦 Artikel verschoben: {}", guestItem.getId());
+                    }
+                }
+            } else {
+                // Benutzer hat noch keinen Warenkorb - konvertiere den Gast-Warenkorb
+                log.info("🔄 Konvertiere Gast-Warenkorb zu Benutzer-Warenkorb");
+                guestCart.setUser(user);
+                guestCart.setSessionId(null); // Entferne die sessionId
+                userCart = cartRepository.save(guestCart);
+                log.info("✅ Warenkorb konvertiert für User-ID: {}", user.getId());
+                return userCart;
+            }
+
+            // Lösche den alten Gast-Warenkorb
+            cartRepository.delete(guestCart);
+            log.info("🗑️ Gast-Warenkorb gelöscht");
+
             return userCart;
+        } catch (Exception e) {
+            log.error("❌ Fehler bei Warenkorb-Migration: {}", e.getMessage(), e);
+            // Gib null zurück, damit die übergeordnete Transaktion nicht fehlschlägt
+            return null;
         }
-
-        // Lösche den alten Gast-Warenkorb
-        cartRepository.delete(guestCart);
-        log.info("🗑️ Gast-Warenkorb gelöscht");
-
-        return userCart;
     }
 
     private Cart createCartSafely(String sessionId, User user, Store store) {

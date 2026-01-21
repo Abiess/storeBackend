@@ -39,4 +39,3 @@ public class ProductMedia {
         createdAt = LocalDateTime.now();
     }
 }
-

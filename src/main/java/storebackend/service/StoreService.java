@@ -133,8 +133,14 @@ public class StoreService {
             log.info("User {} upgraded to STORE_OWNER role", owner.getEmail());
         }
 
-        // Automatisch Subdomain erstellen
-        createDefaultSubdomain(store);
+        // Automatisch Subdomain erstellen - in separater Transaktion
+        // damit Fehler hier die Store-Erstellung nicht blockieren
+        final Store finalStore = store;
+        try {
+            createDefaultSubdomainInNewTransaction(finalStore);
+        } catch (Exception e) {
+            log.error("Subdomain-Erstellung fehlgeschlagen, aber Store wurde erstellt: {}", e.getMessage());
+        }
 
         log.info("Store created successfully: {} with subdomain {}.{}",
                 store.getName(), store.getSlug(), saasProperties.getBaseDomain());
@@ -142,7 +148,12 @@ public class StoreService {
         return toDTO(store);
     }
 
-    private void createDefaultSubdomain(Store store) {
+    /**
+     * Erstellt die Standard-Subdomain in einer separaten Transaktion
+     * REQUIRES_NEW stellt sicher, dass Fehler hier die Store-Erstellung nicht beeinflussen
+     */
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    public void createDefaultSubdomainInNewTransaction(Store store) {
         try {
             String subdomain = saasProperties.generateSubdomain(store.getSlug());
 
@@ -159,11 +170,11 @@ public class StoreService {
             domain.setIsPrimary(true); // Erste Domain ist primary
 
             domainRepository.save(domain);
-            log.info("Default subdomain created: {}", subdomain);
+            log.info("✅ Default subdomain created: {}", subdomain);
 
         } catch (Exception e) {
-            log.error("Failed to create default subdomain for store {}: {}", store.getSlug(), e.getMessage());
-            // Subdomain-Erstellung sollte Store-Erstellung nicht blockieren
+            log.error("❌ Failed to create default subdomain for store {}: {}", store.getSlug(), e.getMessage());
+            throw e; // Wirf Exception, damit REQUIRES_NEW sie isoliert behandelt
         }
     }
 

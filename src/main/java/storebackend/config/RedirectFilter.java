@@ -4,8 +4,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import storebackend.dto.seo.RedirectResolveResponse;
@@ -20,12 +20,17 @@ import java.io.IOException;
  * Only applies to public storefront routes (not /api or /admin).
  */
 @Component
-@RequiredArgsConstructor
 @Slf4j
 public class RedirectFilter extends OncePerRequestFilter {
 
     private final RedirectService redirectService;
     private final PublicStoreService publicStoreService;
+
+    public RedirectFilter(@Lazy RedirectService redirectService,
+                          @Lazy PublicStoreService publicStoreService) {
+        this.redirectService = redirectService;
+        this.publicStoreService = publicStoreService;
+    }
 
     @Override
     protected void doFilterInternal(
@@ -91,4 +96,3 @@ public class RedirectFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 }
-

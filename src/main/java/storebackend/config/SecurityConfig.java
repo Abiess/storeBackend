@@ -68,6 +68,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/cart/**").permitAll()
                 .requestMatchers("/api/checkout/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/orders/create").permitAll()
+                 // h2 cosnole
+                .requestMatchers("/h2-console/**").permitAll()
                 // Health check
                 .requestMatchers("/actuator/**").permitAll()
                 // Swagger UI Endpunkte
@@ -85,7 +87,7 @@ public class SecurityConfig {
                 .accessDeniedHandler(accessDeniedHandler)
                 .authenticationEntryPoint(authenticationEntryPoint)
             );
-
+        http.headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
         return http.build();
     }
 
