@@ -389,7 +389,7 @@ export class CartComponent implements OnInit, OnDestroy {
     }
 
     this.loading = true;
-    console.log('🛒 Lade Warenkorb für Store:', this.storeId);
+    console.log('🛒 Lade Warenkorb für Store (cartcomponent):', this.storeId);
 
     this.cartService.getCart(this.storeId).subscribe({
       next: (cart) => {

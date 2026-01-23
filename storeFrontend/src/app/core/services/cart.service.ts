@@ -5,6 +5,7 @@ import { environment } from '@env/environment';
 import { MockCartService } from '../mocks/mock-cart.service';
 import { map, catchError, tap } from 'rxjs/operators';
 import { Router } from '@angular/router';
+import {SubdomainService} from "@app/core/services/subdomain.service";
 
 export interface CartItem {
   id: number;
@@ -38,15 +39,20 @@ export interface AddToCartRequest {
 export class CartService {
   private mockService = new MockCartService();
   private cartApiUrl = `${environment.publicApiUrl}/simple-cart`;
+  private storeId!: number;
 
   // FIXED: BehaviorSubject für Warenkorb-Updates
   private cartUpdateSubject = new BehaviorSubject<void>(undefined);
   public cartUpdate$ = this.cartUpdateSubject.asObservable();
 
+
   constructor(
     private http: HttpClient,
-    private router: Router
-  ) {}
+    private router: Router,
+    private subDomainService: SubdomainService,
+  ) {
+      this.storeId = subDomainService.getCurrentStoreId()!;
+  }
 
   /**
    * Holt den JWT Token aus localStorage (optional für Cart-Operationen)
@@ -97,14 +103,14 @@ export class CartService {
       return this.mockService.getCart(storeId);
     }
 
-    console.log('🛒 Lade Warenkorb für Store', storeId);
+    console.log('🛒 Lade Warenkorb für Store (java)', this.storeId );
 
     // FIXED: Sende sessionId auch für eingeloggte User (für Cart-Migration!)
     // Das Backend prüft ob ein Guest-Cart migriert werden muss
     const sessionId = localStorage.getItem('cart_session_id'); // Hole IMMER die sessionId
     const url = sessionId
-      ? `${this.cartApiUrl}?storeId=${storeId}&sessionId=${sessionId}`
-      : `${this.cartApiUrl}?storeId=${storeId}`;
+      ? `${this.cartApiUrl}?storeId=${this.storeId}&sessionId=${sessionId}`
+      : `${this.cartApiUrl}?storeId=${this.storeId}`;
 
     return this.http.get<Cart>(url, {
       headers: this.getAuthHeaders()
@@ -116,7 +122,7 @@ export class CartService {
         console.warn('⚠️ Fehler beim Laden des Warenkorbs:', error);
         return of({
           cartId: 0,
-          storeId: storeId,
+          storeId: this.storeId,
           items: [],
           itemCount: 0,
           subtotal: 0
@@ -189,7 +195,7 @@ export class CartService {
 
   clearCart(storeId: number): Observable<void> {
     if (environment.useMockData) {
-      return this.mockService.clearCart(storeId);
+      return this.mockService.clearCart(this.storeId);
     }
 
     return this.http.delete<void>(`${this.cartApiUrl}/clear?storeId=${storeId}`, {
@@ -212,16 +218,17 @@ export class CartService {
    */
   getCartItemCount(storeId: number): Observable<number> {
     if (environment.useMockData) {
-      return this.mockService.getCart(storeId).pipe(
+      return this.mockService.getCart(this.storeId).pipe(
         map(cart => cart.itemCount)
       );
     }
 
     // FIXED: Füge sessionId für Guests hinzu
     const sessionId = this.isAuthenticated() ? null : this.getOrCreateSessionId();
+      console.log("my storeid is ", this.storeId);
     const url = sessionId
-      ? `${this.cartApiUrl}/count?storeId=${storeId}&sessionId=${sessionId}`
-      : `${this.cartApiUrl}/count?storeId=${storeId}`;
+      ? `${this.cartApiUrl}/count?storeId=${this.storeId}&sessionId=${sessionId}`
+      : `${this.cartApiUrl}/count?storeId=${this.storeId}`;
 
     return this.http.get<any>(url, {
       headers: this.getAuthHeaders()

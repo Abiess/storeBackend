@@ -642,7 +642,12 @@ export class CheckoutComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadCart();
+      this.subdomainService.resolveStore().subscribe(store => {
+          if (store) {
+              this.storeId = store.storeId;
+              this.loadCart();
+          }
+      });
 
     // FIXED: Stelle gespeicherte Formular-Daten wieder her (falls User von Login zurückkommt)
     this.restoreFormData();
@@ -717,9 +722,13 @@ export class CheckoutComponent implements OnInit {
   }
 
   loadCart(): void {
+
+
     this.loading = true;
-    const storeId = 1; // TODO: Aus Route oder Store-Service laden
-    this.cartService.getCart(storeId).subscribe({
+
+
+
+    this.cartService.getCart(this.storeId!).subscribe({
       next: (cart: Cart) => {
         this.cart = cart;
         this.loading = false;

@@ -160,6 +160,7 @@ export class SubdomainService {
 
     const hostname = window.location.hostname;
     console.log('🔍 Resolving store for hostname:', hostname);
+    console.log('🔍 Resolving store for storeID:', info.storeId);
 
     // Rufe Backend API auf um Store zu laden
     return this.http.get<any>(`${environment.apiUrl}/public/store/resolve?host=${hostname}`)
@@ -201,6 +202,7 @@ export class SubdomainService {
    * Gibt die Store-ID der aktuellen Subdomain zurück
    */
   getCurrentStoreId(): number | null {
+      console.log('🔢 Current Store ID:', this.subdomainInfo?.storeId || null);
     return this.subdomainInfo?.storeId || null;
   }
 
