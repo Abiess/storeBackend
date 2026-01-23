@@ -1,9 +1,10 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { Subject, forkJoin, of } from 'rxjs';
+import { takeUntil, catchError } from 'rxjs/operators';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { StoreNavigationComponent } from '../../shared/components/store-navigation.component';
 import { DeliverySettingsService } from '../../core/services/delivery-settings.service';
 import { DeliveryProvidersService } from '../../core/services/delivery-providers.service';
 import { DeliveryZonesService } from '../../core/services/delivery-zones.service';
@@ -16,8 +17,10 @@ import { DeliveryZoneDialogComponent } from './dialogs/delivery-zone-dialog.comp
 @Component({
   selector: 'app-delivery-management',
   standalone: true,
-  imports: [CommonModule, MatDialogModule],
+  imports: [CommonModule, MatDialogModule, StoreNavigationComponent],
   template: `
+    <app-store-navigation [storeId]="storeId" currentPage="Lieferung"></app-store-navigation>
+    
     <div class="delivery-management">
       <div class="header">
         <h1>Liefereinstellungen</h1>
@@ -62,11 +65,11 @@ import { DeliveryZoneDialogComponent } from './dialogs/delivery-zone-dialog.comp
               <span class="label">Standard-Anbieter:</span>
               <span class="value">{{ settings.defaultProvider }}</span>
             </div>
-            <div class="setting-row" *ngIf="settings.estimatedMinDays || settings.estimatedMaxDays">
+            <div class="setting-row" *ngIf="settings.estimatedMinDays != null && settings.estimatedMaxDays != null">
               <span class="label">Lieferzeit:</span>
               <span class="value">{{ settings.estimatedMinDays }}-{{ settings.estimatedMaxDays }} Tage</span>
             </div>
-            <div class="setting-row" *ngIf="settings.freeShippingThreshold">
+            <div class="setting-row" *ngIf="settings.freeShippingThreshold != null && settings.freeShippingThreshold > 0">
               <span class="label">Kostenloser Versand ab:</span>
               <span class="value">{{ settings.freeShippingThreshold }} {{ settings.currency || 'EUR' }}</span>
             </div>
@@ -137,15 +140,15 @@ import { DeliveryZoneDialogComponent } from './dialogs/delivery-zone-dialog.comp
                 </span>
               </div>
               <div class="zone-details">
-                <p><strong>Länder:</strong> {{ zone.countries.join(', ') }}</p>
-                <p><strong>Versandkosten:</strong> {{ zone.shippingCost }} EUR</p>
-                <p *ngIf="zone.freeShippingThreshold">
+                <p><strong>Länder:</strong> {{ zone.countries?.join(', ') || 'Keine Länder definiert' }}</p>
+                <p><strong>Versandkosten:</strong> {{ zone.shippingCost ?? 0 }} EUR</p>
+                <p *ngIf="zone.freeShippingThreshold != null && zone.freeShippingThreshold > 0">
                   <strong>Kostenloser Versand ab:</strong> {{ zone.freeShippingThreshold }} EUR
                 </p>
-                <p *ngIf="zone.estimatedMinDays || zone.estimatedMaxDays">
+                <p *ngIf="zone.estimatedMinDays != null && zone.estimatedMaxDays != null">
                   <strong>Lieferzeit:</strong> {{ zone.estimatedMinDays }}-{{ zone.estimatedMaxDays }} Tage
                 </p>
-                <p><strong>Priorität:</strong> {{ zone.priority }}</p>
+                <p><strong>Priorität:</strong> {{ zone.priority ?? 0 }}</p>
               </div>
               <div class="zone-actions">
                 <button class="btn btn-sm btn-secondary" (click)="toggleZone(zone)">
@@ -392,13 +395,31 @@ export class DeliveryManagementComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    // Versuche storeId aus verschiedenen Quellen zu laden
     this.route.parent?.paramMap.pipe(takeUntil(this.destroy$)).subscribe(params => {
       const id = params.get('storeId');
       if (id) {
         this.storeId = +id;
+        console.log('✅ Store-ID für Delivery geladen:', this.storeId);
         this.loadData();
+      } else {
+        console.error('❌ Keine Store-ID gefunden');
+        this.error = 'Keine Store-ID gefunden';
+        this.loading = false;
       }
     });
+
+    // Fallback: Direkter Zugriff auf Route-Params
+    if (!this.storeId) {
+      this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe(params => {
+        const id = params.get('storeId');
+        if (id && !this.storeId) {
+          this.storeId = +id;
+          console.log('✅ Store-ID (direkt) für Delivery geladen:', this.storeId);
+          this.loadData();
+        }
+      });
+    }
   }
 
   ngOnDestroy(): void {
@@ -410,43 +431,43 @@ export class DeliveryManagementComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.error = null;
 
-    this.settingsService.getDeliverySettings(this.storeId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (settings) => {
-          this.settings = settings;
-        },
-        error: (err) => {
-          if (err.status !== 404) {
-            console.error('Error loading settings:', err);
-          }
-        }
-      });
+    console.log('🔄 Lade Delivery-Daten für Store:', this.storeId);
 
-    this.providersService.getProviders(this.storeId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (providers) => {
-          this.providers = providers;
-        },
-        error: (err) => {
-          console.error('Error loading providers:', err);
-        }
-      });
-
-    this.zonesService.getZones(this.storeId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (zones) => {
-          this.zones = zones;
-          this.loading = false;
-        },
-        error: (err) => {
-          console.error('Error loading zones:', err);
-          this.error = 'Fehler beim Laden der Liefereinstellungen';
-          this.loading = false;
-        }
-      });
+    // Lade alle Daten parallel mit forkJoin
+    forkJoin({
+      settings: this.settingsService.getDeliverySettings(this.storeId).pipe(
+        catchError(err => {
+          console.log('ℹ️ Keine Settings gefunden (404 ist normal):', err.status);
+          return of(null);
+        })
+      ),
+      providers: this.providersService.getProviders(this.storeId).pipe(
+        catchError(err => {
+          console.error('❌ Fehler beim Laden der Provider:', err);
+          return of([]);
+        })
+      ),
+      zones: this.zonesService.getZones(this.storeId).pipe(
+        catchError(err => {
+          console.error('❌ Fehler beim Laden der Zones:', err);
+          return of([]);
+        })
+      )
+    }).pipe(takeUntil(this.destroy$))
+    .subscribe({
+      next: (data) => {
+        console.log('✅ Delivery-Daten geladen:', data);
+        this.settings = data.settings;
+        this.providers = data.providers;
+        this.zones = data.zones;
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('❌ Kritischer Fehler beim Laden:', err);
+        this.error = 'Fehler beim Laden der Liefereinstellungen';
+        this.loading = false;
+      }
+    });
   }
 
   openSettingsDialog(): void {
@@ -494,6 +515,7 @@ export class DeliveryManagementComponent implements OnInit, OnDestroy {
             this.toastService.success(
               provider ? 'Anbieter erfolgreich aktualisiert' : 'Anbieter erfolgreich erstellt'
             );
+            this.loadData(); // Lade Daten neu
           },
           error: (err) => {
             console.error('Error saving provider:', err);
@@ -522,6 +544,7 @@ export class DeliveryManagementComponent implements OnInit, OnDestroy {
             this.toastService.success(
               zone ? 'Zone erfolgreich aktualisiert' : 'Zone erfolgreich erstellt'
             );
+            this.loadData(); // Lade Daten neu
           },
           error: (err) => {
             console.error('Error saving zone:', err);
@@ -538,6 +561,7 @@ export class DeliveryManagementComponent implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.toastService.success(`Anbieter ${provider.enabled ? 'deaktiviert' : 'aktiviert'}`);
+          this.loadData(); // Lade Daten neu
         },
         error: (err) => {
           console.error('Error toggling provider:', err);
@@ -556,6 +580,7 @@ export class DeliveryManagementComponent implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.toastService.success('Anbieter erfolgreich gelöscht');
+          this.loadData(); // Lade Daten neu
         },
         error: (err) => {
           console.error('Error deleting provider:', err);
@@ -570,6 +595,7 @@ export class DeliveryManagementComponent implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.toastService.success(`Zone ${zone.enabled ? 'deaktiviert' : 'aktiviert'}`);
+          this.loadData(); // Lade Daten neu
         },
         error: (err) => {
           console.error('Error toggling zone:', err);
@@ -588,6 +614,7 @@ export class DeliveryManagementComponent implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.toastService.success('Zone erfolgreich gelöscht');
+          this.loadData(); // Lade Daten neu
         },
         error: (err) => {
           console.error('Error deleting zone:', err);
@@ -596,4 +623,3 @@ export class DeliveryManagementComponent implements OnInit, OnDestroy {
       });
   }
 }
-
