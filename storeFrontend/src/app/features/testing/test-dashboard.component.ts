@@ -507,8 +507,7 @@ export class TestDashboardComponent implements OnInit {
   }
 
   testGetCart(): void {
-    const storeId = 1;
-    this.cartService.getCart(storeId).subscribe({
+    this.cartService.getCart().subscribe({
       next: (cart) => {
         this.addResult({
           name: 'getCart',
@@ -550,8 +549,7 @@ export class TestDashboardComponent implements OnInit {
   }
 
   testClearCart(): void {
-    const storeId = 1;
-    this.cartService.clearCart(storeId).subscribe({
+    this.cartService.clearCart().subscribe({
       next: () => {
         this.addResult({
           name: 'clearCart',

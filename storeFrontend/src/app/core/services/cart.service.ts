@@ -39,19 +39,27 @@ export interface AddToCartRequest {
 export class CartService {
   private mockService = new MockCartService();
   private cartApiUrl = `${environment.publicApiUrl}/simple-cart`;
-  private storeId!: number;
+  private storeId: number | null = null; // Typisierung geändert
 
-  // FIXED: BehaviorSubject für Warenkorb-Updates
   private cartUpdateSubject = new BehaviorSubject<void>(undefined);
   public cartUpdate$ = this.cartUpdateSubject.asObservable();
-
 
   constructor(
     private http: HttpClient,
     private router: Router,
     private subDomainService: SubdomainService,
-  ) {
-      this.storeId = subDomainService.getCurrentStoreId()!;
+  ) {  }
+
+  private getStoreId(): number {
+    if (!this.storeId) {
+      this.storeId = this.subDomainService.getCurrentStoreId();
+      if (!this.storeId) {
+        console.error('❌ Keine storeId gefunden!');
+        throw new Error('StoreId not available');
+      }
+      console.log('🏪 StoreId geladen:', this.storeId);
+    }
+    return this.storeId;
   }
 
   /**
@@ -98,19 +106,20 @@ export class CartService {
     return !!this.getAuthToken();
   }
 
-  getCart(storeId: number): Observable<Cart> {
+  getCart(): Observable<Cart> {
+    const storeId = this.getStoreId();
     if (environment.useMockData) {
       return this.mockService.getCart(storeId);
     }
 
-    console.log('🛒 Lade Warenkorb für Store (java)', this.storeId );
+    console.log('🛒 Lade Warenkorb für Store (java)', storeId );
 
     // FIXED: Sende sessionId auch für eingeloggte User (für Cart-Migration!)
     // Das Backend prüft ob ein Guest-Cart migriert werden muss
     const sessionId = localStorage.getItem('cart_session_id'); // Hole IMMER die sessionId
     const url = sessionId
-      ? `${this.cartApiUrl}?storeId=${this.storeId}&sessionId=${sessionId}`
-      : `${this.cartApiUrl}?storeId=${this.storeId}`;
+      ? `${this.cartApiUrl}?storeId=${storeId}&sessionId=${sessionId}`
+      : `${this.cartApiUrl}?storeId=${storeId}`;
 
     return this.http.get<Cart>(url, {
       headers: this.getAuthHeaders()
@@ -122,7 +131,7 @@ export class CartService {
         console.warn('⚠️ Fehler beim Laden des Warenkorbs:', error);
         return of({
           cartId: 0,
-          storeId: this.storeId,
+          storeId: storeId,
           items: [],
           itemCount: 0,
           subtotal: 0
@@ -193,9 +202,10 @@ export class CartService {
     );
   }
 
-  clearCart(storeId: number): Observable<void> {
+  clearCart(): Observable<void> {
+    const storeId = this.getStoreId();
     if (environment.useMockData) {
-      return this.mockService.clearCart(this.storeId);
+      return this.mockService.clearCart(storeId);
     }
 
     return this.http.delete<void>(`${this.cartApiUrl}/clear?storeId=${storeId}`, {
@@ -216,19 +226,20 @@ export class CartService {
    * Gibt die Anzahl der Items im Warenkorb zurück
    * FIXED: Funktioniert jetzt auch ohne Login (mit sessionId für Guests)
    */
-  getCartItemCount(storeId: number): Observable<number> {
+  getCartItemCount(): Observable<number> {
+    const storeId = this.getStoreId();
     if (environment.useMockData) {
-      return this.mockService.getCart(this.storeId).pipe(
+      return this.mockService.getCart(storeId).pipe(
         map(cart => cart.itemCount)
       );
     }
 
     // FIXED: Füge sessionId für Guests hinzu
     const sessionId = this.isAuthenticated() ? null : this.getOrCreateSessionId();
-      console.log("my storeid is ", this.storeId);
+      console.log("my storeid is ", storeId);
     const url = sessionId
-      ? `${this.cartApiUrl}/count?storeId=${this.storeId}&sessionId=${sessionId}`
-      : `${this.cartApiUrl}/count?storeId=${this.storeId}`;
+      ? `${this.cartApiUrl}/count?storeId=${storeId}&sessionId=${sessionId}`
+      : `${this.cartApiUrl}/count?storeId=${storeId}`;
 
     return this.http.get<any>(url, {
       headers: this.getAuthHeaders()

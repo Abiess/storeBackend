@@ -728,7 +728,7 @@ export class CheckoutComponent implements OnInit {
 
 
 
-    this.cartService.getCart(this.storeId!).subscribe({
+    this.cartService.getCart().subscribe({
       next: (cart: Cart) => {
         this.cart = cart;
         this.loading = false;

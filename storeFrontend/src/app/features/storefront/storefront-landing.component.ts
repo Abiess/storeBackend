@@ -76,9 +76,12 @@ export class StorefrontLandingComponent implements OnInit {
             storeName: this.storeName
           });
 
-          // Lade Theme, Produkte und Kategorien
+          // FIXED: Lade Theme, Produkte und Kategorien
           this.loadTheme();
           this.loadStoreData();
+
+          // FIXED: loadCartCount() wird ERST nach resolveStore() aufgerufen
+          // damit die storeId im SubdomainService bereits gesetzt ist
           this.loadCartCount();
         } else if (info.isSubdomain && !info.storeId) {
           // NEUE: Subdomain erkannt, aber kein Store gefunden
@@ -194,7 +197,7 @@ export class StorefrontLandingComponent implements OnInit {
     }
 
     console.log('🔄 Lade Warenkorb-Count für Store', this.storeId);
-    this.cartService.getCartItemCount(this.storeId).subscribe({
+    this.cartService.getCartItemCount().subscribe({
       next: (count: number) => {
         console.log('✅ Cart Count geladen:', count);
         this.cartItemCount = count;
