@@ -73,28 +73,28 @@ export class CheckoutService {
   ) {}
 
   /**
-   * Holt den JWT Token aus localStorage
+   * Holt den JWT Token aus localStorage (optional für Guest-Checkout)
    */
   private getAuthToken(): string | null {
     const token = localStorage.getItem('auth_token');
     if (!token) {
-      console.warn('⚠️ Kein Auth-Token gefunden - Login erforderlich');
-      return null;
+      console.log('ℹ️ Kein Auth-Token - Guest-Checkout wird verwendet');
     }
     return token;
   }
 
   /**
-   * Erstellt HTTP Headers mit Authorization Token
+   * Erstellt HTTP Headers mit Authorization Token (falls vorhanden)
    */
   private getAuthHeaders(): HttpHeaders {
     const token = this.getAuthToken();
-    if (!token) {
-      throw new Error('Authentication required for checkout');
+    if (token) {
+      return new HttpHeaders({
+        'Authorization': `Bearer ${token}`
+      });
     }
-    return new HttpHeaders({
-      'Authorization': `Bearer ${token}`
-    });
+    // Für Guest-Checkout: Leere Headers
+    return new HttpHeaders();
   }
 
   checkout(request: CheckoutRequest): Observable<CheckoutResponse> {
@@ -102,35 +102,40 @@ export class CheckoutService {
       return this.mockService.checkout(request);
     }
 
+    // FIXED: Kein Token-Check mehr - Guest-Checkout ist erlaubt
     const token = this.getAuthToken();
-    if (!token) {
-      console.error('❌ Checkout erfordert Login - Weiterleitung');
-      const currentUrl = this.router.url;
-      this.router.navigate(['/login'], {
-        queryParams: { returnUrl: currentUrl }  // FIXED: Speichere aktuelle URL
-      });
-      return throwError(() => new Error('Authentication required'));
-    }
+    const isGuest = !token;
 
     console.log('🛍️ Checkout-Request:', {
       storeId: request.storeId,
-      email: request.customerEmail
+      email: request.customerEmail,
+      mode: isGuest ? '👤 Guest' : '🔐 Authenticated'
     });
+
+    // FIXED: Guest-Session-ID hinzufügen für Guest-Checkout
+    const sessionId = localStorage.getItem('cart_session_id');
+    const requestBody = isGuest && sessionId
+      ? { ...request, sessionId }
+      : request;
 
     return this.http.post<CheckoutResponse>(
       `${environment.publicApiUrl}/orders/checkout`,
-      request,
+      requestBody,
       {
         headers: this.getAuthHeaders()
       }
     ).pipe(
       catchError(error => {
-        if (error.status === 401) {
+        if (error.status === 401 && !isGuest) {
+          // Nur bei eingeloggten Usern mit ungültigem Token zum Login weiterleiten
           console.error('❌ Token ungültig - Login erforderlich');
           const currentUrl = this.router.url;
           this.router.navigate(['/login'], {
-            queryParams: { returnUrl: currentUrl }  // FIXED: Speichere aktuelle URL
+            queryParams: { returnUrl: currentUrl }
           });
+        } else if (error.status === 401 && isGuest) {
+          // Guest-Checkout fehlgeschlagen aus anderen Gründen
+          console.error('❌ Guest-Checkout fehlgeschlagen:', error);
         }
         return throwError(() => error);
       })

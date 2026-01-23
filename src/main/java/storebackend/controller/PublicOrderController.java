@@ -29,73 +29,79 @@ public class PublicOrderController {
     @PostMapping("/checkout")
     public ResponseEntity<Map<String, Object>> checkout(
             @RequestBody Map<String, Object> request,
-            @RequestHeader(value = "Authorization", required = true) String authHeader) {
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
         try {
-            // Extrahiere UserId aus JWT Token
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                return ResponseEntity.status(401).body(Map.of(
-                    "error", "Authentication required for checkout. Please login."
-                ));
-            }
+            Long userId = null;
+            String email = null;
+            boolean isGuest = false;
 
-            String token = authHeader.substring(7);
-            Long userId;
-            String email;
+            // FIXED: Token ist jetzt optional für Guest-Checkout
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring(7);
+                try {
+                    // Authentifizierter User
+                    userId = jwtUtil.extractUserId(token);
+                    email = jwtUtil.extractEmail(token);
 
-            try {
-                // FIXED: Nutze JwtUtil statt manuelles Parsing
-                userId = jwtUtil.extractUserId(token);
-                email = jwtUtil.extractEmail(token);
+                    if (!jwtUtil.validateToken(token, email)) {
+                        log.error("Token validation failed for email: {}", email);
+                        return ResponseEntity.status(401).body(Map.of(
+                            "error", "Invalid or expired token. Please login again."
+                        ));
+                    }
 
-                // FIXED: Validiere Token
-                if (!jwtUtil.validateToken(token, email)) {
-                    log.error("Token validation failed for email: {}", email);
+                    log.info("✅ Authenticated checkout - userId: {}, email: {}", userId, email);
+                } catch (Exception e) {
+                    log.error("Invalid token during checkout: {}", e.getMessage());
                     return ResponseEntity.status(401).body(Map.of(
                         "error", "Invalid or expired token. Please login again."
                     ));
                 }
-
-                log.info("✅ Token validated successfully for userId: {}, email: {}", userId, email);
-            } catch (Exception e) {
-                log.error("Invalid token during checkout: {}", e.getMessage());
-                return ResponseEntity.status(401).body(Map.of(
-                    "error", "Invalid or expired token. Please login again."
-                ));
+            } else {
+                // Guest-Checkout
+                isGuest = true;
+                log.info("👤 Guest checkout detected");
             }
 
             Long storeId = Long.valueOf(request.get("storeId").toString());
             String customerEmail = (String) request.get("customerEmail");
 
-            log.info("🛍️ Checkout - userId: {}, storeId: {}, email: {}", userId, storeId, customerEmail);
+            log.info("🛍️ Checkout - Mode: {}, storeId: {}, email: {}",
+                isGuest ? "GUEST" : "AUTHENTICATED", storeId, customerEmail);
 
-            // FIXED: Suche zuerst nach userId, dann nach Guest-Cart für diesen Store
-            var cartOptional = cartRepository.findByUserId(userId);
+            // FIXED: Cart-Suche je nach Checkout-Typ
+            var cartOptional = java.util.Optional.<storebackend.entity.Cart>empty();
 
-            if (cartOptional.isEmpty()) {
-                // Kein User-spezifischer Cart gefunden, suche Guest-Cart
-                log.info("🔍 Kein User-Cart gefunden, suche Guest-Cart für Store {}", storeId);
+            if (isGuest) {
+                // Guest-Checkout: Suche Cart anhand sessionId
+                String sessionId = (String) request.get("sessionId");
+                if (sessionId == null || sessionId.isEmpty()) {
+                    return ResponseEntity.badRequest().body(Map.of(
+                        "error", "SessionId is required for guest checkout"
+                    ));
+                }
 
-                // Suche nach neuesten Guest-Cart für diesen Store
-                String guestSessionId = "store-" + storeId + "-cart";
-                cartOptional = cartRepository.findBySessionId(guestSessionId);
+                log.info("🔍 Suche Guest-Cart mit sessionId: {}", sessionId);
+                cartOptional = cartRepository.findBySessionId(sessionId);
 
                 if (cartOptional.isEmpty()) {
-                    // Fallback: Suche ALLE Carts für diesen Store (sortiert nach Datum)
-                    List<storebackend.entity.Cart> storeCarts = cartRepository.findAll().stream()
-                        .filter(c -> c.getStore() != null && c.getStore().getId().equals(storeId))
-                        .filter(c -> c.getExpiresAt().isAfter(java.time.LocalDateTime.now()))
-                        .sorted((c1, c2) -> c2.getUpdatedAt().compareTo(c1.getUpdatedAt()))
-                        .toList();
+                    return ResponseEntity.badRequest().body(Map.of(
+                        "error", "Cart not found. Please add items to cart first."
+                    ));
+                }
+            } else {
+                // Authenticated Checkout: Suche Cart anhand userId
+                log.info("🔍 Suche User-Cart für userId: {}", userId);
+                cartOptional = cartRepository.findByUserId(userId);
 
-                    if (!storeCarts.isEmpty()) {
-                        cartOptional = java.util.Optional.of(storeCarts.get(0));
-                        log.info("✅ Guest-Cart gefunden für Store {}", storeId);
-                    }
+                if (cartOptional.isEmpty()) {
+                    return ResponseEntity.badRequest().body(Map.of(
+                        "error", "Cart not found. Please add items to cart first."
+                    ));
                 }
             }
 
-            var cart = cartOptional
-                    .orElseThrow(() -> new RuntimeException("Cart not found. Please add items to cart first."));
+            var cart = cartOptional.get();
 
             // Verify cart belongs to the correct store
             if (!cart.getStore().getId().equals(storeId)) {
@@ -108,16 +114,21 @@ public class PublicOrderController {
                 throw new RuntimeException("Cart is empty. Please add items before checkout.");
             }
 
-            // FIXED: Verknüpfe Guest-Cart mit dem eingeloggten User
+            // FIXED: Customer-Handling für Guest vs. Authenticated
             storebackend.entity.User customer = null;
-            if (cart.getUser() == null) {
-                log.info("🔗 Verknüpfe Guest-Cart mit User {}", userId);
+            if (!isGuest && userId != null) {
+                // Authenticated: Lade User und verknüpfe mit Cart
                 customer = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("User not found"));
-                cart.setUser(customer);
-                cartRepository.save(cart);
+
+                if (cart.getUser() == null) {
+                    log.info("🔗 Verknüpfe Guest-Cart mit User {}", userId);
+                    cart.setUser(customer);
+                    cartRepository.save(cart);
+                }
             } else {
-                customer = cart.getUser();
+                // Guest: customer bleibt null - Order wird ohne User erstellt
+                log.info("👤 Guest-Order wird erstellt (kein User-Account)");
             }
 
             // Extract addresses
@@ -145,10 +156,11 @@ public class PublicOrderController {
                 billingAddress.get("postalCode"),
                 billingAddress.get("country"),
                 notes,
-                customer  // Pass the actual customer
+                customer  // null für Guest, User für Authenticated
             );
 
-            log.info("✅ Order created successfully: {} for userId: {}", order.getOrderNumber(), userId);
+            log.info("✅ Order created successfully: {} (Mode: {})",
+                order.getOrderNumber(), isGuest ? "GUEST" : "AUTHENTICATED");
 
             Map<String, Object> response = new HashMap<>();
             response.put("orderId", order.getId());
