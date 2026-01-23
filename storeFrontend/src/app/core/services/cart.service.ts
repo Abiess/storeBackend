@@ -280,8 +280,9 @@ export class CartService {
   triggerCartUpdate(): void {
     console.log('🔄 Trigger Warenkorb-Update (für Cart-Migration)');
 
-    // WICHTIG: Wir löschen die cart_session_id NICHT, damit das Backend sie für die Migration nutzen kann
-    // Das Backend wird den Guest-Cart automatisch mit dem User-Cart mergen
+    // WICHTIG: Wir löschen die cart_session_id NICHT sofort
+    // Sie wird beim nächsten getCart() Call mitgeschickt
+    // Das Backend migriert dann automatisch den Guest-Cart zum User-Cart
 
     // Trigger Update für alle Components
     this.cartUpdateSubject.next();
@@ -290,12 +291,6 @@ export class CartService {
     setTimeout(() => {
       console.log('🔄 Erzwinge Warenkorb-Neuladung nach Migration');
       this.cartUpdateSubject.next();
-
-      // JETZT können wir die cart_session_id entfernen, nachdem die Migration erfolgt ist
-      setTimeout(() => {
-        localStorage.removeItem('cart_session_id');
-        console.log('🧹 Guest-Session-ID entfernt nach erfolgreicher Migration');
-      }, 500);
     }, 100);
   }
 }
