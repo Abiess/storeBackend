@@ -50,6 +50,13 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
           <span class="label">{{ 'navigation.orders' | translate }}</span>
         </a>
         <a 
+          [routerLink]="['/dashboard/stores', storeId, 'delivery']" 
+          class="nav-tab"
+          routerLinkActive="active">
+          <span class="icon">🚚</span>
+          <span class="label">{{ 'navigation.delivery' | translate }}</span>
+        </a>
+        <a 
           [routerLink]="['/dashboard/stores', storeId, 'settings']" 
           class="nav-tab"
           routerLinkActive="active">
@@ -157,4 +164,3 @@ export class StoreNavigationComponent {
 
   constructor(private router: Router) {}
 }
-

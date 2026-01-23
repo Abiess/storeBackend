@@ -1,5 +1,6 @@
 -- Database Schema Creation Script
 -- Erstellt alle benötigten Tabellen für das Store Backend
+-- Optimiert für PostgreSQL
 
 -- Lösche existierende Tabellen (CASCADE löscht auch Foreign Keys)
 DROP TABLE IF EXISTS customer_profiles CASCADE;
@@ -24,6 +25,7 @@ DROP TABLE IF EXISTS product_options CASCADE;
 DROP TABLE IF EXISTS products CASCADE;
 DROP TABLE IF EXISTS categories CASCADE;
 DROP TABLE IF EXISTS media CASCADE;
+DROP TABLE IF EXISTS redirect_rules CASCADE;
 DROP TABLE IF EXISTS domains CASCADE;
 DROP TABLE IF EXISTS store_usage CASCADE;
 DROP TABLE IF EXISTS stores CASCADE;
@@ -440,11 +442,16 @@ CREATE TABLE store_themes (
     FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS redirect_rules (
-                                              id BIGSERIAL PRIMARY KEY,
-                                              store_id BIGINT NOT NULL,
-                                              domain_id BIGINT,
-                                              source_path VARCHAR(1000) NOT NULL,
+-- ============================================
+-- REDIRECT RULES TABLE
+-- ============================================
+
+-- Redirect Rules für SEO und URL-Management
+CREATE TABLE redirect_rules (
+    id BIGSERIAL PRIMARY KEY,
+    store_id BIGINT NOT NULL,
+    domain_id BIGINT,
+    source_path VARCHAR(1000) NOT NULL,
     target_url VARCHAR(1000) NOT NULL,
     http_code INTEGER NOT NULL DEFAULT 301,
     is_regex BOOLEAN NOT NULL DEFAULT FALSE,
@@ -453,14 +460,10 @@ CREATE TABLE IF NOT EXISTS redirect_rules (
     comment VARCHAR(500),
     tag VARCHAR(100),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-
-CREATE INDEX IF NOT EXISTS idx_redirect_store ON redirect_rules(store_id);
-CREATE INDEX IF NOT EXISTS idx_redirect_domain ON redirect_rules(domain_id);
-CREATE INDEX IF NOT EXISTS idx_redirect_active ON redirect_rules(is_active);
-CREATE INDEX IF NOT EXISTS idx_redirect_priority ON redirect_rules(priority);
-
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE,
+    FOREIGN KEY (domain_id) REFERENCES domains(id) ON DELETE SET NULL
+);
 
 -- Initiale Daten: FREE Plan
 INSERT INTO plans (name, max_stores, max_custom_domains, max_subdomains, max_storage_mb, max_products, max_image_count)
@@ -468,45 +471,53 @@ VALUES ('FREE', 1, 0, 1, 100, 50, 100)
 ON CONFLICT (name) DO NOTHING;
 
 -- Erstelle Indizes für Performance
-CREATE INDEX idx_stores_slug ON stores(slug);
-CREATE INDEX idx_stores_owner ON stores(owner_id);
-CREATE INDEX idx_domains_host ON domains(host);
-CREATE INDEX idx_domains_store ON domains(store_id);
-CREATE INDEX idx_categories_store ON categories(store_id);
-CREATE INDEX idx_categories_parent ON categories(parent_id);
-CREATE INDEX idx_categories_slug ON categories(slug);
-CREATE INDEX idx_products_store ON products(store_id);
-CREATE INDEX idx_products_category ON products(category_id);
-CREATE INDEX idx_product_media_product ON product_media(product_id);
-CREATE INDEX idx_product_media_media ON product_media(media_id);
-CREATE INDEX idx_carts_session_id ON carts(session_id);
-CREATE INDEX idx_carts_user_id ON carts(user_id);
-CREATE INDEX idx_carts_store_id ON carts(store_id);
-CREATE INDEX idx_carts_expires_at ON carts(expires_at);
-CREATE INDEX idx_cart_items_cart_id ON cart_items(cart_id);
-CREATE INDEX idx_cart_items_variant_id ON cart_items(variant_id);
-CREATE INDEX idx_orders_store ON orders(store_id);
-CREATE INDEX idx_orders_customer ON orders(customer_id);
-CREATE INDEX idx_user_roles_user ON user_roles(user_id);
-CREATE INDEX idx_customer_profiles_user ON customer_profiles(user_id);
-CREATE INDEX idx_coupon_store ON coupons(store_id);
-CREATE INDEX idx_coupon_code ON coupons(store_id, code_normalized);
-CREATE INDEX idx_coupon_status ON coupons(status);
-CREATE INDEX idx_redemption_store ON coupon_redemptions(store_id);
-CREATE INDEX idx_redemption_coupon ON coupon_redemptions(coupon_id);
-CREATE INDEX idx_redemption_customer ON coupon_redemptions(customer_id);
-CREATE UNIQUE INDEX idx_redemption_order ON coupon_redemptions(order_id);
-CREATE INDEX idx_theme_store ON store_themes(store_id);
-CREATE INDEX idx_theme_active ON store_themes(store_id, is_active);
-CREATE INDEX idx_inventory_logs_variant ON inventory_logs(variant_id);
-CREATE INDEX idx_inventory_logs_timestamp ON inventory_logs(timestamp);
+CREATE INDEX IF NOT EXISTS idx_stores_slug ON stores(slug);
+CREATE INDEX IF NOT EXISTS idx_stores_owner ON stores(owner_id);
+CREATE INDEX IF NOT EXISTS idx_domains_host ON domains(host);
+CREATE INDEX IF NOT EXISTS idx_domains_store ON domains(store_id);
+CREATE INDEX IF NOT EXISTS idx_categories_store ON categories(store_id);
+CREATE INDEX IF NOT EXISTS idx_categories_parent ON categories(parent_id);
+CREATE INDEX IF NOT EXISTS idx_categories_slug ON categories(slug);
+CREATE INDEX IF NOT EXISTS idx_products_store ON products(store_id);
+CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
+CREATE INDEX IF NOT EXISTS idx_product_media_product ON product_media(product_id);
+CREATE INDEX IF NOT EXISTS idx_product_media_media ON product_media(media_id);
+CREATE INDEX IF NOT EXISTS idx_carts_session_id ON carts(session_id);
+CREATE INDEX IF NOT EXISTS idx_carts_user_id ON carts(user_id);
+CREATE INDEX IF NOT EXISTS idx_carts_store_id ON carts(store_id);
+CREATE INDEX IF NOT EXISTS idx_carts_expires_at ON carts(expires_at);
+CREATE INDEX IF NOT EXISTS idx_cart_items_cart_id ON cart_items(cart_id);
+CREATE INDEX IF NOT EXISTS idx_cart_items_variant_id ON cart_items(variant_id);
+CREATE INDEX IF NOT EXISTS idx_orders_store ON orders(store_id);
+CREATE INDEX IF NOT EXISTS idx_orders_customer ON orders(customer_id);
+CREATE INDEX IF NOT EXISTS idx_user_roles_user ON user_roles(user_id);
+CREATE INDEX IF NOT EXISTS idx_customer_profiles_user ON customer_profiles(user_id);
+CREATE INDEX IF NOT EXISTS idx_coupon_store ON coupons(store_id);
+CREATE INDEX IF NOT EXISTS idx_coupon_code ON coupons(store_id, code_normalized);
+CREATE INDEX IF NOT EXISTS idx_coupon_status ON coupons(status);
+CREATE INDEX IF NOT EXISTS idx_redemption_store ON coupon_redemptions(store_id);
+CREATE INDEX IF NOT EXISTS idx_redemption_coupon ON coupon_redemptions(coupon_id);
+CREATE INDEX IF NOT EXISTS idx_redemption_customer ON coupon_redemptions(customer_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_redemption_order ON coupon_redemptions(order_id);
+CREATE INDEX IF NOT EXISTS idx_theme_store ON store_themes(store_id);
+CREATE INDEX IF NOT EXISTS idx_theme_active ON store_themes(store_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_inventory_logs_variant ON inventory_logs(variant_id);
+CREATE INDEX IF NOT EXISTS idx_inventory_logs_timestamp ON inventory_logs(timestamp);
+CREATE INDEX IF NOT EXISTS idx_redirect_store ON redirect_rules(store_id);
+CREATE INDEX IF NOT EXISTS idx_redirect_domain ON redirect_rules(domain_id);
+CREATE INDEX IF NOT EXISTS idx_redirect_active ON redirect_rules(is_active);
+CREATE INDEX IF NOT EXISTS idx_redirect_priority ON redirect_rules(priority);
 
--- Grant permissions to storeapp user
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO storeapp;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO storeapp;
-
--- Set default privileges for future tables
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO storeapp;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO storeapp;
+-- Grant permissions to storeapp user (falls der User existiert)
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'storeapp') THEN
+        GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO storeapp;
+        GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO storeapp;
+        ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO storeapp;
+        ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO storeapp;
+    END IF;
+END
+$$;
 
 COMMIT;

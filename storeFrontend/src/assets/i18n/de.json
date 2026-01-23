@@ -33,12 +33,14 @@
     "products": "Produkte",
     "categories": "Kategorien",
     "orders": "Bestellungen",
+    "delivery": "Lieferung",
     "customers": "Kunden",
     "media": "Medien",
     "settings": "Einstellungen",
     "profile": "Profil",
     "backToDashboard": "Zurück zum Dashboard",
-    "store": "Shop"
+    "store": "Shop",
+    "overview": "Übersicht"
   },
   "auth": {
     "email": "E-Mail",

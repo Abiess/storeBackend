@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import storebackend.enums.OrderStatus;
+import storebackend.enums.DeliveryType;
+import storebackend.enums.DeliveryMode;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -88,6 +90,24 @@ public class Order {
 
     @Column(name = "cancelled_at")
     private LocalDateTime cancelledAt;
+
+    // DELIVERY FIELDS
+    @Enumerated(EnumType.STRING)
+    @Column(name = "delivery_type", length = 20)
+    private DeliveryType deliveryType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "delivery_mode", length = 20)
+    private DeliveryMode deliveryMode;
+
+    @Column(name = "delivery_provider_id")
+    private Long deliveryProviderId;
+
+    @Column(name = "delivery_fee", precision = 10, scale = 2)
+    private BigDecimal deliveryFee;
+
+    @Column(name = "eta_minutes")
+    private Integer etaMinutes;
 
     @PrePersist
     protected void onCreate() {

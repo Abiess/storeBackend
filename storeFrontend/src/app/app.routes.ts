@@ -128,6 +128,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/settings/brand-onboarding/brand-onboarding.component').then(m => m.BrandOnboardingComponent),
     canActivate: [authGuard]
   },
+  {
+    path: 'dashboard/stores/:storeId/delivery',
+    loadComponent: () => import('./features/delivery/delivery-management.component').then(m => m.DeliveryManagementComponent),
+    canActivate: [authGuard]
+  },
 
   // ==================== Product Management (Primary Routes) ====================
   // WICHTIG: Spezifische Routen (mit /new) müssen VOR allgemeinen Routen stehen!

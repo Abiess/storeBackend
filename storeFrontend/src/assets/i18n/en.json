@@ -33,12 +33,14 @@
     "products": "Products",
     "categories": "Categories",
     "orders": "Orders",
+    "delivery": "Delivery",
     "customers": "Customers",
     "media": "Media",
     "settings": "Settings",
     "profile": "Profile",
     "backToDashboard": "Back to Dashboard",
-    "store": "Store"
+    "store": "Store",
+    "overview": "Overview"
   },
   "auth": {
     "email": "Email",
