@@ -129,11 +129,13 @@ LOGGING_FILE_NAME=$LOG_FILE
 # MinIO (Production) – Werte bei Bedarf in CI/Server-Env überschreiben
 MINIO_ENABLED=true
 MINIO_ENDPOINT=http://localhost:9000
-MINIO_ACCESS_KEY=minioadmin
-MINIO_SECRET_KEY=minioadmin
+MINIO_PUBLIC_ENDPOINT=https://minio.markt.ma
+MINIO_ACCESS_KEY=miniomarkt
+MINIO_SECRET_KEY=miniopassword!
 MINIO_BUCKET=store-assets
 MINIO_REGION=us-east-1
 MINIO_SECURE=false
+
 EOF"
 
 sudo chown "$APP_USER:$APP_USER" "$ENV_FILE"
