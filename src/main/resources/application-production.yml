@@ -77,14 +77,23 @@ jwt:
   secret: ${JWT_SECRET:change-me-in-production}
   expiration: 86400000
 
-# MinIO Konfiguration für Production
 minio:
-  # kannst du z.B. über ENV MINIO_ENABLED steuern
   enabled: ${MINIO_ENABLED:true}
-  endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
-  public-endpoint: ${MINIO_PUBLIC_ENDPOINT:https://api.markt.ma:9001}
-  access-key: ${MINIO_ACCESS_KEY:minioadmin}
-  secret-key: ${MINIO_SECRET_KEY:minioadmin}
+
+  # interner Zugriff für Spring Boot (API!)
+
+
+  # öffentliche URL für Browser/Angular (API über HTTPS + Nginx)
+  public-endpoint: ${MINIO_PUBLIC_ENDPOINT:https://minio.markt.ma}
+
+  access-key: ${MINIO_ACCESS_KEY:miniomarkt}
+  secret-key: ${MINIO_SECRET_KEY:miniopassword!}
+
   bucket: ${MINIO_BUCKET:store-assets}
   region: ${MINIO_REGION:us-east-1}
-  secure: ${MINIO_SECURE:false}
+
+  # weil endpoint intern http ist → false
+
+  endpoint: ${MINIO_ENDPOINT:https://minio.markt.ma}
+  secure: ${MINIO_SECURE:true}
+
