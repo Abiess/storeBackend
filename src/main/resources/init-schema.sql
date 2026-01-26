@@ -285,6 +285,12 @@ CREATE TABLE orders (
     billing_postal_code VARCHAR(50),
     billing_country VARCHAR(100),
     billing_phone VARCHAR(50),
+    -- Delivery Fields
+    delivery_type VARCHAR(20),
+    delivery_mode VARCHAR(20),
+    delivery_provider_id BIGINT,
+    delivery_fee DECIMAL(10, 2),
+    eta_minutes INTEGER,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP,
     shipped_at TIMESTAMP,
