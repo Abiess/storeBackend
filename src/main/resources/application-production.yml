@@ -84,7 +84,7 @@ minio:
 
 
   # öffentliche URL für Browser/Angular (API über HTTPS + Nginx)
-  public-endpoint: ${MINIO_PUBLIC_ENDPOINT:https://minio.markt.ma}
+  public-endpoint:
 
   access-key: ${MINIO_ACCESS_KEY:miniomarkt}
   secret-key: ${MINIO_SECRET_KEY:miniopassword!}

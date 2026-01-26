@@ -37,12 +37,22 @@
             *ngFor="let product of filteredProducts"
             [product]="product"
             [isAddingToCart]="addingToCart"
-            (addToCart)="addToCart($event)">
+            (addToCart)="addToCart($event)"
+            (quickView)="openQuickView($event)">
           </app-product-card>
         </div>
       </div>
     </div>
   </main>
+
+  <!-- QuickView Modal -->
+  <app-product-quick-view
+    [product]="quickViewProduct"
+    [isOpen]="quickViewOpen"
+    (close)="closeQuickView()"
+    (addToCartEvent)="onQuickViewAddToCart($event)"
+    (viewDetailsEvent)="onQuickViewDetails($event)">
+  </app-product-quick-view>
 
   <footer class="store-footer">
     <div class="container">
@@ -74,4 +84,3 @@
     </div>
   </footer>
 </div>
-

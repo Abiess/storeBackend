@@ -9,6 +9,7 @@ import { Product, Category, PublicStore, ProductStatus } from '@app/core/models'
 import { StorefrontHeaderComponent } from './storefront-header.component';
 import { StorefrontNavComponent } from './storefront-nav.component';
 import { ProductCardComponent } from './product-card.component';
+import { ProductQuickViewComponent } from '@app/shared/components/product-quick-view.component';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -19,7 +20,8 @@ import { Subscription } from 'rxjs';
     RouterModule,
     StorefrontHeaderComponent,
     StorefrontNavComponent,
-    ProductCardComponent
+    ProductCardComponent,
+    ProductQuickViewComponent
   ],
   templateUrl: './storefront.component.html',
   styleUrls: ['./storefront.component.scss']
@@ -34,6 +36,10 @@ export class StorefrontComponent implements OnInit, OnDestroy {
   cartItemCount = 0;
   addingToCart = false;
   readonly ProductStatus = ProductStatus;
+
+  // QuickView State
+  quickViewOpen = false;
+  quickViewProduct: Product | null = null;
 
   // FIXED: Subscription für Warenkorb-Updates
   private cartUpdateSubscription?: Subscription;
@@ -188,6 +194,45 @@ export class StorefrontComponent implements OnInit, OnDestroy {
         console.error('Fehler beim Hinzufuegen zum Warenkorb:', error);
       }
     });
+  }
+
+  // QuickView Methoden
+  openQuickView(product: Product): void {
+    console.log('👁️ Öffne QuickView für:', product.title);
+    this.quickViewProduct = product;
+    this.quickViewOpen = true;
+  }
+
+  closeQuickView(): void {
+    console.log('❌ Schließe QuickView');
+    this.quickViewOpen = false;
+    this.quickViewProduct = null;
+  }
+
+  onQuickViewAddToCart(event: { product: Product; quantity: number; variant?: any }): void {
+    console.log('🛒 Füge aus QuickView zum Warenkorb hinzu:', event);
+
+    this.cartService.addItem({
+      storeId: this.storeId,
+      productId: event.product.id,
+      quantity: event.quantity
+    }).subscribe({
+      next: () => {
+        console.log('✅ Produkt erfolgreich zum Warenkorb hinzugefügt');
+        this.loadCartCount();
+        // Zeige kurz eine Bestätigung
+        alert(`${event.quantity}x ${event.product.title} wurde zum Warenkorb hinzugefügt!`);
+      },
+      error: (error) => {
+        console.error('❌ Fehler beim Hinzufügen zum Warenkorb:', error);
+        alert('Fehler beim Hinzufügen zum Warenkorb. Bitte versuchen Sie es erneut.');
+      }
+    });
+  }
+
+  onQuickViewDetails(product: Product): void {
+    console.log('📄 Navigiere zu Produktdetails:', product.id);
+    this.router.navigate(['/products', product.id]);
   }
 
   goToCart(): void {
