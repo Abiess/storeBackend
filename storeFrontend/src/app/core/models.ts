@@ -176,6 +176,13 @@ export interface Product {
   media?: ProductMedia[];
   imageUrl?: string;
   primaryImageUrl?: string; // Haupt-Bild URL
+
+  // Featured/Top Product Felder
+  isFeatured?: boolean;
+  featuredOrder?: number;
+  viewCount?: number;
+  salesCount?: number;
+
   createdAt: string;
   updatedAt: string;
 }

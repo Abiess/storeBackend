@@ -695,15 +695,31 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   loadProductImages(productId: number): void {
     this.mediaService.getProductMedia(this.storeId, productId).subscribe({
       next: (media) => {
-        this.uploadedImages = media.map((m: any) => ({
-          mediaId: m.media.id,
-          url: m.media.url,
-          filename: m.media.filename,
-          isPrimary: m.isPrimary || false
-        }));
+        console.log('📸 Loaded product media:', media);
+
+        // Konvertiere die API-Response in das richtige Format
+        this.uploadedImages = media.map((m: any) => {
+          // Handle verschiedene API-Response Formate
+          const mediaObj = m.media || m;
+          const url = mediaObj.url || m.url || '';
+          const filename = mediaObj.filename || m.filename || 'image.jpg';
+
+          return {
+            mediaId: mediaObj.id || m.mediaId || m.id,
+            url: url,
+            filename: filename,
+            preview: url, // Verwende URL auch als Preview
+            isPrimary: m.isPrimary || false
+          };
+        }).filter(img => img.mediaId && img.url); // Filtere ungültige Einträge
+
+        console.log('✅ Processed images:', this.uploadedImages);
       },
       error: (error) => {
-        console.error(this.translationService.translate('media.uploadError'), error);
+        console.error('❌ Error loading product images:', error);
+        this.errorMessage = this.translationService.translate('media.uploadError');
+        // Zeige trotzdem die Möglichkeit neue Bilder hochzuladen
+        this.uploadedImages = [];
       }
     });
   }

@@ -171,11 +171,21 @@ CREATE TABLE products (
     description TEXT,
     base_price DECIMAL(10, 2) NOT NULL,
     status VARCHAR(50) NOT NULL DEFAULT 'DRAFT',
+    is_featured BOOLEAN DEFAULT FALSE,
+    featured_order INTEGER DEFAULT 0,
+    view_count BIGINT DEFAULT 0,
+    sales_count BIGINT DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE,
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
 );
+
+-- Performance Indizes für Featured/Top Products
+CREATE INDEX idx_products_featured ON products(store_id, is_featured, featured_order);
+CREATE INDEX idx_products_sales_count ON products(store_id, sales_count DESC);
+CREATE INDEX idx_products_view_count ON products(store_id, view_count DESC);
+CREATE INDEX idx_products_created_at ON products(store_id, created_at DESC);
 
 -- Product Options (z.B. Größe, Farbe)
 CREATE TABLE product_options (
@@ -284,8 +294,7 @@ CREATE TABLE orders (
     billing_city VARCHAR(255),
     billing_postal_code VARCHAR(50),
     billing_country VARCHAR(100),
-    billing_phone VARCHAR(50),
-    -- Delivery Fields
+    billing_phone VARCHAR(50),    -- Delivery Fields
     delivery_type VARCHAR(20),
     delivery_mode VARCHAR(20),
     delivery_provider_id BIGINT,

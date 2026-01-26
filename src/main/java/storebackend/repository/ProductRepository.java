@@ -16,4 +16,20 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     // For SEO sitemap generation
     long countByStoreId(Long storeId);
     List<Product> findByStoreId(Long storeId);
+
+    // Featured Products
+    List<Product> findByStoreAndIsFeaturedTrueOrderByFeaturedOrderAsc(Store store);
+    List<Product> findByStoreIdAndIsFeaturedTrueOrderByFeaturedOrderAsc(Long storeId);
+
+    // Top Products (Bestseller)
+    List<Product> findTop10ByStoreOrderBySalesCountDesc(Store store);
+    List<Product> findTop10ByStoreIdOrderBySalesCountDesc(Long storeId);
+
+    // Trending Products (meistgesehen)
+    List<Product> findTop10ByStoreOrderByViewCountDesc(Store store);
+    List<Product> findTop10ByStoreIdOrderByViewCountDesc(Long storeId);
+
+    // New Arrivals
+    List<Product> findTop10ByStoreOrderByCreatedAtDesc(Store store);
+    List<Product> findTop10ByStoreIdOrderByCreatedAtDesc(Long storeId);
 }

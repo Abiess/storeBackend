@@ -19,6 +19,12 @@ public class ProductDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    // Featured/Top Product Informationen
+    private Boolean isFeatured;
+    private Integer featuredOrder;
+    private Long viewCount;
+    private Long salesCount;
+
     // Bilder-Informationen
     private List<ProductMediaDTO> media;
     private String primaryImageUrl;

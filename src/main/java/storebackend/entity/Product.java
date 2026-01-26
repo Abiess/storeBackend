@@ -40,6 +40,19 @@ public class Product {
     @Column(nullable = false)
     private ProductStatus status = ProductStatus.DRAFT;
 
+    // Featured/Highlight Flags
+    @Column(name = "is_featured")
+    private Boolean isFeatured = false;
+
+    @Column(name = "featured_order")
+    private Integer featuredOrder = 0;
+
+    @Column(name = "view_count")
+    private Long viewCount = 0L;
+
+    @Column(name = "sales_count")
+    private Long salesCount = 0L;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

@@ -80,4 +80,34 @@ export class ProductService {
     }
     return this.http.delete<void>(`${environment.apiUrl}/stores/${storeId}/products/${productId}/variants/${variantId}`);
   }
+
+  // Featured/Top Products - Öffentliche Endpoints
+  getFeaturedProducts(storeId: number): Observable<Product[]> {
+    return this.http.get<Product[]>(`${environment.publicApiUrl}/stores/${storeId}/products/featured`);
+  }
+
+  getTopProducts(storeId: number, limit: number = 10): Observable<Product[]> {
+    const params = new HttpParams().set('limit', limit.toString());
+    return this.http.get<Product[]>(`${environment.publicApiUrl}/stores/${storeId}/products/top`, { params });
+  }
+
+  getTrendingProducts(storeId: number, limit: number = 10): Observable<Product[]> {
+    const params = new HttpParams().set('limit', limit.toString());
+    return this.http.get<Product[]>(`${environment.publicApiUrl}/stores/${storeId}/products/trending`, { params });
+  }
+
+  getNewArrivals(storeId: number, limit: number = 10): Observable<Product[]> {
+    const params = new HttpParams().set('limit', limit.toString());
+    return this.http.get<Product[]>(`${environment.publicApiUrl}/stores/${storeId}/products/new`, { params });
+  }
+
+  trackProductView(storeId: number, productId: number): Observable<void> {
+    return this.http.post<void>(`${environment.publicApiUrl}/stores/${storeId}/products/${productId}/view`, {});
+  }
+
+  // Admin: Set Featured Product
+  setFeatured(storeId: number, productId: number, featured: boolean, order?: number): Observable<Product> {
+    const body = { featured, order };
+    return this.http.post<Product>(`${environment.apiUrl}/stores/${storeId}/products/${productId}/featured`, body);
+  }
 }

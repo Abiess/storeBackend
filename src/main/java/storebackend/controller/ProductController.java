@@ -19,6 +19,7 @@ import storebackend.service.ProductService;
 import storebackend.service.StoreService;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/stores/{storeId}/products")
@@ -206,5 +207,29 @@ public class ProductController {
         Store store = storeService.getStoreById(storeId);
         productService.deleteProduct(productId, store);
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Set product as featured", description = "Marks a product as featured/highlighted")
+    @PostMapping("/{productId}/featured")
+    public ResponseEntity<ProductDTO> setFeatured(
+            @Parameter(description = "Store ID") @PathVariable Long storeId,
+            @Parameter(description = "Product ID") @PathVariable Long productId,
+            @RequestBody Map<String, Object> request,
+            @AuthenticationPrincipal User user) {
+
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        if (!hasStoreAccess(storeId, user)) {
+            return ResponseEntity.status(403).build();
+        }
+
+        Store store = storeService.getStoreById(storeId);
+        boolean featured = (Boolean) request.getOrDefault("featured", true);
+        Integer order = request.containsKey("order") ? (Integer) request.get("order") : null;
+
+        log.info("Setting product {} as featured={} with order={}", productId, featured, order);
+        return ResponseEntity.ok(productService.setFeatured(productId, store, featured, order));
     }
 }

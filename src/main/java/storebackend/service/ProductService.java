@@ -130,6 +130,12 @@ public class ProductService {
         dto.setCreatedAt(product.getCreatedAt());
         dto.setUpdatedAt(product.getUpdatedAt());
 
+        // Featured/Top Product Informationen
+        dto.setIsFeatured(product.getIsFeatured());
+        dto.setFeaturedOrder(product.getFeaturedOrder());
+        dto.setViewCount(product.getViewCount());
+        dto.setSalesCount(product.getSalesCount());
+
         // Add category information
         if (product.getCategory() != null) {
             dto.setCategoryId(product.getCategory().getId());
@@ -190,5 +196,64 @@ public class ProductService {
         }
 
         return dto;
+    }
+
+    // Featured Products Methoden
+    public List<ProductDTO> getFeaturedProducts(Long storeId) {
+        return productRepository.findByStoreIdAndIsFeaturedTrueOrderByFeaturedOrderAsc(storeId)
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<ProductDTO> getTopProducts(Long storeId, int limit) {
+        return productRepository.findTop10ByStoreIdOrderBySalesCountDesc(storeId)
+                .stream()
+                .limit(limit)
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<ProductDTO> getTrendingProducts(Long storeId, int limit) {
+        return productRepository.findTop10ByStoreIdOrderByViewCountDesc(storeId)
+                .stream()
+                .limit(limit)
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<ProductDTO> getNewArrivals(Long storeId, int limit) {
+        return productRepository.findTop10ByStoreIdOrderByCreatedAtDesc(storeId)
+                .stream()
+                .limit(limit)
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public void incrementViewCount(Long productId) {
+        productRepository.findById(productId).ifPresent(product -> {
+            product.setViewCount(product.getViewCount() + 1);
+            productRepository.save(product);
+        });
+    }
+
+    public void incrementSalesCount(Long productId, int quantity) {
+        productRepository.findById(productId).ifPresent(product -> {
+            product.setSalesCount(product.getSalesCount() + quantity);
+            productRepository.save(product);
+        });
+    }
+
+    public ProductDTO setFeatured(Long productId, Store store, boolean featured, Integer order) {
+        Product product = productRepository.findByIdAndStore(productId, store)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+
+        product.setIsFeatured(featured);
+        if (order != null) {
+            product.setFeaturedOrder(order);
+        }
+
+        product = productRepository.save(product);
+        return toDTO(product);
     }
 }
