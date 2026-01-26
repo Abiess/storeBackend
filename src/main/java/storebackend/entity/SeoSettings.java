@@ -45,9 +45,11 @@ public class SeoSettings {
     private String robotsTxt;
 
     @Column(name = "sitemap_enabled", nullable = false)
+    @Builder.Default
     private Boolean sitemapEnabled = true;
 
     @Column(name = "robots_index", nullable = false)
+    @Builder.Default
     private Boolean robotsIndex = true;
 
     @Column(name = "updated_at", nullable = false)

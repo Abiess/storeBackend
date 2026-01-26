@@ -37,6 +37,7 @@ public class StructuredDataTemplate {
     private String templateJson; // Mustache template with variables like {{product.title}}
 
     @Column(name = "is_active", nullable = false)
+    @Builder.Default
     private Boolean isActive = true;
 
     @Column(name = "updated_at", nullable = false)

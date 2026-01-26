@@ -34,18 +34,23 @@ public class SitemapConfig {
     private Long domainId;
 
     @Column(name = "include_products", nullable = false)
+    @Builder.Default
     private Boolean includeProducts = true;
 
     @Column(name = "include_collections", nullable = false)
+    @Builder.Default
     private Boolean includeCollections = true;
 
     @Column(name = "include_blog", nullable = false)
+    @Builder.Default
     private Boolean includeBlog = true;
 
     @Column(name = "include_pages", nullable = false)
+    @Builder.Default
     private Boolean includePages = true;
 
     @Column(name = "split_threshold", nullable = false)
+    @Builder.Default
     private Integer splitThreshold = 5000; // URLs per sitemap file
 
     @Column(name = "updated_at", nullable = false)
