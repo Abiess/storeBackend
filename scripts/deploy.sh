@@ -128,13 +128,13 @@ LOGGING_FILE_NAME=$LOG_FILE
 
 # MinIO (Production) – Werte bei Bedarf in CI/Server-Env überschreiben
 MINIO_ENABLED=true
-MINIO_ENDPOINT=http://localhost:9000
-MINIO_PUBLIC_ENDPOINT=https://minio.markt.ma
+MINIO_ENDPOINT=https://minio.markt.ma
+MINIO_PUBLIC_ENDPOINT=
 MINIO_ACCESS_KEY=miniomarkt
 MINIO_SECRET_KEY=miniopassword!
 MINIO_BUCKET=store-assets
 MINIO_REGION=us-east-1
-MINIO_SECURE=false
+MINIO_SECURE=true
 
 EOF"
 
