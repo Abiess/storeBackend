@@ -1,22 +1,23 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { Product, ProductStatus } from '@app/core/models';
+import { ProductImageGalleryComponent } from '@app/shared/components/product-image-gallery.component';
 
 @Component({
   selector: 'app-product-card',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule, ProductImageGalleryComponent],
   template: `
-    <div class="product-card">
-      <div class="product-image">
-        <!-- Bild anzeigen wenn vorhanden -->
+    <div class="product-card" [routerLink]="['/products', product.id]">
+      <!-- Professionelle Bildgalerie -->
+      <div class="product-image-section">
         <img *ngIf="getProductImage()" 
              [src]="getProductImage()" 
              [alt]="product.title"
              class="product-img"
              (error)="onImageError($event)">
         
-        <!-- Platzhalter wenn kein Bild -->
         <div *ngIf="!getProductImage() || imageError" class="image-placeholder">
           <span class="placeholder-icon">📷</span>
         </div>
@@ -30,6 +31,11 @@ import { Product, ProductStatus } from '@app/core/models';
         <span *ngIf="product.status === ProductStatus.PUBLISHED" class="product-badge badge-new">
           Neu
         </span>
+
+        <!-- Quick View Button -->
+        <button class="quick-view-btn" (click)="onQuickView($event)">
+          👁️ Schnellansicht
+        </button>
       </div>
 
       <div class="product-info">
@@ -43,17 +49,17 @@ import { Product, ProductStatus } from '@app/core/models';
           </div>
 
           <button class="btn btn-add-cart"
-                  (click)="addToCart.emit(product)"
+                  (click)="onAddToCart($event)"
                   [disabled]="isAddingToCart">
             <span class="btn-icon">🛒</span>
             <span class="btn-text">
-              {{ isAddingToCart ? 'Wird hinzugefuegt...' : 'In den Warenkorb' }}
+              {{ isAddingToCart ? 'Wird hinzugefügt...' : 'In den Warenkorb' }}
             </span>
           </button>
         </div>
 
         <div *ngIf="product.variants && product.variants.length > 0" class="product-variants">
-          <small>{{ product.variants.length }} Variante(n) verfuegbar</small>
+          <small>{{ product.variants.length }} Variante(n) verfügbar</small>
         </div>
       </div>
     </div>
@@ -68,6 +74,7 @@ import { Product, ProductStatus } from '@app/core/models';
       display: flex;
       flex-direction: column;
       border: 1px solid var(--theme-border, #e9ecef);
+      cursor: pointer;
     }
 
     .product-card:hover {
@@ -75,7 +82,7 @@ import { Product, ProductStatus } from '@app/core/models';
       box-shadow: 0 8px 24px rgba(0,0,0,0.15);
     }
 
-    .product-image {
+    .product-image-section {
       position: relative;
       padding-top: 75%;
       background: var(--theme-background, #f8f9fa);
@@ -148,6 +155,33 @@ import { Product, ProductStatus } from '@app/core/models';
 
     .badge-icon {
       font-size: 0.875rem;
+    }
+
+    /* Quick View Button */
+    .quick-view-btn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255, 255, 255, 0.95);
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 24px;
+      font-weight: 600;
+      cursor: pointer;
+      opacity: 0;
+      transition: all 0.3s;
+      z-index: 3;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .product-card:hover .quick-view-btn {
+      opacity: 1;
+    }
+
+    .quick-view-btn:hover {
+      transform: translate(-50%, -50%) scale(1.05);
+      background: white;
     }
 
     .product-info {
@@ -246,27 +280,28 @@ export class ProductCardComponent {
   @Input() product!: Product;
   @Input() isAddingToCart = false;
   @Output() addToCart = new EventEmitter<Product>();
+  @Output() quickView = new EventEmitter<Product>();
 
   readonly ProductStatus = ProductStatus;
   imageError = false;
 
   getProductImage(): string | null {
-    // 1. Versuche primaryImageUrl
     if (this.product.primaryImageUrl) {
       return this.product.primaryImageUrl;
     }
 
-    // 2. Versuche das erste Bild aus dem media-Array
     if (this.product.media && this.product.media.length > 0) {
-      // Suche nach isPrimary = true
       const primaryMedia = this.product.media.find((m: any) => m.isPrimary);
       if (primaryMedia?.url) {
         return primaryMedia.url;
       }
-      // Sonst nimm das erste Bild
       if (this.product.media[0]?.url) {
         return this.product.media[0].url;
       }
+    }
+
+    if (this.product.imageUrl) {
+      return this.product.imageUrl;
     }
 
     return null;
@@ -282,6 +317,19 @@ export class ProductCardComponent {
 
   onImageError(event: Event): void {
     this.imageError = true;
-    console.warn('Failed to load product image:', this.getProductImage());
+    const img = event.target as HTMLImageElement;
+    img.style.display = 'none';
+  }
+
+  onAddToCart(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.addToCart.emit(this.product);
+  }
+
+  onQuickView(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.quickView.emit(this.product);
   }
 }
