@@ -35,17 +35,11 @@ public class RedirectService {
         for (RedirectRule rule : rules) {
             if (matches(rule, path)) {
                 log.debug("Redirect match: {} -> {} ({})", path, rule.getTargetUrl(), rule.getHttpCode());
-                return RedirectResolveResponse.builder()
-                        .targetUrl(rule.getTargetUrl())
-                        .httpCode(rule.getHttpCode())
-                        .found(true)
-                        .build();
+                return new RedirectResolveResponse(rule.getTargetUrl(), rule.getHttpCode(), true);
             }
         }
 
-        return RedirectResolveResponse.builder()
-                .found(false)
-                .build();
+        return new RedirectResolveResponse(null, null, false);
     }
 
     public Page<RedirectRuleDTO> getRules(Long storeId, Long domainId, String query, Pageable pageable) {
@@ -58,18 +52,17 @@ public class RedirectService {
     public RedirectRuleDTO createRule(RedirectRuleDTO dto) {
         validateRule(dto);
 
-        RedirectRule entity = RedirectRule.builder()
-                .storeId(dto.getStoreId())
-                .domainId(dto.getDomainId())
-                .sourcePath(dto.getSourcePath())
-                .targetUrl(dto.getTargetUrl())
-                .httpCode(dto.getHttpCode())
-                .isRegex(dto.getIsRegex())
-                .priority(dto.getPriority())
-                .isActive(dto.getIsActive())
-                .comment(dto.getComment())
-                .tag(dto.getTag())
-                .build();
+        RedirectRule entity = new RedirectRule();
+        entity.setStoreId(dto.getStoreId());
+        entity.setDomainId(dto.getDomainId());
+        entity.setSourcePath(dto.getSourcePath());
+        entity.setTargetUrl(dto.getTargetUrl());
+        entity.setHttpCode(dto.getHttpCode());
+        entity.setRegex(dto.getIsRegex());
+        entity.setPriority(dto.getPriority());
+        entity.setActive(dto.getIsActive());
+        entity.setComment(dto.getComment());
+        entity.setTag(dto.getTag());
 
         entity = redirectRuleRepository.save(entity);
         return mapToDTO(entity);
@@ -86,9 +79,9 @@ public class RedirectService {
         entity.setSourcePath(dto.getSourcePath());
         entity.setTargetUrl(dto.getTargetUrl());
         entity.setHttpCode(dto.getHttpCode());
-        entity.setIsRegex(dto.getIsRegex());
+        entity.setRegex(dto.getIsRegex());
         entity.setPriority(dto.getPriority());
-        entity.setIsActive(dto.getIsActive());
+        entity.setActive(dto.getIsActive());
         entity.setComment(dto.getComment());
         entity.setTag(dto.getTag());
 
@@ -108,7 +101,7 @@ public class RedirectService {
     }
 
     private boolean matches(RedirectRule rule, String path) {
-        if (rule.getIsRegex()) {
+        if (rule.getRegex()) {
             try {
                 Pattern pattern = Pattern.compile(rule.getSourcePath());
                 return pattern.matcher(path).matches();
@@ -122,16 +115,12 @@ public class RedirectService {
     }
 
     private void validateRule(RedirectRuleDTO dto) {
-        if (!dto.getIsRegex() && !dto.getSourcePath().startsWith("/")) {
-            throw new IllegalArgumentException("Source path must start with '/'");
+        if (dto.getSourcePath() == null || dto.getSourcePath().isBlank()) {
+            throw new IllegalArgumentException("Source path is required");
         }
 
-        if (dto.getIsRegex()) {
-            try {
-                Pattern.compile(dto.getSourcePath());
-            } catch (PatternSyntaxException e) {
-                throw new IllegalArgumentException("Invalid regex pattern: " + e.getMessage());
-            }
+        if (dto.getTargetUrl() == null || dto.getTargetUrl().isBlank()) {
+            throw new IllegalArgumentException("Target URL is required");
         }
 
         if (dto.getHttpCode() != 301 && dto.getHttpCode() != 302) {
@@ -140,21 +129,20 @@ public class RedirectService {
     }
 
     private RedirectRuleDTO mapToDTO(RedirectRule entity) {
-        return RedirectRuleDTO.builder()
-                .id(entity.getId())
-                .storeId(entity.getStoreId())
-                .domainId(entity.getDomainId())
-                .sourcePath(entity.getSourcePath())
-                .targetUrl(entity.getTargetUrl())
-                .httpCode(entity.getHttpCode())
-                .isRegex(entity.getIsRegex())
-                .priority(entity.getPriority())
-                .isActive(entity.getIsActive())
-                .comment(entity.getComment())
-                .tag(entity.getTag())
-                .createdAt(entity.getCreatedAt())
-                .updatedAt(entity.getUpdatedAt())
-                .build();
+        RedirectRuleDTO dto = new RedirectRuleDTO();
+        dto.setId(entity.getId());
+        dto.setStoreId(entity.getStoreId());
+        dto.setDomainId(entity.getDomainId());
+        dto.setSourcePath(entity.getSourcePath());
+        dto.setTargetUrl(entity.getTargetUrl());
+        dto.setHttpCode(entity.getHttpCode());
+        dto.setIsRegex(entity.getRegex());
+        dto.setPriority(entity.getPriority());
+        dto.setIsActive(entity.getActive());
+        dto.setComment(entity.getComment());
+        dto.setTag(entity.getTag());
+        dto.setCreatedAt(entity.getCreatedAt());
+        dto.setUpdatedAt(entity.getUpdatedAt());
+        return dto;
     }
 }
-

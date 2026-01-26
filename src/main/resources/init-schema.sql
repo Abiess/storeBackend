@@ -3,6 +3,11 @@
 -- Optimiert für PostgreSQL
 
 -- Lösche existierende Tabellen (CASCADE löscht auch Foreign Keys)
+DROP TABLE IF EXISTS wishlist_items CASCADE;
+DROP TABLE IF EXISTS wishlists CASCADE;
+DROP TABLE IF EXISTS saved_cart_items CASCADE;
+DROP TABLE IF EXISTS saved_carts CASCADE;
+DROP TABLE IF EXISTS customer_addresses CASCADE;
 DROP TABLE IF EXISTS customer_profiles CASCADE;
 DROP TABLE IF EXISTS store_themes CASCADE;
 DROP TABLE IF EXISTS coupon_redemptions CASCADE;
@@ -92,6 +97,91 @@ CREATE TABLE customer_profiles (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- ============================================
+-- CUSTOMER FEATURES TABLES
+-- ============================================
+
+-- Customer Addresses (separates Adressbuch für Kunden)
+CREATE TABLE customer_addresses (
+    id BIGSERIAL PRIMARY KEY,
+    customer_id BIGINT NOT NULL,
+    address_type VARCHAR(20) NOT NULL, -- SHIPPING, BILLING, BOTH
+    first_name VARCHAR(255) NOT NULL,
+    last_name VARCHAR(255) NOT NULL,
+    company VARCHAR(255),
+    address1 VARCHAR(255) NOT NULL,
+    address2 VARCHAR(255),
+    city VARCHAR(255) NOT NULL,
+    state_province VARCHAR(100),
+    postal_code VARCHAR(50) NOT NULL,
+    country VARCHAR(100) NOT NULL,
+    phone VARCHAR(50),
+    is_default BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Wishlists (Wunschlisten für Kunden)
+CREATE TABLE wishlists (
+    id BIGSERIAL PRIMARY KEY,
+    store_id BIGINT NOT NULL,
+    customer_id BIGINT NOT NULL,
+    name VARCHAR(255) NOT NULL DEFAULT 'Meine Wunschliste',
+    description TEXT,
+    is_default BOOLEAN NOT NULL DEFAULT FALSE,
+    is_public BOOLEAN NOT NULL DEFAULT FALSE,
+    share_token VARCHAR(100) UNIQUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE,
+    FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Wishlist Items (Produkte in Wunschlisten)
+CREATE TABLE wishlist_items (
+    id BIGSERIAL PRIMARY KEY,
+    wishlist_id BIGINT NOT NULL,
+    product_id BIGINT NOT NULL,
+    variant_id BIGINT,
+    priority VARCHAR(20) DEFAULT 'MEDIUM', -- LOW, MEDIUM, HIGH
+    note TEXT,
+    added_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (wishlist_id) REFERENCES wishlists(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE SET NULL,
+    CONSTRAINT wishlist_items_unique UNIQUE (wishlist_id, product_id, variant_id)
+);
+
+-- Saved Carts (Gespeicherte Warenkörbe)
+CREATE TABLE saved_carts (
+    id BIGSERIAL PRIMARY KEY,
+    store_id BIGINT NOT NULL,
+    customer_id BIGINT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    expires_at TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE,
+    FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Saved Cart Items (Items in gespeicherten Warenkörben)
+CREATE TABLE saved_cart_items (
+    id BIGSERIAL PRIMARY KEY,
+    saved_cart_id BIGINT NOT NULL,
+    product_id BIGINT NOT NULL,
+    variant_id BIGINT NOT NULL,
+    quantity INTEGER NOT NULL,
+    price_snapshot DECIMAL(10, 2) NOT NULL,
+    product_snapshot TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (saved_cart_id) REFERENCES saved_carts(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE CASCADE
 );
 
 -- Stores Tabelle
@@ -507,6 +597,16 @@ CREATE INDEX IF NOT EXISTS idx_orders_store ON orders(store_id);
 CREATE INDEX IF NOT EXISTS idx_orders_customer ON orders(customer_id);
 CREATE INDEX IF NOT EXISTS idx_user_roles_user ON user_roles(user_id);
 CREATE INDEX IF NOT EXISTS idx_customer_profiles_user ON customer_profiles(user_id);
+CREATE INDEX IF NOT EXISTS idx_customer_addresses_customer ON customer_addresses(customer_id);
+CREATE INDEX IF NOT EXISTS idx_customer_addresses_default ON customer_addresses(customer_id, is_default);
+CREATE INDEX IF NOT EXISTS idx_wishlists_customer ON wishlists(customer_id);
+CREATE INDEX IF NOT EXISTS idx_wishlists_store ON wishlists(store_id);
+CREATE INDEX IF NOT EXISTS idx_wishlists_default ON wishlists(customer_id, is_default);
+CREATE INDEX IF NOT EXISTS idx_wishlist_items_wishlist ON wishlist_items(wishlist_id);
+CREATE INDEX IF NOT EXISTS idx_wishlist_items_product ON wishlist_items(product_id);
+CREATE INDEX IF NOT EXISTS idx_saved_carts_customer ON saved_carts(customer_id);
+CREATE INDEX IF NOT EXISTS idx_saved_carts_store ON saved_carts(store_id);
+CREATE INDEX IF NOT EXISTS idx_saved_cart_items_cart ON saved_cart_items(saved_cart_id);
 CREATE INDEX IF NOT EXISTS idx_coupon_store ON coupons(store_id);
 CREATE INDEX IF NOT EXISTS idx_coupon_code ON coupons(store_id, code_normalized);
 CREATE INDEX IF NOT EXISTS idx_coupon_status ON coupons(status);

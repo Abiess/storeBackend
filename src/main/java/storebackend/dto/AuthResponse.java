@@ -16,7 +16,7 @@ public class AuthResponse {
         private Long id;
         private String email;
         private String name;
-        private String role;  // Primary role for frontend compatibility
+        private String role;
         private List<String> roles;
     }
 }

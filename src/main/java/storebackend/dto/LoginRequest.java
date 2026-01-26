@@ -15,4 +15,17 @@ public class LoginRequest {
 
     // Optional: Für Warenkorb-Migration von Gast zu User
     private String sessionId;
+
+    // Explizite Getter für Lombok-Kompatibilität
+    public String getEmail() {
+        return email;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public String getSessionId() {
+        return sessionId;
+    }
 }

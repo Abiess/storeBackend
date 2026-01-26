@@ -37,16 +37,19 @@ public class StructuredDataTemplate {
     private String templateJson; // Mustache template with variables like {{product.title}}
 
     @Column(name = "is_active", nullable = false)
-    @Builder.Default
     private Boolean isActive = true;
 
     @Column(name = "updated_at", nullable = false)
-    @Builder.Default
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        updatedAt = LocalDateTime.now();
+    }
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
     }
 
     public enum TemplateType {
@@ -57,4 +60,3 @@ public class StructuredDataTemplate {
         COLLECTION
     }
 }
-

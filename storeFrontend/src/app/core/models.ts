@@ -651,3 +651,158 @@ export interface AuditLogResponse {
   totalPages: number;
   currentPage: number;
 }
+
+// ============================================
+// CUSTOMER ADDRESS BOOK
+// ============================================
+export interface CustomerAddress {
+  id: number;
+  customerId: number;
+  firstName: string;
+  lastName: string;
+  company?: string;
+  address1: string;
+  address2?: string;
+  city: string;
+  state?: string;
+  postalCode: string;
+  country: string;
+  phone?: string;
+  email?: string;
+  isDefault: boolean;
+  addressType: 'SHIPPING' | 'BILLING' | 'BOTH';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateAddressRequest {
+  firstName: string;
+  lastName: string;
+  company?: string;
+  address1: string;
+  address2?: string;
+  city: string;
+  state?: string;
+  postalCode: string;
+  country: string;
+  phone?: string;
+  email?: string;
+  isDefault?: boolean;
+  addressType: 'SHIPPING' | 'BILLING' | 'BOTH';
+}
+
+// ============================================
+// WISHLIST / FAVORITES
+// ============================================
+export interface Wishlist {
+  id: number;
+  customerId: number;
+  storeId: number;
+  name: string;
+  isDefault: boolean;
+  isPublic: boolean;
+  createdAt: string;
+  updatedAt: string;
+  items?: WishlistItem[];
+}
+
+export interface WishlistItem {
+  id: number;
+  wishlistId: number;
+  productId: number;
+  product?: Product;
+  variantId?: number;
+  variant?: ProductVariant;
+  note?: string;
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH';
+  addedAt: string;
+}
+
+export interface CreateWishlistRequest {
+  storeId: number;
+  name: string;
+  isDefault?: boolean;
+  isPublic?: boolean;
+}
+
+export interface AddToWishlistRequest {
+  wishlistId: number;
+  productId: number;
+  variantId?: number;
+  note?: string;
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH';
+}
+
+// ============================================
+// SAVED CARTS
+// ============================================
+export interface SavedCart {
+  id: number;
+  customerId: number;
+  storeId: number;
+  name: string;
+  description?: string;
+  items?: SavedCartItem[];
+  totalItems: number;
+  estimatedTotal: number;
+  createdAt: string;
+  updatedAt: string;
+  expiresAt?: string;
+}
+
+export interface SavedCartItem {
+  id: number;
+  savedCartId: number;
+  productId: number;
+  product?: Product;
+  variantId?: number;
+  variant?: ProductVariant;
+  quantity: number;
+  priceAtSave: number;
+}
+
+export interface CreateSavedCartRequest {
+  storeId: number;
+  name: string;
+  description?: string;
+  cartId?: number; // Optional: Save existing cart
+}
+
+export interface SavedCartToCartRequest {
+  savedCartId: number;
+  mergeWithCurrent?: boolean;
+}
+
+// ============================================
+// CUSTOMER ORDER HISTORY (Enhanced)
+// ============================================
+export interface OrderHistoryFilter {
+  storeId?: number;
+  customerId?: number;
+  status?: OrderStatus;
+  startDate?: string;
+  endDate?: string;
+  searchTerm?: string;
+  page?: number;
+  size?: number;
+  sortBy?: 'date' | 'total' | 'status';
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface OrderHistoryResponse {
+  orders: Order[];
+  totalElements: number;
+  totalPages: number;
+  currentPage: number;
+  totalSpent: number;
+  orderCount: number;
+}
+
+export interface OrderDetail extends Order {
+  trackingNumber?: string;
+  carrier?: string;
+  estimatedDelivery?: string;
+  canCancel: boolean;
+  canReturn: boolean;
+  canReorder: boolean;
+}

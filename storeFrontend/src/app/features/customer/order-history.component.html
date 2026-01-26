@@ -1,0 +1,150 @@
+    <div class="filter-group">
+      <label for="statusFilter">Status:</label>
+      <select id="statusFilter" [(ngModel)]="selectedStatus" (change)="filterOrders()" class="form-control">
+        <option value="">Alle</option>
+        <option *ngFor="let status of orderStatuses" [value]="status">
+          {{ getStatusLabel(status) }}
+        </option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="searchInput">Suche:</label>
+      <input
+        type="text"
+        id="searchInput"
+        [(ngModel)]="searchTerm"
+        (keyup.enter)="filterOrders()"
+        placeholder="Bestellnummer, Produkt..."
+        class="form-control" />
+    </div>
+    <button class="btn btn-primary" (click)="filterOrders()">
+      <i class="fas fa-search"></i> Suchen
+    </button>
+    <button class="btn btn-secondary" (click)="clearFilters()" *ngIf="selectedStatus || searchTerm">
+      <i class="fas fa-times"></i> Zurücksetzen
+    </button>
+  </div>
+
+  <!-- Orders List -->
+  <div class="orders-list" *ngIf="!loading && orders.length > 0">
+    <div class="order-card" *ngFor="let order of orders">
+      <div class="order-header">
+        <div class="order-info">
+          <h3>Bestellung #{{ order.orderNumber || order.id }}</h3>
+          <p class="order-date">
+            <i class="fas fa-calendar"></i> {{ order.createdAt | date: 'dd.MM.yyyy HH:mm' }}
+          </p>
+        </div>
+        <div class="order-status">
+          <span class="status-badge" [class]="getStatusClass(order.status)">
+            {{ getStatusLabel(order.status) }}
+          </span>
+        </div>
+      </div>
+
+      <div class="order-details">
+        <div class="order-items" *ngIf="order.items && order.items.length > 0">
+          <div class="item-summary" *ngFor="let item of order.items.slice(0, 2)">
+            <span class="item-name">{{ item.productTitle || item.product?.title }}</span>
+            <span class="item-quantity">{{ item.quantity }}x {{ item.priceAtOrder || item.price | currency: 'EUR' }}</span>
+          </div>
+          <p class="more-items" *ngIf="order.items.length > 2">
+            +{{ order.items.length - 2 }} weitere Artikel
+          </p>
+        </div>
+
+        <div class="order-meta">
+          <div class="meta-item">
+            <i class="fas fa-box"></i>
+            <span>{{ order.items?.length || 0 }} Artikel</span>
+          </div>
+          <div class="meta-item" *ngIf="order.trackingNumber">
+            <i class="fas fa-truck"></i>
+            <span>Tracking: {{ order.trackingNumber }}</span>
+          </div>
+        </div>
+
+        <div class="order-total">
+          <span class="total-label">Gesamt:</span>
+          <span class="total-amount">{{ order.totalAmount | currency: 'EUR' }}</span>
+        </div>
+      </div>
+
+      <div class="order-actions">
+        <button class="btn btn-primary" (click)="viewOrderDetails(order)">
+          <i class="fas fa-eye"></i> Details
+        </button>
+        <button class="btn btn-outline" (click)="reorder(order)" *ngIf="order.canReorder">
+          <i class="fas fa-redo"></i> Erneut bestellen
+        </button>
+        <button class="btn btn-outline" (click)="downloadInvoice(order)">
+          <i class="fas fa-file-pdf"></i> Rechnung
+        </button>
+        <button class="btn btn-danger-outline" (click)="cancelOrder(order)" *ngIf="order.canCancel">
+          <i class="fas fa-times"></i> Stornieren
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination" *ngIf="!loading && orders.length > 0 && totalPages > 1">
+    <button class="btn btn-secondary" (click)="previousPage()" [disabled]="currentPage === 0">
+      <i class="fas fa-chevron-left"></i> Zurück
+    </button>
+    <span class="page-info">Seite {{ currentPage + 1 }} von {{ totalPages }}</span>
+    <button class="btn btn-secondary" (click)="nextPage()" [disabled]="currentPage >= totalPages - 1">
+      Weiter <i class="fas fa-chevron-right"></i>
+    </button>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="!loading && orders.length === 0">
+    <i class="fas fa-receipt"></i>
+    <h3>Keine Bestellungen gefunden</h3>
+    <p *ngIf="!selectedStatus && !searchTerm">Sie haben noch keine Bestellungen aufgegeben</p>
+    <p *ngIf="selectedStatus || searchTerm">Keine Bestellungen entsprechen Ihren Filterkriterien</p>
+    <button class="btn btn-primary" [routerLink]="['/']" *ngIf="!selectedStatus && !searchTerm">
+      <i class="fas fa-shopping-bag"></i> Jetzt einkaufen
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Lade Bestellungen...</p>
+  </div>
+</div>
+<div class="order-history-container">
+  <div class="header">
+    <h2><i class="fas fa-receipt"></i> Meine Bestellungen</h2>
+  </div>
+
+  <!-- Stats Summary -->
+  <div class="stats-cards" *ngIf="orderCount > 0">
+    <div class="stat-card">
+      <i class="fas fa-shopping-bag"></i>
+      <div class="stat-content">
+        <span class="stat-value">{{ orderCount }}</span>
+        <span class="stat-label">Bestellungen</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <i class="fas fa-euro-sign"></i>
+      <div class="stat-content">
+        <span class="stat-value">{{ totalSpent | currency: 'EUR' }}</span>
+        <span class="stat-label">Gesamt ausgegeben</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <i class="fas fa-chart-line"></i>
+      <div class="stat-content">
+        <span class="stat-value">{{ averageOrderValue | currency: 'EUR' }}</span>
+        <span class="stat-label">Durchschnittswert</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-section">
+

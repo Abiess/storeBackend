@@ -2,7 +2,6 @@ package storebackend.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -15,7 +14,6 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class SeoAsset {
 
     @Id
@@ -36,8 +34,12 @@ public class SeoAsset {
     private Long sizeBytes;
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    @Builder.Default
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+    }
 
     public enum AssetType {
         OG_IMAGE,
@@ -45,4 +47,3 @@ public class SeoAsset {
         APPLE_TOUCH_ICON
     }
 }
-

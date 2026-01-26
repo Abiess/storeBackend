@@ -48,5 +48,41 @@ public class CartItem {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-}
 
+    // Explizite Getter für Lombok-Kompatibilität
+    public Long getId() {
+        return id;
+    }
+
+    public Cart getCart() {
+        return cart;
+    }
+
+    public void setCart(Cart cart) {
+        this.cart = cart;
+    }
+
+    public ProductVariant getVariant() {
+        return variant;
+    }
+
+    public void setVariant(ProductVariant variant) {
+        this.variant = variant;
+    }
+
+    public Integer getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
+
+    public BigDecimal getPriceSnapshot() {
+        return priceSnapshot;
+    }
+
+    public void setPriceSnapshot(BigDecimal priceSnapshot) {
+        this.priceSnapshot = priceSnapshot;
+    }
+}

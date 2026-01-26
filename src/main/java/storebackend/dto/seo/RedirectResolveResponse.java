@@ -14,4 +14,3 @@ public class RedirectResolveResponse {
     private Integer httpCode;
     private boolean found;
 }
-

@@ -15,4 +15,33 @@ public class MinioProperties {
     private String bucket;
     private String region = "us-east-1";
     private boolean secure = false;
+
+    // Explizite Getter für Lombok-Kompatibilität
+    public String getEndpoint() {
+        return endpoint;
+    }
+
+    public String getPublicEndpoint() {
+        return publicEndpoint;
+    }
+
+    public String getAccessKey() {
+        return accessKey;
+    }
+
+    public String getSecretKey() {
+        return secretKey;
+    }
+
+    public String getBucket() {
+        return bucket;
+    }
+
+    public String getRegion() {
+        return region;
+    }
+
+    public boolean isSecure() {
+        return secure;
+    }
 }

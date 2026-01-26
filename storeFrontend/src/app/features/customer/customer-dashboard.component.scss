@@ -1,0 +1,366 @@
+
+  .spending-content {
+    flex: 1;
+
+    h3 {
+      margin: 0 0 0.5rem 0;
+      font-size: 1.2rem;
+      opacity: 0.9;
+    }
+
+    .spending-amount {
+      margin: 0 0 0.25rem 0;
+      font-size: 2.5rem;
+      font-weight: 700;
+    }
+
+    .spending-detail {
+      margin: 0;
+      opacity: 0.8;
+      font-size: 0.95rem;
+    }
+  }
+}
+
+.quick-actions {
+  margin-top: 3rem;
+
+  h2 {
+    margin: 0 0 1.5rem 0;
+    font-size: 1.5rem;
+    color: #333;
+  }
+}
+
+.actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.action-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  background: white;
+  border: 2px solid #eee;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 1rem;
+  color: #666;
+
+  i {
+    font-size: 2rem;
+    color: #667eea;
+  }
+
+  &:hover {
+    border-color: #667eea;
+    background: #f8f9ff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+
+    i {
+      transform: scale(1.1);
+    }
+  }
+
+  span {
+    font-weight: 500;
+  }
+}
+
+.loading-state {
+  text-align: center;
+  padding: 4rem 2rem;
+
+  .spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+  }
+
+  p {
+    color: #666;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+  .welcome-section h1 {
+    font-size: 1.8rem;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-card {
+    padding: 1.5rem;
+
+    .stat-icon {
+      width: 50px;
+      height: 50px;
+      font-size: 1.5rem;
+    }
+
+    .stat-content h3 {
+      font-size: 1.5rem;
+    }
+  }
+
+  .spending-card {
+    flex-direction: column;
+    text-align: center;
+
+    .spending-content .spending-amount {
+      font-size: 2rem;
+    }
+  }
+
+  .actions-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+.customer-dashboard-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.welcome-section {
+  margin-bottom: 3rem;
+  text-align: center;
+
+  h1 {
+    margin: 0 0 0.5rem 0;
+    font-size: 2.5rem;
+    color: #333;
+    font-weight: 700;
+  }
+
+  p {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #666;
+  }
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 2rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: transform 0.3s, box-shadow 0.3s;
+  position: relative;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  }
+
+  .stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+
+    &.orders {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    &.wishlist {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+    }
+
+    &.saved-carts {
+      background: linear-gradient(135deg, #ffc837 0%, #ff8008 100%);
+      color: white;
+    }
+
+    &.addresses {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      color: white;
+    }
+  }
+
+  .stat-content {
+    flex: 1;
+
+    h3 {
+      margin: 0 0 0.25rem 0;
+      font-size: 2rem;
+      font-weight: 700;
+      color: #333;
+    }
+
+    p {
+      margin: 0;
+      color: #666;
+      font-size: 1rem;
+    }
+  }
+
+  .arrow {
+    color: #ccc;
+    font-size: 1.2rem;
+  }
+}
+
+.spending-card {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding: 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  margin-bottom: 2rem;
+  color: white;
+
+  .spending-icon {
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+  }
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Router, RouterModule } from '@angular/router';
+import { AuthService } from '@app/core/services/auth.service';
+import { SubdomainService } from '@app/core/services/subdomain.service';
+import { OrderHistoryService } from '@app/core/services/order-history.service';
+import { WishlistService } from '@app/core/services/wishlist.service';
+import { SavedCartService } from '@app/core/services/saved-cart.service';
+import { AddressBookService } from '@app/core/services/address-book.service';
+
+@Component({
+  selector: 'app-customer-dashboard',
+  standalone: true,
+  imports: [CommonModule, RouterModule],
+  templateUrl: './customer-dashboard.component.html',
+  styleUrls: ['./customer-dashboard.component.scss']
+})
+export class CustomerDashboardComponent implements OnInit {
+  loading = false;
+  storeId: number | null = null;
+  customerId: number | null = null;
+  customerName: string = '';
+
+  // Stats
+  orderCount = 0;
+  totalSpent = 0;
+  wishlistCount = 0;
+  savedCartsCount = 0;
+  addressCount = 0;
+
+  constructor(
+    private authService: AuthService,
+    private subdomainService: SubdomainService,
+    private orderHistoryService: OrderHistoryService,
+    private wishlistService: WishlistService,
+    private savedCartService: SavedCartService,
+    private addressBookService: AddressBookService,
+    private router: Router
+  ) {}
+
+  ngOnInit(): void {
+    this.loadUserData();
+  }
+
+  private loadUserData(): void {
+    this.authService.currentUser$.subscribe(user => {
+      if (user) {
+        this.customerId = user.id;
+        this.customerName = user.name || user.email;
+        this.loadStats();
+      }
+    });
+
+    this.subdomainService.resolveStore().subscribe(info => {
+      if (info.storeId) {
+        this.storeId = info.storeId;
+        this.loadStats();
+      }
+    });
+  }
+
+  private loadStats(): void {
+    if (!this.storeId || !this.customerId) return;
+
+    this.loading = true;
+
+    // Load order stats
+    this.orderHistoryService.getCustomerStats(this.storeId, this.customerId).subscribe({
+      next: (stats) => {
+        this.orderCount = stats.totalOrders;
+        this.totalSpent = stats.totalSpent;
+      },
+      error: (error) => console.error('Fehler beim Laden der Bestellstatistiken:', error)
+    });
+
+    // Load wishlist count
+    this.wishlistService.getWishlistItemCount(this.storeId).subscribe({
+      next: (count) => {
+        this.wishlistCount = count;
+      },
+      error: (error) => console.error('Fehler beim Laden der Wishlist-Count:', error)
+    });
+
+    // Load saved carts count
+    this.savedCartService.getSavedCarts(this.storeId).subscribe({
+      next: (carts) => {
+        this.savedCartsCount = carts.length;
+      },
+      error: (error) => console.error('Fehler beim Laden der Saved Carts:', error)
+    });
+
+    // Load address count
+    this.addressBookService.getAddresses(this.customerId).subscribe({
+      next: (addresses) => {
+        this.addressCount = addresses.length;
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Fehler beim Laden der Adressen:', error);
+        this.loading = false;
+      }
+    });
+  }
+
+  navigateTo(route: string): void {
+    this.router.navigate([route]);
+  }
+}
+

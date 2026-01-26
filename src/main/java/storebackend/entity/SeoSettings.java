@@ -45,19 +45,21 @@ public class SeoSettings {
     private String robotsTxt;
 
     @Column(name = "sitemap_enabled", nullable = false)
-    @Builder.Default
     private Boolean sitemapEnabled = true;
 
+    @Column(name = "robots_index", nullable = false)
+    private Boolean robotsIndex = true;
+
     @Column(name = "updated_at", nullable = false)
-    @Builder.Default
-    private LocalDateTime updatedAt = LocalDateTime.now();
-    private boolean robotsIndex;
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        updatedAt = LocalDateTime.now();
+    }
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
     }
-
-
 }
-

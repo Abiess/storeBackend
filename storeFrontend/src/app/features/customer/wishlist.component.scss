@@ -1,0 +1,492 @@
+    background: #fff9e6;
+    border-left: 3px solid #ffc107;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    color: #666;
+
+    i {
+      color: #ffc107;
+      margin-right: 0.5rem;
+    }
+  }
+
+  .item-date {
+    margin: 0.5rem 0 0 0;
+    color: #999;
+    font-size: 0.85rem;
+
+    i {
+      margin-right: 0.5rem;
+    }
+  }
+}
+
+.item-price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+
+  .price {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #333;
+  }
+
+  .stock-status {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+
+    i {
+      &.fa-check-circle {
+        color: #4caf50;
+      }
+
+      &.fa-times-circle {
+        color: #f44336;
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    align-items: flex-start;
+  }
+}
+
+.item-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: stretch;
+
+  @media (max-width: 768px) {
+    flex-direction: row;
+    justify-content: flex-start;
+  }
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  white-space: nowrap;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  i {
+    margin-right: 0.5rem;
+  }
+}
+
+.btn-primary {
+  background: #e91e63;
+  color: white;
+
+  &:hover:not(:disabled) {
+    background: #c2185b;
+  }
+}
+
+.btn-icon {
+  padding: 0.75rem;
+  background: transparent;
+  border: 1px solid #ddd;
+  color: #666;
+
+  i {
+    margin: 0;
+  }
+
+  &:hover {
+    background: #f8f9fa;
+    border-color: #999;
+    color: #333;
+  }
+
+  &.btn-danger {
+    border-color: #f44336;
+    color: #f44336;
+
+    &:hover {
+      background: #f44336;
+      color: white;
+    }
+  }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  i {
+    font-size: 4rem;
+    color: #e91e63;
+    margin-bottom: 1rem;
+  }
+
+  h3 {
+    margin: 0 0 1rem 0;
+    color: #333;
+  }
+
+  p {
+    color: #666;
+    margin-bottom: 1.5rem;
+  }
+}
+
+.loading-state {
+  text-align: center;
+  padding: 4rem 2rem;
+
+  .spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #e91e63;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+  }
+
+  p {
+    color: #666;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.wishlist-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1.8rem;
+    color: #333;
+
+    i {
+      color: #e91e63;
+      margin-right: 0.5rem;
+    }
+  }
+}
+
+.wishlist-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid #eee;
+  overflow-x: auto;
+}
+
+.tab-button {
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #666;
+  transition: all 0.3s;
+  white-space: nowrap;
+
+  &:hover {
+    color: #333;
+    background: #f8f9fa;
+  }
+
+  &.active {
+    color: #e91e63;
+    border-bottom-color: #e91e63;
+  }
+
+  .item-count {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.125rem 0.5rem;
+    background: #f0f0f0;
+    border-radius: 12px;
+    font-size: 0.85rem;
+  }
+}
+
+.wishlist-items {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.wishlist-item {
+  display: grid;
+  grid-template-columns: 120px 1fr auto auto;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s, box-shadow 0.3s;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.item-image {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s;
+  }
+
+  &:hover img {
+    transform: scale(1.1);
+  }
+
+  @media (max-width: 768px) {
+    width: 100%;
+    height: 200px;
+  }
+}
+
+.priority-badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+
+  &.priority-high {
+    background: #ff5252;
+    color: white;
+  }
+
+  &.priority-medium {
+    background: #ffa726;
+    color: white;
+  }
+
+  &.priority-low {
+    background: #42a5f5;
+    color: white;
+  }
+}
+
+.item-details {
+  flex: 1;
+
+  .item-title {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.2rem;
+    color: #333;
+    cursor: pointer;
+    transition: color 0.3s;
+
+    &:hover {
+      color: #e91e63;
+    }
+  }
+
+  .item-variant {
+    margin: 0.25rem 0;
+    color: #777;
+    font-size: 0.95rem;
+  }
+
+  .item-note {
+    margin: 0.5rem 0;
+    padding: 0.5rem;
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+import { WishlistService } from '@app/core/services/wishlist.service';
+import { CartService } from '@app/core/services/cart.service';
+import { Wishlist, WishlistItem, Product } from '@app/core/models';
+import { SubdomainService } from '@app/core/services/subdomain.service';
+
+@Component({
+  selector: 'app-wishlist',
+  standalone: true,
+  imports: [CommonModule],
+  templateUrl: './wishlist.component.html',
+  styleUrls: ['./wishlist.component.scss']
+})
+export class WishlistComponent implements OnInit {
+  wishlists: Wishlist[] = [];
+  currentWishlist: Wishlist | null = null;
+  loading = false;
+  storeId: number | null = null;
+
+  constructor(
+    private wishlistService: WishlistService,
+    private cartService: CartService,
+    private subdomainService: SubdomainService,
+    private router: Router
+  ) {}
+
+  ngOnInit(): void {
+    this.subdomainService.resolveStore().subscribe(info => {
+      if (info.storeId) {
+        this.storeId = info.storeId;
+        this.loadWishlists();
+      }
+    });
+  }
+
+  loadWishlists(): void {
+    if (!this.storeId) return;
+
+    this.loading = true;
+    this.wishlistService.getWishlists(this.storeId).subscribe({
+      next: (wishlists) => {
+        this.wishlists = wishlists;
+        if (wishlists.length > 0) {
+          this.currentWishlist = wishlists.find(w => w.isDefault) || wishlists[0];
+          this.loadWishlistDetails();
+        }
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Fehler beim Laden der Wishlists:', error);
+        this.loading = false;
+      }
+    });
+  }
+
+  loadWishlistDetails(): void {
+    if (!this.storeId || !this.currentWishlist) return;
+
+    this.wishlistService.getWishlist(this.storeId, this.currentWishlist.id).subscribe({
+      next: (wishlist) => {
+        this.currentWishlist = wishlist;
+      },
+      error: (error) => {
+        console.error('Fehler beim Laden der Wishlist-Details:', error);
+      }
+    });
+  }
+
+  selectWishlist(wishlist: Wishlist): void {
+    this.currentWishlist = wishlist;
+    this.loadWishlistDetails();
+  }
+
+  removeFromWishlist(item: WishlistItem): void {
+    if (!this.storeId || !this.currentWishlist) return;
+
+    this.wishlistService.removeFromWishlist(this.storeId, this.currentWishlist.id, item.id).subscribe({
+      next: () => {
+        this.loadWishlistDetails();
+      },
+      error: (error) => {
+        console.error('Fehler beim Entfernen aus der Wishlist:', error);
+      }
+    });
+  }
+
+  addToCart(item: WishlistItem): void {
+    if (!this.storeId || !item.product) return;
+
+    this.cartService.addItem({
+      storeId: this.storeId,
+      productId: item.productId,
+      variantId: item.variantId,
+      quantity: 1
+    }).subscribe({
+      next: () => {
+        console.log('✅ Produkt zum Warenkorb hinzugefügt');
+      },
+      error: (error) => {
+        console.error('❌ Fehler beim Hinzufügen zum Warenkorb:', error);
+      }
+    });
+  }
+
+  addAllToCart(): void {
+    if (!this.storeId || !this.currentWishlist) return;
+
+    this.wishlistService.moveWishlistToCart(this.storeId, this.currentWishlist.id).subscribe({
+      next: () => {
+        console.log('✅ Alle Produkte zum Warenkorb hinzugefügt');
+        this.loadWishlistDetails();
+      },
+      error: (error) => {
+        console.error('❌ Fehler beim Hinzufügen zum Warenkorb:', error);
+      }
+    });
+  }
+
+  viewProduct(item: WishlistItem): void {
+    if (item.product) {
+      this.router.navigate(['/products', item.productId]);
+    }
+  }
+
+  getPriorityIcon(priority?: string): string {
+    switch (priority) {
+      case 'HIGH': return 'fas fa-exclamation-circle';
+      case 'MEDIUM': return 'fas fa-minus-circle';
+      case 'LOW': return 'fas fa-circle';
+      default: return 'fas fa-circle';
+    }
+  }
+
+  getPriorityClass(priority?: string): string {
+    switch (priority) {
+      case 'HIGH': return 'priority-high';
+      case 'MEDIUM': return 'priority-medium';
+      case 'LOW': return 'priority-low';
+      default: return 'priority-none';
+    }
+  }
+
+  getProductImage(item: WishlistItem): string {
+    return item.product?.primaryImageUrl || item.product?.imageUrl || 'assets/images/placeholder.png';
+  }
+
+  getProductPrice(item: WishlistItem): number {
+    if (item.variant) {
+      return item.variant.price;
+    }
+    return item.product?.basePrice || item.product?.price || 0;
+  }
+}
+

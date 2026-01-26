@@ -272,6 +272,33 @@ export const routes: Routes = [
     loadComponent: () => import('./features/storefront/order-confirmation.component').then(m => m.OrderConfirmationComponent)
   },
 
+  // ==================== Customer Account Routes ====================
+  {
+    path: 'customer',
+    loadComponent: () => import('./features/customer/customer-dashboard.component').then(m => m.CustomerDashboardComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'customer/orders',
+    loadComponent: () => import('./features/customer/order-history.component').then(m => m.OrderHistoryComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'customer/wishlist',
+    loadComponent: () => import('./features/customer/wishlist.component').then(m => m.WishlistComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'customer/saved-carts',
+    loadComponent: () => import('./features/customer/saved-carts.component').then(m => m.SavedCartsComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'customer/addresses',
+    loadComponent: () => import('./features/customer/address-book.component').then(m => m.AddressBookComponent),
+    canActivate: [authGuard]
+  },
+
   // ==================== Demo Routes ====================
   {
     path: 'coupon-demo',

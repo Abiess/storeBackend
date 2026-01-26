@@ -45,4 +45,45 @@ public class Domain {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
     }
+
+    // Explizite Getter für Lombok-Kompatibilität
+    public Store getStore() {
+        return store;
+    }
+
+    public void setStore(Store store) {
+        this.store = store;
+    }
+
+    public String getHost() {
+        return host;
+    }
+
+    public void setHost(String host) {
+        this.host = host;
+    }
+
+    public DomainType getType() {
+        return type;
+    }
+
+    public void setType(DomainType type) {
+        this.type = type;
+    }
+
+    public Boolean getIsPrimary() {
+        return isPrimary;
+    }
+
+    public void setIsPrimary(Boolean isPrimary) {
+        this.isPrimary = isPrimary;
+    }
+
+    public Boolean getIsVerified() {
+        return isVerified;
+    }
+
+    public void setIsVerified(Boolean isVerified) {
+        this.isVerified = isVerified;
+    }
 }

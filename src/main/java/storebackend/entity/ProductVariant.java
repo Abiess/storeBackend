@@ -32,4 +32,25 @@ public class ProductVariant {
 
     @Column(columnDefinition = "TEXT")
     private String attributesJson;
+
+    // Explizite Getter/Setter für Lombok-Kompatibilität
+    public Long getId() {
+        return id;
+    }
+
+    public BigDecimal getPrice() {
+        return price;
+    }
+
+    public void setPrice(BigDecimal price) {
+        this.price = price;
+    }
+
+    public Integer getStockQuantity() {
+        return stockQuantity;
+    }
+
+    public void setStockQuantity(Integer stockQuantity) {
+        this.stockQuantity = stockQuantity;
+    }
 }

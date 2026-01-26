@@ -51,4 +51,41 @@ public class Store {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
+    // Explizite Getter für Lombok-Kompatibilität
+    public Long getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getSlug() {
+        return slug;
+    }
+
+    public void setSlug(String slug) {
+        this.slug = slug;
+    }
+
+    public User getOwner() {
+        return owner;
+    }
+
+    public void setOwner(User owner) {
+        this.owner = owner;
+    }
+
+    public StoreStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(StoreStatus status) {
+        this.status = status;
+    }
 }
