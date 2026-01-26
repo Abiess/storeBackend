@@ -175,6 +175,7 @@ export interface Product {
   variants?: ProductVariant[];
   media?: ProductMedia[];
   imageUrl?: string;
+  primaryImageUrl?: string; // Haupt-Bild URL
   createdAt: string;
   updatedAt: string;
 }
@@ -475,6 +476,9 @@ export interface ProductMedia {
   mediaId: number;
   media?: Media;
   sortOrder: number;
+  isPrimary?: boolean; // Ist dies das Hauptbild?
+  url?: string; // URL zum Bild
+  filename?: string; // Dateiname
 }
 
 // ============================================

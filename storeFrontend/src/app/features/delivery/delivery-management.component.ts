@@ -140,15 +140,15 @@ import { DeliveryZoneDialogComponent } from './dialogs/delivery-zone-dialog.comp
                 </span>
               </div>
               <div class="zone-details">
-                <p><strong>Länder:</strong> {{ zone.countries?.join(', ') || 'Keine Länder definiert' }}</p>
-                <p><strong>Versandkosten:</strong> {{ zone.shippingCost ?? 0 }} EUR</p>
+                <p><strong>Länder:</strong> {{ zone.countries.join(', ') || 'Keine Länder definiert' }}</p>
+                <p><strong>Versandkosten:</strong> {{ zone.shippingCost || 0 }} EUR</p>
                 <p *ngIf="zone.freeShippingThreshold != null && zone.freeShippingThreshold > 0">
                   <strong>Kostenloser Versand ab:</strong> {{ zone.freeShippingThreshold }} EUR
                 </p>
                 <p *ngIf="zone.estimatedMinDays != null && zone.estimatedMaxDays != null">
                   <strong>Lieferzeit:</strong> {{ zone.estimatedMinDays }}-{{ zone.estimatedMaxDays }} Tage
                 </p>
-                <p><strong>Priorität:</strong> {{ zone.priority ?? 0 }}</p>
+                <p><strong>Priorität:</strong> {{ zone.priority || 0 }}</p>
               </div>
               <div class="zone-actions">
                 <button class="btn btn-sm btn-secondary" (click)="toggleZone(zone)">

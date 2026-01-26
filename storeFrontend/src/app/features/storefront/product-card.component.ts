@@ -273,7 +273,7 @@ export class ProductCardComponent {
   }
 
   hasMultipleImages(): boolean {
-    return this.product.media && this.product.media.length > 1;
+    return !!(this.product.media && this.product.media.length > 1);
   }
 
   getImageCount(): number {

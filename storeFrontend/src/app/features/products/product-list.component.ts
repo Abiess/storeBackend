@@ -437,7 +437,7 @@ export class ProductListComponent implements OnInit {
   }
 
   hasMultipleImages(product: Product): boolean {
-    return product.media && product.media.length > 1;
+    return !!(product.media && product.media.length > 1);
   }
 
   getImageCount(product: Product): number {
