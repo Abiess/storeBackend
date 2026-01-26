@@ -58,9 +58,9 @@ public class RedirectService {
         entity.setSourcePath(dto.getSourcePath());
         entity.setTargetUrl(dto.getTargetUrl());
         entity.setHttpCode(dto.getHttpCode());
-        entity.setRegex(dto.getIsRegex());
+        entity.setIsRegex(dto.getIsRegex());
         entity.setPriority(dto.getPriority());
-        entity.setActive(dto.getIsActive());
+        entity.setIsActive(dto.getIsActive());
         entity.setComment(dto.getComment());
         entity.setTag(dto.getTag());
 
@@ -79,9 +79,9 @@ public class RedirectService {
         entity.setSourcePath(dto.getSourcePath());
         entity.setTargetUrl(dto.getTargetUrl());
         entity.setHttpCode(dto.getHttpCode());
-        entity.setRegex(dto.getIsRegex());
+        entity.setIsRegex(dto.getIsRegex());
         entity.setPriority(dto.getPriority());
-        entity.setActive(dto.getIsActive());
+        entity.setIsActive(dto.getIsActive());
         entity.setComment(dto.getComment());
         entity.setTag(dto.getTag());
 
@@ -136,9 +136,9 @@ public class RedirectService {
         dto.setSourcePath(entity.getSourcePath());
         dto.setTargetUrl(entity.getTargetUrl());
         dto.setHttpCode(entity.getHttpCode());
-        dto.setIsRegex(entity.getRegex());
+        dto.setIsRegex(entity.getIsRegex());
         dto.setPriority(entity.getPriority());
-        dto.setIsActive(entity.getActive());
+        dto.setIsActive(entity.getIsActive());
         dto.setComment(entity.getComment());
         dto.setTag(entity.getTag());
         dto.setCreatedAt(entity.getCreatedAt());

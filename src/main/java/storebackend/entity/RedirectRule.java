@@ -43,16 +43,20 @@ public class RedirectRule {
     private String targetUrl; // absolute or relative
 
     @Column(name = "http_code", nullable = false)
+    @Builder.Default
     private Integer httpCode = 301; // 301 or 302
 
     @Column(name = "is_regex", nullable = false)
-    private Boolean regex = false;
+    @Builder.Default
+    private Boolean isRegex = false;
 
     @Column(name = "priority", nullable = false)
+    @Builder.Default
     private Integer priority = 100; // Lower = higher priority (evaluated first)
 
     @Column(name = "is_active", nullable = false)
-    private Boolean active = true;
+    @Builder.Default
+    private Boolean isActive = true;
 
     @Column(name = "comment", length = 500)
     private String comment;
@@ -78,20 +82,29 @@ public class RedirectRule {
     }
 
     // Explizite Getter für Boolean-Felder (Lombok-Kompatibilität)
-    public Boolean getRegex() {
-        return regex;
+    public Boolean getIsRegex() {
+        return isRegex;
     }
 
-    public void setRegex(Boolean regex) {
-        this.regex = regex;
+    public void setIsRegex(Boolean isRegex) {
+        this.isRegex = isRegex;
+    }
+
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
+
+    // Kompatibilitäts-Getter ohne "Is" Präfix
+    public Boolean getRegex() {
+        return isRegex;
     }
 
     public Boolean getActive() {
-        return active;
-    }
-
-    public void setActive(Boolean active) {
-        this.active = active;
+        return isActive;
     }
 
     // Weitere explizite Getter/Setter
