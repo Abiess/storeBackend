@@ -232,4 +232,70 @@ public class ProductController {
         log.info("Setting product {} as featured={} with order={}", productId, featured, order);
         return ResponseEntity.ok(productService.setFeatured(productId, store, featured, order));
     }
+
+    @Operation(summary = "Get featured products", description = "Returns all featured products for a store (public access)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved featured products")
+    })
+    @GetMapping("/featured")
+    public ResponseEntity<List<ProductDTO>> getFeaturedProducts(
+            @Parameter(description = "Store ID") @PathVariable Long storeId) {
+
+        log.info("Getting featured products for store {}", storeId);
+        List<ProductDTO> products = productService.getFeaturedProducts(storeId);
+        return ResponseEntity.ok(products);
+    }
+
+    @Operation(summary = "Get top products", description = "Returns top selling products (public access)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved top products")
+    })
+    @GetMapping("/top")
+    public ResponseEntity<List<ProductDTO>> getTopProducts(
+            @Parameter(description = "Store ID") @PathVariable Long storeId,
+            @Parameter(description = "Limit (default: 10)") @RequestParam(defaultValue = "10") int limit) {
+
+        log.info("Getting top {} products for store {}", limit, storeId);
+        List<ProductDTO> products = productService.getTopProducts(storeId, limit);
+        return ResponseEntity.ok(products);
+    }
+
+    @Operation(summary = "Get trending products", description = "Returns most viewed products (public access)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved trending products")
+    })
+    @GetMapping("/trending")
+    public ResponseEntity<List<ProductDTO>> getTrendingProducts(
+            @Parameter(description = "Store ID") @PathVariable Long storeId,
+            @Parameter(description = "Limit (default: 10)") @RequestParam(defaultValue = "10") int limit) {
+
+        log.info("Getting trending {} products for store {}", limit, storeId);
+        List<ProductDTO> products = productService.getTrendingProducts(storeId, limit);
+        return ResponseEntity.ok(products);
+    }
+
+    @Operation(summary = "Get new arrivals", description = "Returns newest products (public access)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved new arrivals")
+    })
+    @GetMapping("/new")
+    public ResponseEntity<List<ProductDTO>> getNewArrivals(
+            @Parameter(description = "Store ID") @PathVariable Long storeId,
+            @Parameter(description = "Limit (default: 10)") @RequestParam(defaultValue = "10") int limit) {
+
+        log.info("Getting {} new arrivals for store {}", limit, storeId);
+        List<ProductDTO> products = productService.getNewArrivals(storeId, limit);
+        return ResponseEntity.ok(products);
+    }
+
+    @Operation(summary = "Increment product view count", description = "Tracks product views (public access)")
+    @PostMapping("/{productId}/view")
+    public ResponseEntity<Void> incrementViewCount(
+            @Parameter(description = "Store ID") @PathVariable Long storeId,
+            @Parameter(description = "Product ID") @PathVariable Long productId) {
+
+        log.info("Incrementing view count for product {} in store {}", productId, storeId);
+        productService.incrementViewCount(productId);
+        return ResponseEntity.ok().build();
+    }
 }

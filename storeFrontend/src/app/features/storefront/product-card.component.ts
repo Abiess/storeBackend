@@ -2,12 +2,11 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Product, ProductStatus } from '@app/core/models';
-import { ProductImageGalleryComponent } from '@app/shared/components/product-image-gallery.component';
 
 @Component({
   selector: 'app-product-card',
   standalone: true,
-  imports: [CommonModule, RouterModule, ProductImageGalleryComponent],
+  imports: [CommonModule, RouterModule],
   template: `
     <div class="product-card">
       <!-- Professionelle Bildgalerie -->

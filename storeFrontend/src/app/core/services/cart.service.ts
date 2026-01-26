@@ -30,6 +30,7 @@ export interface Cart {
 export interface AddToCartRequest {
   storeId: number;
   productId: number;
+  variantId?: number;
   quantity: number;
 }
 

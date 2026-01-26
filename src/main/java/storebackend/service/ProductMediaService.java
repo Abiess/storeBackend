@@ -3,19 +3,51 @@ package storebackend.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import storebackend.dto.ProductMediaDTO;
 import storebackend.entity.ProductMedia;
 import storebackend.repository.ProductMediaRepository;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class ProductMediaService {
     private final ProductMediaRepository productMediaRepository;
+    private final MinioService minioService;
 
     @Transactional(readOnly = true)
     public List<ProductMedia> getMediaByProduct(Long productId) {
         return productMediaRepository.findByProductIdOrderBySortOrderAsc(productId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductMediaDTO> getMediaDTOsByProduct(Long productId) {
+        List<ProductMedia> productMediaList = productMediaRepository.findByProductIdOrderBySortOrderAsc(productId);
+
+        return productMediaList.stream()
+                .map(pm -> {
+                    ProductMediaDTO dto = new ProductMediaDTO();
+                    dto.setId(pm.getId());
+                    dto.setProductId(pm.getProduct().getId());
+                    dto.setMediaId(pm.getMedia().getId());
+                    dto.setFilename(pm.getMedia().getFilename());
+                    dto.setContentType(pm.getMedia().getContentType());
+                    dto.setSizeBytes(pm.getMedia().getSizeBytes());
+                    dto.setSortOrder(pm.getSortOrder());
+                    dto.setIsPrimary(pm.getIsPrimary());
+
+                    // Generate presigned URL
+                    try {
+                        String url = minioService.getPresignedUrl(pm.getMedia().getMinioObjectName(), 60);
+                        dto.setUrl(url);
+                    } catch (Exception e) {
+                        dto.setUrl("");
+                    }
+
+                    return dto;
+                })
+                .collect(Collectors.toList());
     }
 
     @Transactional
@@ -65,4 +97,3 @@ public class ProductMediaService {
         productMediaRepository.deleteById(id);
     }
 }
-

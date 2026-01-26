@@ -11,6 +11,7 @@ import { StorefrontHeaderComponent } from './storefront-header.component';
 import { StorefrontNavComponent } from './storefront-nav.component';
 import { ProductCardComponent } from './product-card.component';
 import { StoreNotFoundComponent } from './store-not-found.component';
+import { ProductQuickViewComponent } from '@app/shared/components/product-quick-view.component';
 
 /**
  * Dedizierte Storefront-Landing-Page für Subdomains (abc.markt.ma)
@@ -24,7 +25,8 @@ import { StoreNotFoundComponent } from './store-not-found.component';
     StorefrontHeaderComponent,
     StorefrontNavComponent,
     ProductCardComponent,
-    StoreNotFoundComponent
+    StoreNotFoundComponent,
+    ProductQuickViewComponent
   ],
   templateUrl: './storefront-landing.component.html',
   styleUrls: ['./storefront-landing.component.scss']
@@ -36,8 +38,19 @@ export class StorefrontLandingComponent implements OnInit {
   categories: Category[] = [];
   loading = true;
   cartItemCount = 0;
-  storeNotFound = false;  // NEUE: Flag für "Store nicht gefunden"
-  isReservedSlug = false;  // NEUE: Flag für reservierte Slugs
+  storeNotFound = false;
+  isReservedSlug = false;
+
+  // NEUE: Featured Products Features
+  featuredProducts: Product[] = [];
+  topProducts: Product[] = [];
+  trendingProducts: Product[] = [];
+  newArrivals: Product[] = [];
+  loadingFeatured = false;
+
+  // NEUE: Quick View State
+  quickViewProduct: Product | null = null;
+  isQuickViewOpen = false;
 
   constructor(
     private subdomainService: SubdomainService,
@@ -124,7 +137,13 @@ export class StorefrontLandingComponent implements OnInit {
     this.loading = true;
     console.log('📦 Lade Store-Daten für Store ID:', this.storeId);
 
-    Promise.all([this.loadProducts(), this.loadCategories()])
+    Promise.all([
+      this.loadProducts(),
+      this.loadCategories(),
+      this.loadFeaturedProducts(),
+      this.loadTopProducts(),
+      this.loadNewArrivals()
+    ])
       .then(() => {
         this.loading = false;
         console.log('✅ Alle Store-Daten geladen');
@@ -187,6 +206,89 @@ export class StorefrontLandingComponent implements OnInit {
           resolve();
         }
       });
+    });
+  }
+
+  // NEUE: Lade Featured Products
+  loadFeaturedProducts(): Promise<void> {
+    if (!this.storeId) {
+      return Promise.resolve();
+    }
+
+    return new Promise((resolve) => {
+      console.log('⭐ Lade Featured Products für Store', this.storeId);
+      this.productService.getFeaturedProducts(this.storeId!).subscribe({
+        next: (products) => {
+          console.log('✅ Featured Products geladen:', products.length);
+          this.featuredProducts = products;
+          resolve();
+        },
+        error: (error) => {
+          console.error('❌ Fehler beim Laden der Featured Products:', error);
+          this.featuredProducts = [];
+          resolve();
+        }
+      });
+    });
+  }
+
+  // NEUE: Lade Top Products (Bestseller)
+  loadTopProducts(): Promise<void> {
+    if (!this.storeId) {
+      return Promise.resolve();
+    }
+
+    return new Promise((resolve) => {
+      console.log('🔥 Lade Top Products für Store', this.storeId);
+      this.productService.getTopProducts(this.storeId!, 6).subscribe({
+        next: (products) => {
+          console.log('✅ Top Products geladen:', products.length);
+          this.topProducts = products;
+          resolve();
+        },
+        error: (error) => {
+          console.error('❌ Fehler beim Laden der Top Products:', error);
+          this.topProducts = [];
+          resolve();
+        }
+      });
+    });
+  }
+
+  // NEUE: Lade Neue Produkte
+  loadNewArrivals(): Promise<void> {
+    if (!this.storeId) {
+      return Promise.resolve();
+    }
+
+    return new Promise((resolve) => {
+      console.log('✨ Lade Neue Produkte für Store', this.storeId);
+      this.productService.getNewArrivals(this.storeId!, 6).subscribe({
+        next: (products) => {
+          console.log('✅ Neue Produkte geladen:', products.length);
+          this.newArrivals = products;
+          resolve();
+        },
+        error: (error) => {
+          console.error('❌ Fehler beim Laden der neuen Produkte:', error);
+          this.newArrivals = [];
+          resolve();
+        }
+      });
+    });
+  }
+
+  // NEUE: Track Product View
+  trackProductView(product: Product): void {
+    if (!this.storeId) return;
+
+    this.productService.trackProductView(this.storeId, product.id).subscribe({
+      next: () => {
+        console.log('👁️ Product view tracked:', product.title);
+      },
+      error: (error) => {
+        console.warn('⚠️ Could not track view:', error);
+      }
     });
   }
 
@@ -261,5 +363,56 @@ export class StorefrontLandingComponent implements OnInit {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     }
+  }
+
+  // NEUE: Quick View Handlers
+  openQuickView(product: Product): void {
+    console.log('📱 Quick View öffnen für:', product.title);
+    this.quickViewProduct = product;
+    this.isQuickViewOpen = true;
+
+    // Track product view
+    this.trackProductView(product);
+
+    // Disable body scroll when modal is open
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeQuickView(): void {
+    console.log('📱 Quick View schließen');
+    this.isQuickViewOpen = false;
+    this.quickViewProduct = null;
+
+    // Re-enable body scroll
+    document.body.style.overflow = '';
+  }
+
+  onQuickViewAddToCart(event: { product: Product; quantity: number; variant?: any }): void {
+    console.log('🛒 Add to cart from Quick View:', event);
+
+    if (!this.storeId) {
+      console.error('❌ Keine Store-ID vorhanden');
+      return;
+    }
+
+    this.cartService.addItem({
+      storeId: this.storeId,
+      productId: event.product.id,
+      variantId: event.variant?.id,
+      quantity: event.quantity
+    }).subscribe({
+      next: (response) => {
+        console.log('✅ Produkt erfolgreich hinzugefügt:', response);
+        this.loadCartCount();
+      },
+      error: (error) => {
+        console.error('❌ Fehler beim Hinzufügen zum Warenkorb:', error);
+      }
+    });
+  }
+
+  onQuickViewDetails(product: Product): void {
+    console.log('👁️ Navigate to product details:', product.id);
+    this.router.navigate(['/products', product.id]);
   }
 }

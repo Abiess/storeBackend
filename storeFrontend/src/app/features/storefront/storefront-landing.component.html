@@ -40,10 +40,75 @@
       </div>
     </section>
 
+    <!-- Featured Products Section -->
+    <section *ngIf="featuredProducts.length > 0" class="featured-section">
+      <div class="container">
+        <div class="section-header">
+          <h3 class="section-title">⭐ Unsere Highlights</h3>
+          <p class="section-subtitle">Speziell für dich ausgewählt</p>
+        </div>
+
+        <div class="products-grid featured-grid">
+          <app-product-card
+            *ngFor="let product of featuredProducts"
+            [product]="product"
+            (addToCart)="addToCart($event)"
+            (quickView)="openQuickView($event)"
+            (click)="trackProductView(product)">
+          </app-product-card>
+        </div>
+      </div>
+    </section>
+
+    <!-- Top Products (Bestseller) Section -->
+    <section *ngIf="topProducts.length > 0" class="top-products-section">
+      <div class="container">
+        <div class="section-header">
+          <h3 class="section-title">🔥 Bestseller</h3>
+          <p class="section-subtitle">Die meistverkauften Produkte</p>
+        </div>
+
+        <div class="products-grid">
+          <app-product-card
+            *ngFor="let product of topProducts"
+            [product]="product"
+            (addToCart)="addToCart($event)"
+            (quickView)="openQuickView($event)"
+            (click)="trackProductView(product)">
+          </app-product-card>
+        </div>
+
+        <!-- Sales Badge für Bestseller -->
+        <div class="bestseller-info" *ngIf="topProducts[0]?.salesCount">
+          <p>💰 Über {{ topProducts[0].salesCount }} mal verkauft!</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- New Arrivals Section -->
+    <section *ngIf="newArrivals.length > 0" class="new-arrivals-section">
+      <div class="container">
+        <div class="section-header">
+          <h3 class="section-title">✨ Neu eingetroffen</h3>
+          <p class="section-subtitle">Die neuesten Produkte in unserem Shop</p>
+        </div>
+
+        <div class="products-grid">
+          <app-product-card
+            *ngFor="let product of newArrivals"
+            [product]="product"
+            (addToCart)="addToCart($event)"
+            (quickView)="openQuickView($event)"
+            (click)="trackProductView(product)">
+          </app-product-card>
+        </div>
+      </div>
+    </section>
+
     <!-- Products Section -->
     <section id="products" class="products-section">
       <div class="container">
-        <h3 class="section-title">Unsere Produkte</h3>
+        <h3 class="section-title">Alle Produkte</h3>
 
         <!-- Keine Produkte vorhanden -->
         <div *ngIf="products.length === 0" class="empty-state">
@@ -57,7 +122,9 @@
           <app-product-card
             *ngFor="let product of products"
             [product]="product"
-            (addToCart)="addToCart(product)">
+            (addToCart)="addToCart($event)"
+            (quickView)="openQuickView($event)"
+            (click)="trackProductView(product)">
           </app-product-card>
         </div>
       </div>
@@ -89,6 +156,9 @@
             storeName: storeName,
             productsCount: products.length,
             categoriesCount: categories.length,
+            featuredCount: featuredProducts.length,
+            topProductsCount: topProducts.length,
+            newArrivalsCount: newArrivals.length,
             cartItemCount: cartItemCount
           } | json }}</pre>
         </details>
@@ -96,11 +166,20 @@
     </section>
 
   </main>
+
+  <!-- Quick View Modal -->
+  <app-product-quick-view
+    [product]="quickViewProduct"
+    [isOpen]="isQuickViewOpen"
+    (close)="closeQuickView()"
+    (addToCartEvent)="onQuickViewAddToCart($event)"
+    (viewDetailsEvent)="onQuickViewDetails($event)">
+  </app-product-quick-view>
 </div>
 
 <!-- Footer -->
 <footer class="storefront-footer">
   <div class="container">
-    <p>&copy; 2025 {{ storeName || 'Store' }} - Powered by Markt.ma</p>
+    <p>&copy; 2026 {{ storeName || 'Store' }} - Powered by Markt.ma</p>
   </div>
 </footer>

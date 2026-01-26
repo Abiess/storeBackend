@@ -10,6 +10,7 @@ import { StorefrontHeaderComponent } from './storefront-header.component';
 import { StorefrontNavComponent } from './storefront-nav.component';
 import { ProductCardComponent } from './product-card.component';
 import { ProductQuickViewComponent } from '@app/shared/components/product-quick-view.component';
+import { FeaturedProductsComponent } from '@app/shared/components/featured-products.component';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -21,7 +22,8 @@ import { Subscription } from 'rxjs';
     StorefrontHeaderComponent,
     StorefrontNavComponent,
     ProductCardComponent,
-    ProductQuickViewComponent
+    ProductQuickViewComponent,
+    FeaturedProductsComponent
   ],
   templateUrl: './storefront.component.html',
   styleUrls: ['./storefront.component.scss']

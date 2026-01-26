@@ -215,6 +215,8 @@ export interface CreateProductRequest {
   stock?: number;
   status?: ProductStatus;
   categoryId?: number;
+  isFeatured?: boolean;
+  featuredOrder?: number;
 }
 
 // ============================================

@@ -49,6 +49,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
               <th>{{ 'product.description' | translate }}</th>
               <th>{{ 'product.price' | translate }}</th>
               <th>{{ 'product.status' | translate }}</th>
+              <th style="width: 100px;">Featured</th>
               <th>{{ 'common.actions' | translate }}</th>
             </tr>
           </thead>
@@ -70,7 +71,10 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
                 </div>
               </td>
               <td>
-                <div class="product-name">{{ product.title }}</div>
+                <div class="product-name">
+                  {{ product.title }}
+                  <span *ngIf="product.isFeatured" class="featured-inline-badge" title="Featured Product">⭐</span>
+                </div>
               </td>
               <td>
                 <div class="product-category">
@@ -87,6 +91,28 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
                 <span class="status-badge" [ngClass]="'status-' + product.status.toLowerCase()">
                   {{ getStatusLabel(product.status) }}
                 </span>
+              </td>
+              <td>
+                <div class="featured-controls">
+                  <button 
+                    class="btn-featured" 
+                    [class.active]="product.isFeatured"
+                    (click)="toggleFeatured(product)"
+                    [title]="product.isFeatured ? 'Als Featured entfernen' : 'Als Featured markieren'"
+                  >
+                    {{ product.isFeatured ? '⭐' : '☆' }}
+                  </button>
+                  <input 
+                    *ngIf="product.isFeatured"
+                    type="number" 
+                    class="featured-order-input"
+                    [value]="product.featuredOrder || 0"
+                    (change)="updateFeaturedOrder(product, $event)"
+                    min="0"
+                    max="999"
+                    title="Sortierreihenfolge"
+                  />
+                </div>
               </td>
               <td>
                 <div class="actions">
@@ -324,6 +350,40 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       font-weight: 600;
     }
 
+    .featured-inline-badge {
+      font-size: 1rem;
+      color: #ffcc00;
+      margin-left: 0.5rem;
+    }
+
+    .featured-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-featured {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.5rem;
+      color: #ffcc00;
+      transition: transform 0.3s;
+    }
+
+    .btn-featured:hover {
+      transform: scale(1.1);
+    }
+
+    .featured-order-input {
+      width: 60px;
+      padding: 0.25rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 0.875rem;
+      text-align: center;
+    }
+
     @media (max-width: 768px) {
       .product-list-container {
         padding: 1rem;
@@ -403,6 +463,36 @@ export class ProductListComponent implements OnInit {
         }
       });
     }
+  }
+
+  toggleFeatured(product: Product): void {
+    const newStatus = !product.isFeatured;
+    this.productService.updateProduct(this.storeId, product.id, { isFeatured: newStatus }).subscribe({
+      next: () => {
+        product.isFeatured = newStatus;
+      },
+      error: (error) => {
+        console.error('خطأ في تحديث الحالة المميزة:', error);
+      }
+    });
+  }
+
+  updateFeaturedOrder(product: Product, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const newOrder = Number(input.value);
+
+    if (isNaN(newOrder) || newOrder < 0 || newOrder > 999) {
+      return;
+    }
+
+    this.productService.updateProduct(this.storeId, product.id, { featuredOrder: newOrder }).subscribe({
+      next: () => {
+        product.featuredOrder = newOrder;
+      },
+      error: (error) => {
+        console.error('خطأ في تحديث ترتيب المميز:', error);
+      }
+    });
   }
 
   getStatusLabel(status: string): string {

@@ -80,6 +80,71 @@
   background: #f9fafb;
 }
 
+/* ==================== Featured Products Section ==================== */
+.featured-section {
+  padding: 4rem 0;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.featured-section::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.featured-grid {
+  position: relative;
+  z-index: 1;
+}
+
+/* ==================== Top Products (Bestseller) Section ==================== */
+.top-products-section {
+  padding: 4rem 0;
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+}
+
+.bestseller-info {
+  text-align: center;
+  margin-top: 2rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.bestseller-info p {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #dc2626;
+}
+
+/* ==================== New Arrivals Section ==================== */
+.new-arrivals-section {
+  padding: 4rem 0;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+}
+
+/* ==================== Section Header ==================== */
+.section-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.section-subtitle {
+  font-size: 1.125rem;
+  color: rgba(0, 0, 0, 0.7);
+  margin: 0.5rem 0 0;
+  font-weight: 400;
+}
+
 .section-title {
   font-size: 2rem;
   margin: 0 0 2rem;

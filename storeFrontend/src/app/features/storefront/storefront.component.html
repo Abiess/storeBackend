@@ -13,6 +13,30 @@
   </app-storefront-nav>
 
   <main class="store-main">
+    <!-- Featured Products Sektion (vor den regulären Produkten) -->
+    <app-featured-products
+      *ngIf="!selectedCategory && !loading"
+      [storeId]="storeId"
+      type="featured"
+      [limit]="8">
+    </app-featured-products>
+
+    <!-- Bestseller Sektion -->
+    <app-featured-products
+      *ngIf="!selectedCategory && !loading"
+      [storeId]="storeId"
+      type="top"
+      [limit]="8">
+    </app-featured-products>
+
+    <!-- Neue Produkte Sektion -->
+    <app-featured-products
+      *ngIf="!selectedCategory && !loading"
+      [storeId]="storeId"
+      type="new"
+      [limit]="8">
+    </app-featured-products>
+
     <div class="container">
       <div *ngIf="loading" class="loading-state">
         <div class="spinner"></div>

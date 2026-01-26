@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import storebackend.dto.ProductMediaDTO;
 import storebackend.entity.*;
 import storebackend.repository.*;
 import storebackend.service.ProductMediaService;
@@ -26,7 +27,7 @@ public class ProductMediaController {
      * Dieser Endpoint ist für die Storefront gedacht und erfordert KEINE Authentifizierung
      */
     @GetMapping
-    public ResponseEntity<List<ProductMedia>> getProductMedia(
+    public ResponseEntity<List<ProductMediaDTO>> getProductMedia(
             @PathVariable Long storeId,
             @PathVariable Long productId,
             @AuthenticationPrincipal User user) {
@@ -43,8 +44,8 @@ public class ProductMediaController {
             return ResponseEntity.notFound().build();
         }
 
-        // Gib Medien zurück
-        return ResponseEntity.ok(productMediaService.getMediaByProduct(productId));
+        // Gib Medien als DTOs zurück (mit vollständigen URLs)
+        return ResponseEntity.ok(productMediaService.getMediaDTOsByProduct(productId));
     }
 
     @PostMapping
