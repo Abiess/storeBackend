@@ -21,23 +21,29 @@ public class ProductMediaController {
     private final StoreRepository storeRepository;
     private final UserRepository userRepository;
 
+    /**
+     * PUBLIC ENDPOINT - Holt Medien für ein Produkt (öffentlich zugänglich)
+     * Dieser Endpoint ist für die Storefront gedacht und erfordert KEINE Authentifizierung
+     */
     @GetMapping
     public ResponseEntity<List<ProductMedia>> getProductMedia(
             @PathVariable Long storeId,
             @PathVariable Long productId,
             @AuthenticationPrincipal User user) {
 
-        if (user == null) {
-            return ResponseEntity.status(401).build();
+        // Öffentlicher Zugriff erlaubt - kein Auth-Check!
+        // Prüfe nur, ob Store und Produkt existieren
+        Store store = storeRepository.findById(storeId).orElse(null);
+        if (store == null) {
+            return ResponseEntity.notFound().build();
         }
 
-        Store store = storeRepository.findById(storeId)
-                .orElseThrow(() -> new RuntimeException("Store not found"));
-
-        if (!store.getOwner().getId().equals(user.getId())) {
-            return ResponseEntity.status(403).build();
+        Product product = productRepository.findById(productId).orElse(null);
+        if (product == null || !product.getStore().getId().equals(storeId)) {
+            return ResponseEntity.notFound().build();
         }
 
+        // Gib Medien zurück
         return ResponseEntity.ok(productMediaService.getMediaByProduct(productId));
     }
 

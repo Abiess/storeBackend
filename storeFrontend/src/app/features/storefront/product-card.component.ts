@@ -9,9 +9,9 @@ import { ProductImageGalleryComponent } from '@app/shared/components/product-ima
   standalone: true,
   imports: [CommonModule, RouterModule, ProductImageGalleryComponent],
   template: `
-    <div class="product-card" [routerLink]="['/products', product.id]">
+    <div class="product-card">
       <!-- Professionelle Bildgalerie -->
-      <div class="product-image-section">
+      <div class="product-image-section" [routerLink]="['/products', product.id]">
         <img *ngIf="getProductImage()" 
              [src]="getProductImage()" 
              [alt]="product.title"
@@ -32,13 +32,15 @@ import { ProductImageGalleryComponent } from '@app/shared/components/product-ima
           Neu
         </span>
 
-        <!-- Quick View Button -->
-        <button class="quick-view-btn" (click)="onQuickView($event)">
+        <!-- Quick View Button - mit stopPropagation -->
+        <button class="quick-view-btn" 
+                (click)="onQuickView($event)"
+                type="button">
           👁️ Schnellansicht
         </button>
       </div>
 
-      <div class="product-info">
+      <div class="product-info" [routerLink]="['/products', product.id]">
         <h3 class="product-title">{{ product.title }}</h3>
         <p class="product-description">{{ product.description }}</p>
 
@@ -50,7 +52,8 @@ import { ProductImageGalleryComponent } from '@app/shared/components/product-ima
 
           <button class="btn btn-add-cart"
                   (click)="onAddToCart($event)"
-                  [disabled]="isAddingToCart">
+                  [disabled]="isAddingToCart"
+                  type="button">
             <span class="btn-icon">🛒</span>
             <span class="btn-text">
               {{ isAddingToCart ? 'Wird hinzugefügt...' : 'In den Warenkorb' }}
