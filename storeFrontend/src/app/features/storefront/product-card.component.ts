@@ -9,9 +9,24 @@ import { Product, ProductStatus } from '@app/core/models';
   template: `
     <div class="product-card">
       <div class="product-image">
-        <div class="image-placeholder">
+        <!-- Bild anzeigen wenn vorhanden -->
+        <img *ngIf="getProductImage()" 
+             [src]="getProductImage()" 
+             [alt]="product.title"
+             class="product-img"
+             (error)="onImageError($event)">
+        
+        <!-- Platzhalter wenn kein Bild -->
+        <div *ngIf="!getProductImage() || imageError" class="image-placeholder">
           <span class="placeholder-icon">📷</span>
         </div>
+
+        <!-- Badge für mehrere Bilder -->
+        <span *ngIf="hasMultipleImages()" class="image-count-badge">
+          <span class="badge-icon">🖼️</span>
+          {{ getImageCount() }}
+        </span>
+
         <span *ngIf="product.status === ProductStatus.PUBLISHED" class="product-badge badge-new">
           Neu
         </span>
@@ -67,6 +82,20 @@ import { Product, ProductStatus } from '@app/core/models';
       overflow: hidden;
     }
 
+    .product-img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s;
+    }
+
+    .product-card:hover .product-img {
+      transform: scale(1.05);
+    }
+
     .image-placeholder {
       position: absolute;
       top: 0;
@@ -93,11 +122,32 @@ import { Product, ProductStatus } from '@app/core/models';
       font-size: 0.75rem;
       font-weight: 600;
       text-transform: uppercase;
+      z-index: 2;
     }
 
     .badge-new {
       background: var(--theme-success, #28a745);
       color: white;
+    }
+
+    .image-count-badge {
+      position: absolute;
+      bottom: 0.75rem;
+      right: 0.75rem;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 0.25rem 0.5rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      z-index: 2;
+    }
+
+    .badge-icon {
+      font-size: 0.875rem;
     }
 
     .product-info {
@@ -198,5 +248,40 @@ export class ProductCardComponent {
   @Output() addToCart = new EventEmitter<Product>();
 
   readonly ProductStatus = ProductStatus;
-}
+  imageError = false;
 
+  getProductImage(): string | null {
+    // 1. Versuche primaryImageUrl
+    if (this.product.primaryImageUrl) {
+      return this.product.primaryImageUrl;
+    }
+
+    // 2. Versuche das erste Bild aus dem media-Array
+    if (this.product.media && this.product.media.length > 0) {
+      // Suche nach isPrimary = true
+      const primaryMedia = this.product.media.find((m: any) => m.isPrimary);
+      if (primaryMedia?.url) {
+        return primaryMedia.url;
+      }
+      // Sonst nimm das erste Bild
+      if (this.product.media[0]?.url) {
+        return this.product.media[0].url;
+      }
+    }
+
+    return null;
+  }
+
+  hasMultipleImages(): boolean {
+    return this.product.media && this.product.media.length > 1;
+  }
+
+  getImageCount(): number {
+    return this.product.media?.length || 0;
+  }
+
+  onImageError(event: Event): void {
+    this.imageError = true;
+    console.warn('Failed to load product image:', this.getProductImage());
+  }
+}

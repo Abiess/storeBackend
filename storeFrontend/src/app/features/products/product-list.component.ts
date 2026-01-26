@@ -43,6 +43,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
         <table>
           <thead>
             <tr>
+              <th style="width: 80px;">Bild</th>
               <th>{{ 'product.name' | translate }}</th>
               <th>{{ 'product.category' | translate }}</th>
               <th>{{ 'product.description' | translate }}</th>
@@ -53,6 +54,21 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
           </thead>
           <tbody>
             <tr *ngFor="let product of products">
+              <td>
+                <div class="product-image-cell">
+                  <img *ngIf="getProductImage(product)" 
+                       [src]="getProductImage(product)" 
+                       [alt]="product.title"
+                       class="product-thumbnail"
+                       (error)="onImageError($event)">
+                  <div *ngIf="!getProductImage(product)" class="product-thumbnail-placeholder">
+                    📷
+                  </div>
+                  <span *ngIf="hasMultipleImages(product)" class="thumbnail-badge">
+                    +{{ getImageCount(product) - 1 }}
+                  </span>
+                </div>
+              </td>
               <td>
                 <div class="product-name">{{ product.title }}</div>
               </td>
@@ -270,6 +286,44 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       background: #fff5f5;
     }
 
+    .product-image-cell {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      overflow: hidden;
+      border-radius: 8px;
+      background: #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .product-thumbnail {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+
+    .product-thumbnail-placeholder {
+      font-size: 1.5rem;
+      color: #ccc;
+      line-height: 80px;
+      text-align: center;
+    }
+
+    .thumbnail-badge {
+      position: absolute;
+      bottom: 4px;
+      right: 4px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 2px 6px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
     @media (max-width: 768px) {
       .product-list-container {
         padding: 1rem;
@@ -358,5 +412,40 @@ export class ProductListComponent implements OnInit {
       'ARCHIVED': 'مؤرشف'
     };
     return labels[status] || status;
+  }
+
+  getProductImage(product: Product): string | null {
+    // 1. Versuche primaryImageUrl
+    if (product.primaryImageUrl) {
+      return product.primaryImageUrl;
+    }
+
+    // 2. Versuche das erste Bild aus dem media-Array
+    if (product.media && product.media.length > 0) {
+      // Suche nach isPrimary = true
+      const primaryMedia = product.media.find((m: any) => m.isPrimary);
+      if (primaryMedia?.url) {
+        return primaryMedia.url;
+      }
+      // Sonst nimm das erste Bild
+      if (product.media[0]?.url) {
+        return product.media[0].url;
+      }
+    }
+
+    return null;
+  }
+
+  hasMultipleImages(product: Product): boolean {
+    return product.media && product.media.length > 1;
+  }
+
+  getImageCount(product: Product): number {
+    return product.media?.length || 0;
+  }
+
+  onImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.style.display = 'none';
   }
 }
