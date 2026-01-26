@@ -861,12 +861,24 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   }
 
   updateProduct(formData: any): void {
-    this.productService.updateProduct(this.storeId, this.productId!, formData).subscribe({
+    // Stelle sicher, dass alle erforderlichen Felder vorhanden sind
+    const updateData = {
+      title: formData.title,
+      description: formData.description,
+      basePrice: formData.basePrice,
+      status: formData.status || 'DRAFT',
+      categoryId: formData.categoryId || null,
+      storeId: this.storeId
+    };
+
+    console.log('📝 Updating product with data:', updateData);
+
+    this.productService.updateProduct(this.storeId, this.productId!, updateData).subscribe({
       next: (product) => {
         console.log('✅ Produkt aktualisiert:', product);
 
-        // Verknüpfe neue Bilder
-        const newImages = this.uploadedImages.filter(img => img.file);
+        // Verknüpfe neue Bilder (nur wenn welche hochgeladen wurden)
+        const newImages = this.uploadedImages.filter(img => img.file && img.mediaId > 0);
         if (newImages.length > 0) {
           this.linkImagesToProduct(product.id);
         } else {
@@ -877,8 +889,8 @@ export class ProductFormComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         this.saving = false;
+        console.error('❌ Update error:', error);
         this.errorMessage = this.translationService.translate('product.error.update');
-        console.error(error);
       }
     });
   }

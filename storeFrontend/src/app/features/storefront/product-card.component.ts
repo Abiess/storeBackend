@@ -23,19 +23,15 @@ import { Product, ProductStatus } from '@app/core/models';
 
         <!-- Badge für mehrere Bilder -->
         <span *ngIf="hasMultipleImages()" class="image-count-badge">
-          <span class="badge-icon">🖼️</span>
-          {{ getImageCount() }}
-        </span>
-
-        <span *ngIf="product.status === ProductStatus.PUBLISHED" class="product-badge badge-new">
-          Neu
+          🖼️ {{ getImageCount() }}
         </span>
 
         <!-- Quick View Button - mit stopPropagation -->
         <button class="quick-view-btn" 
                 (click)="onQuickView($event)"
                 type="button">
-          👁️ Schnellansicht
+          <span class="quick-view-icon">👁️</span>
+          <span class="quick-view-text">Schnellansicht</span>
         </button>
       </div>
 
@@ -46,7 +42,6 @@ import { Product, ProductStatus } from '@app/core/models';
         <div class="product-footer">
           <div class="product-price">
             <span class="price-amount">{{ product.basePrice | number:'1.2-2' }} €</span>
-            <span class="price-label">inkl. MwSt.</span>
           </div>
 
           <button class="btn btn-add-cart"
@@ -54,41 +49,37 @@ import { Product, ProductStatus } from '@app/core/models';
                   [disabled]="isAddingToCart"
                   type="button">
             <span class="btn-icon">🛒</span>
-            <span class="btn-text">
-              {{ isAddingToCart ? 'Wird hinzugefügt...' : 'In den Warenkorb' }}
-            </span>
           </button>
-        </div>
-
-        <div *ngIf="product.variants && product.variants.length > 0" class="product-variants">
-          <small>{{ product.variants.length }} Variante(n) verfügbar</small>
         </div>
       </div>
     </div>
   `,
   styles: [`
+    /* ==================== MODERN PRODUCT CARD ==================== */
     .product-card {
       background: white;
-      border-radius: var(--theme-border-radius, 8px);
+      border-radius: 16px;
       overflow: hidden;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      transition: all 0.3s;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       display: flex;
       flex-direction: column;
-      border: 1px solid var(--theme-border, #e9ecef);
-      cursor: pointer;
+      height: 100%;
+      position: relative;
     }
 
     .product-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      transform: translateY(-8px);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
     }
 
+    /* ==================== IMAGE SECTION ==================== */
     .product-image-section {
       position: relative;
-      padding-top: 75%;
-      background: var(--theme-background, #f8f9fa);
+      padding-top: 100%;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
       overflow: hidden;
+      cursor: pointer;
     }
 
     .product-img {
@@ -98,11 +89,11 @@ import { Product, ProductStatus } from '@app/core/models';
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transition: transform 0.3s;
+      transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .product-card:hover .product-img {
-      transform: scale(1.05);
+      transform: scale(1.08);
     }
 
     .image-placeholder {
@@ -119,93 +110,94 @@ import { Product, ProductStatus } from '@app/core/models';
 
     .placeholder-icon {
       font-size: 3rem;
-      opacity: 0.5;
+      opacity: 0.4;
     }
 
-    .product-badge {
-      position: absolute;
-      top: 0.75rem;
-      right: 0.75rem;
-      padding: 0.25rem 0.75rem;
-      border-radius: var(--theme-border-radius, 8px);
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      z-index: 2;
-    }
-
-    .badge-new {
-      background: var(--theme-success, #28a745);
-      color: white;
-    }
-
+    /* ==================== BADGES ==================== */
     .image-count-badge {
       position: absolute;
-      bottom: 0.75rem;
-      right: 0.75rem;
-      background: rgba(0, 0, 0, 0.7);
+      top: 12px;
+      right: 12px;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(10px);
       color: white;
-      padding: 0.25rem 0.5rem;
-      border-radius: 12px;
+      padding: 6px 12px;
+      border-radius: 20px;
       font-size: 0.75rem;
       font-weight: 600;
       display: flex;
       align-items: center;
-      gap: 0.25rem;
+      gap: 4px;
       z-index: 2;
     }
 
-    .badge-icon {
-      font-size: 0.875rem;
-    }
-
-    /* Quick View Button */
+    /* ==================== QUICK VIEW BUTTON ==================== */
     .quick-view-btn {
       position: absolute;
-      top: 50%;
+      bottom: 16px;
       left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(255, 255, 255, 0.95);
+      transform: translateX(-50%) translateY(100%);
+      background: white;
       border: none;
-      padding: 0.75rem 1.5rem;
+      padding: 10px 20px;
       border-radius: 24px;
       font-weight: 600;
+      font-size: 0.875rem;
       cursor: pointer;
       opacity: 0;
-      transition: all 0.3s;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       z-index: 3;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #333;
     }
 
     .product-card:hover .quick-view-btn {
       opacity: 1;
+      transform: translateX(-50%) translateY(0);
     }
 
     .quick-view-btn:hover {
-      transform: translate(-50%, -50%) scale(1.05);
-      background: white;
+      background: #667eea;
+      color: white;
+      box-shadow: 0 6px 24px rgba(102, 126, 234, 0.4);
     }
 
+    .quick-view-icon {
+      font-size: 1.1rem;
+    }
+
+    .quick-view-text {
+      font-size: 0.8125rem;
+    }
+
+    /* ==================== PRODUCT INFO ==================== */
     .product-info {
       padding: 1.25rem;
       flex: 1;
       display: flex;
       flex-direction: column;
+      cursor: pointer;
     }
 
     .product-title {
       margin: 0 0 0.5rem;
-      font-size: 1.125rem;
-      color: var(--theme-text, #333);
+      font-size: 1rem;
+      color: #1f2937;
       font-weight: 600;
       line-height: 1.4;
-      font-family: var(--theme-heading-font-family, var(--theme-font-family, inherit));
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
 
     .product-description {
       margin: 0 0 1rem;
-      color: var(--theme-text-secondary, #666);
-      font-size: var(--theme-font-size-small, 0.875rem);
+      color: #6b7280;
+      font-size: 0.875rem;
       line-height: 1.5;
       flex: 1;
       display: -webkit-box;
@@ -214,47 +206,52 @@ import { Product, ProductStatus } from '@app/core/models';
       overflow: hidden;
     }
 
+    /* ==================== FOOTER ==================== */
     .product-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
       margin-top: auto;
       padding-top: 1rem;
-      border-top: 1px solid var(--theme-border, #e9ecef);
+      border-top: 1px solid #f3f4f6;
     }
 
     .product-price {
-      margin-bottom: 1rem;
+      flex: 1;
     }
 
     .price-amount {
       display: block;
       font-size: 1.5rem;
       font-weight: 700;
-      color: var(--theme-primary, #667eea);
+      color: #667eea;
+      line-height: 1;
     }
 
-    .price-label {
-      font-size: 0.75rem;
-      color: var(--theme-text-secondary, #999);
-    }
-
+    /* ==================== ADD TO CART BUTTON ==================== */
     .btn-add-cart {
-      width: 100%;
-      background: linear-gradient(135deg, var(--theme-primary, #667eea), var(--theme-secondary, #764ba2));
+      background: linear-gradient(135deg, #667eea, #764ba2);
       color: white;
       border: none;
-      padding: 0.875rem 1.25rem;
-      border-radius: var(--theme-border-radius, 8px);
-      font-weight: 600;
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 0.5rem;
-      transition: all 0.3s;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      flex-shrink: 0;
     }
 
     .btn-add-cart:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      transform: scale(1.08);
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-add-cart:active:not(:disabled) {
+      transform: scale(0.95);
     }
 
     .btn-add-cart:disabled {
@@ -263,18 +260,31 @@ import { Product, ProductStatus } from '@app/core/models';
     }
 
     .btn-icon {
-      font-size: 1.125rem;
+      font-size: 1.5rem;
     }
 
-    .product-variants {
-      margin-top: 0.75rem;
-      padding-top: 0.75rem;
-      border-top: 1px solid var(--theme-border, #e9ecef);
-    }
+    /* ==================== RESPONSIVE ==================== */
+    @media (max-width: 768px) {
+      .product-card {
+        border-radius: 12px;
+      }
 
-    .product-variants small {
-      color: var(--theme-text-secondary, #666);
-      font-size: 0.8125rem;
+      .product-info {
+        padding: 1rem;
+      }
+
+      .product-title {
+        font-size: 0.9375rem;
+      }
+
+      .price-amount {
+        font-size: 1.25rem;
+      }
+
+      .btn-add-cart {
+        width: 44px;
+        height: 44px;
+      }
     }
   `]
 })
