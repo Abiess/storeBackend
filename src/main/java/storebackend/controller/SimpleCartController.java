@@ -160,83 +160,109 @@ public class SimpleCartController {
      * Für angemeldete User: Nur userId + storeId (sessionId ist OPTIONAL für Migration)
      * Für Gäste: sessionId + storeId
      */
+    /**
+     * FIXED VERSION - Ersetze die findOrCreateCart Methode in SimpleCartController.java
+     * Ab Zeile 163 bis ca. Zeile 250
+     */
+
+    /**
+     * FIXED: Findet oder erstellt Cart basierend auf User-ID oder Session-ID
+     * Für angemeldete User: Nur userId + storeId (sessionId ist OPTIONAL für Migration)
+     * Für Gäste: sessionId + storeId
+     */
     private Cart findOrCreateCart(Long userId, Long storeId, String sessionId) {
         Store store = storeRepository.findById(storeId)
-            .orElseThrow(() -> new RuntimeException("Store not found"));
+                .orElseThrow(() -> new RuntimeException("Store not found"));
 
         if (userId != null) {
-            // USER CART: Prüfe ob Guest-Cart migriert werden muss
-            if (sessionId != null && !sessionId.isEmpty()) {
-                log.info("🔍 Prüfe Guest-Cart-Migration für sessionId: {}", sessionId);
-                migrateGuestCartToUser(sessionId, userId, storeId);
+            // USER CART: Prüfe ob User existiert
+            Optional<User> userOptional = userRepository.findById(userId);
+
+            if (!userOptional.isPresent()) {
+                log.warn("⚠️ User with ID {} not found in database - treating as guest", userId);
+                // FIXED: Behandle als Guest wenn User nicht existiert
+                if (sessionId == null || sessionId.isEmpty()) {
+                    // Generiere Fallback-SessionId
+                    sessionId = "user-fallback-" + userId + "-" + System.currentTimeMillis();
+                    log.info("🆕 Generated fallback sessionId: {}", sessionId);
+                }
+                // Weiter als Guest-Cart behandeln
+                userId = null;
             }
 
-            // USER CART: Nutze optimierte Query
-            log.info("🔍 Searching for user cart (userId: {}, storeId: {})", userId, storeId);
-            User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+            // Wenn User existiert, verarbeite als User-Cart
+            if (userId != null) {
+                User user = userOptional.get();
 
-            // Nutze die optimierte Repository-Methode
-            List<Cart> userCarts = cartRepository.findByUserIdAndStoreIdAndNotExpired(
-                userId, storeId, LocalDateTime.now()
-            );
+                // Prüfe ob Guest-Cart migriert werden muss
+                if (sessionId != null && !sessionId.isEmpty()) {
+                    log.info("🔍 Prüfe Guest-Cart-Migration für sessionId: {}", sessionId);
+                    migrateGuestCartToUser(sessionId, userId, storeId);
+                }
 
-            if (!userCarts.isEmpty()) {
-                Cart cart = userCarts.get(0);
-                int itemCount = cartItemRepository.findByCartId(cart.getId()).size();
-                log.info("✅ Found existing user cart: {} (userId: {}, storeId: {}, has {} items)",
-                    cart.getId(), userId, storeId, itemCount);
-                return cart;
+                // USER CART: Nutze optimierte Query
+                log.info("🔍 Searching for user cart (userId: {}, storeId: {})", userId, storeId);
+                List<Cart> userCarts = cartRepository.findByUserIdAndStoreIdAndNotExpired(
+                        userId, storeId, LocalDateTime.now()
+                );
+
+                if (!userCarts.isEmpty()) {
+                    Cart cart = userCarts.get(0);
+                    int itemCount = cartItemRepository.findByCartId(cart.getId()).size();
+                    log.info("✅ Found existing user cart: {} (userId: {}, storeId: {}, has {} items)",
+                            cart.getId(), userId, storeId, itemCount);
+                    return cart;
+                }
+
+                // Erstelle neuen User-Cart OHNE sessionId
+                log.info("➕ Creating new user cart for userId: {}, storeId: {}", userId, storeId);
+                Cart cart = new Cart();
+                cart.setUser(user);
+                cart.setSessionId(null); // KEINE sessionId für angemeldete User!
+                cart.setStore(store);
+                cart.setCreatedAt(LocalDateTime.now());
+                cart.setUpdatedAt(LocalDateTime.now());
+                cart.setExpiresAt(LocalDateTime.now().plusDays(30)); // User-Carts länger gültig
+                Cart savedCart = cartRepository.save(cart);
+                log.info("✅ Created new user cart with ID: {}", savedCart.getId());
+                return savedCart;
             }
-
-            // Erstelle neuen User-Cart OHNE sessionId
-            log.info("➕ Creating new user cart for userId: {}, storeId: {}", userId, storeId);
-            Cart cart = new Cart();
-            cart.setUser(user);
-            cart.setSessionId(null); // KEINE sessionId für angemeldete User!
-            cart.setStore(store);
-            cart.setCreatedAt(LocalDateTime.now());
-            cart.setUpdatedAt(LocalDateTime.now());
-            cart.setExpiresAt(LocalDateTime.now().plusDays(30)); // User-Carts länger gültig
-            Cart savedCart = cartRepository.save(cart);
-            log.info("✅ Created new user cart with ID: {}", savedCart.getId());
-            return savedCart;
-
-        } else {
-            // GUEST CART: Nur für nicht-angemeldete User
-            // Für Gäste ist sessionId ERFORDERLICH
-            if (sessionId == null || sessionId.isEmpty()) {
-                log.error("❌ Guest user without sessionId - cannot create cart");
-                throw new RuntimeException("SessionId required for guest checkout");
-            }
-
-            log.info("🔍 Searching for guest cart (sessionId: {}, storeId: {})", sessionId, storeId);
-
-            // Nutze die optimierte Repository-Methode
-            List<Cart> guestCarts = cartRepository.findBySessionIdAndStoreIdAndNotExpired(
-                sessionId, storeId, LocalDateTime.now()
-            );
-
-            if (!guestCarts.isEmpty()) {
-                Cart cart = guestCarts.get(0);
-                int itemCount = cartItemRepository.findByCartId(cart.getId()).size();
-                log.info("✅ Found existing guest cart: {} (has {} items)", cart.getId(), itemCount);
-                return cart;
-            }
-
-            // Erstelle neuen Guest-Cart
-            log.info("➕ Creating new guest cart for sessionId: {}, storeId: {}", sessionId, storeId);
-            Cart cart = new Cart();
-            cart.setSessionId(sessionId);
-            cart.setStore(store);
-            cart.setCreatedAt(LocalDateTime.now());
-            cart.setUpdatedAt(LocalDateTime.now());
-            cart.setExpiresAt(LocalDateTime.now().plusDays(7)); // Guest-Carts kürzer gültig
-            Cart savedCart = cartRepository.save(cart);
-            log.info("✅ Created new guest cart with ID: {}", savedCart.getId());
-            return savedCart;
         }
+
+        // GUEST CART: Für nicht-angemeldete User oder wenn User nicht existiert
+        if (sessionId == null || sessionId.isEmpty()) {
+            log.error("❌ Guest user without sessionId - cannot create cart");
+            throw new RuntimeException("SessionId required for guest checkout");
+        }
+
+        log.info("🔍 Searching for guest cart (sessionId: {}, storeId: {})", sessionId, storeId);
+
+        // Nutze die optimierte Repository-Methode
+        List<Cart> guestCarts = cartRepository.findBySessionIdAndStoreIdAndNotExpired(
+                sessionId, storeId, LocalDateTime.now()
+        );
+
+        if (!guestCarts.isEmpty()) {
+            Cart cart = guestCarts.get(0);
+            int itemCount = cartItemRepository.findByCartId(cart.getId()).size();
+            log.info("✅ Found existing guest cart: {} (has {} items)", cart.getId(), itemCount);
+            return cart;
+        }
+
+        // Erstelle neuen Guest-Cart
+        log.info("➕ Creating new guest cart for sessionId: {}, storeId: {}", sessionId, storeId);
+        Cart cart = new Cart();
+        cart.setSessionId(sessionId);
+        cart.setStore(store);
+        cart.setCreatedAt(LocalDateTime.now());
+        cart.setUpdatedAt(LocalDateTime.now());
+        cart.setExpiresAt(LocalDateTime.now().plusDays(7)); // Guest-Carts kürzer gültig
+        Cart savedCart = cartRepository.save(cart);
+        log.info("✅ Created new guest cart with ID: {}", savedCart.getId());
+        return savedCart;
     }
+
+
 
     @GetMapping
     public ResponseEntity<Map<String, Object>> getCart(
