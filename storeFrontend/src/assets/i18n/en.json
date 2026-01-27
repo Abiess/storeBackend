@@ -25,7 +25,9 @@
     "settings": "Settings",
     "logout": "Logout",
     "login": "Login",
-    "register": "Register"
+    "register": "Register",
+    "submit": "Submit",
+    "reset": "Reset"
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -40,7 +42,12 @@
     "profile": "Profile",
     "backToDashboard": "Back to Dashboard",
     "store": "Store",
-    "overview": "Overview"
+    "overview": "Overview",
+    "myAccount": "My Account",
+    "wishlist": "Wishlist",
+    "savedCarts": "Saved Carts",
+    "addressBook": "Address Book",
+    "orderHistory": "Order History"
   },
   "auth": {
     "email": "Email",
@@ -58,7 +65,10 @@
     "loginError": "Login failed",
     "registerSuccess": "Account created successfully",
     "registerError": "Registration failed",
-    "logoutSuccess": "Successfully logged out"
+    "logoutSuccess": "Successfully logged out",
+    "name": "Name",
+    "firstName": "First Name",
+    "lastName": "Last Name"
   },
   "store": {
     "title": "Store",
@@ -120,7 +130,12 @@
       "update": "Error updating product",
       "delete": "Error deleting product",
       "load": "Could not load product"
-    }
+    },
+    "basePrice": "Base Price",
+    "addToCart": "Add to Cart",
+    "addToWishlist": "Add to Wishlist",
+    "viewDetails": "View Details",
+    "quickView": "Quick View"
   },
   "category": {
     "title": "Category",
@@ -172,23 +187,143 @@
       "load": "Error loading categories"
     }
   },
+  "cart": {
+    "title": "Shopping Cart",
+    "emptyCart": "Your cart is empty",
+    "continueShopping": "Continue Shopping",
+    "checkout": "Checkout",
+    "subtotal": "Subtotal",
+    "shipping": "Shipping",
+    "tax": "Tax",
+    "total": "Total",
+    "remove": "Remove",
+    "updateCart": "Update Cart",
+    "saveForLater": "Save for Later",
+    "itemAdded": "Item added",
+    "itemRemoved": "Item removed",
+    "quantity": "Quantity"
+  },
+  "checkout": {
+    "title": "Checkout",
+    "shippingAddress": "Shipping Address",
+    "billingAddress": "Billing Address",
+    "paymentMethod": "Payment Method",
+    "orderSummary": "Order Summary",
+    "placeOrder": "Place Order",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "address": "Address",
+    "address2": "Address Line 2",
+    "city": "City",
+    "postalCode": "Postal Code",
+    "country": "Country",
+    "phone": "Phone",
+    "email": "Email",
+    "notes": "Notes",
+    "sameAsBilling": "Same as Billing Address",
+    "cashOnDelivery": "Cash on Delivery",
+    "online": "Online Payment",
+    "orderSuccess": "Order placed successfully",
+    "orderError": "Error placing order"
+  },
+  "customer": {
+    "dashboard": "Customer Account",
+    "profile": "My Profile",
+    "orders": "My Orders",
+    "wishlist": "My Wishlist",
+    "savedCarts": "Saved Carts",
+    "addresses": "Address Book",
+    "settings": "Settings",
+    "logout": "Logout"
+  },
+  "address": {
+    "title": "Address Book",
+    "addNew": "Add New Address",
+    "edit": "Edit Address",
+    "delete": "Delete Address",
+    "setDefault": "Set as Default",
+    "default": "Default",
+    "shipping": "Shipping Address",
+    "billing": "Billing Address",
+    "both": "Shipping & Billing Address",
+    "noAddresses": "No saved addresses",
+    "addFirst": "Add First Address",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "company": "Company",
+    "street": "Street and Number",
+    "street2": "Address Line 2",
+    "city": "City",
+    "state": "State",
+    "postalCode": "Postal Code",
+    "country": "Country",
+    "phone": "Phone",
+    "addressType": "Address Type",
+    "confirmDelete": "Are you sure you want to delete this address?"
+  },
+  "wishlist": {
+    "title": "My Wishlist",
+    "empty": "Your wishlist is empty",
+    "addProducts": "Add Products",
+    "remove": "Remove",
+    "addToCart": "Add to Cart",
+    "share": "Share",
+    "shareLink": "Share Link",
+    "copyLink": "Copy Link",
+    "linkCopied": "Link copied",
+    "shareTitle": "Share Wishlist",
+    "shareDescription": "Share your wishlist with friends and family",
+    "addAllToCart": "Add All to Cart",
+    "viewProduct": "View Product",
+    "addedOn": "Added on",
+    "inStock": "In Stock",
+    "outOfStock": "Out of Stock",
+    "priority": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    }
+  },
+  "savedCart": {
+    "title": "Saved Carts",
+    "empty": "No saved carts",
+    "save": "Save Cart",
+    "restore": "Restore",
+    "delete": "Delete",
+    "name": "Name",
+    "description": "Description",
+    "created": "Created",
+    "expires": "Expires",
+    "expired": "Expired",
+    "items": "Items",
+    "total": "Total",
+    "confirmDelete": "Are you sure you want to delete this cart?",
+    "confirmRestore": "Are you sure you want to restore this cart? Your current cart will be replaced.",
+    "restored": "Cart restored",
+    "saved": "Cart saved"
+  },
   "order": {
     "title": "Order",
     "orderNumber": "Order Number",
     "customer": "Customer",
-    "date": "Date",
+    "date": "Order Date",
     "status": "Status",
     "total": "Total",
     "items": "Items",
-    "noOrders": "No orders available",
-    "orderDetails": "Order Details",
-    "statusPending": "Pending",
-    "statusProcessing": "Processing",
-    "statusShipped": "Shipped",
-    "statusDelivered": "Delivered",
-    "statusCancelled": "Cancelled",
-    "updateStatus": "Update Status",
-    "orderUpdated": "Order updated successfully"
+    "shipping": "Shipping",
+    "billing": "Billing",
+    "payment": "Payment",
+    "tracking": "Tracking",
+    "viewDetails": "View Details",
+    "noOrders": "No Orders",
+    "orderHistory": "Order History",
+    "statuses": {
+      "pending": "Pending",
+      "processing": "Processing",
+      "shipped": "Shipped",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled"
+    }
   },
   "media": {
     "title": "Media",
@@ -218,6 +353,21 @@
     "passwordMismatch": "Passwords do not match",
     "invalidNumber": "Please enter a valid number",
     "invalidUrl": "Please enter a valid URL"
+  },
+  "errors": {
+    "general": "An error occurred",
+    "networkError": "Network error. Please check your internet connection.",
+    "serverError": "Server error. Please try again later.",
+    "notFound": "Not found",
+    "unauthorized": "Unauthorized. Please login.",
+    "forbidden": "Access denied",
+    "badRequest": "Bad request"
+  },
+  "language": {
+    "select": "Select Language",
+    "de": "German",
+    "en": "English",
+    "ar": "Arabic"
   },
   "messages": {
     "confirmDelete": "Are you sure you want to delete this item?",

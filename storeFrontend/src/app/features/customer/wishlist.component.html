@@ -1,8 +1,8 @@
 <div class="wishlist-container">
   <div class="header">
-    <h2><i class="fas fa-heart"></i> Meine Wunschliste</h2>
+    <h2><i class="fas fa-heart"></i> {{ 'wishlist.title' | translate }}</h2>
     <button class="btn btn-primary" (click)="addAllToCart()" *ngIf="currentWishlist && currentWishlist.items && currentWishlist.items.length > 0">
-      <i class="fas fa-cart-plus"></i> Alle in den Warenkorb
+      <i class="fas fa-cart-plus"></i> {{ 'wishlist.addAllToCart' | translate }}
     </button>
   </div>
 
@@ -14,7 +14,7 @@
       [class.active]="currentWishlist?.id === wishlist.id"
       (click)="selectWishlist(wishlist)">
       {{ wishlist.name }}
-      <span class="item-count">{{ wishlist.items?.length || 0 }}</span>
+      <span class="item-count">{{ wishlist.items.length || 0 }}</span>
     </button>
   </div>
 
@@ -22,7 +22,7 @@
   <div class="wishlist-items" *ngIf="!loading && currentWishlist && currentWishlist.items && currentWishlist.items.length > 0">
     <div class="wishlist-item" *ngFor="let item of currentWishlist.items">
       <div class="item-image" (click)="viewProduct(item)">
-        <img [src]="getProductImage(item)" [alt]="item.product?.title || 'Product'" />
+        <img [src]="getProductImage(item)" [alt]="item.productTitle || 'Product'" />
         <div class="priority-badge" [class]="getPriorityClass(item.priority)" *ngIf="item.priority">
           <i [class]="getPriorityIcon(item.priority)"></i>
         </div>
@@ -30,36 +30,33 @@
 
       <div class="item-details">
         <h3 class="item-title" (click)="viewProduct(item)">
-          {{ item.product?.title || item.product?.name }}
+          {{ item.productTitle }}
         </h3>
-        <p class="item-variant" *ngIf="item.variant">
-          {{ item.variant.name || 'Variante: ' + item.variant.sku }}
-        </p>
         <p class="item-note" *ngIf="item.note">
           <i class="fas fa-sticky-note"></i> {{ item.note }}
         </p>
         <p class="item-date">
-          <i class="fas fa-calendar"></i> Hinzugefügt am {{ item.addedAt | date: 'dd.MM.yyyy' }}
+          <i class="fas fa-calendar"></i> {{ 'wishlist.addedOn' | translate }} {{ item.addedAt | date: 'dd.MM.yyyy' }}
         </p>
       </div>
 
       <div class="item-price">
-        <span class="price">{{ getProductPrice(item) | currency: 'EUR' }}</span>
-        <span class="stock-status" *ngIf="item.product?.stock !== undefined">
-          <i class="fas fa-check-circle" *ngIf="item.product.stock > 0"></i>
-          <i class="fas fa-times-circle" *ngIf="item.product.stock === 0"></i>
-          {{ item.product.stock > 0 ? 'Auf Lager' : 'Nicht verfügbar' }}
+        <span class="price">{{ item.productPrice | currency: 'EUR' }}</span>
+        <span class="stock-status" *ngIf="item.inStock !== undefined">
+          <i class="fas fa-check-circle" *ngIf="item.inStock"></i>
+          <i class="fas fa-times-circle" *ngIf="!item.inStock"></i>
+          {{ item.inStock ? ('wishlist.inStock' | translate) : ('wishlist.outOfStock' | translate) }}
         </span>
       </div>
 
       <div class="item-actions">
-        <button class="btn btn-primary" (click)="addToCart(item)" [disabled]="item.product?.stock === 0">
-          <i class="fas fa-cart-plus"></i> In den Warenkorb
+        <button class="btn btn-primary" (click)="addToCart(item)" [disabled]="!item.inStock">
+          <i class="fas fa-cart-plus"></i> {{ 'wishlist.addToCart' | translate }}
         </button>
-        <button class="btn btn-icon" (click)="viewProduct(item)" title="Details ansehen">
+        <button class="btn btn-icon" (click)="viewProduct(item)" [title]="'wishlist.viewProduct' | translate">
           <i class="fas fa-eye"></i>
         </button>
-        <button class="btn btn-icon btn-danger" (click)="removeFromWishlist(item)" title="Entfernen">
+        <button class="btn btn-icon btn-danger" (click)="removeFromWishlist(item)" [title]="'common.remove' | translate">
           <i class="fas fa-trash"></i>
         </button>
       </div>
@@ -69,24 +66,23 @@
   <!-- Empty State -->
   <div class="empty-state" *ngIf="!loading && currentWishlist && (!currentWishlist.items || currentWishlist.items.length === 0)">
     <i class="fas fa-heart-broken"></i>
-    <h3>Ihre Wunschliste ist leer</h3>
-    <p>Fügen Sie Produkte zu Ihrer Wunschliste hinzu, um sie später zu kaufen</p>
+    <h3>{{ 'wishlist.empty' | translate }}</h3>
+    <p>{{ 'wishlist.addProducts' | translate }}</p>
     <button class="btn btn-primary" [routerLink]="['/']">
-      <i class="fas fa-shopping-bag"></i> Jetzt einkaufen
+      <i class="fas fa-shopping-bag"></i> {{ 'cart.continueShopping' | translate }}
     </button>
   </div>
 
   <!-- No Wishlists State -->
   <div class="empty-state" *ngIf="!loading && wishlists.length === 0">
     <i class="fas fa-heart"></i>
-    <h3>Keine Wunschlisten gefunden</h3>
-    <p>Erstellen Sie Ihre erste Wunschliste</p>
+    <h3>{{ 'wishlist.empty' | translate }}</h3>
+    <p>{{ 'wishlist.addProducts' | translate }}</p>
   </div>
 
   <!-- Loading State -->
   <div class="loading-state" *ngIf="loading">
     <div class="spinner"></div>
-    <p>Lade Wunschliste...</p>
+    <p>{{ 'common.loading' | translate }}</p>
   </div>
 </div>
-

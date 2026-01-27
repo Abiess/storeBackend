@@ -1,30 +1,41 @@
-      <h3>Warenkorb speichern</h3>
+<div class="saved-carts-container">
+  <div class="header">
+    <h2><i class="fas fa-bookmark"></i> {{ 'savedCart.title' | translate }}</h2>
+    <button class="btn btn-primary" (click)="openSaveDialog()">
+      <i class="fas fa-save"></i> {{ 'savedCart.save' | translate }}
+    </button>
+  </div>
+
+  <!-- Save Dialog -->
+  <div class="modal-overlay" *ngIf="showSaveDialog" (click)="closeSaveDialog()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h3>{{ 'savedCart.save' | translate }}</h3>
       <div class="form-group">
-        <label for="cartName">Name *</label>
+        <label for="cartName">{{ 'savedCart.name' | translate }} *</label>
         <input
           type="text"
           id="cartName"
           [(ngModel)]="newCartName"
           class="form-control"
-          placeholder="z.B. Weihnachtsgeschenke 2024"
+          [placeholder]="'savedCart.name' | translate"
           maxlength="100" />
       </div>
       <div class="form-group">
-        <label for="cartDescription">Beschreibung (optional)</label>
+        <label for="cartDescription">{{ 'savedCart.description' | translate }}</label>
         <textarea
           id="cartDescription"
           [(ngModel)]="newCartDescription"
           class="form-control"
-          placeholder="Notizen zu diesem Warenkorb..."
+          [placeholder]="'savedCart.description' | translate"
           rows="3"
           maxlength="500"></textarea>
       </div>
       <div class="modal-actions">
         <button class="btn btn-primary" (click)="saveCurrentCart()" [disabled]="!newCartName.trim()">
-          <i class="fas fa-check"></i> Speichern
+          <i class="fas fa-check"></i> {{ 'common.save' | translate }}
         </button>
         <button class="btn btn-secondary" (click)="closeSaveDialog()">
-          Abbrechen
+          {{ 'common.cancel' | translate }}
         </button>
       </div>
     </div>
@@ -42,35 +53,35 @@
           <p class="cart-description" *ngIf="cart.description">{{ cart.description }}</p>
         </div>
         <div class="cart-stats">
-          <span class="item-count">{{ cart.totalItems }} Artikel</span>
-          <span class="total-amount">{{ cart.estimatedTotal | currency: 'EUR' }}</span>
+          <span class="item-count">{{ cart.itemCount }} {{ 'savedCart.items' | translate }}</span>
+          <span class="total-amount">{{ cart.totalAmount | currency: 'EUR' }}</span>
         </div>
       </div>
 
       <div class="cart-items-preview" *ngIf="cart.items && cart.items.length > 0">
         <div class="item-preview" *ngFor="let item of cart.items.slice(0, 3)">
-          <img [src]="getProductImage(item)" [alt]="item.product?.title || 'Product'" />
+          <img [src]="getProductImage(item)" [alt]="'Product'" />
           <div class="item-info">
-            <p class="item-name">{{ item.product?.title || item.product?.name }}</p>
-            <p class="item-quantity">{{ item.quantity }}x {{ item.priceAtSave | currency: 'EUR' }}</p>
+            <p class="item-name">{{ item.productTitle }}</p>
+            <p class="item-quantity">{{ item.quantity }}x {{ item.priceSnapshot | currency: 'EUR' }}</p>
           </div>
         </div>
         <p class="more-items" *ngIf="cart.items.length > 3">
-          +{{ cart.items.length - 3 }} weitere Artikel
+          +{{ cart.items.length - 3 }} {{ 'savedCart.items' | translate }}
         </p>
       </div>
 
       <div class="expired-notice" *ngIf="isExpired(cart)">
         <i class="fas fa-exclamation-triangle"></i>
-        Dieser Warenkorb ist abgelaufen. Preise und Verfügbarkeit können sich geändert haben.
+        {{ 'savedCart.expired' | translate }}
       </div>
 
       <div class="cart-actions">
         <button class="btn btn-primary" (click)="restoreCart(cart, false)">
-          <i class="fas fa-redo"></i> Wiederherstellen
+          <i class="fas fa-redo"></i> {{ 'savedCart.restore' | translate }}
         </button>
         <button class="btn btn-outline" (click)="restoreCart(cart, true)">
-          <i class="fas fa-plus"></i> Hinzufügen
+          <i class="fas fa-plus"></i> {{ 'common.add' | translate }}
         </button>
         <button class="btn btn-danger-outline" (click)="deleteCart(cart)">
           <i class="fas fa-trash"></i>
@@ -82,28 +93,16 @@
   <!-- Empty State -->
   <div class="empty-state" *ngIf="!loading && savedCarts.length === 0">
     <i class="fas fa-bookmark"></i>
-    <h3>Keine gespeicherten Warenkörbe</h3>
-    <p>Speichern Sie Ihren Warenkorb, um später weiterzumachen</p>
+    <h3>{{ 'savedCart.empty' | translate }}</h3>
+    <p>{{ 'savedCart.save' | translate }}</p>
     <button class="btn btn-primary" (click)="openSaveDialog()">
-      <i class="fas fa-save"></i> Warenkorb speichern
+      <i class="fas fa-save"></i> {{ 'savedCart.save' | translate }}
     </button>
   </div>
 
   <!-- Loading State -->
   <div class="loading-state" *ngIf="loading">
     <div class="spinner"></div>
-    <p>Lade gespeicherte Warenkörbe...</p>
+    <p>{{ 'common.loading' | translate }}</p>
   </div>
 </div>
-<div class="saved-carts-container">
-  <div class="header">
-    <h2><i class="fas fa-bookmark"></i> Gespeicherte Warenkörbe</h2>
-    <button class="btn btn-primary" (click)="openSaveDialog()">
-      <i class="fas fa-save"></i> Aktuellen Warenkorb speichern
-    </button>
-  </div>
-
-  <!-- Save Dialog -->
-  <div class="modal-overlay" *ngIf="showSaveDialog" (click)="closeSaveDialog()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-

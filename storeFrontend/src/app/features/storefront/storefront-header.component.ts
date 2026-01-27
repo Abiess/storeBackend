@@ -4,11 +4,14 @@ import { RouterModule } from '@angular/router';
 import { map } from 'rxjs/operators';
 import { AuthService } from '../../core/services/auth.service';
 import { StorefrontAuthDialogComponent } from './storefront-auth-dialog.component';
+import { TranslationService } from '../../core/services/translation.service';
+import { TranslatePipe } from '../../core/pipes/translate.pipe';
+import { LanguageSelectorComponent } from '../../shared/components/language-selector/language-selector.component';
 
 @Component({
   selector: 'app-storefront-header',
   standalone: true,
-  imports: [CommonModule, RouterModule, StorefrontAuthDialogComponent],
+  imports: [CommonModule, RouterModule, StorefrontAuthDialogComponent, TranslatePipe, LanguageSelectorComponent],
   template: `
     <header class="store-header">
       <div class="container">
@@ -17,33 +20,36 @@ import { StorefrontAuthDialogComponent } from './storefront-auth-dialog.componen
           <p class="store-tagline">{{ storeSlug }}.markt.ma</p>
         </div>
         <div class="header-actions">
+          <!-- Language Selector -->
+          <app-language-selector></app-language-selector>
+          
           <!-- Login/Register Button -->
           <button 
             *ngIf="!(isLoggedIn$ | async)" 
             class="btn btn-login" 
             (click)="showAuthDialog = true"
-            aria-label="Anmelden"
+            [attr.aria-label]="'common.login' | translate"
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
               <path d="M10 10a4 4 0 100-8 4 4 0 000 8zm0 2c-4.42 0-8 1.79-8 4v2h16v-2c0-2.21-3.58-4-8-4z" fill="currentColor"/>
             </svg>
-            <span>Anmelden</span>
+            <span>{{ 'common.login' | translate }}</span>
           </button>
           
           <!-- User Menu wenn eingeloggt -->
           <div *ngIf="isLoggedIn$ | async" class="user-menu">
-            <a routerLink="/storefront/profile" class="btn btn-profile" aria-label="Mein Konto">
+            <a routerLink="/storefront/profile" class="btn btn-profile" [attr.aria-label]="'navigation.myAccount' | translate">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                 <path d="M10 10a4 4 0 100-8 4 4 0 000 8zm0 2c-4.42 0-8 1.79-8 4v2h16v-2c0-2.21-3.58-4-8-4z" fill="currentColor"/>
               </svg>
-              <span>Konto</span>
+              <span>{{ 'navigation.myAccount' | translate }}</span>
             </a>
-            <button class="btn btn-logout" (click)="logout()" aria-label="Abmelden">
-              Abmelden
+            <button class="btn btn-logout" (click)="logout()" [attr.aria-label]="'common.logout' | translate">
+              {{ 'common.logout' | translate }}
             </button>
           </div>
           
-          <button class="btn btn-cart" (click)="cartClick.emit()" aria-label="Warenkorb anzeigen">
+          <button class="btn btn-cart" (click)="cartClick.emit()" [attr.aria-label]="'cart.title' | translate">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
               <path d="M3 1h2.59l.83 2H17a1 1 0 01.97 1.24l-2 7A1 1 0 0115 12H8.36l-.5 2H14a1 1 0 110 2H7a1 1 0 01-.97-1.24l.5-2H4a1 1 0 01-1-1V3H2a1 1 0 110-2zm5 16a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm6 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" fill="currentColor"/>
             </svg>
@@ -245,7 +251,10 @@ export class StorefrontHeaderComponent {
 
   currentUser$ = this.authService.currentUser$;
 
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    public translationService: TranslationService
+  ) {}
 
   logout(): void {
     this.authService.logout();

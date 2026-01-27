@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Product, ProductStatus } from '@app/core/models';
+import { WishlistService } from '../../core/services/wishlist.service';
 
 @Component({
   selector: 'app-product-card',
@@ -9,6 +10,20 @@ import { Product, ProductStatus } from '@app/core/models';
   imports: [CommonModule, RouterModule],
   template: `
     <div class="product-card">
+      <!-- Wishlist Heart Button -->
+      <button class="wishlist-btn" 
+              (click)="onAddToWishlist($event)"
+              [class.active]="isInWishlist"
+              type="button"
+              aria-label="Add to wishlist">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" 
+                [attr.fill]="isInWishlist ? 'currentColor' : 'none'"
+                [attr.stroke]="isInWishlist ? 'none' : 'currentColor'"
+                stroke-width="2"/>
+        </svg>
+      </button>
+
       <!-- Modern Image Section -->
       <div class="product-image-section" [routerLink]="['/products', product.id]">
         <img *ngIf="getProductImage()" 
@@ -274,6 +289,54 @@ import { Product, ProductStatus } from '@app/core/models';
       height: 20px;
     }
 
+    /* ==================== WISHLIST HEART BUTTON ==================== */
+    .wishlist-btn {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: none;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 4;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      color: #1d1d1f;
+    }
+
+    .wishlist-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    }
+
+    .wishlist-btn.active {
+      background: #ff3b30;
+      color: white;
+      animation: heartBeat 0.6s ease-in-out;
+    }
+
+    .wishlist-btn svg {
+      width: 22px;
+      height: 22px;
+      transition: transform 0.3s ease;
+    }
+
+    .wishlist-btn:active svg {
+      transform: scale(0.9);
+    }
+
+    @keyframes heartBeat {
+      0%, 100% { transform: scale(1); }
+      25% { transform: scale(1.3); }
+      50% { transform: scale(1.1); }
+    }
+
     /* ==================== RESPONSIVE ==================== */
     @media (max-width: 768px) {
       .product-card {
@@ -306,12 +369,15 @@ import { Product, ProductStatus } from '@app/core/models';
 })
 export class ProductCardComponent {
   @Input() product!: Product;
-  @Input() isAddingToCart = false;
-  @Output() addToCart = new EventEmitter<Product>();
   @Output() quickView = new EventEmitter<Product>();
+  @Output() addToCart = new EventEmitter<Product>();
 
-  readonly ProductStatus = ProductStatus;
   imageError = false;
+  isAddingToCart = false;
+  isInWishlist = false;
+  private storeId = 1; // TODO: Get from context
+
+  constructor(private wishlistService: WishlistService) {}
 
   getProductImage(): string | null {
     if (this.product.primaryImageUrl) {
@@ -359,5 +425,36 @@ export class ProductCardComponent {
     event.preventDefault();
     event.stopPropagation();
     this.quickView.emit(this.product);
+  }
+
+  onAddToWishlist(event: Event): void {
+    event.stopPropagation();
+    event.preventDefault();
+
+    if (this.isInWishlist) {
+      // TODO: Remove from wishlist
+      this.isInWishlist = false;
+      return;
+    }
+
+    this.wishlistService.getDefaultWishlist(this.storeId).subscribe({
+      next: (wishlist) => {
+        this.wishlistService.addToWishlist(wishlist.id, this.product.id).subscribe({
+          next: () => {
+            this.isInWishlist = true;
+            // Optional: Show toast notification
+            console.log('Zur Wunschliste hinzugefügt!');
+          },
+          error: (error) => {
+            console.error('Fehler beim Hinzufügen zur Wunschliste:', error);
+            alert('Fehler beim Hinzufügen zur Wunschliste');
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Fehler beim Laden der Wunschliste:', error);
+        alert('Bitte melden Sie sich an, um Produkte zur Wunschliste hinzuzufügen');
+      }
+    });
   }
 }

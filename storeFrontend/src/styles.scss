@@ -1,6 +1,9 @@
 /* Import Angular Material Theme */
 @import '@angular/material/prebuilt-themes/indigo-pink.css';
 
+/* Import RTL Support Styles */
+@import './styles/rtl.scss';
+
 /* ==================== Theme CSS Variables ==================== */
 :root {
   /* Default Theme Colors - werden vom ThemeService überschrieben */
