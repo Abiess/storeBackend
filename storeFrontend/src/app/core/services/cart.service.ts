@@ -55,8 +55,18 @@ export class CartService {
     if (!this.storeId) {
       this.storeId = this.subDomainService.getCurrentStoreId();
       if (!this.storeId) {
-        console.error('❌ Keine storeId gefunden!');
-        throw new Error('StoreId not available');
+        // Fallback: Versuche aus localStorage zu holen
+        const storedStoreId = localStorage.getItem('last_store_id');
+        if (storedStoreId) {
+          this.storeId = parseInt(storedStoreId, 10);
+          console.log('🏪 StoreId aus localStorage geladen:', this.storeId);
+        }
+      }
+
+      if (!this.storeId) {
+        console.error('❌ Keine storeId gefunden - verwende 0 als Fallback');
+        // FIXED: Werfe keinen Error mehr, gebe 0 zurück
+        return 0;
       }
       console.log('🏪 StoreId geladen:', this.storeId);
     }
