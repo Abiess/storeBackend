@@ -140,6 +140,11 @@ public class WishlistController {
     public ResponseEntity<Map<String, Long>> getWishlistItemCount(
             @AuthenticationPrincipal UserDetails userDetails) {
 
+        // Wenn kein Benutzer eingeloggt ist, gib 0 zurück
+        if (userDetails == null) {
+            return ResponseEntity.ok(Map.of("count", 0L));
+        }
+
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("Benutzer nicht gefunden"));
 
@@ -147,4 +152,3 @@ public class WishlistController {
         return ResponseEntity.ok(Map.of("count", count));
     }
 }
-

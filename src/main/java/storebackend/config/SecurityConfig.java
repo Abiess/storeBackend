@@ -52,6 +52,9 @@ public class SecurityConfig {
                 // Public API endpoints
                 .requestMatchers("/api/public/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/public/**").permitAll()
+                // Customer endpoints - Count endpoints müssen öffentlich sein für Gäste
+                .requestMatchers(HttpMethod.GET, "/api/customer/wishlists/count").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/customer/wishlists/shared/**").permitAll()
                 // Slug-Verfügbarkeitsprüfung - öffentlich zugänglich für Registrierung
                 .requestMatchers(HttpMethod.GET, "/api/me/stores/check-slug/**").permitAll()
                 // Subscription plans - öffentlich sichtbar
