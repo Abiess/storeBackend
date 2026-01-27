@@ -6,10 +6,11 @@ import { CartService, Cart } from '../../core/services/cart.service';
 import { CheckoutService, CheckoutRequest } from '../../core/services/checkout.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CustomerProfileService, SaveAddressRequest } from '../../core/services/customer-profile.service';
-import { SubdomainService } from '../../core/services/subdomain.service'; // NEUE: Import hinzugefügt
+import { SubdomainService } from '../../core/services/subdomain.service';
 import { CouponInputComponent } from '../../shared/components/coupon-input/coupon-input.component';
 import { ValidateCouponsResponse } from '../../core/services/coupon.service';
 import { PlaceholderImageUtil } from '../../shared/utils/placeholder-image.util';
+import { PhoneVerificationService } from '../../core/services/phone-verification.service'; // NEUE: Import hinzugefügt
 
 @Component({
   selector: 'app-checkout',
@@ -213,6 +214,182 @@ import { PlaceholderImageUtil } from '../../shared/utils/placeholder-image.util'
                   rows="4" 
                   placeholder="Besondere Wünsche oder Anmerkungen zur Bestellung..."
                 ></textarea>
+              </div>
+            </section>
+
+            <!-- PAYMENT METHOD AUSWAHL -->
+            <section class="form-section">
+              <h2>Zahlungsmethode *</h2>
+              <div class="payment-methods">
+                <label class="payment-option" [class.selected]="selectedPaymentMethod === 'CREDIT_CARD'">
+                  <input 
+                    type="radio" 
+                    name="paymentMethod" 
+                    value="CREDIT_CARD"
+                    [(ngModel)]="selectedPaymentMethod"
+                    [ngModelOptions]="{standalone: true}"
+                    (change)="onPaymentMethodChange()"
+                  />
+                  <div class="payment-content">
+                    <span class="payment-icon">💳</span>
+                    <div class="payment-info">
+                      <strong>Kreditkarte</strong>
+                      <small>Visa, Mastercard, American Express</small>
+                    </div>
+                  </div>
+                </label>
+
+                <label class="payment-option" [class.selected]="selectedPaymentMethod === 'PAYPAL'">
+                  <input 
+                    type="radio" 
+                    name="paymentMethod" 
+                    value="PAYPAL"
+                    [(ngModel)]="selectedPaymentMethod"
+                    [ngModelOptions]="{standalone: true}"
+                    (change)="onPaymentMethodChange()"
+                  />
+                  <div class="payment-content">
+                    <span class="payment-icon">🅿️</span>
+                    <div class="payment-info">
+                      <strong>PayPal</strong>
+                      <small>Schnell und sicher bezahlen</small>
+                    </div>
+                  </div>
+                </label>
+
+                <label class="payment-option" [class.selected]="selectedPaymentMethod === 'BANK_TRANSFER'">
+                  <input 
+                    type="radio" 
+                    name="paymentMethod" 
+                    value="BANK_TRANSFER"
+                    [(ngModel)]="selectedPaymentMethod"
+                    [ngModelOptions]="{standalone: true}"
+                    (change)="onPaymentMethodChange()"
+                  />
+                  <div class="payment-content">
+                    <span class="payment-icon">🏦</span>
+                    <div class="payment-info">
+                      <strong>Überweisung</strong>
+                      <small>Zahlung per Banküberweisung</small>
+                    </div>
+                  </div>
+                </label>
+
+                <label class="payment-option cod" [class.selected]="selectedPaymentMethod === 'CASH_ON_DELIVERY'">
+                  <input 
+                    type="radio" 
+                    name="paymentMethod" 
+                    value="CASH_ON_DELIVERY"
+                    [(ngModel)]="selectedPaymentMethod"
+                    [ngModelOptions]="{standalone: true}"
+                    (change)="onPaymentMethodChange()"
+                  />
+                  <div class="payment-content">
+                    <span class="payment-icon">💵</span>
+                    <div class="payment-info">
+                      <strong>Nachnahme</strong>
+                      <small>Bar bei Lieferung (Telefon-Verifizierung erforderlich)</small>
+                    </div>
+                  </div>
+                </label>
+              </div>
+
+              <!-- PHONE VERIFICATION für Cash on Delivery -->
+              <div *ngIf="selectedPaymentMethod === 'CASH_ON_DELIVERY'" class="phone-verification-box">
+                <div class="verification-header">
+                  <span class="icon">📱</span>
+                  <div>
+                    <h3>Telefonnummer-Verifizierung</h3>
+                    <p>Aus Sicherheitsgründen benötigen wir eine verifizierte Telefonnummer für Nachnahme-Bestellungen</p>
+                  </div>
+                </div>
+
+                <!-- Schritt 1: Telefonnummer eingeben -->
+                <div *ngIf="!phoneVerificationSent" class="verification-step">
+                  <label>Telefonnummer (mit Ländervorwahl) *</label>
+                  <div class="phone-input-group">
+                    <input 
+                      type="tel" 
+                      [(ngModel)]="phoneNumber"
+                      [ngModelOptions]="{standalone: true}"
+                      placeholder="+49 123 4567890"
+                      class="phone-input"
+                      [disabled]="sendingCode"
+                    />
+                    <button 
+                      type="button"
+                      class="btn-send-code"
+                      (click)="sendVerificationCode()"
+                      [disabled]="!phoneNumber || sendingCode || codeSentRecently"
+                    >
+                      {{ sendingCode ? '⏳ Wird gesendet...' : '📨 Code senden' }}
+                    </button>
+                  </div>
+                  <small class="help-text">
+                    Sie erhalten einen 6-stelligen Code per WhatsApp oder SMS
+                  </small>
+                  <div *ngIf="codeSentRecently" class="warning-text">
+                    ⏰ Bitte warten Sie {{ remainingSeconds }}s bevor Sie einen neuen Code anfordern
+                  </div>
+                </div>
+
+                <!-- Schritt 2: Code eingeben -->
+                <div *ngIf="phoneVerificationSent && !phoneVerified" class="verification-step">
+                  <div class="success-message">
+                    ✅ Code wurde per {{ verificationChannel === 'whatsapp' ? 'WhatsApp' : 'SMS' }} an {{ phoneNumber }} gesendet
+                  </div>
+                  
+                  <label>Verifizierungscode *</label>
+                  <div class="code-input-group">
+                    <input 
+                      type="text" 
+                      [(ngModel)]="verificationCode"
+                      [ngModelOptions]="{standalone: true}"
+                      placeholder="123456"
+                      maxlength="6"
+                      class="code-input"
+                      [disabled]="verifyingCode"
+                      (input)="onCodeInput($event)"
+                    />
+                    <button 
+                      type="button"
+                      class="btn-verify-code"
+                      (click)="verifyCode()"
+                      [disabled]="verificationCode.length !== 6 || verifyingCode"
+                    >
+                      {{ verifyingCode ? '⏳ Wird geprüft...' : '✓ Verifizieren' }}
+                    </button>
+                  </div>
+                  
+                  <div class="verification-info">
+                    <small>Code ist 10 Minuten gültig • Noch {{ remainingAttempts }} Versuche</small>
+                    <button 
+                      type="button" 
+                      class="btn-link-small" 
+                      (click)="resendCode()"
+                      [disabled]="codeSentRecently"
+                    >
+                      Neuen Code anfordern
+                    </button>
+                  </div>
+
+                  <div *ngIf="verificationError" class="error-message">
+                    ❌ {{ verificationError }}
+                  </div>
+                </div>
+
+                <!-- Schritt 3: Erfolgreich verifiziert -->
+                <div *ngIf="phoneVerified" class="verification-success">
+                  <span class="success-icon">✅</span>
+                  <div>
+                    <strong>Telefonnummer erfolgreich verifiziert!</strong>
+                    <p>{{ phoneNumber }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div *ngIf="!selectedPaymentMethod" class="error">
+                Bitte wählen Sie eine Zahlungsmethode
               </div>
             </section>
 
@@ -592,6 +769,138 @@ import { PlaceholderImageUtil } from '../../shared/utils/placeholder-image.util'
       font-size: 14px;
       cursor: pointer;
     }
+
+    .payment-methods {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 15px;
+    }
+
+    @media (min-width: 576px) {
+      .payment-methods {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .payment-option {
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 15px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      transition: border-color 0.3s;
+    }
+
+    .payment-option.selected {
+      border-color: #667eea;
+      background: #e1f5fe;
+    }
+
+    .payment-icon {
+      font-size: 28px;
+      margin-right: 10px;
+    }
+
+    .verification-header {
+      background: #e1f5fe;
+      border: 1px solid #b3e5fc;
+      border-radius: 8px;
+      padding: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .icon {
+      font-size: 24px;
+      color: #4caf50;
+    }
+
+    .phone-verification-box {
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 20px;
+    }
+
+    .verification-step {
+      margin-bottom: 20px;
+    }
+
+    .phone-input-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    .phone-input {
+      flex: 1;
+    }
+
+    .btn-send-code {
+      flex-shrink: 0;
+      padding: 12px 20px;
+      font-size: 14px;
+    }
+
+    .code-input-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    .code-input {
+      flex: 1;
+    }
+
+    .btn-verify-code {
+      flex-shrink: 0;
+      padding: 12px 20px;
+      font-size: 14px;
+    }
+
+    .success-message {
+      background: #d4edda;
+      border: 1px solid #c3e6cb;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 10px;
+      font-size: 14px;
+      color: #155724;
+    }
+
+    .warning-text {
+      color: #856404;
+      background: #fff3cd;
+      border: 1px solid #ffeeba;
+      border-radius: 8px;
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    .error-message {
+      color: #dc3545;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+
+    .verification-info {
+      font-size: 12px;
+      color: #666;
+      margin-top: 5px;
+    }
+
+    .btn-link-small {
+      font-size: 12px;
+      color: #007bff;
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+    }
   `]
 })
 export class CheckoutComponent implements OnInit {
@@ -606,6 +915,20 @@ export class CheckoutComponent implements OnInit {
   hasFreeShipping = false;
   saveAddressForFuture = false;
   storeId: number | null = null; // NEUE: Store-ID aus Subdomain
+  selectedPaymentMethod: string | null = null; // NEUE: Ausgewählte Zahlungsmethode
+  phoneNumber: string = ''; // NEUE: Telefonnummer für Verifizierung
+  verificationCode: string = ''; // NEUE: Verifizierungscode
+  phoneVerified: boolean = false; // NEUE: Status der Telefonnummer-Verifizierung
+  sendingCode: boolean = false; // NEUE: Ladezustand beim Senden des Codes
+  verifyingCode: boolean = false; // NEUE: Ladezustand beim Verifizieren des Codes
+  codeSentRecently: boolean = false; // NEUE: Flag, ob der Code kürzlich gesendet wurde
+  remainingSeconds: number = 0; // NEUE: Verbleibende Sekunden für die Code-Anforderung
+  remainingAttempts: number = 3; // NEUE: Verbleibende Versuche für die Code-Eingabe
+  verificationChannel: 'sms' | 'whatsapp' = 'sms'; // NEUE: Kanal für die Code-Zustellung (SMS oder WhatsApp)
+  phoneVerificationSent: boolean = false; // NEUE: Flag, ob der Code gesendet wurde
+  verificationError: string = ''; // NEUE: Fehlermeldung bei der Verifizierung
+  phoneVerificationId: number | null = null; // NEUE: ID der Telefonnummer-Verifizierung
+  private codeSentTimestamp: number = 0; // NEUE: Zeitstempel wann der Code gesendet wurde
 
   constructor(
     private fb: FormBuilder,
@@ -614,7 +937,8 @@ export class CheckoutComponent implements OnInit {
     private router: Router,
     private authService: AuthService,
     private customerProfileService: CustomerProfileService,
-    private subdomainService: SubdomainService // NEUE: SubdomainService injiziert
+    private subdomainService: SubdomainService, // NEUE: SubdomainService injiziert
+    private phoneVerificationService: PhoneVerificationService // NEUE: PhoneVerificationService injiziert
   ) {
     this.checkoutForm = this.fb.group({
       customerEmail: ['', [Validators.required, Validators.email]],
@@ -975,6 +1299,153 @@ export class CheckoutComponent implements OnInit {
         console.error('❌ Fehler beim Wiederherstellen der Formular-Daten:', e);
         localStorage.removeItem('checkout_form_data');
       }
+    }
+  }
+
+  /**
+   * Sendet den Verifizierungscode an die angegebene Telefonnummer
+   */
+  sendVerificationCode(): void {
+    if (!this.phoneNumber || !this.storeId) {
+      return;
+    }
+
+    this.sendingCode = true;
+    this.verificationError = '';
+
+    this.phoneVerificationService.sendVerificationCode(this.phoneNumber, this.storeId).subscribe({
+      next: (response) => {
+        console.log('✅ Verifizierungscode gesendet:', response);
+        this.sendingCode = false;
+
+        if (response.success) {
+          this.phoneVerificationSent = true;
+          this.phoneVerificationId = response.verificationId || null;
+          this.verificationChannel = response.channel as 'sms' | 'whatsapp';
+          this.remainingAttempts = response.remainingAttempts || 3;
+
+          // Starte Rate Limiting Countdown (60 Sekunden)
+          this.codeSentRecently = true;
+          this.remainingSeconds = 60;
+          this.startCountdown();
+        } else {
+          this.verificationError = response.message || 'Fehler beim Senden des Codes';
+        }
+      },
+      error: (error) => {
+        console.error('❌ Fehler beim Senden des Codes:', error);
+        this.sendingCode = false;
+        this.verificationError = 'Fehler beim Senden des Codes. Bitte versuchen Sie es später erneut.';
+      }
+    });
+  }
+
+  /**
+   * Startet den Countdown für die verbleibenden Sekunden
+   */
+  private startCountdown(): void {
+    const interval = setInterval(() => {
+      this.remainingSeconds--;
+
+      if (this.remainingSeconds <= 0) {
+        clearInterval(interval);
+        this.remainingSeconds = 0;
+        this.codeSentRecently = false;
+      }
+    }, 1000);
+  }
+
+  /**
+   * Überprüft den eingegebenen Verifizierungscode
+   */
+  verifyCode(): void {
+    if (this.verifyingCode || this.verificationCode.length !== 6 || !this.phoneVerificationId) {
+      return;
+    }
+
+    this.verifyingCode = true;
+    this.verificationError = '';
+
+    this.phoneVerificationService.verifyCode(this.phoneVerificationId, this.verificationCode).subscribe({
+      next: (response) => {
+        console.log('✅ Code verifiziert:', response);
+        this.verifyingCode = false;
+
+        if (response.success) {
+          this.phoneVerified = true;
+          this.verificationError = '';
+        } else {
+          this.phoneVerified = false;
+          this.remainingAttempts--;
+          this.verificationError = response.message || 'Ungültiger Code';
+
+          if (this.remainingAttempts <= 0) {
+            this.verificationError = 'Maximale Anzahl an Versuchen erreicht. Bitte fordern Sie einen neuen Code an.';
+            this.phoneVerificationSent = false;
+            this.verificationCode = '';
+          }
+        }
+      },
+      error: (error) => {
+        console.error('❌ Fehler bei der Verifizierung:', error);
+        this.verifyingCode = false;
+        this.verificationError = 'Fehler bei der Verifizierung. Bitte versuchen Sie es erneut.';
+        this.remainingAttempts--;
+      }
+    });
+  }
+
+  /**
+   * Handhabt die Eingabe im Code-Feld (automatisches Setzen des Fokus auf das nächste Feld)
+   */
+  onCodeInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    let value = input.value;
+
+    // Erlaube nur Zahlen
+    value = value.replace(/[^\d]/g, '');
+    this.verificationCode = value;
+
+    // Automatische Verifizierung wenn 6 Ziffern eingegeben wurden
+    if (value.length === 6) {
+      this.verifyCode();
+    }
+  }
+
+  /**
+   * Fordert einen neuen Verifizierungscode an (nach Ablauf der Wartezeit)
+   */
+  resendCode(): void {
+    if (this.codeSentRecently) {
+      return;
+    }
+
+    // Reset state
+    this.phoneVerificationSent = false;
+    this.verificationCode = '';
+    this.verificationError = '';
+    this.remainingAttempts = 3;
+
+    // Sende neuen Code
+    this.sendVerificationCode();
+  }
+
+  /**
+   * Handler für Änderungen der Zahlungsmethode
+   */
+  onPaymentMethodChange(): void {
+    console.log('💳 Zahlungsmethode geändert:', this.selectedPaymentMethod);
+
+    if (this.selectedPaymentMethod !== 'CASH_ON_DELIVERY') {
+      // Bei anderen Zahlungsmethoden ist keine Phone Verification nötig
+      this.phoneVerified = true;
+      this.phoneVerificationId = null;
+    } else {
+      // Bei Nachnahme muss die Telefonnummer verifiziert werden
+      this.phoneVerified = false;
+      this.phoneVerificationSent = false;
+      this.verificationCode = '';
+      this.verificationError = '';
     }
   }
 }
