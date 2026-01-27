@@ -13,10 +13,11 @@
     (cartClick)="router.navigate(['/cart'])">
   </app-storefront-header>
 
-  <!-- Navigation mit Kategorien -->
+  <!-- ✨ NEUE POSITION: Navigation mit Kategorien - DIREKT UNTER HEADER -->
   <app-storefront-nav
-    *ngIf="categories.length > 0"
+    *ngIf="!loading && categories.length > 0"
     [categories]="categories"
+    [selectedCategory]="selectedCategory"
     (categorySelect)="filterByCategory($event)">
   </app-storefront-nav>
 
@@ -108,40 +109,36 @@
     <!-- Products Section -->
     <section id="products" class="products-section">
       <div class="container">
-        <h3 class="section-title">Alle Produkte</h3>
+        <h3 class="section-title">
+          {{ selectedCategory ? selectedCategory.name : 'Alle Produkte' }}
+        </h3>
 
         <!-- Keine Produkte vorhanden -->
-        <div *ngIf="products.length === 0" class="empty-state">
+        <div *ngIf="filteredProducts.length === 0 && !selectedCategory" class="empty-state">
           <div class="empty-icon">📦</div>
           <h4>Noch keine Produkte verfügbar</h4>
           <p>Wir arbeiten daran, neue Produkte für dich bereitzustellen.</p>
         </div>
 
+        <!-- Keine Produkte in Kategorie -->
+        <div *ngIf="filteredProducts.length === 0 && selectedCategory" class="empty-state">
+          <div class="empty-icon">🔍</div>
+          <h4>Keine Produkte gefunden</h4>
+          <p>In dieser Kategorie sind aktuell keine Produkte verfügbar.</p>
+          <button class="btn btn-primary" (click)="filterByCategory(null)" style="margin-top: 1.5rem;">
+            Alle Produkte anzeigen
+          </button>
+        </div>
+
         <!-- Produkte Grid -->
-        <div *ngIf="products.length > 0" class="products-grid">
+        <div *ngIf="filteredProducts.length > 0" class="products-grid">
           <app-product-card
-            *ngFor="let product of products"
+            *ngFor="let product of filteredProducts"
             [product]="product"
             (addToCart)="addToCart($event)"
             (quickView)="openQuickView($event)"
             (click)="trackProductView(product)">
           </app-product-card>
-        </div>
-      </div>
-    </section>
-
-    <!-- Categories Section -->
-    <section *ngIf="categories.length > 0" class="categories-section">
-      <div class="container">
-        <h3 class="section-title">Kategorien durchsuchen</h3>
-        <div class="categories-grid">
-          <div
-            *ngFor="let category of categories"
-            class="category-card"
-            (click)="filterByCategory(category)">
-            <h4>{{ category.name }}</h4>
-            <p *ngIf="category.description">{{ category.description }}</p>
-          </div>
         </div>
       </div>
     </section>

@@ -52,6 +52,10 @@ export class StorefrontLandingComponent implements OnInit {
   quickViewProduct: Product | null = null;
   isQuickViewOpen = false;
 
+  // ✨ NEUE: Filter State
+  selectedCategory: Category | null = null;
+  filteredProducts: Product[] = [];
+
   constructor(
     private subdomainService: SubdomainService,
     private productService: ProductService,
@@ -170,12 +174,15 @@ export class StorefrontLandingComponent implements OnInit {
             console.log('📦 Erste 3 Produkte:', products.slice(0, 3).map(p => p.name));
           }
           this.products = products;
+          // ✨ Initialisiere filteredProducts mit allen Produkten
+          this.filteredProducts = [...products];
           resolve();
         },
         error: (error) => {
           console.error('❌ Fehler beim Laden der Produkte:', error);
           console.error('Error details:', error.status, error.statusText);
-          this.products = [];  // Explizit leeres Array setzen
+          this.products = [];
+          this.filteredProducts = [];
           resolve();
         }
       });
@@ -348,13 +355,20 @@ export class StorefrontLandingComponent implements OnInit {
   }
 
   filterByCategory(category: Category | null): void {
+    this.selectedCategory = category;
+
     if (category) {
-      console.log('🏷️ Filter nach Kategorie:', category.name);
-      // Filter-Logik hier implementieren
-      // TODO: Produkte nach Kategorie filtern
+      console.log('🏷️ Filter nach Kategorie:', category.name, '(ID:', category.id, ')');
+
+      // Filter Produkte nach Kategorie-ID
+      this.filteredProducts = this.products.filter(product => {
+        return product.categoryId === category.id;
+      });
+
+      console.log(`📊 Gefilterte Produkte: ${this.filteredProducts.length} von ${this.products.length}`);
     } else {
       console.log('🏷️ Filter zurückgesetzt - zeige alle Produkte');
-      // TODO: Alle Produkte anzeigen
+      this.filteredProducts = [...this.products];
     }
   }
 
