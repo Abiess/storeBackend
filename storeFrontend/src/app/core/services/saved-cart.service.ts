@@ -1,14 +1,41 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '@env/environment';
-import { SavedCart, CreateSavedCartRequest, SavedCartToCartRequest } from '../models';
+import { environment } from '../../../environments/environment';
+
+export interface SavedCartItem {
+  id: number;
+  savedCartId: number;
+  productId: number;
+  variantId: number;
+  quantity: number;
+  priceSnapshot: number;
+  productSnapshot?: string;
+  createdAt: Date;
+  productTitle?: string;
+  productImageUrl?: string;
+}
+
+export interface SavedCart {
+  id: number;
+  storeId: number;
+  customerId: number;
+  name: string;
+  description?: string;
+  expiresAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  items: SavedCartItem[];
+  itemCount: number;
+  totalAmount: number;
+  isExpired: boolean;
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class SavedCartService {
-  private apiUrl = environment.apiUrl;
+  private apiUrl = `${environment.apiUrl}/api/customer/saved-carts`;
 
   constructor(private http: HttpClient) {}
 
@@ -16,49 +43,54 @@ export class SavedCartService {
    * Alle gespeicherten Warenkörbe eines Kunden abrufen
    */
   getSavedCarts(storeId: number): Observable<SavedCart[]> {
-    return this.http.get<SavedCart[]>(`${this.apiUrl}/stores/${storeId}/saved-carts`);
+    return this.http.get<SavedCart[]>(`${this.apiUrl}?storeId=${storeId}`);
   }
 
   /**
    * Einzelnen gespeicherten Warenkorb abrufen
    */
-  getSavedCart(storeId: number, savedCartId: number): Observable<SavedCart> {
-    return this.http.get<SavedCart>(`${this.apiUrl}/stores/${storeId}/saved-carts/${savedCartId}`);
+  getSavedCart(savedCartId: number): Observable<SavedCart> {
+    return this.http.get<SavedCart>(`${this.apiUrl}/${savedCartId}`);
   }
 
   /**
    * Aktuellen Warenkorb speichern
    */
-  saveCurrentCart(request: CreateSavedCartRequest): Observable<SavedCart> {
-    return this.http.post<SavedCart>(`${this.apiUrl}/stores/${request.storeId}/saved-carts`, request);
+  saveCart(storeId: number, name: string, description: string, items: SavedCartItem[], expirationDays?: number): Observable<SavedCart> {
+    return this.http.post<SavedCart>(this.apiUrl, {
+      storeId,
+      name,
+      description,
+      items,
+      expirationDays
+    });
   }
 
   /**
    * Gespeicherten Warenkorb wiederherstellen
    */
-  restoreSavedCart(storeId: number, request: SavedCartToCartRequest): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/stores/${storeId}/saved-carts/${request.savedCartId}/restore`, request);
-  }
-
-  /**
-   * Gespeicherten Warenkorb umbenennen
-   */
-  updateSavedCart(storeId: number, savedCartId: number, updates: Partial<CreateSavedCartRequest>): Observable<SavedCart> {
-    return this.http.put<SavedCart>(`${this.apiUrl}/stores/${storeId}/saved-carts/${savedCartId}`, updates);
+  restoreSavedCart(savedCartId: number): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/${savedCartId}/restore`, {});
   }
 
   /**
    * Gespeicherten Warenkorb löschen
    */
-  deleteSavedCart(storeId: number, savedCartId: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/stores/${storeId}/saved-carts/${savedCartId}`);
+  deleteSavedCart(savedCartId: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${savedCartId}`);
   }
 
   /**
-   * Abgelaufene gespeicherte Warenkörbe bereinigen
+   * Anzahl gespeicherter Warenkörbe
    */
-  cleanupExpiredCarts(storeId: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/stores/${storeId}/saved-carts/cleanup`);
+  getSavedCartCount(): Observable<{ count: number }> {
+    return this.http.get<{ count: number }>(`${this.apiUrl}/count`);
+  }
+
+  /**
+   * Abgelaufene gespeicherte Warenkörbe bereinigen (Admin)
+   */
+  cleanupExpiredCarts(): Observable<{ deletedCount: number }> {
+    return this.http.post<{ deletedCount: number }>(`${this.apiUrl}/cleanup-expired`, {});
   }
 }
-

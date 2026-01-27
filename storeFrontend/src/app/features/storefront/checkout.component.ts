@@ -10,7 +10,8 @@ import { SubdomainService } from '../../core/services/subdomain.service';
 import { CouponInputComponent } from '../../shared/components/coupon-input/coupon-input.component';
 import { ValidateCouponsResponse } from '../../core/services/coupon.service';
 import { PlaceholderImageUtil } from '../../shared/utils/placeholder-image.util';
-import { PhoneVerificationService } from '../../core/services/phone-verification.service'; // NEUE: Import hinzugefügt
+import { PhoneVerificationService } from '../../core/services/phone-verification.service';
+import { parsePhoneNumber, isValidPhoneNumber, CountryCode } from 'libphonenumber-js'; // NEUE: Import für Phone Validation
 
 @Component({
   selector: 'app-checkout',
@@ -308,11 +309,16 @@ import { PhoneVerificationService } from '../../core/services/phone-verification
                 <div *ngIf="!phoneVerificationSent" class="verification-step">
                   <label>Telefonnummer (mit Ländervorwahl) *</label>
                   <div class="phone-input-group">
+                    <select [(ngModel)]="selectedCountry" class="country-select" (change)="onCountryChange()">
+                      <option *ngFor="let country of countryCodes" [value]="country">
+                        {{ country.flag }} {{ country.name }} ({{ country.dialCode }})
+                      </option>
+                    </select>
                     <input 
                       type="tel" 
-                      [(ngModel)]="phoneNumber"
+                      [(ngModel)]="phoneNumberLocal"
                       [ngModelOptions]="{standalone: true}"
-                      placeholder="+49 123 4567890"
+                      placeholder="1234567890"
                       class="phone-input"
                       [disabled]="sendingCode"
                     />
@@ -320,7 +326,7 @@ import { PhoneVerificationService } from '../../core/services/phone-verification
                       type="button"
                       class="btn-send-code"
                       (click)="sendVerificationCode()"
-                      [disabled]="!phoneNumber || sendingCode || codeSentRecently"
+                      [disabled]="!phoneNumberLocal || sendingCode || codeSentRecently"
                     >
                       {{ sendingCode ? '⏳ Wird gesendet...' : '📨 Code senden' }}
                     </button>
@@ -901,6 +907,19 @@ import { PhoneVerificationService } from '../../core/services/phone-verification
       padding: 0;
       cursor: pointer;
     }
+
+    .country-select {
+      flex: 0 0 120px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .country-select option {
+      padding: 10px;
+    }
   `]
 })
 export class CheckoutComponent implements OnInit {
@@ -929,6 +948,25 @@ export class CheckoutComponent implements OnInit {
   verificationError: string = ''; // NEUE: Fehlermeldung bei der Verifizierung
   phoneVerificationId: number | null = null; // NEUE: ID der Telefonnummer-Verifizierung
   private codeSentTimestamp: number = 0; // NEUE: Zeitstempel wann der Code gesendet wurde
+
+  // NEUE: Verbesserte Phone Input mit Vorwahl
+  countryCodes = [
+    { code: 'DE', dialCode: '+49', flag: '🇩🇪', name: 'Deutschland' },
+    { code: 'AT', dialCode: '+43', flag: '🇦🇹', name: 'Österreich' },
+    { code: 'CH', dialCode: '+41', flag: '🇨🇭', name: 'Schweiz' },
+    { code: 'MA', dialCode: '+212', flag: '🇲🇦', name: 'Marokko' }, // NEUE: Marokko hinzugefügt
+    { code: 'US', dialCode: '+1', flag: '🇺🇸', name: 'USA' },
+    { code: 'GB', dialCode: '+44', flag: '🇬🇧', name: 'UK' },
+    { code: 'FR', dialCode: '+33', flag: '🇫🇷', name: 'Frankreich' },
+    { code: 'IT', dialCode: '+39', flag: '🇮🇹', name: 'Italien' },
+    { code: 'ES', dialCode: '+34', flag: '🇪🇸', name: 'Spanien' },
+    { code: 'NL', dialCode: '+31', flag: '🇳🇱', name: 'Niederlande' },
+    { code: 'PL', dialCode: '+48', flag: '🇵🇱', name: 'Polen' }
+  ];
+  selectedCountry = this.countryCodes[0]; // Deutschland als Default
+  phoneNumberLocal = ''; // Nur die Nummer ohne Vorwahl
+  phoneValidationError = '';
+  isPhoneValid = false;
 
   constructor(
     private fb: FormBuilder,
@@ -1313,7 +1351,10 @@ export class CheckoutComponent implements OnInit {
     this.sendingCode = true;
     this.verificationError = '';
 
-    this.phoneVerificationService.sendVerificationCode(this.phoneNumber, this.storeId).subscribe({
+    // Kombiniere Ländervorwahl und lokale Nummer
+    const fullPhoneNumber = this.selectedCountry.dialCode + this.phoneNumberLocal;
+
+    this.phoneVerificationService.sendVerificationCode(fullPhoneNumber, this.storeId).subscribe({
       next: (response) => {
         console.log('✅ Verifizierungscode gesendet:', response);
         this.sendingCode = false;
@@ -1447,5 +1488,21 @@ export class CheckoutComponent implements OnInit {
       this.verificationCode = '';
       this.verificationError = '';
     }
+  }
+
+  /**
+   * Handler für Änderungen des Landes
+   */
+  onCountryChange(): void {
+    console.log('🌍 Land geändert:', this.selectedCountry);
+
+    // Setze die lokale Telefonnummer zurück, wenn das Land gewechselt wird
+    this.phoneNumberLocal = '';
+
+    // Optional: Fokussiere das Telefonnummern-Feld
+    setTimeout(() => {
+      const phoneInput = document.querySelector('.phone-input') as HTMLInputElement;
+      phoneInput?.focus();
+    }, 100);
   }
 }

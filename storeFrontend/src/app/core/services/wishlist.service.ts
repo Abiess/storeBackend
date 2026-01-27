@@ -2,119 +2,130 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { environment } from '@env/environment';
-import { Wishlist, WishlistItem, CreateWishlistRequest, AddToWishlistRequest } from '../models';
+import { environment } from '../../../environments/environment';
+
+export interface WishlistItem {
+  id: number;
+  wishlistId: number;
+  productId: number;
+  variantId?: number;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH';
+  note?: string;
+  addedAt: Date;
+  productTitle?: string;
+  productPrice?: number;
+  productImageUrl?: string;
+  inStock?: boolean;
+}
+
+export interface Wishlist {
+  id: number;
+  storeId: number;
+  customerId: number;
+  name: string;
+  description?: string;
+  isDefault: boolean;
+  isPublic: boolean;
+  shareToken?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  items: WishlistItem[];
+  itemCount: number;
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class WishlistService {
-  private apiUrl = environment.apiUrl;
+  private apiUrl = `${environment.apiUrl}/api/customer/wishlists`;
   private wishlistCountSubject = new BehaviorSubject<number>(0);
   public wishlistCount$ = this.wishlistCountSubject.asObservable();
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) {
+    this.loadWishlistCount();
+  }
 
   /**
    * Alle Wishlists eines Kunden abrufen
    */
   getWishlists(storeId: number): Observable<Wishlist[]> {
-    return this.http.get<Wishlist[]>(`${this.apiUrl}/stores/${storeId}/wishlists`);
+    return this.http.get<Wishlist[]>(`${this.apiUrl}?storeId=${storeId}`);
   }
 
   /**
    * Standard-Wishlist abrufen (oder erstellen falls nicht vorhanden)
    */
   getDefaultWishlist(storeId: number): Observable<Wishlist> {
-    return this.http.get<Wishlist>(`${this.apiUrl}/stores/${storeId}/wishlists/default`);
+    return this.http.get<Wishlist>(`${this.apiUrl}/default?storeId=${storeId}`);
   }
 
   /**
    * Einzelne Wishlist mit Items abrufen
    */
-  getWishlist(storeId: number, wishlistId: number): Observable<Wishlist> {
-    return this.http.get<Wishlist>(`${this.apiUrl}/stores/${storeId}/wishlists/${wishlistId}`);
+  getWishlist(wishlistId: number): Observable<Wishlist> {
+    return this.http.get<Wishlist>(`${this.apiUrl}/${wishlistId}`);
+  }
+
+  /**
+   * Öffentliche Wishlist über Share-Token abrufen
+   */
+  getPublicWishlist(shareToken: string): Observable<Wishlist> {
+    return this.http.get<Wishlist>(`${this.apiUrl}/shared/${shareToken}`);
   }
 
   /**
    * Neue Wishlist erstellen
    */
-  createWishlist(request: CreateWishlistRequest): Observable<Wishlist> {
-    return this.http.post<Wishlist>(`${this.apiUrl}/stores/${request.storeId}/wishlists`, request);
-  }
-
-  /**
-   * Wishlist umbenennen
-   */
-  updateWishlist(storeId: number, wishlistId: number, updates: Partial<CreateWishlistRequest>): Observable<Wishlist> {
-    return this.http.put<Wishlist>(`${this.apiUrl}/stores/${storeId}/wishlists/${wishlistId}`, updates);
-  }
-
-  /**
-   * Wishlist löschen
-   */
-  deleteWishlist(storeId: number, wishlistId: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/stores/${storeId}/wishlists/${wishlistId}`);
+  createWishlist(storeId: number, name: string, description?: string): Observable<Wishlist> {
+    return this.http.post<Wishlist>(`${this.apiUrl}?storeId=${storeId}&name=${name}${description ? '&description=' + description : ''}`, {});
   }
 
   /**
    * Produkt zur Wishlist hinzufügen
    */
-  addToWishlist(storeId: number, request: AddToWishlistRequest): Observable<WishlistItem> {
-    return this.http.post<WishlistItem>(`${this.apiUrl}/stores/${storeId}/wishlists/${request.wishlistId}/items`, request)
-      .pipe(tap(() => this.updateWishlistCount(storeId)));
+  addToWishlist(wishlistId: number, productId: number, variantId?: number, priority: string = 'MEDIUM', note?: string): Observable<WishlistItem> {
+    return this.http.post<WishlistItem>(`${this.apiUrl}/${wishlistId}/items`, {
+      productId,
+      variantId,
+      priority,
+      note
+    }).pipe(tap(() => this.loadWishlistCount()));
   }
 
   /**
    * Produkt aus Wishlist entfernen
    */
-  removeFromWishlist(storeId: number, wishlistId: number, itemId: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/stores/${storeId}/wishlists/${wishlistId}/items/${itemId}`)
-      .pipe(tap(() => this.updateWishlistCount(storeId)));
+  removeFromWishlist(wishlistId: number, itemId: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${wishlistId}/items/${itemId}`)
+      .pipe(tap(() => this.loadWishlistCount()));
   }
 
   /**
-   * Prüfen ob Produkt in Wishlist ist
+   * Wishlist teilen
    */
-  isInWishlist(storeId: number, productId: number): Observable<boolean> {
-    return this.http.get<boolean>(`${this.apiUrl}/stores/${storeId}/wishlists/check/${productId}`);
+  shareWishlist(wishlistId: number, makePublic: boolean = true): Observable<{ shareToken: string }> {
+    return this.http.post<{ shareToken: string }>(`${this.apiUrl}/${wishlistId}/share?makePublic=${makePublic}`, {});
   }
 
   /**
-   * Wishlist-Item Notiz aktualisieren
+   * Wishlist löschen
    */
-  updateItemNote(storeId: number, wishlistId: number, itemId: number, note: string): Observable<WishlistItem> {
-    return this.http.put<WishlistItem>(`${this.apiUrl}/stores/${storeId}/wishlists/${wishlistId}/items/${itemId}`, { note });
-  }
-
-  /**
-   * Wishlist-Item Priorität setzen
-   */
-  updateItemPriority(storeId: number, wishlistId: number, itemId: number, priority: 'LOW' | 'MEDIUM' | 'HIGH'): Observable<WishlistItem> {
-    return this.http.put<WishlistItem>(`${this.apiUrl}/stores/${storeId}/wishlists/${wishlistId}/items/${itemId}`, { priority });
+  deleteWishlist(wishlistId: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${wishlistId}`);
   }
 
   /**
    * Anzahl der Items in allen Wishlists abrufen
    */
-  getWishlistItemCount(storeId: number): Observable<number> {
-    return this.http.get<number>(`${this.apiUrl}/stores/${storeId}/wishlists/count`)
-      .pipe(tap(count => this.wishlistCountSubject.next(count)));
+  getWishlistItemCount(): Observable<{ count: number }> {
+    return this.http.get<{ count: number }>(`${this.apiUrl}/count`)
+      .pipe(tap(result => this.wishlistCountSubject.next(result.count)));
   }
 
   /**
-   * Wishlist-Count aktualisieren
+   * Wishlist-Count laden
    */
-  private updateWishlistCount(storeId: number): void {
-    this.getWishlistItemCount(storeId).subscribe();
-  }
-
-  /**
-   * Alle Items aus Wishlist in den Warenkorb verschieben
-   */
-  moveWishlistToCart(storeId: number, wishlistId: number): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/stores/${storeId}/wishlists/${wishlistId}/move-to-cart`, {})
-      .pipe(tap(() => this.updateWishlistCount(storeId)));
+  private loadWishlistCount(): void {
+    this.getWishlistItemCount().subscribe();
   }
 }
-
