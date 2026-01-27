@@ -88,6 +88,31 @@ public class CategoryController {
         return ResponseEntity.ok(categoryService.getSubCategories(categoryId));
     }
 
+    @Operation(summary = "Get category by ID", description = "Returns a single category by ID (public access)")
+    @GetMapping("/{categoryId}")
+    public ResponseEntity<Category> getCategoryById(
+            @Parameter(description = "Store ID") @PathVariable Long storeId,
+            @Parameter(description = "Category ID") @PathVariable Long categoryId,
+            @AuthenticationPrincipal User user) {
+
+        log.info("Getting category {} for store {} (user: {})", categoryId, storeId, user != null ? user.getId() : "anonymous");
+
+        try {
+            Category category = categoryService.getCategoryById(categoryId);
+
+            // Prüfe ob Kategorie zum Store gehört
+            if (!category.getStore().getId().equals(storeId)) {
+                log.warn("Category {} does not belong to store {}", categoryId, storeId);
+                return ResponseEntity.notFound().build();
+            }
+
+            return ResponseEntity.ok(category);
+        } catch (Exception e) {
+            log.error("Error getting category {}: {}", categoryId, e.getMessage());
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @Operation(summary = "Create category", description = "Creates a new category that can contain products")
     @PostMapping
     public ResponseEntity<Category> createCategory(

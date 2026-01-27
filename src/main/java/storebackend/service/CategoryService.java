@@ -28,6 +28,12 @@ public class CategoryService {
         return categoryRepository.findByParentIdOrderBySortOrderAsc(parentId);
     }
 
+    @Transactional(readOnly = true)
+    public Category getCategoryById(Long categoryId) {
+        return categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new RuntimeException("Category not found"));
+    }
+
     @Transactional
     public Category createCategory(Category category) {
         return categoryRepository.save(category);
@@ -50,4 +56,3 @@ public class CategoryService {
         categoryRepository.deleteById(id);
     }
 }
-
