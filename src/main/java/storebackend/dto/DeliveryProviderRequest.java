@@ -3,13 +3,17 @@ package storebackend.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Min;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import storebackend.enums.DeliveryProviderType;
 
 /**
  * DTO for creating/updating delivery providers
  */
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class DeliveryProviderRequest {
 
     @NotBlank(message = "Provider name is required")
@@ -27,4 +31,3 @@ public class DeliveryProviderRequest {
 
     private String configJson;
 }
-

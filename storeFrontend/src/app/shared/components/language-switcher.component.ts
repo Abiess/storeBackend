@@ -10,14 +10,14 @@ import { LanguageService } from '../../core/services/language.service';
     <div class="language-switcher">
       <button 
         class="lang-btn"
-        [class.active]="languageService.language() === 'ar'"
+        [class.active]="languageService.getCurrentLanguage() === 'ar'"
         (click)="setLanguage('ar')"
         title="العربية">
         AR
       </button>
       <button 
         class="lang-btn"
-        [class.active]="languageService.language() === 'de'"
+        [class.active]="languageService.getCurrentLanguage() === 'de'"
         (click)="setLanguage('de')"
         title="Deutsch">
         DE
@@ -70,4 +70,3 @@ export class LanguageSwitcherComponent {
     this.languageService.setLanguage(lang);
   }
 }
-

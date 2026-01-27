@@ -1,7 +1,9 @@
 package storebackend.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import storebackend.enums.DeliveryProviderType;
 import java.time.LocalDateTime;
 
@@ -13,6 +15,8 @@ import java.time.LocalDateTime;
     @Index(name = "idx_store_active_priority", columnList = "store_id,is_active,priority")
 })
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class DeliveryProvider {
 
     @Id
@@ -56,4 +60,3 @@ public class DeliveryProvider {
         this.updatedAt = LocalDateTime.now();
     }
 }
-

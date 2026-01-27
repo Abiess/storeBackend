@@ -1,7 +1,9 @@
 package storebackend.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
@@ -10,6 +12,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "store_delivery_settings")
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class StoreDeliverySettings {
 
     @Id
@@ -41,4 +45,3 @@ public class StoreDeliverySettings {
         this.updatedAt = LocalDateTime.now();
     }
 }
-

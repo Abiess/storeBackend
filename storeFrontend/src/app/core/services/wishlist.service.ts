@@ -37,7 +37,7 @@ export interface Wishlist {
   providedIn: 'root'
 })
 export class WishlistService {
-  private apiUrl = `${environment.apiUrl}/api/customer/wishlists`;
+  private apiUrl = `${environment.apiUrl}/customer/wishlists`;
   private wishlistCountSubject = new BehaviorSubject<number>(0);
   public wishlistCount$ = this.wishlistCountSubject.asObservable();
 

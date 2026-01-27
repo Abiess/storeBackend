@@ -1,0 +1,353 @@
+/* ========================================
+   RTL (Right-to-Left) Support Styles
+   ======================================== */
+
+/* Global RTL adjustments */
+[dir="rtl"] {
+  direction: rtl;
+  text-align: start;
+}
+
+/* Typography */
+[dir="rtl"] h1,
+[dir="rtl"] h2,
+[dir="rtl"] h3,
+[dir="rtl"] h4,
+[dir="rtl"] h5,
+[dir="rtl"] h6 {
+  text-align: start;
+}
+
+/* Flexbox RTL */
+[dir="rtl"] .flex-row {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .flex-row-reverse {
+  flex-direction: row;
+}
+
+/* Margins & Paddings - Use logical properties */
+.margin-start {
+  margin-inline-start: 1rem;
+}
+
+.margin-end {
+  margin-inline-end: 1rem;
+}
+
+.padding-start {
+  padding-inline-start: 1rem;
+}
+
+.padding-end {
+  padding-inline-end: 1rem;
+}
+
+/* Text Alignment */
+.text-start {
+  text-align: start;
+}
+
+.text-end {
+  text-align: end;
+}
+
+/* Float alternatives - Use Flexbox instead */
+.float-start {
+  float: inline-start;
+}
+
+.float-end {
+  float: inline-end;
+}
+
+/* Icons that need mirroring in RTL */
+[dir="rtl"] .icon-arrow-right::before {
+  content: "←";
+}
+
+[dir="rtl"] .icon-arrow-left::before {
+  content: "→";
+}
+
+[dir="rtl"] .icon-chevron-right {
+  transform: scaleX(-1);
+}
+
+[dir="rtl"] .icon-chevron-left {
+  transform: scaleX(-1);
+}
+
+/* Navigation */
+[dir="rtl"] nav ul {
+  padding-inline-start: 0;
+}
+
+[dir="rtl"] nav li {
+  margin-inline-end: 1rem;
+  margin-inline-start: 0;
+}
+
+/* Forms */
+[dir="rtl"] input,
+[dir="rtl"] textarea,
+[dir="rtl"] select {
+  text-align: start;
+}
+
+[dir="rtl"] input[type="checkbox"],
+[dir="rtl"] input[type="radio"] {
+  margin-inline-end: 0.5rem;
+  margin-inline-start: 0;
+}
+
+[dir="rtl"] label {
+  text-align: start;
+}
+
+/* Buttons */
+[dir="rtl"] button {
+  text-align: center;
+}
+
+[dir="rtl"] .button-with-icon {
+  flex-direction: row-reverse;
+}
+
+/* Cards */
+[dir="rtl"] .card {
+  text-align: start;
+}
+
+[dir="rtl"] .card-header,
+[dir="rtl"] .card-body,
+[dir="rtl"] .card-footer {
+  text-align: start;
+}
+
+/* Lists */
+[dir="rtl"] ul,
+[dir="rtl"] ol {
+  padding-inline-start: 1.5rem;
+  padding-inline-end: 0;
+}
+
+/* Tooltips & Popovers */
+[dir="rtl"] .tooltip,
+[dir="rtl"] .popover {
+  text-align: start;
+}
+
+/* Dropdowns */
+[dir="rtl"] .dropdown-menu {
+  left: auto;
+  right: 0;
+  text-align: start;
+}
+
+/* Modals */
+[dir="rtl"] .modal-header,
+[dir="rtl"] .modal-body,
+[dir="rtl"] .modal-footer {
+  text-align: start;
+}
+
+[dir="rtl"] .modal-header .close {
+  margin-inline-start: auto;
+  margin-inline-end: 0;
+}
+
+/* Tables */
+[dir="rtl"] table {
+  text-align: start;
+}
+
+[dir="rtl"] th,
+[dir="rtl"] td {
+  text-align: start;
+}
+
+/* Breadcrumbs */
+[dir="rtl"] .breadcrumb-item + .breadcrumb-item::before {
+  content: "‹";
+  padding-inline-end: 0.5rem;
+  padding-inline-start: 0.5rem;
+}
+
+/* Shopping Cart */
+[dir="rtl"] .cart-item {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .cart-item-image {
+  margin-inline-start: 1rem;
+  margin-inline-end: 0;
+}
+
+[dir="rtl"] .cart-item-details {
+  text-align: start;
+}
+
+[dir="rtl"] .cart-total {
+  text-align: start;
+}
+
+/* Product Cards */
+[dir="rtl"] .product-card {
+  text-align: start;
+}
+
+[dir="rtl"] .product-price {
+  text-align: start;
+}
+
+[dir="rtl"] .product-actions {
+  justify-content: flex-start;
+}
+
+/* Checkout */
+[dir="rtl"] .checkout-step {
+  text-align: start;
+}
+
+[dir="rtl"] .checkout-summary {
+  text-align: start;
+}
+
+/* Header & Navigation */
+[dir="rtl"] .header-nav {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .nav-links {
+  padding-inline-start: 0;
+}
+
+[dir="rtl"] .nav-item {
+  margin-inline-end: 1.5rem;
+  margin-inline-start: 0;
+}
+
+/* Footer */
+[dir="rtl"] .footer-section {
+  text-align: start;
+}
+
+/* Badges & Tags */
+[dir="rtl"] .badge,
+[dir="rtl"] .tag {
+  margin-inline-end: 0.25rem;
+  margin-inline-start: 0;
+}
+
+/* Alerts */
+[dir="rtl"] .alert {
+  text-align: start;
+}
+
+[dir="rtl"] .alert-icon {
+  margin-inline-end: 0.75rem;
+  margin-inline-start: 0;
+}
+
+/* Progress Bars */
+[dir="rtl"] .progress-bar {
+  transform-origin: right center;
+}
+
+/* Tabs */
+[dir="rtl"] .nav-tabs {
+  border-bottom: 1px solid #dee2e6;
+}
+
+[dir="rtl"] .nav-tabs .nav-link {
+  margin-inline-end: 0.25rem;
+  margin-inline-start: 0;
+}
+
+/* Pagination */
+[dir="rtl"] .pagination {
+  flex-direction: row-reverse;
+}
+
+/* Scrollbar RTL */
+[dir="rtl"] ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+/* Animations for RTL */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+[dir="rtl"] .slide-in-right {
+  animation: slideInLeft 0.3s ease-out;
+}
+
+[dir="rtl"] .slide-in-left {
+  animation: slideInRight 0.3s ease-out;
+}
+
+/* Utilities */
+[dir="rtl"] .border-start {
+  border-inline-start: 1px solid #dee2e6;
+  border-left: 0;
+}
+
+[dir="rtl"] .border-end {
+  border-inline-end: 1px solid #dee2e6;
+  border-right: 0;
+}
+
+/* Grid System RTL adjustments */
+[dir="rtl"] .container,
+[dir="rtl"] .container-fluid {
+  padding-inline-start: 15px;
+  padding-inline-end: 15px;
+}
+
+/* Arabic Font Optimization */
+[dir="rtl"] body,
+[dir="rtl"] input,
+[dir="rtl"] textarea,
+[dir="rtl"] select,
+[dir="rtl"] button {
+  font-family: 'Segoe UI', 'Tahoma', 'Arial', sans-serif;
+  letter-spacing: normal;
+}
+
+/* Number formatting in RTL */
+[dir="rtl"] .number,
+[dir="rtl"] .price,
+[dir="rtl"] .currency {
+  direction: ltr;
+  display: inline-block;
+}
+
+/* Ensure proper text direction for mixed content */
+[dir="rtl"] .ltr-content {
+  direction: ltr;
+  display: inline-block;
+}
+
+[dir="rtl"] .rtl-content {
+  direction: rtl;
+  display: inline-block;
+}
+

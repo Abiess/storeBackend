@@ -1,259 +1,196 @@
-/* ==================== RTL (Right-to-Left) Support ==================== */
-/* Wird automatisch aktiviert wenn html[dir="rtl"] gesetzt ist */
+/* ========================================
+   RTL (Right-to-Left) Support Styles
+   ======================================== */
 
+// RTL Mixins für wiederverwendbare Styles
+@mixin rtl {
+  [dir="rtl"] & {
+    @content;
+  }
+}
+
+@mixin ltr {
+  [dir="ltr"] & {
+    @content;
+  }
+}
+
+// Logical Properties Mixins
+@mixin margin-inline-start($value) {
+  margin-inline-start: $value;
+}
+
+@mixin margin-inline-end($value) {
+  margin-inline-end: $value;
+}
+
+@mixin padding-inline-start($value) {
+  padding-inline-start: $value;
+}
+
+@mixin padding-inline-end($value) {
+  padding-inline-end: $value;
+}
+
+/* Global RTL Base Styles */
 [dir="rtl"] {
-  /* Text Alignment */
-  text-align: right;
+  direction: rtl;
+  text-align: start;
+}
 
-  /* Flexbox Direction Reversal */
-  .flex-row {
+[dir="ltr"] {
+  direction: ltr;
+  text-align: start;
+}
+
+/* Typography */
+[dir="rtl"] {
+  h1, h2, h3, h4, h5, h6 {
+    text-align: start;
+  }
+}
+
+/* Use Logical Properties everywhere */
+.m-start { margin-inline-start: 1rem; }
+.m-end { margin-inline-end: 1rem; }
+.p-start { padding-inline-start: 1rem; }
+.p-end { padding-inline-end: 1rem; }
+
+.text-start { text-align: start; }
+.text-end { text-align: end; }
+
+/* Icons that need mirroring in RTL */
+[dir="rtl"] {
+  .icon-arrow-right, .icon-chevron-right, .icon-forward {
+    transform: scaleX(-1);
+  }
+
+  .icon-arrow-left, .icon-chevron-left, .icon-back {
+    transform: scaleX(-1);
+  }
+}
+
+/* Forms */
+[dir="rtl"] {
+  input, textarea, select {
+    text-align: start;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    @include margin-inline-end(0.5rem);
+    margin-inline-start: 0;
+  }
+}
+
+/* Lists */
+[dir="rtl"] {
+  ul, ol {
+    @include padding-inline-start(1.5rem);
+    padding-inline-end: 0;
+  }
+}
+
+/* Flexbox helpers */
+.flex-row-rtl {
+  display: flex;
+
+  @include rtl {
+    flex-direction: row-reverse;
+  }
+}
+
+/* Shopping Cart RTL */
+[dir="rtl"] {
+  .cart-item {
     flex-direction: row-reverse;
   }
 
-  /* Margins & Paddings - Flip horizontal spacing */
-  .ml-auto { margin-left: 0 !important; margin-right: auto !important; }
-  .mr-auto { margin-right: 0 !important; margin-left: auto !important; }
+  .cart-item-image {
+    @include margin-inline-start(1rem);
+    margin-inline-end: 0;
+  }
+}
 
-  /* Float */
-  .float-left { float: right !important; }
-  .float-right { float: left !important; }
-
-  /* Border Radius - Corner Flipping */
-  .rounded-l { border-radius: 0 0.375rem 0.375rem 0 !important; }
-  .rounded-r { border-radius: 0.375rem 0 0 0.375rem !important; }
-
-  /* Positioning */
-  .left-0 { left: auto; right: 0; }
-  .right-0 { right: auto; left: 0; }
-
-  /* Transform for icons that need flipping */
-  .icon-flip {
-    transform: scaleX(-1);
+/* Product Cards RTL */
+[dir="rtl"] {
+  .product-card {
+    text-align: start;
   }
 
-  /* Navigation arrows */
-  .arrow-left::before { content: '→'; }
-  .arrow-right::before { content: '←'; }
-
-  /* Breadcrumbs */
-  .breadcrumb-item + .breadcrumb-item::before {
-    transform: scaleX(-1);
+  .product-actions {
+    justify-content: flex-start;
   }
+}
 
-  /* Dropdowns */
+/* Navigation RTL */
+[dir="rtl"] {
+  .nav-item {
+    @include margin-inline-end(1.5rem);
+    margin-inline-start: 0;
+  }
+}
+
+/* Dropdowns RTL */
+[dir="rtl"] {
   .dropdown-menu {
     left: auto;
     right: 0;
-    text-align: right;
+    text-align: start;
   }
+}
 
-  /* Modals */
-  .modal-header .btn-close {
-    margin: -0.5rem auto -0.5rem -0.5rem;
+/* Arabic Font Optimization */
+[dir="rtl"] {
+  body, input, textarea, select, button {
+    font-family: 'Segoe UI', 'Tahoma', 'Arial', sans-serif;
   }
+}
 
-  /* Forms */
-  input[type="checkbox"],
-  input[type="radio"] {
-    margin-right: 0;
-    margin-left: 0.5rem;
-  }
-
-  /* Tables */
-  table {
-    text-align: right;
-  }
-
-  th:first-child,
-  td:first-child {
-    text-align: right;
-  }
-
-  /* Lists */
-  ul, ol {
-    padding-right: 2rem;
-    padding-left: 0;
-  }
-
-  /* Tooltips & Popovers */
-  .tooltip,
-  .popover {
-    text-align: right;
-  }
-
-  /* Icons that should not flip */
-  .icon-no-flip {
-    transform: none !important;
-  }
-
-  /* Numbers and dates should stay LTR */
-  .ltr-content {
+/* Number formatting - always LTR */
+[dir="rtl"] {
+  .number, .price, .currency {
     direction: ltr;
-    unicode-bidi: embed;
-  }
-
-  /* Shopping cart icon badge positioning */
-  .cart-badge {
-    left: -8px;
-    right: auto;
-  }
-
-  /* Header actions alignment */
-  .header-actions {
-    flex-direction: row-reverse;
-  }
-
-  /* Sidebar navigation */
-  .sidebar {
-    left: auto;
-    right: 0;
-  }
-
-  /* Product cards grid adjustments */
-  .product-card {
-    text-align: right;
-  }
-
-  /* Form labels */
-  label {
-    text-align: right;
-  }
-
-  /* Button groups */
-  .btn-group {
-    flex-direction: row-reverse;
-  }
-
-  .btn-group > .btn:not(:last-child) {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-    border-top-left-radius: inherit;
-    border-bottom-left-radius: inherit;
-  }
-
-  .btn-group > .btn:not(:first-child) {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-    border-top-right-radius: inherit;
-    border-bottom-right-radius: inherit;
-  }
-
-  /* Pagination */
-  .pagination {
-    flex-direction: row-reverse;
-  }
-
-  /* Progress bars */
-  .progress-bar {
-    right: 0;
-    left: auto;
-  }
-
-  /* Spinners and loaders - centered, no flip needed */
-  .spinner,
-  .loading-spinner {
-    margin: 0 auto;
-  }
-
-  /* Search input icons */
-  .search-icon {
-    left: auto;
-    right: 1rem;
-  }
-
-  input[type="search"] {
-    padding-right: 2.5rem;
-    padding-left: 1rem;
-  }
-
-  /* Chevrons and arrows in UI */
-  .chevron-right::before {
-    content: '\2039'; /* ‹ */
-  }
-
-  .chevron-left::before {
-    content: '\203A'; /* › */
-  }
-
-  /* Scrollbar (WebKit browsers) */
-  ::-webkit-scrollbar {
-    width: 8px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: #f1f1f1;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 4px;
+    display: inline-block;
   }
 }
 
-/* ==================== Responsive RTL Adjustments ==================== */
-
-@media (max-width: 768px) {
-  [dir="rtl"] {
-    /* Mobile navigation adjustments */
-    .mobile-menu {
-      right: 0;
-      left: auto;
-      transform: translateX(100%);
-    }
-
-    .mobile-menu.open {
-      transform: translateX(0);
-    }
-
-    /* Mobile drawer from right */
-    .drawer-right {
-      right: auto;
-      left: 0;
-    }
-
-    /* Hamburger menu icon */
-    .hamburger {
-      margin-left: 0;
-      margin-right: auto;
-    }
+/* Animations for RTL */
+@keyframes slideInFromEnd {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
   }
 }
 
-/* ==================== Language-Specific Font Adjustments ==================== */
-
-:lang(ar) {
-  font-family: 'Cairo', 'Tajawal', 'Almarai', sans-serif;
-
-  /* Arabic typography adjustments */
-  h1, h2, h3, h4, h5, h6 {
-    font-weight: 700;
-    letter-spacing: 0;
+@keyframes slideInFromStart {
+  from {
+    transform: translateX(-100%);
   }
-
-  p, span, div {
-    line-height: 1.8;
-  }
-
-  /* Larger font for better Arabic readability */
-  body {
-    font-size: 1.05rem;
-  }
-
-  button, .btn {
-    font-weight: 600;
+  to {
+    transform: translateX(0);
   }
 }
 
-:lang(de), :lang(en) {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+[dir="rtl"] {
+  .slide-in-right {
+    animation: slideInFromStart 0.3s ease-out;
+  }
+
+  .slide-in-left {
+    animation: slideInFromEnd 0.3s ease-out;
+  }
 }
 
-/* ==================== Print Styles for RTL ==================== */
+[dir="ltr"] {
+  .slide-in-right {
+    animation: slideInFromEnd 0.3s ease-out;
+  }
 
-@media print {
-  [dir="rtl"] {
-    direction: rtl;
-    text-align: right;
+  .slide-in-left {
+    animation: slideInFromStart 0.3s ease-out;
   }
 }
 
