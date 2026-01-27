@@ -7,14 +7,9 @@ import { AuthInterceptor } from './core/interceptors/auth.interceptor';
 import { ErrorInterceptor } from './core/interceptors/error.interceptor';
 import {provideCouponService} from "@app/core/providers/coupon.provider";
 import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
-import { TranslateHttpLoader } from '@ngx-translate/http-loader';
+import { TranslateHttpLoader, provideTranslateHttpLoader } from '@ngx-translate/http-loader';
 import { importProvidersFrom } from '@angular/core';
 import { LanguageService } from './core/services/language.service';
-
-// Translation Loader Factory - für Angular 17 standalone
-export function createTranslateLoader(http: HttpClient) {
-  return new TranslateHttpLoader();
-}
 
 // Language Initializer Factory
 export function initializeLanguage(languageService: LanguageService) {
@@ -24,20 +19,24 @@ export function initializeLanguage(languageService: LanguageService) {
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
-    provideHttpClient(withInterceptorsFromDi()),  // ← FIX: Enable class-based interceptors!
-    provideAnimations(), // Enable Angular Material animations
+    provideHttpClient(withInterceptorsFromDi()),
+    provideAnimations(),
     provideCouponService(),
-    // ngx-translate Setup
+    // ngx-translate Setup für Angular 17
     importProvidersFrom(
       TranslateModule.forRoot({
         defaultLanguage: 'en',
         loader: {
           provide: TranslateLoader,
-          useFactory: createTranslateLoader,
-          deps: [HttpClient]
+          useClass: TranslateHttpLoader
         }
       })
     ),
+    // Provide TranslateHttpLoader Config
+    provideTranslateHttpLoader({
+      prefix: './assets/i18n/',
+      suffix: '.json'
+    }),
     // APP_INITIALIZER für Language Detection
     {
       provide: APP_INITIALIZER,
@@ -55,6 +54,5 @@ export const appConfig: ApplicationConfig = {
       useClass: ErrorInterceptor,
       multi: true
     }
-
   ]
 };
