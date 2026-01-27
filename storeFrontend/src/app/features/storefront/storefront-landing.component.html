@@ -1,6 +1,6 @@
-<!-- Storefront Landing Page Template -->
+<!-- Storefront Landing Page Template - Modern Design -->
 
-<!-- NEUE: Store nicht gefunden / Reservierter Slug -->
+<!-- Store nicht gefunden / Reservierter Slug -->
 <app-store-not-found *ngIf="storeNotFound"></app-store-not-found>
 
 <!-- Normaler Store-Inhalt -->
@@ -29,13 +29,13 @@
   <!-- Main Content -->
   <main class="storefront-content" *ngIf="!loading">
 
-    <!-- Hero Section -->
+    <!-- Hero Section - Modern & Clean -->
     <section class="hero-section">
       <div class="container">
-        <h2>Willkommen bei {{ storeName }}</h2>
-        <p class="hero-description">Entdecke unsere Produkte</p>
+        <h2>{{ storeName }}</h2>
+        <p class="hero-description">Entdecke unsere sorgfältig ausgewählten Produkte</p>
         <button class="btn btn-primary" (click)="scrollToProducts()">
-          Produkte ansehen
+          Jetzt einkaufen
         </button>
       </div>
     </section>
@@ -44,11 +44,11 @@
     <section *ngIf="featuredProducts.length > 0" class="featured-section">
       <div class="container">
         <div class="section-header">
-          <h3 class="section-title">⭐ Unsere Highlights</h3>
-          <p class="section-subtitle">Speziell für dich ausgewählt</p>
+          <h3 class="section-title">Highlights</h3>
+          <p class="section-subtitle">Unsere Top-Empfehlungen für dich</p>
         </div>
 
-        <div class="products-grid featured-grid">
+        <div class="products-grid">
           <app-product-card
             *ngFor="let product of featuredProducts"
             [product]="product"
@@ -64,8 +64,8 @@
     <section *ngIf="topProducts.length > 0" class="top-products-section">
       <div class="container">
         <div class="section-header">
-          <h3 class="section-title">🔥 Bestseller</h3>
-          <p class="section-subtitle">Die meistverkauften Produkte</p>
+          <h3 class="section-title">Bestseller</h3>
+          <p class="section-subtitle">Die beliebtesten Produkte unserer Kunden</p>
         </div>
 
         <div class="products-grid">
@@ -80,7 +80,7 @@
 
         <!-- Sales Badge für Bestseller -->
         <div class="bestseller-info" *ngIf="topProducts[0]?.salesCount">
-          <p>💰 Über {{ topProducts[0].salesCount }} mal verkauft!</p>
+          <p>Über {{ topProducts[0].salesCount }} zufriedene Kunden</p>
         </div>
       </div>
     </section>
@@ -89,8 +89,8 @@
     <section *ngIf="newArrivals.length > 0" class="new-arrivals-section">
       <div class="container">
         <div class="section-header">
-          <h3 class="section-title">✨ Neu eingetroffen</h3>
-          <p class="section-subtitle">Die neuesten Produkte in unserem Shop</p>
+          <h3 class="section-title">Neu eingetroffen</h3>
+          <p class="section-subtitle">Entdecke die neuesten Produkte in unserem Sortiment</p>
         </div>
 
         <div class="products-grid">
@@ -114,7 +114,7 @@
         <div *ngIf="products.length === 0" class="empty-state">
           <div class="empty-icon">📦</div>
           <h4>Noch keine Produkte verfügbar</h4>
-          <p>Der Store-Besitzer hat noch keine Produkte hinzugefügt.</p>
+          <p>Wir arbeiten daran, neue Produkte für dich bereitzustellen.</p>
         </div>
 
         <!-- Produkte Grid -->
@@ -130,10 +130,10 @@
       </div>
     </section>
 
-    <!-- Categories Section (wenn vorhanden) -->
+    <!-- Categories Section -->
     <section *ngIf="categories.length > 0" class="categories-section">
       <div class="container">
-        <h3 class="section-title">Kategorien</h3>
+        <h3 class="section-title">Kategorien durchsuchen</h3>
         <div class="categories-grid">
           <div
             *ngFor="let category of categories"
@@ -143,25 +143,6 @@
             <p *ngIf="category.description">{{ category.description }}</p>
           </div>
         </div>
-      </div>
-    </section>
-
-    <!-- Debug Info (nur für Entwicklung) -->
-    <section class="debug-section" *ngIf="false">
-      <div class="container">
-        <details>
-          <summary>🔧 Debug Info</summary>
-          <pre>{{ {
-            storeId: storeId,
-            storeName: storeName,
-            productsCount: products.length,
-            categoriesCount: categories.length,
-            featuredCount: featuredProducts.length,
-            topProductsCount: topProducts.length,
-            newArrivalsCount: newArrivals.length,
-            cartItemCount: cartItemCount
-          } | json }}</pre>
-        </details>
       </div>
     </section>
 
@@ -180,6 +161,6 @@
 <!-- Footer -->
 <footer class="storefront-footer">
   <div class="container">
-    <p>&copy; 2026 {{ storeName || 'Store' }} - Powered by Markt.ma</p>
+    <p>&copy; 2026 {{ storeName || 'Store' }} · Powered by Markt.ma</p>
   </div>
 </footer>
