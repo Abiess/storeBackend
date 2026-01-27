@@ -410,5 +410,12 @@
     "categories": "Loading categories...",
     "orders": "Loading orders...",
     "stores": "Loading stores..."
+  },
+  "topBar": {
+    "help": "Help",
+    "contact": "Contact",
+    "customerService": "Customer Service",
+    "shipping": "Shipping & Delivery",
+    "returns": "Returns"
   }
 }

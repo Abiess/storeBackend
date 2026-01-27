@@ -73,6 +73,13 @@
     "addressBook": "دفتر العناوين",
     "orderHistory": "سجل الطلبات"
   },
+  "topBar": {
+    "help": "المساعدة",
+    "contact": "اتصل بنا",
+    "customerService": "خدمة العملاء",
+    "shipping": "الشحن والتوصيل",
+    "returns": "المرتجعات"
+  },
   "auth": {
     "email": "البريد الإلكتروني",
     "password": "كلمة المرور",

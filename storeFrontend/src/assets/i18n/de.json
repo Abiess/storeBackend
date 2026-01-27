@@ -73,6 +73,13 @@
     "addressBook": "Adressbuch",
     "orderHistory": "Bestellhistorie"
   },
+  "topBar": {
+    "help": "Hilfe",
+    "contact": "Kontakt",
+    "customerService": "Kundenservice",
+    "shipping": "Versand & Lieferung",
+    "returns": "Rücksendungen"
+  },
   "auth": {
     "email": "E-Mail",
     "password": "Passwort",
@@ -291,9 +298,9 @@
     "badRequest": "Ungültige Anfrage"
   },
   "language": {
-    "select": "Sprache wählen",
+    "select": "Sprache auswählen",
     "de": "Deutsch",
     "en": "Englisch",
-    "ar": "العربية"
+    "ar": "Arabisch"
   }
 }

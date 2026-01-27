@@ -11,6 +11,7 @@ import { StorefrontNavComponent } from './storefront-nav.component';
 import { ProductCardComponent } from './product-card.component';
 import { ProductQuickViewComponent } from '@app/shared/components/product-quick-view.component';
 import { FeaturedProductsComponent } from '@app/shared/components/featured-products.component';
+import { TopBarComponent } from '@app/shared/components/top-bar/top-bar.component';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -23,7 +24,8 @@ import { Subscription } from 'rxjs';
     StorefrontNavComponent,
     ProductCardComponent,
     ProductQuickViewComponent,
-    FeaturedProductsComponent
+    FeaturedProductsComponent,
+    TopBarComponent
   ],
   templateUrl: './storefront.component.html',
   styleUrls: ['./storefront.component.scss']
