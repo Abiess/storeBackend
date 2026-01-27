@@ -54,6 +54,16 @@ public class WishlistController {
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam Long storeId) {
 
+        // Wenn kein Benutzer eingeloggt ist, gib leere Wishlist zurück
+        if (userDetails == null) {
+            WishlistDTO emptyWishlist = new WishlistDTO();
+            emptyWishlist.setStoreId(storeId);
+            emptyWishlist.setName("Meine Wunschliste");
+            emptyWishlist.setIsDefault(true);
+            emptyWishlist.setItems(List.of());
+            return ResponseEntity.ok(emptyWishlist);
+        }
+
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("Benutzer nicht gefunden"));
 
@@ -65,6 +75,11 @@ public class WishlistController {
     public ResponseEntity<WishlistDTO> getWishlistById(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long wishlistId) {
+
+        // Gäste können keine spezifischen Wishlists abrufen
+        if (userDetails == null) {
+            throw new RuntimeException("Authentifizierung erforderlich");
+        }
 
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("Benutzer nicht gefunden"));
