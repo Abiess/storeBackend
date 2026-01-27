@@ -384,12 +384,17 @@ CREATE TABLE orders (
     billing_city VARCHAR(255),
     billing_postal_code VARCHAR(50),
     billing_country VARCHAR(100),
-    billing_phone VARCHAR(50),    -- Delivery Fields
+    billing_phone VARCHAR(50),
+    -- Delivery Fields
     delivery_type VARCHAR(20),
     delivery_mode VARCHAR(20),
     delivery_provider_id BIGINT,
     delivery_fee DECIMAL(10, 2),
     eta_minutes INTEGER,
+    -- Payment Fields (Cash on Delivery Support)
+    payment_method VARCHAR(30),
+    phone_verification_id BIGINT,
+    phone_verified BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP,
     shipped_at TIMESTAMP,

@@ -67,8 +67,9 @@ public class SecurityConfig {
                 // Cart and Checkout - können öffentlich sein (verwenden Session)
                 .requestMatchers("/api/cart/**").permitAll()
                 .requestMatchers("/api/checkout/**").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/orders/create").permitAll()
-                 // h2 cosnole
+                .requestMatchers("/api/public/**").permitAll()
+                .requestMatchers("/api/phone-verification/**").permitAll()
+                // h2 cosnole
                 .requestMatchers("/h2-console/**").permitAll()
                 // Health check
                 .requestMatchers("/actuator/**").permitAll()

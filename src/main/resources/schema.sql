@@ -256,6 +256,10 @@ CREATE TABLE orders (
     delivery_provider_id BIGINT,
     delivery_fee DECIMAL(10,2),
     eta_minutes INTEGER,
+    -- Payment Fields (Cash on Delivery Support)
+    payment_method VARCHAR(30),
+    phone_verification_id BIGINT,
+    phone_verified BOOLEAN DEFAULT FALSE,
     -- Timestamps
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

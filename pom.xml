@@ -85,6 +85,13 @@
             <version>2.3.0</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.twilio.sdk</groupId>
+            <artifactId>twilio</artifactId>
+            <version>9.14.1</version>
+        </dependency>
+
+
         <!-- Jackson Hibernate6 Module - Fix für Lazy Loading Serialization (Spring Boot 3.x) -->
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>

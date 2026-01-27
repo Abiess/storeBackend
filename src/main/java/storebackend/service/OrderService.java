@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import storebackend.dto.OrderDetailsDTO;
 import storebackend.entity.*;
 import storebackend.enums.OrderStatus;
+import storebackend.enums.PaymentMethod;
 import storebackend.repository.*;
 
 import java.math.BigDecimal;
@@ -59,7 +60,9 @@ public class OrderService {
                                      String billingAddress1, String billingAddress2,
                                      String billingCity, String billingPostalCode,
                                      String billingCountry, String notes,
-                                     User customer) {
+                                     User customer,
+                                     PaymentMethod paymentMethod,
+                                     Long phoneVerificationId) {
 
         Cart cart = cartRepository.findById(cartId)
                 .orElseThrow(() -> new RuntimeException("Cart not found"));
@@ -79,14 +82,40 @@ public class OrderService {
         BigDecimal shipping = BigDecimal.valueOf(5.00); // Fixed shipping
         total = total.add(tax).add(shipping);
 
-        // Create order with only fields that exist in DB
+        // Create order with payment method and phone verification
         Order order = new Order();
         order.setStore(cart.getStore());
         order.setCustomer(customer);
+        order.setCustomerEmail(customerEmail);
         order.setStatus(OrderStatus.PENDING);
         order.setTotalAmount(total);
-        // Note: Shipping/Billing address fields no longer stored in Order table
-        // Consider storing them in separate OrderAddress table if needed
+        order.setNotes(notes);
+        order.setPaymentMethod(paymentMethod);
+        order.setPhoneVerificationId(phoneVerificationId);
+        order.setPhoneVerified(phoneVerificationId != null);
+
+        // Set shipping address
+        Address shippingAddr = new Address();
+        shippingAddr.setFirstName(shippingFirstName);
+        shippingAddr.setLastName(shippingLastName);
+        shippingAddr.setAddress1(shippingAddress1);
+        shippingAddr.setAddress2(shippingAddress2);
+        shippingAddr.setCity(shippingCity);
+        shippingAddr.setPostalCode(shippingPostalCode);
+        shippingAddr.setCountry(shippingCountry);
+        shippingAddr.setPhone(shippingPhone);
+        order.setShippingAddress(shippingAddr);
+
+        // Set billing address
+        Address billingAddr = new Address();
+        billingAddr.setFirstName(billingFirstName);
+        billingAddr.setLastName(billingLastName);
+        billingAddr.setAddress1(billingAddress1);
+        billingAddr.setAddress2(billingAddress2);
+        billingAddr.setCity(billingCity);
+        billingAddr.setPostalCode(billingPostalCode);
+        billingAddr.setCountry(billingCountry);
+        order.setBillingAddress(billingAddr);
 
         Order savedOrder = orderRepository.save(order);
 

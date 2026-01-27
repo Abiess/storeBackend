@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import storebackend.enums.OrderStatus;
 import storebackend.enums.DeliveryType;
 import storebackend.enums.DeliveryMode;
+import storebackend.enums.PaymentMethod;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -108,6 +109,17 @@ public class Order {
 
     @Column(name = "eta_minutes")
     private Integer etaMinutes;
+
+    // PAYMENT FIELDS
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method", length = 30)
+    private PaymentMethod paymentMethod;
+
+    @Column(name = "phone_verification_id")
+    private Long phoneVerificationId;
+
+    @Column(name = "phone_verified")
+    private Boolean phoneVerified = false;
 
     @PrePersist
     protected void onCreate() {

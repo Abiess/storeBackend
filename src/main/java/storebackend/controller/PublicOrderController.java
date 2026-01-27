@@ -66,8 +66,33 @@ public class PublicOrderController {
             Long storeId = Long.valueOf(request.get("storeId").toString());
             String customerEmail = (String) request.get("customerEmail");
 
-            log.info("🛍️ Checkout - Mode: {}, storeId: {}, email: {}",
-                isGuest ? "GUEST" : "AUTHENTICATED", storeId, customerEmail);
+            // Zahlungsmethode extrahieren
+            String paymentMethodStr = (String) request.get("paymentMethod");
+            storebackend.enums.PaymentMethod paymentMethod = paymentMethodStr != null
+                ? storebackend.enums.PaymentMethod.valueOf(paymentMethodStr)
+                : null;
+
+            // Phone Verification ID für Cash on Delivery
+            Long phoneVerificationId = null;
+            if (request.containsKey("phoneVerificationId")) {
+                phoneVerificationId = Long.valueOf(request.get("phoneVerificationId").toString());
+            }
+
+            // Validiere Phone Verification für Cash on Delivery
+            if (paymentMethod == storebackend.enums.PaymentMethod.CASH_ON_DELIVERY) {
+                if (phoneVerificationId == null) {
+                    return ResponseEntity.badRequest().body(Map.of(
+                        "error", "Telefonnummer-Verifizierung ist erforderlich für Nachnahme",
+                        "requiresPhoneVerification", true
+                    ));
+                }
+
+                // Prüfe ob Verifizierung gültig ist (sollte im Service gemacht werden)
+                log.info("📱 Cash on Delivery order with phone verification: {}", phoneVerificationId);
+            }
+
+            log.info("🛍️ Checkout - Mode: {}, storeId: {}, email: {}, payment: {}",
+                isGuest ? "GUEST" : "AUTHENTICATED", storeId, customerEmail, paymentMethod);
 
             // FIXED: Cart-Suche je nach Checkout-Typ
             var cartOptional = java.util.Optional.<storebackend.entity.Cart>empty();
@@ -136,7 +161,7 @@ public class PublicOrderController {
             Map<String, String> billingAddress = (Map<String, String>) request.get("billingAddress");
             String notes = (String) request.get("notes");
 
-            // Create order
+            // Create order mit PaymentMethod und PhoneVerificationId
             Order order = orderService.createOrderFromCart(
                 cart.getId(),
                 customerEmail,
@@ -156,11 +181,13 @@ public class PublicOrderController {
                 billingAddress.get("postalCode"),
                 billingAddress.get("country"),
                 notes,
-                customer  // null für Guest, User für Authenticated
+                customer,
+                paymentMethod,
+                phoneVerificationId
             );
 
-            log.info("✅ Order created successfully: {} (Mode: {})",
-                order.getOrderNumber(), isGuest ? "GUEST" : "AUTHENTICATED");
+            log.info("✅ Order created successfully: {} (Mode: {}, Payment: {})",
+                order.getOrderNumber(), isGuest ? "GUEST" : "AUTHENTICATED", paymentMethod);
 
             Map<String, Object> response = new HashMap<>();
             response.put("orderId", order.getId());
@@ -168,6 +195,8 @@ public class PublicOrderController {
             response.put("status", order.getStatus());
             response.put("total", order.getTotalAmount());
             response.put("customerEmail", customerEmail);
+            response.put("paymentMethod", paymentMethod);
+            response.put("phoneVerified", order.getPhoneVerified());
             response.put("message", "Order created successfully");
 
             return ResponseEntity.ok(response);

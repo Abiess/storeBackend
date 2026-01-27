@@ -4,6 +4,6 @@ public enum PaymentMethod {
     BANK_TRANSFER,
     CREDIT_CARD,
     PAYPAL,
-    STRIPE
+    STRIPE,
+    CASH_ON_DELIVERY
 }
-
