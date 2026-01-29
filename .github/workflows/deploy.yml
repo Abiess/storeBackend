@@ -57,7 +57,7 @@ jobs:
           target: "/tmp/"
           strip_components: 1
 
-      - name: 🔍 Debug: list scripts + verify files
+      - name: "🔍 Debug: list scripts + verify files"
         run: |
           echo "PWD: $(pwd)"
           echo "Repo files:"
