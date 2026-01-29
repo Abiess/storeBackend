@@ -6,8 +6,23 @@
     </button>
   </div>
 
+  <!-- ✅ Login-Aufforderung für Gäste -->
+  <div class="login-prompt" *ngIf="showLoginPrompt && !loading">
+    <div class="prompt-card">
+      <i class="fas fa-lock"></i>
+      <h3>{{ 'wishlist.loginRequired' | translate }}</h3>
+      <p>{{ 'wishlist.loginMessage' | translate }}</p>
+      <button class="btn btn-primary btn-lg" (click)="goToLogin()">
+        <i class="fas fa-sign-in-alt"></i> {{ 'auth.login' | translate }}
+      </button>
+      <button class="btn btn-secondary" [routerLink]="['/']">
+        <i class="fas fa-shopping-bag"></i> {{ 'cart.continueShopping' | translate }}
+      </button>
+    </div>
+  </div>
+
   <!-- Wishlist Tabs -->
-  <div class="wishlist-tabs" *ngIf="wishlists.length > 1">
+  <div class="wishlist-tabs" *ngIf="wishlists.length > 1 && !showLoginPrompt">
     <button
       *ngFor="let wishlist of wishlists"
       class="tab-button"
@@ -19,7 +34,7 @@
   </div>
 
   <!-- Wishlist Items -->
-  <div class="wishlist-items" *ngIf="!loading && currentWishlist && currentWishlist.items && currentWishlist.items.length > 0">
+  <div class="wishlist-items" *ngIf="!loading && !showLoginPrompt && currentWishlist && currentWishlist.items && currentWishlist.items.length > 0">
     <div class="wishlist-item" *ngFor="let item of currentWishlist.items">
       <div class="item-image" (click)="viewProduct(item)">
         <img [src]="getProductImage(item)" [alt]="item.productTitle || 'Product'" />
@@ -64,7 +79,7 @@
   </div>
 
   <!-- Empty State -->
-  <div class="empty-state" *ngIf="!loading && currentWishlist && (!currentWishlist.items || currentWishlist.items.length === 0)">
+  <div class="empty-state" *ngIf="!loading && !showLoginPrompt && currentWishlist && (!currentWishlist.items || currentWishlist.items.length === 0)">
     <i class="fas fa-heart-broken"></i>
     <h3>{{ 'wishlist.empty' | translate }}</h3>
     <p>{{ 'wishlist.addProducts' | translate }}</p>
@@ -74,7 +89,7 @@
   </div>
 
   <!-- No Wishlists State -->
-  <div class="empty-state" *ngIf="!loading && wishlists.length === 0">
+  <div class="empty-state" *ngIf="!loading && !showLoginPrompt && wishlists.length === 0">
     <i class="fas fa-heart"></i>
     <h3>{{ 'wishlist.empty' | translate }}</h3>
     <p>{{ 'wishlist.addProducts' | translate }}</p>

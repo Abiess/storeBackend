@@ -4,6 +4,7 @@ import { RouterModule, Router } from '@angular/router';
 import { WishlistService, Wishlist, WishlistItem } from '../../core/services/wishlist.service';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { CartService } from '../../core/services/cart.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-wishlist',
@@ -20,21 +21,48 @@ export class WishlistComponent implements OnInit {
   showShareModal = false;
   shareToken: string | null = null;
   storeId = 1; // TODO: Get from context/route
+  isAuthenticated = false;
+  showLoginPrompt = false;
 
   constructor(
     private wishlistService: WishlistService,
     private cartService: CartService,
-    private router: Router
+    private router: Router,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
-    this.loadWishlist();
+    // ✅ Prüfe zuerst, ob Benutzer eingeloggt ist
+    this.authService.currentUser$.subscribe(user => {
+      this.isAuthenticated = !!user;
+      if (this.isAuthenticated) {
+        this.loadWishlist();
+      } else {
+        // Zeige Login-Aufforderung für Gäste
+        this.showLoginPrompt = true;
+        this.loading = false;
+      }
+    });
   }
 
   loadWishlist(): void {
+    // ✅ Nur für authentifizierte Benutzer laden
+    if (!this.isAuthenticated) {
+      console.log('ℹ️ Benutzer nicht eingeloggt - Wishlist wird nicht geladen');
+      return;
+    }
+
     this.loading = true;
     this.wishlistService.getDefaultWishlist(this.storeId).subscribe({
       next: (wishlist) => {
+        // ✅ Prüfe ob es eine echte Wishlist ist (nicht Gast-Wishlist mit ID=0)
+        if (wishlist.id === 0) {
+          console.log('ℹ️ Gast-Wishlist erkannt - Keine Items verfügbar');
+          this.showLoginPrompt = true;
+          this.loading = false;
+          return;
+        }
+
         this.wishlist = wishlist;
         this.currentWishlist = wishlist;
         this.wishlists = [wishlist];
@@ -43,9 +71,17 @@ export class WishlistComponent implements OnInit {
       },
       error: (error) => {
         console.error('Fehler beim Laden der Wunschliste:', error);
+        // Bei 401 Fehler: Zeige Login-Aufforderung
+        if (error.status === 401) {
+          this.showLoginPrompt = true;
+        }
         this.loading = false;
       }
     });
+  }
+
+  goToLogin(): void {
+    this.router.navigate(['/login'], { queryParams: { returnUrl: '/customer/wishlist' } });
   }
 
   selectWishlist(wishlist: Wishlist): void {

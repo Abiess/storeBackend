@@ -198,7 +198,8 @@ export class SubscriptionService {
 
       return of(mockPaymentIntent).pipe(delay(500));
     }
-    return this.http.post<PaymentIntent>(`${this.API_URL}/subscribe`, request);
+    // ✅ FIX: Verwende /upgrade statt /subscribe (Backend hat keinen /subscribe Endpoint)
+    return this.http.post<PaymentIntent>(`${this.API_URL}/upgrade`, request);
   }
 
   /**
