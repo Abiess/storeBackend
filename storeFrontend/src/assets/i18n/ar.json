@@ -24,6 +24,10 @@
     "quantity": "الكمية"
   },
   "product": {
+    "name": "اسم المنتج",
+    "category": "الفئة",
+    "status": "الحالة",
+    "new": "منتج جديد",
     "price": "السعر",
     "addToCart": "أضف إلى السلة",
     "addToWishlist": "أضف إلى قائمة الأمنيات",
@@ -50,6 +54,7 @@
     "country": "البلد"
   },
   "common": {
+    "actions": "الإجراءات",
     "save": "حفظ",
     "cancel": "إلغاء",
     "delete": "حذف",
@@ -62,6 +67,29 @@
     "error": "خطأ",
     "success": "نجح"
   },
+  "navigation": {
+    "dashboard": "لوحة التحكم",
+    "store": "المتجر",
+    "overview": "نظرة عامة",
+    "categories": "الفئات",
+    "products": "المنتجات",
+    "orders": "الطلبات",
+    "delivery": "التوصيل",
+    "settings": "الإعدادات"
+  },
+  "table": {
+    "image": "الصورة",
+    "featured": "مميز"
+  },
+  "status": {
+    "draft": "مسودة",
+    "active": "نشط",
+    "inactive": "غير نشط"
+  },
+  "actions": {
+    "edit": "تعديل",
+    "delete": "حذف"
+  },
   "footer": {
     "about": "من نحن",
     "contact": "اتصل بنا",
@@ -70,4 +98,3 @@
     "copyright": "© {{year}} جميع الحقوق محفوظة"
   }
 }
-

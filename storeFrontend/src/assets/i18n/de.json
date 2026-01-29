@@ -24,6 +24,10 @@
     "quantity": "Menge"
   },
   "product": {
+    "name": "Produktname",
+    "category": "Kategorie",
+    "status": "Status",
+    "new": "Neues Produkt",
     "price": "Preis",
     "addToCart": "In den Warenkorb",
     "addToWishlist": "Zur Wunschliste",
@@ -50,6 +54,7 @@
     "country": "Land"
   },
   "common": {
+    "actions": "Aktionen",
     "save": "Speichern",
     "cancel": "Abbrechen",
     "delete": "Löschen",
@@ -62,6 +67,29 @@
     "error": "Fehler",
     "success": "Erfolgreich"
   },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "store": "Shop",
+    "overview": "Übersicht",
+    "categories": "Kategorien",
+    "products": "Produkte",
+    "orders": "Bestellungen",
+    "delivery": "Lieferung",
+    "settings": "Einstellungen"
+  },
+  "table": {
+    "image": "Bild",
+    "featured": "Hervorgehoben"
+  },
+  "status": {
+    "draft": "Entwurf",
+    "active": "Aktiv",
+    "inactive": "Inaktiv"
+  },
+  "actions": {
+    "edit": "Bearbeiten",
+    "delete": "Löschen"
+  },
   "footer": {
     "about": "Über uns",
     "contact": "Kontakt",
@@ -70,4 +98,3 @@
     "copyright": "© {{year}} Alle Rechte vorbehalten"
   }
 }
-

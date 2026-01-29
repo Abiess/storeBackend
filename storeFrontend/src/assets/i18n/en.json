@@ -24,6 +24,10 @@
     "quantity": "Quantity"
   },
   "product": {
+    "name": "Product Name",
+    "category": "Category",
+    "status": "Status",
+    "new": "New Product",
     "price": "Price",
     "addToCart": "Add to Cart",
     "addToWishlist": "Add to Wishlist",
@@ -50,6 +54,7 @@
     "country": "Country"
   },
   "common": {
+    "actions": "Actions",
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
@@ -62,6 +67,29 @@
     "error": "Error",
     "success": "Success"
   },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "store": "Store",
+    "overview": "Overview",
+    "categories": "Categories",
+    "products": "Products",
+    "orders": "Orders",
+    "delivery": "Delivery",
+    "settings": "Settings"
+  },
+  "table": {
+    "image": "Image",
+    "featured": "Featured"
+  },
+  "status": {
+    "draft": "Draft",
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "actions": {
+    "edit": "Edit",
+    "delete": "Delete"
+  },
   "footer": {
     "about": "About Us",
     "contact": "Contact",
@@ -70,4 +98,3 @@
     "copyright": "© {{year}} All rights reserved"
   }
 }
-
