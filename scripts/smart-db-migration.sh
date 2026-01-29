@@ -1,21 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# =======================
-# Configuration
-# =======================
 DB_NAME="${DB_NAME:-storedb}"
 PG_SUPERUSER="${PG_SUPERUSER:-postgres}"
+AUTO_DEPLOY="${AUTO_DEPLOY:-true}"
+FORCE_FRESH="${FORCE_FRESH:-false}"
 
-SCRIPTS_DIR="${SCRIPTS_DIR:-/opt/storebackend/scripts}"
-INIT_SQL="${INIT_SQL:-$SCRIPTS_DIR/init-schema.sql}"
-MIGRATE_SQL="${MIGRATE_SQL:-$SCRIPTS_DIR/migrate-database.sql}"
-
-# CI/Auto deploy behavior:
-AUTO_DEPLOY="${AUTO_DEPLOY:-true}"        # true => automatically choose migration
-FORCE_FRESH="${FORCE_FRESH:-false}"       # true => drop and recreate schema (DANGEROUS)
-
-# Tables your app expects (adjust as needed)
 REQUIRED_TABLES=(
   "users"
   "stores"
@@ -27,15 +17,16 @@ REQUIRED_TABLES=(
   "audit_logs"
 )
 
-# =======================
-# Helpers
-# =======================
 psql_pg() {
   sudo -u "${PG_SUPERUSER}" psql -d "${DB_NAME}" -v ON_ERROR_STOP=1 -P pager=off "$@"
 }
 
-db_exists() {
-  sudo -u "${PG_SUPERUSER}" psql -tAc "SELECT 1 FROM pg_database WHERE datname='${DB_NAME}'" | grep -q 1
+log() { echo "$@"; }
+
+section() {
+  echo "========================================"
+  echo "$1"
+  echo "========================================"
 }
 
 table_exists() {
@@ -46,119 +37,106 @@ table_exists() {
   [[ "${res}" == "t" ]]
 }
 
-list_public_tables() {
+public_tables() {
   psql_pg -tAc "SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY 1;"
 }
 
-count_app_users_if_exists() {
-  if table_exists "public" "users"; then
-    psql_pg -tAc "SELECT count(*) FROM public.users;"
+count_rows_if_exists() {
+  local schema="$1"
+  local table="$2"
+  if table_exists "$schema" "$table"; then
+    psql_pg -tAc "SELECT count(*) FROM ${schema}.${table};"
   else
     echo ""
   fi
 }
 
-count_login_roles() {
-  # purely informational: number of login roles (NOT app users!)
-  psql_pg -tAc "SELECT count(*) FROM pg_roles WHERE rolcanlogin;"
-}
+section "🔍 Smart Database Migration"
+log "DB: ${DB_NAME}"
+log "AUTO_DEPLOY: ${AUTO_DEPLOY}"
+log "FORCE_FRESH: ${FORCE_FRESH}"
+log "Running as OS user: $(whoami)"
+echo "========================================"
 
-missing_required_tables() {
-  local missing=()
-  for t in "${REQUIRED_TABLES[@]}"; do
-    if ! table_exists "public" "$t"; then
-      missing+=("$t")
-    fi
-  done
+# Ensure DB exists (normally it does)
+if ! sudo -u "${PG_SUPERUSER}" psql -lqt | cut -d\| -f1 | sed 's/ //g' | grep -qx "${DB_NAME}"; then
+  log "❌ Database ${DB_NAME} does not exist."
+  exit 1
+fi
+log "✅ Database exists"
 
-  if (( ${#missing[@]} > 0 )); then
-    printf "%s\n" "${missing[@]}"
+log "ℹ️  Current search_path:"
+psql_pg -tAc "SHOW search_path;" | sed 's/^/  /'
+
+log "📊 Info (do NOT confuse these):"
+roles_cnt="$(psql_pg -tAc "SELECT count(*) FROM pg_roles WHERE rolcanlogin;")"
+users_cnt="$(count_rows_if_exists public users || true)"
+log "  - Postgres login roles count: ${roles_cnt} (NOT app users)"
+if [[ -n "${users_cnt}" ]]; then
+  log "  - App users in public.users: ${users_cnt}"
+else
+  log "  - App users in public.users: (table missing)"
+fi
+
+log "📋 Public tables currently:"
+tbls="$(public_tables || true)"
+if [[ -n "${tbls}" ]]; then
+  echo "${tbls}" | sed 's/^/  - /'
+else
+  log "  (none)"
+fi
+
+# If FORCE_FRESH -> run init schema
+if [[ "${FORCE_FRESH}" == "true" ]]; then
+  log "⚠️ FORCE_FRESH=true -> running init-schema.sql"
+  if [[ ! -f "/opt/storebackend/scripts/init-schema.sql" ]]; then
+    log "❌ Missing /opt/storebackend/scripts/init-schema.sql"
+    exit 1
   fi
-}
+  psql_pg -f /opt/storebackend/scripts/init-schema.sql
+  log "✅ init-schema.sql applied"
+fi
 
-run_init_schema() {
-  echo "🆕 Running init schema: ${INIT_SQL}"
-  [[ -f "${INIT_SQL}" ]] || { echo "❌ Missing ${INIT_SQL}"; exit 1; }
-  psql_pg -f "${INIT_SQL}"
-  echo "✅ init-schema.sql applied"
-}
+# If users missing -> init schema
+if ! table_exists public users; then
+  log "🆕 public.users missing -> initializing schema..."
+  if [[ ! -f "/opt/storebackend/scripts/init-schema.sql" ]]; then
+    log "❌ Missing /opt/storebackend/scripts/init-schema.sql"
+    exit 1
+  fi
+  psql_pg -f /opt/storebackend/scripts/init-schema.sql
+  log "✅ Schema initialized"
+fi
 
-run_migration() {
-  echo "🔄 Running migration: ${MIGRATE_SQL}"
-  [[ -f "${MIGRATE_SQL}" ]] || { echo "❌ Missing ${MIGRATE_SQL}"; exit 1; }
-  psql_pg -f "${MIGRATE_SQL}"
-  echo "✅ migrate-database.sql applied"
-}
+# Run migration SQL (idempotent)
+log "🧱 Applying migrate-database.sql (idempotent)..."
+if [[ ! -f "/opt/storebackend/scripts/migrate-database.sql" ]]; then
+  log "❌ Missing /opt/storebackend/scripts/migrate-database.sql"
+  exit 1
+fi
+psql_pg -f /opt/storebackend/scripts/migrate-database.sql
+log "✅ migrate-database.sql applied"
 
-fresh_install() {
-  echo "🗑️  FRESH INSTALL selected (DANGEROUS) - dropping public schema..."
-  psql_pg -c "DROP SCHEMA IF EXISTS public CASCADE;"
-  psql_pg -c "CREATE SCHEMA public;"
-  run_init_schema
-  run_migration
-}
+# Verify required tables
+log "🔎 Verifying required tables..."
+missing=()
+for t in "${REQUIRED_TABLES[@]}"; do
+  if table_exists public "$t"; then
+    log "  ✅ public.${t}"
+  else
+    log "  ❌ MISSING public.${t}"
+    missing+=("$t")
+  fi
+done
 
-# =======================
-# Main
-# =======================
-echo "========================================"
-echo "🔍 Smart Database Migration"
-echo "DB: ${DB_NAME}"
-echo "AUTO_DEPLOY: ${AUTO_DEPLOY}"
-echo "FORCE_FRESH: ${FORCE_FRESH}"
-echo "Running as OS user: $(whoami)"
-echo "========================================"
-
-# DB existence check
-if ! db_exists; then
-  echo "❌ Database '${DB_NAME}' does not exist."
-  echo "   (This script currently expects DB to exist.)"
-  echo "   Create it first or extend script to create DB."
+if (( ${#missing[@]} > 0 )); then
+  echo
+  log "❌ Migration failed!"
+  log "Missing required tables:"
+  for t in "${missing[@]}"; do log "  - ${t}"; done
   exit 1
 fi
 
-echo "✅ Database exists"
-
-echo "ℹ️  Current search_path:"
-psql_pg -tAc "SHOW search_path;" | sed 's/^/  /'
-
-echo "📊 Info (do NOT confuse these):"
-LOGIN_ROLES="$(count_login_roles || true)"
-APP_USERS="$(count_app_users_if_exists || true)"
-
-echo "  - Postgres login roles count: ${LOGIN_ROLES:-unknown} (NOT app users)"
-if [[ -n "${APP_USERS}" ]]; then
-  echo "  - App users in public.users: ${APP_USERS}"
-else
-  echo "  - App users: public.users table does not exist"
-fi
-
-echo "📋 Public tables currently:"
-PUB_TABLES="$(list_public_tables || true)"
-if [[ -n "${PUB_TABLES}" ]]; then
-  echo "${PUB_TABLES}" | sed 's/^/  - /'
-else
-  echo "  (none)"
-fi
-
-MISSING="$(missing_required_tables || true)"
-
-if [[ -n "${MISSING}" ]]; then
-  echo "⚠️  Missing required tables:"
-  echo "${MISSING}" | sed 's/^/  - /'
-else
-  echo "✅ All required tables appear to exist"
-fi
-
-# FORCE_FRESH has top priority
-if [[ "${FORCE_FRESH}" == "true" ]]; then
-  fresh_install
-  echo "✅ Fresh install complete"
-  exit 0
-fi
-
-# Decide what to do
-# Case A: no tables at all => init + migrate
-if [[ -z "${PUB_TABLES}" ]]; then
-  echo "🆕 No tables found in public schema -> initializing schema..."
-  run
+echo
+log "✅ All required tables exist"
+log "✅ Smart migration finished successfully"
