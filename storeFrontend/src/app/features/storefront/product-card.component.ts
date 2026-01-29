@@ -437,23 +437,36 @@ export class ProductCardComponent {
       return;
     }
 
+    // ✅ Lade Default-Wishlist und prüfe auf gültige ID
     this.wishlistService.getDefaultWishlist(this.storeId).subscribe({
       next: (wishlist) => {
+        // ✅ Prüfe ob es eine echte Wishlist ist (nicht Gast-Wishlist mit ID=0)
+        if (!wishlist || wishlist.id === 0) {
+          console.error('⚠️ Ungültige Wishlist-ID:', wishlist?.id);
+          return;
+        }
+
+        // ✅ Füge Item zur echten Wishlist hinzu
         this.wishlistService.addToWishlist(wishlist.id, this.product.id).subscribe({
           next: () => {
             this.isInWishlist = true;
-            // Optional: Show toast notification
-            console.log('Zur Wunschliste hinzugefügt!');
+            console.log('✅ Zur Wunschliste hinzugefügt!');
           },
           error: (error) => {
-            console.error('Fehler beim Hinzufügen zur Wunschliste:', error);
-            alert('Fehler beim Hinzufügen zur Wunschliste');
+            console.error('❌ Fehler beim Hinzufügen zur Wunschliste:', error);
+            if (error.status === 401) {
+            } else if (error.status === 500 && error.error?.message) {
+              alert(error.error.message);
+            } else {
+            }
           }
         });
       },
       error: (error) => {
-        console.error('Fehler beim Laden der Wunschliste:', error);
-        alert('Bitte melden Sie sich an, um Produkte zur Wunschliste hinzuzufügen');
+        console.error('❌ Fehler beim Laden der Wunschliste:', error);
+        if (error.status === 401) {
+        } else {
+        }
       }
     });
   }
