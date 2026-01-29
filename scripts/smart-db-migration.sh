@@ -1,92 +1,164 @@
-#!/bin/bash
-# Smart Database Migration Script
-# Automatisch ausgeführt beim Deployment - erkennt ob fresh install oder update
+#!/usr/bin/env bash
+set -euo pipefail
 
-set -e
+# =======================
+# Configuration
+# =======================
+DB_NAME="${DB_NAME:-storedb}"
+PG_SUPERUSER="${PG_SUPERUSER:-postgres}"
 
-DB_NAME="storedb"
-DB_USER="storeapp"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPTS_DIR="${SCRIPTS_DIR:-/opt/storebackend/scripts}"
+INIT_SQL="${INIT_SQL:-$SCRIPTS_DIR/init-schema.sql}"
+MIGRATE_SQL="${MIGRATE_SQL:-$SCRIPTS_DIR/migrate-database.sql}"
 
+# CI/Auto deploy behavior:
+AUTO_DEPLOY="${AUTO_DEPLOY:-true}"        # true => automatically choose migration
+FORCE_FRESH="${FORCE_FRESH:-false}"       # true => drop and recreate schema (DANGEROUS)
+
+# Tables your app expects (adjust as needed)
+REQUIRED_TABLES=(
+  "users"
+  "stores"
+  "products"
+  "orders"
+  "plans"
+  "domains"
+  "categories"
+  "audit_logs"
+)
+
+# =======================
+# Helpers
+# =======================
+psql_pg() {
+  sudo -u "${PG_SUPERUSER}" psql -d "${DB_NAME}" -v ON_ERROR_STOP=1 -P pager=off "$@"
+}
+
+db_exists() {
+  sudo -u "${PG_SUPERUSER}" psql -tAc "SELECT 1 FROM pg_database WHERE datname='${DB_NAME}'" | grep -q 1
+}
+
+table_exists() {
+  local schema="$1"
+  local table="$2"
+  local res
+  res="$(psql_pg -tAc "SELECT to_regclass('${schema}.${table}') IS NOT NULL;")"
+  [[ "${res}" == "t" ]]
+}
+
+list_public_tables() {
+  psql_pg -tAc "SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY 1;"
+}
+
+count_app_users_if_exists() {
+  if table_exists "public" "users"; then
+    psql_pg -tAc "SELECT count(*) FROM public.users;"
+  else
+    echo ""
+  fi
+}
+
+count_login_roles() {
+  # purely informational: number of login roles (NOT app users!)
+  psql_pg -tAc "SELECT count(*) FROM pg_roles WHERE rolcanlogin;"
+}
+
+missing_required_tables() {
+  local missing=()
+  for t in "${REQUIRED_TABLES[@]}"; do
+    if ! table_exists "public" "$t"; then
+      missing+=("$t")
+    fi
+  done
+
+  if (( ${#missing[@]} > 0 )); then
+    printf "%s\n" "${missing[@]}"
+  fi
+}
+
+run_init_schema() {
+  echo "🆕 Running init schema: ${INIT_SQL}"
+  [[ -f "${INIT_SQL}" ]] || { echo "❌ Missing ${INIT_SQL}"; exit 1; }
+  psql_pg -f "${INIT_SQL}"
+  echo "✅ init-schema.sql applied"
+}
+
+run_migration() {
+  echo "🔄 Running migration: ${MIGRATE_SQL}"
+  [[ -f "${MIGRATE_SQL}" ]] || { echo "❌ Missing ${MIGRATE_SQL}"; exit 1; }
+  psql_pg -f "${MIGRATE_SQL}"
+  echo "✅ migrate-database.sql applied"
+}
+
+fresh_install() {
+  echo "🗑️  FRESH INSTALL selected (DANGEROUS) - dropping public schema..."
+  psql_pg -c "DROP SCHEMA IF EXISTS public CASCADE;"
+  psql_pg -c "CREATE SCHEMA public;"
+  run_init_schema
+  run_migration
+}
+
+# =======================
+# Main
+# =======================
 echo "========================================"
 echo "🔍 Smart Database Migration"
+echo "DB: ${DB_NAME}"
+echo "AUTO_DEPLOY: ${AUTO_DEPLOY}"
+echo "FORCE_FRESH: ${FORCE_FRESH}"
+echo "Running as OS user: $(whoami)"
 echo "========================================"
 
-# Funktion: Prüfe ob Tabelle existiert
-table_exists() {
-    local table_name=$1
-    sudo -u postgres psql -d $DB_NAME -tAc "SELECT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = '$table_name');"
-}
-
-# Funktion: Prüfe ob Datenbank Daten enthält
-has_data() {
-    local user_count=$(sudo -u postgres psql -d $DB_NAME -tAc "SELECT COUNT(*) FROM users;" 2>/dev/null || echo "0")
-    echo "$user_count"
-}
-
-# Prüfe ob users Tabelle existiert
-if [ "$(table_exists 'users')" = "t" ]; then
-    USER_COUNT=$(has_data)
-    echo "✅ Datenbank existiert bereits"
-    echo "📊 Anzahl Benutzer: $USER_COUNT"
-
-    if [ "$USER_COUNT" -gt 0 ]; then
-        echo ""
-        echo "⚠️  WARNUNG: Datenbank enthält $USER_COUNT Benutzer"
-        echo ""
-        echo "Wähle eine Option:"
-        echo "  1) 🔄 Migration (nur fehlende Tabellen hinzufügen - EMPFOHLEN)"
-        echo "  2) 🗑️  Fresh Install (ALLES LÖSCHEN und neu erstellen)"
-        echo "  3) ⏭️  Überspringen (nichts ändern)"
-        echo ""
-
-        # Im automatischen Deployment: Standardmäßig Migration
-        if [ "${AUTO_DEPLOY}" = "true" ]; then
-            echo "🤖 Auto-Deploy Modus: Wähle automatisch Option 1 (Migration)"
-            CHOICE=1
-        else
-            read -p "Deine Wahl [1-3]: " CHOICE
-        fi
-
-        case $CHOICE in
-            1)
-                echo "🔄 Führe Migration durch..."
-                sudo -u postgres psql -d $DB_NAME -f "$SCRIPT_DIR/migrate-database.sql"
-                echo "✅ Migration abgeschlossen"
-                ;;
-            2)
-                echo "🗑️  WARNUNG: Lösche ALLE Daten!"
-                read -p "Bist du SICHER? Tippe 'JA LÖSCHEN' um fortzufahren: " CONFIRM
-                if [ "$CONFIRM" = "JA LÖSCHEN" ]; then
-                    sudo -u postgres psql -d $DB_NAME -f "$SCRIPT_DIR/init-schema.sql"
-                    echo "✅ Fresh Install abgeschlossen"
-                else
-                    echo "❌ Abgebrochen"
-                    exit 1
-                fi
-                ;;
-            3)
-                echo "⏭️  Überspringe Datenbankänderungen"
-                exit 0
-                ;;
-            *)
-                echo "❌ Ungültige Auswahl"
-                exit 1
-                ;;
-        esac
-    else
-        echo "📭 Datenbank ist leer - führe Initial-Setup durch"
-        sudo -u postgres psql -d $DB_NAME -f "$SCRIPT_DIR/init-schema.sql"
-        echo "✅ Initial-Setup abgeschlossen"
-    fi
-else
-    echo "🆕 Erste Installation - erstelle Schema"
-    sudo -u postgres psql -d $DB_NAME -f "$SCRIPT_DIR/init-schema.sql"
-    echo "✅ Schema erstellt"
+# DB existence check
+if ! db_exists; then
+  echo "❌ Database '${DB_NAME}' does not exist."
+  echo "   (This script currently expects DB to exist.)"
+  echo "   Create it first or extend script to create DB."
+  exit 1
 fi
 
-echo ""
-echo "========================================"
-echo "✅ Datenbank-Migration abgeschlossen"
-echo "========================================"
+echo "✅ Database exists"
 
+echo "ℹ️  Current search_path:"
+psql_pg -tAc "SHOW search_path;" | sed 's/^/  /'
+
+echo "📊 Info (do NOT confuse these):"
+LOGIN_ROLES="$(count_login_roles || true)"
+APP_USERS="$(count_app_users_if_exists || true)"
+
+echo "  - Postgres login roles count: ${LOGIN_ROLES:-unknown} (NOT app users)"
+if [[ -n "${APP_USERS}" ]]; then
+  echo "  - App users in public.users: ${APP_USERS}"
+else
+  echo "  - App users: public.users table does not exist"
+fi
+
+echo "📋 Public tables currently:"
+PUB_TABLES="$(list_public_tables || true)"
+if [[ -n "${PUB_TABLES}" ]]; then
+  echo "${PUB_TABLES}" | sed 's/^/  - /'
+else
+  echo "  (none)"
+fi
+
+MISSING="$(missing_required_tables || true)"
+
+if [[ -n "${MISSING}" ]]; then
+  echo "⚠️  Missing required tables:"
+  echo "${MISSING}" | sed 's/^/  - /'
+else
+  echo "✅ All required tables appear to exist"
+fi
+
+# FORCE_FRESH has top priority
+if [[ "${FORCE_FRESH}" == "true" ]]; then
+  fresh_install
+  echo "✅ Fresh install complete"
+  exit 0
+fi
+
+# Decide what to do
+# Case A: no tables at all => init + migrate
+if [[ -z "${PUB_TABLES}" ]]; then
+  echo "🆕 No tables found in public schema -> initializing schema..."
+  run
