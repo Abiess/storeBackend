@@ -18,8 +18,8 @@ jobs:
       - name: ☕ Set up JDK 17
         uses: actions/setup-java@v3
         with:
-          java-version: '17'
-          distribution: 'temurin'
+          java-version: "17"
+          distribution: "temurin"
           cache: maven
 
       - name: 🔧 Build with Maven
@@ -57,7 +57,7 @@ jobs:
           target: "/tmp/"
           strip_components: 1
 
-      - name:🔍 Debug: list scripts + verify files
+      - name: 🔍 Debug: list scripts + verify files
         run: |
           echo "PWD: $(pwd)"
           echo "Repo files:"
@@ -84,7 +84,6 @@ jobs:
             fi
           done
 
-
       - name: 📋 Copy scripts to VPS (/tmp)
         uses: appleboy/scp-action@master
         with:
@@ -92,15 +91,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          source: |
-            scripts/deploy.sh
-            scripts/diagnose-database.sh
-            scripts/reset-database.sh
-            scripts/install-minio.sh
-            scripts/smart-db-migration.sh
-            scripts/migrate-database.sql
-            scripts/init-schema.sql
-            scripts/init-schema.sh
+          source: "scripts/deploy.sh,scripts/diagnose-database.sh,scripts/reset-database.sh,scripts/install-minio.sh,scripts/smart-db-migration.sh,scripts/migrate-database.sql,scripts/init-schema.sql,scripts/init-schema.sh"
           target: "/tmp/"
           strip_components: 1
 
@@ -151,7 +142,7 @@ jobs:
             sudo chown -R storebackend:storebackend /opt/storebackend
             sudo chmod 755 /opt/storebackend
 
-            # ✅ Correct chmod paths
+            # Correct chmod paths
             sudo chmod +x /opt/storebackend/deploy.sh || true
             sudo chmod +x /opt/storebackend/scripts/diagnose-database.sh || true
             sudo chmod +x /opt/storebackend/scripts/reset-database.sh || true
