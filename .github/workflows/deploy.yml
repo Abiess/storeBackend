@@ -57,6 +57,34 @@ jobs:
           target: "/tmp/"
           strip_components: 1
 
+      - name:🔍 Debug: list scripts + verify files
+        run: |
+          echo "PWD: $(pwd)"
+          echo "Repo files:"
+          ls -lah
+          echo ""
+          echo "scripts folder:"
+          ls -lah scripts || true
+          echo ""
+          echo "Check required files:"
+          for f in \
+            scripts/deploy.sh \
+            scripts/diagnose-database.sh \
+            scripts/reset-database.sh \
+            scripts/install-minio.sh \
+            scripts/smart-db-migration.sh \
+            scripts/migrate-database.sql \
+            scripts/init-schema.sql \
+            scripts/init-schema.sh; do
+            if [ -f "$f" ]; then
+              echo "✅ $f"
+            else
+              echo "❌ MISSING: $f"
+              exit 1
+            fi
+          done
+
+
       - name: 📋 Copy scripts to VPS (/tmp)
         uses: appleboy/scp-action@master
         with:
