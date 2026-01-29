@@ -29,29 +29,21 @@ jobs:
 
       - name: 📦 Prepare JAR for Deployment
         run: |
-          # Find the built JAR file
           JAR_FILE=$(find target -name "*SNAPSHOT.jar" -o -name "storeBackend*.jar" | grep -v javadoc | head -n 1)
 
           if [ -z "$JAR_FILE" ]; then
             echo "❌ No JAR file found in target directory!"
-            echo "📁 Contents of target directory:"
-            ls -lah target/ || echo "target directory is empty or doesn't exist"
+            ls -lah target/ || true
             exit 1
           fi
 
           JAR_SIZE=$(stat --format=%s "$JAR_FILE" 2>/dev/null || stat -f%z "$JAR_FILE" 2>/dev/null)
           echo "Found JAR: $(basename "$JAR_FILE") ($(numfmt --to=iec $JAR_SIZE 2>/dev/null || du -h "$JAR_FILE" | cut -f1))"
 
-          # Create a stable name: app.jar
           cp "$JAR_FILE" target/app.jar
-
-          if [ ! -f target/app.jar ]; then
-            echo "❌ Failed to create target/app.jar"
-            exit 1
-          fi
+          test -f target/app.jar
 
           echo "✅ Created target/app.jar for deployment"
-          echo "📁 Contents of target:"
           ls -lah target/
 
       - name: 🚀 Deploy JAR to VPS (/tmp)
@@ -63,96 +55,24 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           source: "target/app.jar"
           target: "/tmp/"
-          # remove the leading "target/" folder on extraction → /tmp/app.jar
           strip_components: 1
 
-      - name: 📋 Copy Deploy Script to VPS (/tmp)
+      - name: 📋 Copy scripts to VPS (/tmp)
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          source: "scripts/deploy.sh"
-          target: "/tmp/"
-          # remove the leading "scripts/" folder → /tmp/deploy.sh
-          strip_components: 1
-
-      - name: 📋 Copy Database Diagnostics Script to VPS (/tmp)
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          source: "scripts/diagnose-database.sh"
-          target: "/tmp/"
-          # remove the leading "scripts/" folder → /tmp/diagnose-database.sh
-          strip_components: 1
-
-      - name: 📋 Copy Database Reset Script to VPS (/tmp)
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          source: "scripts/reset-database.sh"
-          target: "/tmp/"
-          strip_components: 1
-
-      - name: 📋 Copy MinIO Installation Script to VPS (/tmp)
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          source: "scripts/install-minio.sh"
-          target: "/tmp/"
-          strip_components: 1
-
-      - name: 📋 Copy Smart DB Migration Script to VPS (/tmp)
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          source: "scripts/smart-db-migration.sh"
-          target: "/tmp/"
-          strip_components: 1
-
-      - name: 📋 Copy Database Migration SQL to VPS (/tmp)
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          source: "scripts/migrate-database.sql"
-          target: "/tmp/"
-          strip_components: 1
-
-      - name: 📋 Copy Database Schema SQL to VPS (/tmp)
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          source: "scripts/init-schema.sql"
-          target: "/tmp/"
-          strip_components: 1
-
-      - name: 📋 Copy Schema Init Script to VPS (/tmp)
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          source: "scripts/init-schema.sh"
+          source: |
+            scripts/deploy.sh
+            scripts/diagnose-database.sh
+            scripts/reset-database.sh
+            scripts/install-minio.sh
+            scripts/smart-db-migration.sh
+            scripts/migrate-database.sql
+            scripts/init-schema.sql
+            scripts/init-schema.sh
           target: "/tmp/"
           strip_components: 1
 
@@ -164,18 +84,10 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
           script: |
+            set -e
             echo "🔍 Checking for app.jar in /tmp..."
-
-            if [ -f /tmp/app.jar ]; then
-              APP_SIZE=$(stat --format=%s /tmp/app.jar 2>/dev/null || stat -f%z /tmp/app.jar 2>/dev/null)
-              echo "✅ app.jar found! Size: $(numfmt --to=iec $APP_SIZE 2>/dev/null || du -h /tmp/app.jar | cut -f1)"
-              exit 0
-            fi
-
-            echo "❌ /tmp/app.jar not found!"
-            echo "📁 Files in /tmp:"
-            ls -lah /tmp/ | head -30
-            exit 1
+            test -f /tmp/app.jar
+            ls -lah /tmp/app.jar
 
       - name: 🔧 Setup VPS Environment
         uses: appleboy/ssh-action@master
@@ -185,126 +97,45 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
           script: |
+            set -e
             echo "🔧 Preparing VPS environment..."
 
-            # Create base directory and subdirectories if they don't exist
-            sudo mkdir -p /opt/storebackend
             sudo mkdir -p /opt/storebackend/backups
             sudo mkdir -p /opt/storebackend/logs
             sudo mkdir -p /opt/storebackend/scripts
 
-            # Create storebackend user if it doesn't exist
             if ! id -u storebackend > /dev/null 2>&1; then
-              echo "Creating storebackend user..."
               sudo useradd -r -s /bin/bash storebackend
             fi
 
-            # Move deploy.sh from /tmp to /opt/storebackend
+            # Move deploy.sh
             if [ -f /tmp/deploy.sh ]; then
-              echo "Moving deploy.sh to /opt/storebackend..."
               sudo mv /tmp/deploy.sh /opt/storebackend/deploy.sh
-            else
-              echo "⚠️  /tmp/deploy.sh not found!"
             fi
 
-            # Move diagnose-database.sh from /tmp to /opt/storebackend/scripts
-            if [ -f /tmp/diagnose-database.sh ]; then
-              echo "Moving diagnose-database.sh to /opt/storebackend/scripts..."
-              sudo mv /tmp/diagnose-database.sh /opt/storebackend/scripts/diagnose-database.sh
-            else
-              echo "⚠️  /tmp/diagnose-database.sh not found!"
-            fi
+            # Move scripts + sql
+            for f in diagnose-database.sh reset-database.sh install-minio.sh smart-db-migration.sh migrate-database.sql init-schema.sql init-schema.sh; do
+              if [ -f "/tmp/$f" ]; then
+                sudo mv "/tmp/$f" "/opt/storebackend/scripts/$f"
+              fi
+            done
 
-            # Move reset-database.sh from /tmp to /opt/storebackend/scripts
-            if [ -f /tmp/reset-database.sh ]; then
-              echo "Moving reset-database.sh to /opt/storebackend/scripts..."
-              sudo mv /tmp/reset-database.sh /opt/storebackend/scripts/reset-database.sh
-            else
-              echo "⚠️  /tmp/reset-database.sh not found!"
-            fi
-
-            # Move install-minio.sh from /tmp to /opt/storebackend/scripts
-            if [ -f /tmp/install-minio.sh ]; then
-              echo "Moving install-minio.sh to /opt/storebackend/scripts..."
-              sudo mv /tmp/install-minio.sh /opt/storebackend/scripts/install-minio.sh
-            else
-              echo "⚠️  /tmp/install-minio.sh not found!"
-            fi
-
-            # Move smart-db-migration.sh from /tmp to /opt/storebackend/scripts
-            if [ -f /tmp/smart-db-migration.sh ]; then
-              echo "Moving smart-db-migration.sh to /opt/storebackend/scripts..."
-              sudo mv /tmp/smart-db-migration.sh /opt/storebackend/scripts/smart-db-migration.sh
-            else
-              echo "⚠️  /tmp/smart-db-migration.sh not found!"
-            fi
-
-            # Move migrate-database.sql from /tmp to /opt/storebackend/scripts
-            if [ -f /tmp/migrate-database.sql ]; then
-              echo "Moving migrate-database.sql to /opt/storebackend/scripts..."
-              sudo mv /tmp/migrate-database.sql /opt/storebackend/scripts/migrate-database.sql
-            else
-              echo "⚠️  /tmp/migrate-database.sql not found!"
-            fi
-
-            # Move init-schema.sql from /tmp to /opt/storebackend/scripts
-            if [ -f /tmp/init-schema.sql ]; then
-              echo "Moving init-schema.sql to /opt/storebackend/scripts..."
-              sudo mv /tmp/init-schema.sql /opt/storebackend/scripts/init-schema.sql
-            else
-              echo "⚠️  /tmp/init-schema.sql not found!"
-            fi
-
-            # Move init-schema.sh from /tmp to /opt/storebackend/scripts
-            if [ -f /tmp/init-schema.sh ]; then
-              echo "Moving init-schema.sh to /opt/storebackend/scripts..."
-              sudo mv /tmp/init-schema.sh /opt/storebackend/scripts/init-schema.sh
-            else
-              echo "⚠️  /tmp/init-schema.sh not found!"
-            fi
-
-            # Set permissions and ownership
             sudo chown -R storebackend:storebackend /opt/storebackend
             sudo chmod 755 /opt/storebackend
 
-            # Ensure deploy.sh is executable
-            if [ -f /opt/storebackend/deploy.sh ]; then
-              sudo chmod +x /opt/storebackend/deploy.sh
-            else
-              echo "⚠️  /opt/storebackend/deploy.sh not found!"
-            fi
-
-            # Ensure diagnose-database.sh is executable
-            if [ -f /opt/storebackend/diagnose-database.sh ]; then
-              sudo chmod +x /opt/storebackend/diagnose-database.sh
-            else
-              echo "⚠️  /opt/storebackend/diagnose-database.sh not found!"
-            fi
-
-            # Ensure reset-database.sh is executable
-            if [ -f /opt/storebackend/reset-database.sh ]; then
-              sudo chmod +x /opt/storebackend/reset-database.sh
-            else
-              echo "⚠️  /opt/storebackend/reset-database.sh not found!"
-            fi
-
-            # Ensure install-minio.sh is executable
-            if [ -f /opt/storebackend/install-minio.sh ]; then
-              sudo chmod +x /opt/storebackend/install-minio.sh
-            else
-              echo "⚠️  /opt/storebackend/install-minio.sh not found!"
-            fi
-
-            # Ensure smart-db-migration.sh is executable
-            if [ -f /opt/storebackend/smart-db-migration.sh ]; then
-              sudo chmod +x /opt/storebackend/smart-db-migration.sh
-            else
-              echo "⚠️  /opt/storebackend/smart-db-migration.sh not found!"
-            fi
+            # ✅ Correct chmod paths
+            sudo chmod +x /opt/storebackend/deploy.sh || true
+            sudo chmod +x /opt/storebackend/scripts/diagnose-database.sh || true
+            sudo chmod +x /opt/storebackend/scripts/reset-database.sh || true
+            sudo chmod +x /opt/storebackend/scripts/install-minio.sh || true
+            sudo chmod +x /opt/storebackend/scripts/smart-db-migration.sh || true
+            sudo chmod +x /opt/storebackend/scripts/init-schema.sh || true
 
             echo "✅ VPS environment ready"
+            echo "📁 Files in /opt/storebackend/scripts:"
+            ls -lah /opt/storebackend/scripts | head -50
 
-      - name: 🗃️ Initialize Database Schema
+      - name: 🗃️ Initialize Database Schema (only if missing)
         uses: appleboy/ssh-action@master
         env:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
@@ -315,21 +146,17 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           envs: DB_PASSWORD
           script: |
-            echo "🗃️  Initializing database schema with SQL..."
-            cd /opt/storebackend
-            
-            if [ -f ./init-schema.sh ]; then
-              export DB_PASSWORD="${DB_PASSWORD}"
-              if bash ./init-schema.sh; then
-                echo "✅ Database schema initialized successfully!"
-              else
-                echo "❌ Schema initialization failed!"
-                exit 1
-              fi
-            else
-              echo "❌ init-schema.sh not found!"
-              exit 1
+            set -e
+            echo "🗃️  Checking if DB has users table..."
+            if sudo -u postgres psql -d storedb -tAc "SELECT to_regclass('public.users')" | grep -q users; then
+              echo "✅ users table exists, skipping init-schema"
+              exit 0
             fi
+
+            echo "🆕 users missing -> initializing schema..."
+            test -f /opt/storebackend/scripts/init-schema.sql
+            sudo -u postgres psql -d storedb -f /opt/storebackend/scripts/init-schema.sql
+            echo "✅ Schema initialized"
 
       - name: 🔄 Execute Deployment
         uses: appleboy/ssh-action@master
@@ -343,19 +170,12 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           envs: DB_PASSWORD,JWT_SECRET
           script: |
-            # Export environment variables
+            set -e
             export DB_PASSWORD="${DB_PASSWORD}"
             export JWT_SECRET="${JWT_SECRET}"
 
-            echo "🚀 Starting deployment script..."
             cd /opt/storebackend
-
-            if [ ! -x ./deploy.sh ]; then
-              echo "❌ /opt/storebackend/deploy.sh is missing or not executable"
-              ls -lah .
-              exit 1
-            fi
-
+            test -x ./deploy.sh
             ./deploy.sh
 
       - name: 🏥 Final Health Check
@@ -366,23 +186,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
           script: |
-            echo "Checking application health..."
+            set -e
             sleep 5
-            curl -f http://localhost:8080/actuator/health || exit 1
+            curl -f http://localhost:8080/actuator/health
             echo "✅ Application is running!"
-
-      - name: 📊 Deployment Summary
-        if: success()
-        run: |
-          echo "🎉 Deployment successful!"
-          echo "✅ Application built"
-          echo "✅ Deployed to VPS"
-          echo "✅ Health check passed"
-          echo "🌐 Your application is now live!"
-
-      - name: ❌ Deployment Failed
-        if: failure()
-        run: |
-          echo "❌ Deployment failed!"
-          echo "Please check the logs above for details."
-          echo "The application may have been rolled back to the previous version."
