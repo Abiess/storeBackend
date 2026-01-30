@@ -36,53 +36,67 @@ print_success "Passwort aktualisiert"
 
 # KRITISCH: Alle Rechte auf public Schema setzen
 print_info "Setze volle Rechte auf Schema public..."
-sudo -u postgres psql -d "$DB_NAME" <<EOF
+
+# Split in mehrere Transaktionen um Locks zu vermeiden
+print_info "  → Schema Owner und Basis-Rechte..."
+sudo -u postgres psql -d "$DB_NAME" <<'EOF'
 -- Schema Owner setzen (PostgreSQL 15+ Fix)
-ALTER SCHEMA public OWNER TO $DB_USER;
+ALTER SCHEMA public OWNER TO storeapp;
 
 -- Explizite Rechte auf Schema
-GRANT ALL ON SCHEMA public TO $DB_USER;
-GRANT CREATE ON SCHEMA public TO $DB_USER;
-GRANT USAGE ON SCHEMA public TO $DB_USER;
+GRANT ALL ON SCHEMA public TO storeapp;
+GRANT CREATE ON SCHEMA public TO storeapp;
+GRANT USAGE ON SCHEMA public TO storeapp;
 
 -- Rechte auf Datenbank
-GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;
+GRANT ALL PRIVILEGES ON DATABASE storedb TO storeapp;
+EOF
 
+print_info "  → Rechte auf existierende Objekte..."
+sudo -u postgres psql -d "$DB_NAME" <<'EOF'
 -- Rechte auf alle existierenden Objekte
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO $DB_USER;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO $DB_USER;
-GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO $DB_USER;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO storeapp;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO storeapp;
+GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO storeapp;
+EOF
 
--- Default Privileges für zukünftige Objekte (durch $DB_USER erstellt)
-ALTER DEFAULT PRIVILEGES FOR USER $DB_USER IN SCHEMA public
-    GRANT ALL ON TABLES TO $DB_USER;
-ALTER DEFAULT PRIVILEGES FOR USER $DB_USER IN SCHEMA public
-    GRANT ALL ON SEQUENCES TO $DB_USER;
-ALTER DEFAULT PRIVILEGES FOR USER $DB_USER IN SCHEMA public
-    GRANT ALL ON FUNCTIONS TO $DB_USER;
+print_info "  → Default Privileges für storeapp..."
+sudo -u postgres psql -d "$DB_NAME" <<'EOF'
+-- Default Privileges für zukünftige Objekte (durch storeapp erstellt)
+ALTER DEFAULT PRIVILEGES FOR USER storeapp IN SCHEMA public
+    GRANT ALL ON TABLES TO storeapp;
+ALTER DEFAULT PRIVILEGES FOR USER storeapp IN SCHEMA public
+    GRANT ALL ON SEQUENCES TO storeapp;
+ALTER DEFAULT PRIVILEGES FOR USER storeapp IN SCHEMA public
+    GRANT ALL ON FUNCTIONS TO storeapp;
+EOF
 
+print_info "  → Default Privileges für postgres..."
+# Dieser Teil kann fehlschlagen wenn postgres User nicht Owner ist - nicht kritisch
+sudo -u postgres psql -d "$DB_NAME" <<'EOF' 2>/dev/null || print_warning "Default privileges für postgres User übersprungen (nicht kritisch)"
 -- Default Privileges für zukünftige Objekte (durch postgres erstellt)
 ALTER DEFAULT PRIVILEGES FOR USER postgres IN SCHEMA public
-    GRANT ALL ON TABLES TO $DB_USER;
+    GRANT ALL ON TABLES TO storeapp;
 ALTER DEFAULT PRIVILEGES FOR USER postgres IN SCHEMA public
-    GRANT ALL ON SEQUENCES TO $DB_USER;
+    GRANT ALL ON SEQUENCES TO storeapp;
 ALTER DEFAULT PRIVILEGES FOR USER postgres IN SCHEMA public
-    GRANT ALL ON FUNCTIONS TO $DB_USER;
+    GRANT ALL ON FUNCTIONS TO storeapp;
 EOF
+
 print_success "Alle Rechte gesetzt (PostgreSQL 15+ kompatibel)"
 
 # Teste Verbindung
 print_info "Teste Verbindung und CREATE Rechte..."
-if PGPASSWORD="$DB_PASSWORD" psql -h localhost -U "$DB_USER" -d "$DB_NAME" -c "
+if timeout 10 bash -c "PGPASSWORD='$DB_PASSWORD' psql -h localhost -U '$DB_USER' -d '$DB_NAME' -c \"
     CREATE TABLE IF NOT EXISTS _permission_test (id INT);
     DROP TABLE IF EXISTS _permission_test;
     SELECT 'CREATE permission OK' as test;
-" > /dev/null 2>&1; then
+\" > /dev/null 2>&1"; then
     print_success "Verbindung und CREATE-Rechte erfolgreich getestet!"
 else
     print_error "Verbindung oder CREATE-Rechte fehlgeschlagen!"
+    print_warning "Prüfe: sudo journalctl -u postgresql -n 50"
     exit 1
 fi
 
 print_success "PostgreSQL Passwort und Rechte erfolgreich aktualisiert"
-
