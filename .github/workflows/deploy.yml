@@ -139,7 +139,6 @@ jobs:
             fi
 
             # Move Flyway-based scripts
-            for f in diagnose-database.sh flyway-helper.sh setup-postgres-user.sh install-minio.sh fix-db-password.sh force-run-migrations.sh; do
               if [ -f "/tmp/$f" ]; then
                 sudo mv "/tmp/$f" "/opt/storebackend/scripts/$f"
                 echo "✅ Moved $f"
@@ -156,7 +155,6 @@ jobs:
             sudo chmod +x /opt/storebackend/scripts/setup-postgres-user.sh || true
             sudo chmod +x /opt/storebackend/scripts/install-minio.sh || true
             sudo chmod +x /opt/storebackend/scripts/fix-db-password.sh || true
-            sudo chmod +x /opt/storebackend/scripts/force-run-migrations.sh || true
 
             echo "✅ VPS environment ready (Flyway-based)"
             echo "📁 Files in /opt/storebackend/scripts:"
@@ -232,6 +230,8 @@ jobs:
             cd /opt/storebackend
             test -x ./deploy.sh
             ./deploy.sh
+            echo "📌 Last 200 logs after start (focus: flyway/ddl/schema/media)...📌 Last 200 logs after start (focus: flyway/ddl/schema/media)..."
+            sudo journalctl -u storebackend -n 200 --no-pager | egrep -i "flyway|migrat|schema_history|ddl|validate|content_type|created_at|media" || true
 
       - name: 🏥 Final Health Check
         uses: appleboy/ssh-action@master
