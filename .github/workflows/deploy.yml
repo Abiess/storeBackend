@@ -232,15 +232,18 @@ jobs:
             cd /opt/storebackend
             test -x ./deploy.sh
             ./deploy.sh
-            echo "📌 Check storebackend logs on disk (last 200 lines, flyway/media)..."
-            LOG_CANDIDATES=$(ls -1t /opt/storebackend/logs/* 2>/dev/null | head -n 5 || true)
-            echo "Log candidates:"
-            echo "$LOG_CANDIDATES" || true
+            echo "📌 Flyway/media logs (last 500 lines):"
+            sudo journalctl -u storebackend -n 500 --no-pager \
+            | grep -iE "flyway|migrat|schema_history|validate|baseline|content_type|media" || true
             
-            for f in $LOG_CANDIDATES; do
-            echo "---- $f (flyway/media hits) ----"
-            tail -n 200 "$f" | grep -iE "flyway|migrat|schema_history|validate|baseline|content_type|media" || true
-            done
+            echo "📌 DB content_type check:"
+            sudo -u postgres psql -d storedb -c "
+            SELECT
+            COUNT(*) AS total,
+            COUNT(*) FILTER (WHERE content_type IS NULL) AS nulls,
+            COUNT(*) FILTER (WHERE content_type = 'application/octet-stream') AS octet_stream
+            FROM public.media;" || true
+
 
 
       - name: 🏥 Final Health Check
