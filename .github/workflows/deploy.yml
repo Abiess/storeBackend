@@ -72,7 +72,8 @@ jobs:
             scripts/diagnose-database.sh \
             scripts/flyway-helper.sh \
             scripts/setup-postgres-user.sh \
-            scripts/install-minio.sh; do
+            scripts/install-minio.sh \
+            scripts/fix-db-password.sh; do
             if [ -f "$f" ]; then
               echo "✅ $f"
             else
@@ -90,7 +91,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          source: "scripts/deploy.sh,scripts/diagnose-database.sh,scripts/flyway-helper.sh,scripts/setup-postgres-user.sh,scripts/install-minio.sh"
+          source: "scripts/deploy.sh,scripts/diagnose-database.sh,scripts/flyway-helper.sh,scripts/setup-postgres-user.sh,scripts/install-minio.sh,scripts/fix-db-password.sh"
           target: "/tmp/"
           strip_components: 1
 
@@ -132,7 +133,7 @@ jobs:
             fi
 
             # Move Flyway-based scripts
-            for f in diagnose-database.sh flyway-helper.sh setup-postgres-user.sh install-minio.sh; do
+            for f in diagnose-database.sh flyway-helper.sh setup-postgres-user.sh install-minio.sh fix-db-password.sh; do
               if [ -f "/tmp/$f" ]; then
                 sudo mv "/tmp/$f" "/opt/storebackend/scripts/$f"
                 echo "✅ Moved $f"
@@ -148,6 +149,7 @@ jobs:
             sudo chmod +x /opt/storebackend/scripts/flyway-helper.sh || true
             sudo chmod +x /opt/storebackend/scripts/setup-postgres-user.sh || true
             sudo chmod +x /opt/storebackend/scripts/install-minio.sh || true
+            sudo chmod +x /opt/storebackend/scripts/fix-db-password.sh || true
 
             echo "✅ VPS environment ready (Flyway-based)"
             echo "📁 Files in /opt/storebackend/scripts:"
@@ -170,6 +172,12 @@ jobs:
             # Prüfe ob storeapp User existiert
             if sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='storeapp'" | grep -q 1; then
               echo "✅ PostgreSQL user 'storeapp' exists"
+              
+              # Stelle sicher, dass das Passwort korrekt ist
+              echo "🔐 Verifying and updating database password..."
+              cd /opt/storebackend
+              export DB_PASSWORD="${DB_PASSWORD}"
+              sudo -E ./scripts/fix-db-password.sh
             else
               echo "🆕 Creating PostgreSQL user and database..."
               cd /opt/storebackend

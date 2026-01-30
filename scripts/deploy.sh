@@ -161,3 +161,63 @@ echo "   ✅ Flyway is configured to run migrations before application starts"
 echo "   ✅ Baseline will be created automatically for existing databases"
 echo "   ✅ All schema changes are versioned and tracked"
 echo ""
+
+# Erstelle oder aktualisiere systemd Service
+echo "🔧 Setting up systemd service..."
+SYSTEMD_SERVICE="/etc/systemd/system/${SERVICE_NAME}.service"
+
+sudo bash -c "cat > '$SYSTEMD_SERVICE' <<'EOF'
+[Unit]
+Description=Store Backend Spring Boot Application
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=storebackend
+Group=storebackend
+
+# Environment-Datei laden
+EnvironmentFile=/etc/storebackend.env
+
+# JAR ausführen
+ExecStart=/usr/bin/java \$JAVA_OPTS -jar /opt/storebackend/app.jar
+
+# Working Directory
+WorkingDirectory=/opt/storebackend
+
+# Restart-Strategie (wichtig bei DB-Connection-Problemen während Start)
+Restart=on-failure
+RestartSec=10s
+StartLimitInterval=300s
+StartLimitBurst=5
+
+# Security (optional)
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Standard-Ausgabe ins Journal
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=storebackend
+
+[Install]
+WantedBy=multi-user.target
+EOF"
+
+echo "✅ Systemd service file created/updated"
+
+echo "🔄 Enabling and starting service..."
+sudo systemctl daemon-reload
+sudo systemctl enable "$SERVICE_NAME"
+sudo systemctl start "$SERVICE_NAME"
+
+echo ""
+echo "✅ Deployment complete!"
+echo ""
+echo "📊 Service Status:"
+sudo systemctl status "$SERVICE_NAME" --no-pager || true
+echo ""
+echo "📋 View logs with:"
+echo "   sudo journalctl -u $SERVICE_NAME -f"
+echo ""
+echo "🏥 Health check will be performed by GitHub Actions..."
