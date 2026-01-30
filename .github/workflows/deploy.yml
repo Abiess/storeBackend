@@ -208,6 +208,30 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           script: |
             set -e
-            sleep 5
-            curl -f http://localhost:8080/actuator/health
-            echo "✅ Application is running!"
+            echo "🏥 Warte auf Anwendungsstart (inkl. Flyway Migrationen)..."
+            
+            MAX_ATTEMPTS=12
+            SLEEP_TIME=5
+            
+            for i in $(seq 1 $MAX_ATTEMPTS); do
+              echo "Versuch $i/$MAX_ATTEMPTS..."
+              
+              if curl -f -s http://localhost:8080/actuator/health > /dev/null 2>&1; then
+                echo "✅ Application is running!"
+                curl http://localhost:8080/actuator/health
+                exit 0
+              fi
+              
+              if [ $i -lt $MAX_ATTEMPTS ]; then
+                echo "⏳ Warte ${SLEEP_TIME}s vor nächstem Versuch..."
+                sleep $SLEEP_TIME
+              fi
+            done
+            
+            echo "❌ Application nicht erreichbar nach $((MAX_ATTEMPTS * SLEEP_TIME)) Sekunden"
+            echo "📋 Systemd Status:"
+            sudo systemctl status storebackend --no-pager || true
+            echo ""
+            echo "📋 Letzte Log-Zeilen:"
+            sudo journalctl -u storebackend -n 50 --no-pager || true
+            exit 1
