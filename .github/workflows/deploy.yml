@@ -206,7 +206,7 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           FLYWAY_BASELINE_ON_MIGRATE: "false"
-          FLYWAY_REPAIR_ON_MIGRATE: "true"  # ✅ TEMP: Aktiviert Repair für V5/V6 Migrationen
+          FLYWAY_REPAIR_ON_MIGRATE: "false"  # ✅ Zurück zu false - Repair wurde bereits ausgeführt
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
