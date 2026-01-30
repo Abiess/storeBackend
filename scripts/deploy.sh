@@ -1,6 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# ✅ Hilfsfunktionen für farbige Ausgabe
+print_warning() {
+    echo "⚠️  WARNING: $1"
+}
+
+print_error() {
+    echo "❌ ERROR: $1"
+}
+
+print_success() {
+    echo "✅ $1"
+}
+
 APP_USER="storebackend"
 SERVICE_NAME="storebackend"
 
