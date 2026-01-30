@@ -10,7 +10,8 @@
     "register": "التسجيل",
     "logout": "تسجيل الخروج",
     "search": "بحث...",
-    "language": "اللغة"
+    "language": "اللغة",
+    "logout": "تسجيل الخروج"
   },
   "cart": {
     "title": "سلة التسوق",
@@ -35,7 +36,22 @@
     "inStock": "متوفر",
     "description": "الوصف",
     "details": "التفاصيل",
-    "reviews": "التقييمات"
+    "reviews": "التقييمات",
+
+    "images": "صور المنتج",
+    "info": "معلومات المنتج",
+    "placeholder": {
+      "name": "أدخل اسم المنتج",
+      "description": "أدخل وصف المنتج"
+    }
+  },
+  "media": {
+    "uploadImages": "رفع الصور",
+    "noMedia": "لا توجد وسائط"
+  },
+  "messages": {
+    "maxFileSize": "الحد الأقصى لحجم الملف: {{size}}",
+    "allowedFormats": "الصيغ المدعومة: PNG، JPG، WEBP"
   },
   "checkout": {
     "title": "الدفع",
@@ -65,7 +81,10 @@
     "no": "لا",
     "loading": "جاري التحميل...",
     "error": "خطأ",
-    "success": "نجح"
+    "success": "نجح",
+    "back": "رجوع",
+    "login": "تسجيل الدخول"
+
   },
   "navigation": {
     "dashboard": "لوحة التحكم",
@@ -75,7 +94,8 @@
     "products": "المنتجات",
     "orders": "الطلبات",
     "delivery": "التوصيل",
-    "settings": "الإعدادات"
+    "settings": "الإعدادات",
+    "myAccount": "حسابي"
   },
   "table": {
     "image": "الصورة",

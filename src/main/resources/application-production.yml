@@ -49,7 +49,7 @@ spring:
 
     # KRITISCH: Validierung & Sicherheit
     validate-on-migrate: true           # ✅ Checksums prüfen bei jedem Start
-    out-of-order: true                  # ✅ TEMP: true - erlaubt V5/V6 nachträglich
+    out-of-order: false                  # ✅ TEMP: true - erlaubt V5/V6 nachträglich
     ignore-missing-migrations: false    # ✅ Fehlende Migrations = Fehler
     ignore-ignored-migrations: false    # ✅ Ignorierte Migrations = Fehler
     ignore-future-migrations: true      # ✅ TEMP: true - ignoriert Warnungen für V5/V6

@@ -35,7 +35,21 @@
     "inStock": "Auf Lager",
     "description": "Beschreibung",
     "details": "Details",
-    "reviews": "Bewertungen"
+    "reviews": "Bewertungen",
+
+    "images": "Produktbilder",
+    "info": "Produktinfo",
+    "placeholder": {
+      "name": "Produktname eingeben",
+      "description": "Produktbeschreibung eingeben"
+    }
+  },
+  "media": {
+    "uploadImages": "Bilder hochladen",
+    "noMedia": "Keine Medien vorhanden"
+  },
+  "messages": {
+    "maxFileSize": "Maximale Dateigröße: {{size}}"
   },
   "checkout": {
     "title": "Kasse",
@@ -65,7 +79,10 @@
     "no": "Nein",
     "loading": "Lädt...",
     "error": "Fehler",
-    "success": "Erfolgreich"
+    "success": "Erfolgreich",
+    "back": "Zurück",
+    "login": "Anmelden",
+    "logout": "Abmelden"
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -75,7 +92,8 @@
     "products": "Produkte",
     "orders": "Bestellungen",
     "delivery": "Lieferung",
-    "settings": "Einstellungen"
+    "settings": "Einstellungen",
+    "myAccount": "Mein Konto"
   },
   "table": {
     "image": "Bild",

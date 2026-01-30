@@ -35,7 +35,22 @@
     "inStock": "In Stock",
     "description": "Description",
     "details": "Details",
-    "reviews": "Reviews"
+    "reviews": "Reviews",
+
+    "images": "Product Images",
+    "info": "Product Information",
+    "placeholder": {
+      "name": "Enter product name",
+      "description": "Enter product description"
+    }
+  },
+  "media": {
+    "uploadImages": "Upload Images",
+    "noMedia": "No media available"
+  },
+  "messages": {
+    "maxFileSize": "Maximum file size: {{size}}",
+    "allowedFormats": "PNG, JPG, WEBP supported"
   },
   "checkout": {
     "title": "Checkout",
@@ -65,7 +80,10 @@
     "no": "No",
     "loading": "Loading...",
     "error": "Error",
-    "success": "Success"
+    "success": "Success",
+    "back": "Back",
+    "login": "Login",
+    "logout": "Logout",
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -75,7 +93,8 @@
     "products": "Products",
     "orders": "Orders",
     "delivery": "Delivery",
-    "settings": "Settings"
+    "settings": "Settings",
+    "myAccount": "My Account"
   },
   "table": {
     "image": "Image",
