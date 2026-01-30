@@ -66,16 +66,13 @@ jobs:
           echo "scripts folder:"
           ls -lah scripts || true
           echo ""
-          echo "Check required files:"
+          echo "Check required files (Flyway-based):"
           for f in \
             scripts/deploy.sh \
             scripts/diagnose-database.sh \
-            scripts/reset-database.sh \
-            scripts/install-minio.sh \
-            scripts/smart-db-migration.sh \
-            scripts/migrate-database.sql \
-            scripts/init-schema.sql \
-            scripts/init-schema.sh; do
+            scripts/flyway-helper.sh \
+            scripts/setup-postgres-user.sh \
+            scripts/install-minio.sh; do
             if [ -f "$f" ]; then
               echo "✅ $f"
             else
@@ -83,6 +80,8 @@ jobs:
               exit 1
             fi
           done
+          echo ""
+          echo "✅ All required Flyway-based scripts present"
 
       - name: 📋 Copy scripts to VPS (/tmp)
         uses: appleboy/scp-action@master
@@ -91,7 +90,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          source: "scripts/deploy.sh,scripts/diagnose-database.sh,scripts/reset-database.sh,scripts/install-minio.sh,scripts/smart-db-migration.sh,scripts/migrate-database.sql,scripts/init-schema.sql,scripts/init-schema.sh"
+          source: "scripts/deploy.sh,scripts/diagnose-database.sh,scripts/flyway-helper.sh,scripts/setup-postgres-user.sh,scripts/install-minio.sh"
           target: "/tmp/"
           strip_components: 1
 
@@ -132,29 +131,29 @@ jobs:
               sudo mv /tmp/deploy.sh /opt/storebackend/deploy.sh
             fi
 
-            # Move scripts + sql
-            for f in diagnose-database.sh reset-database.sh install-minio.sh smart-db-migration.sh migrate-database.sql init-schema.sql init-schema.sh; do
+            # Move Flyway-based scripts
+            for f in diagnose-database.sh flyway-helper.sh setup-postgres-user.sh install-minio.sh; do
               if [ -f "/tmp/$f" ]; then
                 sudo mv "/tmp/$f" "/opt/storebackend/scripts/$f"
+                echo "✅ Moved $f"
               fi
             done
 
             sudo chown -R storebackend:storebackend /opt/storebackend
             sudo chmod 755 /opt/storebackend
 
-            # Correct chmod paths
+            # Make scripts executable
             sudo chmod +x /opt/storebackend/deploy.sh || true
             sudo chmod +x /opt/storebackend/scripts/diagnose-database.sh || true
-            sudo chmod +x /opt/storebackend/scripts/reset-database.sh || true
+            sudo chmod +x /opt/storebackend/scripts/flyway-helper.sh || true
+            sudo chmod +x /opt/storebackend/scripts/setup-postgres-user.sh || true
             sudo chmod +x /opt/storebackend/scripts/install-minio.sh || true
-            sudo chmod +x /opt/storebackend/scripts/smart-db-migration.sh || true
-            sudo chmod +x /opt/storebackend/scripts/init-schema.sh || true
 
-            echo "✅ VPS environment ready"
+            echo "✅ VPS environment ready (Flyway-based)"
             echo "📁 Files in /opt/storebackend/scripts:"
             ls -lah /opt/storebackend/scripts | head -50
 
-      - name: 🗃️ Initialize Database Schema (only if missing)
+      - name: 🗃️ Setup PostgreSQL Database (one-time, if needed)
         uses: appleboy/ssh-action@master
         env:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
@@ -166,16 +165,19 @@ jobs:
           envs: DB_PASSWORD
           script: |
             set -e
-            echo "🗃️  Checking if DB has users table..."
-            if sudo -u postgres psql -d storedb -tAc "SELECT to_regclass('public.users')" | grep -q users; then
-              echo "✅ users table exists, skipping init-schema"
-              exit 0
+            echo "🗃️ Checking PostgreSQL setup..."
+            
+            # Prüfe ob storeapp User existiert
+            if sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='storeapp'" | grep -q 1; then
+              echo "✅ PostgreSQL user 'storeapp' exists"
+            else
+              echo "🆕 Creating PostgreSQL user and database..."
+              cd /opt/storebackend
+              export DB_PASSWORD="${DB_PASSWORD}"
+              sudo -E ./scripts/setup-postgres-user.sh
             fi
-
-            echo "🆕 users missing -> initializing schema..."
-            test -f /opt/storebackend/scripts/init-schema.sql
-            sudo -u postgres psql -d storedb -f /opt/storebackend/scripts/init-schema.sql
-            echo "✅ Schema initialized"
+            
+            echo "✅ PostgreSQL ready - Flyway will handle schema migrations"
 
       - name: 🔄 Execute Deployment
         uses: appleboy/ssh-action@master

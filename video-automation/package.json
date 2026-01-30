@@ -1,0 +1,30 @@
+{
+  "name": "saas-video-automation",
+  "version": "1.0.0",
+  "description": "Automated How-to Video Pipeline for SaaS",
+  "scripts": {
+    "install:browsers": "playwright install chromium",
+    "record:all": "node scripts/record-all.js",
+    "record:login": "npm run record -- login",
+    "record:checkout": "npm run record -- checkout",
+    "record:products": "npm run record -- products",
+    "record:create-store": "npm run record -- create-store",
+    "record": "node scripts/record-single.js",
+    "process:all": "node scripts/process-all.js",
+    "process": "node scripts/process-video.js",
+    "subtitles": "node scripts/generate-subtitles.js",
+    "howto": "node scripts/build-howto.js",
+    "clean": "node scripts/clean.js",
+    "test:flows": "playwright test --headed",
+    "setup": "npm install && npm run install:browsers",
+    "pipeline:full": "npm run record:all && npm run process:all"
+  },
+  "dependencies": {
+    "@playwright/test": "^1.48.0",
+    "fluent-ffmpeg": "^2.1.3",
+    "whisper-node": "^1.0.0"
+  },
+  "devDependencies": {
+    "dotenv": "^16.4.5"
+  }
+}

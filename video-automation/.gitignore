@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment
+.env
+
+# Test results
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Output videos
+output/
+*.mp4
+*.webm
+*.avi
+
+# Subtitles
+*.srt
+*.vtt
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
