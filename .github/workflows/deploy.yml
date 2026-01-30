@@ -78,7 +78,8 @@ jobs:
             scripts/flyway-helper.sh \
             scripts/setup-postgres-user.sh \
             scripts/install-minio.sh \
-            scripts/fix-db-password.sh; do
+            scripts/fix-db-password.sh \
+            scripts/force-run-migrations.sh; do
             if [ -f "$f" ]; then
               echo "✅ $f"
             else
@@ -96,7 +97,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          source: "scripts/deploy.sh,scripts/diagnose-database.sh,scripts/flyway-helper.sh,scripts/setup-postgres-user.sh,scripts/install-minio.sh,scripts/fix-db-password.sh"
+          source: "scripts/deploy.sh,scripts/diagnose-database.sh,scripts/flyway-helper.sh,scripts/setup-postgres-user.sh,scripts/install-minio.sh,scripts/fix-db-password.sh,scripts/force-run-migrations.sh"
           target: "/tmp/"
           strip_components: 1
 
@@ -138,7 +139,7 @@ jobs:
             fi
 
             # Move Flyway-based scripts
-            for f in diagnose-database.sh flyway-helper.sh setup-postgres-user.sh install-minio.sh fix-db-password.sh; do
+            for f in diagnose-database.sh flyway-helper.sh setup-postgres-user.sh install-minio.sh fix-db-password.sh force-run-migrations.sh; do
               if [ -f "/tmp/$f" ]; then
                 sudo mv "/tmp/$f" "/opt/storebackend/scripts/$f"
                 echo "✅ Moved $f"
@@ -155,6 +156,7 @@ jobs:
             sudo chmod +x /opt/storebackend/scripts/setup-postgres-user.sh || true
             sudo chmod +x /opt/storebackend/scripts/install-minio.sh || true
             sudo chmod +x /opt/storebackend/scripts/fix-db-password.sh || true
+            sudo chmod +x /opt/storebackend/scripts/force-run-migrations.sh || true
 
             echo "✅ VPS environment ready (Flyway-based)"
             echo "📁 Files in /opt/storebackend/scripts:"
@@ -178,19 +180,26 @@ jobs:
             if sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='storeapp'" | grep -q 1; then
               echo "✅ PostgreSQL user 'storeapp' exists"
               
-              # WICHTIG: Setze Permissions VOR Flyway (verhindert V3 Lock)
-              echo "🔐 Setting complete permissions (outside Flyway to avoid locks)..."
-              cd /opt/storebackend
-              export DB_PASSWORD="${DB_PASSWORD}"
-              
               # Stoppe App um Locks zu vermeiden
               sudo systemctl stop storebackend || true
               sleep 2
               
-              # Führe vollständiges Permissions-Setup aus
+              # WICHTIG: Setze Permissions VOR Flyway (verhindert V3 Lock)
+              echo "🔐 Setting complete permissions (outside Flyway to avoid locks)..."
+              cd /opt/storebackend
+              export DB_PASSWORD="${DB_PASSWORD}"
               sudo -E ./scripts/fix-db-password.sh
               
-              echo "✅ Permissions set - Flyway V3 will now run fast (no locks)"
+              echo "✅ Permissions set"
+              
+              # ✅ NEU: Force-Run V5/V6 Migrations direkt auf DB
+              echo "🔧 Checking and forcing V5/V6 migrations..."
+              if [ -f ./scripts/force-run-migrations.sh ]; then
+                chmod +x ./scripts/force-run-migrations.sh
+                sudo -E ./scripts/force-run-migrations.sh
+              else
+                echo "⚠️  force-run-migrations.sh not found - will rely on Flyway"
+              fi
             else
               echo "🆕 Creating PostgreSQL user and database..."
               cd /opt/storebackend
@@ -198,7 +207,7 @@ jobs:
               sudo -E ./scripts/setup-postgres-user.sh
             fi
             
-            echo "✅ PostgreSQL ready - Flyway will handle schema migrations (V3 is now non-blocking)"
+            echo "✅ PostgreSQL ready - Flyway will handle schema migrations"
 
       - name: 🔄 Execute Deployment
         uses: appleboy/ssh-action@master
