@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.*;
 import storebackend.config.SaasProperties;
 import storebackend.dto.PublicStoreDTO;
 import storebackend.entity.Domain;
-import storebackend.entity.Store;
 import storebackend.service.DomainService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -42,27 +41,18 @@ public class PublicStoreController {
 
         log.info("Resolving store for host: {}", targetHost);
 
-        Optional<Domain> domainOpt = domainService.resolveDomainByHost(targetHost);
+        // ✅ FIX: Verwende die neue Service-Methode die direkt DTO zurückgibt
+        // Diese Methode lädt Store mit JOIN FETCH innerhalb der Transaktion
+        Optional<PublicStoreDTO> storeDTO = domainService.resolveStoreByHost(targetHost);
 
-        if (domainOpt.isEmpty()) {
+        if (storeDTO.isEmpty()) {
             log.info("No active verified domain found for host: {}", targetHost);
             return ResponseEntity.notFound().build();
         }
 
-        Domain domain = domainOpt.get();
-        Store store = domain.getStore();
+        log.info("Successfully resolved store {} for host {}", storeDTO.get().getName(), targetHost);
 
-        // Erstelle Public Store DTO
-        PublicStoreDTO storeDTO = new PublicStoreDTO();
-        storeDTO.setStoreId(store.getId());
-        storeDTO.setName(store.getName());
-        storeDTO.setSlug(store.getSlug());
-        storeDTO.setPrimaryDomain(domain.getHost());
-        storeDTO.setStatus(store.getStatus().name());
-
-        log.info("Successfully resolved store {} for host {}", store.getName(), targetHost);
-
-        return ResponseEntity.ok(storeDTO);
+        return ResponseEntity.ok(storeDTO.get());
     }
 
     @GetMapping("/store/by-slug/{slug}")
@@ -73,26 +63,17 @@ public class PublicStoreController {
         // Generiere Subdomain und suche
         String subdomain = saasProperties.generateSubdomain(slug);
 
-        Optional<Domain> domainOpt = domainService.resolveDomainByHost(subdomain);
+        // ✅ FIX: Verwende die neue DTO-basierte Methode
+        Optional<PublicStoreDTO> storeDTO = domainService.resolveStoreByHost(subdomain);
 
-        if (domainOpt.isEmpty()) {
+        if (storeDTO.isEmpty()) {
             log.info("No active verified subdomain found for slug: {}", slug);
             return ResponseEntity.notFound().build();
         }
 
-        Domain domain = domainOpt.get();
-        Store store = domain.getStore();
+        log.info("Successfully resolved store {} by slug {}", storeDTO.get().getName(), slug);
 
-        PublicStoreDTO storeDTO = new PublicStoreDTO();
-        storeDTO.setStoreId(store.getId());
-        storeDTO.setName(store.getName());
-        storeDTO.setSlug(store.getSlug());
-        storeDTO.setPrimaryDomain(domain.getHost());
-        storeDTO.setStatus(store.getStatus().name());
-
-        log.info("Successfully resolved store {} by slug {}", store.getName(), slug);
-
-        return ResponseEntity.ok(storeDTO);
+        return ResponseEntity.ok(storeDTO.get());
     }
 
     @GetMapping("/domain/check-availability")

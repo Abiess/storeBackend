@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import storebackend.config.SaasProperties;
+import storebackend.dto.PublicStoreDTO;
 import storebackend.entity.Domain;
 import storebackend.entity.Store;
 import storebackend.entity.User;
@@ -102,8 +103,29 @@ public class DomainService {
         return domainRepository.save(domain);
     }
 
+    @Transactional(readOnly = true)
     public Optional<Domain> resolveDomainByHost(String host) {
         return domainRepository.findActiveVerifiedDomainByHost(host);
+    }
+
+    /**
+     * ✅ NEUE METHODE: Löst Domain mit Store in einer Abfrage auf
+     * Verwendet JOIN FETCH um LazyInitializationException zu vermeiden
+     */
+    @Transactional(readOnly = true)
+    public Optional<PublicStoreDTO> resolveStoreByHost(String host) {
+        return domainRepository.findActiveVerifiedDomainWithStoreByHost(host)
+            .map(domain -> {
+                Store store = domain.getStore();
+                PublicStoreDTO dto = new PublicStoreDTO();
+                dto.setStoreId(store.getId());
+                dto.setName(store.getName());
+                dto.setSlug(store.getSlug());
+                dto.setDescription(store.getDescription());
+                dto.setPrimaryDomain(domain.getHost());
+                dto.setStatus(store.getStatus().name());
+                return dto;
+            });
     }
 
     public String getVerificationInstructions(Long domainId, User currentUser) {

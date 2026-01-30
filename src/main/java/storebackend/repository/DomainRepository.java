@@ -28,6 +28,10 @@ public interface DomainRepository extends JpaRepository<Domain, Long> {
     @Query("SELECT d FROM Domain d WHERE d.store.status = 'ACTIVE' AND d.isVerified = true AND d.host = :host")
     Optional<Domain> findActiveVerifiedDomainByHost(@Param("host") String host);
 
+    // ✅ NEUE METHODE: Lädt Store mit JOIN FETCH - verhindert LazyInitializationException
+    @Query("SELECT d FROM Domain d JOIN FETCH d.store s WHERE s.status = 'ACTIVE' AND d.isVerified = true AND d.host = :host")
+    Optional<Domain> findActiveVerifiedDomainWithStoreByHost(@Param("host") String host);
+
     @Query("SELECT d FROM Domain d JOIN d.store s WHERE s.slug = :slug AND d.type = 'SUBDOMAIN' AND d.isVerified = true")
     Optional<Domain> findVerifiedSubdomainBySlug(@Param("slug") String slug);
 }
