@@ -139,6 +139,7 @@ jobs:
             fi
 
             # Move Flyway-based scripts
+            for f in diagnose-database.sh flyway-helper.sh setup-postgres-user.sh install-minio.sh fix-db-password.sh force-run-migrations.sh; do
               if [ -f "/tmp/$f" ]; then
                 sudo mv "/tmp/$f" "/opt/storebackend/scripts/$f"
                 echo "✅ Moved $f"
@@ -155,6 +156,7 @@ jobs:
             sudo chmod +x /opt/storebackend/scripts/setup-postgres-user.sh || true
             sudo chmod +x /opt/storebackend/scripts/install-minio.sh || true
             sudo chmod +x /opt/storebackend/scripts/fix-db-password.sh || true
+            sudo chmod +x /opt/storebackend/scripts/force-run-migrations.sh || true
 
             echo "✅ VPS environment ready (Flyway-based)"
             echo "📁 Files in /opt/storebackend/scripts:"
@@ -177,19 +179,19 @@ jobs:
             # Prüfe ob storeapp User existiert
             if sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='storeapp'" | grep -q 1; then
               echo "✅ PostgreSQL user 'storeapp' exists"
-              
+            
               # Stoppe App um Locks zu vermeiden
               sudo systemctl stop storebackend || true
               sleep 2
-              
+            
               # WICHTIG: Setze Permissions VOR Flyway (verhindert V3 Lock)
               echo "🔐 Setting complete permissions (outside Flyway to avoid locks)..."
               cd /opt/storebackend
               export DB_PASSWORD="${DB_PASSWORD}"
               sudo -E ./scripts/fix-db-password.sh
-              
+            
               echo "✅ Permissions set"
-              
+            
               # ✅ NEU: Force-Run V5/V6 Migrations direkt auf DB
               echo "🔧 Checking and forcing V5/V6 migrations..."
               if [ -f ./scripts/force-run-migrations.sh ]; then
@@ -230,6 +232,10 @@ jobs:
             cd /opt/storebackend
             test -x ./deploy.sh
             ./deploy.sh
+            echo "📌 Flyway-related startup logs:"
+            sudo journalctl -u storebackend -n 300 --no-pager | egrep -i "flyway|migrat|schema_history|validate|baseline" || true
+
+            
 
       - name: 🏥 Final Health Check
         uses: appleboy/ssh-action@master
@@ -249,7 +255,7 @@ jobs:
             for i in $(seq 1 $MAX_ATTEMPTS); do
               ELAPSED=$((i * SLEEP_TIME))
               echo "⏳ Versuch $i/$MAX_ATTEMPTS (${ELAPSED}s / 240s)..."
-              
+            
               if curl -f -s http://localhost:8080/actuator/health > /dev/null 2>&1; then
                 echo ""
                 echo "✅ Application is running!"
@@ -259,7 +265,7 @@ jobs:
                 echo "⏱️  Started after ${ELAPSED} seconds"
                 exit 0
               fi
-              
+            
               if [ $i -lt $MAX_ATTEMPTS ]; then
                 sleep $SLEEP_TIME
               fi
