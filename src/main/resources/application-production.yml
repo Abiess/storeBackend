@@ -18,6 +18,7 @@ spring:
     hibernate:
       ddl-auto: validate  # ✅ Nur validieren - Schema kommt von Flyway!
     show-sql: false  # In Production: false (Performance)
+    open-in-view: false  # Verhindert lazy-loading Probleme
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
@@ -59,6 +60,11 @@ spring:
     # Repair-Mode (für Checksum-Fixes, über ENV steuerbar)
     # Setze FLYWAY_REPAIR_ON_MIGRATE=true für einmaligen Repair
     repair-on-migrate: ${FLYWAY_REPAIR_ON_MIGRATE:false}
+
+    # FIX: Bean-Dependency-Konflikt vermeiden
+    # Flyway soll NACH JPA initialisieren (nur für Validation)
+    # Bei ddl-auto=validate ist das sicher
+    create-schemas: false
 
   servlet:
     multipart:
