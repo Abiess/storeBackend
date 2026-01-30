@@ -84,7 +84,7 @@ logging:
     root: INFO
     storebackend: INFO
     org.springframework.security: INFO
-    org.flywaydb: INFO  # ✅ Flyway Logs sichtbar machen
+    org.flywaydb: DEBUG  # ✅ Flyway Logs sichtbar machen
 
 # Swagger/OpenAPI Configuration
 springdoc:
