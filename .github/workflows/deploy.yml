@@ -230,9 +230,6 @@ jobs:
             cd /opt/storebackend
             test -x ./deploy.sh
             ./deploy.sh
-            echo "📌 Last 200 logs after start (storebackend):"
-            sudo journalctl -u storebackend -n 200 --no-pager || true
-
 
       - name: 🏥 Final Health Check
         uses: appleboy/ssh-action@master
