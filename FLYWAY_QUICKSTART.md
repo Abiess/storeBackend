@@ -100,8 +100,8 @@ export DB_PASSWORD='your_password'
 
 ## Dokumentation
 
-📖 [FLYWAY_MIGRATION_GUIDE.md](FLYWAY_MIGRATION_GUIDE.md) - Vollständige Anleitung
-📖 [DATABASE_SETUP.md](DATABASE_SETUP.md) - Deployment & Troubleshooting
+
+
 
 ## Migration von altem System
 
