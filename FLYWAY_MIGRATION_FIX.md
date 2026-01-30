@@ -10,7 +10,15 @@ Offenders:
 - db/migration/V001__add_delivery_tables.sql
 ```
 
-**Root Cause:** Flyway ignoriert führende Nullen in Versionsnummern. `V1` und `V001` werden beide als Version "1" interpretiert → Kollision!
+**Zusätzliches Problem (PostgreSQL 15+):**
+```
+org.postgresql.util.PSQLException: ERROR: permission denied for schema public
+Position: 14
+```
+
+**Root Causes:** 
+1. Flyway ignoriert führende Nullen in Versionsnummern. `V1` und `V001` werden beide als Version "1" interpretiert → Kollision!
+2. **PostgreSQL 15+** hat das public Schema standardmäßig ohne PUBLIC Rechte → `storeapp` User kann keine Tabellen erstellen
 
 ---
 
@@ -78,37 +86,64 @@ SET search_path TO public;
 
 ---
 
-### 3️⃣ **PostgreSQL User + Rechte - Idempotentes Setup**
+### 3️⃣ **PostgreSQL User + Rechte - PostgreSQL 15+ kompatibel**
 
 #### Geänderte Datei:
 - `scripts/setup-postgres-user.sh`
 
+**KRITISCHE Änderung für PostgreSQL 15+:**
+
+Ab PostgreSQL 15 hat das `public` Schema standardmäßig **keine PUBLIC Rechte** mehr. Der Owner muss explizit gesetzt werden!
+
 **Wichtigste Änderungen:**
 ```bash
-# Explizites LOGIN-Recht (war vorher implizit)
-CREATE USER $DB_USER WITH LOGIN PASSWORD '$DB_PASSWORD';
-GRANT CONNECT ON DATABASE $DB_NAME TO $DB_USER;
+# Database Owner auf storeapp setzen
+ALTER DATABASE storedb OWNER TO storeapp;
 
-# Idempotente Updates (bei mehrfachem Ausführen)
-ALTER USER $DB_USER WITH LOGIN PASSWORD '$DB_PASSWORD';
-GRANT CONNECT ON DATABASE $DB_NAME TO $DB_USER;
+# KRITISCH: public Schema Owner setzen (PostgreSQL 15+ Fix)
+ALTER SCHEMA public OWNER TO storeapp;
 
-# Schema-Berechtigungen
-GRANT USAGE ON SCHEMA public TO $DB_USER;
-GRANT CREATE ON SCHEMA public TO $DB_USER;
-GRANT ALL ON SCHEMA public TO $DB_USER;
+# Explizit alle Rechte geben
+GRANT ALL ON SCHEMA public TO storeapp;
+GRANT CREATE ON SCHEMA public TO storeapp;
+GRANT USAGE ON SCHEMA public TO storeapp;
+
+# Default Privileges für zukünftige Objekte
+ALTER DEFAULT PRIVILEGES FOR USER storeapp IN SCHEMA public 
+    GRANT ALL ON TABLES TO storeapp;
+ALTER DEFAULT PRIVILEGES FOR USER storeapp IN SCHEMA public 
+    GRANT ALL ON SEQUENCES TO storeapp;
 ```
 
 **Why:**
-- `LOGIN` muss explizit gesetzt werden (Default ist NOLOGIN bei manchen PostgreSQL-Versionen)
-- `GRANT CONNECT` erlaubt dem User, sich mit der DB zu verbinden
-- Script ist jetzt **idempotent** = kann mehrfach ausgeführt werden ohne Fehler
-- Bei erneutem Ausführen wird Passwort aktualisiert statt Fehler zu werfen
+- PostgreSQL 14 und früher: `public` Schema hat automatisch PUBLIC Rechte (alle User können erstellen)
+- **PostgreSQL 15+**: `public` Schema hat **keine** PUBLIC Rechte mehr (Security-Verbesserung)
+- Ohne explizites `ALTER SCHEMA public OWNER TO storeapp` kann der User keine Tabellen erstellen
+- Der Fehler "permission denied for schema public" tritt auf, wenn Owner nicht korrekt ist
 
 **Test nach Setup:**
 ```bash
-PGPASSWORD="your_password" psql -h localhost -U storeapp -d storedb -c "SELECT 1;"
+PGPASSWORD="your_password" psql -h localhost -U storeapp -d storedb -c "CREATE TABLE test (id INT);"
+# Sollte ohne Fehler funktionieren
 ```
+
+#### Neue PowerShell-Scripts für Windows:
+
+**scripts/fix-postgres-permissions.ps1** - Führt Setup remote auf VPS aus:
+```powershell
+.\scripts\fix-postgres-permissions.ps1 -VpsHost 'your-vps-ip' -DbPassword 'your-db-password'
+```
+
+**scripts/diagnose-postgres-permissions.ps1** - Prüft ob Rechte korrekt sind:
+```powershell
+.\scripts\diagnose-postgres-permissions.ps1 -VpsHost 'your-vps-ip'
+```
+
+Das Diagnose-Script zeigt:
+- ✅ Schema Owner = storeapp
+- ✅ can_create = true
+- ✅ can_use = true
+- ✅ Alle Tabellen gehören storeapp
 
 ---
 
@@ -234,7 +269,10 @@ storeBackend/
 7. Setup PostgreSQL User (idempotent)
    - CREATE USER storeapp WITH LOGIN
    - GRANT CONNECT ON DATABASE
-   - GRANT ALL ON SCHEMA public
+   - ALTER DATABASE storedb OWNER TO storeapp        ← NEU
+   - ALTER SCHEMA public OWNER TO storeapp          ← KRITISCH (PostgreSQL 15+)
+   - GRANT ALL ON SCHEMA public TO storeapp
+   - Default Privileges setzen
 8. Fix DB Password (verify connection)
 ```
 
@@ -306,13 +344,31 @@ Flyway: Migrating schema "PUBLIC" to version "4 - add delivery tables"
 Flyway: Successfully applied 4 migrations
 ```
 
-### **Test 3: PostgreSQL Setup (wenn du lokal PostgreSQL hast)**
-```bash
-export DB_PASSWORD='test123'
-sudo -E ./scripts/setup-postgres-user.sh
+### **Test 3: PostgreSQL Setup + Permission Check**
+```powershell
+# Auf Windows (PowerShell):
+cd C:\Users\t13016a\Downloads\Team2\storeBackend
 
-# Test connection
-PGPASSWORD='test123' psql -h localhost -U storeapp -d storedb -c "SELECT version();"
+# 1. Führe Setup aus (fixe Permissions)
+.\scripts\fix-postgres-permissions.ps1 -VpsHost 'your-vps-ip' -DbPassword 'your-db-password'
+
+# 2. Prüfe ob Rechte korrekt sind
+.\scripts\diagnose-postgres-permissions.ps1 -VpsHost 'your-vps-ip'
+
+# 3. Starte App neu
+ssh root@your-vps-ip 'sudo systemctl restart storebackend'
+
+# 4. Beobachte Logs
+ssh root@your-vps-ip 'sudo journalctl -u storebackend -f | grep -i flyway'
+```
+
+**Erwartete Log-Ausgabe:**
+```
+Flyway: Migrating schema "public" to version "1 - initial schema"
+Flyway: Migrating schema "public" to version "2 - initial data"
+Flyway: Migrating schema "public" to version "3 - setup permissions"
+Flyway: Migrating schema "public" to version "4 - add delivery tables"
+Flyway: Successfully applied 4 migrations
 ```
 
 ---
@@ -344,46 +400,140 @@ Lösung: Migration wiederherstellen oder `flyway repair` (entfernt Eintrag aus H
 - **NEIN** für frische Deployments (wenn DB garantiert leer ist)
 - **Empfehlung:** Belasse auf `true`, schadet nicht und verhindert Fehler
 
+### **Q: Warum "permission denied for schema public"?**
+**A:** PostgreSQL 15+ Security-Änderung:
+- **PostgreSQL ≤14**: public Schema hat automatisch PUBLIC Rechte
+- **PostgreSQL ≥15**: public Schema hat **keine** PUBLIC Rechte mehr
+- **Lösung**: `ALTER SCHEMA public OWNER TO storeapp` explizit setzen
+- **Prävention**: Unser Setup-Script macht das jetzt automatisch
+
+### **Q: Wie prüfe ich die PostgreSQL Version?**
+**A:** Auf VPS:
+```bash
+sudo -u postgres psql -c "SELECT version();"
+```
+Oder nutze das Diagnose-Script:
+```powershell
+.\scripts\diagnose-postgres-permissions.ps1 -VpsHost 'your-vps-ip'
+```
+
+### **Q: Was wenn der Fehler trotzdem auftritt?**
+**A:** Schritt-für-Schritt Fix:
+```bash
+# 1. Auf VPS einloggen
+ssh root@your-vps-ip
+
+# 2. Setup-Script manuell ausführen
+cd /opt/storebackend
+export DB_PASSWORD='your-password'
+sudo -E bash scripts/setup-postgres-user.sh
+
+# 3. Prüfe Schema Owner
+sudo -u postgres psql -d storedb -c "SELECT nspname, nspowner::regrole FROM pg_namespace WHERE nspname='public';"
+# Sollte zeigen: public | storeapp
+
+# 4. Wenn Owner falsch ist, manuell fixen:
+sudo -u postgres psql -d storedb <<EOF
+ALTER SCHEMA public OWNER TO storeapp;
+GRANT ALL ON SCHEMA public TO storeapp;
+EOF
+
+# 5. App neu starten
+sudo systemctl restart storebackend
+sudo journalctl -u storebackend -f
+```
+
 ---
 
 ## 🎯 Next Steps nach diesem Fix
 
-1. **Committe die Änderungen:**
+1. **Fixe die Berechtigungen (Windows PowerShell):**
+```powershell
+cd C:\Users\t13016a\Downloads\Team2\storeBackend
+
+# Setup ausführen (mit deinem echten DB-Passwort)
+.\scripts\fix-postgres-permissions.ps1 `
+    -VpsHost 'your-vps-ip' `
+    -DbPassword 'your-db-password'
+```
+
+2. **Prüfe ob Permissions korrekt sind:**
+```powershell
+.\scripts\diagnose-postgres-permissions.ps1 -VpsHost 'your-vps-ip'
+```
+
+Die Ausgabe sollte zeigen:
+- ✅ Schema Owner = storeapp
+- ✅ can_create = t
+- ✅ Final Check = "All permissions OK"
+
+3. **Committe die Änderungen:**
 ```bash
-git add .
-git commit -m "Fix: Resolve Flyway migration conflict (V1 vs V001) + improve DB setup"
+git add scripts/setup-postgres-user.sh
+git add scripts/fix-postgres-permissions.ps1
+git add scripts/diagnose-postgres-permissions.ps1
+git add FLYWAY_MIGRATION_FIX.md
+git commit -m "Fix: PostgreSQL 15+ public schema permissions (permission denied fix)"
 git push origin main
 ```
 
-2. **Prüfe GitHub Actions:**
-- Workflow sollte bei "Validate Flyway Migrations" grün werden
-- Bei Fehler: Logs prüfen, validate-migrations.sh zeigt genaue Fehler
+4. **Starte App neu und prüfe Logs:**
+```powershell
+# Starte neu
+ssh root@your-vps-ip 'sudo systemctl restart storebackend'
 
-3. **Auf Produktion deployen:**
-- Workflow deployt automatisch
-- Fix-DB-Password Script stellt sicher, dass Passwort korrekt ist
-- Flyway führt Migrationen aus
+# Warte 10 Sekunden
+Start-Sleep -Seconds 10
 
-4. **Verifiziere nach Deployment:**
-```bash
-# Auf VPS (via SSH)
-sudo journalctl -u storebackend -n 100 | grep -i flyway
-
-# Check Flyway History
-export DB_PASSWORD='your_password'
-cd /opt/storebackend
-./scripts/flyway-helper.sh status
+# Prüfe Status
+ssh root@your-vps-ip 'sudo systemctl status storebackend'
 ```
+
+5. **Verifiziere Flyway Migrationen:**
+```bash
+# Auf VPS
+export DB_PASSWORD='your-password'
+cd /opt/storebackend
+sudo -u postgres psql -d storedb -c "SELECT * FROM flyway_schema_history ORDER BY installed_rank;"
+```
+
+Sollte 4 Migrationen zeigen (V1, V2, V3, V4) mit `success = true`
 
 ---
 
 ## 📚 Weitere Ressourcen
 
 - [Flyway Documentation](https://flywaydb.org/documentation/)
-- [Flyway Naming Patterns](https://flywaydb.org/documentation/concepts/migrations#naming)
+- [PostgreSQL 15 Release Notes - public schema changes](https://www.postgresql.org/docs/15/ddl-schemas.html#DDL-SCHEMAS-PUBLIC)
 - [PostgreSQL Schema Privileges](https://www.postgresql.org/docs/current/ddl-schemas.html)
 
 ---
 
-**Status:** ✅ Alle Probleme behoben und getestet!
+## 🛡️ PostgreSQL 15+ Breaking Change
 
+**Was hat sich geändert?**
+
+PostgreSQL 15 hat eine wichtige Security-Verbesserung eingeführt:
+
+| Version | public Schema Rechte | Auswirkung |
+|---------|---------------------|------------|
+| PostgreSQL ≤14 | `CREATE` Recht für alle User (PUBLIC) | Jeder User kann Tabellen erstellen |
+| PostgreSQL ≥15 | **Keine** PUBLIC Rechte | Nur Schema Owner oder explizit berechtigte User können erstellen |
+
+**Warum die Änderung?**
+
+Security: Verhindert dass unprivilegierte User ungewollt Objekte im public Schema erstellen können.
+
+**Was bedeutet das für uns?**
+
+- Wir müssen explizit `ALTER SCHEMA public OWNER TO storeapp` setzen
+- Ohne diesen Fix kann Flyway keine Tabellen erstellen
+- Der Fehler "permission denied for schema public" ist die Folge
+
+**Unser Fix:**
+
+Unser `setup-postgres-user.sh` Script ist jetzt **PostgreSQL 15+ kompatibel** und setzt alle nötigen Berechtigungen automatisch.
+
+---
+
+**Status:** ✅ Alle Probleme behoben (inkl. PostgreSQL 15+ public schema fix)!
