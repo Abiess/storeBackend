@@ -346,5 +346,6 @@ jobs:
             echo "2. Prüfe DB-Verbindung: sudo /opt/storebackend/scripts/diagnose-database.sh"
             echo "3. Prüfe DB-Rechte: sudo /opt/storebackend/scripts/fix-db-password.sh"
             echo "4. Prüfe MinIO Status: sudo systemctl status minio"
+            echo "5. Prüfe Schema-Validation: sudo journalctl -u storebackend | grep -i schema"
             echo ""
             exit 1
