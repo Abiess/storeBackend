@@ -16,10 +16,8 @@ spring:
 
   jpa:
     hibernate:
-      # Temporär auf 'create' für Schema-Neuinitialisierung
-      # Danach zurück auf 'validate' setzen!
-      ddl-auto: validate
-    show-sql: true
+      ddl-auto: validate  # ✅ Nur validieren - Schema kommt von Flyway!
+    show-sql: false  # In Production: false (Performance)
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
@@ -28,25 +26,39 @@ spring:
           batch_size: 50
         order_inserts: true
         order_updates: true
-        # Zeige DDL-Statements im Log
-        show_sql: true
-        use_sql_comments: true
-    # Stelle sicher, dass Hibernate die Tabellen erstellt
-    generate-ddl: true
 
-  # Flyway Datenbank-Migrationen
+  # ==========================================
+  # Flyway Migrations - PRODUCTION MODE
+  # ==========================================
   flyway:
     enabled: true
-    baseline-on-migrate: true  # Wichtig für existierende Produktionsdatenbank
+
+    # KRITISCH: baseline-on-migrate nur beim ERSTEN Deployment!
+    # Danach auf false setzen oder über ENV steuern
+    baseline-on-migrate: ${FLYWAY_BASELINE_ON_MIGRATE:false}
     baseline-version: 0
+
     locations: classpath:db/migration
-    schemas: public  # ✅ Explizit public Schema
-    default-schema: public  # ✅ Default Schema setzen
-    out-of-order: false
-    validate-on-migrate: true
-    # Für Production: User mit ausreichenden Rechten
+    schemas: public
+    default-schema: public
+
+    # User für Migrationen (sollte genug Rechte haben)
     user: ${FLYWAY_USER:storeapp}
     password: ${FLYWAY_PASSWORD:${SPRING_DATASOURCE_PASSWORD:postgres}}
+
+    # KRITISCH: Validierung & Sicherheit
+    validate-on-migrate: true           # ✅ Checksums prüfen bei jedem Start
+    out-of-order: false                 # ✅ Reihenfolge strikt erzwingen
+    ignore-missing-migrations: false    # ✅ Fehlende Migrations = Fehler
+    ignore-ignored-migrations: false    # ✅ Ignorierte Migrations = Fehler
+    ignore-future-migrations: false     # ✅ Neuere Versionen = Fehler
+
+    # Clean DEAKTIVIERT (würde alle Daten löschen!)
+    clean-disabled: true                # ✅ KRITISCH für Production!
+
+    # Repair-Mode (für Checksum-Fixes, über ENV steuerbar)
+    # Setze FLYWAY_REPAIR_ON_MIGRATE=true für einmaligen Repair
+    repair-on-migrate: ${FLYWAY_REPAIR_ON_MIGRATE:false}
 
   servlet:
     multipart:
@@ -54,21 +66,19 @@ spring:
       max-request-size: 10MB
 
 server:
-  # kommt von SERVER_PORT in /etc/storebackend.env, fallback 8080
   port: ${SERVER_PORT:8080}
   tomcat:
     threads:
       max: 100
       min-spare: 20
 
-# Logging für Debugging
+# Logging für Production
 logging:
   level:
     root: INFO
-    storebackend.security: DEBUG
-    storebackend.controller: DEBUG
-    org.springframework.security: DEBUG
-    org.flywaydb: INFO
+    storebackend: INFO
+    org.springframework.security: INFO
+    org.flywaydb: INFO  # ✅ Flyway Logs sichtbar machen
 
 # Swagger/OpenAPI Configuration
 springdoc:
@@ -82,22 +92,14 @@ springdoc:
     tryItOutEnabled: true
 
 jwt:
-  # hier aus ENV – passt zu deinem deploy.sh (/etc/storebackend.env → JWT_SECRET)
   secret: ${JWT_SECRET:change-me-in-production}
   expiration: 86400000
 
 minio:
   enabled: ${MINIO_ENABLED:true}
-
-  # interner Zugriff für Spring Boot (API!)
-
-
-  # öffentliche URL für Browser/Angular (API über HTTPS + Nginx)
   public-endpoint:
-
   access-key: ${MINIO_ACCESS_KEY:miniomarkt}
   secret-key: ${MINIO_SECRET_KEY:miniopassword!}
-
   bucket: ${MINIO_BUCKET:store-assets}
   region: ${MINIO_REGION:us-east-1}
 
