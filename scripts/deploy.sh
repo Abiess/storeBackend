@@ -158,4 +158,6 @@ echo ""
 # ✅ FLYWAY MACHT JETZT ALLES AUTOMATISCH!
 echo "📊 Database migrations will be handled by Flyway automatically on startup..."
 echo "   ✅ Flyway is configured to run migrations before application starts"
-echo "   ✅ Baseline will be created automatisch
+echo "   ✅ Baseline will be created automatically for existing databases"
+echo "   ✅ All schema changes are versioned and tracked"
+echo ""
