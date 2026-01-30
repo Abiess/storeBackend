@@ -232,8 +232,9 @@ jobs:
             cd /opt/storebackend
             test -x ./deploy.sh
             ./deploy.sh
-            echo "📌 Flyway-related startup logs:"
-            sudo journalctl -u storebackend -n 300 --no-pager | egrep -i "flyway|migrat|schema_history|validate|baseline" || true
+            echo "📌 Flyway-related startup logs (last 2 minutes):"
+            sudo journalctl -u storebackend --since "2 minutes ago" --no-pager | grep -iE "flyway|migrat|schema_history|validate|baseline|content_type|media" || true
+
 
       - name: 🏥 Final Health Check
         uses: appleboy/ssh-action@master
