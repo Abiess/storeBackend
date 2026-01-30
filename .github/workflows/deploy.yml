@@ -230,7 +230,7 @@ jobs:
             cd /opt/storebackend
             test -x ./deploy.sh
             ./deploy.sh
-            echo "📌 Last 200 logs after start (focus: flyway/ddl/schema/media)...📌 Last 200 logs after start (focus: flyway/ddl/schema/media)..."
+            echo "📌 Last 200 logs after start (focus: flyway/ddl/schema/media)..."
             sudo journalctl -u storebackend -n 200 --no-pager | egrep -i "flyway|migrat|schema_history|ddl|validate|content_type|created_at|media" || true
 
       - name: 🏥 Final Health Check
