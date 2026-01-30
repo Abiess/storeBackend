@@ -215,16 +215,58 @@ jobs:
             echo "🔧 EINMALIG: Flyway Repair für Checksum Mismatch"
             echo "================================================"
             echo ""
-            echo "⚠️  Dieser Schritt behebt das 'Migration checksum mismatch for version 1' Problem"
-            echo "⚠️  Nach erfolgreichem Deployment kann dieser Schritt entfernt werden!"
-            echo ""
             
             # Stoppe App
             echo "⏹️  Stoppe storebackend App..."
             sudo systemctl stop storebackend || true
             sleep 2
             
-            # Zeige aktuellen Flyway Status
+            # KRITISCH: V5 Problem Fix - Spalten existieren nicht trotz Flyway success
+            echo ""
+            echo "🔍 EMERGENCY: Prüfe ob cart_items.created_at existiert..."
+            
+            CREATED_EXISTS=$(PGPASSWORD="${DB_PASSWORD}" psql -h localhost -U storeapp -d storedb -t -c "
+            SELECT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_schema = 'public'
+                  AND table_name = 'cart_items'
+                  AND column_name = 'created_at'
+            );" | xargs)
+            
+            if [ "$CREATED_EXISTS" = "f" ]; then
+                echo "❌ cart_items.created_at FEHLT - füge sie JETZT hinzu!"
+                
+                PGPASSWORD="${DB_PASSWORD}" psql -h localhost -U storeapp -d storedb <<'SQL'
+                -- Force add columns (außerhalb Flyway)
+                ALTER TABLE cart_items 
+                ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP;
+                
+                ALTER TABLE cart_items 
+                ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP;
+                
+                -- Verify
+                SELECT 
+                    column_name,
+                    data_type,
+                    column_default
+                FROM information_schema.columns
+                WHERE table_name = 'cart_items'
+                  AND column_name IN ('created_at', 'updated_at');
+SQL
+                
+                echo "✅ Spalten manuell hinzugefügt"
+                
+                # Lösche V5 aus History damit Flyway es erneut versuchen kann
+                PGPASSWORD="${DB_PASSWORD}" psql -h localhost -U storeapp -d storedb -c "
+                DELETE FROM flyway_schema_history WHERE version = '5';
+                " || echo "V5 Entry noch nicht vorhanden (OK)"
+                
+                echo "💡 V5 wird beim App-Start erneut ausgeführt"
+            else
+                echo "✅ cart_items.created_at existiert bereits"
+            fi
+            
+            echo ""
             echo "📊 Aktueller Flyway Status:"
             PGPASSWORD="${DB_PASSWORD}" psql -h localhost -U storeapp -d storedb -c "
             SELECT 

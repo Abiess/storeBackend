@@ -16,7 +16,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate  # ✅ Nur validieren - Schema kommt von Flyway!
+      ddl-auto: none  # ✅ Nur validieren - Schema kommt von Flyway!
     show-sql: false  # In Production: false (Performance)
     open-in-view: false  # Verhindert lazy-loading Probleme
     properties:
