@@ -13,6 +13,8 @@ spring:
       minimum-idle: 3
       connection-timeout: 20000
       idle-timeout: 300000
+      data-source-properties:
+        currentSchema: public
 
   jpa:
     hibernate:
