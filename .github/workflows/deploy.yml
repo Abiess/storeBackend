@@ -222,29 +222,49 @@ jobs:
           script: |
             set -e
             echo "🏥 Warte auf Anwendungsstart (inkl. Flyway Migrationen)..."
+            echo "⏱️  Timeout: 240 Sekunden (4 Minuten)"
             
-            MAX_ATTEMPTS=12
+            MAX_ATTEMPTS=48
             SLEEP_TIME=5
             
             for i in $(seq 1 $MAX_ATTEMPTS); do
-              echo "Versuch $i/$MAX_ATTEMPTS..."
+              ELAPSED=$((i * SLEEP_TIME))
+              echo "⏳ Versuch $i/$MAX_ATTEMPTS (${ELAPSED}s / 240s)..."
               
               if curl -f -s http://localhost:8080/actuator/health > /dev/null 2>&1; then
+                echo ""
                 echo "✅ Application is running!"
-                curl http://localhost:8080/actuator/health
+                echo "📊 Health Status:"
+                curl -s http://localhost:8080/actuator/health | jq '.' 2>/dev/null || curl -s http://localhost:8080/actuator/health
+                echo ""
+                echo "⏱️  Started after ${ELAPSED} seconds"
                 exit 0
               fi
               
               if [ $i -lt $MAX_ATTEMPTS ]; then
-                echo "⏳ Warte ${SLEEP_TIME}s vor nächstem Versuch..."
                 sleep $SLEEP_TIME
               fi
             done
             
-            echo "❌ Application nicht erreichbar nach $((MAX_ATTEMPTS * SLEEP_TIME)) Sekunden"
-            echo "📋 Systemd Status:"
-            sudo systemctl status storebackend --no-pager || true
             echo ""
-            echo "📋 Letzte Log-Zeilen:"
-            sudo journalctl -u storebackend -n 50 --no-pager || true
+            echo "❌ Application nicht erreichbar nach 240 Sekunden"
+            echo ""
+            echo "═══════════════════════════════════════════════════════════"
+            echo "📋 SYSTEMD STATUS"
+            echo "═══════════════════════════════════════════════════════════"
+            sudo systemctl status storebackend --no-pager --lines=50 || true
+            echo ""
+            echo "═══════════════════════════════════════════════════════════"
+            echo "📋 LETZTE 200 LOG-ZEILEN (journalctl)"
+            echo "═══════════════════════════════════════════════════════════"
+            sudo journalctl -u storebackend -n 200 --no-pager || true
+            echo ""
+            echo "═══════════════════════════════════════════════════════════"
+            echo "💡 TROUBLESHOOTING TIPPS"
+            echo "═══════════════════════════════════════════════════════════"
+            echo "1. Prüfe Flyway-Migration-Logs auf Fehler"
+            echo "2. Prüfe DB-Verbindung: sudo /opt/storebackend/scripts/diagnose-database.sh"
+            echo "3. Prüfe DB-Rechte: sudo /opt/storebackend/scripts/fix-db-password.sh"
+            echo "4. Prüfe MinIO Status: sudo systemctl status minio"
+            echo ""
             exit 1

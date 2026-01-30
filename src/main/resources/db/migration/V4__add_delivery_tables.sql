@@ -1,6 +1,7 @@
 -- Flyway Migration V4: Add Delivery Management Tables
 -- Created: 2026-01-30
 -- Description: Tables for delivery providers, zones, and store delivery settings
+-- VOLLSTÄNDIG IDEMPOTENT
 
 -- Explizit public Schema setzen
 SET search_path TO public;
@@ -13,7 +14,7 @@ CREATE TABLE IF NOT EXISTS store_delivery_settings (
     express_enabled BOOLEAN NOT NULL DEFAULT FALSE,
     currency VARCHAR(3) NOT NULL DEFAULT 'EUR',
     updated_at TIMESTAMP,
-    FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
+    CONSTRAINT fk_store_delivery_settings_store FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
 );
 
 -- Delivery Providers
@@ -27,10 +28,8 @@ CREATE TABLE IF NOT EXISTS delivery_providers (
     config_json TEXT,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP,
-    FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
+    CONSTRAINT fk_delivery_providers_store FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
 );
-
-CREATE INDEX IF NOT EXISTS idx_delivery_providers_store_active_priority ON delivery_providers(store_id, is_active, priority);
 
 -- Delivery Zones
 CREATE TABLE IF NOT EXISTS delivery_zones (
@@ -48,16 +47,51 @@ CREATE TABLE IF NOT EXISTS delivery_zones (
     eta_express_minutes INTEGER,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP,
-    FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
+    CONSTRAINT fk_delivery_zones_store FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_delivery_zones_store_active ON delivery_zones(store_id, is_active);
+-- Idempotente Indizes
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_delivery_providers_store_active_priority') THEN
+        CREATE INDEX idx_delivery_providers_store_active_priority ON delivery_providers(store_id, is_active, priority);
+    END IF;
 
--- Comments for documentation
-COMMENT ON TABLE store_delivery_settings IS 'Store-wide delivery configuration (pickup, delivery, express)';
-COMMENT ON TABLE delivery_providers IS 'Delivery provider configurations (IN_HOUSE, WHATSAPP_DISPATCH, MANUAL, EXTERNAL)';
-COMMENT ON TABLE delivery_zones IS 'Delivery zones with postal codes, fees, and ETAs';
-COMMENT ON COLUMN orders.delivery_type IS 'PICKUP or DELIVERY';
-COMMENT ON COLUMN orders.delivery_mode IS 'STANDARD or EXPRESS';
-COMMENT ON COLUMN orders.delivery_provider_id IS 'Selected provider (auto-chosen by routing logic)';
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_delivery_zones_store_active') THEN
+        CREATE INDEX idx_delivery_zones_store_active ON delivery_zones(store_id, is_active);
+    END IF;
+END $$;
 
+-- Comments for documentation (idempotent)
+DO $$
+BEGIN
+    -- Table comments
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_description d
+        JOIN pg_class c ON c.oid = d.objoid
+        WHERE c.relname = 'store_delivery_settings'
+    ) THEN
+        COMMENT ON TABLE store_delivery_settings IS 'Store-wide delivery configuration (pickup, delivery, express)';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_description d
+        JOIN pg_class c ON c.oid = d.objoid
+        WHERE c.relname = 'delivery_providers'
+    ) THEN
+        COMMENT ON TABLE delivery_providers IS 'Delivery provider configurations (IN_HOUSE, WHATSAPP_DISPATCH, MANUAL, EXTERNAL)';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_description d
+        JOIN pg_class c ON c.oid = d.objoid
+        WHERE c.relname = 'delivery_zones'
+    ) THEN
+        COMMENT ON TABLE delivery_zones IS 'Delivery zones with postal codes, fees, and ETAs';
+    END IF;
+
+    -- Column comments (orders table from V1)
+    EXECUTE 'COMMENT ON COLUMN orders.delivery_type IS ''PICKUP or DELIVERY''';
+    EXECUTE 'COMMENT ON COLUMN orders.delivery_mode IS ''STANDARD or EXPRESS''';
+    EXECUTE 'COMMENT ON COLUMN orders.delivery_provider_id IS ''Selected provider (auto-chosen by routing logic)''';
+END $$;
