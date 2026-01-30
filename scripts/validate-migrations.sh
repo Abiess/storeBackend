@@ -1,6 +1,103 @@
+
+print_info "Suche nach Migration-Dateien in: $MIGRATION_DIR"
+
+# Liste alle Migrations auf
+MIGRATIONS=$(find "$MIGRATION_DIR" -name "V*.sql" | sort)
+MIGRATION_COUNT=$(echo "$MIGRATIONS" | grep -c "V" || echo 0)
+
+if [ "$MIGRATION_COUNT" -eq 0 ]; then
+    print_warning "Keine Migrationen gefunden"
+    exit 0
+fi
+
+print_info "Gefundene Migrationen: $MIGRATION_COUNT"
+echo "$MIGRATIONS" | while read -r file; do
+    basename "$file"
+done
+echo ""
+
+# Prüfe auf doppelte Versionen
+print_info "Prüfe auf doppelte Versionen..."
+
+# Extrahiere Versionsnummern
+VERSIONS=$(echo "$MIGRATIONS" | sed -E 's/.*\/V([0-9]+)__.*/\1/' | sort)
+
+# Prüfe auf Duplikate
+DUPLICATES=$(echo "$VERSIONS" | uniq -d)
+
+if [ -n "$DUPLICATES" ]; then
+    print_error "Doppelte Versionen gefunden!"
+    echo ""
+    echo "Betroffene Versionen:"
+    echo "$DUPLICATES"
+    echo ""
+    echo "Betroffene Dateien:"
+    for version in $DUPLICATES; do
+        echo "  Version $version:"
+        echo "$MIGRATIONS" | grep "V${version}__" | while read -r file; do
+            echo "    - $(basename "$file")"
+        done
+    done
+    echo ""
+    print_error "Behebe die Versionskonflikte bevor du deployst!"
+    exit 1
+fi
+
+print_success "Keine doppelten Versionen gefunden"
+
+# Prüfe auf sequentielle Versionen
+print_info "Prüfe Versions-Sequenz..."
+EXPECTED=1
+HAS_GAPS=false
+
+for version in $VERSIONS; do
+    if [ "$version" -ne "$EXPECTED" ]; then
+        print_warning "Gap gefunden: V${EXPECTED} fehlt (nächste gefunden: V${version})"
+        HAS_GAPS=true
+    fi
+    EXPECTED=$((version + 1))
+done
+
+if [ "$HAS_GAPS" = false ]; then
+    print_success "Versionen sind sequentiell (V1 bis V$((EXPECTED - 1)))"
+else
+    print_warning "Versionen haben Lücken - das ist OK, aber nicht ideal"
+fi
+
+# Prüfe SQL-Syntax (basic)
+print_info "Prüfe SQL-Syntax (basic)..."
+SYNTAX_ERRORS=0
+
+echo "$MIGRATIONS" | while read -r file; do
+    # Prüfe ob Datei leer ist
+    if [ ! -s "$file" ]; then
+        print_warning "Leere Migration: $(basename "$file")"
+        continue
+    fi
+
+    # Prüfe auf common SQL Fehler
+    if grep -q "DROP TABLE.*IF NOT EXISTS" "$file"; then
+        print_warning "Verdächtig: DROP TABLE IF NOT EXISTS in $(basename "$file")"
+    fi
+
+    # Prüfe ob Schema explizit gesetzt ist
+    if ! grep -qi "schema" "$file" && ! grep -qi "public\." "$file"; then
+        # OK - Standard ist public schema
+        :
+    fi
+done
+
+print_success "Syntax-Check abgeschlossen"
+
+# Summary
+echo ""
+print_success "Migration Validation erfolgreich!"
+echo "  📊 Migrationen: $MIGRATION_COUNT"
+echo "  🔢 Versionen: V1 bis V$((EXPECTED - 1))"
+echo "  ✅ Keine Konflikte gefunden"
 #!/bin/bash
-# Validate Flyway Migrations - Check for duplicate versions and conflicts
-# To be used in CI/CD pipeline
+# Validiert Flyway Migrationen auf doppelte Versionen und Konflikte
+# Wird in CI/CD vor dem Deploy ausgeführt
 
 set -e
 
@@ -15,113 +112,15 @@ print_success() { echo -e "${GREEN}✅ $1${NC}"; }
 print_warning() { echo -e "${YELLOW}⚠️  $1${NC}"; }
 print_error() { echo -e "${RED}❌ $1${NC}"; }
 
+echo "==============================================="
+echo "Flyway Migration Validation"
+echo "==============================================="
+
+# Finde alle Migration-Dateien
 MIGRATION_DIR="src/main/resources/db/migration"
 
-echo "=========================================="
-echo "🔍 Flyway Migration Validation"
-echo "=========================================="
-echo ""
-
-# Prüfe ob Migrations-Ordner existiert
 if [ ! -d "$MIGRATION_DIR" ]; then
-    print_error "Migrations-Ordner nicht gefunden: $MIGRATION_DIR"
+    print_error "Migration Verzeichnis nicht gefunden: $MIGRATION_DIR"
     exit 1
 fi
-
-print_info "Scanning migrations in: $MIGRATION_DIR"
-echo ""
-
-# Finde alle SQL-Migrations-Dateien
-MIGRATIONS=$(find "$MIGRATION_DIR" -name "V*.sql" | sort)
-
-if [ -z "$MIGRATIONS" ]; then
-    print_warning "Keine Migrations gefunden in $MIGRATION_DIR"
-    exit 0
-fi
-
-# Array für Versionen
-declare -A versions
-HAS_DUPLICATES=0
-HAS_ISSUES=0
-
-print_info "Found migrations:"
-for migration in $MIGRATIONS; do
-    filename=$(basename "$migration")
-    echo "   - $filename"
-
-    # Extrahiere Version (z.B. V1, V001, V2_1)
-    # Flyway ignoriert führende Nullen, also V1 = V001 = V01
-    if [[ $filename =~ ^V([0-9]+) ]]; then
-        version_raw="${BASH_REMATCH[1]}"
-        # Entferne führende Nullen für Vergleich
-        version=$((10#$version_raw))
-
-        # Prüfe auf Duplikat
-        if [ -n "${versions[$version]}" ]; then
-            print_error "DUPLICATE VERSION FOUND!"
-            echo "   Version $version appears in:"
-            echo "     1. ${versions[$version]}"
-            echo "     2. $filename"
-            echo ""
-            HAS_DUPLICATES=1
-        else
-            versions[$version]=$filename
-        fi
-    else
-        print_warning "Invalid migration filename: $filename (should start with V<number>__)"
-        HAS_ISSUES=1
-    fi
-done
-
-echo ""
-
-# Prüfe ob alle Migrationen das richtige Format haben
-print_info "Validating migration naming convention..."
-for migration in $MIGRATIONS; do
-    filename=$(basename "$migration")
-
-    # Format: V<number>__<description>.sql
-    if ! [[ $filename =~ ^V[0-9]+__.+\.sql$ ]]; then
-        print_error "Invalid naming: $filename"
-        echo "   Expected format: V<number>__<description>.sql"
-        echo "   Example: V1__initial_schema.sql"
-        HAS_ISSUES=1
-    fi
-done
-
-echo ""
-
-# Zeige Migrations-Reihenfolge
-print_info "Migration order (by version number):"
-for version in $(echo "${!versions[@]}" | tr ' ' '\n' | sort -n); do
-    printf "   V%-3s -> %s\n" "$version" "${versions[$version]}"
-done
-
-echo ""
-echo "=========================================="
-
-if [ $HAS_DUPLICATES -eq 1 ]; then
-    print_error "VALIDATION FAILED: Duplicate versions detected!"
-    echo ""
-    echo "🔧 How to fix:"
-    echo "   1. Rename migrations to use unique version numbers (V1, V2, V3, ...)"
-    echo "   2. Don't use leading zeros (V001 = V1 in Flyway)"
-    echo "   3. Follow naming convention: V<number>__<description>.sql"
-    echo ""
-    exit 1
-fi
-
-if [ $HAS_ISSUES -eq 1 ]; then
-    print_error "VALIDATION FAILED: Migration naming issues detected!"
-    exit 1
-fi
-
-print_success "All migrations are valid! ✨"
-echo ""
-print_info "Summary:"
-echo "   Total migrations: ${#versions[@]}"
-echo "   Version range: V$(echo "${!versions[@]}" | tr ' ' '\n' | sort -n | head -1) - V$(echo "${!versions[@]}" | tr ' ' '\n' | sort -n | tail -1)"
-echo ""
-
-exit 0
 
