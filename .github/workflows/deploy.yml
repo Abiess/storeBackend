@@ -235,8 +235,6 @@ jobs:
             echo "📌 Flyway-related startup logs:"
             sudo journalctl -u storebackend -n 300 --no-pager | egrep -i "flyway|migrat|schema_history|validate|baseline" || true
 
-            
-
       - name: 🏥 Final Health Check
         uses: appleboy/ssh-action@master
         with:
