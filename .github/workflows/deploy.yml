@@ -178,11 +178,19 @@ jobs:
             if sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='storeapp'" | grep -q 1; then
               echo "✅ PostgreSQL user 'storeapp' exists"
               
-              # Stelle sicher, dass das Passwort korrekt ist
-              echo "🔐 Verifying and updating database password..."
+              # WICHTIG: Setze Permissions VOR Flyway (verhindert V3 Lock)
+              echo "🔐 Setting complete permissions (outside Flyway to avoid locks)..."
               cd /opt/storebackend
               export DB_PASSWORD="${DB_PASSWORD}"
+              
+              # Stoppe App um Locks zu vermeiden
+              sudo systemctl stop storebackend || true
+              sleep 2
+              
+              # Führe vollständiges Permissions-Setup aus
               sudo -E ./scripts/fix-db-password.sh
+              
+              echo "✅ Permissions set - Flyway V3 will now run fast (no locks)"
             else
               echo "🆕 Creating PostgreSQL user and database..."
               cd /opt/storebackend
@@ -190,7 +198,7 @@ jobs:
               sudo -E ./scripts/setup-postgres-user.sh
             fi
             
-            echo "✅ PostgreSQL ready - Flyway will handle schema migrations"
+            echo "✅ PostgreSQL ready - Flyway will handle schema migrations (V3 is now non-blocking)"
 
       - name: 🔧 EINMALIG - Flyway Repair für Checksum Mismatch
         uses: appleboy/ssh-action@master
