@@ -1,6 +1,7 @@
 #!/bin/bash
 # Fix PostgreSQL Password und Rechte für storeapp User
 # Idempotent - kann mehrfach ausgeführt werden
+# LOCK-SAFE: Stoppt App, terminiert Sessions, nutzt Timeouts
 
 set -e
 
@@ -28,41 +29,63 @@ if [ -z "$DB_PASSWORD" ]; then
     exit 1
 fi
 
+# KRITISCH: App stoppen um Locks zu vermeiden
+print_info "Stoppe storebackend App um DB-Locks zu vermeiden..."
+if systemctl is-active --quiet storebackend 2>/dev/null; then
+    sudo systemctl stop storebackend || true
+    sleep 2
+    print_success "App gestoppt"
+else
+    print_info "App läuft nicht (OK)"
+fi
+
 print_info "Aktualisiere Passwort für $DB_USER..."
-sudo -u postgres psql <<EOF
+sudo -u postgres psql -v ON_ERROR_STOP=1 <<EOF
 ALTER USER $DB_USER WITH LOGIN PASSWORD '$DB_PASSWORD';
 EOF
 print_success "Passwort aktualisiert"
 
-# KRITISCH: Alle Rechte auf public Schema setzen
-print_info "Setze volle Rechte auf Schema public..."
-
-# Split in mehrere Transaktionen um Locks zu vermeiden
-print_info "  → Schema Owner und Basis-Rechte..."
-sudo -u postgres psql -d "$DB_NAME" <<'EOF'
--- Schema Owner setzen (PostgreSQL 15+ Fix)
-ALTER SCHEMA public OWNER TO storeapp;
-
--- Explizite Rechte auf Schema
-GRANT ALL ON SCHEMA public TO storeapp;
-GRANT CREATE ON SCHEMA public TO storeapp;
-GRANT USAGE ON SCHEMA public TO storeapp;
-
--- Rechte auf Datenbank
-GRANT ALL PRIVILEGES ON DATABASE storedb TO storeapp;
+# Terminate aktive Sessions auf storedb
+print_info "Beende aktive Sessions auf $DB_NAME..."
+sudo -u postgres psql -v ON_ERROR_STOP=1 <<EOF
+SELECT pg_terminate_backend(pid)
+FROM pg_stat_activity
+WHERE datname='$DB_NAME' AND pid <> pg_backend_pid();
 EOF
+print_success "Aktive Sessions beendet"
 
-print_info "  → Rechte auf existierende Objekte..."
-sudo -u postgres psql -d "$DB_NAME" <<'EOF'
+# KRITISCH: Rechte setzen MIT Timeouts (kein Owner-Wechsel nötig!)
+print_info "Setze Rechte auf Schema public (ohne Owner-Wechsel)..."
+
+sudo -u postgres psql -d "$DB_NAME" -v ON_ERROR_STOP=1 <<'EOF'
+-- Timeouts setzen um Lock-Hängen zu verhindern
+SET lock_timeout = '5s';
+SET statement_timeout = '30s';
+
+-- Schema-Rechte (KEIN Owner-Wechsel - vermeidet Locks!)
+GRANT USAGE ON SCHEMA public TO storeapp;
+GRANT CREATE ON SCHEMA public TO storeapp;
+GRANT ALL ON SCHEMA public TO storeapp;
+
+-- Datenbank-Rechte
+GRANT ALL PRIVILEGES ON DATABASE storedb TO storeapp;
+
 -- Rechte auf alle existierenden Objekte
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO storeapp;
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO storeapp;
 GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO storeapp;
 EOF
 
-print_info "  → Default Privileges für storeapp..."
-sudo -u postgres psql -d "$DB_NAME" <<'EOF'
--- Default Privileges für zukünftige Objekte (durch storeapp erstellt)
+print_success "Schema-Rechte gesetzt (ohne Owner-Wechsel)"
+
+# Default Privileges für zukünftige Objekte
+print_info "Setze Default Privileges..."
+
+sudo -u postgres psql -d "$DB_NAME" -v ON_ERROR_STOP=1 <<'EOF'
+SET lock_timeout = '5s';
+SET statement_timeout = '30s';
+
+-- Default Privileges für Objekte die storeapp erstellt
 ALTER DEFAULT PRIVILEGES FOR USER storeapp IN SCHEMA public
     GRANT ALL ON TABLES TO storeapp;
 ALTER DEFAULT PRIVILEGES FOR USER storeapp IN SCHEMA public
@@ -71,10 +94,15 @@ ALTER DEFAULT PRIVILEGES FOR USER storeapp IN SCHEMA public
     GRANT ALL ON FUNCTIONS TO storeapp;
 EOF
 
-print_info "  → Default Privileges für postgres..."
-# Dieser Teil kann fehlschlagen wenn postgres User nicht Owner ist - nicht kritisch
-sudo -u postgres psql -d "$DB_NAME" <<'EOF' 2>/dev/null || print_warning "Default privileges für postgres User übersprungen (nicht kritisch)"
--- Default Privileges für zukünftige Objekte (durch postgres erstellt)
+print_success "Default Privileges für storeapp gesetzt"
+
+# Default Privileges für postgres User (optional, kann fehlschlagen)
+print_info "Setze Default Privileges für postgres User (optional)..."
+if sudo -u postgres psql -d "$DB_NAME" -v ON_ERROR_STOP=1 <<'EOF' 2>/dev/null; then
+SET lock_timeout = '5s';
+SET statement_timeout = '30s';
+
+-- Default Privileges für Objekte die postgres erstellt
 ALTER DEFAULT PRIVILEGES FOR USER postgres IN SCHEMA public
     GRANT ALL ON TABLES TO storeapp;
 ALTER DEFAULT PRIVILEGES FOR USER postgres IN SCHEMA public
@@ -82,14 +110,17 @@ ALTER DEFAULT PRIVILEGES FOR USER postgres IN SCHEMA public
 ALTER DEFAULT PRIVILEGES FOR USER postgres IN SCHEMA public
     GRANT ALL ON FUNCTIONS TO storeapp;
 EOF
+    print_success "Default Privileges für postgres gesetzt"
+else
+    print_warning "Default Privileges für postgres übersprungen (nicht kritisch)"
+fi
 
-print_success "Alle Rechte gesetzt (PostgreSQL 15+ kompatibel)"
-
-# Teste Verbindung
+# Teste Verbindung und CREATE Rechte
 print_info "Teste Verbindung und CREATE Rechte..."
-if timeout 10 bash -c "PGPASSWORD='$DB_PASSWORD' psql -h localhost -U '$DB_USER' -d '$DB_NAME' -c \"
-    CREATE TABLE IF NOT EXISTS _permission_test (id INT);
-    DROP TABLE IF EXISTS _permission_test;
+if timeout 10 bash -c "PGPASSWORD='$DB_PASSWORD' psql -h localhost -U '$DB_USER' -d '$DB_NAME' -v ON_ERROR_STOP=1 -c \"
+    SET statement_timeout = '5s';
+    CREATE TABLE IF NOT EXISTS _permission_test_$(date +%s) (id INT);
+    DROP TABLE IF EXISTS _permission_test_$(date +%s);
     SELECT 'CREATE permission OK' as test;
 \" > /dev/null 2>&1"; then
     print_success "Verbindung und CREATE-Rechte erfolgreich getestet!"
@@ -100,3 +131,4 @@ else
 fi
 
 print_success "PostgreSQL Passwort und Rechte erfolgreich aktualisiert"
+print_info "App kann nun gestartet werden (deploy.sh macht das automatisch)"
