@@ -38,6 +38,8 @@ spring:
     baseline-on-migrate: true  # Wichtig für existierende Datenbanken
     baseline-version: 0
     locations: classpath:db/migration
+    schemas: public  # ✅ Explizit public Schema
+    default-schema: public  # ✅ Default Schema setzen
     out-of-order: false
     validate-on-migrate: true
 

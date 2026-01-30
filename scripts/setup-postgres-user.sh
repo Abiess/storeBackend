@@ -63,13 +63,19 @@ print_info "Prüfe ob User $DB_USER existiert..."
 if sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='$DB_USER'" | grep -q 1; then
     print_warning "User $DB_USER existiert bereits"
 
-    # Aktualisiere Passwort
-    print_info "Aktualisiere Passwort für $DB_USER..."
-    sudo -u postgres psql -c "ALTER USER $DB_USER WITH PASSWORD '$DB_PASSWORD';"
-    print_success "Passwort aktualisiert"
+    # Aktualisiere Passwort und stelle LOGIN sicher
+    print_info "Aktualisiere Passwort und Rechte für $DB_USER..."
+    sudo -u postgres psql <<EOF
+ALTER USER $DB_USER WITH LOGIN PASSWORD '$DB_PASSWORD';
+GRANT CONNECT ON DATABASE $DB_NAME TO $DB_USER;
+EOF
+    print_success "Passwort und Rechte aktualisiert"
 else
     print_info "Erstelle User $DB_USER..."
-    sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';"
+    sudo -u postgres psql <<EOF
+CREATE USER $DB_USER WITH LOGIN PASSWORD '$DB_PASSWORD';
+GRANT CONNECT ON DATABASE $DB_NAME TO $DB_USER;
+EOF
     print_success "User $DB_USER erstellt"
 fi
 
@@ -79,7 +85,9 @@ if sudo -u postgres psql -lqt | cut -d \| -f 1 | grep -qw "$DB_NAME"; then
     print_warning "Datenbank $DB_NAME existiert bereits"
 else
     print_info "Erstelle Datenbank $DB_NAME..."
-    sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;"
+    sudo -u postgres psql <<EOF
+CREATE DATABASE $DB_NAME OWNER $DB_USER;
+EOF
     print_success "Datenbank $DB_NAME erstellt"
 fi
 
@@ -96,18 +104,20 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO $DB_USER;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO $DB_USER;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO $DB_USER;
 
--- Falls Tabellen bereits existieren
+-- Falls postgres User Objekte erstellt hat, übertrage Ownership
 DO \$\$
 DECLARE r RECORD;
 BEGIN
-    -- Ownership für alle Tabellen
+    -- Ownership für alle existierenden Tabellen
     FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname='public') LOOP
         EXECUTE format('ALTER TABLE public.%I OWNER TO $DB_USER', r.tablename);
+        RAISE NOTICE 'Changed owner of table % to $DB_USER', r.tablename;
     END LOOP;
 
     -- Ownership für alle Sequences
     FOR r IN (SELECT sequence_name FROM information_schema.sequences WHERE sequence_schema='public') LOOP
         EXECUTE format('ALTER SEQUENCE public.%I OWNER TO $DB_USER', r.sequence_name);
+        RAISE NOTICE 'Changed owner of sequence % to $DB_USER', r.sequence_name;
     END LOOP;
 
     -- Grant ALL auf existierende Objekte
@@ -131,6 +141,9 @@ else
     echo ""
     echo "Stelle sicher, dass folgende Zeile vorhanden ist:"
     echo "  host    all             all             127.0.0.1/32            md5"
+    echo ""
+    echo "Dann PostgreSQL neu laden:"
+    echo "  sudo systemctl reload postgresql"
     exit 1
 fi
 
@@ -146,7 +159,11 @@ WHERE d.datname = current_database()
 UNION ALL
 SELECT 'Size: ' || pg_size_pretty(pg_database_size(current_database()));
 
-SELECT schemaname, tablename, tableowner
+-- Zeige existierende Tabellen (falls vorhanden)
+SELECT
+    schemaname,
+    tablename,
+    tableowner
 FROM pg_tables
 WHERE schemaname = 'public'
 ORDER BY tablename;
@@ -155,20 +172,26 @@ EOF
 echo ""
 print_success "PostgreSQL Setup abgeschlossen!"
 echo ""
-echo "📋 Nächste Schritte:"
-echo "1. Speichere DB_PASSWORD in deinem Deployment-System:"
-echo "   export DB_PASSWORD='$DB_PASSWORD'"
+print_info "📋 Wichtige Hinweise:"
 echo ""
-echo "2. Beim ersten Application-Start wird Flyway automatisch:"
-echo "   - Schema-Tabellen erstellen (V1__initial_schema.sql)"
-echo "   - Initiale Daten einfügen (V2__initial_data.sql)"
-echo "   - Berechtigungen finalisieren (V3__setup_permissions.sql)"
+echo "1️⃣  User-Info:"
+echo "   - User: $DB_USER"
+echo "   - Database: $DB_NAME"
+echo "   - LOGIN: ✅ Aktiviert"
+echo "   - Rechte: ✅ Owner von $DB_NAME, alle Rechte auf public Schema"
 echo ""
-echo "3. Starte die Application:"
-echo "   sudo systemctl start storebackend"
+echo "2️⃣  Flyway wird beim nächsten App-Start automatisch:"
+echo "   ✅ V1: Initial Schema erstellen"
+echo "   ✅ V2: Initial Data einfügen"
+echo "   ✅ V3: Berechtigungen finalisieren"
+echo "   ✅ V4: Delivery Tables hinzufügen"
 echo ""
-echo "4. Prüfe Flyway Migrations-Status:"
+echo "3️⃣  Nächste Schritte:"
+echo "   - Export DB_PASSWORD='$DB_PASSWORD'"
+echo "   - sudo systemctl restart storebackend"
+echo "   - sudo journalctl -u storebackend -f  (Logs beobachten)"
+echo ""
+print_info "Flyway Migrations-Status prüfen:"
 echo "   export DB_PASSWORD='$DB_PASSWORD'"
 echo "   ./scripts/flyway-helper.sh status"
 echo ""
-

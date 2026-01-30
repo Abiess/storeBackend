@@ -2,6 +2,9 @@
 -- Erstellt alle benötigten Tabellen für das Store Backend
 -- Optimiert für PostgreSQL
 
+-- Explizit public Schema setzen
+SET search_path TO public;
+
 -- Plans Tabelle (muss zuerst erstellt werden wegen FK)
 CREATE TABLE IF NOT EXISTS plans (
     id BIGSERIAL PRIMARY KEY,

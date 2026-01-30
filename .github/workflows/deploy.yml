@@ -27,6 +27,11 @@ jobs:
           chmod +x ./mvnw
           ./mvnw clean package -DskipTests
 
+      - name: 🔍 Validate Flyway Migrations
+        run: |
+          chmod +x scripts/validate-migrations.sh
+          ./scripts/validate-migrations.sh
+
       - name: 📦 Prepare JAR for Deployment
         run: |
           JAR_FILE=$(find target -name "*SNAPSHOT.jar" -o -name "storeBackend*.jar" | grep -v javadoc | head -n 1)

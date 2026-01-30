@@ -1,6 +1,9 @@
 -- Flyway Migration V3: Setup Database Permissions
 -- Stellt sicher, dass der storeapp User die richtigen Berechtigungen hat
 
+-- Explizit public Schema setzen
+SET search_path TO public;
+
 -- Setze Ownership und Berechtigungen für alle Tabellen und Sequences
 DO $$
 DECLARE
@@ -57,4 +60,3 @@ BEGIN
     END IF;
 END
 $$;
-
