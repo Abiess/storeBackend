@@ -13,17 +13,24 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create-drop
-    show-sql: true
+      ddl-auto: validate  # ✅ Flyway verwaltet das Schema auch in Tests
+    show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
-        format_sql: false
 
   # H2 Console für Test-Debugging (nur in Tests)
   h2:
     console:
       enabled: true
+
+  # Flyway für Tests
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+    locations: classpath:db/migration
+    clean-disabled: false  # Erlaubt clean in Tests
 
 # Test-spezifische SaaS Konfiguration
 saas:

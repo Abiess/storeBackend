@@ -33,12 +33,18 @@ spring:
         use_sql_comments: true
     # Stelle sicher, dass Hibernate die Tabellen erstellt
     generate-ddl: true
-  sql:
-    init:
-      # Führe data.sql NACH Hibernate DDL aus
-      mode: never
-      # Verhindere dass data.sql VOR Hibernate läuft
-      defer-datasource-initialization: false
+
+  # Flyway Datenbank-Migrationen
+  flyway:
+    enabled: true
+    baseline-on-migrate: true  # Wichtig für existierende Produktionsdatenbank
+    baseline-version: 0
+    locations: classpath:db/migration
+    out-of-order: false
+    validate-on-migrate: true
+    # Für Production: User mit ausreichenden Rechten
+    user: ${FLYWAY_USER:storeapp}
+    password: ${FLYWAY_PASSWORD:${SPRING_DATASOURCE_PASSWORD:postgres}}
 
   servlet:
     multipart:
@@ -60,6 +66,7 @@ logging:
     storebackend.security: DEBUG
     storebackend.controller: DEBUG
     org.springframework.security: DEBUG
+    org.flywaydb: INFO
 
 # Swagger/OpenAPI Configuration
 springdoc:
@@ -96,4 +103,3 @@ minio:
 
   endpoint: ${MINIO_ENDPOINT:https://minio.markt.ma}
   secure: ${MINIO_SECURE:true}
-

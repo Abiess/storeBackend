@@ -1,0 +1,174 @@
+#!/bin/bash
+# Setup PostgreSQL User und Datenbank für Store Backend
+# Einmalig auf dem VPS ausführen
+
+set -e
+
+DB_NAME="${DB_NAME:-storedb}"
+DB_USER="${DB_USER:-storeapp}"
+DB_PASSWORD="${DB_PASSWORD}"
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+print_info() { echo -e "${BLUE}ℹ️  $1${NC}"; }
+print_success() { echo -e "${GREEN}✅ $1${NC}"; }
+print_warning() { echo -e "${YELLOW}⚠️  $1${NC}"; }
+print_error() { echo -e "${RED}❌ $1${NC}"; }
+
+echo "==============================================="
+echo "PostgreSQL Setup für Store Backend (Flyway)"
+echo "==============================================="
+echo ""
+
+# Prüfe ob als root/sudo
+if [ "$EUID" -ne 0 ]; then
+    print_error "Bitte als root ausführen oder sudo verwenden"
+    exit 1
+fi
+
+# Prüfe Passwort
+if [ -z "$DB_PASSWORD" ]; then
+    print_error "DB_PASSWORD nicht gesetzt!"
+    echo ""
+    echo "Verwendung:"
+    echo "  export DB_PASSWORD='sichere_passwort_hier'"
+    echo "  sudo -E $0"
+    echo ""
+    echo "Oder direkt:"
+    echo "  sudo DB_PASSWORD='sichere_passwort_hier' $0"
+    exit 1
+fi
+
+print_info "Konfiguration:"
+echo "  Datenbank: $DB_NAME"
+echo "  User:      $DB_USER"
+echo "  Passwort:  ${DB_PASSWORD:0:3}***"
+echo ""
+
+# Prüfe ob PostgreSQL läuft
+if ! systemctl is-active --quiet postgresql; then
+    print_error "PostgreSQL läuft nicht!"
+    echo "Starte PostgreSQL: sudo systemctl start postgresql"
+    exit 1
+fi
+
+print_success "PostgreSQL läuft"
+
+# Erstelle User falls nicht vorhanden
+print_info "Prüfe ob User $DB_USER existiert..."
+if sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='$DB_USER'" | grep -q 1; then
+    print_warning "User $DB_USER existiert bereits"
+
+    # Aktualisiere Passwort
+    print_info "Aktualisiere Passwort für $DB_USER..."
+    sudo -u postgres psql -c "ALTER USER $DB_USER WITH PASSWORD '$DB_PASSWORD';"
+    print_success "Passwort aktualisiert"
+else
+    print_info "Erstelle User $DB_USER..."
+    sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';"
+    print_success "User $DB_USER erstellt"
+fi
+
+# Erstelle Datenbank falls nicht vorhanden
+print_info "Prüfe ob Datenbank $DB_NAME existiert..."
+if sudo -u postgres psql -lqt | cut -d \| -f 1 | grep -qw "$DB_NAME"; then
+    print_warning "Datenbank $DB_NAME existiert bereits"
+else
+    print_info "Erstelle Datenbank $DB_NAME..."
+    sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;"
+    print_success "Datenbank $DB_NAME erstellt"
+fi
+
+# Setze Berechtigungen auf public Schema
+print_info "Setze Berechtigungen auf public Schema..."
+sudo -u postgres psql -d "$DB_NAME" <<EOF
+-- Grant auf public Schema
+GRANT USAGE ON SCHEMA public TO $DB_USER;
+GRANT CREATE ON SCHEMA public TO $DB_USER;
+GRANT ALL ON SCHEMA public TO $DB_USER;
+
+-- Default Privileges für zukünftige Objekte
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO $DB_USER;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO $DB_USER;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO $DB_USER;
+
+-- Falls Tabellen bereits existieren
+DO \$\$
+DECLARE r RECORD;
+BEGIN
+    -- Ownership für alle Tabellen
+    FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname='public') LOOP
+        EXECUTE format('ALTER TABLE public.%I OWNER TO $DB_USER', r.tablename);
+    END LOOP;
+
+    -- Ownership für alle Sequences
+    FOR r IN (SELECT sequence_name FROM information_schema.sequences WHERE sequence_schema='public') LOOP
+        EXECUTE format('ALTER SEQUENCE public.%I OWNER TO $DB_USER', r.sequence_name);
+    END LOOP;
+
+    -- Grant ALL auf existierende Objekte
+    EXECUTE 'GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO $DB_USER';
+    EXECUTE 'GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO $DB_USER';
+END
+\$\$;
+EOF
+
+print_success "Berechtigungen gesetzt"
+
+# Teste Verbindung
+print_info "Teste Verbindung als $DB_USER..."
+if PGPASSWORD="$DB_PASSWORD" psql -h localhost -U "$DB_USER" -d "$DB_NAME" -c "SELECT version();" > /dev/null 2>&1; then
+    print_success "Verbindung erfolgreich!"
+else
+    print_error "Verbindung fehlgeschlagen!"
+    echo ""
+    echo "Prüfe pg_hba.conf Konfiguration:"
+    echo "  sudo nano /etc/postgresql/*/main/pg_hba.conf"
+    echo ""
+    echo "Stelle sicher, dass folgende Zeile vorhanden ist:"
+    echo "  host    all             all             127.0.0.1/32            md5"
+    exit 1
+fi
+
+# Zeige Datenbank-Info
+print_info "Datenbank-Informationen:"
+sudo -u postgres psql -d "$DB_NAME" <<EOF
+SELECT
+    'Database: ' || current_database() as info
+UNION ALL
+SELECT 'Owner: ' || pg_catalog.pg_get_userbyid(d.datdba)
+FROM pg_catalog.pg_database d
+WHERE d.datname = current_database()
+UNION ALL
+SELECT 'Size: ' || pg_size_pretty(pg_database_size(current_database()));
+
+SELECT schemaname, tablename, tableowner
+FROM pg_tables
+WHERE schemaname = 'public'
+ORDER BY tablename;
+EOF
+
+echo ""
+print_success "PostgreSQL Setup abgeschlossen!"
+echo ""
+echo "📋 Nächste Schritte:"
+echo "1. Speichere DB_PASSWORD in deinem Deployment-System:"
+echo "   export DB_PASSWORD='$DB_PASSWORD'"
+echo ""
+echo "2. Beim ersten Application-Start wird Flyway automatisch:"
+echo "   - Schema-Tabellen erstellen (V1__initial_schema.sql)"
+echo "   - Initiale Daten einfügen (V2__initial_data.sql)"
+echo "   - Berechtigungen finalisieren (V3__setup_permissions.sql)"
+echo ""
+echo "3. Starte die Application:"
+echo "   sudo systemctl start storebackend"
+echo ""
+echo "4. Prüfe Flyway Migrations-Status:"
+echo "   export DB_PASSWORD='$DB_PASSWORD'"
+echo "   ./scripts/flyway-helper.sh status"
+echo ""
+

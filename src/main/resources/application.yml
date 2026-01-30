@@ -21,16 +21,25 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: none  # ✅ Kein Auto-DDL - Schema kommt aus init-schema.sql
+      ddl-auto: validate  # ✅ Nur validieren - Schema kommt von Flyway
     show-sql: true
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect  # ✅ PostgreSQL-Dialekt
+        dialect: org.hibernate.dialect.H2Dialect
         format_sql: true
         jdbc:
           batch_size: 20
         order_inserts: true
         order_updates: true
+
+  # Flyway Datenbank-Migrationen
+  flyway:
+    enabled: true
+    baseline-on-migrate: true  # Wichtig für existierende Datenbanken
+    baseline-version: 0
+    locations: classpath:db/migration
+    out-of-order: false
+    validate-on-migrate: true
 
   servlet:
     multipart:
@@ -54,12 +63,6 @@ springdoc:
     operationsSorter: method
     tagsSorter: alpha
     tryItOutEnabled: true
-sql:
-  init:
-    mode: always  # ✅ SQL-Scripts bei jedem Start ausführen
-    platform: postgres
-    schema-locations: classpath:db/init-schema.sql
-    continue-on-error: false
 
 jwt:
   # nur lokal hardcodiert – in production bitte über ENV (siehe unten)
