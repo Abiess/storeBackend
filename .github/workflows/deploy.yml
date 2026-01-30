@@ -232,8 +232,15 @@ jobs:
             cd /opt/storebackend
             test -x ./deploy.sh
             ./deploy.sh
-            echo "📌 Flyway-related startup logs (last 2 minutes):"
-            sudo journalctl -u storebackend --since "2 minutes ago" --no-pager | grep -iE "flyway|migrat|schema_history|validate|baseline|content_type|media" || true
+            echo "📌 Check storebackend logs on disk (last 200 lines, flyway/media)..."
+            LOG_CANDIDATES=$(ls -1t /opt/storebackend/logs/* 2>/dev/null | head -n 5 || true)
+            echo "Log candidates:"
+            echo "$LOG_CANDIDATES" || true
+            
+            for f in $LOG_CANDIDATES; do
+            echo "---- $f (flyway/media hits) ----"
+            tail -n 200 "$f" | grep -iE "flyway|migrat|schema_history|validate|baseline|content_type|media" || true
+            done
 
 
       - name: 🏥 Final Health Check
