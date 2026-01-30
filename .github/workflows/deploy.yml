@@ -236,7 +236,7 @@ jobs:
             if [ "$CREATED_EXISTS" = "f" ]; then
                 echo "❌ cart_items.created_at FEHLT - füge sie JETZT hinzu!"
                 
-                PGPASSWORD="${DB_PASSWORD}" psql -h localhost -U storeapp -d storedb <<'SQL'
+                PGPASSWORD="${DB_PASSWORD}" psql -h localhost -U storeapp -d storedb -c "
                 -- Force add columns (außerhalb Flyway)
                 ALTER TABLE cart_items 
                 ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP;
@@ -252,7 +252,7 @@ jobs:
                 FROM information_schema.columns
                 WHERE table_name = 'cart_items'
                   AND column_name IN ('created_at', 'updated_at');
-SQL
+                "
                 
                 echo "✅ Spalten manuell hinzugefügt"
                 
