@@ -78,7 +78,7 @@ jobs:
             scripts/flyway-helper.sh \
             scripts/setup-postgres-user.sh \
             scripts/install-minio.sh \
-            scripts/fix-db-password.sh \
+            scripts/fix-db-password.sh ; do
             if [ -f "$f" ]; then
               echo "✅ $f"
             else
