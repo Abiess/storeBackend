@@ -101,7 +101,7 @@ JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC
 SPRING_PROFILES_ACTIVE=production
 
 # PostgreSQL (Production)
-SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/storedb
+SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/storedb?currentSchema=public
 SPRING_DATASOURCE_USERNAME=storeapp
 SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-}
 SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
