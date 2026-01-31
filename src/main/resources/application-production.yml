@@ -18,7 +18,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate  # ✅ TEMP: none - damit App startet und Flyway V5/V6 ausführen kann
+      ddl-auto: none  # ✅ TEMP: none - damit App startet und Flyway V5/V6 ausführen kann
     show-sql: false  # In Production: false (Performance)
     open-in-view: false  # Verhindert lazy-loading Probleme
     properties:
@@ -40,6 +40,7 @@ spring:
     # Danach auf false setzen oder über ENV steuern
     baseline-on-migrate: ${FLYWAY_BASELINE_ON_MIGRATE:false}
     baseline-version: 0
+    defer-datasource-initialization: false
 
     locations: classpath:db/migration
     schemas: public
