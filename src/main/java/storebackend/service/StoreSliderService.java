@@ -29,7 +29,10 @@ public class StoreSliderService {
     private final MediaService mediaService;
     private final MediaRepository mediaRepository;
 
-    @Transactional
+    /**
+     * Initialize slider for a new store
+     * NOTE: Must be called within an existing transaction (e.g., from StoreService.createStore)
+     */
     public void initializeSliderForNewStore(Store store, String category) {
         log.info("Initializing slider for store: {} with category: {}", store.getId(), category);
 
@@ -284,7 +287,6 @@ public class StoreSliderService {
     /**
      * Creates default slider settings for a store
      */
-    @Transactional
     private StoreSliderSettings createDefaultSettings(Store store) {
         StoreSliderSettings settings = new StoreSliderSettings();
         settings.setStore(store);
