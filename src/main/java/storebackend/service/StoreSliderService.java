@@ -77,17 +77,14 @@ public class StoreSliderService {
         return images;
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public StoreSliderDTO getSliderByStoreId(Long storeId) {
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found: " + storeId));
 
         // Auto-initialize if missing
         StoreSliderSettings settings = settingsRepository.findByStoreId(storeId)
-                .orElseGet(() -> {
-                    log.warn("Slider settings not found for store {}. Auto-initializing...", storeId);
-                    return createDefaultSettings(store);
-                });
+                .orElseGet(() -> createDefaultSettings(store));
 
         List<StoreSliderImage> images = getImagesBasedOnMode(storeId, settings.getOverrideMode());
 
@@ -98,17 +95,14 @@ public class StoreSliderService {
         return dto;
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<StoreSliderImageDTO> getActiveSliderImages(Long storeId) {
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found: " + storeId));
 
         // Auto-initialize if missing
         StoreSliderSettings settings = settingsRepository.findByStoreId(storeId)
-                .orElseGet(() -> {
-                    log.warn("Slider settings not found for store {}. Auto-initializing...", storeId);
-                    return createDefaultSettings(store);
-                });
+                .orElseGet(() -> createDefaultSettings(store));
 
         List<StoreSliderImage> images = getImagesBasedOnMode(storeId, settings.getOverrideMode())
                 .stream()
