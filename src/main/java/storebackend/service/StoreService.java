@@ -32,6 +32,7 @@ public class StoreService {
     private final DomainRepository domainRepository;
     private final UserRepository userRepository;
     private final SaasProperties saasProperties;
+    private final StoreSliderService sliderService;  // NEU: Slider Service injizieren
 
     // NEUE: Liste der reservierten Slugs, die NICHT als Stores verwendet werden dürfen
     private static final Set<String> RESERVED_SLUGS = Set.of(
@@ -251,5 +252,35 @@ public class StoreService {
         dto.setDescription(store.getDescription());
         dto.setCreatedAt(store.getCreatedAt());
         return dto;
+    }
+
+    /**
+     * Bestimmt die Store-Kategorie basierend auf Name und Beschreibung
+     * für passende Default-Slider-Bilder
+     */
+    private String determineStoreCategory(String name, String description) {
+        if (name == null && description == null) {
+            return "general";
+        }
+
+        String combined = (name + " " + (description != null ? description : "")).toLowerCase();
+
+        // Fashion/Clothing Keywords
+        if (combined.matches(".*(fashion|clothing|apparel|style|boutique|wear|clothes|dress).*")) {
+            return "fashion";
+        }
+
+        // Electronics Keywords
+        if (combined.matches(".*(electronic|gadget|tech|computer|phone|laptop|device).*")) {
+            return "electronics";
+        }
+
+        // Food Keywords
+        if (combined.matches(".*(food|restaurant|cafe|bakery|kitchen|cuisine|meal|cook).*")) {
+            return "food";
+        }
+
+        // Default fallback
+        return "general";
     }
 }
