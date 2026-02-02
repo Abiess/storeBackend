@@ -35,7 +35,7 @@ export interface StoreSlider {
   providedIn: 'root'
 })
 export class StoreSliderService {
-  private apiUrl = `${environment.apiUrl}/api/stores`;
+  private apiUrl = `${environment.apiUrl}/stores`;
 
   constructor(private http: HttpClient) {}
 
@@ -72,4 +72,3 @@ export class StoreSliderService {
     return this.http.delete<void>(`${this.apiUrl}/${storeId}/slider/images/${imageId}`);
   }
 }
-
