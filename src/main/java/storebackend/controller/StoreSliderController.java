@@ -93,5 +93,14 @@ public class StoreSliderController {
         sliderService.deleteSliderImage(imageId);
         return ResponseEntity.noContent().build();
     }
-}
 
+    @PostMapping("/initialize")
+    @PreAuthorize("hasRole('STORE_OWNER') or hasRole('ADMIN')")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Initialize slider settings for stores that don't have them yet")
+    public ResponseEntity<StoreSliderDTO> initializeSlider(
+            @PathVariable Long storeId,
+            @RequestParam(value = "category", defaultValue = "general") String category) {
+        return ResponseEntity.ok(sliderService.initializeSliderIfMissing(storeId, category));
+    }
+}

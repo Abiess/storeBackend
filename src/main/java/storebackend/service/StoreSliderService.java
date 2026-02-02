@@ -79,11 +79,15 @@ public class StoreSliderService {
 
     @Transactional(readOnly = true)
     public StoreSliderDTO getSliderByStoreId(Long storeId) {
-        storeRepository.findById(storeId)
+        Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found: " + storeId));
 
+        // Auto-initialize if missing
         StoreSliderSettings settings = settingsRepository.findByStoreId(storeId)
-                .orElseThrow(() -> new RuntimeException("Slider settings not found for store: " + storeId));
+                .orElseGet(() -> {
+                    log.warn("Slider settings not found for store {}. Auto-initializing...", storeId);
+                    return createDefaultSettings(store);
+                });
 
         List<StoreSliderImage> images = getImagesBasedOnMode(storeId, settings.getOverrideMode());
 
@@ -96,8 +100,15 @@ public class StoreSliderService {
 
     @Transactional(readOnly = true)
     public List<StoreSliderImageDTO> getActiveSliderImages(Long storeId) {
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found: " + storeId));
+
+        // Auto-initialize if missing
         StoreSliderSettings settings = settingsRepository.findByStoreId(storeId)
-                .orElseThrow(() -> new RuntimeException("Slider settings not found for store: " + storeId));
+                .orElseGet(() -> {
+                    log.warn("Slider settings not found for store {}. Auto-initializing...", storeId);
+                    return createDefaultSettings(store);
+                });
 
         List<StoreSliderImage> images = getImagesBasedOnMode(storeId, settings.getOverrideMode())
                 .stream()
@@ -124,8 +135,15 @@ public class StoreSliderService {
 
     @Transactional
     public StoreSliderSettingsDTO updateSettings(Long storeId, StoreSliderSettingsDTO dto) {
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found: " + storeId));
+
+        // Auto-initialize if missing
         StoreSliderSettings settings = settingsRepository.findByStoreId(storeId)
-                .orElseThrow(() -> new RuntimeException("Slider settings not found for store: " + storeId));
+                .orElseGet(() -> {
+                    log.warn("Slider settings not found for store {}. Auto-initializing...", storeId);
+                    return createDefaultSettings(store);
+                });
 
         if (dto.getOverrideMode() != null) {
             settings.setOverrideMode(dto.getOverrideMode());
@@ -267,5 +285,44 @@ public class StoreSliderService {
         dto.setIsActive(image.getIsActive());
         dto.setAltText(image.getAltText());
         return dto;
+    }
+
+    /**
+     * Creates default slider settings for a store
+     */
+    @Transactional
+    private StoreSliderSettings createDefaultSettings(Store store) {
+        StoreSliderSettings settings = new StoreSliderSettings();
+        settings.setStore(store);
+        settings.setOverrideMode(SliderOverrideMode.DEFAULT_ONLY);
+        settings.setAutoplay(true);
+        settings.setDurationMs(5000);
+        settings.setTransitionMs(500);
+        settings.setLoopEnabled(true);
+        settings.setShowDots(true);
+        settings.setShowArrows(true);
+        settings = settingsRepository.save(settings);
+
+        log.info("Created default slider settings for store {}", store.getId());
+        return settings;
+    }
+
+    /**
+     * Initialize slider if missing (can be called via API endpoint)
+     */
+    @Transactional
+    public StoreSliderDTO initializeSliderIfMissing(Long storeId, String category) {
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found: " + storeId));
+
+        // Check if already initialized
+        if (settingsRepository.findByStoreId(storeId).isPresent()) {
+            log.info("Slider already initialized for store {}", storeId);
+            return getSliderByStoreId(storeId);
+        }
+
+        // Initialize with full setup
+        initializeSliderForNewStore(store, category);
+        return getSliderByStoreId(storeId);
     }
 }

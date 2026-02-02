@@ -12,4 +12,6 @@ public class CreateStoreRequest {
     private String slug;
 
     private String description;
+
+    private String category; // Kategorie für Slider-Initialisierung (z.B. "fashion", "electronics", "food", "general")
 }

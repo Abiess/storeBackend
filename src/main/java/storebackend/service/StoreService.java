@@ -143,6 +143,18 @@ public class StoreService {
             log.error("Subdomain-Erstellung fehlgeschlagen, aber Store wurde erstellt: {}", e.getMessage());
         }
 
+        // NEU: Initialisiere Slider für den neuen Store
+        try {
+            String category = determineStoreCategory(finalStore.getName(), request.getDescription());
+            if (request.getCategory() != null && !request.getCategory().isBlank()) {
+                category = request.getCategory();
+            }
+            sliderService.initializeSliderForNewStore(finalStore, category);
+            log.info("✅ Slider initialized for store {} with category {}", finalStore.getId(), category);
+        } catch (Exception e) {
+            log.error("❌ Slider-Initialisierung fehlgeschlagen, aber Store wurde erstellt: {}", e.getMessage());
+        }
+
         log.info("Store created successfully: {} with subdomain {}.{}",
                 store.getName(), store.getSlug(), saasProperties.getBaseDomain());
 

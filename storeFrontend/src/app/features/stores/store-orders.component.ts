@@ -652,11 +652,9 @@ export class StoreOrdersComponent implements OnInit {
           if (this.selectedOrder?.id === order.id) {
             this.selectedOrder = updatedOrder;
           }
-          alert('Status erfolgreich aktualisiert!');
         },
         error: (error) => {
           console.error('Error updating order status:', error);
-          alert('Fehler beim Aktualisieren des Status');
         }
       });
     }
