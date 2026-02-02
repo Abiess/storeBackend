@@ -6,11 +6,12 @@ import { StoreService } from '../../core/services/store.service';
 import { Store } from '../../core/models';
 import { StoreNavigationComponent } from '../../shared/components/store-navigation.component';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
+import { StoreSliderEditorComponent } from './components/store-slider-editor.component';
 
 @Component({
   selector: 'app-store-settings',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, StoreNavigationComponent, TranslatePipe],
+  imports: [CommonModule, ReactiveFormsModule, StoreNavigationComponent, TranslatePipe, StoreSliderEditorComponent],
   template: `
     <div class="store-settings-container">
       <!-- Einheitliche Navigation -->
@@ -28,6 +29,12 @@ import { TranslatePipe } from '../../core/pipes/translate.pipe';
             [class.active]="activeTab === 'general'"
             (click)="activeTab = 'general'">
             {{ 'settings.general' | translate }}
+          </button>
+          <button 
+            class="tab-button" 
+            [class.active]="activeTab === 'slider'"
+            (click)="activeTab = 'slider'">
+            🎬 Slider
           </button>
           <button 
             class="tab-button" 
@@ -97,6 +104,11 @@ import { TranslatePipe } from '../../core/pipes/translate.pipe';
               </button>
             </div>
           </form>
+        </div>
+
+        <!-- Slider Settings -->
+        <div class="tab-content" *ngIf="activeTab === 'slider'">
+          <app-store-slider-editor [storeId]="storeId"></app-store-slider-editor>
         </div>
 
         <!-- Branding Settings -->
@@ -410,7 +422,7 @@ export class StoreSettingsComponent implements OnInit {
   loading = false;
   saving = false;
   error: string | null = null;
-  activeTab: 'general' | 'branding' | 'domain' | 'advanced' = 'general';
+  activeTab: 'general' | 'slider' | 'branding' | 'domain' | 'advanced' = 'general';
 
   settingsForm: FormGroup;
   brandingForm: FormGroup;

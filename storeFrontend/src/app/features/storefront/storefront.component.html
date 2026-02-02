@@ -15,6 +15,12 @@
     (categorySelect)="selectCategory($event)">
   </app-storefront-nav>
 
+  <!-- Store Slider (Hero) -->
+  <app-store-slider-viewer
+    *ngIf="storeId && !loading"
+    [storeId]="storeId">
+  </app-store-slider-viewer>
+
   <main class="store-main">
     <!-- Featured Products Sektion (vor den regulären Produkten) -->
     <app-featured-products
