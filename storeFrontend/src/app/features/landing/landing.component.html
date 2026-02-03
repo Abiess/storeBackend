@@ -23,9 +23,89 @@
           Starten Sie Ihren Online-Shop <span class="gradient-text">in Minuten</span>
         </h1>
         <p class="hero-subtitle">
-          Die All-in-One E-Commerce-Plattform für Unternehmen jeder Größe.
+          Wählen Sie Ihren Weg: Eigene Produkte verkaufen oder als Reseller durchstarten.
           Keine Programmierkenntnisse erforderlich.
         </p>
+
+        <!-- NEW: Two Path Selection -->
+        <div class="hero-paths">
+          <div class="path-card path-own">
+            <div class="path-icon">🏗️</div>
+            <h3>Eigenen Store bauen</h3>
+            <p class="path-for">Für Händler mit eigenen Produkten</p>
+            <ul class="path-benefits">
+              <li>✓ Volle Kontrolle über Katalog & Preise</li>
+              <li>✓ Eigene Marke & Custom Design</li>
+              <li>✓ 100% Umsatz gehört Ihnen</li>
+            </ul>
+            <button class="btn btn-path-own" (click)="navigateToRegister('own-store')">
+              🚀 Store aufbauen
+            </button>
+          </div>
+
+          <div class="path-card path-reseller">
+            <div class="path-badge">Neu</div>
+            <div class="path-icon">🤝</div>
+            <h3>Reseller Store starten</h3>
+            <p class="path-for">Für Wiederverkäufer ohne eigene Produkte</p>
+            <ul class="path-benefits">
+              <li>✓ Sofort 1000+ Produkte verfügbar</li>
+              <li>✓ Kein Lager, kein Versand nötig</li>
+              <li>✓ Attraktive Provisionen verdienen</li>
+            </ul>
+            <button class="btn btn-path-reseller" (click)="navigateToRegister('reseller')">
+              💰 Reseller werden
+            </button>
+          </div>
+        </div>
+
+        <!-- NEW: Quick Comparison -->
+        <div class="path-comparison">
+          <button class="comparison-toggle" (click)="toggleComparison()">
+            {{ showComparison ? '▼' : '▶' }} Schnellvergleich ansehen
+          </button>
+          <div class="comparison-table" *ngIf="showComparison">
+            <div class="comparison-row comparison-header">
+              <span class="comparison-label"></span>
+              <span class="comparison-own-col">Eigener Store</span>
+              <span class="comparison-reseller-col">Reseller Store</span>
+            </div>
+            <div class="comparison-row">
+              <span class="comparison-label">Setup-Zeit</span>
+              <span class="comparison-value">~2 Stunden</span>
+              <span class="comparison-value">~15 Minuten</span>
+            </div>
+            <div class="comparison-row">
+              <span class="comparison-label">Startkapital</span>
+              <span class="comparison-value">Mittel-Hoch</span>
+              <span class="comparison-value">Kein/Gering</span>
+            </div>
+            <div class="comparison-row">
+              <span class="comparison-label">Produktauswahl</span>
+              <span class="comparison-value">Sie entscheiden</span>
+              <span class="comparison-value">Supplier-Katalog</span>
+            </div>
+            <div class="comparison-row">
+              <span class="comparison-label">Lager/Versand</span>
+              <span class="comparison-value">Sie organisieren</span>
+              <span class="comparison-value">Automatisch</span>
+            </div>
+            <div class="comparison-row">
+              <span class="comparison-label">Umsatzmodell</span>
+              <span class="comparison-value">100% Ihres Preises</span>
+              <span class="comparison-value">20-30% Provision</span>
+            </div>
+            <div class="comparison-row">
+              <span class="comparison-label">Für wen?</span>
+              <span class="comparison-value">Hersteller, Händler</span>
+              <span class="comparison-value">Affiliates, Influencer</span>
+            </div>
+          </div>
+          <p class="comparison-note">
+            💡 <strong>Gut zu wissen:</strong> Sie können später jederzeit weitere Stores erstellen - auch vom anderen Typ!
+          </p>
+        </div>
+
         <div class="hero-actions">
           <button class="btn btn-hero-primary" (click)="navigateToRegister()">
             🚀 Jetzt kostenlos starten
@@ -219,4 +299,3 @@
     </div>
   </footer>
 </div>
-

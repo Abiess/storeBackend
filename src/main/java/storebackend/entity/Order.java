@@ -11,6 +11,8 @@ import storebackend.enums.PaymentMethod;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "orders")
@@ -120,6 +122,10 @@ public class Order {
 
     @Column(name = "phone_verified")
     private Boolean phoneVerified = false;
+
+    // MARKETPLACE: Order Items Collection
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<OrderItem> orderItems = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {

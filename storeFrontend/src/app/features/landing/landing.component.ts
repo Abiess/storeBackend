@@ -11,6 +11,8 @@ import { VideoPlaceholderComponent } from './video-placeholder.component';
   styleUrls: ['./landing.component.scss']
 })
 export class LandingComponent {
+  showComparison = false;
+
   stats = [
     { value: '10K+', label: 'Aktive Shops' },
     { value: '50M+', label: 'Transaktionen' },
@@ -137,7 +139,15 @@ export class LandingComponent {
     }
   }
 
-  navigateToRegister(): void {
+  toggleComparison(): void {
+    this.showComparison = !this.showComparison;
+  }
+
+  navigateToRegister(storeType?: 'own-store' | 'reseller'): void {
+    if (storeType) {
+      // Store the choice in localStorage for later use
+      localStorage.setItem('preferredStoreType', storeType);
+    }
     this.router.navigate(['/register']);
   }
 

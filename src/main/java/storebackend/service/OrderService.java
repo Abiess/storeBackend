@@ -23,6 +23,11 @@ public class OrderService {
     private final CartItemRepository cartItemRepository;
     private final InventoryService inventoryService;
 
+    // MARKETPLACE: New dependencies for revenue sharing
+    private final RevenueShareService revenueShareService;
+    private final StoreProductRepository storeProductRepository;
+    private final PlatformSettingsService platformSettingsService;
+
     @Transactional(readOnly = true)
     public List<Order> getOrdersByStore(Long storeId) {
         return orderRepository.findByStoreIdOrderByCreatedAtDesc(storeId);
@@ -128,6 +133,10 @@ public class OrderService {
             orderItem.setQuantity(cartItem.getQuantity());
             orderItem.setPrice(cartItem.getPriceSnapshot());
             orderItem.setProductSnapshot(createProductSnapshot(cartItem.getVariant()));
+
+            // MARKETPLACE: Enrich order item with revenue split data
+            enrichOrderItemWithMarketplaceData(orderItem, cartItem.getVariant().getProduct(), cart.getStore());
+
             orderItemRepository.save(orderItem);
 
             // Reduce inventory
@@ -139,6 +148,9 @@ public class OrderService {
                 customer
             );
         }
+
+        // MARKETPLACE: Calculate and create commissions at checkout
+        revenueShareService.createCommissionsForOrder(savedOrder);
 
         // Create initial status history
         createStatusHistory(savedOrder, OrderStatus.PENDING, "Order created", null);
@@ -240,5 +252,26 @@ public class OrderService {
                 variant.getProduct().getTitle(),
                 variant.getSku(),
                 variant.getAttributesJson());
+    }
+
+    /**
+     * MARKETPLACE: Enrich order item with supplier and pricing data for revenue split.
+     * This snapshots all pricing data at order time for immutable commission calculation.
+     */
+    private void enrichOrderItemWithMarketplaceData(OrderItem orderItem, Product product, Store store) {
+        // Check if this is an imported supplier product
+        storeProductRepository.findByStoreAndSupplierProduct(store, product)
+                .ifPresent(storeProduct -> {
+                    // This is an imported product - save supplier info
+                    Product supplierProduct = storeProduct.getSupplierProduct();
+                    orderItem.setStoreProduct(storeProduct);
+                    orderItem.setSupplierId(supplierProduct.getSupplier() != null
+                            ? supplierProduct.getSupplier().getId()
+                            : null);
+                    orderItem.setWholesalePrice(supplierProduct.getWholesalePrice());
+                });
+
+        // Always set platform fee percentage (snapshot at order time)
+        orderItem.setPlatformFeePercentage(platformSettingsService.getPlatformFeePercentage());
     }
 }

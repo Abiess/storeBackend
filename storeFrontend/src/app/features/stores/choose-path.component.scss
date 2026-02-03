@@ -1,0 +1,357 @@
+$primary: #667eea;
+$secondary: #764ba2;
+$success: #28a745;
+$text-dark: #2c3e50;
+$text-light: #7f8c8d;
+
+.choose-path-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+  padding: 2rem 0;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.header {
+  margin-bottom: 3rem;
+
+  .back-btn {
+    background: white;
+    border: 1px solid #e0e0e0;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    color: $text-dark;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-bottom: 2rem;
+    display: inline-block;
+
+    &:hover {
+      background: #f5f5f5;
+      border-color: $primary;
+      color: $primary;
+    }
+  }
+
+  .welcome {
+    text-align: center;
+
+    h1 {
+      font-size: 2.5rem;
+      color: $text-dark;
+      margin: 0 0 0.5rem;
+      font-weight: 800;
+    }
+
+    .user-email {
+      color: $primary;
+      font-weight: 600;
+      margin: 0 0 1rem;
+    }
+
+    .subtitle {
+      font-size: 1.125rem;
+      color: $text-light;
+      margin: 0;
+    }
+  }
+}
+
+.paths-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 3rem;
+
+  @media (max-width: 968px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.path-card {
+  background: white;
+  border-radius: 16px;
+  padding: 2.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s;
+  cursor: pointer;
+  position: relative;
+  border: 3px solid transparent;
+
+  &:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  }
+
+  &.path-own {
+    border-color: rgba(102, 126, 234, 0.2);
+
+    &:hover {
+      border-color: $primary;
+    }
+  }
+
+  &.path-reseller {
+    border-color: rgba(40, 167, 69, 0.2);
+
+    &:hover {
+      border-color: $success;
+    }
+  }
+
+  .path-badge {
+    position: absolute;
+    top: -12px;
+    right: 30px;
+    background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+  }
+
+  .path-header {
+    margin-bottom: 1.5rem;
+
+    .path-icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+
+    h2 {
+      font-size: 1.75rem;
+      color: $text-dark;
+      margin: 0;
+      font-weight: 700;
+    }
+  }
+
+  .path-subtitle {
+    color: $text-light;
+    font-size: 1rem;
+    margin: 0 0 2rem;
+  }
+
+  .path-benefits,
+  .path-features {
+    margin-bottom: 2rem;
+
+    h3 {
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: $text-light;
+      margin: 0 0 1rem;
+      font-weight: 600;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+
+      li {
+        padding: 0.75rem 0;
+        color: $text-dark;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+
+        .icon {
+          font-size: 1.5rem;
+          flex-shrink: 0;
+        }
+
+        strong {
+          display: block;
+          margin-bottom: 0.25rem;
+          color: $text-dark;
+        }
+
+        small {
+          color: $text-light;
+          font-size: 0.875rem;
+        }
+      }
+    }
+  }
+
+  .path-benefits ul li {
+    font-size: 0.95rem;
+  }
+
+  .path-cta {
+    margin-top: auto;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e0e0e0;
+
+    .btn {
+      width: 100%;
+      padding: 1rem 2rem;
+      border: none;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 1.125rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-bottom: 1rem;
+
+      &.btn-own {
+        background: linear-gradient(135deg, $primary, $secondary);
+        color: white;
+
+        &:hover {
+          transform: scale(1.02);
+          box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+      }
+
+      &.btn-reseller {
+        background: linear-gradient(135deg, $success, #20c997);
+        color: white;
+
+        &:hover {
+          transform: scale(1.02);
+          box-shadow: 0 8px 20px rgba(40, 167, 69, 0.4);
+        }
+      }
+    }
+
+    .time-estimate {
+      text-align: center;
+      color: $text-light;
+      font-size: 0.875rem;
+      margin: 0;
+    }
+  }
+}
+
+.comparison-section {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  margin-bottom: 2rem;
+
+  h3 {
+    text-align: center;
+    font-size: 1.5rem;
+    color: $text-dark;
+    margin: 0 0 2rem;
+    font-weight: 700;
+  }
+
+  .comparison-table {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .comparison-row {
+    display: grid;
+    grid-template-columns: 2fr 1.5fr 1.5fr;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    align-items: center;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+      gap: 0.5rem;
+    }
+
+    &.comparison-header {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+      font-weight: 700;
+      color: $text-dark;
+    }
+
+    .label {
+      font-weight: 600;
+      color: $text-dark;
+    }
+
+    .col-own,
+    .col-reseller {
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .col-own {
+      color: $primary;
+    }
+
+    .col-reseller {
+      color: $success;
+    }
+
+    .value {
+      color: $text-light;
+      text-align: center;
+      font-size: 0.95rem;
+    }
+  }
+}
+
+.info-note {
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 152, 0, 0.1));
+  border-left: 4px solid #ffc107;
+  border-radius: 8px;
+  padding: 1.5rem;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+
+  .note-icon {
+    font-size: 2rem;
+    flex-shrink: 0;
+  }
+
+  .note-content {
+    color: $text-dark;
+    line-height: 1.6;
+
+    strong {
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .choose-path-page {
+    padding: 1rem 0;
+  }
+
+  .container {
+    padding: 0 1rem;
+  }
+
+  .header {
+    margin-bottom: 2rem;
+
+    .welcome h1 {
+      font-size: 1.75rem;
+    }
+  }
+
+  .path-card {
+    padding: 1.5rem;
+
+    .path-header .path-icon {
+      font-size: 3rem;
+    }
+
+    .path-header h2 {
+      font-size: 1.5rem;
+    }
+  }
+}

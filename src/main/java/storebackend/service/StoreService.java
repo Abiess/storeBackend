@@ -125,13 +125,13 @@ public class StoreService {
         // This ensures any DB errors happen in THIS transaction, not in post-create operations
         storeRepository.flush();
 
-        // Upgrade User zu STORE_OWNER Rolle wenn noch nicht vorhanden
-        if (!owner.getRoles().contains(Role.ROLE_STORE_OWNER)) {
+        // Upgrade User zu RESELLER Rolle wenn noch nicht vorhanden
+        if (!owner.getRoles().contains(Role.ROLE_RESELLER)) {
             Set<Role> roles = new HashSet<>(owner.getRoles());
-            roles.add(Role.ROLE_STORE_OWNER);
+            roles.add(Role.ROLE_RESELLER);
             owner.setRoles(roles);
             userRepository.save(owner);
-            log.info("User {} upgraded to STORE_OWNER role", owner.getEmail());
+            log.info("User {} upgraded to RESELLER role", owner.getEmail());
         }
 
         // NEU: Post-Create-Operationen über separaten Service (REQUIRES_NEW funktioniert hier!)

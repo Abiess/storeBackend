@@ -906,7 +906,8 @@ export class DashboardComponent implements OnInit {
 
   constructor(
     private storeService: StoreService,
-    private authService: AuthService
+    private authService: AuthService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -960,13 +961,30 @@ export class DashboardComponent implements OnInit {
   }
 
   openCreateStoreModal(): void {
+    // Check if user has hit store limit
+    const user = this.authService.getCurrentUser();
+    if (user?.plan?.features && this.stores.length >= user.plan.features.maxStores) {
+      this.showLimitModal = true;
+      return;
+    }
+
+    // NEW: Show store type choice if this is the first store
+    const preferredType = localStorage.getItem('preferredStoreType');
+    if (this.stores.length === 0 && !preferredType) {
+      // First store - show path selection
+      this.router.navigate(['/choose-path']);
+      return;
+    }
+
     this.showCreateModal = true;
-    this.resetNewStore();
+    this.newStore = { name: '', slug: '', description: '' };
+    this.slugError = '';
+    this.createError = '';
   }
 
   closeCreateStoreModal(): void {
     this.showCreateModal = false;
-    this.createError = null;
+    this.newStore = { name: '', slug: '', description: '' };
   }
 
   resetNewStore(): void {
@@ -1020,8 +1038,25 @@ export class DashboardComponent implements OnInit {
   }
 
   createStore(): void {
+    if (this.creating) return;
+
+    // Basic validation
+    if (!this.newStore.name || !this.newStore.slug) {
+      this.createError = 'Bitte füllen Sie alle erforderlichen Felder aus';
+      return;
+    }
+
     this.creating = true;
-    this.storeService.createStore(this.newStore).subscribe({
+    this.createError = '';
+
+    // NEW: Add store type from localStorage if set
+    const preferredType = localStorage.getItem('preferredStoreType');
+    const storeData: CreateStoreRequest = {
+      ...this.newStore,
+      storeType: preferredType === 'reseller' ? 'RESELLER' : 'OWN'
+    };
+
+    this.storeService.createStore(storeData).subscribe({
       next: () => {
         this.creating = false;
         this.closeCreateStoreModal();

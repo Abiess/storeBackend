@@ -20,8 +20,19 @@ public class Product {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "store_id", nullable = false)
+    @JoinColumn(name = "store_id", nullable = true) // CHANGED: nullable for supplier products
     private Store store;
+
+    // MARKETPLACE: Supplier catalog support
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "supplier_id")
+    private User supplier;
+
+    @Column(name = "is_supplier_catalog")
+    private Boolean isSupplierCatalog = false;
+
+    @Column(name = "wholesale_price", precision = 10, scale = 2)
+    private BigDecimal wholesalePrice; // Supplier's base price for resellers
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")

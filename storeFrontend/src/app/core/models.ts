@@ -6,7 +6,7 @@ export interface User {
   email: string;
   name?: string;
   roles: Role[];
-  plan?: Plan;
+  plan?: PlanDetails; // FIXED: Changed from Plan enum to PlanDetails interface
   createdAt: string;
   updatedAt: string;
 }
@@ -467,6 +467,7 @@ export interface CreateStoreRequest {
   name: string;
   slug?: string;
   description?: string;
+  storeType?: string; // NEW: "OWN" or "RESELLER"
 }
 
 // ============================================

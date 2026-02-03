@@ -96,6 +96,205 @@ $background: #f8f9fa;
     line-height: 1.6;
   }
 
+  // NEW: Hero Paths (Two-Path CTA)
+  .hero-paths {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin: 3rem 0 2rem;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .path-card {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s, box-shadow 0.3s;
+    position: relative;
+    border: 2px solid transparent;
+
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    }
+
+    &.path-own {
+      border-color: rgba(102, 126, 234, 0.3);
+      &:hover {
+        border-color: $primary;
+      }
+    }
+
+    &.path-reseller {
+      border-color: rgba(40, 167, 69, 0.3);
+      &:hover {
+        border-color: $success;
+      }
+    }
+
+    .path-badge {
+      position: absolute;
+      top: -10px;
+      right: 20px;
+      background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+      color: white;
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .path-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    h3 {
+      font-size: 1.5rem;
+      margin: 0 0 0.5rem;
+      color: $text-dark;
+    }
+
+    .path-for {
+      color: $text-light;
+      font-size: 0.9rem;
+      margin: 0 0 1rem;
+    }
+
+    .path-benefits {
+      list-style: none;
+      padding: 0;
+      margin: 1.5rem 0;
+
+      li {
+        padding: 0.5rem 0;
+        color: $text-dark;
+        font-size: 0.95rem;
+      }
+    }
+
+    .btn {
+      width: 100%;
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+
+      &.btn-path-own {
+        background: linear-gradient(135deg, $primary, $secondary);
+        color: white;
+        &:hover {
+          transform: scale(1.02);
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+      }
+
+      &.btn-path-reseller {
+        background: linear-gradient(135deg, $success, #20c997);
+        color: white;
+        &:hover {
+          transform: scale(1.02);
+          box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+        }
+      }
+    }
+  }
+
+  // NEW: Comparison Section
+  .path-comparison {
+    margin: 2rem 0 3rem;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+
+    .comparison-toggle {
+      background: none;
+      border: none;
+      color: $primary;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 0.5rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: color 0.3s;
+
+      &:hover {
+        color: $secondary;
+      }
+    }
+
+    .comparison-table {
+      margin-top: 1.5rem;
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .comparison-row {
+      display: grid;
+      grid-template-columns: 2fr 1.5fr 1.5fr;
+      gap: 1rem;
+      padding: 0.75rem 1rem;
+      background: white;
+      border-radius: 8px;
+      align-items: center;
+
+      @media (max-width: 768px) {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+      }
+
+      &.comparison-header {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+        font-weight: 700;
+        color: $text-dark;
+      }
+
+      .comparison-label {
+        font-weight: 600;
+        color: $text-dark;
+      }
+
+      .comparison-own-col,
+      .comparison-reseller-col {
+        font-weight: 700;
+        text-align: center;
+      }
+
+      .comparison-own-col {
+        color: $primary;
+      }
+
+      .comparison-reseller-col {
+        color: $success;
+      }
+
+      .comparison-value {
+        color: $text-light;
+        text-align: center;
+      }
+    }
+
+    .comparison-note {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 152, 0, 0.1));
+      border-left: 4px solid #ffc107;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      color: $text-dark;
+    }
+  }
+
   .hero-actions {
     display: flex;
     gap: 1rem;

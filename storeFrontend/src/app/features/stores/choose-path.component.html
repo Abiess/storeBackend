@@ -1,0 +1,166 @@
+<div class="choose-path-page">
+  <div class="container">
+    <div class="header">
+      <button class="back-btn" (click)="goBack()">
+        ← Zurück zum Dashboard
+      </button>
+      <div class="welcome">
+        <h1>Willkommen bei markt.ma! 👋</h1>
+        <p class="user-email">{{ userEmail }}</p>
+        <p class="subtitle">Wählen Sie Ihren Weg, um Ihren ersten Store zu erstellen</p>
+      </div>
+    </div>
+
+    <div class="paths-container">
+      <!-- Own Store Path -->
+      <div class="path-card path-own" (click)="selectPath('own-store')">
+        <div class="path-header">
+          <div class="path-icon">🏗️</div>
+          <h2>Eigenen Store bauen</h2>
+        </div>
+
+        <p class="path-subtitle">Für Händler mit eigenen Produkten</p>
+
+        <div class="path-benefits">
+          <h3>Perfekt für:</h3>
+          <ul>
+            <li>✓ Hersteller & Produzenten</li>
+            <li>✓ Händler mit eigenem Lager</li>
+            <li>✓ Marken mit eigenen Produkten</li>
+          </ul>
+        </div>
+
+        <div class="path-features">
+          <h3>Was Sie bekommen:</h3>
+          <ul>
+            <li>
+              <span class="icon">🎨</span>
+              <div>
+                <strong>Volle Kontrolle</strong>
+                <small>Eigener Katalog, eigene Preise, eigene Marke</small>
+              </div>
+            </li>
+            <li>
+              <span class="icon">💰</span>
+              <div>
+                <strong>100% Umsatz</strong>
+                <small>Alle Einnahmen gehören Ihnen</small>
+              </div>
+            </li>
+            <li>
+              <span class="icon">📦</span>
+              <div>
+                <strong>Produktverwaltung</strong>
+                <small>Unbegrenzte Produkte, Varianten & Kategorien</small>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="path-cta">
+          <button class="btn btn-own">
+            🚀 Eigenen Store erstellen
+          </button>
+          <p class="time-estimate">⏱️ Setup-Zeit: ~2 Stunden</p>
+        </div>
+      </div>
+
+      <!-- Reseller Path -->
+      <div class="path-card path-reseller" (click)="selectPath('reseller')">
+        <div class="path-badge">Neu & beliebt</div>
+
+        <div class="path-header">
+          <div class="path-icon">🤝</div>
+          <h2>Reseller Store starten</h2>
+        </div>
+
+        <p class="path-subtitle">Für Wiederverkäufer ohne eigene Produkte</p>
+
+        <div class="path-benefits">
+          <h3>Perfekt für:</h3>
+          <ul>
+            <li>✓ Affiliates & Influencer</li>
+            <li>✓ Dropshipper</li>
+            <li>✓ Nischen-Marketer</li>
+          </ul>
+        </div>
+
+        <div class="path-features">
+          <h3>Was Sie bekommen:</h3>
+          <ul>
+            <li>
+              <span class="icon">⚡</span>
+              <div>
+                <strong>Schnellstart</strong>
+                <small>In 15 Minuten live mit 1000+ Produkten</small>
+              </div>
+            </li>
+            <li>
+              <span class="icon">📦</span>
+              <div>
+                <strong>Kein Lager nötig</strong>
+                <small>Supplier kümmern sich um Versand</small>
+              </div>
+            </li>
+            <li>
+              <span class="icon">💸</span>
+              <div>
+                <strong>Attraktive Provisionen</strong>
+                <small>20-30% Marge pro Verkauf</small>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="path-cta">
+          <button class="btn btn-reseller">
+            💰 Reseller Store erstellen
+          </button>
+          <p class="time-estimate">⏱️ Setup-Zeit: ~15 Minuten</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comparison Section -->
+    <div class="comparison-section">
+      <h3>Schneller Vergleich</h3>
+      <div class="comparison-table">
+        <div class="comparison-row comparison-header">
+          <span class="label"></span>
+          <span class="col-own">Eigener Store</span>
+          <span class="col-reseller">Reseller Store</span>
+        </div>
+        <div class="comparison-row">
+          <span class="label">Startkapital</span>
+          <span class="value">Mittel-Hoch</span>
+          <span class="value">Kein/Gering</span>
+        </div>
+        <div class="comparison-row">
+          <span class="label">Produktauswahl</span>
+          <span class="value">Sie entscheiden</span>
+          <span class="value">Supplier-Katalog</span>
+        </div>
+        <div class="comparison-row">
+          <span class="label">Lager/Versand</span>
+          <span class="value">Sie organisieren</span>
+          <span class="value">Automatisch</span>
+        </div>
+        <div class="comparison-row">
+          <span class="label">Umsatzmodell</span>
+          <span class="value">100% Ihres Preises</span>
+          <span class="value">20-30% Provision</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info Note -->
+    <div class="info-note">
+      <div class="note-icon">💡</div>
+      <div class="note-content">
+        <strong>Gut zu wissen:</strong> Sie können später jederzeit weitere Stores erstellen –
+        auch vom anderen Typ! Diese Entscheidung ist nicht endgültig.
+      </div>
+    </div>
+  </div>
+</div>
+
