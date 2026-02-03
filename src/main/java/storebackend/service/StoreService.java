@@ -8,13 +8,10 @@ import storebackend.config.SaasProperties;
 import storebackend.dto.CreateStoreRequest;
 import storebackend.dto.UpdateStoreRequest;
 import storebackend.dto.StoreDTO;
-import storebackend.entity.Domain;
 import storebackend.entity.Store;
 import storebackend.entity.User;
-import storebackend.enums.DomainType;
 import storebackend.enums.Role;
 import storebackend.enums.StoreStatus;
-import storebackend.repository.DomainRepository;
 import storebackend.repository.StoreRepository;
 import storebackend.repository.UserRepository;
 
@@ -29,10 +26,9 @@ import java.util.stream.Collectors;
 public class StoreService {
 
     private final StoreRepository storeRepository;
-    private final DomainRepository domainRepository;
     private final UserRepository userRepository;
     private final SaasProperties saasProperties;
-    private final StoreSliderService sliderService;  // NEU: Slider Service injizieren
+    private final StorePostCreateService postCreateService;  // NEU: Separater Service für Post-Create-Operationen
 
     // NEUE: Liste der reservierten Slugs, die NICHT als Stores verwendet werden dürfen
     private static final Set<String> RESERVED_SLUGS = Set.of(
@@ -134,82 +130,23 @@ public class StoreService {
             log.info("User {} upgraded to STORE_OWNER role", owner.getEmail());
         }
 
-        // Automatisch Subdomain erstellen - in separater Transaktion
-        // damit Fehler hier die Store-Erstellung nicht blockieren
-        final Store finalStore = store;
-        try {
-            createDefaultSubdomainInNewTransaction(finalStore);
-        } catch (Exception e) {
-            log.error("Subdomain-Erstellung fehlgeschlagen, aber Store wurde erstellt: {}", e.getMessage());
+        // NEU: Post-Create-Operationen über separaten Service (REQUIRES_NEW funktioniert hier!)
+        // Bestimme Kategorie für Slider
+        String category = determineStoreCategory(store.getName(), request.getDescription());
+        if (request.getCategory() != null && !request.getCategory().isBlank()) {
+            category = request.getCategory();
         }
 
-        // NEU: Initialisiere Slider für den neuen Store - in separater Transaktion
-        try {
-            String category = determineStoreCategory(finalStore.getName(), request.getDescription());
-            if (request.getCategory() != null && !request.getCategory().isBlank()) {
-                category = request.getCategory();
-            }
-            initializeSliderInNewTransaction(finalStore, category);
-            log.info("✅ Slider initialized for store {} with category {}", finalStore.getId(), category);
-        } catch (Exception e) {
-            log.error("❌ Slider-Initialisierung fehlgeschlagen, aber Store wurde erstellt: {}", e.getMessage(), e);
-        }
+        // Führe Post-Create-Operationen aus (in separaten Transaktionen)
+        // Fehler hier beeinflussen die Store-Erstellung NICHT
+        postCreateService.executePostCreateOperations(store.getId(), category);
 
-        log.info("Store created successfully: {} with subdomain {}.{}",
-                store.getName(), store.getSlug(), saasProperties.getBaseDomain());
+        log.info("Store created successfully: {} (ID: {}) with subdomain {}.{}",
+                store.getName(), store.getId(), store.getSlug(), saasProperties.getBaseDomain());
 
         return toDTO(store);
     }
 
-    /**
-     * Erstellt die Standard-Subdomain in einer separaten Transaktion
-     * REQUIRES_NEW stellt sicher, dass Fehler hier die Store-Erstellung nicht beeinflussen
-     */
-    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
-    public void createDefaultSubdomainInNewTransaction(Store store) {
-        try {
-            String subdomain = saasProperties.generateSubdomain(store.getSlug());
-
-            if (domainRepository.existsByHost(subdomain)) {
-                log.warn("Subdomain {} already exists, skipping creation", subdomain);
-                return;
-            }
-
-            Domain domain = new Domain();
-            domain.setStore(store);
-            domain.setHost(subdomain);
-            domain.setType(DomainType.SUBDOMAIN);
-            domain.setIsVerified(true); // Subdomains sind automatisch verifiziert
-            domain.setIsPrimary(true); // Erste Domain ist primary
-
-            domainRepository.save(domain);
-            log.info("✅ Default subdomain created: {}", subdomain);
-
-        } catch (Exception e) {
-            log.error("❌ Failed to create default subdomain for store {}: {}", store.getSlug(), e.getMessage());
-            throw e; // Wirf Exception, damit REQUIRES_NEW sie isoliert behandelt
-        }
-    }
-
-    /**
-     * Initialisiert Slider in einer separaten Transaktion
-     * REQUIRES_NEW stellt sicher, dass Fehler hier die Store-Erstellung nicht beeinflussen
-     */
-    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
-    public void initializeSliderInNewTransaction(Store store, String category) {
-        try {
-            sliderService.initializeSliderForNewStore(store, category);
-            log.info("Slider initialized successfully for store {} with category {}", store.getId(), category);
-        } catch (Exception e) {
-            log.error("Failed to initialize slider for store {}: {}", store.getId(), e.getMessage(), e);
-            throw e;
-        }
-    }
-
-    public Store getStoreById(Long storeId) {
-        return storeRepository.findByIdWithOwner(storeId)
-                .orElseThrow(() -> new RuntimeException("Store not found"));
-    }
 
     @Transactional
     public StoreDTO updateStore(Long storeId, UpdateStoreRequest request, User user) {
