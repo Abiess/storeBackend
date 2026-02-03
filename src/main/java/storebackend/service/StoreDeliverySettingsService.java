@@ -34,10 +34,19 @@ public class StoreDeliverySettingsService {
         StoreDeliverySettings settings = settingsRepository.findByStoreId(storeId)
             .orElseGet(() -> createDefaultSettings(storeId));
 
-        settings.setPickupEnabled(request.getPickupEnabled());
-        settings.setDeliveryEnabled(request.getDeliveryEnabled());
-        settings.setExpressEnabled(request.getExpressEnabled());
-        settings.setCurrency(request.getCurrency());
+        if (request.getPickupEnabled() != null) {
+            settings.setPickupEnabled(request.getPickupEnabled());
+        }
+        if (request.getDeliveryEnabled() != null) {
+            settings.setDeliveryEnabled(request.getDeliveryEnabled());
+        }
+        if (request.getExpressEnabled() != null) {
+            settings.setExpressEnabled(request.getExpressEnabled());
+        }
+        if (request.getCurrency() != null) {
+            settings.setCurrency(request.getCurrency());
+        }
+        settings.setUpdatedAt(LocalDateTime.now());
 
         settings = settingsRepository.save(settings);
         log.info("✅ Updated delivery settings for store {}", storeId);
