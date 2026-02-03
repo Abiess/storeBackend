@@ -121,6 +121,10 @@ public class StoreService {
 
         store = storeRepository.save(store);
 
+        // IMPORTANT: Flush to DB immediately to catch constraint violations NOW
+        // This ensures any DB errors happen in THIS transaction, not in post-create operations
+        storeRepository.flush();
+
         // Upgrade User zu STORE_OWNER Rolle wenn noch nicht vorhanden
         if (!owner.getRoles().contains(Role.ROLE_STORE_OWNER)) {
             Set<Role> roles = new HashSet<>(owner.getRoles());

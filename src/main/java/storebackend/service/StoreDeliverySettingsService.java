@@ -38,7 +38,6 @@ public class StoreDeliverySettingsService {
         settings.setDeliveryEnabled(request.getDeliveryEnabled());
         settings.setExpressEnabled(request.getExpressEnabled());
         settings.setCurrency(request.getCurrency());
-        settings.setUpdatedAt(LocalDateTime.now());
 
         settings = settingsRepository.save(settings);
         log.info("✅ Updated delivery settings for store {}", storeId);
@@ -72,4 +71,3 @@ public class StoreDeliverySettingsService {
         return dto;
     }
 }
-
