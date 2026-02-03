@@ -207,6 +207,11 @@ public class StoreService {
         return storeRepository.findByOwnerId(userId);
     }
 
+    public Store getStoreById(Long storeId) {
+        return storeRepository.findByIdWithOwner(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+    }
+
     private StoreDTO toDTO(Store store) {
         StoreDTO dto = new StoreDTO();
         dto.setId(store.getId());
