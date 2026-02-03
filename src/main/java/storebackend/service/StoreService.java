@@ -143,16 +143,16 @@ public class StoreService {
             log.error("Subdomain-Erstellung fehlgeschlagen, aber Store wurde erstellt: {}", e.getMessage());
         }
 
-        // NEU: Initialisiere Slider für den neuen Store
+        // NEU: Initialisiere Slider für den neuen Store - in separater Transaktion
         try {
             String category = determineStoreCategory(finalStore.getName(), request.getDescription());
             if (request.getCategory() != null && !request.getCategory().isBlank()) {
                 category = request.getCategory();
             }
-            sliderService.initializeSliderForNewStore(finalStore, category);
+            initializeSliderInNewTransaction(finalStore, category);
             log.info("✅ Slider initialized for store {} with category {}", finalStore.getId(), category);
         } catch (Exception e) {
-            log.error("❌ Slider-Initialisierung fehlgeschlagen, aber Store wurde erstellt: {}", e.getMessage());
+            log.error("❌ Slider-Initialisierung fehlgeschlagen, aber Store wurde erstellt: {}", e.getMessage(), e);
         }
 
         log.info("Store created successfully: {} with subdomain {}.{}",
@@ -188,6 +188,21 @@ public class StoreService {
         } catch (Exception e) {
             log.error("❌ Failed to create default subdomain for store {}: {}", store.getSlug(), e.getMessage());
             throw e; // Wirf Exception, damit REQUIRES_NEW sie isoliert behandelt
+        }
+    }
+
+    /**
+     * Initialisiert Slider in einer separaten Transaktion
+     * REQUIRES_NEW stellt sicher, dass Fehler hier die Store-Erstellung nicht beeinflussen
+     */
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    public void initializeSliderInNewTransaction(Store store, String category) {
+        try {
+            sliderService.initializeSliderForNewStore(store, category);
+            log.info("Slider initialized successfully for store {} with category {}", store.getId(), category);
+        } catch (Exception e) {
+            log.error("Failed to initialize slider for store {}: {}", store.getId(), e.getMessage(), e);
+            throw e;
         }
     }
 
