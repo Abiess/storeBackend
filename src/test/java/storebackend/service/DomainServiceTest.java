@@ -63,7 +63,7 @@ class DomainServiceTest {
         testUser.setEmail("test@example.com");
         testUser.setPlan(freePlan);
         Set<Role> roles = new HashSet<>();
-        roles.add(Role.ROLE_STORE_OWNER);
+        roles.add(Role.ROLE_RESELLER); // FIXED: Changed from ROLE_STORE_OWNER to ROLE_RESELLER
         testUser.setRoles(roles);
 
         // Setup Test Store
