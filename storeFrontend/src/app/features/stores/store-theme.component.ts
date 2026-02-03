@@ -40,7 +40,7 @@ import {
             </div>
             <div class="theme-info">
               <p><strong>Template:</strong> {{ getTemplateName(activeTheme.template) }}</p>
-              <p><strong>Erstellt:</strong> {{ activeTheme.createdAt | date:'dd.MM.yyyy' }}</p>
+              <p><strong>Erstellt:</strong> {{ (activeTheme.createdAt || null) | date:'dd.MM.yyyy':'':'de-DE' }}</p>
               <button class="btn btn-primary" (click)="editTheme(activeTheme)">
                 Bearbeiten
               </button>

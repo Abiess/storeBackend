@@ -136,7 +136,7 @@ import { TranslatePipe } from '../../core/pipes/translate.pipe';
           <div class="order-info">
             <h3>{{ 'order.customerInfo' | translate }}</h3>
             <p><strong>Email:</strong> {{ selectedOrder.customerEmail }}</p>
-            <p><strong>{{ 'order.date' | translate }}:</strong> {{ selectedOrder.createdAt | date:'dd.MM.yyyy HH:mm' }}</p>
+            <p><strong>{{ 'order.date' | translate }}:</strong> {{ (selectedOrder.createdAt || null) | date:'dd.MM.yyyy HH:mm':'':'de-DE' }}</p>
             <p><strong>{{ 'order.status' | translate }}:</strong>
               <span class="status-badge" [ngClass]="'status-' + selectedOrder.status.toLowerCase()">
                 {{ getStatusLabel(selectedOrder.status) }}
