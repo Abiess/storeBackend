@@ -3,6 +3,7 @@ package storebackend.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import storebackend.config.SaasProperties;
 import storebackend.dto.PublicStoreDTO;
@@ -10,6 +11,7 @@ import storebackend.entity.Domain;
 import storebackend.entity.Store;
 import storebackend.entity.User;
 import storebackend.enums.DomainType;
+import storebackend.enums.StoreStatus;
 import storebackend.repository.DomainRepository;
 import storebackend.repository.StoreRepository;
 
@@ -105,27 +107,73 @@ public class DomainService {
 
     @Transactional(readOnly = true)
     public Optional<Domain> resolveDomainByHost(String host) {
-        return domainRepository.findActiveVerifiedDomainByHost(host);
+        String normalized = normalizeHost(host);
+        if (normalized == null) {
+            return Optional.empty();
+        }
+        return domainRepository.findActiveVerifiedDomainByHost(normalized);
     }
 
     /**
-     * ✅ NEUE METHODE: Löst Domain mit Store in einer Abfrage auf
-     * Verwendet JOIN FETCH um LazyInitializationException zu vermeiden
+     * Lt eine Store-Konfiguration anhand eines Hostnamens auf.
+     *
+     * Robust gegen:
+     * - Gro/Kleinschreibung
+     * - Whitespace
+     * - Port (":8080")
+     * - Trailing dot ("example.com.")
+     * - Protokoll/Path falls flschlich mitgegeben wurde ("https://x.y")
+     *
+     * Fallback:
+     * Wenn es eine Subdomain unserer Base-Domain ist und kein exakter Domain-Host gefunden wurde,
+     * wird ber den slug (Subdomain-Teil) auf die verifizierte SUBDOMAIN gemappt.
      */
     @Transactional(readOnly = true)
     public Optional<PublicStoreDTO> resolveStoreByHost(String host) {
-        return domainRepository.findActiveVerifiedDomainWithStoreByHost(host)
-            .map(domain -> {
-                Store store = domain.getStore();
-                PublicStoreDTO dto = new PublicStoreDTO();
-                dto.setStoreId(store.getId());
-                dto.setName(store.getName());
-                dto.setSlug(store.getSlug());
-                dto.setDescription(store.getDescription());
-                dto.setPrimaryDomain(domain.getHost());
-                dto.setStatus(store.getStatus().name());
-                return dto;
-            });
+        String normalized = normalizeHost(host);
+        if (normalized == null) {
+            return Optional.empty();
+        }
+
+        // 1) Exaktes Host-Matching (nach Normalisierung)
+        Optional<PublicStoreDTO> direct = domainRepository.findActiveVerifiedDomainWithStoreByHost(normalized)
+                .map(domain -> {
+                    Store store = domain.getStore();
+                    PublicStoreDTO dto = new PublicStoreDTO();
+                    dto.setStoreId(store.getId());
+                    dto.setName(store.getName());
+                    dto.setSlug(store.getSlug());
+                    dto.setDescription(store.getDescription());
+                    dto.setPrimaryDomain(domain.getHost());
+                    dto.setStatus(store.getStatus().name());
+                    return dto;
+                });
+
+        if (direct.isPresent()) {
+            return direct;
+        }
+
+        // 2) Fallback fr Platform-Subdomains: abdellah.markt.ma ber slug finden
+        if (saasProperties.isSubdomainOfBaseDomain(normalized)) {
+            String slug = saasProperties.extractSlugFromSubdomain(normalized);
+            if (slug != null && !slug.isBlank()) {
+                return domainRepository.findVerifiedSubdomainBySlug(slug.toLowerCase())
+                        .filter(d -> d.getStore() != null && d.getStore().getStatus() == StoreStatus.ACTIVE)
+                        .map(domain -> {
+                            Store store = domain.getStore();
+                            PublicStoreDTO dto = new PublicStoreDTO();
+                            dto.setStoreId(store.getId());
+                            dto.setName(store.getName());
+                            dto.setSlug(store.getSlug());
+                            dto.setDescription(store.getDescription());
+                            dto.setPrimaryDomain(domain.getHost());
+                            dto.setStatus(store.getStatus().name());
+                            return dto;
+                        });
+            }
+        }
+
+        return Optional.empty();
     }
 
     public String getVerificationInstructions(Long domainId, User currentUser) {
@@ -229,5 +277,38 @@ public class DomainService {
         // Für jetzt return true zur Demonstration
         log.info("Performing DNS verification for domain: {}", domain.getHost());
         return true;
+    }
+
+    private String normalizeHost(String host) {
+        if (host == null) {
+            return null;
+        }
+
+        String h = host.trim();
+        if (h.isEmpty()) {
+            return null;
+        }
+
+        // Falls aus Versehen eine URL bergeben wird
+        h = h.replace("http://", "").replace("https://", "");
+
+        // Pfad/Query-Fragmente entfernen
+        int slashIdx = h.indexOf('/');
+        if (slashIdx >= 0) {
+            h = h.substring(0, slashIdx);
+        }
+
+        // Port entfernen
+        int colonIdx = h.indexOf(':');
+        if (colonIdx >= 0) {
+            h = h.substring(0, colonIdx);
+        }
+
+        // Trailing dot entfernen (DNS Fully Qualified)
+        while (h.endsWith(".")) {
+            h = h.substring(0, h.length() - 1);
+        }
+
+        return h.toLowerCase();
     }
 }

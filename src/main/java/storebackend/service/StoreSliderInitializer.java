@@ -35,6 +35,8 @@ public class StoreSliderInitializer {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean initializeSlider(Long storeId, String category) {
         try {
+            log.info("🔄 Initializing slider for store ID: {} with category: {}", storeId, category);
+
             Store store = storeRepository.findById(storeId)
                     .orElseThrow(() -> new RuntimeException("Store not found: " + storeId));
 
@@ -44,6 +46,7 @@ public class StoreSliderInitializer {
 
         } catch (Exception e) {
             log.error("❌ Failed to initialize slider for store {}: {}", storeId, e.getMessage(), e);
+            log.error("Full error details:", e);
             // Do NOT re-throw! This would mark the transaction as rollback-only
             return false;
         }
