@@ -2,7 +2,7 @@ SET search_path TO public;
 
 DO $$
 BEGIN
-  -- 1) Rename old columns if they exist
+  -- rename columns
   IF EXISTS (
     SELECT 1 FROM information_schema.columns
     WHERE table_schema='public' AND table_name='media' AND column_name='file_name'
@@ -23,8 +23,6 @@ END IF;
     EXECUTE 'ALTER TABLE public.media RENAME COLUMN original_name TO original_filename';
 END IF;
 
-  -- Achtung: du hast in deinem "alten" schema mime_type.
-  -- Das passt fachlich eher zu content_type.
   IF EXISTS (
     SELECT 1 FROM information_schema.columns
     WHERE table_schema='public' AND table_name='media' AND column_name='mime_type'
@@ -35,7 +33,7 @@ END IF;
     EXECUTE 'ALTER TABLE public.media RENAME COLUMN mime_type TO content_type';
 END IF;
 
-  -- 2) Add missing columns (new model)
+  -- add missing columns
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.columns
     WHERE table_schema='public' AND table_name='media' AND column_name='minio_object_name'
@@ -50,15 +48,14 @@ END IF;
     EXECUTE 'ALTER TABLE public.media ADD COLUMN media_type VARCHAR(50)';
 END IF;
 
-  -- 3) Ensure NOT NULL constraints safely (only if column exists)
+  -- ensure content_type not null if column exists
   IF EXISTS (
     SELECT 1 FROM information_schema.columns
     WHERE table_schema='public' AND table_name='media' AND column_name='content_type'
   ) THEN
-    EXECUTE $$UPDATE public.media
-             SET content_type = COALESCE(content_type, 'application/octet-stream')
-             WHERE content_type IS NULL$$;
+    EXECUTE 'UPDATE public.media
+             SET content_type = COALESCE(content_type, ''application/octet-stream'')
+             WHERE content_type IS NULL';
 EXECUTE 'ALTER TABLE public.media ALTER COLUMN content_type SET NOT NULL';
 END IF;
-
 END $$;
