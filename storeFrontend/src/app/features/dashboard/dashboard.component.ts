@@ -86,7 +86,7 @@ import { LanguageSwitcherComponent } from '@app/shared/components/language-switc
               <div class="store-meta">
                 <span class="meta-item">
                   <span class="meta-icon">📅</span>
-                  Erstellt: {{ store.createdAt | date:'dd.MM.yyyy' }}
+                  Erstellt: {{ formatDate(store.createdAt) }}
                 </span>
               </div>
             </div>
@@ -1096,5 +1096,20 @@ export class DashboardComponent implements OnInit {
 
   getStorefrontUrl(slug: string): string {
     return `https://${slug}.markt.ma`;
+  }
+
+  formatDate(dateString: string): string {
+    if (!dateString) return '';
+    const options: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    };
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('de-DE', options).format(date);
   }
 }

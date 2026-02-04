@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { Observable, of, throwError } from 'rxjs';
+import { catchError, map, retry, delay, retryWhen, take, concat } from 'rxjs/operators';
 import { environment } from '@env/environment';
 
 export interface SubdomainInfo {
@@ -150,23 +150,43 @@ export class SubdomainService {
 
   /**
    * Lädt Store-Informationen basierend auf der aktuellen Subdomain
+   * MIT RETRY-LOGIK: Store kann kurz nach Erstellung noch nicht verfügbar sein
    */
   resolveStore(): Observable<SubdomainInfo> {
     const info = this.detectSubdomain();
 
+    // 🔍 DEBUG: Zeige die erkannte Subdomain-Info
+    console.log('📋 Detected Subdomain Info:', info);
+    console.log('📋 - isSubdomain:', info.isSubdomain);
+    console.log('📋 - subdomain:', info.subdomain);
+    console.log('📋 - slug:', info.slug);
+
     if (!info.isSubdomain || !info.slug) {
+      console.log('⚠️ No subdomain detected or no slug, returning early');
       return of(info);
     }
 
     const hostname = window.location.hostname;
     console.log('🔍 Resolving store for hostname:', hostname);
-    console.log('🔍 Resolving store for storeID:', info.storeId);
+    console.log('🔍 API URL:', `${environment.apiUrl}/public/store/resolve?host=${hostname}`);
 
     // Rufe Backend API auf um Store zu laden
+    // Mit Retry-Logik: 3 Versuche mit 1 Sekunde Wartezeit
     return this.http.get<any>(`${environment.apiUrl}/public/store/resolve?host=${hostname}`)
       .pipe(
+        retryWhen(errors =>
+          errors.pipe(
+            delay(1000), // Warte 1 Sekunde zwischen Versuchen
+            take(3), // Maximal 3 Wiederholungen
+            concat(throwError(() => new Error('Store resolution failed after 3 retries')))
+          )
+        ),
         map(response => {
-          console.log('✅ Store resolved:', response);
+          console.log('✅ Store resolved successfully:', response);
+          console.log('✅ - storeId:', response.storeId);
+          console.log('✅ - name:', response.name);
+          console.log('✅ - slug:', response.slug);
+
           this.subdomainInfo = {
             isSubdomain: true,
             subdomain: info.subdomain,
@@ -177,8 +197,21 @@ export class SubdomainService {
           return this.subdomainInfo;
         }),
         catchError(error => {
-          console.error('❌ Failed to resolve store:', error);
-          return of(info);
+          console.error('❌ Failed to resolve store after retries');
+          console.error('❌ Error details:', error);
+          console.error('❌ Status:', error.status);
+          console.error('❌ Message:', error.message);
+          console.error('❌ URL was:', `${environment.apiUrl}/public/store/resolve?host=${hostname}`);
+          console.warn('💡 Store may still be initializing. Please refresh in a few seconds.');
+
+          // Zeige Benutzerfreundliche Fehlermeldung
+          return of({
+            isSubdomain: true,
+            subdomain: info.subdomain,
+            storeId: null,
+            storeName: null,
+            slug: info.slug
+          });
         })
       );
   }

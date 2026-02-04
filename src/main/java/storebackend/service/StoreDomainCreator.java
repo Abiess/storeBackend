@@ -154,14 +154,23 @@ public class StoreDomainCreator {
 
     /**
      * Builds a new Domain entity.
+     * Sets isPrimary=true only if this is the first domain for the store.
      */
     private Domain buildDomain(Store store, String subdomain) {
+        // Prüfe ob bereits Domains für diesen Store existieren
+        long existingDomainsCount = domainRepository.countByStore(store);
+        boolean shouldBePrimary = (existingDomainsCount == 0);
+
+        log.debug("📊 Store {} has {} existing domains, setting isPrimary={}",
+                store.getId(), existingDomainsCount, shouldBePrimary);
+
         Domain domain = new Domain();
         domain.setStore(store);
         domain.setHost(subdomain);
         domain.setType(DomainType.SUBDOMAIN);
-        domain.setIsVerified(true);
-        domain.setIsPrimary(true);
+        domain.setIsVerified(true); // ✅ Subdomains sind automatisch verifiziert
+        domain.setIsPrimary(shouldBePrimary); // ✅ Nur erste Domain ist primary
+
         return domain;
     }
 

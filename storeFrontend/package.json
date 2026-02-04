@@ -5,6 +5,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
+    "start:debug": "ng serve --source-maps=true --optimization=false --configuration=development",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",

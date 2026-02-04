@@ -134,21 +134,35 @@ public class StoreService {
             log.info("User {} upgraded to RESELLER role", owner.getEmail());
         }
 
-        // NEU: Post-Create-Operationen über separaten Service (REQUIRES_NEW funktioniert hier!)
+        Long storeId = store.getId();
+
         // Bestimme Kategorie für Slider
         String category = determineStoreCategory(store.getName(), request.getDescription());
         if (request.getCategory() != null && !request.getCategory().isBlank()) {
             category = request.getCategory();
         }
 
-        // Führe Post-Create-Operationen aus (in separaten Transaktionen)
-        // Fehler hier beeinflussen die Store-Erstellung NICHT
-        postCreateService.executePostCreateOperations(store.getId(), category);
-
         log.info("Store created successfully: {} (ID: {}) with subdomain {}.{}",
                 store.getName(), store.getId(), store.getSlug(), saasProperties.getBaseDomain());
 
-        return toDTO(store);
+        StoreDTO result = toDTO(store);
+
+        // WICHTIG: Transaktion endet HIER - Store wird committed
+        // Post-Create-Operationen werden NACH dem Commit ausgeführt
+        // Dies wird durch @TransactionalEventListener in StorePostCreateService gehandhabt
+        // Alternativ: Expliziter Aufruf nach Transaktions-Ende
+        final String finalCategory = category;
+        org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+            new org.springframework.transaction.support.TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    // Wird NACH dem Commit ausgeführt
+                    postCreateService.executePostCreateOperations(storeId, finalCategory);
+                }
+            }
+        );
+
+        return result;
     }
 
 

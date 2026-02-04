@@ -130,15 +130,25 @@ public class DomainService {
      */
     @Transactional(readOnly = true)
     public Optional<PublicStoreDTO> resolveStoreByHost(String host) {
+
+        log.info("🔍 resolveStoreByHost called with host: '{}'", host);
+
         String normalized = normalizeHost(host);
+        log.info("📝 Normalized host: '{}'", normalized);
+
         if (normalized == null) {
+            log.warn("⚠️ Normalized host is null, returning empty");
             return Optional.empty();
         }
 
         // 1) Exaktes Host-Matching (nach Normalisierung)
+        log.debug("🔎 Step 1: Searching for exact host match in database...");
         Optional<PublicStoreDTO> direct = domainRepository.findActiveVerifiedDomainWithStoreByHost(normalized)
                 .map(domain -> {
                     Store store = domain.getStore();
+                    log.info("✅ Found exact match - Store: {} (ID: {}), Domain: {}, IsVerified: {}",
+                             store.getName(), store.getId(), domain.getHost(), domain.getIsVerified());
+
                     PublicStoreDTO dto = new PublicStoreDTO();
                     dto.setStoreId(store.getId());
                     dto.setName(store.getName());
@@ -150,17 +160,36 @@ public class DomainService {
                 });
 
         if (direct.isPresent()) {
+            log.info("✅ Returning direct match result");
             return direct;
         }
 
-        // 2) Fallback fr Platform-Subdomains: abdellah.markt.ma ber slug finden
-        if (saasProperties.isSubdomainOfBaseDomain(normalized)) {
+        log.debug("⚠️ No exact host match found, trying fallback...");
+
+        // 2) Fallback für Platform-Subdomains: abdellah.markt.ma über slug finden
+        boolean isSubdomain = saasProperties.isSubdomainOfBaseDomain(normalized);
+        log.debug("🔎 Step 2: Is subdomain of base domain? {}", isSubdomain);
+
+        if (isSubdomain) {
             String slug = saasProperties.extractSlugFromSubdomain(normalized);
+            log.info("🔎 Extracted slug from subdomain: '{}'", slug);
+
             if (slug != null && !slug.isBlank()) {
-                return domainRepository.findVerifiedSubdomainBySlug(slug.toLowerCase())
-                        .filter(d -> d.getStore() != null && d.getStore().getStatus() == StoreStatus.ACTIVE)
+                log.debug("🔍 Searching for verified subdomain by slug: '{}'", slug.toLowerCase());
+
+                Optional<PublicStoreDTO> fallbackResult = domainRepository.findVerifiedSubdomainBySlug(slug.toLowerCase())
+                        .filter(d -> {
+                            boolean hasStore = d.getStore() != null;
+                            boolean isActive = hasStore && d.getStore().getStatus() == StoreStatus.ACTIVE;
+                            log.debug("📊 Domain check - HasStore: {}, IsActive: {}, IsVerified: {}",
+                                     hasStore, isActive, d.getIsVerified());
+                            return hasStore && isActive;
+                        })
                         .map(domain -> {
                             Store store = domain.getStore();
+                            log.info("✅ Found via slug fallback - Store: {} (ID: {}), Domain: {}, IsVerified: {}",
+                                     store.getName(), store.getId(), domain.getHost(), domain.getIsVerified());
+
                             PublicStoreDTO dto = new PublicStoreDTO();
                             dto.setStoreId(store.getId());
                             dto.setName(store.getName());
@@ -170,9 +199,19 @@ public class DomainService {
                             dto.setStatus(store.getStatus().name());
                             return dto;
                         });
+
+                if (fallbackResult.isPresent()) {
+                    log.info("✅ Returning fallback result");
+                    return fallbackResult;
+                } else {
+                    log.warn("❌ No verified subdomain found for slug: '{}'", slug);
+                }
+            } else {
+                log.warn("⚠️ Extracted slug is null or blank");
             }
         }
 
+        log.warn("❌ No store found for host: '{}' (normalized: '{}')", host, normalized);
         return Optional.empty();
     }
 
