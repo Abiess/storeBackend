@@ -18,7 +18,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate  # ✅ TEMP: none - damit App startet und Flyway V5/V6 ausführen kann
+      ddl-auto: none  # ✅ TEMP: none - damit App startet und Flyway V5/V6 ausführen kann
     show-sql: false  # In Production: false (Performance)
     open-in-view: false  # Verhindert lazy-loading Probleme
     properties:
