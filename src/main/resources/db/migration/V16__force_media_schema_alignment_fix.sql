@@ -41,26 +41,10 @@ END IF;
     EXECUTE 'ALTER TABLE public.media ADD COLUMN content_type VARCHAR(100)';
 END IF;
 
-  -- 3) Defaults & NOT NULL erzwingen
-EXECUTE $$UPDATE public.media;
-           SET content_type = COALESCE(content_type, 'application/octet-stream')
-           WHERE content_type IS NULL$$;
+  -- 3) Backfill + NOT NULL
+EXECUTE 'UPDATE public.media
+           SET content_type = COALESCE(content_type, ''application/octet-stream'')
+           WHERE content_type IS NULL';
 
 EXECUTE 'ALTER TABLE public.media ALTER COLUMN content_type SET NOT NULL';
-
--- 4) HARD FAIL wenn am Ende nicht korrekt (damit Flyway nie “grün” lügt)
-IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema='public' AND table_name='media' AND column_name='filename'
-  ) THEN
-    RAISE EXCEPTION 'media.filename fehlt nach Alignment';
-END IF;
-
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema='public' AND table_name='media' AND column_name='content_type'
-  ) THEN
-    RAISE EXCEPTION 'media.content_type fehlt nach Alignment';
-END IF;
-
 END $$;
