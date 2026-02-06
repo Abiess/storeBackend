@@ -411,7 +411,7 @@ CREATE TABLE IF NOT EXISTS coupons (
     usage_limit_per_customer INTEGER,
     times_used_total INTEGER NOT NULL DEFAULT 0,
     combinable VARCHAR(30) NOT NULL,
-    status VARCHAR(20) NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,  -- ✅ Korrigiert: is_active statt status
     auto_apply BOOLEAN NOT NULL DEFAULT FALSE,
     description VARCHAR(500),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
