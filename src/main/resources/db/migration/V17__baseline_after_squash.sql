@@ -520,6 +520,28 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     );
 
 -- ==================================================================================
+-- SPALTEN-REPARATUR: Benenne timestamp -> logged_at um (falls vorhanden)
+-- ==================================================================================
+DO $$
+BEGIN
+    -- Prüfe ob inventory_logs.timestamp existiert und benenne zu logged_at um
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+        AND table_name = 'inventory_logs'
+        AND column_name = 'timestamp'
+    ) AND NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+        AND table_name = 'inventory_logs'
+        AND column_name = 'logged_at'
+    ) THEN
+        ALTER TABLE inventory_logs RENAME COLUMN timestamp TO logged_at;
+        RAISE NOTICE 'Renamed inventory_logs.timestamp to logged_at';
+    END IF;
+END $$;
+
+-- ==================================================================================
 -- INDIZES - VOLLSTÄNDIG IDEMPOTENT MIT DO-BLOCK
 -- Verhindert "relation already exists" Warnungen bei Re-Runs
 -- ==================================================================================
