@@ -218,7 +218,7 @@ CREATE TABLE IF NOT EXISTS inventory_logs (
                                               reason VARCHAR(50) NOT NULL,
     user_id BIGINT,
     notes TEXT,
-    timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    logged_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_inventory_logs_variant FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE CASCADE,
     CONSTRAINT fk_inventory_logs_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
     );
@@ -702,7 +702,7 @@ CREATE INDEX idx_inventory_logs_variant ON inventory_logs(variant_id);
 END IF;
 
     IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_inventory_logs_timestamp') THEN
-CREATE INDEX idx_inventory_logs_timestamp ON inventory_logs("timestamp");
+CREATE INDEX idx_inventory_logs_timestamp ON inventory_logs(logged_at);
 END IF;
 
     -- Redirect Rules
@@ -1486,7 +1486,7 @@ CREATE INDEX idx_inventory_logs_variant ON inventory_logs(variant_id);
 END IF;
 
     IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_inventory_logs_timestamp') THEN
-CREATE INDEX idx_inventory_logs_timestamp ON inventory_logs("timestamp");
+CREATE INDEX idx_inventory_logs_timestamp ON inventory_logs(logged_at);
 END IF;
 
     -- Redirect Rules

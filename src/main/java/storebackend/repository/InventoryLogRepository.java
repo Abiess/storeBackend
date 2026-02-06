@@ -8,7 +8,6 @@ import java.util.List;
 
 @Repository
 public interface InventoryLogRepository extends JpaRepository<InventoryLog, Long> {
-    List<InventoryLog> findByVariantIdOrderByTimestampDesc(Long variantId);
-    List<InventoryLog> findByVariant_Product_Store_IdOrderByTimestampDesc(Long storeId);
+    List<InventoryLog> findByVariantIdOrderByLoggedAtDesc(Long variantId);
+    List<InventoryLog> findByVariant_Product_Store_IdOrderByLoggedAtDesc(Long storeId);
 }
-

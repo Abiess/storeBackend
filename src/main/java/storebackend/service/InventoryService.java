@@ -19,12 +19,12 @@ public class InventoryService {
 
     @Transactional(readOnly = true)
     public List<InventoryLog> getInventoryLogsByVariant(Long variantId) {
-        return inventoryLogRepository.findByVariantIdOrderByTimestampDesc(variantId);
+        return inventoryLogRepository.findByVariantIdOrderByLoggedAtDesc(variantId);
     }
 
     @Transactional(readOnly = true)
     public List<InventoryLog> getInventoryLogsByStore(Long storeId) {
-        return inventoryLogRepository.findByVariant_Product_Store_IdOrderByTimestampDesc(storeId);
+        return inventoryLogRepository.findByVariant_Product_Store_IdOrderByLoggedAtDesc(storeId);
     }
 
     @Transactional
@@ -51,4 +51,3 @@ public class InventoryService {
         return inventoryLogRepository.save(log);
     }
 }
-

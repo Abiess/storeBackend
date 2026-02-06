@@ -34,12 +34,11 @@ public class InventoryLog {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime timestamp;
+    @Column(name = "logged_at", nullable = false, updatable = false)
+    private LocalDateTime loggedAt;
 
     @PrePersist
     protected void onCreate() {
-        timestamp = LocalDateTime.now();
+        loggedAt = LocalDateTime.now();
     }
 }
-
