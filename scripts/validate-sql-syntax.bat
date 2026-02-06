@@ -1,6 +1,6 @@
 @echo off
 REM SQL Syntax Validator for V17__baseline_after_squash.sql
-REM Checks for common syntax errors
+REM Checks for common syntax errors and errors
 
 setlocal enabledelayedexpansion
 
