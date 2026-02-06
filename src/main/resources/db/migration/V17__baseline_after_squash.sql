@@ -696,10 +696,6 @@ END IF;
 CREATE INDEX idx_theme_store ON store_themes(store_id);
 END IF;
 
-    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_theme_active') THEN
-CREATE INDEX idx_theme_active ON store_themes(store_id, is_active);
-END IF;
-
     -- Inventory Logs
     IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_inventory_logs_variant') THEN
 CREATE INDEX idx_inventory_logs_variant ON inventory_logs(variant_id);
@@ -1484,10 +1480,6 @@ END IF;
 CREATE INDEX idx_theme_store ON store_themes(store_id);
 END IF;
 
-    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_theme_active') THEN
-CREATE INDEX idx_theme_active ON store_themes(store_id, is_active);
-END IF;
-
     -- Inventory Logs
     IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_inventory_logs_variant') THEN
 CREATE INDEX idx_inventory_logs_variant ON inventory_logs(variant_id);
@@ -1516,3 +1508,201 @@ END IF;
 
 END $$;
 
+
+-- =====================
+-- V18: Missing Tables and Coupon Status Fix
+-- =====================
+-- Description: Adds all missing tables that exist as Entities but not in V17 baseline schema
+-- Tables: phone_verifications, seo_assets, seo_settings, structured_data_templates, subscriptions
+-- PLUS: Fixes coupon.is_active -> coupon.status migration
+
+SET search_path TO public;
+
+-- =====================
+-- 1. Phone Verifications
+-- =====================
+CREATE TABLE IF NOT EXISTS phone_verifications (
+    id BIGSERIAL PRIMARY KEY,
+    phone_number VARCHAR(50) NOT NULL,
+    code VARCHAR(10) NOT NULL,
+    store_id BIGINT NOT NULL,
+    verified BOOLEAN NOT NULL DEFAULT FALSE,
+    verified_at TIMESTAMP,
+    attempts INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP NOT NULL,
+    channel VARCHAR(20),
+    CONSTRAINT fk_phone_verifications_store FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_phone_number ON phone_verifications(phone_number);
+CREATE INDEX IF NOT EXISTS idx_phone_created_at ON phone_verifications(created_at);
+CREATE INDEX IF NOT EXISTS idx_phone_expires_at ON phone_verifications(expires_at);
+
+-- =====================
+-- 2. SEO Assets
+-- =====================
+CREATE TABLE IF NOT EXISTS seo_assets (
+    id BIGSERIAL PRIMARY KEY,
+    store_id BIGINT NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    path VARCHAR(500) NOT NULL,
+    size_bytes BIGINT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_seo_assets_store FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_seo_asset_store ON seo_assets(store_id);
+
+-- =====================
+-- 3. SEO Settings
+-- =====================
+CREATE TABLE IF NOT EXISTS seo_settings (
+    id BIGSERIAL PRIMARY KEY,
+    store_id BIGINT NOT NULL UNIQUE,
+    meta_title VARCHAR(255),
+    meta_description VARCHAR(500),
+    meta_keywords VARCHAR(500),
+    og_image_url VARCHAR(1000),
+    twitter_handle VARCHAR(100),
+    robots_txt TEXT,
+    sitemap_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    robots_index BOOLEAN NOT NULL DEFAULT TRUE,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_seo_settings_store FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
+);
+
+-- =====================
+-- 4. Structured Data Templates
+-- =====================
+CREATE TABLE IF NOT EXISTS structured_data_templates (
+    id BIGSERIAL PRIMARY KEY,
+    store_id BIGINT NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    template_json TEXT NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_structured_data_store FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_struct_store_type ON structured_data_templates(store_id, type);
+
+-- =====================
+-- 5. Subscriptions
+-- =====================
+CREATE TABLE IF NOT EXISTS subscriptions (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    plan VARCHAR(50) NOT NULL DEFAULT 'FREE',
+    status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
+    start_date TIMESTAMP NOT NULL,
+    end_date TIMESTAMP,
+    renewal_date TIMESTAMP,
+    payment_method VARCHAR(50),
+    amount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    billing_cycle VARCHAR(20) NOT NULL DEFAULT 'MONTHLY',
+    auto_renew BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP,
+    CONSTRAINT fk_subscriptions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON subscriptions(status);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_renewal ON subscriptions(renewal_date);
+
+-- =====================
+-- 6. FIX: Coupon Status Field (is_active -> status)
+-- =====================
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'coupons' AND column_name = 'status'
+    ) THEN
+        ALTER TABLE coupons ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE';
+        RAISE NOTICE 'Added status column to coupons';
+    END IF;
+END $$;
+
+UPDATE coupons
+SET status = CASE
+    WHEN is_active = TRUE THEN 'ACTIVE'
+    WHEN is_active = FALSE THEN 'INACTIVE'
+    ELSE 'ACTIVE'
+END
+WHERE EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'coupons' AND column_name = 'is_active'
+);
+
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'coupons' AND column_name = 'is_active'
+    ) THEN
+        ALTER TABLE coupons DROP COLUMN is_active;
+        RAISE NOTICE 'Dropped is_active column from coupons';
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'chk_coupon_status' AND conrelid = 'coupons'::regclass
+    ) THEN
+        ALTER TABLE coupons ADD CONSTRAINT chk_coupon_status
+        CHECK (status IN ('ACTIVE', 'INACTIVE', 'EXPIRED', 'SCHEDULED'));
+        RAISE NOTICE 'Added CHECK constraint for coupon status';
+    END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_coupon_status ON coupons(status);
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'coupons' AND column_name = 'description'
+    ) THEN
+        ALTER TABLE coupons ADD COLUMN description VARCHAR(500);
+        RAISE NOTICE 'Added description column to coupons';
+    END IF;
+END $$;
+
+-- =====================
+-- Comments
+-- =====================
+COMMENT ON TABLE phone_verifications IS 'SMS/WhatsApp verification codes for order checkout';
+COMMENT ON TABLE seo_assets IS 'SEO-related assets like OG images, favicons, etc.';
+COMMENT ON TABLE seo_settings IS 'Store-specific SEO metadata and configuration';
+COMMENT ON TABLE structured_data_templates IS 'JSON-LD schema.org templates with Mustache variables';
+COMMENT ON TABLE subscriptions IS 'User subscription/plan management with billing cycles';
+COMMENT ON COLUMN coupons.status IS 'Coupon status: ACTIVE, INACTIVE, EXPIRED, SCHEDULED';
+
+-- =====================
+-- Final Verification
+-- =====================
+DO $$
+DECLARE
+    status_exists BOOLEAN;
+    is_active_exists BOOLEAN;
+BEGIN
+    SELECT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'coupons' AND column_name = 'status'
+    ) INTO status_exists;
+
+    SELECT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'coupons' AND column_name = 'is_active'
+    ) INTO is_active_exists;
+
+    IF status_exists AND NOT is_active_exists THEN
+        RAISE NOTICE '✅ V17 Extended - All tables created and coupon status fixed';
+    ELSE
+        RAISE EXCEPTION 'V17 Extended failed - coupon status migration incomplete: status=% is_active=%', status_exists, is_active_exists;
+    END IF;
+END $$;
