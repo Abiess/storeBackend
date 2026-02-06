@@ -353,12 +353,12 @@ jobs:
             echo "🏥 Warte auf Anwendungsstart (inkl. Flyway Migrationen)..."
             echo "⏱️  Timeout: 240 Sekunden (4 Minuten)"
 
-            MAX_ATTEMPTS=48
+            MAX_ATTEMPTS=8
             SLEEP_TIME=5
 
             for i in $(seq 1 $MAX_ATTEMPTS); do
               ELAPSED=$((i * SLEEP_TIME))
-              echo "⏳ Versuch $i/$MAX_ATTEMPTS (${ELAPSED}s / 240s)..."
+              echo "⏳ Versuch $i/$MAX_ATTEMPTS (${ELAPSED}s / 40s)..."
 
               if curl -f -s http://localhost:8080/actuator/health > /dev/null 2>&1; then
                 echo ""
