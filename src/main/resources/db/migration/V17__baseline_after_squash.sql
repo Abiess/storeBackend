@@ -1310,3 +1310,217 @@ EXECUTE 'UPDATE public.media
 
 EXECUTE 'ALTER TABLE public.media ALTER COLUMN content_type SET NOT NULL';
 END $$;
+
+-- ==================================================================================
+-- INDIZES - VOLLSTÄNDIG IDEMPOTENT MIT DO-BLOCK
+-- Verhindert "relation already exists" Warnungen bei Re-Runs
+-- ==================================================================================
+
+DO $$
+BEGIN
+    -- Stores
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_stores_slug') THEN
+CREATE INDEX idx_stores_slug ON stores(slug);
+END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_stores_owner') THEN
+CREATE INDEX idx_stores_owner ON stores(owner_id);
+END IF;
+
+    -- Domains
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_domains_host') THEN
+CREATE INDEX idx_domains_host ON domains(host);
+END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_domains_store') THEN
+CREATE INDEX idx_domains_store ON domains(store_id);
+END IF;
+
+    -- Categories
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_categories_store') THEN
+CREATE INDEX idx_categories_store ON categories(store_id);
+END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_categories_parent') THEN
+CREATE INDEX idx_categories_parent ON categories(parent_id);
+END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_categories_slug') THEN
+CREATE INDEX idx_categories_slug ON categories(slug);
+END IF;
+
+    -- Products
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_products_store') THEN
+CREATE INDEX idx_products_store ON products(store_id);
+END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_products_category') THEN
+CREATE INDEX idx_products_category ON products(category_id);
+END IF;
+
+    -- Product Media
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_product_media_product') THEN
+CREATE INDEX idx_product_media_product ON product_media(product_id);
+END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_product_media_media') THEN
+CREATE INDEX idx_product_media_media ON product_media(media_id);
+END IF;
+
+    -- Carts
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_carts_session_id') THEN
+CREATE INDEX idx_carts_session_id ON carts(session_id);
+END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_carts_user_id') THEN
+CREATE INDEX idx_carts_user_id ON carts(user_id);
+END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_carts_store_id') THEN
+CREATE INDEX idx_carts_store_id ON carts(store_id);
+END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_carts_expires_at') THEN
+CREATE INDEX idx_carts_expires_at ON carts(expires_at);
+END IF;
+
+    -- Cart Items
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_cart_items_cart_id') THEN
+CREATE INDEX idx_cart_items_cart_id ON cart_items(cart_id);
+END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_cart_items_variant_id') THEN
+CREATE INDEX idx_cart_items_variant_id ON cart_items(variant_id);
+END IF;
+
+    -- Orders
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_orders_store') THEN
+CREATE INDEX idx_orders_store ON orders(store_id);
+END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_orders_customer') THEN
+CREATE INDEX idx_orders_customer ON orders(customer_id);
+END IF;
+
+    -- User Roles
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_user_roles_user') THEN
+CREATE INDEX idx_user_roles_user ON user_roles(user_id);
+END IF;
+
+    -- Customer Profiles
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_customer_profiles_user') THEN
+CREATE INDEX idx_customer_profiles_user ON customer_profiles(user_id);
+END IF;
+
+    -- Customer Addresses
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_customer_addresses_customer') THEN
+CREATE INDEX idx_customer_addresses_customer ON customer_addresses(customer_id);
+END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_customer_addresses_default') THEN
+CREATE INDEX idx_customer_addresses_default ON customer_addresses(customer_id, is_default);
+END IF;
+
+    -- Wishlists
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_wishlists_customer') THEN
+CREATE INDEX idx_wishlists_customer ON wishlists(customer_id);
+END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_wishlists_store') THEN
+CREATE INDEX idx_wishlists_store ON wishlists(store_id);
+END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_wishlists_default') THEN
+CREATE INDEX idx_wishlists_default ON wishlists(customer_id, is_default);
+END IF;
+
+    -- Wishlist Items
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_wishlist_items_wishlist') THEN
+CREATE INDEX idx_wishlist_items_wishlist ON wishlist_items(wishlist_id);
+END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_wishlist_items_product') THEN
+CREATE INDEX idx_wishlist_items_product ON wishlist_items(product_id);
+END IF;
+
+    -- Saved Carts
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_saved_carts_customer') THEN
+CREATE INDEX idx_saved_carts_customer ON saved_carts(customer_id);
+END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_saved_carts_store') THEN
+CREATE INDEX idx_saved_carts_store ON saved_carts(store_id);
+END IF;
+
+    -- Saved Cart Items
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_saved_cart_items_cart') THEN
+CREATE INDEX idx_saved_cart_items_cart ON saved_cart_items(saved_cart_id);
+END IF;
+
+    -- Coupons
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_coupon_store') THEN
+CREATE INDEX idx_coupon_store ON coupons(store_id);
+END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_coupon_code') THEN
+CREATE INDEX idx_coupon_code ON coupons(store_id, code);  -- ✅ Verwendet 'code' statt 'code_normalized'
+END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_coupon_active') THEN
+CREATE INDEX idx_coupon_active ON coupons(is_active);  -- ✅ Korrigiert: is_active statt status
+END IF;
+
+    -- Coupon Redemptions
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_redemption_store') THEN
+CREATE INDEX idx_redemption_store ON coupon_redemptions(store_id);
+END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_redemption_coupon') THEN
+CREATE INDEX idx_redemption_coupon ON coupon_redemptions(coupon_id);
+END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_redemption_customer') THEN
+CREATE INDEX idx_redemption_customer ON coupon_redemptions(customer_id);
+END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_redemption_order') THEN
+CREATE UNIQUE INDEX idx_redemption_order ON coupon_redemptions(order_id);
+END IF;
+
+    -- Store Themes
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_theme_store') THEN
+CREATE INDEX idx_theme_store ON store_themes(store_id);
+END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_theme_active') THEN
+CREATE INDEX idx_theme_active ON store_themes(store_id, is_active);
+END IF;
+
+    -- Inventory Logs
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_inventory_logs_variant') THEN
+CREATE INDEX idx_inventory_logs_variant ON inventory_logs(variant_id);
+END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_inventory_logs_timestamp') THEN
+CREATE INDEX idx_inventory_logs_timestamp ON inventory_logs(timestamp);
+END IF;
+
+    -- Redirect Rules
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_redirect_store') THEN
+CREATE INDEX idx_redirect_store ON redirect_rules(store_id);
+END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_redirect_domain') THEN
+CREATE INDEX idx_redirect_domain ON redirect_rules(domain_id);
+END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_redirect_active') THEN
+CREATE INDEX idx_redirect_active ON redirect_rules(is_active);
+END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_redirect_priority') THEN
+CREATE INDEX idx_redirect_priority ON redirect_rules(priority);
+END IF;
+
+END $$;
+

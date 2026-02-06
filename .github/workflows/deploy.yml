@@ -80,7 +80,8 @@ jobs:
             scripts/install-minio.sh \
             scripts/fix-db-password.sh \
             scripts/check-server-error.sh \
-            scripts/diagnose-v17-migration.sh ; do
+            scripts/diagnose-v17-migration.sh \
+            scripts/drop-coupon-tables.sh ; do
             if [ -f "$f" ]; then
               echo "✅ $f"
             else
@@ -98,7 +99,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          source: "scripts/deploy.sh,scripts/diagnose-database.sh,scripts/flyway-helper.sh,scripts/setup-postgres-user.sh,scripts/install-minio.sh,scripts/fix-db-password.sh,scripts/check-server-error.sh,scripts/diagnose-v17-migration.sh"
+          source: "scripts/deploy.sh,scripts/diagnose-database.sh,scripts/flyway-helper.sh,scripts/setup-postgres-user.sh,scripts/install-minio.sh,scripts/fix-db-password.sh,scripts/check-server-error.sh,scripts/diagnose-v17-migration.sh,scripts/drop-coupon-tables.sh"
           target: "/tmp/"
           strip_components: 1
 
@@ -140,7 +141,7 @@ jobs:
             fi
 
             # Move Flyway-based scripts
-            for f in diagnose-database.sh flyway-helper.sh setup-postgres-user.sh install-minio.sh fix-db-password.sh check-server-error.sh diagnose-v17-migration.sh ; do
+            for f in diagnose-database.sh flyway-helper.sh setup-postgres-user.sh install-minio.sh fix-db-password.sh check-server-error.sh diagnose-v17-migration.sh drop-coupon-tables.sh ; do
               if [ -f "/tmp/$f" ]; then
                 sudo mv "/tmp/$f" "/opt/storebackend/scripts/$f"
                 echo "✅ Moved $f"
@@ -159,6 +160,7 @@ jobs:
             sudo chmod +x /opt/storebackend/scripts/fix-db-password.sh || true
             sudo chmod +x /opt/storebackend/scripts/check-server-error.sh || true
             sudo chmod +x /opt/storebackend/scripts/diagnose-v17-migration.sh || true
+            sudo chmod +x /opt/storebackend/scripts/drop-coupon-tables.sh || true
 
 
             echo "✅ VPS environment ready (Flyway-based)"
