@@ -674,8 +674,8 @@ END IF;
 CREATE INDEX idx_coupon_code ON coupons(store_id, code);  -- ✅ Verwendet 'code' statt 'code_normalized'
 END IF;
 
-    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_coupon_status') THEN
-CREATE INDEX idx_coupon_status ON coupons(status);
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_coupon_active') THEN
+CREATE INDEX idx_coupon_active ON coupons(is_active);  -- ✅ Korrigiert: is_active statt status
 END IF;
 
     -- Coupon Redemptions
