@@ -671,11 +671,7 @@ CREATE INDEX idx_coupon_store ON coupons(store_id);
 END IF;
 
     IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_coupon_code') THEN
-CREATE INDEX idx_coupon_code ON coupons(store_id, code);  -- ✅ Verwendet 'code' statt 'code_normalized'
-END IF;
-
-    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_coupon_active') THEN
-CREATE INDEX idx_coupon_active ON coupons(is_active);  -- ✅ Korrigiert: is_active statt status
+CREATE INDEX idx_coupon_code ON coupons(store_id, code);
 END IF;
 
     -- Coupon Redemptions
@@ -1463,11 +1459,7 @@ CREATE INDEX idx_coupon_store ON coupons(store_id);
 END IF;
 
     IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_coupon_code') THEN
-CREATE INDEX idx_coupon_code ON coupons(store_id, code);  -- ✅ Verwendet 'code' statt 'code_normalized'
-END IF;
-
-    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_coupon_active') THEN
-CREATE INDEX idx_coupon_active ON coupons(is_active);  -- ✅ Korrigiert: is_active statt status
+CREATE INDEX idx_coupon_code ON coupons(store_id, code);
 END IF;
 
     -- Coupon Redemptions
