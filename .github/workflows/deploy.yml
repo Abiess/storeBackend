@@ -78,7 +78,9 @@ jobs:
             scripts/flyway-helper.sh \
             scripts/setup-postgres-user.sh \
             scripts/install-minio.sh \
-            scripts/fix-db-password.sh ; do
+            scripts/fix-db-password.sh \
+            scripts/check-server-error.sh \
+            scripts/diagnose-v17-migration.sh ; do
             if [ -f "$f" ]; then
               echo "✅ $f"
             else
@@ -96,7 +98,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          source: "scripts/deploy.sh,scripts/diagnose-database.sh,scripts/flyway-helper.sh,scripts/setup-postgres-user.sh,scripts/install-minio.sh,scripts/fix-db-password.sh"
+          source: "scripts/deploy.sh,scripts/diagnose-database.sh,scripts/flyway-helper.sh,scripts/setup-postgres-user.sh,scripts/install-minio.sh,scripts/fix-db-password.sh,scripts/check-server-error.sh,scripts/diagnose-v17-migration.sh"
           target: "/tmp/"
           strip_components: 1
 
@@ -138,7 +140,7 @@ jobs:
             fi
 
             # Move Flyway-based scripts
-            for f in diagnose-database.sh flyway-helper.sh setup-postgres-user.sh install-minio.sh fix-db-password.sh ; do
+            for f in diagnose-database.sh flyway-helper.sh setup-postgres-user.sh install-minio.sh fix-db-password.sh check-server-error.sh diagnose-v17-migration.sh ; do
               if [ -f "/tmp/$f" ]; then
                 sudo mv "/tmp/$f" "/opt/storebackend/scripts/$f"
                 echo "✅ Moved $f"
@@ -155,6 +157,8 @@ jobs:
             sudo chmod +x /opt/storebackend/scripts/setup-postgres-user.sh || true
             sudo chmod +x /opt/storebackend/scripts/install-minio.sh || true
             sudo chmod +x /opt/storebackend/scripts/fix-db-password.sh || true
+            sudo chmod +x /opt/storebackend/scripts/check-server-error.sh || true
+            sudo chmod +x /opt/storebackend/scripts/diagnose-v17-migration.sh || true
 
 
             echo "✅ VPS environment ready (Flyway-based)"
@@ -379,6 +383,18 @@ jobs:
             echo "❌ Application nicht erreichbar nach 240 Sekunden"
             echo ""
             echo "═══════════════════════════════════════════════════════════"
+            echo "🔍 RUNNING AUTOMATIC DIAGNOSTICS"
+            echo "═══════════════════════════════════════════════════════════"
+            echo ""
+            echo "📋 1. Running check-server-error.sh..."
+            echo "───────────────────────────────────────────────────────────"
+            /opt/storebackend/scripts/check-server-error.sh || true
+            echo ""
+            echo "📋 2. Running diagnose-v17-migration.sh..."
+            echo "───────────────────────────────────────────────────────────"
+            /opt/storebackend/scripts/diagnose-v17-migration.sh || true
+            echo ""
+            echo "═══════════════════════════════════════════════════════════"
             echo "📋 SYSTEMD STATUS"
             echo "═══════════════════════════════════════════════════════════"
             sudo systemctl status storebackend --no-pager --lines=50 || true
@@ -391,7 +407,7 @@ jobs:
             echo "═══════════════════════════════════════════════════════════"
             echo "💡 TROUBLESHOOTING TIPPS"
             echo "═══════════════════════════════════════════════════════════"
-            echo "1. Prüfe Flyway-Migration-Logs auf Fehler"
+            echo "1. Prüfe Flyway-Migration-Logs auf Fehler (siehe oben)"
             echo "2. Prüfe DB-Verbindung: sudo /opt/storebackend/scripts/diagnose-database.sh"
             echo "3. Prüfe DB-Rechte: sudo /opt/storebackend/scripts/fix-db-password.sh"
             echo "4. Prüfe MinIO Status: sudo systemctl status minio"
