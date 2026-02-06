@@ -1044,8 +1044,7 @@ BEGIN
 ELSE
         RAISE NOTICE 'V3: User storeapp does not exist yet - skipping (will be handled by deployment)';
 END IF;
-END
-$$;
+END $$;
 
 -- HINWEIS: Vollständige Permissions (inkl. DEFAULT PRIVILEGES) werden von
 -- fix-db-password.sh gesetzt, welches VOR diesem Flyway-Lauf ausgeführt wird!
