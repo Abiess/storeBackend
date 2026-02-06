@@ -207,6 +207,20 @@ jobs:
 
             echo "✅ PostgreSQL ready - Flyway will handle schema migrations"
 
+      - name: 🗑️ Drop Old Coupon Tables (Fresh Start)
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            set -e
+            echo "🗑️ Dropping old coupon tables for fresh V17 migration..."
+            cd /opt/storebackend
+            sudo ./scripts/drop-coupon-tables.sh || echo "⚠️ Drop script failed or tables don't exist - continuing anyway"
+            echo "✅ Ready for fresh V17 migration"
+
       - name: 🔄 Execute Deployment
         uses: appleboy/ssh-action@master
         env:
