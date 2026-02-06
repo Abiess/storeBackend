@@ -43,11 +43,11 @@ spring:
     schemas: public
     default-schema: public
 
-    # Validierung & Sicherheit
-    validate-on-migrate: true
+    # Validierung deaktiviert für Squash
+    validate-on-migrate: false  # ✅ Ignoriert fehlende V2-V16
     out-of-order: false
     ignore-missing-migrations: true  # ✅ Ignoriert fehlende V2-V16 (nur V17 im Classpath)
-    ignore-ignored-migrations: false
+    ignore-ignored-migrations: true
     ignore-future-migrations: false
 
     # Clean DEAKTIVIERT (löscht sonst alle Daten!)

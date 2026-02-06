@@ -48,18 +48,18 @@ spring:
     user: ${FLYWAY_USER:storeapp}
     password: ${FLYWAY_PASSWORD:${SPRING_DATASOURCE_PASSWORD:postgres}}
 
-    # Validierung & Sicherheit
-    validate-on-migrate: true
+    # WICHTIG: Validierung deaktivieren (temporär für Squash-Migration)
+    validate-on-migrate: false  # ✅ Ignoriert fehlende V2-V16
     out-of-order: false
     ignore-missing-migrations: true  # ✅ WICHTIG: Ignoriert fehlende V2-V16 (nur V17 im Classpath)
-    ignore-ignored-migrations: false
+    ignore-ignored-migrations: true  # ✅ Ignoriert gelöschte Migrationen
     ignore-future-migrations: false
 
     # Clean DEAKTIVIERT
     clean-disabled: true
 
-    # Repair NICHT mehr nötig (kein Checksum-Konflikt mehr)
-    repair-on-migrate: ${FLYWAY_REPAIR_ON_MIGRATE:false}
+    # Repair aktiviert zum Markieren gelöschter Migrationen
+    repair-on-migrate: ${FLYWAY_REPAIR_ON_MIGRATE:true}
 
     create-schemas: false
 
