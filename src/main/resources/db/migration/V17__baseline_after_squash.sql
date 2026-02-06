@@ -10,7 +10,6 @@ SET search_path TO public;
 -- Flyway Migration V1: Initial Schema
 -- Erstellt alle benötigten Tabellen für das Store Backend
 -- Optimiert für PostgreSQL - VOLLSTÄNDIG IDEMPOTENT
-
 -- Explizit public Schema setzen
 SET search_path TO public;
 
