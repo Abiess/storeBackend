@@ -672,7 +672,7 @@ CREATE INDEX idx_coupon_store ON coupons(store_id);
 END IF;
 
     IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_coupon_code') THEN
-CREATE INDEX idx_coupon_code ON coupons(store_id, code_normalized);
+CREATE INDEX idx_coupon_code ON coupons(store_id, code);  -- ✅ Verwendet 'code' statt 'code_normalized'
 END IF;
 
     IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_coupon_status') THEN
