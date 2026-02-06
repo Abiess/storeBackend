@@ -206,22 +206,20 @@ jobs:
         env:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          FLYWAY_BASELINE_ON_MIGRATE: "false"
+          FLYWAY_BASELINE_ON_MIGRATE: "true"   # ✅ Für ersten Deployment nach Squash
           FLYWAY_REPAIR_ON_MIGRATE: "false"
-          RESET_DATABASE: "true"  # ✅ Für ersten Deployment nach Squash - danach auf "false" setzen!
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          envs: DB_PASSWORD,JWT_SECRET,FLYWAY_BASELINE_ON_MIGRATE,FLYWAY_REPAIR_ON_MIGRATE,RESET_DATABASE
+          envs: DB_PASSWORD,JWT_SECRET,FLYWAY_BASELINE_ON_MIGRATE,FLYWAY_REPAIR_ON_MIGRATE
           script: |
             set -e
             export DB_PASSWORD="${DB_PASSWORD}"
             export JWT_SECRET="${JWT_SECRET}"
             export FLYWAY_BASELINE_ON_MIGRATE="${FLYWAY_BASELINE_ON_MIGRATE}"
             export FLYWAY_REPAIR_ON_MIGRATE="${FLYWAY_REPAIR_ON_MIGRATE}"
-            export RESET_DATABASE="${RESET_DATABASE}"
 
             cd /opt/storebackend
             test -x ./deploy.sh
