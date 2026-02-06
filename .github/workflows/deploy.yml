@@ -207,36 +207,143 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           FLYWAY_BASELINE_ON_MIGRATE: "false"
-          FLYWAY_REPAIR_ON_MIGRATE: "false"  # ✅ Zurück zu false - Repair wurde bereits ausgeführt
+          FLYWAY_REPAIR_ON_MIGRATE: "false"
+          RESET_DATABASE: "true"  # ✅ Für ersten Deployment nach Squash - danach auf "false" setzen!
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          envs: DB_PASSWORD,JWT_SECRET,FLYWAY_BASELINE_ON_MIGRATE,FLYWAY_REPAIR_ON_MIGRATE
+          envs: DB_PASSWORD,JWT_SECRET,FLYWAY_BASELINE_ON_MIGRATE,FLYWAY_REPAIR_ON_MIGRATE,RESET_DATABASE
           script: |
             set -e
             export DB_PASSWORD="${DB_PASSWORD}"
             export JWT_SECRET="${JWT_SECRET}"
             export FLYWAY_BASELINE_ON_MIGRATE="${FLYWAY_BASELINE_ON_MIGRATE}"
             export FLYWAY_REPAIR_ON_MIGRATE="${FLYWAY_REPAIR_ON_MIGRATE}"
+            export RESET_DATABASE="${RESET_DATABASE}"
 
             cd /opt/storebackend
             test -x ./deploy.sh
             ./deploy.sh
-            echo "📌 Flyway/media logs (last 500 lines):"
-            sudo journalctl -u storebackend -n 500 --no-pager \
-            | grep -iE "flyway|migrat|schema_history|validate|baseline|content_type|media" || true
-
-            echo "📌 DB content_type check:"
+            
+            echo ""
+            echo "═══════════════════════════════════════════════════════════"
+            echo "📊 DATABASE STATUS AFTER DEPLOYMENT"
+            echo "═══════════════════════════════════════════════════════════"
+            
+            echo ""
+            echo "📋 1. Flyway Migration History:"
+            echo "───────────────────────────────────────────────────────────"
             sudo -u postgres psql -d storedb -c "
-            SELECT
-            COUNT(*) AS total,
-            COUNT(*) FILTER (WHERE content_type IS NULL) AS nulls,
-            COUNT(*) FILTER (WHERE content_type = 'application/octet-stream') AS octet_stream
-            FROM public.media;" || true
-
-
+            SELECT 
+              installed_rank AS rank,
+              version,
+              description,
+              type,
+              script,
+              installed_on,
+              execution_time AS exec_time_ms,
+              success
+            FROM flyway_schema_history 
+            ORDER BY installed_rank;" || echo "⚠️  flyway_schema_history table not found"
+            
+            echo ""
+            echo "📋 2. All Tables in Database:"
+            echo "───────────────────────────────────────────────────────────"
+            sudo -u postgres psql -d storedb -c "
+            SELECT 
+              schemaname,
+              tablename,
+              pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size,
+              (SELECT COUNT(*) FROM information_schema.columns 
+               WHERE table_schema = schemaname AND table_name = tablename) AS column_count
+            FROM pg_tables 
+            WHERE schemaname = 'public' 
+            ORDER BY tablename;" || echo "⚠️  Could not list tables"
+            
+            echo ""
+            echo "📋 3. Media Table Structure (wichtig für content_type):"
+            echo "───────────────────────────────────────────────────────────"
+            sudo -u postgres psql -d storedb -c "
+            SELECT 
+              column_name,
+              data_type,
+              character_maximum_length,
+              is_nullable,
+              column_default
+            FROM information_schema.columns 
+            WHERE table_name = 'media' 
+            ORDER BY ordinal_position;" || echo "⚠️  Media table not found"
+            
+            echo ""
+            echo "📋 4. Store Domains Table Structure:"
+            echo "───────────────────────────────────────────────────────────"
+            sudo -u postgres psql -d storedb -c "
+            SELECT 
+              column_name,
+              data_type,
+              character_maximum_length,
+              is_nullable,
+              column_default
+            FROM information_schema.columns 
+            WHERE table_name = 'store_domains' 
+            ORDER BY ordinal_position;" || echo "⚠️  Store_domains table not found"
+            
+            echo ""
+            echo "📋 5. Users Table Structure:"
+            echo "───────────────────────────────────────────────────────────"
+            sudo -u postgres psql -d storedb -c "
+            SELECT 
+              column_name,
+              data_type,
+              is_nullable
+            FROM information_schema.columns 
+            WHERE table_name = 'users' 
+            ORDER BY ordinal_position;" || echo "⚠️  Users table not found"
+            
+            echo ""
+            echo "📋 6. Stores Table Structure:"
+            echo "───────────────────────────────────────────────────────────"
+            sudo -u postgres psql -d storedb -c "
+            SELECT 
+              column_name,
+              data_type,
+              is_nullable
+            FROM information_schema.columns 
+            WHERE table_name = 'stores' 
+            ORDER BY ordinal_position;" || echo "⚠️  Stores table not found"
+            
+            echo ""
+            echo "📋 7. Row Counts (should be empty after fresh migration):"
+            echo "───────────────────────────────────────────────────────────"
+            for table in users stores products categories orders order_items cart_items media store_domains; do
+              count=$(sudo -u postgres psql -d storedb -t -c "SELECT COUNT(*) FROM $table;" 2>/dev/null | xargs || echo "N/A")
+              printf "%-20s : %s rows\n" "$table" "$count"
+            done
+            
+            echo ""
+            echo "📋 8. Flyway & Migration Logs from Application:"
+            echo "───────────────────────────────────────────────────────────"
+            sudo journalctl -u storebackend -n 500 --no-pager \
+            | grep -iE "flyway|migrat|schema_history|validate|baseline|V1__initial" || echo "No Flyway logs found"
+            
+            echo ""
+            echo "📋 9. Content-Type Column Check (should exist):"
+            echo "───────────────────────────────────────────────────────────"
+            sudo -u postgres psql -d storedb -c "
+            SELECT 
+              EXISTS (
+                SELECT 1 
+                FROM information_schema.columns 
+                WHERE table_name = 'media' AND column_name = 'content_type'
+              ) AS content_type_exists;" || echo "⚠️  Could not check content_type"
+            
+            echo ""
+            echo "═══════════════════════════════════════════════════════════"
+            echo "✅ DATABASE STATUS CHECK COMPLETE"
+            echo "═══════════════════════════════════════════════════════════"
+            echo ""
 
       - name: 🏥 Final Health Check
         uses: appleboy/ssh-action@master
