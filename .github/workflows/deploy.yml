@@ -206,20 +206,18 @@ jobs:
         env:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          FLYWAY_BASELINE_ON_MIGRATE: "true"
-          FLYWAY_REPAIR_ON_MIGRATE: "true"   # ✅ WICHTIG: Für Checksum-Update nach Squash
+          FLYWAY_BASELINE_ON_MIGRATE: "true"   # ✅ Baseline bei V16, dann V17 ausführen
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          envs: DB_PASSWORD,JWT_SECRET,FLYWAY_BASELINE_ON_MIGRATE,FLYWAY_REPAIR_ON_MIGRATE
+          envs: DB_PASSWORD,JWT_SECRET,FLYWAY_BASELINE_ON_MIGRATE
           script: |
             set -e
             export DB_PASSWORD="${DB_PASSWORD}"
             export JWT_SECRET="${JWT_SECRET}"
             export FLYWAY_BASELINE_ON_MIGRATE="${FLYWAY_BASELINE_ON_MIGRATE}"
-            export FLYWAY_REPAIR_ON_MIGRATE="${FLYWAY_REPAIR_ON_MIGRATE}"
 
             cd /opt/storebackend
             test -x ./deploy.sh

@@ -33,12 +33,12 @@ spring:
         order_updates: true
 
   # ==========================================
-  # Flyway Migrations - AFTER SQUASH
+  # Flyway Migrations - AFTER SQUASH (V17 Baseline)
   # ==========================================
   flyway:
     enabled: true
-    baseline-on-migrate: true  # ✅ Für erste Migration nach Squash
-    baseline-version: 0
+    baseline-on-migrate: true  # ✅ Für erste Migration mit V17 Baseline
+    baseline-version: 16  # ✅ Baseline bei V16 (V1-V16 existieren bereits in DB)
     locations: classpath:db/migration
     schemas: public
     default-schema: public
@@ -46,7 +46,7 @@ spring:
     # Validierung & Sicherheit
     validate-on-migrate: true
     out-of-order: false
-    ignore-missing-migrations: false
+    ignore-missing-migrations: true  # ✅ Ignoriert fehlende V2-V16 (nur V17 im Classpath)
     ignore-ignored-migrations: false
     ignore-future-migrations: false
 
