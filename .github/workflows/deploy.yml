@@ -206,8 +206,8 @@ jobs:
         env:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          FLYWAY_BASELINE_ON_MIGRATE: "true"   # ✅ Für ersten Deployment nach Squash
-          FLYWAY_REPAIR_ON_MIGRATE: "false"
+          FLYWAY_BASELINE_ON_MIGRATE: "true"
+          FLYWAY_REPAIR_ON_MIGRATE: "true"   # ✅ WICHTIG: Für Checksum-Update nach Squash
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
