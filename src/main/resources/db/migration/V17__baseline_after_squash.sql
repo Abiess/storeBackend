@@ -702,7 +702,7 @@ CREATE INDEX idx_inventory_logs_variant ON inventory_logs(variant_id);
 END IF;
 
     IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_inventory_logs_timestamp') THEN
-CREATE INDEX idx_inventory_logs_timestamp ON inventory_logs(timestamp);
+CREATE INDEX idx_inventory_logs_timestamp ON inventory_logs("timestamp");
 END IF;
 
     -- Redirect Rules
@@ -1486,7 +1486,7 @@ CREATE INDEX idx_inventory_logs_variant ON inventory_logs(variant_id);
 END IF;
 
     IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_inventory_logs_timestamp') THEN
-CREATE INDEX idx_inventory_logs_timestamp ON inventory_logs(timestamp);
+CREATE INDEX idx_inventory_logs_timestamp ON inventory_logs("timestamp");
 END IF;
 
     -- Redirect Rules
