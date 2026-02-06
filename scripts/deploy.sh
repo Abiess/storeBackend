@@ -14,6 +14,12 @@ print_success() {
     echo "✅ $1"
 }
 
+# ==========================================
+# OPTIONAL: Database Reset (Fresh Start)
+# ==========================================
+# Set RESET_DATABASE=true for complete fresh start
+RESET_DATABASE="${RESET_DATABASE:-false}"
+
 APP_USER="storebackend"
 SERVICE_NAME="storebackend"
 
@@ -36,6 +42,21 @@ SLEEP_SECONDS=2
 
 echo "================ Store Backend Deployment (production) ================"
 echo "🚀 Starting deployment with Flyway migrations..."
+
+# Prüfe auf Database Reset Flag
+if [ "$RESET_DATABASE" = "true" ]; then
+    echo "🔥 RESET_DATABASE=true detected - Performing complete database reset..."
+    echo "⚠️  This will DELETE all data and start fresh with V1__initial_schema.sql"
+
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    if [ -f "$SCRIPT_DIR/reset-database-fresh.sh" ]; then
+        # Auto-confirm für CI/CD
+        echo "DELETE-ALL" | bash "$SCRIPT_DIR/reset-database-fresh.sh"
+    else
+        print_error "reset-database-fresh.sh not found!"
+        exit 1
+    fi
+fi
 
 echo "⏹️  Stopping old application (systemd service: $SERVICE_NAME)..."
 if sudo systemctl list-unit-files | grep -q "^${SERVICE_NAME}.service"; then

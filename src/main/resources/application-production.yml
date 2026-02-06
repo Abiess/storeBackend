@@ -18,7 +18,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: none  # ✅ TEMP: none - damit App startet und Flyway V5/V6 ausführen kann
+      ddl-auto: validate  # ✅ Nach Squash: validate (Schema kommt von Flyway)
     show-sql: false  # In Production: false (Performance)
     open-in-view: false  # Verhindert lazy-loading Probleme
     properties:
@@ -31,42 +31,36 @@ spring:
         order_updates: true
 
   # ==========================================
-  # Flyway Migrations - PRODUCTION MODE
+  # Flyway Migrations - AFTER SQUASH
   # ==========================================
   flyway:
     enabled: true
 
-    # KRITISCH: baseline-on-migrate nur beim ERSTEN Deployment!
-    # Danach auf false setzen oder über ENV steuern
-    baseline-on-migrate: ${FLYWAY_BASELINE_ON_MIGRATE:false}
+    # Baseline für fresh start nach Squash
+    baseline-on-migrate: ${FLYWAY_BASELINE_ON_MIGRATE:true}
     baseline-version: 0
-    defer-datasource-initialization: false
 
     locations: classpath:db/migration
     schemas: public
     default-schema: public
 
-    # User für Migrationen (sollte genug Rechte haben)
+    # User für Migrationen
     user: ${FLYWAY_USER:storeapp}
     password: ${FLYWAY_PASSWORD:${SPRING_DATASOURCE_PASSWORD:postgres}}
 
-    # KRITISCH: Validierung & Sicherheit
-    validate-on-migrate: true           # ✅ Checksums prüfen bei jedem Start
-    out-of-order: false                  # ✅ TEMP: true - erlaubt V5/V6 nachträglich
-    ignore-missing-migrations: false    # ✅ Fehlende Migrations = Fehler
-    ignore-ignored-migrations: false    # ✅ Ignorierte Migrations = Fehler
-    ignore-future-migrations: true      # ✅ TEMP: true - ignoriert Warnungen für V5/V6
+    # Validierung & Sicherheit
+    validate-on-migrate: true
+    out-of-order: false
+    ignore-missing-migrations: false
+    ignore-ignored-migrations: false
+    ignore-future-migrations: false
 
-    # Clean DEAKTIVIERT (würde alle Daten löschen!)
-    clean-disabled: true                # ✅ KRITISCH für Production!
+    # Clean DEAKTIVIERT
+    clean-disabled: true
 
-    # Repair-Mode (für Checksum-Fixes, über ENV steuerbar)
-    # Setze FLYWAY_REPAIR_ON_MIGRATE=true für einmaligen Repair
+    # Repair bei Bedarf über ENV
     repair-on-migrate: ${FLYWAY_REPAIR_ON_MIGRATE:false}
 
-    # FIX: Bean-Dependency-Konflikt vermeiden
-    # Flyway soll NACH JPA initialisieren (nur für Validation)
-    # Bei ddl-auto=validate ist das sicher
     create-schemas: false
 
   servlet:

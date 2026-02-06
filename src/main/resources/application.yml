@@ -33,28 +33,25 @@ spring:
         order_updates: true
 
   # ==========================================
-  # Flyway Migrations - PRODUCTION SAFE
+  # Flyway Migrations - AFTER SQUASH
   # ==========================================
   flyway:
     enabled: true
-    baseline-on-migrate: true  # ✅ Für existierende DBs (nur beim ersten Mal)
+    baseline-on-migrate: true  # ✅ Für erste Migration nach Squash
     baseline-version: 0
     locations: classpath:db/migration
     schemas: public
     default-schema: public
 
-    # KRITISCH: Validierung & Sicherheit
-    validate-on-migrate: true           # ✅ Checksums prüfen bei jedem Start
-    out-of-order: false                 # ✅ Reihenfolge strikt erzwingen
-    ignore-missing-migrations: false    # ✅ Fehlende Migrations = Fehler
-    ignore-ignored-migrations: false    # ✅ Ignorierte Migrations = Fehler
-    ignore-future-migrations: false     # ✅ Neuere Versionen = Fehler
+    # Validierung & Sicherheit
+    validate-on-migrate: true
+    out-of-order: false
+    ignore-missing-migrations: false
+    ignore-ignored-migrations: false
+    ignore-future-migrations: false
 
     # Clean DEAKTIVIERT (löscht sonst alle Daten!)
-    clean-disabled: true                # ✅ KRITISCH für Production!
-
-    # Repair-Mode (kann über ENV aktiviert werden)
-    # spring.flyway.repair-on-migrate=false (default)
+    clean-disabled: true
 
   servlet:
     multipart:
