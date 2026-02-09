@@ -194,7 +194,7 @@ CREATE TABLE IF NOT EXISTS product_options (
 CREATE TABLE IF NOT EXISTS product_option_values (
                                                      id BIGSERIAL PRIMARY KEY,
                                                      option_id BIGINT NOT NULL,
-                                                     value VARCHAR(100) NOT NULL,
+                                                     "value" VARCHAR(100) NOT NULL,
     display_order INTEGER NOT NULL DEFAULT 0,
     CONSTRAINT fk_product_option_values_option FOREIGN KEY (option_id) REFERENCES product_options(id) ON DELETE CASCADE
     );

@@ -27,15 +27,15 @@ public class CartItem {
     private ProductVariant variant;
 
     @Column(nullable = false)
-    private Integer quantity;
+    private Integer quantity = 1;
 
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal priceSnapshot; // Preis zum Zeitpunkt des Hinzufügens
+    @Column(name = "price_snapshot", nullable = false, precision = 10, scale = 2)
+    private BigDecimal priceSnapshot;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(nullable = false)
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
     @PrePersist
@@ -49,7 +49,7 @@ public class CartItem {
         updatedAt = LocalDateTime.now();
     }
 
-    // Explizite Getter für Lombok-Kompatibilität
+    // Explizite Getter/Setter für Lombok-Kompatibilität
     public Long getId() {
         return id;
     }
@@ -84,5 +84,13 @@ public class CartItem {
 
     public void setPriceSnapshot(BigDecimal priceSnapshot) {
         this.priceSnapshot = priceSnapshot;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
     }
 }

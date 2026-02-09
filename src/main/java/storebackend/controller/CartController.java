@@ -3,13 +3,12 @@ package storebackend.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import storebackend.entity.*;
 import storebackend.repository.*;
 import storebackend.service.CartService;
 
+import java.math.BigDecimal;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -142,11 +141,44 @@ public class CartController {
         response.put("id", cart.getId());
         response.put("sessionId", cart.getSessionId());
         response.put("storeId", cart.getStore().getId());
-        response.put("items", items);
+
+        // Konvertiere CartItems in DTOs mit allen notwendigen Feldern
+        List<Map<String, Object>> itemDtos = items.stream().map(item -> {
+            Map<String, Object> dto = new HashMap<>();
+            dto.put("id", item.getId());
+            dto.put("variantId", item.getVariant() != null ? item.getVariant().getId() : null);
+            dto.put("quantity", item.getQuantity());
+            dto.put("price", item.getPriceSnapshot());
+
+            // Füge Variant-Details hinzu
+            if (item.getVariant() != null) {
+                Map<String, Object> variantDto = new HashMap<>();
+                variantDto.put("id", item.getVariant().getId());
+                variantDto.put("sku", item.getVariant().getSku());
+                variantDto.put("price", item.getVariant().getPrice());
+                variantDto.put("stock", item.getVariant().getStockQuantity());
+
+                // Füge Product-Details hinzu
+                if (item.getVariant().getProduct() != null) {
+                    Map<String, Object> productDto = new HashMap<>();
+                    productDto.put("id", item.getVariant().getProduct().getId());
+                    productDto.put("name", item.getVariant().getProduct().getTitle());
+                    productDto.put("description", item.getVariant().getProduct().getDescription());
+                    productDto.put("imageUrl", item.getVariant().getProduct().getTitle());
+                    variantDto.put("product", productDto);
+                }
+
+                dto.put("variant", variantDto);
+            }
+
+            return dto;
+        }).toList();
+
+        response.put("items", itemDtos);
         response.put("itemCount", items.stream().mapToInt(CartItem::getQuantity).sum());
         response.put("subtotal", items.stream()
-                .map(item -> item.getPriceSnapshot().multiply(java.math.BigDecimal.valueOf(item.getQuantity())))
-                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add));
+                .map(item -> item.getPriceSnapshot().multiply(BigDecimal.valueOf(item.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add));
         response.put("expiresAt", cart.getExpiresAt());
         return response;
     }

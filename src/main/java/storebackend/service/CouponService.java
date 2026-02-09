@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import storebackend.dto.*;
 import storebackend.entity.Coupon;
 import storebackend.entity.CouponRedemption;
+import storebackend.mapper.CouponMapper;
 import storebackend.repository.CouponRepository;
 import storebackend.repository.CouponRedemptionRepository;
 
@@ -21,6 +22,7 @@ public class CouponService {
 
     private final CouponRepository couponRepository;
     private final CouponRedemptionRepository redemptionRepository;
+    private final CouponMapper couponMapper;
 
     @Transactional
     public CouponDTO createCoupon(Long storeId, CouponDTO dto) {
@@ -33,10 +35,10 @@ public class CouponService {
 
         dto.setStoreId(storeId);
         dto.setTimesUsedTotal(0);
-        Coupon coupon = dto.toEntity();
+        Coupon coupon = couponMapper.toEntity(dto);
         coupon = couponRepository.save(coupon);
         log.info("Created coupon {} for store {}", coupon.getCode(), storeId);
-        return CouponDTO.fromEntity(coupon);
+        return couponMapper.toDto(coupon);
     }
 
     @Transactional
@@ -58,10 +60,10 @@ public class CouponService {
         dto.setId(id);
         dto.setStoreId(storeId);
         dto.setTimesUsedTotal(existing.getTimesUsedTotal());
-        Coupon updated = dto.toEntity();
+        Coupon updated = couponMapper.toEntity(dto);
         updated = couponRepository.save(updated);
         log.info("Updated coupon {} for store {}", updated.getCode(), storeId);
-        return CouponDTO.fromEntity(updated);
+        return couponMapper.toDto(updated);
     }
 
     @Transactional(readOnly = true)
@@ -74,14 +76,14 @@ public class CouponService {
                 .filter(c -> c.getStoreId().equals(storeId))
                 .collect(Collectors.toList());
         }
-        return coupons.stream().map(CouponDTO::fromEntity).collect(Collectors.toList());
+        return coupons.stream().map(couponMapper::toDto).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public CouponDTO getCoupon(Long storeId, Long id) {
         Coupon coupon = couponRepository.findByStoreIdAndId(storeId, id)
             .orElseThrow(() -> new IllegalArgumentException("Coupon not found"));
-        return CouponDTO.fromEntity(coupon);
+        return couponMapper.toDto(coupon);
     }
 
     @Transactional
@@ -393,4 +395,3 @@ public class CouponService {
         log.info("Finalized {} coupon redemptions for order {}", validCoupons.size(), orderId);
     }
 }
-

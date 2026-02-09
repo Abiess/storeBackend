@@ -221,6 +221,50 @@ jobs:
             sudo ./scripts/drop-coupon-tables.sh || echo "⚠️ Drop script failed or tables don't exist - continuing anyway"
             echo "✅ Ready for fresh V17 migration"
 
+      - name: 🔧 Fix Flyway Schema History Mismatch
+        uses: appleboy/ssh-action@master
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          envs: DB_PASSWORD
+          script: |
+            set -e
+            echo "🔍 Checking for Flyway History vs Schema mismatch..."
+            
+            # Prüfe ob cart_items Spalten fehlen
+            CREATED_AT_EXISTS=$(sudo -u postgres psql -d storedb -t -c "
+              SELECT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name = 'cart_items' AND column_name = 'created_at'
+              );" | xargs)
+            
+            UPDATED_AT_EXISTS=$(sudo -u postgres psql -d storedb -t -c "
+              SELECT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name = 'cart_items' AND column_name = 'updated_at'
+              );" | xargs)
+            
+            echo "created_at exists: $CREATED_AT_EXISTS"
+            echo "updated_at exists: $UPDATED_AT_EXISTS"
+            
+            if [ "$CREATED_AT_EXISTS" = "f" ] || [ "$UPDATED_AT_EXISTS" = "f" ]; then
+              echo "⚠️ Spalten fehlen trotz Flyway History - repariere..."
+              
+              # Entferne fehlerhafte V18 und V19 Einträge aus Flyway History
+              sudo -u postgres psql -d storedb -c "
+                DELETE FROM flyway_schema_history 
+                WHERE version IN ('18', '19');
+              " || echo "⚠️ Konnte History nicht bereinigen"
+              
+              echo "✅ Flyway History bereinigt - V20 wird die Spalten hinzufügen"
+            else
+              echo "✅ cart_items Spalten existieren - kein Repair nötig"
+            fi
+
       - name: 🔄 Execute Deployment
         uses: appleboy/ssh-action@master
         env:
@@ -320,7 +364,7 @@ jobs:
             
             echo ""
             echo "📋 6. Stores Table Structure:"
-            echo "───────────────────────────────────────────────────────────"
+            echo "──────────────────────────────────────────────────────���────"
             sudo -u postgres psql -d storedb -c "
             SELECT 
               column_name,

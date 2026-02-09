@@ -126,7 +126,6 @@ public class SimpleCartController {
                 // Merge: Addiere Mengen
                 CartItem userItem = existingUserItem.get();
                 userItem.setQuantity(userItem.getQuantity() + guestItem.getQuantity());
-                userItem.setUpdatedAt(LocalDateTime.now());
                 cartItemRepository.save(userItem);
                 mergedCount++;
                 log.info("🔀 Merged Item: {} (Neue Menge: {})",
@@ -138,8 +137,6 @@ public class SimpleCartController {
                 newUserItem.setVariant(guestItem.getVariant());
                 newUserItem.setQuantity(guestItem.getQuantity());
                 newUserItem.setPriceSnapshot(guestItem.getPriceSnapshot());
-                newUserItem.setCreatedAt(LocalDateTime.now());
-                newUserItem.setUpdatedAt(LocalDateTime.now());
                 cartItemRepository.save(newUserItem);
                 addedCount++;
                 log.info("➕ Added Item: {} (Menge: {})",
@@ -155,21 +152,9 @@ public class SimpleCartController {
             mergedCount, addedCount);
     }
 
-    /**
-     * FIXED: Findet oder erstellt Cart basierend auf User-ID oder Session-ID
-     * Für angemeldete User: Nur userId + storeId (sessionId ist OPTIONAL für Migration)
-     * Für Gäste: sessionId + storeId
-     */
-    /**
-     * FIXED VERSION - Ersetze die findOrCreateCart Methode in SimpleCartController.java
-     * Ab Zeile 163 bis ca. Zeile 250
-     */
-
-    /**
-     * FIXED: Findet oder erstellt Cart basierend auf User-ID oder Session-ID
-     * Für angemeldete User: Nur userId + storeId (sessionId ist OPTIONAL für Migration)
-     * Für Gäste: sessionId + storeId
-     */
+    // Findet oder erstellt Cart basierend auf User-ID oder Session-ID
+    // Für angemeldete User: Nur userId + storeId (sessionId ist OPTIONAL für Migration)
+    // Für Gäste: sessionId + storeId
     private Cart findOrCreateCart(Long userId, Long storeId, String sessionId) {
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
@@ -317,7 +302,7 @@ public class SimpleCartController {
 
                         return dto;
                     })
-                    .collect(java.util.stream.Collectors.toList());
+                    .toList();
 
             BigDecimal subtotal = items.stream()
                     .map(item -> item.getPriceSnapshot().multiply(BigDecimal.valueOf(item.getQuantity())))
@@ -416,9 +401,7 @@ public class SimpleCartController {
                 cartItem.setVariant(defaultVariant);
                 cartItem.setQuantity(quantity);
                 cartItem.setPriceSnapshot(product.getBasePrice());
-                cartItem.setCreatedAt(LocalDateTime.now());
             }
-            cartItem.setUpdatedAt(LocalDateTime.now());
 
             cartItemRepository.save(cartItem);
 
@@ -489,7 +472,6 @@ public class SimpleCartController {
             }
 
             item.setQuantity(quantity);
-            item.setUpdatedAt(LocalDateTime.now());
             cartItemRepository.save(item);
 
             return ResponseEntity.ok(Map.of("success", true, "item", item));
