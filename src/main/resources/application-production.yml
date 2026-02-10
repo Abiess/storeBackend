@@ -18,7 +18,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate  # ✅ Schema-Validierung - Schema kommt von scripts/db/schema.sql
+      ddl-auto: update  # ✅ Auto-Update Schema - fügt fehlende Spalten hinzu (z.B. cart_items.created_at)
     show-sql: false  # In Production: false (Performance)
     open-in-view: false  # Verhindert lazy-loading Probleme
     properties:
