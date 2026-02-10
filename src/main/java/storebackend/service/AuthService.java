@@ -58,21 +58,13 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException("FREE plan not found in database. Please run database initialization."));
         user.setPlan(freePlan);
 
-        // FIXED: Save and flush to ensure user is immediately available in DB
+        // Save user
         user = userRepository.saveAndFlush(user);
 
-        // Sende Verification-Email
-        try {
-            emailVerificationService.createAndSendVerificationToken(user);
-        } catch (Exception e) {
-            // Log error but don't fail registration - user can resend email later
-            System.err.println("Failed to send verification email: " + e.getMessage());
-        }
-
-        // Generate JWT token using JwtUtil with roles
+        // Generate JWT token BEFORE sending email (so registration succeeds even if email fails)
         String token = jwtUtil.generateToken(user.getEmail(), user.getId(), user.getRoles());
 
-        // Create UserDTO with name and primary role
+        // Create UserDTO
         String primaryRole = user.getRoles().isEmpty() ? "USER" : user.getRoles().iterator().next().name();
         AuthResponse.UserDTO userDTO = new AuthResponse.UserDTO(
             user.getId(),
@@ -81,6 +73,20 @@ public class AuthService {
             primaryRole,
             user.getRoles().stream().map(Enum::name).collect(Collectors.toList())
         );
+
+        // Send verification email AFTER transaction completes (in separate thread/transaction)
+        // This prevents email failures from rolling back the user registration
+        final Long userId = user.getId();
+        new Thread(() -> {
+            try {
+                User savedUser = userRepository.findById(userId).orElse(null);
+                if (savedUser != null) {
+                    emailVerificationService.createAndSendVerificationToken(savedUser);
+                }
+            } catch (Exception e) {
+                System.err.println("Failed to send verification email: " + e.getMessage());
+            }
+        }).start();
 
         return new AuthResponse(token, userDTO);
     }
