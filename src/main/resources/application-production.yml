@@ -59,6 +59,57 @@ server:
       max: 100
       min-spare: 20
 
+# Management & Health Check Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always  # Zeige Details für Debugging
+      probes:
+        enabled: true
+  health:
+    # NUR PostgreSQL und DiskSpace aktivieren - alles andere aus!
+    defaults:
+      enabled: false  # WICHTIG: Deaktiviere alle anderen Health Checks als Standard
+    db:
+      enabled: true  # Nur PostgreSQL
+    diskSpace:
+      enabled: true
+      threshold: 10MB
+    ping:
+      enabled: true  # Einfacher Ping
+    # Explizit alle anderen deaktivieren
+    mail:
+      enabled: false  # Kein SMTP konfiguriert
+    mongo:
+      enabled: false  # Kein MongoDB
+    redis:
+      enabled: false  # Kein Redis
+    cassandra:
+      enabled: false
+    couchbase:
+      enabled: false
+    elasticsearch:
+      enabled: false
+    influxdb:
+      enabled: false
+    jms:
+      enabled: false
+    ldap:
+      enabled: false
+    neo4j:
+      enabled: false
+    rabbit:
+      enabled: false
+    solr:
+      enabled: false
+  health.livenessState.enabled: true
+  health.readinessState.enabled: true
+
 # Logging für Production
 logging:
   level:
@@ -66,6 +117,8 @@ logging:
     storebackend: INFO
     org.springframework.security: INFO
     org.hibernate: INFO
+    # Health Check Logging
+    org.springframework.boot.actuate.health: DEBUG
 
 # Swagger/OpenAPI Configuration
 springdoc:
