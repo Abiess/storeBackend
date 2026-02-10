@@ -167,25 +167,25 @@ jobs:
               # Grant permissions
               echo "🔐 Granting permissions..."
               sudo -u postgres psql -d storedb <<EOF
-GRANT ALL PRIVILEGES ON DATABASE storedb TO storeapp;
-GRANT ALL PRIVILEGES ON SCHEMA public TO storeapp;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO storeapp;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO storeapp;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO storeapp;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO storeapp;
-EOF
+              GRANT ALL PRIVILEGES ON DATABASE storedb TO storeapp;
+              GRANT ALL PRIVILEGES ON SCHEMA public TO storeapp;
+              GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO storeapp;
+              GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO storeapp;
+              ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO storeapp;
+              ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO storeapp;
+              EOF
               
               echo "✅ Permissions granted"
             else
               echo "📦 Creating PostgreSQL user 'storeapp'..."
               sudo -u postgres psql <<EOF
-CREATE USER storeapp WITH PASSWORD '${DB_PASSWORD}';
-GRANT ALL PRIVILEGES ON DATABASE storedb TO storeapp;
-\c storedb
-GRANT ALL PRIVILEGES ON SCHEMA public TO storeapp;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO storeapp;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO storeapp;
-EOF
+              CREATE USER storeapp WITH PASSWORD '${DB_PASSWORD}';
+              GRANT ALL PRIVILEGES ON DATABASE storedb TO storeapp;
+              \c storedb
+              GRANT ALL PRIVILEGES ON SCHEMA public TO storeapp;
+              ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO storeapp;
+              ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO storeapp;
+              EOF
               echo "✅ User created and permissions granted"
             fi
 
