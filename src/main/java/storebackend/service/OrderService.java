@@ -128,25 +128,39 @@ public class OrderService {
         for (CartItem cartItem : cartItems) {
             OrderItem orderItem = new OrderItem();
             orderItem.setOrder(savedOrder);
-            orderItem.setVariant(cartItem.getVariant());
-            orderItem.setProductName(cartItem.getVariant().getProduct().getTitle());
+
+            // Handle both products with and without variants
+            ProductVariant variant = cartItem.getVariant();
+            Product product = variant != null ? variant.getProduct() : cartItem.getProduct();
+
+            if (product == null) {
+                throw new RuntimeException("CartItem has neither variant nor product");
+            }
+
+            orderItem.setVariant(variant);
+            orderItem.setProductName(product.getTitle());
             orderItem.setQuantity(cartItem.getQuantity());
             orderItem.setPrice(cartItem.getPriceSnapshot());
-            orderItem.setProductSnapshot(createProductSnapshot(cartItem.getVariant()));
+            orderItem.setProductSnapshot(variant != null
+                ? createProductSnapshot(variant)
+                : createProductSnapshotFromProduct(product));
 
             // MARKETPLACE: Enrich order item with revenue split data
-            enrichOrderItemWithMarketplaceData(orderItem, cartItem.getVariant().getProduct(), cart.getStore());
+            enrichOrderItemWithMarketplaceData(orderItem, product, cart.getStore());
 
             orderItemRepository.save(orderItem);
 
             // Reduce inventory
-            inventoryService.adjustInventory(
-                cartItem.getVariant().getId(),
-                -cartItem.getQuantity(),
-                "SALE",
-                "Order " + savedOrder.getOrderNumber(),
-                customer
-            );
+            if (variant != null) {
+                inventoryService.adjustInventory(
+                    variant.getId(),
+                    -cartItem.getQuantity(),
+                    "SALE",
+                    "Order " + savedOrder.getOrderNumber(),
+                    customer
+                );
+            }
+            // Note: Simple products without variants don't track inventory per variant
         }
 
         // MARKETPLACE: Calculate and create commissions at checkout
@@ -252,6 +266,12 @@ public class OrderService {
                 variant.getProduct().getTitle(),
                 variant.getSku(),
                 variant.getAttributesJson());
+    }
+
+    private String createProductSnapshotFromProduct(Product product) {
+        // Simple JSON snapshot for product without variant
+        return String.format("{\"productTitle\":\"%s\",\"sku\":null,\"attributes\":{}}",
+                product.getTitle());
     }
 
     /**
