@@ -30,6 +30,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
     private final PlanRepository planRepository;
+    private final EmailVerificationService emailVerificationService;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -42,6 +43,7 @@ public class AuthService {
         User user = new User();
         user.setEmail(request.getEmail());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        user.setEmailVerified(false); // User muss Email verifizieren
 
         // Set name from email if not provided
         user.setName(request.getEmail().split("@")[0]);
@@ -58,6 +60,14 @@ public class AuthService {
 
         // FIXED: Save and flush to ensure user is immediately available in DB
         user = userRepository.saveAndFlush(user);
+
+        // Sende Verification-Email
+        try {
+            emailVerificationService.createAndSendVerificationToken(user);
+        } catch (Exception e) {
+            // Log error but don't fail registration - user can resend email later
+            System.err.println("Failed to send verification email: " + e.getMessage());
+        }
 
         // Generate JWT token using JwtUtil with roles
         String token = jwtUtil.generateToken(user.getEmail(), user.getId(), user.getRoles());
@@ -76,6 +86,15 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
+        // Get user first to check email verification
+        User user = userRepository.findByEmail(request.getEmail())
+            .orElseThrow(() -> new RuntimeException("Invalid email or password"));
+
+        // Check if email is verified
+        if (!user.getEmailVerified()) {
+            throw new RuntimeException("Please verify your email address before logging in. Check your inbox for the verification link.");
+        }
+
         // Authenticate user
         Authentication authentication = authenticationManager.authenticate(
             new UsernamePasswordAuthenticationToken(
@@ -83,10 +102,6 @@ public class AuthService {
                 request.getPassword()
             )
         );
-
-        // Get user
-        User user = userRepository.findByEmail(request.getEmail())
-            .orElseThrow(() -> new RuntimeException("User not found"));
 
         // Generate JWT token using JwtUtil with roles
         String token = jwtUtil.generateToken(user.getEmail(), user.getId(), user.getRoles());

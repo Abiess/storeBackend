@@ -146,12 +146,10 @@ export class RegisterComponent implements OnInit {
 
       this.authService.register(this.registerForm.value).subscribe({
         next: () => {
-          this.successMessage = 'Registrierung erfolgreich! Sie werden weitergeleitet...';
-          setTimeout(() => {
-            // FIXED: Nutze gespeicherte returnUrl
-            console.log('🔄 Weiterleitung nach Registrierung zu:', this.returnUrl);
-            this.router.navigate([this.returnUrl]);
-          }, 1500);
+          this.loading = false;
+          this.successMessage = '✓ Registrierung erfolgreich! Bitte überprüfen Sie Ihre E-Mails und klicken Sie auf den Bestätigungslink, um Ihr Konto zu aktivieren.';
+          // Formular zurücksetzen
+          this.registerForm.reset();
         },
         error: (error) => {
           this.loading = false;

@@ -55,6 +55,12 @@ import { LanguageSwitcherComponent } from '../../shared/components/language-swit
           </button>
         </form>
 
+        <div class="text-center mt-3">
+          <a [routerLink]="['/forgot-password']" class="text-sm text-indigo-600 hover:text-indigo-500">
+            Passwort vergessen?
+          </a>
+        </div>
+
         <p class="auth-footer">
           Noch kein Konto? <a [routerLink]="['/register']" [queryParams]="{ returnUrl: returnUrl }">Jetzt registrieren</a>
         </p>

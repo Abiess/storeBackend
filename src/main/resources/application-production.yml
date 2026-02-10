@@ -35,6 +35,23 @@ spring:
       max-file-size: 10MB
       max-request-size: 10MB
 
+  mail:
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USER:}
+    password: ${SMTP_PASS:}
+    from: ${MAIL_FROM:noreply@example.com}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 3000
+          writetimeout: 5000
+
 server:
   port: ${SERVER_PORT:8080}
   tomcat:
@@ -64,6 +81,14 @@ springdoc:
 jwt:
   secret: ${JWT_SECRET:change-me-in-production}
   expiration: 86400000
+
+# Spring Mail Configuration für Email-Verification
+mail:
+  enabled: ${MAIL_ENABLED:true}
+
+# Base URL für Verification-Links
+app:
+  base-url: ${APP_BASE_URL:https://yourapp.com}
 
 minio:
   enabled: ${MINIO_ENABLED:true}

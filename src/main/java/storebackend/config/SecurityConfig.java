@@ -45,6 +45,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 // Auth endpoints
                 .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/validate").permitAll()
+                .requestMatchers("/api/auth/verify", "/api/auth/resend-verification").permitAll()
+                .requestMatchers("/api/auth/forgot-password", "/api/auth/reset-password", "/api/auth/reset-password/validate").permitAll()
                 // Config endpoints - Language detection muss öffentlich sein
                 .requestMatchers("/api/config", "/api/config/**").permitAll()
                 // Error endpoint - muss öffentlich sein für Spring Boot Error Handling
