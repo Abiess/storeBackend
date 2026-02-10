@@ -22,29 +22,29 @@ public class Media {
     @JoinColumn(name = "store_id", nullable = false)
     private Store store;
 
-    @Column(nullable = false)
+    @Column(name = "file_name", nullable = false)
     private String filename;
 
-    @Column(nullable = false)
+    @Column(name = "original_filename", nullable = false)
     private String originalFilename;
 
-    @Column(nullable = false)
+    @Column(name = "content_type", nullable = false)
     private String contentType;
 
-    @Column(nullable = false)
+    @Column(name = "size_bytes", nullable = false)
     private Long sizeBytes;
 
-    @Column(nullable = false)
+    @Column(name = "minio_object_name", nullable = false)
     private String minioObjectName;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "media_type", nullable = false)
     private MediaType mediaType;
 
-    @Column
+    @Column(name = "alt_text")
     private String altText;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @PrePersist
@@ -52,4 +52,3 @@ public class Media {
         createdAt = LocalDateTime.now();
     }
 }
-
