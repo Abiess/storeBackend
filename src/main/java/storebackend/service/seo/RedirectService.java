@@ -106,7 +106,7 @@ public class RedirectService {
                 Pattern pattern = Pattern.compile(rule.getSourcePath());
                 return pattern.matcher(path).matches();
             } catch (PatternSyntaxException e) {
-                log.error("Invalid regex pattern in rule {}: {}", rule.getId(), rule.getSourcePath(), e);
+                log.warn("Invalid regex pattern in rule {}: {}", rule.getId(), rule.getSourcePath());
                 return false;
             }
         } else {
