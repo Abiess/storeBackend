@@ -128,6 +128,20 @@ interface UploadedImage {
           </div>
 
           <div class="form-group">
+            <label for="sku">{{ 'product.sku' | translate }}</label>
+            <input 
+              id="sku"
+              type="text" 
+              formControlName="sku"
+              [placeholder]="'product.placeholder.sku' | translate"
+              [class.error]="productForm.get('sku')?.invalid && productForm.get('sku')?.touched"
+            />
+            <div class="error-message" *ngIf="productForm.get('sku')?.invalid && productForm.get('sku')?.touched">
+              {{ 'product.required.sku' | translate }}
+            </div>
+          </div>
+
+          <div class="form-group">
             <label for="description">{{ 'product.description' | translate }} *</label>
             <textarea 
               id="description"
@@ -611,6 +625,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   ) {
     this.productForm = this.fb.group({
       title: ['', Validators.required],
+      sku: [''],
       description: ['', Validators.required],
       basePrice: [0, [Validators.required, Validators.min(0.01)]],
       status: [ProductStatus.DRAFT],
@@ -679,6 +694,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
       next: (product) => {
         this.productForm.patchValue({
           title: product.title,
+          sku: product.sku,
           description: product.description,
           basePrice: product.basePrice,
           status: product.status,

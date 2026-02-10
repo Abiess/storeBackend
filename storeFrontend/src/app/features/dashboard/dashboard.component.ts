@@ -1098,18 +1098,37 @@ export class DashboardComponent implements OnInit {
     return `https://${slug}.markt.ma`;
   }
 
-  formatDate(dateString: string): string {
-    if (!dateString) return '';
-    const options: Intl.DateTimeFormatOptions = {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false,
-    };
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('de-DE', options).format(date);
-  }
+    formatDate(input: any): string {
+        if (!input) return '';
+
+        let date: Date;
+
+        // Case 1: createdAt ist schon ein Date/ISO-String
+        if (typeof input === 'string' || input instanceof Date) {
+            date = new Date(input);
+        }
+        // Case 2: createdAt kommt als Array [YYYY, M, D, h, m, s, nanos]
+        else if (Array.isArray(input)) {
+            const [y, mon, d, h = 0, min = 0, sec = 0, nanos = 0] = input;
+            // Achtung: JS Monate sind 0-based, Backend ist 1-based
+            const ms = Math.floor((nanos ?? 0) / 1_000_000);
+            date = new Date(y, (mon ?? 1) - 1, d ?? 1, h, min, sec, ms);
+        } else {
+            // unknown format
+            return '';
+        }
+
+        if (isNaN(date.getTime())) return '';
+
+        return new Intl.DateTimeFormat('de-DE', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false,
+        }).format(date);
+    }
+
 }
