@@ -9,6 +9,7 @@ import storebackend.entity.Store;
 import storebackend.entity.User;
 import storebackend.repository.StoreRepository;
 import storebackend.service.InventoryService;
+import storebackend.util.StoreAccessChecker;
 
 import java.util.HashMap;
 import java.util.List;
@@ -33,7 +34,7 @@ public class InventoryController {
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
 
-        if (!store.getOwner().getId().equals(user.getId())) {
+        if (!StoreAccessChecker.isOwner(store, user)) {
             return ResponseEntity.status(403).build();
         }
 
@@ -53,7 +54,7 @@ public class InventoryController {
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
 
-        if (!store.getOwner().getId().equals(user.getId())) {
+        if (!StoreAccessChecker.isOwner(store, user)) {
             return ResponseEntity.status(403).build();
         }
 
@@ -74,7 +75,7 @@ public class InventoryController {
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
 
-        if (!store.getOwner().getId().equals(user.getId())) {
+        if (!StoreAccessChecker.isOwner(store, user)) {
             return ResponseEntity.status(403).build();
         }
 

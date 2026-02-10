@@ -12,6 +12,7 @@ import storebackend.entity.Store;
 import storebackend.entity.User;
 import storebackend.repository.StoreRepository;
 import storebackend.service.*;
+import storebackend.util.StoreAccessChecker;
 
 import java.util.List;
 
@@ -42,7 +43,7 @@ public class DeliveryController {
         }
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
-        if (!store.getOwner().getId().equals(user.getId())) {
+        if (!StoreAccessChecker.isOwner(store, user)) {
             return ResponseEntity.status(403).body("Not authorized");
         }
 
@@ -61,7 +62,7 @@ public class DeliveryController {
         }
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
-        if (!store.getOwner().getId().equals(user.getId())) {
+        if (!StoreAccessChecker.isOwner(store, user)) {
             return ResponseEntity.status(403).body("Not authorized");
         }
 
@@ -81,7 +82,7 @@ public class DeliveryController {
         }
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
-        if (!store.getOwner().getId().equals(user.getId())) {
+        if (!StoreAccessChecker.isOwner(store, user)) {
             return ResponseEntity.status(403).body("Not authorized");
         }
 
@@ -100,7 +101,7 @@ public class DeliveryController {
         }
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
-        if (!store.getOwner().getId().equals(user.getId())) {
+        if (!StoreAccessChecker.isOwner(store, user)) {
             return ResponseEntity.status(403).body("Not authorized");
         }
 
@@ -119,7 +120,7 @@ public class DeliveryController {
         }
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
-        if (!store.getOwner().getId().equals(user.getId())) {
+        if (!StoreAccessChecker.isOwner(store, user)) {
             return ResponseEntity.status(403).body("Not authorized");
         }
 
@@ -139,7 +140,7 @@ public class DeliveryController {
         }
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
-        if (!store.getOwner().getId().equals(user.getId())) {
+        if (!StoreAccessChecker.isOwner(store, user)) {
             return ResponseEntity.status(403).body("Not authorized");
         }
 
@@ -158,7 +159,7 @@ public class DeliveryController {
         }
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
-        if (!store.getOwner().getId().equals(user.getId())) {
+        if (!StoreAccessChecker.isOwner(store, user)) {
             return ResponseEntity.status(403).body("Not authorized");
         }
 
@@ -179,7 +180,7 @@ public class DeliveryController {
         }
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
-        if (!store.getOwner().getId().equals(user.getId())) {
+        if (!StoreAccessChecker.isOwner(store, user)) {
             return ResponseEntity.status(403).body("Not authorized");
         }
 
@@ -198,7 +199,7 @@ public class DeliveryController {
         }
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
-        if (!store.getOwner().getId().equals(user.getId())) {
+        if (!StoreAccessChecker.isOwner(store, user)) {
             return ResponseEntity.status(403).body("Not authorized");
         }
 
@@ -217,7 +218,7 @@ public class DeliveryController {
         }
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
-        if (!store.getOwner().getId().equals(user.getId())) {
+        if (!StoreAccessChecker.isOwner(store, user)) {
             return ResponseEntity.status(403).body("Not authorized");
         }
 
@@ -237,7 +238,7 @@ public class DeliveryController {
         }
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
-        if (!store.getOwner().getId().equals(user.getId())) {
+        if (!StoreAccessChecker.isOwner(store, user)) {
             return ResponseEntity.status(403).body("Not authorized");
         }
 
@@ -256,7 +257,7 @@ public class DeliveryController {
         }
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
-        if (!store.getOwner().getId().equals(user.getId())) {
+        if (!StoreAccessChecker.isOwner(store, user)) {
             return ResponseEntity.status(403).body("Not authorized");
         }
 

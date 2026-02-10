@@ -15,6 +15,7 @@ import storebackend.repository.StoreRepository;
 import storebackend.repository.UserRepository;
 import storebackend.service.CategoryService;
 import storebackend.service.StoreService;
+import storebackend.util.StoreAccessChecker;
 
 import java.util.List;
 
@@ -44,7 +45,7 @@ public class CategoryController {
         }
 
         // Owner hat immer Zugriff
-        if (store.getOwner().getId().equals(user.getId())) {
+        if (StoreAccessChecker.isOwner(store, user)) {
             return true;
         }
 

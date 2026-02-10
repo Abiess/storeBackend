@@ -4,7 +4,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +18,7 @@ import storebackend.entity.User;
 import storebackend.repository.StoreRepository;
 import storebackend.service.MediaService;
 import storebackend.service.StoreUsageService;
+import storebackend.util.StoreAccessChecker;
 
 import java.util.List;
 
@@ -57,7 +57,7 @@ public class MediaController {
             }
             Store store = storeRepository.findById(storeId)
                     .orElseThrow(() -> new RuntimeException("Store not found"));
-            if (!store.getOwner().getId().equals(user.getId())) {
+            if (!StoreAccessChecker.isOwner(store, user)) {
                 return ResponseEntity.status(403).body("Not authorized to upload media to this store");
             }
             storebackend.enums.MediaType type = storebackend.enums.MediaType.valueOf(mediaType);
@@ -81,7 +81,7 @@ public class MediaController {
         }
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
-        if (!store.getOwner().getId().equals(user.getId())) {
+        if (!StoreAccessChecker.isOwner(store, user)) {
             return ResponseEntity.status(403).build();
         }
         List<MediaDTO> media = mediaService.getMediaByStore(store);
@@ -103,7 +103,7 @@ public class MediaController {
             }
             Store store = storeRepository.findById(storeId)
                     .orElseThrow(() -> new RuntimeException("Store not found"));
-            if (!store.getOwner().getId().equals(user.getId())) {
+            if (!StoreAccessChecker.isOwner(store, user)) {
                 return ResponseEntity.status(403).body("Not authorized");
             }
             String url = mediaService.getMediaUrl(mediaId);
@@ -128,7 +128,7 @@ public class MediaController {
             }
             Store store = storeRepository.findById(storeId)
                     .orElseThrow(() -> new RuntimeException("Store not found"));
-            if (!store.getOwner().getId().equals(user.getId())) {
+            if (!StoreAccessChecker.isOwner(store, user)) {
                 return ResponseEntity.status(403).body("Not authorized");
             }
             mediaService.deleteMedia(mediaId, store);
@@ -152,7 +152,7 @@ public class MediaController {
             }
             Store store = storeRepository.findById(storeId)
                     .orElseThrow(() -> new RuntimeException("Store not found"));
-            if (!store.getOwner().getId().equals(user.getId())) {
+            if (!StoreAccessChecker.isOwner(store, user)) {
                 return ResponseEntity.status(403).body("Not authorized");
             }
             StoreUsageDTO usage = storeUsageService.getStoreUsageDTO(store, user);

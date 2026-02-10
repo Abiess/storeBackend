@@ -3,7 +3,6 @@ package storebackend.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import storebackend.config.SaasProperties;
 import storebackend.dto.PublicStoreDTO;
@@ -14,6 +13,7 @@ import storebackend.enums.DomainType;
 import storebackend.enums.StoreStatus;
 import storebackend.repository.DomainRepository;
 import storebackend.repository.StoreRepository;
+import storebackend.util.StoreAccessChecker;
 
 import java.security.SecureRandom;
 import java.util.List;
@@ -34,7 +34,7 @@ public class DomainService {
         Store store = storeRepository.findById(storeId)
             .orElseThrow(() -> new IllegalArgumentException("Store not found"));
 
-        if (!store.getOwner().getId().equals(currentUser.getId())) {
+        if (!StoreAccessChecker.isOwner(store, currentUser)) {
             throw new SecurityException("Access denied");
         }
 
@@ -45,7 +45,7 @@ public class DomainService {
         Store store = storeRepository.findById(storeId)
             .orElseThrow(() -> new IllegalArgumentException("Store not found"));
 
-        if (!store.getOwner().getId().equals(currentUser.getId())) {
+        if (!StoreAccessChecker.isOwner(store, currentUser)) {
             throw new SecurityException("Access denied");
         }
 
@@ -75,7 +75,7 @@ public class DomainService {
         Store store = storeRepository.findById(storeId)
             .orElseThrow(() -> new IllegalArgumentException("Store not found"));
 
-        if (!store.getOwner().getId().equals(currentUser.getId())) {
+        if (!StoreAccessChecker.isOwner(store, currentUser)) {
             throw new SecurityException("Access denied");
         }
 
@@ -242,7 +242,7 @@ public class DomainService {
         Domain domain = domainRepository.findById(domainId)
             .orElseThrow(() -> new IllegalArgumentException("Domain not found"));
 
-        if (!domain.getStore().getOwner().getId().equals(currentUser.getId())) {
+        if (!StoreAccessChecker.isOwner(domain.getStore(), currentUser)) {
             throw new SecurityException("Access denied");
         }
 
@@ -290,7 +290,7 @@ public class DomainService {
         Domain domain = domainRepository.findById(domainId)
             .orElseThrow(() -> new IllegalArgumentException("Domain not found"));
 
-        if (!domain.getStore().getOwner().getId().equals(currentUser.getId())) {
+        if (!StoreAccessChecker.isOwner(domain.getStore(), currentUser)) {
             throw new SecurityException("Access denied");
         }
 
