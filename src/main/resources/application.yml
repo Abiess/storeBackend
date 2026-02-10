@@ -21,7 +21,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate  # ✅ Nur validieren - Schema kommt von Flyway
+      ddl-auto: validate  # ✅ Schema-Validierung - Schema kommt von scripts/db/schema.sql
     show-sql: true
     properties:
       hibernate:
@@ -31,27 +31,6 @@ spring:
           batch_size: 20
         order_inserts: true
         order_updates: true
-
-  # ==========================================
-  # Flyway Migrations - AFTER SQUASH (V17 Baseline)
-  # ==========================================
-  flyway:
-    enabled: true
-    baseline-on-migrate: true  # ✅ Für erste Migration mit V17 Baseline
-    baseline-version: 16  # ✅ Baseline bei V16 (V1-V16 existieren bereits in DB)
-    locations: classpath:db/migration
-    schemas: public
-    default-schema: public
-
-    # Validierung deaktiviert für Squash
-    validate-on-migrate: false  # ✅ Ignoriert fehlende V2-V16
-    out-of-order: false
-    ignore-missing-migrations: true  # ✅ Ignoriert fehlende V2-V16 (nur V17 im Classpath)
-    ignore-ignored-migrations: true
-    ignore-future-migrations: false
-
-    # Clean DEAKTIVIERT (löscht sonst alle Daten!)
-    clean-disabled: true
 
   servlet:
     multipart:

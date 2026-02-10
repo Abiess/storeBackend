@@ -1,4 +1,4 @@
-name: Deploy Backend to VPS
+name: Deploy Backend to VPS (Pure Schema - NO FLYWAY)
 
 on:
   push:
@@ -26,11 +26,6 @@ jobs:
         run: |
           chmod +x ./mvnw
           ./mvnw clean package -DskipTests
-
-      - name: 🔍 Validate Flyway Migrations
-        run: |
-          chmod +x scripts/validate-migrations.sh
-          ./scripts/validate-migrations.sh
 
       - name: 📦 Prepare JAR for Deployment
         run: |
@@ -62,44 +57,24 @@ jobs:
           target: "/tmp/"
           strip_components: 1
 
-      - name: "🔍 Debug: list scripts + verify files"
+      - name: 🔍 Debug - Verify required files
         run: |
           echo "PWD: $(pwd)"
-          echo "Repo files:"
-          ls -lah
           echo ""
-          echo "scripts folder:"
-          ls -lah scripts || true
+          echo "✅ Required files for Pure Schema deployment:"
+          ls -lah scripts/deploy-no-flyway.sh
+          ls -lah scripts/db/schema.sql
           echo ""
-          echo "Check required files (Flyway-based):"
-          for f in \
-            scripts/deploy.sh \
-            scripts/diagnose-database.sh \
-            scripts/flyway-helper.sh \
-            scripts/setup-postgres-user.sh \
-            scripts/install-minio.sh \
-            scripts/fix-db-password.sh \
-            scripts/check-server-error.sh \
-            scripts/diagnose-v17-migration.sh \
-            scripts/drop-coupon-tables.sh ; do
-            if [ -f "$f" ]; then
-              echo "✅ $f"
-            else
-              echo "❌ MISSING: $f"
-              exit 1
-            fi
-          done
-          echo ""
-          echo "✅ All required Flyway-based scripts present"
+          echo "✅ All files present"
 
-      - name: 📋 Copy scripts to VPS (/tmp)
+      - name: 📋 Copy schema.sql and deploy script to VPS
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          source: "scripts/deploy.sh,scripts/diagnose-database.sh,scripts/flyway-helper.sh,scripts/setup-postgres-user.sh,scripts/install-minio.sh,scripts/fix-db-password.sh,scripts/check-server-error.sh,scripts/diagnose-v17-migration.sh,scripts/drop-coupon-tables.sh"
+          source: "scripts/db/schema.sql,scripts/deploy-no-flyway.sh"
           target: "/tmp/"
           strip_components: 1
 
@@ -125,7 +100,7 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           script: |
             set -e
-            echo "🔧 Preparing VPS environment..."
+            echo "🔧 Preparing VPS environment (Pure Schema - NO Flyway)..."
 
             sudo mkdir -p /opt/storebackend/backups
             sudo mkdir -p /opt/storebackend/logs
@@ -135,37 +110,29 @@ jobs:
               sudo useradd -r -s /bin/bash storebackend
             fi
 
-            # Move deploy.sh
-            if [ -f /tmp/deploy.sh ]; then
-              sudo mv /tmp/deploy.sh /opt/storebackend/deploy.sh
+            # Move deploy script
+            if [ -f /tmp/deploy-no-flyway.sh ]; then
+              sudo mv /tmp/deploy-no-flyway.sh /opt/storebackend/deploy.sh
+              sudo chmod +x /opt/storebackend/deploy.sh
+              echo "✅ Moved deploy script"
             fi
 
-            # Move Flyway-based scripts
-            for f in diagnose-database.sh flyway-helper.sh setup-postgres-user.sh install-minio.sh fix-db-password.sh check-server-error.sh diagnose-v17-migration.sh drop-coupon-tables.sh ; do
-              if [ -f "/tmp/$f" ]; then
-                sudo mv "/tmp/$f" "/opt/storebackend/scripts/$f"
-                echo "✅ Moved $f"
-              fi
-            done
+            # Move schema.sql
+            if [ -f /tmp/schema.sql ]; then
+              sudo mv /tmp/schema.sql /opt/storebackend/scripts/schema.sql
+              sudo chmod 644 /opt/storebackend/scripts/schema.sql
+              echo "✅ Moved schema.sql"
+            fi
 
             sudo chown -R storebackend:storebackend /opt/storebackend
             sudo chmod 755 /opt/storebackend
 
-            # Make scripts executable
-            sudo chmod +x /opt/storebackend/deploy.sh || true
-            sudo chmod +x /opt/storebackend/scripts/diagnose-database.sh || true
-            sudo chmod +x /opt/storebackend/scripts/flyway-helper.sh || true
-            sudo chmod +x /opt/storebackend/scripts/setup-postgres-user.sh || true
-            sudo chmod +x /opt/storebackend/scripts/install-minio.sh || true
-            sudo chmod +x /opt/storebackend/scripts/fix-db-password.sh || true
-            sudo chmod +x /opt/storebackend/scripts/check-server-error.sh || true
-            sudo chmod +x /opt/storebackend/scripts/diagnose-v17-migration.sh || true
-            sudo chmod +x /opt/storebackend/scripts/drop-coupon-tables.sh || true
-
-
-            echo "✅ VPS environment ready (Flyway-based)"
+            echo "✅ VPS environment ready (Pure Schema - NO Flyway)"
+            echo "📁 Files in /opt/storebackend:"
+            ls -lah /opt/storebackend/
+            echo ""
             echo "📁 Files in /opt/storebackend/scripts:"
-            ls -lah /opt/storebackend/scripts | head -50
+            ls -lah /opt/storebackend/scripts/ || true
 
       - name: 🗃️ Setup PostgreSQL Database (one-time, if needed)
         uses: appleboy/ssh-action@master
@@ -181,231 +148,162 @@ jobs:
             set -e
             echo "🗃️ Checking PostgreSQL setup..."
 
-            # Prüfe ob storeapp User existiert
+            # Check if database exists
+            if sudo -u postgres psql -lqt | cut -d \| -f 1 | grep -qw storedb; then
+              echo "✅ Database 'storedb' exists"
+            else
+              echo "📦 Creating database 'storedb'..."
+              sudo -u postgres psql -c "CREATE DATABASE storedb;"
+            fi
+
+            # Check if user exists
             if sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='storeapp'" | grep -q 1; then
               echo "✅ PostgreSQL user 'storeapp' exists"
-
-              # Stoppe App um Locks zu vermeiden
-              sudo systemctl stop storebackend || true
-              sleep 2
-
-              # WICHTIG: Setze Permissions VOR Flyway (verhindert V3 Lock)
-              echo "🔐 Setting complete permissions (outside Flyway to avoid locks)..."
-              cd /opt/storebackend
-              export DB_PASSWORD="${DB_PASSWORD}"
-              sudo -E ./scripts/fix-db-password.sh
-
-              echo "✅ Permissions set"
-
-
+              
+              # Update password
+              echo "🔐 Updating storeapp password..."
+              sudo -u postgres psql -c "ALTER USER storeapp WITH PASSWORD '${DB_PASSWORD}';"
+              
+              # Grant permissions
+              echo "🔐 Granting permissions..."
+              sudo -u postgres psql -d storedb <<EOF
+GRANT ALL PRIVILEGES ON DATABASE storedb TO storeapp;
+GRANT ALL PRIVILEGES ON SCHEMA public TO storeapp;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO storeapp;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO storeapp;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO storeapp;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO storeapp;
+EOF
+              
+              echo "✅ Permissions granted"
             else
-              echo "🆕 Creating PostgreSQL user and database..."
-              cd /opt/storebackend
-              export DB_PASSWORD="${DB_PASSWORD}"
-              sudo -E ./scripts/setup-postgres-user.sh
+              echo "📦 Creating PostgreSQL user 'storeapp'..."
+              sudo -u postgres psql <<EOF
+CREATE USER storeapp WITH PASSWORD '${DB_PASSWORD}';
+GRANT ALL PRIVILEGES ON DATABASE storedb TO storeapp;
+\c storedb
+GRANT ALL PRIVILEGES ON SCHEMA public TO storeapp;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO storeapp;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO storeapp;
+EOF
+              echo "✅ User created and permissions granted"
             fi
 
-            echo "✅ PostgreSQL ready - Flyway will handle schema migrations"
-
-      - name: 🗑️ Drop Old Coupon Tables (Fresh Start)
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          script: |
-            set -e
-            echo "🗑️ Dropping old coupon tables for fresh V17 migration..."
-            cd /opt/storebackend
-            sudo ./scripts/drop-coupon-tables.sh || echo "⚠️ Drop script failed or tables don't exist - continuing anyway"
-            echo "✅ Ready for fresh V17 migration"
-
-      - name: 🔧 Fix Flyway Schema History Mismatch
-        uses: appleboy/ssh-action@master
-        env:
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          envs: DB_PASSWORD
-          script: |
-            set -e
-            echo "🔍 Checking for Flyway History vs Schema mismatch..."
-            
-            # Prüfe ob cart_items Spalten fehlen
-            CREATED_AT_EXISTS=$(sudo -u postgres psql -d storedb -t -c "
-              SELECT EXISTS (
-                SELECT 1 FROM information_schema.columns 
-                WHERE table_name = 'cart_items' AND column_name = 'created_at'
-              );" | xargs)
-            
-            UPDATED_AT_EXISTS=$(sudo -u postgres psql -d storedb -t -c "
-              SELECT EXISTS (
-                SELECT 1 FROM information_schema.columns 
-                WHERE table_name = 'cart_items' AND column_name = 'updated_at'
-              );" | xargs)
-            
-            echo "created_at exists: $CREATED_AT_EXISTS"
-            echo "updated_at exists: $UPDATED_AT_EXISTS"
-            
-            if [ "$CREATED_AT_EXISTS" = "f" ] || [ "$UPDATED_AT_EXISTS" = "f" ]; then
-              echo "⚠️ Spalten fehlen trotz Flyway History - repariere..."
-              
-              # Entferne fehlerhafte V18 und V19 Einträge aus Flyway History
-              sudo -u postgres psql -d storedb -c "
-                DELETE FROM flyway_schema_history 
-                WHERE version IN ('18', '19');
-              " || echo "⚠️ Konnte History nicht bereinigen"
-              
-              echo "✅ Flyway History bereinigt - V20 wird die Spalten hinzufügen"
-            else
-              echo "✅ cart_items Spalten existieren - kein Repair nötig"
-            fi
-
-      - name: 🔄 Execute Deployment
+      - name: 🚀 Execute Deployment (Pure Schema)
         uses: appleboy/ssh-action@master
         env:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          FLYWAY_BASELINE_ON_MIGRATE: "true"   # ✅ Baseline bei V16, dann V17 ausführen
+          MINIO_ENABLED: ${{ secrets.MINIO_ENABLED }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          envs: DB_PASSWORD,JWT_SECRET,FLYWAY_BASELINE_ON_MIGRATE
+          envs: DB_PASSWORD,JWT_SECRET,MINIO_ENABLED
+          command_timeout: 5m
           script: |
             set -e
-            export DB_PASSWORD="${DB_PASSWORD}"
-            export JWT_SECRET="${JWT_SECRET}"
-            export FLYWAY_BASELINE_ON_MIGRATE="${FLYWAY_BASELINE_ON_MIGRATE}"
-
+            
+            # Ensure environment file exists
+            if [ ! -f /etc/storebackend.env ]; then
+              echo "SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}" | sudo tee /etc/storebackend.env > /dev/null
+              echo "JWT_SECRET=${JWT_SECRET}" | sudo tee -a /etc/storebackend.env > /dev/null
+              echo "MINIO_ENABLED=${MINIO_ENABLED:-false}" | sudo tee -a /etc/storebackend.env > /dev/null
+              sudo chmod 600 /etc/storebackend.env
+            fi
+            
+            # Run deploy script (applies schema.sql and starts app)
             cd /opt/storebackend
-            test -x ./deploy.sh
-            ./deploy.sh
-            
-            echo ""
+            sudo -E ./deploy.sh
+
+      - name: 📊 Database Status Check
+        uses: appleboy/ssh-action@master
+        if: success()
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
             echo "═══════════════════════════════════════════════════════════"
-            echo "📊 DATABASE STATUS AFTER DEPLOYMENT"
+            echo "📊 DATABASE STATUS (Pure Schema - NO Flyway)"
             echo "═══════════════════════════════════════════════════════════"
-            
             echo ""
-            echo "📋 1. Flyway Migration History:"
+            echo "📋 1. All Tables in Database:"
             echo "───────────────────────────────────────────────────────────"
             sudo -u postgres psql -d storedb -c "
             SELECT 
-              installed_rank AS rank,
-              version,
-              description,
-              type,
-              script,
-              installed_on,
-              execution_time AS exec_time_ms,
-              success
-            FROM flyway_schema_history 
-            ORDER BY installed_rank;" || echo "⚠️  flyway_schema_history table not found"
-            
-            echo ""
-            echo "📋 2. All Tables in Database:"
-            echo "───────────────────────────────────────────────────────────"
-            sudo -u postgres psql -d storedb -c "
-            SELECT 
-              schemaname,
               tablename,
-              pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size,
-              (SELECT COUNT(*) FROM information_schema.columns 
-               WHERE table_schema = schemaname AND table_name = tablename) AS column_count
+              pg_size_pretty(pg_total_relation_size('public.'||tablename)) AS size
             FROM pg_tables 
             WHERE schemaname = 'public' 
             ORDER BY tablename;" || echo "⚠️  Could not list tables"
             
             echo ""
-            echo "📋 3. Media Table Structure (wichtig für content_type):"
+            echo "📋 2. cart_items Table Structure (should have created_at/updated_at):"
             echo "───────────────────────────────────────────────────────────"
             sudo -u postgres psql -d storedb -c "
             SELECT 
               column_name,
               data_type,
-              character_maximum_length,
               is_nullable,
               column_default
             FROM information_schema.columns 
-            WHERE table_name = 'media' 
-            ORDER BY ordinal_position;" || echo "⚠️  Media table not found"
+            WHERE table_name = 'cart_items' 
+            ORDER BY ordinal_position;" || echo "⚠️  cart_items table not found"
             
             echo ""
-            echo "📋 4. Store Domains Table Structure:"
+            echo "📋 3. Verify created_at and updated_at columns:"
             echo "───────────────────────────────────────────────────────────"
-            sudo -u postgres psql -d storedb -c "
-            SELECT 
-              column_name,
-              data_type,
-              character_maximum_length,
-              is_nullable,
-              column_default
-            FROM information_schema.columns 
-            WHERE table_name = 'store_domains' 
-            ORDER BY ordinal_position;" || echo "⚠️  Store_domains table not found"
+            CREATED_AT=$(sudo -u postgres psql -d storedb -t -c "
+              SELECT EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'cart_items' AND column_name = 'created_at'
+              );" | xargs)
             
-            echo ""
-            echo "📋 5. Users Table Structure:"
-            echo "───────────────────────────────────────────────────────────"
-            sudo -u postgres psql -d storedb -c "
-            SELECT 
-              column_name,
-              data_type,
-              is_nullable
-            FROM information_schema.columns 
-            WHERE table_name = 'users' 
-            ORDER BY ordinal_position;" || echo "⚠️  Users table not found"
+            UPDATED_AT=$(sudo -u postgres psql -d storedb -t -c "
+              SELECT EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'cart_items' AND column_name = 'updated_at'
+              );" | xargs)
             
-            echo ""
-            echo "📋 6. Stores Table Structure:"
-            echo "──────────────────────────────────────────────────────���────"
-            sudo -u postgres psql -d storedb -c "
-            SELECT 
-              column_name,
-              data_type,
-              is_nullable
-            FROM information_schema.columns 
-            WHERE table_name = 'stores' 
-            ORDER BY ordinal_position;" || echo "⚠️  Stores table not found"
-            
-            echo ""
-            echo "📋 7. Row Counts (should be empty after fresh migration):"
-            echo "───────────────────────────────────────────────────────────"
-            for table in users stores products categories orders order_items cart_items media store_domains; do
-              count=$(sudo -u postgres psql -d storedb -t -c "SELECT COUNT(*) FROM $table;" 2>/dev/null | xargs || echo "N/A")
-              printf "%-20s : %s rows\n" "$table" "$count"
-            done
-            
-            echo ""
-            echo "📋 8. Flyway & Migration Logs from Application:"
-            echo "───────────────────────────────────────────────────────────"
-            sudo journalctl -u storebackend -n 500 --no-pager \
-            | grep -iE "flyway|migrat|schema_history|validate|baseline|V1__initial" || echo "No Flyway logs found"
-            
-            echo ""
-            echo "📋 9. Content-Type Column Check (should exist):"
-            echo "───────────────────────────────────────────────────────────"
-            sudo -u postgres psql -d storedb -c "
-            SELECT 
-              EXISTS (
-                SELECT 1 
-                FROM information_schema.columns 
-                WHERE table_name = 'media' AND column_name = 'content_type'
-              ) AS content_type_exists;" || echo "⚠️  Could not check content_type"
+            if [ "$CREATED_AT" = "t" ] && [ "$UPDATED_AT" = "t" ]; then
+              echo "✅ created_at: EXISTS"
+              echo "✅ updated_at: EXISTS"
+            else
+              echo "❌ created_at: $CREATED_AT"
+              echo "❌ updated_at: $UPDATED_AT"
+            fi
             
             echo ""
             echo "═══════════════════════════════════════════════════════════"
             echo "✅ DATABASE STATUS CHECK COMPLETE"
             echo "═══════════════════════════════════════════════════════════"
-            echo ""
 
-      - name: 🏥 Final Health Check
+      - name: 🎉 Deployment Summary
+        if: success()
+        run: |
+          echo "========================================="
+          echo "✅ DEPLOYMENT SUCCESSFUL"
+          echo "========================================="
+          echo ""
+          echo "📊 Architecture:"
+          echo "   - NO Flyway"
+          echo "   - Pure schema.sql (idempotent)"
+          echo "   - Hibernate: validate mode"
+          echo ""
+          echo "🗃️ Database:"
+          echo "   - Schema applied from scripts/db/schema.sql"
+          echo "   - Changes via psql before deploy"
+          echo ""
+          echo "🚀 Application:"
+          echo "   - Will crash if schema mismatch (by design)"
+          echo "   - Forces correct schema state"
+          echo ""
+
+      - name: ❌ Deployment Failed - Show Logs
+        if: failure()
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -413,110 +311,12 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
           script: |
-            set -e
-            echo "🏥 Warte auf Anwendungsstart (inkl. Flyway Migrationen)..."
-            echo "⏱️  Timeout: 240 Sekunden (4 Minuten)"
-
-            MAX_ATTEMPTS=8
-            SLEEP_TIME=5
-
-            for i in $(seq 1 $MAX_ATTEMPTS); do
-              ELAPSED=$((i * SLEEP_TIME))
-              echo "⏳ Versuch $i/$MAX_ATTEMPTS (${ELAPSED}s / 40s)..."
-
-              if curl -f -s http://localhost:8080/actuator/health > /dev/null 2>&1; then
-                echo ""
-                echo "✅ Application is running!"
-                echo "📊 Health Status:"
-                curl -s http://localhost:8080/actuator/health | jq '.' 2>/dev/null || curl -s http://localhost:8080/actuator/health
-                echo ""
-                echo "⏱️  Started after ${ELAPSED} seconds"
-                exit 0
-              fi
-
-              if [ $i -lt $MAX_ATTEMPTS ]; then
-                sleep $SLEEP_TIME
-              fi
-            done
-
+            echo "========================================="
+            echo "❌ DEPLOYMENT FAILED"
+            echo "========================================="
             echo ""
-            echo "❌ Application nicht erreichbar nach 240 Sekunden"
+            echo "📋 Last 100 log lines:"
+            sudo journalctl -u storebackend -n 100 --no-pager
             echo ""
-            echo "════════════════��══════════════════════════════════════════"
-            echo "🔍 RUNNING AUTOMATIC DIAGNOSTICS"
-            echo "═══════════════════════════════════════════════════════════"
-            echo ""
-            echo "📋 1. Running check-server-error.sh..."
-            echo "───────────────────────────────────────────────────────────"
-            /opt/storebackend/scripts/check-server-error.sh || true
-            echo ""
-            echo "📋 2. Running diagnose-v17-migration.sh..."
-            echo "───────────────────────────────────────────────────────────"
-            /opt/storebackend/scripts/diagnose-v17-migration.sh || true
-            echo ""
-            echo "═══════════════════════════════════════════════════════════"
-            echo "📋 SYSTEMD STATUS"
-            echo "═══════════════════════════════════════════════════════════"
-            sudo systemctl status storebackend --no-pager --lines=50 || true
-            echo ""
-            echo "═══════════════════════════════════════════════════════════"
-            echo "📋 LETZTE 200 LOG-ZEILEN (journalctl)"
-            echo "═══════════════════════════════════════════════════════════"
-            sudo journalctl -u storebackend -n 200 --no-pager || true
-            echo ""
-            echo "═══════════════════════════════════════════════════════════"
-            echo "💡 TROUBLESHOOTING TIPPS"
-            echo "═══════════════════════════════════════════════════════════"
-            echo "1. Prüfe Flyway-Migration-Logs auf Fehler (siehe oben)"
-            echo "2. Prüfe DB-Verbindung: sudo /opt/storebackend/scripts/diagnose-database.sh"
-            echo "3. Prüfe DB-Rechte: sudo /opt/storebackend/scripts/fix-db-password.sh"
-            echo "4. Prüfe MinIO Status: sudo systemctl status minio"
-            echo "5. Prüfe Schema-Validation: sudo journalctl -u storebackend | grep -i schema"
-            echo ""
-            exit 1
-
-      - name: Wait for Application to Start
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
-            echo "=========================================="
-            echo "🔍 CHECKING cart_items SCHEMA"
-            echo "=========================================="
-            
-            sudo -u postgres psql -d storedb -t -c "
-            SELECT 
-              column_name, 
-              data_type
-            FROM information_schema.columns
-            WHERE table_schema = 'public' AND table_name = 'cart_items'
-            ORDER BY ordinal_position;
-            "
-            
-            echo ""
-            echo "Checking for created_at column:"
-            sudo -u postgres psql -d storedb -t -c "
-            SELECT EXISTS (
-              SELECT 1 FROM information_schema.columns
-              WHERE table_schema = 'public' 
-              AND table_name = 'cart_items' 
-              AND column_name = 'created_at'
-            );
-            "
-            
-            echo ""
-            echo "Checking for updated_at column:"
-            sudo -u postgres psql -d storedb -t -c "
-            SELECT EXISTS (
-              SELECT 1 FROM information_schema.columns
-              WHERE table_schema = 'public' 
-              AND table_name = 'cart_items' 
-              AND column_name = 'updated_at'
-            );
-            "
-            
-            echo ""
-            echo "Full application logs (last 100 lines):"
-            sudo journalctl -u storebackend --no-pager -n 100
+            echo "📋 Systemd status:"
+            sudo systemctl status storebackend --no-pager || true

@@ -18,7 +18,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate  # ✅ Nach Squash: validate (Schema kommt von Flyway)
+      ddl-auto: validate  # ✅ Schema-Validierung - Schema kommt von scripts/db/schema.sql
     show-sql: false  # In Production: false (Performance)
     open-in-view: false  # Verhindert lazy-loading Probleme
     properties:
@@ -29,39 +29,6 @@ spring:
           batch_size: 50
         order_inserts: true
         order_updates: true
-
-  # ==========================================
-  # Flyway Migrations - AFTER SQUASH (V17 Baseline)
-  # ==========================================
-  flyway:
-    enabled: true
-
-    # Baseline für V17 nach Squash
-    baseline-on-migrate: ${FLYWAY_BASELINE_ON_MIGRATE:true}
-    baseline-version: 16  # ✅ V1-V16 existieren in DB, V17 ist neue Baseline
-
-    locations: classpath:db/migration
-    schemas: public
-    default-schema: public
-
-    # User für Migrationen
-    user: ${FLYWAY_USER:storeapp}
-    password: ${FLYWAY_PASSWORD:${SPRING_DATASOURCE_PASSWORD:postgres}}
-
-    # WICHTIG: Validierung deaktivieren (temporär für Squash-Migration)
-    validate-on-migrate: false  # ✅ Ignoriert fehlende V2-V16
-    out-of-order: false
-    ignore-missing-migrations: true  # ✅ WICHTIG: Ignoriert fehlende V2-V16 (nur V17 im Classpath)
-    ignore-ignored-migrations: true  # ✅ Ignoriert gelöschte Migrationen
-    ignore-future-migrations: false
-
-    # Clean DEAKTIVIERT
-    clean-disabled: true
-
-    # Repair aktiviert zum Markieren gelöschter Migrationen
-    repair-on-migrate: ${FLYWAY_REPAIR_ON_MIGRATE:true}
-
-    create-schemas: false
 
   servlet:
     multipart:
@@ -81,7 +48,7 @@ logging:
     root: INFO
     storebackend: INFO
     org.springframework.security: INFO
-    org.flywaydb: DEBUG  # ✅ Flyway Logs sichtbar machen
+    org.hibernate: INFO
 
 # Swagger/OpenAPI Configuration
 springdoc:
