@@ -146,19 +146,20 @@ public class CartController {
         List<Map<String, Object>> itemDtos = items.stream().map(item -> {
             Map<String, Object> dto = new HashMap<>();
             dto.put("id", item.getId());
-            dto.put("variantId", item.getVariant() != null ? item.getVariant().getId() : null);
             dto.put("quantity", item.getQuantity());
             dto.put("price", item.getPriceSnapshot());
 
-            // Füge Variant-Details hinzu
+            // Füge Variant-Details hinzu (wenn vorhanden)
             if (item.getVariant() != null) {
+                dto.put("variantId", item.getVariant().getId());
+
                 Map<String, Object> variantDto = new HashMap<>();
                 variantDto.put("id", item.getVariant().getId());
                 variantDto.put("sku", item.getVariant().getSku());
                 variantDto.put("price", item.getVariant().getPrice());
                 variantDto.put("stock", item.getVariant().getStockQuantity());
 
-                // Füge Product-Details hinzu
+                // Füge Product-Details hinzu (über Variant)
                 if (item.getVariant().getProduct() != null) {
                     Map<String, Object> productDto = new HashMap<>();
                     productDto.put("id", item.getVariant().getProduct().getId());
@@ -169,6 +170,20 @@ public class CartController {
                 }
 
                 dto.put("variant", variantDto);
+            }
+            // Behandle Items ohne Variante (nur Product)
+            else if (item.getProduct() != null) {
+                dto.put("variantId", null);
+                dto.put("productId", item.getProduct().getId());
+
+                Map<String, Object> productDto = new HashMap<>();
+                productDto.put("id", item.getProduct().getId());
+                productDto.put("name", item.getProduct().getTitle());
+                productDto.put("description", item.getProduct().getDescription());
+                productDto.put("price", item.getProduct().getBasePrice());
+                productDto.put("imageUrl", item.getProduct().getTitle());
+
+                dto.put("product", productDto);
             }
 
             return dto;

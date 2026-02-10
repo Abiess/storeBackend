@@ -271,34 +271,48 @@ public class SimpleCartController {
                         Map<String, Object> dto = new java.util.HashMap<>();
                         dto.put("id", item.getId());
                         dto.put("quantity", item.getQuantity());
-                        dto.put("priceSnapshot", item.getPriceSnapshot());
+                        dto.put("priceSnapshot", item.getPrice()); // FIXED: Verwende getPrice()
 
-                        Product product = item.getVariant().getProduct();
-                        dto.put("productId", product.getId());
-                        dto.put("productTitle", product.getTitle());
-                        dto.put("productDescription", product.getDescription());
-                        dto.put("variantId", item.getVariant().getId());
-                        dto.put("variantSku", item.getVariant().getSku());
+                        // FIXED: Behandle Items ohne Varianten (einfache Produkte)
+                        Product product = item.getProduct();
+                        if (product == null && item.getVariant() != null) {
+                            product = item.getVariant().getProduct();
+                        }
 
-                        // Füge Produktbild hinzu
-                        try {
-                            List<ProductMedia> media = productMediaRepository.findByProductIdOrderBySortOrderAsc(product.getId());
-                            if (!media.isEmpty()) {
-                                ProductMedia primaryMedia = media.stream()
-                                    .filter(pm -> pm != null && pm.getIsPrimary() != null && pm.getIsPrimary())
-                                    .findFirst()
-                                    .orElse(media.get(0));
+                        if (product != null) {
+                            dto.put("productId", product.getId());
+                            dto.put("productTitle", product.getTitle());
+                            dto.put("productDescription", product.getDescription());
 
-                                if (primaryMedia != null && primaryMedia.getMedia() != null) {
-                                    String imageUrl = minioService.getPresignedUrl(
-                                        primaryMedia.getMedia().getMinioObjectName(), 60
-                                    );
-                                    dto.put("imageUrl", imageUrl);
+                            // Füge Produktbild hinzu
+                            try {
+                                List<ProductMedia> media = productMediaRepository.findByProductIdOrderBySortOrderAsc(product.getId());
+                                if (!media.isEmpty()) {
+                                    ProductMedia primaryMedia = media.stream()
+                                        .filter(pm -> pm != null && pm.getIsPrimary() != null && pm.getIsPrimary())
+                                        .findFirst()
+                                        .orElse(media.get(0));
+
+                                    if (primaryMedia != null && primaryMedia.getMedia() != null) {
+                                        String imageUrl = minioService.getPresignedUrl(
+                                            primaryMedia.getMedia().getMinioObjectName(), 60
+                                        );
+                                        dto.put("imageUrl", imageUrl);
+                                    }
                                 }
+                            } catch (Exception e) {
+                                log.warn("Could not load image for product {}: {}", product.getId(), e.getMessage());
+                                dto.put("imageUrl", null);
                             }
-                        } catch (Exception e) {
-                            log.warn("Could not load image for product {}: {}", product.getId(), e.getMessage());
-                            dto.put("imageUrl", null);
+                        }
+
+                        // Füge Varianten-Informationen hinzu (falls vorhanden)
+                        if (item.getVariant() != null) {
+                            dto.put("variantId", item.getVariant().getId());
+                            dto.put("variantSku", item.getVariant().getSku());
+                        } else {
+                            dto.put("variantId", null);
+                            dto.put("variantSku", null);
                         }
 
                         return dto;
@@ -306,7 +320,7 @@ public class SimpleCartController {
                     .toList();
 
             BigDecimal subtotal = items.stream()
-                    .map(item -> item.getPriceSnapshot().multiply(BigDecimal.valueOf(item.getQuantity())))
+                    .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             int itemCount = items.stream().mapToInt(CartItem::getQuantity).sum();
@@ -380,44 +394,61 @@ public class SimpleCartController {
             Integer quantity = Integer.valueOf(request.getOrDefault("quantity", 1).toString());
             String sessionId = (String) request.get("sessionId");
 
+            log.info("📥 Adding item to cart: productId={}, quantity={}, storeId={}, userId={}, sessionId={}",
+                productId, quantity, storeId, userId, sessionId);
+
             Product product = productRepository.findById(productId)
                     .orElseThrow(() -> new RuntimeException("Product not found"));
 
             Cart cart = findOrCreateCart(userId, storeId, sessionId);
+            log.info("🛒 Using cart ID: {}", cart.getId());
 
-            // Für Produkte ohne Varianten: Erstelle eine "Default-Variante"
-            ProductVariant defaultVariant = getOrCreateDefaultVariant(product);
-
-            // Check if item already exists
+            // Für Produkte ohne Varianten: Suche nach existierendem Item mit gleicher productId und ohne Variante
             Optional<CartItem> existingItem = cartItemRepository
-                    .findByCartIdAndVariantId(cart.getId(), defaultVariant.getId());
+                    .findByCartIdAndProductIdAndVariantIsNull(cart.getId(), productId);
 
             CartItem cartItem;
             if (existingItem.isPresent()) {
+                // Item existiert bereits - Menge erhöhen
                 cartItem = existingItem.get();
-                cartItem.setQuantity(cartItem.getQuantity() + quantity);
+                int oldQuantity = cartItem.getQuantity();
+                cartItem.setQuantity(oldQuantity + quantity);
+                cartItemRepository.save(cartItem);
+                log.info("✅ Updated existing cart item {} (quantity: {} -> {})",
+                    cartItem.getId(), oldQuantity, cartItem.getQuantity());
             } else {
+                // Neues Item hinzufügen (ohne Variante für einfache Produkte)
                 cartItem = new CartItem();
                 cartItem.setCart(cart);
-                cartItem.setProduct(product); // FIXED: Set product reference
-                cartItem.setVariant(defaultVariant);
+                cartItem.setProduct(product);
+                cartItem.setVariant(null); // Kein Variant für einfache Produkte
                 cartItem.setQuantity(quantity);
-                cartItem.setPriceSnapshot(product.getBasePrice());
+                cartItem.setPrice(product.getBasePrice()); // FIXED: Verwende setPrice() statt setPriceSnapshot()
+                cartItemRepository.save(cartItem);
+                log.info("✅ Added new cart item {} to cart {}", cartItem.getId(), cart.getId());
             }
 
-            cartItemRepository.save(cartItem);
+            // Berechne aktuelle Cart-Statistiken
+            List<CartItem> allItems = cartItemRepository.findByCartId(cart.getId());
+            int totalItemCount = allItems.stream().mapToInt(CartItem::getQuantity).sum();
+            BigDecimal subtotal = allItems.stream()
+                .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            log.info("✅ Added product {} to cart {} (userId: {}, storeId: {})", productId, cart.getId(), userId, storeId);
+            log.info("✅ Cart now contains {} items (total quantity), subtotal: {}", totalItemCount, subtotal);
 
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "Product added to cart",
                 "cartId", cart.getId(),
-                "sessionId", cart.getSessionId() != null ? cart.getSessionId() : ""
+                "sessionId", cart.getSessionId() != null ? cart.getSessionId() : "",
+                "itemCount", totalItemCount,
+                "subtotal", subtotal,
+                "cartItemId", cartItem.getId()
             ));
 
         } catch (Exception e) {
-            log.error("Error adding item to cart: {}", e.getMessage(), e);
+            log.error("❌ Error adding item to cart: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().body(Map.of(
                 "success", false,
                 "message", e.getMessage()
@@ -426,7 +457,7 @@ public class SimpleCartController {
     }
 
     /**
-     * Erstellt oder lädt die Default-Variante für ein Produkt
+     * FIXED: Erstellt oder lädt die Default-Variante für ein Produkt
      * Erstellt eine echte Variante in der Datenbank wenn keine existiert
      */
     private ProductVariant getOrCreateDefaultVariant(Product product) {

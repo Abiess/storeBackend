@@ -27,35 +27,65 @@ public class CartItem {
     private Product product;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "variant_id", nullable = false)
+    @JoinColumn(name = "variant_id") // FIXED: nullable = true (default)
     private ProductVariant variant;
 
     @Column(nullable = false)
     private Integer quantity = 1;
 
-    @Column(name = "price_snapshot", nullable = false, precision = 10, scale = 2)
-    private BigDecimal priceSnapshot;
+    // FIXED: Map to 'price' column in database (not 'price_snapshot')
+    @Column(name = "price", nullable = false, precision = 10, scale = 2)
+    private BigDecimal price;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    // Keep price_snapshot as alias for compatibility
+    @Transient
+    public BigDecimal getPriceSnapshot() {
+        return price;
+    }
 
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
+    public void setPriceSnapshot(BigDecimal priceSnapshot) {
+        this.price = priceSnapshot;
+    }
+
+    @Column(name = "added_at", nullable = false, updatable = false)
+    private LocalDateTime addedAt;
+
+    // Keep created_at and updated_at for compatibility
+    @Transient
+    public LocalDateTime getCreatedAt() {
+        return addedAt;
+    }
+
+    public void setCreatedAt(LocalDateTime addedAt) {
+        this.addedAt = addedAt;
+    }
+
+    @Transient
+    public LocalDateTime getUpdatedAt() {
+        return addedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime addedAt) {
+        // Ignore updates for this field
+    }
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        addedAt = LocalDateTime.now();
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        // No update timestamp needed
     }
 
     // Explizite Getter/Setter für Lombok-Kompatibilität
     public Long getId() {
         return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public Cart getCart() {
@@ -90,19 +120,19 @@ public class CartItem {
         this.quantity = quantity;
     }
 
-    public BigDecimal getPriceSnapshot() {
-        return priceSnapshot;
+    public BigDecimal getPrice() {
+        return price;
     }
 
-    public void setPriceSnapshot(BigDecimal priceSnapshot) {
-        this.priceSnapshot = priceSnapshot;
+    public void setPrice(BigDecimal price) {
+        this.price = price;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
+    public LocalDateTime getAddedAt() {
+        return addedAt;
     }
 
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
+    public void setAddedAt(LocalDateTime addedAt) {
+        this.addedAt = addedAt;
     }
 }
