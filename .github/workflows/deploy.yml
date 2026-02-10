@@ -172,7 +172,7 @@ jobs:
             cd /opt/storebackend
             sudo -E bash deploy.sh
 
-      - name: 🏥 Health Check
+      - name: 🏥 Health Check with Auto-Recovery
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -183,18 +183,59 @@ jobs:
             set -e
             echo "🏥 Waiting for app..."
 
-            for i in $(seq 1 30); do
-              if curl -fsS http://localhost:8080/actuator/health >/dev/null; then
-                echo "✅ Healthy"
+            # Erste Versuche (0-15)
+            ATTEMPT=0
+            MAX_ATTEMPTS=30
+            RECOVERY_ATTEMPTED=false
+
+            while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+              ATTEMPT=$((ATTEMPT + 1))
+              
+              # Prüfe Health Check
+              HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health || echo "000")
+              
+              if [ "$HTTP_CODE" = "200" ]; then
+                echo "✅ Healthy!"
                 curl -fsS http://localhost:8080/actuator/health
                 exit 0
+              elif [ "$HTTP_CODE" = "503" ] && [ "$RECOVERY_ATTEMPTED" = "false" ] && [ $ATTEMPT -ge 10 ]; then
+                echo "⚠️  HTTP 503 detected - attempting auto-recovery..."
+                echo ""
+                echo "🔧 Step 1: Checking PostgreSQL..."
+                if ! sudo -u postgres psql -d storedb -c "SELECT 1;" &>/dev/null; then
+                  echo "   ❌ DB not responding, restarting PostgreSQL..."
+                  sudo systemctl restart postgresql
+                  sleep 3
+                else
+                  echo "   ✅ PostgreSQL is responding"
+                fi
+                
+                echo ""
+                echo "🔧 Step 2: Restarting StoreBackend service..."
+                sudo systemctl restart storebackend
+                RECOVERY_ATTEMPTED=true
+                echo "   ✅ Service restarted, continuing health checks..."
+                sleep 5
+                continue
               fi
-              echo "⏳ Attempt $i/30..."
+              
+              echo "⏳ Attempt $ATTEMPT/$MAX_ATTEMPTS (HTTP $HTTP_CODE)..."
               sleep 2
             done
 
-            echo "❌ Health check failed"
+            # Wenn alle Versuche fehlgeschlagen sind
+            echo ""
+            echo "❌ Health check failed after $MAX_ATTEMPTS attempts"
+            echo ""
+            echo "📊 Service Status:"
+            sudo systemctl status storebackend --no-pager -l | head -20 || true
+            echo ""
+            echo "❌ Last 120 log lines:"
             sudo journalctl -u storebackend -n 120 --no-pager || true
+            echo ""
+            echo "🔍 Database Status:"
+            sudo systemctl status postgresql --no-pager | head -10 || true
+            
             exit 1
 
       - name: 📊 Show Service Status

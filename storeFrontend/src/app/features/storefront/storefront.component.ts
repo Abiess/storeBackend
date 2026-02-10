@@ -13,6 +13,12 @@ import { ProductQuickViewComponent } from '@app/shared/components/product-quick-
 import { FeaturedProductsComponent } from '@app/shared/components/featured-products.component';
 import { TopBarComponent } from '@app/shared/components/top-bar/top-bar.component';
 import { StoreSliderViewerComponent } from './components/store-slider-viewer.component';
+// NEW: Import moderne Layout-Komponenten
+import { StoreLayoutComponent } from './components/store-layout.component';
+import { StoreSidebarComponent } from './components/store-sidebar.component';
+import { ProductGridComponent } from './components/product-grid.component';
+import { ModernProductCardComponent } from './components/modern-product-card.component';
+import { ModernStoreHeaderComponent } from './components/modern-store-header.component';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -27,7 +33,13 @@ import { Subscription } from 'rxjs';
     ProductQuickViewComponent,
     FeaturedProductsComponent,
     TopBarComponent,
-    StoreSliderViewerComponent
+    StoreSliderViewerComponent,
+    // NEW: Moderne Layout-Komponenten
+    StoreLayoutComponent,
+    StoreSidebarComponent,
+    ProductGridComponent,
+    ModernProductCardComponent,
+    ModernStoreHeaderComponent
   ],
   templateUrl: './storefront.component.html',
   styleUrls: ['./storefront.component.scss']
@@ -49,6 +61,9 @@ export class StorefrontComponent implements OnInit, OnDestroy {
 
   // FIXED: Subscription für Warenkorb-Updates
   private cartUpdateSubscription?: Subscription;
+
+  // NEW: Für Suchfunktion
+  searchQuery = '';
 
   constructor(
     private route: ActivatedRoute,
