@@ -1,5 +1,5 @@
 #!/bin/bash
-# Fix PostgreSQL Password und Rechte für storeapp User
+# Fix PostgreSQL Password und Rechte für storeapp User and
 # Idempotent - kann mehrfach ausgeführt werden
 # LOCK-SAFE: Stoppt App, terminiert Sessions, nutzt Timeouts
 
