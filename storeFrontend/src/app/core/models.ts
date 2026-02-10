@@ -163,6 +163,7 @@ export interface Product {
   storeId: number;
   name?: string;
   title: string;
+  sku?: string;
   description?: string;
   price?: number;
   basePrice: number;

@@ -23,7 +23,11 @@ public class OrderItem {
     private Order order;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "variant_id", nullable = false)
+    @JoinColumn(name = "product_id")
+    private Product product;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "variant_id")
     private ProductVariant variant;
 
     // MARKETPLACE: Track imported products and revenue split
@@ -40,14 +44,26 @@ public class OrderItem {
     @Column(name = "platform_fee_percentage", precision = 5, scale = 4)
     private BigDecimal platformFeePercentage; // Snapshot (e.g., 0.05 = 5%)
 
-    @Column(name = "product_name", nullable = false)
-    private String productName;
+    @Column(name = "name", nullable = false)
+    private String name;
+
+    @Column(name = "sku")
+    private String sku;
+
+    @Column(name = "variant_title")
+    private String variantTitle;
 
     @Column(nullable = false)
     private Integer quantity;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
+
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal total;
+
+    @Column(name = "product_name")
+    private String productName;
 
     @Column(columnDefinition = "TEXT")
     private String productSnapshot; // JSON: Name, Image, Attributes zum Bestellzeitpunkt
@@ -58,5 +74,9 @@ public class OrderItem {
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+        // Automatically calculate total if not set
+        if (total == null && price != null && quantity != null) {
+            total = price.multiply(BigDecimal.valueOf(quantity));
+        }
     }
 }

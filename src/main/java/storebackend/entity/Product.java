@@ -41,6 +41,9 @@ public class Product {
     @Column(nullable = false)
     private String title;
 
+    @Column(name = "sku")
+    private String sku;
+
     @Column(columnDefinition = "TEXT")
     private String description;
 

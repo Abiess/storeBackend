@@ -137,10 +137,29 @@ public class OrderService {
                 throw new RuntimeException("CartItem has neither variant nor product");
             }
 
+            // Set product reference
+            orderItem.setProduct(product);
             orderItem.setVariant(variant);
+
+            // Set name (required field in DB)
+            orderItem.setName(product.getTitle());
             orderItem.setProductName(product.getTitle());
+
+            // Set SKU and variant title if variant exists
+            if (variant != null) {
+                orderItem.setSku(variant.getSku());
+                orderItem.setVariantTitle(variant.getAttributesJson());
+            } else {
+                orderItem.setSku(product.getSku());
+                orderItem.setVariantTitle(null);
+            }
+
             orderItem.setQuantity(cartItem.getQuantity());
             orderItem.setPrice(cartItem.getPriceSnapshot());
+
+            // Calculate total (price * quantity)
+            orderItem.setTotal(cartItem.getPriceSnapshot().multiply(BigDecimal.valueOf(cartItem.getQuantity())));
+
             orderItem.setProductSnapshot(variant != null
                 ? createProductSnapshot(variant)
                 : createProductSnapshotFromProduct(product));

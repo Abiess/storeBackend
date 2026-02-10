@@ -144,6 +144,7 @@ CREATE TABLE products (
     store_id BIGINT NOT NULL,
     category_id BIGINT,
     title VARCHAR(255) NOT NULL,
+    sku VARCHAR(100),
     description VARCHAR(10000),
     base_price DECIMAL(10,2) NOT NULL,
     status VARCHAR(50) NOT NULL DEFAULT 'DRAFT',
