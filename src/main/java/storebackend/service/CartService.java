@@ -77,6 +77,7 @@ public class CartService {
             CartItem item = new CartItem();
             item.setCart(cart);
             item.setVariant(variant);
+            item.setProduct(variant.getProduct());  // Set product from variant
             item.setQuantity(quantity);
             item.setPriceSnapshot(variant.getPrice());
             return cartItemRepository.save(item);
