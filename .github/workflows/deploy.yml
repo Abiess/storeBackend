@@ -2,10 +2,12 @@ name: Deploy Backend to VPS
 
 on:
   push:
-    branches:
-      - main
-      - master
+    branches: [ main, master ]
   workflow_dispatch:
+
+concurrency:
+  group: deploy-backend-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-and-deploy:
@@ -13,10 +15,10 @@ jobs:
 
     steps:
       - name: 📥 Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: ☕ Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: "17"
           distribution: "temurin"
@@ -29,7 +31,8 @@ jobs:
 
       - name: 📦 Prepare JAR for Deployment
         run: |
-          JAR_FILE=$(find target -name "*SNAPSHOT.jar" -o -name "storeBackend*.jar" | grep -v javadoc | head -n 1)
+          set -e
+          JAR_FILE=$(find target -maxdepth 1 -type f \( -name "*SNAPSHOT.jar" -o -name "storeBackend*.jar" \) | grep -v javadoc | head -n 1)
 
           if [ -z "$JAR_FILE" ]; then
             echo "❌ No JAR file found in target directory!"
@@ -37,14 +40,10 @@ jobs:
             exit 1
           fi
 
-          JAR_SIZE=$(stat --format=%s "$JAR_FILE" 2>/dev/null || stat -f%z "$JAR_FILE" 2>/dev/null)
-          echo "Found JAR: $(basename "$JAR_FILE") ($(numfmt --to=iec $JAR_SIZE 2>/dev/null || du -h "$JAR_FILE" | cut -f1))"
-
           cp "$JAR_FILE" target/app.jar
           test -f target/app.jar
-
-          echo "✅ Created target/app.jar for deployment"
-          ls -lah target/
+          ls -lah target/app.jar
+          echo "✅ Prepared target/app.jar"
 
       - name: 🚀 Deploy JAR to VPS (/tmp)
         uses: appleboy/scp-action@master
@@ -56,15 +55,6 @@ jobs:
           source: "target/app.jar"
           target: "/tmp/"
           strip_components: 1
-
-      - name: 🔍 Debug - Verify required files
-        run: |
-          echo "PWD: $(pwd)"
-          echo ""
-          echo "✅ Required files for deployment:"
-          ls -lah scripts/deploy.sh
-          echo ""
-          echo "✅ Deploy script present"
 
       - name: 📋 Copy deploy script to VPS
         uses: appleboy/scp-action@master
@@ -86,9 +76,12 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           script: |
             set -e
-            echo "🔍 Checking for app.jar in /tmp..."
+            echo "🔍 Checking /tmp/app.jar..."
             test -f /tmp/app.jar
             ls -lah /tmp/app.jar
+            echo "🔍 Checking /tmp/deploy.sh..."
+            test -f /tmp/deploy.sh
+            ls -lah /tmp/deploy.sh
 
       - name: 🔧 Setup VPS Environment
         uses: appleboy/ssh-action@master
@@ -101,29 +94,24 @@ jobs:
             set -e
             echo "🔧 Preparing VPS environment..."
 
-            sudo mkdir -p /opt/storebackend/backups
-            sudo mkdir -p /opt/storebackend/logs
-            sudo mkdir -p /opt/storebackend/scripts
+            sudo mkdir -p /opt/storebackend/{backups,logs,scripts}
 
-            if ! id -u storebackend > /dev/null 2>&1; then
+            if ! id -u storebackend >/dev/null 2>&1; then
               sudo useradd -r -s /bin/bash storebackend
             fi
 
-            # Move deploy script
             if [ -f /tmp/deploy.sh ]; then
               sudo mv /tmp/deploy.sh /opt/storebackend/deploy.sh
               sudo chmod +x /opt/storebackend/deploy.sh
-              echo "✅ Moved deploy script"
             fi
 
             sudo chown -R storebackend:storebackend /opt/storebackend
             sudo chmod 755 /opt/storebackend
 
-            echo "✅ VPS environment ready"
-            echo "📁 Files in /opt/storebackend:"
-            ls -lah /opt/storebackend/
+            echo "✅ VPS ready:"
+            ls -lah /opt/storebackend
 
-      - name: 🗃️ Setup PostgreSQL Database (one-time, if needed)
+      - name: 🗃️ Setup PostgreSQL Database (idempotent)
         uses: appleboy/ssh-action@master
         env:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
@@ -134,49 +122,37 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           envs: DB_PASSWORD
           script: |
-            set -e
-            echo "🗃️ Checking PostgreSQL setup..."
+            set -euo pipefail
 
-            # Check if database exists
-            if sudo -u postgres psql -lqt | cut -d \| -f 1 | grep -qw storedb; then
-              echo "✅ Database 'storedb' exists"
-            else
-              echo "📦 Creating database 'storedb'..."
+            echo "🗃️ Ensuring database and user exist..."
+
+            # Create DB if missing
+            if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='storedb'" | grep -q 1; then
+              echo "📦 Creating database storedb..."
               sudo -u postgres psql -c "CREATE DATABASE storedb;"
+            else
+              echo "✅ Database storedb exists"
             fi
 
-            # Check if user exists
-            if sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='storeapp'" | grep -q 1; then
-              echo "✅ PostgreSQL user 'storeapp' exists"
-              
-              # Update password
-              echo "🔐 Updating storeapp password..."
-              sudo -u postgres psql -c "ALTER USER storeapp WITH PASSWORD '${DB_PASSWORD}';"
-              
-              # Grant permissions
-              echo "🔐 Granting permissions..."
-              sudo -u postgres psql -d storedb <<EOF
-              GRANT ALL PRIVILEGES ON DATABASE storedb TO storeapp;
-              GRANT ALL PRIVILEGES ON SCHEMA public TO storeapp;
-              GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO storeapp;
-              GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO storeapp;
-              ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO storeapp;
-              ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO storeapp;
-              EOF
-              
-              echo "✅ Permissions granted"
+            # Create user if missing
+            if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='storeapp'" | grep -q 1; then
+              echo "📦 Creating role storeapp..."
+              sudo -u postgres psql -c "CREATE USER storeapp WITH PASSWORD '${DB_PASSWORD}';"
             else
-              echo "📦 Creating PostgreSQL user 'storeapp'..."
-              sudo -u postgres psql <<EOF
-              CREATE USER storeapp WITH PASSWORD '${DB_PASSWORD}';
-              GRANT ALL PRIVILEGES ON DATABASE storedb TO storeapp;
-              \c storedb
-              GRANT ALL PRIVILEGES ON SCHEMA public TO storeapp;
-              ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO storeapp;
-              ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO storeapp;
-              EOF
-              echo "✅ User created and permissions granted"
+              echo "✅ Role storeapp exists"
+              echo "🔐 Updating password for storeapp..."
+              sudo -u postgres psql -c "ALTER USER storeapp WITH PASSWORD '${DB_PASSWORD}';"
             fi
+
+            echo "🔐 Granting privileges..."
+            sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE storedb TO storeapp;"
+            sudo -u postgres psql -d storedb -c "GRANT ALL PRIVILEGES ON SCHEMA public TO storeapp;"
+            sudo -u postgres psql -d storedb -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO storeapp;"
+            sudo -u postgres psql -d storedb -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO storeapp;"
+            sudo -u postgres psql -d storedb -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO storeapp;"
+            sudo -u postgres psql -d storedb -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO storeapp;"
+
+            echo "✅ DB setup done"
 
       - name: 🚀 Execute Deployment
         uses: appleboy/ssh-action@master
@@ -192,8 +168,7 @@ jobs:
           envs: DB_PASSWORD,JWT_SECRET,MINIO_ENABLED
           script: |
             set -e
-            echo "🚀 Executing deployment script..."
-            
+            echo "🚀 Deploying..."
             cd /opt/storebackend
             sudo -E bash deploy.sh
 
@@ -206,26 +181,20 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           script: |
             set -e
-            echo "🏥 Waiting for application to start..."
-            
-            MAX_RETRIES=30
-            RETRY=0
-            
-            while [ $RETRY -lt $MAX_RETRIES ]; do
-              if curl -f http://localhost:8080/actuator/health > /dev/null 2>&1; then
-                echo "✅ Application is healthy!"
-                curl http://localhost:8080/actuator/health
+            echo "🏥 Waiting for app..."
+
+            for i in $(seq 1 30); do
+              if curl -fsS http://localhost:8080/actuator/health >/dev/null; then
+                echo "✅ Healthy"
+                curl -fsS http://localhost:8080/actuator/health
                 exit 0
               fi
-              
-              RETRY=$((RETRY + 1))
-              echo "⏳ Attempt $RETRY/$MAX_RETRIES - waiting..."
+              echo "⏳ Attempt $i/30..."
               sleep 2
             done
-            
-            echo "❌ Health check failed after $MAX_RETRIES attempts"
-            echo "📋 Last 50 lines of application logs:"
-            sudo journalctl -u storebackend -n 50 --no-pager
+
+            echo "❌ Health check failed"
+            sudo journalctl -u storebackend -n 120 --no-pager || true
             exit 1
 
       - name: 📊 Show Service Status
@@ -241,4 +210,4 @@ jobs:
             sudo systemctl status storebackend --no-pager || true
             echo ""
             echo "📋 Recent logs:"
-            sudo journalctl -u storebackend -n 30 --no-pager || true
+            sudo journalctl -u storebackend -n 60 --no-pager || true
