@@ -134,6 +134,7 @@ public class SimpleCartController {
                 // Neu: Erstelle Item im User-Cart
                 CartItem newUserItem = new CartItem();
                 newUserItem.setCart(userCart);
+                newUserItem.setProduct(guestItem.getProduct()); // FIXED: Set product reference
                 newUserItem.setVariant(guestItem.getVariant());
                 newUserItem.setQuantity(guestItem.getQuantity());
                 newUserItem.setPriceSnapshot(guestItem.getPriceSnapshot());
@@ -398,6 +399,7 @@ public class SimpleCartController {
             } else {
                 cartItem = new CartItem();
                 cartItem.setCart(cart);
+                cartItem.setProduct(product); // FIXED: Set product reference
                 cartItem.setVariant(defaultVariant);
                 cartItem.setQuantity(quantity);
                 cartItem.setPriceSnapshot(product.getBasePrice());
