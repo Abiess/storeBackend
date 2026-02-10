@@ -189,21 +189,6 @@ else
 fi
 echo ""
 
-# ✅ FLYWAY MACHT JETZT ALLES AUTOMATISCH!
-echo "📊 Database migrations will be handled by Flyway automatically on startup..."
-echo "   ✅ Flyway is configured to run migrations before application starts"
-echo "   ✅ Baseline will be created automatically for existing databases"
-echo "   ✅ All schema changes are versioned and tracked"
-echo "   ✅ Checksum validation enabled (immutable migrations)"
-echo ""
-
-# Optional: Flyway Repair bei Checksum-Problemen
-if [ "${FLYWAY_REPAIR_ON_MIGRATE:-false}" = "true" ]; then
-    print_warning "FLYWAY_REPAIR_ON_MIGRATE ist aktiviert!"
-    echo "   Flyway wird bei Start automatisch Checksums reparieren"
-    echo "   ACHTUNG: Nur für Recovery nutzen, danach deaktivieren!"
-fi
-
 # Erstelle oder aktualisiere systemd Service
 echo "🔧 Setting up systemd service..."
 SYSTEMD_SERVICE="/etc/systemd/system/${SERVICE_NAME}.service"

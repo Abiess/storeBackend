@@ -1,4 +1,4 @@
-name: Deploy Backend to VPS (Pure Schema - NO FLYWAY)
+name: Deploy Backend to VPS
 
 on:
   push:
@@ -61,20 +61,19 @@ jobs:
         run: |
           echo "PWD: $(pwd)"
           echo ""
-          echo "✅ Required files for Pure Schema deployment:"
-          ls -lah scripts/deploy-no-flyway.sh
-          ls -lah scripts/db/schema.sql
+          echo "✅ Required files for deployment:"
+          ls -lah scripts/deploy.sh
           echo ""
-          echo "✅ All files present"
+          echo "✅ Deploy script present"
 
-      - name: 📋 Copy schema.sql and deploy script to VPS
+      - name: 📋 Copy deploy script to VPS
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          source: "scripts/db/schema.sql,scripts/deploy-no-flyway.sh"
+          source: "scripts/deploy.sh"
           target: "/tmp/"
           strip_components: 1
 
@@ -100,7 +99,7 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           script: |
             set -e
-            echo "🔧 Preparing VPS environment (Pure Schema - NO Flyway)..."
+            echo "🔧 Preparing VPS environment..."
 
             sudo mkdir -p /opt/storebackend/backups
             sudo mkdir -p /opt/storebackend/logs
@@ -111,28 +110,18 @@ jobs:
             fi
 
             # Move deploy script
-            if [ -f /tmp/deploy-no-flyway.sh ]; then
-              sudo mv /tmp/deploy-no-flyway.sh /opt/storebackend/deploy.sh
+            if [ -f /tmp/deploy.sh ]; then
+              sudo mv /tmp/deploy.sh /opt/storebackend/deploy.sh
               sudo chmod +x /opt/storebackend/deploy.sh
               echo "✅ Moved deploy script"
-            fi
-
-            # Move schema.sql
-            if [ -f /tmp/schema.sql ]; then
-              sudo mv /tmp/schema.sql /opt/storebackend/scripts/schema.sql
-              sudo chmod 644 /opt/storebackend/scripts/schema.sql
-              echo "✅ Moved schema.sql"
             fi
 
             sudo chown -R storebackend:storebackend /opt/storebackend
             sudo chmod 755 /opt/storebackend
 
-            echo "✅ VPS environment ready (Pure Schema - NO Flyway)"
+            echo "✅ VPS environment ready"
             echo "📁 Files in /opt/storebackend:"
             ls -lah /opt/storebackend/
-            echo ""
-            echo "📁 Files in /opt/storebackend/scripts:"
-            ls -lah /opt/storebackend/scripts/ || true
 
       - name: 🗃️ Setup PostgreSQL Database (one-time, if needed)
         uses: appleboy/ssh-action@master
@@ -189,7 +178,7 @@ jobs:
               echo "✅ User created and permissions granted"
             fi
 
-      - name: 🚀 Execute Deployment (Pure Schema)
+      - name: 🚀 Execute Deployment
         uses: appleboy/ssh-action@master
         env:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
@@ -201,109 +190,14 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
           envs: DB_PASSWORD,JWT_SECRET,MINIO_ENABLED
-          command_timeout: 5m
           script: |
             set -e
+            echo "🚀 Executing deployment script..."
             
-            # Ensure environment file exists
-            if [ ! -f /etc/storebackend.env ]; then
-              echo "SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}" | sudo tee /etc/storebackend.env > /dev/null
-              echo "JWT_SECRET=${JWT_SECRET}" | sudo tee -a /etc/storebackend.env > /dev/null
-              echo "MINIO_ENABLED=${MINIO_ENABLED:-false}" | sudo tee -a /etc/storebackend.env > /dev/null
-              sudo chmod 600 /etc/storebackend.env
-            fi
-            
-            # Run deploy script (applies schema.sql and starts app)
             cd /opt/storebackend
-            sudo -E ./deploy.sh
+            sudo -E bash deploy.sh
 
-      - name: 📊 Database Status Check
-        uses: appleboy/ssh-action@master
-        if: success()
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          script: |
-            echo "═══════════════════════════════════════════════════════════"
-            echo "📊 DATABASE STATUS (Pure Schema - NO Flyway)"
-            echo "═══════════════════════════════════════════════════════════"
-            echo ""
-            echo "📋 1. All Tables in Database:"
-            echo "───────────────────────────────────────────────────────────"
-            sudo -u postgres psql -d storedb -c "
-            SELECT 
-              tablename,
-              pg_size_pretty(pg_total_relation_size('public.'||tablename)) AS size
-            FROM pg_tables 
-            WHERE schemaname = 'public' 
-            ORDER BY tablename;" || echo "⚠️  Could not list tables"
-            
-            echo ""
-            echo "📋 2. cart_items Table Structure (should have created_at/updated_at):"
-            echo "───────────────────────────────────────────────────────────"
-            sudo -u postgres psql -d storedb -c "
-            SELECT 
-              column_name,
-              data_type,
-              is_nullable,
-              column_default
-            FROM information_schema.columns 
-            WHERE table_name = 'cart_items' 
-            ORDER BY ordinal_position;" || echo "⚠️  cart_items table not found"
-            
-            echo ""
-            echo "📋 3. Verify created_at and updated_at columns:"
-            echo "───────────────────────────────────────────────────────────"
-            CREATED_AT=$(sudo -u postgres psql -d storedb -t -c "
-              SELECT EXISTS (
-                SELECT 1 FROM information_schema.columns
-                WHERE table_name = 'cart_items' AND column_name = 'created_at'
-              );" | xargs)
-            
-            UPDATED_AT=$(sudo -u postgres psql -d storedb -t -c "
-              SELECT EXISTS (
-                SELECT 1 FROM information_schema.columns
-                WHERE table_name = 'cart_items' AND column_name = 'updated_at'
-              );" | xargs)
-            
-            if [ "$CREATED_AT" = "t" ] && [ "$UPDATED_AT" = "t" ]; then
-              echo "✅ created_at: EXISTS"
-              echo "✅ updated_at: EXISTS"
-            else
-              echo "❌ created_at: $CREATED_AT"
-              echo "❌ updated_at: $UPDATED_AT"
-            fi
-            
-            echo ""
-            echo "═══════════════════════════════════════════════════════════"
-            echo "✅ DATABASE STATUS CHECK COMPLETE"
-            echo "═══════════════════════════════════════════════════════════"
-
-      - name: 🎉 Deployment Summary
-        if: success()
-        run: |
-          echo "========================================="
-          echo "✅ DEPLOYMENT SUCCESSFUL"
-          echo "========================================="
-          echo ""
-          echo "📊 Architecture:"
-          echo "   - NO Flyway"
-          echo "   - Pure schema.sql (idempotent)"
-          echo "   - Hibernate: validate mode"
-          echo ""
-          echo "🗃️ Database:"
-          echo "   - Schema applied from scripts/db/schema.sql"
-          echo "   - Changes via psql before deploy"
-          echo ""
-          echo "🚀 Application:"
-          echo "   - Will crash if schema mismatch (by design)"
-          echo "   - Forces correct schema state"
-          echo ""
-
-      - name: ❌ Deployment Failed - Show Logs
-        if: failure()
+      - name: 🏥 Health Check
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -311,12 +205,40 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
           script: |
-            echo "========================================="
-            echo "❌ DEPLOYMENT FAILED"
-            echo "========================================="
-            echo ""
-            echo "📋 Last 100 log lines:"
-            sudo journalctl -u storebackend -n 100 --no-pager
-            echo ""
-            echo "📋 Systemd status:"
+            set -e
+            echo "🏥 Waiting for application to start..."
+            
+            MAX_RETRIES=30
+            RETRY=0
+            
+            while [ $RETRY -lt $MAX_RETRIES ]; do
+              if curl -f http://localhost:8080/actuator/health > /dev/null 2>&1; then
+                echo "✅ Application is healthy!"
+                curl http://localhost:8080/actuator/health
+                exit 0
+              fi
+              
+              RETRY=$((RETRY + 1))
+              echo "⏳ Attempt $RETRY/$MAX_RETRIES - waiting..."
+              sleep 2
+            done
+            
+            echo "❌ Health check failed after $MAX_RETRIES attempts"
+            echo "📋 Last 50 lines of application logs:"
+            sudo journalctl -u storebackend -n 50 --no-pager
+            exit 1
+
+      - name: 📊 Show Service Status
+        if: always()
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            echo "📊 Service Status:"
             sudo systemctl status storebackend --no-pager || true
+            echo ""
+            echo "📋 Recent logs:"
+            sudo journalctl -u storebackend -n 30 --no-pager || true
