@@ -38,9 +38,9 @@ spring:
   mail:
     host: ${SMTP_HOST:smtp.gmail.com}
     port: ${SMTP_PORT:587}
-    username: ${SMTP_USER:}
-    password: ${SMTP_PASS:}
-    from: ${MAIL_FROM:noreply@example.com}
+    username: ${SMTP_USER:markt.ma.noreply@gmail.com}
+    password: ${SMTP_PASS:fefz phln uprt eikh}
+    from: ${MAIL_FROM:noreply@markt.ma}
     properties:
       mail:
         smtp:
@@ -49,7 +49,7 @@ spring:
             enable: true
             required: true
           connectiontimeout: 5000
-          timeout: 3000
+          timeout: 5000
           writetimeout: 5000
 
 server:
@@ -84,7 +84,7 @@ management:
       enabled: true  # Einfacher Ping
     # Explizit alle anderen deaktivieren
     mail:
-      enabled: false  # Kein SMTP konfiguriert
+      enabled: false  # Kein SMTP Health Check (verhindert 503)
     mongo:
       enabled: false  # Kein MongoDB
     redis:
@@ -141,7 +141,7 @@ mail:
 
 # Base URL für Verification-Links
 app:
-  base-url: ${APP_BASE_URL:https://yourapp.com}
+  base-url: ${APP_BASE_URL:https://markt.ma}
 
 minio:
   enabled: ${MINIO_ENABLED:true}

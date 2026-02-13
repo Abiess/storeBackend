@@ -1,73 +1,42 @@
-name: Deploy Backend to VPS
+name: Deploy to VPS
 
 on:
   push:
-    branches: [ main, master ]
+    branches:
+      - main
+      - master
   workflow_dispatch:
 
-concurrency:
-  group: deploy-backend-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Checkout Code
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: ☕ Set up JDK 17
-        uses: actions/setup-java@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
         with:
-          java-version: "17"
-          distribution: "temurin"
+          java-version: '17'
+          distribution: 'temurin'
           cache: maven
 
-      - name: 🔧 Build with Maven
-        run: |
-          chmod +x ./mvnw
-          ./mvnw clean package -DskipTests
+      - name: Build with Maven
+        run: mvn clean package -DskipTests
 
-      - name: 📦 Prepare JAR for Deployment
-        run: |
-          set -e
-          JAR_FILE=$(find target -maxdepth 1 -type f \( -name "*SNAPSHOT.jar" -o -name "storeBackend*.jar" \) | grep -v javadoc | head -n 1)
-
-          if [ -z "$JAR_FILE" ]; then
-            echo "❌ No JAR file found in target directory!"
-            ls -lah target/ || true
-            exit 1
-          fi
-
-          cp "$JAR_FILE" target/app.jar
-          test -f target/app.jar
-          ls -lah target/app.jar
-          echo "✅ Prepared target/app.jar"
-
-      - name: 🚀 Deploy JAR to VPS (/tmp)
+      - name: Deploy to VPS
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          source: "target/app.jar"
-          target: "/tmp/"
+          source: "target/*.jar"
+          target: "/tmp"
           strip_components: 1
 
-      - name: 📋 Copy deploy script to VPS
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          source: "scripts/deploy.sh"
-          target: "/tmp/"
-          strip_components: 1
-
-      - name: ✅ Verify JAR Transfer
+      - name: Execute deployment script
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -75,180 +44,72 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
           script: |
-            set -e
-            echo "🔍 Checking /tmp/app.jar..."
-            test -f /tmp/app.jar
-            ls -lah /tmp/app.jar
-            echo "🔍 Checking /tmp/deploy.sh..."
-            test -f /tmp/deploy.sh
-            ls -lah /tmp/deploy.sh
-
-      - name: 🔧 Setup VPS Environment
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          script: |
-            set -e
-            echo "🔧 Preparing VPS environment..."
-
-            sudo mkdir -p /opt/storebackend/{backups,logs,scripts}
-
-            if ! id -u storebackend >/dev/null 2>&1; then
-              sudo useradd -r -s /bin/bash storebackend
-            fi
-
-            if [ -f /tmp/deploy.sh ]; then
-              sudo mv /tmp/deploy.sh /opt/storebackend/deploy.sh
-              sudo chmod +x /opt/storebackend/deploy.sh
-            fi
-
-            sudo chown -R storebackend:storebackend /opt/storebackend
-            sudo chmod 755 /opt/storebackend
-
-            echo "✅ VPS ready:"
-            ls -lah /opt/storebackend
-
-      - name: 🗃️ Setup PostgreSQL Database (idempotent)
-        uses: appleboy/ssh-action@master
-        env:
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          envs: DB_PASSWORD
-          script: |
-            set -euo pipefail
-
-            echo "🗃️ Ensuring database and user exist..."
-
-            # Create DB if missing
-            if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='storedb'" | grep -q 1; then
-              echo "📦 Creating database storedb..."
-              sudo -u postgres psql -c "CREATE DATABASE storedb;"
-            else
-              echo "✅ Database storedb exists"
-            fi
-
-            # Create user if missing
-            if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='storeapp'" | grep -q 1; then
-              echo "📦 Creating role storeapp..."
-              sudo -u postgres psql -c "CREATE USER storeapp WITH PASSWORD '${DB_PASSWORD}';"
-            else
-              echo "✅ Role storeapp exists"
-              echo "🔐 Updating password for storeapp..."
-              sudo -u postgres psql -c "ALTER USER storeapp WITH PASSWORD '${DB_PASSWORD}';"
-            fi
-
-            echo "🔐 Granting privileges..."
-            sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE storedb TO storeapp;"
-            sudo -u postgres psql -d storedb -c "GRANT ALL PRIVILEGES ON SCHEMA public TO storeapp;"
-            sudo -u postgres psql -d storedb -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO storeapp;"
-            sudo -u postgres psql -d storedb -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO storeapp;"
-            sudo -u postgres psql -d storedb -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO storeapp;"
-            sudo -u postgres psql -d storedb -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO storeapp;"
-
-            echo "✅ DB setup done"
-
-      - name: 🚀 Execute Deployment
-        uses: appleboy/ssh-action@master
-        env:
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          MINIO_ENABLED: ${{ secrets.MINIO_ENABLED }}
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          envs: DB_PASSWORD,JWT_SECRET,MINIO_ENABLED
-          script: |
-            set -e
-            echo "🚀 Deploying..."
+            # Export SMTP configuration from GitHub Secrets
+            export SMTP_HOST="${{ secrets.SMTP_HOST }}"
+            export SMTP_PORT="${{ secrets.SMTP_PORT }}"
+            export SMTP_USER="${{ secrets.SMTP_USER }}"
+            export SMTP_PASS="${{ secrets.SMTP_PASS }}"
+            export MAIL_FROM="${{ secrets.MAIL_FROM }}"
+            export APP_BASE_URL="${{ secrets.APP_BASE_URL }}"
+            export MAIL_ENABLED="true"
+            
+            # Export other required secrets
+            export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
+            export JWT_SECRET="${{ secrets.JWT_SECRET }}"
+            
+            # Execute deployment
             cd /opt/storebackend
-            sudo -E bash deploy.sh
+            bash scripts/deploy.sh
 
-      - name: 🏥 Health Check with Auto-Recovery
+      - name: Health Check
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
+          command_timeout: 10m
           script: |
             set -e
             echo "🏥 Waiting for app..."
-
-            # Erste Versuche (0-15)
-            ATTEMPT=0
-            MAX_ATTEMPTS=30
-            RECOVERY_ATTEMPTED=false
-
-            while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
-              ATTEMPT=$((ATTEMPT + 1))
-              
-              # Prüfe Health Check
-              HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health || echo "000")
+            
+            for i in $(seq 1 30); do
+              HTTP_CODE=$(curl -fsS -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health || echo "000")
               
               if [ "$HTTP_CODE" = "200" ]; then
-                echo "✅ Healthy!"
+                echo "✅ Healthy"
                 curl -fsS http://localhost:8080/actuator/health
                 exit 0
-              elif [ "$HTTP_CODE" = "503" ] && [ "$RECOVERY_ATTEMPTED" = "false" ] && [ $ATTEMPT -ge 10 ]; then
-                echo "⚠️  HTTP 503 detected - attempting auto-recovery..."
-                echo ""
-                echo "🔧 Step 1: Checking PostgreSQL..."
-                if ! sudo -u postgres psql -d storedb -c "SELECT 1;" &>/dev/null; then
-                  echo "   ❌ DB not responding, restarting PostgreSQL..."
-                  sudo systemctl restart postgresql
-                  sleep 3
-                else
-                  echo "   ✅ PostgreSQL is responding"
-                fi
-                
-                echo ""
-                echo "🔧 Step 2: Restarting StoreBackend service..."
-                sudo systemctl restart storebackend
-                RECOVERY_ATTEMPTED=true
-                echo "   ✅ Service restarted, continuing health checks..."
-                sleep 5
-                continue
               fi
               
-              echo "⏳ Attempt $ATTEMPT/$MAX_ATTEMPTS (HTTP $HTTP_CODE)..."
+              echo "⏳ Attempt $i/30 (HTTP $HTTP_CODE)..."
+              
+              # Auto-recovery bei 503 (Service Unavailable)
+              if [ "$HTTP_CODE" = "503" ] && [ "$i" -eq 10 ]; then
+                echo "⚠️  HTTP 503 detected - attempting auto-recovery..."
+                echo "🔧 Step 1: Checking PostgreSQL..."
+                if sudo systemctl is-active --quiet postgresql; then
+                  echo "   ✅ PostgreSQL is responding"
+                else
+                  echo "   ❌ PostgreSQL is not running - starting..."
+                  sudo systemctl start postgresql
+                  sleep 3
+                fi
+                
+                echo "🔧 Step 2: Restarting StoreBackend service..."
+                sudo systemctl restart storebackend
+                echo "   ✅ Service restarted, continuing health checks..."
+                sleep 5
+              fi
+              
               sleep 2
             done
-
-            # Wenn alle Versuche fehlgeschlagen sind
-            echo ""
-            echo "❌ Health check failed after $MAX_ATTEMPTS attempts"
-            echo ""
-            echo "📊 Service Status:"
-            sudo systemctl status storebackend --no-pager -l | head -20 || true
-            echo ""
-            echo "❌ Last 120 log lines:"
-            sudo journalctl -u storebackend -n 120 --no-pager || true
-            echo ""
-            echo "🔍 Database Status:"
-            sudo systemctl status postgresql --no-pager | head -10 || true
             
-            exit 1
-
-      - name: 📊 Show Service Status
-        if: always()
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          script: |
+            echo "❌ Health check failed after 30 attempts"
             echo "📊 Service Status:"
             sudo systemctl status storebackend --no-pager || true
             echo ""
-            echo "📋 Recent logs:"
-            sudo journalctl -u storebackend -n 60 --no-pager || true
+            echo "❌ Last 120 log lines:"
+            sudo journalctl -u storebackend -n 120 --no-pager || true
+            exit 1
+

@@ -14,38 +14,49 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
-    @Value("${spring.mail.from:noreply@example.com}")
+    @Value("${spring.mail.from:noreply@markt.ma}")
     private String fromEmail;
 
     @Value("${app.base-url:http://localhost:4200}")
     private String baseUrl;
 
+    @Value("${mail.enabled:false}")
+    private boolean mailEnabled;
+
     /**
      * Sendet eine Email-Verification-Email an den User
+     * WICHTIG: Diese Methode wirft KEINE Exceptions mehr,
+     * um Transaktions-Rollbacks zu vermeiden
      */
     public void sendVerificationEmail(String toEmail, String token) {
+        if (!mailEnabled) {
+            log.info("Mail disabled - skipping verification email to: {}", toEmail);
+            log.info("Verification URL (for testing): {}/verify?token={}", baseUrl, token);
+            return;
+        }
+
         try {
             String verificationUrl = baseUrl + "/verify?token=" + token;
 
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(toEmail);
-            message.setSubject("Verify your email address");
+            message.setSubject("Verify your email address - Markt.ma");
             message.setText(
-                "Welcome to our platform!\n\n" +
+                "Welcome to Markt.ma!\n\n" +
                 "Please verify your email address by clicking the link below:\n\n" +
                 verificationUrl + "\n\n" +
                 "This link will expire in 24 hours.\n\n" +
                 "If you did not create an account, please ignore this email.\n\n" +
                 "Best regards,\n" +
-                "Your Team"
+                "Your Markt.ma Team"
             );
 
             mailSender.send(message);
             log.info("Verification email sent successfully to: {}", toEmail);
         } catch (Exception e) {
             log.error("Failed to send verification email to: {}", toEmail, e);
-            throw new RuntimeException("Failed to send verification email: " + e.getMessage());
+            // ❌ NICHT mehr werfen - nur loggen
         }
     }
 
@@ -53,17 +64,22 @@ public class EmailService {
      * Sendet eine Bestätigungs-Email nach erfolgreicher Verification
      */
     public void sendWelcomeEmail(String toEmail, String name) {
+        if (!mailEnabled) {
+            log.info("Mail disabled - skipping welcome email to: {}", toEmail);
+            return;
+        }
+
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(toEmail);
-            message.setSubject("Welcome! Your email has been verified");
+            message.setSubject("Welcome! Your email has been verified - Markt.ma");
             message.setText(
                 "Hi " + (name != null ? name : "there") + ",\n\n" +
                 "Your email address has been successfully verified!\n\n" +
-                "You can now log in and enjoy all features of our platform.\n\n" +
+                "You can now log in and enjoy all features of Markt.ma.\n\n" +
                 "Best regards,\n" +
-                "Your Team"
+                "Your Markt.ma Team"
             );
 
             mailSender.send(message);
@@ -78,13 +94,19 @@ public class EmailService {
      * Sendet eine Password-Reset-Email mit Token-Link
      */
     public void sendPasswordResetEmail(String toEmail, String token) {
+        if (!mailEnabled) {
+            log.info("Mail disabled - skipping password reset email to: {}", toEmail);
+            log.info("Password reset URL (for testing): {}/reset-password?token={}", baseUrl, token);
+            return;
+        }
+
         try {
             String resetUrl = baseUrl + "/reset-password?token=" + token;
 
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(toEmail);
-            message.setSubject("Reset your password");
+            message.setSubject("Reset your password - Markt.ma");
             message.setText(
                 "Hello,\n\n" +
                 "We received a request to reset your password.\n\n" +
@@ -94,14 +116,14 @@ public class EmailService {
                 "If you did not request a password reset, please ignore this email. " +
                 "Your password will remain unchanged.\n\n" +
                 "Best regards,\n" +
-                "Your Team"
+                "Your Markt.ma Team"
             );
 
             mailSender.send(message);
             log.info("Password reset email sent successfully to: {}", toEmail);
         } catch (Exception e) {
             log.error("Failed to send password reset email to: {}", toEmail, e);
-            throw new RuntimeException("Failed to send password reset email: " + e.getMessage());
+            // ❌ NICHT mehr werfen - auch hier nur loggen
         }
     }
 
@@ -109,17 +131,22 @@ public class EmailService {
      * Sendet eine Bestätigungs-Email nach erfolgreichem Password-Reset
      */
     public void sendPasswordResetConfirmationEmail(String toEmail, String name) {
+        if (!mailEnabled) {
+            log.info("Mail disabled - skipping password reset confirmation email to: {}", toEmail);
+            return;
+        }
+
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(toEmail);
-            message.setSubject("Your password has been changed");
+            message.setSubject("Your password has been changed - Markt.ma");
             message.setText(
                 "Hi " + (name != null ? name : "there") + ",\n\n" +
                 "This is a confirmation that your password has been successfully changed.\n\n" +
                 "If you did not make this change, please contact our support immediately.\n\n" +
                 "Best regards,\n" +
-                "Your Team"
+                "Your Markt.ma Team"
             );
 
             mailSender.send(message);

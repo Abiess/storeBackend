@@ -3,6 +3,7 @@ package storebackend.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import storebackend.entity.EmailVerification;
 import storebackend.entity.User;
@@ -23,28 +24,49 @@ public class EmailVerificationService {
 
     /**
      * Erstellt einen Verification-Token und sendet Email
+     * WICHTIG: Diese Methode muss in einer NEUEN Transaction laufen,
+     * um Rollbacks der Outer Transaction zu vermeiden
      */
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void createAndSendVerificationToken(User user) {
-        // Lösche alte Tokens für diesen User
-        emailVerificationRepository.findByUser(user)
-            .ifPresent(emailVerificationRepository::delete);
+        try {
+            // Lösche alte Tokens für diesen User
+            emailVerificationRepository.findByUser(user)
+                .ifPresent(emailVerificationRepository::delete);
 
-        // Erstelle neuen Token (UUID für Sicherheit)
-        String token = UUID.randomUUID().toString();
-        LocalDateTime expiresAt = LocalDateTime.now().plusHours(24);
+            // Erstelle neuen Token (UUID für Sicherheit)
+            String token = UUID.randomUUID().toString();
+            LocalDateTime expiresAt = LocalDateTime.now().plusHours(24);
 
-        EmailVerification verification = new EmailVerification();
-        verification.setUser(user);
-        verification.setToken(token);
-        verification.setExpiresAt(expiresAt);
+            EmailVerification verification = new EmailVerification();
+            verification.setUser(user);
+            verification.setToken(token);
+            verification.setExpiresAt(expiresAt);
 
-        emailVerificationRepository.save(verification);
+            emailVerificationRepository.save(verification);
 
-        // Sende Verification Email
-        emailService.sendVerificationEmail(user.getEmail(), token);
+            log.info("Verification token created for user: {}", user.getEmail());
 
-        log.info("Verification token created for user: {}", user.getEmail());
+            // Sende Email NACH dem DB-Commit (außerhalb der Transaction)
+            sendVerificationEmailAsync(user.getEmail(), token);
+
+        } catch (Exception e) {
+            log.error("Failed to create verification token for user: {}", user.getEmail(), e);
+            // ❌ Werfe keine Exception, um die Registrierung nicht zu blockieren
+        }
+    }
+
+    /**
+     * Sendet Verification-Email asynchron (ohne Transaktionskontext)
+     * Failures hier blockieren NICHT die User-Registrierung
+     */
+    private void sendVerificationEmailAsync(String email, String token) {
+        try {
+            emailService.sendVerificationEmail(email, token);
+        } catch (Exception e) {
+            log.error("Failed to send verification email to: {}, but token was saved in DB. User can request resend.", email, e);
+            // ❌ NICHT werfen - Email-Fehler dürfen Registrierung nicht blockieren
+        }
     }
 
     /**
@@ -101,4 +123,3 @@ public class EmailVerificationService {
         log.info("Expired verification tokens cleaned up");
     }
 }
-

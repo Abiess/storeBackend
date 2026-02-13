@@ -1,6 +1,7 @@
 package storebackend.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -32,6 +33,9 @@ public class AuthService {
     private final PlanRepository planRepository;
     private final EmailVerificationService emailVerificationService;
 
+    @Value("${email.verification.skip-for-login:false}")
+    private boolean skipEmailVerificationForLogin;
+
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         // Check if user already exists
@@ -61,7 +65,7 @@ public class AuthService {
         // Save user
         user = userRepository.saveAndFlush(user);
 
-        // Generate JWT token BEFORE sending email (so registration succeeds even if email fails)
+        // Generate JWT token
         String token = jwtUtil.generateToken(user.getEmail(), user.getId(), user.getRoles());
 
         // Create UserDTO
@@ -74,19 +78,14 @@ public class AuthService {
             user.getRoles().stream().map(Enum::name).collect(Collectors.toList())
         );
 
-        // Send verification email AFTER transaction completes (in separate thread/transaction)
-        // This prevents email failures from rolling back the user registration
-        final Long userId = user.getId();
-        new Thread(() -> {
-            try {
-                User savedUser = userRepository.findById(userId).orElse(null);
-                if (savedUser != null) {
-                    emailVerificationService.createAndSendVerificationToken(savedUser);
-                }
-            } catch (Exception e) {
-                System.err.println("Failed to send verification email: " + e.getMessage());
-            }
-        }).start();
+        // Send verification email in separate transaction (REQUIRES_NEW)
+        // This runs in its own transaction and won't affect the registration if it fails
+        try {
+            emailVerificationService.createAndSendVerificationToken(user);
+        } catch (Exception e) {
+            // Log but don't fail registration - user can request resend later
+            System.err.println("Failed to send verification email during registration: " + e.getMessage());
+        }
 
         return new AuthResponse(token, userDTO);
     }
@@ -96,8 +95,8 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail())
             .orElseThrow(() -> new RuntimeException("Invalid email or password"));
 
-        // Check if email is verified
-        if (!user.getEmailVerified()) {
+        // Check if email is verified (skip in development mode)
+        if (!skipEmailVerificationForLogin && !user.getEmailVerified()) {
             throw new RuntimeException("Please verify your email address before logging in. Check your inbox for the verification link.");
         }
 
