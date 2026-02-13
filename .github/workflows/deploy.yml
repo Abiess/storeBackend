@@ -25,7 +25,7 @@ jobs:
       - name: Build with Maven
         run: mvn clean package -DskipTests
 
-      - name: Upload JAR to VPS
+      - name: Deploy to VPS
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -36,7 +36,7 @@ jobs:
           target: "/tmp"
           strip_components: 1
 
-      - name: Upload deployment scripts to VPS
+      - name: Upload deployment scripts
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -89,15 +89,15 @@ jobs:
             
             for i in $(seq 1 30); do
               HTTP_CODE=$(curl -fsS -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health || echo "000")
-              
+            
               if [ "$HTTP_CODE" = "200" ]; then
                 echo "✅ Healthy"
                 curl -fsS http://localhost:8080/actuator/health
                 exit 0
               fi
-              
+            
               echo "⏳ Attempt $i/30 (HTTP $HTTP_CODE)..."
-              
+            
               # Auto-recovery bei 503 (Service Unavailable)
               if [ "$HTTP_CODE" = "503" ] && [ "$i" -eq 10 ]; then
                 echo "⚠️  HTTP 503 detected - attempting auto-recovery..."
@@ -109,13 +109,13 @@ jobs:
                   sudo systemctl start postgresql
                   sleep 3
                 fi
-                
+            
                 echo "🔧 Step 2: Restarting StoreBackend service..."
                 sudo systemctl restart storebackend
                 echo "   ✅ Service restarted, continuing health checks..."
                 sleep 5
               fi
-              
+            
               sleep 2
             done
             
