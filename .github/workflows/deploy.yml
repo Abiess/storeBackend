@@ -25,7 +25,7 @@ jobs:
       - name: Build with Maven
         run: mvn clean package -DskipTests
 
-      - name: Deploy to VPS
+      - name: Upload JAR to VPS
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -36,6 +36,17 @@ jobs:
           target: "/tmp"
           strip_components: 1
 
+      - name: Upload deployment scripts to VPS
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          source: "scripts/"
+          target: "/opt/storebackend/"
+          strip_components: 0
+
       - name: Execute deployment script
         uses: appleboy/ssh-action@master
         with:
@@ -44,6 +55,9 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
           script: |
+            # Make scripts executable
+            chmod +x /opt/storebackend/scripts/*.sh
+            
             # Export SMTP configuration from GitHub Secrets
             export SMTP_HOST="${{ secrets.SMTP_HOST }}"
             export SMTP_PORT="${{ secrets.SMTP_PORT }}"
@@ -112,4 +126,3 @@ jobs:
             echo "❌ Last 120 log lines:"
             sudo journalctl -u storebackend -n 120 --no-pager || true
             exit 1
-
