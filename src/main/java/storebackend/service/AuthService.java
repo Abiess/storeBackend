@@ -62,7 +62,7 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException("FREE plan not found in database. Please run database initialization."));
         user.setPlan(freePlan);
 
-        // Save user
+        // Save user FIRST - muss committed sein bevor EmailVerification foreign key gesetzt wird
         user = userRepository.saveAndFlush(user);
 
         // Generate JWT token
@@ -78,14 +78,8 @@ public class AuthService {
             user.getRoles().stream().map(Enum::name).collect(Collectors.toList())
         );
 
-        // Send verification email in separate transaction (REQUIRES_NEW)
-        // This runs in its own transaction and won't affect the registration if it fails
-        try {
-            emailVerificationService.createAndSendVerificationToken(user);
-        } catch (Exception e) {
-            // Log but don't fail registration - user can request resend later
-            System.err.println("Failed to send verification email during registration: " + e.getMessage());
-        }
+        // Send verification email in SAME transaction - wird erst nach commit versendet
+        emailVerificationService.createAndSendVerificationToken(user);
 
         return new AuthResponse(token, userDTO);
     }

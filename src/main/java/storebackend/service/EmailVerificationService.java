@@ -24,36 +24,30 @@ public class EmailVerificationService {
 
     /**
      * Erstellt einen Verification-Token und sendet Email
-     * WICHTIG: Diese Methode muss in einer NEUEN Transaction laufen,
-     * um Rollbacks der Outer Transaction zu vermeiden
+     * WICHTIG: Läuft in derselben Transaction wie User-Registrierung (REQUIRED)
+     * damit der Foreign Key constraint erfüllt ist
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(propagation = Propagation.REQUIRED)
     public void createAndSendVerificationToken(User user) {
-        try {
-            // Lösche alte Tokens für diesen User
-            emailVerificationRepository.findByUser(user)
-                .ifPresent(emailVerificationRepository::delete);
+        // Lösche alte Tokens für diesen User
+        emailVerificationRepository.findByUser(user)
+            .ifPresent(emailVerificationRepository::delete);
 
-            // Erstelle neuen Token (UUID für Sicherheit)
-            String token = UUID.randomUUID().toString();
-            LocalDateTime expiresAt = LocalDateTime.now().plusHours(24);
+        // Erstelle neuen Token (UUID für Sicherheit)
+        String token = UUID.randomUUID().toString();
+        LocalDateTime expiresAt = LocalDateTime.now().plusHours(24);
 
-            EmailVerification verification = new EmailVerification();
-            verification.setUser(user);
-            verification.setToken(token);
-            verification.setExpiresAt(expiresAt);
+        EmailVerification verification = new EmailVerification();
+        verification.setUser(user);
+        verification.setToken(token);
+        verification.setExpiresAt(expiresAt);
 
-            emailVerificationRepository.save(verification);
+        emailVerificationRepository.save(verification);
 
-            log.info("Verification token created for user: {}", user.getEmail());
+        log.info("Verification token created for user: {}", user.getEmail());
 
-            // Sende Email NACH dem DB-Commit (außerhalb der Transaction)
-            sendVerificationEmailAsync(user.getEmail(), token);
-
-        } catch (Exception e) {
-            log.error("Failed to create verification token for user: {}", user.getEmail(), e);
-            // ❌ Werfe keine Exception, um die Registrierung nicht zu blockieren
-        }
+        // Sende Email asynchron NACH dem Transaction-Commit
+        sendVerificationEmailAsync(user.getEmail(), token);
     }
 
     /**
