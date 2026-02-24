@@ -4,41 +4,43 @@ import { RouterModule, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { TranslatePipe } from '../../core/pipes/translate.pipe';
+import { TranslationService } from '../../core/services/translation.service';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, TranslatePipe],
   template: `
     <div class="auth-container">
       <div class="auth-card">
-        <h1>markt.ma Registrierung</h1>
-        <p class="subtitle">Erstellen Sie Ihren Store in wenigen Minuten</p>
+        <h1>{{ 'auth.registerTitle' | translate }}</h1>
+        <p class="subtitle">{{ 'auth.registerSubtitle' | translate }}</p>
         
         <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
           <div class="form-group">
-            <label for="email">E-Mail</label>
+            <label for="email">{{ 'auth.email' | translate }}</label>
             <input 
               id="email" 
               type="email" 
               formControlName="email" 
-              placeholder="ihre@email.de"
+              [placeholder]="'auth.emailPlaceholder' | translate"
             />
             <div *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched" class="error">
-              Bitte geben Sie eine gültige E-Mail-Adresse ein
+              {{ 'auth.emailInvalid' | translate }}
             </div>
           </div>
 
           <div class="form-group">
-            <label for="password">Passwort</label>
+            <label for="password">{{ 'auth.password' | translate }}</label>
             <input 
               id="password" 
               type="password" 
               formControlName="password" 
-              placeholder="Mindestens 6 Zeichen"
+              [placeholder]="'profile.newPasswordPlaceholder' | translate"
             />
             <div *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched" class="error">
-              Passwort muss mindestens 6 Zeichen lang sein
+              {{ 'profile.passwordMinLength' | translate }}
             </div>
           </div>
 
@@ -51,12 +53,12 @@ import { AuthService } from '../../core/services/auth.service';
           </div>
 
           <button type="submit" class="btn btn-primary" [disabled]="registerForm.invalid || loading">
-            {{ loading ? 'Wird registriert...' : 'Konto erstellen' }}
+            {{ loading ? ('auth.registering' | translate) : ('auth.registerBtn' | translate) }}
           </button>
         </form>
 
         <p class="auth-footer">
-          Bereits ein Konto? <a [routerLink]="['/login']" [queryParams]="{ returnUrl: returnUrl }">Jetzt anmelden</a>
+          <a [routerLink]="['/login']" [queryParams]="{ returnUrl: returnUrl }">{{ 'auth.alreadyRegistered' | translate }}</a>
         </p>
       </div>
     </div>
@@ -125,7 +127,8 @@ export class RegisterComponent implements OnInit {
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private translationService: TranslationService
   ) {
     this.registerForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -147,13 +150,13 @@ export class RegisterComponent implements OnInit {
       this.authService.register(this.registerForm.value).subscribe({
         next: () => {
           this.loading = false;
-          this.successMessage = '✓ Registrierung erfolgreich! Bitte überprüfen Sie Ihre E-Mails und klicken Sie auf den Bestätigungslink, um Ihr Konto zu aktivieren.';
+          this.successMessage = this.translationService.translate('auth.registerSuccess');
           // Formular zurücksetzen
           this.registerForm.reset();
         },
         error: (error) => {
           this.loading = false;
-          this.errorMessage = error.error?.message || 'Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.';
+          this.errorMessage = error.error?.message || this.translationService.translate('auth.registerFailed');
         }
       });
     }

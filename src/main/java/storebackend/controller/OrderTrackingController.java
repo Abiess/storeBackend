@@ -128,7 +128,7 @@ public class OrderTrackingController {
      * PUT /api/admin/orders/{id}/status
      */
     @PutMapping("/admin/orders/{id}/status")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ROLE_PLATFORM_ADMIN')")
     public ResponseEntity<?> updateOrderStatus(
             @PathVariable Long id,
             @RequestBody UpdateOrderStatusRequest request) {

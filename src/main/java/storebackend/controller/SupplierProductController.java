@@ -28,7 +28,7 @@ public class SupplierProductController {
      * GET /api/supplier/products
      */
     @GetMapping
-    @PreAuthorize("hasRole('ROLE_SUPPLIER')")
+    @PreAuthorize("hasAuthority('ROLE_SUPPLIER')")
     public ResponseEntity<List<SupplierProductDTO>> getMyProducts(@AuthenticationPrincipal User supplier) {
         List<SupplierProductDTO> products = supplierProductService.getProductsBySupplier(supplier);
         return ResponseEntity.ok(products);
@@ -39,7 +39,7 @@ public class SupplierProductController {
      * POST /api/supplier/products
      */
     @PostMapping
-    @PreAuthorize("hasRole('ROLE_SUPPLIER')")
+    @PreAuthorize("hasAuthority('ROLE_SUPPLIER')")
     public ResponseEntity<Product> createProduct(
             @AuthenticationPrincipal User supplier,
             @RequestBody Product product) {
@@ -52,7 +52,7 @@ public class SupplierProductController {
      * PUT /api/supplier/products/{id}
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ROLE_SUPPLIER')")
+    @PreAuthorize("hasAuthority('ROLE_SUPPLIER')")
     public ResponseEntity<Product> updateProduct(
             @PathVariable Long id,
             @AuthenticationPrincipal User supplier,
@@ -66,7 +66,7 @@ public class SupplierProductController {
      * POST /api/supplier/products/{id}/publish
      */
     @PostMapping("/{id}/publish")
-    @PreAuthorize("hasRole('ROLE_SUPPLIER')")
+    @PreAuthorize("hasAuthority('ROLE_SUPPLIER')")
     public ResponseEntity<Product> publishProduct(
             @PathVariable Long id,
             @AuthenticationPrincipal User supplier) {
@@ -79,10 +79,9 @@ public class SupplierProductController {
      * GET /api/supplier/products/{id}
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ROLE_SUPPLIER')")
+    @PreAuthorize("hasAuthority('ROLE_SUPPLIER')")
     public ResponseEntity<SupplierProductDTO> getProduct(@PathVariable Long id) {
         SupplierProductDTO product = supplierProductService.getSupplierProductById(id);
         return ResponseEntity.ok(product);
     }
 }
-

@@ -23,7 +23,12 @@ public class CustomUserDetailsService implements UserDetailsService {
             .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
 
         var authorities = user.getRoles().stream()
-            .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
+            .map(role -> {
+                String roleName = role.name();
+                // Wenn die Rolle bereits mit ROLE_ beginnt, kein weiteres Prefix hinzufügen
+                String authority = roleName.startsWith("ROLE_") ? roleName : "ROLE_" + roleName;
+                return new SimpleGrantedAuthority(authority);
+            })
             .collect(Collectors.toList());
 
         return org.springframework.security.core.userdetails.User

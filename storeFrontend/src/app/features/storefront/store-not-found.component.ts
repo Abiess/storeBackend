@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { SubdomainService } from '@app/core/services/subdomain.service';
 import { AuthService } from '@app/core/services/auth.service';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 @Component({
   selector: 'app-store-not-found',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe],
   template: `
     <div class="store-not-found-container">
       <div class="content-card">
@@ -19,72 +20,72 @@ import { AuthService } from '@app/core/services/auth.service';
         </div>
 
         <!-- Hauptnachricht -->
-        <h1>Store nicht gefunden</h1>
-        <p class="subtitle" *ngIf="slug && !isReservedSlug">
-          Der Store <strong>{{ slug }}.markt.ma</strong> existiert noch nicht.
+        <h1>{{ 'storeNotFound.title' | translate }}</h1>
+        <p class="subtitle" *ngIf="slug && !isReservedSlug"
+           [innerHTML]="'storeNotFound.subtitleSlug' | translate: { slug: slug }">
         </p>
-        <p class="subtitle" *ngIf="isReservedSlug">
-          Die Subdomain <strong>{{ slug }}.markt.ma</strong> ist für technische Zwecke reserviert und kann nicht als Store verwendet werden.
+        <p class="subtitle" *ngIf="isReservedSlug"
+           [innerHTML]="'storeNotFound.subtitleReserved' | translate: { slug: slug }">
         </p>
 
         <!-- Reservierte Slugs Warnung -->
         <div class="warning-box" *ngIf="isReservedSlug">
           <div class="warning-icon">⚠️</div>
           <div class="warning-content">
-            <h3>Technische Subdomain</h3>
-            <p>Diese Subdomain ist für Systemdienste reserviert (API, Datenbank, etc.) und kann nicht als Store registriert werden.</p>
+            <h3>{{ 'storeNotFound.warningTitle' | translate }}</h3>
+            <p>{{ 'storeNotFound.warningText' | translate }}</p>
           </div>
         </div>
 
         <!-- Call-to-Action für registrierte User -->
         <div class="action-section" *ngIf="!isReservedSlug">
           <div class="cta-box" *ngIf="isLoggedIn">
-            <h2>Möchten Sie diesen Store erstellen?</h2>
-            <p>Sie können jetzt Ihren eigenen Online-Shop unter dieser Adresse erstellen!</p>
+            <h2>{{ 'storeNotFound.createStoreTitle' | translate }}</h2>
+            <p>{{ 'storeNotFound.createStoreText' | translate }}</p>
             <button class="btn-primary" (click)="createStore()">
               <span class="btn-icon">✨</span>
-              Store erstellen: {{ slug }}.markt.ma
+              {{ 'storeNotFound.createStoreBtn' | translate: { slug: slug } }}
             </button>
-            <p class="small-text">Mit Ihrem eigenen Online-Shop auf markt.ma</p>
+            <p class="small-text">{{ 'storeNotFound.createStoreHint' | translate }}</p>
           </div>
 
           <!-- Call-to-Action für nicht-registrierte User -->
           <div class="cta-box" *ngIf="!isLoggedIn">
-            <h2>Erstellen Sie Ihren eigenen Store!</h2>
-            <p>Melden Sie sich an oder registrieren Sie sich, um {{ slug }}.markt.ma zu sichern.</p>
+            <h2>{{ 'storeNotFound.registerTitle' | translate }}</h2>
+            <p>{{ 'storeNotFound.registerText' | translate: { slug: slug } }}</p>
             <div class="button-group">
               <button class="btn-primary" (click)="goToRegister()">
                 <span class="btn-icon">🚀</span>
-                Jetzt registrieren
+                {{ 'storeNotFound.registerBtn' | translate }}
               </button>
               <button class="btn-secondary" (click)="goToLogin()">
                 <span class="btn-icon">🔑</span>
-                Anmelden
+                {{ 'storeNotFound.loginBtn' | translate }}
               </button>
             </div>
-            <p class="small-text">Kostenlos starten • Keine Kreditkarte erforderlich</p>
+            <p class="small-text">{{ 'storeNotFound.freeHint' | translate }}</p>
           </div>
         </div>
 
         <!-- Alternative Aktionen -->
         <div class="alternative-actions">
           <button class="btn-link" (click)="goToMarketplace()">
-            ← Zurück zum Marketplace
+            {{ 'storeNotFound.backToMarketplace' | translate }}
           </button>
           <span class="separator">•</span>
           <button class="btn-link" (click)="goToDashboard()" *ngIf="isLoggedIn">
-            Zum Dashboard
+            {{ 'storeNotFound.toDashboard' | translate }}
           </button>
         </div>
 
         <!-- Hilfe-Sektion -->
         <div class="help-section" *ngIf="!isReservedSlug">
-          <h3>💡 So funktioniert's:</h3>
+          <h3>{{ 'storeNotFound.howItWorksTitle' | translate }}</h3>
           <ol>
-            <li>Registrieren Sie sich kostenlos oder melden Sie sich an</li>
-            <li>Erstellen Sie Ihren Store mit Ihrer Wunsch-Subdomain</li>
-            <li>Fügen Sie Produkte hinzu und passen Sie das Design an</li>
-            <li>Ihr Store ist sofort online unter ihrer-name.markt.ma</li>
+            <li>{{ 'storeNotFound.step1' | translate }}</li>
+            <li>{{ 'storeNotFound.step2' | translate }}</li>
+            <li>{{ 'storeNotFound.step3' | translate }}</li>
+            <li>{{ 'storeNotFound.step4' | translate }}</li>
           </ol>
         </div>
       </div>

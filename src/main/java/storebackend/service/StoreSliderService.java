@@ -173,6 +173,13 @@ public class StoreSliderService {
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found: " + storeId));
 
+        // Auto-initialize slider settings if missing
+        StoreSliderSettings settings = settingsRepository.findByStoreId(storeId)
+                .orElseGet(() -> {
+                    log.warn("Slider settings not found for store {} during upload. Auto-initializing...", storeId);
+                    return createDefaultSettings(store);
+                });
+
         try {
             UploadMediaResponse uploadResponse = mediaService.uploadMedia(
                     file, store, store.getOwner(), MediaType.IMAGE, altText);
@@ -194,8 +201,6 @@ public class StoreSliderService {
             sliderImage = imageRepository.save(sliderImage);
 
             if (ownerImageCount == 0) {
-                StoreSliderSettings settings = settingsRepository.findByStoreId(storeId)
-                        .orElseThrow(() -> new RuntimeException("Slider settings not found"));
                 settings.setOverrideMode(SliderOverrideMode.OWNER_ONLY);
                 settingsRepository.save(settings);
                 log.info("Auto-switched slider mode to OWNER_ONLY for store {}", storeId);

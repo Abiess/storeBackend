@@ -218,6 +218,30 @@
     "newArrivalsSub": "Discover our latest products",
     "loading": "Loading products..."
   },
+  "auth": {
+    "loginTitle": "markt.ma Login",
+    "loginSubtitle": "Sign in to your store dashboard",
+    "email": "Email",
+    "emailPlaceholder": "your@email.com",
+    "password": "Password",
+    "passwordMinLength": "Password is required",
+    "emailInvalid": "Please enter a valid email address",
+    "loggingIn": "Signing in...",
+    "login": "Sign In",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "No account yet? Register now",
+    "alreadyRegistered": "Already registered? Sign in",
+    "loginFailed": "Login failed. Please check your credentials.",
+    "registerFailed": "Registration failed. Please try again.",
+    "loginDialogFailed": "Sign in failed. Please check your credentials.",
+    "sessionExpired": "Your session has expired. Please sign in again.",
+    "authRequired": "Please sign in to access this page.",
+    "registerTitle": "Register",
+    "registerSubtitle": "Create your free account",
+    "registerBtn": "Create Account",
+    "registering": "Registering...",
+    "registerSuccess": "✓ Registration successful! Please check your emails and click on the confirmation link to activate your account."
+  },
   "storefront": {
     "searchResults": "Search Results",
     "allProducts": "All Products",
@@ -226,7 +250,9 @@
     "noProducts": "No Products Found",
     "noProductsHint": "There are currently no products available in this category.",
     "products": "{{count}} Product",
-    "productsPlural": "{{count}} Products"
+    "productsPlural": "{{count}} Products",
+    "addedToCart": "{{count}}x {{name}} has been added to the cart!",
+    "addToCartError": "Error adding to cart. Please try again."
   },
   "order": {
     "title": "Order Details",
@@ -322,6 +348,35 @@
     "tip2": "Mix uppercase and lowercase letters",
     "tip3": "Add numbers and special characters",
     "tip4": "Avoid personal information",
-    "tip5": "Use a different password for each account"
+    "tip5": "Use a different password for each account",
+    "strengthWeak": "Weak – Please choose a stronger password",
+    "strengthMedium": "Medium – Good, but can be improved",
+    "strengthStrong": "Strong – Very secure password!",
+    "passwordChangedSuccess": "Password changed successfully!",
+    "errorWrongCurrentPassword": "The current password is incorrect",
+    "errorChangePassword": "Error changing password"
+  },
+  "storeNotFound": {
+    "title": "Store Not Found",
+    "subtitleSlug": "The store <strong>{{slug}}.markt.ma</strong> does not exist yet.",
+    "subtitleReserved": "The subdomain <strong>{{slug}}.markt.ma</strong> is reserved for technical purposes and cannot be used as a store.",
+    "warningTitle": "Technical Subdomain",
+    "warningText": "This subdomain is reserved for system services (API, database, etc.) and cannot be registered as a store.",
+    "createStoreTitle": "Would you like to create this store?",
+    "createStoreText": "You can now create your own online shop at this address!",
+    "createStoreBtn": "Create store: {{slug}}.markt.ma",
+    "createStoreHint": "Your own online shop on markt.ma",
+    "registerTitle": "Create Your Own Store!",
+    "registerText": "Sign in or register to claim {{slug}}.markt.ma.",
+    "registerBtn": "Register Now",
+    "loginBtn": "Sign In",
+    "freeHint": "Start for free • No credit card required",
+    "backToMarketplace": "← Back to Marketplace",
+    "toDashboard": "Go to Dashboard",
+    "howItWorksTitle": "💡 How it works:",
+    "step1": "Register for free or sign in",
+    "step2": "Create your store with your desired subdomain",
+    "step3": "Add products and customize the design",
+    "step4": "Your store is immediately online at your-name.markt.ma"
   }
 }

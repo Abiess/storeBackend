@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CustomerProfileService, PasswordChangeRequest } from '../../core/services/customer-profile.service';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { TranslationService } from '@app/core/services/translation.service';
 
 @Component({
   selector: 'app-customer-password-change',
@@ -333,7 +334,10 @@ export class CustomerPasswordChangeComponent {
   successMessage = '';
   errorMessage = '';
 
-  constructor(private customerService: CustomerProfileService) {}
+  constructor(
+    private customerService: CustomerProfileService,
+    private translationService: TranslationService
+  ) {}
 
   validatePasswordMatch(): void {
     this.passwordsMatch = !this.confirmPassword ||
@@ -364,14 +368,14 @@ export class CustomerPasswordChangeComponent {
 
   getPasswordStrengthLabel(): string {
     const strength = this.getPasswordStrength();
-    if (strength < 40) return 'Schwach - Bitte ein sichereres Passwort wählen';
-    if (strength < 70) return 'Mittel - Gut, aber kann noch verbessert werden';
-    return 'Stark - Sehr sicheres Passwort!';
+    if (strength < 40) return this.translationService.translate('profile.strengthWeak');
+    if (strength < 70) return this.translationService.translate('profile.strengthMedium');
+    return this.translationService.translate('profile.strengthStrong');
   }
 
   changePassword(): void {
     if (!this.passwordsMatch) {
-      this.errorMessage = 'Die Passwörter stimmen nicht überein';
+      this.errorMessage = this.translationService.translate('profile.passwordMismatch');
       return;
     }
 
@@ -382,7 +386,7 @@ export class CustomerPasswordChangeComponent {
     this.customerService.changePassword(this.passwordRequest).subscribe({
       next: (response) => {
         this.saving = false;
-        this.successMessage = 'Passwort erfolgreich geändert!';
+        this.successMessage = this.translationService.translate('profile.passwordChangedSuccess');
         this.resetForm();
 
         setTimeout(() => {
@@ -392,9 +396,9 @@ export class CustomerPasswordChangeComponent {
       error: (error) => {
         this.saving = false;
         if (error.status === 401) {
-          this.errorMessage = 'Das aktuelle Passwort ist falsch';
+          this.errorMessage = this.translationService.translate('profile.errorWrongCurrentPassword');
         } else {
-          this.errorMessage = error.error?.message || 'Fehler beim Ändern des Passworts';
+          this.errorMessage = error.error?.message || this.translationService.translate('profile.errorChangePassword');
         }
         console.error('❌ Fehler beim Ändern des Passworts:', error);
       }

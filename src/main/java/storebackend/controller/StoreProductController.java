@@ -31,7 +31,7 @@ public class StoreProductController {
      * GET /api/stores/{storeId}/imported-products
      */
     @GetMapping
-    @PreAuthorize("hasRole('ROLE_RESELLER')")
+    @PreAuthorize("hasAuthority('ROLE_RESELLER')")
     public ResponseEntity<List<StoreProductDTO>> getImportedProducts(
             @PathVariable Long storeId,
             @RequestParam(required = false, defaultValue = "true") Boolean activeOnly,
@@ -56,7 +56,7 @@ public class StoreProductController {
      * }
      */
     @PostMapping
-    @PreAuthorize("hasRole('ROLE_RESELLER')")
+    @PreAuthorize("hasAuthority('ROLE_RESELLER')")
     public ResponseEntity<StoreProductDTO> importProduct(
             @PathVariable Long storeId,
             @RequestBody ImportProductRequest request,
@@ -74,7 +74,7 @@ public class StoreProductController {
      * PUT /api/stores/{storeId}/imported-products/{productId}/price
      */
     @PutMapping("/{productId}/price")
-    @PreAuthorize("hasRole('ROLE_RESELLER')")
+    @PreAuthorize("hasAuthority('ROLE_RESELLER')")
     public ResponseEntity<StoreProductDTO> updatePrice(
             @PathVariable Long storeId,
             @PathVariable Long productId,
@@ -93,7 +93,7 @@ public class StoreProductController {
      * POST /api/stores/{storeId}/imported-products/{productId}/toggle
      */
     @PostMapping("/{productId}/toggle")
-    @PreAuthorize("hasRole('ROLE_RESELLER')")
+    @PreAuthorize("hasAuthority('ROLE_RESELLER')")
     public ResponseEntity<StoreProductDTO> toggleActive(
             @PathVariable Long storeId,
             @PathVariable Long productId,
@@ -111,7 +111,7 @@ public class StoreProductController {
      * DELETE /api/stores/{storeId}/imported-products/{productId}
      */
     @DeleteMapping("/{productId}")
-    @PreAuthorize("hasRole('ROLE_RESELLER')")
+    @PreAuthorize("hasAuthority('ROLE_RESELLER')")
     public ResponseEntity<Void> removeImportedProduct(
             @PathVariable Long storeId,
             @PathVariable Long productId,

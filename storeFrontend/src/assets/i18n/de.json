@@ -218,6 +218,30 @@
     "newArrivalsSub": "Entdecken Sie unsere neuesten Produkte",
     "loading": "Produkte werden geladen..."
   },
+  "auth": {
+    "loginTitle": "markt.ma Login",
+    "loginSubtitle": "Melden Sie sich bei Ihrem Store-Dashboard an",
+    "email": "E-Mail",
+    "emailPlaceholder": "ihre@email.de",
+    "password": "Passwort",
+    "passwordMinLength": "Passwort ist erforderlich",
+    "emailInvalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+    "loggingIn": "Wird angemeldet...",
+    "login": "Anmelden",
+    "forgotPassword": "Passwort vergessen?",
+    "noAccount": "Noch kein Konto? Jetzt registrieren",
+    "alreadyRegistered": "Bereits registriert? Anmelden",
+    "loginFailed": "Login fehlgeschlagen. Bitte überprüfen Sie Ihre Angaben.",
+    "registerFailed": "Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "loginDialogFailed": "Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Zugangsdaten.",
+    "sessionExpired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
+    "authRequired": "Bitte melden Sie sich an, um auf diese Seite zuzugreifen.",
+    "registerTitle": "Registrieren",
+    "registerSubtitle": "Erstellen Sie Ihr kostenloses Konto",
+    "registerBtn": "Konto erstellen",
+    "registering": "Wird registriert...",
+    "registerSuccess": "✓ Registrierung erfolgreich! Bitte überprüfen Sie Ihre E-Mails und klicken Sie auf den Bestätigungslink, um Ihr Konto zu aktivieren."
+  },
   "storefront": {
     "searchResults": "Suchergebnisse",
     "allProducts": "Alle Produkte",
@@ -226,7 +250,9 @@
     "noProducts": "Keine Produkte gefunden",
     "noProductsHint": "In dieser Kategorie sind aktuell keine Produkte verfügbar.",
     "products": "{{count}} Produkt",
-    "productsPlural": "{{count}} Produkte"
+    "productsPlural": "{{count}} Produkte",
+    "addedToCart": "{{count}}x {{name}} wurde zum Warenkorb hinzugefügt!",
+    "addToCartError": "Fehler beim Hinzufügen zum Warenkorb. Bitte versuchen Sie es erneut."
   },
   "order": {
     "title": "Bestelldetails",
@@ -322,6 +348,39 @@
     "tip2": "Kombinieren Sie Groß- und Kleinbuchstaben",
     "tip3": "Fügen Sie Zahlen und Sonderzeichen hinzu",
     "tip4": "Vermeiden Sie persönliche Informationen",
-    "tip5": "Nutzen Sie für jeden Account ein anderes Passwort"
+    "tip5": "Nutzen Sie für jeden Account ein anderes Passwort",
+    "strengthWeak": "Schwach – Bitte ein sichereres Passwort wählen",
+    "strengthMedium": "Mittel – Gut, aber kann noch verbessert werden",
+    "strengthStrong": "Stark – Sehr sicheres Passwort!",
+    "passwordChangedSuccess": "Passwort erfolgreich geändert!",
+    "errorWrongCurrentPassword": "Das aktuelle Passwort ist falsch",
+    "errorChangePassword": "Fehler beim Ändern des Passworts"
+  },
+  "storeNotFound": {
+    "title": "Store nicht gefunden",
+    "subtitleSlug": "Der Store <strong>{{slug}}.markt.ma</strong> existiert noch nicht.",
+    "subtitleReserved": "Die Subdomain <strong>{{slug}}.markt.ma</strong> ist für technische Zwecke reserviert und kann nicht als Store verwendet werden.",
+    "warningTitle": "Technische Subdomain",
+    "warningText": "Diese Subdomain ist für Systemdienste reserviert (API, Datenbank, etc.) und kann nicht als Store registriert werden.",
+    "createStoreTitle": "Möchten Sie diesen Store erstellen?",
+    "createStoreText": "Sie können jetzt Ihren eigenen Online-Shop unter dieser Adresse erstellen!",
+    "createStoreBtn": "Store erstellen: {{slug}}.markt.ma",
+    "createStoreHint": "Mit Ihrem eigenen Online-Shop auf markt.ma",
+    "registerTitle": "Erstellen Sie Ihren eigenen Store!",
+    "registerText": "Melden Sie sich an oder registrieren Sie sich, um {{slug}}.markt.ma zu sichern.",
+    "registerBtn": "Jetzt registrieren",
+    "loginBtn": "Anmelden",
+    "freeHint": "Kostenlos starten • Keine Kreditkarte erforderlich",
+    "backToMarketplace": "← Zurück zum Marketplace",
+    "toDashboard": "Zum Dashboard",
+    "howItWorksTitle": "💡 So funktioniert's:",
+    "step1": "Registrieren Sie sich kostenlos oder melden Sie sich an",
+    "step2": "Erstellen Sie Ihren Store mit Ihrer Wunsch-Subdomain",
+    "step3": "Fügen Sie Produkte hinzu und passen Sie das Design an",
+    "step4": "Ihr Store ist sofort online unter ihrer-name.markt.ma"
+  },
+  "storefront": {
+    "addedToCart": "{{count}}x {{name}} wurde zum Warenkorb hinzugefügt!",
+    "addToCartError": "Fehler beim Hinzufügen zum Warenkorb. Bitte versuchen Sie es erneut."
   }
 }

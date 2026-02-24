@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
+import { TranslationService } from '../../core/services/translation.service';
 
 @Component({
   selector: 'app-storefront-auth-dialog',
@@ -226,7 +227,8 @@ export class StorefrontAuthDialogComponent {
 
   constructor(
     private fb: FormBuilder,
-    private authService: AuthService
+    private authService: AuthService,
+    private translationService: TranslationService
   ) {
     this.authForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -266,8 +268,8 @@ export class StorefrontAuthDialogComponent {
         this.loading = false;
         this.errorMessage = error.error?.message ||
           (this.isLogin
-            ? 'Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Zugangsdaten.'
-            : 'Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.');
+            ? this.translationService.translate('auth.loginDialogFailed')
+            : this.translationService.translate('auth.registerFailed'));
       }
     });
   }

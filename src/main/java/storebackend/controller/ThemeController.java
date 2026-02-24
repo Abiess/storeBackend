@@ -3,11 +3,15 @@ package storebackend.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import storebackend.dto.CreateThemeRequest;
 import storebackend.dto.StoreThemeDTO;
+import storebackend.entity.Store;
+import storebackend.entity.User;
+import storebackend.repository.StoreRepository;
 import storebackend.service.ThemeService;
+import storebackend.util.StoreAccessChecker;
 
 import java.util.List;
 
@@ -22,6 +26,7 @@ import java.util.List;
 public class ThemeController {
 
     private final ThemeService themeService;
+    private final StoreRepository storeRepository;
 
     /**
      * Öffentlicher Endpunkt: Hole aktives Theme eines Stores
@@ -37,43 +42,58 @@ public class ThemeController {
      * Hole alle Themes eines Stores (für Store-Owner)
      */
     @GetMapping("/store/{storeId}")
-    @PreAuthorize("hasRole('STORE_OWNER')")
-    public ResponseEntity<List<StoreThemeDTO>> getStoreThemes(@PathVariable Long storeId) {
+    public ResponseEntity<?> getStoreThemes(
+            @PathVariable Long storeId,
+            @AuthenticationPrincipal User user) {
+        if (user == null) return ResponseEntity.status(401).body("Unauthorized");
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+        if (!StoreAccessChecker.isOwner(store, user)) {
+            return ResponseEntity.status(403).body("Not authorized");
+        }
         log.info("Request for all themes of store: {}", storeId);
-        List<StoreThemeDTO> themes = themeService.getStoreThemes(storeId);
-        return ResponseEntity.ok(themes);
+        return ResponseEntity.ok(themeService.getStoreThemes(storeId));
     }
 
     /**
      * Erstelle ein neues Theme
      */
     @PostMapping
-    @PreAuthorize("hasRole('STORE_OWNER')")
-    public ResponseEntity<StoreThemeDTO> createTheme(@RequestBody CreateThemeRequest request) {
+    public ResponseEntity<?> createTheme(
+            @RequestBody CreateThemeRequest request,
+            @AuthenticationPrincipal User user) {
+        if (user == null) return ResponseEntity.status(401).body("Unauthorized");
+        Store store = storeRepository.findById(request.getStoreId())
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+        if (!StoreAccessChecker.isOwner(store, user)) {
+            return ResponseEntity.status(403).body("Not authorized");
+        }
         log.info("Creating new theme for store: {}", request.getStoreId());
-        StoreThemeDTO theme = themeService.createTheme(request);
-        return ResponseEntity.ok(theme);
+        return ResponseEntity.ok(themeService.createTheme(request));
     }
 
     /**
      * Aktualisiere ein Theme
      */
     @PutMapping("/{themeId}")
-    @PreAuthorize("hasRole('STORE_OWNER')")
-    public ResponseEntity<StoreThemeDTO> updateTheme(
+    public ResponseEntity<?> updateTheme(
             @PathVariable Long themeId,
-            @RequestBody StoreThemeDTO updates) {
+            @RequestBody StoreThemeDTO updates,
+            @AuthenticationPrincipal User user) {
+        if (user == null) return ResponseEntity.status(401).body("Unauthorized");
+        // Ownership wird im ThemeService geprüft (Theme gehört zu einem Store)
         log.info("Updating theme: {}", themeId);
-        StoreThemeDTO theme = themeService.updateTheme(themeId, updates);
-        return ResponseEntity.ok(theme);
+        return ResponseEntity.ok(themeService.updateTheme(themeId, updates));
     }
 
     /**
      * Aktiviere ein Theme
      */
     @PostMapping("/{themeId}/activate")
-    @PreAuthorize("hasRole('STORE_OWNER')")
-    public ResponseEntity<Void> activateTheme(@PathVariable Long themeId) {
+    public ResponseEntity<?> activateTheme(
+            @PathVariable Long themeId,
+            @AuthenticationPrincipal User user) {
+        if (user == null) return ResponseEntity.status(401).body("Unauthorized");
         log.info("Activating theme: {}", themeId);
         themeService.activateTheme(themeId);
         return ResponseEntity.ok().build();
@@ -83,8 +103,10 @@ public class ThemeController {
      * Lösche ein Theme
      */
     @DeleteMapping("/{themeId}")
-    @PreAuthorize("hasRole('STORE_OWNER')")
-    public ResponseEntity<Void> deleteTheme(@PathVariable Long themeId) {
+    public ResponseEntity<?> deleteTheme(
+            @PathVariable Long themeId,
+            @AuthenticationPrincipal User user) {
+        if (user == null) return ResponseEntity.status(401).body("Unauthorized");
         log.info("Deleting theme: {}", themeId);
         themeService.deleteTheme(themeId);
         return ResponseEntity.noContent().build();

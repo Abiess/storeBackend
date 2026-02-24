@@ -266,11 +266,11 @@ export class StorefrontComponent implements OnInit, OnDestroy {
         console.log('✅ Produkt erfolgreich zum Warenkorb hinzugefügt');
         this.loadCartCount();
         // Zeige kurz eine Bestätigung
-        alert(`${event.quantity}x ${event.product.title} wurde zum Warenkorb hinzugefügt!`);
+        alert(this.translationService.translate('storefront.addedToCart', { count: event.quantity, name: event.product.title }));
       },
       error: (error) => {
         console.error('❌ Fehler beim Hinzufügen zum Warenkorb:', error);
-        alert('Fehler beim Hinzufügen zum Warenkorb. Bitte versuchen Sie es erneut.');
+        alert(this.translationService.translate('storefront.addToCartError'));
       }
     });
   }
