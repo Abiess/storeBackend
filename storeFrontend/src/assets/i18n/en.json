@@ -378,5 +378,31 @@
     "step2": "Create your store with your desired subdomain",
     "step3": "Add products and customize the design",
     "step4": "Your store is immediately online at your-name.markt.ma"
+  },
+  "reviews": {
+    "reviews": "Reviews",
+    "totalReviews": "Total",
+    "pendingApproval": "Pending Approval",
+    "approved": "Approved",
+    "pending": "Pending",
+    "approve": "Approve",
+    "writeReview": "Write a Review",
+    "writeYourReview": "Write Your Review",
+    "loginToReview": "Please login to write a review",
+    "yourRating": "Your Rating",
+    "ratingRequired": "Please provide a rating",
+    "title": "Title (optional)",
+    "titlePlaceholder": "Summary of your review",
+    "yourReview": "Your Review",
+    "commentPlaceholder": "Share your experience with this product...",
+    "commentRequired": "Please write at least 10 characters",
+    "submitReview": "Submit Review",
+    "customerReviews": "Customer Reviews",
+    "noReviews": "No reviews yet",
+    "verifiedPurchase": "Verified Purchase",
+    "wasHelpful": "Was this review helpful?",
+    "yes": "Yes",
+    "no": "No",
+    "youVoted": "You have already voted"
   }
 }

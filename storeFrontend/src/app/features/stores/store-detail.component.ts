@@ -31,6 +31,9 @@ import { LanguageSwitcherComponent } from '@app/shared/components/language-switc
             <button [class.active]="activeTab === 'orders'" (click)="switchTab('orders')">
               📋 Bestellungen
             </button>
+            <button [class.active]="activeTab === 'reviews'" (click)="switchTab('reviews')">
+              ⭐ Bewertungen
+            </button>
             <button [class.active]="activeTab === 'domains'" (click)="switchTab('domains')">
               🌐 Domains
             </button>
@@ -122,6 +125,45 @@ import { LanguageSwitcherComponent } from '@app/shared/components/language-switc
               <div class="order-footer">
                 <span class="order-amount">{{ order.totalAmount }} €</span>
                 <span class="order-date">{{ order.createdAt | date:'dd.MM.yyyy HH:mm' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reviews Tab -->
+        <div *ngIf="activeTab === 'reviews'" class="tab-content">
+          <div class="section-header">
+            <h2>Kundenbewertungen</h2>
+            <button class="btn btn-primary" [routerLink]="['/stores', storeId, 'reviews']">
+              Alle Bewertungen verwalten →
+            </button>
+          </div>
+          
+          <div class="reviews-info">
+            <div class="info-card">
+              <div class="info-icon">⭐</div>
+              <div class="info-content">
+                <h3>Bewertungen verwalten</h3>
+                <p>Sehen Sie alle Kundenbewertungen, genehmigen Sie neue Reviews und löschen Sie unangemessene Inhalte.</p>
+                <button class="btn btn-link" [routerLink]="['/stores', storeId, 'reviews']">
+                  Zur Bewertungs-Verwaltung →
+                </button>
+              </div>
+            </div>
+            
+            <div class="info-card">
+              <div class="info-icon">📊</div>
+              <div class="info-content">
+                <h3>Statistiken einsehen</h3>
+                <p>Verfolgen Sie die durchschnittliche Bewertung Ihrer Produkte und die Zufriedenheit Ihrer Kunden.</p>
+              </div>
+            </div>
+            
+            <div class="info-card">
+              <div class="info-icon">✅</div>
+              <div class="info-content">
+                <h3>Moderation</h3>
+                <p>Alle neuen Bewertungen warten auf Ihre Genehmigung, bevor sie öffentlich sichtbar werden.</p>
               </div>
             </div>
           </div>
@@ -1081,6 +1123,49 @@ import { LanguageSwitcherComponent } from '@app/shared/components/language-switc
     .btn-block {
       width: 100%;
       justify-content: center;
+    }
+
+    /* Reviews Info Cards */
+    .reviews-info {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .info-card {
+      background: #f8f9fa;
+      border: 2px solid #e9ecef;
+      border-radius: 12px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      transition: all 0.3s;
+    }
+
+    .info-card:hover {
+      border-color: #667eea;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .info-card .info-icon {
+      font-size: 2.5rem;
+      text-align: center;
+    }
+
+    .info-card .info-content h3 {
+      margin: 0 0 0.5rem;
+      font-size: 1.125rem;
+      color: #333;
+    }
+
+    .info-card .info-content p {
+      margin: 0;
+      color: #666;
+      line-height: 1.6;
+      font-size: 0.9375rem;
     }
 
     @media (max-width: 768px) {

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Product, ProductVariant } from '@app/core/models';
 import { ProductImageGalleryComponent } from './product-image-gallery.component';
+import { ProductReviewsComponent } from './product-reviews.component';
 
 /**
  * Product Quick View Modal Component
@@ -11,7 +12,7 @@ import { ProductImageGalleryComponent } from './product-image-gallery.component'
 @Component({
   selector: 'app-product-quick-view',
   standalone: true,
-  imports: [CommonModule, FormsModule, ProductImageGalleryComponent],
+  imports: [CommonModule, FormsModule, ProductImageGalleryComponent, ProductReviewsComponent],
   template: `
     <div *ngIf="isOpen" class="quick-view-overlay" (click)="closeModal()">
       <div class="quick-view-modal" (click)="$event.stopPropagation()">
@@ -112,6 +113,11 @@ import { ProductImageGalleryComponent } from './product-image-gallery.component'
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Reviews Section (full width unterhalb der Produktinfo) -->
+        <div class="reviews-section" *ngIf="product?.id">
+          <app-product-reviews [productId]="product!.id"></app-product-reviews>
         </div>
       </div>
     </div>
@@ -425,6 +431,12 @@ import { ProductImageGalleryComponent } from './product-image-gallery.component'
 
     .info-text {
       color: #666;
+    }
+
+    .reviews-section {
+      padding: 2rem;
+      border-top: 1px solid #e9ecef;
+      background: #f8f9fa;
     }
 
     /* Responsive */

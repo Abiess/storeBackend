@@ -382,5 +382,31 @@
   "storefront": {
     "addedToCart": "{{count}}x {{name}} wurde zum Warenkorb hinzugefügt!",
     "addToCartError": "Fehler beim Hinzufügen zum Warenkorb. Bitte versuchen Sie es erneut."
+  },
+  "reviews": {
+    "reviews": "Bewertungen",
+    "totalReviews": "Gesamt",
+    "pendingApproval": "Warten auf Freigabe",
+    "approved": "Freigegeben",
+    "pending": "Ausstehend",
+    "approve": "Freigeben",
+    "writeReview": "Bewertung schreiben",
+    "writeYourReview": "Schreiben Sie Ihre Bewertung",
+    "loginToReview": "Melden Sie sich an, um eine Bewertung zu schreiben",
+    "yourRating": "Ihre Bewertung",
+    "ratingRequired": "Bitte geben Sie eine Bewertung ab",
+    "title": "Titel (optional)",
+    "titlePlaceholder": "Zusammenfassung Ihrer Bewertung",
+    "yourReview": "Ihre Bewertung",
+    "commentPlaceholder": "Teilen Sie Ihre Erfahrungen mit diesem Produkt...",
+    "commentRequired": "Bitte schreiben Sie mindestens 10 Zeichen",
+    "submitReview": "Bewertung absenden",
+    "customerReviews": "Kundenbewertungen",
+    "noReviews": "Noch keine Bewertungen vorhanden",
+    "verifiedPurchase": "Verifizierter Kauf",
+    "wasHelpful": "War diese Bewertung hilfreich?",
+    "yes": "Ja",
+    "no": "Nein",
+    "youVoted": "Sie haben bereits abgestimmt"
   }
 }

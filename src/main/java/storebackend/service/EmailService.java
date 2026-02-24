@@ -156,4 +156,146 @@ public class EmailService {
             // Don't throw exception here - confirmation email is optional
         }
     }
+
+    /**
+     * Sendet eine Bestellbestätigung an den Kunden
+     */
+    public void sendOrderConfirmation(String toEmail, String orderNumber, String storeName, Double totalAmount) {
+        if (!mailEnabled) {
+            log.info("Mail disabled - skipping order confirmation to: {}", toEmail);
+            return;
+        }
+
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(toEmail);
+            message.setSubject("Bestellbestätigung #" + orderNumber + " - " + storeName);
+            message.setText(
+                "Vielen Dank für Ihre Bestellung!\n\n" +
+                "Ihre Bestellung wurde erfolgreich aufgegeben:\n\n" +
+                "Bestellnummer: " + orderNumber + "\n" +
+                "Shop: " + storeName + "\n" +
+                "Gesamtbetrag: " + String.format("%.2f", totalAmount) + " €\n\n" +
+                "Sie erhalten eine weitere E-Mail, sobald Ihre Bestellung versendet wird.\n\n" +
+                "Sie können den Status Ihrer Bestellung hier verfolgen:\n" +
+                baseUrl + "/customer/orders\n\n" +
+                "Bei Fragen stehen wir Ihnen gerne zur Verfügung.\n\n" +
+                "Mit freundlichen Grüßen,\n" +
+                storeName
+            );
+
+            mailSender.send(message);
+            log.info("Order confirmation sent to: {} for order: {}", toEmail, orderNumber);
+        } catch (Exception e) {
+            log.error("Failed to send order confirmation to: {}", toEmail, e);
+        }
+    }
+
+    /**
+     * Sendet eine Versandbenachrichtigung an den Kunden
+     */
+    public void sendShippingNotification(String toEmail, String orderNumber, String storeName, String trackingNumber) {
+        if (!mailEnabled) {
+            log.info("Mail disabled - skipping shipping notification to: {}", toEmail);
+            return;
+        }
+
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(toEmail);
+            message.setSubject("Ihre Bestellung wurde versendet #" + orderNumber + " - " + storeName);
+
+            String trackingInfo = trackingNumber != null && !trackingNumber.isEmpty()
+                ? "Sendungsverfolgungsnummer: " + trackingNumber + "\n\n"
+                : "";
+
+            message.setText(
+                "Gute Nachrichten!\n\n" +
+                "Ihre Bestellung wurde versendet:\n\n" +
+                "Bestellnummer: " + orderNumber + "\n" +
+                "Shop: " + storeName + "\n" +
+                trackingInfo +
+                "Sie sollten Ihr Paket in den nächsten Tagen erhalten.\n\n" +
+                "Status verfolgen:\n" +
+                baseUrl + "/customer/orders\n\n" +
+                "Mit freundlichen Grüßen,\n" +
+                storeName
+            );
+
+            mailSender.send(message);
+            log.info("Shipping notification sent to: {} for order: {}", toEmail, orderNumber);
+        } catch (Exception e) {
+            log.error("Failed to send shipping notification to: {}", toEmail, e);
+        }
+    }
+
+    /**
+     * Sendet eine Lieferbestätigung an den Kunden
+     */
+    public void sendDeliveryConfirmation(String toEmail, String orderNumber, String storeName) {
+        if (!mailEnabled) {
+            log.info("Mail disabled - skipping delivery confirmation to: {}", toEmail);
+            return;
+        }
+
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(toEmail);
+            message.setSubject("Ihre Bestellung wurde zugestellt #" + orderNumber + " - " + storeName);
+            message.setText(
+                "Ihre Bestellung wurde erfolgreich zugestellt!\n\n" +
+                "Bestellnummer: " + orderNumber + "\n" +
+                "Shop: " + storeName + "\n\n" +
+                "Wir hoffen, dass Sie mit Ihrer Bestellung zufrieden sind.\n\n" +
+                "Falls Sie Fragen oder Probleme haben, kontaktieren Sie uns bitte.\n\n" +
+                "Vielen Dank für Ihren Einkauf!\n\n" +
+                "Mit freundlichen Grüßen,\n" +
+                storeName
+            );
+
+            mailSender.send(message);
+            log.info("Delivery confirmation sent to: {} for order: {}", toEmail, orderNumber);
+        } catch (Exception e) {
+            log.error("Failed to send delivery confirmation to: {}", toEmail, e);
+        }
+    }
+
+    /**
+     * Sendet eine Stornierungsbenachrichtigung an den Kunden
+     */
+    public void sendOrderCancellation(String toEmail, String orderNumber, String storeName, String reason) {
+        if (!mailEnabled) {
+            log.info("Mail disabled - skipping order cancellation to: {}", toEmail);
+            return;
+        }
+
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(toEmail);
+            message.setSubject("Bestellung storniert #" + orderNumber + " - " + storeName);
+
+            String reasonText = reason != null && !reason.isEmpty()
+                ? "\n\nGrund: " + reason + "\n"
+                : "";
+
+            message.setText(
+                "Ihre Bestellung wurde storniert.\n\n" +
+                "Bestellnummer: " + orderNumber + "\n" +
+                "Shop: " + storeName +
+                reasonText + "\n" +
+                "Falls Sie Fragen zur Stornierung haben, kontaktieren Sie uns bitte.\n\n" +
+                "Mit freundlichen Grüßen,\n" +
+                storeName
+            );
+
+            mailSender.send(message);
+            log.info("Order cancellation sent to: {} for order: {}", toEmail, orderNumber);
+        } catch (Exception e) {
+            log.error("Failed to send order cancellation to: {}", toEmail, e);
+        }
+    }
 }

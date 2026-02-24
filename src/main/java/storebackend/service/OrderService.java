@@ -1,12 +1,14 @@
 package storebackend.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import storebackend.dto.OrderDetailsDTO;
 import storebackend.entity.*;
 import storebackend.enums.OrderStatus;
 import storebackend.enums.PaymentMethod;
+import storebackend.event.OrderStatusChangedEvent;
 import storebackend.repository.*;
 
 import java.math.BigDecimal;
@@ -22,6 +24,7 @@ public class OrderService {
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
     private final InventoryService inventoryService;
+    private final ApplicationEventPublisher eventPublisher;
 
     // MARKETPLACE: New dependencies for revenue sharing
     private final RevenueShareService revenueShareService;
@@ -191,22 +194,12 @@ public class OrderService {
         // Clear cart
         cartItemRepository.deleteByCartId(cartId);
 
-        return savedOrder;
-    }
-
-    @Transactional
-    public Order updateOrderStatus(Long orderId, OrderStatus status, String note, User updatedBy) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
-
-        order.setStatus(status);
-        Order savedOrder = orderRepository.save(order);
-
-        // Create status history entry
-        createStatusHistory(savedOrder, status, note, updatedBy);
+        // Publish event for order confirmation email
+        eventPublisher.publishEvent(new OrderStatusChangedEvent(this, savedOrder, null, OrderStatus.PENDING));
 
         return savedOrder;
     }
+
 
     @Transactional(readOnly = true)
     public List<OrderStatusHistory> getOrderHistory(Long orderId) {
@@ -312,5 +305,49 @@ public class OrderService {
 
         // Always set platform fee percentage (snapshot at order time)
         orderItem.setPlatformFeePercentage(platformSettingsService.getPlatformFeePercentage());
+    }
+
+    /**
+     * Update order status and publish event for email notifications
+     */
+    @Transactional
+    public Order updateOrderStatus(Long orderId, OrderStatus newStatus, String notes, User updatedBy) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        OrderStatus oldStatus = order.getStatus();
+
+        // Update status
+        order.setStatus(newStatus);
+
+        // Update timestamps based on status
+        switch (newStatus) {
+            case SHIPPED:
+                order.setShippedAt(java.time.LocalDateTime.now());
+                break;
+            case DELIVERED:
+                order.setDeliveredAt(java.time.LocalDateTime.now());
+                break;
+            case CANCELLED:
+                order.setCancelledAt(java.time.LocalDateTime.now());
+                break;
+        }
+
+        // Save notes if provided
+        if (notes != null && !notes.isEmpty()) {
+            order.setNotes(notes);
+        }
+
+        order = orderRepository.save(order);
+
+        // Add to status history
+        createStatusHistory(order, newStatus, notes, updatedBy);
+
+        // Publish event for email notification
+        if (oldStatus != newStatus) {
+            eventPublisher.publishEvent(new OrderStatusChangedEvent(this, order, oldStatus, newStatus));
+        }
+
+        return order;
     }
 }

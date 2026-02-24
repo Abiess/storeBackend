@@ -16,4 +16,21 @@ public class StoreDeliverySettingsDTO {
     private Boolean deliveryEnabled;
     private Boolean expressEnabled;
     private String currency;
+
+    // Explicit getters (Lombok fallback)
+    public Boolean getPickupEnabled() {
+        return pickupEnabled;
+    }
+
+    public Boolean getDeliveryEnabled() {
+        return deliveryEnabled;
+    }
+
+    public Boolean getExpressEnabled() {
+        return expressEnabled;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
 }

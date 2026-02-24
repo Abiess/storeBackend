@@ -152,6 +152,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/delivery/delivery-management.component').then(m => m.DeliveryManagementComponent),
     canActivate: [authGuard]
   },
+  {
+    path: 'dashboard/stores/:storeId/reviews',
+    loadComponent: () => import('./features/stores/store-reviews-manager.component').then(m => m.StoreReviewsManagerComponent),
+    canActivate: [authGuard]
+  },
 
   // ==================== Product Management (Primary Routes) ====================
   // WICHTIG: Spezifische Routen (mit /new) müssen VOR allgemeinen Routen stehen!
@@ -239,6 +244,13 @@ export const routes: Routes = [
   {
     path: 'stores/:id/coupons',
     loadComponent: () => import('./features/coupons/coupons-list/coupons-list.component').then(m => m.CouponsListComponent),
+    canActivate: [authGuard]
+  },
+
+  // ==================== Reviews Management ====================
+  {
+    path: 'stores/:id/reviews',
+    loadComponent: () => import('./features/stores/store-reviews-manager.component').then(m => m.StoreReviewsManagerComponent),
     canActivate: [authGuard]
   },
 

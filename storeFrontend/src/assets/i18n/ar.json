@@ -378,5 +378,31 @@
     "step2": "أنشئ متجرك بنطاقك الفرعي المطلوب",
     "step3": "أضف المنتجات وخصّص التصميم",
     "step4": "متجرك فوراً على الإنترنت تحت اسمك.markt.ma"
+  },
+  "reviews": {
+    "reviews": "التقييمات",
+    "totalReviews": "الإجمالي",
+    "pendingApproval": "في انتظار الموافقة",
+    "approved": "تمت الموافقة",
+    "pending": "قيد الانتظار",
+    "approve": "الموافقة",
+    "writeReview": "اكتب تقييماً",
+    "writeYourReview": "اكتب تقييمك",
+    "loginToReview": "يرجى تسجيل الدخول لكتابة تقييم",
+    "yourRating": "تقييمك",
+    "ratingRequired": "يرجى تقديم تقييم",
+    "title": "العنوان (اختياري)",
+    "titlePlaceholder": "ملخص تقييمك",
+    "yourReview": "تقييمك",
+    "commentPlaceholder": "شارك تجربتك مع هذا المنتج...",
+    "commentRequired": "يرجى كتابة 10 أحرف على الأقل",
+    "submitReview": "إرسال التقييم",
+    "customerReviews": "تقييمات العملاء",
+    "noReviews": "لا توجد تقييمات بعد",
+    "verifiedPurchase": "عملية شراء موثقة",
+    "wasHelpful": "هل كان هذا التقييم مفيداً؟",
+    "yes": "نعم",
+    "no": "لا",
+    "youVoted": "لقد صوّتت بالفعل"
   }
 }

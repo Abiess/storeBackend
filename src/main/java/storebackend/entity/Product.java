@@ -67,6 +67,13 @@ public class Product {
     @Column(name = "sales_count")
     private Long salesCount = 0L;
 
+    // Review statistics (denormalized for performance)
+    @Column(name = "average_rating", precision = 3, scale = 2)
+    private Double averageRating = 0.0;
+
+    @Column(name = "review_count")
+    private Integer reviewCount = 0;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

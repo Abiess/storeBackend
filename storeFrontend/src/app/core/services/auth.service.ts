@@ -165,4 +165,18 @@ export class AuthService {
         })
       );
   }
+
+  /**
+   * Prüft ob User eingeloggt ist
+   */
+  isLoggedIn(): boolean {
+    return !!this.getToken() && this.currentUserSubject.value !== null;
+  }
+
+  /**
+   * Prüft ob User ausgeloggt ist
+   */
+  isLoggedOut(): boolean {
+    return !this.isLoggedIn();
+  }
 }
