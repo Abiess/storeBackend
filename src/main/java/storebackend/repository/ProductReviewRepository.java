@@ -14,17 +14,40 @@ import java.util.Optional;
 @Repository
 public interface ProductReviewRepository extends JpaRepository<ProductReview, Long> {
 
-    // Find all approved reviews for a product
-    List<ProductReview> findByProductIdAndIsApprovedTrueOrderByCreatedAtDesc(Long productId);
+    // Find all approved reviews for a product with eager loading
+    @Query("SELECT r FROM ProductReview r " +
+           "JOIN FETCH r.customer " +
+           "JOIN FETCH r.product " +
+           "WHERE r.product.id = :productId AND r.isApproved = true " +
+           "ORDER BY r.createdAt DESC")
+    List<ProductReview> findByProductIdAndIsApprovedTrueOrderByCreatedAtDesc(@Param("productId") Long productId);
 
-    Page<ProductReview> findByProductIdAndIsApprovedTrue(Long productId, Pageable pageable);
+    @Query("SELECT r FROM ProductReview r " +
+           "JOIN FETCH r.customer " +
+           "JOIN FETCH r.product " +
+           "WHERE r.product.id = :productId AND r.isApproved = true")
+    Page<ProductReview> findByProductIdAndIsApprovedTrue(@Param("productId") Long productId, Pageable pageable);
 
-    // Find all reviews by customer
-    List<ProductReview> findByCustomerIdOrderByCreatedAtDesc(Long customerId);
+    // Find all reviews by customer with eager loading
+    @Query("SELECT r FROM ProductReview r " +
+           "JOIN FETCH r.customer " +
+           "JOIN FETCH r.product " +
+           "WHERE r.customer.id = :customerId " +
+           "ORDER BY r.createdAt DESC")
+    List<ProductReview> findByCustomerIdOrderByCreatedAtDesc(@Param("customerId") Long customerId);
 
-    // Find pending reviews (for moderation)
+    // Find pending reviews (for moderation) with eager loading
+    @Query("SELECT r FROM ProductReview r " +
+           "JOIN FETCH r.customer " +
+           "JOIN FETCH r.product " +
+           "WHERE r.isApproved = false " +
+           "ORDER BY r.createdAt DESC")
     List<ProductReview> findByIsApprovedFalseOrderByCreatedAtDesc();
 
+    @Query("SELECT r FROM ProductReview r " +
+           "JOIN FETCH r.customer " +
+           "JOIN FETCH r.product " +
+           "WHERE r.isApproved = false")
     Page<ProductReview> findByIsApprovedFalse(Pageable pageable);
 
     // Check if customer already reviewed this product
@@ -42,11 +65,18 @@ public interface ProductReviewRepository extends JpaRepository<ProductReview, Lo
     @Query("SELECT COUNT(r) FROM ProductReview r WHERE r.product.id = :productId AND r.isApproved = true AND r.rating = :rating")
     Integer countByRating(@Param("productId") Long productId, @Param("rating") Integer rating);
 
-    // Get reviews for store owner (all reviews for their products)
-    @Query("SELECT r FROM ProductReview r WHERE r.product.store.id = :storeId ORDER BY r.createdAt DESC")
+    // Get reviews for store owner (all reviews for their products) with eager loading
+    @Query("SELECT r FROM ProductReview r " +
+           "JOIN FETCH r.customer " +
+           "JOIN FETCH r.product " +
+           "WHERE r.product.store.id = :storeId " +
+           "ORDER BY r.createdAt DESC")
     List<ProductReview> findByStoreId(@Param("storeId") Long storeId);
 
-    @Query("SELECT r FROM ProductReview r WHERE r.product.store.id = :storeId")
+    @Query("SELECT r FROM ProductReview r " +
+           "JOIN FETCH r.customer " +
+           "JOIN FETCH r.product " +
+           "WHERE r.product.store.id = :storeId")
     Page<ProductReview> findByStoreId(@Param("storeId") Long storeId, Pageable pageable);
 }
 
