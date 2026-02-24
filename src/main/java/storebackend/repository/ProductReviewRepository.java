@@ -34,7 +34,7 @@ public interface ProductReviewRepository extends JpaRepository<ProductReview, Lo
 
     // Statistics queries
     @Query("SELECT AVG(r.rating) FROM ProductReview r WHERE r.product.id = :productId AND r.isApproved = true")
-    Double getAverageRating(@Param("productId") Long productId);
+    java.math.BigDecimal getAverageRating(@Param("productId") Long productId);
 
     @Query("SELECT COUNT(r) FROM ProductReview r WHERE r.product.id = :productId AND r.isApproved = true")
     Long countApprovedReviews(@Param("productId") Long productId);

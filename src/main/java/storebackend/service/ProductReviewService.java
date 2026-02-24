@@ -212,12 +212,12 @@ public class ProductReviewService {
      * Get review statistics for a product
      */
     public ProductReviewStats getProductReviewStats(Long productId) {
-        Double avgRating = reviewRepository.getAverageRating(productId);
+        java.math.BigDecimal avgRating = reviewRepository.getAverageRating(productId);
         Long totalApproved = reviewRepository.countApprovedReviews(productId);
 
         ProductReviewStats stats = new ProductReviewStats();
         stats.setProductId(productId);
-        stats.setAverageRating(avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : 0.0);
+        stats.setAverageRating(avgRating != null ? avgRating.setScale(1, java.math.RoundingMode.HALF_UP).doubleValue() : 0.0);
         stats.setTotalApprovedReviews(totalApproved != null ? totalApproved.intValue() : 0);
         stats.setTotalReviews(totalApproved != null ? totalApproved.intValue() : 0);
 

@@ -69,7 +69,7 @@ public class Product {
 
     // Review statistics (denormalized for performance)
     @Column(name = "average_rating", precision = 3, scale = 2)
-    private Double averageRating = 0.0;
+    private java.math.BigDecimal averageRating = java.math.BigDecimal.ZERO;
 
     @Column(name = "review_count")
     private Integer reviewCount = 0;
