@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Product } from '@app/core/models';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 /**
  * Product Grid Component
@@ -9,7 +10,7 @@ import { Product } from '@app/core/models';
 @Component({
   selector: 'app-product-grid',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe],
   template: `
     <div class="product-grid-wrapper">
       <!-- Section Header -->
@@ -17,7 +18,9 @@ import { Product } from '@app/core/models';
         <h2 class="grid-title">{{ title }}</h2>
         <div class="grid-info">
           <span class="product-count" *ngIf="products.length > 0">
-            {{ products.length }} {{ products.length === 1 ? 'Produkt' : 'Produkte' }}
+            {{ products.length === 1
+              ? ('storefront.products' | translate: { count: products.length })
+              : ('storefront.productsPlural' | translate: { count: products.length }) }}
           </span>
           <ng-content select="[headerActions]"></ng-content>
         </div>
@@ -38,8 +41,8 @@ import { Product } from '@app/core/models';
       <!-- Empty State -->
       <div class="empty-grid" *ngIf="!loading && products.length === 0">
         <div class="empty-icon">📦</div>
-        <h3>{{ emptyTitle || 'Keine Produkte gefunden' }}</h3>
-        <p>{{ emptyMessage || 'In dieser Kategorie sind aktuell keine Produkte verfügbar.' }}</p>
+        <h3>{{ emptyTitle || ('grid.emptyTitle' | translate) }}</h3>
+        <p>{{ emptyMessage || ('grid.emptyMessage' | translate) }}</p>
       </div>
 
       <!-- Products Grid -->

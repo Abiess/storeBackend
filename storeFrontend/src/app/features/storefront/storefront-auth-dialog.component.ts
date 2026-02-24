@@ -2,17 +2,18 @@ import { Component, Output, EventEmitter, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
+import { TranslatePipe } from '../../core/pipes/translate.pipe';
 
 @Component({
   selector: 'app-storefront-auth-dialog',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, TranslatePipe],
   template: `
     <div class="dialog-overlay" (click)="close.emit()">
       <div class="dialog-content" (click)="$event.stopPropagation()">
         <button class="btn-close" (click)="close.emit()">✕</button>
         
-        <h2>{{ isLogin ? 'Anmelden' : 'Registrieren' }}</h2>
+        <h2>{{ isLogin ? ('common.login' | translate) : ('header.register' | translate) }}</h2>
         
         <div *ngIf="errorMessage" class="error-banner">
           {{ errorMessage }}
@@ -20,20 +21,20 @@ import { AuthService } from '../../core/services/auth.service';
         
         <form [formGroup]="authForm" (ngSubmit)="onSubmit()">
           <div class="form-group">
-            <label for="email">E-Mail</label>
+            <label for="email">{{ 'checkout.email' | translate }}</label>
             <input 
               id="email" 
               type="email" 
               formControlName="email"
-              placeholder="ihre@email.de"
+              [placeholder]="'checkout.emailPlaceholder' | translate"
             />
             <div *ngIf="authForm.get('email')?.invalid && authForm.get('email')?.touched" class="error">
-              Bitte geben Sie eine gültige E-Mail ein
+              {{ 'checkout.errors.email' | translate }}
             </div>
           </div>
           
           <div class="form-group">
-            <label for="password">Passwort</label>
+            <label for="password">{{ 'auth.password' | translate }}</label>
             <input 
               id="password" 
               type="password" 
@@ -41,18 +42,18 @@ import { AuthService } from '../../core/services/auth.service';
               placeholder="••••••••"
             />
             <div *ngIf="authForm.get('password')?.invalid && authForm.get('password')?.touched" class="error">
-              Passwort muss mindestens 6 Zeichen lang sein
+              {{ 'auth.passwordMinLength' | translate }}
             </div>
           </div>
           
           <button type="submit" class="btn btn-primary" [disabled]="loading || authForm.invalid">
-            {{ loading ? 'Bitte warten...' : (isLogin ? 'Anmelden' : 'Registrieren') }}
+            {{ loading ? ('common.loading' | translate) : (isLogin ? ('common.login' | translate) : ('header.register' | translate)) }}
           </button>
         </form>
         
         <div class="toggle-mode">
           <button type="button" (click)="toggleMode()" class="btn-link">
-            {{ isLogin ? 'Noch kein Konto? Jetzt registrieren' : 'Bereits registriert? Anmelden' }}
+            {{ isLogin ? ('auth.noAccount' | translate) : ('auth.alreadyRegistered' | translate) }}
           </button>
         </div>
       </div>

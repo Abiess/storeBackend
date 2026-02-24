@@ -10,6 +10,8 @@ import { AuthService } from '../../core/services/auth.service';
 import { CustomerProfileEditComponent } from './customer-profile-edit.component';
 import { CustomerAddressesComponent } from './customer-addresses.component';
 import { CustomerPasswordChangeComponent } from './customer-password-change.component';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { TranslationService } from '@app/core/services/translation.service';
 
 type CustomerTab = 'overview' | 'orders' | 'profile' | 'addresses' | 'password';
 
@@ -34,14 +36,15 @@ interface OrderHistoryVM {
         RouterModule,
         CustomerProfileEditComponent,
         CustomerAddressesComponent,
-        CustomerPasswordChangeComponent
+        CustomerPasswordChangeComponent,
+        TranslatePipe
     ],
     template: `
     <div class="profile-container">
       <div class="profile-header">
-        <h1>Mein Konto</h1>
+        <h1>{{ 'navigation.myAccount' | translate }}</h1>
         <button class="btn-logout" (click)="logout()">
-          <span class="icon">🚪</span> Abmelden
+          <span class="icon">🚪</span> {{ 'common.logout' | translate }}
         </button>
       </div>
 
@@ -53,7 +56,7 @@ interface OrderHistoryVM {
             [class.active]="activeTab === 'overview'"
             (click)="activeTab = 'overview'">
             <span class="icon">📊</span>
-            <span>Übersicht</span>
+            <span>{{ 'navigation.overview' | translate }}</span>
           </button>
 
           <button
@@ -61,7 +64,7 @@ interface OrderHistoryVM {
             [class.active]="activeTab === 'orders'"
             (click)="activeTab = 'orders'">
             <span class="icon">📦</span>
-            <span>Meine Bestellungen</span>
+            <span>{{ 'profile.myOrders' | translate }}</span>
             <span class="badge" *ngIf="orderHistory.length > 0">{{ orderHistory.length }}</span>
           </button>
 
@@ -70,7 +73,7 @@ interface OrderHistoryVM {
             [class.active]="activeTab === 'profile'"
             (click)="activeTab = 'profile'">
             <span class="icon">👤</span>
-            <span>Profildaten</span>
+            <span>{{ 'profile.profileData' | translate }}</span>
           </button>
 
           <button
@@ -78,7 +81,7 @@ interface OrderHistoryVM {
             [class.active]="activeTab === 'addresses'"
             (click)="activeTab = 'addresses'">
             <span class="icon">📍</span>
-            <span>Adressen</span>
+            <span>{{ 'profile.addresses' | translate }}</span>
           </button>
 
           <button
@@ -86,7 +89,7 @@ interface OrderHistoryVM {
             [class.active]="activeTab === 'password'"
             (click)="activeTab = 'password'">
             <span class="icon">🔒</span>
-            <span>Passwort ändern</span>
+            <span>{{ 'profile.changePassword' | translate }}</span>
           </button>
         </nav>
 
@@ -95,14 +98,14 @@ interface OrderHistoryVM {
 
           <!-- Overview Tab -->
           <div *ngIf="activeTab === 'overview'" class="tab-content">
-            <h2>Willkommen zurück, {{ profile?.email || 'Kunde' }}!</h2>
+            <h2>{{ 'profile.welcomeBack' | translate: { name: profile?.email || ('profile.customer' | translate) } }}</h2>
 
             <div class="overview-cards">
               <div class="overview-card">
                 <div class="card-icon">📦</div>
                 <div class="card-content">
                   <h3>{{ orderHistory.length }}</h3>
-                  <p>Bestellungen</p>
+                  <p>{{ 'navigation.orders' | translate }}</p>
                 </div>
               </div>
 
@@ -110,7 +113,7 @@ interface OrderHistoryVM {
                 <div class="card-icon">✅</div>
                 <div class="card-content">
                   <h3>{{ getCompletedOrders() }}</h3>
-                  <p>Abgeschlossen</p>
+                  <p>{{ 'profile.completed' | translate }}</p>
                 </div>
               </div>
 
@@ -118,65 +121,58 @@ interface OrderHistoryVM {
                 <div class="card-icon">🚚</div>
                 <div class="card-content">
                   <h3>{{ getPendingOrders() }}</h3>
-                  <p>In Bearbeitung</p>
+                  <p>{{ 'profile.inProgress' | translate }}</p>
                 </div>
               </div>
             </div>
 
             <div class="recent-orders" *ngIf="orderHistory.length > 0">
-              <h3>Letzte Bestellungen</h3>
-
+              <h3>{{ 'profile.recentOrders' | translate }}</h3>
               <div class="order-list-compact">
                 <div class="order-item-compact" *ngFor="let order of orderHistory.slice(0, 3)">
                   <div class="order-info">
                     <strong>{{ order.orderNumber }}</strong>
-
                     <span class="order-date">
                       {{ order.createdAt ? (order.createdAt | date:'dd.MM.yyyy') : '-' }}
                     </span>
                   </div>
-
                   <span class="status-badge" [class]="'status-' + (order.status || 'PENDING').toLowerCase()">
                     {{ getStatusLabel(order.status) }}
                   </span>
-
-                    <strong class="order-total">{{ order.totalAmount | number:'1.2-2' }} €</strong>
+                  <strong class="order-total">{{ order.totalAmount | number:'1.2-2' }} €</strong>
                 </div>
               </div>
-
               <button class="btn-secondary" (click)="activeTab = 'orders'">
-                Alle Bestellungen ansehen
+                {{ 'profile.viewAllOrders' | translate }}
               </button>
             </div>
           </div>
 
           <!-- Orders Tab -->
           <div *ngIf="activeTab === 'orders'" class="tab-content">
-            <h2>Meine Bestellungen</h2>
+            <h2>{{ 'profile.myOrders' | translate }}</h2>
 
             <div *ngIf="loadingOrders" class="loading">
               <div class="spinner"></div>
-              Bestellungen werden geladen...
+              {{ 'profile.loadingOrders' | translate }}
             </div>
 
             <div *ngIf="!loadingOrders && orderHistory.length === 0" class="empty-state">
               <div class="empty-icon">📦</div>
-              <h3>Keine Bestellungen gefunden</h3>
-              <p>Sie haben noch keine Bestellungen aufgegeben.</p>
-              <button class="btn-primary" (click)="goToShop()">Jetzt einkaufen</button>
+              <h3>{{ 'profile.noOrders' | translate }}</h3>
+              <p>{{ 'profile.noOrdersHint' | translate }}</p>
+              <button class="btn-primary" (click)="goToShop()">{{ 'profile.shopNow' | translate }}</button>
             </div>
 
             <div *ngIf="!loadingOrders && orderHistory.length > 0" class="orders-list">
               <div class="order-card" *ngFor="let order of orderHistory">
                 <div class="order-header">
                   <div>
-                    <h3>Bestellung {{ order.orderNumber }}</h3>
-
+                    <h3>{{ 'profile.orderLabel' | translate }} {{ order.orderNumber }}</h3>
                     <p class="order-date">
                       {{ order.createdAt ? (order.createdAt | date:'dd.MM.yyyy HH:mm') : '-' }}
                     </p>
                   </div>
-
                   <span class="status-badge" [class]="'status-' + (order.status || 'PENDING').toLowerCase()">
                     {{ getStatusLabel(order.status) }}
                   </span>
@@ -184,21 +180,18 @@ interface OrderHistoryVM {
 
                 <div class="order-body">
                   <div class="order-detail">
-                    <span class="label">Artikel:</span>
-                      <span>{{ order.itemCount ?? 0 }} Stück</span>
-
+                    <span class="label">{{ 'profile.items' | translate }}:</span>
+                    <span>{{ order.itemCount ?? 0 }}</span>
                   </div>
-
                   <div class="order-detail">
-                    <span class="label">Gesamtsumme:</span>
-                      <strong class="total">{{ order.totalAmount | number:'1.2-2' }} €</strong>
-
+                    <span class="label">{{ 'order.total' | translate }}:</span>
+                    <strong class="total">{{ order.totalAmount | number:'1.2-2' }} €</strong>
                   </div>
                 </div>
 
                 <div class="order-actions">
                   <button class="btn-secondary" (click)="viewOrderDetails(order)">
-                    Details ansehen
+                    {{ 'profile.viewDetails' | translate }}
                   </button>
                 </div>
               </div>
@@ -576,7 +569,8 @@ export class CustomerProfileComponent implements OnInit {
     constructor(
         private customerService: CustomerProfileService,
         private authService: AuthService,
-        private router: Router
+        private router: Router,
+        private translationService: TranslationService
     ) {}
 
     ngOnInit(): void {
@@ -683,17 +677,9 @@ export class CustomerProfileComponent implements OnInit {
     }
 
     getStatusLabel(status: string): string {
-        const labels: Record<string, string> = {
-            PENDING: 'Ausstehend',
-            CONFIRMED: 'Bestätigt',
-            PROCESSING: 'In Bearbeitung',
-            SHIPPED: 'Versandt',
-            DELIVERED: 'Zugestellt',
-            CANCELLED: 'Storniert'
-        };
-
-        const key = (status ?? '').toUpperCase();
-        return labels[key] || status || 'Ausstehend';
+        const key = `status.${(status ?? 'pending').toLowerCase()}`;
+        const translated = this.translationService.translate(key);
+        return translated !== key ? translated : (status || this.translationService.translate('status.pending'));
     }
 
     getCompletedOrders(): number {

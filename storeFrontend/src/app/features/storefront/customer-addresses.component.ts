@@ -2,26 +2,23 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CustomerProfileService, CustomerProfile, Address } from '../../core/services/customer-profile.service';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 @Component({
   selector: 'app-customer-addresses',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   template: `
     <div class="addresses-container">
-      <h2>Meine Adressen</h2>
-      <p class="description">Verwalten Sie Ihre Liefer- und Rechnungsadressen</p>
+      <h2>{{ 'profile.myAddresses' | translate }}</h2>
+      <p class="description">{{ 'profile.addressDescription' | translate }}</p>
 
       <!-- Lieferadresse -->
       <div class="address-section">
         <div class="section-header">
-          <h3>📦 Lieferadresse</h3>
-          <button 
-            type="button" 
-            class="btn-edit"
-            *ngIf="!editingShipping"
-            (click)="startEditShipping()">
-            ✏️ Bearbeiten
+          <h3>📦 {{ 'checkout.shippingAddress' | translate }}</h3>
+          <button type="button" class="btn-edit" *ngIf="!editingShipping" (click)="startEditShipping()">
+            ✏️ {{ 'common.edit' | translate }}
           </button>
         </div>
 
@@ -35,119 +32,63 @@ import { CustomerProfileService, CustomerProfile, Address } from '../../core/ser
         </div>
 
         <div *ngIf="!editingShipping && !profile?.defaultShippingAddress" class="no-address">
-          <p>Keine Lieferadresse hinterlegt</p>
+          <p>{{ 'profile.noShippingAddress' | translate }}</p>
           <button type="button" class="btn-secondary" (click)="startEditShipping()">
-            ➕ Adresse hinzufügen
+            ➕ {{ 'common.addAddress' | translate }}
           </button>
         </div>
 
         <form *ngIf="editingShipping" (ngSubmit)="saveShippingAddress()" #shippingForm="ngForm">
           <div class="form-row">
             <div class="form-group">
-              <label>Vorname *</label>
-              <input
-                type="text"
-                name="shippingFirstName"
-                [(ngModel)]="shippingAddress.firstName"
-                required
-                class="form-control"
-              />
+              <label>{{ 'checkout.firstName' | translate }} {{ 'checkout.required' | translate }}</label>
+              <input type="text" name="shippingFirstName" [(ngModel)]="shippingAddress.firstName" required class="form-control" />
             </div>
             <div class="form-group">
-              <label>Nachname *</label>
-              <input
-                type="text"
-                name="shippingLastName"
-                [(ngModel)]="shippingAddress.lastName"
-                required
-                class="form-control"
-              />
+              <label>{{ 'checkout.lastName' | translate }} {{ 'checkout.required' | translate }}</label>
+              <input type="text" name="shippingLastName" [(ngModel)]="shippingAddress.lastName" required class="form-control" />
             </div>
           </div>
-
           <div class="form-group">
-            <label>Straße und Hausnummer *</label>
-            <input
-              type="text"
-              name="shippingAddress1"
-              [(ngModel)]="shippingAddress.address1"
-              required
-              class="form-control"
-            />
+            <label>{{ 'checkout.address' | translate }} {{ 'checkout.required' | translate }}</label>
+            <input type="text" name="shippingAddress1" [(ngModel)]="shippingAddress.address1" required class="form-control" />
           </div>
-
           <div class="form-group">
-            <label>Adresszusatz (optional)</label>
-            <input
-              type="text"
-              name="shippingAddress2"
-              [(ngModel)]="shippingAddress.address2"
-              class="form-control"
-            />
+            <label>{{ 'checkout.addressOptional' | translate }}</label>
+            <input type="text" name="shippingAddress2" [(ngModel)]="shippingAddress.address2" class="form-control" />
           </div>
-
           <div class="form-row">
             <div class="form-group">
-              <label>PLZ *</label>
-              <input
-                type="text"
-                name="shippingPostalCode"
-                [(ngModel)]="shippingAddress.postalCode"
-                required
-                class="form-control"
-              />
+              <label>{{ 'checkout.postalCode' | translate }} {{ 'checkout.required' | translate }}</label>
+              <input type="text" name="shippingPostalCode" [(ngModel)]="shippingAddress.postalCode" required class="form-control" />
             </div>
             <div class="form-group">
-              <label>Stadt *</label>
-              <input
-                type="text"
-                name="shippingCity"
-                [(ngModel)]="shippingAddress.city"
-                required
-                class="form-control"
-              />
+              <label>{{ 'checkout.city' | translate }} {{ 'checkout.required' | translate }}</label>
+              <input type="text" name="shippingCity" [(ngModel)]="shippingAddress.city" required class="form-control" />
             </div>
           </div>
-
           <div class="form-group">
-            <label>Land *</label>
-            <select
-              name="shippingCountry"
-              [(ngModel)]="shippingAddress.country"
-              required
-              class="form-control"
-            >
-              <option value="Deutschland">Deutschland</option>
-              <option value="Österreich">Österreich</option>
-              <option value="Schweiz">Schweiz</option>
-              <option value="Niederlande">Niederlande</option>
-              <option value="Belgien">Belgien</option>
-              <option value="Frankreich">Frankreich</option>
+            <label>{{ 'checkout.country' | translate }} {{ 'checkout.required' | translate }}</label>
+            <select name="shippingCountry" [(ngModel)]="shippingAddress.country" required class="form-control">
+              <option value="Deutschland">{{ 'checkout.countries.de' | translate }}</option>
+              <option value="Österreich">{{ 'checkout.countries.at' | translate }}</option>
+              <option value="Schweiz">{{ 'checkout.countries.ch' | translate }}</option>
+              <option value="Niederlande">{{ 'checkout.countries.nl' | translate }}</option>
+              <option value="Belgien">{{ 'checkout.countries.be' | translate }}</option>
+              <option value="Frankreich">{{ 'checkout.countries.fr' | translate }}</option>
             </select>
           </div>
-
           <div class="form-group">
-            <label>Telefon (optional)</label>
-            <input
-              type="tel"
-              name="shippingPhone"
-              [(ngModel)]="shippingAddress.phone"
-              class="form-control"
-            />
+            <label>{{ 'checkout.phone' | translate }}</label>
+            <input type="tel" name="shippingPhone" [(ngModel)]="shippingAddress.phone" class="form-control" />
           </div>
-
-          <div *ngIf="shippingError" class="alert alert-error">
-            ❌ {{ shippingError }}
-          </div>
-
+          <div *ngIf="shippingError" class="alert alert-error">❌ {{ shippingError }}</div>
           <div class="form-actions">
             <button type="submit" class="btn-primary" [disabled]="!shippingForm.valid || savingShipping">
-              <span *ngIf="!savingShipping">💾 Speichern</span>
-              <span *ngIf="savingShipping">⏳ Wird gespeichert...</span>
+              <span *ngIf="!savingShipping">💾 {{ 'common.save' | translate }}</span>
+              <span *ngIf="savingShipping">⏳ {{ 'common.saving' | translate }}</span>
             </button>
-            <button type="button" class="btn-secondary" (click)="cancelEditShipping()">
-              Abbrechen
-            </button>
+            <button type="button" class="btn-secondary" (click)="cancelEditShipping()">{{ 'common.cancel' | translate }}</button>
           </div>
         </form>
       </div>
@@ -155,24 +96,16 @@ import { CustomerProfileService, CustomerProfile, Address } from '../../core/ser
       <!-- Rechnungsadresse -->
       <div class="address-section">
         <div class="section-header">
-          <h3>📄 Rechnungsadresse</h3>
-          <button 
-            type="button" 
-            class="btn-edit"
-            *ngIf="!editingBilling"
-            (click)="startEditBilling()">
-            ✏️ Bearbeiten
+          <h3>📄 {{ 'checkout.billingAddress' | translate }}</h3>
+          <button type="button" class="btn-edit" *ngIf="!editingBilling" (click)="startEditBilling()">
+            ✏️ {{ 'common.edit' | translate }}
           </button>
         </div>
 
         <div class="copy-address" *ngIf="editingBilling">
           <label class="checkbox-label">
-            <input 
-              type="checkbox" 
-              [(ngModel)]="useSameAddress"
-              (change)="onUseSameAddressChange()"
-            />
-            <span>Rechnungsadresse entspricht Lieferadresse</span>
+            <input type="checkbox" [(ngModel)]="useSameAddress" (change)="onUseSameAddressChange()" />
+            <span>{{ 'profile.sameBillingAddress' | translate }}</span>
           </label>
         </div>
 
@@ -185,16 +118,16 @@ import { CustomerProfileService, CustomerProfile, Address } from '../../core/ser
         </div>
 
         <div *ngIf="!editingBilling && !profile?.defaultBillingAddress" class="no-address">
-          <p>Keine Rechnungsadresse hinterlegt</p>
+          <p>{{ 'profile.noBillingAddress' | translate }}</p>
           <button type="button" class="btn-secondary" (click)="startEditBilling()">
-            ➕ Adresse hinzufügen
+            ➕ {{ 'common.addAddress' | translate }}
           </button>
         </div>
 
         <form *ngIf="editingBilling && !useSameAddress" (ngSubmit)="saveBillingAddress()" #billingForm="ngForm">
           <div class="form-row">
             <div class="form-group">
-              <label>Vorname *</label>
+              <label>{{ 'checkout.firstName' | translate }} {{ 'checkout.required' | translate }}</label>
               <input
                 type="text"
                 name="billingFirstName"
@@ -204,7 +137,7 @@ import { CustomerProfileService, CustomerProfile, Address } from '../../core/ser
               />
             </div>
             <div class="form-group">
-              <label>Nachname *</label>
+              <label>{{ 'checkout.lastName' | translate }} {{ 'checkout.required' | translate }}</label>
               <input
                 type="text"
                 name="billingLastName"
@@ -216,7 +149,7 @@ import { CustomerProfileService, CustomerProfile, Address } from '../../core/ser
           </div>
 
           <div class="form-group">
-            <label>Straße und Hausnummer *</label>
+            <label>{{ 'checkout.address' | translate }} {{ 'checkout.required' | translate }}</label>
             <input
               type="text"
               name="billingAddress1"
@@ -227,7 +160,7 @@ import { CustomerProfileService, CustomerProfile, Address } from '../../core/ser
           </div>
 
           <div class="form-group">
-            <label>Adresszusatz (optional)</label>
+            <label>{{ 'checkout.addressOptional' | translate }}</label>
             <input
               type="text"
               name="billingAddress2"
@@ -238,7 +171,7 @@ import { CustomerProfileService, CustomerProfile, Address } from '../../core/ser
 
           <div class="form-row">
             <div class="form-group">
-              <label>PLZ *</label>
+              <label>{{ 'checkout.postalCode' | translate }} {{ 'checkout.required' | translate }}</label>
               <input
                 type="text"
                 name="billingPostalCode"
@@ -248,7 +181,7 @@ import { CustomerProfileService, CustomerProfile, Address } from '../../core/ser
               />
             </div>
             <div class="form-group">
-              <label>Stadt *</label>
+              <label>{{ 'checkout.city' | translate }} {{ 'checkout.required' | translate }}</label>
               <input
                 type="text"
                 name="billingCity"
@@ -260,19 +193,19 @@ import { CustomerProfileService, CustomerProfile, Address } from '../../core/ser
           </div>
 
           <div class="form-group">
-            <label>Land *</label>
+            <label>{{ 'checkout.country' | translate }} {{ 'checkout.required' | translate }}</label>
             <select
               name="billingCountry"
               [(ngModel)]="billingAddress.country"
               required
               class="form-control"
             >
-              <option value="Deutschland">Deutschland</option>
-              <option value="Österreich">Österreich</option>
-              <option value="Schweiz">Schweiz</option>
-              <option value="Niederlande">Niederlande</option>
-              <option value="Belgien">Belgien</option>
-              <option value="Frankreich">Frankreich</option>
+              <option value="Deutschland">{{ 'checkout.countries.de' | translate }}</option>
+              <option value="Österreich">{{ 'checkout.countries.at' | translate }}</option>
+              <option value="Schweiz">{{ 'checkout.countries.ch' | translate }}</option>
+              <option value="Niederlande">{{ 'checkout.countries.nl' | translate }}</option>
+              <option value="Belgien">{{ 'checkout.countries.be' | translate }}</option>
+              <option value="Frankreich">{{ 'checkout.countries.fr' | translate }}</option>
             </select>
           </div>
 
@@ -282,22 +215,22 @@ import { CustomerProfileService, CustomerProfile, Address } from '../../core/ser
 
           <div class="form-actions">
             <button type="submit" class="btn-primary" [disabled]="!billingForm.valid || savingBilling">
-              <span *ngIf="!savingBilling">💾 Speichern</span>
-              <span *ngIf="savingBilling">⏳ Wird gespeichert...</span>
+              <span *ngIf="!savingBilling">💾 {{ 'common.save' | translate }}</span>
+              <span *ngIf="savingBilling">⏳ {{ 'common.saving' | translate }}</span>
             </button>
             <button type="button" class="btn-secondary" (click)="cancelEditBilling()">
-              Abbrechen
+              {{ 'common.cancel' | translate }}
             </button>
           </div>
         </form>
 
         <div *ngIf="editingBilling && useSameAddress" class="form-actions">
           <button type="button" class="btn-primary" (click)="saveBillingAddress()" [disabled]="savingBilling">
-            <span *ngIf="!savingBilling">💾 Speichern</span>
-            <span *ngIf="savingBilling">⏳ Wird gespeichert...</span>
+            <span *ngIf="!savingBilling">💾 {{ 'common.save' | translate }}</span>
+            <span *ngIf="savingBilling">⏳ {{ 'common.saving' | translate }}</span>
           </button>
           <button type="button" class="btn-secondary" (click)="cancelEditBilling()">
-            Abbrechen
+            {{ 'common.cancel' | translate }}
           </button>
         </div>
       </div>

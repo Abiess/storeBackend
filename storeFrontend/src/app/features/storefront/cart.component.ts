@@ -4,37 +4,39 @@ import { Router } from '@angular/router';
 import { CartService, Cart, CartItem } from '../../core/services/cart.service';
 import { SubdomainService } from '../../core/services/subdomain.service';
 import { PlaceholderImageUtil } from '../../shared/utils/placeholder-image.util';
+import { TranslatePipe } from '../../core/pipes/translate.pipe';
+import { TranslationService } from '../../core/services/translation.service';
 import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-cart',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe],
   template: `
     <div class="cart-container">
       <!-- NEUE: Warnung wenn keine Store-ID gefunden wurde -->
       <div *ngIf="!storeId" class="alert alert-warning">
-        ⚠️ Keine Store-ID gefunden. Bitte öffnen Sie den Warenkorb über eine Store-Subdomain.
+        ⚠️ {{ 'cart.noStoreId' | translate }}
       </div>
 
       <div class="cart-header">
-        <h1>Warenkorb</h1>
+        <h1>{{ 'cart.title' | translate }}</h1>
         <button class="btn-back" (click)="goBack()">
-          ← Zurück zum Shop
+          {{ 'cart.backToShop' | translate }}
         </button>
       </div>
 
       <div *ngIf="loading" class="loading">
         <div class="spinner"></div>
-        Warenkorb wird geladen...
+        {{ 'cart.loading' | translate }}
       </div>
 
       <div *ngIf="!loading && cart && cart.items.length === 0" class="empty-cart">
         <div class="empty-icon">🛒</div>
-        <h2>Ihr Warenkorb ist leer</h2>
-        <p>Fügen Sie Produkte hinzu, um fortzufahren</p>
+        <h2>{{ 'cart.empty' | translate }}</h2>
+        <p>{{ 'cart.emptyAdd' | translate }}</p>
         <button class="btn btn-primary" (click)="goBack()">
-          Weiter einkaufen
+          {{ 'cart.continueShopping' | translate }}
         </button>
       </div>
 
@@ -65,36 +67,36 @@ import { Subscription } from 'rxjs';
             <div class="item-total">
               <p class="total-price">{{ (item.priceSnapshot * item.quantity) | number:'1.2-2' }} €</p>
               <button class="btn-remove" (click)="removeItem(item)" [disabled]="updatingItem === item.id">
-                🗑️ Entfernen
+                🗑️ {{ 'cart.remove' | translate }}
               </button>
             </div>
           </div>
         </div>
 
         <div class="cart-summary">
-          <h2>Zusammenfassung</h2>
+          <h2>{{ 'cart.summary' | translate }}</h2>
           
           <div class="summary-row">
-            <span>Artikel ({{ cart.itemCount }})</span>
+            <span>{{ 'cart.items' | translate: { count: cart.itemCount } }}</span>
             <span>{{ cart.subtotal | number:'1.2-2' }} €</span>
           </div>
           
           <div class="summary-row">
-            <span>Versand</span>
+            <span>{{ 'cart.shipping' | translate }}</span>
             <span>{{ shipping | number:'1.2-2' }} €</span>
           </div>
 
           <div class="summary-row total">
-            <strong>Gesamt</strong>
+            <strong>{{ 'cart.total' | translate }}</strong>
             <strong>{{ (cart.subtotal + shipping) | number:'1.2-2' }} €</strong>
           </div>
 
           <button class="btn btn-primary btn-checkout" (click)="proceedToCheckout()">
-            Zur Kasse
+            {{ 'cart.checkout' | translate }}
           </button>
 
           <button class="btn btn-secondary" (click)="clearCart()" [disabled]="loading">
-            Warenkorb leeren
+            {{ 'cart.clearCart' | translate }}
           </button>
         </div>
       </div>
@@ -345,8 +347,9 @@ export class CartComponent implements OnInit, OnDestroy {
 
   constructor(
     private cartService: CartService,
-    private subdomainService: SubdomainService, // NEUE: SubdomainService injiziert
-    private router: Router
+    private subdomainService: SubdomainService,
+    private router: Router,
+    private translationService: TranslationService
   ) {}
 
   ngOnInit(): void {
@@ -452,7 +455,7 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   removeItem(item: CartItem): void {
-    if (!confirm(`${item.productTitle} aus dem Warenkorb entfernen?`)) {
+    if (!confirm(this.translationService.translate('cart.confirmRemove', { name: item.productTitle }))) {
       return;
     }
 
@@ -470,7 +473,7 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   clearCart(): void {
-    if (!confirm('Möchten Sie den gesamten Warenkorb leeren?')) {
+    if (!confirm(this.translationService.translate('cart.confirmClear'))) {
       return;
     }
 

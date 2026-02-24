@@ -1,5 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 /**
  * Main Layout Wrapper Component
@@ -8,7 +9,7 @@ import { CommonModule } from '@angular/common';
 @Component({
   selector: 'app-store-layout',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe],
   template: `
     <div class="store-layout" [class.sidebar-open]="sidebarOpen">
       <!-- Mobile Overlay -->
@@ -40,7 +41,7 @@ import { CommonModule } from '@angular/common';
       <button 
         class="mobile-sidebar-toggle" 
         (click)="toggleSidebar()"
-        [attr.aria-label]="sidebarOpen ? 'Kategorien schließen' : 'Kategorien öffnen'">
+        [attr.aria-label]="sidebarOpen ? ('sidebar.categories' | translate) + ' schließen' : ('sidebar.categories' | translate) + ' öffnen'">
         <svg *ngIf="!sidebarOpen" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="3" y1="6" x2="21" y2="6"></line>
           <line x1="3" y1="12" x2="21" y2="12"></line>
@@ -50,7 +51,7 @@ import { CommonModule } from '@angular/common';
           <line x1="18" y1="6" x2="6" y2="18"></line>
           <line x1="6" y1="6" x2="18" y2="18"></line>
         </svg>
-        <span class="toggle-text">{{ sidebarOpen ? 'Schließen' : 'Filter' }}</span>
+        <span class="toggle-text">{{ sidebarOpen ? ('common.close' | translate) : ('common.filter' | translate) }}</span>
       </button>
     </div>
   `,
@@ -269,4 +270,3 @@ export class StoreLayoutComponent {
     this.sidebarOpen = !this.sidebarOpen;
   }
 }
-

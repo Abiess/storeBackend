@@ -1,11 +1,12 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Category } from '@app/core/models';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 @Component({
   selector: 'app-storefront-nav',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe],
   template: `
     <nav class="category-nav">
       <div class="container">
@@ -21,7 +22,7 @@ import { Category } from '@app/core/models';
         <!-- Category Pills - Desktop & Mobile -->
         <div class="category-pills" [class.mobile-open]="mobileFilterOpen">
           <div class="pills-header" *ngIf="mobileFilterOpen">
-            <h3>Kategorien</h3>
+            <h3>{{ 'sidebar.categories' | translate }}</h3>
             <button class="close-btn" (click)="toggleMobileFilter()">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <path d="M6 6l12 12M6 18L18 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -36,7 +37,7 @@ import { Category } from '@app/core/models';
               [class.active]="selectedCategory === null"
               (click)="selectCategory(null)">
               <span class="pill-icon">🏪</span>
-              <span class="pill-label">Alle Produkte</span>
+              <span class="pill-label">{{ 'sidebar.allProducts' | translate }}</span>
               <span class="pill-check" *ngIf="selectedCategory === null">✓</span>
             </button>
 
@@ -72,7 +73,7 @@ import { Category } from '@app/core/models';
             </svg>
             {{ selectedCategory.name }}
           </span>
-          <button class="remove-filter" (click)="selectCategory(null)" aria-label="Filter entfernen">
+          <button class="remove-filter" (click)="selectCategory(null)" [attr.aria-label]="'common.filter' | translate">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M2 2l10 10M2 12L12 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>

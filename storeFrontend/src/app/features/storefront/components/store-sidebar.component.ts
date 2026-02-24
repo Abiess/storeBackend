@@ -1,16 +1,7 @@
-    if (lowerName.includes('baby') || lowerName.includes('kind')) return '👶';
-    if (lowerName.includes('tier') || lowerName.includes('pet')) return '🐾';
-    if (lowerName.includes('musik') || lowerName.includes('music')) return '🎵';
-    if (lowerName.includes('film') || lowerName.includes('movie')) return '🎬';
-    if (lowerName.includes('lebensmittel') || lowerName.includes('food')) return '🍎';
-    if (lowerName.includes('getränk') || lowerName.includes('drink')) return '🥤';
-
-    return '🏷️'; // Default icon
-  }
-}
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Category } from '@app/core/models';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 /**
  * Store Sidebar Component
@@ -19,18 +10,18 @@ import { Category } from '@app/core/models';
 @Component({
   selector: 'app-store-sidebar',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe],
   template: `
     <div class="store-sidebar-content">
       <!-- Header -->
       <div class="sidebar-header">
-        <h3>Kategorien</h3>
+        <h3>{{ 'sidebar.categories' | translate }}</h3>
         <button 
           *ngIf="selectedCategory"
           class="clear-filter"
           (click)="clearFilter()"
-          aria-label="Alle Produkte anzeigen">
-          Alle anzeigen
+          [attr.aria-label]="'sidebar.allProducts' | translate">
+          {{ 'sidebar.showAll' | translate }}
         </button>
       </div>
 
@@ -42,7 +33,7 @@ import { Category } from '@app/core/models';
           [class.active]="!selectedCategory"
           (click)="onSelectCategory(null)">
           <span class="category-icon">📦</span>
-          <span class="category-name">Alle Produkte</span>
+          <span class="category-name">{{ 'sidebar.allProducts' | translate }}</span>
           <span class="category-arrow">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -72,7 +63,7 @@ import { Category } from '@app/core/models';
       <!-- Optional: Filters Section -->
       <div class="filters-section" *ngIf="showFilters">
         <div class="sidebar-header">
-          <h3>Filter</h3>
+          <h3>{{ 'sidebar.filters' | translate }}</h3>
         </div>
         <ng-content></ng-content>
       </div>
@@ -292,4 +283,13 @@ export class StoreSidebarComponent {
     if (lowerName.includes('beauty') || lowerName.includes('kosmetik')) return '💄';
     if (lowerName.includes('schmuck') || lowerName.includes('jewelry')) return '💎';
     if (lowerName.includes('auto') || lowerName.includes('car')) return '🚗';
+    if (lowerName.includes('baby') || lowerName.includes('kind')) return '👶';
+    if (lowerName.includes('tier') || lowerName.includes('pet')) return '🐾';
+    if (lowerName.includes('musik') || lowerName.includes('music')) return '🎵';
+    if (lowerName.includes('film') || lowerName.includes('movie')) return '🎬';
+    if (lowerName.includes('lebensmittel') || lowerName.includes('food')) return '🍎';
+    if (lowerName.includes('getränk') || lowerName.includes('drink')) return '🥤';
 
+    return '🏷️';
+  }
+}

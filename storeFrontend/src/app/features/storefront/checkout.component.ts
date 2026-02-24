@@ -11,34 +11,36 @@ import { CouponInputComponent } from '../../shared/components/coupon-input/coupo
 import { ValidateCouponsResponse } from '../../core/services/coupon.service';
 import { PlaceholderImageUtil } from '../../shared/utils/placeholder-image.util';
 import { PhoneVerificationService } from '../../core/services/phone-verification.service';
-import { parsePhoneNumber, isValidPhoneNumber, CountryCode } from 'libphonenumber-js'; // NEUE: Import für Phone Validation
+import { TranslatePipe } from '../../core/pipes/translate.pipe';
+import { TranslationService } from '../../core/services/translation.service';
+import { parsePhoneNumber, isValidPhoneNumber, CountryCode } from 'libphonenumber-js';
 
 @Component({
   selector: 'app-checkout',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, CouponInputComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, CouponInputComponent, TranslatePipe],
   template: `
     <div class="checkout-container">
       <div class="checkout-header">
-        <h1>Kasse</h1>
-        <button class="btn-back" (click)="goBack()">← Zurück zum Warenkorb</button>
+        <h1>{{ 'checkout.title' | translate }}</h1>
+        <button class="btn-back" (click)="goBack()">{{ 'checkout.back' | translate }}</button>
       </div>
 
-      <!-- Login-Hinweis für Guests (oberhalb des Formulars) -->
+      <!-- Login-Hinweis für Guests -->
       <div *ngIf="!isUserLoggedIn() && !loading && cart && cart.items.length > 0" class="guest-login-hint">
         <div class="hint-content">
           <div class="hint-icon">👤</div>
           <div class="hint-text">
-            <h3>Bereits Kunde?</h3>
-            <p>Melden Sie sich an, um Ihre gespeicherten Adressen zu nutzen und Bestellungen zu verfolgen.</p>
+            <h3>{{ 'checkout.alreadyCustomer' | translate }}</h3>
+            <p>{{ 'checkout.loginHint' | translate }}</p>
           </div>
           <div class="hint-actions">
-            <button class="btn btn-secondary" (click)="showLoginModal()">🔐 Anmelden</button>
-            <button class="btn btn-outline" (click)="showRegisterModal()">📝 Registrieren</button>
+            <button class="btn btn-secondary" (click)="showLoginModal()">{{ 'checkout.loginBtn' | translate }}</button>
+            <button class="btn btn-outline" (click)="showRegisterModal()">{{ 'checkout.registerBtn' | translate }}</button>
           </div>
         </div>
         <div class="hint-guest">
-          <p><strong>Neu hier?</strong> Bestellen Sie einfach als Gast weiter unten.</p>
+          <p><strong>{{ 'checkout.guestHint' | translate }}</strong></p>
         </div>
       </div>
 
@@ -46,20 +48,20 @@ import { parsePhoneNumber, isValidPhoneNumber, CountryCode } from 'libphonenumbe
       <div *ngIf="isUserLoggedIn() && !loading && cart && cart.items.length > 0" class="logged-in-banner">
         <div class="banner-content">
           <span class="banner-icon">✅</span>
-          <span class="banner-text">Angemeldet als <strong>{{ getCurrentUserEmail() }}</strong></span>
-          <button class="btn-link" (click)="logout()">Abmelden</button>
+          <span class="banner-text">{{ 'checkout.loggedInAs' | translate }} <strong>{{ getCurrentUserEmail() }}</strong></span>
+          <button class="btn-link" (click)="logout()">{{ 'checkout.logout' | translate }}</button>
         </div>
       </div>
 
       <div *ngIf="loading" class="loading">
         <div class="spinner"></div>
-        Warenkorb wird geladen...
+        {{ 'checkout.loading' | translate }}
       </div>
 
       <div *ngIf="!loading && (!cart || cart.items.length === 0)" class="empty-cart">
-        <h2>Ihr Warenkorb ist leer</h2>
-        <p>Bitte fügen Sie Artikel hinzu, bevor Sie zur Kasse gehen</p>
-        <button class="btn btn-primary" (click)="goToShop()">Zum Shop</button>
+        <h2>{{ 'checkout.emptyCart' | translate }}</h2>
+        <p>{{ 'checkout.emptyCartHint' | translate }}</p>
+        <button class="btn btn-primary" (click)="goToShop()">{{ 'checkout.goToShop' | translate }}</button>
       </div>
 
       <div *ngIf="!loading && cart && cart.items.length > 0" class="checkout-content">
@@ -67,86 +69,86 @@ import { parsePhoneNumber, isValidPhoneNumber, CountryCode } from 'libphonenumbe
           <form [formGroup]="checkoutForm" (ngSubmit)="submitOrder()">
             <!-- Kontaktinformationen -->
             <section class="form-section">
-              <h2>Kontaktinformationen</h2>
+              <h2>{{ 'checkout.contactInfo' | translate }}</h2>
               <div class="form-group">
-                <label for="email">E-Mail-Adresse *</label>
+                <label for="email">{{ 'checkout.email' | translate }} {{ 'checkout.required' | translate }}</label>
                 <input 
                   id="email" 
                   type="email" 
                   formControlName="customerEmail"
-                  placeholder="ihre@email.de"
+                  [placeholder]="'checkout.emailPlaceholder' | translate"
                 />
                 <div *ngIf="checkoutForm.get('customerEmail')?.invalid && checkoutForm.get('customerEmail')?.touched" class="error">
-                  Bitte geben Sie eine gültige E-Mail-Adresse ein
+                  {{ 'checkout.errors.email' | translate }}
                 </div>
               </div>
             </section>
 
             <!-- Lieferadresse -->
             <section class="form-section" formGroupName="shippingAddress">
-              <h2>Lieferadresse</h2>
+              <h2>{{ 'checkout.shippingAddress' | translate }}</h2>
               <div class="form-row">
                 <div class="form-group">
-                  <label for="firstName">Vorname *</label>
+                  <label for="firstName">{{ 'checkout.firstName' | translate }} {{ 'checkout.required' | translate }}</label>
                   <input id="firstName" type="text" formControlName="firstName" />
                   <div *ngIf="isFieldInvalid('shippingAddress.firstName')" class="error">
-                    Vorname ist erforderlich
+                    {{ 'checkout.errors.firstName' | translate }}
                   </div>
                 </div>
                 <div class="form-group">
-                  <label for="lastName">Nachname *</label>
+                  <label for="lastName">{{ 'checkout.lastName' | translate }} {{ 'checkout.required' | translate }}</label>
                   <input id="lastName" type="text" formControlName="lastName" />
                   <div *ngIf="isFieldInvalid('shippingAddress.lastName')" class="error">
-                    Nachname ist erforderlich
+                    {{ 'checkout.errors.lastName' | translate }}
                   </div>
                 </div>
               </div>
 
               <div class="form-group">
-                <label for="address1">Straße und Hausnummer *</label>
+                <label for="address1">{{ 'checkout.address' | translate }} {{ 'checkout.required' | translate }}</label>
                 <input id="address1" type="text" formControlName="address1" />
                 <div *ngIf="isFieldInvalid('shippingAddress.address1')" class="error">
-                  Adresse ist erforderlich
+                  {{ 'checkout.errors.address' | translate }}
                 </div>
               </div>
 
               <div class="form-group">
-                <label for="address2">Adresszusatz (optional)</label>
+                <label for="address2">{{ 'checkout.addressOptional' | translate }}</label>
                 <input id="address2" type="text" formControlName="address2" />
               </div>
 
               <div class="form-row">
                 <div class="form-group">
-                  <label for="postalCode">PLZ *</label>
+                  <label for="postalCode">{{ 'checkout.postalCode' | translate }} {{ 'checkout.required' | translate }}</label>
                   <input id="postalCode" type="text" formControlName="postalCode" />
                   <div *ngIf="isFieldInvalid('shippingAddress.postalCode')" class="error">
-                    PLZ ist erforderlich
+                    {{ 'checkout.errors.postalCode' | translate }}
                   </div>
                 </div>
                 <div class="form-group">
-                  <label for="city">Stadt *</label>
+                  <label for="city">{{ 'checkout.city' | translate }} {{ 'checkout.required' | translate }}</label>
                   <input id="city" type="text" formControlName="city" />
                   <div *ngIf="isFieldInvalid('shippingAddress.city')" class="error">
-                    Stadt ist erforderlich
+                    {{ 'checkout.errors.city' | translate }}
                   </div>
                 </div>
               </div>
 
               <div class="form-group">
-                <label for="country">Land *</label>
+                <label for="country">{{ 'checkout.country' | translate }} {{ 'checkout.required' | translate }}</label>
                 <select id="country" formControlName="country">
-                  <option value="">Bitte wählen</option>
-                  <option value="Deutschland">Deutschland</option>
-                  <option value="Österreich">Österreich</option>
-                  <option value="Schweiz">Schweiz</option>
+                  <option value="">{{ 'checkout.selectCountry' | translate }}</option>
+                  <option value="Deutschland">{{ 'checkout.countries.de' | translate }}</option>
+                  <option value="Österreich">{{ 'checkout.countries.at' | translate }}</option>
+                  <option value="Schweiz">{{ 'checkout.countries.ch' | translate }}</option>
                 </select>
                 <div *ngIf="isFieldInvalid('shippingAddress.country')" class="error">
-                  Land ist erforderlich
+                  {{ 'checkout.errors.country' | translate }}
                 </div>
               </div>
 
               <div class="form-group">
-                <label for="phone">Telefon (optional)</label>
+                <label for="phone">{{ 'checkout.phone' | translate }}</label>
                 <input id="phone" type="tel" formControlName="phone" />
               </div>
             </section>
@@ -156,51 +158,51 @@ import { parsePhoneNumber, isValidPhoneNumber, CountryCode } from 'libphonenumbe
               <div class="checkbox-wrapper">
                 <label>
                   <input type="checkbox" [checked]="sameAsShipping" (change)="toggleBillingAddress($event)" />
-                  Rechnungsadresse ist identisch mit Lieferadresse
+                  {{ 'checkout.sameBilling' | translate }}
                 </label>
               </div>
 
               <div *ngIf="!sameAsShipping" formGroupName="billingAddress">
-                <h2>Rechnungsadresse</h2>
+                <h2>{{ 'checkout.billingAddress' | translate }}</h2>
                 <div class="form-row">
                   <div class="form-group">
-                    <label for="billFirstName">Vorname *</label>
+                    <label for="billFirstName">{{ 'checkout.firstName' | translate }} {{ 'checkout.required' | translate }}</label>
                     <input id="billFirstName" type="text" formControlName="firstName" />
                   </div>
                   <div class="form-group">
-                    <label for="billLastName">Nachname *</label>
+                    <label for="billLastName">{{ 'checkout.lastName' | translate }} {{ 'checkout.required' | translate }}</label>
                     <input id="billLastName" type="text" formControlName="lastName" />
                   </div>
                 </div>
 
                 <div class="form-group">
-                  <label for="billAddress1">Straße und Hausnummer *</label>
+                  <label for="billAddress1">{{ 'checkout.address' | translate }} {{ 'checkout.required' | translate }}</label>
                   <input id="billAddress1" type="text" formControlName="address1" />
                 </div>
 
                 <div class="form-group">
-                  <label for="billAddress2">Adresszusatz (optional)</label>
+                  <label for="billAddress2">{{ 'checkout.addressOptional' | translate }}</label>
                   <input id="billAddress2" type="text" formControlName="address2" />
                 </div>
 
                 <div class="form-row">
                   <div class="form-group">
-                    <label for="billPostalCode">PLZ *</label>
+                    <label for="billPostalCode">{{ 'checkout.postalCode' | translate }} {{ 'checkout.required' | translate }}</label>
                     <input id="billPostalCode" type="text" formControlName="postalCode" />
                   </div>
                   <div class="form-group">
-                    <label for="billCity">Stadt *</label>
+                    <label for="billCity">{{ 'checkout.city' | translate }} {{ 'checkout.required' | translate }}</label>
                     <input id="billCity" type="text" formControlName="city" />
                   </div>
                 </div>
 
                 <div class="form-group">
-                  <label for="billCountry">Land *</label>
+                  <label for="billCountry">{{ 'checkout.country' | translate }} {{ 'checkout.required' | translate }}</label>
                   <select id="billCountry" formControlName="country">
-                    <option value="">Bitte wählen</option>
-                    <option value="Deutschland">Deutschland</option>
-                    <option value="Österreich">Österreich</option>
-                    <option value="Schweiz">Schweiz</option>
+                    <option value="">{{ 'checkout.selectCountry' | translate }}</option>
+                    <option value="Deutschland">{{ 'checkout.countries.de' | translate }}</option>
+                    <option value="Österreich">{{ 'checkout.countries.at' | translate }}</option>
+                    <option value="Schweiz">{{ 'checkout.countries.ch' | translate }}</option>
                   </select>
                 </div>
               </div>
@@ -220,76 +222,56 @@ import { parsePhoneNumber, isValidPhoneNumber, CountryCode } from 'libphonenumbe
 
             <!-- PAYMENT METHOD AUSWAHL -->
             <section class="form-section">
-              <h2>Zahlungsmethode *</h2>
+              <h2>{{ 'checkout.paymentMethod' | translate }} {{ 'checkout.required' | translate }}</h2>
               <div class="payment-methods">
                 <label class="payment-option" [class.selected]="selectedPaymentMethod === 'CREDIT_CARD'">
-                  <input 
-                    type="radio" 
-                    name="paymentMethod" 
-                    value="CREDIT_CARD"
-                    [(ngModel)]="selectedPaymentMethod"
-                    [ngModelOptions]="{standalone: true}"
-                    (change)="onPaymentMethodChange()"
-                  />
+                  <input type="radio" name="paymentMethod" value="CREDIT_CARD"
+                    [(ngModel)]="selectedPaymentMethod" [ngModelOptions]="{standalone: true}"
+                    (change)="onPaymentMethodChange()" />
                   <div class="payment-content">
                     <span class="payment-icon">💳</span>
                     <div class="payment-info">
-                      <strong>Kreditkarte</strong>
+                      <strong>{{ 'payment.creditCard' | translate }}</strong>
                       <small>Visa, Mastercard, American Express</small>
                     </div>
                   </div>
                 </label>
 
                 <label class="payment-option" [class.selected]="selectedPaymentMethod === 'PAYPAL'">
-                  <input 
-                    type="radio" 
-                    name="paymentMethod" 
-                    value="PAYPAL"
-                    [(ngModel)]="selectedPaymentMethod"
-                    [ngModelOptions]="{standalone: true}"
-                    (change)="onPaymentMethodChange()"
-                  />
+                  <input type="radio" name="paymentMethod" value="PAYPAL"
+                    [(ngModel)]="selectedPaymentMethod" [ngModelOptions]="{standalone: true}"
+                    (change)="onPaymentMethodChange()" />
                   <div class="payment-content">
                     <span class="payment-icon">🅿️</span>
                     <div class="payment-info">
                       <strong>PayPal</strong>
-                      <small>Schnell und sicher bezahlen</small>
+                      <small>{{ 'payment.paypalHint' | translate }}</small>
                     </div>
                   </div>
                 </label>
 
                 <label class="payment-option" [class.selected]="selectedPaymentMethod === 'BANK_TRANSFER'">
-                  <input 
-                    type="radio" 
-                    name="paymentMethod" 
-                    value="BANK_TRANSFER"
-                    [(ngModel)]="selectedPaymentMethod"
-                    [ngModelOptions]="{standalone: true}"
-                    (change)="onPaymentMethodChange()"
-                  />
+                  <input type="radio" name="paymentMethod" value="BANK_TRANSFER"
+                    [(ngModel)]="selectedPaymentMethod" [ngModelOptions]="{standalone: true}"
+                    (change)="onPaymentMethodChange()" />
                   <div class="payment-content">
                     <span class="payment-icon">🏦</span>
                     <div class="payment-info">
-                      <strong>Überweisung</strong>
-                      <small>Zahlung per Banküberweisung</small>
+                      <strong>{{ 'payment.bankTransfer' | translate }}</strong>
+                      <small>{{ 'payment.bankTransferHint' | translate }}</small>
                     </div>
                   </div>
                 </label>
 
                 <label class="payment-option cod" [class.selected]="selectedPaymentMethod === 'CASH_ON_DELIVERY'">
-                  <input 
-                    type="radio" 
-                    name="paymentMethod" 
-                    value="CASH_ON_DELIVERY"
-                    [(ngModel)]="selectedPaymentMethod"
-                    [ngModelOptions]="{standalone: true}"
-                    (change)="onPaymentMethodChange()"
-                  />
+                  <input type="radio" name="paymentMethod" value="CASH_ON_DELIVERY"
+                    [(ngModel)]="selectedPaymentMethod" [ngModelOptions]="{standalone: true}"
+                    (change)="onPaymentMethodChange()" />
                   <div class="payment-content">
                     <span class="payment-icon">💵</span>
                     <div class="payment-info">
-                      <strong>Nachnahme</strong>
-                      <small>Bar bei Lieferung (Telefon-Verifizierung erforderlich)</small>
+                      <strong>{{ 'payment.cashOnDelivery' | translate }}</strong>
+                      <small>{{ 'payment.cashOnDeliveryHint' | translate }}</small>
                     </div>
                   </div>
                 </label>
@@ -300,8 +282,8 @@ import { parsePhoneNumber, isValidPhoneNumber, CountryCode } from 'libphonenumbe
                 <div class="verification-header">
                   <span class="icon">📱</span>
                   <div>
-                    <h3>Telefonnummer-Verifizierung</h3>
-                    <p>Aus Sicherheitsgründen benötigen wir eine verifizierte Telefonnummer für Nachnahme-Bestellungen</p>
+                    <h3>{{ 'payment.phoneVerification' | translate }}</h3>
+                    <p>{{ 'payment.phoneVerificationHint' | translate }}</p>
                   </div>
                 </div>
 
@@ -395,7 +377,7 @@ import { parsePhoneNumber, isValidPhoneNumber, CountryCode } from 'libphonenumbe
               </div>
 
               <div *ngIf="!selectedPaymentMethod" class="error">
-                Bitte wählen Sie eine Zahlungsmethode
+                {{ 'checkout.paymentMethod' | translate }}
               </div>
             </section>
 
@@ -419,13 +401,13 @@ import { parsePhoneNumber, isValidPhoneNumber, CountryCode } from 'libphonenumbe
               class="btn btn-primary btn-submit" 
               [disabled]="checkoutForm.invalid || submitting"
             >
-              {{ submitting ? 'Bestellung wird aufgegeben...' : 'Zahlungspflichtig bestellen' }}
+              {{ submitting ? ('common.loading' | translate) : ('checkout.placeOrder' | translate) }}
             </button>
           </form>
         </div>
 
         <div class="order-summary">
-          <h2>Bestellübersicht</h2>
+          <h2>{{ 'checkout.orderSummary' | translate }}</h2>
           
           <div class="summary-items">
             <div class="summary-item" *ngFor="let item of cart.items">
@@ -435,7 +417,7 @@ import { parsePhoneNumber, isValidPhoneNumber, CountryCode } from 'libphonenumbe
               <div class="item-info">
                 <h4>{{ item.productTitle }}</h4>
                 <p>{{ item.variantSku }}</p>
-                <p class="quantity">Menge: {{ item.quantity }}</p>
+                <p class="quantity">{{ 'product.quantity' | translate: { count: item.quantity } }}</p>
               </div>
               <div class="item-price">
                 {{ (item.priceSnapshot * item.quantity) | number:'1.2-2' }} €
@@ -455,7 +437,7 @@ import { parsePhoneNumber, isValidPhoneNumber, CountryCode } from 'libphonenumbe
 
           <div class="summary-totals">
             <div class="summary-row">
-              <span>Zwischensumme</span>
+              <span>{{ 'cart.subtotal' | translate }}</span>
               <span>{{ cart.subtotal | number:'1.2-2' }} €</span>
             </div>
             <div class="summary-row discount" *ngIf="discountAmount > 0">
@@ -463,11 +445,11 @@ import { parsePhoneNumber, isValidPhoneNumber, CountryCode } from 'libphonenumbe
               <span class="discount-value">-{{ discountAmount | number:'1.2-2' }} €</span>
             </div>
             <div class="summary-row">
-              <span>Versand</span>
+              <span>{{ 'cart.shipping' | translate }}</span>
               <span>{{ (hasFreeShipping ? 0 : shipping) | number:'1.2-2' }} €</span>
             </div>
             <div class="summary-row total">
-              <strong>Gesamt</strong>
+              <strong>{{ 'cart.total' | translate }}</strong>
               <strong>{{ getFinalTotal() | number:'1.2-2' }} €</strong>
             </div>
           </div>
@@ -975,8 +957,9 @@ export class CheckoutComponent implements OnInit {
     private router: Router,
     private authService: AuthService,
     private customerProfileService: CustomerProfileService,
-    private subdomainService: SubdomainService, // NEUE: SubdomainService injiziert
-    private phoneVerificationService: PhoneVerificationService // NEUE: PhoneVerificationService injiziert
+    private subdomainService: SubdomainService,
+    private phoneVerificationService: PhoneVerificationService,
+    private translationService: TranslationService
   ) {
     this.checkoutForm = this.fb.group({
       customerEmail: ['', [Validators.required, Validators.email]],

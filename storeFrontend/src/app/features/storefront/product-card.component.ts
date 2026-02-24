@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Product, ProductStatus } from '@app/core/models';
 import { WishlistService } from '../../core/services/wishlist.service';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 @Component({
   selector: 'app-product-card',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, TranslatePipe],
   template: `
     <div class="product-card">
       <!-- Wishlist Heart Button -->
@@ -49,7 +50,7 @@ import { WishlistService } from '../../core/services/wishlist.service';
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
             <path d="M10 4C5 4 1.73 7.11 1 10c.73 2.89 4 6 9 6s8.27-3.11 9-6c-.73-2.89-4-6-9-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm0-6.5c-1.38 0-2.5 1.12-2.5 2.5s1.12 2.5 2.5 2.5 2.5-1.12 2.5-2.5-1.12-2.5-2.5-2.5z" fill="currentColor"/>
           </svg>
-          <span>Schnellansicht</span>
+          <span>{{ 'product.quickView' | translate }}</span>
         </button>
       </div>
 

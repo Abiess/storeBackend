@@ -2,82 +2,84 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CheckoutService, OrderDetails } from '../../core/services/checkout.service';
+import { TranslatePipe } from '../../core/pipes/translate.pipe';
+import { TranslationService } from '../../core/services/translation.service';
 
 @Component({
   selector: 'app-order-confirmation',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe],
   template: `
     <div class="confirmation-container">
       <div *ngIf="loading" class="loading">
         <div class="spinner"></div>
-        Bestellung wird geladen...
+        {{ 'order.loading' | translate }}
       </div>
 
       <div *ngIf="!loading && error" class="error-container">
         <div class="error-icon">❌</div>
-        <h2>Bestellung nicht gefunden</h2>
+        <h2>{{ 'order.notFound' | translate }}</h2>
         <p>{{ error }}</p>
-        <button class="btn btn-primary" (click)="goToShop()">Zurück zum Shop</button>
+        <button class="btn btn-primary" (click)="goToShop()">{{ 'order.backToShop' | translate }}</button>
       </div>
 
       <div *ngIf="!loading && !error && order" class="confirmation-content">
         <div class="success-header">
           <div class="success-icon">✅</div>
-          <h1>Vielen Dank für Ihre Bestellung!</h1>
-          <p class="order-number">Bestellnummer: <strong>{{ order.orderNumber }}</strong></p>
+          <h1>{{ 'order.thankYou' | translate }}</h1>
+          <p class="order-number">{{ 'order.numberLabel' | translate }} <strong>{{ order.orderNumber }}</strong></p>
           <p class="confirmation-text">
-            Wir haben Ihre Bestellung erhalten und werden sie schnellstmöglichst bearbeiten.
+            {{ 'order.confirmationText' | translate }}
             <span *ngIf="order.customer?.email">
-              Eine Bestätigungs-E-Mail wurde an <strong>{{ order.customer?.email }}</strong> gesendet.
+              {{ 'order.emailSent' | translate: { email: order.customer?.email } }}
             </span>
           </p>
         </div>
 
         <div class="order-details">
           <section class="details-section">
-            <h2>Bestelldetails</h2>
+            <h2>{{ 'order.title' | translate }}</h2>
             <div class="detail-row">
-              <span>Bestellnummer:</span>
+              <span>{{ 'order.number' | translate }}:</span>
               <strong>{{ order.orderNumber }}</strong>
             </div>
             <div class="detail-row">
-              <span>Datum:</span>
+              <span>{{ 'order.date' | translate }}:</span>
               <strong>{{ order.createdAt | date:'dd.MM.yyyy HH:mm' }}</strong>
             </div>
             <div class="detail-row">
-              <span>Status:</span>
+              <span>{{ 'order.status' | translate }}:</span>
               <span class="status-badge" [class]="'status-' + order.status.toLowerCase()">
                 {{ getStatusLabel(order.status) }}
               </span>
             </div>
             <div class="detail-row" *ngIf="order.customer?.email">
-              <span>Kunden-E-Mail:</span>
+              <span>{{ 'order.customerEmail' | translate }}:</span>
               <strong>{{ order.customer?.email }}</strong>
             </div>
           </section>
 
           <section class="details-section">
-            <h2>Bestellte Artikel</h2>
+            <h2>{{ 'order.items' | translate }}</h2>
             <div class="order-items">
               <div class="order-item" *ngFor="let item of order.items">
                 <div class="item-info">
                   <h4>{{ item.productName }}</h4>
                   <p *ngIf="getProductSnapshot(item.productSnapshot)?.sku" class="sku">
-                    SKU: {{ getProductSnapshot(item.productSnapshot)?.sku }}
+                    {{ 'product.sku' | translate: { sku: getProductSnapshot(item.productSnapshot)?.sku } }}
                   </p>
-                  <p class="quantity">Menge: {{ item.quantity }}</p>
+                  <p class="quantity">{{ 'product.quantity' | translate: { count: item.quantity } }}</p>
                 </div>
                 <div class="item-price">
                   {{ item.price * item.quantity | number:'1.2-2' }} €
-                  <span class="unit-price">({{ item.price | number:'1.2-2' }} € / Stk.)</span>
+                  <span class="unit-price">{{ 'product.unitPrice' | translate: { price: (item.price | number:'1.2-2') } }}</span>
                 </div>
               </div>
             </div>
           </section>
 
           <section class="details-section" *ngIf="order.shippingAddress">
-            <h2>Lieferadresse</h2>
+            <h2>{{ 'order.shippingAddress' | translate }}</h2>
             <address>
               {{ order.shippingAddress.firstName }} {{ order.shippingAddress.lastName }}<br>
               {{ order.shippingAddress.address1 }}<br>
@@ -89,7 +91,7 @@ import { CheckoutService, OrderDetails } from '../../core/services/checkout.serv
           </section>
 
           <section class="details-section" *ngIf="order.billingAddress">
-            <h2>Rechnungsadresse</h2>
+            <h2>{{ 'order.billingAddress' | translate }}</h2>
             <address>
               {{ order.billingAddress.firstName }} {{ order.billingAddress.lastName }}<br>
               {{ order.billingAddress.address1 }}<br>
@@ -100,12 +102,12 @@ import { CheckoutService, OrderDetails } from '../../core/services/checkout.serv
           </section>
 
           <section class="details-section" *ngIf="order.notes">
-            <h2>Anmerkungen</h2>
+            <h2>{{ 'order.notes' | translate }}</h2>
             <p>{{ order.notes }}</p>
           </section>
 
           <section class="details-section total-section">
-            <h2>Gesamtsumme</h2>
+            <h2>{{ 'order.total' | translate }}</h2>
             <div class="total-amount">
               {{ order.totalAmount | number:'1.2-2' }} €
             </div>
@@ -113,8 +115,8 @@ import { CheckoutService, OrderDetails } from '../../core/services/checkout.serv
         </div>
 
         <div class="action-buttons">
-          <button class="btn btn-primary" (click)="goToShop()">Weiter einkaufen</button>
-          <button class="btn btn-secondary" (click)="printOrder()">🖨️ Bestellung drucken</button>
+          <button class="btn btn-primary" (click)="goToShop()">{{ 'order.continueShopping' | translate }}</button>
+          <button class="btn btn-secondary" (click)="printOrder()">{{ 'order.print' | translate }}</button>
         </div>
       </div>
     </div>
@@ -332,7 +334,8 @@ export class OrderConfirmationComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private checkoutService: CheckoutService
+    private checkoutService: CheckoutService,
+    private translationService: TranslationService
   ) {}
 
   ngOnInit(): void {
@@ -340,7 +343,7 @@ export class OrderConfirmationComponent implements OnInit {
     const email = this.route.snapshot.queryParams['email'];
 
     if (!orderNumber || !email) {
-      this.error = 'Bestellinformationen fehlen';
+      this.error = this.translationService.translate('order.missingInfo');
       return;
     }
 
@@ -355,22 +358,16 @@ export class OrderConfirmationComponent implements OnInit {
         this.loading = false;
       },
       error: (error: any) => {
-        this.error = error.message || 'Bestellung konnte nicht geladen werden';
+        this.error = error.message || this.translationService.translate('order.loadError');
         this.loading = false;
       }
     });
   }
 
   getStatusLabel(status: string): string {
-    const labels: { [key: string]: string } = {
-      'PENDING': 'Ausstehend',
-      'CONFIRMED': 'Bestätigt',
-      'PROCESSING': 'In Bearbeitung',
-      'SHIPPED': 'Versandt',
-      'DELIVERED': 'Zugestellt',
-      'CANCELLED': 'Storniert'
-    };
-    return labels[status] || status;
+    const key = `status.${status.toLowerCase()}`;
+    const translated = this.translationService.translate(key);
+    return translated !== key ? translated : status;
   }
 
   /**

@@ -1,6 +1,8 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Product, ProductStatus } from '@app/core/models';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { TranslationService } from '@app/core/services/translation.service';
 
 /**
  * Modern Product Card Component (idealo.de style)
@@ -9,7 +11,7 @@ import { Product, ProductStatus } from '@app/core/models';
 @Component({
   selector: 'app-modern-product-card',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe],
   template: `
     <div class="product-card" [class.out-of-stock]="product.status !== ProductStatus.ACTIVE">
       <!-- Product Image -->
@@ -22,12 +24,12 @@ import { Product, ProductStatus } from '@app/core/models';
         
         <!-- Badges -->
         <div class="product-badges">
-          <span class="badge badge-new" *ngIf="isNew">Neu</span>
+          <span class="badge badge-new" *ngIf="isNew">{{ 'product.new' | translate }}</span>
           <span class="badge badge-sale" *ngIf="product.discountPercentage">
             -{{ product.discountPercentage }}%
           </span>
           <span class="badge badge-out" *ngIf="product.status !== ProductStatus.ACTIVE">
-            Nicht verfügbar
+            {{ 'product.outOfStock' | translate }}
           </span>
         </div>
 
@@ -39,7 +41,7 @@ import { Product, ProductStatus } from '@app/core/models';
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               <circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="2"/>
             </svg>
-            Schnellansicht
+            {{ 'product.quickView' | translate }}
           </button>
         </div>
       </div>
@@ -70,9 +72,9 @@ import { Product, ProductStatus } from '@app/core/models';
         <div class="stock-info" *ngIf="product.stock !== undefined">
           <span class="stock-indicator" [class.low]="product.stock > 0 && product.stock <= 5">
             <span class="stock-dot"></span>
-            <span *ngIf="product.stock > 5">Auf Lager</span>
-            <span *ngIf="product.stock > 0 && product.stock <= 5">Nur noch {{ product.stock }} verfügbar</span>
-            <span *ngIf="product.stock === 0">Ausverkauft</span>
+            <span *ngIf="product.stock > 5">{{ 'product.inStock' | translate }}</span>
+            <span *ngIf="product.stock > 0 && product.stock <= 5">{{ 'product.lowStock' | translate: { count: product.stock } }}</span>
+            <span *ngIf="product.stock === 0">{{ 'product.soldOut' | translate }}</span>
           </span>
         </div>
 
@@ -437,10 +439,12 @@ export class ModernProductCardComponent {
 
   readonly ProductStatus = ProductStatus;
 
+  constructor(private translationService: TranslationService) {}
+
   get buttonText(): string {
-    if (this.isAddingToCart) return 'Wird hinzugefügt...';
-    if (this.product.status !== ProductStatus.ACTIVE) return 'Nicht verfügbar';
-    return 'In den Warenkorb';
+    if (this.isAddingToCart) return this.translationService.translate('product.adding');
+    if (this.product.status !== ProductStatus.ACTIVE) return this.translationService.translate('product.outOfStock');
+    return this.translationService.translate('product.addToCart');
   }
 
   onAddToCart(): void {

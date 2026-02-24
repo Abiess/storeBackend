@@ -58,9 +58,9 @@
       <app-product-grid
         [products]="displayedProducts || filteredProducts"
         [loading]="loading"
-        [title]="selectedCategory ? selectedCategory.name : (searchQuery ? 'Suchergebnisse' : 'Alle Produkte')"
-        [emptyTitle]="searchQuery ? 'Keine Suchergebnisse' : 'Keine Produkte gefunden'"
-        [emptyMessage]="searchQuery ? 'Versuche es mit anderen Suchbegriffen.' : 'In dieser Kategorie sind aktuell keine Produkte verfügbar.'">
+        [title]="selectedCategory ? selectedCategory.name : (searchQuery ? ('storefront.searchResults' | translate) : ('storefront.allProducts' | translate))"
+        [emptyTitle]="searchQuery ? ('storefront.noSearchResults' | translate) : ('storefront.noProducts' | translate)"
+        [emptyMessage]="searchQuery ? ('storefront.noSearchResultsHint' | translate) : ('storefront.noProductsHint' | translate)">
 
         <!-- Product Cards -->
         <app-modern-product-card
@@ -90,11 +90,11 @@
       <div class="footer-grid">
         <div class="footer-col">
           <h4>{{ store?.name || 'Online Shop' }}</h4>
-          <p class="footer-tagline">Powered by markt.ma</p>
+          <p class="footer-tagline">{{ 'common.poweredBy' | translate }}</p>
         </div>
 
         <div class="footer-col">
-          <h4>Kategorien</h4>
+          <h4>{{ 'navigation.categories' | translate }}</h4>
           <ul class="footer-links">
             <li *ngFor="let category of categories">
               <a (click)="selectCategory(category)">{{ category.name }}</a>
@@ -103,27 +103,27 @@
         </div>
 
         <div class="footer-col">
-          <h4>Informationen</h4>
+          <h4>{{ 'footer.info' | translate }}</h4>
           <ul class="footer-links">
-            <li><a>Impressum</a></li>
-            <li><a>Datenschutz</a></li>
-            <li><a>AGB</a></li>
-            <li><a>Versand & Zahlung</a></li>
+            <li><a>{{ 'footer.imprint' | translate }}</a></li>
+            <li><a>{{ 'footer.privacy' | translate }}</a></li>
+            <li><a>{{ 'footer.terms' | translate }}</a></li>
+            <li><a>{{ 'footer.shipping' | translate }}</a></li>
           </ul>
         </div>
 
         <div class="footer-col">
-          <h4>Kontakt</h4>
+          <h4>{{ 'footer.contact' | translate }}</h4>
           <ul class="footer-links">
-            <li><a>Kontaktformular</a></li>
-            <li><a>FAQ</a></li>
-            <li><a>Support</a></li>
+            <li><a>{{ 'footer.contact' | translate }}</a></li>
+            <li><a>{{ 'footer.faq' | translate }}</a></li>
+            <li><a>{{ 'footer.support' | translate }}</a></li>
           </ul>
         </div>
       </div>
 
       <div class="footer-bottom">
-        <p>&copy; 2025 {{ store?.name || 'markt.ma' }}. Alle Rechte vorbehalten.</p>
+        <p>{{ 'footer.copyright' | translate: { year: currentYear } }}</p>
       </div>
     </div>
   </footer>

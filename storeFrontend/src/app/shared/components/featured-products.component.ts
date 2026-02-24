@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { ProductService } from '@app/core/services/product.service';
 import { Product } from '@app/core/models';
 import { ProductCardComponent } from '../storefront/product-card.component';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { TranslationService } from '@app/core/services/translation.service';
 
 /**
  * Featured Products Section Component
@@ -11,12 +13,11 @@ import { ProductCardComponent } from '../storefront/product-card.component';
 @Component({
   selector: 'app-featured-products',
   standalone: true,
-  imports: [CommonModule, ProductCardComponent],
+  imports: [CommonModule, ProductCardComponent, TranslatePipe],
   template: `
     <section class="featured-products" *ngIf="products.length > 0">
       <div class="section-header">
         <h2 class="section-title">
-          <span class="icon">⭐</span>
           {{ title }}
         </h2>
         <p class="section-subtitle" *ngIf="subtitle">{{ subtitle }}</p>
@@ -33,7 +34,7 @@ import { ProductCardComponent } from '../storefront/product-card.component';
 
       <div class="loading" *ngIf="loading">
         <div class="spinner"></div>
-        <p>Produkte werden geladen...</p>
+        <p>{{ 'featured.loading' | translate }}</p>
       </div>
 
       <div class="error" *ngIf="error">
@@ -61,20 +62,6 @@ import { ProductCardComponent } from '../storefront/product-card.component';
       align-items: center;
       justify-content: center;
       gap: 0.75rem;
-    }
-
-    .icon {
-      font-size: 2rem;
-      animation: pulse 2s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% {
-        transform: scale(1);
-      }
-      50% {
-        transform: scale(1.1);
-      }
     }
 
     .section-subtitle {
@@ -122,11 +109,9 @@ import { ProductCardComponent } from '../storefront/product-card.component';
       .featured-products {
         padding: 2rem 0;
       }
-
       .section-title {
         font-size: 2rem;
       }
-
       .products-grid {
         grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
         gap: 1rem;
@@ -139,14 +124,17 @@ export class FeaturedProductsComponent implements OnInit {
   @Input() storeId!: number;
   @Input() type: 'featured' | 'top' | 'trending' | 'new' = 'featured';
   @Input() limit: number = 8;
-  @Input() title: string = '⭐ Empfohlene Produkte';
+  @Input() title: string = '';
   @Input() subtitle?: string;
 
   products: Product[] = [];
   loading = false;
   error = '';
 
-  constructor(private productService: ProductService) {}
+  constructor(
+    private productService: ProductService,
+    private translationService: TranslationService
+  ) {}
 
   ngOnInit(): void {
     this.loadProducts();
@@ -154,23 +142,23 @@ export class FeaturedProductsComponent implements OnInit {
   }
 
   private setDefaultTitle(): void {
-    if (this.title === '⭐ Empfohlene Produkte') {
+    if (!this.title) {
       switch (this.type) {
         case 'featured':
-          this.title = '⭐ Empfohlene Produkte';
-          this.subtitle = 'Unsere Top-Auswahl für Sie';
+          this.title = this.translationService.translate('featured.recommended');
+          this.subtitle = this.subtitle || this.translationService.translate('featured.recommendedSub');
           break;
         case 'top':
-          this.title = '🏆 Bestseller';
-          this.subtitle = 'Die beliebtesten Produkte';
+          this.title = this.translationService.translate('featured.bestseller');
+          this.subtitle = this.subtitle || this.translationService.translate('featured.bestsellerSub');
           break;
         case 'trending':
-          this.title = '🔥 Im Trend';
-          this.subtitle = 'Diese Produkte sind gerade beliebt';
+          this.title = this.translationService.translate('featured.trending');
+          this.subtitle = this.subtitle || this.translationService.translate('featured.trendingSub');
           break;
         case 'new':
-          this.title = '✨ Neu eingetroffen';
-          this.subtitle = 'Entdecken Sie unsere neuesten Produkte';
+          this.title = this.translationService.translate('featured.newArrivals');
+          this.subtitle = this.subtitle || this.translationService.translate('featured.newArrivalsSub');
           break;
       }
     }
@@ -203,7 +191,7 @@ export class FeaturedProductsComponent implements OnInit {
         console.log(`✅ ${this.type} products geladen:`, products.length);
       },
       error: (error) => {
-        this.error = 'Fehler beim Laden der Produkte';
+        this.error = this.translationService.translate('common.error');
         this.loading = false;
         console.error('❌ Fehler:', error);
       }
@@ -212,12 +200,9 @@ export class FeaturedProductsComponent implements OnInit {
 
   onAddToCart(product: Product): void {
     console.log('🛒 Add to cart:', product);
-    // Event nach oben weiterleiten
   }
 
   onQuickView(product: Product): void {
     console.log('👁️ Quick view:', product);
-    // Event nach oben weiterleiten
   }
 }
-

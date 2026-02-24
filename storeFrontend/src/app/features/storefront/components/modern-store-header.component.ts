@@ -1,6 +1,8 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { TranslationService } from '@app/core/services/translation.service';
 
 /**
  * Modern Store Header Component (idealo.de style)
@@ -9,7 +11,7 @@ import { FormsModule } from '@angular/forms';
 @Component({
   selector: 'app-modern-store-header',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   template: `
     <header class="modern-store-header">
       <div class="header-container">
@@ -28,14 +30,14 @@ import { FormsModule } from '@angular/forms';
             <input
               type="search"
               class="search-input"
-              placeholder="Produkte durchsuchen..."
+              [placeholder]="'header.searchPlaceholder' | translate"
               [(ngModel)]="searchQuery"
               (input)="onSearchChange()">
             <button 
               class="search-clear" 
               *ngIf="searchQuery"
               (click)="clearSearch()"
-              aria-label="Suche löschen">
+              [attr.aria-label]="'header.searchClear' | translate">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path d="M12 4L4 12M4 4l8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
               </svg>
@@ -51,7 +53,7 @@ import { FormsModule } from '@angular/forms';
               <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/>
               <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>
-            <span class="btn-label">Konto</span>
+            <span class="btn-label">{{ 'header.account' | translate }}</span>
           </button>
 
           <!-- Cart Button -->
@@ -63,7 +65,7 @@ import { FormsModule } from '@angular/forms';
               </svg>
               <span class="cart-badge" *ngIf="cartItemCount > 0">{{ cartItemCount }}</span>
             </div>
-            <span class="btn-label">Warenkorb</span>
+            <span class="btn-label">{{ 'header.cart' | translate }}</span>
           </button>
         </div>
       </div>
@@ -78,7 +80,7 @@ import { FormsModule } from '@angular/forms';
           <input
             type="search"
             class="search-input"
-            placeholder="Produkte suchen..."
+            [placeholder]="'header.searchPlaceholderMobile' | translate"
             [(ngModel)]="searchQuery"
             (input)="onSearchChange()">
           <button 

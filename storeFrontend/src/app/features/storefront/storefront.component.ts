@@ -19,6 +19,8 @@ import { StoreSidebarComponent } from './components/store-sidebar.component';
 import { ProductGridComponent } from './components/product-grid.component';
 import { ModernProductCardComponent } from './components/modern-product-card.component';
 import { ModernStoreHeaderComponent } from './components/modern-store-header.component';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { TranslationService } from '@app/core/services/translation.service';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -39,7 +41,8 @@ import { Subscription } from 'rxjs';
     StoreSidebarComponent,
     ProductGridComponent,
     ModernProductCardComponent,
-    ModernStoreHeaderComponent
+    ModernStoreHeaderComponent,
+    TranslatePipe
   ],
   templateUrl: './storefront.component.html',
   styleUrls: ['./storefront.component.scss']
@@ -65,13 +68,17 @@ export class StorefrontComponent implements OnInit, OnDestroy {
   // NEW: Für Suchfunktion
   searchQuery = '';
 
+  // NEW: Aktuelles Jahr für Footer
+  readonly currentYear = new Date().getFullYear();
+
   constructor(
     private route: ActivatedRoute,
     private productService: ProductService,
     private categoryService: CategoryService,
     private router: Router,
     private cartService: CartService,
-    private themeService: ThemeService
+    private themeService: ThemeService,
+    private translationService: TranslationService
   ) {}
 
   ngOnInit(): void {
@@ -182,7 +189,24 @@ export class StorefrontComponent implements OnInit, OnDestroy {
 
   selectCategory(category: Category | null): void {
     this.selectedCategory = category;
+    this.searchQuery = '';
     console.log('📁 Category selected:', category?.name || 'Alle Produkte');
+  }
+
+  onSearchChange(query: string): void {
+    this.searchQuery = query;
+  }
+
+  get displayedProducts(): Product[] {
+    let products = this.filteredProducts;
+    if (this.searchQuery) {
+      const q = this.searchQuery.toLowerCase();
+      products = products.filter(p =>
+        p.name?.toLowerCase().includes(q) ||
+        p.description?.toLowerCase().includes(q)
+      );
+    }
+    return products;
   }
 
   get filteredProducts(): Product[] {

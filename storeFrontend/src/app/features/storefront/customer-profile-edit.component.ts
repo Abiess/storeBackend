@@ -2,44 +2,45 @@ import { Component, Input, Output, EventEmitter, OnInit, OnChanges } from '@angu
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CustomerProfileService, CustomerProfile } from '../../core/services/customer-profile.service';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 @Component({
   selector: 'app-customer-profile-edit',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   template: `
     <div class="profile-edit">
-      <h2>Profildaten</h2>
-      <p class="description">Verwalten Sie Ihre persönlichen Informationen</p>
+      <h2>{{ 'profile.profileData' | translate }}</h2>
+      <p class="description">{{ 'profile.managePersonalInfo' | translate }}</p>
 
       <form (ngSubmit)="saveProfile()" #profileForm="ngForm">
         <div class="form-row">
           <div class="form-group">
-            <label for="firstName">Vorname</label>
+            <label for="firstName">{{ 'checkout.firstName' | translate }}</label>
             <input
               type="text"
               id="firstName"
               name="firstName"
               [(ngModel)]="editProfile.firstName"
-              placeholder="Ihr Vorname"
+              [placeholder]="'profile.firstNamePlaceholder' | translate"
               class="form-control"
             />
           </div>
           <div class="form-group">
-            <label for="lastName">Nachname</label>
+            <label for="lastName">{{ 'checkout.lastName' | translate }}</label>
             <input
               type="text"
               id="lastName"
               name="lastName"
               [(ngModel)]="editProfile.lastName"
-              placeholder="Ihr Nachname"
+              [placeholder]="'profile.lastNamePlaceholder' | translate"
               class="form-control"
             />
           </div>
         </div>
 
         <div class="form-group">
-          <label for="email">E-Mail-Adresse</label>
+          <label for="email">{{ 'checkout.email' | translate }}</label>
           <input
             type="email"
             id="email"
@@ -49,11 +50,11 @@ import { CustomerProfileService, CustomerProfile } from '../../core/services/cus
             class="form-control"
             disabled
           />
-          <small class="form-hint">Die E-Mail-Adresse kann nicht geändert werden</small>
+          <small class="form-hint">{{ 'profile.emailReadonly' | translate }}</small>
         </div>
 
         <div class="form-group">
-          <label for="phone">Telefonnummer (optional)</label>
+          <label for="phone">{{ 'checkout.phone' | translate }}</label>
           <input
             type="tel"
             id="phone"
@@ -74,8 +75,8 @@ import { CustomerProfileService, CustomerProfile } from '../../core/services/cus
 
         <div class="form-actions">
           <button type="submit" class="btn-primary" [disabled]="saving">
-            <span *ngIf="!saving">💾 Änderungen speichern</span>
-            <span *ngIf="saving">⏳ Wird gespeichert...</span>
+            <span *ngIf="!saving">💾 {{ 'common.saveChanges' | translate }}</span>
+            <span *ngIf="saving">⏳ {{ 'common.saving' | translate }}</span>
           </button>
         </div>
       </form>

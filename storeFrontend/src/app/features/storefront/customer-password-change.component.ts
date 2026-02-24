@@ -2,19 +2,20 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CustomerProfileService, PasswordChangeRequest } from '../../core/services/customer-profile.service';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 @Component({
   selector: 'app-customer-password-change',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   template: `
     <div class="password-change">
-      <h2>Passwort ändern</h2>
-      <p class="description">Ändern Sie Ihr Passwort für mehr Sicherheit</p>
+      <h2>{{ 'profile.changePassword' | translate }}</h2>
+      <p class="description">{{ 'profile.changePasswordHint' | translate }}</p>
 
       <form (ngSubmit)="changePassword()" #passwordForm="ngForm">
         <div class="form-group">
-          <label for="currentPassword">Aktuelles Passwort *</label>
+          <label for="currentPassword">{{ 'profile.currentPassword' | translate }} {{ 'checkout.required' | translate }}</label>
           <div class="password-input">
             <input
               [type]="showCurrentPassword ? 'text' : 'password'"
@@ -24,7 +25,7 @@ import { CustomerProfileService, PasswordChangeRequest } from '../../core/servic
               required
               minlength="6"
               class="form-control"
-              placeholder="Geben Sie Ihr aktuelles Passwort ein"
+              [placeholder]="'profile.currentPasswordPlaceholder' | translate"
             />
             <button 
               type="button" 
@@ -36,7 +37,7 @@ import { CustomerProfileService, PasswordChangeRequest } from '../../core/servic
         </div>
 
         <div class="form-group">
-          <label for="newPassword">Neues Passwort *</label>
+          <label for="newPassword">{{ 'profile.newPassword' | translate }} {{ 'checkout.required' | translate }}</label>
           <div class="password-input">
             <input
               [type]="showNewPassword ? 'text' : 'password'"
@@ -46,7 +47,7 @@ import { CustomerProfileService, PasswordChangeRequest } from '../../core/servic
               required
               minlength="6"
               class="form-control"
-              placeholder="Mindestens 6 Zeichen"
+              [placeholder]="'profile.newPasswordPlaceholder' | translate"
               (ngModelChange)="validatePasswordMatch()"
             />
             <button 
@@ -56,11 +57,11 @@ import { CustomerProfileService, PasswordChangeRequest } from '../../core/servic
               {{ showNewPassword ? '👁️' : '👁️‍🗨️' }}
             </button>
           </div>
-          <small class="form-hint">Das Passwort sollte mindestens 6 Zeichen lang sein</small>
+          <small class="form-hint">{{ 'profile.passwordMinLength' | translate }}</small>
         </div>
 
         <div class="form-group">
-          <label for="confirmPassword">Neues Passwort bestätigen *</label>
+          <label for="confirmPassword">{{ 'profile.confirmPassword' | translate }} {{ 'checkout.required' | translate }}</label>
           <div class="password-input">
             <input
               [type]="showConfirmPassword ? 'text' : 'password'"
@@ -71,7 +72,7 @@ import { CustomerProfileService, PasswordChangeRequest } from '../../core/servic
               minlength="6"
               class="form-control"
               [class.invalid]="confirmPassword && !passwordsMatch"
-              placeholder="Passwort erneut eingeben"
+              [placeholder]="'profile.confirmPasswordPlaceholder' | translate"
               (ngModelChange)="validatePasswordMatch()"
             />
             <button 
@@ -82,15 +83,15 @@ import { CustomerProfileService, PasswordChangeRequest } from '../../core/servic
             </button>
           </div>
           <small class="form-hint error" *ngIf="confirmPassword && !passwordsMatch">
-            ⚠️ Die Passwörter stimmen nicht überein
+            ⚠️ {{ 'profile.passwordMismatch' | translate }}
           </small>
           <small class="form-hint success" *ngIf="confirmPassword && passwordsMatch">
-            ✅ Die Passwörter stimmen überein
+            ✅ {{ 'profile.passwordMatch' | translate }}
           </small>
         </div>
 
         <div class="password-strength" *ngIf="passwordRequest.newPassword">
-          <label>Passwortstärke:</label>
+          <label>{{ 'profile.passwordStrength' | translate }}:</label>
           <div class="strength-bar">
             <div 
               class="strength-indicator" 
@@ -114,23 +115,23 @@ import { CustomerProfileService, PasswordChangeRequest } from '../../core/servic
             type="submit" 
             class="btn-primary" 
             [disabled]="!passwordForm.valid || !passwordsMatch || saving">
-            <span *ngIf="!saving">🔒 Passwort ändern</span>
-            <span *ngIf="saving">⏳ Wird geändert...</span>
+            <span *ngIf="!saving">🔒 {{ 'profile.changePassword' | translate }}</span>
+            <span *ngIf="saving">⏳ {{ 'common.loading' | translate }}</span>
           </button>
           <button type="button" class="btn-secondary" (click)="resetForm()">
-            🔄 Zurücksetzen
+            🔄 {{ 'common.reset' | translate }}
           </button>
         </div>
       </form>
 
       <div class="security-tips">
-        <h3>💡 Tipps für ein sicheres Passwort:</h3>
+        <h3>💡 {{ 'profile.securityTips' | translate }}:</h3>
         <ul>
-          <li>Verwenden Sie mindestens 8 Zeichen</li>
-          <li>Kombinieren Sie Groß- und Kleinbuchstaben</li>
-          <li>Fügen Sie Zahlen und Sonderzeichen hinzu</li>
-          <li>Vermeiden Sie persönliche Informationen</li>
-          <li>Nutzen Sie für jeden Account ein anderes Passwort</li>
+          <li>{{ 'profile.tip1' | translate }}</li>
+          <li>{{ 'profile.tip2' | translate }}</li>
+          <li>{{ 'profile.tip3' | translate }}</li>
+          <li>{{ 'profile.tip4' | translate }}</li>
+          <li>{{ 'profile.tip5' | translate }}</li>
         </ul>
       </div>
     </div>
@@ -413,4 +414,3 @@ export class CustomerPasswordChangeComponent {
     this.errorMessage = '';
   }
 }
-
