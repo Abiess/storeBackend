@@ -172,11 +172,11 @@ CREATE TABLE IF NOT EXISTS products (
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
 );
 
-CREATE INDEX idx_products_featured ON products(store_id, is_featured, featured_order);
-CREATE INDEX idx_products_sales_count ON products(store_id, sales_count);
-CREATE INDEX idx_products_view_count ON products(store_id, view_count);
-CREATE INDEX idx_products_created_at ON products(store_id, created_at);
-CREATE INDEX idx_products_rating ON products(average_rating DESC);
+CREATE INDEX IF NOT EXISTS idx_products_featured ON products(store_id, is_featured, featured_order);
+CREATE INDEX IF NOT EXISTS idx_products_sales_count ON products(store_id, sales_count);
+CREATE INDEX IF NOT EXISTS idx_products_view_count ON products(store_id, view_count);
+CREATE INDEX IF NOT EXISTS idx_products_created_at ON products(store_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_products_rating ON products(average_rating DESC);
 
 -- Product Options
 CREATE TABLE IF NOT EXISTS product_options (
@@ -569,23 +569,23 @@ CREATE TABLE IF NOT EXISTS redirect_rules (
 );
 
 -- Indizes fuer bessere Performance
-CREATE INDEX idx_redirect_store ON redirect_rules(store_id);
-CREATE INDEX idx_redirect_domain ON redirect_rules(domain_id);
-CREATE INDEX idx_redirect_active ON redirect_rules(is_active);
-CREATE INDEX idx_redirect_priority ON redirect_rules(priority);
+CREATE INDEX IF NOT EXISTS idx_redirect_store ON redirect_rules(store_id);
+CREATE INDEX IF NOT EXISTS idx_redirect_domain ON redirect_rules(domain_id);
+CREATE INDEX IF NOT EXISTS idx_redirect_active ON redirect_rules(is_active);
+CREATE INDEX IF NOT EXISTS idx_redirect_priority ON redirect_rules(priority);
 
-CREATE INDEX idx_products_store ON products(store_id);
-CREATE INDEX idx_products_category ON products(category_id);
-CREATE INDEX idx_products_status ON products(status);
+CREATE INDEX IF NOT EXISTS idx_products_store ON products(store_id);
+CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
+CREATE INDEX IF NOT EXISTS idx_products_status ON products(status);
 
-CREATE INDEX idx_orders_store ON orders(store_id);
-CREATE INDEX idx_orders_customer ON orders(customer_id);
-CREATE INDEX idx_orders_status ON orders(status);
-CREATE INDEX idx_orders_created ON orders(created_at);
+CREATE INDEX IF NOT EXISTS idx_orders_store ON orders(store_id);
+CREATE INDEX IF NOT EXISTS idx_orders_customer ON orders(customer_id);
+CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
+CREATE INDEX IF NOT EXISTS idx_orders_created ON orders(created_at);
 
-CREATE INDEX idx_carts_store ON carts(store_id);
-CREATE INDEX idx_carts_user ON carts(user_id);
-CREATE INDEX idx_carts_session ON carts(session_id);
+CREATE INDEX IF NOT EXISTS idx_carts_store ON carts(store_id);
+CREATE INDEX IF NOT EXISTS idx_carts_user ON carts(user_id);
+CREATE INDEX IF NOT EXISTS idx_carts_session ON carts(session_id);
 
 -- Product Reviews
 CREATE TABLE IF NOT EXISTS product_reviews (
@@ -622,11 +622,11 @@ CREATE TABLE IF NOT EXISTS review_votes (
     UNIQUE (review_id, user_id)
 );
 
-CREATE INDEX idx_review_product ON product_reviews(product_id);
-CREATE INDEX idx_review_customer ON product_reviews(customer_id);
-CREATE INDEX idx_review_approved ON product_reviews(is_approved, created_at);
-CREATE INDEX idx_vote_review ON review_votes(review_id);
-CREATE INDEX idx_vote_user ON review_votes(user_id);
+CREATE INDEX IF NOT EXISTS idx_review_product ON product_reviews(product_id);
+CREATE INDEX IF NOT EXISTS idx_review_customer ON product_reviews(customer_id);
+CREATE INDEX IF NOT EXISTS idx_review_approved ON product_reviews(is_approved, created_at);
+CREATE INDEX IF NOT EXISTS idx_vote_review ON review_votes(review_id);
+CREATE INDEX IF NOT EXISTS idx_vote_user ON review_votes(user_id);
 
 -- Default Daten einfuegen
 INSERT INTO plans (name, max_stores, max_custom_domains, max_subdomains, max_storage_mb, max_products, max_image_count)
@@ -684,9 +684,9 @@ CREATE TABLE IF NOT EXISTS chat_sessions (
     FOREIGN KEY (assigned_agent_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
-CREATE INDEX idx_chat_session_store ON chat_sessions(store_id, status);
-CREATE INDEX idx_chat_session_customer ON chat_sessions(customer_id);
-CREATE INDEX idx_chat_session_token ON chat_sessions(session_token);
+CREATE INDEX IF NOT EXISTS idx_chat_session_store ON chat_sessions(store_id, status);
+CREATE INDEX IF NOT EXISTS idx_chat_session_customer ON chat_sessions(customer_id);
+CREATE INDEX IF NOT EXISTS idx_chat_session_token ON chat_sessions(session_token);
 
 -- Chat Messages
 CREATE TABLE IF NOT EXISTS chat_messages (
@@ -704,8 +704,8 @@ CREATE TABLE IF NOT EXISTS chat_messages (
     FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
-CREATE INDEX idx_chat_message_session ON chat_messages(session_id, created_at);
-CREATE INDEX idx_chat_message_unread ON chat_messages(session_id, is_read);
+CREATE INDEX IF NOT EXISTS idx_chat_message_session ON chat_messages(session_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_chat_message_unread ON chat_messages(session_id, is_read);
 
 -- FAQ Knowledge Base
 CREATE TABLE IF NOT EXISTS faq_categories (
@@ -721,7 +721,7 @@ CREATE TABLE IF NOT EXISTS faq_categories (
     FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_faq_category_store ON faq_categories(store_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_faq_category_store ON faq_categories(store_id, is_active);
 
 -- FAQ Questions & Answers
 CREATE TABLE IF NOT EXISTS faq_items (
@@ -742,8 +742,8 @@ CREATE TABLE IF NOT EXISTS faq_items (
     FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_faq_item_category ON faq_items(category_id, is_active);
-CREATE INDEX idx_faq_item_store ON faq_items(store_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_faq_item_category ON faq_items(category_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_faq_item_store ON faq_items(store_id, is_active);
 
 -- Canned Responses (Quick Replies for Agents)
 CREATE TABLE IF NOT EXISTS canned_responses (
@@ -762,7 +762,7 @@ CREATE TABLE IF NOT EXISTS canned_responses (
     UNIQUE (store_id, shortcut)
 );
 
-CREATE INDEX idx_canned_response_store ON canned_responses(store_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_canned_response_store ON canned_responses(store_id, is_active);
 
 -- Chat Bot Intents (AI Training Data)
 CREATE TABLE IF NOT EXISTS chatbot_intents (
@@ -779,7 +779,7 @@ CREATE TABLE IF NOT EXISTS chatbot_intents (
     FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_chatbot_intent_store ON chatbot_intents(store_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_chatbot_intent_store ON chatbot_intents(store_id, is_active);
 
 -- Chat Analytics
 CREATE TABLE IF NOT EXISTS chat_analytics (
@@ -796,7 +796,7 @@ CREATE TABLE IF NOT EXISTS chat_analytics (
     UNIQUE (store_id, date)
 );
 
-CREATE INDEX idx_chat_analytics_store_date ON chat_analytics(store_id, date);
+CREATE INDEX IF NOT EXISTS idx_chat_analytics_store_date ON chat_analytics(store_id, date);
 
 -- Default FAQ Categories (Global)
 INSERT INTO faq_categories (store_id, name, slug, description, icon, display_order)
