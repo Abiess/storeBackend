@@ -36,10 +36,22 @@ public class SubscriptionService {
 
     /**
      * Hole aktuelle Subscription eines Benutzers
+     * Erstellt automatisch FREE Plan wenn keine Subscription existiert
      */
+    @Transactional
     public Optional<Subscription> getCurrentSubscription(Long userId) {
         log.info("Lade aktuelle Subscription für User: {}", userId);
-        return subscriptionRepository.findByUserIdAndStatus(userId, SubscriptionStatus.ACTIVE);
+
+        Optional<Subscription> existing = subscriptionRepository.findByUserIdAndStatus(userId, SubscriptionStatus.ACTIVE);
+
+        // Wenn keine aktive Subscription existiert, erstelle FREE Plan
+        if (existing.isEmpty()) {
+            log.info("Keine Subscription gefunden für User {}, erstelle FREE Plan", userId);
+            Subscription freeSub = createSubscription(userId, Plan.FREE);
+            return Optional.of(freeSub);
+        }
+
+        return existing;
     }
 
     /**
