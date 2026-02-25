@@ -1,0 +1,141 @@
+<div class="chatbot-widget">
+  <!-- Chat Button (Floating) -->
+  <button
+    *ngIf="!session?.isOpen"
+    class="chat-toggle-btn"
+    (click)="toggleChat()"
+    aria-label="Chat öffnen">
+    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+    </svg>
+    <span class="chat-badge" *ngIf="session && session.messages.length > 0">
+      {{ session.messages.length }}
+    </span>
+  </button>
+
+  <!-- Chat Window -->
+  <div class="chat-window" *ngIf="session?.isOpen">
+    <!-- Header -->
+    <div class="chat-header">
+      <div class="chat-header-content">
+        <div class="bot-avatar">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </div>
+        <div class="chat-header-text">
+          <h3>Kundenservice</h3>
+          <p class="chat-status">
+            <span class="status-indicator"></span>
+            Immer für Sie da
+          </p>
+        </div>
+      </div>
+      <div class="chat-header-actions">
+        <button class="icon-btn" (click)="clearChat()" title="Chat zurücksetzen">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="1 4 1 10 7 10"></polyline>
+            <polyline points="23 20 23 14 17 14"></polyline>
+            <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path>
+          </svg>
+        </button>
+        <button class="icon-btn" (click)="toggleChat()" title="Schließen">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div class="chat-messages" #messagesContainer>
+      <div *ngFor="let message of session?.messages"
+           class="message"
+           [class.message-customer]="message.senderType === 'CUSTOMER'"
+           [class.message-bot]="message.senderType === 'BOT'">
+
+        <div class="message-avatar" *ngIf="message.senderType === 'BOT'">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </div>
+
+        <div class="message-content">
+          <div class="message-bubble">
+            {{ message.content }}
+          </div>
+          <div class="message-time">
+            {{ formatTime(message.timestamp) }}
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="quick-actions" *ngIf="message.action && message.senderType === 'BOT'">
+            <button
+              class="quick-action-btn"
+              (click)="handleQuickAction(message.action, message.data)">
+              <span *ngIf="message.action === 'CHECK_ORDER'">📦 Bestellung verfolgen</span>
+              <span *ngIf="message.action === 'SHOW_FAQ'">❓ FAQ anzeigen</span>
+              <span *ngIf="message.action === 'TRANSFER_TO_AGENT'">👤 Mit Mitarbeiter sprechen</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Typing Indicator -->
+      <div class="message message-bot" *ngIf="session?.isTyping">
+        <div class="message-avatar">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </div>
+        <div class="message-content">
+          <div class="message-bubble typing-indicator">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="chat-input-area">
+      <textarea
+        class="chat-input"
+        [(ngModel)]="currentMessage"
+        (keypress)="handleKeyPress($event)"
+        placeholder="Ihre Nachricht..."
+        rows="1"
+        [disabled]="!!session?.isTyping"></textarea>
+      <button
+        class="send-btn"
+        (click)="sendMessage()"
+        [disabled]="!currentMessage.trim() || !!session?.isTyping"
+        aria-label="Senden">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Quick Suggestions (shown when no messages) -->
+    <div class="quick-suggestions" *ngIf="session && session.messages.length === 0">
+      <p class="suggestions-title">Wie kann ich Ihnen helfen?</p>
+      <button class="suggestion-btn" (click)="currentMessage = 'Wo ist meine Bestellung?'; sendMessage()">
+        📦 Bestellung verfolgen
+      </button>
+      <button class="suggestion-btn" (click)="currentMessage = 'Häufige Fragen'; sendMessage()">
+        ❓ Häufige Fragen
+      </button>
+      <button class="suggestion-btn" (click)="currentMessage = 'Mit Mitarbeiter sprechen'; sendMessage()">
+        👤 Mit Mitarbeiter sprechen
+      </button>
+    </div>
+  </div>
+</div>
+

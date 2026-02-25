@@ -157,6 +157,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/stores/store-reviews-manager.component').then(m => m.StoreReviewsManagerComponent),
     canActivate: [authGuard]
   },
+  {
+    path: 'dashboard/stores/:storeId/chatbot',
+    loadComponent: () => import('./components/chatbot-management/chatbot-management.component').then(m => m.ChatbotManagementComponent),
+    canActivate: [authGuard]
+  },
 
   // ==================== Product Management (Primary Routes) ====================
   // WICHTIG: Spezifische Routen (mit /new) müssen VOR allgemeinen Routen stehen!
@@ -251,6 +256,13 @@ export const routes: Routes = [
   {
     path: 'stores/:id/reviews',
     loadComponent: () => import('./features/stores/store-reviews-manager.component').then(m => m.StoreReviewsManagerComponent),
+    canActivate: [authGuard]
+  },
+
+  // ==================== Chatbot Management ====================
+  {
+    path: 'stores/:id/chatbot',
+    loadComponent: () => import('./components/chatbot-management/chatbot-management.component').then(m => m.ChatbotManagementComponent),
     canActivate: [authGuard]
   },
 

@@ -293,6 +293,8 @@ public class StoreSliderService {
      * Creates default slider settings for a store
      */
     private StoreSliderSettings createDefaultSettings(Store store) {
+        log.info("Creating default slider settings for store {}", store.getId());
+
         StoreSliderSettings settings = new StoreSliderSettings();
         settings.setStore(store);
         settings.setOverrideMode(SliderOverrideMode.DEFAULT_ONLY);
@@ -303,6 +305,31 @@ public class StoreSliderService {
         settings.setShowDots(true);
         settings.setShowArrows(true);
         settings = settingsRepository.save(settings);
+
+        // Check if store already has slider images
+        long existingImageCount = imageRepository.countByStoreIdAndImageType(
+            store.getId(), SliderImageType.DEFAULT);
+
+        // If no images exist, add default ones
+        if (existingImageCount == 0) {
+            log.info("No slider images found for store {}, adding default images", store.getId());
+            List<DefaultSliderImage> defaultImages = getDefaultImagesForCategory("general");
+
+            int order = 0;
+            for (DefaultSliderImage defImage : defaultImages) {
+                StoreSliderImage sliderImage = new StoreSliderImage();
+                sliderImage.setStore(store);
+                sliderImage.setImageUrl(defImage.getImageUrl());
+                sliderImage.setImageType(SliderImageType.DEFAULT);
+                sliderImage.setDisplayOrder(order++);
+                sliderImage.setIsActive(true);
+                sliderImage.setAltText(defImage.getAltText());
+                imageRepository.save(sliderImage);
+            }
+            log.info("Added {} default slider images for store {}", defaultImages.size(), store.getId());
+        } else {
+            log.info("Store {} already has {} slider images", store.getId(), existingImageCount);
+        }
 
         log.info("Created default slider settings for store {}", store.getId());
         return settings;

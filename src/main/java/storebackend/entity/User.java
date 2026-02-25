@@ -113,4 +113,21 @@ public class User {
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
+
+    // Helper methods for name handling
+    public String getFirstName() {
+        if (name == null || name.trim().isEmpty()) {
+            return "User";
+        }
+        String[] parts = name.trim().split("\\s+", 2);
+        return parts[0];
+    }
+
+    public String getLastName() {
+        if (name == null || name.trim().isEmpty()) {
+            return "";
+        }
+        String[] parts = name.trim().split("\\s+", 2);
+        return parts.length > 1 ? parts[1] : "";
+    }
 }

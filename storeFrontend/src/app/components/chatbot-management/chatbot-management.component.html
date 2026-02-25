@@ -1,0 +1,305 @@
+<div class="chatbot-management">
+  <div class="page-header">
+    <div>
+      <h1>🤖 Chatbot Verwaltung</h1>
+      <p class="page-subtitle">Verwalten Sie Chatbot-Intents und Antworten</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary" (click)="exportIntents()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        Export
+      </button>
+      <label class="btn btn-secondary">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="17 8 12 3 7 8"></polyline>
+          <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+        Import
+        <input type="file" accept=".json" (change)="importIntents($event)" style="display: none;">
+      </label>
+      <button class="btn btn-primary" (click)="openCreateModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        Neuer Intent
+      </button>
+    </div>
+  </div>
+
+  <!-- Statistics -->
+  <div class="statistics-grid" *ngIf="statistics">
+    <div class="stat-card">
+      <div class="stat-icon" style="background: #e3f2fd;">💬</div>
+      <div class="stat-content">
+        <div class="stat-value">{{ statistics.totalSessions }}</div>
+        <div class="stat-label">Gesamt Sessions</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon" style="background: #e8f5e9;">🎯</div>
+      <div class="stat-content">
+        <div class="stat-value">{{ statistics.resolutionRate.toFixed(1) }}%</div>
+        <div class="stat-label">Bot-Auflösungsrate</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon" style="background: #fff3e0;">👤</div>
+      <div class="stat-content">
+        <div class="stat-value">{{ statistics.agentTransferred }}</div>
+        <div class="stat-label">An Agent weitergeleitet</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon" style="background: #fce4ec;">📊</div>
+      <div class="stat-content">
+        <div class="stat-value">{{ statistics.todaySessions }}</div>
+        <div class="stat-label">Heute</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Intents List -->
+  <div class="intents-section">
+    <div *ngIf="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Lädt Intents...</p>
+    </div>
+
+    <div *ngIf="error" class="error-state">
+      <p>{{ error }}</p>
+      <button class="btn btn-secondary" (click)="loadIntents()">Erneut versuchen</button>
+    </div>
+
+    <div *ngIf="!loading && !error && intents.length === 0" class="empty-state">
+      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      </svg>
+      <h3>Keine Intents vorhanden</h3>
+      <p>Erstellen Sie Ihren ersten Chatbot-Intent</p>
+      <button class="btn btn-primary" (click)="openCreateModal()">Intent erstellen</button>
+    </div>
+
+    <div class="intents-grid" *ngIf="!loading && !error && intents.length > 0">
+      <div class="intent-card" *ngFor="let intent of intents" [class.intent-inactive]="!intent.isActive">
+        <div class="intent-header">
+          <div class="intent-title-row">
+            <h3>{{ intent.intentName }}</h3>
+            <span class="intent-badge" [class.badge-active]="intent.isActive" [class.badge-inactive]="!intent.isActive">
+              {{ intent.isActive ? 'Aktiv' : 'Inaktiv' }}
+            </span>
+          </div>
+          <p class="intent-description">{{ intent.description || 'Keine Beschreibung' }}</p>
+        </div>
+
+        <div class="intent-body">
+          <div class="intent-detail">
+            <label>Aktion:</label>
+            <span class="badge">{{ intent.action }}</span>
+          </div>
+
+          <div class="intent-detail">
+            <label>Trainingsphrasen:</label>
+            <div class="phrase-tags">
+              <span class="phrase-tag" *ngFor="let phrase of getTrainingPhrases(intent).slice(0, 3)">
+                {{ phrase }}
+              </span>
+              <span class="phrase-tag" *ngIf="getTrainingPhrases(intent).length > 3">
+                +{{ getTrainingPhrases(intent).length - 3 }} mehr
+              </span>
+            </div>
+          </div>
+
+          <div class="intent-detail">
+            <label>Antwort:</label>
+            <p class="intent-response">{{ intent.responseTemplate }}</p>
+          </div>
+
+          <div class="intent-detail">
+            <label>Confidence Threshold:</label>
+            <span>{{ (intent.confidenceThreshold * 100).toFixed(0) }}%</span>
+          </div>
+        </div>
+
+        <div class="intent-actions">
+          <button class="btn-icon" (click)="openTestModal(intent)" title="Testen">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+          </button>
+          <button class="btn-icon" (click)="openEditModal(intent)" title="Bearbeiten">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+          </button>
+          <button class="btn-icon" (click)="toggleIntent(intent)" [title]="intent.isActive ? 'Deaktivieren' : 'Aktivieren'">
+            <svg *ngIf="intent.isActive" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="15" y1="9" x2="9" y2="15"></line>
+              <line x1="9" y1="9" x2="15" y2="15"></line>
+            </svg>
+            <svg *ngIf="!intent.isActive" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </button>
+          <button class="btn-icon btn-danger" (click)="deleteIntent(intent)" title="Löschen">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Intent Modal -->
+<div class="modal-overlay" *ngIf="showIntentModal" (click)="closeModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ editingIntent ? 'Intent bearbeiten' : 'Neuer Intent' }}</h2>
+      <button class="modal-close" (click)="closeModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <form [formGroup]="intentForm" (ngSubmit)="saveIntent()">
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Intent Name *</label>
+          <input type="text" formControlName="intentName" class="form-control" placeholder="z.B. order_status">
+          <small class="error" *ngIf="intentForm.get('intentName')?.invalid && intentForm.get('intentName')?.touched">
+            Pflichtfeld
+          </small>
+        </div>
+
+        <div class="form-group">
+          <label>Beschreibung</label>
+          <textarea formControlName="description" class="form-control" rows="2" placeholder="Was macht dieser Intent?"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Trainingsphrasen *</label>
+          <div formArrayName="trainingPhrases">
+            <div *ngFor="let phrase of trainingPhrases.controls; let i = index" class="phrase-input-group">
+              <input type="text" [formControlName]="i" class="form-control" placeholder="Beispielphrase eingeben">
+              <button type="button" class="btn-icon btn-danger" (click)="removeTrainingPhrase(i)" *ngIf="trainingPhrases.length > 1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" (click)="addTrainingPhrase()">
+            + Phrase hinzufügen
+          </button>
+        </div>
+
+        <div class="form-group">
+          <label>Antwort-Template *</label>
+          <textarea formControlName="responseTemplate" class="form-control" rows="3" placeholder="Die Antwort des Bots"></textarea>
+          <small class="error" *ngIf="intentForm.get('responseTemplate')?.invalid && intentForm.get('responseTemplate')?.touched">
+            Pflichtfeld
+          </small>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Aktion *</label>
+            <select formControlName="action" class="form-control">
+              <option *ngFor="let action of availableActions" [value]="action.value">
+                {{ action.label }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Confidence Threshold</label>
+            <input type="number" formControlName="confidenceThreshold" class="form-control" min="0" max="1" step="0.01">
+            <small>Wert zwischen 0 und 1 (z.B. 0.7)</small>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" formControlName="isActive">
+            <span>Intent aktiv</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModal()">Abbrechen</button>
+        <button type="submit" class="btn btn-primary">Speichern</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Test Modal -->
+<div class="modal-overlay" *ngIf="showTestModal" (click)="closeModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Intent testen: {{ editingIntent?.intentName }}</h2>
+      <button class="modal-close" (click)="closeModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <form [formGroup]="testForm" (ngSubmit)="testIntent()">
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Testnachricht</label>
+          <input type="text" formControlName="message" class="form-control" placeholder="Geben Sie eine Nachricht ein...">
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block">Testen</button>
+
+        <div class="test-result" *ngIf="testResult">
+          <h4>Ergebnis:</h4>
+          <div class="result-item">
+            <label>Matched:</label>
+            <span [class.success]="testResult.matched" [class.error]="!testResult.matched">
+              {{ testResult.matched ? '✓ Ja' : '✗ Nein' }}
+            </span>
+          </div>
+          <div class="result-item">
+            <label>Confidence:</label>
+            <span>{{ (testResult.confidence * 100).toFixed(0) }}%</span>
+          </div>
+          <div class="result-item">
+            <label>Antwort:</label>
+            <p>{{ testResult.responseTemplate }}</p>
+          </div>
+          <div class="result-item">
+            <label>Aktion:</label>
+            <span class="badge">{{ testResult.action }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModal()">Schließen</button>
+      </div>
+    </form>
+  </div>
+</div>
+

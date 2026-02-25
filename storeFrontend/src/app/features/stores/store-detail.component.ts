@@ -34,6 +34,9 @@ import { LanguageSwitcherComponent } from '@app/shared/components/language-switc
             <button [class.active]="activeTab === 'reviews'" (click)="switchTab('reviews')">
               ⭐ Bewertungen
             </button>
+            <button [class.active]="activeTab === 'chatbot'" (click)="switchTab('chatbot')">
+              🤖 Chatbot
+            </button>
             <button [class.active]="activeTab === 'domains'" (click)="switchTab('domains')">
               🌐 Domains
             </button>
@@ -164,6 +167,69 @@ import { LanguageSwitcherComponent } from '@app/shared/components/language-switc
               <div class="info-content">
                 <h3>Moderation</h3>
                 <p>Alle neuen Bewertungen warten auf Ihre Genehmigung, bevor sie öffentlich sichtbar werden.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chatbot Tab -->
+        <div *ngIf="activeTab === 'chatbot'" class="tab-content">
+          <div class="section-header">
+            <h2>24/7 Chatbot</h2>
+            <button class="btn btn-primary" [routerLink]="['/stores', storeId, 'chatbot']">
+              Chatbot verwalten →
+            </button>
+          </div>
+          
+          <div class="reviews-info">
+            <div class="info-card">
+              <div class="info-icon">🤖</div>
+              <div class="info-content">
+                <h3>Automatische Kundenbetreuung</h3>
+                <p>Ihr Chatbot beantwortet Kundenanfragen rund um die Uhr automatisch und intelligent.</p>
+                <button class="btn btn-link" [routerLink]="['/stores', storeId, 'chatbot']">
+                  Zur Chatbot-Verwaltung →
+                </button>
+              </div>
+            </div>
+            
+            <div class="info-card">
+              <div class="info-icon">🎯</div>
+              <div class="info-content">
+                <h3>Intent-Verwaltung</h3>
+                <p>Erstellen Sie benutzerdefinierte Intents und Antworten für häufige Kundenanfragen.</p>
+              </div>
+            </div>
+            
+            <div class="info-card">
+              <div class="info-icon">📊</div>
+              <div class="info-content">
+                <h3>Statistiken & Analytics</h3>
+                <p>Verfolgen Sie die Leistung Ihres Chatbots und sehen Sie, wie viele Anfragen automatisch gelöst wurden.</p>
+              </div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-icon">🧪</div>
+              <div class="info-content">
+                <h3>Live-Testing</h3>
+                <p>Testen Sie Ihre Intents direkt im Management-Interface, bevor sie live gehen.</p>
+              </div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-icon">🌍</div>
+              <div class="info-content">
+                <h3>Mehrsprachig</h3>
+                <p>Unterstützt Deutsch, Englisch und Arabisch für internationale Kunden.</p>
+              </div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-icon">📦</div>
+              <div class="info-content">
+                <h3>Bestellverfolgung</h3>
+                <p>Kunden können direkt im Chat ihre Bestellungen verfolgen und den Status abfragen.</p>
               </div>
             </div>
           </div>
