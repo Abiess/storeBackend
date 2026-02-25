@@ -634,7 +634,8 @@ VALUES
     ('FREE', 1, 0, 1, 100, 10, 20),
     ('STARTER', 3, 1, 5, 1000, 100, 200),
     ('BUSINESS', 10, 5, 20, 10000, 1000, 2000),
-    ('ENTERPRISE', 100, 50, 100, 100000, 10000, 20000);
+    ('ENTERPRISE', 100, 50, 100, 100000, 10000, 20000)
+ON CONFLICT (name) DO NOTHING;
 
 -- Default Slider Images (Idempotent INSERT)
 WITH seed (category, image_url, alt_text, display_order) AS (
@@ -718,7 +719,8 @@ CREATE TABLE IF NOT EXISTS faq_categories (
     display_order INTEGER DEFAULT 0,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
+    FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE,
+    UNIQUE (store_id, slug)
 );
 
 CREATE INDEX IF NOT EXISTS idx_faq_category_store ON faq_categories(store_id, is_active);
@@ -776,7 +778,8 @@ CREATE TABLE IF NOT EXISTS chatbot_intents (
     confidence_threshold DECIMAL(3,2) DEFAULT 0.7,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
+    FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE,
+    UNIQUE (intent_name)
 );
 
 CREATE INDEX IF NOT EXISTS idx_chatbot_intent_store ON chatbot_intents(store_id, is_active);
@@ -805,7 +808,8 @@ VALUES
     (NULL, 'Zahlung & Rückerstattung', 'payment-refund', 'Zahlungsmethoden und Rückgaben', '💳', 2),
     (NULL, 'Produkte & Verfügbarkeit', 'products-availability', 'Produktinformationen und Lagerbestand', '🛍️', 3),
     (NULL, 'Konto & Datenschutz', 'account-privacy', 'Account-Verwaltung und Datenschutz', '👤', 4),
-    (NULL, 'Allgemeine Fragen', 'general', 'Sonstige häufig gestellte Fragen', '❓', 5);
+    (NULL, 'Allgemeine Fragen', 'general', 'Sonstige häufig gestellte Fragen', '❓', 5)
+ON CONFLICT (store_id, slug) DO NOTHING;
 
 -- Default FAQ Items (Global)
 WITH faq_seed AS (
@@ -902,5 +906,5 @@ VALUES
      '["tschüss","auf wiedersehen","bye","danke","ciao"]',
      'Vielen Dank! Bei Fragen stehe ich Ihnen jederzeit zur Verfügung. 😊',
      'END_SESSION')
-WHERE NOT EXISTS (SELECT 1 FROM chatbot_intents WHERE intent_name = 'greeting');
+ON CONFLICT (intent_name) DO NOTHING;
 
