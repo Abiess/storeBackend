@@ -141,6 +141,10 @@
   "common": {
     "actions": "Aktionen",
     "save": "Speichern",
+    "saving": "Wird gespeichert...",
+    "generating": "Wird generiert...",
+    "loading": "Lädt...",
+    "back": "Zurück",
     "cancel": "Abbrechen",
     "delete": "Löschen",
     "edit": "Bearbeiten",

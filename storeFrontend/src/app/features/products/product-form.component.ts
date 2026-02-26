@@ -4,10 +4,11 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, Router } from '@angular/router';
 import { ProductService } from '@app/core/services/product.service';
 import { CategoryService } from '@app/core/services/category.service';
-import { MediaService, UploadMediaResponse } from '@app/core/services/media.service';
+import { MediaService } from '@app/core/services/media.service';
 import { Category, ProductStatus } from '@app/core/models';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { TranslationService } from '@app/core/services/translation.service';
+import { ProductVariantsManagerComponent } from './product-variants-manager.component';
 
 interface UploadedImage {
   mediaId: number;
@@ -22,7 +23,7 @@ interface UploadedImage {
 @Component({
   selector: 'app-product-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TranslatePipe],
+  imports: [CommonModule, ReactiveFormsModule, TranslatePipe, ProductVariantsManagerComponent],
   template: `
     <div class="product-form-container">
       <div class="form-header">
@@ -196,10 +197,17 @@ interface UploadedImage {
           </div>
         </div>
 
+        <!-- Varianten Manager (nur im Edit-Modus) -->
+        <div class="form-card" *ngIf="isEditMode && productId">
+          <app-product-variants-manager 
+            [productId]="productId" 
+            [storeId]="storeId">
+          </app-product-variants-manager>
+        </div>
+
         <div class="form-actions">
           <button type="button" class="btn-secondary" (click)="goBack()">
-            {{ 'common.cancel' | translate }}
-          </button>
+            {{ 'common.cancel' | translate }}</button>
           <button 
             type="submit" 
             class="btn-primary"

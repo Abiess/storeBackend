@@ -110,4 +110,43 @@ export class ProductService {
     const body = { featured, order };
     return this.http.post<Product>(`${environment.apiUrl}/stores/${storeId}/products/${productId}/featured`, body);
   }
+
+  // Product Options
+  getProductOptions(storeId: number, productId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/stores/${storeId}/products/${productId}/options`);
+  }
+
+  createProductOption(storeId: number, productId: number, option: any): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/stores/${storeId}/products/${productId}/options`, option);
+  }
+
+  updateProductOption(storeId: number, productId: number, optionId: number, option: any): Observable<any> {
+    return this.http.put<any>(`${environment.apiUrl}/stores/${storeId}/products/${productId}/options/${optionId}`, option);
+  }
+
+  deleteProductOption(storeId: number, productId: number, optionId: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/stores/${storeId}/products/${productId}/options/${optionId}`);
+  }
+
+  // Generate Variants
+  generateVariants(storeId: number, productId: number, request: any): Observable<ProductVariant[]> {
+    return this.http.post<ProductVariant[]>(`${environment.apiUrl}/stores/${storeId}/products/${productId}/variants/generate`, request);
+  }
+
+  // Product Variants
+  getProductVariants(storeId: number, productId: number): Observable<ProductVariant[]> {
+    return this.http.get<ProductVariant[]>(`${environment.apiUrl}/stores/${storeId}/products/${productId}/variants`);
+  }
+
+  createProductVariant(storeId: number, productId: number, variant: any): Observable<ProductVariant> {
+    return this.http.post<ProductVariant>(`${environment.apiUrl}/stores/${storeId}/products/${productId}/variants`, variant);
+  }
+
+  updateProductVariant(storeId: number, productId: number, variantId: number, variant: any): Observable<ProductVariant> {
+    return this.http.put<ProductVariant>(`${environment.apiUrl}/stores/${storeId}/products/${productId}/variants/${variantId}`, variant);
+  }
+
+  deleteProductVariant(storeId: number, productId: number, variantId: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/stores/${storeId}/products/${productId}/variants/${variantId}`);
+  }
 }

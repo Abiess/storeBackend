@@ -272,6 +272,12 @@ CREATE TABLE IF NOT EXISTS inventory_logs (
     CONSTRAINT fk_inventory_logs_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
     );
 
+-- Performance Indices für Varianten und Optionen
+CREATE INDEX IF NOT EXISTS idx_product_variants_product_id ON product_variants(product_id);
+CREATE INDEX IF NOT EXISTS idx_product_variants_sku ON product_variants(sku);
+CREATE INDEX IF NOT EXISTS idx_product_options_product_id ON product_options(product_id);
+CREATE INDEX IF NOT EXISTS idx_inventory_logs_variant_id ON inventory_logs(variant_id);
+
 -- Product Media
 CREATE TABLE IF NOT EXISTS product_media (
                                              id BIGSERIAL PRIMARY KEY,

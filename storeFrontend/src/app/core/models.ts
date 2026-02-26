@@ -201,8 +201,9 @@ export interface ProductVariant {
   sku: string;
   price: number;
   stock: number;
-  stockQuantity?: number;
+  stockQuantity: number; // Required for inventory management
   attributesJson?: string;
+  attributes?: { [key: string]: string }; // Parsed attributes for UI
   options?: ProductOption[];
 }
 

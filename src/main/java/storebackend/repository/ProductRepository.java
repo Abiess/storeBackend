@@ -15,6 +15,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findByStore(Store store);
     Optional<Product> findByIdAndStore(Long id, Store store);
 
+    // FIXED: Single product with JOIN FETCH
+    @Query("SELECT p FROM Product p LEFT JOIN FETCH p.category WHERE p.id = :id AND p.store = :store")
+    Optional<Product> findByIdAndStoreWithCategory(@Param("id") Long id, @Param("store") Store store);
+
     // FIXED: JOIN FETCH to avoid LazyInitializationException
     @Query("SELECT p FROM Product p LEFT JOIN FETCH p.category WHERE p.store = :store")
     List<Product> findByStoreWithCategory(@Param("store") Store store);

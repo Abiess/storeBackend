@@ -11,6 +11,7 @@ import java.util.List;
 public class ProductDTO {
     private Long id;
     private String title;
+    private String sku;
     private String description;
     private BigDecimal basePrice;
     private ProductStatus status;
@@ -28,6 +29,9 @@ public class ProductDTO {
     // Bilder-Informationen
     private List<ProductMediaDTO> media;
     private String primaryImageUrl;
+
+    // Varianten
+    private List<ProductVariantDTO> variants;
 
     @Data
     public static class ProductMediaDTO {

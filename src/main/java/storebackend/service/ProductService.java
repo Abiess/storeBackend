@@ -1,20 +1,26 @@
 package storebackend.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import storebackend.dto.CreateProductRequest;
 import storebackend.dto.ProductDTO;
+import storebackend.dto.ProductVariantDTO;
 import storebackend.entity.Category;
 import storebackend.entity.Product;
 import storebackend.entity.ProductMedia;
+import storebackend.entity.ProductVariant;
 import storebackend.entity.Store;
 import storebackend.entity.User;
 import storebackend.repository.CategoryRepository;
 import storebackend.repository.ProductMediaRepository;
 import storebackend.repository.ProductRepository;
+import storebackend.repository.ProductVariantRepository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,8 +30,10 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final ProductMediaRepository productMediaRepository;
+    private final ProductVariantRepository productVariantRepository;
     private final StoreUsageService storeUsageService;
     private final MinioService minioService;
+    private final ObjectMapper objectMapper;
 
     @Transactional(readOnly = true)
     public List<ProductDTO> getProductsByStore(Store store) {
@@ -53,8 +61,10 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public ProductDTO getProductById(Long productId, Store store) {
-        Product product = productRepository.findByIdAndStore(productId, store)
+        // FIXED: Use JOIN FETCH to avoid LazyInitializationException
+        Product product = productRepository.findByIdAndStoreWithCategory(productId, store)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
         return toDTO(product);
     }
@@ -92,7 +102,7 @@ public class ProductService {
     }
 
     public ProductDTO updateProduct(Long productId, CreateProductRequest request, Store store) {
-        Product product = productRepository.findByIdAndStore(productId, store)
+        Product product = productRepository.findByIdAndStoreWithCategory(productId, store)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
         product.setTitle(request.getTitle());
@@ -200,6 +210,40 @@ public class ProductService {
             }
         }
 
+        // Lade Varianten für das Produkt
+        List<ProductVariant> variants = productVariantRepository.findByProductId(product.getId());
+        if (!variants.isEmpty()) {
+            List<ProductVariantDTO> variantDTOs = variants.stream()
+                    .map(this::variantToDTO)
+                    .collect(Collectors.toList());
+            dto.setVariants(variantDTOs);
+        }
+
+        return dto;
+    }
+
+    private ProductVariantDTO variantToDTO(ProductVariant variant) {
+        ProductVariantDTO dto = new ProductVariantDTO();
+        dto.setId(variant.getId());
+        dto.setProductId(variant.getProduct().getId());
+        dto.setSku(variant.getSku());
+        dto.setPrice(variant.getPrice());
+        dto.setStockQuantity(variant.getStockQuantity());
+        dto.setAttributesJson(variant.getAttributesJson());
+
+        // Parse JSON to Map for UI
+        if (variant.getAttributesJson() != null && !variant.getAttributesJson().isEmpty()) {
+            try {
+                Map<String, String> attributes = objectMapper.readValue(
+                        variant.getAttributesJson(),
+                        new TypeReference<Map<String, String>>() {}
+                );
+                dto.setAttributes(attributes);
+            } catch (Exception e) {
+                // Ignore parsing errors
+            }
+        }
+
         return dto;
     }
 
@@ -253,6 +297,20 @@ public class ProductService {
         });
     }
 
+    @Transactional(readOnly = true)
+    public ProductDTO getPublicProductById(Long productId, Long storeId) {
+        // Öffentlicher Zugriff - keine Store-Auth nötig
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+
+        if (!product.getStore().getId().equals(storeId)) {
+            throw new RuntimeException("Product does not belong to this store");
+        }
+
+        return toDTO(product);
+    }
+
+    @Transactional
     public ProductDTO setFeatured(Long productId, Store store, boolean featured, Integer order) {
         Product product = productRepository.findByIdAndStore(productId, store)
                 .orElseThrow(() -> new RuntimeException("Product not found"));

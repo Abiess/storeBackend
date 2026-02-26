@@ -76,6 +76,25 @@ public class PublicProductController {
         return ResponseEntity.ok(products);
     }
 
+    @Operation(summary = "Get product details", description = "Returns single product with variants")
+    @GetMapping("/{productId}")
+    public ResponseEntity<ProductDTO> getProductDetails(
+            @Parameter(description = "Store ID") @PathVariable Long storeId,
+            @Parameter(description = "Product ID") @PathVariable Long productId) {
+
+        log.info("Getting product {} details for store {}", productId, storeId);
+
+        // Verwende den normalen ProductService, der bereits Varianten lädt
+        // TODO: Benötigt public Version ohne Store Auth
+        try {
+            ProductDTO product = productService.getPublicProductById(productId, storeId);
+            return ResponseEntity.ok(product);
+        } catch (Exception e) {
+            log.error("Error fetching product {}: {}", productId, e.getMessage());
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @Operation(summary = "Track product view", description = "Increments view count for analytics")
     @PostMapping("/{productId}/view")
     public ResponseEntity<Void> trackView(
