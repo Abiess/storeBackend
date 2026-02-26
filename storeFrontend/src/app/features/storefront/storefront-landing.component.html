@@ -1,25 +1,38 @@
-<!-- Storefront Landing Page Template - Modern Design -->
+<!-- Modern E-Commerce Storefront - Inspired by Amazon, Zalando, About You -->
 
 <!-- Store nicht gefunden / Reservierter Slug -->
 <app-store-not-found *ngIf="storeNotFound"></app-store-not-found>
 
 <!-- Normaler Store-Inhalt -->
-<div *ngIf="!storeNotFound">
-  <!-- Header mit Store-Name und Warenkorb -->
-  <app-storefront-header
-    [storeName]="storeName || 'Loading...'"
-    [storeSlug]="storeName || ''"
-    [cartItemCount]="cartItemCount"
-    (cartClick)="router.navigate(['/cart'])">
-  </app-storefront-header>
+<div *ngIf="!storeNotFound" class="storefront-wrapper">
+  <!-- Sticky Header mit Store-Name und Warenkorb -->
+  <div class="sticky-header">
+    <app-storefront-header
+      [storeName]="storeName || 'Loading...'"
+      [storeSlug]="storeName || ''"
+      [cartItemCount]="cartItemCount"
+      (cartClick)="router.navigate(['/cart'])">
+    </app-storefront-header>
 
-  <!-- ✨ NEUE POSITION: Navigation mit Kategorien - DIREKT UNTER HEADER -->
-  <app-storefront-nav
-    *ngIf="!loading && categories.length > 0"
-    [categories]="categories"
-    [selectedCategory]="selectedCategory"
-    (categorySelect)="filterByCategory($event)">
-  </app-storefront-nav>
+    <!-- Category Pills Navigation - Mobile First -->
+    <div class="category-pills-wrapper" *ngIf="!loading && categories.length > 0">
+      <div class="category-pills">
+        <button
+          class="category-pill"
+          [class.active]="!selectedCategory"
+          (click)="filterByCategory(null)">
+          Alle
+        </button>
+        <button
+          *ngFor="let cat of categories"
+          class="category-pill"
+          [class.active]="selectedCategory?.id === cat.id"
+          (click)="filterByCategory(cat)">
+          {{ cat.name }}
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Loading Indicator -->
   <div *ngIf="loading" class="loading-container">
@@ -27,122 +40,151 @@
     <p>Store wird geladen...</p>
   </div>
 
-  <!-- Main Content -->
-  <main class="storefront-content" *ngIf="!loading">
+  <!-- Main Content with Sidebar Layout -->
+  <main class="storefront-main" *ngIf="!loading">
+    <div class="page-container">
 
-    <!-- Hero Section - Modern & Clean -->
-    <section class="hero-section">
-      <div class="container">
-        <h2>{{ storeName }}</h2>
-        <p class="hero-description">Entdecke unsere sorgfältig ausgewählten Produkte</p>
-        <button class="btn btn-primary" (click)="scrollToProducts()">
-          Jetzt einkaufen
-        </button>
-      </div>
-    </section>
-
-    <!-- Featured Products Section -->
-    <section *ngIf="featuredProducts.length > 0" class="featured-section">
-      <div class="container">
-        <div class="section-header">
-          <h3 class="section-title">Highlights</h3>
-          <p class="section-subtitle">Unsere Top-Empfehlungen für dich</p>
+      <!-- Hero/Banner Section - Compact -->
+      <section class="hero-banner">
+        <div class="hero-content">
+          <h1 class="hero-title">{{ storeName }}</h1>
+          <p class="hero-subtitle">Entdecke unsere Produkte</p>
         </div>
+      </section>
 
-        <div class="products-grid">
-          <app-product-card
-            *ngFor="let product of featuredProducts"
-            [product]="product"
-            (addToCart)="addToCart($event)"
-            (quickView)="openQuickView($event)"
-            (click)="trackProductView(product)">
-          </app-product-card>
-        </div>
-      </div>
-    </section>
+      <!-- Breadcrumbs -->
+      <nav class="breadcrumbs" aria-label="breadcrumb">
+        <ol>
+          <li><a (click)="filterByCategory(null)">Home</a></li>
+          <li *ngIf="selectedCategory" class="active">{{ selectedCategory.name }}</li>
+        </ol>
+      </nav>
 
-    <!-- Top Products (Bestseller) Section -->
-    <section *ngIf="topProducts.length > 0" class="top-products-section">
-      <div class="container">
-        <div class="section-header">
-          <h3 class="section-title">Bestseller</h3>
-          <p class="section-subtitle">Die beliebtesten Produkte unserer Kunden</p>
-        </div>
+      <!-- Products Layout: Sidebar + Grid -->
+      <div class="products-layout">
 
-        <div class="products-grid">
-          <app-product-card
-            *ngFor="let product of topProducts"
-            [product]="product"
-            (addToCart)="addToCart($event)"
-            (quickView)="openQuickView($event)"
-            (click)="trackProductView(product)">
-          </app-product-card>
-        </div>
+        <!-- Sidebar with Filters (Desktop) -->
+        <aside class="sidebar-filters">
+          <div class="filter-section">
+            <h3 class="filter-title">Kategorien</h3>
+            <ul class="category-list">
+              <li>
+                <button
+                  class="category-item"
+                  [class.active]="!selectedCategory"
+                  (click)="filterByCategory(null)">
+                  <span>Alle Produkte</span>
+                  <span class="count">({{ products.length }})</span>
+                </button>
+              </li>
+              <li *ngFor="let cat of categories">
+                <button
+                  class="category-item"
+                  [class.active]="selectedCategory?.id === cat.id"
+                  (click)="filterByCategory(cat)">
+                  <span>{{ cat.name }}</span>
+                  <span class="count">({{ getProductCountForCategory(cat) }})</span>
+                </button>
+              </li>
+            </ul>
+          </div>
+        </aside>
 
-        <!-- Sales Badge für Bestseller -->
-        <div class="bestseller-info" *ngIf="topProducts[0]?.salesCount">
-          <p>Über {{ topProducts[0].salesCount }} zufriedene Kunden</p>
-        </div>
-      </div>
-    </section>
+        <!-- Products Grid Area -->
+        <div class="products-area">
 
-    <!-- New Arrivals Section -->
-    <section *ngIf="newArrivals.length > 0" class="new-arrivals-section">
-      <div class="container">
-        <div class="section-header">
-          <h3 class="section-title">Neu eingetroffen</h3>
-          <p class="section-subtitle">Entdecke die neuesten Produkte in unserem Sortiment</p>
-        </div>
+          <!-- Toolbar with Sort & View Options -->
+          <div class="products-toolbar">
+            <div class="toolbar-left">
+              <span class="result-count">
+                {{ filteredProducts.length }} {{ filteredProducts.length === 1 ? 'Produkt' : 'Produkte' }}
+                <span *ngIf="selectedCategory"> in {{ selectedCategory.name }}</span>
+              </span>
+            </div>
+            <div class="toolbar-right">
+              <label for="sortSelect" class="sr-only">Sortieren</label>
+              <select id="sortSelect" class="sort-select" (change)="onSortChange($event)">
+                <option value="relevant">Relevanz</option>
+                <option value="price-asc">Preis aufsteigend</option>
+                <option value="price-desc">Preis absteigend</option>
+                <option value="name-asc">Name A-Z</option>
+                <option value="newest">Neueste zuerst</option>
+              </select>
+            </div>
+          </div>
 
-        <div class="products-grid">
-          <app-product-card
-            *ngFor="let product of newArrivals"
-            [product]="product"
-            (addToCart)="addToCart($event)"
-            (quickView)="openQuickView($event)"
-            (click)="trackProductView(product)">
-          </app-product-card>
-        </div>
-      </div>
-    </section>
+          <!-- Featured Products Section -->
+          <section *ngIf="featuredProducts.length > 0 && !selectedCategory" class="featured-products-section">
+            <h2 class="section-heading">⭐ Highlights</h2>
+            <div class="products-grid featured">
+              <app-product-card
+                *ngFor="let product of featuredProducts.slice(0, 4)"
+                [product]="product"
+                (addToCart)="addToCart($event)"
+                (quickView)="openQuickView($event)"
+                (click)="trackProductView(product)">
+              </app-product-card>
+            </div>
+          </section>
 
-    <!-- Products Section -->
-    <section id="products" class="products-section">
-      <div class="container">
-        <h3 class="section-title">
-          {{ selectedCategory ? selectedCategory.name : 'Alle Produkte' }}
-        </h3>
+          <!-- Bestsellers Section -->
+          <section *ngIf="topProducts.length > 0 && !selectedCategory" class="bestsellers-section">
+            <h2 class="section-heading">🔥 Bestseller</h2>
+            <div class="products-grid">
+              <app-product-card
+                *ngFor="let product of topProducts.slice(0, 4)"
+                [product]="product"
+                (addToCart)="addToCart($event)"
+                (quickView)="openQuickView($event)"
+                (click)="trackProductView(product)">
+              </app-product-card>
+            </div>
+          </section>
 
-        <!-- Keine Produkte vorhanden -->
-        <div *ngIf="filteredProducts.length === 0 && !selectedCategory" class="empty-state">
-          <div class="empty-icon">📦</div>
-          <h4>Noch keine Produkte verfügbar</h4>
-          <p>Wir arbeiten daran, neue Produkte für dich bereitzustellen.</p>
-        </div>
+          <!-- New Arrivals -->
+          <section *ngIf="newArrivals.length > 0 && !selectedCategory" class="new-arrivals-section">
+            <h2 class="section-heading">✨ Neu eingetroffen</h2>
+            <div class="products-grid">
+              <app-product-card
+                *ngFor="let product of newArrivals.slice(0, 4)"
+                [product]="product"
+                (addToCart)="addToCart($event)"
+                (quickView)="openQuickView($event)"
+                (click)="trackProductView(product)">
+              </app-product-card>
+            </div>
+          </section>
 
-        <!-- Keine Produkte in Kategorie -->
-        <div *ngIf="filteredProducts.length === 0 && selectedCategory" class="empty-state">
-          <div class="empty-icon">🔍</div>
-          <h4>Keine Produkte gefunden</h4>
-          <p>In dieser Kategorie sind aktuell keine Produkte verfügbar.</p>
-          <button class="btn btn-primary" (click)="filterByCategory(null)" style="margin-top: 1.5rem;">
-            Alle Produkte anzeigen
-          </button>
-        </div>
+          <!-- All Products Section -->
+          <section class="all-products-section">
+            <h2 class="section-heading" *ngIf="!selectedCategory">Alle Produkte</h2>
 
-        <!-- Produkte Grid -->
-        <div *ngIf="filteredProducts.length > 0" class="products-grid">
-          <app-product-card
-            *ngFor="let product of filteredProducts"
-            [product]="product"
-            (addToCart)="addToCart($event)"
-            (quickView)="openQuickView($event)"
-            (click)="trackProductView(product)">
-          </app-product-card>
-        </div>
-      </div>
-    </section>
+            <!-- Empty State -->
+            <div *ngIf="filteredProducts.length === 0" class="empty-state">
+              <div class="empty-icon">{{ selectedCategory ? '🔍' : '📦' }}</div>
+              <h3>{{ selectedCategory ? 'Keine Produkte gefunden' : 'Noch keine Produkte verfügbar' }}</h3>
+              <p>{{ selectedCategory ? 'In dieser Kategorie sind aktuell keine Produkte verfügbar.' : 'Wir arbeiten daran, neue Produkte bereitzustellen.' }}</p>
+              <button *ngIf="selectedCategory" class="btn-primary" (click)="filterByCategory(null)">
+                Alle Produkte anzeigen
+              </button>
+            </div>
 
+            <!-- Products Grid -->
+            <div *ngIf="filteredProducts.length > 0" class="products-grid main">
+              <app-product-card
+                *ngFor="let product of filteredProducts"
+                [product]="product"
+                (addToCart)="addToCart($event)"
+                (quickView)="openQuickView($event)"
+                (click)="trackProductView(product)">
+              </app-product-card>
+            </div>
+          </section>
+
+        </div><!-- End products-area -->
+      </div><!-- End products-layout -->
+
+    </div><!-- End page-container -->
   </main>
 
   <!-- Quick View Modal -->
@@ -153,11 +195,12 @@
     (addToCartEvent)="onQuickViewAddToCart($event)"
     (viewDetailsEvent)="onQuickViewDetails($event)">
   </app-product-quick-view>
-</div>
+
+</div><!-- End storefront-wrapper -->
 
 <!-- Footer -->
 <footer class="storefront-footer">
-  <div class="container">
+  <div class="footer-container">
     <p>&copy; 2026 {{ storeName || 'Store' }} · Powered by Markt.ma</p>
   </div>
 </footer>

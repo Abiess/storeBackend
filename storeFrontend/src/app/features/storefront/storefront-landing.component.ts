@@ -8,7 +8,6 @@ import { CartService } from '@app/core/services/cart.service';
 import { ThemeService } from '@app/core/services/theme.service';
 import { Product, Category } from '@app/core/models';
 import { StorefrontHeaderComponent } from './storefront-header.component';
-import { StorefrontNavComponent } from './storefront-nav.component';
 import { ProductCardComponent } from './product-card.component';
 import { StoreNotFoundComponent } from './store-not-found.component';
 import { ProductQuickViewComponent } from '@app/shared/components/product-quick-view.component';
@@ -23,7 +22,6 @@ import { ProductQuickViewComponent } from '@app/shared/components/product-quick-
   imports: [
     CommonModule,
     StorefrontHeaderComponent,
-    StorefrontNavComponent,
     ProductCardComponent,
     StoreNotFoundComponent,
     ProductQuickViewComponent
@@ -44,9 +42,7 @@ export class StorefrontLandingComponent implements OnInit {
   // NEUE: Featured Products Features
   featuredProducts: Product[] = [];
   topProducts: Product[] = [];
-  trendingProducts: Product[] = [];
   newArrivals: Product[] = [];
-  loadingFeatured = false;
 
   // NEUE: Quick View State
   quickViewProduct: Product | null = null;
@@ -428,5 +424,41 @@ export class StorefrontLandingComponent implements OnInit {
   onQuickViewDetails(product: Product): void {
     console.log('👁️ Navigate to product details:', product.id);
     this.router.navigate(['/products', product.id]);
+  }
+
+  // Neue Methoden für verbessertes UI
+  getProductCountForCategory(category: Category): number {
+    return this.products.filter(p => p.categoryId === category.id).length;
+  }
+
+  onSortChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    console.log('🔄 Sort changed:', value);
+
+    let sorted = [...this.filteredProducts];
+
+    switch (value) {
+      case 'price-asc':
+        sorted.sort((a, b) => a.basePrice - b.basePrice);
+        break;
+      case 'price-desc':
+        sorted.sort((a, b) => b.basePrice - a.basePrice);
+        break;
+      case 'name-asc':
+        sorted.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case 'newest':
+        sorted.sort((a, b) => {
+          const dateA = new Date(a.createdAt || 0).getTime();
+          const dateB = new Date(b.createdAt || 0).getTime();
+          return dateB - dateA;
+        });
+        break;
+      default: // relevant
+        // Keep original order (featured/bestsellers first)
+        break;
+    }
+
+    this.filteredProducts = sorted;
   }
 }
