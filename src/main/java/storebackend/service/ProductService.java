@@ -27,7 +27,8 @@ public class ProductService {
     private final MinioService minioService;
 
     public List<ProductDTO> getProductsByStore(Store store) {
-        return productRepository.findByStore(store).stream()
+        // FIXED: Use JOIN FETCH to avoid LazyInitializationException
+        return productRepository.findByStoreWithCategory(store).stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
@@ -41,8 +42,9 @@ public class ProductService {
             return getProductsByStore(store);
         }
 
+        // FIXED: Use JOIN FETCH to avoid LazyInitializationException
         // Produkte nach Kategorie filtern
-        return productRepository.findByStore(store).stream()
+        return productRepository.findByStoreWithCategory(store).stream()
                 .filter(p -> p.getCategory() != null && p.getCategory().getId().equals(categoryId))
                 .map(this::toDTO)
                 .collect(Collectors.toList());
