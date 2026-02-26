@@ -2,6 +2,7 @@ package storebackend.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import storebackend.dto.CreateProductRequest;
 import storebackend.dto.ProductDTO;
 import storebackend.entity.Category;
@@ -26,6 +27,7 @@ public class ProductService {
     private final StoreUsageService storeUsageService;
     private final MinioService minioService;
 
+    @Transactional(readOnly = true)
     public List<ProductDTO> getProductsByStore(Store store) {
         // FIXED: Use JOIN FETCH to avoid LazyInitializationException
         return productRepository.findByStoreWithCategory(store).stream()
@@ -36,6 +38,7 @@ public class ProductService {
     /**
      * Holt alle Produkte für einen Store, optional gefiltert nach Kategorie
      */
+    @Transactional(readOnly = true)
     public List<ProductDTO> getProductsByStoreAndCategory(Store store, Long categoryId) {
         if (categoryId == null) {
             // Alle Produkte zurückgeben
@@ -201,6 +204,7 @@ public class ProductService {
     }
 
     // Featured Products Methoden
+    @Transactional(readOnly = true)
     public List<ProductDTO> getFeaturedProducts(Long storeId) {
         return productRepository.findByStoreIdAndIsFeaturedTrueOrderByFeaturedOrderAsc(storeId)
                 .stream()
@@ -208,6 +212,7 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<ProductDTO> getTopProducts(Long storeId, int limit) {
         return productRepository.findTop10ByStoreIdOrderBySalesCountDesc(storeId)
                 .stream()
@@ -216,6 +221,7 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<ProductDTO> getTrendingProducts(Long storeId, int limit) {
         return productRepository.findTop10ByStoreIdOrderByViewCountDesc(storeId)
                 .stream()
@@ -224,6 +230,7 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<ProductDTO> getNewArrivals(Long storeId, int limit) {
         return productRepository.findTop10ByStoreIdOrderByCreatedAtDesc(storeId)
                 .stream()
