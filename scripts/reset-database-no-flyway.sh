@@ -2,7 +2,7 @@
 # ========================================
 # Database Reset Script (NON-PRODUCTION ONLY!)
 # ========================================
-# Drops and recreates the database, then applies schema.sql
+# Drops and recreates the database, then lets Hibernate recreate schema
 # USE WITH EXTREME CAUTION - ALL DATA WILL BE LOST!
 
 set -e
@@ -14,7 +14,7 @@ echo ""
 echo "This will:"
 echo "  1. Drop ALL data in storedb"
 echo "  2. Drop and recreate the public schema"
-echo "  3. Apply schema.sql"
+echo "  3. Restart backend (Hibernate will recreate schema automatically)"
 echo ""
 echo "⚠️  ALL DATA WILL BE PERMANENTLY DELETED!"
 echo ""
@@ -25,16 +25,9 @@ if [ "$1" != "--confirm" ]; then
   echo ""
   echo "Usage: $0 --confirm"
   echo ""
-  echo "Example: sudo -u postgres ./reset-database-no-flyway.sh --confirm"
+  echo "Example: sudo ./reset-database-no-flyway.sh --confirm"
   exit 1
 fi
-
-# Load DB password
-if [ -f /etc/storebackend.env ]; then
-  source /etc/storebackend.env
-fi
-
-DB_PASSWORD="${SPRING_DATASOURCE_PASSWORD:-postgres}"
 
 echo "🗑️  Dropping public schema..."
 
@@ -47,17 +40,30 @@ EOF
 
 echo "✅ Schema dropped and recreated"
 echo ""
-echo "📦 Applying schema.sql..."
+echo "🔄 Restarting backend..."
+echo "   (Hibernate will recreate schema from Entities)"
+echo ""
 
-PGPASSWORD="$DB_PASSWORD" psql -U storeapp -d storedb \
-  -f /opt/storebackend/scripts/schema.sql \
-  -v ON_ERROR_STOP=1
+sudo systemctl restart storebackend
 
-if [ $? -eq 0 ]; then
+echo "⏳ Waiting for backend to start..."
+sleep 5
+
+# Check if backend is healthy
+if systemctl is-active --quiet storebackend; then
   echo ""
   echo "========================================="
   echo "✅ DATABASE RESET SUCCESSFUL"
   echo "========================================="
+  echo ""
+  echo "Backend is running and Hibernate has recreated the schema."
+  echo "Initial data (Plans) will be created by DataInitializer."
+  echo ""
+else
+  echo ""
+  echo "⚠️  Backend start might need more time."
+  echo "Check logs: sudo journalctl -u storebackend -n 50"
+fi
   echo ""
   echo "Database is now empty with fresh schema"
   echo ""

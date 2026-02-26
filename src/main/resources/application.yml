@@ -4,7 +4,7 @@ spring:
 
   # H2 In-Memory Database (lokale Entwicklung ohne PostgreSQL)
   datasource:
-    url: jdbc:h2:mem:storedb
+    url: jdbc:h2:mem:storedb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
     driver-class-name: org.h2.Driver
     username: sa
     password:
@@ -21,7 +21,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate  # ✅ Schema-Validierung - Schema kommt von scripts/db/schema.sql
+      ddl-auto: create-drop  # ✅ H2: Lasse Hibernate Schema erstellen (aus Entities)
     show-sql: true
     properties:
       hibernate:
@@ -31,6 +31,10 @@ spring:
           batch_size: 20
         order_inserts: true
         order_updates: true
+
+  sql:
+    init:
+      mode: never  # ✅ Schema.sql für H2 deaktiviert - Hibernate erstellt Schema aus Entities
 
   servlet:
     multipart:

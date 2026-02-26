@@ -113,6 +113,24 @@ CREATE TABLE IF NOT EXISTS user_roles (
     CONSTRAINT fk_user_roles_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
 
+-- Subscriptions Tabelle
+CREATE TABLE IF NOT EXISTS subscriptions (
+                                            id BIGSERIAL PRIMARY KEY,
+                                            user_id BIGINT NOT NULL,
+                                            plan VARCHAR(50) NOT NULL DEFAULT 'FREE',
+    status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
+    start_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    end_date TIMESTAMP,
+    renewal_date TIMESTAMP,
+    payment_method VARCHAR(50),
+    amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    billing_cycle VARCHAR(20) NOT NULL DEFAULT 'MONTHLY',
+    auto_renew BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_subscriptions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
 -- Customer Profiles Tabelle
 CREATE TABLE IF NOT EXISTS customer_profiles (
                                                  id BIGSERIAL PRIMARY KEY,

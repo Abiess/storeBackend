@@ -30,6 +30,10 @@ spring:
         order_inserts: true
         order_updates: true
 
+  sql:
+    init:
+      mode: never  # ✅ Deaktiviere schema.sql - Hibernate erstellt Schema aus Entities
+
   servlet:
     multipart:
       max-file-size: 10MB
