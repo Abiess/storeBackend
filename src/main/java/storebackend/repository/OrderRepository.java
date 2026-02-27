@@ -17,4 +17,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByStoreIdAndStatusOrderByCreatedAtDesc(Long storeId, OrderStatus status);
     Optional<Order> findByOrderNumber(String orderNumber);
     List<Order> findByStoreIdAndCreatedAtBetween(Long storeId, LocalDateTime start, LocalDateTime end);
+
+    // Delete method for cascade deletion
+    void deleteByStoreId(Long storeId);
 }

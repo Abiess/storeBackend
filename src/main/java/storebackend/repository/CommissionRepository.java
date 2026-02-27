@@ -22,4 +22,10 @@ public interface CommissionRepository extends JpaRepository<Commission, Long> {
 
     @Query("SELECT SUM(c.amount) FROM Commission c WHERE c.recipientType = :type AND c.recipientId = :id AND c.status = :status")
     Double sumAmountByRecipient(@Param("type") String recipientType, @Param("id") Long recipientId, @Param("status") String status);
+
+    // Delete methods for cascade deletion
+    void deleteByOrderId(Long orderId);
+
+    @Query("DELETE FROM Commission c WHERE c.order.store.id = :storeId")
+    void deleteByStoreId(@Param("storeId") Long storeId);
 }

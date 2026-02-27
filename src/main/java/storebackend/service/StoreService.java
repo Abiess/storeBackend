@@ -13,9 +13,7 @@ import storebackend.entity.Store;
 import storebackend.entity.User;
 import storebackend.enums.Role;
 import storebackend.enums.StoreStatus;
-import storebackend.repository.DomainRepository;
-import storebackend.repository.StoreRepository;
-import storebackend.repository.UserRepository;
+import storebackend.repository.*;
 
 import java.util.HashSet;
 import java.util.List;
@@ -32,7 +30,16 @@ public class StoreService {
     private final DomainRepository domainRepository;
     private final MediaService mediaService;
     private final SaasProperties saasProperties;
-    private final StorePostCreateService postCreateService;  // NEU: Separater Service für Post-Create-Operationen
+    private final StorePostCreateService postCreateService;
+
+    // Repositories für Cascade-Deletion
+    private final CommissionRepository commissionRepository;
+    private final OrderRepository orderRepository;
+    private final OrderItemRepository orderItemRepository;
+    private final OrderStatusHistoryRepository orderStatusHistoryRepository;
+    private final CartRepository cartRepository;
+    private final CartItemRepository cartItemRepository;
+    private final ProductReviewRepository productReviewRepository;
 
     // NEUE: Liste der reservierten Slugs, die NICHT als Stores verwendet werden dürfen
     private static final Set<String> RESERVED_SLUGS = Set.of(
@@ -216,36 +223,109 @@ public class StoreService {
         Store store = storeRepository.findByIdWithOwner(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
 
-        // Verify ownership
+        // Verify ownership (Store Manager kann seinen eigenen Store löschen)
         if (!store.getOwner().getId().equals(user.getId())) {
             throw new RuntimeException("You are not authorized to delete this store");
         }
 
-        log.info("Starting deletion of store {} by user {}", storeId, user.getEmail());
+        log.info("🗑️ Starting COMPLETE deletion of store {} ('{}') by user {}",
+                 storeId, store.getName(), user.getEmail());
 
-        // 1. Lösche alle Medien (Bilder) aus MinIO
-        int deletedMediaCount = 0;
         try {
-            deletedMediaCount = mediaService.deleteAllMediaForStore(store);
-            log.info("Deleted {} media files from MinIO for store {}", deletedMediaCount, storeId);
+            // === PHASE 1: Commissions (ZUERST!) ===
+            // Diese haben FK zu Orders, müssen also vor Orders gelöscht werden
+            log.info("Phase 1: Deleting commissions...");
+            var orders = orderRepository.findByStoreIdOrderByCreatedAtDesc(storeId);
+            int commissionCount = 0;
+            for (var order : orders) {
+                var commissions = commissionRepository.findByOrderId(order.getId());
+                commissionCount += commissions.size();
+                commissionRepository.deleteAll(commissions);
+            }
+            log.info("✅ Deleted {} commissions", commissionCount);
+
+            // === PHASE 2: Order Dependencies ===
+            log.info("Phase 2: Deleting order dependencies...");
+            int orderItemCount = 0;
+            int statusHistoryCount = 0;
+            for (var order : orders) {
+                // Order Items
+                var orderItems = orderItemRepository.findByOrderId(order.getId());
+                orderItemCount += orderItems.size();
+                orderItemRepository.deleteAll(orderItems);
+
+                // Order Status History
+                var statusHistory = orderStatusHistoryRepository.findByOrderIdOrderByTimestampDesc(order.getId());
+                statusHistoryCount += statusHistory.size();
+                orderStatusHistoryRepository.deleteAll(statusHistory);
+            }
+            log.info("✅ Deleted {} order items, {} status histories", orderItemCount, statusHistoryCount);
+
+            // === PHASE 3: Orders ===
+            log.info("Phase 3: Deleting orders...");
+            int orderCount = orders.size();
+            orderRepository.deleteAll(orders);
+            log.info("✅ Deleted {} orders", orderCount);
+
+            // === PHASE 4: Product Reviews ===
+            log.info("Phase 4: Deleting product reviews...");
+            int reviewCount = productReviewRepository.findAll().stream()
+                .filter(r -> r.getProduct().getStore().getId().equals(storeId))
+                .mapToInt(r -> {
+                    productReviewRepository.delete(r);
+                    return 1;
+                })
+                .sum();
+            log.info("✅ Deleted {} product reviews", reviewCount);
+
+            // === PHASE 5: Cart Items ===
+            log.info("Phase 5: Deleting cart items...");
+            var carts = cartRepository.findAll().stream()
+                .filter(c -> c.getStore() != null && c.getStore().getId().equals(storeId))
+                .toList();
+            int cartItemCount = 0;
+            for (var cart : carts) {
+                var cartItems = cartItemRepository.findByCartId(cart.getId());
+                cartItemCount += cartItems.size();
+                cartItemRepository.deleteAll(cartItems);
+            }
+            log.info("✅ Deleted {} cart items from {} carts", cartItemCount, carts.size());
+
+            // === PHASE 6: Carts ===
+            log.info("Phase 6: Deleting carts...");
+            cartRepository.deleteAll(carts);
+            log.info("✅ Deleted {} carts", carts.size());
+
+            // === PHASE 7: Media Files (MinIO) ===
+            log.info("Phase 7: Deleting media files from MinIO...");
+            int deletedMediaCount = 0;
+            try {
+                deletedMediaCount = mediaService.deleteAllMediaForStore(store);
+                log.info("✅ Deleted {} media files from MinIO", deletedMediaCount);
+            } catch (Exception e) {
+                log.error("⚠️ Error deleting media files (continuing): {}", e.getMessage());
+            }
+
+            // === PHASE 8: Domains ===
+            log.info("Phase 8: Deleting domains...");
+            List<Domain> domains = domainRepository.findByStore(store);
+            int domainCount = domains.size();
+            if (!domains.isEmpty()) {
+                domainRepository.deleteAll(domains);
+                log.info("✅ Deleted {} domains", domainCount);
+            }
+
+            // === PHASE 9: Store (mit CASCADE für Products, Categories, etc.) ===
+            log.info("Phase 9: Deleting store entity (CASCADE: products, categories, themes, etc.)...");
+            storeRepository.delete(store);
+
+            log.info("🎉 Store {} COMPLETELY deleted: {} orders, {} commissions, {} domains, {} media files, by user {}",
+                     storeId, orderCount, commissionCount, domainCount, deletedMediaCount, user.getEmail());
+
         } catch (Exception e) {
-            log.error("Error deleting media files for store {}: {}", storeId, e.getMessage());
-            // Fortfahren trotz Fehler, um Store trotzdem zu löschen
+            log.error("❌ Error during store deletion: {}", e.getMessage(), e);
+            throw new RuntimeException("Fehler beim Löschen des Stores: " + e.getMessage(), e);
         }
-
-        // 2. Lösche alle Domains des Stores
-        List<Domain> domains = domainRepository.findByStore(store);
-        int domainCount = domains.size();
-        if (!domains.isEmpty()) {
-            domainRepository.deleteAll(domains);
-            log.info("Deleted {} domains for store {}", domainCount, storeId);
-        }
-
-        // 3. Lösche den Store (CASCADE löscht automatisch: Products, Orders, Categories, etc.)
-        storeRepository.delete(store);
-
-        log.info("Store {} completely deleted: {} domains, {} media files, by user {}",
-                 storeId, domainCount, deletedMediaCount, user.getEmail());
     }
 
     public List<Store> getStoresByUserId(Long userId) {

@@ -9,5 +9,8 @@ import java.util.List;
 @Repository
 public interface OrderStatusHistoryRepository extends JpaRepository<OrderStatusHistory, Long> {
     List<OrderStatusHistory> findByOrderIdOrderByTimestampDesc(Long orderId);
+
+    // Delete method for cascade deletion
+    void deleteByOrderId(Long orderId);
 }
 

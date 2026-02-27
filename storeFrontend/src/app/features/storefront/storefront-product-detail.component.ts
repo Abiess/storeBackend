@@ -531,14 +531,33 @@ export class StorefrontProductDetailComponent implements OnInit {
       next: (product) => {
         this.product = product as any;
         this.currentImage = product.primaryImageUrl || null;
-        this.loading = false;
-        
+
+        // Lade Varianten für das Produkt
+        this.loadProductVariants();
+
         // Track view
         this.productService.trackProductView(this.storeId, this.productId).subscribe();
       },
       error: (err) => {
         console.error('Error loading product:', err);
         this.error = 'Produkt konnte nicht geladen werden.';
+        this.loading = false;
+      }
+    });
+  }
+
+  loadProductVariants() {
+    this.productService.getProductVariants(this.storeId, this.productId).subscribe({
+      next: (variants) => {
+        if (this.product) {
+          this.product.variants = variants;
+          console.log('✅ Loaded variants:', variants.length);
+        }
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Error loading variants:', err);
+        // Nicht kritisch - Produkt kann auch ohne Varianten angezeigt werden
         this.loading = false;
       }
     });
