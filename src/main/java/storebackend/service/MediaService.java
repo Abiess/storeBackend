@@ -143,6 +143,35 @@ public class MediaService {
     }
 
     /**
+     * Delete all media for a store (used when deleting a store)
+     */
+    @Transactional
+    public int deleteAllMediaForStore(Store store) {
+        List<Media> mediaList = mediaRepository.findByStore(store);
+        int deletedCount = 0;
+
+        for (Media media : mediaList) {
+            try {
+                // Delete from MinIO
+                minioService.deleteFile(media.getMinioObjectName());
+                deletedCount++;
+                log.debug("Deleted MinIO file: {}", media.getMinioObjectName());
+            } catch (Exception e) {
+                log.warn("Failed to delete MinIO file: {} - {}", media.getMinioObjectName(), e.getMessage());
+                // Continue with next file even if one fails
+            }
+        }
+
+        // Delete all media records from database
+        if (!mediaList.isEmpty()) {
+            mediaRepository.deleteAll(mediaList);
+            log.info("Deleted {} media records from database for store {}", mediaList.size(), store.getId());
+        }
+
+        return deletedCount;
+    }
+
+    /**
      * Validate file
      */
     private void validateFile(MultipartFile file) {

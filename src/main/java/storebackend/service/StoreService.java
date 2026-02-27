@@ -30,6 +30,7 @@ public class StoreService {
     private final StoreRepository storeRepository;
     private final UserRepository userRepository;
     private final DomainRepository domainRepository;
+    private final MediaService mediaService;
     private final SaasProperties saasProperties;
     private final StorePostCreateService postCreateService;  // NEU: Separater Service für Post-Create-Operationen
 
@@ -220,16 +221,31 @@ public class StoreService {
             throw new RuntimeException("You are not authorized to delete this store");
         }
 
-        // Lösche alle Domains des Stores VOR dem Store-Löschen
-        // Dies verhindert Probleme mit Primary-Domain-Constraints
+        log.info("Starting deletion of store {} by user {}", storeId, user.getEmail());
+
+        // 1. Lösche alle Medien (Bilder) aus MinIO
+        int deletedMediaCount = 0;
+        try {
+            deletedMediaCount = mediaService.deleteAllMediaForStore(store);
+            log.info("Deleted {} media files from MinIO for store {}", deletedMediaCount, storeId);
+        } catch (Exception e) {
+            log.error("Error deleting media files for store {}: {}", storeId, e.getMessage());
+            // Fortfahren trotz Fehler, um Store trotzdem zu löschen
+        }
+
+        // 2. Lösche alle Domains des Stores
         List<Domain> domains = domainRepository.findByStore(store);
         int domainCount = domains.size();
         if (!domains.isEmpty()) {
             domainRepository.deleteAll(domains);
+            log.info("Deleted {} domains for store {}", domainCount, storeId);
         }
 
+        // 3. Lösche den Store (CASCADE löscht automatisch: Products, Orders, Categories, etc.)
         storeRepository.delete(store);
-        log.info("Store {} and {} domains deleted by user {}", storeId, domainCount, user.getEmail());
+
+        log.info("Store {} completely deleted: {} domains, {} media files, by user {}",
+                 storeId, domainCount, deletedMediaCount, user.getEmail());
     }
 
     public List<Store> getStoresByUserId(Long userId) {
