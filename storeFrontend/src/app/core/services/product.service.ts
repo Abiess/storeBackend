@@ -133,11 +133,18 @@ export class ProductService {
     return this.http.post<ProductVariant[]>(`${environment.apiUrl}/stores/${storeId}/products/${productId}/variants/generate`, request);
   }
 
-  // Product Variants
+  // Product Variants - PUBLIC für Storefront
   getProductVariants(storeId: number, productId: number): Observable<ProductVariant[]> {
-    return this.http.get<ProductVariant[]>(`${environment.apiUrl}/stores/${storeId}/products/${productId}/variants`);
+    // Im Storefront-Kontext verwenden wir die PUBLIC API
+    return this.http.get<ProductVariant[]>(`${environment.publicApiUrl}/stores/${storeId}/products/${productId}/variants`);
   }
 
+  // Product Options - PUBLIC für Storefront
+  getPublicProductOptions(storeId: number, productId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.publicApiUrl}/stores/${storeId}/products/${productId}/options`);
+  }
+
+  // ADMIN: Product Variants Management
   createProductVariant(storeId: number, productId: number, variant: any): Observable<ProductVariant> {
     return this.http.post<ProductVariant>(`${environment.apiUrl}/stores/${storeId}/products/${productId}/variants`, variant);
   }

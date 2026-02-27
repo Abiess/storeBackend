@@ -1749,9 +1749,100 @@ BEGIN
     END IF;
 END $$;
 
+-- =====================================================
+-- V10: DROPSHIPPING SYSTEM - PHASE 1
+-- =====================================================
+-- Dropshipping Sources (Supplier Links per Variant)
+CREATE TABLE IF NOT EXISTS dropshipping_sources (
+    id BIGSERIAL PRIMARY KEY,
+    variant_id BIGINT NOT NULL,
+    supplier_type VARCHAR(20) NOT NULL DEFAULT 'MANUAL',
+    supplier_url VARCHAR(1000) NOT NULL,
+    supplier_name VARCHAR(255),
+    purchase_price DECIMAL(10, 2) NOT NULL CHECK (purchase_price >= 0),
+    estimated_shipping_days INTEGER CHECK (estimated_shipping_days >= 0),
+    supplier_sku VARCHAR(255),
+    cj_product_id VARCHAR(255),
+    cj_variant_id VARCHAR(255),
+    notes TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by BIGINT NOT NULL,
+
+    CONSTRAINT fk_dropshipping_sources_variant
+        FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE CASCADE,
+    CONSTRAINT fk_dropshipping_sources_creator
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+    CONSTRAINT uk_dropshipping_sources_variant
+        UNIQUE (variant_id),
+    CONSTRAINT check_supplier_type
+        CHECK (supplier_type IN ('MANUAL', 'CJ'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_dropshipping_sources_variant ON dropshipping_sources(variant_id);
+CREATE INDEX IF NOT EXISTS idx_dropshipping_sources_creator ON dropshipping_sources(created_by);
+
+-- Supplier Connections (API Tokens per Store)
+CREATE TABLE IF NOT EXISTS supplier_connections (
+    id BIGSERIAL PRIMARY KEY,
+    store_id BIGINT NOT NULL,
+    supplier_type VARCHAR(20) NOT NULL,
+    api_key VARCHAR(500),
+    api_secret VARCHAR(500),
+    access_token TEXT,
+    refresh_token TEXT,
+    token_expires_at TIMESTAMP,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_supplier_connections_store
+        FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE,
+    CONSTRAINT uk_supplier_connections_store_type
+        UNIQUE (store_id, supplier_type),
+    CONSTRAINT check_supplier_connection_type
+        CHECK (supplier_type IN ('CJ', 'ALIEXPRESS', 'ALIBABA'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_supplier_connections_store ON supplier_connections(store_id);
+CREATE INDEX IF NOT EXISTS idx_supplier_connections_type ON supplier_connections(supplier_type);
+
+-- Order Items Fulfillment Tracking
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'order_items' AND column_name = 'fulfillment_status') THEN
+        ALTER TABLE order_items ADD COLUMN fulfillment_status VARCHAR(50) DEFAULT 'PENDING';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'order_items' AND column_name = 'supplier_order_id') THEN
+        ALTER TABLE order_items ADD COLUMN supplier_order_id VARCHAR(255);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'order_items' AND column_name = 'supplier_tracking_number') THEN
+        ALTER TABLE order_items ADD COLUMN supplier_tracking_number VARCHAR(255);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'order_items' AND column_name = 'supplier_carrier') THEN
+        ALTER TABLE order_items ADD COLUMN supplier_carrier VARCHAR(100);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'order_items' AND column_name = 'ordered_from_supplier_at') THEN
+        ALTER TABLE order_items ADD COLUMN ordered_from_supplier_at TIMESTAMP;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'order_items' AND column_name = 'fulfilled_at') THEN
+        ALTER TABLE order_items ADD COLUMN fulfilled_at TIMESTAMP;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'order_items' AND column_name = 'fulfillment_notes') THEN
+        ALTER TABLE order_items ADD COLUMN fulfillment_notes TEXT;
+    END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_order_items_fulfillment_status ON order_items(fulfillment_status);
+
 -- =====================
 -- Comments
 -- =====================
+COMMENT ON TABLE dropshipping_sources IS 'Supplier links and purchase prices for dropshipping variants (ROLE_RESELLER)';
+COMMENT ON COLUMN dropshipping_sources.supplier_url IS 'Full URL to supplier product (Alibaba, AliExpress, CJ, etc.)';
+COMMENT ON COLUMN dropshipping_sources.purchase_price IS 'Purchase price from supplier for margin calculation';
+COMMENT ON COLUMN order_items.fulfillment_status IS 'Dropshipping fulfillment: PENDING, ORDERED, SHIPPED, DELIVERED, CANCELLED';
+
 COMMENT ON TABLE phone_verifications IS 'SMS/WhatsApp verification codes for order checkout';
 COMMENT ON TABLE seo_assets IS 'SEO-related assets like OG images, favicons, etc.';
 COMMENT ON TABLE seo_settings IS 'Store-specific SEO metadata and configuration';

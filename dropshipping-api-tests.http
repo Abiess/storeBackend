@@ -1,0 +1,213 @@
+### ============================================
+### DROPSHIPPING API TESTS - Phase 1
+### ============================================
+### Ersetze {{token}} und {{variantId}} mit echten Werten
+
+@baseUrl = http://localhost:8080/api
+@token = YOUR_JWT_TOKEN_HERE
+@storeId = 1
+@productId = 1
+@variantId = 1
+@orderId = 1
+@orderItemId = 1
+
+### ============================================
+### 1. LOGIN (um Token zu bekommen)
+### ============================================
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "essoudati@hotmail.de",
+  "password": "yourpassword"
+}
+
+### ============================================
+### 2. SUPPLIER-LINK HINZUFÜGEN
+### ============================================
+POST {{baseUrl}}/dropshipping/variants/{{variantId}}/source
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "supplierUrl": "https://www.alibaba.com/product/premium-tshirt-red",
+  "supplierName": "Alibaba Fashion Supplier Co.",
+  "purchasePrice": 6.50,
+  "estimatedShippingDays": 14,
+  "supplierSku": "ALI-TSHIRT-RED-M-2024",
+  "notes": "Mindestbestellmenge: 10 Stück\nZahlungsmethode: PayPal\nKontakt: supplier@alibaba.com"
+}
+
+### ============================================
+### 3. SUPPLIER-LINK LADEN
+### ============================================
+GET {{baseUrl}}/dropshipping/variants/{{variantId}}/source
+Authorization: Bearer {{token}}
+
+### ============================================
+### 4. SUPPLIER-LINK AKTUALISIEREN
+### ============================================
+PUT {{baseUrl}}/dropshipping/variants/{{variantId}}/source
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "supplierUrl": "https://www.alibaba.com/product/premium-tshirt-red",
+  "supplierName": "Alibaba Fashion Supplier Co.",
+  "purchasePrice": 7.00,
+  "estimatedShippingDays": 12,
+  "supplierSku": "ALI-TSHIRT-RED-M-2024",
+  "notes": "Preis erhöht auf 7.00€ (Stand: 27.02.2026)"
+}
+
+### ============================================
+### 5. ALLE SUPPLIER-LINKS FÜR PRODUCT
+### ============================================
+GET {{baseUrl}}/dropshipping/products/{{productId}}/sources
+Authorization: Bearer {{token}}
+
+### ============================================
+### 6. ALLE SUPPLIER-LINKS FÜR STORE
+### ============================================
+GET {{baseUrl}}/dropshipping/stores/{{storeId}}/sources
+Authorization: Bearer {{token}}
+
+### ============================================
+### 7. ORDER ITEMS MIT DROPSHIPPING-INFO
+### ============================================
+GET {{baseUrl}}/dropshipping/orders/{{orderId}}/items
+Authorization: Bearer {{token}}
+
+### ============================================
+### 8. FULFILLMENT STATUS UPDATEN: ORDERED
+### ============================================
+PUT {{baseUrl}}/dropshipping/order-items/{{orderItemId}}/fulfillment
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "ORDERED",
+  "supplierOrderId": "ALI-2024-12345-TEST",
+  "notes": "Bestellt via Alibaba Trade Assurance am 27.02.2026"
+}
+
+### ============================================
+### 9. FULFILLMENT STATUS UPDATEN: SHIPPED
+### ============================================
+PUT {{baseUrl}}/dropshipping/order-items/{{orderItemId}}/fulfillment
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "SHIPPED",
+  "supplierOrderId": "ALI-2024-12345-TEST",
+  "trackingNumber": "1Z999AA10123456784",
+  "carrier": "DHL Express",
+  "notes": "Versendet am 28.02.2026, geschätzte Ankunft: 12.03.2026"
+}
+
+### ============================================
+### 10. FULFILLMENT STATUS UPDATEN: DELIVERED
+### ============================================
+PUT {{baseUrl}}/dropshipping/order-items/{{orderItemId}}/fulfillment
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "DELIVERED",
+  "trackingNumber": "1Z999AA10123456784",
+  "carrier": "DHL Express",
+  "notes": "Erfolgreich zugestellt am 11.03.2026"
+}
+
+### ============================================
+### 11. STORE GESAMT-MARGE BERECHNEN
+### ============================================
+GET {{baseUrl}}/dropshipping/stores/{{storeId}}/margin
+Authorization: Bearer {{token}}
+
+### ============================================
+### 12. SUPPLIER-LINK LÖSCHEN
+### ============================================
+DELETE {{baseUrl}}/dropshipping/variants/{{variantId}}/source
+Authorization: Bearer {{token}}
+
+### ============================================
+### ERWARTETE RESPONSES
+### ============================================
+
+# Nach Schritt 2 (Supplier-Link hinzufügen):
+# {
+#   "id": 1,
+#   "variantId": 123,
+#   "supplierUrl": "https://www.alibaba.com/product/premium-tshirt-red",
+#   "supplierName": "Alibaba Fashion Supplier Co.",
+#   "purchasePrice": 6.50,
+#   "estimatedShippingDays": 14,
+#   "supplierSku": "ALI-TSHIRT-RED-M-2024",
+#   "notes": "Mindestbestellmenge: 10 Stück...",
+#   "salePrice": 19.99,
+#   "marginPercentage": 0.6750,    ← 67.5% Marge!
+#   "profitAmount": 13.49           ← 13.49€ Gewinn
+# }
+
+# Nach Schritt 7 (Order Items):
+# [
+#   {
+#     "id": 456,
+#     "name": "Test T-Shirt",
+#     "variantTitle": "Rot, M",
+#     "quantity": 2,
+#     "price": 19.99,
+#     "total": 39.98,
+#     "fulfillmentStatus": "PENDING",
+#     "dropshippingSource": {
+#       "supplierUrl": "https://www.alibaba.com/product/premium-tshirt-red",
+#       "purchasePrice": 6.50,
+#       "marginPercentage": 0.6750
+#     }
+#   }
+# ]
+
+# Nach Schritt 11 (Store Margin):
+# {
+#   "marginPercentage": 0.6750
+# }
+
+### ============================================
+### ERROR CASES (zum Testen)
+### ============================================
+
+### Ungültige URL
+POST {{baseUrl}}/dropshipping/variants/{{variantId}}/source
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "supplierUrl": "not-a-valid-url",
+  "purchasePrice": 6.50
+}
+# Erwartung: 400 Bad Request
+
+### Negativer Preis
+POST {{baseUrl}}/dropshipping/variants/{{variantId}}/source
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "supplierUrl": "https://www.alibaba.com/test",
+  "purchasePrice": -5.00
+}
+# Erwartung: 400 Bad Request
+
+### Ohne ROLE_RESELLER
+GET {{baseUrl}}/dropshipping/variants/{{variantId}}/source
+# Kein Token oder Token ohne ROLE_RESELLER
+# Erwartung: 401/403 Forbidden
+
+### Fremder Store
+GET {{baseUrl}}/dropshipping/variants/999999/source
+Authorization: Bearer {{token}}
+# Variant gehört anderem Store Owner
+# Erwartung: 403 Forbidden
+

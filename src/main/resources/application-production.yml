@@ -159,3 +159,10 @@ minio:
 
   endpoint: ${MINIO_ENDPOINT:https://minio.markt.ma}
   secure: ${MINIO_SECURE:true}
+
+# CJ Dropshipping API Configuration (Production)
+cj:
+  api:
+    base-url: ${CJ_API_BASE_URL:https://developers.cjdropshipping.com/api2.0/v1}
+    timeout: ${CJ_API_TIMEOUT:30000}
+

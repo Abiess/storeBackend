@@ -1,0 +1,302 @@
+### ==============================================
+### CJ DROPSHIPPING API INTEGRATION TESTS
+### Phase 2: Proof of Concept
+### ==============================================
+
+@baseUrl = http://localhost:8080/api
+@token = Bearer YOUR_JWT_TOKEN_HERE
+@storeId = 1
+@variantId = 1
+@productId = 1
+@orderItemId = 1
+
+### ==============================================
+### 1. CJ CONNECTION MANAGEMENT
+### ==============================================
+
+### 1.1 Connect Store to CJ
+POST {{baseUrl}}/cj/stores/{{storeId}}/connect
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "email": "your-cj-email@example.com",
+  "password": "your-cj-password"
+}
+
+### Expected Response:
+# {
+#   "connected": true,
+#   "message": "CJ connected successfully",
+#   "errorCode": null
+# }
+
+### 1.2 Check CJ Connection Status
+GET {{baseUrl}}/cj/stores/{{storeId}}/status
+Authorization: {{token}}
+
+### Expected Response:
+# {
+#   "connected": true,
+#   "message": "CJ connected",
+#   "errorCode": null
+# }
+
+### 1.3 Disconnect Store from CJ
+DELETE {{baseUrl}}/cj/stores/{{storeId}}/disconnect
+Authorization: {{token}}
+
+### Expected Response:
+# {
+#   "connected": false,
+#   "message": "CJ disconnected",
+#   "errorCode": null
+# }
+
+### ==============================================
+### 2. SUPPLIER LINK WITH CJ TYPE
+### ==============================================
+
+### 2.1 Add CJ Supplier Link to Variant
+POST {{baseUrl}}/dropshipping/variants/{{variantId}}/source
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "supplierType": "CJ",
+  "supplierUrl": "https://cjdropshipping.com/product/123456",
+  "supplierName": "CJ Dropshipping",
+  "purchasePrice": 6.50,
+  "estimatedShippingDays": 7,
+  "supplierSku": "CJ-SKU-123",
+  "cjProductId": "CJ-PROD-12345",
+  "cjVariantId": "CJ-VAR-67890",
+  "notes": "CJ Product - Auto-order enabled"
+}
+
+### Expected Response:
+# {
+#   "id": 1,
+#   "variantId": 1,
+#   "supplierType": "CJ",
+#   "supplierUrl": "https://cjdropshipping.com/product/123456",
+#   "supplierName": "CJ Dropshipping",
+#   "purchasePrice": 6.50,
+#   "cjProductId": "CJ-PROD-12345",
+#   "cjVariantId": "CJ-VAR-67890",
+#   "salePrice": 19.99,
+#   "marginPercentage": 0.675,
+#   "profitAmount": 13.49
+# }
+
+### 2.2 Get CJ Supplier Link
+GET {{baseUrl}}/dropshipping/variants/{{variantId}}/source
+Authorization: {{token}}
+
+### Expected: Same as above + calculations
+
+### 2.3 Update CJ Supplier Link
+PUT {{baseUrl}}/dropshipping/variants/{{variantId}}/source
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "supplierType": "CJ",
+  "supplierUrl": "https://cjdropshipping.com/product/123456",
+  "supplierName": "CJ Dropshipping - Updated",
+  "purchasePrice": 7.00,
+  "estimatedShippingDays": 5,
+  "cjProductId": "CJ-PROD-12345",
+  "cjVariantId": "CJ-VAR-67890-NEW",
+  "notes": "Price updated"
+}
+
+### ==============================================
+### 3. CJ ORDER PLACEMENT
+### ==============================================
+
+### 3.1 Place CJ Order for OrderItem
+POST {{baseUrl}}/cj/order-items/{{orderItemId}}/place-order
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "shippingFirstName": "John",
+  "shippingLastName": "Doe",
+  "shippingAddress": "123 Main Street, Apt 4B",
+  "shippingCity": "Berlin",
+  "shippingPostalCode": "10115",
+  "shippingCountryCode": "DE",
+  "shippingPhone": "+49 30 12345678"
+}
+
+### Expected Response:
+# {
+#   "success": true,
+#   "cjOrderId": "CJ-ORDER-2024-123456",
+#   "message": "Order placed successfully",
+#   "errorCode": null
+# }
+
+### 3.2 Verify OrderItem was updated
+GET {{baseUrl}}/dropshipping/orders/1/items
+Authorization: {{token}}
+
+### Expected: OrderItem should now have:
+# {
+#   "id": 1,
+#   "fulfillmentStatus": "ORDERED",
+#   "supplierOrderId": "CJ-ORDER-2024-123456",
+#   "orderedFromSupplierAt": "2024-02-27T10:30:00",
+#   "dropshippingSource": {
+#     "supplierType": "CJ",
+#     "cjProductId": "CJ-PROD-12345",
+#     "cjVariantId": "CJ-VAR-67890"
+#   }
+# }
+
+### ==============================================
+### 4. ERROR CASES
+### ==============================================
+
+### 4.1 Place CJ Order without Connection
+# Should fail with: "Store not connected to CJ"
+POST {{baseUrl}}/cj/order-items/{{orderItemId}}/place-order
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "shippingFirstName": "Test",
+  "shippingLastName": "User",
+  "shippingAddress": "Address",
+  "shippingCity": "City",
+  "shippingPostalCode": "12345",
+  "shippingCountryCode": "US",
+  "shippingPhone": "+1234567890"
+}
+
+### Expected Error:
+# {
+#   "success": false,
+#   "message": "Store not connected to CJ. Please connect first.",
+#   "errorCode": "CJ_NOT_CONNECTED"
+# }
+
+### 4.2 Place CJ Order for MANUAL Item
+# Should fail with: "This item is not configured for CJ dropshipping"
+
+### 4.3 Connect with Invalid Credentials
+POST {{baseUrl}}/cj/stores/{{storeId}}/connect
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "email": "invalid@example.com",
+  "password": "wrongpassword"
+}
+
+### Expected Error:
+# {
+#   "connected": false,
+#   "message": "CJ Authentication failed",
+#   "errorCode": "CONNECTION_FAILED"
+# }
+
+### ==============================================
+### 5. COMBINED WORKFLOW TEST
+### ==============================================
+
+### Step 1: Connect to CJ
+POST {{baseUrl}}/cj/stores/{{storeId}}/connect
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "email": "your-cj-email@example.com",
+  "password": "your-cj-password"
+}
+
+### Step 2: Add CJ Supplier Link to Variant
+POST {{baseUrl}}/dropshipping/variants/{{variantId}}/source
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "supplierType": "CJ",
+  "supplierUrl": "https://cjdropshipping.com/product/test",
+  "supplierName": "CJ Test Product",
+  "purchasePrice": 5.00,
+  "cjProductId": "CJ-TEST-PROD",
+  "cjVariantId": "CJ-TEST-VAR",
+  "notes": "Test product for CJ integration"
+}
+
+### Step 3: Create Order with this Variant
+# (Use existing order creation endpoint)
+
+### Step 4: Place CJ Order
+POST {{baseUrl}}/cj/order-items/{{orderItemId}}/place-order
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "shippingFirstName": "Test",
+  "shippingLastName": "Customer",
+  "shippingAddress": "Test Street 123",
+  "shippingCity": "Berlin",
+  "shippingPostalCode": "10115",
+  "shippingCountryCode": "DE",
+  "shippingPhone": "+49301234567"
+}
+
+### Step 5: Verify Status
+GET {{baseUrl}}/dropshipping/orders/1/items
+Authorization: {{token}}
+
+### Expected: Item should be ORDERED with CJ Order ID
+
+### ==============================================
+### 6. MANUAL VS CJ COMPARISON
+### ==============================================
+
+### 6.1 Add Manual Supplier Link (Phase 1)
+POST {{baseUrl}}/dropshipping/variants/2/source
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "supplierType": "MANUAL",
+  "supplierUrl": "https://www.alibaba.com/product/999",
+  "supplierName": "Alibaba Supplier",
+  "purchasePrice": 8.00,
+  "notes": "Manual ordering - click link"
+}
+
+### 6.2 Add CJ Supplier Link (Phase 2)
+POST {{baseUrl}}/dropshipping/variants/3/source
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "supplierType": "CJ",
+  "supplierUrl": "https://cjdropshipping.com/product/auto",
+  "supplierName": "CJ Auto Order",
+  "purchasePrice": 8.00,
+  "cjProductId": "CJ-AUTO-123",
+  "cjVariantId": "CJ-AUTO-VAR-456",
+  "notes": "Automatic CJ ordering"
+}
+
+### ==============================================
+### NOTES
+### ==============================================
+#
+# Phase 1 (MANUAL): Reseller clicks link, orders manually
+# Phase 2 (CJ): Reseller clicks "Place CJ Order" button, automatic
+#
+# Both workflows coexist - no breaking changes!
+#
+# CJ API Docs: https://developers.cjdropshipping.com/
+#
+### ==============================================
+

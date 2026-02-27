@@ -158,6 +158,10 @@ MINIO_BUCKET=store-assets
 MINIO_REGION=us-east-1
 MINIO_SECURE=true
 
+# CJ Dropshipping API (Phase 2)
+CJ_API_BASE_URL=${CJ_API_BASE_URL:-https://developers.cjdropshipping.com/api2.0/v1}
+CJ_API_TIMEOUT=${CJ_API_TIMEOUT:-30000}
+
 EOF"
 
 sudo chown "$APP_USER:$APP_USER" "$ENV_FILE"

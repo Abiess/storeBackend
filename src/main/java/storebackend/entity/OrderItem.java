@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import storebackend.enums.FulfillmentStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -67,6 +68,53 @@ public class OrderItem {
 
     @Column(columnDefinition = "TEXT")
     private String productSnapshot; // JSON: Name, Image, Attributes zum Bestellzeitpunkt
+
+    // ==================================================================================
+    // DROPSHIPPING FULFILLMENT (Phase 1)
+    // ==================================================================================
+
+    /**
+     * Fulfillment Status für Dropshipping Items
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "fulfillment_status", length = 50)
+    private FulfillmentStatus fulfillmentStatus = FulfillmentStatus.PENDING;
+
+    /**
+     * Order ID beim Supplier (manuell eingegeben vom Reseller)
+     */
+    @Column(name = "supplier_order_id", length = 255)
+    private String supplierOrderId;
+
+    /**
+     * Tracking-Nummer vom Supplier
+     */
+    @Column(name = "supplier_tracking_number", length = 255)
+    private String supplierTrackingNumber;
+
+    /**
+     * Versanddienstleister des Suppliers (z.B. DHL, China Post)
+     */
+    @Column(name = "supplier_carrier", length = 100)
+    private String supplierCarrier;
+
+    /**
+     * Zeitpunkt, wann Reseller beim Supplier bestellt hat
+     */
+    @Column(name = "ordered_from_supplier_at")
+    private LocalDateTime orderedFromSupplierAt;
+
+    /**
+     * Zeitpunkt, wann Item als geliefert markiert wurde
+     */
+    @Column(name = "fulfilled_at")
+    private LocalDateTime fulfilledAt;
+
+    /**
+     * Notizen zum Fulfillment-Prozess (für Reseller)
+     */
+    @Column(name = "fulfillment_notes", columnDefinition = "TEXT")
+    private String fulfillmentNotes;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

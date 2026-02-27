@@ -1,9 +1,13 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ProductService } from '@app/core/services/product.service';
+import { DropshippingService } from '@app/core/services/dropshipping.service';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { ProductVariant } from '@app/core/models';
+import { DropshippingSource, formatMargin } from '@app/core/models/dropshipping.model';
+import { SupplierLinkFormComponent } from './supplier-link-form.component';
 
 interface ProductOption {
   id?: number;
@@ -16,7 +20,7 @@ interface ProductOption {
 @Component({
   selector: 'app-product-variants-manager',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe],
+  imports: [CommonModule, FormsModule, TranslatePipe, MatDialogModule],
   template: `
     <div class="variants-manager">
       <h2>🎨 {{ 'product.variants.title' | translate }}</h2>
@@ -157,6 +161,22 @@ interface ProductOption {
                   min="0"
                   class="input-sm"
                 />
+              </div>
+              
+              <!-- DROPSHIPPING: Supplier Link Button -->
+              <div class="field dropshipping-field">
+                <label>🚚 Dropshipping</label>
+                <button 
+                  type="button" 
+                  class="btn-supplier-link"
+                  [class.has-link]="hasSupplierLink(variant)"
+                  (click)="openSupplierLinkDialog(variant)"
+                >
+                  {{ hasSupplierLink(variant) ? '✓ Link bearbeiten' : '+ Link hinzufügen' }}
+                </button>
+                <div class="margin-info" *ngIf="getSupplierLink(variant) as source">
+                  <small>Marge: {{ formatMargin(source.marginPercentage || 0) }}</small>
+                </div>
               </div>
             </div>
             
@@ -578,6 +598,41 @@ interface ProductOption {
       margin-top: 1rem;
     }
 
+    /* Dropshipping Supplier Link Styles */
+    .dropshipping-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .btn-supplier-link {
+      padding: 0.5rem 1rem;
+      border: 2px dashed #ccc;
+      background: white;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+    }
+
+    .btn-supplier-link:hover {
+      border-color: #667eea;
+      background: #f0f4ff;
+    }
+
+    .btn-supplier-link.has-link {
+      border-style: solid;
+      border-color: #4caf50;
+      background: #f1f8f4;
+      color: #2e7d32;
+    }
+
+    .margin-info {
+      font-size: 0.75rem;
+      color: #4caf50;
+      font-weight: 600;
+    }
+
     @media (max-width: 768px) {
       .generate-controls {
         grid-template-columns: 1fr;
@@ -600,6 +655,9 @@ export class ProductVariantsManagerComponent implements OnInit {
   options: ProductOption[] = [];
   variants: ProductVariant[] = [];
 
+  // Dropshipping: Cache für Supplier-Links
+  supplierLinks = new Map<number, DropshippingSource>();
+
   basePrice: number = 0;
   baseStock: number = 0;
 
@@ -609,11 +667,14 @@ export class ProductVariantsManagerComponent implements OnInit {
   errorMessage = '';
 
   constructor(
-    private productService: ProductService
+    private productService: ProductService,
+    private dropshippingService: DropshippingService,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit() {
     this.loadExistingData();
+    this.loadSupplierLinks();
   }
 
   loadExistingData() {
@@ -795,6 +856,94 @@ export class ProductVariantsManagerComponent implements OnInit {
 
   getAttributesArray(attributes: { [key: string]: string } | undefined): Array<{ key: string, value: string }> {
     return Object.entries(attributes || {}).map(([key, value]) => ({ key, value }));
+  }
+
+  // ==================================================================================
+  // DROPSHIPPING METHODS
+  // ==================================================================================
+
+  /**
+   * Lädt Supplier-Links für alle Varianten
+   */
+  loadSupplierLinks() {
+    if (!this.productId) return;
+
+    this.dropshippingService.getSupplierLinksForProduct(this.productId).subscribe({
+      next: (sources) => {
+        // Cache in Map für schnellen Zugriff
+        sources.forEach(source => {
+          if (source.variantId) {
+            this.supplierLinks.set(source.variantId, source);
+          }
+        });
+      },
+      error: (err) => {
+        // Kein Fehler anzeigen - 404 ist normal wenn keine Links vorhanden
+        if (err.status !== 404) {
+          console.error('Error loading supplier links:', err);
+        }
+      }
+    });
+  }
+
+  /**
+   * Prüft ob Variant einen Supplier-Link hat
+   */
+  hasSupplierLink(variant: ProductVariant): boolean {
+    return variant.id ? this.supplierLinks.has(variant.id) : false;
+  }
+
+  /**
+   * Holt Supplier-Link für Variant
+   */
+  getSupplierLink(variant: ProductVariant): DropshippingSource | undefined {
+    return variant.id ? this.supplierLinks.get(variant.id) : undefined;
+  }
+
+  /**
+   * Öffnet Supplier-Link Dialog
+   */
+  openSupplierLinkDialog(variant: ProductVariant) {
+    if (!variant.id) {
+      alert('Bitte speichere die Variante zuerst, bevor du einen Supplier-Link hinzufügst.');
+      return;
+    }
+
+    const existingSource = this.getSupplierLink(variant);
+
+    const dialogRef = this.dialog.open(SupplierLinkFormComponent, {
+      width: '600px',
+      data: {
+        variantId: variant.id,
+        variantPrice: variant.price,
+        existingSource: existingSource
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === 'deleted') {
+        // Entferne aus Cache
+        if (variant.id) {
+          this.supplierLinks.delete(variant.id);
+        }
+        this.successMessage = 'Supplier-Link gelöscht';
+        setTimeout(() => this.successMessage = '', 3000);
+      } else if (result) {
+        // Update Cache
+        if (variant.id) {
+          this.supplierLinks.set(variant.id, result);
+        }
+        this.successMessage = 'Supplier-Link gespeichert';
+        setTimeout(() => this.successMessage = '', 3000);
+      }
+    });
+  }
+
+  /**
+   * Formatiert Marge für Anzeige
+   */
+  formatMargin(margin: number): string {
+    return formatMargin(margin);
   }
 }
 
