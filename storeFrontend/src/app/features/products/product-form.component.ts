@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ProductService } from '@app/core/services/product.service';
 import { CategoryService } from '@app/core/services/category.service';
@@ -23,7 +23,7 @@ interface UploadedImage {
 @Component({
   selector: 'app-product-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TranslatePipe, ProductVariantsManagerComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, TranslatePipe, ProductVariantsManagerComponent],
   template: `
     <div class="product-form-container">
       <div class="form-header">
@@ -197,12 +197,101 @@ interface UploadedImage {
           </div>
         </div>
 
-        <!-- Varianten Manager (nur im Edit-Modus) -->
-        <div class="form-card" *ngIf="isEditMode && productId">
-          <app-product-variants-manager 
-            [productId]="productId" 
-            [storeId]="storeId">
-          </app-product-variants-manager>
+        <!-- Varianten Konfiguration -->
+        <div class="form-card">
+          <h2>🎨 Produktvarianten</h2>
+          
+          <!-- Im Edit-Modus: Voller Varianten-Manager -->
+          <div *ngIf="isEditMode && productId">
+            <app-product-variants-manager 
+              [productId]="productId" 
+              [storeId]="storeId">
+            </app-product-variants-manager>
+          </div>
+          
+          <!-- Im Create-Modus: Einfache Optionen-Eingabe -->
+          <div *ngIf="!isEditMode">
+            <p class="variants-hint">
+              💡 Definieren Sie Optionen wie Größe, Farbe, Material. Nach dem Speichern können Sie Varianten mit spezifischen Preisen und Lagerbeständen verwalten.
+            </p>
+
+            <!-- Optionen-Liste -->
+            <div class="options-list">
+              <div *ngFor="let option of variantOptions; let i = index" class="option-card">
+                <div class="option-header">
+                  <input 
+                    type="text" 
+                    [(ngModel)]="option.name" 
+                    [ngModelOptions]="{standalone: true}"
+                    placeholder="z.B. Farbe, Größe, Material"
+                    class="option-name-input"
+                  />
+                  <button 
+                    type="button" 
+                    class="btn-remove-option"
+                    (click)="removeOption(i)"
+                    title="Option entfernen"
+                  >
+                    ✕
+                  </button>
+                </div>
+                
+                <div class="option-values">
+                  <div *ngFor="let value of option.values; let j = index" class="value-chip">
+                    <span>{{ value }}</span>
+                    <button 
+                      type="button" 
+                      (click)="removeOptionValue(i, j)"
+                      class="btn-remove-value"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  
+                  <div class="add-value-input">
+                    <input 
+                      type="text" 
+                      [(ngModel)]="option.newValue"
+                      [ngModelOptions]="{standalone: true}"
+                      (keydown.enter)="addOptionValue(i); $event.preventDefault()"
+                      placeholder="Wert hinzufügen (z.B. Rot, S, Baumwolle)"
+                      class="value-input"
+                    />
+                    <button 
+                      type="button"
+                      class="btn-add-value"
+                      (click)="addOptionValue(i)"
+                      [disabled]="!option.newValue?.trim()"
+                    >
+                      + Hinzufügen
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button 
+              type="button" 
+              class="btn-add-option"
+              (click)="addOption()"
+            >
+              + Neue Option hinzufügen
+            </button>
+
+            <!-- Varianten-Vorschau -->
+            <div *ngIf="getVariantCombinations().length > 0" class="variants-preview">
+              <h3>📋 Vorschau: {{ getVariantCombinations().length }} Varianten werden erstellt</h3>
+              <div class="preview-list">
+                <div *ngFor="let combo of getVariantCombinations()" class="preview-item">
+                  <span class="preview-sku">{{ productForm.get('title')?.value || 'Produkt' }}-{{ combo }}</span>
+                  <span class="preview-price">{{ productForm.get('basePrice')?.value || 0 }}€</span>
+                </div>
+              </div>
+              <p class="preview-note">
+                ℹ️ Nach dem Speichern können Sie für jede Variante individuell Preis, SKU und Lagerbestand anpassen.
+              </p>
+            </div>
+          </div>
         </div>
 
         <div class="form-actions">
@@ -583,6 +672,218 @@ interface UploadedImage {
       border: 1px solid #f5c6cb;
     }
 
+    /* Varianten Info Box */
+    .variants-hint {
+      background: #f8f9fa;
+      padding: 1rem;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+      margin-bottom: 1.5rem;
+      color: #555;
+    }
+
+    .options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .option-card {
+      background: #f8f9fa;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+
+    .option-header {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .option-name-input {
+      flex: 1;
+      padding: 0.75rem;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .option-name-input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .btn-remove-option {
+      background: #dc3545;
+      color: white;
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1.25rem;
+      transition: all 0.2s;
+    }
+
+    .btn-remove-option:hover {
+      background: #c82333;
+      transform: scale(1.1);
+    }
+
+    .option-values {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .value-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: white;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      border: 2px solid #667eea;
+      font-weight: 500;
+      color: #667eea;
+    }
+
+    .btn-remove-value {
+      background: transparent;
+      border: none;
+      color: #dc3545;
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 0;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s;
+    }
+
+    .btn-remove-value:hover {
+      background: #dc3545;
+      color: white;
+    }
+
+    .add-value-input {
+      display: flex;
+      gap: 0.5rem;
+      flex: 1;
+      min-width: 300px;
+    }
+
+    .value-input {
+      flex: 1;
+      padding: 0.5rem 1rem;
+      border: 2px solid #e0e0e0;
+      border-radius: 20px;
+      font-size: 0.9375rem;
+    }
+
+    .value-input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .btn-add-value {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: 500;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .btn-add-value:hover:not(:disabled) {
+      background: #5568d3;
+    }
+
+    .btn-add-value:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-add-option {
+      width: 100%;
+      background: white;
+      border: 2px dashed #667eea;
+      color: #667eea;
+      padding: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .btn-add-option:hover {
+      background: #f5f7ff;
+      border-color: #5568d3;
+    }
+
+    .variants-preview {
+      margin-top: 1.5rem;
+      padding: 1.5rem;
+      background: #f5f7ff;
+      border-radius: 12px;
+      border: 2px solid #d0d7ff;
+    }
+
+    .variants-preview h3 {
+      margin: 0 0 1rem;
+      color: #333;
+      font-size: 1rem;
+    }
+
+    .preview-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      max-height: 300px;
+      overflow-y: auto;
+      margin-bottom: 1rem;
+    }
+
+    .preview-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      background: white;
+      border-radius: 8px;
+      border: 1px solid #e0e0e0;
+    }
+
+    .preview-sku {
+      font-weight: 500;
+      color: #555;
+    }
+
+    .preview-price {
+      font-weight: 600;
+      color: #667eea;
+    }
+
+    .preview-note {
+      background: white;
+      padding: 1rem;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+      margin: 0;
+      font-size: 0.875rem;
+      color: #555;
+    }
+
     @media (max-width: 768px) {
       .form-header {
         flex-direction: column;
@@ -621,6 +922,13 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   errorMessage = '';
 
   uploadedImages: UploadedImage[] = [];
+
+  // Varianten-Optionen für Create-Modus
+  variantOptions: Array<{
+    name: string;
+    values: string[];
+    newValue?: string;
+  }> = [];
 
   constructor(
     private fb: FormBuilder,
@@ -863,7 +1171,22 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   }
 
   createProduct(formData: any): void {
-    this.productService.createProduct(this.storeId, formData).subscribe({
+    // Bereite Varianten-Optionen vor
+    const variantOptions = this.variantOptions
+      .filter(opt => opt.name.trim() && opt.values.length > 0)
+      .map(opt => ({
+        name: opt.name.trim(),
+        values: opt.values
+      }));
+
+    const requestData = {
+      ...formData,
+      variantOptions: variantOptions
+    };
+
+    console.log('📦 Creating product with data:', requestData);
+
+    this.productService.createProduct(this.storeId, requestData).subscribe({
       next: (product) => {
         console.log('✅ Produkt erstellt:', product);
 
@@ -964,5 +1287,62 @@ export class ProductFormComponent implements OnInit, OnDestroy {
 
   goBack(): void {
     this.router.navigate(['/dashboard/stores', this.storeId, 'products']);
+  }
+
+  // ============ Varianten-Management ============
+
+  addOption(): void {
+    this.variantOptions.push({
+      name: '',
+      values: [],
+      newValue: ''
+    });
+  }
+
+  removeOption(index: number): void {
+    this.variantOptions.splice(index, 1);
+  }
+
+  addOptionValue(optionIndex: number): void {
+    const option = this.variantOptions[optionIndex];
+    const value = option.newValue?.trim();
+
+    if (value && !option.values.includes(value)) {
+      option.values.push(value);
+      option.newValue = '';
+    }
+  }
+
+  removeOptionValue(optionIndex: number, valueIndex: number): void {
+    this.variantOptions[optionIndex].values.splice(valueIndex, 1);
+  }
+
+  getVariantCombinations(): string[] {
+    // Filtere nur Optionen mit Namen und Werten
+    const validOptions = this.variantOptions.filter(
+      opt => opt.name.trim() && opt.values.length > 0
+    );
+
+    if (validOptions.length === 0) {
+      return [];
+    }
+
+    // Erzeuge alle Kombinationen
+    const combinations: string[] = [];
+
+    const generate = (current: string[], depth: number) => {
+      if (depth === validOptions.length) {
+        combinations.push(current.join('-'));
+        return;
+      }
+
+      const option = validOptions[depth];
+      for (const value of option.values) {
+        generate([...current, value], depth + 1);
+      }
+    };
+
+    generate([], 0);
+    return combinations;
   }
 }

@@ -9,5 +9,5 @@ import java.util.Optional;
 @Repository
 public interface PlatformSettingRepository extends JpaRepository<PlatformSetting, Long> {
 
-    Optional<PlatformSetting> findByKey(String key);
+    Optional<PlatformSetting> findBySettingKey(String settingKey);
 }

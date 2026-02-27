@@ -243,7 +243,7 @@ CREATE TABLE IF NOT EXISTS product_options (
 CREATE TABLE IF NOT EXISTS product_option_values (
                                                      id BIGSERIAL PRIMARY KEY,
                                                      option_id BIGINT NOT NULL,
-                                                     "value" VARCHAR(100) NOT NULL,
+                                                     option_value VARCHAR(100) NOT NULL,
     display_order INTEGER NOT NULL DEFAULT 0,
     CONSTRAINT fk_product_option_values_option FOREIGN KEY (option_id) REFERENCES product_options(id) ON DELETE CASCADE
     );
@@ -1261,19 +1261,19 @@ WHERE role = 'ROLE_STORE_OWNER';
 -- 6) platform_settings
 CREATE TABLE IF NOT EXISTS public.platform_settings (
                                                         id BIGSERIAL PRIMARY KEY,
-                                                        key VARCHAR(100) NOT NULL UNIQUE,
-    value TEXT NOT NULL,
+                                                        setting_key VARCHAR(100) NOT NULL UNIQUE,
+    setting_value TEXT NOT NULL,
     description TEXT,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
 
-INSERT INTO public.platform_settings (key, value, description)
+INSERT INTO public.platform_settings (setting_key, setting_value, description)
 VALUES ('platform_fee_percentage', '0.05', 'Platform commission percentage (5%)')
-    ON CONFLICT (key) DO NOTHING;
+    ON CONFLICT (setting_key) DO NOTHING;
 
-INSERT INTO public.platform_settings (key, value, description)
+INSERT INTO public.platform_settings (setting_key, setting_value, description)
 VALUES ('recommended_reseller_margin', '0.30', 'Recommended reseller markup (30%)')
-    ON CONFLICT (key) DO NOTHING;
+    ON CONFLICT (setting_key) DO NOTHING;
 
 COMMENT ON TABLE public.store_products IS 'Maps supplier products to reseller stores with custom pricing';
 COMMENT ON TABLE public.commissions IS 'Tracks revenue split: supplier gets wholesale_price, reseller gets margin, platform gets fee';

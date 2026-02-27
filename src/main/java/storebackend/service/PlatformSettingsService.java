@@ -20,8 +20,8 @@ public class PlatformSettingsService {
      * Get platform commission percentage (default: 5%).
      */
     public BigDecimal getPlatformFeePercentage() {
-        return platformSettingRepository.findByKey("platform_fee_percentage")
-                .map(s -> new BigDecimal(s.getValue()))
+        return platformSettingRepository.findBySettingKey("platform_fee_percentage")
+                .map(s -> new BigDecimal(s.getSettingValue()))
                 .orElse(new BigDecimal("0.05"));
     }
 
@@ -29,8 +29,8 @@ public class PlatformSettingsService {
      * Get recommended reseller margin (default: 30%).
      */
     public BigDecimal getRecommendedResellerMargin() {
-        return platformSettingRepository.findByKey("recommended_reseller_margin")
-                .map(s -> new BigDecimal(s.getValue()))
+        return platformSettingRepository.findBySettingKey("recommended_reseller_margin")
+                .map(s -> new BigDecimal(s.getSettingValue()))
                 .orElse(new BigDecimal("0.30"));
     }
 
@@ -38,11 +38,11 @@ public class PlatformSettingsService {
      * Update platform fee percentage.
      */
     public void updatePlatformFeePercentage(BigDecimal percentage) {
-        PlatformSetting setting = platformSettingRepository.findByKey("platform_fee_percentage")
+        PlatformSetting setting = platformSettingRepository.findBySettingKey("platform_fee_percentage")
                 .orElse(new PlatformSetting());
 
-        setting.setKey("platform_fee_percentage");
-        setting.setValue(percentage.toString());
+        setting.setSettingKey("platform_fee_percentage");
+        setting.setSettingValue(percentage.toString());
         setting.setDescription("Platform commission percentage");
 
         platformSettingRepository.save(setting);
@@ -52,11 +52,11 @@ public class PlatformSettingsService {
      * Update recommended reseller margin.
      */
     public void updateRecommendedResellerMargin(BigDecimal margin) {
-        PlatformSetting setting = platformSettingRepository.findByKey("recommended_reseller_margin")
+        PlatformSetting setting = platformSettingRepository.findBySettingKey("recommended_reseller_margin")
                 .orElse(new PlatformSetting());
 
-        setting.setKey("recommended_reseller_margin");
-        setting.setValue(margin.toString());
+        setting.setSettingKey("recommended_reseller_margin");
+        setting.setSettingValue(margin.toString());
         setting.setDescription("Recommended reseller markup percentage");
 
         platformSettingRepository.save(setting);

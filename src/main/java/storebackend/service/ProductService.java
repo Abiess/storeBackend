@@ -34,6 +34,7 @@ public class ProductService {
     private final StoreUsageService storeUsageService;
     private final MinioService minioService;
     private final ObjectMapper objectMapper;
+    private final ProductVariantGenerationService variantGenerationService;
 
     @Transactional(readOnly = true)
     public List<ProductDTO> getProductsByStore(Store store) {
@@ -97,6 +98,11 @@ public class ProductService {
 
         // Increment product count
         storeUsageService.incrementProductCount(store);
+
+        // Generiere Varianten wenn Optionen vorhanden sind
+        if (request.getVariantOptions() != null && !request.getVariantOptions().isEmpty()) {
+            variantGenerationService.createOptionsAndGenerateVariants(product, request.getVariantOptions());
+        }
 
         return toDTO(product);
     }
