@@ -1,6 +1,7 @@
 package storebackend.controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -12,6 +13,7 @@ import storebackend.service.ProductOptionService;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/stores/{storeId}/products/{productId}/options")
 @RequiredArgsConstructor
@@ -19,24 +21,51 @@ public class ProductOptionController {
     private final ProductOptionService productOptionService;
     private final StoreRepository storeRepository;
 
+    /**
+     * Prüft, ob der Benutzer Zugriff auf den Store hat
+     */
+    private boolean hasStoreAccess(Long storeId, User user) {
+        if (user == null) {
+            log.warn("hasStoreAccess: User is null");
+            return false;
+        }
+
+        Store store = storeRepository.findById(storeId).orElse(null);
+        if (store == null) {
+            log.warn("hasStoreAccess: Store {} not found", storeId);
+            return false;
+        }
+
+        // Owner hat immer Zugriff
+        boolean isOwner = store.getOwner().getId().equals(user.getId());
+        if (isOwner) {
+            log.info("hasStoreAccess: User {} is owner of store {}", user.getId(), storeId);
+            return true;
+        }
+
+        log.warn("hasStoreAccess: User {} is not owner of store {}", user.getId(), storeId);
+        return false;
+    }
+
     @GetMapping
     public ResponseEntity<List<ProductOptionDTO>> getProductOptions(
             @PathVariable Long storeId,
             @PathVariable Long productId,
             @AuthenticationPrincipal User user) {
 
-        if (user == null) {
-            return ResponseEntity.status(401).build();
+        log.info("GET /api/stores/{}/products/{}/options - User: {}",
+                 storeId, productId, user != null ? user.getId() : "null");
+
+        if (!hasStoreAccess(storeId, user)) {
+            return ResponseEntity.status(403).build();
         }
 
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
 
-        if (!store.getOwner().getId().equals(user.getId())) {
-            return ResponseEntity.status(403).build();
-        }
 
         List<ProductOptionDTO> options = productOptionService.getOptionsByProduct(productId, store);
+        log.info("Returning {} options for product {}", options.size(), productId);
         return ResponseEntity.ok(options);
     }
 
@@ -47,18 +76,18 @@ public class ProductOptionController {
             @RequestBody ProductOptionDTO request,
             @AuthenticationPrincipal User user) {
 
-        if (user == null) {
-            return ResponseEntity.status(401).build();
+        log.info("POST /api/stores/{}/products/{}/options - Option: {}",
+                 storeId, productId, request.getName());
+
+        if (!hasStoreAccess(storeId, user)) {
+            return ResponseEntity.status(403).build();
         }
 
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
 
-        if (!store.getOwner().getId().equals(user.getId())) {
-            return ResponseEntity.status(403).build();
-        }
-
         ProductOptionDTO option = productOptionService.createOption(productId, store, request);
+        log.info("Created option {} for product {}", option.getId(), productId);
         return ResponseEntity.ok(option);
     }
 
@@ -70,18 +99,17 @@ public class ProductOptionController {
             @RequestBody ProductOptionDTO request,
             @AuthenticationPrincipal User user) {
 
-        if (user == null) {
-            return ResponseEntity.status(401).build();
+        log.info("PUT /api/stores/{}/products/{}/options/{}", storeId, productId, optionId);
+
+        if (!hasStoreAccess(storeId, user)) {
+            return ResponseEntity.status(403).build();
         }
 
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
 
-        if (!store.getOwner().getId().equals(user.getId())) {
-            return ResponseEntity.status(403).build();
-        }
-
         ProductOptionDTO option = productOptionService.updateOption(optionId, productId, store, request);
+        log.info("Updated option {} for product {}", optionId, productId);
         return ResponseEntity.ok(option);
     }
 
@@ -92,18 +120,17 @@ public class ProductOptionController {
             @PathVariable Long optionId,
             @AuthenticationPrincipal User user) {
 
-        if (user == null) {
-            return ResponseEntity.status(401).build();
+        log.info("DELETE /api/stores/{}/products/{}/options/{}", storeId, productId, optionId);
+
+        if (!hasStoreAccess(storeId, user)) {
+            return ResponseEntity.status(403).build();
         }
 
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
 
-        if (!store.getOwner().getId().equals(user.getId())) {
-            return ResponseEntity.status(403).build();
-        }
-
         productOptionService.deleteOption(optionId, productId, store);
+        log.info("Deleted option {} for product {}", optionId, productId);
         return ResponseEntity.noContent().build();
     }
 
@@ -117,18 +144,17 @@ public class ProductOptionController {
             @PathVariable Long productId,
             @AuthenticationPrincipal User user) {
 
-        if (user == null) {
-            return ResponseEntity.status(401).build();
+        log.info("POST /api/stores/{}/products/{}/variants/regenerate", storeId, productId);
+
+        if (!hasStoreAccess(storeId, user)) {
+            return ResponseEntity.status(403).build();
         }
 
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
 
-        if (!store.getOwner().getId().equals(user.getId())) {
-            return ResponseEntity.status(403).build();
-        }
-
         int count = productOptionService.regenerateVariants(productId, store);
+        log.info("Regenerated {} variants for product {}", count, productId);
         return ResponseEntity.ok(new RegenerateResponse(count, "Varianten erfolgreich regeneriert"));
     }
 
