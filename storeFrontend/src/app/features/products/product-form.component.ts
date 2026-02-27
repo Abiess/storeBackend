@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ProductService } from '@app/core/services/product.service';
 import { CategoryService } from '@app/core/services/category.service';
 import { MediaService } from '@app/core/services/media.service';
+import { ProductOptionService } from '@app/core/services/product-option.service';
 import { Category, ProductStatus } from '@app/core/models';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { TranslationService } from '@app/core/services/translation.service';
@@ -201,15 +202,129 @@ interface UploadedImage {
         <div class="form-card">
           <h2>🎨 Produktvarianten</h2>
           
-          <!-- Im Edit-Modus: Voller Varianten-Manager -->
-          <div *ngIf="isEditMode && productId">
+          <!-- Tab Navigation -->
+          <div class="variant-tabs" *ngIf="isEditMode && productId">
+            <button 
+              type="button"
+              class="tab-button"
+              [class.active]="activeVariantTab === 'options'"
+              (click)="activeVariantTab = 'options'"
+            >
+              📋 Optionen definieren
+            </button>
+            <button 
+              type="button"
+              class="tab-button"
+              [class.active]="activeVariantTab === 'variants'"
+              (click)="activeVariantTab = 'variants'"
+            >
+              🎯 Varianten verwalten
+            </button>
+          </div>
+
+          <!-- Tab: Optionen definieren (Edit-Modus) -->
+          <div *ngIf="isEditMode && productId && activeVariantTab === 'options'" class="variant-tab-content">
+            <p class="variants-hint">
+              💡 Bearbeiten Sie die Optionen und Werte. Neue Optionen oder Werte generieren automatisch neue Varianten.
+            </p>
+            
+            <!-- Laden bestehender Optionen -->
+            <div *ngIf="loadingOptions" class="loading-state">
+              <div class="spinner"></div>
+              <p>Lade Optionen...</p>
+            </div>
+
+            <div *ngIf="!loadingOptions">
+              <!-- Bestehende Optionen -->
+              <div class="options-list">
+                <div *ngFor="let option of productOptions; let i = index" class="option-card">
+                  <div class="option-header">
+                    <input 
+                      type="text" 
+                      [(ngModel)]="option.name" 
+                      [ngModelOptions]="{standalone: true}"
+                      placeholder="z.B. Farbe, Größe, Material"
+                      class="option-name-input"
+                      (blur)="updateProductOption(option)"
+                    />
+                    <button 
+                      type="button" 
+                      class="btn-remove-option"
+                      (click)="deleteProductOption(option.id, i)"
+                      title="Option entfernen"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  
+                  <div class="option-values">
+                    <div *ngFor="let value of option.values; let j = index" class="value-chip">
+                      <span>{{ value }}</span>
+                      <button 
+                        type="button" 
+                        (click)="removeProductOptionValue(option, j)"
+                        class="btn-remove-value"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    
+                    <div class="add-value-input">
+                      <input 
+                        type="text" 
+                        [(ngModel)]="option.newValue"
+                        [ngModelOptions]="{standalone: true}"
+                        (keydown.enter)="addProductOptionValue(option); $event.preventDefault()"
+                        placeholder="Neuer Wert"
+                        class="value-input"
+                      />
+                      <button 
+                        type="button"
+                        class="btn-add-value"
+                        (click)="addProductOptionValue(option)"
+                        [disabled]="!option.newValue?.trim()"
+                      >
+                        + Hinzufügen
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <button 
+                type="button" 
+                class="btn-add-option"
+                (click)="addNewProductOption()"
+              >
+                + Neue Option hinzufügen
+              </button>
+
+              <div class="options-actions">
+                <button 
+                  type="button" 
+                  class="btn-regenerate-variants"
+                  (click)="regenerateVariants()"
+                  [disabled]="regeneratingVariants"
+                >
+                  <span *ngIf="!regeneratingVariants">🔄 Varianten neu generieren</span>
+                  <span *ngIf="regeneratingVariants">⏳ Generiere...</span>
+                </button>
+                <p class="regenerate-hint">
+                  ⚠️ Regeneriert alle Varianten basierend auf den aktuellen Optionen. Bestehende Preis- und Lagerbestandsanpassungen gehen verloren.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab: Varianten verwalten (Edit-Modus) -->
+          <div *ngIf="isEditMode && productId && activeVariantTab === 'variants'" class="variant-tab-content">
             <app-product-variants-manager 
               [productId]="productId" 
               [storeId]="storeId">
             </app-product-variants-manager>
           </div>
           
-          <!-- Im Create-Modus: Einfache Optionen-Eingabe -->
+          <!-- Create-Modus: Einfache Optionen-Eingabe -->
           <div *ngIf="!isEditMode">
             <p class="variants-hint">
               💡 Definieren Sie Optionen wie Größe, Farbe, Material. Nach dem Speichern können Sie Varianten mit spezifischen Preisen und Lagerbeständen verwalten.
@@ -672,7 +787,103 @@ interface UploadedImage {
       border: 1px solid #f5c6cb;
     }
 
-    /* Varianten Info Box */
+    /* Varianten Tabs */
+    .variant-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      border-bottom: 2px solid #e0e0e0;
+    }
+
+    .tab-button {
+      background: transparent;
+      border: none;
+      padding: 1rem 1.5rem;
+      cursor: pointer;
+      font-weight: 600;
+      color: #666;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+      font-size: 1rem;
+    }
+
+    .tab-button:hover {
+      color: #667eea;
+      background: #f5f7ff;
+    }
+
+    .tab-button.active {
+      color: #667eea;
+      border-bottom-color: #667eea;
+    }
+
+    .variant-tab-content {
+      padding-top: 1rem;
+    }
+
+    .loading-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem;
+      gap: 1rem;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .options-actions {
+      margin-top: 1.5rem;
+      padding: 1.5rem;
+      background: #fff8e1;
+      border-radius: 8px;
+      border: 2px solid #ffc107;
+    }
+
+    .btn-regenerate-variants {
+      width: 100%;
+      background: #ffc107;
+      color: #000;
+      border: none;
+      padding: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: all 0.2s;
+    }
+
+    .btn-regenerate-variants:hover:not(:disabled) {
+      background: #ffb300;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+    }
+
+    .btn-regenerate-variants:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .regenerate-hint {
+      margin: 1rem 0 0;
+      font-size: 0.875rem;
+      color: #856404;
+      text-align: center;
+    }
+
+    /* Varianten Info/Hint */
     .variants-hint {
       background: #f8f9fa;
       padding: 1rem;
@@ -930,6 +1141,18 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     newValue?: string;
   }> = [];
 
+  // Varianten-Optionen für Edit-Modus
+  productOptions: Array<{
+    id?: number;
+    name: string;
+    values: string[];
+    newValue?: string;
+  }> = [];
+
+  activeVariantTab: 'options' | 'variants' = 'variants';
+  loadingOptions = false;
+  regeneratingVariants = false;
+
   constructor(
     private fb: FormBuilder,
     private route: ActivatedRoute,
@@ -937,7 +1160,8 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     private productService: ProductService,
     private categoryService: CategoryService,
     private mediaService: MediaService,
-    private translationService: TranslationService
+    private translationService: TranslationService,
+    private productOptionService: ProductOptionService
   ) {
     this.productForm = this.fb.group({
       title: ['', Validators.required],
@@ -977,6 +1201,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     if (this.isEditMode && this.productId) {
       this.loadProduct(this.productId);
       this.loadProductImages(this.productId);
+      this.loadProductOptions(this.productId);
     }
 
     // Kategorien neu laden, wenn die Seite wieder im Fokus ist
@@ -1289,7 +1514,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     this.router.navigate(['/dashboard/stores', this.storeId, 'products']);
   }
 
-  // ============ Varianten-Management ============
+  // ============ Varianten-Management (Create-Modus) ============
 
   addOption(): void {
     this.variantOptions.push({
@@ -1344,5 +1569,148 @@ export class ProductFormComponent implements OnInit, OnDestroy {
 
     generate([], 0);
     return combinations;
+  }
+
+  // ============ Varianten-Management (Edit-Modus) ============
+
+  loadProductOptions(productId: number): void {
+    this.loadingOptions = true;
+
+    this.productOptionService.getOptions(this.storeId, productId).subscribe({
+      next: (options) => {
+        this.productOptions = options.map(opt => ({
+          id: opt.id,
+          name: opt.name,
+          values: opt.values || [],
+          newValue: ''
+        }));
+        this.loadingOptions = false;
+        console.log('✅ Loaded product options:', this.productOptions);
+      },
+      error: (error) => {
+        console.error('❌ Fehler beim Laden der Optionen:', error);
+        this.errorMessage = 'Fehler beim Laden der Optionen';
+        this.loadingOptions = false;
+      }
+    });
+  }
+
+  addNewProductOption(): void {
+    this.productOptions.push({
+      name: '',
+      values: [],
+      newValue: ''
+    });
+  }
+
+  addProductOptionValue(option: any): void {
+    const value = option.newValue?.trim();
+
+    if (value && !option.values.includes(value)) {
+      option.values.push(value);
+      option.newValue = '';
+
+      // Wenn Option bereits eine ID hat, speichere die Änderung
+      if (option.id) {
+        this.updateProductOption(option);
+      }
+    }
+  }
+
+  removeProductOptionValue(option: any, valueIndex: number): void {
+    option.values.splice(valueIndex, 1);
+
+    // Wenn Option bereits eine ID hat, speichere die Änderung
+    if (option.id) {
+      this.updateProductOption(option);
+    }
+  }
+
+  updateProductOption(option: any): void {
+    if (!option.id || !this.productId) return;
+
+    this.productOptionService.updateOption(
+      this.storeId,
+      this.productId,
+      option.id,
+      {
+        name: option.name,
+        values: option.values
+      }
+    ).subscribe({
+      next: (updated) => {
+        console.log('✅ Option aktualisiert:', updated);
+        this.successMessage = 'Option gespeichert';
+        setTimeout(() => this.successMessage = '', 2000);
+      },
+      error: (error) => {
+        console.error('❌ Fehler beim Aktualisieren der Option:', error);
+        this.errorMessage = 'Fehler beim Speichern der Option';
+        setTimeout(() => this.errorMessage = '', 3000);
+      }
+    });
+  }
+
+  deleteProductOption(optionId: number | undefined, index: number): void {
+    if (!optionId) {
+      // Neue Option ohne ID, einfach aus Array entfernen
+      this.productOptions.splice(index, 1);
+      return;
+    }
+
+    if (!this.productId) return;
+
+    if (confirm('Option wirklich löschen? Alle zugehörigen Varianten werden ebenfalls gelöscht.')) {
+      this.productOptionService.deleteOption(this.storeId, this.productId, optionId).subscribe({
+        next: () => {
+          this.productOptions.splice(index, 1);
+          this.successMessage = 'Option gelöscht';
+          setTimeout(() => this.successMessage = '', 2000);
+          console.log('✅ Option gelöscht:', optionId);
+        },
+        error: (error) => {
+          console.error('❌ Fehler beim Löschen der Option:', error);
+          this.errorMessage = 'Fehler beim Löschen der Option';
+          setTimeout(() => this.errorMessage = '', 3000);
+        }
+      });
+    }
+  }
+
+  regenerateVariants(): void {
+    if (!this.productId) return;
+
+    const validOptions = this.productOptions.filter(
+      opt => opt.name.trim() && opt.values.length > 0
+    );
+
+    if (validOptions.length === 0) {
+      alert('Bitte definieren Sie mindestens eine Option mit Werten.');
+      return;
+    }
+
+    const totalVariants = validOptions.reduce((acc, opt) => acc * opt.values.length, 1);
+
+    if (!confirm(`${totalVariants} Varianten werden neu generiert. Bestehende Preis- und Lagerbestandsanpassungen gehen verloren. Fortfahren?`)) {
+      return;
+    }
+
+    this.regeneratingVariants = true;
+
+    this.productOptionService.regenerateVariants(this.storeId, this.productId).subscribe({
+      next: (response) => {
+        this.regeneratingVariants = false;
+        this.successMessage = `✅ ${response.variantCount} Varianten wurden erfolgreich neu generiert!`;
+        this.activeVariantTab = 'variants'; // Wechsle zum Varianten-Tab
+        setTimeout(() => this.successMessage = '', 4000);
+        console.log('✅ Varianten regeneriert:', response);
+      },
+      error: (error) => {
+        this.regeneratingVariants = false;
+        this.errorMessage = 'Fehler beim Regenerieren der Varianten: ' + (error.error?.message || error.message);
+        setTimeout(() => this.errorMessage = '', 5000);
+        console.error('❌ Fehler beim Regenerieren:', error);
+      }
+    });
   }
 }

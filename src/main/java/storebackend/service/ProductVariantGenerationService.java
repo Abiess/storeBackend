@@ -78,6 +78,24 @@ public class ProductVariantGenerationService {
     }
 
     /**
+     * Generiert Varianten aus bestehenden ProductOptions (für Regenerierung)
+     * Erstellt KEINE neuen Options, verwendet nur die übergebenen
+     */
+    @Transactional
+    public void generateVariantsFromOptions(Product product, List<ProductOption> options) {
+        if (options == null || options.isEmpty()) {
+            log.warn("No options provided for variant generation of product {}", product.getId());
+            return;
+        }
+
+        // Generiere alle Kombinationen aus bestehenden Optionen
+        List<Map<String, String>> combinations = generateCombinations(options);
+        createVariantsFromCombinations(product, combinations);
+        log.info("Generated {} variants for product '{}' from existing options",
+                 combinations.size(), product.getTitle());
+    }
+
+    /**
      * Generiert alle Kombinationen von Option-Werten
      */
     private List<Map<String, String>> generateCombinations(List<ProductOption> options) {

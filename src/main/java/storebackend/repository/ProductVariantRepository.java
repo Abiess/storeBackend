@@ -4,6 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import storebackend.entity.Product;
 import storebackend.entity.ProductVariant;
 
@@ -29,4 +30,8 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
 
     // Check if SKU exists
     boolean existsBySku(String sku);
+
+    // Delete all variants for a product (used for regeneration)
+    @Transactional
+    int deleteByProductId(Long productId);
 }

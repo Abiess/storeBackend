@@ -5,14 +5,14 @@ import { environment } from '@env/environment';
 import { MockProductOptionService } from '../mocks/mock-product-option.service';
 
 export interface ProductOption {
-  id: number;
-  productId: number;
+  id?: number;
+  productId?: number;
   name: string;
-  displayName: string;
-  type: 'SELECT' | 'RADIO' | 'CHECKBOX';
-  required: boolean;
-  sortOrder: number;
-  values: ProductOptionValue[];
+  values: string[];
+  sortOrder?: number;
+  displayName?: string;
+  type?: 'SELECT' | 'RADIO' | 'CHECKBOX';
+  required?: boolean;
 }
 
 export interface ProductOptionValue {
@@ -26,10 +26,16 @@ export interface ProductOptionValue {
 
 export interface CreateProductOptionRequest {
   name: string;
-  displayName: string;
-  type: 'SELECT' | 'RADIO' | 'CHECKBOX';
-  required: boolean;
-  sortOrder: number;
+  values: string[];
+  sortOrder?: number;
+  displayName?: string;
+  type?: 'SELECT' | 'RADIO' | 'CHECKBOX';
+  required?: boolean;
+}
+
+export interface RegenerateResponse {
+  variantCount: number;
+  message: string;
 }
 
 @Injectable({
@@ -75,6 +81,16 @@ export class ProductOptionService {
     }
     return this.http.delete<void>(
       `${environment.apiUrl}/stores/${storeId}/products/${productId}/options/${optionId}`
+    );
+  }
+
+  regenerateVariants(storeId: number, productId: number): Observable<RegenerateResponse> {
+    if (environment.useMockData) {
+      return this.mockService.regenerateVariants(storeId, productId);
+    }
+    return this.http.post<RegenerateResponse>(
+      `${environment.apiUrl}/stores/${storeId}/products/${productId}/variants/regenerate`,
+      {}
     );
   }
 }

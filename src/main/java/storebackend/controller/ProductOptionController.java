@@ -106,4 +106,37 @@ public class ProductOptionController {
         productOptionService.deleteOption(optionId, productId, store);
         return ResponseEntity.noContent().build();
     }
+
+    /**
+     * POST /api/stores/{storeId}/products/{productId}/variants/regenerate
+     * Regeneriert alle Varianten basierend auf den aktuellen Optionen
+     */
+    @PostMapping("/../variants/regenerate")
+    public ResponseEntity<RegenerateResponse> regenerateVariants(
+            @PathVariable Long storeId,
+            @PathVariable Long productId,
+            @AuthenticationPrincipal User user) {
+
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+
+        if (!store.getOwner().getId().equals(user.getId())) {
+            return ResponseEntity.status(403).build();
+        }
+
+        int count = productOptionService.regenerateVariants(productId, store);
+        return ResponseEntity.ok(new RegenerateResponse(count, "Varianten erfolgreich regeneriert"));
+    }
+
+    /**
+     * Response DTO für Varianten-Regenerierung
+     */
+    public record RegenerateResponse(
+            int variantCount,
+            String message
+    ) {}
 }
