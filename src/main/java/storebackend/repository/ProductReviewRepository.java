@@ -78,5 +78,9 @@ public interface ProductReviewRepository extends JpaRepository<ProductReview, Lo
            "JOIN FETCH r.product " +
            "WHERE r.product.store.id = :storeId")
     Page<ProductReview> findByStoreId(@Param("storeId") Long storeId, Pageable pageable);
+
+    // For store deletion - nur IDs zurückgeben um Lazy-Loading zu vermeiden
+    @Query("SELECT r.id FROM ProductReview r WHERE r.product.store.id = :storeId")
+    List<Long> findReviewIdsByStoreId(@Param("storeId") Long storeId);
 }
 

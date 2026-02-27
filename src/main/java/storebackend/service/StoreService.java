@@ -232,72 +232,85 @@ public class StoreService {
                  storeId, store.getName(), user.getEmail());
 
         try {
-            // === PHASE 1: Commissions (ZUERST!) ===
-            // Diese haben FK zu Orders, müssen also vor Orders gelöscht werden
+            // === PHASE 1: Commissions (ZUERST - haben FK zu Orders!) ===
             log.info("Phase 1: Deleting commissions...");
-            var orders = orderRepository.findByStoreIdOrderByCreatedAtDesc(storeId);
+            List<Long> orderIds = orderRepository.findByStoreIdOrderByCreatedAtDesc(storeId)
+                .stream()
+                .map(o -> o.getId())
+                .toList();
+
             int commissionCount = 0;
-            for (var order : orders) {
-                var commissions = commissionRepository.findByOrderId(order.getId());
-                commissionCount += commissions.size();
-                commissionRepository.deleteAll(commissions);
+            for (Long orderId : orderIds) {
+                List<Long> commissionIds = commissionRepository.findByOrderId(orderId)
+                    .stream()
+                    .map(c -> c.getId())
+                    .toList();
+                commissionCount += commissionIds.size();
+                commissionIds.forEach(id -> commissionRepository.deleteById(id));
             }
             log.info("✅ Deleted {} commissions", commissionCount);
 
-            // === PHASE 2: Order Dependencies ===
-            log.info("Phase 2: Deleting order dependencies...");
-            int orderItemCount = 0;
+            // === PHASE 2: Order Status History ===
+            log.info("Phase 2: Deleting order status history...");
             int statusHistoryCount = 0;
-            for (var order : orders) {
-                // Order Items
-                var orderItems = orderItemRepository.findByOrderId(order.getId());
-                orderItemCount += orderItems.size();
-                orderItemRepository.deleteAll(orderItems);
-
-                // Order Status History
-                var statusHistory = orderStatusHistoryRepository.findByOrderIdOrderByTimestampDesc(order.getId());
-                statusHistoryCount += statusHistory.size();
-                orderStatusHistoryRepository.deleteAll(statusHistory);
+            for (Long orderId : orderIds) {
+                List<Long> historyIds = orderStatusHistoryRepository.findByOrderIdOrderByTimestampDesc(orderId)
+                    .stream()
+                    .map(h -> h.getId())
+                    .toList();
+                statusHistoryCount += historyIds.size();
+                historyIds.forEach(id -> orderStatusHistoryRepository.deleteById(id));
             }
-            log.info("✅ Deleted {} order items, {} status histories", orderItemCount, statusHistoryCount);
+            log.info("✅ Deleted {} order status histories", statusHistoryCount);
 
-            // === PHASE 3: Orders ===
-            log.info("Phase 3: Deleting orders...");
-            int orderCount = orders.size();
-            orderRepository.deleteAll(orders);
+            // === PHASE 3: Order Items ===
+            log.info("Phase 3: Deleting order items...");
+            int orderItemCount = 0;
+            for (Long orderId : orderIds) {
+                List<Long> itemIds = orderItemRepository.findByOrderId(orderId)
+                    .stream()
+                    .map(i -> i.getId())
+                    .toList();
+                orderItemCount += itemIds.size();
+                itemIds.forEach(id -> orderItemRepository.deleteById(id));
+            }
+            log.info("✅ Deleted {} order items", orderItemCount);
+
+            // === PHASE 4: Orders ===
+            log.info("Phase 4: Deleting orders...");
+            int orderCount = orderIds.size();
+            orderIds.forEach(id -> orderRepository.deleteById(id));
             log.info("✅ Deleted {} orders", orderCount);
 
-            // === PHASE 4: Product Reviews ===
-            log.info("Phase 4: Deleting product reviews...");
-            int reviewCount = productReviewRepository.findAll().stream()
-                .filter(r -> r.getProduct().getStore().getId().equals(storeId))
-                .mapToInt(r -> {
-                    productReviewRepository.delete(r);
-                    return 1;
-                })
-                .sum();
+            // === PHASE 5: Product Reviews ===
+            log.info("Phase 5: Deleting product reviews...");
+            List<Long> reviewIds = productReviewRepository.findReviewIdsByStoreId(storeId);
+            int reviewCount = reviewIds.size();
+            reviewIds.forEach(id -> productReviewRepository.deleteById(id));
             log.info("✅ Deleted {} product reviews", reviewCount);
 
-            // === PHASE 5: Cart Items ===
-            log.info("Phase 5: Deleting cart items...");
-            var carts = cartRepository.findAll().stream()
-                .filter(c -> c.getStore() != null && c.getStore().getId().equals(storeId))
-                .toList();
+            // === PHASE 6: Cart Items ===
+            log.info("Phase 6: Deleting cart items...");
+            List<Long> cartIds = cartRepository.findCartIdsByStoreId(storeId);
             int cartItemCount = 0;
-            for (var cart : carts) {
-                var cartItems = cartItemRepository.findByCartId(cart.getId());
-                cartItemCount += cartItems.size();
-                cartItemRepository.deleteAll(cartItems);
+            for (Long cartId : cartIds) {
+                List<Long> itemIds = cartItemRepository.findByCartId(cartId)
+                    .stream()
+                    .map(i -> i.getId())
+                    .toList();
+                cartItemCount += itemIds.size();
+                itemIds.forEach(id -> cartItemRepository.deleteById(id));
             }
-            log.info("✅ Deleted {} cart items from {} carts", cartItemCount, carts.size());
+            log.info("✅ Deleted {} cart items from {} carts", cartItemCount, cartIds.size());
 
-            // === PHASE 6: Carts ===
-            log.info("Phase 6: Deleting carts...");
-            cartRepository.deleteAll(carts);
-            log.info("✅ Deleted {} carts", carts.size());
+            // === PHASE 7: Carts ===
+            log.info("Phase 7: Deleting carts...");
+            int cartCount = cartIds.size();
+            cartIds.forEach(id -> cartRepository.deleteById(id));
+            log.info("✅ Deleted {} carts", cartCount);
 
-            // === PHASE 7: Media Files (MinIO) ===
-            log.info("Phase 7: Deleting media files from MinIO...");
+            // === PHASE 8: Media Files (MinIO) ===
+            log.info("Phase 8: Deleting media files from MinIO...");
             int deletedMediaCount = 0;
             try {
                 deletedMediaCount = mediaService.deleteAllMediaForStore(store);
@@ -306,21 +319,29 @@ public class StoreService {
                 log.error("⚠️ Error deleting media files (continuing): {}", e.getMessage());
             }
 
-            // === PHASE 8: Domains ===
-            log.info("Phase 8: Deleting domains...");
-            List<Domain> domains = domainRepository.findByStore(store);
-            int domainCount = domains.size();
-            if (!domains.isEmpty()) {
-                domainRepository.deleteAll(domains);
-                log.info("✅ Deleted {} domains", domainCount);
-            }
+            // === PHASE 9: Domains ===
+            log.info("Phase 9: Deleting domains...");
+            List<Long> domainIds = domainRepository.findByStore(store)
+                .stream()
+                .map(d -> d.getId())
+                .toList();
+            int domainCount = domainIds.size();
+            domainIds.forEach(id -> domainRepository.deleteById(id));
+            log.info("✅ Deleted {} domains", domainCount);
 
-            // === PHASE 9: Store (mit CASCADE für Products, Categories, etc.) ===
-            log.info("Phase 9: Deleting store entity (CASCADE: products, categories, themes, etc.)...");
-            storeRepository.delete(store);
+            // === PHASE 10: Store (mit CASCADE für Products, Variants, Categories, Themes, etc.) ===
+            // JPA CASCADE wird automatisch folgendes löschen:
+            // - Products → Product Options → Product Option Values
+            // - Products → Product Variants
+            // - Products → Inventory
+            // - Categories
+            // - Store Themes
+            // - Store Usage
+            log.info("Phase 10: Deleting store entity (CASCADE: products, categories, themes, etc.)...");
+            storeRepository.deleteById(storeId);
 
-            log.info("🎉 Store {} COMPLETELY deleted: {} orders, {} commissions, {} domains, {} media files, by user {}",
-                     storeId, orderCount, commissionCount, domainCount, deletedMediaCount, user.getEmail());
+            log.info("🎉 Store {} COMPLETELY deleted: {} orders, {} commissions, {} reviews, {} carts, {} domains, {} media files, by user {}",
+                     storeId, orderCount, commissionCount, reviewCount, cartCount, domainCount, deletedMediaCount, user.getEmail());
 
         } catch (Exception e) {
             log.error("❌ Error during store deletion: {}", e.getMessage(), e);

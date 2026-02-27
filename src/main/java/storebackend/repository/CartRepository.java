@@ -23,4 +23,10 @@ public interface CartRepository extends JpaRepository<Cart, Long> {
 
     @Query("SELECT c FROM Cart c WHERE c.sessionId = :sessionId AND c.store.id = :storeId AND c.expiresAt > :now ORDER BY c.updatedAt DESC")
     List<Cart> findBySessionIdAndStoreIdAndNotExpired(@Param("sessionId") String sessionId, @Param("storeId") Long storeId, @Param("now") LocalDateTime now);
+
+    // For store deletion
+    @Query("SELECT c.id FROM Cart c WHERE c.store.id = :storeId")
+    List<Long> findCartIdsByStoreId(@Param("storeId") Long storeId);
+
+    void deleteByStoreId(Long storeId);
 }
