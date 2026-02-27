@@ -8,10 +8,12 @@ import storebackend.config.SaasProperties;
 import storebackend.dto.CreateStoreRequest;
 import storebackend.dto.UpdateStoreRequest;
 import storebackend.dto.StoreDTO;
+import storebackend.entity.Domain;
 import storebackend.entity.Store;
 import storebackend.entity.User;
 import storebackend.enums.Role;
 import storebackend.enums.StoreStatus;
+import storebackend.repository.DomainRepository;
 import storebackend.repository.StoreRepository;
 import storebackend.repository.UserRepository;
 
@@ -27,6 +29,7 @@ public class StoreService {
 
     private final StoreRepository storeRepository;
     private final UserRepository userRepository;
+    private final DomainRepository domainRepository;
     private final SaasProperties saasProperties;
     private final StorePostCreateService postCreateService;  // NEU: Separater Service für Post-Create-Operationen
 
@@ -217,8 +220,16 @@ public class StoreService {
             throw new RuntimeException("You are not authorized to delete this store");
         }
 
+        // Lösche alle Domains des Stores VOR dem Store-Löschen
+        // Dies verhindert Probleme mit Primary-Domain-Constraints
+        List<Domain> domains = domainRepository.findByStore(store);
+        int domainCount = domains.size();
+        if (!domains.isEmpty()) {
+            domainRepository.deleteAll(domains);
+        }
+
         storeRepository.delete(store);
-        log.info("Store {} deleted by user {}", storeId, user.getEmail());
+        log.info("Store {} and {} domains deleted by user {}", storeId, domainCount, user.getEmail());
     }
 
     public List<Store> getStoresByUserId(Long userId) {

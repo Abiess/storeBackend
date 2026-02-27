@@ -294,8 +294,17 @@ public class DomainService {
             throw new SecurityException("Access denied");
         }
 
+        // Prüfe ob es die primäre Domain ist
         if (domain.getIsPrimary()) {
-            throw new IllegalStateException("Cannot delete primary domain");
+            // Zähle wie viele Domains der Store hat
+            long domainCount = domainRepository.countByStore(domain.getStore());
+
+            // Wenn es mehr als 1 Domain gibt, verhindere das Löschen der primären Domain
+            if (domainCount > 1) {
+                throw new IllegalStateException("Cannot delete primary domain. Please set another domain as primary first.");
+            }
+            // Wenn es die einzige Domain ist, erlaube das Löschen
+            // (z.B. beim Store-Löschen oder wenn User die letzte Domain löschen will)
         }
 
         domainRepository.delete(domain);
