@@ -13,6 +13,7 @@ import {
 import { environment } from '@env/environment';
 import { SubscriptionStateService } from './subscription-state.service';
 import { SubscriptionHelperService } from './subscription-helper.service';
+import { toDate } from '../utils/date.utils';
 
 /**
  * Service für Subscription API-Calls
@@ -144,7 +145,19 @@ export class SubscriptionService {
 
     const request$ = environment.useMockData
       ? of(this.createMockSubscription(userId)).pipe(delay(300))
-      : this.http.get<Subscription>(`${this.API_URL}/user/${userId}/current`);
+      : this.http.get<Subscription>(`${this.API_URL}/user/${userId}/current`).pipe(
+          map(sub => {
+            // ✅ Konvertiere LocalDateTime-Arrays zu JS Dates
+            if (sub) {
+              sub.startDate = toDate(sub.startDate) as any;
+              sub.endDate = toDate(sub.endDate) as any;
+              sub.renewalDate = toDate(sub.renewalDate) as any;
+              sub.createdAt = toDate(sub.createdAt) as any;
+              sub.updatedAt = toDate(sub.updatedAt) as any;
+            }
+            return sub;
+          })
+        );
 
     return request$.pipe(
       tap(subscription => {
@@ -190,7 +203,17 @@ export class SubscriptionService {
     if (environment.useMockData) {
       return of([]).pipe(delay(300));
     }
-    return this.http.get<Subscription[]>(`${this.API_URL}/user/${userId}/history`);
+    return this.http.get<Subscription[]>(`${this.API_URL}/user/${userId}/history`).pipe(
+      map(subs => subs.map(sub => {
+        // ✅ Konvertiere LocalDateTime-Arrays zu JS Dates
+        sub.startDate = toDate(sub.startDate) as any;
+        sub.endDate = toDate(sub.endDate) as any;
+        sub.renewalDate = toDate(sub.renewalDate) as any;
+        sub.createdAt = toDate(sub.createdAt) as any;
+        sub.updatedAt = toDate(sub.updatedAt) as any;
+        return sub;
+      }))
+    );
   }
 
   /**
