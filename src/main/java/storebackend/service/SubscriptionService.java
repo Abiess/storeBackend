@@ -21,6 +21,8 @@ public class SubscriptionService {
 
     private final SubscriptionRepository subscriptionRepository;
     private final storebackend.config.PlanConfig planConfig;
+    private final storebackend.repository.UserRepository userRepository;
+    private final storebackend.repository.PlanRepository planRepository;
 
     /**
      * Hole aktuelle Subscription eines Benutzers
@@ -108,7 +110,52 @@ public class SubscriptionService {
             : LocalDateTime.now().plusMonths(1);
         subscription.setRenewalDate(renewalDate);
 
-        return subscriptionRepository.save(subscription);
+        Subscription savedSubscription = subscriptionRepository.save(subscription);
+
+        // WICHTIG: Aktualisiere auch User.plan für Legacy-Kompatibilität
+        // (StoreService prüft aktuell noch User.plan für Limits)
+        updateUserPlanFromSubscription(userId, targetPlan);
+
+        return savedSubscription;
+    }
+
+    /**
+     * Aktualisiere User.plan basierend auf Subscription
+     * (Legacy-Support für bestehenden Code der User.plan prüft)
+     */
+    @Transactional
+    private void updateUserPlanFromSubscription(Long userId, storebackend.enums.Plan subscriptionPlan) {
+        // Hole User
+        storebackend.entity.User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User nicht gefunden"));
+
+        // Finde oder erstelle entsprechenden Plan in plans-Tabelle
+        storebackend.entity.Plan planEntity = planRepository.findByName(subscriptionPlan.name())
+            .orElseGet(() -> createPlanEntityFromEnum(subscriptionPlan));
+
+        // Setze Plan beim User
+        user.setPlan(planEntity);
+        userRepository.save(user);
+
+        log.info("User {} Plan aktualisiert auf: {}", userId, subscriptionPlan);
+    }
+
+    /**
+     * Erstelle Plan Entity aus Enum (falls nicht vorhanden)
+     */
+    private storebackend.entity.Plan createPlanEntityFromEnum(storebackend.enums.Plan planEnum) {
+        Map<String, Integer> limits = planConfig.getLimits(planEnum);
+
+        storebackend.entity.Plan planEntity = new storebackend.entity.Plan();
+        planEntity.setName(planEnum.name());
+        planEntity.setMaxStores(limits.get("maxStores"));
+        planEntity.setMaxProducts(limits.get("maxProducts"));
+        planEntity.setMaxCustomDomains(1); // Default
+        planEntity.setMaxSubdomains(1); // Default
+        planEntity.setMaxStorageMb(1000); // Default
+        planEntity.setMaxImageCount(100); // Default
+
+        return planRepository.save(planEntity);
     }
 
     /**
@@ -177,8 +224,12 @@ public class SubscriptionService {
             .orElseThrow(() -> new RuntimeException("Subscription nicht gefunden"));
 
         subscription.setStatus(SubscriptionStatus.ACTIVE);
+        Subscription savedSubscription = subscriptionRepository.save(subscription);
 
-        return subscriptionRepository.save(subscription);
+        // WICHTIG: Aktualisiere auch User.plan nach Zahlungsbestätigung
+        updateUserPlanFromSubscription(subscription.getUserId(), subscription.getPlan());
+
+        return savedSubscription;
     }
 
     /**

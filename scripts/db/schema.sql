@@ -1077,9 +1077,24 @@ WHERE NOT EXISTS (
 -- Explizit public Schema setzen
 SET search_path TO public;
 
--- FREE Plan
+-- Initial Plans (synchronisiert mit PlanConfig.java)
 INSERT INTO plans (name, max_stores, max_custom_domains, max_subdomains, max_storage_mb, max_products, max_image_count)
-VALUES ('FREE', 1, 0, 1, 100, 50, 100)
+VALUES ('FREE', 2, 0, 1, 1000, 100, 10)
+    ON CONFLICT (name) DO UPDATE SET
+        max_stores = 2,
+        max_products = 100,
+        max_storage_mb = 1000,
+        max_image_count = 10;
+
+INSERT INTO plans (name, max_stores, max_custom_domains, max_subdomains, max_storage_mb, max_products, max_image_count)
+VALUES ('PRO', 4, 5, 10, 10000, 1000, 100)
+    ON CONFLICT (name) DO UPDATE SET
+        max_stores = 4,
+        max_products = 1000,
+        max_storage_mb = 10000;
+
+INSERT INTO plans (name, max_stores, max_custom_domains, max_subdomains, max_storage_mb, max_products, max_image_count)
+VALUES ('ENTERPRISE', -1, -1, -1, -1, -1, -1)
     ON CONFLICT (name) DO NOTHING;
 
 -- =====================
