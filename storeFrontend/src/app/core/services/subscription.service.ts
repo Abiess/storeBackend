@@ -28,9 +28,9 @@ export class SubscriptionService {
       monthlyPrice: 0,
       yearlyPrice: 0,
       features: {
-        maxStores: 1,
-        maxProducts: 10,
-        maxOrders: 50,
+        maxStores: 2,
+        maxProducts: 50,
+        maxOrders: 500,
         customDomain: false,
         analytics: false,
         priority_support: false,
