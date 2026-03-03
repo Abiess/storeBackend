@@ -43,9 +43,9 @@ public class SubscriptionController {
                 .yearlyPrice(0.0)
                 .popular(false)
                 .features(Map.of(
-                    "maxStores", 1,
-                    "maxProducts", 10,
-                    "maxOrders", 50,
+                    "maxStores", 2,
+                    "maxProducts", 100,
+                    "maxOrders", 500,
                     "customDomain", false,
                     "analytics", false,
                     "priority_support", false,
@@ -63,7 +63,7 @@ public class SubscriptionController {
                 .yearlyPrice(299.99)
                 .popular(true)
                 .features(Map.of(
-                    "maxStores", 3,
+                    "maxStores", 4,
                     "maxProducts", 1000,
                     "maxOrders", -1,
                     "customDomain", true,
