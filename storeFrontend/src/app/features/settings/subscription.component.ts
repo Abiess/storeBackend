@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SubscriptionService } from '@app/core/services/subscription.service';
+import { SubscriptionHelperService } from '@app/core/services/subscription-helper.service';
 import { AuthService } from '@app/core/services/auth.service';
 import {
   Plan,
@@ -36,6 +37,7 @@ export class SubscriptionComponent implements OnInit {
 
   constructor(
     private subscriptionService: SubscriptionService,
+    private helperService: SubscriptionHelperService,
     private authService: AuthService
   ) {}
 
@@ -136,29 +138,15 @@ export class SubscriptionComponent implements OnInit {
   }
 
   getPlanName(plan: Plan): string {
-    const planDetails = this.availablePlans.find(p => p.plan === plan);
-    return planDetails?.name || plan;
+    return this.helperService.getPlanName(plan);
   }
 
   getStatusLabel(status: SubscriptionStatus): string {
-    const labels: Record<SubscriptionStatus, string> = {
-      [SubscriptionStatus.ACTIVE]: 'Aktiv',
-      [SubscriptionStatus.CANCELLED]: 'Gekündigt',
-      [SubscriptionStatus.EXPIRED]: 'Abgelaufen',
-      [SubscriptionStatus.PENDING]: 'Ausstehend',
-      [SubscriptionStatus.TRIAL]: 'Testphase'
-    };
-    return labels[status] || status;
+    return this.helperService.getStatusLabel(status);
   }
 
   getPaymentMethodLabel(method: PaymentMethod): string {
-    const labels: Record<PaymentMethod, string> = {
-      [PaymentMethod.BANK_TRANSFER]: 'Banküberweisung',
-      [PaymentMethod.CREDIT_CARD]: 'Kreditkarte',
-      [PaymentMethod.PAYPAL]: 'PayPal',
-      [PaymentMethod.STRIPE]: 'Stripe'
-    };
-    return labels[method] || method;
+    return this.helperService.getPaymentMethodLabel(method);
   }
 
   canUpgradeToThisPlan(targetPlan: Plan): boolean {

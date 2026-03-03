@@ -20,19 +20,7 @@ import java.util.*;
 public class SubscriptionService {
 
     private final SubscriptionRepository subscriptionRepository;
-
-    // Plan-Preise
-    private static final Map<Plan, BigDecimal> MONTHLY_PRICES = Map.of(
-        Plan.FREE, BigDecimal.ZERO,
-        Plan.PRO, new BigDecimal("29.99"),
-        Plan.ENTERPRISE, new BigDecimal("99.99")
-    );
-
-    private static final Map<Plan, BigDecimal> YEARLY_PRICES = Map.of(
-        Plan.FREE, BigDecimal.ZERO,
-        Plan.PRO, new BigDecimal("299.99"),
-        Plan.ENTERPRISE, new BigDecimal("999.99")
-    );
+    private final storebackend.config.PlanConfig planConfig;
 
     /**
      * Hole aktuelle Subscription eines Benutzers
@@ -74,7 +62,7 @@ public class SubscriptionService {
         subscription.setPlan(plan);
         subscription.setStatus(SubscriptionStatus.ACTIVE);
         subscription.setStartDate(LocalDateTime.now());
-        subscription.setAmount(MONTHLY_PRICES.get(plan));
+        subscription.setAmount(planConfig.getPrice(plan, "MONTHLY"));
         subscription.setBillingCycle("MONTHLY");
         subscription.setAutoRenew(false);
 
@@ -105,9 +93,7 @@ public class SubscriptionService {
         }
 
         // Setze Preis basierend auf Billing-Zyklus
-        BigDecimal price = "YEARLY".equals(billingCycle)
-            ? YEARLY_PRICES.get(targetPlan)
-            : MONTHLY_PRICES.get(targetPlan);
+        BigDecimal price = planConfig.getPrice(targetPlan, billingCycle);
 
         subscription.setAmount(price);
         subscription.setBillingCycle(billingCycle);
@@ -209,27 +195,78 @@ public class SubscriptionService {
      * Hole Plan-Limits
      */
     public Map<String, Integer> getPlanLimits(Plan plan) {
-        Map<String, Integer> limits = new HashMap<>();
+        return planConfig.getLimits(plan);
+    }
 
+    /**
+     * Berechne Preis für einen Plan basierend auf Billing-Zyklus
+     */
+    public Double calculatePrice(String planStr, String billingCycle) {
+        Plan plan = Plan.valueOf(planStr.toUpperCase());
+        BigDecimal price = planConfig.getPrice(plan, billingCycle);
+        return price != null ? price.doubleValue() : 0.0;
+    }
+
+    /**
+     * Berechne jährliche Ersparnis für einen Plan
+     */
+    public Double getYearlySavings(String planStr) {
+        Plan plan = Plan.valueOf(planStr.toUpperCase());
+        BigDecimal savings = planConfig.getYearlySavings(plan);
+        return savings.doubleValue();
+    }
+
+    /**
+     * Hole Plan-Namen (lokalisiert)
+     */
+    public String getPlanName(Plan plan) {
         switch (plan) {
-            case FREE:
-                limits.put("maxStores", 1);
-                limits.put("maxProducts", 10);
-                limits.put("maxOrders", 50);
-                break;
-            case PRO:
-                limits.put("maxStores", 3);
-                limits.put("maxProducts", 1000);
-                limits.put("maxOrders", -1); // unbegrenzt
-                break;
-            case ENTERPRISE:
-                limits.put("maxStores", -1);
-                limits.put("maxProducts", -1);
-                limits.put("maxOrders", -1);
-                break;
+            case FREE: return "Free";
+            case PRO: return "Pro";
+            case ENTERPRISE: return "Enterprise";
+            default: return plan.name();
+        }
+    }
+
+    /**
+     * Hole Status-Label (lokalisiert)
+     */
+    public String getStatusLabel(SubscriptionStatus status) {
+        switch (status) {
+            case ACTIVE: return "Aktiv";
+            case CANCELLED: return "Gekündigt";
+            case EXPIRED: return "Abgelaufen";
+            case PENDING: return "Ausstehend";
+            case TRIAL: return "Testphase";
+            default: return status.name();
+        }
+    }
+
+    /**
+     * Prüfe ob Plan ein Feature hat
+     */
+    public boolean hasFeature(Plan plan, String featureName) {
+        return planConfig.hasFeature(plan, featureName);
+    }
+
+    /**
+     * Berechne Tage bis zur Verlängerung
+     */
+    public Long getDaysUntilRenewal(LocalDateTime renewalDate) {
+        if (renewalDate == null) {
+            return null;
         }
 
-        return limits;
+        LocalDateTime now = LocalDateTime.now();
+        return java.time.temporal.ChronoUnit.DAYS.between(now, renewalDate);
+    }
+
+    /**
+     * Prüfe ob Subscription bald abläuft
+     */
+    public boolean isExpiringSoon(LocalDateTime renewalDate) {
+        Long days = getDaysUntilRenewal(renewalDate);
+        return days != null && days <= 7 && days > 0;
     }
 }
 

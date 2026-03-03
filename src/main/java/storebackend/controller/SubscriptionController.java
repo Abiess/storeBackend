@@ -1,5 +1,8 @@
 package storebackend.controller;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -26,6 +29,7 @@ import java.util.Arrays;
 public class SubscriptionController {
 
     private final SubscriptionService subscriptionService;
+    private final storebackend.config.PlanConfig planConfig;
 
     /**
      * Hole alle verfügbaren Subscription-Pläne
@@ -33,70 +37,7 @@ public class SubscriptionController {
     @GetMapping("/plans")
     public ResponseEntity<List<PlanDetails>> getAvailablePlans() {
         log.info("GET /api/subscriptions/plans");
-
-        List<PlanDetails> plans = Arrays.asList(
-            PlanDetails.builder()
-                .plan("FREE")
-                .name("Free")
-                .description("Perfekt für den Start")
-                .monthlyPrice(0.0)
-                .yearlyPrice(0.0)
-                .popular(false)
-                .features(Map.of(
-                    "maxStores", 2,
-                    "maxProducts", 100,
-                    "maxOrders", 500,
-                    "customDomain", false,
-                    "analytics", false,
-                    "priority_support", false,
-                    "api_access", false,
-                    "multiLanguage", false,
-                    "customBranding", false
-                ))
-                .build(),
-
-            PlanDetails.builder()
-                .plan("PRO")
-                .name("Pro")
-                .description("Für wachsende Unternehmen")
-                .monthlyPrice(29.99)
-                .yearlyPrice(299.99)
-                .popular(true)
-                .features(Map.of(
-                    "maxStores", 4,
-                    "maxProducts", 1000,
-                    "maxOrders", -1,
-                    "customDomain", true,
-                    "analytics", true,
-                    "priority_support", true,
-                    "api_access", true,
-                    "multiLanguage", true,
-                    "customBranding", false
-                ))
-                .build(),
-
-            PlanDetails.builder()
-                .plan("ENTERPRISE")
-                .name("Enterprise")
-                .description("Für große Unternehmen")
-                .monthlyPrice(99.99)
-                .yearlyPrice(999.99)
-                .popular(false)
-                .features(Map.of(
-                    "maxStores", -1,
-                    "maxProducts", -1,
-                    "maxOrders", -1,
-                    "customDomain", true,
-                    "analytics", true,
-                    "priority_support", true,
-                    "api_access", true,
-                    "multiLanguage", true,
-                    "customBranding", true
-                ))
-                .build()
-        );
-
-        return ResponseEntity.ok(plans);
+        return ResponseEntity.ok(planConfig.getAllPlanDetails());
     }
 
     /**
@@ -139,7 +80,7 @@ public class SubscriptionController {
 
             // Erstelle Payment Intent Response
             PaymentIntentResponse response = new PaymentIntentResponse();
-            response.setId("pi_" + UUID.randomUUID().toString());
+            response.setId("pi_" + UUID.randomUUID());
             response.setAmount(subscription.getAmount());
             response.setCurrency("EUR");
             response.setStatus(subscription.getStatus().toString().toLowerCase());
@@ -234,16 +175,93 @@ public class SubscriptionController {
         }
     }
 
+    /**
+     * Validiere Upgrade-Möglichkeit
+     */
+    @PostMapping("/validate-upgrade")
+    public ResponseEntity<Map<String, Object>> validateUpgrade(@RequestBody UpgradeValidationRequest request) {
+        log.info("POST /api/subscriptions/validate-upgrade: currentPlan={}, targetPlan={}",
+                 request.getCurrentPlan(), request.getTargetPlan());
+
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            boolean canUpgrade = subscriptionService.canUpgrade(
+                request.getCurrentPlan(),
+                request.getTargetPlan()
+            );
+
+            response.put("valid", canUpgrade);
+            if (!canUpgrade) {
+                response.put("error", "Downgrade ist derzeit nicht möglich");
+            }
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Fehler bei Upgrade-Validierung", e);
+            response.put("valid", false);
+            response.put("error", e.getMessage());
+            return ResponseEntity.ok(response);
+        }
+    }
+
+    /**
+     * Berechne Preis für Plan und Billing-Zyklus
+     */
+    @GetMapping("/calculate-price")
+    public ResponseEntity<Map<String, Object>> calculatePrice(
+            @RequestParam String plan,
+            @RequestParam String billingCycle) {
+        log.info("GET /api/subscriptions/calculate-price: plan={}, billingCycle={}", plan, billingCycle);
+
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            Double price = subscriptionService.calculatePrice(plan, billingCycle);
+            Double yearlySavings = subscriptionService.getYearlySavings(plan);
+
+            response.put("price", price);
+            response.put("currency", "EUR");
+            response.put("billingCycle", billingCycle);
+            response.put("yearlySavings", yearlySavings);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Fehler bei Preisberechnung", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+    }
+
+    /**
+     * Hole Plan-Limits
+     */
+    @GetMapping("/plans/{plan}/limits")
+    public ResponseEntity<Map<String, Integer>> getPlanLimits(@PathVariable String plan) {
+        log.info("GET /api/subscriptions/plans/{}/limits", plan);
+
+        try {
+            Map<String, Integer> limits = subscriptionService.getPlanLimits(storebackend.enums.Plan.valueOf(plan));
+            return ResponseEntity.ok(limits);
+        } catch (Exception e) {
+            log.error("Fehler beim Abrufen der Plan-Limits", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+    }
+
     // Inner class für Payment Method Request
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class PaymentMethodRequest {
         private PaymentMethod paymentMethod;
+    }
 
-        public PaymentMethod getPaymentMethod() {
-            return paymentMethod;
-        }
-
-        public void setPaymentMethod(PaymentMethod paymentMethod) {
-            this.paymentMethod = paymentMethod;
-        }
+    // Inner class für Upgrade Validation Request
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class UpgradeValidationRequest {
+        private storebackend.enums.Plan currentPlan;
+        private storebackend.enums.Plan targetPlan;
     }
 }
