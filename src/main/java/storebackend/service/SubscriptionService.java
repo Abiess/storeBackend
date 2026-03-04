@@ -81,6 +81,20 @@ public class SubscriptionService {
         // Finde aktuelle Subscription
         Optional<Subscription> currentSubOpt = getCurrentSubscription(userId);
 
+        // ✅ SICHERHEIT: Verhindere versehentliches Downgrade von bezahltem Plan zu FREE
+        if (currentSubOpt.isPresent()) {
+            Subscription currentSub = currentSubOpt.get();
+            if (currentSub.getStatus() == SubscriptionStatus.ACTIVE) {
+                // Prüfe ob es ein Downgrade von bezahltem Plan zu FREE ist
+                if ((currentSub.getPlan() == Plan.PRO || currentSub.getPlan() == Plan.ENTERPRISE)
+                    && targetPlan == Plan.FREE) {
+                    log.warn("⚠️ BLOCKIERT: Versuch FREE Plan über aktive {} Subscription zu setzen für User {}",
+                             currentSub.getPlan(), userId);
+                    throw new RuntimeException("Cannot downgrade from " + currentSub.getPlan() + " to FREE. Please cancel your current subscription first.");
+                }
+            }
+        }
+
         Subscription subscription;
         if (currentSubOpt.isPresent()) {
             // Upgrade bestehende Subscription
@@ -116,6 +130,7 @@ public class SubscriptionService {
         // (StoreService prüft aktuell noch User.plan für Limits)
         updateUserPlanFromSubscription(userId, targetPlan);
 
+        log.info("✅ Plan erfolgreich aktualisiert: User {} → {}", userId, targetPlan);
         return savedSubscription;
     }
 

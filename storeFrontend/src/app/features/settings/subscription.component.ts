@@ -68,14 +68,10 @@ export class SubscriptionComponent implements OnInit {
         error: (error) => {
           console.error('Fehler beim Laden der Subscription:', error);
           this.loadingSubscription = false;
-          // Kein Fehler anzeigen - Benutzer hat möglicherweise noch keine Subscription
-          // Automatisch FREE-Plan vorauswählen
-          this.autoSelectFreePlan();
+          // Bei 404 (keine Subscription) ist das OK - Benutzer hat noch keinen Plan
+          // Kein automatisches Aktivieren mehr!
         }
       });
-    } else {
-      // Auch wenn kein User eingeloggt ist, FREE-Plan vorauswählen
-      this.autoSelectFreePlan();
     }
   }
 
@@ -87,10 +83,7 @@ export class SubscriptionComponent implements OnInit {
         this.availablePlans = plans;
         this.loadingPlans = false;
         console.log('Verfügbare Pläne geladen:', plans);
-        // Wenn keine Subscription vorhanden, FREE-Plan vorauswählen
-        if (!this.currentSubscription && !this.selectedPlan) {
-          this.autoSelectFreePlan();
-        }
+        // Keine automatische Aktivierung mehr!
       },
       error: (error) => {
         console.error('Fehler beim Laden der Pläne:', error);
@@ -104,44 +97,13 @@ export class SubscriptionComponent implements OnInit {
     // Finde den FREE-Plan in den verfügbaren Plänen
     const freePlan = this.availablePlans.find(p => p.plan === Plan.FREE);
     if (freePlan && !this.currentSubscription) {
-      console.log('🎁 FREE-Plan automatisch vorausgewählt');
+      console.log('🎁 FREE-Plan automatisch vorausgewählt (nur UI)');
       this.selectedPlan = freePlan;
-      // Automatisch aktivieren ohne Modal für FREE-Plan
-      this.autoActivateFreePlan();
+      // NICHT automatisch aktivieren! Nur UI-Vorauswahl.
+      // User muss explizit auf "Kostenlos starten" klicken.
     }
   }
 
-  private autoActivateFreePlan(): void {
-    const user = this.authService.getCurrentUser();
-    if (!user || this.currentSubscription) {
-      return; // Nur aktivieren wenn User eingeloggt und keine Subscription vorhanden
-    }
-
-    const freePlan = this.availablePlans.find(p => p.plan === Plan.FREE);
-    if (!freePlan) {
-      return;
-    }
-
-    console.log('🎁 FREE-Plan wird automatisch aktiviert...');
-
-    const request: UpgradeRequest = {
-      userId: user.id,
-      targetPlan: Plan.FREE,
-      billingCycle: 'MONTHLY',
-      paymentMethod: PaymentMethod.BANK_TRANSFER // Dummy, wird nicht gebraucht für FREE
-    };
-
-    this.subscriptionService.subscribeToPlan(request).subscribe({
-      next: (paymentIntent) => {
-        console.log('✅ FREE-Plan erfolgreich aktiviert');
-        this.loadCurrentSubscription();
-      },
-      error: (error) => {
-        console.error('Fehler beim Aktivieren des FREE-Plans:', error);
-        // Fehler nicht anzeigen, Benutzer kann manuell wählen
-      }
-    });
-  }
 
   toggleBillingCycle(): void {
     this.selectedBillingCycle = this.selectedBillingCycle === 'MONTHLY' ? 'YEARLY' : 'MONTHLY';
