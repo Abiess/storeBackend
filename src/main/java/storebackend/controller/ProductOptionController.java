@@ -3,12 +3,14 @@ package storebackend.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import storebackend.dto.ProductOptionDTO;
 import storebackend.entity.Store;
 import storebackend.entity.User;
 import storebackend.repository.StoreRepository;
+import storebackend.repository.UserRepository;
 import storebackend.service.ProductOptionService;
 
 import java.util.List;
@@ -20,6 +22,21 @@ import java.util.List;
 public class ProductOptionController {
     private final ProductOptionService productOptionService;
     private final StoreRepository storeRepository;
+    private final UserRepository userRepository;
+
+    /**
+     * Holt den aktuell authentifizierten User aus dem SecurityContext
+     */
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            log.warn("getCurrentUser: No authentication found");
+            return null;
+        }
+
+        String email = authentication.getName();
+        return userRepository.findByEmail(email).orElse(null);
+    }
 
     /**
      * Prüft, ob der Benutzer Zugriff auf den Store hat
@@ -50,13 +67,15 @@ public class ProductOptionController {
     @GetMapping
     public ResponseEntity<List<ProductOptionDTO>> getProductOptions(
             @PathVariable Long storeId,
-            @PathVariable Long productId,
-            @AuthenticationPrincipal User user) {
+            @PathVariable Long productId) {
 
+        User user = getCurrentUser();
         log.info("GET /api/stores/{}/products/{}/options - User: {}",
                  storeId, productId, user != null ? user.getId() : "null");
 
         if (!hasStoreAccess(storeId, user)) {
+            log.error("403 Forbidden: User {} has no access to store {}",
+                      user != null ? user.getId() : "null", storeId);
             return ResponseEntity.status(403).build();
         }
 
@@ -73,9 +92,9 @@ public class ProductOptionController {
     public ResponseEntity<ProductOptionDTO> createProductOption(
             @PathVariable Long storeId,
             @PathVariable Long productId,
-            @RequestBody ProductOptionDTO request,
-            @AuthenticationPrincipal User user) {
+            @RequestBody ProductOptionDTO request) {
 
+        User user = getCurrentUser();
         log.info("POST /api/stores/{}/products/{}/options - Option: {}",
                  storeId, productId, request.getName());
 
@@ -96,9 +115,9 @@ public class ProductOptionController {
             @PathVariable Long storeId,
             @PathVariable Long productId,
             @PathVariable Long optionId,
-            @RequestBody ProductOptionDTO request,
-            @AuthenticationPrincipal User user) {
+            @RequestBody ProductOptionDTO request) {
 
+        User user = getCurrentUser();
         log.info("PUT /api/stores/{}/products/{}/options/{}", storeId, productId, optionId);
 
         if (!hasStoreAccess(storeId, user)) {
@@ -117,9 +136,9 @@ public class ProductOptionController {
     public ResponseEntity<Void> deleteProductOption(
             @PathVariable Long storeId,
             @PathVariable Long productId,
-            @PathVariable Long optionId,
-            @AuthenticationPrincipal User user) {
+            @PathVariable Long optionId) {
 
+        User user = getCurrentUser();
         log.info("DELETE /api/stores/{}/products/{}/options/{}", storeId, productId, optionId);
 
         if (!hasStoreAccess(storeId, user)) {
@@ -141,9 +160,9 @@ public class ProductOptionController {
     @PostMapping("/../variants/regenerate")
     public ResponseEntity<RegenerateResponse> regenerateVariants(
             @PathVariable Long storeId,
-            @PathVariable Long productId,
-            @AuthenticationPrincipal User user) {
+            @PathVariable Long productId) {
 
+        User user = getCurrentUser();
         log.info("POST /api/stores/{}/products/{}/variants/regenerate", storeId, productId);
 
         if (!hasStoreAccess(storeId, user)) {

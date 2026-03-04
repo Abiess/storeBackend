@@ -6,13 +6,15 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import storebackend.dto.GenerateVariantsRequest;
 import storebackend.dto.ProductVariantDTO;
 import storebackend.entity.Store;
 import storebackend.entity.User;
 import storebackend.repository.StoreRepository;
+import storebackend.repository.UserRepository;
 import storebackend.service.ProductVariantService;
 
 import java.util.List;
@@ -26,6 +28,17 @@ public class ProductVariantController {
 
     private final ProductVariantService variantService;
     private final StoreRepository storeRepository;
+    private final UserRepository userRepository;
+
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            log.warn("getCurrentUser: No authentication found");
+            return null;
+        }
+        String email = authentication.getName();
+        return userRepository.findByEmail(email).orElse(null);
+    }
 
     private boolean hasStoreAccess(Long storeId, User user) {
         if (user == null) return false;
@@ -38,9 +51,9 @@ public class ProductVariantController {
     @GetMapping
     public ResponseEntity<List<ProductVariantDTO>> getVariants(
             @PathVariable Long storeId,
-            @PathVariable Long productId,
-            @AuthenticationPrincipal User user) {
+            @PathVariable Long productId) {
 
+        User user = getCurrentUser();
         if (!hasStoreAccess(storeId, user)) {
             return ResponseEntity.status(403).build();
         }
@@ -57,9 +70,9 @@ public class ProductVariantController {
     public ResponseEntity<ProductVariantDTO> getVariant(
             @PathVariable Long storeId,
             @PathVariable Long productId,
-            @PathVariable Long variantId,
-            @AuthenticationPrincipal User user) {
+            @PathVariable Long variantId) {
 
+        User user = getCurrentUser();
         if (!hasStoreAccess(storeId, user)) {
             return ResponseEntity.status(403).build();
         }
@@ -76,9 +89,9 @@ public class ProductVariantController {
     public ResponseEntity<ProductVariantDTO> createVariant(
             @PathVariable Long storeId,
             @PathVariable Long productId,
-            @RequestBody ProductVariantDTO request,
-            @AuthenticationPrincipal User user) {
+            @RequestBody ProductVariantDTO request) {
 
+        User user = getCurrentUser();
         if (!hasStoreAccess(storeId, user)) {
             return ResponseEntity.status(403).build();
         }
@@ -96,9 +109,9 @@ public class ProductVariantController {
             @PathVariable Long storeId,
             @PathVariable Long productId,
             @PathVariable Long variantId,
-            @RequestBody ProductVariantDTO request,
-            @AuthenticationPrincipal User user) {
+            @RequestBody ProductVariantDTO request) {
 
+        User user = getCurrentUser();
         if (!hasStoreAccess(storeId, user)) {
             return ResponseEntity.status(403).build();
         }
@@ -115,9 +128,9 @@ public class ProductVariantController {
     public ResponseEntity<Void> deleteVariant(
             @PathVariable Long storeId,
             @PathVariable Long productId,
-            @PathVariable Long variantId,
-            @AuthenticationPrincipal User user) {
+            @PathVariable Long variantId) {
 
+        User user = getCurrentUser();
         if (!hasStoreAccess(storeId, user)) {
             return ResponseEntity.status(403).build();
         }
@@ -134,9 +147,9 @@ public class ProductVariantController {
     public ResponseEntity<List<ProductVariantDTO>> generateVariants(
             @PathVariable Long storeId,
             @PathVariable Long productId,
-            @RequestBody GenerateVariantsRequest request,
-            @AuthenticationPrincipal User user) {
+            @RequestBody GenerateVariantsRequest request) {
 
+        User user = getCurrentUser();
         if (!hasStoreAccess(storeId, user)) {
             return ResponseEntity.status(403).build();
         }
