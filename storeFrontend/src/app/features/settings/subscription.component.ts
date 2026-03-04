@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { SubscriptionService } from '@app/core/services/subscription.service';
 import { SubscriptionHelperService } from '@app/core/services/subscription-helper.service';
 import { AuthService } from '@app/core/services/auth.service';
+import { toDate } from '@app/core/utils/date.utils';
 import {
   Plan,
   PlanDetails,
@@ -52,8 +53,17 @@ export class SubscriptionComponent implements OnInit {
       this.loadingSubscription = true;
       this.subscriptionService.getCurrentSubscription(user.id).subscribe({
         next: (subscription) => {
+          // ✅ Sicherheitskonvertierung (falls Service es nicht gemacht hat)
+          if (subscription) {
+            subscription.startDate = toDate(subscription.startDate) as any;
+            subscription.endDate = toDate(subscription.endDate) as any;
+            subscription.renewalDate = toDate(subscription.renewalDate) as any;
+            subscription.createdAt = toDate(subscription.createdAt) as any;
+            subscription.updatedAt = toDate(subscription.updatedAt) as any;
+          }
           this.currentSubscription = subscription;
           this.loadingSubscription = false;
+          console.log('✅ Subscription geladen:', subscription);
         },
         error: (error) => {
           console.error('Fehler beim Laden der Subscription:', error);

@@ -124,7 +124,7 @@ public class SubscriptionService {
      * (Legacy-Support für bestehenden Code der User.plan prüft)
      */
     @Transactional
-    private void updateUserPlanFromSubscription(Long userId, storebackend.enums.Plan subscriptionPlan) {
+    protected void updateUserPlanFromSubscription(Long userId, storebackend.enums.Plan subscriptionPlan) {
         // Hole User
         storebackend.entity.User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User nicht gefunden"));
