@@ -70,6 +70,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/stores/*/products/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/stores/*/categories").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/stores/*/categories/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/stores/*/slider/active").permitAll() // Slider für Storefront
                 .requestMatchers(HttpMethod.GET, "/api/stores/by-domain/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/themes/**").permitAll()
                 // Cart and Checkout - können öffentlich sein (verwenden Session)
