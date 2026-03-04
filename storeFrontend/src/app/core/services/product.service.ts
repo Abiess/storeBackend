@@ -1,9 +1,11 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import { Product, CreateProductRequest, ProductVariant } from '../models';
 import { MockProductService } from '../mocks/mock-product.service';
+import { toDate } from '../utils/date.utils';
 
 @Injectable({
   providedIn: 'root'
@@ -21,14 +23,18 @@ export class ProductService {
     if (status) {
       params = params.set('status', status);
     }
-    return this.http.get<Product[]>(`${environment.apiUrl}/stores/${storeId}/products`, { params });
+    return this.http.get<Product[]>(`${environment.apiUrl}/stores/${storeId}/products`, { params }).pipe(
+      map(products => products.map(p => this.convertProductDates(p)))
+    );
   }
 
   getProduct(storeId: number, productId: number): Observable<Product> {
     if (environment.useMockData) {
       return this.mockService.getProduct(storeId, productId);
     }
-    return this.http.get<Product>(`${environment.apiUrl}/stores/${storeId}/products/${productId}`);
+    return this.http.get<Product>(`${environment.apiUrl}/stores/${storeId}/products/${productId}`).pipe(
+      map(p => this.convertProductDates(p))
+    );
   }
 
   createProduct(storeId: number, request: CreateProductRequest): Observable<Product> {
@@ -83,22 +89,37 @@ export class ProductService {
 
   // Featured/Top Products - Öffentliche Endpoints
   getFeaturedProducts(storeId: number): Observable<Product[]> {
-    return this.http.get<Product[]>(`${environment.publicApiUrl}/stores/${storeId}/products/featured`);
+    return this.http.get<Product[]>(`${environment.publicApiUrl}/stores/${storeId}/products/featured`).pipe(
+      map(products => products.map(p => this.convertProductDates(p)))
+    );
   }
 
   getTopProducts(storeId: number, limit: number = 10): Observable<Product[]> {
     const params = new HttpParams().set('limit', limit.toString());
-    return this.http.get<Product[]>(`${environment.publicApiUrl}/stores/${storeId}/products/top`, { params });
+    return this.http.get<Product[]>(`${environment.publicApiUrl}/stores/${storeId}/products/top`, { params }).pipe(
+      map(products => products.map(p => this.convertProductDates(p)))
+    );
   }
 
   getTrendingProducts(storeId: number, limit: number = 10): Observable<Product[]> {
     const params = new HttpParams().set('limit', limit.toString());
-    return this.http.get<Product[]>(`${environment.publicApiUrl}/stores/${storeId}/products/trending`, { params });
+    return this.http.get<Product[]>(`${environment.publicApiUrl}/stores/${storeId}/products/trending`, { params }).pipe(
+      map(products => products.map(p => this.convertProductDates(p)))
+    );
   }
 
   getNewArrivals(storeId: number, limit: number = 10): Observable<Product[]> {
     const params = new HttpParams().set('limit', limit.toString());
-    return this.http.get<Product[]>(`${environment.publicApiUrl}/stores/${storeId}/products/new`, { params });
+    return this.http.get<Product[]>(`${environment.publicApiUrl}/stores/${storeId}/products/new`, { params }).pipe(
+      map(products => products.map(p => this.convertProductDates(p)))
+    );
+  }
+
+  // ✅ Helper: Konvertiere Date-Arrays für ein Produkt
+  private convertProductDates(product: Product): Product {
+    product.createdAt = toDate(product.createdAt) as any;
+    product.updatedAt = toDate(product.updatedAt) as any;
+    return product;
   }
 
   trackProductView(storeId: number, productId: number): Observable<void> {

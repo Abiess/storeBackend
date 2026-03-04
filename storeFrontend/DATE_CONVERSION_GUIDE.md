@@ -11,7 +11,16 @@
 - ✅ Zeigt aktiven Plan korrekt an
 - ✅ DatePipes funktionieren im Template
 
-### 3. **dashboard.component.ts**
+### 3. **product.service.ts** (Product Service)
+- ✅ `getProducts()` - konvertiert createdAt, updatedAt
+- ✅ `getProduct()` - konvertiert für einzelnes Produkt
+- ✅ `getFeaturedProducts()` - konvertiert Featured Products
+- ✅ `getTopProducts()` - konvertiert Top Products
+- ✅ `getTrendingProducts()` - konvertiert Trending Products
+- ✅ `getNewArrivals()` - konvertiert neue Produkte
+- ✅ Helper-Funktion `convertProductDates()` für DRY-Code
+
+### 4. **dashboard.component.ts**
 - ✅ `formatDate()` - Custom Formatter für Store.createdAt
 - ✅ Unterstützt sowohl Arrays als auch ISO-Strings
 
@@ -115,9 +124,11 @@ ERROR NG02100: InvalidPipeArgument: 'Unable to convert "[2026,3,4,15,24,36,78741
 |-----------|-------------------|--------|
 | subscription.service.ts | ✅ | Implementiert |
 | subscription.component.ts | ✅ | Implementiert |
+| product.service.ts | ✅ | Implementiert |
 | dashboard.component.ts | ✅ | Custom Formatter |
-| store-detail.component.ts | ⏳ | Noch nicht geprüft |
-| order.component.ts | ⏳ | Noch nicht geprüft |
+| store.service.ts | ⏳ | Noch nicht geprüft |
+| order.service.ts | ⏳ | Noch nicht geprüft |
+| cart.service.ts | ⏳ | Noch nicht geprüft |
 | ... | ⏳ | Bei Bedarf hinzufügen |
 
 ## 🚀 Best Practice
