@@ -31,6 +31,13 @@ public class Store {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    // Banner/Slider Images
+    @Column(name = "banner_image_url", columnDefinition = "TEXT")
+    private String bannerImageUrl;
+
+    @Column(name = "slider_images", columnDefinition = "TEXT")
+    private String sliderImages; // JSON array: ["url1", "url2", "url3"]
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private StoreStatus status = StoreStatus.ACTIVE;

@@ -6,11 +6,13 @@ import { ProductService } from '@app/core/services/product.service';
 import { CategoryService } from '@app/core/services/category.service';
 import { CartService } from '@app/core/services/cart.service';
 import { ThemeService } from '@app/core/services/theme.service';
+import { SliderService, SliderImage } from '@app/core/services/slider.service';
 import { Product, Category } from '@app/core/models';
 import { StorefrontHeaderComponent } from './storefront-header.component';
 import { ProductCardComponent } from './product-card.component';
 import { StoreNotFoundComponent } from './store-not-found.component';
 import { ProductQuickViewComponent } from '@app/shared/components/product-quick-view.component';
+import { ImageSliderComponent } from '@app/shared/components/image-slider.component';
 
 /**
  * Dedizierte Storefront-Landing-Page für Subdomains (abc.markt.ma)
@@ -24,7 +26,8 @@ import { ProductQuickViewComponent } from '@app/shared/components/product-quick-
     StorefrontHeaderComponent,
     ProductCardComponent,
     StoreNotFoundComponent,
-    ProductQuickViewComponent
+    ProductQuickViewComponent,
+    ImageSliderComponent
   ],
   templateUrl: './storefront-landing.component.html',
   styleUrls: ['./storefront-landing.component.scss']
@@ -52,12 +55,16 @@ export class StorefrontLandingComponent implements OnInit {
   selectedCategory: Category | null = null;
   filteredProducts: Product[] = [];
 
+  // ✨ NEUE: Slider State
+  sliderImages: SliderImage[] = [];
+
   constructor(
     private subdomainService: SubdomainService,
     private productService: ProductService,
     private categoryService: CategoryService,
     private cartService: CartService,
     private themeService: ThemeService,
+    private sliderService: SliderService,
     public router: Router  // public statt private für Template-Zugriff
   ) {}
 
@@ -142,12 +149,13 @@ export class StorefrontLandingComponent implements OnInit {
       this.loadCategories(),
       this.loadFeaturedProducts(),
       this.loadTopProducts(),
-      this.loadNewArrivals()
+      this.loadNewArrivals(),
+      this.loadSliderImages()
     ])
       .then(() => {
         this.loading = false;
         console.log('✅ Alle Store-Daten geladen');
-        console.log(`📊 Summary: ${this.products.length} Produkte, ${this.categories.length} Kategorien`);
+        console.log(`📊 Summary: ${this.products.length} Produkte, ${this.categories.length} Kategorien, ${this.sliderImages.length} Slider-Bilder`);
       })
       .catch((err) => {
         this.loading = false;
@@ -275,6 +283,29 @@ export class StorefrontLandingComponent implements OnInit {
         error: (error) => {
           console.error('❌ Fehler beim Laden der neuen Produkte:', error);
           this.newArrivals = [];
+          resolve();
+        }
+      });
+    });
+  }
+
+  // ✨ NEUE: Lade Slider-Bilder
+  loadSliderImages(): Promise<void> {
+    if (!this.storeId) {
+      return Promise.resolve();
+    }
+
+    return new Promise((resolve) => {
+      console.log('🖼️ Lade Slider-Bilder für Store', this.storeId);
+      this.sliderService.getActiveSliderImages(this.storeId!).subscribe({
+        next: (images) => {
+          console.log('✅ Slider-Bilder geladen:', images.length);
+          this.sliderImages = images;
+          resolve();
+        },
+        error: (error) => {
+          console.error('❌ Fehler beim Laden der Slider-Bilder:', error);
+          this.sliderImages = [];
           resolve();
         }
       });

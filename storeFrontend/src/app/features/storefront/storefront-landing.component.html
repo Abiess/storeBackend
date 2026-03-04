@@ -44,8 +44,13 @@
   <main class="storefront-main" *ngIf="!loading">
     <div class="page-container">
 
-      <!-- Hero/Banner Section - Compact -->
-      <section class="hero-banner">
+      <!-- Image Slider Section -->
+      <section class="slider-section" *ngIf="sliderImages && sliderImages.length > 0">
+        <app-image-slider [images]="sliderImages" [autoplay]="true" [interval]="5000"></app-image-slider>
+      </section>
+
+      <!-- Fallback Hero Banner (wenn keine Slider-Bilder) -->
+      <section class="hero-banner" *ngIf="!sliderImages || sliderImages.length === 0">
         <div class="hero-content">
           <h1 class="hero-title">{{ storeName }}</h1>
           <p class="hero-subtitle">Entdecke unsere Produkte</p>
