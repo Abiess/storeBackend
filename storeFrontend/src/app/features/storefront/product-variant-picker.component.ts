@@ -29,12 +29,16 @@ interface ProductOption {
             [class.selected]="isSelected(option.name, value)"
             [class.disabled]="!isAvailable(option.name, value)"
             [disabled]="!isAvailable(option.name, value)"
+            [attr.aria-disabled]="!isAvailable(option.name, value)"
+            [attr.aria-label]="option.name + ': ' + value + (isSelected(option.name, value) ? ' (ausgewählt)' : '') + (!isAvailable(option.name, value) ? ' (nicht verfügbar)' : '')"
             [style.background-color]="isColorOption(option.name) ? getColorValue(value) : null"
             (click)="selectOption(option.name, value)"
-            [title]="value"
+            [title]="!isAvailable(option.name, value) ? value + ' - Ausverkauft' : value"
           >
             <span *ngIf="!isColorOption(option.name)">{{ value }}</span>
             <span *ngIf="isColorOption(option.name)" class="color-name">{{ value }}</span>
+            <!-- ✅ STEP 4: Ausverkauft-Badge für disabled Optionen -->
+            <span *ngIf="!isAvailable(option.name, value) && !isColorOption(option.name)" class="sold-out-badge">✗</span>
           </button>
         </div>
       </div>
@@ -110,6 +114,16 @@ interface ProductOption {
       color: #333;
       min-width: 60px;
       text-align: center;
+      position: relative;
+      /* ✅ STEP 4: Focus styles für Accessibility */
+      outline: none;
+    }
+
+    /* ✅ STEP 4: Focus-visible für Keyboard-Navigation */
+    .option-btn:focus-visible {
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+      outline: 2px solid #667eea;
+      outline-offset: 2px;
     }
 
     .option-btn:hover:not(:disabled) {
@@ -118,15 +132,68 @@ interface ProductOption {
       box-shadow: 0 4px 8px rgba(102, 126, 234, 0.2);
     }
 
+    /* ✅ STEP 4: Verbesserter Selected State */
     .option-btn.selected {
       border-color: #667eea;
       background: linear-gradient(135deg, #667eea, #764ba2);
       color: white;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      transform: translateY(-1px);
     }
 
-    .option-btn:disabled {
-      opacity: 0.4;
+    .option-btn.selected:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+    }
+
+    /* ✅ STEP 4: Verbesserter Disabled State */
+    .option-btn:disabled,
+    .option-btn.disabled {
+      opacity: 0.5;
       cursor: not-allowed;
+      background: #f8f9fa;
+      color: #999;
+      border-color: #e0e0e0;
+      position: relative;
+    }
+
+    .option-btn:disabled:hover,
+    .option-btn.disabled:hover {
+      transform: none;
+      box-shadow: none;
+      border-color: #e0e0e0;
+    }
+
+    /* ✅ STEP 4: Durchgestrichener Effekt für disabled */
+    .option-btn:disabled::after,
+    .option-btn.disabled::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 10%;
+      right: 10%;
+      height: 2px;
+      background: #dc3545;
+      transform: translateY(-50%) rotate(-15deg);
+      opacity: 0.7;
+    }
+
+    /* ✅ STEP 4: Ausverkauft Badge */
+    .sold-out-badge {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background: #dc3545;
+      color: white;
+      font-size: 0.65rem;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      border: 2px solid white;
     }
 
     .size-btn {
@@ -246,6 +313,12 @@ export class ProductVariantPickerComponent implements OnInit {
   }
 
   selectOption(optionName: string, value: string) {
+    // ✅ STEP 4: Guard - nicht klickbar wenn nicht verfügbar
+    if (!this.isAvailable(optionName, value)) {
+      console.log('⚠️ Option not available:', optionName, value);
+      return;
+    }
+
     this.selectedOptions[optionName] = value;
     this.updateSelectedVariant();
   }

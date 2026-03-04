@@ -39,9 +39,9 @@ interface Product {
             <img [src]="currentImage || product.primaryImageUrl || 'assets/placeholder.png'" [alt]="product.title">
           </div>
           
-          <div class="thumbnail-gallery" *ngIf="product.media && product.media.length > 1">
+          <div class="thumbnail-gallery" *ngIf="hasGalleryImages()">
             <button
-              *ngFor="let media of product.media"
+              *ngFor="let media of getGalleryImages()"
               class="thumbnail"
               [class.active]="currentImage === media.url"
               (click)="selectImage(media.url)"
@@ -68,13 +68,16 @@ interface Product {
 
           <!-- Price -->
           <div class="price-section">
-            <span class="price">{{ getCurrentPrice() | number:'1.2-2' }} €</span>
+            <span class="price">
+              <span *ngIf="showFromPrefix()" class="from-prefix">ab </span>{{ getCurrentPrice() | number:'1.2-2' }} €
+            </span>
           </div>
 
           <!-- Variant Picker -->
           <app-product-variant-picker
             *ngIf="product.variants && product.variants.length > 0"
             [variants]="product.variants"
+            [defaultVariantId]="selectedVariant?.id"
             (variantSelected)="onVariantSelected($event)"
           ></app-product-variant-picker>
 
@@ -104,6 +107,21 @@ interface Product {
             </button>
           </div>
 
+          <!-- ✅ STEP 5: Warn-Message wenn Button disabled -->
+          <div class="add-to-cart-message" *ngIf="!canAddToCart() && !adding">
+            <p class="warning-message">
+              <span *ngIf="getStockQuantity() === 0">
+                ⚠️ Dieser Artikel ist derzeit ausverkauft
+              </span>
+              <span *ngIf="getStockQuantity() > 0 && quantity > getStockQuantity()">
+                ⚠️ Nicht genug auf Lager (max. {{ getStockQuantity() }} verfügbar)
+              </span>
+              <span *ngIf="product?.variants?.length > 0 && !selectedVariant">
+                ℹ️ Bitte wählen Sie eine Variante aus
+              </span>
+            </p>
+          </div>
+
           <!-- Stock Info -->
           <div class="stock-info">
             <span 
@@ -112,11 +130,16 @@ interface Product {
               [class.low-stock]="getStockQuantity() > 0 && getStockQuantity() <= 5"
               [class.out-of-stock]="getStockQuantity() === 0"
             >
-              <span *ngIf="getStockQuantity() > 5">✓ {{ 'product.inStock' | translate }}</span>
-              <span *ngIf="getStockQuantity() > 0 && getStockQuantity() <= 5">
-                ⚠️ {{ 'product.lowStock' | translate:{ count: getStockQuantity() } }}
+              <!-- ✅ STEP 5: Klarere Stock-Messages -->
+              <span *ngIf="getStockQuantity() > 5">
+                ✓ {{ 'product.inStock' | translate }}
               </span>
-              <span *ngIf="getStockQuantity() === 0">✗ {{ 'product.outOfStock' | translate }}</span>
+              <span *ngIf="getStockQuantity() > 0 && getStockQuantity() <= 5">
+                ⚠️ Nur noch {{ getStockQuantity() }} verfügbar
+              </span>
+              <span *ngIf="getStockQuantity() === 0">
+                ✗ Ausverkauft
+              </span>
             </span>
           </div>
 
@@ -283,6 +306,13 @@ interface Product {
       background-clip: text;
     }
 
+    .from-prefix {
+      font-size: 1.25rem;
+      font-weight: 500;
+      color: #666;
+      -webkit-text-fill-color: #666;
+    }
+
     /* Quantity Selector */
     .quantity-section label {
       display: block;
@@ -378,6 +408,25 @@ interface Product {
     .btn-wishlist:hover {
       border-color: #e83e8c;
       transform: scale(1.1);
+    }
+
+    /* ✅ STEP 5: Warning Message */
+    .add-to-cart-message {
+      margin-top: 1rem;
+      padding: 0.75rem 1rem;
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      border-radius: 8px;
+    }
+
+    .warning-message {
+      margin: 0;
+      color: #856404;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
     /* Stock Info */
@@ -552,6 +601,34 @@ export class StorefrontProductDetailComponent implements OnInit {
         if (this.product) {
           this.product.variants = variants;
           console.log('✅ Loaded variants:', variants.length);
+
+          // ✅ STEP 3: Prüfe URL Query-Parameter für Varianten-Auswahl
+          const variantIdFromUrl = this.route.snapshot.queryParamMap.get('variant');
+          let selectedFromUrl = false;
+
+          if (variantIdFromUrl && variants.length > 0) {
+            const variantId = Number(variantIdFromUrl);
+            const variantFromUrl = variants.find(v => v.id === variantId);
+
+            if (variantFromUrl) {
+              // URL-Variante gefunden → verwende diese
+              this.selectedVariant = variantFromUrl;
+              selectedFromUrl = true;
+              console.log('🔗 Selected variant from URL:', variantFromUrl.sku);
+            } else {
+              console.warn('⚠️ Variant ID from URL not found:', variantId);
+            }
+          }
+
+          // ✅ AUTO-SELECT: Fallback wenn keine URL-Variante oder nicht gefunden
+          if (variants.length > 0 && !this.selectedVariant && !selectedFromUrl) {
+            const firstAvailableVariant = variants.find(v => v.stockQuantity > 0) || variants[0];
+            this.selectedVariant = firstAvailableVariant;
+            console.log('🎯 Auto-selected variant:', firstAvailableVariant.sku);
+
+            // Update URL mit auto-selected Variante
+            this.updateUrlWithVariant(firstAvailableVariant.id);
+          }
         }
         this.loading = false;
       },
@@ -565,20 +642,100 @@ export class StorefrontProductDetailComponent implements OnInit {
 
   onVariantSelected(variant: any) {
     this.selectedVariant = variant;
-    
-    // TODO: Update image if variant has specific image
-    // this.currentImage = variant.imageUrl || this.product?.primaryImageUrl;
+    console.log('🔄 Variant selected:', variant?.sku, 'Price:', variant?.price);
+
+    // ✅ STEP 3: Update URL mit ausgewählter Variante
+    if (variant?.id) {
+      this.updateUrlWithVariant(variant.id);
+    }
+
+    // ✅ STEP 5: Auto-korrigiere Quantity wenn über Stock der neuen Variante
+    if (variant && variant.stockQuantity > 0) {
+      const maxStock = variant.stockQuantity;
+      if (this.quantity > maxStock) {
+        console.log('⚠️ Quantity exceeds new variant stock, auto-correcting:', this.quantity, '→', maxStock);
+        this.quantity = maxStock;
+      }
+    }
+
+    // ✅ STEP 2: Variantenbilder-Logik
+    // TODO: Backend muss erst variant.images unterstützen (variant_id in product_media Tabelle)
+    // Aktuell: Varianten haben KEINE eigenen Bilder im Backend
+
+    if (variant?.images && variant.images.length > 0) {
+      // Fall 1: Variante hat eigene Bilder → zeige diese
+      this.currentImage = variant.images[0].url;
+      console.log('🖼️ Using variant images:', variant.images.length);
+    } else if (variant?.imageUrl) {
+      // Fall 2: Variante hat einzelnes Bild
+      this.currentImage = variant.imageUrl;
+      console.log('🖼️ Using variant imageUrl');
+    } else {
+      // Fall 3: Keine Variantenbilder → fallback auf Produktbilder
+      this.currentImage = this.product?.primaryImageUrl || null;
+      console.log('⚠️ Variant has no images, using product primary image');
+    }
   }
 
   selectImage(url: string) {
     this.currentImage = url;
   }
 
+  /**
+   * ✅ STEP 3: Aktualisiert URL mit Varianten-ID (ohne Page Reload)
+   */
+  private updateUrlWithVariant(variantId: number): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { variant: variantId },
+      queryParamsHandling: 'merge',
+      replaceState: true  // replaceState statt replaceUrl (korrekte Angular API)
+    });
+  }
+
+  /**
+   * ✅ STEP 2: Galerie-Bilder basierend auf Varianten-Auswahl
+   * Gibt Bilder für die Galerie zurück (Varianten-Bilder oder Produkt-Bilder)
+   */
+  getGalleryImages(): any[] {
+    // Fall 1: Variante ausgewählt UND Variante hat eigene Bilder
+    if (this.selectedVariant?.images && this.selectedVariant.images.length > 0) {
+      return this.selectedVariant.images;
+    }
+
+    // Fall 2: Fallback auf Produkt-Bilder
+    return this.product?.media || [];
+  }
+
+  /**
+   * Prüft ob die Galerie Bilder anzeigen soll
+   */
+  hasGalleryImages(): boolean {
+    return this.getGalleryImages().length > 1;
+  }
+
   getCurrentPrice(): number {
+    // 1️⃣ Wenn Variante ausgewählt → Variantenpreis
     if (this.selectedVariant) {
       return this.selectedVariant.price;
     }
+
+    // 2️⃣ Wenn Varianten vorhanden aber keine ausgewählt → niedrigster Preis
+    if (this.product?.variants && this.product.variants.length > 0) {
+      const prices = this.product.variants.map((v: any) => v.price);
+      return Math.min(...prices);
+    }
+
+    // 3️⃣ Fallback: Basis-Preis
     return this.product?.basePrice || 0;
+  }
+
+  /**
+   * Zeigt "ab" nur wenn Varianten existieren aber keine ausgewählt ist
+   */
+  showFromPrefix(): boolean {
+    return !this.selectedVariant &&
+           !!(this.product?.variants && this.product.variants.length > 0);
   }
 
   getStockQuantity(): number {
@@ -607,15 +764,36 @@ export class StorefrontProductDetailComponent implements OnInit {
   }
 
   canAddToCart(): boolean {
-    // Wenn Varianten vorhanden, muss eine ausgewählt sein
+    // ✅ STEP 5: Erweiterte Validierung mit Quantity-Check
+
+    // Fall 1: Produkt mit Varianten
     if (this.product?.variants && this.product.variants.length > 0) {
-      return this.selectedVariant != null && this.selectedVariant.stockQuantity > 0;
+      // Variante muss ausgewählt sein
+      if (!this.selectedVariant) return false;
+
+      // Variante muss auf Lager sein
+      if (this.selectedVariant.stockQuantity <= 0) return false;
+
+      // Quantity darf nicht über Bestand liegen
+      if (this.quantity > this.selectedVariant.stockQuantity) return false;
+
+      return true;
     }
+
+    // Fall 2: Simple Product (ohne Varianten)
+    // Hier könnte product.stockQuantity geprüft werden, falls vorhanden
     return true;
   }
 
   addToCart() {
     if (!this.canAddToCart() || this.adding) return;
+
+    // ✅ STEP 5: Auto-korrigiere Quantity falls über Stock
+    const maxStock = this.getStockQuantity();
+    if (this.quantity > maxStock && maxStock > 0) {
+      console.log('⚠️ Quantity exceeds stock, auto-correcting:', this.quantity, '→', maxStock);
+      this.quantity = maxStock;
+    }
 
     this.adding = true;
 
