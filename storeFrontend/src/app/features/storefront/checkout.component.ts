@@ -11,9 +11,10 @@ import { CouponInputComponent } from '../../shared/components/coupon-input/coupo
 import { ValidateCouponsResponse } from '../../core/services/coupon.service';
 import { PlaceholderImageUtil } from '../../shared/utils/placeholder-image.util';
 import { PhoneVerificationService } from '../../core/services/phone-verification.service';
+import { DeliveryService } from '../../core/services/delivery.service';
+import { DeliveryOption, DeliveryOptionsResponse } from '../../core/models';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { TranslationService } from '../../core/services/translation.service';
-import { parsePhoneNumber, isValidPhoneNumber, CountryCode } from 'libphonenumber-js';
 
 @Component({
   selector: 'app-checkout',
@@ -138,14 +139,14 @@ import { parsePhoneNumber, isValidPhoneNumber, CountryCode } from 'libphonenumbe
               <div class="form-row">
                 <div class="form-group">
                   <label for="postalCode">{{ 'checkout.postalCode' | translate }} {{ 'checkout.required' | translate }}</label>
-                  <input id="postalCode" type="text" formControlName="postalCode" />
+                  <input id="postalCode" type="text" formControlName="postalCode" (blur)="loadDeliveryOptions()" />
                   <div *ngIf="isFieldInvalid('shippingAddress.postalCode')" class="error">
                     {{ 'checkout.errors.postalCode' | translate }}
                   </div>
                 </div>
                 <div class="form-group">
                   <label for="city">{{ 'checkout.city' | translate }} {{ 'checkout.required' | translate }}</label>
-                  <input id="city" type="text" formControlName="city" />
+                  <input id="city" type="text" formControlName="city" (blur)="loadDeliveryOptions()" />
                   <div *ngIf="isFieldInvalid('shippingAddress.city')" class="error">
                     {{ 'checkout.errors.city' | translate }}
                   </div>
@@ -238,42 +239,69 @@ import { parsePhoneNumber, isValidPhoneNumber, CountryCode } from 'libphonenumbe
               </div>
             </section>
 
-            <!-- SHIPPING METHOD AUSWAHL -->
+            <!-- DELIVERY OPTIONS AUSWAHL (DYNAMIC) -->
             <section class="form-section">
               <h2>🚚 {{ 'checkout.shippingMethod' | translate }} {{ 'checkout.required' | translate }}</h2>
-              <div class="shipping-methods">
-                <label class="shipping-option" [class.selected]="selectedShippingMethod === 'STANDARD'">
-                  <input type="radio" name="shippingMethod" value="STANDARD"
-                    [(ngModel)]="selectedShippingMethod" [ngModelOptions]="{standalone: true}"
-                    (change)="onShippingMethodChange()" />
-                  <div class="shipping-content">
-                    <div class="shipping-info">
-                      <strong>📦 {{ 'shipping.standard' | translate }}</strong>
-                      <small>{{ 'shipping.standardHint' | translate }}</small>
-                    </div>
-                    <div class="shipping-price">
-                      {{ shipping | number:'1.2-2' }} €
-                    </div>
-                  </div>
-                </label>
+              
+              <!-- Loading State -->
+              <div *ngIf="loadingDeliveryOptions" class="loading-delivery">
+                <div class="spinner"></div>
+                <p>Lade Lieferoptionen...</p>
+              </div>
 
-                <label class="shipping-option" [class.selected]="selectedShippingMethod === 'EXPRESS'">
-                  <input type="radio" name="shippingMethod" value="EXPRESS"
-                    [(ngModel)]="selectedShippingMethod" [ngModelOptions]="{standalone: true}"
-                    (change)="onShippingMethodChange()" />
-                  <div class="shipping-content">
-                    <div class="shipping-info">
-                      <strong>⚡ {{ 'shipping.express' | translate }}</strong>
-                      <small>{{ 'shipping.expressHint' | translate }}</small>
+              <!-- Error State -->
+              <div *ngIf="deliveryOptionsError" class="error-delivery">
+                <p>{{ deliveryOptionsError }}</p>
+                <button class="btn-retry" (click)="loadDeliveryOptions()">Erneut versuchen</button>
+              </div>
+
+              <!-- No Postal Code Entered -->
+              <div *ngIf="!loadingDeliveryOptions && !deliveryOptions && !deliveryOptionsError" class="info-delivery">
+                <p>Bitte geben Sie Ihre Postleitzahl ein, um verfügbare Lieferoptionen zu sehen.</p>
+              </div>
+
+              <!-- Delivery Options List -->
+              <div *ngIf="deliveryOptions && !loadingDeliveryOptions" class="delivery-options">
+                <label *ngFor="let option of deliveryOptions.options" 
+                       class="delivery-option" 
+                       [class.selected]="isDeliveryOptionSelected(option)"
+                       [class.disabled]="!option.available">
+                  
+                  <input type="radio" 
+                         name="deliveryOption" 
+                         [value]="option"
+                         [disabled]="!option.available"
+                         [checked]="isDeliveryOptionSelected(option)"
+                         (change)="selectDeliveryOption(option)" />
+                  
+                  <div class="delivery-content">
+                    <div class="delivery-info">
+                      <strong>{{ getDeliveryOptionLabel(option) }}</strong>
+                      <small *ngIf="option.available && option.etaMinutes">
+                        {{ getDeliveryEta(option.etaMinutes) }}
+                      </small>
+                      <small *ngIf="option.available && option.zoneName" class="zone-name">
+                        Zone: {{ option.zoneName }}
+                      </small>
+                      <small *ngIf="!option.available" class="unavailable-reason">
+                        {{ option.reason }}
+                      </small>
                     </div>
-                    <div class="shipping-price">
-                      {{ expressShipping | number:'1.2-2' }} €
+                    <div class="delivery-price" [class.free]="option.fee === 0">
+                      <span *ngIf="option.available">
+                        {{ option.fee === 0 ? 'Kostenlos' : (option.fee | number:'1.2-2') + ' ' + (deliveryOptions?.currency || '€') }}
+                      </span>
+                      <span *ngIf="!option.available" class="unavailable-text">
+                        Nicht verfügbar
+                      </span>
                     </div>
                   </div>
                 </label>
               </div>
-              <div *ngIf="!selectedShippingMethod" class="error">
-                Bitte wählen Sie eine Versandmethode
+
+              <!-- Validation Error -->
+              <div *ngIf="deliveryOptions && !selectedDeliveryOption" class="error">
+                Bitte wählen Sie eine Lieferoption
               </div>
             </section>
 
@@ -504,9 +532,9 @@ import { parsePhoneNumber, isValidPhoneNumber, CountryCode } from 'libphonenumbe
             <div class="summary-row">
               <span>{{ 'cart.shipping' | translate }}</span>
               <span>
-                {{ (hasFreeShipping ? 0 : (selectedShippingMethod === 'EXPRESS' ? expressShipping : shipping)) | number:'1.2-2' }} €
-                <small *ngIf="!hasFreeShipping && selectedShippingMethod" class="shipping-method-label">
-                  ({{ selectedShippingMethod === 'EXPRESS' ? 'Express' : 'Standard' }})
+                {{ (hasFreeShipping ? 0 : (selectedDeliveryOption?.fee || 0)) | number:'1.2-2' }} €
+                <small *ngIf="!hasFreeShipping && selectedDeliveryOption" class="shipping-method-label">
+                  ({{ getDeliveryOptionLabel(selectedDeliveryOption) }})
                 </small>
               </span>
             </div>
@@ -943,6 +971,142 @@ import { parsePhoneNumber, isValidPhoneNumber, CountryCode } from 'libphonenumbe
       margin-right: 10px;
     }
 
+    /* Delivery Options (Dynamic) */
+    .loading-delivery,
+    .error-delivery,
+    .info-delivery {
+      padding: 20px;
+      text-align: center;
+      background: #f7fafc;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+
+    .loading-delivery .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .error-delivery {
+      background: #fee;
+      color: #c33;
+    }
+
+    .btn-retry {
+      margin-top: 10px;
+      padding: 8px 16px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .info-delivery {
+      color: #666;
+    }
+
+    .delivery-options {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 15px;
+    }
+
+    .delivery-option {
+      background: #f9f9f9;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      padding: 15px;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: block;
+    }
+
+    .delivery-option.selected {
+      border-color: #667eea;
+      background: #e1f5fe;
+    }
+
+    .delivery-option.disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      background: #f0f0f0;
+    }
+
+    .delivery-option:not(.disabled):hover {
+      border-color: #667eea;
+      transform: translateY(-2px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .delivery-option input[type="radio"] {
+      margin-right: 10px;
+    }
+
+    .delivery-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+    }
+
+    .delivery-info {
+      flex: 1;
+    }
+
+    .delivery-info strong {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 16px;
+      color: #1a202c;
+    }
+
+    .delivery-info small {
+      display: block;
+      color: #666;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .delivery-info .zone-name {
+      color: #667eea;
+      font-weight: 500;
+    }
+
+    .delivery-info .unavailable-reason {
+      color: #ef4444;
+      font-style: italic;
+    }
+
+    .delivery-price {
+      font-weight: 700;
+      font-size: 18px;
+      color: #1a202c;
+      text-align: right;
+      min-width: 100px;
+    }
+
+    .delivery-price.free {
+      color: #10b981;
+    }
+
+    .delivery-price .unavailable-text {
+      font-size: 14px;
+      color: #ef4444;
+      font-weight: 500;
+    }
+
+    /* Legacy shipping styles (keep for compatibility) */
     .shipping-methods {
       display: grid;
       grid-template-columns: 1fr;
@@ -1123,9 +1287,8 @@ export class CheckoutComponent implements OnInit {
   submitting = false;
   errorMessage = '';
   sameAsShipping = true;
-  shipping = 4.99;
-  expressShipping = 9.99;
-  selectedShippingMethod: string = 'STANDARD';
+  // shipping and expressShipping removed - now dynamic via deliveryOptions
+  selectedShippingMethod: string = 'STANDARD'; // Legacy compatibility
   discountAmount = 0;
   hasFreeShipping = false;
   saveAddressForFuture = false;
@@ -1164,6 +1327,12 @@ export class CheckoutComponent implements OnInit {
   phoneValidationError = '';
   isPhoneValid = false;
 
+  // DELIVERY OPTIONS (NEW)
+  deliveryOptions: DeliveryOptionsResponse | null = null;
+  loadingDeliveryOptions = false;
+  selectedDeliveryOption: DeliveryOption | null = null;
+  deliveryOptionsError = '';
+
   constructor(
     private fb: FormBuilder,
     private cartService: CartService,
@@ -1173,6 +1342,7 @@ export class CheckoutComponent implements OnInit {
     private customerProfileService: CustomerProfileService,
     private subdomainService: SubdomainService,
     private phoneVerificationService: PhoneVerificationService,
+    private deliveryService: DeliveryService,
     private translationService: TranslationService
   ) {
     this.checkoutForm = this.fb.group({
@@ -1326,6 +1496,12 @@ export class CheckoutComponent implements OnInit {
       return;
     }
 
+    // Validate delivery option is selected
+    if (!this.selectedDeliveryOption) {
+      this.errorMessage = 'Bitte wählen Sie eine Lieferoption.';
+      return;
+    }
+
     this.submitting = true;
     this.errorMessage = '';
 
@@ -1336,16 +1512,29 @@ export class CheckoutComponent implements OnInit {
       ? this.checkoutForm.get('customerEmail')?.value
       : formValue.customerEmail;
 
+    // Prepare delivery information
+    const deliveryType = this.selectedDeliveryOption.deliveryType;
+    const deliveryMode = this.selectedDeliveryOption.deliveryMode; // null for PICKUP
+
     // FIXED: sessionId nicht mehr nötig - JWT-Token wird automatisch im Header gesendet
     const request: CheckoutRequest = {
       storeId: this.cart.storeId,
       customerEmail: customerEmail,
       shippingAddress: formValue.shippingAddress,
       billingAddress: this.sameAsShipping ? formValue.shippingAddress : formValue.billingAddress,
-      notes: formValue.notes
+      notes: formValue.notes,
+      deliveryType: deliveryType,
+      deliveryMode: deliveryMode,
+      paymentMethod: this.selectedPaymentMethod,
+      phoneVerificationId: this.phoneVerificationId
     };
 
-    console.log('📦 Sende Checkout-Request mit E-Mail:', customerEmail);
+    console.log('📦 Sende Checkout-Request:', {
+      email: customerEmail,
+      deliveryType,
+      deliveryMode,
+      paymentMethod: this.selectedPaymentMethod
+    });
 
     this.checkoutService.checkout(request).subscribe({
       next: (response) => {
@@ -1373,7 +1562,21 @@ export class CheckoutComponent implements OnInit {
       },
       error: (error) => {
         this.submitting = false;
-        this.errorMessage = error.message || 'Fehler beim Aufgeben der Bestellung. Bitte versuchen Sie es erneut.';
+
+        // Handle specific error cases
+        if (error.status === 400) {
+          // Validation error
+          this.errorMessage = error.error?.error || 'Ungültige Eingabedaten. Bitte überprüfen Sie Ihre Angaben.';
+        } else if (error.status === 409) {
+          // Delivery option not available
+          this.errorMessage = 'Die gewählte Lieferoption ist für diese Adresse nicht verfügbar. Bitte wählen Sie eine andere Option.';
+          // Reload delivery options
+          this.loadDeliveryOptions();
+        } else {
+          // Generic error
+          this.errorMessage = error.message || 'Fehler beim Aufgeben der Bestellung. Bitte versuchen Sie es erneut.';
+        }
+
         console.error('❌ Checkout-Fehler:', error);
       }
     });
@@ -1431,10 +1634,125 @@ export class CheckoutComponent implements OnInit {
   getFinalTotal(): number {
     if (!this.cart) return 0;
     const subtotal = this.cart.subtotal;
-    const shippingCost = this.hasFreeShipping ? 0 : (
-      this.selectedShippingMethod === 'EXPRESS' ? this.expressShipping : this.shipping
-    );
+
+    // Use dynamic delivery fee from selected option
+    const deliveryFee = this.selectedDeliveryOption?.fee || 0;
+    const shippingCost = this.hasFreeShipping ? 0 : deliveryFee;
+
     return Math.max(0, subtotal - this.discountAmount + shippingCost);
+  }
+
+  /**
+   * Load delivery options based on postal code
+   * Called when shipping address postal code changes
+   */
+  loadDeliveryOptions(): void {
+    if (!this.storeId) {
+      console.warn('Store ID not set, cannot load delivery options');
+      return;
+    }
+
+    const postalCode = this.checkoutForm.get('shipping')?.get('postalCode')?.value?.trim();
+
+    if (!postalCode) {
+      // Reset options if postal code is empty
+      this.deliveryOptions = null;
+      this.selectedDeliveryOption = null;
+      this.deliveryOptionsError = '';
+      return;
+    }
+
+    const city = this.checkoutForm.get('shipping')?.get('city')?.value?.trim();
+    const country = this.checkoutForm.get('shipping')?.get('country')?.value?.trim();
+
+    console.log('🚚 Loading delivery options for postal code:', postalCode);
+    this.loadingDeliveryOptions = true;
+    this.deliveryOptionsError = '';
+
+    this.deliveryService.getDeliveryOptions(this.storeId, postalCode, city, country).subscribe({
+      next: (response) => {
+        console.log('✅ Delivery options loaded:', response);
+        this.deliveryOptions = response;
+        this.loadingDeliveryOptions = false;
+
+        // Auto-select first available option
+        const firstAvailable = response.options.find(opt => opt.available);
+        if (firstAvailable) {
+          this.selectDeliveryOption(firstAvailable);
+        } else {
+          this.selectedDeliveryOption = null;
+        }
+      },
+      error: (err) => {
+        console.error('❌ Error loading delivery options:', err);
+        this.deliveryOptionsError = 'Fehler beim Laden der Lieferoptionen. Bitte versuchen Sie es erneut.';
+        this.loadingDeliveryOptions = false;
+        this.deliveryOptions = null;
+        this.selectedDeliveryOption = null;
+      }
+    });
+  }
+
+  /**
+   * Select a delivery option
+   */
+  selectDeliveryOption(option: DeliveryOption): void {
+    if (!option.available) {
+      return; // Cannot select unavailable option
+    }
+
+    this.selectedDeliveryOption = option;
+    console.log('✅ Selected delivery option:', option);
+
+    // Update legacy selectedShippingMethod for compatibility
+    if (option.deliveryType === 'DELIVERY' && option.deliveryMode === 'EXPRESS') {
+      this.selectedShippingMethod = 'EXPRESS';
+    } else if (option.deliveryType === 'DELIVERY' && option.deliveryMode === 'STANDARD') {
+      this.selectedShippingMethod = 'STANDARD';
+    } else {
+      this.selectedShippingMethod = 'PICKUP';
+    }
+  }
+
+  /**
+   * Check if delivery option is selected
+   */
+  isDeliveryOptionSelected(option: DeliveryOption): boolean {
+    if (!this.selectedDeliveryOption) return false;
+
+    return this.selectedDeliveryOption.deliveryType === option.deliveryType &&
+           this.selectedDeliveryOption.deliveryMode === option.deliveryMode;
+  }
+
+  /**
+   * Get display label for delivery option
+   */
+  getDeliveryOptionLabel(option: DeliveryOption): string {
+    if (option.deliveryType === 'PICKUP') {
+      return '📦 Abholung im Geschäft';
+    } else if (option.deliveryMode === 'STANDARD') {
+      return '🚚 Standard Lieferung';
+    } else if (option.deliveryMode === 'EXPRESS') {
+      return '⚡ Express Lieferung';
+    }
+    return 'Lieferung';
+  }
+
+  /**
+   * Get ETA display string
+   */
+  getDeliveryEta(etaMinutes: number | null | undefined): string {
+    if (!etaMinutes) return '';
+
+    if (etaMinutes < 60) {
+      return `ca. ${etaMinutes} Minuten`;
+    } else if (etaMinutes < 1440) {
+      const hours = Math.round(etaMinutes / 60);
+      return `ca. ${hours} Stunden`;
+    } else {
+      const days = Math.round(etaMinutes / 1440);
+      return `ca. ${days} Tage`;
+    }
   }
 
   goBack(): void {

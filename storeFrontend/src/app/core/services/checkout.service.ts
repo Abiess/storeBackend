@@ -12,6 +12,10 @@ export interface CheckoutRequest {
   shippingAddress: Address;
   billingAddress: Address;
   notes?: string;
+  deliveryType?: string;
+  deliveryMode?: string | null;
+  paymentMethod?: string | null;
+  phoneVerificationId?: number | null;
 }
 
 export interface Address {

@@ -161,7 +161,44 @@ public class PublicOrderController {
             Map<String, String> billingAddress = (Map<String, String>) request.get("billingAddress");
             String notes = (String) request.get("notes");
 
-            // Create order mit PaymentMethod und PhoneVerificationId
+            // Extract delivery information (NEW)
+            storebackend.enums.DeliveryType deliveryType = null;
+            storebackend.enums.DeliveryMode deliveryMode = null;
+
+            if (request.containsKey("deliveryType")) {
+                String deliveryTypeStr = (String) request.get("deliveryType");
+                deliveryType = storebackend.enums.DeliveryType.valueOf(deliveryTypeStr);
+            }
+
+            if (request.containsKey("deliveryMode")) {
+                String deliveryModeStr = (String) request.get("deliveryMode");
+                deliveryMode = deliveryModeStr != null ? storebackend.enums.DeliveryMode.valueOf(deliveryModeStr) : null;
+            }
+
+            // Strict validation: deliveryType is required
+            if (deliveryType == null) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "error", "Delivery type is required"
+                ));
+            }
+
+            // Strict validation: deliveryMode is required for DELIVERY type
+            if (deliveryType == storebackend.enums.DeliveryType.DELIVERY && deliveryMode == null) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "error", "Delivery mode is required when delivery type is DELIVERY"
+                ));
+            }
+
+            // Strict validation: deliveryMode must be null for PICKUP type
+            if (deliveryType == storebackend.enums.DeliveryType.PICKUP && deliveryMode != null) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "error", "Delivery mode must be null for PICKUP"
+                ));
+            }
+
+            log.info("📦 Delivery: type={}, mode={}", deliveryType, deliveryMode);
+
+            // Create order mit PaymentMethod, PhoneVerificationId und Delivery Information
             Order order = orderService.createOrderFromCart(
                 cart.getId(),
                 customerEmail,
@@ -183,7 +220,9 @@ public class PublicOrderController {
                 notes,
                 customer,
                 paymentMethod,
-                phoneVerificationId
+                phoneVerificationId,
+                deliveryType,
+                deliveryMode
             );
 
             log.info("✅ Order created successfully: {} (Mode: {}, Payment: {})",

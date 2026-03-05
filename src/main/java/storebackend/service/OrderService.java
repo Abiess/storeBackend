@@ -2,10 +2,17 @@ package storebackend.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+import storebackend.dto.DeliveryOptionDTO;
+import storebackend.dto.DeliveryOptionsRequestDTO;
+import storebackend.dto.DeliveryOptionsResponseDTO;
 import storebackend.dto.OrderDetailsDTO;
 import storebackend.entity.*;
+import storebackend.enums.DeliveryMode;
+import storebackend.enums.DeliveryType;
 import storebackend.enums.OrderStatus;
 import storebackend.enums.PaymentMethod;
 import storebackend.event.OrderStatusChangedEvent;
@@ -25,6 +32,7 @@ public class OrderService {
     private final CartItemRepository cartItemRepository;
     private final InventoryService inventoryService;
     private final ApplicationEventPublisher eventPublisher;
+    private final PublicDeliveryService publicDeliveryService;
 
     // MARKETPLACE: New dependencies for revenue sharing
     private final RevenueShareService revenueShareService;
@@ -70,7 +78,9 @@ public class OrderService {
                                      String billingCountry, String notes,
                                      User customer,
                                      PaymentMethod paymentMethod,
-                                     Long phoneVerificationId) {
+                                     Long phoneVerificationId,
+                                     DeliveryType deliveryType,
+                                     DeliveryMode deliveryMode) {
 
         Cart cart = cartRepository.findById(cartId)
                 .orElseThrow(() -> new RuntimeException("Cart not found"));
@@ -85,12 +95,67 @@ public class OrderService {
                 .map(item -> item.getPriceSnapshot().multiply(BigDecimal.valueOf(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Add tax and shipping to total
+        // Add tax (TODO: Make configurable per store)
         BigDecimal tax = total.multiply(BigDecimal.valueOf(0.19)); // 19% MwSt
-        BigDecimal shipping = BigDecimal.valueOf(5.00); // Fixed shipping
-        total = total.add(tax).add(shipping);
 
-        // Create order with payment method and phone verification
+        // Calculate dynamic delivery fee based on delivery options
+        BigDecimal deliveryFee = BigDecimal.ZERO;
+        Integer etaMinutes = null;
+
+        // Strict validation and matching
+        if (deliveryType == DeliveryType.PICKUP) {
+            // PICKUP: deliveryMode must be null
+            if (deliveryMode != null) {
+                throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "deliveryMode must be null for PICKUP"
+                );
+            }
+
+            // Pickup: no fee, no ETA
+            deliveryFee = BigDecimal.ZERO;
+            etaMinutes = null;
+
+        } else if (deliveryType == DeliveryType.DELIVERY) {
+            // DELIVERY: deliveryMode is required
+            if (deliveryMode == null) {
+                throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "deliveryMode is required for DELIVERY"
+                );
+            }
+
+            // Get available delivery options from PublicDeliveryService
+            DeliveryOptionsRequestDTO deliveryRequest = new DeliveryOptionsRequestDTO(
+                shippingPostalCode,
+                shippingCity,
+                shippingCountry
+            );
+
+            DeliveryOptionsResponseDTO deliveryOptions = publicDeliveryService.getDeliveryOptions(
+                cart.getStore().getId(),
+                deliveryRequest
+            );
+
+            // Strict matching: type + mode + available
+            DeliveryOptionDTO matchingOption = deliveryOptions.getOptions().stream()
+                .filter(opt -> opt.getDeliveryType() == deliveryType)
+                .filter(opt -> opt.getDeliveryMode() == deliveryMode)  // Exact match (no null check)
+                .filter(DeliveryOptionDTO::isAvailable)
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Selected delivery option is not available for this address"
+                ));
+
+            deliveryFee = matchingOption.getFee();
+            etaMinutes = matchingOption.getEtaMinutes();
+        }
+
+        // Calculate final total
+        total = total.add(tax).add(deliveryFee);
+
+        // Create order with payment method, phone verification and delivery information
         Order order = new Order();
         order.setStore(cart.getStore());
         order.setCustomer(customer);
@@ -101,6 +166,12 @@ public class OrderService {
         order.setPaymentMethod(paymentMethod);
         order.setPhoneVerificationId(phoneVerificationId);
         order.setPhoneVerified(phoneVerificationId != null);
+
+        // Set delivery information
+        order.setDeliveryType(deliveryType);
+        order.setDeliveryMode(deliveryMode);
+        order.setDeliveryFee(deliveryFee);
+        order.setEtaMinutes(etaMinutes);
 
         // Set shipping address
         Address shippingAddr = new Address();

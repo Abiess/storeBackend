@@ -286,6 +286,44 @@ export interface OrderStatusHistory {
 }
 
 // ============================================
+// DELIVERY OPTIONS
+// ============================================
+export enum DeliveryType {
+  PICKUP = 'PICKUP',
+  DELIVERY = 'DELIVERY'
+}
+
+export enum DeliveryMode {
+  STANDARD = 'STANDARD',
+  EXPRESS = 'EXPRESS'
+}
+
+export interface DeliveryOption {
+  deliveryType: DeliveryType;
+  deliveryMode?: DeliveryMode | null;
+  fee: number;
+  etaMinutes?: number | null;
+  available: boolean;
+  zoneId?: number | null;
+  zoneName?: string | null;
+  reason?: string | null;
+}
+
+export interface DeliveryOptionsRequest {
+  postalCode: string;
+  city?: string;
+  country?: string;
+}
+
+export interface DeliveryOptionsResponse {
+  pickupEnabled: boolean;
+  deliveryEnabled: boolean;
+  expressEnabled: boolean;
+  currency: string;
+  options: DeliveryOption[];
+}
+
+// ============================================
 // CART
 // ============================================
 export interface Cart {
