@@ -240,6 +240,9 @@ export interface Order {
   trackingNumber?: string;
   trackingCarrier?: string;
   trackingUrl?: string;
+  paymentMethod?: string; // CASH_ON_DELIVERY, BANK_TRANSFER, CREDIT_CARD, PAYPAL
+  phoneVerificationId?: number;
+  phoneVerified?: boolean;
   items?: OrderItem[];
   statusHistory?: OrderStatusHistory[];
   createdAt: string;

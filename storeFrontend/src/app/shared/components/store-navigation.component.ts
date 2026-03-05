@@ -1,7 +1,9 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { OrderVerificationCounterService } from '@app/core/services/order-verification-counter.service';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-store-navigation',
@@ -48,6 +50,16 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
           routerLinkActive="active">
           <span class="icon">🛒</span>
           <span class="label">{{ 'navigation.orders' | translate }}</span>
+        </a>
+        <a 
+          [routerLink]="['/dashboard/stores', storeId, 'orders', 'verification']" 
+          class="nav-tab"
+          routerLinkActive="active">
+          <span class="icon">📞</span>
+          <span class="label">COD Verifizierung</span>
+          <span class="badge" *ngIf="(unverifiedCount$ | async) as count">
+            <span *ngIf="count > 0">{{ count }}</span>
+          </span>
         </a>
         <a 
           [routerLink]="['/dashboard/stores', storeId, 'delivery']" 
@@ -150,6 +162,26 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       transform: scale(1.1);
     }
 
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 6px;
+      background: #ef4444;
+      color: white;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1;
+      margin-left: 6px;
+    }
+
+    .nav-tab.active .badge {
+      background: #dc2626;
+    }
+
     @media (max-width: 768px) {
       .nav-tab .label {
         display: none;
@@ -162,12 +194,28 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       .nav-tab .icon {
         font-size: 1.5rem;
       }
+
+      .badge {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        min-width: 18px;
+        height: 18px;
+        font-size: 10px;
+        padding: 0 4px;
+      }
     }
   `]
 })
-export class StoreNavigationComponent {
+export class StoreNavigationComponent implements OnInit {
   @Input() storeId!: number;
   @Input() currentPage: string = '';
 
-  constructor(private router: Router) {}
+  unverifiedCount$!: Observable<number>;
+
+  constructor(private counterService: OrderVerificationCounterService) {}
+
+  ngOnInit(): void {
+    this.unverifiedCount$ = this.counterService.unverifiedCount$;
+  }
 }

@@ -82,6 +82,11 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'dashboard/stores/:storeId/orders/verification',
+    loadComponent: () => import('./features/stores/order-verification-center.component').then(m => m.OrderVerificationCenterComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'dashboard/stores/:storeId/orders/:orderId',
     loadComponent: () => import('./features/stores/order-detail-professional.component').then(m => m.OrderDetailProfessionalComponent),
     canActivate: [authGuard]
