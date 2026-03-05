@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { ProductService } from '@app/core/services/product.service';
 import { OrderService } from '@app/core/services/order.service';
-import { Product, Order } from '@app/core/models';
+import { CategoryService } from '@app/core/services/category.service';
+import { Product, Order, Category } from '@app/core/models';
 import { AdminSidebarComponent } from '@app/shared/components/admin-sidebar/admin-sidebar.component';
 
 @Component({
@@ -16,24 +17,135 @@ import { AdminSidebarComponent } from '@app/shared/components/admin-sidebar/admi
 
       <div class="content">
         <div class="topbar">
-          <a routerLink="/dashboard">← Dashboard</a>
+          <a routerLink="/dashboard" class="back-link">← Zurück zum Dashboard</a>
+          <h1 class="page-title">Store Übersicht</h1>
         </div>
 
         <div class="container">
-          <h1>Store Übersicht</h1>
+          <!-- Stats Cards -->
+          <div class="stats-grid">
+            <!-- Total Sales -->
+            <div class="stat-card gradient-purple">
+              <div class="stat-icon">💰</div>
+              <div class="stat-content">
+                <h3 class="stat-value">{{ getTotalSales() | currency:'EUR':'symbol':'1.0-0' }}</h3>
+                <p class="stat-label">Gesamtumsatz</p>
+              </div>
+            </div>
 
-          <!-- Products -->
+            <!-- Orders Count -->
+            <div class="stat-card gradient-blue">
+              <div class="stat-icon">📋</div>
+              <div class="stat-content">
+                <h3 class="stat-value">{{ orders.length }}</h3>
+                <p class="stat-label">Bestellungen</p>
+              </div>
+            </div>
+
+            <!-- Products Count -->
+            <div class="stat-card gradient-green">
+              <div class="stat-icon">📦</div>
+              <div class="stat-content">
+                <h3 class="stat-value">{{ products.length }}</h3>
+                <p class="stat-label">Produkte</p>
+              </div>
+            </div>
+
+            <!-- Categories Count -->
+            <div class="stat-card gradient-orange">
+              <div class="stat-icon">🏷️</div>
+              <div class="stat-content">
+                <h3 class="stat-value">{{ categories.length }}</h3>
+                <p class="stat-label">Kategorien</p>
+              </div>
+            </div>
+
+            <!-- Average Order Value -->
+            <div class="stat-card gradient-pink">
+              <div class="stat-icon">📊</div>
+              <div class="stat-content">
+                <h3 class="stat-value">{{ getAverageOrderValue() | currency:'EUR':'symbol':'1.0-0' }}</h3>
+                <p class="stat-label">Ø Bestellwert</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="section quick-actions-section">
+            <h2>Schnellzugriff</h2>
+            <div class="quick-actions">
+              <button class="action-btn" [routerLink]="['/stores', storeId, 'products', 'new']">
+                <span class="action-icon">➕</span>
+                <span class="action-text">Produkt hinzufügen</span>
+              </button>
+              <button class="action-btn" [routerLink]="['/stores', storeId, 'categories', 'new']">
+                <span class="action-icon">🏷️</span>
+                <span class="action-text">Kategorie erstellen</span>
+              </button>
+              <button class="action-btn" [routerLink]="['/stores', storeId, 'orders']">
+                <span class="action-icon">📋</span>
+                <span class="action-text">Bestellungen ansehen</span>
+              </button>
+              <button class="action-btn" [routerLink]="['/stores', storeId, 'products']">
+                <span class="action-icon">📦</span>
+                <span class="action-text">Alle Produkte</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Recent Orders -->
+          <div class="section">
+            <div class="section-header">
+              <h2>Letzte Bestellungen</h2>
+              <a class="link" [routerLink]="['/stores', storeId, 'orders']">Alle anzeigen →</a>
+            </div>
+            
+            <div *ngIf="ordersLoading" class="loading">
+              <div class="spinner"></div>
+              <p>Bestellungen werden geladen...</p>
+            </div>
+
+            <div *ngIf="!ordersLoading && orders.length === 0" class="empty">
+              <div class="icon">📋</div>
+              <p>Noch keine Bestellungen vorhanden</p>
+              <p class="hint">Sobald Kunden in Ihrem Store bestellen, erscheinen diese hier.</p>
+            </div>
+
+            <div *ngIf="!ordersLoading && orders.length > 0" class="orders-table">
+              <div class="table-header">
+                <div class="col">Bestellnummer</div>
+                <div class="col">Kunde</div>
+                <div class="col">Status</div>
+                <div class="col">Betrag</div>
+                <div class="col">Datum</div>
+              </div>
+              <div *ngFor="let order of orders.slice(0, 5)" class="table-row" [routerLink]="['/stores', storeId, 'orders', order.id]">
+                <div class="col">
+                  <strong>{{ order.orderNumber }}</strong>
+                </div>
+                <div class="col">
+                  <span class="customer-email">{{ order.customerEmail }}</span>
+                </div>
+                <div class="col">
+                  <span [class]="'badge badge-' + getOrderStatusClass(order.status)">
+                    {{ getOrderStatusLabel(order.status) }}
+                  </span>
+                </div>
+                <div class="col">
+                  <strong class="amount">{{ order.totalAmount | currency:'EUR':'symbol':'1.2-2' }}</strong>
+                </div>
+                <div class="col">
+                  <span class="date">{{ order.createdAt | date:'dd.MM.yyyy HH:mm' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Products Overview -->
           <div class="section">
             <div class="section-header">
               <h2>Produkte</h2>
-              <div class="actions">
-                <button class="btn btn-secondary" [routerLink]="['/stores', storeId, 'categories', 'new']">
-                  + Kategorie
-                </button>
-                <button class="btn btn-primary" [routerLink]="['/stores', storeId, 'products', 'new']">
-                  + Produkt
-                </button>
-              </div>
+              <a class="link" [routerLink]="['/stores', storeId, 'products']">Alle anzeigen ({{ products.length }}) →</a>
             </div>
 
             <div *ngIf="productsLoading" class="loading">
@@ -49,57 +161,22 @@ import { AdminSidebarComponent } from '@app/shared/components/admin-sidebar/admi
               </button>
             </div>
 
-            <div *ngIf="!productsLoading && products.length > 0">
-              <a class="link" [routerLink]="['/stores', storeId, 'products']">
-                Alle Produkte anzeigen ({{ products.length }}) →
-              </a>
-              
-              <div class="grid">
-                <div *ngFor="let product of products.slice(0, 6)" class="card">
+            <div *ngIf="!productsLoading && products.length > 0" class="products-grid">
+              <div *ngFor="let product of products.slice(0, 6)" class="product-card" [routerLink]="['/stores', storeId, 'products', product.id]">
+                <div class="product-image" *ngIf="product.imageUrl">
+                  <img [src]="product.imageUrl" [alt]="product.title" />
+                </div>
+                <div class="product-image placeholder" *ngIf="!product.imageUrl">
+                  <span class="placeholder-icon">📦</span>
+                </div>
+                <div class="product-content">
                   <h3>{{ product.title }}</h3>
                   <span [class]="'badge badge-' + getProductStatusClass(product.status)">
-                    {{ product.status }}
+                    {{ getProductStatusLabel(product.status) }}
                   </span>
-                  <p>{{ product.description }}</p>
-                  <div class="footer">
-                    <span class="price">{{ product.price }} €</span>
-                    <span class="date">{{ product.createdAt | date:'dd.MM.yyyy' }}</span>
+                  <div class="product-footer">
+                    <span class="price">{{ product.price | currency:'EUR':'symbol':'1.2-2' }}</span>
                   </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Orders -->
-          <div class="section">
-            <div class="section-header">
-              <h2>Bestellungen</h2>
-            </div>
-            
-            <div *ngIf="ordersLoading" class="loading">
-              <div class="spinner"></div>
-              <p>Bestellungen werden geladen...</p>
-            </div>
-
-            <div *ngIf="!ordersLoading && orders.length === 0" class="empty">
-              <div class="icon">📋</div>
-              <p>Noch keine Bestellungen vorhanden</p>
-            </div>
-
-            <div *ngIf="!ordersLoading && orders.length > 0">
-              <div *ngFor="let order of orders" class="order">
-                <div class="order-header">
-                  <div>
-                    <strong>{{ order.orderNumber }}</strong>
-                    <span>{{ order.customerEmail }}</span>
-                  </div>
-                  <span [class]="'badge badge-' + getOrderStatusClass(order.status)">
-                    {{ order.status }}
-                  </span>
-                </div>
-                <div class="footer">
-                  <span class="price">{{ order.totalAmount }} €</span>
-                  <span class="date">{{ order.createdAt | date:'dd.MM.yyyy HH:mm' }}</span>
                 </div>
               </div>
             </div>
@@ -112,6 +189,7 @@ import { AdminSidebarComponent } from '@app/shared/components/admin-sidebar/admi
     .admin-layout {
       display: flex;
       min-height: 100vh;
+      background: #f8f9fa;
     }
 
     .content {
@@ -127,15 +205,31 @@ import { AdminSidebarComponent } from '@app/shared/components/admin-sidebar/admi
     }
 
     .topbar {
-      padding: 1rem 2rem;
+      padding: 1.5rem 2rem;
       background: #fff;
       border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
     }
 
-    .topbar a {
+    .back-link {
       color: #667eea;
       text-decoration: none;
       font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .back-link:hover {
+      color: #764ba2;
+    }
+
+    .page-title {
+      margin: 0;
+      font-size: 1.5rem;
+      color: #333;
+      font-weight: 700;
     }
 
     .container {
@@ -144,15 +238,156 @@ import { AdminSidebarComponent } from '@app/shared/components/admin-sidebar/admi
       margin: 0 auto;
     }
 
-    h1 {
-      margin: 0 0 2rem;
-      font-size: 2rem;
-      color: #333;
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
     }
 
+    @media (max-width: 640px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .stat-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+    }
+
+    .gradient-purple {
+      --gradient-start: #667eea;
+      --gradient-end: #764ba2;
+    }
+
+    .gradient-blue {
+      --gradient-start: #4facfe;
+      --gradient-end: #00f2fe;
+    }
+
+    .gradient-green {
+      --gradient-start: #43e97b;
+      --gradient-end: #38f9d7;
+    }
+
+    .gradient-orange {
+      --gradient-start: #fa709a;
+      --gradient-end: #fee140;
+    }
+
+    .gradient-pink {
+      --gradient-start: #f093fb;
+      --gradient-end: #f5576c;
+    }
+
+    .stat-icon {
+      font-size: 2.5rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .stat-content {
+      flex: 1;
+    }
+
+    .stat-value {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: #333;
+      margin: 0 0 0.25rem;
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: 0.875rem;
+      color: #666;
+      margin: 0;
+      font-weight: 500;
+    }
+
+    /* Quick Actions */
+    .quick-actions-section {
+      margin-bottom: 2rem;
+    }
+
+    .quick-actions-section h2 {
+      margin: 0 0 1rem;
+      font-size: 1.25rem;
+      color: #333;
+      font-weight: 700;
+    }
+
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    @media (max-width: 640px) {
+      .quick-actions {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .action-btn {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 1rem;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    }
+
+    .action-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    .action-icon {
+      font-size: 1.5rem;
+    }
+
+    .action-text {
+      flex: 1;
+      text-align: left;
+    }
+
+    /* Section */
     .section {
       background: #fff;
-      border-radius: 12px;
+      border-radius: 16px;
       padding: 2rem;
       margin-bottom: 2rem;
       box-shadow: 0 2px 8px rgba(0,0,0,0.05);
@@ -169,49 +404,200 @@ import { AdminSidebarComponent } from '@app/shared/components/admin-sidebar/admi
       margin: 0;
       font-size: 1.5rem;
       color: #333;
-    }
-
-    .actions {
-      display: flex;
-      gap: 0.75rem;
-    }
-
-    .btn {
-      padding: 0.5rem 1rem;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      font-weight: 500;
-      transition: all 0.2s;
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: #fff;
-    }
-
-    .btn-primary:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-    }
-
-    .btn-secondary {
-      background: #f8f9fa;
-      color: #333;
-      border: 1px solid #e0e0e0;
-    }
-
-    .btn-secondary:hover {
-      background: #e9ecef;
+      font-weight: 700;
     }
 
     .link {
       color: #667eea;
       text-decoration: none;
-      margin-bottom: 1rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .link:hover {
+      color: #764ba2;
+    }
+
+    /* Orders Table */
+    .orders-table {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .table-header {
+      display: grid;
+      grid-template-columns: 1.5fr 2fr 1fr 1fr 1.5fr;
+      gap: 1rem;
+      padding: 0.75rem 1rem;
+      background: #f8f9fa;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: #666;
+    }
+
+    @media (max-width: 1023px) {
+      .table-header {
+        display: none;
+      }
+    }
+
+    .table-row {
+      display: grid;
+      grid-template-columns: 1.5fr 2fr 1fr 1fr 1.5fr;
+      gap: 1rem;
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      align-items: center;
+    }
+
+    .table-row:hover {
+      background: #e9ecef;
+      transform: translateX(4px);
+    }
+
+    @media (max-width: 1023px) {
+      .table-row {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+      }
+
+      .table-row .col:before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #666;
+        margin-right: 0.5rem;
+      }
+    }
+
+    .col {
+      font-size: 0.875rem;
+      color: #333;
+    }
+
+    .customer-email {
+      color: #666;
+      font-size: 0.875rem;
+    }
+
+    .amount {
+      color: #667eea;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .date {
+      color: #999;
+      font-size: 0.875rem;
+    }
+
+    /* Products Grid */
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 640px) {
+      .products-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      }
+    }
+
+    .product-card {
+      background: #f8f9fa;
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: 2px solid transparent;
+    }
+
+    .product-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+      border-color: #667eea;
+    }
+
+    .product-image {
+      width: 100%;
+      padding-top: 100%;
+      position: relative;
+      background: #e9ecef;
+      overflow: hidden;
+    }
+
+    .product-image img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .product-image.placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .placeholder-icon {
+      font-size: 3rem;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .product-content {
+      padding: 1rem;
+    }
+
+    .product-content h3 {
+      margin: 0 0 0.5rem;
+      font-size: 1rem;
+      color: #333;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .product-footer {
+      margin-top: 0.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .price {
+      font-weight: 700;
+      color: #667eea;
+      font-size: 1.125rem;
+    }
+
+    /* Badge */
+    .badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
       display: inline-block;
     }
 
+    .badge-success { background: #d4edda; color: #155724; }
+    .badge-warning { background: #fff3cd; color: #856404; }
+    .badge-danger { background: #f8d7da; color: #721c24; }
+    .badge-info { background: #d1ecf1; color: #0c5460; }
+    .badge-secondary { background: #e9ecef; color: #495057; }
+
+    /* Loading & Empty States */
     .loading, .empty {
       text-align: center;
       padding: 3rem 1rem;
@@ -220,6 +606,12 @@ import { AdminSidebarComponent } from '@app/shared/components/admin-sidebar/admi
     .icon {
       font-size: 3rem;
       margin-bottom: 1rem;
+    }
+
+    .hint {
+      color: #999;
+      font-size: 0.875rem;
+      margin-top: 0.5rem;
     }
 
     .spinner {
@@ -237,93 +629,27 @@ import { AdminSidebarComponent } from '@app/shared/components/admin-sidebar/admi
       100% { transform: rotate(360deg); }
     }
 
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 1.5rem;
-      margin-top: 1rem;
-    }
-
-    .card {
-      background: #f8f9fa;
-      padding: 1.25rem;
+    .btn {
+      padding: 0.75rem 1.5rem;
       border-radius: 8px;
-      border: 1px solid #e9ecef;
-      transition: all 0.2s;
-    }
-
-    .card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-
-    .card h3 {
-      margin: 0 0 0.5rem;
-      font-size: 1.125rem;
-      color: #333;
-    }
-
-    .card p {
-      color: #666;
-      font-size: 0.875rem;
-      margin: 0 0 1rem;
-    }
-
-    .footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.875rem;
-    }
-
-    .price {
-      font-weight: 700;
-      color: #667eea;
-      font-size: 1.125rem;
-    }
-
-    .date {
-      color: #999;
-    }
-
-    .badge {
-      padding: 0.25rem 0.75rem;
-      border-radius: 12px;
-      font-size: 0.75rem;
+      border: none;
+      cursor: pointer;
       font-weight: 600;
-      white-space: nowrap;
-    }
-
-    .badge-success { background: #d4edda; color: #155724; }
-    .badge-warning { background: #fff3cd; color: #856404; }
-    .badge-danger { background: #f8d7da; color: #721c24; }
-    .badge-info { background: #d1ecf1; color: #0c5460; }
-
-    .order {
-      padding: 1.25rem;
-      background: #f8f9fa;
-      border-radius: 8px;
-      border: 1px solid #e9ecef;
-      margin-bottom: 1rem;
       transition: all 0.2s;
-    }
-
-    .order:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
-    .order-header {
-      display: flex;
-      justify-content: space-between;
+      display: inline-flex;
       align-items: center;
-      margin-bottom: 0.75rem;
+      gap: 0.5rem;
     }
 
-    .order-header span {
-      color: #666;
-      font-size: 0.875rem;
-      margin-left: 0.5rem;
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
     }
 
     @media (max-width: 768px) {
@@ -335,22 +661,14 @@ import { AdminSidebarComponent } from '@app/shared/components/admin-sidebar/admi
         padding: 1.5rem;
       }
 
-      .section-header {
+      .topbar {
+        padding: 1rem;
         flex-direction: column;
         align-items: flex-start;
-        gap: 1rem;
       }
 
-      .actions {
-        width: 100%;
-      }
-
-      .actions .btn {
-        flex: 1;
-      }
-
-      .grid {
-        grid-template-columns: 1fr;
+      .page-title {
+        font-size: 1.25rem;
       }
     }
   `]
@@ -359,13 +677,16 @@ export class StoreDetailComponent implements OnInit {
   storeId!: number;
   products: Product[] = [];
   orders: Order[] = [];
+  categories: Category[] = [];
   productsLoading = false;
   ordersLoading = false;
+  categoriesLoading = false;
 
   constructor(
     private route: ActivatedRoute,
     private productService: ProductService,
-    private orderService: OrderService
+    private orderService: OrderService,
+    private categoryService: CategoryService
   ) {}
 
   ngOnInit(): void {
@@ -374,6 +695,7 @@ export class StoreDetailComponent implements OnInit {
       if (this.storeId) {
         this.loadProducts();
         this.loadOrders();
+        this.loadCategories();
       }
     });
   }
@@ -406,12 +728,44 @@ export class StoreDetailComponent implements OnInit {
     });
   }
 
+  loadCategories(): void {
+    this.categoriesLoading = true;
+    this.categoryService.getCategories(this.storeId).subscribe({
+      next: (categories) => {
+        this.categories = categories;
+        this.categoriesLoading = false;
+      },
+      error: (error) => {
+        console.error('Fehler beim Laden der Kategorien:', error);
+        this.categoriesLoading = false;
+      }
+    });
+  }
+
+  getTotalSales(): number {
+    return this.orders.reduce((sum, order) => sum + order.totalAmount, 0);
+  }
+
+  getAverageOrderValue(): number {
+    if (this.orders.length === 0) return 0;
+    return this.getTotalSales() / this.orders.length;
+  }
+
   getProductStatusClass(status: string): string {
     switch (status) {
       case 'ACTIVE': return 'success';
       case 'DRAFT': return 'warning';
       case 'ARCHIVED': return 'danger';
       default: return 'info';
+    }
+  }
+
+  getProductStatusLabel(status: string): string {
+    switch (status) {
+      case 'ACTIVE': return 'Aktiv';
+      case 'DRAFT': return 'Entwurf';
+      case 'ARCHIVED': return 'Archiviert';
+      default: return status;
     }
   }
 
@@ -423,7 +777,19 @@ export class StoreDetailComponent implements OnInit {
       case 'SHIPPED': return 'success';
       case 'DELIVERED': return 'success';
       case 'CANCELLED': return 'danger';
-      default: return 'info';
+      default: return 'secondary';
+    }
+  }
+
+  getOrderStatusLabel(status: string): string {
+    switch (status) {
+      case 'PENDING': return 'Ausstehend';
+      case 'CONFIRMED': return 'Bestätigt';
+      case 'PROCESSING': return 'In Bearbeitung';
+      case 'SHIPPED': return 'Versendet';
+      case 'DELIVERED': return 'Zugestellt';
+      case 'CANCELLED': return 'Storniert';
+      default: return status;
     }
   }
 }
