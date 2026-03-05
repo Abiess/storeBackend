@@ -28,11 +28,11 @@ export class OrderService {
     return this.getOrders(storeId);
   }
 
-  getOrder(storeId: number, orderId: number): Observable<Order> {
+  getOrder(storeId: number, orderId: number): Observable<any> {
     if (environment.useMockData) {
       return this.mockService.getOrder(storeId, orderId);
     }
-    return this.http.get<Order>(`${environment.apiUrl}/stores/${storeId}/orders/${orderId}`);
+    return this.http.get<any>(`${environment.apiUrl}/stores/${storeId}/orders/${orderId}`);
   }
 
   updateOrderStatus(storeId: number, orderId: number, status: OrderStatus, note?: string): Observable<Order> {

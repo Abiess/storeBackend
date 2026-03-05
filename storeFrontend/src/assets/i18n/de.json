@@ -79,9 +79,13 @@
   "checkout": {
     "title": "Kasse",
     "back": "← Zurück zum Warenkorb",
+    "step1": "Warenkorb",
+    "step2": "Kasse",
+    "step3": "Bestätigung",
     "shippingAddress": "Lieferadresse",
     "billingAddress": "Rechnungsadresse",
     "sameBilling": "Rechnungsadresse ist identisch mit Lieferadresse",
+    "shippingMethod": "Versandmethode",
     "paymentMethod": "Zahlungsmethode",
     "orderSummary": "Bestellübersicht",
     "placeOrder": "Bestellung aufgeben",
@@ -194,6 +198,12 @@
     "shipped": "Versandt",
     "delivered": "Zugestellt",
     "cancelled": "Storniert"
+  },
+  "shipping": {
+    "standard": "Standard-Versand",
+    "standardHint": "Lieferung in 3-5 Werktagen",
+    "express": "Express-Versand",
+    "expressHint": "Lieferung in 1-2 Werktagen"
   },
   "actions": {
     "edit": "Bearbeiten",

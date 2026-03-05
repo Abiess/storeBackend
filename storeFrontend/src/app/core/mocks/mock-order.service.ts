@@ -13,9 +13,10 @@ export class MockOrderService {
     return of(filtered).pipe(delay(500));
   }
 
-  getOrder(storeId: number, orderId: number): Observable<Order> {
+  getOrder(storeId: number, orderId: number): Observable<any> {
     const order = this.orders.find(o => o.id === orderId);
-    return of(order!).pipe(delay(300));
+    const items = order?.items || [];
+    return of({ order, items }).pipe(delay(300));
   }
 
   updateOrderStatus(storeId: number, orderId: number, status: OrderStatus, note?: string): Observable<Order> {

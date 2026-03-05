@@ -197,19 +197,33 @@ export const MOCK_ORDERS: Order[] = [
     items: [
       {
         id: 1,
+        orderId: 1,
+        productId: 1,
         variantId: 1,
-        quantity: 1, orderId: 1, productId: 1, price: 29.99, totalPrice: 29.99,
+        quantity: 1,
+        price: 1299.99,
+        totalPrice: 1299.99,
         priceAtOrder: 1299.99,
         productTitle: 'Premium Laptop',
-        variantSku: 'LAPTOP-001-SILVER'
+        productName: 'Premium Laptop',
+        name: 'Premium Laptop',
+        variantSku: 'LAPTOP-001-SILVER',
+        sku: 'LAPTOP-001-SILVER'
       },
       {
         id: 2,
+        orderId: 1,
+        productId: 2,
         variantId: 3,
-        quantity: 1, orderId: 1, productId: 1, price: 29.99, totalPrice: 29.99,
+        quantity: 1,
+        price: 29.99,
+        totalPrice: 29.99,
         priceAtOrder: 29.99,
         productTitle: 'Wireless Mouse',
-        variantSku: 'MOUSE-002-BLACK'
+        productName: 'Wireless Mouse',
+        name: 'Wireless Mouse',
+        variantSku: 'MOUSE-002-BLACK',
+        sku: 'MOUSE-002-BLACK'
       }
     ]
   },
@@ -221,6 +235,9 @@ export const MOCK_ORDERS: Order[] = [
     customerEmail: 'jane@example.com',
     status: OrderStatus.SHIPPED,
     totalAmount: 199.99,
+    trackingCarrier: 'DHL',
+    trackingNumber: 'DHL1234567890',
+    trackingUrl: 'https://www.dhl.de/tracking?id=DHL1234567890',
     shippingAddress: {
       firstName: 'Anna',
       lastName: 'Schmidt',
@@ -243,11 +260,18 @@ export const MOCK_ORDERS: Order[] = [
     items: [
       {
         id: 3,
+        orderId: 2,
+        productId: 3,
         variantId: 4,
-        quantity: 1, orderId: 1, productId: 1, price: 29.99, totalPrice: 29.99,
+        quantity: 1,
+        price: 199.99,
+        totalPrice: 199.99,
         priceAtOrder: 199.99,
         productTitle: 'Bluetooth Kopfhörer',
-        variantSku: 'HEADPHONE-004-WHITE'
+        productName: 'Bluetooth Kopfhörer',
+        name: 'Bluetooth Kopfhörer',
+        variantSku: 'HEADPHONE-004-WHITE',
+        sku: 'HEADPHONE-004-WHITE'
       }
     ]
   },
@@ -280,11 +304,18 @@ export const MOCK_ORDERS: Order[] = [
     items: [
       {
         id: 4,
+        orderId: 3,
+        productId: 2,
         variantId: 3,
-        quantity: 2, orderId: 1, productId: 1, price: 29.99, totalPrice: 29.99,
+        quantity: 2,
+        price: 29.99,
+        totalPrice: 59.98,
         priceAtOrder: 29.99,
         productTitle: 'Wireless Mouse',
-        variantSku: 'MOUSE-002-BLACK'
+        productName: 'Wireless Mouse',
+        name: 'Wireless Mouse',
+        variantSku: 'MOUSE-002-BLACK',
+        sku: 'MOUSE-002-BLACK'
       }
     ]
   }

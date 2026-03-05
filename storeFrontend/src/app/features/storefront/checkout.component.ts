@@ -26,6 +26,24 @@ import { parsePhoneNumber, isValidPhoneNumber, CountryCode } from 'libphonenumbe
         <button class="btn-back" (click)="goBack()">{{ 'checkout.back' | translate }}</button>
       </div>
 
+      <!-- Step Indicator -->
+      <div class="step-indicator">
+        <div class="step completed">
+          <div class="step-number">✓</div>
+          <div class="step-label">{{ 'checkout.step1' | translate }}</div>
+        </div>
+        <div class="step-line completed"></div>
+        <div class="step active">
+          <div class="step-number">2</div>
+          <div class="step-label">{{ 'checkout.step2' | translate }}</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-label">{{ 'checkout.step3' | translate }}</div>
+        </div>
+      </div>
+
       <!-- Login-Hinweis für Guests -->
       <div *ngIf="!isUserLoggedIn() && !loading && cart && cart.items.length > 0" class="guest-login-hint">
         <div class="hint-content">
@@ -220,9 +238,48 @@ import { parsePhoneNumber, isValidPhoneNumber, CountryCode } from 'libphonenumbe
               </div>
             </section>
 
+            <!-- SHIPPING METHOD AUSWAHL -->
+            <section class="form-section">
+              <h2>🚚 {{ 'checkout.shippingMethod' | translate }} {{ 'checkout.required' | translate }}</h2>
+              <div class="shipping-methods">
+                <label class="shipping-option" [class.selected]="selectedShippingMethod === 'STANDARD'">
+                  <input type="radio" name="shippingMethod" value="STANDARD"
+                    [(ngModel)]="selectedShippingMethod" [ngModelOptions]="{standalone: true}"
+                    (change)="onShippingMethodChange()" />
+                  <div class="shipping-content">
+                    <div class="shipping-info">
+                      <strong>📦 {{ 'shipping.standard' | translate }}</strong>
+                      <small>{{ 'shipping.standardHint' | translate }}</small>
+                    </div>
+                    <div class="shipping-price">
+                      {{ shipping | number:'1.2-2' }} €
+                    </div>
+                  </div>
+                </label>
+
+                <label class="shipping-option" [class.selected]="selectedShippingMethod === 'EXPRESS'">
+                  <input type="radio" name="shippingMethod" value="EXPRESS"
+                    [(ngModel)]="selectedShippingMethod" [ngModelOptions]="{standalone: true}"
+                    (change)="onShippingMethodChange()" />
+                  <div class="shipping-content">
+                    <div class="shipping-info">
+                      <strong>⚡ {{ 'shipping.express' | translate }}</strong>
+                      <small>{{ 'shipping.expressHint' | translate }}</small>
+                    </div>
+                    <div class="shipping-price">
+                      {{ expressShipping | number:'1.2-2' }} €
+                    </div>
+                  </div>
+                </label>
+              </div>
+              <div *ngIf="!selectedShippingMethod" class="error">
+                Bitte wählen Sie eine Versandmethode
+              </div>
+            </section>
+
             <!-- PAYMENT METHOD AUSWAHL -->
             <section class="form-section">
-              <h2>{{ 'checkout.paymentMethod' | translate }} {{ 'checkout.required' | translate }}</h2>
+              <h2>💳 {{ 'checkout.paymentMethod' | translate }} {{ 'checkout.required' | translate }}</h2>
               <div class="payment-methods">
                 <label class="payment-option" [class.selected]="selectedPaymentMethod === 'CREDIT_CARD'">
                   <input type="radio" name="paymentMethod" value="CREDIT_CARD"
@@ -446,7 +503,12 @@ import { parsePhoneNumber, isValidPhoneNumber, CountryCode } from 'libphonenumbe
             </div>
             <div class="summary-row">
               <span>{{ 'cart.shipping' | translate }}</span>
-              <span>{{ (hasFreeShipping ? 0 : shipping) | number:'1.2-2' }} €</span>
+              <span>
+                {{ (hasFreeShipping ? 0 : (selectedShippingMethod === 'EXPRESS' ? expressShipping : shipping)) | number:'1.2-2' }} €
+                <small *ngIf="!hasFreeShipping && selectedShippingMethod" class="shipping-method-label">
+                  ({{ selectedShippingMethod === 'EXPRESS' ? 'Express' : 'Standard' }})
+                </small>
+              </span>
             </div>
             <div class="summary-row total">
               <strong>{{ 'cart.total' | translate }}</strong>
@@ -469,6 +531,96 @@ import { parsePhoneNumber, isValidPhoneNumber, CountryCode } from 'libphonenumbe
       justify-content: space-between;
       align-items: center;
       margin-bottom: 30px;
+    }
+
+    .step-indicator {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 30px 0;
+      padding: 20px;
+      background: white;
+      border-radius: 12px;
+    }
+
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    .step-number {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #e0e0e0;
+      color: #666;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-bottom: 8px;
+      transition: all 0.3s;
+    }
+
+    .step.completed .step-number {
+      background: #4caf50;
+      color: white;
+    }
+
+    .step.active .step-number {
+      background: #667eea;
+      color: white;
+      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2);
+    }
+
+    .step-label {
+      font-size: 14px;
+      color: #666;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .step.active .step-label {
+      color: #667eea;
+      font-weight: bold;
+    }
+
+    .step.completed .step-label {
+      color: #4caf50;
+    }
+
+    .step-line {
+      width: 80px;
+      height: 2px;
+      background: #e0e0e0;
+      margin: 0 10px;
+      margin-bottom: 32px;
+    }
+
+    .step-line.completed {
+      background: #4caf50;
+    }
+
+    @media (max-width: 576px) {
+      .step-indicator {
+        padding: 15px 10px;
+      }
+
+      .step-line {
+        width: 40px;
+        margin: 0 5px;
+      }
+
+      .step-label {
+        font-size: 12px;
+      }
+
+      .step-number {
+        width: 35px;
+        height: 35px;
+      }
     }
 
     .btn-back {
@@ -791,6 +943,66 @@ import { parsePhoneNumber, isValidPhoneNumber, CountryCode } from 'libphonenumbe
       margin-right: 10px;
     }
 
+    .shipping-methods {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 15px;
+    }
+
+    .shipping-option {
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 15px;
+      cursor: pointer;
+      transition: border-color 0.3s;
+      display: block;
+    }
+
+    .shipping-option.selected {
+      border-color: #667eea;
+      background: #e1f5fe;
+    }
+
+    .shipping-option input[type="radio"] {
+      margin-right: 10px;
+    }
+
+    .shipping-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+    }
+
+    .shipping-info {
+      flex: 1;
+    }
+
+    .shipping-info strong {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 16px;
+    }
+
+    .shipping-info small {
+      color: #666;
+      font-size: 14px;
+    }
+
+    .shipping-price {
+      font-size: 18px;
+      font-weight: bold;
+      color: #667eea;
+    }
+
+    .shipping-method-label {
+      display: block;
+      font-size: 12px;
+      color: #666;
+      margin-top: 2px;
+    }
+
     .verification-header {
       background: #e1f5fe;
       border: 1px solid #b3e5fc;
@@ -912,6 +1124,8 @@ export class CheckoutComponent implements OnInit {
   errorMessage = '';
   sameAsShipping = true;
   shipping = 4.99;
+  expressShipping = 9.99;
+  selectedShippingMethod: string = 'STANDARD';
   discountAmount = 0;
   hasFreeShipping = false;
   saveAddressForFuture = false;
@@ -1217,7 +1431,9 @@ export class CheckoutComponent implements OnInit {
   getFinalTotal(): number {
     if (!this.cart) return 0;
     const subtotal = this.cart.subtotal;
-    const shippingCost = this.hasFreeShipping ? 0 : this.shipping;
+    const shippingCost = this.hasFreeShipping ? 0 : (
+      this.selectedShippingMethod === 'EXPRESS' ? this.expressShipping : this.shipping
+    );
     return Math.max(0, subtotal - this.discountAmount + shippingCost);
   }
 
@@ -1487,5 +1703,13 @@ export class CheckoutComponent implements OnInit {
       const phoneInput = document.querySelector('.phone-input') as HTMLInputElement;
       phoneInput?.focus();
     }, 100);
+  }
+
+  /**
+   * Handler für Änderungen der Versandmethode
+   */
+  onShippingMethodChange(): void {
+    console.log('🚚 Versandmethode geändert:', this.selectedShippingMethod);
+    // Shipping Cost wird automatisch in getFinalTotal() berechnet
   }
 }
