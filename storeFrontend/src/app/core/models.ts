@@ -556,6 +556,7 @@ export interface StoreTheme {
   typography: ThemeTypography;
   layout: ThemeLayout;
   customCss?: string;
+  logoUrl?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -570,6 +571,7 @@ export interface CreateThemeRequest {
   typography?: Partial<ThemeTypography>;
   layout?: Partial<ThemeLayout>;
   customCss?: string;
+  logoUrl?: string;
 }
 
 export interface ThemePreset {

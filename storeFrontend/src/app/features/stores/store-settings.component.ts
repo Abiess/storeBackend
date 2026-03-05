@@ -7,11 +7,12 @@ import { Store } from '../../core/models';
 import { StoreNavigationComponent } from '../../shared/components/store-navigation.component';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { StoreSliderEditorComponent } from './components/store-slider-editor.component';
+import { BrandingEditorComponent } from './branding-editor.component';
 
 @Component({
   selector: 'app-store-settings',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, StoreNavigationComponent, TranslatePipe, StoreSliderEditorComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, StoreNavigationComponent, TranslatePipe, StoreSliderEditorComponent, BrandingEditorComponent],
   template: `
     <div class="store-settings-container">
       <!-- Einheitliche Navigation -->
@@ -112,46 +113,9 @@ import { StoreSliderEditorComponent } from './components/store-slider-editor.com
         </div>
 
         <!-- Branding Settings -->
+        <!-- Branding Settings -->
         <div class="tab-content" *ngIf="activeTab === 'branding'">
-          <form [formGroup]="brandingForm" (ngSubmit)="saveBranding()">
-            <div class="form-group">
-              <label for="logoUrl">Logo URL</label>
-              <input
-                id="logoUrl"
-                type="text"
-                formControlName="logoUrl"
-                class="form-control"
-                placeholder="https://...">
-              <small class="form-text">URL zu Ihrem Store-Logo</small>
-            </div>
-
-            <div class="form-group">
-              <label for="bannerUrl">Banner URL</label>
-              <input
-                id="bannerUrl"
-                type="text"
-                formControlName="bannerUrl"
-                class="form-control"
-                placeholder="https://...">
-              <small class="form-text">URL zu Ihrem Store-Banner</small>
-            </div>
-
-            <div class="logo-preview" *ngIf="brandingForm.get('logoUrl')?.value">
-              <h4>Logo Vorschau</h4>
-              <img [src]="brandingForm.get('logoUrl')?.value" alt="Logo Preview" class="preview-image">
-            </div>
-
-            <div class="banner-preview" *ngIf="brandingForm.get('bannerUrl')?.value">
-              <h4>Banner Vorschau</h4>
-              <img [src]="brandingForm.get('bannerUrl')?.value" alt="Banner Preview" class="preview-banner">
-            </div>
-
-            <div class="form-actions">
-              <button type="submit" class="btn btn-primary" [disabled]="!brandingForm.valid || saving">
-                {{ saving ? 'Speichern...' : 'Branding speichern' }}
-              </button>
-            </div>
-          </form>
+          <app-branding-editor [storeId]="storeId"></app-branding-editor>
         </div>
 
         <!-- Domain Settings -->

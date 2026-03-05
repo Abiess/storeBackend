@@ -42,6 +42,9 @@ public class StoreTheme {
     @Column(columnDefinition = "TEXT")
     private String customCss;
 
+    @Column(name = "logo_url", columnDefinition = "TEXT")
+    private String logoUrl;
+
     @Column(nullable = false)
     private Boolean isActive = false;
 

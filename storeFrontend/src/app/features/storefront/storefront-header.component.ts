@@ -16,8 +16,13 @@ import { LanguageSelectorComponent } from '../../shared/components/language-sele
     <header class="store-header">
       <div class="container">
         <div class="header-content">
-          <h1 class="store-name">{{ storeName }}</h1>
-          <p class="store-tagline">{{ storeSlug }}.markt.ma</p>
+          <div class="store-brand">
+            <img *ngIf="storeLogo" [src]="storeLogo" [alt]="storeName + ' logo'" class="store-logo">
+            <div class="store-info">
+              <h1 class="store-name">{{ storeName }}</h1>
+              <p class="store-tagline">{{ storeSlug }}.markt.ma</p>
+            </div>
+          </div>
         </div>
         <div class="header-actions">
           <!-- Language Selector -->
@@ -68,10 +73,10 @@ import { LanguageSelectorComponent } from '../../shared/components/language-sele
     ></app-storefront-auth-dialog>
   `,
   styles: [`
-    /* ==================== MODERN STORE HEADER ==================== */
+    /* ==================== MODERN STORE HEADER (THEME-AWARE) ==================== */
     .store-header {
-      background: white;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+      background: var(--theme-background, white);
+      border-bottom: 1px solid var(--theme-border, rgba(0, 0, 0, 0.08));
       padding: 1.5rem 0;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
       position: sticky;
@@ -93,19 +98,36 @@ import { LanguageSelectorComponent } from '../../shared/components/language-sele
     .header-content { 
       flex: 1; 
     }
+
+    .store-brand {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .store-logo {
+      max-height: 50px;
+      max-width: 150px;
+      object-fit: contain;
+    }
+
+    .store-info {
+      display: flex;
+      flex-direction: column;
+    }
     
     .store-name {
       margin: 0 0 0.25rem;
       font-size: clamp(1.5rem, 3vw, 2rem);
       font-weight: 700;
-      color: #1d1d1f;
+      color: var(--theme-text, #1d1d1f);
       letter-spacing: -0.02em;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: var(--theme-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
     }
     
     .store-tagline { 
       margin: 0; 
-      color: #6e6e73;
+      color: var(--theme-text-secondary, #6e6e73);
       font-size: 0.875rem;
       font-weight: 400;
     }
@@ -138,16 +160,73 @@ import { LanguageSelectorComponent } from '../../shared/components/language-sele
     }
     
     .btn-login {
-      background: #f5f5f7;
-      color: #1d1d1f;
-      border: 1px solid rgba(0, 0, 0, 0.06);
+      background: var(--theme-primary, #667eea);
+      color: white;
+      border: 1px solid transparent;
       
       &:hover {
-        background: #e8e8ed;
-        border-color: rgba(0, 0, 0, 0.1);
+        background: var(--theme-secondary, #764ba2);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
       }
     }
     
+    .btn-cart {
+      background: var(--theme-accent, #f093fb);
+      color: white;
+      position: relative;
+      
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(240, 147, 251, 0.3);
+      }
+    }
+    
+    .cart-badge {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background: var(--theme-error, #f56565);
+      color: white;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    
+    .user-menu {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .btn-profile {
+      background: var(--theme-primary, #667eea);
+      color: white;
+      text-decoration: none;
+      
+      &:hover {
+        background: var(--theme-secondary, #764ba2);
+        transform: translateY(-1px);
+      }
+    }
+    
+    .btn-logout {
+      background: transparent;
+      color: var(--theme-text, #1d1d1f);
+      border: 1px solid var(--theme-border, rgba(0, 0, 0, 0.1));
+      
+      &:hover {
+        background: var(--theme-background, #f5f5f7);
+        border-color: var(--theme-primary, #667eea);
+        color: var(--theme-primary, #667eea);
+      }
+    }
     .btn-cart {
       background: #0071e3;
       color: white;
@@ -238,8 +317,9 @@ import { LanguageSelectorComponent } from '../../shared/components/language-sele
   `]
 })
 export class StorefrontHeaderComponent {
-  @Input() storeName = '';
-  @Input() storeSlug = '';
+  @Input() storeName!: string;
+  @Input() storeSlug!: string;
+  @Input() storeLogo: string | null = null;
   @Input() cartItemCount = 0;
   @Output() cartClick = new EventEmitter<void>();
 

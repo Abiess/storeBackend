@@ -17,7 +17,10 @@ import { TranslationService } from '@app/core/services/translation.service';
       <div class="header-container">
         <!-- Logo / Store Name -->
         <div class="header-logo">
-          <h1 class="store-name">{{ storeName }}</h1>
+          <div class="store-brand">
+            <img *ngIf="storeLogo" [src]="storeLogo" [alt]="storeName + ' logo'" class="store-logo-img">
+            <h1 class="store-name">{{ storeName }}</h1>
+          </div>
         </div>
 
         <!-- Search Bar (Desktop) -->
@@ -122,6 +125,18 @@ import { TranslationService } from '@app/core/services/translation.service';
        ============================================ */
     .header-logo {
       flex-shrink: 0;
+    }
+
+    .store-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .store-logo-img {
+      max-height: 45px;
+      max-width: 150px;
+      object-fit: contain;
     }
 
     .store-name {
@@ -365,6 +380,7 @@ import { TranslationService } from '@app/core/services/translation.service';
 })
 export class ModernStoreHeaderComponent {
   @Input() storeName = 'Online Shop';
+  @Input() storeLogo: string | null = null;
   @Input() cartItemCount = 0;
   @Input() showSearch = true;
   @Input() showAccount = true;

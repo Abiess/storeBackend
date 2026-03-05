@@ -59,6 +59,7 @@ public class ThemeService {
         theme.setTypographyJson(request.getTypographyJson());
         theme.setLayoutJson(request.getLayoutJson());
         theme.setCustomCss(request.getCustomCss());
+        theme.setLogoUrl(request.getLogoUrl());
         theme.setIsActive(true);
 
         StoreTheme savedTheme = themeRepository.save(theme);
@@ -92,6 +93,9 @@ public class ThemeService {
         }
         if (updates.getCustomCss() != null) {
             theme.setCustomCss(updates.getCustomCss());
+        }
+        if (updates.getLogoUrl() != null) {
+            theme.setLogoUrl(updates.getLogoUrl());
         }
 
         StoreTheme savedTheme = themeRepository.save(theme);
@@ -135,6 +139,7 @@ public class ThemeService {
         dto.setTypographyJson(theme.getTypographyJson());
         dto.setLayoutJson(theme.getLayoutJson());
         dto.setCustomCss(theme.getCustomCss());
+        dto.setLogoUrl(theme.getLogoUrl());
         dto.setIsActive(theme.getIsActive());
         dto.setCreatedAt(theme.getCreatedAt());
         dto.setUpdatedAt(theme.getUpdatedAt());

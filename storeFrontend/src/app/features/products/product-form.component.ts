@@ -32,87 +32,24 @@ interface UploadedImage {
         <button class="btn-back" (click)="goBack()">← {{ 'common.back' | translate }}</button>
       </div>
 
+      <!-- Tab Navigation -->
+      <div class="tab-navigation">
+        <div 
+          *ngFor="let tab of tabs" 
+          class="tab-item"
+          [class.active]="activeTab === tab.id"
+          (click)="setActiveTab(tab.id)"
+          [title]="tab.label"
+        >
+          <span class="tab-icon">{{ tab.icon }}</span>
+          <span class="tab-label">{{ tab.label | translate }}</span>
+        </div>
+      </div>
+
       <form [formGroup]="productForm" (ngSubmit)="onSubmit()" class="product-form">
         
-        <!-- Foto-Upload Bereich -->
-        <div class="form-card">
-          <h2>📷 {{ 'product.images' | translate }}</h2>
-          
-          <div class="upload-area">
-            <input 
-              #fileInput
-              type="file" 
-              accept="image/*"
-              multiple
-              (change)="onFileSelected($event)"
-              style="display: none"
-            />
-            
-            <button 
-              type="button" 
-              class="btn-upload"
-              (click)="fileInput.click()"
-              [disabled]="uploading"
-            >
-              <span class="upload-icon">📁</span>
-              {{ uploading ? ('common.loading' | translate) : ('media.uploadImages' | translate) }}
-            </button>
-            
-            <p class="upload-hint">PNG, JPG, WEBP {{ 'messages.maxFileSize' | translate:  {size: '5MB'} }}</p>
-          </div>
-
-          <!-- Bildvorschau -->
-          <div class="images-preview" *ngIf="uploadedImages.length > 0">
-            <div 
-              *ngFor="let img of uploadedImages; let i = index" 
-              class="image-preview-card"
-              [class.primary]="img.isPrimary"
-            >
-              <div class="image-container">
-                <img [src]="img.preview || img.url" [alt]="img.filename" />
-                
-                <!-- Upload-Fortschritt -->
-                <div class="upload-progress" *ngIf="img.uploadProgress !== undefined && img.uploadProgress < 100">
-                  <div class="progress-bar" [style.width.%]="img.uploadProgress"></div>
-                  <span class="progress-text">{{ img.uploadProgress }}%</span>
-                </div>
-                
-                <!-- Primär-Badge -->
-                <div class="primary-badge" *ngIf="img.isPrimary">
-                  ⭐ {{ 'media.primaryImage' | translate }}
-                </div>
-              </div>
-              
-              <div class="image-actions">
-                <button 
-                  type="button" 
-                  class="btn-icon"
-                  (click)="setPrimaryImage(i)"
-                  [disabled]="img.isPrimary"
-                  [title]="'media.setPrimary' | translate"
-                >
-                  ⭐
-                </button>
-                <button 
-                  type="button" 
-                  class="btn-icon btn-danger"
-                  (click)="removeImage(i)"
-                  [title]="'common.delete' | translate"
-                >
-                  🗑️
-                </button>
-              </div>
-              
-              <p class="image-name">{{ img.filename }}</p>
-            </div>
-          </div>
-
-          <div class="upload-info" *ngIf="uploadedImages.length === 0">
-            <p>{{ 'media.noMedia' | translate }}</p>
-          </div>
-        </div>
-
-        <div class="form-card">
+        <!-- Basisinformationen (Tab: Basic Info) -->
+        <div class="form-card" *ngIf="activeTab === 'basic'">
           <h2>{{ 'product.info' | translate }}</h2>
           
           <div class="form-group">
@@ -198,8 +135,86 @@ interface UploadedImage {
           </div>
         </div>
 
-        <!-- Varianten Konfiguration -->
-        <div class="form-card">
+        <!-- Foto-Upload Bereich (Tab: Media) -->
+        <div class="form-card" *ngIf="activeTab === 'media'">
+          <h2>📷 {{ 'product.images' | translate }}</h2>
+          
+          <div class="upload-area">
+            <input 
+              #fileInput
+              type="file" 
+              accept="image/*"
+              multiple
+              (change)="onFileSelected($event)"
+              style="display: none"
+            />
+            
+            <button 
+              type="button" 
+              class="btn-upload"
+              (click)="fileInput.click()"
+              [disabled]="uploading"
+            >
+              <span class="upload-icon">📁</span>
+              {{ uploading ? ('common.loading' | translate) : ('media.uploadImages' | translate) }}
+            </button>
+            
+            <p class="upload-hint">PNG, JPG, WEBP {{ 'messages.maxFileSize' | translate:  {size: '5MB'} }}</p>
+          </div>
+
+          <!-- Bildvorschau -->
+          <div class="images-preview" *ngIf="uploadedImages.length > 0">
+            <div 
+              *ngFor="let img of uploadedImages; let i = index" 
+              class="image-preview-card"
+              [class.primary]="img.isPrimary"
+            >
+              <div class="image-container">
+                <img [src]="img.preview || img.url" [alt]="img.filename" />
+                
+                <!-- Upload-Fortschritt -->
+                <div class="upload-progress" *ngIf="img.uploadProgress !== undefined && img.uploadProgress < 100">
+                  <div class="progress-bar" [style.width.%]="img.uploadProgress"></div>
+                  <span class="progress-text">{{ img.uploadProgress }}%</span>
+                </div>
+                
+                <!-- Primär-Badge -->
+                <div class="primary-badge" *ngIf="img.isPrimary">
+                  ⭐ {{ 'media.primaryImage' | translate }}
+                </div>
+              </div>
+              
+              <div class="image-actions">
+                <button 
+                  type="button" 
+                  class="btn-icon"
+                  (click)="setPrimaryImage(i)"
+                  [disabled]="img.isPrimary"
+                  [title]="'media.setPrimary' | translate"
+                >
+                  ⭐
+                </button>
+                <button 
+                  type="button" 
+                  class="btn-icon btn-danger"
+                  (click)="removeImage(i)"
+                  [title]="'common.delete' | translate"
+                >
+                  🗑️
+                </button>
+              </div>
+              
+              <p class="image-name">{{ img.filename }}</p>
+            </div>
+          </div>
+
+          <div class="upload-info" *ngIf="uploadedImages.length === 0">
+            <p>{{ 'media.noMedia' | translate }}</p>
+          </div>
+        </div>
+
+        <!-- Varianten Konfiguration (Tab: Varianten) -->
+        <div class="form-card" *ngIf="activeTab === 'variants'">
           <h2>🎨 Produktvarianten</h2>
           
           <!-- Edit-Modus: Nur Varianten verwalten -->
@@ -298,6 +313,56 @@ interface UploadedImage {
           </div>
         </div>
 
+        <!-- Preis & Lager (Tab: Pricing) -->
+        <div class="form-card" *ngIf="activeTab === 'pricing'">
+          <h2>💰 Preis & Lager</h2>
+          
+          <div class="form-group">
+            <label for="basePrice">{{ 'product.price' | translate }} (€) *</label>
+            <input 
+              id="basePrice"
+              type="number" 
+              formControlName="basePrice"
+              step="0.01"
+              min="0"
+              placeholder="0.00"
+              [class.error]="productForm.get('basePrice')?.invalid && productForm.get('basePrice')?.touched"
+            />
+            <div class="error-message" *ngIf="productForm.get('basePrice')?.invalid && productForm.get('basePrice')?.touched">
+              {{ 'product.required.price' | translate }}
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="stock">{{ 'product.stock' | translate }}</label>
+            <input 
+              id="stock"
+              type="number" 
+              formControlName="stock"
+              min="0"
+              placeholder="0"
+              [class.error]="productForm.get('stock')?.invalid && productForm.get('stock')?.touched"
+            />
+            <div class="error-message" *ngIf="productForm.get('stock')?.invalid && productForm.get('stock')?.touched">
+              {{ 'product.required.stock' | translate }}
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="sku">{{ 'product.sku' | translate }}</label>
+            <input 
+              id="sku"
+              type="text" 
+              formControlName="sku"
+              [placeholder]="'product.placeholder.sku' | translate"
+              [class.error]="productForm.get('sku')?.invalid && productForm.get('sku')?.touched"
+            />
+            <div class="error-message" *ngIf="productForm.get('sku')?.invalid && productForm.get('sku')?.touched">
+              {{ 'product.required.sku' | translate }}
+            </div>
+          </div>
+        </div>
+
         <div class="form-actions">
           <button type="button" class="btn-secondary" (click)="goBack()">
             {{ 'common.cancel' | translate }}</button>
@@ -373,6 +438,40 @@ interface UploadedImage {
       color: #333;
       padding-bottom: 0.75rem;
       border-bottom: 2px solid #f0f0f0;
+    }
+
+    /* Tab Navigation */
+    .tab-navigation {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid #f0f0f0;
+    }
+
+    .tab-item {
+      flex: 1;
+      padding: 0.75rem;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.3s;
+      background: #f8f9fa;
+      color: #333;
+      font-weight: 500;
+    }
+
+    .tab-item.active {
+      background: white;
+      border: 2px solid #667eea;
+      color: #667eea;
+      font-weight: 600;
+    }
+
+    .tab-icon {
+      font-size: 1.25rem;
     }
 
     /* Upload-Bereich */
@@ -935,6 +1034,16 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     newValue?: string;
   }> = [];
 
+  // Tab Navigation
+  activeTab: 'basic' | 'media' | 'variants' | 'pricing' = 'basic';
+
+  tabs = [
+    { id: 'basic' as const, label: 'Basis Info', icon: '📝' },
+    { id: 'media' as const, label: 'Bilder', icon: '📷' },
+    { id: 'variants' as const, label: 'Varianten', icon: '🎨' },
+    { id: 'pricing' as const, label: 'Preis & Lager', icon: '💰' }
+  ];
+
 
   constructor(
     private fb: FormBuilder,
@@ -951,6 +1060,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
       sku: [''],
       description: ['', Validators.required],
       basePrice: [0, [Validators.required, Validators.min(0.01)]],
+      stock: [0, [Validators.min(0)]],
       status: [ProductStatus.DRAFT],
       categoryId: [null]
     });
@@ -1351,5 +1461,23 @@ export class ProductFormComponent implements OnInit, OnDestroy {
 
     generate([], 0);
     return combinations;
+  }
+
+  setActiveTab(tab: 'basic' | 'media' | 'variants' | 'pricing'): void {
+    this.activeTab = tab;
+  }
+
+  hasTabError(tab: string): boolean {
+    const form = this.productForm;
+    if (!form.touched) return false;
+
+    switch (tab) {
+      case 'basic':
+        return !!(form.get('title')?.invalid || form.get('description')?.invalid || form.get('categoryId')?.invalid);
+      case 'pricing':
+        return !!form.get('basePrice')?.invalid;
+      default:
+        return false;
+    }
   }
 }

@@ -587,6 +587,7 @@ CREATE TABLE IF NOT EXISTS store_themes (
     typography_json TEXT,
     layout_json TEXT,
     custom_css TEXT,
+    logo_url TEXT,
     is_active BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

@@ -5,6 +5,7 @@ import { ProductService } from '@app/core/services/product.service';
 import { CategoryService } from '@app/core/services/category.service';
 import { CartService } from '@app/core/services/cart.service';
 import { ThemeService } from '@app/core/services/theme.service';
+import { ThemeApplierService } from '@app/core/services/theme-applier.service';
 import { Product, Category, PublicStore, ProductStatus } from '@app/core/models';
 import { StorefrontHeaderComponent } from './storefront-header.component';
 import { StorefrontNavComponent } from './storefront-nav.component';
@@ -50,6 +51,7 @@ import { Subscription } from 'rxjs';
 export class StorefrontComponent implements OnInit, OnDestroy {
   storeId!: number;
   store: PublicStore | null = null;
+  storeLogo: string | null = null;
   products: Product[] = [];
   categories: Category[] = [];
   selectedCategory: Category | null = null;
@@ -78,6 +80,7 @@ export class StorefrontComponent implements OnInit, OnDestroy {
     private router: Router,
     private cartService: CartService,
     private themeService: ThemeService,
+    private themeApplier: ThemeApplierService,
     private translationService: TranslationService
   ) {}
 
@@ -117,7 +120,14 @@ export class StorefrontComponent implements OnInit, OnDestroy {
       next: (theme) => {
         if (theme) {
           console.log('✅ Theme geladen und wird angewendet:', theme.name);
-          this.themeService.applyTheme(theme);
+          // Apply theme colors to document root as CSS variables
+          this.themeApplier.applyTheme(theme.colors, theme.typography.fontFamily);
+
+          // Set logo if available
+          if (theme.logoUrl) {
+            this.storeLogo = theme.logoUrl;
+            console.log('✅ Logo geladen:', theme.logoUrl);
+          }
         } else {
           console.log('ℹ️ Kein Theme gefunden - verwende Standard-Theme');
         }
@@ -174,8 +184,8 @@ export class StorefrontComponent implements OnInit, OnDestroy {
   loadCartCount(): void {
     console.log('🔢 Lade Warenkorb-Anzahl für Store:', this.storeId);
 
-    // FIXED: Verwende getCartItemCount() statt getCart() für bessere Performance
-    this.cartService.getCartItemCount(this.storeId).subscribe({
+    // FIXED: getCartItemCount() nimmt keine Parameter (verwendet JWT für storeId)
+    this.cartService.getCartItemCount().subscribe({
       next: (count) => {
         this.cartItemCount = count;
         console.log('✅ Warenkorb-Anzahl geladen:', count, 'Artikel');

@@ -16,5 +16,6 @@ public class CreateThemeRequest {
     private String typographyJson;
     private String layoutJson;
     private String customCss;
+    private String logoUrl;
 }
 
