@@ -1,0 +1,144 @@
+/* ==================== Admin Layout ==================== */
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #f8f9fa;
+}
+
+.admin-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-left: 280px; /* Sidebar width */
+  min-height: 100vh;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ==================== Top Bar ==================== */
+.admin-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #fff;
+  border-bottom: 1px solid #e0e0e0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.topbar-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  max-width: 100%;
+}
+
+.topbar-left {
+  flex: 1;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* User Menu */
+.user-menu {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.btn-logout {
+  background: transparent;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #666;
+  transition: all 0.2s;
+}
+
+.btn-logout:hover {
+  background: #f8f9fa;
+  border-color: #667eea;
+  color: #667eea;
+}
+
+.logout-icon {
+  font-size: 1.25rem;
+}
+
+/* ==================== Content Area ==================== */
+.admin-content {
+  flex: 1;
+  padding: 2rem 1.5rem;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* ==================== Responsive ==================== */
+@media (max-width: 1023px) {
+  .admin-main {
+    margin-left: 0; /* No sidebar on mobile */
+  }
+
+  .admin-content {
+    padding: 1.5rem 1rem;
+    padding-top: 5rem; /* Space for mobile toggle button */
+  }
+
+  .topbar-content {
+    padding: 0.75rem 1rem;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1280px) {
+  .admin-content {
+    padding: 1.5rem 1.25rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .admin-content {
+    max-width: 1400px;
+    padding: 2rem 2rem;
+  }
+}
+
+/* ==================== Utility Classes for Content ==================== */
+.admin-content {
+  /* Content will inherit global styles */
+}
+
+/* Ensure smooth transitions */
+* {
+  box-sizing: border-box;
+}
+
+/* ==================== Accessibility ==================== */
+@media (prefers-reduced-motion: reduce) {
+  .admin-main {
+    transition: none;
+  }
+}
+

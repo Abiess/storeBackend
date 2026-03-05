@@ -1,0 +1,35 @@
+<div class="admin-layout">
+  <!-- Sidebar -->
+  <app-admin-sidebar [storeId]="storeId"></app-admin-sidebar>
+
+  <!-- Main Content Area -->
+  <div class="admin-main">
+    <!-- Top Bar -->
+    <header class="admin-topbar">
+      <div class="topbar-content">
+        <div class="topbar-left">
+          <!-- Breadcrumbs or page title will be here -->
+        </div>
+
+        <div class="topbar-right">
+          <app-language-switcher></app-language-switcher>
+
+          <div class="user-menu">
+            <div class="user-avatar" [title]="currentUser?.email || ''">
+              {{ getUserInitials() }}
+            </div>
+            <button class="btn btn-logout" (click)="logout()" title="Abmelden">
+              <span class="logout-icon">⎋</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <main class="admin-content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>
+

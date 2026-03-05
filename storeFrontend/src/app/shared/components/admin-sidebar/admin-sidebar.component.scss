@@ -1,0 +1,326 @@
+/* ==================== Sidebar Layout ==================== */
+.admin-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 280px;
+  background: linear-gradient(180deg, #1a1f36 0%, #2d3561 100%);
+  color: #fff;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ==================== Header ==================== */
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: inherit;
+  font-weight: 700;
+  font-size: 1.25rem;
+  transition: opacity 0.2s;
+}
+
+.sidebar-logo:hover {
+  opacity: 0.9;
+}
+
+.logo-icon {
+  font-size: 1.75rem;
+}
+
+.logo-text {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.btn-close-sidebar {
+  display: none;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  line-height: 1;
+  transition: opacity 0.2s;
+}
+
+.btn-close-sidebar:hover {
+  opacity: 0.7;
+}
+
+/* ==================== Navigation ==================== */
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1rem 0;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Navigation Groups */
+.nav-group {
+  margin-bottom: 1.5rem;
+}
+
+.nav-group-title {
+  padding: 0.5rem 1.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 0.5rem;
+}
+
+.nav-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0 0.75rem;
+}
+
+/* Navigation Items */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border-radius: 8px;
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  outline: none;
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  transform: translateX(2px);
+}
+
+.nav-item:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.5);
+}
+
+/* Active State */
+.nav-item-active,
+.nav-item.nav-item-active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  font-weight: 600;
+}
+
+.nav-item-active:hover {
+  transform: translateX(2px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+}
+
+/* Navigation Icons */
+.nav-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.nav-label {
+  flex: 1;
+}
+
+/* Badges */
+.nav-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.badge-primary {
+  background: #667eea;
+  color: #fff;
+}
+
+.badge-success {
+  background: #28a745;
+  color: #fff;
+}
+
+.badge-warning {
+  background: #ffc107;
+  color: #212529;
+}
+
+/* ==================== Footer ==================== */
+.sidebar-footer {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.footer-info {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.75rem;
+}
+
+/* ==================== Mobile Styles ==================== */
+.sidebar-mobile {
+  transform: translateX(-100%);
+}
+
+.sidebar-mobile.sidebar-open {
+  transform: translateX(0);
+}
+
+.sidebar-overlay {
+  display: none;
+}
+
+/* Mobile Toggle Button */
+.btn-toggle-sidebar {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 999;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+.btn-toggle-sidebar:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+}
+
+.btn-toggle-sidebar:focus-visible {
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.5);
+}
+
+.hamburger-icon {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hamburger-icon span {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background: #fff;
+  border-radius: 1px;
+  transition: all 0.2s;
+}
+
+/* ==================== Responsive ==================== */
+@media (max-width: 1023px) {
+  .sidebar-mobile .btn-close-sidebar {
+    display: block;
+  }
+
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    z-index: 999;
+  }
+
+  .btn-toggle-sidebar {
+    display: flex;
+  }
+}
+
+/* Desktop: Always visible, no toggle needed */
+@media (min-width: 1024px) {
+  .admin-sidebar {
+    transform: translateX(0) !important;
+  }
+
+  .sidebar-overlay,
+  .btn-toggle-sidebar,
+  .btn-close-sidebar {
+    display: none !important;
+  }
+}
+
+/* ==================== Accessibility ==================== */
+@media (prefers-reduced-motion: reduce) {
+  .admin-sidebar,
+  .nav-item,
+  .btn-toggle-sidebar {
+    transition: none;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .admin-sidebar {
+    border-right: 2px solid #fff;
+  }
+
+  .nav-item {
+    border: 1px solid transparent;
+  }
+
+  .nav-item-active {
+    border-color: #fff;
+  }
+}
+
