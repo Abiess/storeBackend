@@ -1,0 +1,191 @@
+<div class="orders-professional">
+  <app-store-navigation [storeId]="storeId" currentPage="Bestellungen"></app-store-navigation>
+
+  <div class="orders-header">
+    <h1>📦 Bestellungen</h1>
+    <button class="btn-refresh" (click)="loadOrders()" [disabled]="loading">
+      🔄 Aktualisieren
+    </button>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid" *ngIf="!loading">
+    <div class="stat-card">
+      <div class="stat-value">{{ orders.length }}</div>
+      <div class="stat-label">Gesamt</div>
+    </div>
+    <div class="stat-card warning">
+      <div class="stat-value">{{ getPendingCount() }}</div>
+      <div class="stat-label">Ausstehend</div>
+    </div>
+    <div class="stat-card info">
+      <div class="stat-value">{{ getProcessingCount() }}</div>
+      <div class="stat-label">In Bearbeitung</div>
+    </div>
+    <div class="stat-card success">
+      <div class="stat-value">{{ getShippedCount() }}</div>
+      <div class="stat-label">Versandt</div>
+    </div>
+    <div class="stat-card primary">
+      <div class="stat-value">{{ getTotalRevenue() | currency:'EUR' }}</div>
+      <div class="stat-label">Umsatz</div>
+    </div>
+  </div>
+
+  <!-- Filters & Search -->
+  <div class="filters-bar">
+    <div class="search-box">
+      <input
+        type="text"
+        [(ngModel)]="searchTerm"
+        (input)="applyFilters()"
+        placeholder="🔍 Suche nach Bestellnummer, Kunde, Email..."
+        class="search-input">
+    </div>
+
+    <div class="filter-group">
+      <label>Status:</label>
+      <select [(ngModel)]="filterStatus" (change)="applyFilters()" class="filter-select">
+        <option value="">Alle</option>
+        <option value="PENDING">Ausstehend</option>
+        <option value="CONFIRMED">Bestätigt</option>
+        <option value="PROCESSING">In Bearbeitung</option>
+        <option value="SHIPPED">Versandt</option>
+        <option value="DELIVERED">Zugestellt</option>
+        <option value="CANCELLED">Storniert</option>
+        <option value="REFUNDED">Erstattet</option>
+      </select>
+    </div>
+
+    <div class="bulk-actions" *ngIf="selectedOrderIds.size > 0">
+      <span class="selected-count">{{ selectedOrderIds.size }} ausgewählt</span>
+      <button class="btn-bulk" (click)="openBulkActionModal()">
+        ⚙️ Bulk-Aktion
+      </button>
+    </div>
+  </div>
+
+  <!-- Orders Table -->
+  <div class="orders-table-container" *ngIf="!loading && filteredOrders.length > 0">
+    <table class="orders-table">
+      <thead>
+        <tr>
+          <th class="checkbox-col">
+            <input
+              type="checkbox"
+              [checked]="selectAll"
+              (change)="toggleSelectAll()"
+              title="Alle auswählen">
+          </th>
+          <th>Bestellnummer</th>
+          <th>Kunde</th>
+          <th>Datum</th>
+          <th>Betrag</th>
+          <th>Status</th>
+          <th>Aktionen</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let order of filteredOrders"
+            [class.selected]="isOrderSelected(order.id)">
+          <td class="checkbox-col">
+            <input
+              type="checkbox"
+              [checked]="isOrderSelected(order.id)"
+              (change)="toggleOrderSelection(order.id)">
+          </td>
+          <td class="order-number">
+            <strong>{{ order.orderNumber }}</strong>
+          </td>
+          <td>
+            <div class="customer-info">
+              <div class="customer-name">{{ order.customerName || 'Gast' }}</div>
+              <div class="customer-email">{{ order.customerEmail }}</div>
+            </div>
+          </td>
+          <td>{{ order.createdAt | date:'dd.MM.yyyy HH:mm' }}</td>
+          <td class="amount">{{ order.totalAmount | currency:'EUR' }}</td>
+          <td>
+            <span class="status-badge" [ngClass]="getStatusClass(order.status)">
+              {{ getStatusLabel(order.status) }}
+            </span>
+          </td>
+          <td class="actions">
+            <button
+              class="btn-icon"
+              (click)="viewOrderDetail(order.id)"
+              title="Details anzeigen">
+              👁️
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="!loading && filteredOrders.length === 0">
+    <div class="empty-icon">📦</div>
+    <h2>Keine Bestellungen gefunden</h2>
+    <p *ngIf="searchTerm || filterStatus">Versuchen Sie andere Filter</p>
+    <p *ngIf="!searchTerm && !filterStatus">Noch keine Bestellungen vorhanden</p>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Bestellungen werden geladen...</p>
+  </div>
+
+  <!-- Error -->
+  <div class="error-state" *ngIf="error">
+    <p>{{ error }}</p>
+    <button class="btn-primary" (click)="loadOrders()">Erneut versuchen</button>
+  </div>
+</div>
+
+<!-- Bulk Action Modal -->
+<div class="modal" *ngIf="showBulkModal" (click)="closeBulkModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>⚙️ Bulk-Aktion</h2>
+      <button class="btn-close" (click)="closeBulkModal()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <p><strong>{{ selectedOrderIds.size }} Bestellungen</strong> werden aktualisiert</p>
+
+      <div class="form-group">
+        <label>Neuer Status *</label>
+        <select [(ngModel)]="bulkActionStatus" class="form-control">
+          <option value="">-- Status wählen --</option>
+          <option *ngFor="let status of availableStatuses" [value]="status">
+            {{ getStatusLabel(status) }}
+          </option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Notiz (optional)</label>
+        <textarea
+          [(ngModel)]="bulkActionNote"
+          class="form-control"
+          rows="3"
+          placeholder="Interne Notiz..."></textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeBulkModal()" [disabled]="bulkProcessing">
+        Abbrechen
+      </button>
+      <button
+        class="btn-primary"
+        (click)="executeBulkAction()"
+        [disabled]="!bulkActionStatus || bulkProcessing">
+        {{ bulkProcessing ? 'Wird ausgeführt...' : 'Ausführen' }}
+      </button>
+    </div>
+  </div>
+</div>
+

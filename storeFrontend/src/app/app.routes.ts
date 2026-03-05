@@ -69,11 +69,21 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'dashboard/stores/:storeId/homepage-builder',
+    loadComponent: () => import('./features/stores/homepage-builder.component').then(m => m.HomepageBuilderComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'dashboard/stores/:storeId/orders',
     loadComponent: () => {
       console.log('✅ Route matched: dashboard/stores/:storeId/orders');
       return import('./features/stores/store-orders.component').then(m => m.StoreOrdersComponent);
     },
+    canActivate: [authGuard]
+  },
+  {
+    path: 'dashboard/stores/:storeId/orders/:orderId',
+    loadComponent: () => import('./features/stores/order-detail-professional.component').then(m => m.OrderDetailProfessionalComponent),
     canActivate: [authGuard]
   },
   {
@@ -222,6 +232,11 @@ export const routes: Routes = [
   {
     path: 'stores/:id/settings',
     loadComponent: () => import('./features/stores/store-settings.component').then(m => m.StoreSettingsComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/homepage-builder',
+    loadComponent: () => import('./features/stores/homepage-builder.component').then(m => m.HomepageBuilderComponent),
     canActivate: [authGuard]
   },
   {

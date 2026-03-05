@@ -6,7 +6,8 @@ import { CategoryService } from '@app/core/services/category.service';
 import { CartService } from '@app/core/services/cart.service';
 import { ThemeService } from '@app/core/services/theme.service';
 import { ThemeApplierService } from '@app/core/services/theme-applier.service';
-import { Product, Category, PublicStore, ProductStatus } from '@app/core/models';
+import { HomepageSectionService } from '@app/core/services/homepage-section.service';
+import { Product, Category, PublicStore, ProductStatus, HomepageSection } from '@app/core/models';
 import { StorefrontHeaderComponent } from './storefront-header.component';
 import { StorefrontNavComponent } from './storefront-nav.component';
 import { ProductCardComponent } from './product-card.component';
@@ -20,6 +21,7 @@ import { StoreSidebarComponent } from './components/store-sidebar.component';
 import { ProductGridComponent } from './components/product-grid.component';
 import { ModernProductCardComponent } from './components/modern-product-card.component';
 import { ModernStoreHeaderComponent } from './components/modern-store-header.component';
+import { HomepageSectionRendererComponent } from './homepage-section-renderer.component';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { TranslationService } from '@app/core/services/translation.service';
 import { Subscription } from 'rxjs';
@@ -43,6 +45,7 @@ import { Subscription } from 'rxjs';
     ProductGridComponent,
     ModernProductCardComponent,
     ModernStoreHeaderComponent,
+    HomepageSectionRendererComponent,
     TranslatePipe
   ],
   templateUrl: './storefront.component.html',
@@ -59,6 +62,9 @@ export class StorefrontComponent implements OnInit, OnDestroy {
   cartItemCount = 0;
   addingToCart = false;
   readonly ProductStatus = ProductStatus;
+
+  // Homepage Sections
+  homepageSections: HomepageSection[] = [];
 
   // QuickView State
   quickViewOpen = false;
@@ -81,6 +87,7 @@ export class StorefrontComponent implements OnInit, OnDestroy {
     private cartService: CartService,
     private themeService: ThemeService,
     private themeApplier: ThemeApplierService,
+    private homepageSectionService: HomepageSectionService,
     private translationService: TranslationService
   ) {}
 
@@ -100,6 +107,7 @@ export class StorefrontComponent implements OnInit, OnDestroy {
     this.loadTheme();
     this.loadStoreData();
     this.loadCartCount();
+    this.loadHomepageSections();
 
     // FIXED: Höre auf Warenkorb-Updates (z.B. nach Logout/Login)
     this.cartUpdateSubscription = this.cartService.cartUpdate$.subscribe(() => {
@@ -193,6 +201,19 @@ export class StorefrontComponent implements OnInit, OnDestroy {
       error: (error) => {
         console.error('❌ Fehler beim Laden der Warenkorb-Anzahl:', error);
         this.cartItemCount = 0;
+      }
+    });
+  }
+
+  loadHomepageSections(): void {
+    this.homepageSectionService.getActiveSections(this.storeId).subscribe({
+      next: (sections) => {
+        this.homepageSections = sections;
+        console.log('✅ Loaded', sections.length, 'homepage sections');
+      },
+      error: (error) => {
+        console.warn('⚠️ Error loading homepage sections:', error);
+        this.homepageSections = [];
       }
     });
   }

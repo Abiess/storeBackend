@@ -30,6 +30,37 @@ export class MockOrderService {
     return of(order!).pipe(delay(500));
   }
 
+  bulkUpdateOrderStatus(storeId: number, orderIds: number[], status: OrderStatus, note?: string): Observable<any> {
+    orderIds.forEach(id => {
+      const order = this.orders.find(o => o.id === id);
+      if (order) {
+        order.status = status;
+        order.updatedAt = new Date().toISOString();
+      }
+    });
+    return of({ success: true, updated: orderIds.length }).pipe(delay(500));
+  }
+
+  updateOrderTracking(storeId: number, orderId: number, trackingCarrier: string, trackingNumber: string, trackingUrl?: string): Observable<Order> {
+    const order = this.orders.find(o => o.id === orderId);
+    if (order) {
+      order.trackingCarrier = trackingCarrier;
+      order.trackingNumber = trackingNumber;
+      order.trackingUrl = trackingUrl;
+      order.updatedAt = new Date().toISOString();
+    }
+    return of(order!).pipe(delay(500));
+  }
+
+  addOrderNote(storeId: number, orderId: number, note: string): Observable<any> {
+    const order = this.orders.find(o => o.id === orderId);
+    if (order) {
+      order.notes = (order.notes || '') + '\n' + note;
+      order.updatedAt = new Date().toISOString();
+    }
+    return of({ success: true, note }).pipe(delay(500));
+  }
+
   getOrderHistory(storeId: number, orderId: number): Observable<any[]> {
     const history = [
       {

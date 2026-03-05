@@ -237,6 +237,9 @@ export interface Order {
   shippingAddress?: Address | string;
   billingAddress?: Address | string;
   notes?: string;
+  trackingNumber?: string;
+  trackingCarrier?: string;
+  trackingUrl?: string;
   items?: OrderItem[];
   statusHistory?: OrderStatusHistory[];
   createdAt: string;
@@ -265,7 +268,10 @@ export interface OrderItem {
   priceAtOrder?: number;
   totalPrice: number;
   productTitle?: string;
+  productName?: string;
+  name?: string;
   variantSku?: string;
+  sku?: string;
 }
 
 export interface OrderStatusHistory {
@@ -582,6 +588,68 @@ export interface ThemePreset {
   colors: ThemeColors;
   typography: ThemeTypography;
   layout: ThemeLayout;
+}
+
+// ============================================
+// HOMEPAGE SECTIONS - Homepage Builder
+// ============================================
+export type SectionType =
+  | 'HERO'
+  | 'FEATURED_PRODUCTS'
+  | 'CATEGORIES'
+  | 'BEST_SELLERS'
+  | 'BANNER'
+  | 'NEWSLETTER';
+
+export interface HomepageSection {
+  id: number;
+  storeId: number;
+  sectionType: SectionType;
+  sortOrder: number;
+  isActive: boolean;
+  settings: string; // JSON string
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateHomepageSectionRequest {
+  storeId: number;
+  sectionType: SectionType;
+  sortOrder: number;
+  isActive?: boolean;
+  settings?: string;
+}
+
+export interface HeroSectionSettings {
+  title?: string;
+  subtitle?: string;
+  buttonText?: string;
+  buttonLink?: string;
+  backgroundImage?: string;
+}
+
+export interface FeaturedProductsSettings {
+  categoryId?: number;
+  limit?: number;
+  title?: string;
+}
+
+export interface CategoriesSettings {
+  limit?: number;
+  title?: string;
+}
+
+export interface BannerSettings {
+  imageUrl?: string;
+  link?: string;
+  title?: string;
+  subtitle?: string;
+}
+
+export interface NewsletterSettings {
+  title?: string;
+  description?: string;
+  placeholderText?: string;
 }
 
 // ============================================

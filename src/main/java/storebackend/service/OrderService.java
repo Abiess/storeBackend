@@ -350,4 +350,52 @@ public class OrderService {
 
         return order;
     }
+
+    /**
+     * Bulk update order status for multiple orders
+     */
+    @Transactional
+    public List<Order> bulkUpdateOrderStatus(List<Long> orderIds, OrderStatus newStatus, String notes, User updatedBy) {
+        return orderIds.stream()
+                .map(orderId -> updateOrderStatus(orderId, newStatus, notes, updatedBy))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Update order tracking information
+     */
+    @Transactional
+    public Order updateOrderTracking(Long orderId, String trackingCarrier, String trackingNumber, String trackingUrl, User updatedBy) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        order.setTrackingCarrier(trackingCarrier);
+        order.setTrackingNumber(trackingNumber);
+        order.setTrackingUrl(trackingUrl);
+
+        order = orderRepository.save(order);
+
+        // Add note to history
+        String note = "Tracking updated: " + trackingCarrier + " - " + trackingNumber;
+        createStatusHistory(order, order.getStatus(), note, updatedBy);
+
+        return order;
+    }
+
+    /**
+     * Add internal note to order (without changing status)
+     */
+    @Transactional
+    public OrderStatusHistory addOrderNote(Long orderId, String note, User createdBy) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        OrderStatusHistory history = new OrderStatusHistory();
+        history.setOrder(order);
+        history.setStatus(order.getStatus()); // Keep current status
+        history.setNotes(note);
+        history.setUpdatedBy(createdBy);
+
+        return orderStatusHistoryRepository.save(history);
+    }
 }

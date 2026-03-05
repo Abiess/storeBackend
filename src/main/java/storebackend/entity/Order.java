@@ -45,6 +45,12 @@ public class Order {
     @Column(name = "tracking_number", length = 100)
     private String trackingNumber;
 
+    @Column(name = "tracking_carrier", length = 50)
+    private String trackingCarrier;
+
+    @Column(name = "tracking_url", length = 500)
+    private String trackingUrl;
+
     @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount;
 

@@ -1,0 +1,225 @@
+<div class="order-detail-professional" *ngIf="!loading">
+  <app-store-navigation [storeId]="storeId" currentPage="Bestellung"></app-store-navigation>
+
+  <!-- Header -->
+  <div class="detail-header">
+    <div class="header-left">
+      <button class="btn-back" (click)="goBack()">← Zurück</button>
+      <h1>📦 Bestellung {{ order?.orderNumber }}</h1>
+    </div>
+    <div class="header-right">
+      <span class="status-badge" [ngClass]="getStatusClass(order!.status)">
+        {{ getStatusLabel(order!.status) }}
+      </span>
+    </div>
+  </div>
+
+  <div class="detail-content">
+    <!-- Left Column -->
+    <div class="left-column">
+      <!-- Customer Info -->
+      <div class="detail-card">
+        <h2>👤 Kunde</h2>
+        <div class="info-grid">
+          <div class="info-item">
+            <label>Name:</label>
+            <span>{{ order?.customerName || 'Gast' }}</span>
+          </div>
+          <div class="info-item">
+            <label>Email:</label>
+            <span>{{ order?.customerEmail }}</span>
+          </div>
+          <div class="info-item">
+            <label>Bestelldatum:</label>
+            <span>{{ order?.createdAt | date:'dd.MM.yyyy HH:mm' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Addresses -->
+      <div class="detail-card" *ngIf="getAddress(order?.shippingAddress) as shipping">
+        <h2>📍 Lieferadresse</h2>
+        <div class="address-text">
+          <p>{{ shipping.firstName }} {{ shipping.lastName }}</p>
+          <p>{{ shipping.address1 }}</p>
+          <p *ngIf="shipping.address2">{{ shipping.address2 }}</p>
+          <p>{{ shipping.postalCode }} {{ shipping.city }}</p>
+          <p>{{ shipping.country }}</p>
+          <p *ngIf="shipping.phone">Tel: {{ shipping.phone }}</p>
+        </div>
+      </div>
+
+      <div class="detail-card" *ngIf="getAddress(order?.billingAddress) as billing">
+        <h2>💳 Rechnungsadresse</h2>
+        <div class="address-text">
+          <p>{{ billing.firstName }} {{ billing.lastName }}</p>
+          <p>{{ billing.address1 }}</p>
+          <p *ngIf="billing.address2">{{ billing.address2 }}</p>
+          <p>{{ billing.postalCode }} {{ billing.city }}</p>
+          <p>{{ billing.country }}</p>
+        </div>
+      </div>
+
+      <!-- Order Items -->
+      <div class="detail-card">
+        <h2>🛒 Bestellte Produkte</h2>
+        <div class="items-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Produkt</th>
+                <th>Menge</th>
+                <th>Preis</th>
+                <th>Gesamt</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of orderItems">
+                <td>
+                  <div class="item-name">{{ item.productName || item.name }}</div>
+                  <div class="item-sku" *ngIf="item.sku">SKU: {{ item.sku }}</div>
+                </td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item.price | currency:'EUR' }}</td>
+                <td class="item-total">{{ (item.price * item.quantity) | currency:'EUR' }}</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr class="total-row">
+                <td colspan="3"><strong>Gesamt:</strong></td>
+                <td class="total-amount"><strong>{{ order?.totalAmount | currency:'EUR' }}</strong></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column -->
+    <div class="right-column">
+      <!-- Status Change -->
+      <div class="detail-card">
+        <h2>🔄 Status ändern</h2>
+        <div class="form-group">
+          <label>Neuer Status:</label>
+          <select [(ngModel)]="selectedStatus" class="form-control">
+            <option *ngFor="let status of availableStatuses" [value]="status">
+              {{ getStatusLabel(status) }}
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Notiz (optional):</label>
+          <textarea
+            [(ngModel)]="statusChangeNote"
+            class="form-control"
+            rows="2"
+            placeholder="Grund für Statusänderung..."></textarea>
+        </div>
+        <button
+          class="btn-primary btn-full"
+          (click)="changeOrderStatus()"
+          [disabled]="changingStatus || selectedStatus === order?.status">
+          {{ changingStatus ? 'Wird gespeichert...' : 'Status aktualisieren' }}
+        </button>
+      </div>
+
+      <!-- Tracking -->
+      <div class="detail-card">
+        <h2>🚚 Tracking</h2>
+        <div class="form-group">
+          <label>Carrier *</label>
+          <input
+            type="text"
+            [(ngModel)]="trackingCarrier"
+            class="form-control"
+            placeholder="z.B. DHL, UPS, FedEx">
+        </div>
+        <div class="form-group">
+          <label>Tracking-Nummer *</label>
+          <input
+            type="text"
+            [(ngModel)]="trackingNumber"
+            class="form-control"
+            placeholder="Tracking-Nummer">
+        </div>
+        <div class="form-group">
+          <label>Tracking-URL (optional)</label>
+          <input
+            type="text"
+            [(ngModel)]="trackingUrl"
+            class="form-control"
+            placeholder="https://...">
+        </div>
+        <button
+          class="btn-primary btn-full"
+          (click)="saveTracking()"
+          [disabled]="savingTracking || !trackingCarrier || !trackingNumber">
+          {{ savingTracking ? 'Wird gespeichert...' : 'Tracking speichern' }}
+        </button>
+      </div>
+
+      <!-- Internal Notes -->
+      <div class="detail-card">
+        <h2>📝 Interne Notizen</h2>
+        <div class="form-group">
+          <textarea
+            [(ngModel)]="newNote"
+            class="form-control"
+            rows="3"
+            placeholder="Neue Notiz hinzufügen..."></textarea>
+        </div>
+        <button
+          class="btn-primary btn-full"
+          (click)="addNote()"
+          [disabled]="addingNote || !newNote.trim()">
+          {{ addingNote ? 'Wird hinzugefügt...' : 'Notiz hinzufügen' }}
+        </button>
+      </div>
+
+      <!-- Timeline -->
+      <div class="detail-card">
+        <h2>📅 Timeline</h2>
+        <div class="timeline">
+          <div class="timeline-item" *ngFor="let event of orderHistory">
+            <div class="timeline-marker"></div>
+            <div class="timeline-content">
+              <div class="timeline-header">
+                <span class="status-badge small" [ngClass]="getStatusClass(event.status)">
+                  {{ getStatusLabel(event.status) }}
+                </span>
+                <span class="timeline-date">{{ formatTimestamp(event.createdAt) }}</span>
+              </div>
+              <div class="timeline-note" *ngIf="event.note">
+                {{ event.note }}
+              </div>
+            </div>
+          </div>
+
+          <div class="timeline-item" *ngIf="orderHistory.length === 0">
+            <div class="timeline-marker"></div>
+            <div class="timeline-content">
+              <div class="timeline-header">
+                <span class="status-badge small">Erstellt</span>
+                <span class="timeline-date">{{ order?.createdAt | date:'dd.MM.yyyy HH:mm' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Loading State -->
+<div class="loading-state" *ngIf="loading">
+  <div class="spinner"></div>
+  <p>Bestellung wird geladen...</p>
+</div>
+
+<!-- Error State -->
+<div class="error-state" *ngIf="error && !loading">
+  <p>{{ error }}</p>
+  <button class="btn-primary" (click)="goBack()">Zurück</button>
+</div>
+

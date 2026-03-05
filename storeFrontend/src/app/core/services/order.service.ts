@@ -48,4 +48,29 @@ export class OrderService {
     }
     return this.http.get<any[]>(`${environment.apiUrl}/stores/${storeId}/orders/${orderId}/history`);
   }
+
+  bulkUpdateOrderStatus(storeId: number, orderIds: number[], status: OrderStatus, note?: string): Observable<Order[]> {
+    if (environment.useMockData) {
+      return this.mockService.bulkUpdateOrderStatus(storeId, orderIds, status, note);
+    }
+    return this.http.put<Order[]>(`${environment.apiUrl}/stores/${storeId}/orders/bulk-status`, { orderIds, status, note });
+  }
+
+  updateOrderTracking(storeId: number, orderId: number, trackingCarrier: string, trackingNumber: string, trackingUrl?: string): Observable<Order> {
+    if (environment.useMockData) {
+      return this.mockService.updateOrderTracking(storeId, orderId, trackingCarrier, trackingNumber, trackingUrl);
+    }
+    return this.http.put<Order>(`${environment.apiUrl}/stores/${storeId}/orders/${orderId}/tracking`, {
+      trackingCarrier,
+      trackingNumber,
+      trackingUrl
+    });
+  }
+
+  addOrderNote(storeId: number, orderId: number, note: string): Observable<any> {
+    if (environment.useMockData) {
+      return this.mockService.addOrderNote(storeId, orderId, note);
+    }
+    return this.http.post(`${environment.apiUrl}/stores/${storeId}/orders/${orderId}/notes`, { note });
+  }
 }

@@ -57,6 +57,13 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
           <span class="label">{{ 'navigation.delivery' | translate }}</span>
         </a>
         <a 
+          [routerLink]="['/dashboard/stores', storeId, 'homepage-builder']" 
+          class="nav-tab"
+          routerLinkActive="active">
+          <span class="icon">🏠</span>
+          <span class="label">{{ 'navigation.homepage' | translate }}</span>
+        </a>
+        <a 
           [routerLink]="['/dashboard/stores', storeId, 'settings']" 
           class="nav-tab"
           routerLinkActive="active">

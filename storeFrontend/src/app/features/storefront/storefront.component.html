@@ -14,33 +14,43 @@
     (searchChange)="onSearchChange($event)">
   </app-modern-store-header>
 
-  <!-- Hero Section (Store Slider) -->
-  <div class="hero-section">
-    <app-store-slider-viewer
-      *ngIf="storeId && !loading"
-      [storeId]="storeId">
-    </app-store-slider-viewer>
-  </div>
+  <!-- Dynamic Homepage Sections -->
+  <app-homepage-section-renderer
+    *ngIf="homepageSections.length > 0 && !selectedCategory && !loading"
+    [storeId]="storeId"
+    [sections]="homepageSections">
+  </app-homepage-section-renderer>
 
-  <!-- Featured Products (Before Main Content) -->
-  <div class="featured-sections" *ngIf="!selectedCategory && !loading">
-    <app-featured-products
-      [storeId]="storeId"
-      type="featured"
-      [limit]="8">
-    </app-featured-products>
+  <!-- Fallback: Show default sections if no homepage sections configured -->
+  <div class="default-sections" *ngIf="homepageSections.length === 0 && !selectedCategory && !loading">
+    <!-- Hero Section (Store Slider) -->
+    <div class="hero-section">
+      <app-store-slider-viewer
+        *ngIf="storeId"
+        [storeId]="storeId">
+      </app-store-slider-viewer>
+    </div>
 
-    <app-featured-products
-      [storeId]="storeId"
-      type="top"
-      [limit]="8">
-    </app-featured-products>
+    <!-- Featured Products -->
+    <div class="featured-sections">
+      <app-featured-products
+        [storeId]="storeId"
+        type="featured"
+        [limit]="8">
+      </app-featured-products>
 
-    <app-featured-products
-      [storeId]="storeId"
-      type="new"
-      [limit]="8">
-    </app-featured-products>
+      <app-featured-products
+        [storeId]="storeId"
+        type="top"
+        [limit]="8">
+      </app-featured-products>
+
+      <app-featured-products
+        [storeId]="storeId"
+        type="new"
+        [limit]="8">
+      </app-featured-products>
+    </div>
   </div>
 
   <!-- Main Store Layout with Sidebar -->

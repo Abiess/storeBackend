@@ -133,4 +133,95 @@ public class OrderController {
 
         return ResponseEntity.ok(orderService.getOrderHistory(orderId));
     }
+
+    /**
+     * Bulk update order status
+     */
+    @PutMapping("/bulk-status")
+    public ResponseEntity<?> bulkUpdateOrderStatus(
+            @PathVariable Long storeId,
+            @RequestBody Map<String, Object> request,
+            @AuthenticationPrincipal User user) {
+
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        if (!hasStoreAccess(storeId, user)) {
+            return ResponseEntity.status(403).build();
+        }
+
+        try {
+            @SuppressWarnings("unchecked")
+            List<Long> orderIds = (List<Long>) request.get("orderIds");
+            OrderStatus status = OrderStatus.valueOf((String) request.get("status"));
+            String note = (String) request.get("note");
+
+            List<Order> updated = orderService.bulkUpdateOrderStatus(orderIds, status, note, user);
+            return ResponseEntity.ok(updated);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    /**
+     * Update order tracking
+     */
+    @PutMapping("/{orderId}/tracking")
+    public ResponseEntity<?> updateOrderTracking(
+            @PathVariable Long storeId,
+            @PathVariable Long orderId,
+            @RequestBody Map<String, String> request,
+            @AuthenticationPrincipal User user) {
+
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        if (!hasStoreAccess(storeId, user)) {
+            return ResponseEntity.status(403).build();
+        }
+
+        try {
+            String trackingCarrier = request.get("trackingCarrier");
+            String trackingNumber = request.get("trackingNumber");
+            String trackingUrl = request.get("trackingUrl");
+
+            Order updated = orderService.updateOrderTracking(orderId, trackingCarrier, trackingNumber, trackingUrl, user);
+            return ResponseEntity.ok(updated);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    /**
+     * Add internal note to order
+     */
+    @PostMapping("/{orderId}/notes")
+    public ResponseEntity<?> addOrderNote(
+            @PathVariable Long storeId,
+            @PathVariable Long orderId,
+            @RequestBody Map<String, String> request,
+            @AuthenticationPrincipal User user) {
+
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        if (!hasStoreAccess(storeId, user)) {
+            return ResponseEntity.status(403).build();
+        }
+
+        try {
+            String note = request.get("note");
+            if (note == null || note.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Note cannot be empty");
+            }
+
+            OrderStatusHistory history = orderService.addOrderNote(orderId, note, user);
+            return ResponseEntity.ok(history);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }
