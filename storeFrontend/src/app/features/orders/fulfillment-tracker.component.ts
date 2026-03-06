@@ -64,8 +64,8 @@ import {
             </div>
             
             <div class="item-price">
-              <span class="price">{{ item.price | number:'1.2-2' }} €</span>
-              <span class="total">Total: {{ item.total | number:'1.2-2' }} €</span>
+              <span class="price">{{ (item.price || 0) | number:'1.2-2' }} €</span>
+              <span class="total">Total: {{ (item.total || 0) | number:'1.2-2' }} €</span>
             </div>
           </div>
 

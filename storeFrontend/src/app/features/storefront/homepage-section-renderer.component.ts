@@ -1,5 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { HomepageSection } from '@app/core/models';
 import { FeaturedProductsComponent } from '@app/shared/components/featured-products.component';
 import { StoreSliderViewerComponent } from './components/store-slider-viewer.component';
@@ -7,7 +8,7 @@ import { StoreSliderViewerComponent } from './components/store-slider-viewer.com
 @Component({
   selector: 'app-homepage-section-renderer',
   standalone: true,
-  imports: [CommonModule, FeaturedProductsComponent, StoreSliderViewerComponent],
+  imports: [CommonModule, FormsModule, FeaturedProductsComponent, StoreSliderViewerComponent],
   template: `
     <div class="homepage-sections">
       <ng-container *ngFor="let section of sections">
@@ -50,12 +51,16 @@ import { StoreSliderViewerComponent } from './components/store-slider-viewer.com
 
         <!-- Banner Section -->
         <div class="section banner-section" *ngIf="section.sectionType === 'BANNER' && section.isActive">
-          <a [href]="getBannerLink(section)" *ngIf="getBannerImage(section)" class="banner-link">
+          <div *ngIf="getBannerImage(section)" 
+               class="banner-link" 
+               (click)="onBannerClick($event, section)"
+               role="button"
+               tabindex="0">
             <img [src]="getBannerImage(section)" [alt]="getTitle(section) || 'Banner'" class="banner-image">
             <div class="banner-overlay" *ngIf="getTitle(section)">
               <h3>{{ getTitle(section) }}</h3>
             </div>
-          </a>
+          </div>
         </div>
 
         <!-- Newsletter Section -->
@@ -64,8 +69,18 @@ import { StoreSliderViewerComponent } from './components/store-slider-viewer.com
             <h2>{{ getTitle(section) || '📧 Newsletter' }}</h2>
             <p>{{ getDescription(section) || 'Bleiben Sie auf dem Laufenden mit unseren neuesten Angeboten!' }}</p>
             <div class="newsletter-form">
-              <input type="email" placeholder="Ihre E-Mail-Adresse" class="email-input">
-              <button class="subscribe-btn">Abonnieren</button>
+              <input 
+                type="email" 
+                placeholder="Ihre E-Mail-Adresse" 
+                class="email-input"
+                [(ngModel)]="newsletterEmail"
+                (keyup.enter)="onNewsletterSubmit($event, section)">
+              <button 
+                class="subscribe-btn"
+                (click)="onNewsletterSubmit($event, section)"
+                type="button">
+                Abonnieren
+              </button>
             </div>
           </div>
         </div>
@@ -122,6 +137,7 @@ import { StoreSliderViewerComponent } from './components/store-slider-viewer.com
       border-radius: 12px;
       max-width: 1400px;
       margin: 0 auto;
+      cursor: pointer;
     }
 
     .banner-image {
@@ -232,6 +248,8 @@ export class HomepageSectionRendererComponent implements OnInit {
   @Input() storeId!: number;
   @Input() sections: HomepageSection[] = [];
 
+  newsletterEmail = '';
+
   ngOnInit(): void {
     console.log('📄 Rendering', this.sections.length, 'homepage sections');
   }
@@ -284,6 +302,42 @@ export class HomepageSectionRendererComponent implements OnInit {
     } catch (e) {
       return '#';
     }
+  }
+
+  onBannerClick(event: Event, section: HomepageSection): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const link = this.getBannerLink(section);
+
+    if (!link || link === '#') {
+      console.log('🚫 Banner has no valid link');
+      return;
+    }
+
+    // Check if external link
+    if (link.startsWith('http://') || link.startsWith('https://')) {
+      window.open(link, '_blank', 'noopener,noreferrer');
+    } else {
+      // Internal navigation - use window.location for simplicity
+      window.location.href = link;
+    }
+  }
+
+  onNewsletterSubmit(event: Event, section: HomepageSection): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!this.newsletterEmail || !this.newsletterEmail.includes('@')) {
+      console.log('🚫 Invalid email address');
+      alert('Bitte geben Sie eine gültige E-Mail-Adresse ein.');
+      return;
+    }
+
+    console.log('📧 Newsletter subscription:', this.newsletterEmail);
+    // TODO: Implement actual newsletter subscription API call
+    alert(`Vielen Dank! Sie wurden mit ${this.newsletterEmail} für unseren Newsletter angemeldet.`);
+    this.newsletterEmail = '';
   }
 }
 

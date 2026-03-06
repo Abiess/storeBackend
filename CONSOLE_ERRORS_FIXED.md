@@ -35,28 +35,73 @@ TranslateModule.forRoot({
 
 ---
 
-### 2. ✅ NG02100 Pipe Error (KRITISCH)
+### 2. ✅ NG02100 Pipe Error (KRITISCH) - toDate() Integration
 
 **Problem:**
 ```
 ERROR NG02100: Runtime pipe error
-at f.transform (date pipe on null/undefined)
+at f.transform (date pipe on null/undefined/invalid)
 ```
 
-**Root Cause:** `order.createdAt` und `order.totalAmount` ohne null-safe checks
+**Root Cause:** 
+- Spring Boot serialisiert `LocalDateTime` als Array: `[2026,3,6,15,24,9,692042000]`
+- Angular Date Pipe erwartet Date-Objekt oder ISO String
+- `order.createdAt`, `order.totalAmount`, `item.price` ohne Konvertierung
 
-**Fix:**
+**Lösung:** Verwendung der `toDate()` Utility Funktion
+
+**toDate() Utility:**
 ```typescript
+// src/app/core/utils/date.utils.ts
+export function toDate(value: any): Date | null {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+  if (Array.isArray(value) && value.length >= 3) {
+    // Spring LocalDateTime: [year, month (1-12), day, hour, minute, second, nano]
+    // JS Date erwartet month 0-11, daher -1
+    return new Date(
+      value[0],           // year
+      value[1] - 1,       // month (0-11) ← WICHTIG!
+      value[2],           // day
+      value[3] || 0,      // hour
+      value[4] || 0,      // minute
+      value[5] || 0,      // second
+      Math.floor((value[6] || 0) / 1000000) // nano → milliseconds
+    );
+  }
+  return null;
+}
+```
+
+**Implementation:**
+```typescript
+// Import
+import { toDate } from '../../core/utils/date.utils';
+
+// Component Class
+export class MyComponent {
+  toDate = toDate; // Template-verfügbar
+}
+
+// Template
 // ❌ VORHER
-{{ order.totalAmount | currency:'EUR' }}
-{{ order.createdAt | date:'dd.MM.yyyy HH:mm' }}
+{{ (order.createdAt || null) | date:'dd.MM.yyyy' }}
 
 // ✅ NACHHER
-{{ (order.totalAmount || 0) | currency:'EUR' }}
-{{ (order.createdAt || null) | date:'dd.MM.yyyy HH:mm' }}
+{{ toDate(order.createdAt) | date:'dd.MM.yyyy' }}
 ```
 
-**Betroffene Datei:** `store-detail.component.ts`
+**Betroffene Dateien:**
+- `store-orders.component.ts` ✅ (Table + Modal)
+- `store-detail.component.ts` ✅ (Orders Section)
+- `order-verification-center.component.ts` ✅ (Orders Table)
+
+**Benefits:**
+- ✅ Spring Boot LocalDateTime Array → JS Date
+- ✅ Korrekte Month Konvertierung (Java 1-12 → JS 0-11)
+- ✅ Nano → Milliseconds Umrechnung
+- ✅ Null-safe
+- ✅ Zentralisierte Lösung
 
 ---
 
@@ -141,17 +186,20 @@ Failed to load resource: favicon.ico (404 Not Found)
 
 ---
 
-## 📝 GEÄNDERTE DATEIEN (6 Total)
+## 📝 GEÄNDERTE DATEIEN (8 Total)
 
 | # | Datei | Änderung | Typ |
 |---|-------|----------|-----|
 | 1 | `app.config.ts` | `defaultLanguage` → `fallbackLang` | Config Fix |
-| 2 | `store-detail.component.ts` | Null-safe Pipes | Pipe Fix |
-| 3 | `store-theme.component.ts` | 3-stufige StoreId Extraktion | Route Fix |
-| 4 | `store-settings.component.ts` | 3-stufige StoreId Extraktion | Route Fix |
-| 5 | `product-list.component.ts` | 3-stufige StoreId Extraktion | Route Fix |
-| 6 | `category-list.component.ts` | 3-stufige StoreId Extraktion | Route Fix |
-| 7 | `index.html` | SVG Data URL Favicon | Asset Fix |
+| 2 | `store-detail.component.ts` | toDate() Integration | Date Fix |
+| 3 | `store-orders.component.ts` | toDate() Integration | Date Fix |
+| 4 | `order-verification-center.component.ts` | toDate() + Typo Fix | Date Fix |
+| 5 | `store-theme.component.ts` | 3-stufige StoreId Extraktion | Route Fix |
+| 6 | `store-settings.component.ts` | 3-stufige StoreId Extraktion | Route Fix |
+| 7 | `product-list.component.ts` | 3-stufige StoreId Extraktion | Route Fix |
+| 8 | `category-list.component.ts` | 3-stufige StoreId Extraktion | Route Fix |
+| 9 | `index.html` | SVG Data URL Favicon | Asset Fix |
+| 10 | `fulfillment-tracker.component.ts` | Null-safe Number Pipes | Pipe Fix |
 
 ---
 

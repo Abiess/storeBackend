@@ -6,6 +6,7 @@ import { OrderService } from '../../core/services/order.service';
 import { Order, OrderStatus, Address } from '../../core/models';
 import { StoreNavigationComponent } from '../../shared/components/store-navigation.component';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
+import { toDate } from '../../core/utils/date.utils';
 
 @Component({
   selector: 'app-store-orders',
@@ -87,7 +88,7 @@ import { TranslatePipe } from '../../core/pipes/translate.pipe';
             <tr *ngFor="let order of filteredOrders">
               <td class="order-number">{{ order.orderNumber }}</td>
               <td>{{ order.customerEmail }}</td>
-              <td>{{ (order.createdAt || null) | date:'dd.MM.yyyy HH:mm' }}</td>
+              <td>{{ toDate(order.createdAt) | date:'dd.MM.yyyy HH:mm' }}</td>
               <td class="amount">{{ (order.totalAmount || 0) | currency:'EUR' }}</td>
               <td>
                 <span class="status-badge" [ngClass]="'status-' + order.status.toLowerCase()">
@@ -136,7 +137,7 @@ import { TranslatePipe } from '../../core/pipes/translate.pipe';
           <div class="order-info">
             <h3>{{ 'order.customerInfo' | translate }}</h3>
             <p><strong>Email:</strong> {{ selectedOrder.customerEmail }}</p>
-            <p><strong>{{ 'order.date' | translate }}:</strong> {{ (selectedOrder.createdAt || null) | date:'dd.MM.yyyy HH:mm':'':'de-DE' }}</p>
+            <p><strong>{{ 'order.date' | translate }}:</strong> {{ toDate(selectedOrder.createdAt) | date:'dd.MM.yyyy HH:mm':'':'de-DE' }}</p>
             <p><strong>{{ 'order.status' | translate }}:</strong>
               <span class="status-badge" [ngClass]="'status-' + selectedOrder.status.toLowerCase()">
                 {{ getStatusLabel(selectedOrder.status) }}
@@ -169,14 +170,14 @@ import { TranslatePipe } from '../../core/pipes/translate.pipe';
                 <tr *ngFor="let item of selectedOrder.items">
                   <td>{{ getItemName(item) }}</td>
                   <td>{{ item.quantity }}</td>
-                  <td>{{ item.price | currency:'EUR' }}</td>
-                  <td>{{ (item.price * item.quantity) | currency:'EUR' }}</td>
+                  <td>{{ (item.price || 0) | currency:'EUR' }}</td>
+                  <td>{{ ((item.price || 0) * item.quantity) | currency:'EUR' }}</td>
                 </tr>
               </tbody>
               <tfoot>
                 <tr>
                   <td colspan="3"><strong>{{ 'order.grandTotal' | translate }}:</strong></td>
-                  <td><strong>{{ selectedOrder.totalAmount | currency:'EUR' }}</strong></td>
+                  <td><strong>{{ (selectedOrder.totalAmount || 0) | currency:'EUR' }}</strong></td>
                 </tr>
               </tfoot>
             </table>
@@ -536,6 +537,9 @@ export class StoreOrdersComponent implements OnInit {
   error: string | null = null;
   filterStatus = '';
   searchTerm = '';
+
+  // Make toDate available in template
+  toDate = toDate;
 
   constructor(
     private route: ActivatedRoute,

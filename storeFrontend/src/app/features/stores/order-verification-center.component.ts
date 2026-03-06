@@ -7,6 +7,7 @@ import { Order, OrderStatus } from '../../core/models';
 import { StoreNavigationComponent } from '../../shared/components/store-navigation.component';
 import { ToastService } from '../../core/services/toast.service';
 import { OrderVerificationCounterService } from '../../core/services/order-verification-counter.service';
+import { toDate } from '../../core/utils/date.utils';
 
 @Component({
   selector: 'app-order-verification-center',
@@ -100,11 +101,11 @@ import { OrderVerificationCounterService } from '../../core/services/order-verif
                 <div class="phone-number">{{ getPhone(order) || 'Keine Angabe' }}</div>
               </td>
               <td>
-                <div class="order-total">{{ order.totalAmount | number:'1.2-2' }} €</div>
+                <div class="order-total">{{ (order.totalAmount || 0) | number:'1.2-2' }} €</div>
               </td>
               <td>
-                <div class="order-date">{{ order.createdAt | date:'dd.MM.yyyy' }}</div>
-                <div class="order-time">{{ order.createdAt | date:'HH:mm' }}</div>
+                <div class="order-date">{{ toDate(order.createdAt) | date:'dd.MM.yyyy' }}</div>
+                <div class="order-time">{{ toDate(order.createdAt) | date:'HH:mm' }}</div>
               </td>
               <td (click)="$event.stopPropagation()" class="actions-cell">
                 <div class="action-buttons">
@@ -938,6 +939,9 @@ export class OrderVerificationCenterComponent implements OnInit, OnDestroy {
     addressConfirmed: false,
     deliveryTimeConfirmed: false
   };
+
+  // Make toDate available in template
+  toDate = toDate;
 
   constructor(
     private route: ActivatedRoute,

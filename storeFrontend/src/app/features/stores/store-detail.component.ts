@@ -6,6 +6,7 @@ import { OrderService } from '@app/core/services/order.service';
 import { CategoryService } from '@app/core/services/category.service';
 import { Product, Order, Category } from '@app/core/models';
 import { AdminSidebarComponent } from '@app/shared/components/admin-sidebar/admin-sidebar.component';
+import { toDate } from '@app/core/utils/date.utils';
 
 @Component({
   selector: 'app-store-detail',
@@ -135,7 +136,7 @@ import { AdminSidebarComponent } from '@app/shared/components/admin-sidebar/admi
                   <strong class="amount">{{ (order.totalAmount || 0) | currency:'EUR':'symbol':'1.2-2' }}</strong>
                 </div>
                 <div class="col">
-                  <span class="date">{{ (order.createdAt || null) | date:'dd.MM.yyyy HH:mm' }}</span>
+                  <span class="date">{{ toDate(order.createdAt) | date:'dd.MM.yyyy HH:mm' }}</span>
                 </div>
               </div>
             </div>
@@ -175,7 +176,7 @@ import { AdminSidebarComponent } from '@app/shared/components/admin-sidebar/admi
                     {{ getProductStatusLabel(product.status) }}
                   </span>
                   <div class="product-footer">
-                    <span class="price">{{ product.price | currency:'EUR':'symbol':'1.2-2' }}</span>
+                    <span class="price">{{ (product.price || 0) | currency:'EUR':'symbol':'1.2-2' }}</span>
                   </div>
                 </div>
               </div>
@@ -678,6 +679,9 @@ export class StoreDetailComponent implements OnInit {
   products: Product[] = [];
   orders: Order[] = [];
   categories: Category[] = [];
+
+  // Make toDate available in template
+  toDate = toDate;
   productsLoading = false;
   ordersLoading = false;
   categoriesLoading = false;
