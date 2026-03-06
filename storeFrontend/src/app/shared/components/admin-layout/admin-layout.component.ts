@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, ActivatedRoute } from '@angular/router';
+import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { AdminSidebarComponent } from '../admin-sidebar/admin-sidebar.component';
 import { LanguageSwitcherComponent } from '../language-switcher.component';
 import { AuthService } from '@app/core/services/auth.service';
@@ -19,18 +19,40 @@ export class AdminLayoutComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private authService: AuthService
   ) {}
 
   ngOnInit(): void {
-    // Get storeId from route params if available
+    // Methode 1: Aus Route Params
     this.route.params.subscribe(params => {
       if (params['id']) {
         this.storeId = +params['id'];
+        console.log('✅ AdminLayout: StoreId aus params[id]:', this.storeId);
       } else if (params['storeId']) {
         this.storeId = +params['storeId'];
+        console.log('✅ AdminLayout: StoreId aus params[storeId]:', this.storeId);
       }
     });
+
+    // Methode 2: Aus Parent Route (falls verschachtelt)
+    if (!this.storeId && this.route.parent) {
+      this.route.parent.params.subscribe(params => {
+        if (params['id'] && !this.storeId) {
+          this.storeId = +params['id'];
+          console.log('✅ AdminLayout: StoreId aus parent params:', this.storeId);
+        }
+      });
+    }
+
+    // Methode 3: Aus URL extrahieren (Fallback)
+    if (!this.storeId) {
+      const urlMatch = this.router.url.match(/\/stores\/(\d+)/);
+      if (urlMatch) {
+        this.storeId = +urlMatch[1];
+        console.log('✅ AdminLayout: StoreId aus URL extrahiert:', this.storeId);
+      }
+    }
 
     // Get current user (synchron)
     this.currentUser = this.authService.getCurrentUser();

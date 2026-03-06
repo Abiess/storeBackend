@@ -44,6 +44,8 @@ export class AdminSidebarComponent implements OnInit {
         if (this.isMobile) {
           this.isOpen = false;
         }
+        // Rebuild Navigation um storeId aus neuer Route zu extrahieren
+        this.buildNavigation();
       });
   }
 
@@ -66,7 +68,25 @@ export class AdminSidebarComponent implements OnInit {
   }
 
   private buildNavigation(): void {
-    const baseRoute = this.storeId ? `/stores/${this.storeId}` : '';
+    // Intelligente Store-ID Erkennung:
+    // 1. Explizit übergebene storeId (Input)
+    // 2. Aus aktueller Route extrahieren (z.B. /stores/4/products)
+    let storeId = this.storeId;
+
+    if (!storeId) {
+      const urlMatch = this.router.url.match(/\/stores\/(\d+)/);
+      if (urlMatch) {
+        storeId = +urlMatch[1];
+        console.log('✅ StoreId aus URL extrahiert:', storeId);
+      }
+    }
+
+    const baseRoute = storeId ? `/stores/${storeId}` : '';
+
+    // Fallback-Warnung wenn keine storeId gefunden
+    if (!storeId && this.router.url.includes('/stores/')) {
+      console.warn('⚠️ Sidebar: Keine storeId gefunden, aber /stores/ Route aktiv');
+    }
 
     this.navGroups = [
       {
