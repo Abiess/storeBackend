@@ -36,7 +36,7 @@ export const appConfig: ApplicationConfig = {
     // ngx-translate Setup für Angular 17
     importProvidersFrom(
       TranslateModule.forRoot({
-        defaultLanguage: 'en',
+        fallbackLang: 'en', // ✅ Verwendet fallbackLang statt defaultLanguage (deprecated)
         loader: {
           provide: TranslateLoader,
           useClass: TranslateHttpLoader

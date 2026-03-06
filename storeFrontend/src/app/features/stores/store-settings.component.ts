@@ -648,19 +648,38 @@ export class StoreSettingsComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Mehrstufige StoreId Extraktion
     this.route.params.subscribe(params => {
       const storeIdParam = params['id'] || params['storeId'];
-      this.storeId = storeIdParam ? Number(storeIdParam) : 0;
-
-      if (!this.storeId || isNaN(this.storeId)) {
-        console.error('❌ Ungültige Store-ID:', storeIdParam);
-        this.router.navigate(['/dashboard']);
-        return;
+      if (storeIdParam) {
+        this.storeId = Number(storeIdParam);
       }
-
-      console.log('✅ Store-ID geladen:', this.storeId);
-      this.loadStore();
     });
+
+    if (!this.storeId && this.route.parent) {
+      this.route.parent.params.subscribe(params => {
+        const storeIdParam = params['id'] || params['storeId'];
+        if (storeIdParam && !this.storeId) {
+          this.storeId = Number(storeIdParam);
+        }
+      });
+    }
+
+    if (!this.storeId) {
+      const urlMatch = this.router.url.match(/\/stores\/(\d+)/);
+      if (urlMatch) {
+        this.storeId = +urlMatch[1];
+      }
+    }
+
+    if (!this.storeId || isNaN(this.storeId)) {
+      console.error('❌ Ungültige Store-ID:', this.storeId);
+      this.router.navigate(['/dashboard']);
+      return;
+    }
+
+    console.log('✅ Store-ID geladen:', this.storeId);
+    this.loadStore();
   }
 
   loadStore(): void {

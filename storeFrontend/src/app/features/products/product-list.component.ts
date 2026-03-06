@@ -417,8 +417,22 @@ export class ProductListComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    const storeIdParam = this.route.snapshot.paramMap.get('storeId');
-    this.storeId = storeIdParam ? Number(storeIdParam) : 0;
+    // Mehrstufige StoreId Extraktion
+    let storeIdParam = this.route.snapshot.paramMap.get('storeId') || this.route.snapshot.paramMap.get('id');
+
+    if (!storeIdParam && this.route.parent) {
+      storeIdParam = this.route.parent.snapshot.paramMap.get('id') || this.route.parent.snapshot.paramMap.get('storeId');
+    }
+
+    if (storeIdParam) {
+      this.storeId = Number(storeIdParam);
+    } else {
+      // Fallback: Aus URL extrahieren
+      const urlMatch = this.router.url.match(/\/stores\/(\d+)/);
+      if (urlMatch) {
+        this.storeId = +urlMatch[1];
+      }
+    }
 
     if (!this.storeId || isNaN(this.storeId)) {
       console.error('❌ Ungültige Store-ID:', storeIdParam);

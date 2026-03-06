@@ -132,10 +132,10 @@ import { AdminSidebarComponent } from '@app/shared/components/admin-sidebar/admi
                   </span>
                 </div>
                 <div class="col">
-                  <strong class="amount">{{ order.totalAmount | currency:'EUR':'symbol':'1.2-2' }}</strong>
+                  <strong class="amount">{{ (order.totalAmount || 0) | currency:'EUR':'symbol':'1.2-2' }}</strong>
                 </div>
                 <div class="col">
-                  <span class="date">{{ order.createdAt | date:'dd.MM.yyyy HH:mm' }}</span>
+                  <span class="date">{{ (order.createdAt || null) | date:'dd.MM.yyyy HH:mm' }}</span>
                 </div>
               </div>
             </div>
