@@ -35,12 +35,15 @@ export class AdminSidebarComponent implements OnInit {
   navGroups: NavGroup[] = [];
 
   constructor(private router: Router) {
-    // Track active route
+    // Track active route und schließe nur Mobile Drawer
     this.router.events
       .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
       .subscribe((event) => {
         this.activeRoute = event.urlAfterRedirects;
-        this.isOpen = false; // Close mobile drawer on navigation
+        // Nur Mobile Drawer schließen nach Navigation
+        if (this.isMobile) {
+          this.isOpen = false;
+        }
       });
   }
 
@@ -120,8 +123,8 @@ export class AdminSidebarComponent implements OnInit {
         title: 'Store Setup',
         items: [
           {
-            label: 'Domains',
-            icon: '🌐',
+            label: 'Store Einstellungen',
+            icon: '⚙️',
             route: `${baseRoute}/settings`
           },
           {
@@ -150,8 +153,8 @@ export class AdminSidebarComponent implements OnInit {
         title: 'Account',
         items: [
           {
-            label: 'Einstellungen',
-            icon: '⚙️',
+            label: 'Mein Account',
+            icon: '👤',
             route: '/settings'
           },
           {
@@ -174,6 +177,7 @@ export class AdminSidebarComponent implements OnInit {
   }
 
   closeSidebar(): void {
+    // Nur auf Mobile schließen, Desktop bleibt offen
     if (this.isMobile) {
       this.isOpen = false;
     }

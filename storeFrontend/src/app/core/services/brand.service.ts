@@ -29,7 +29,7 @@ export interface BrandAssetsResponse {
 })
 export class BrandService {
   private http = inject(HttpClient);
-  private baseUrl = `${environment.apiUrl}/api/stores`;
+  private baseUrl = `${environment.apiUrl}/stores`; // ✅ environment.apiUrl enthält bereits /api
 
   generate(storeId: number, request: BrandGenerateRequest): Observable<BrandGenerateResponse> {
     return this.http.post<BrandGenerateResponse>(

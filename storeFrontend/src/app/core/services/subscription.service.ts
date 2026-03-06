@@ -239,7 +239,7 @@ export class SubscriptionService {
   }
 
   /**
-   * Hilfsmethode: Erstelle Mock PaymentIntent
+   * Hilfsmethode: Erstelle Mock PaymentIntent (synchron für Mock-Modus)
    */
   private createMockPaymentIntent(request: UpgradeRequest): PaymentIntent {
     const planDetails = this.MOCK_PLAN_DETAILS.find(p => p.plan === request.targetPlan);
@@ -247,7 +247,7 @@ export class SubscriptionService {
       throw new Error(`Plan not found: ${request.targetPlan}`);
     }
 
-    // Synchrone Preisberechnung für Mock-Modus - Hardcoded für Typ-Sicherheit
+    // ✅ Synchrone Preisberechnung für Mock-Modus
     const priceMap: Record<Plan, { monthly: number; yearly: number }> = {
       [Plan.FREE]: { monthly: 0, yearly: 0 },
       [Plan.PRO]: { monthly: 29.99, yearly: 299.99 },
@@ -259,14 +259,14 @@ export class SubscriptionService {
       : priceMap[request.targetPlan].monthly;
 
     return {
-      id: 'pi_' + Date.now(),
+      id: `pi_mock_${Date.now()}`,
       amount: priceAmount,
       currency: 'EUR',
       status: priceAmount === 0 ? 'completed' : 'pending',
       paymentMethod: request.paymentMethod,
       bankTransferDetails: request.paymentMethod === PaymentMethod.BANK_TRANSFER && priceAmount > 0 ? {
         accountHolder: 'markt.ma GmbH',
-        iban: 'DE89 3704 0044 0532 0130 00',
+        iban: 'DE89370400440532013000',
         bic: 'COBADEFFXXX',
         reference: `SUB-${Date.now()}`,
         amount: priceAmount,

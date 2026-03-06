@@ -32,10 +32,8 @@ export class AdminLayoutComponent implements OnInit {
       }
     });
 
-    // Get current user
-    this.authService.getCurrentUser().subscribe(user => {
-      this.currentUser = user;
-    });
+    // Get current user (synchron)
+    this.currentUser = this.authService.getCurrentUser();
   }
 
   getUserInitials(): string {

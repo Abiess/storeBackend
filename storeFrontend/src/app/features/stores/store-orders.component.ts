@@ -87,8 +87,8 @@ import { TranslatePipe } from '../../core/pipes/translate.pipe';
             <tr *ngFor="let order of filteredOrders">
               <td class="order-number">{{ order.orderNumber }}</td>
               <td>{{ order.customerEmail }}</td>
-              <td>{{ order.createdAt | date:'dd.MM.yyyy HH:mm' }}</td>
-              <td class="amount">{{ order.totalAmount | currency:'EUR' }}</td>
+              <td>{{ (order.createdAt || null) | date:'dd.MM.yyyy HH:mm' }}</td>
+              <td class="amount">{{ (order.totalAmount || 0) | currency:'EUR' }}</td>
               <td>
                 <span class="status-badge" [ngClass]="'status-' + order.status.toLowerCase()">
                   {{ getStatusLabel(order.status) }}

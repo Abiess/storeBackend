@@ -289,7 +289,7 @@ import { TranslationService } from '../../core/services/translation.service';
                     </div>
                     <div class="delivery-price" [class.free]="option.fee === 0">
                       <span *ngIf="option.available">
-                        {{ option.fee === 0 ? 'Kostenlos' : (option.fee | number:'1.2-2') + ' ' + (deliveryOptions?.currency || '€') }}
+                        {{ option.fee === 0 ? 'Kostenlos' : (option.fee | number:'1.2-2') + ' ' + (deliveryOptions.currency || '€') }}
                       </span>
                       <span *ngIf="!option.available" class="unavailable-text">
                         Nicht verfügbar

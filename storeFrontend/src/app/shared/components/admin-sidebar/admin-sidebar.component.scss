@@ -214,10 +214,19 @@
 
 .sidebar-mobile.sidebar-open {
   transform: translateX(0);
+  z-index: 1001; /* Höher als Overlay */
 }
 
 .sidebar-overlay {
   display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+  z-index: 1000; /* Unter Sidebar aber über Content */
 }
 
 /* Mobile Toggle Button */
@@ -266,20 +275,17 @@
 
 /* ==================== Responsive ==================== */
 @media (max-width: 1023px) {
+  .sidebar-mobile {
+    z-index: 1001;
+  }
+
   .sidebar-mobile .btn-close-sidebar {
     display: block;
   }
 
+  .sidebar-mobile.sidebar-open + .sidebar-overlay,
   .sidebar-overlay {
     display: block;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(2px);
-    z-index: 999;
   }
 
   .btn-toggle-sidebar {

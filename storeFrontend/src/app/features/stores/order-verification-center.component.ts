@@ -155,11 +155,11 @@ import { OrderVerificationCounterService } from '../../core/services/order-verif
             </div>
             <div class="card-row">
               <span class="label">Betrag:</span>
-              <span class="value bold">{{ order.totalAmount | number:'1.2-2' }} €</span>
+              <span class="value bold">{{ (order.totalAmount || 0) | number:'1.2-2' }} €</span>
             </div>
             <div class="card-row">
               <span class="label">Erstellt:</span>
-              <span class="value">{{ order.createdAt | date:'dd.MM.yyyy HH:mm' }}</span>
+              <span class="value">{{ (order.createdAt || null) | date:'dd.MM.yyyy HH:mm' }}</span>
             </div>
           </div>
 
