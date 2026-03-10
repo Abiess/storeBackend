@@ -5,13 +5,24 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ProductService } from '@app/core/services/product.service';
 import { Product } from '@app/core/models';
 import { ProductImageGalleryComponent } from '@app/shared/components/product-image-gallery.component';
+import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
+import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
 
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, ProductImageGalleryComponent],
+  imports: [CommonModule, FormsModule, ProductImageGalleryComponent, PageHeaderComponent],
   template: `
     <div class="product-detail-page" *ngIf="product">
+      <!-- Page Header mit Breadcrumbs -->
+      <app-page-header
+        [title]="product.title"
+        [breadcrumbs]="breadcrumbItems"
+        [showBackButton]="true"
+        [backRoute]="'/stores/' + storeId + '/products'"
+        [actions]="headerActions"
+      ></app-page-header>
+      
       <div class="container">
         <div class="product-layout">
           <!-- Linke Seite: Bildgalerie -->
@@ -438,6 +449,8 @@ export class ProductDetailComponent implements OnInit {
   isAddingToCart = false;
   storeId!: number;
   productId!: number;
+  breadcrumbItems: BreadcrumbItem[] = [];
+  headerActions: HeaderAction[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -465,6 +478,14 @@ export class ProductDetailComponent implements OnInit {
         this.product = product;
         this.loading = false;
         
+        // Breadcrumbs initialisieren
+        this.breadcrumbItems = [
+          { label: 'navigation.dashboard', route: '/dashboard', icon: '🏠' },
+          { label: 'navigation.store', route: ['/dashboard/stores', this.storeId], icon: '🏪' },
+          { label: 'navigation.products', route: ['/dashboard/stores', this.storeId, 'products'], icon: '📦' },
+          { label: product.title }
+        ];
+
         // Wähle erste Variante aus, falls vorhanden
         if (product.variants && product.variants.length > 0) {
           this.selectedVariant = product.variants[0];

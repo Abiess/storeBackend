@@ -3,15 +3,18 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { ProductReviewService, ProductReview } from '@app/core/services/product-review.service';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import {ProductnavigationBarComponent} from "@app/features/productnavigation-bar/productnavigation-bar.component";
+import {BreadcrumbComponent, BreadcrumbItem} from "@app/shared/components/breadcrumb.component";
 
 @Component({
   selector: 'app-store-reviews-manager',
   standalone: true,
-  imports: [CommonModule, TranslatePipe],
+    imports: [CommonModule, TranslatePipe, ProductnavigationBarComponent, BreadcrumbComponent],
   template: `
     <div class="reviews-manager">
       <div class="header">
         <h1>{{ 'reviews.customerReviews' | translate }}</h1>
+         <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
         <div class="stats">
           <div class="stat-card">
             <span class="stat-number">{{ totalReviews }}</span>
@@ -357,6 +360,11 @@ export class StoreReviewsManagerComponent implements OnInit {
   totalReviews = 0;
   pendingReviews = 0;
   approvedReviews = 0;
+    breadcrumbItems: BreadcrumbItem[] = [
+        { label: 'Dashboard', route: '/dashboard' },
+        { label: 'Shop', route: '/dashboard/stores/1' },
+        { label: 'Kategorien' }  // Letzter ohne Route = aktuell
+    ];
 
   constructor(
     private route: ActivatedRoute,
@@ -443,5 +451,7 @@ export class StoreReviewsManagerComponent implements OnInit {
     this.currentPage = page;
     this.loadReviews();
   }
+
+
 }
 

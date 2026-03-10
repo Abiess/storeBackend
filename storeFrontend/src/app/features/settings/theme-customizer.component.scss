@@ -9,17 +9,14 @@
   margin: 0 auto 2rem;
   position: relative;
 
+  /* btn-back styles are now in styles.scss - using custom overrides if needed */
   .btn-back {
     background: white;
     border: 1px solid #e2e8f0;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    cursor: pointer;
     margin-bottom: 1rem;
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    transition: all 0.3s;
 
     &:hover {
       background: #f7fafc;

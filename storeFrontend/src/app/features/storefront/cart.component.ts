@@ -6,12 +6,13 @@ import { SubdomainService } from '../../core/services/subdomain.service';
 import { PlaceholderImageUtil } from '../../shared/utils/placeholder-image.util';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { TranslationService } from '../../core/services/translation.service';
+import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
 import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-cart',
   standalone: true,
-  imports: [CommonModule, TranslatePipe],
+  imports: [CommonModule, TranslatePipe, PageHeaderComponent],
   template: `
     <div class="cart-container">
       <!-- NEUE: Warnung wenn keine Store-ID gefunden wurde -->
@@ -19,12 +20,12 @@ import { Subscription } from 'rxjs';
         ⚠️ {{ 'cart.noStoreId' | translate }}
       </div>
 
-      <div class="cart-header">
-        <h1>{{ 'cart.title' | translate }}</h1>
-        <button class="btn-back" (click)="goBack()">
-          {{ 'cart.backToShop' | translate }}
-        </button>
-      </div>
+      <app-page-header
+        [title]="'cart.title'"
+        [showBackButton]="true"
+        [backButtonText]="'cart.backToShop'"
+        [actions]="headerActions"
+      ></app-page-header>
 
       <div *ngIf="loading" class="loading">
         <div class="spinner"></div>
@@ -109,29 +110,7 @@ import { Subscription } from 'rxjs';
       padding: 20px;
     }
 
-    .cart-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 30px;
-    }
-
-    .cart-header h1 {
-      margin: 0;
-    }
-
-    .btn-back {
-      background: #6c757d;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    .btn-back:hover {
-      background: #5a6268;
-    }
+    /* Page header styles are now in PageHeaderComponent */
 
     .loading {
       text-align: center;
@@ -342,6 +321,7 @@ export class CartComponent implements OnInit, OnDestroy {
   updatingItem: number | null = null;
   shipping = 4.99;
   storeId: number | null = null; // FIXED: Nicht mehr hart codiert!
+  headerActions: HeaderAction[] = []; // Für PageHeaderComponent
 
   private cartUpdateSubscription?: Subscription;
 

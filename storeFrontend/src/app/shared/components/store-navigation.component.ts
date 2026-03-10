@@ -4,11 +4,12 @@ import { RouterModule } from '@angular/router';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { OrderVerificationCounterService } from '@app/core/services/order-verification-counter.service';
 import { Observable } from 'rxjs';
+import {ProductnavigationBarComponent} from "@app/features/productnavigation-bar/productnavigation-bar.component";
 
 @Component({
   selector: 'app-store-navigation',
   standalone: true,
-  imports: [CommonModule, RouterModule, TranslatePipe],
+    imports: [CommonModule, RouterModule, TranslatePipe, ProductnavigationBarComponent],
   template: `
     <div class="store-navigation">
       <!-- Breadcrumb -->
@@ -21,68 +22,10 @@ import { Observable } from 'rxjs';
       </nav>
 
       <!-- Navigation Tabs -->
-      <nav class="nav-tabs">
-        <a 
-          [routerLink]="['/dashboard/stores', storeId]" 
-          class="nav-tab"
-          routerLinkActive="active"
-          [routerLinkActiveOptions]="{exact: true}">
-          <span class="icon">📊</span>
-          <span class="label">{{ 'navigation.overview' | translate }}</span>
-        </a>
-        <a 
-          [routerLink]="['/dashboard/stores', storeId, 'categories']" 
-          class="nav-tab"
-          routerLinkActive="active">
-          <span class="icon">🏷️</span>
-          <span class="label">{{ 'navigation.categories' | translate }}</span>
-        </a>
-        <a 
-          [routerLink]="['/dashboard/stores', storeId, 'products']" 
-          class="nav-tab"
-          routerLinkActive="active">
-          <span class="icon">📦</span>
-          <span class="label">{{ 'navigation.products' | translate }}</span>
-        </a>
-        <a 
-          [routerLink]="['/dashboard/stores', storeId, 'orders']" 
-          class="nav-tab"
-          routerLinkActive="active">
-          <span class="icon">🛒</span>
-          <span class="label">{{ 'navigation.orders' | translate }}</span>
-        </a>
-        <a 
-          [routerLink]="['/dashboard/stores', storeId, 'orders', 'verification']" 
-          class="nav-tab"
-          routerLinkActive="active">
-          <span class="icon">📞</span>
-          <span class="label">COD Verifizierung</span>
-          <span class="badge" *ngIf="(unverifiedCount$ | async) as count">
-            <span *ngIf="count > 0">{{ count }}</span>
-          </span>
-        </a>
-        <a 
-          [routerLink]="['/dashboard/stores', storeId, 'delivery']" 
-          class="nav-tab"
-          routerLinkActive="active">
-          <span class="icon">🚚</span>
-          <span class="label">{{ 'navigation.delivery' | translate }}</span>
-        </a>
-        <a 
-          [routerLink]="['/dashboard/stores', storeId, 'homepage-builder']" 
-          class="nav-tab"
-          routerLinkActive="active">
-          <span class="icon">🏠</span>
-          <span class="label">{{ 'navigation.homepage' | translate }}</span>
-        </a>
-        <a 
-          [routerLink]="['/dashboard/stores', storeId, 'settings']" 
-          class="nav-tab"
-          routerLinkActive="active">
-          <span class="icon">⚙️</span>
-          <span class="label">{{ 'navigation.settings' | translate }}</span>
-        </a>
-      </nav>
+        <app-productnavigation-bar
+                [storeId]="storeId">
+        </app-productnavigation-bar>
+    
     </div>
   `,
   styles: [`
@@ -97,6 +40,7 @@ import { Observable } from 'rxjs';
       margin-bottom: 1rem;
       padding: 0.75rem 0;
       font-size: 0.875rem;
+      flex-wrap: wrap;
     }
 
     .breadcrumb a {
@@ -119,49 +63,59 @@ import { Observable } from 'rxjs';
       font-weight: 600;
     }
 
+    /* Navigation Tabs - Responsive Flexbox Wrap */
     .nav-tabs {
       display: flex;
+      flex-wrap: wrap;
       gap: 0.5rem;
       border-bottom: 2px solid #e0e0e0;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
+      padding-bottom: 0.5rem;
+      margin-bottom: 0.5rem;
     }
 
     .nav-tab {
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      padding: 0.875rem 1.25rem;
+      padding: 0.75rem 1rem;
       color: #666;
       text-decoration: none;
       border-bottom: 3px solid transparent;
-      transition: all 0.3s;
+      transition: all 0.2s ease;
       white-space: nowrap;
       font-weight: 500;
       position: relative;
-      top: 2px;
+      border-radius: 8px 8px 0 0;
+      background: transparent;
+      min-height: 44px; /* Touch-friendly */
     }
 
     .nav-tab .icon {
       font-size: 1.125rem;
+      line-height: 1;
+    }
+
+    .nav-tab .label {
+      font-size: 0.9375rem;
     }
 
     .nav-tab:hover {
       color: #667eea;
-      background: rgba(102, 126, 234, 0.05);
-      border-radius: 8px 8px 0 0;
+      background: rgba(102, 126, 234, 0.08);
     }
 
     .nav-tab.active {
       color: #667eea;
       border-bottom-color: #667eea;
       font-weight: 600;
+      background: rgba(102, 126, 234, 0.05);
     }
 
     .nav-tab.active .icon {
       transform: scale(1.1);
     }
 
+    /* Badge Styling */
     .badge {
       display: inline-flex;
       align-items: center;
@@ -182,27 +136,94 @@ import { Observable } from 'rxjs';
       background: #dc2626;
     }
 
-    @media (max-width: 768px) {
+    /* Tablet (768px - 1023px) */
+    @media (max-width: 1023px) {
+      .nav-tab {
+        padding: 0.65rem 0.875rem;
+      }
+
       .nav-tab .label {
-        display: none;
+        font-size: 0.875rem;
+      }
+    }
+
+    /* Mobile (< 768px) */
+    @media (max-width: 767px) {
+      .store-navigation {
+        margin-bottom: 1.5rem;
+      }
+
+      .breadcrumb {
+        font-size: 0.8125rem;
+        padding: 0.5rem 0;
+      }
+
+      .nav-tabs {
+        gap: 0.375rem;
+        padding-bottom: 0.375rem;
       }
 
       .nav-tab {
-        padding: 0.75rem 1rem;
+        flex: 0 0 auto;
+        padding: 0.625rem 0.75rem;
+        min-width: auto;
+      }
+
+      /* Kompakte Darstellung auf Mobile */
+      .nav-tab .label {
+        font-size: 0.8125rem;
       }
 
       .nav-tab .icon {
-        font-size: 1.5rem;
+        font-size: 1rem;
       }
 
+      /* Badge absolute positioniert */
       .badge {
         position: absolute;
-        top: 8px;
-        right: 8px;
+        top: 4px;
+        right: 4px;
         min-width: 18px;
         height: 18px;
         font-size: 10px;
         padding: 0 4px;
+      }
+    }
+
+    /* Sehr kleine Screens (< 480px) */
+    @media (max-width: 479px) {
+      .nav-tab .label {
+        display: none; /* Nur Icons auf sehr kleinen Screens */
+      }
+
+      .nav-tab {
+        padding: 0.75rem;
+        flex: 0 0 auto;
+      }
+
+      .nav-tab .icon {
+        font-size: 1.25rem;
+      }
+    }
+
+    /* Focus States für Accessibility */
+    .nav-tab:focus {
+      outline: 2px solid #667eea;
+      outline-offset: 2px;
+    }
+
+    .nav-tab:focus:not(:focus-visible) {
+      outline: none;
+    }
+
+    /* Hover disabled auf Touch-Geräten */
+    @media (hover: none) {
+      .nav-tab:hover {
+        background: transparent;
+      }
+
+      .nav-tab:active {
+        background: rgba(102, 126, 234, 0.1);
       }
     }
   `]

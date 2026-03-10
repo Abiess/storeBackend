@@ -5,18 +5,23 @@ import { RoleService } from '@app/core/services/role.service';
 import { StoreRole, DomainRole } from '@app/core/models';
 import { Observable } from 'rxjs';
 import { AdminLayoutComponent } from '@app/shared/components/admin-layout/admin-layout.component';
+import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
+import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
 
 @Component({
   selector: 'app-role-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, AdminLayoutComponent],
+  imports: [CommonModule, FormsModule, AdminLayoutComponent, PageHeaderComponent],
   template: `
     <app-admin-layout>
       <div class="role-management-container">
-        <div class="header">
-          <h1>👥 Rollen-Verwaltung</h1>
-          <p class="subtitle">Verwalten Sie Store- und Domain-Rollen für Benutzer</p>
-        </div>
+        <app-page-header
+          [title]="'Rollen-Verwaltung'"
+          [subtitle]="'Verwalten Sie Store- und Domain-Rollen für Benutzer'"
+          [breadcrumbs]="breadcrumbItems"
+          [showBackButton]="true"
+          [actions]="headerActions"
+        ></app-page-header>
 
         <div class="content">
           <!-- Shop-Rollen Section -->
@@ -408,11 +413,20 @@ export class RoleManagementComponent {
   storeRoles$: Observable<StoreRole[]>;
   domainRoles$: Observable<DomainRole[]>;
   userId = 1;
+  breadcrumbItems: BreadcrumbItem[] = [];
+  headerActions: HeaderAction[] = [];
 
   newStoreRole = { role: '', storeId: 0, permissionsStr: '' };
   newDomainRole = { role: '', domainId: 0, permissionsStr: '' };
 
   constructor(private roleService: RoleService) {
+    // Breadcrumbs initialisieren
+    this.breadcrumbItems = [
+      { label: 'navigation.dashboard', route: '/dashboard', icon: '🏠' },
+      { label: 'navigation.settings', route: '/settings', icon: '⚙️' },
+      { label: 'Rollen-Verwaltung', icon: '👥' }
+    ];
+
     this.storeRoles$ = this.roleService.getStoreRoles(this.userId);
     this.domainRoles$ = this.roleService.getDomainRoles(this.userId);
   }

@@ -14,7 +14,7 @@ import { toDate } from '@app/core/utils/date.utils';
   imports: [CommonModule, RouterModule, AdminSidebarComponent],
   template: `
     <div class="admin-layout">
-      <app-admin-sidebar [storeId]="storeId"></app-admin-sidebar>
+        <app-admin-sidebar [storeId]="storeId"></app-admin-sidebar>
 
       <div class="content">
         <div class="topbar">

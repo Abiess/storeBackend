@@ -1,39 +1,23 @@
 <div class="coupons-container">
+  <app-page-header
+    [title]="'Gutscheine & Rabatte'"
+    [breadcrumbs]="breadcrumbItems"
+    [showBackButton]="true"
+    [actions]="headerActions"
+  ></app-page-header>
+
   <mat-card>
-    <mat-card-header>
-      <mat-card-title>
-        <mat-icon>local_offer</mat-icon>
-        Gutscheine & Rabatte
-      </mat-card-title>
-      <div class="header-actions">
-        <mat-form-field appearance="outline" class="filter-field">
+    <mat-card-content>
+      <mat-form-field appearance="outline" class="filter-field">
           <mat-label>Status Filter</mat-label>
           <mat-select [(value)]="statusFilter" (selectionChange)="onFilterChange($event.value)">
             <mat-option value="">Alle</mat-option>
             <mat-option value="ACTIVE">Aktiv</mat-option>
-            <mat-option value="PAUSED">Pausiert</mat-option>
-            <mat-option value="ARCHIVED">Archiviert</mat-option>
-          </mat-select>
-        </mat-form-field>
+          <mat-option value="PAUSED">Pausiert</mat-option>
+          <mat-option value="ARCHIVED">Archiviert</mat-option>
+        </mat-select>
+      </mat-form-field>
 
-        <button mat-stroked-button (click)="onImport()">
-          <mat-icon>upload</mat-icon>
-          Importieren
-        </button>
-
-        <button mat-stroked-button (click)="onExport()">
-          <mat-icon>download</mat-icon>
-          Exportieren
-        </button>
-
-        <button mat-raised-button color="primary" (click)="onCreate()">
-          <mat-icon>add</mat-icon>
-          Neuer Gutschein
-        </button>
-      </div>
-    </mat-card-header>
-
-    <mat-card-content>
       <div *ngIf="loading" class="loading-container">
         <mat-spinner diameter="40"></mat-spinner>
       </div>

@@ -127,24 +127,23 @@
   padding: 0.875rem 1rem;
   border-radius: 8px;
   text-decoration: none;
-  color: rgba(255, 255, 255, 0.9); /* Erhöhter Kontrast von 0.8 auf 0.9 */
+  color: rgba(255, 255, 255, 0.9);
   font-size: 0.9375rem;
   font-weight: 500;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   outline: none;
-  /* Bessere Sichtbarkeit mit leichtem Schatten */
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .nav-item:hover {
-  background: rgba(255, 255, 255, 0.12); /* Erhöht von 0.08 auf 0.12 */
+  background: rgba(255, 255, 255, 0.12);
   color: #fff;
   transform: translateX(2px);
 }
 
 .nav-item:focus-visible {
-  background: rgba(255, 255, 255, 0.12); /* Erhöht von 0.08 auf 0.12 */
+  background: rgba(255, 255, 255, 0.12);
   box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.5);
 }
 
@@ -205,36 +204,34 @@
 
 .footer-info {
   text-align: center;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.5); /* leicht heller */
   font-size: 0.75rem;
 }
 
 /* ==================== Mobile Styles ==================== */
 .sidebar-mobile {
   transform: translateX(-100%);
-  /* Starker Schatten für bessere Sichtbarkeit im Mobile Mode */
   box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
 }
 
 .sidebar-mobile.sidebar-open {
   transform: translateX(0);
-  z-index: 1001; /* Höher als Overlay */
-  /* Extra starker Schatten wenn offen */
-  box-shadow: 4px 0 30px rgba(0, 0, 0, 0.5);
+  z-index: 1001;
+  box-shadow: 4px 0 30px rgba(0, 0, 0, 0.45); /* leicht reduziert */
 }
 
-.sidebar-overlay {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(2px);
-  z-index: 1000; /* Unter Sidebar aber über Content */
-  animation: fadeIn 0.3s ease;
-}
+//.sidebar-overlay {
+//  display: none;
+//  position: fixed;
+//  top: 0;
+//  left: 0;
+//  right: 0;
+//  bottom: 0;
+//  background: rgba(0, 0, 0, 0.48); /* vorher 0.6 */
+//  backdrop-filter: blur(1.5px); /* etwas sanfter */
+//  z-index: 1000;
+//  animation: fadeIn 0.3s ease;
+//}
 
 @keyframes fadeIn {
   from {
@@ -260,9 +257,8 @@
   display: none;
   align-items: center;
   justify-content: center;
-  /* Starker Schatten für bessere Sichtbarkeit */
   box-shadow: 0 4px 16px rgba(102, 126, 234, 0.5),
-              0 2px 8px rgba(0, 0, 0, 0.3);
+  0 2px 8px rgba(0, 0, 0, 0.3);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   outline: none;
 }
@@ -270,7 +266,7 @@
 .btn-toggle-sidebar:hover {
   transform: scale(1.05);
   box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6),
-              0 3px 12px rgba(0, 0, 0, 0.4);
+  0 3px 12px rgba(0, 0, 0, 0.4);
 }
 
 .btn-toggle-sidebar:active {
@@ -300,8 +296,8 @@
 @media (max-width: 1023px) {
   .sidebar-mobile {
     z-index: 1001;
-    /* Stärkeres Gradient für bessere Sichtbarkeit auf Mobile */
-    background: linear-gradient(180deg, #1e2442 0%, #323964 100%);
+    /* etwas heller und klarer */
+    background: linear-gradient(180deg, #232a4a 0%, #38406d 100%);
   }
 
   .sidebar-mobile .btn-close-sidebar {
@@ -319,24 +315,40 @@
 
   /* Mobile: Größere Touch-Targets */
   .nav-item {
-    padding: 1rem 1rem; /* Erhöht von 0.875rem */
-    font-size: 1rem; /* Etwas größer für Mobile */
+    padding: 1rem 1rem;
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.95); /* leicht besser lesbar */
   }
 
   .nav-icon {
-    font-size: 1.375rem; /* Größere Icons auf Mobile */
+    font-size: 1.375rem;
+    color: inherit;
   }
 
   /* Mobile: Besserer Kontrast */
   .nav-group-title {
-    color: rgba(255, 255, 255, 0.65); /* Erhöht von 0.5 */
-    font-weight: 800; /* Fetter für bessere Lesbarkeit */
+    color: rgba(255, 255, 255, 0.72); /* sanft erhöht */
+    font-weight: 800;
+  }
+
+  /* Logo auf Mobile besser lesbar */
+  .sidebar-mobile .logo-text {
+    background: none;
+    -webkit-background-clip: initial;
+    -webkit-text-fill-color: #ffffff;
+    background-clip: initial;
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  }
+
+  .sidebar-mobile .footer-info {
+    color: rgba(255, 255, 255, 0.62);
   }
 
   /* Mobile: Aktivierter State noch deutlicher */
   .nav-item-active,
   .nav-item.nav-item-active {
-    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.5); /* Stärkerer Schatten */
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.45);
   }
 }
 
@@ -376,4 +388,3 @@
     border-color: #fff;
   }
 }
-

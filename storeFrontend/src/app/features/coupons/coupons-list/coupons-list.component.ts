@@ -12,6 +12,8 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { CouponService, CouponDTO } from '../../../core/services/coupon.service';
+import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
+import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
 
 @Component({
   selector: 'app-coupons-list',
@@ -27,7 +29,8 @@ import { CouponService, CouponDTO } from '../../../core/services/coupon.service'
     MatProgressSpinnerModule,
     MatSnackBarModule,
     MatFormFieldModule,
-    MatSelectModule
+    MatSelectModule,
+    PageHeaderComponent
   ],
   templateUrl: './coupons-list.component.html',
   styleUrls: ['./coupons-list.component.scss']
@@ -37,6 +40,8 @@ export class CouponsListComponent implements OnInit {
   coupons: CouponDTO[] = [];
   loading = false;
   statusFilter = '';
+  breadcrumbItems: BreadcrumbItem[] = [];
+  headerActions: HeaderAction[] = [];
 
   displayedColumns: string[] = ['code', 'type', 'discount', 'status', 'usage', 'dates', 'actions'];
 
@@ -49,6 +54,19 @@ export class CouponsListComponent implements OnInit {
 
   ngOnInit(): void {
     this.storeId = Number(this.route.snapshot.paramMap.get('storeId'));
+
+    // Breadcrumbs initialisieren
+    this.breadcrumbItems = [
+      { label: 'navigation.dashboard', route: '/dashboard', icon: '🏠' },
+      { label: 'navigation.store', route: ['/dashboard/stores', this.storeId], icon: '🏪' },
+      { label: 'Gutscheine', icon: '🎟️' }
+    ];
+
+    // Header Actions
+    this.headerActions = [
+      { label: 'Neuer Gutschein', class: 'btn-primary', icon: '➕', onClick: () => this.onCreate() }
+    ];
+
     this.loadCoupons();
   }
 

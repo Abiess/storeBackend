@@ -3,11 +3,13 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
 import { ChatbotManagementService, ChatbotIntent, ChatbotStatistics } from '../../services/chatbot-management.service';
+import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
+import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
 
 @Component({
   selector: 'app-chatbot-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent],
   templateUrl: './chatbot-management.component.html',
   styleUrls: ['./chatbot-management.component.scss']
 })
@@ -17,6 +19,8 @@ export class ChatbotManagementComponent implements OnInit {
   statistics: ChatbotStatistics | null = null;
   loading = false;
   error: string | null = null;
+  breadcrumbItems: BreadcrumbItem[] = [];
+  headerActions: HeaderAction[] = [];
 
   showIntentModal = false;
   showTestModal = false;
@@ -44,6 +48,20 @@ export class ChatbotManagementComponent implements OnInit {
   ngOnInit(): void {
     this.route.params.subscribe(params => {
       this.storeId = +params['id'] || +params['storeId'];
+
+      // Breadcrumbs initialisieren
+      this.breadcrumbItems = [
+        { label: 'navigation.dashboard', route: '/dashboard', icon: '🏠' },
+        { label: 'navigation.store', route: ['/dashboard/stores', this.storeId], icon: '🏪' },
+        { label: 'Chatbot', icon: '🤖' }
+      ];
+
+      // Header Actions
+      this.headerActions = [
+        { label: 'Export', class: 'btn-secondary', icon: '⬇️', onClick: () => this.exportIntents() },
+        { label: 'Neuer Intent', class: 'btn-primary', icon: '➕', onClick: () => this.openCreateModal() }
+      ];
+
       this.loadIntents();
       this.loadStatistics();
     });

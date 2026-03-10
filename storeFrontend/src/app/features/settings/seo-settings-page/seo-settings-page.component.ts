@@ -13,6 +13,8 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { SeoApiService, SeoSettingsDTO } from '../../../core/services/seo-api.service';
+import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
+import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
 
 @Component({
   selector: 'app-seo-settings-page',
@@ -30,7 +32,8 @@ import { SeoApiService, SeoSettingsDTO } from '../../../core/services/seo-api.se
     MatSnackBarModule,
     MatCheckboxModule,
     MatChipsModule,
-    MatSlideToggleModule
+    MatSlideToggleModule,
+    PageHeaderComponent
   ],
   templateUrl: './seo-settings-page.component.html',
   styleUrls: ['./seo-settings-page.component.scss']
@@ -43,6 +46,8 @@ export class SeoSettingsPageComponent implements OnInit {
   ogImagePreview?: string;
   ogImageFile?: File;
   hreflangEntries: any[] = [];
+  breadcrumbItems: BreadcrumbItem[] = [];
+  headerActions: HeaderAction[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -53,6 +58,19 @@ export class SeoSettingsPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.storeId = Number(this.route.snapshot.paramMap.get('storeId'));
+
+    // Breadcrumbs initialisieren
+    this.breadcrumbItems = [
+      { label: 'navigation.dashboard', route: '/dashboard', icon: '🏠' },
+      { label: 'navigation.store', route: ['/dashboard/stores', this.storeId], icon: '🏪' },
+      { label: 'SEO', icon: '🔍' }
+    ];
+
+    // Header Actions
+    this.headerActions = [
+      { label: 'Speichern', class: 'btn-primary', icon: '💾', onClick: () => this.onSave() }
+    ];
+
     this.initForm();
     this.loadSettings();
   }

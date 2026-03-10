@@ -6,17 +6,21 @@ import { CategoryService } from '@app/core/services/category.service';
 import { Category } from '@app/core/models';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { TranslationService } from '@app/core/services/translation.service';
+import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
+import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
 
 @Component({
   selector: 'app-category-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TranslatePipe],
+  imports: [CommonModule, ReactiveFormsModule, TranslatePipe, PageHeaderComponent],
   template: `
     <div class="category-form-container">
-      <div class="form-header">
-        <h1>{{ (isEditMode ? 'category.edit' : 'category.new') | translate }}</h1>
-        <button class="btn-back" (click)="goBack()">{{ 'common.back' | translate }}</button>
-      </div>
+      <app-page-header
+        [title]="isEditMode ? 'category.edit' : 'category.new'"
+        [breadcrumbs]="breadcrumbItems"
+        [showBackButton]="true"
+        [actions]="headerActions"
+      ></app-page-header>
 
       <form [formGroup]="categoryForm" (ngSubmit)="onSubmit()" class="category-form">
         <div class="form-card">
@@ -115,33 +119,7 @@ import { TranslationService } from '@app/core/services/translation.service';
       padding: 2rem 1rem;
     }
 
-    .form-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 2rem;
-    }
-
-    .form-header h1 {
-      margin: 0;
-      color: #333;
-      font-size: 1.875rem;
-    }
-
-    .btn-back {
-      background: white;
-      border: 1px solid #ddd;
-      padding: 0.5rem 1rem;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.3s;
-    }
-
-    .btn-back:hover {
-      background: #f8f9fa;
-      border-color: #667eea;
-      color: #667eea;
-    }
+    /* Page header styles are now in PageHeaderComponent */
 
     .category-form {
       display: flex;
@@ -319,6 +297,8 @@ export class CategoryFormComponent implements OnInit {
   saving = false;
   successMessage = '';
   errorMessage = '';
+  headerActions: HeaderAction[] = [];
+  breadcrumbItems: BreadcrumbItem[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -358,6 +338,14 @@ export class CategoryFormComponent implements OnInit {
     // categoryId ist nur gesetzt bei Edit-Routen (/categories/:categoryId/edit)
     const categoryIdParam = this.route.snapshot.paramMap.get('categoryId');
     this.categoryId = categoryIdParam ? Number(categoryIdParam) : undefined;
+
+    // Breadcrumbs initialisieren
+    this.breadcrumbItems = [
+      { label: 'navigation.dashboard', route: '/dashboard', icon: '🏠' },
+      { label: 'navigation.store', route: ['/dashboard/stores', this.storeId], icon: '🏪' },
+      { label: 'navigation.categories', route: ['/dashboard/stores', this.storeId, 'categories'], icon: '🏷️' },
+      { label: this.isEditMode ? 'category.edit' : 'category.new' }
+    ];
 
     console.log('📋 Category Form Init:', {
       storeId: this.storeId,

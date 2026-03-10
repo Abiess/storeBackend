@@ -10,6 +10,8 @@ import { Category, ProductStatus } from '@app/core/models';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { TranslationService } from '@app/core/services/translation.service';
 import { ProductVariantsManagerComponent } from './product-variants-manager.component';
+import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
+import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
 
 interface UploadedImage {
   mediaId: number;
@@ -24,13 +26,15 @@ interface UploadedImage {
 @Component({
   selector: 'app-product-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, TranslatePipe, ProductVariantsManagerComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, TranslatePipe, ProductVariantsManagerComponent, PageHeaderComponent],
   template: `
     <div class="product-form-container">
-      <div class="form-header">
-        <h1>{{ (isEditMode ? 'product.edit' : 'product.new') | translate }}</h1>
-        <button class="btn-back" (click)="goBack()">← {{ 'common.back' | translate }}</button>
-      </div>
+      <app-page-header
+        [title]="isEditMode ? 'product.edit' : 'product.new'"
+        [breadcrumbs]="breadcrumbItems"
+        [showBackButton]="true"
+        [actions]="headerActions"
+      ></app-page-header>
 
       <!-- Tab Navigation -->
       <div class="tab-navigation">
@@ -391,33 +395,7 @@ interface UploadedImage {
       padding: 2rem 1rem;
     }
 
-    .form-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 2rem;
-    }
-
-    .form-header h1 {
-      margin: 0;
-      color: #333;
-      font-size: 1.875rem;
-    }
-
-    .btn-back {
-      background: white;
-      border: 1px solid #ddd;
-      padding: 0.5rem 1rem;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.3s;
-    }
-
-    .btn-back:hover {
-      background: #f8f9fa;
-      border-color: #667eea;
-      color: #667eea;
-    }
+    /* Page header styles are now in PageHeaderComponent */
 
     .product-form {
       display: flex;
@@ -1024,6 +1002,8 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   uploading = false;
   successMessage = '';
   errorMessage = '';
+  headerActions: HeaderAction[] = [];
+  breadcrumbItems: BreadcrumbItem[] = [];
 
   uploadedImages: UploadedImage[] = [];
 
@@ -1090,6 +1070,14 @@ export class ProductFormComponent implements OnInit, OnDestroy {
 
     // Kategorien immer laden (auch wenn von Kategorie-Erstellung zurückgekehrt)
     this.loadCategories();
+
+    // Breadcrumbs initialisieren
+    this.breadcrumbItems = [
+      { label: 'navigation.dashboard', route: '/dashboard', icon: '🏠' },
+      { label: 'navigation.store', route: ['/dashboard/stores', this.storeId], icon: '🏪' },
+      { label: 'navigation.products', route: ['/dashboard/stores', this.storeId, 'products'], icon: '📦' },
+      { label: this.isEditMode ? 'product.edit' : 'product.new' }
+    ];
 
     if (this.isEditMode && this.productId) {
       this.loadProduct(this.productId);

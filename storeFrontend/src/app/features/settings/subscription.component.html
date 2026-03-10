@@ -1,8 +1,11 @@
 <div class="subscription-page">
-  <div class="page-header">
-    <h1>Abonnement & Pläne</h1>
-    <p>Verwalten Sie Ihr Abonnement und upgraden Sie Ihren Plan</p>
-  </div>
+  <app-page-header
+    [title]="'Abonnement & Pläne'"
+    [subtitle]="'Verwalten Sie Ihr Abonnement und upgraden Sie Ihren Plan'"
+    [breadcrumbs]="breadcrumbItems"
+    [showBackButton]="true"
+    [actions]="headerActions"
+  ></app-page-header>
 
   <!-- Aktueller Plan -->
   <div class="current-plan-section" *ngIf="currentSubscription">

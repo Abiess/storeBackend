@@ -5,14 +5,21 @@ import { UserRolesComponent } from './user-roles.component';
 import { RoleManagementComponent } from './role-management.component';
 import { AuditLogComponent } from './audit-log.component';
 import { AuthService } from '@app/core/services/auth.service';
+import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
+import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, UserRolesComponent, RoleManagementComponent, AuditLogComponent],
+  imports: [CommonModule, UserRolesComponent, RoleManagementComponent, AuditLogComponent, PageHeaderComponent],
   template: `
     <div class="settings-container">
-      <h1>⚙️ Einstellungen</h1>
+      <app-page-header
+        [title]="'Einstellungen'"
+        [breadcrumbs]="breadcrumbItems"
+        [showBackButton]="true"
+        [actions]="headerActions"
+      ></app-page-header>
       
       <div class="settings-tabs">
         <button 
@@ -139,6 +146,8 @@ import { AuthService } from '@app/core/services/auth.service';
 export class SettingsComponent implements OnInit {
   activeTab: 'roles' | 'permissions' | 'audit' = 'roles';
   currentStoreId: number | null = null; // FIXED: Kann null sein, wenn keine Store-ID vorhanden ist
+  breadcrumbItems: BreadcrumbItem[] = [];
+  headerActions: HeaderAction[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -146,6 +155,12 @@ export class SettingsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // Breadcrumbs initialisieren
+    this.breadcrumbItems = [
+      { label: 'navigation.dashboard', route: '/dashboard', icon: '🏠' },
+      { label: 'Einstellungen', icon: '⚙️' }
+    ];
+
     // Hole die aktuelle Store-ID aus dem Store-Context oder Route
     const storeId = this.route.snapshot.paramMap.get('storeId');
     if (storeId && !isNaN(Number(storeId))) {

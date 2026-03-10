@@ -14,11 +14,13 @@ import {
   UpgradeRequest,
   PaymentIntent
 } from '@app/core/models';
+import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
+import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
 
 @Component({
   selector: 'app-subscription',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PageHeaderComponent],
   templateUrl: './subscription.component.html',
   styleUrls: ['./subscription.component.scss']
 })
@@ -26,7 +28,7 @@ export class SubscriptionComponent implements OnInit {
   currentSubscription: Subscription | null = null;
   availablePlans: PlanDetails[] = [];
   selectedBillingCycle: 'MONTHLY' | 'YEARLY' = 'MONTHLY';
-  showUpgradeOptions = true; // Geändert: Zeige Pläne immer an
+  showUpgradeOptions = true;
   showPaymentModal = false;
   selectedPlan: PlanDetails | null = null;
   selectedPaymentMethod: PaymentMethod | null = null;
@@ -35,6 +37,8 @@ export class SubscriptionComponent implements OnInit {
   loadingPlans = false;
   loadingSubscription = false;
   plansError: string | null = null;
+  breadcrumbItems: BreadcrumbItem[] = [];
+  headerActions: HeaderAction[] = [];
 
   constructor(
     private subscriptionService: SubscriptionService,
@@ -43,6 +47,12 @@ export class SubscriptionComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // Breadcrumbs initialisieren
+    this.breadcrumbItems = [
+      { label: 'navigation.dashboard', route: '/dashboard', icon: '🏠' },
+      { label: 'Subscription', icon: '💳' }
+    ];
+
     this.loadCurrentSubscription();
     this.loadAvailablePlans();
   }

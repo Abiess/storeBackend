@@ -1,235 +1,240 @@
 <div class="brand-onboarding-container">
-  <h1>Brand Kit Generator</h1>
+    <h1>Brand Kit Generator</h1>
 
-  <div class="content-grid">
-    <!-- Form Section -->
-    <mat-card class="form-section">
-      <mat-card-header>
-        <mat-card-title>Brand Information</mat-card-title>
-      </mat-card-header>
+    <app-productnavigation-bar
+            *ngIf="storeId != null"
+            [storeId]="storeId">
+    </app-productnavigation-bar>
+    <div class="content-grid">
 
-      <mat-card-content>
-        <form [formGroup]="brandForm">
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Shop Name</mat-label>
-            <input
-              matInput
-              formControlName="shopName"
-              placeholder="Enter your shop name"
-              data-testid="shop-name-input">
-          </mat-form-field>
+        <mat-card class="form-section">
+            <mat-card-header>
+                <mat-card-title>Brand Information</mat-card-title>
+            </mat-card-header>
 
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Slogan (Optional)</mat-label>
-            <input
-              matInput
-              formControlName="slogan"
-              placeholder="Your brand slogan"
-              data-testid="slogan-input">
-          </mat-form-field>
+            <mat-card-content>
+                <form [formGroup]="brandForm">
+                    <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Shop Name</mat-label>
+                        <input
+                                matInput
+                                formControlName="shopName"
+                                placeholder="Enter your shop name"
+                                data-testid="shop-name-input">
+                    </mat-form-field>
 
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Industry (Optional)</mat-label>
-            <input
-              matInput
-              formControlName="industry"
-              placeholder="e.g., Fashion, Electronics"
-              data-testid="industry-input">
-          </mat-form-field>
+                    <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Slogan (Optional)</mat-label>
+                        <input
+                                matInput
+                                formControlName="slogan"
+                                placeholder="Your brand slogan"
+                                data-testid="slogan-input">
+                    </mat-form-field>
 
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Brand Style</mat-label>
-            <mat-select formControlName="style" data-testid="style-select">
-              <mat-option *ngFor="let style of styles" [value]="style.value">
-                {{ style.label }}
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
+                    <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Industry (Optional)</mat-label>
+                        <input
+                                matInput
+                                formControlName="industry"
+                                placeholder="e.g., Fashion, Electronics"
+                                data-testid="industry-input">
+                    </mat-form-field>
 
-          <!-- Preferred Colors -->
-          <div class="color-section">
-            <h3>Preferred Colors</h3>
-            <div class="color-input-group">
-              <mat-form-field appearance="outline" class="color-input">
-                <mat-label>Add Color (e.g., #FF5733)</mat-label>
-                <input
-                  matInput
-                  formControlName="preferredColorInput"
-                  placeholder="#FF5733"
-                  data-testid="preferred-color-input">
-              </mat-form-field>
-              <button
-                mat-raised-button
-                type="button"
-                (click)="addPreferredColor()"
-                data-testid="add-preferred-color-btn">
-                Add
-              </button>
-            </div>
-            <mat-chip-set>
-              <mat-chip
-                *ngFor="let color of preferredColors"
-                [removable]="true"
-                (removed)="removePreferredColor(color)">
-                <div class="chip-content">
-                  <span class="color-swatch" [style.background-color]="color"></span>
-                  {{ color }}
+                    <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Brand Style</mat-label>
+                        <mat-select formControlName="style" data-testid="style-select">
+                            <mat-option *ngFor="let style of styles" [value]="style.value">
+                                {{ style.label }}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+
+                    <div class="color-section">
+                        <h3>Preferred Colors</h3>
+                        <div class="color-input-group">
+                            <mat-form-field appearance="outline" class="color-input">
+                                <mat-label>Add Color (e.g., #FF5733)</mat-label>
+                                <input
+                                        matInput
+                                        formControlName="preferredColorInput"
+                                        placeholder="#FF5733"
+                                        data-testid="preferred-color-input">
+                            </mat-form-field>
+
+                            <button
+                                    mat-raised-button
+                                    type="button"
+                                    (click)="addPreferredColor()"
+                                    data-testid="add-preferred-color-btn">
+                                Add
+                            </button>
+                        </div>
+
+                        <mat-chip-set>
+                            <mat-chip
+                                    *ngFor="let color of preferredColors"
+                                    [removable]="true"
+                                    (removed)="removePreferredColor(color)">
+                                <div class="chip-content">
+                                    <span class="color-swatch" [style.background-color]="color"></span>
+                                    {{ color }}
+                                </div>
+                                <mat-icon matChipRemove>cancel</mat-icon>
+                            </mat-chip>
+                        </mat-chip-set>
+                    </div>
+
+                    <div class="color-section">
+                        <h3>Forbidden Colors</h3>
+                        <div class="color-input-group">
+                            <mat-form-field appearance="outline" class="color-input">
+                                <mat-label>Add Color (e.g., #000000)</mat-label>
+                                <input
+                                        matInput
+                                        formControlName="forbiddenColorInput"
+                                        placeholder="#000000"
+                                        data-testid="forbidden-color-input">
+                            </mat-form-field>
+
+                            <button
+                                    mat-raised-button
+                                    type="button"
+                                    (click)="addForbiddenColor()"
+                                    data-testid="add-forbidden-color-btn">
+                                Add
+                            </button>
+                        </div>
+
+                        <mat-chip-set>
+                            <mat-chip
+                                    *ngFor="let color of forbiddenColors"
+                                    [removable]="true"
+                                    (removed)="removeForbiddenColor(color)">
+                                <div class="chip-content">
+                                    <span class="color-swatch" [style.background-color]="color"></span>
+                                    {{ color }}
+                                </div>
+                                <mat-icon matChipRemove>cancel</mat-icon>
+                            </mat-chip>
+                        </mat-chip-set>
+                    </div>
+                </form>
+            </mat-card-content>
+
+            <mat-card-actions>
+                <button
+                        mat-raised-button
+                        color="primary"
+                        (click)="generateBrand()"
+                        [disabled]="!brandForm.valid || loading || storeId == null"
+                        data-testid="generate-btn">
+                    <mat-icon>auto_awesome</mat-icon>
+                    Generate Brand Kit
+                </button>
+
+                <button
+                        mat-raised-button
+                        color="accent"
+                        (click)="regenerateBrand()"
+                        [disabled]="!brandForm.valid || loading || !generatedBrand || storeId == null"
+                        data-testid="regenerate-btn">
+                    <mat-icon>refresh</mat-icon>
+                    Regenerate
+                </button>
+            </mat-card-actions>
+        </mat-card>
+
+        <mat-card class="preview-section">
+            <mat-card-header>
+                <mat-card-title>Brand Preview</mat-card-title>
+            </mat-card-header>
+
+            <mat-card-content>
+                <div *ngIf="loading" class="loading-container">
+                    <mat-spinner></mat-spinner>
+                    <p>Generating your brand assets...</p>
                 </div>
-                <mat-icon matChipRemove>cancel</mat-icon>
-              </mat-chip>
-            </mat-chip-set>
-          </div>
 
-          <!-- Forbidden Colors -->
-          <div class="color-section">
-            <h3>Forbidden Colors</h3>
-            <div class="color-input-group">
-              <mat-form-field appearance="outline" class="color-input">
-                <mat-label>Add Color (e.g., #000000)</mat-label>
-                <input
-                  matInput
-                  formControlName="forbiddenColorInput"
-                  placeholder="#000000"
-                  data-testid="forbidden-color-input">
-              </mat-form-field>
-              <button
-                mat-raised-button
-                type="button"
-                (click)="addForbiddenColor()"
-                data-testid="add-forbidden-color-btn">
-                Add
-              </button>
-            </div>
-            <mat-chip-set>
-              <mat-chip
-                *ngFor="let color of forbiddenColors"
-                [removable]="true"
-                (removed)="removeForbiddenColor(color)">
-                <div class="chip-content">
-                  <span class="color-swatch" [style.background-color]="color"></span>
-                  {{ color }}
+                <div *ngIf="!loading && !generatedBrand" class="empty-state">
+                    <mat-icon>palette</mat-icon>
+                    <p>Fill out the form and click "Generate Brand Kit" to see your brand preview</p>
                 </div>
-                <mat-icon matChipRemove>cancel</mat-icon>
-              </mat-chip>
-            </mat-chip-set>
-          </div>
-        </form>
-      </mat-card-content>
 
-      <mat-card-actions>
-        <button
-          mat-raised-button
-          color="primary"
-          (click)="generateBrand()"
-          [disabled]="!brandForm.valid || loading"
-          data-testid="generate-btn">
-          <mat-icon>auto_awesome</mat-icon>
-          Generate Brand Kit
-        </button>
+                <div *ngIf="!loading && generatedBrand" class="brand-preview">
+                    <div class="brand-decor" aria-hidden="true">
+                    </div>
 
-        <button
-          mat-raised-button
-          color="accent"
-          (click)="regenerateBrand()"
-          [disabled]="!brandForm.valid || loading || !generatedBrand"
-          data-testid="regenerate-btn">
-          <mat-icon>refresh</mat-icon>
-          Regenerate
-        </button>
-      </mat-card-actions>
-    </mat-card>
+                    <div class="brand-content">
+                        <div class="palette-display">
+                            <h3>Color Palette</h3>
+                            <div class="color-grid">
+                                <div *ngFor="let token of previewPalette | keyvalue" class="color-item">
+                                    <div class="color-box" [style.background-color]="token.value"></div>
+                                    <div class="color-label">
+                                        <strong>{{ token.key }}</strong>
+                                        <span>{{ token.value }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-    <!-- Preview Section -->
-    <mat-card class="preview-section">
-      <mat-card-header>
-        <mat-card-title>Brand Preview</mat-card-title>
-      </mat-card-header>
+                        <div class="initials-display">
+                            <h3>Brand Initials</h3>
+                            <div class="initials-box" [style.background-color]="previewPalette['--color-primary']">
+                                <span [style.color]="'white'">{{ generatedBrand.initials }}</span>
+                            </div>
+                        </div>
 
-      <mat-card-content>
-        <div *ngIf="loading" class="loading-container">
-          <mat-spinner></mat-spinner>
-          <p>Generating your brand assets...</p>
-        </div>
+                        <div class="assets-display">
+                            <h3>Generated Assets</h3>
+                            <div class="assets-grid">
+                                <div *ngFor="let key of getAssetKeys()" class="asset-item">
+                                    <strong>{{ key }}</strong>
 
-        <div *ngIf="!loading && !generatedBrand" class="empty-state">
-          <mat-icon>palette</mat-icon>
-          <p>Fill out the form and click "Generate Brand Kit" to see your brand preview</p>
-        </div>
+                                    <img
+                                            *ngIf="key.includes('png') || key.includes('jpg')"
+                                            [src]="generatedBrand.assets[key]"
+                                            [alt]="key"
+                                            class="asset-preview">
 
-        <div *ngIf="!loading && generatedBrand" class="brand-preview">
-          <!-- Decorative background layer (isolated, no interaction) -->
-          <div class="brand-decor" aria-hidden="true">
-            <!-- SVG or canvas decorations go here if needed -->
-          </div>
+                                    <a
+                                            *ngIf="!key.includes('png') && !key.includes('jpg')"
+                                            [href]="generatedBrand.assets[key]"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            class="asset-link">
+                                        View {{ key }}
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
 
-          <!-- Content layer (interactive, on top) -->
-          <div class="brand-content">
-            <!-- Color Palette -->
-            <div class="palette-display">
-              <h3>Color Palette</h3>
-              <div class="color-grid">
-                <div *ngFor="let token of previewPalette | keyvalue" class="color-item">
-                  <div class="color-box" [style.background-color]="token.value"></div>
-                  <div class="color-label">
-                    <strong>{{ token.key }}</strong>
-                    <span>{{ token.value }}</span>
-                  </div>
+                        <div class="preview-actions">
+                            <button
+                                    mat-raised-button
+                                    color="primary"
+                                    (click)="savePalette()"
+                                    [disabled]="storeId == null"
+                                    data-testid="save-palette-btn">
+                                <mat-icon>save</mat-icon>
+                                Save Palette
+                            </button>
+
+                            <button
+                                    mat-raised-button
+                                    (click)="downloadZip()"
+                                    [disabled]="storeId == null"
+                                    data-testid="download-zip-btn">
+                                <mat-icon>download</mat-icon>
+                                Download ZIP
+                            </button>
+                        </div>
+                    </div>
                 </div>
-              </div>
-            </div>
-
-            <!-- Initials -->
-            <div class="initials-display">
-              <h3>Brand Initials</h3>
-              <div class="initials-box" [style.background-color]="previewPalette['--color-primary']">
-                <span [style.color]="'white'">{{ generatedBrand.initials }}</span>
-              </div>
-            </div>
-
-            <!-- Assets Preview -->
-            <div class="assets-display">
-              <h3>Generated Assets</h3>
-              <div class="assets-grid">
-                <div *ngFor="let key of getAssetKeys()" class="asset-item">
-                  <strong>{{ key }}</strong>
-                  <img
-                    *ngIf="key.includes('png') || key.includes('jpg')"
-                    [src]="generatedBrand.assets[key]"
-                    [alt]="key"
-                    class="asset-preview">
-                  <a
-                    *ngIf="!key.includes('png') && !key.includes('jpg')"
-                    [href]="generatedBrand.assets[key]"
-                    target="_blank"
-                    class="asset-link">
-                    View {{ key }}
-                  </a>
-                </div>
-              </div>
-            </div>
-
-            <!-- Actions -->
-            <div class="preview-actions">
-              <button
-                mat-raised-button
-                color="primary"
-                (click)="savePalette()"
-                data-testid="save-palette-btn">
-                <mat-icon>save</mat-icon>
-                Save Palette
-              </button>
-
-              <button
-                mat-raised-button
-                (click)="downloadZip()"
-                data-testid="download-zip-btn">
-                <mat-icon>download</mat-icon>
-                Download ZIP
-              </button>
-            </div>
-          </div>
-        </div>
-      </mat-card-content>
-    </mat-card>
-  </div>
+            </mat-card-content>
+        </mat-card>
+    </div>
 </div>
+
+

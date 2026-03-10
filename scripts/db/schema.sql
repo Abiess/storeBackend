@@ -76,6 +76,8 @@ CREATE TABLE IF NOT EXISTS stores (
     slug VARCHAR(255) NOT NULL UNIQUE,
     owner_id BIGINT NOT NULL,
     description TEXT,
+    banner_image_url TEXT,
+    slider_images TEXT,
     status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -214,20 +216,27 @@ CREATE TABLE IF NOT EXISTS categories (
 -- Products Tabelle
 CREATE TABLE IF NOT EXISTS products (
                                         id BIGSERIAL PRIMARY KEY,
-                                        store_id BIGINT NOT NULL,
+                                        store_id BIGINT,
                                         category_id BIGINT,
+                                        supplier_id BIGINT,
                                         title VARCHAR(255) NOT NULL,
+    sku VARCHAR(100),
     description TEXT,
     base_price DECIMAL(10, 2) NOT NULL,
+    wholesale_price DECIMAL(10, 2),
+    is_supplier_catalog BOOLEAN DEFAULT FALSE,
     status VARCHAR(50) NOT NULL DEFAULT 'DRAFT',
     is_featured BOOLEAN DEFAULT FALSE,
     featured_order INTEGER DEFAULT 0,
     view_count BIGINT DEFAULT 0,
     sales_count BIGINT DEFAULT 0,
+    average_rating DECIMAL(3, 2) DEFAULT 0.00,
+    review_count INTEGER DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_products_store FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE,
-    CONSTRAINT fk_products_category FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
+    CONSTRAINT fk_products_category FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
+    CONSTRAINT fk_products_supplier FOREIGN KEY (supplier_id) REFERENCES users(id) ON DELETE CASCADE
     );
 
 -- Product Options

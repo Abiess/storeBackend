@@ -1,6 +1,9 @@
 <div class="admin-layout">
   <!-- Sidebar -->
-  <app-admin-sidebar [storeId]="storeId"></app-admin-sidebar>
+    <app-admin-sidebar
+            *ngIf="storeId != null"
+            [storeId]="storeId">
+    </app-admin-sidebar>
 
   <!-- Main Content Area -->
   <div class="admin-main">

@@ -15,17 +15,20 @@ import { DeliveryService } from '../../core/services/delivery.service';
 import { DeliveryOption, DeliveryOptionsResponse } from '../../core/models';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { TranslationService } from '../../core/services/translation.service';
+import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
 
 @Component({
   selector: 'app-checkout',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, CouponInputComponent, TranslatePipe],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, CouponInputComponent, TranslatePipe, PageHeaderComponent],
   template: `
     <div class="checkout-container">
-      <div class="checkout-header">
-        <h1>{{ 'checkout.title' | translate }}</h1>
-        <button class="btn-back" (click)="goBack()">{{ 'checkout.back' | translate }}</button>
-      </div>
+      <app-page-header
+        [title]="'checkout.title'"
+        [showBackButton]="true"
+        [backButtonText]="'checkout.back'"
+        [actions]="headerActions"
+      ></app-page-header>
 
       <!-- Step Indicator -->
       <div class="step-indicator">
@@ -651,14 +654,7 @@ import { TranslationService } from '../../core/services/translation.service';
       }
     }
 
-    .btn-back {
-      background: #6c757d;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
+    /* Page header styles are now in PageHeaderComponent */
 
     .checkout-content {
       display: grid;
@@ -1287,6 +1283,7 @@ export class CheckoutComponent implements OnInit {
   submitting = false;
   errorMessage = '';
   sameAsShipping = true;
+  headerActions: HeaderAction[] = []; // Für PageHeaderComponent
   // shipping and expressShipping removed - now dynamic via deliveryOptions
   selectedShippingMethod: string = 'STANDARD'; // Legacy compatibility
   discountAmount = 0;

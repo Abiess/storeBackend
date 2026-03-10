@@ -1,11 +1,12 @@
 <div class="seo-settings-container">
+  <app-page-header
+    [title]="'SEO Einstellungen'"
+    [breadcrumbs]="breadcrumbItems"
+    [showBackButton]="true"
+    [actions]="headerActions"
+  ></app-page-header>
+
   <mat-card>
-    <mat-card-header>
-      <mat-card-title>
-        <mat-icon>search</mat-icon>
-        SEO Einstellungen
-      </mat-card-title>
-    </mat-card-header>
 
     <mat-card-content>
       <div *ngIf="loading" class="loading-spinner">

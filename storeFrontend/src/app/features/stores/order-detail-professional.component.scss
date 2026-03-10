@@ -19,19 +19,7 @@
   gap: 1rem;
 }
 
-.btn-back {
-  padding: 0.5rem 1rem;
-  background: #e2e8f0;
-  border: none;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-back:hover {
-  background: #cbd5e0;
-}
+/* btn-back styles are now in styles.scss */
 
 .detail-header h1 {
   font-size: 1.75rem;

@@ -4,17 +4,22 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { ActivatedRoute } from '@angular/router';
 import { HomepageSectionService } from '@app/core/services/homepage-section.service';
 import { HomepageSection, SectionType, HeroSectionSettings, FeaturedProductsSettings, CategoriesSettings, BannerSettings, NewsletterSettings } from '@app/core/models';
+import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
+import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
 
 @Component({
   selector: 'app-homepage-builder',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent],
   template: `
     <div class="homepage-builder">
-      <div class="builder-header">
-        <h1>🏠 Homepage Builder</h1>
-        <p>Gestalten Sie Ihre Homepage mit individuellen Sections</p>
-      </div>
+      <app-page-header
+        [title]="'homepage.builder'"
+        [subtitle]="'homepage.subtitle'"
+        [breadcrumbs]="breadcrumbItems"
+        [showBackButton]="true"
+        [actions]="headerActions"
+      ></app-page-header>
 
       <div class="builder-content">
         <!-- Section List -->
@@ -567,6 +572,8 @@ export class HomepageBuilderComponent implements OnInit {
   editingSection: HomepageSection | null = null;
   editForm!: FormGroup;
   saving = false;
+  headerActions: HeaderAction[] = [];
+  breadcrumbItems: BreadcrumbItem[] = [];
 
   availableSectionTypes = [
     { value: 'HERO' as SectionType, icon: '🎯', label: 'Hero / Slider', description: 'Hauptbereich mit Slider' },
@@ -598,6 +605,24 @@ export class HomepageBuilderComponent implements OnInit {
 
   ngOnInit(): void {
     this.storeId = Number(this.route.snapshot.paramMap.get('id'));
+    
+    // Breadcrumbs initialisieren
+    this.breadcrumbItems = [
+      { label: 'navigation.dashboard', route: '/dashboard', icon: '🏠' },
+      { label: 'navigation.store', route: ['/dashboard/stores', this.storeId], icon: '🏪' },
+      { label: 'navigation.homepage', icon: '🏠' }
+    ];
+    
+    // Header Actions
+    this.headerActions = [
+      {
+        label: 'homepage.addSection',
+        class: 'btn-primary',
+        icon: '➕',
+        onClick: () => this.openAddSectionModal()
+      }
+    ];
+    
     this.loadSections();
   }
 

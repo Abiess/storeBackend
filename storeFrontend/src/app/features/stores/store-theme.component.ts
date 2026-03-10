@@ -10,22 +10,22 @@ import {
   ShopTemplate,
   CreateThemeRequest
 } from '../../core/models';
+import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
+import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
 
 @Component({
   selector: 'app-store-theme',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PageHeaderComponent],
   template: `
     <div class="theme-container">
-      <div class="theme-header">
-        <button class="back-button" (click)="goBack()">
-          ← Zurück zum Store
-        </button>
-        <div class="header-content">
-          <h1>🎨 Theme-Verwaltung</h1>
-          <p>Gestalten Sie das Aussehen Ihres Shops</p>
-        </div>
-      </div>
+      <app-page-header
+        [title]="'theme.management'"
+        [subtitle]="'theme.subtitle'"
+        [breadcrumbs]="breadcrumbItems"
+        [showBackButton]="true"
+        [actions]="headerActions"
+      ></app-page-header>
 
       <div class="theme-content" *ngIf="!loading">
         <!-- Aktives Theme -->
@@ -534,6 +534,8 @@ export class StoreThemeComponent implements OnInit {
   loading = false;
   saving = false;
   error: string | null = null;
+  headerActions: HeaderAction[] = [];
+  breadcrumbItems: BreadcrumbItem[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -548,6 +550,13 @@ export class StoreThemeComponent implements OnInit {
       if (storeIdParam) {
         this.storeId = Number(storeIdParam);
         console.log('✅ Store-ID aus params geladen:', this.storeId);
+
+        // Breadcrumbs initialisieren
+        this.breadcrumbItems = [
+          { label: 'navigation.dashboard', route: '/dashboard', icon: '🏠' },
+          { label: 'navigation.store', route: ['/dashboard/stores', this.storeId], icon: '🏪' },
+          { label: 'theme.management', icon: '🎨' }
+        ];
       }
     });
 
