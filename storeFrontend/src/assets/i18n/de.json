@@ -411,5 +411,33 @@
     "yes": "Ja",
     "no": "Nein",
     "youVoted": "Sie haben bereits abgestimmt"
+  },
+  "storeDetail": {
+    "backToDashboard": "← Zurück zum Dashboard",
+    "title": "Store Übersicht",
+    "totalSales": "Gesamtumsatz",
+    "orders": "Bestellungen",
+    "products": "Produkte",
+    "categories": "Kategorien",
+    "avgOrderValue": "Ø Bestellwert",
+    "quickAccess": "Schnellzugriff",
+    "addProduct": "Produkt hinzufügen",
+    "createCategory": "Kategorie erstellen",
+    "viewOrders": "Bestellungen ansehen",
+    "allProducts": "Alle Produkte",
+    "recentOrders": "Letzte Bestellungen",
+    "showAll": "Alle anzeigen",
+    "loadingOrders": "Bestellungen werden geladen...",
+    "noOrders": "Noch keine Bestellungen vorhanden",
+    "noOrdersHint": "Sobald Kunden in Ihrem Store bestellen, erscheinen diese hier.",
+    "orderNumber": "Bestellnummer",
+    "customer": "Kunde",
+    "status": "Status",
+    "amount": "Betrag",
+    "date": "Datum",
+    "showAllProducts": "Alle anzeigen",
+    "loadingProducts": "Produkte werden geladen...",
+    "noProducts": "Noch keine Produkte vorhanden",
+    "createFirstProduct": "Erstes Produkt erstellen"
   }
 }

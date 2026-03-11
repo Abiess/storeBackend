@@ -7,19 +7,20 @@ import { CategoryService } from '@app/core/services/category.service';
 import { Product, Order, Category } from '@app/core/models';
 import { AdminSidebarComponent } from '@app/shared/components/admin-sidebar/admin-sidebar.component';
 import { toDate } from '@app/core/utils/date.utils';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 @Component({
   selector: 'app-store-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, AdminSidebarComponent],
+  imports: [CommonModule, RouterModule, AdminSidebarComponent, TranslatePipe],
   template: `
     <div class="admin-layout">
         <app-admin-sidebar [storeId]="storeId"></app-admin-sidebar>
 
       <div class="content">
         <div class="topbar">
-          <a routerLink="/dashboard" class="back-link">← Zurück zum Dashboard</a>
-          <h1 class="page-title">Store Übersicht</h1>
+          <a routerLink="/dashboard" class="back-link">{{ 'storeDetail.backToDashboard' | translate }}</a>
+          <h1 class="page-title">{{ 'storeDetail.title' | translate }}</h1>
         </div>
 
         <div class="container">
@@ -30,7 +31,7 @@ import { toDate } from '@app/core/utils/date.utils';
               <div class="stat-icon">💰</div>
               <div class="stat-content">
                 <h3 class="stat-value">{{ getTotalSales() | currency:'EUR':'symbol':'1.0-0' }}</h3>
-                <p class="stat-label">Gesamtumsatz</p>
+                <p class="stat-label">{{ 'storeDetail.totalSales' | translate }}</p>
               </div>
             </div>
 
@@ -39,7 +40,7 @@ import { toDate } from '@app/core/utils/date.utils';
               <div class="stat-icon">📋</div>
               <div class="stat-content">
                 <h3 class="stat-value">{{ orders.length }}</h3>
-                <p class="stat-label">Bestellungen</p>
+                <p class="stat-label">{{ 'storeDetail.orders' | translate }}</p>
               </div>
             </div>
 
@@ -48,7 +49,7 @@ import { toDate } from '@app/core/utils/date.utils';
               <div class="stat-icon">📦</div>
               <div class="stat-content">
                 <h3 class="stat-value">{{ products.length }}</h3>
-                <p class="stat-label">Produkte</p>
+                <p class="stat-label">{{ 'storeDetail.products' | translate }}</p>
               </div>
             </div>
 
@@ -57,7 +58,7 @@ import { toDate } from '@app/core/utils/date.utils';
               <div class="stat-icon">🏷️</div>
               <div class="stat-content">
                 <h3 class="stat-value">{{ categories.length }}</h3>
-                <p class="stat-label">Kategorien</p>
+                <p class="stat-label">{{ 'storeDetail.categories' | translate }}</p>
               </div>
             </div>
 
@@ -66,30 +67,30 @@ import { toDate } from '@app/core/utils/date.utils';
               <div class="stat-icon">📊</div>
               <div class="stat-content">
                 <h3 class="stat-value">{{ getAverageOrderValue() | currency:'EUR':'symbol':'1.0-0' }}</h3>
-                <p class="stat-label">Ø Bestellwert</p>
+                <p class="stat-label">{{ 'storeDetail.avgOrderValue' | translate }}</p>
               </div>
             </div>
           </div>
 
           <!-- Quick Actions -->
           <div class="section quick-actions-section">
-            <h2>Schnellzugriff</h2>
+            <h2>{{ 'storeDetail.quickAccess' | translate }}</h2>
             <div class="quick-actions">
               <button class="action-btn" [routerLink]="['/stores', storeId, 'products', 'new']">
                 <span class="action-icon">➕</span>
-                <span class="action-text">Produkt hinzufügen</span>
+                <span class="action-text">{{ 'storeDetail.addProduct' | translate }}</span>
               </button>
               <button class="action-btn" [routerLink]="['/stores', storeId, 'categories', 'new']">
                 <span class="action-icon">🏷️</span>
-                <span class="action-text">Kategorie erstellen</span>
+                <span class="action-text">{{ 'storeDetail.createCategory' | translate }}</span>
               </button>
               <button class="action-btn" [routerLink]="['/stores', storeId, 'orders']">
                 <span class="action-icon">📋</span>
-                <span class="action-text">Bestellungen ansehen</span>
+                <span class="action-text">{{ 'storeDetail.viewOrders' | translate }}</span>
               </button>
               <button class="action-btn" [routerLink]="['/stores', storeId, 'products']">
                 <span class="action-icon">📦</span>
-                <span class="action-text">Alle Produkte</span>
+                <span class="action-text">{{ 'storeDetail.allProducts' | translate }}</span>
               </button>
             </div>
           </div>
@@ -97,28 +98,28 @@ import { toDate } from '@app/core/utils/date.utils';
           <!-- Recent Orders -->
           <div class="section">
             <div class="section-header">
-              <h2>Letzte Bestellungen</h2>
-              <a class="link" [routerLink]="['/stores', storeId, 'orders']">Alle anzeigen →</a>
+              <h2>{{ 'storeDetail.recentOrders' | translate }}</h2>
+              <a class="link" [routerLink]="['/stores', storeId, 'orders']">{{ 'storeDetail.showAll' | translate }} →</a>
             </div>
             
             <div *ngIf="ordersLoading" class="loading">
               <div class="spinner"></div>
-              <p>Bestellungen werden geladen...</p>
+              <p>{{ 'storeDetail.loadingOrders' | translate }}</p>
             </div>
 
             <div *ngIf="!ordersLoading && orders.length === 0" class="empty">
               <div class="icon">📋</div>
-              <p>Noch keine Bestellungen vorhanden</p>
-              <p class="hint">Sobald Kunden in Ihrem Store bestellen, erscheinen diese hier.</p>
+              <p>{{ 'storeDetail.noOrders' | translate }}</p>
+              <p class="hint">{{ 'storeDetail.noOrdersHint' | translate }}</p>
             </div>
 
             <div *ngIf="!ordersLoading && orders.length > 0" class="orders-table">
               <div class="table-header">
-                <div class="col">Bestellnummer</div>
-                <div class="col">Kunde</div>
-                <div class="col">Status</div>
-                <div class="col">Betrag</div>
-                <div class="col">Datum</div>
+                <div class="col">{{ 'storeDetail.orderNumber' | translate }}</div>
+                <div class="col">{{ 'storeDetail.customer' | translate }}</div>
+                <div class="col">{{ 'storeDetail.status' | translate }}</div>
+                <div class="col">{{ 'storeDetail.amount' | translate }}</div>
+                <div class="col">{{ 'storeDetail.date' | translate }}</div>
               </div>
               <div *ngFor="let order of orders.slice(0, 5)" class="table-row" [routerLink]="['/stores', storeId, 'orders', order.id]">
                 <div class="col">
@@ -145,20 +146,20 @@ import { toDate } from '@app/core/utils/date.utils';
           <!-- Products Overview -->
           <div class="section">
             <div class="section-header">
-              <h2>Produkte</h2>
-              <a class="link" [routerLink]="['/stores', storeId, 'products']">Alle anzeigen ({{ products.length }}) →</a>
+              <h2>{{ 'storeDetail.products' | translate }}</h2>
+              <a class="link" [routerLink]="['/stores', storeId, 'products']">{{ 'storeDetail.showAllProducts' | translate }} ({{ products.length }}) →</a>
             </div>
 
             <div *ngIf="productsLoading" class="loading">
               <div class="spinner"></div>
-              <p>Produkte werden geladen...</p>
+              <p>{{ 'storeDetail.loadingProducts' | translate }}</p>
             </div>
 
             <div *ngIf="!productsLoading && products.length === 0" class="empty">
               <div class="icon">📦</div>
-              <p>Noch keine Produkte vorhanden</p>
+              <p>{{ 'storeDetail.noProducts' | translate }}</p>
               <button class="btn btn-primary" [routerLink]="['/stores', storeId, 'products', 'new']">
-                Erstes Produkt erstellen
+                {{ 'storeDetail.createFirstProduct' | translate }}
               </button>
             </div>
 

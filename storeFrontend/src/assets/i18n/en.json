@@ -400,5 +400,33 @@
     "yes": "Yes",
     "no": "No",
     "youVoted": "You have already voted"
+  },
+  "storeDetail": {
+    "backToDashboard": "← Back to Dashboard",
+    "title": "Store Overview",
+    "totalSales": "Total Sales",
+    "orders": "Orders",
+    "products": "Products",
+    "categories": "Categories",
+    "avgOrderValue": "Avg. Order Value",
+    "quickAccess": "Quick Access",
+    "addProduct": "Add Product",
+    "createCategory": "Create Category",
+    "viewOrders": "View Orders",
+    "allProducts": "All Products",
+    "recentOrders": "Recent Orders",
+    "showAll": "Show All",
+    "loadingOrders": "Loading orders...",
+    "noOrders": "No orders yet",
+    "noOrdersHint": "Orders from your store will appear here.",
+    "orderNumber": "Order Number",
+    "customer": "Customer",
+    "status": "Status",
+    "amount": "Amount",
+    "date": "Date",
+    "showAllProducts": "Show All",
+    "loadingProducts": "Loading products...",
+    "noProducts": "No products yet",
+    "createFirstProduct": "Create First Product"
   }
 }
