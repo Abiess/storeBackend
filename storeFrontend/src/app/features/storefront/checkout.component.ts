@@ -260,7 +260,11 @@ import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-h
 
               <!-- No Postal Code Entered -->
               <div *ngIf="!loadingDeliveryOptions && !deliveryOptions && !deliveryOptionsError" class="info-delivery">
-                <p>Bitte geben Sie Ihre Postleitzahl ein, um verfügbare Lieferoptionen zu sehen.</p>
+                <div class="info-icon">ℹ️</div>
+                <div>
+                  <strong>Lieferoptionen werden geladen...</strong>
+                  <p>Bitte geben Sie oben Ihre vollständige Lieferadresse inkl. Postleitzahl und Stadt ein. Die verfügbaren Lieferoptionen werden dann automatisch angezeigt.</p>
+                </div>
               </div>
 
               <!-- Delivery Options List -->
@@ -312,45 +316,43 @@ import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-h
             <section class="form-section">
               <h2>💳 {{ 'checkout.paymentMethod' | translate }} {{ 'checkout.required' | translate }}</h2>
               <div class="payment-methods">
-                <label class="payment-option" [class.selected]="selectedPaymentMethod === 'CREDIT_CARD'">
-                  <input type="radio" name="paymentMethod" value="CREDIT_CARD"
-                    [(ngModel)]="selectedPaymentMethod" [ngModelOptions]="{standalone: true}"
-                    (change)="onPaymentMethodChange()" />
+                <!-- DEAKTIVIERT: Kreditkarte -->
+                <label class="payment-option disabled" title="Derzeit nicht verfügbar">
+                  <input type="radio" name="paymentMethod" value="CREDIT_CARD" disabled />
                   <div class="payment-content">
                     <span class="payment-icon">💳</span>
                     <div class="payment-info">
                       <strong>{{ 'payment.creditCard' | translate }}</strong>
-                      <small>Visa, Mastercard, American Express</small>
+                      <small>Derzeit nicht verfügbar</small>
                     </div>
                   </div>
                 </label>
 
-                <label class="payment-option" [class.selected]="selectedPaymentMethod === 'PAYPAL'">
-                  <input type="radio" name="paymentMethod" value="PAYPAL"
-                    [(ngModel)]="selectedPaymentMethod" [ngModelOptions]="{standalone: true}"
-                    (change)="onPaymentMethodChange()" />
+                <!-- DEAKTIVIERT: PayPal -->
+                <label class="payment-option disabled" title="Derzeit nicht verfügbar">
+                  <input type="radio" name="paymentMethod" value="PAYPAL" disabled />
                   <div class="payment-content">
                     <span class="payment-icon">🅿️</span>
                     <div class="payment-info">
                       <strong>PayPal</strong>
-                      <small>{{ 'payment.paypalHint' | translate }}</small>
+                      <small>Derzeit nicht verfügbar</small>
                     </div>
                   </div>
                 </label>
 
-                <label class="payment-option" [class.selected]="selectedPaymentMethod === 'BANK_TRANSFER'">
-                  <input type="radio" name="paymentMethod" value="BANK_TRANSFER"
-                    [(ngModel)]="selectedPaymentMethod" [ngModelOptions]="{standalone: true}"
-                    (change)="onPaymentMethodChange()" />
+                <!-- DEAKTIVIERT: Überweisung -->
+                <label class="payment-option disabled" title="Derzeit nicht verfügbar">
+                  <input type="radio" name="paymentMethod" value="BANK_TRANSFER" disabled />
                   <div class="payment-content">
                     <span class="payment-icon">🏦</span>
                     <div class="payment-info">
                       <strong>{{ 'payment.bankTransfer' | translate }}</strong>
-                      <small>{{ 'payment.bankTransferHint' | translate }}</small>
+                      <small>Derzeit nicht verfügbar</small>
                     </div>
                   </div>
                 </label>
 
+                <!-- AKTIV: Nachnahme -->
                 <label class="payment-option cod" [class.selected]="selectedPaymentMethod === 'CASH_ON_DELIVERY'">
                   <input type="radio" name="paymentMethod" value="CASH_ON_DELIVERY"
                     [(ngModel)]="selectedPaymentMethod" [ngModelOptions]="{standalone: true}"
@@ -962,6 +964,21 @@ import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-h
       background: #e1f5fe;
     }
 
+    .payment-option.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background: #f5f5f5;
+      pointer-events: none;
+      
+      .payment-info strong {
+        color: #999;
+      }
+      
+      .payment-info small {
+        color: #bbb;
+      }
+    }
+
     .payment-icon {
       font-size: 28px;
       margin-right: 10px;
@@ -1009,7 +1026,30 @@ import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-h
     }
 
     .info-delivery {
-      color: #666;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      text-align: left;
+      color: #475569;
+      
+      .info-icon {
+        font-size: 24px;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+      
+      strong {
+        display: block;
+        color: #1e293b;
+        margin-bottom: 6px;
+        font-weight: 600;
+      }
+      
+      p {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.6;
+      }
     }
 
     .delivery-options {
@@ -1290,7 +1330,7 @@ export class CheckoutComponent implements OnInit {
   hasFreeShipping = false;
   saveAddressForFuture = false;
   storeId: number | null = null; // NEUE: Store-ID aus Subdomain
-  selectedPaymentMethod: string | null = null; // NEUE: Ausgewählte Zahlungsmethode
+  selectedPaymentMethod: string | null = 'CASH_ON_DELIVERY'; // Standard: Nachnahme (einzige aktive Methode)
   phoneNumber: string = ''; // NEUE: Telefonnummer für Verifizierung
   verificationCode: string = ''; // NEUE: Verifizierungscode
   phoneVerified: boolean = false; // NEUE: Status der Telefonnummer-Verifizierung
@@ -1439,12 +1479,44 @@ export class CheckoutComponent implements OnInit {
             this.sameAsShipping = false;
           }
         }
+
+        // NEUE FUNKTION: Lade gespeicherte Telefonnummer
+        if (profile.phone) {
+          console.log('📱 Lade gespeicherte Telefonnummer:', profile.phone);
+          this.loadSavedPhone(profile.phone);
+        }
       },
       error: (error) => {
         console.warn('⚠️ Fehler beim Laden der Adressen:', error);
         // Kein Fehler anzeigen - User kann manuell eingeben
       }
     });
+  }
+
+  /**
+   * Lädt gespeicherte Telefonnummer und setzt sie im Formular
+   */
+  loadSavedPhone(phoneNumber: string): void {
+    // Extrahiere Ländercode aus Telefonnummer
+    const matchedCountry = this.countryCodes.find((country: any) =>
+      phoneNumber.startsWith(country.dialCode)
+    );
+
+    if (matchedCountry) {
+      this.selectedCountry = matchedCountry;
+      this.phoneNumberLocal = phoneNumber.substring(matchedCountry.dialCode.length);
+      this.phoneNumber = phoneNumber;
+
+      console.log('✅ Telefonnummer geladen:', {
+        country: matchedCountry.name,
+        localNumber: this.phoneNumberLocal,
+        fullNumber: phoneNumber
+      });
+    } else {
+      // Fallback: Deutschland
+      this.phoneNumber = phoneNumber;
+      console.log('⚠️ Ländercode nicht erkannt, verwende Standardland');
+    }
   }
 
   loadCart(): void {
@@ -1929,6 +2001,9 @@ export class CheckoutComponent implements OnInit {
         if (response.success) {
           this.phoneVerified = true;
           this.verificationError = '';
+
+          // NEUE FUNKTION: Telefonnummer automatisch im Profil speichern
+          this.savePhoneToProfile();
         } else {
           this.phoneVerified = false;
           this.remainingAttempts--;
@@ -2018,6 +2093,43 @@ export class CheckoutComponent implements OnInit {
       const phoneInput = document.querySelector('.phone-input') as HTMLInputElement;
       phoneInput?.focus();
     }, 100);
+  }
+
+  /**
+   * Speichert die verifizierte Telefonnummer im Benutzerprofil
+   */
+  savePhoneToProfile(): void {
+    // Prüfe ob Nutzer angemeldet ist
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      console.log('ℹ️ Nutzer nicht angemeldet - Telefonnummer wird nicht im Profil gespeichert');
+      return;
+    }
+
+    const fullPhoneNumber = this.selectedCountry.dialCode + this.phoneNumberLocal;
+
+    console.log('💾 Speichere verifizierte Telefonnummer im Profil:', fullPhoneNumber);
+
+    // Speichere im Shipping-Address Feld (phone)
+    this.checkoutForm.patchValue({
+      shippingAddress: {
+        ...this.checkoutForm.get('shippingAddress')?.value,
+        phone: fullPhoneNumber
+      }
+    });
+
+    // Sende an Backend über CustomerProfileService
+    this.customerProfileService.updateProfile({
+      phone: fullPhoneNumber
+    }).subscribe({
+      next: () => {
+        console.log('✅ Telefonnummer erfolgreich im Profil gespeichert');
+      },
+      error: (error) => {
+        console.warn('⚠️ Telefonnummer konnte nicht im Profil gespeichert werden:', error);
+        // Kein Error für User - Feature funktioniert trotzdem
+      }
+    });
   }
 
   /**
