@@ -158,3 +158,248 @@
   75% { transform: translateX(5px); }
 }
 
+/* ============================================
+   Mobile Responsive Styles
+   ============================================ */
+
+/* Tablet (max-width: 1024px) */
+@media (max-width: 1024px) {
+  .coupon-input-container {
+    padding: 16px;
+
+    .coupon-input-section {
+      gap: 10px;
+
+      button {
+        min-width: 100px;
+        font-size: 14px;
+      }
+    }
+
+    .applied-coupons {
+      .coupon-list {
+        .coupon-chip {
+          padding: 10px 14px;
+
+          .chip-content {
+            gap: 10px;
+
+            strong {
+              font-size: 15px;
+            }
+
+            .discount-amount {
+              font-size: 16px;
+            }
+          }
+        }
+      }
+
+      .total-discount {
+        padding: 14px;
+        font-size: 16px;
+
+        .amount {
+          font-size: 20px;
+        }
+      }
+    }
+  }
+}
+
+/* Mobile (max-width: 768px) */
+@media (max-width: 768px) {
+  .coupon-input-container {
+    padding: 12px;
+    border-radius: 8px;
+
+    .coupon-input-section {
+      flex-direction: column;
+      gap: 12px;
+
+      .coupon-field {
+        width: 100%;
+      }
+
+      button {
+        width: 100%;
+        height: 48px;
+        min-width: unset;
+      }
+    }
+
+    .applied-coupons {
+      margin-top: 16px;
+      padding-top: 16px;
+
+      h4 {
+        font-size: 14px;
+        margin-bottom: 12px;
+      }
+
+      .coupon-list {
+        gap: 10px;
+        margin-bottom: 12px;
+
+        .coupon-chip {
+          padding: 10px 12px;
+          flex-wrap: wrap;
+
+          .chip-content {
+            gap: 8px;
+            flex: 1;
+            min-width: 0;
+
+            mat-icon {
+              font-size: 18px;
+              width: 18px;
+              height: 18px;
+            }
+
+            strong {
+              font-size: 14px;
+              flex: 1;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+            }
+
+            .discount-amount {
+              font-size: 15px;
+              margin-left: 0;
+            }
+          }
+
+          .remove-btn {
+            margin-left: 8px;
+
+            mat-icon {
+              font-size: 18px;
+              width: 18px;
+              height: 18px;
+            }
+          }
+
+          &:hover {
+            transform: none; // Disable hover transform on mobile
+          }
+        }
+      }
+
+      .total-discount {
+        padding: 12px;
+        font-size: 15px;
+
+        strong {
+          font-size: 14px;
+        }
+
+        .amount {
+          font-size: 18px;
+        }
+      }
+    }
+
+    .invalid-coupons {
+      margin-top: 12px;
+
+      .error-message {
+        padding: 10px 12px;
+        font-size: 13px;
+        gap: 8px;
+
+        mat-icon {
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
+        }
+      }
+    }
+  }
+}
+
+/* Small Mobile (max-width: 480px) */
+@media (max-width: 480px) {
+  .coupon-input-container {
+    padding: 10px;
+    border-radius: 6px;
+
+    .coupon-input-section {
+      gap: 10px;
+
+      button {
+        height: 44px;
+        font-size: 14px;
+      }
+    }
+
+    .applied-coupons {
+      h4 {
+        font-size: 13px;
+      }
+
+      .coupon-list {
+        gap: 8px;
+
+        .coupon-chip {
+          padding: 8px 10px;
+
+          .chip-content {
+            gap: 6px;
+
+            mat-icon {
+              font-size: 16px;
+              width: 16px;
+              height: 16px;
+            }
+
+            strong {
+              font-size: 13px;
+            }
+
+            .discount-amount {
+              font-size: 14px;
+            }
+          }
+
+          .remove-btn {
+            mat-icon {
+              font-size: 16px;
+              width: 16px;
+              height: 16px;
+            }
+          }
+        }
+      }
+
+      .total-discount {
+        padding: 10px;
+        font-size: 14px;
+
+        strong {
+          font-size: 13px;
+        }
+
+        .amount {
+          font-size: 16px;
+        }
+      }
+    }
+
+    .invalid-coupons {
+      .error-message {
+        padding: 8px 10px;
+        font-size: 12px;
+        flex-direction: column;
+        align-items: flex-start;
+
+        mat-icon {
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+        }
+      }
+    }
+  }
+}
+

@@ -262,8 +262,11 @@ import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-h
               <div *ngIf="!loadingDeliveryOptions && !deliveryOptions && !deliveryOptionsError" class="info-delivery">
                 <div class="info-icon">ℹ️</div>
                 <div>
-                  <strong>Lieferoptionen werden geladen...</strong>
-                  <p>Bitte geben Sie oben Ihre vollständige Lieferadresse inkl. Postleitzahl und Stadt ein. Die verfügbaren Lieferoptionen werden dann automatisch angezeigt.</p>
+                  <strong>Bitte füllen Sie zuerst die Lieferadresse aus ↑</strong>
+                  <p>Geben Sie im Abschnitt <strong>"Lieferadresse"</strong> weiter oben Ihre <strong>Postleitzahl</strong>, <strong>Stadt</strong> und <strong>Land</strong> ein. Die verfügbaren Lieferoptionen werden dann hier automatisch angezeigt.</p>
+                  <button class="btn-scroll-to-address" (click)="scrollToAddress()">
+                    ↑ Zur Lieferadresse springen
+                  </button>
                 </div>
               </div>
 
@@ -1046,9 +1049,31 @@ import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-h
       }
       
       p {
-        margin: 0;
+        margin: 0 0 12px 0;
         font-size: 14px;
         line-height: 1.6;
+      }
+      
+      .btn-scroll-to-address {
+        padding: 8px 16px;
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        
+        &:hover {
+          background: #5568d3;
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+        
+        &:active {
+          transform: translateY(0);
+        }
       }
     }
 
@@ -2138,5 +2163,24 @@ export class CheckoutComponent implements OnInit {
   onShippingMethodChange(): void {
     console.log('🚚 Versandmethode geändert:', this.selectedShippingMethod);
     // Shipping Cost wird automatisch in getFinalTotal() berechnet
+  }
+
+  /**
+   * Scrollt zum Lieferadresse-Formular
+   */
+  scrollToAddress(): void {
+    const addressSection = document.querySelector('.form-section h2');
+    if (addressSection) {
+      addressSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      console.log('📍 Scrolle zur Lieferadresse');
+
+      // Fokussiere das PLZ-Feld nach dem Scrollen
+      setTimeout(() => {
+        const postalCodeInput = document.getElementById('postalCode') as HTMLInputElement;
+        if (postalCodeInput) {
+          postalCodeInput.focus();
+        }
+      }, 500);
+    }
   }
 }
