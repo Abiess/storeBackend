@@ -98,14 +98,14 @@ export class AdminSidebarComponent implements OnInit {
                 ]
             },
             {
-                title: 'Verkauf',
+                title: 'Commerce',
                 items: [
                     {
                         label: 'Produkte',
                         icon: '📦',
                         route: `${baseRoute}/products`
                     },
-                    {
+                    /*{
                         label: 'Kategorien',
                         icon: '📁',
                         route: `${baseRoute}/categories`
@@ -119,7 +119,7 @@ export class AdminSidebarComponent implements OnInit {
                         label: 'Gutscheine',
                         icon: '🎟️',
                         route: `${baseRoute}/coupons`
-                    }
+                    }*/
                 ]
             },
             {

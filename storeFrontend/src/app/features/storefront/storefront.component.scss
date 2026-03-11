@@ -6,8 +6,9 @@
    Global Storefront Wrapper
    ============================================ */
 .modern-storefront {
-  background: #f9fafb;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
   min-height: 100vh;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 /* ============================================
@@ -15,8 +16,17 @@
    ============================================ */
 .hero-section {
   max-width: 1400px;
-  margin: 0 auto 32px;
+  margin: 0 auto 40px;
   padding: 0 24px;
+
+  // Add subtle elevation
+  app-store-slider-viewer {
+    display: block;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    background: white;
+  }
 }
 
 /* ============================================
@@ -24,18 +34,183 @@
    ============================================ */
 .featured-sections {
   max-width: 1400px;
-  margin: 0 auto 32px;
+  margin: 0 auto 40px;
   padding: 0 24px;
+}
+
+/* ============================================
+   Category Highlights (NEW)
+   ============================================ */
+.category-highlights {
+  max-width: 1400px;
+  margin: 0 auto 56px;
+  padding: 0 24px;
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 40px;
+
+  h2 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 12px 0;
+    letter-spacing: -0.02em;
+  }
+
+  p {
+    font-size: 16px;
+    color: #64748b;
+    margin: 0;
+    line-height: 1.6;
+  }
+}
+
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.category-card {
+  background: white;
+  padding: 32px 24px;
+  border-radius: 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(168, 85, 247, 0.05) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+    border-color: #e0e7ff;
+
+    &::before {
+      opacity: 1;
+    }
+
+    .category-icon {
+      transform: scale(1.1);
+    }
+
+    .category-arrow {
+      transform: translateX(4px);
+      opacity: 1;
+    }
+  }
+}
+
+.category-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  transition: transform 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.category-card h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 8px 0;
+  position: relative;
+  z-index: 1;
+}
+
+.category-arrow {
+  display: inline-block;
+  font-size: 18px;
+  color: #6366f1;
+  opacity: 0;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================
+   Trust Badges Section (NEW)
+   ============================================ */
+.trust-section {
+  max-width: 1400px;
+  margin: 0 auto 48px;
+  padding: 0 24px;
+}
+
+.trust-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  background: white;
+  padding: 32px;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.trust-badge {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.trust-badge:hover {
+  background: #f8fafc;
+  transform: translateY(-2px);
+}
+
+.trust-icon {
+  font-size: 32px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.trust-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.trust-text strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.4;
+}
+
+.trust-text span {
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.4;
 }
 
 /* ============================================
    Modern Footer
    ============================================ */
 .modern-footer {
-  background: white;
-  margin-top: 64px;
-  border-top: 2px solid #e5e7eb;
-  padding: 48px 0 24px;
+  background: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
+  margin-top: 80px;
+  border-top: 1px solid #e5e7eb;
+  padding: 64px 0 32px;
 }
 
 .footer-container {
@@ -48,20 +223,22 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 48px;
-  margin-bottom: 48px;
+  margin-bottom: 56px;
 }
 
 .footer-col h4 {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
-  color: #111827;
-  margin: 0 0 16px 0;
+  color: #0f172a;
+  margin: 0 0 20px 0;
+  letter-spacing: -0.01em;
 }
 
 .footer-tagline {
-  font-size: 14px;
-  color: #6b7280;
-  margin: 8px 0 0 0;
+  font-size: 13px;
+  color: #64748b;
+  margin: 12px 0 0 0;
+  line-height: 1.6;
 }
 
 .footer-links {
@@ -71,30 +248,32 @@
 }
 
 .footer-links li {
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .footer-links a {
   font-size: 14px;
-  color: #6b7280;
+  color: #475569;
   text-decoration: none;
-  transition: color 0.2s ease;
+  transition: all 0.2s ease;
   cursor: pointer;
+  display: inline-block;
 }
 
 .footer-links a:hover {
   color: #2563eb;
+  transform: translateX(2px);
 }
 
 .footer-bottom {
-  padding-top: 24px;
+  padding-top: 32px;
   border-top: 1px solid #e5e7eb;
   text-align: center;
 }
 
 .footer-bottom p {
   font-size: 13px;
-  color: #9ca3af;
+  color: #94a3b8;
   margin: 0;
 }
 
@@ -103,8 +282,29 @@
    ============================================ */
 @media (max-width: 1024px) {
   .hero-section,
-  .featured-sections {
+  .featured-sections,
+  .trust-section,
+  .category-highlights {
     padding: 0 16px;
+  }
+
+  .category-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .section-header h2 {
+    font-size: 24px;
+  }
+
+  .section-header p {
+    font-size: 15px;
+  }
+
+  .trust-container {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    padding: 24px;
   }
 
   .footer-grid {
@@ -122,23 +322,83 @@
    ============================================ */
 @media (max-width: 768px) {
   .modern-footer {
-    margin-top: 48px;
-    padding: 32px 0 16px;
+    margin-top: 56px;
+    padding: 48px 0 24px;
+  }
+
+  .category-highlights {
+    margin-bottom: 40px;
+  }
+
+  .section-header {
+    margin-bottom: 32px;
+  }
+
+  .section-header h2 {
+    font-size: 22px;
+  }
+
+  .section-header p {
+    font-size: 14px;
+  }
+
+  .category-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .category-card {
+    padding: 24px 16px;
+  }
+
+  .category-icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+  }
+
+  .category-card h3 {
+    font-size: 14px;
+  }
+
+  .trust-section {
+    margin-bottom: 32px;
+  }
+
+  .trust-container {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 20px;
+  }
+
+  .trust-badge {
+    padding: 12px;
+  }
+
+  .trust-icon {
+    font-size: 28px;
+  }
+
+  .trust-text strong {
+    font-size: 13px;
+  }
+
+  .trust-text span {
+    font-size: 11px;
   }
 
   .footer-grid {
     grid-template-columns: 1fr;
-    gap: 24px;
-    margin-bottom: 32px;
+    gap: 32px;
+    margin-bottom: 40px;
   }
 
   .footer-col h4 {
-    font-size: 15px;
-    margin-bottom: 12px;
+    font-size: 14px;
+    margin-bottom: 16px;
   }
 
   .footer-links li {
-    margin-bottom: 8px;
+    margin-bottom: 10px;
   }
 
   .footer-links a {
@@ -148,11 +408,11 @@
   .hero-section,
   .featured-sections {
     padding: 0 12px;
-    margin-bottom: 24px;
+    margin-bottom: 32px;
   }
 
   .footer-bottom {
-    padding-top: 16px;
+    padding-top: 24px;
   }
 
   .footer-bottom p {
@@ -165,17 +425,41 @@
    ============================================ */
 @media (max-width: 480px) {
   .hero-section,
-  .featured-sections {
+  .featured-sections,
+  .trust-section,
+  .category-highlights {
     padding: 0 8px;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
+  }
+
+  .category-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .category-card {
+    padding: 20px 16px;
+  }
+
+  .section-header h2 {
+    font-size: 20px;
+  }
+
+  .section-header p {
+    font-size: 13px;
+  }
+
+  .trust-container {
+    padding: 16px;
+    gap: 12px;
   }
 
   .modern-footer {
-    margin-top: 32px;
+    margin-top: 40px;
   }
 
   .footer-grid {
-    gap: 20px;
+    gap: 24px;
   }
 }
 

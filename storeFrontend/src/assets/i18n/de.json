@@ -156,10 +156,8 @@
     "confirm": "Bestätigen",
     "yes": "Ja",
     "no": "Nein",
-    "loading": "Lädt...",
     "error": "Fehler",
     "success": "Erfolgreich",
-    "back": "Zurück",
     "login": "Anmelden",
     "logout": "Abmelden",
     "search": "Suchen",
@@ -168,7 +166,6 @@
     "poweredBy": "Powered by markt.ma",
     "saveChanges": "Änderungen speichern",
     "reset": "Zurücksetzen",
-    "saving": "Wird gespeichert...",
     "addAddress": "Adresse hinzufügen"
   },
   "navigation": {
@@ -222,16 +219,15 @@
     "copyright": "© {{year}} Alle Rechte vorbehalten",
     "info": "Informationen"
   },
-  "featured": {
-    "recommended": "⭐ Empfohlene Produkte",
-    "recommendedSub": "Unsere Top-Auswahl für Sie",
-    "bestseller": "🏆 Bestseller",
-    "bestsellerSub": "Die beliebtesten Produkte",
-    "trending": "🔥 Im Trend",
-    "trendingSub": "Diese Produkte sind gerade beliebt",
-    "newArrivals": "✨ Neu eingetroffen",
-    "newArrivalsSub": "Entdecken Sie unsere neuesten Produkte",
-    "loading": "Produkte werden geladen..."
+  "trust": {
+    "freeShipping": "Kostenloser Versand",
+    "freeShippingDesc": "Ab 50€ Bestellwert",
+    "easyReturns": "Einfache Rückgabe",
+    "easyReturnsDesc": "30 Tage Rückgaberecht",
+    "securePayment": "Sichere Zahlung",
+    "securePaymentDesc": "SSL-verschlüsselt",
+    "support": "24/7 Support",
+    "supportDesc": "Wir sind für Sie da"
   },
   "auth": {
     "loginTitle": "markt.ma Login",
@@ -239,7 +235,7 @@
     "email": "E-Mail",
     "emailPlaceholder": "ihre@email.de",
     "password": "Passwort",
-    "passwordMinLength": "Passwort ist erforderlich",
+    "passwordMinLength": "Passwort muss mindestens 6 Zeichen lang sein",
     "emailInvalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
     "loggingIn": "Wird angemeldet...",
     "login": "Anmelden",
@@ -267,7 +263,9 @@
     "products": "{{count}} Produkt",
     "productsPlural": "{{count}} Produkte",
     "addedToCart": "{{count}}x {{name}} wurde zum Warenkorb hinzugefügt!",
-    "addToCartError": "Fehler beim Hinzufügen zum Warenkorb. Bitte versuchen Sie es erneut."
+    "addToCartError": "Fehler beim Hinzufügen zum Warenkorb. Bitte versuchen Sie es erneut.",
+    "shopByCategory": "Nach Kategorie stöbern",
+    "shopByCategoryDesc": "Finden Sie genau das, was Sie suchen"
   },
   "order": {
     "title": "Bestelldetails",
@@ -301,12 +299,6 @@
   "grid": {
     "emptyTitle": "Keine Produkte gefunden",
     "emptyMessage": "In dieser Kategorie sind aktuell keine Produkte verfügbar."
-  },
-  "auth": {
-    "password": "Passwort",
-    "passwordMinLength": "Passwort muss mindestens 6 Zeichen lang sein",
-    "noAccount": "Noch kein Konto? Jetzt registrieren",
-    "alreadyRegistered": "Bereits registriert? Anmelden"
   },
   "payment": {
     "creditCard": "Kreditkarte",
@@ -393,10 +385,6 @@
     "step2": "Erstellen Sie Ihren Store mit Ihrer Wunsch-Subdomain",
     "step3": "Fügen Sie Produkte hinzu und passen Sie das Design an",
     "step4": "Ihr Store ist sofort online unter ihrer-name.markt.ma"
-  },
-  "storefront": {
-    "addedToCart": "{{count}}x {{name}} wurde zum Warenkorb hinzugefügt!",
-    "addToCartError": "Fehler beim Hinzufügen zum Warenkorb. Bitte versuchen Sie es erneut."
   },
   "reviews": {
     "reviews": "Bewertungen",

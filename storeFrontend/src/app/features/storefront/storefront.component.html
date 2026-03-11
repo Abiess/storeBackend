@@ -31,6 +31,24 @@
       </app-store-slider-viewer>
     </div>
 
+    <!-- Category Highlights (NEW) -->
+    <div class="category-highlights" *ngIf="categories && categories.length > 0">
+      <div class="section-header">
+        <h2>{{ 'storefront.shopByCategory' | translate }}</h2>
+        <p>{{ 'storefront.shopByCategoryDesc' | translate }}</p>
+      </div>
+      <div class="category-grid">
+        <div
+          class="category-card"
+          *ngFor="let category of categories.slice(0, 6)"
+          (click)="selectCategory(category)">
+          <div class="category-icon">📦</div>
+          <h3>{{ category.name }}</h3>
+          <span class="category-arrow">→</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Featured Products -->
     <div class="featured-sections">
       <app-featured-products
@@ -50,6 +68,40 @@
         type="new"
         [limit]="8">
       </app-featured-products>
+    </div>
+  </div>
+
+  <!-- Trust Badges Section (new, minimal) -->
+  <div class="trust-section" *ngIf="!selectedCategory && !loading">
+    <div class="trust-container">
+      <div class="trust-badge">
+        <span class="trust-icon">🚚</span>
+        <div class="trust-text">
+          <strong>{{ 'trust.freeShipping' | translate }}</strong>
+          <span>{{ 'trust.freeShippingDesc' | translate }}</span>
+        </div>
+      </div>
+      <div class="trust-badge">
+        <span class="trust-icon">↩️</span>
+        <div class="trust-text">
+          <strong>{{ 'trust.easyReturns' | translate }}</strong>
+          <span>{{ 'trust.easyReturnsDesc' | translate }}</span>
+        </div>
+      </div>
+      <div class="trust-badge">
+        <span class="trust-icon">🔒</span>
+        <div class="trust-text">
+          <strong>{{ 'trust.securePayment' | translate }}</strong>
+          <span>{{ 'trust.securePaymentDesc' | translate }}</span>
+        </div>
+      </div>
+      <div class="trust-badge">
+        <span class="trust-icon">💬</span>
+        <div class="trust-text">
+          <strong>{{ 'trust.support' | translate }}</strong>
+          <span>{{ 'trust.supportDesc' | translate }}</span>
+        </div>
+      </div>
     </div>
   </div>
 

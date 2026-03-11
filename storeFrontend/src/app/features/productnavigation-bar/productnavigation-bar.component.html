@@ -1,0 +1,26 @@
+<nav class="nav-tabs">
+
+    <a
+            *ngFor="let tab of navTabs"
+            [routerLink]="tab.route(storeId)"
+            class="nav-tab"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: tab.exact ?? false }">
+
+        <span class="icon">{{ tab.icon }}</span>
+
+        <span class="label">
+      {{ tab.label | translate }}
+    </span>
+
+        <span
+                class="badge"
+                *ngIf="tab.showBadge && (unverifiedCount$ | async) as count">
+
+      <span *ngIf="count > 0">{{ count }}</span>
+
+    </span>
+
+    </a>
+
+</nav>

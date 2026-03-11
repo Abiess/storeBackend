@@ -92,12 +92,15 @@ export class StorefrontComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.storeId = Number(this.route.snapshot.paramMap.get('id'));
+    // Unterstütze beide Parameternamen: 'storeId' und 'id'
+    const storeIdParam = this.route.snapshot.paramMap.get('storeId') || this.route.snapshot.paramMap.get('id');
+    this.storeId = Number(storeIdParam);
+
     console.log('🏪 Storefront: Loading store with ID:', this.storeId);
     console.log('🏪 Route params:', this.route.snapshot.paramMap);
 
     if (!this.storeId || isNaN(this.storeId)) {
-      console.error('❌ Invalid store ID:', this.route.snapshot.paramMap.get('id'));
+      console.error('❌ Invalid store ID:', storeIdParam);
       this.storeId = 1; // Fallback
     }
 

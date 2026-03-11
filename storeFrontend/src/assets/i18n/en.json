@@ -208,16 +208,15 @@
     "copyright": "© {{year}} All rights reserved",
     "info": "Information"
   },
-  "featured": {
-    "recommended": "⭐ Recommended Products",
-    "recommendedSub": "Our top picks for you",
-    "bestseller": "🏆 Bestsellers",
-    "bestsellerSub": "The most popular products",
-    "trending": "🔥 Trending",
-    "trendingSub": "These products are popular right now",
-    "newArrivals": "✨ New Arrivals",
-    "newArrivalsSub": "Discover our latest products",
-    "loading": "Loading products..."
+  "trust": {
+    "freeShipping": "Free Shipping",
+    "freeShippingDesc": "On orders over $50",
+    "easyReturns": "Easy Returns",
+    "easyReturnsDesc": "30 days return policy",
+    "securePayment": "Secure Payment",
+    "securePaymentDesc": "SSL encrypted",
+    "support": "24/7 Support",
+    "supportDesc": "We're here for you"
   },
   "auth": {
     "loginTitle": "markt.ma Login",
@@ -225,7 +224,7 @@
     "email": "Email",
     "emailPlaceholder": "your@email.com",
     "password": "Password",
-    "passwordMinLength": "Password is required",
+    "passwordMinLength": "Password must be at least 6 characters long",
     "emailInvalid": "Please enter a valid email address",
     "loggingIn": "Signing in...",
     "login": "Sign In",
@@ -241,7 +240,7 @@
     "registerSubtitle": "Create your free account",
     "registerBtn": "Create Account",
     "registering": "Registering...",
-    "registerSuccess": "✓ Registration successful! Please check your emails and click on the confirmation link to activate your account."
+    "registerSuccess": "✓ Registration successful! Please check your email and click on the confirmation link to activate your account."
   },
   "storefront": {
     "searchResults": "Search Results",
@@ -253,7 +252,9 @@
     "products": "{{count}} Product",
     "productsPlural": "{{count}} Products",
     "addedToCart": "{{count}}x {{name}} has been added to the cart!",
-    "addToCartError": "Error adding to cart. Please try again."
+    "addToCartError": "Error adding to cart. Please try again.",
+    "shopByCategory": "Shop by Category",
+    "shopByCategoryDesc": "Find exactly what you're looking for"
   },
   "order": {
     "title": "Order Details",
@@ -287,12 +288,6 @@
   "grid": {
     "emptyTitle": "No Products Found",
     "emptyMessage": "There are currently no products available in this category."
-  },
-  "auth": {
-    "password": "Password",
-    "passwordMinLength": "Password must be at least 6 characters long",
-    "noAccount": "No account yet? Register now",
-    "alreadyRegistered": "Already registered? Sign in"
   },
   "payment": {
     "creditCard": "Credit Card",

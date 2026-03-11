@@ -604,8 +604,17 @@ export class HomepageBuilderComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.storeId = Number(this.route.snapshot.paramMap.get('id'));
-    
+    // Unterstütze beide Parameternamen: 'storeId' und 'id'
+    const storeIdParam = this.route.snapshot.paramMap.get('storeId') || this.route.snapshot.paramMap.get('id');
+    this.storeId = Number(storeIdParam);
+
+    if (!this.storeId || isNaN(this.storeId)) {
+      console.error('❌ Keine gültige storeId gefunden in Route-Parametern');
+      return;
+    }
+
+    console.log('✅ Homepage Builder - storeId:', this.storeId);
+
     // Breadcrumbs initialisieren
     this.breadcrumbItems = [
       { label: 'navigation.dashboard', route: '/dashboard', icon: '🏠' },

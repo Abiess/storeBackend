@@ -50,7 +50,15 @@ export class OrdersProfessionalComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.storeId = Number(this.route.snapshot.paramMap.get('id'));
+    // Unterstütze beide Parameternamen: 'storeId' und 'id'
+    const storeIdParam = this.route.snapshot.paramMap.get('storeId') || this.route.snapshot.paramMap.get('id');
+    this.storeId = Number(storeIdParam);
+
+    if (!this.storeId || isNaN(this.storeId)) {
+      console.error('❌ Orders Professional - Keine gültige storeId gefunden');
+      return;
+    }
+
     this.loadOrders();
   }
 
