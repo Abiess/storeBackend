@@ -158,7 +158,7 @@ import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-h
 
               <div class="form-group">
                 <label for="country">{{ 'checkout.country' | translate }} {{ 'checkout.required' | translate }}</label>
-                <select id="country" formControlName="country">
+                  <select id="country" formControlName="country" (change)="loadDeliveryOptions()">
                   <option value="">{{ 'checkout.selectCountry' | translate }}</option>
                   <option value="Deutschland">{{ 'checkout.countries.de' | translate }}</option>
                   <option value="Österreich">{{ 'checkout.countries.at' | translate }}</option>
@@ -1432,34 +1432,33 @@ export class CheckoutComponent implements OnInit {
     });
   }
 
-  ngOnInit(): void {
-      this.subdomainService.resolveStore().subscribe(store => {
-          if (store) {
-              this.storeId = store.storeId;
-              this.loadCart();
-          }
-      });
-
-    // FIXED: Stelle gespeicherte Formular-Daten wieder her (falls User von Login zurückkommt)
-    this.restoreFormData();
-
-    this.loadSavedAddresses();
-
-    // FIXED: Setze E-Mail des eingeloggten Users automatisch
-    this.authService.currentUser$.subscribe(user => {
-      if (user && user.email) {
-        console.log('✅ Setze E-Mail des eingeloggten Users:', user.email);
-        this.checkoutForm.patchValue({
-          customerEmail: user.email
+    ngOnInit(): void {
+        this.subdomainService.resolveStore().subscribe(store => {
+            if (store) {
+                this.storeId = store.storeId;
+                this.loadCart();
+            }
         });
-        // Disable das Feld, damit der User es nicht ändern kann
-        this.checkoutForm.get('customerEmail')?.disable();
-      } else {
-        // User nicht eingeloggt - Feld aktivieren
-        this.checkoutForm.get('customerEmail')?.enable();
-      }
-    });
-  }
+
+        this.restoreFormData();
+        this.loadSavedAddresses();
+
+        this.checkoutForm.get('shippingAddress')?.valueChanges.subscribe(() => {
+            this.loadDeliveryOptions();
+        });
+
+        this.authService.currentUser$.subscribe(user => {
+            if (user && user.email) {
+                console.log('✅ Setze E-Mail des eingeloggten Users:', user.email);
+                this.checkoutForm.patchValue({
+                    customerEmail: user.email
+                });
+                this.checkoutForm.get('customerEmail')?.disable();
+            } else {
+                this.checkoutForm.get('customerEmail')?.enable();
+            }
+        });
+    }
 
   /**
    * Lädt die gespeicherten Adressen des Kunden und füllt das Formular vor
@@ -1476,14 +1475,17 @@ export class CheckoutComponent implements OnInit {
       next: (profile) => {
         console.log('✅ Customer Profile geladen:', profile);
 
-        // Fülle Shipping-Adresse wenn vorhanden
-        if (profile.defaultShippingAddress) {
-          console.log('📦 Fülle gespeicherte Lieferadresse ein');
-          this.checkoutForm.patchValue({
-            shippingAddress: profile.defaultShippingAddress
-          });
-        }
 
+          if (profile.defaultShippingAddress) {
+              console.log('📦 Fülle gespeicherte Lieferadresse ein');
+              this.checkoutForm.patchValue({
+                  shippingAddress: profile.defaultShippingAddress
+              });
+
+              setTimeout(() => {
+                  this.loadDeliveryOptions();
+              }, 0);
+          }
         // Fülle Billing-Adresse wenn vorhanden
         if (profile.defaultBillingAddress) {
           console.log('💳 Fülle gespeicherte Rechnungsadresse ein');
@@ -1741,50 +1743,49 @@ export class CheckoutComponent implements OnInit {
    * Called when shipping address postal code changes
    */
   loadDeliveryOptions(): void {
-    if (!this.storeId) {
-      console.warn('Store ID not set, cannot load delivery options');
-      return;
-    }
-
-    const postalCode = this.checkoutForm.get('shipping')?.get('postalCode')?.value?.trim();
-
-    if (!postalCode) {
-      // Reset options if postal code is empty
-      this.deliveryOptions = null;
-      this.selectedDeliveryOption = null;
-      this.deliveryOptionsError = '';
-      return;
-    }
-
-    const city = this.checkoutForm.get('shipping')?.get('city')?.value?.trim();
-    const country = this.checkoutForm.get('shipping')?.get('country')?.value?.trim();
-
-    console.log('🚚 Loading delivery options for postal code:', postalCode);
-    this.loadingDeliveryOptions = true;
-    this.deliveryOptionsError = '';
-
-    this.deliveryService.getDeliveryOptions(this.storeId, postalCode, city, country).subscribe({
-      next: (response) => {
-        console.log('✅ Delivery options loaded:', response);
-        this.deliveryOptions = response;
-        this.loadingDeliveryOptions = false;
-
-        // Auto-select first available option
-        const firstAvailable = response.options.find(opt => opt.available);
-        if (firstAvailable) {
-          this.selectDeliveryOption(firstAvailable);
-        } else {
-          this.selectedDeliveryOption = null;
-        }
-      },
-      error: (err) => {
-        console.error('❌ Error loading delivery options:', err);
-        this.deliveryOptionsError = 'Fehler beim Laden der Lieferoptionen. Bitte versuchen Sie es erneut.';
-        this.loadingDeliveryOptions = false;
-        this.deliveryOptions = null;
-        this.selectedDeliveryOption = null;
+      if (!this.storeId) {
+          console.warn('Store ID not set, cannot load delivery options');
+          return;
       }
-    });
+
+      const shippingAddress = this.checkoutForm.get('shippingAddress');
+
+      const postalCode = shippingAddress?.get('postalCode')?.value?.trim();
+      const city = shippingAddress?.get('city')?.value?.trim();
+      const country = shippingAddress?.get('country')?.value?.trim();
+
+      if (!postalCode || !city || !country) {
+          this.deliveryOptions = null;
+          this.selectedDeliveryOption = null;
+          this.deliveryOptionsError = '';
+          return;
+      }
+
+      console.log('🚚 Loading delivery options for:', { postalCode, city, country });
+      this.loadingDeliveryOptions = true;
+      this.deliveryOptionsError = '';
+
+      this.deliveryService.getDeliveryOptions(this.storeId, postalCode, city, country).subscribe({
+          next: (response) => {
+              console.log('✅ Delivery options loaded:', response);
+              this.deliveryOptions = response;
+              this.loadingDeliveryOptions = false;
+
+              const firstAvailable = response.options.find(opt => opt.available);
+              if (firstAvailable) {
+                  this.selectDeliveryOption(firstAvailable);
+              } else {
+                  this.selectedDeliveryOption = null;
+              }
+          },
+          error: (err) => {
+              console.error('❌ Error loading delivery options:', err);
+              this.deliveryOptionsError = 'Fehler beim Laden der Lieferoptionen. Bitte versuchen Sie es erneut.';
+              this.loadingDeliveryOptions = false;
+              this.deliveryOptions = null;
+              this.selectedDeliveryOption = null;
+          }
+      });
   }
 
   /**
@@ -1931,13 +1932,17 @@ export class CheckoutComponent implements OnInit {
         console.log('📂 Stelle gespeicherte Formular-Daten wieder her');
 
         // Setze nur die Felder, die noch leer sind (gespeicherte Adressen haben Vorrang)
-        if (!this.checkoutForm.get('shippingAddress.firstName')?.value) {
-          this.checkoutForm.patchValue({
-            shippingAddress: formData.shippingAddress,
-            billingAddress: formData.billingAddress,
-            notes: formData.notes
-          });
-        }
+          if (!this.checkoutForm.get('shippingAddress.firstName')?.value) {
+              this.checkoutForm.patchValue({
+                  shippingAddress: formData.shippingAddress,
+                  billingAddress: formData.billingAddress,
+                  notes: formData.notes
+              });
+
+              setTimeout(() => {
+                  this.loadDeliveryOptions();
+              }, 0);
+          }
 
         this.sameAsShipping = formData.sameAsShipping;
 
