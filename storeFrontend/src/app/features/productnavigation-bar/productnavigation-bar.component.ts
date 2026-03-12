@@ -1,9 +1,10 @@
-import { Component, Input } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Observable } from 'rxjs';
 import { TranslatePipe } from 'src/app/core/pipes/translate.pipe';
 import { OrderVerificationCounterService } from 'src/app/core/services/order-verification-counter.service';
+import { StoreContextService } from 'src/app/core/services/store-context.service';
 
 interface NavTab {
     icon: string;
@@ -24,13 +25,20 @@ interface NavTab {
     templateUrl: './productnavigation-bar.component.html',
     styleUrl: './productnavigation-bar.component.scss'
 })
-export class ProductnavigationBarComponent {
-    @Input() storeId!: number;
-
+export class ProductnavigationBarComponent implements OnInit {
+    storeId$: Observable<number | null>;
     unverifiedCount$: Observable<number>;
 
-    constructor(private counterService: OrderVerificationCounterService) {
+    constructor(
+        private counterService: OrderVerificationCounterService,
+        private storeContext: StoreContextService
+    ) {
+        this.storeId$ = this.storeContext.storeId$;
         this.unverifiedCount$ = this.counterService.unverifiedCount$;
+    }
+
+    ngOnInit(): void {
+        // Bereits im Constructor initialisiert
     }
 
     navTabs: NavTab[] = [
@@ -53,19 +61,21 @@ export class ProductnavigationBarComponent {
         {
             icon: '🛒',
             label: 'navigation.orders',
-            route: (id) => ['/dashboard/stores', id, 'orders']
+            route: (id) => ['/dashboard/stores', id, 'orders'],
+            exact: true
         },
         {
             icon: '📞',
             label: 'COD Verifizierung',
             route: (id) => ['/dashboard/stores', id, 'orders', 'verification'],
+            exact: true,
             showBadge: true
         },
-        {
+        /*{
             icon: '🚚',
             label: 'navigation.delivery',
             route: (id) => ['/dashboard/stores', id, 'delivery']
-        },
+        },*/
         {
             icon: '🏠',
             label: 'navigation.homepage',

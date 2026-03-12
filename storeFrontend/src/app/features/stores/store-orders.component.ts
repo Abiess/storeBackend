@@ -16,7 +16,6 @@ import { toDate } from '../../core/utils/date.utils';
     <div class="store-orders-container">
       <!-- Einheitliche Navigation -->
       <app-store-navigation 
-        [storeId]="storeId" 
         [currentPage]="'navigation.orders' | translate">
       </app-store-navigation>
 

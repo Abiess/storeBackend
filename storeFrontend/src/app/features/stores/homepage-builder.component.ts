@@ -6,22 +6,19 @@ import { HomepageSectionService } from '@app/core/services/homepage-section.serv
 import { HomepageSection, SectionType, HeroSectionSettings, FeaturedProductsSettings, CategoriesSettings, BannerSettings, NewsletterSettings } from '@app/core/models';
 import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
 import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
+import {StoreNavigationComponent} from "@app/shared/components/store-navigation.component";
 
 @Component({
   selector: 'app-homepage-builder',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent],
+    imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent, StoreNavigationComponent],
   template: `
     <div class="homepage-builder">
-      <app-page-header
-        [title]="'homepage.builder'"
-        [subtitle]="'homepage.subtitle'"
-        [breadcrumbs]="breadcrumbItems"
-        [showBackButton]="true"
-        [actions]="headerActions"
-      ></app-page-header>
-
+     
+        <app-store-navigation currentPage="HomBuilder
+" ></app-store-navigation>
       <div class="builder-content">
+        
         <!-- Section List -->
         <div class="sections-list">
           <div class="list-header">

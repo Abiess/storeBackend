@@ -3,15 +3,16 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { OrderVerificationCounterService } from '@app/core/services/order-verification-counter.service';
+import { StoreContextService } from '@app/core/services/store-context.service';
 import { Observable } from 'rxjs';
 import {ProductnavigationBarComponent} from "@app/features/productnavigation-bar/productnavigation-bar.component";
 
 @Component({
-  selector: 'app-store-navigation',
-  standalone: true,
+    selector: 'app-store-navigation',
+    standalone: true,
     imports: [CommonModule, RouterModule, TranslatePipe, ProductnavigationBarComponent],
-  template: `
-    <div class="store-navigation">
+    template: `
+    <div class="store-navigation" *ngIf="storeId$ | async as storeId">
       <!-- Breadcrumb -->
       <nav class="breadcrumb">
         <a [routerLink]="['/dashboard']">{{ 'navigation.dashboard' | translate }}</a>
@@ -22,13 +23,11 @@ import {ProductnavigationBarComponent} from "@app/features/productnavigation-bar
       </nav>
 
       <!-- Navigation Tabs -->
-        <app-productnavigation-bar
-                [storeId]="storeId">
-        </app-productnavigation-bar>
+        <app-productnavigation-bar></app-productnavigation-bar>
     
     </div>
   `,
-  styles: [`
+    styles: [`
     .store-navigation {
       margin-bottom: 2rem;
     }
@@ -229,14 +228,19 @@ import {ProductnavigationBarComponent} from "@app/features/productnavigation-bar
   `]
 })
 export class StoreNavigationComponent implements OnInit {
-  @Input() storeId!: number;
-  @Input() currentPage: string = '';
+    @Input() currentPage: string = '';
 
-  unverifiedCount$!: Observable<number>;
+    storeId$: Observable<number | null>;
+    unverifiedCount$!: Observable<number>;
 
-  constructor(private counterService: OrderVerificationCounterService) {}
+    constructor(
+        private counterService: OrderVerificationCounterService,
+        private storeContext: StoreContextService
+    ) {
+        this.storeId$ = this.storeContext.storeId$;
+    }
 
-  ngOnInit(): void {
-    this.unverifiedCount$ = this.counterService.unverifiedCount$;
-  }
+    ngOnInit(): void {
+        this.unverifiedCount$ = this.counterService.unverifiedCount$;
+    }
 }

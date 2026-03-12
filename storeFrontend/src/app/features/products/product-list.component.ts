@@ -14,7 +14,6 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
     <div class="product-list-container">
       <!-- Einheitliche Navigation -->
       <app-store-navigation 
-        [storeId]="storeId" 
         [currentPage]="'navigation.products' | translate">
       </app-store-navigation>
 
@@ -32,8 +31,8 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
       <div *ngIf="!loading && products.length === 0" class="empty-state">
         <div class="empty-icon">📦</div>
-        <h2>{{ 'product.noProducts' | translate }}</h2>
-        <p>{{ 'product.noProductsDesc' | translate }}</p>
+        <h2>{{ 'storeDetail.noProducts' | translate }}</h2>
+        <p>{{ 'storeDetail.' | translate }}</p>
         <button class="btn-primary" (click)="createProduct()">
           {{ 'product.create' | translate }}
         </button>

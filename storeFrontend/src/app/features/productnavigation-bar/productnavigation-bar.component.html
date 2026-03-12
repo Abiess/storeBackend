@@ -1,4 +1,4 @@
-<nav class="nav-tabs">
+<nav class="nav-tabs" *ngIf="storeId$ | async as storeId">
 
     <a
             *ngFor="let tab of navTabs"

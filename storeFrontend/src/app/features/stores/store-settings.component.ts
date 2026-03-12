@@ -17,7 +17,6 @@ import { BrandingEditorComponent } from './branding-editor.component';
     <div class="store-settings-container">
       <!-- Einheitliche Navigation -->
       <app-store-navigation 
-        [storeId]="storeId" 
         [currentPage]="'navigation.settings' | translate">
       </app-store-navigation>
 
@@ -41,19 +40,19 @@ import { BrandingEditorComponent } from './branding-editor.component';
             class="tab-button" 
             [class.active]="activeTab === 'branding'"
             (click)="activeTab = 'branding'">
-            {{ 'settings.branding' | translate }}
+            {{ 'settings.branding.title' | translate }}
           </button>
           <button 
             class="tab-button" 
             [class.active]="activeTab === 'domain'"
             (click)="activeTab = 'domain'">
-            {{ 'settings.domain' | translate }}
+            {{ 'settings.domain.title' | translate }}
           </button>
           <button 
             class="tab-button" 
             [class.active]="activeTab === 'advanced'"
             (click)="activeTab = 'advanced'">
-            {{ 'settings.advanced' | translate }}
+            {{ 'settings.advanced.title' | translate }}
           </button>
         </div>
 
@@ -109,13 +108,13 @@ import { BrandingEditorComponent } from './branding-editor.component';
 
         <!-- Slider Settings -->
         <div class="tab-content" *ngIf="activeTab === 'slider'">
-          <app-store-slider-editor [storeId]="storeId"></app-store-slider-editor>
+          <app-store-slider-editor></app-store-slider-editor>
         </div>
 
         <!-- Branding Settings -->
         <!-- Branding Settings -->
         <div class="tab-content" *ngIf="activeTab === 'branding'">
-          <app-branding-editor [storeId]="storeId"></app-branding-editor>
+          <app-branding-editor></app-branding-editor>
         </div>
 
         <!-- Domain Settings -->

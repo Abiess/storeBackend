@@ -19,7 +19,7 @@ import { DeliveryZoneDialogComponent } from './dialogs/delivery-zone-dialog.comp
   standalone: true,
   imports: [CommonModule, MatDialogModule, StoreNavigationComponent],
   template: `
-    <app-store-navigation [storeId]="storeId" currentPage="Lieferung"></app-store-navigation>
+    <app-store-navigation currentPage="Lieferung"></app-store-navigation>
     
     <div class="delivery-management">
       <div class="header">

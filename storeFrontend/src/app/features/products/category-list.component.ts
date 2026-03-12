@@ -27,7 +27,6 @@ interface Category {
     <div class="category-list-container">
       <!-- Einheitliche Navigation -->
       <app-store-navigation 
-        [storeId]="storeId" 
         [currentPage]="'navigation.categories' | translate">
       </app-store-navigation>
 

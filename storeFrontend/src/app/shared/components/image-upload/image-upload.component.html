@@ -1,0 +1,74 @@
+<div class="upload-wrapper">
+  <!-- Upload-Bereich -->
+  <div class="upload-area" (dragover)="$event.preventDefault()" (drop)="onDrop($event)">
+    <input
+      #fileInput
+      type="file"
+      accept="image/*"
+      [attr.multiple]="multiple ? '' : null"
+      (change)="onFileSelected($event)"
+      style="display: none"
+    />
+
+    <button
+      type="button"
+      class="btn-upload"
+      (click)="fileInput.click()"
+      [disabled]="uploading"
+    >
+      <span class="upload-icon">📁</span>
+      {{ uploading ? 'Wird hochgeladen…' : uploadLabel }}
+    </button>
+
+    <p class="upload-hint">PNG, JPG, WEBP · max. {{ maxSizeMb }}MB{{ multiple ? ' · Mehrere Dateien möglich' : '' }}</p>
+  </div>
+
+  <!-- Bildvorschau -->
+  <div class="images-preview" *ngIf="images.length > 0">
+    <div
+      *ngFor="let img of images; let i = index"
+      class="image-preview-card"
+      [class.primary]="img.isPrimary"
+    >
+      <div class="image-container">
+        <img [src]="img.preview || img.url" [alt]="img.filename" />
+
+        <!-- Upload-Fortschritt -->
+        <div class="upload-progress" *ngIf="img.uploadProgress !== undefined && img.uploadProgress < 100">
+          <div class="progress-bar" [style.width.%]="img.uploadProgress"></div>
+          <span class="progress-text">{{ img.uploadProgress }}%</span>
+        </div>
+
+        <!-- Primär-Badge -->
+        <div class="primary-badge" *ngIf="img.isPrimary && showPrimary">
+          ⭐ Hauptbild
+        </div>
+      </div>
+
+      <div class="image-actions">
+        <button
+          *ngIf="showPrimary"
+          type="button"
+          class="btn-icon"
+          (click)="setPrimary(i)"
+          [disabled]="img.isPrimary"
+          title="Als Hauptbild setzen"
+        >⭐</button>
+        <button
+          type="button"
+          class="btn-icon btn-danger"
+          (click)="remove(i)"
+          title="Entfernen"
+        >🗑️</button>
+      </div>
+
+      <p class="image-name">{{ img.filename }}</p>
+    </div>
+  </div>
+
+  <!-- Leer-Hinweis -->
+  <div class="upload-empty" *ngIf="images.length === 0">
+    <p>{{ emptyLabel }}</p>
+  </div>
+</div>
+

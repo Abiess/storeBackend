@@ -14,16 +14,25 @@ import { toDate } from '../../core/utils/date.utils';
   standalone: true,
   imports: [CommonModule, FormsModule, StoreNavigationComponent],
   template: `
-    <app-store-navigation [storeId]="storeId" currentPage="COD Verifizierung"></app-store-navigation>
-    
-    <div class="verification-center">
-      <div class="header">
-        <h1>📞 COD Bestellungen Verifizierung</h1>
-        <button class="btn-refresh" (click)="loadOrders()" [disabled]="loading">
-          🔄 Aktualisieren
-        </button>
-      </div>
 
+
+      <div class="verification-center">
+
+          <app-store-navigation
+                  currentPage="COD Verifizierung">
+          </app-store-navigation>
+
+          <div class="header">
+              <h1>📞 COD Bestellungen Verifizierung</h1>
+
+              <button
+                      class="btn-refresh"
+                      (click)="loadOrders()"
+                      [disabled]="loading">
+
+                  🔄 Aktualisieren
+              </button>
+          </div>
       <!-- Stats Cards -->
       <div class="stats-grid" *ngIf="!loading">
         <div class="stat-card warning">
@@ -262,7 +271,7 @@ import { toDate } from '../../core/utils/date.utils';
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 30px;
+      margin: 20px 0 30px;
     }
 
     .header h1 {

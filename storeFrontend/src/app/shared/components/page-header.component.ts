@@ -31,8 +31,7 @@ import { BreadcrumbComponent, BreadcrumbItem } from './breadcrumb.component';
           *ngIf="showBackButton" 
           class="btn btn-back" 
           (click)="handleBack()"
-          [attr.aria-label]="'common.back' | translate"
-        >
+          [attr.aria-label]="'common.back' | translate">
           <span class="back-icon">←</span>
           <span class="back-text">{{ backButtonText || ('common.back' | translate) }}</span>
         </button>

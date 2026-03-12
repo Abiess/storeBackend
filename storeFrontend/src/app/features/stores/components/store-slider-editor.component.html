@@ -1,0 +1,152 @@
+<div class="slider-editor">
+  <h2>🖼️ Slider Verwaltung</h2>
+
+  <!-- ─── Einstellungen ─────────────────────────────────── -->
+  <div class="card settings-card">
+    <h3>⚙️ Slider Einstellungen</h3>
+
+    <div class="form-group">
+      <label>Anzeigemodus</label>
+      <select [(ngModel)]="settings.overrideMode" (change)="saveSettings()">
+        <option value="DEFAULT_ONLY">Nur Standard-Bilder</option>
+        <option value="OWNER_ONLY">Nur eigene Bilder</option>
+        <option value="MIXED">Gemischt</option>
+      </select>
+    </div>
+
+    <div class="form-row checkboxes">
+      <label class="checkbox-label">
+        <input type="checkbox" [(ngModel)]="settings.autoplay" (change)="saveSettings()">
+        Autoplay
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" [(ngModel)]="settings.loopEnabled" (change)="saveSettings()">
+        Endlosschleife
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" [(ngModel)]="settings.showDots" (change)="saveSettings()">
+        Punkte anzeigen
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" [(ngModel)]="settings.showArrows" (change)="saveSettings()">
+        Pfeile anzeigen
+      </label>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Slide-Dauer (ms)</label>
+        <input type="number" [(ngModel)]="settings.durationMs" (change)="saveSettings()" min="1000" max="30000" step="500">
+      </div>
+      <div class="form-group">
+        <label>Übergang (ms)</label>
+        <input type="number" [(ngModel)]="settings.transitionMs" (change)="saveSettings()" min="100" max="3000" step="100">
+      </div>
+    </div>
+
+    <div class="save-indicator" *ngIf="isSaving">Speichern…</div>
+    <div class="save-indicator success" *ngIf="saveSuccess">✓ Gespeichert</div>
+  </div>
+
+  <!-- ─── Upload (gleicher Look wie ImageUploadComponent) ─ -->
+  <div class="card">
+    <h3>📤 Neues Bild hochladen</h3>
+
+    <div class="upload-wrapper">
+      <!-- Drop-Zone -->
+      <div class="upload-area" (dragover)="$event.preventDefault()" (drop)="onDropFile($event)">
+        <input
+          #sliderFileInput
+          type="file"
+          accept="image/*"
+          (change)="onFileSelected($event)"
+          style="display:none"
+        />
+        <button type="button" class="btn-upload" (click)="sliderFileInput.click()" [disabled]="isUploading">
+          <span class="upload-icon">📁</span>
+          {{ isUploading ? 'Wird hochgeladen…' : 'Bild auswählen' }}
+        </button>
+        <p class="upload-hint">PNG, JPG, WEBP · max. 5 MB</p>
+      </div>
+
+      <!-- Ausgewählte Datei + Alt-Text -->
+      <div class="selected-file-row" *ngIf="selectedFile">
+        <span class="selected-name">📎 {{ selectedFile.name }}</span>
+        <input
+          type="text"
+          [(ngModel)]="newImageAltText"
+          placeholder="Alternativer Text (optional)"
+          class="alt-text-field"
+        />
+        <button type="button" class="btn-confirm" (click)="uploadSliderImage()" [disabled]="isUploading">
+          {{ isUploading ? 'Hochladen…' : '✓ Hochladen' }}
+        </button>
+        <button type="button" class="btn-cancel" (click)="clearSelection()">✕</button>
+      </div>
+
+      <div class="upload-empty" *ngIf="!selectedFile">
+        <p>Wählen Sie ein Bild oder ziehen Sie es in den Bereich.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Bilderliste ─────────────────────────────────────── -->
+  <div class="card">
+    <h3>🗂️ Slider-Bilder ({{ images.length }})</h3>
+    <p class="drag-hint">Ziehen Sie Bilder, um die Reihenfolge zu ändern.</p>
+
+    <div cdkDropList class="images-list" (cdkDropListDropped)="onDrop($event)">
+      <div
+        *ngFor="let image of images"
+        class="image-item"
+        [class.inactive]="!image.isActive"
+        cdkDrag
+      >
+        <!-- Drag-Handle -->
+        <div class="drag-handle" cdkDragHandle>☰</div>
+
+        <!-- Thumbnail -->
+        <div class="thumb-wrap">
+          <img [src]="image.imageUrl" [alt]="image.altText || 'Slider Bild'" />
+        </div>
+
+        <!-- Info -->
+        <div class="image-info">
+          <span class="badge" [class.badge-default]="image.imageType === 'DEFAULT'" [class.badge-owner]="image.imageType === 'OWNER_UPLOAD'">
+            {{ image.imageType === 'DEFAULT' ? 'Standard' : 'Eigenes Bild' }}
+          </span>
+          <span class="order-label">Position {{ image.displayOrder + 1 }}</span>
+          <input
+            type="text"
+            [(ngModel)]="image.altText"
+            (change)="updateImage(image)"
+            placeholder="Alt-Text"
+            class="alt-text-input"
+          />
+        </div>
+
+        <!-- Aktionen -->
+        <div class="image-actions">
+          <button
+            type="button"
+            class="btn-icon"
+            (click)="toggleActive(image)"
+            [title]="image.isActive ? 'Deaktivieren' : 'Aktivieren'"
+          >{{ image.isActive ? '👁️' : '🚫' }}</button>
+          <button
+            type="button"
+            class="btn-icon btn-danger"
+            *ngIf="image.imageType === 'OWNER_UPLOAD'"
+            (click)="deleteImage(image)"
+            title="Löschen"
+          >🗑️</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="upload-empty" *ngIf="images.length === 0">
+      <p>Keine Bilder vorhanden. Laden Sie eigene Bilder hoch!</p>
+    </div>
+  </div>
+</div>
+

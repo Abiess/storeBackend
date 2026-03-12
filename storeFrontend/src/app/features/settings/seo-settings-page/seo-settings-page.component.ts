@@ -15,26 +15,28 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { SeoApiService, SeoSettingsDTO } from '../../../core/services/seo-api.service';
 import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
 import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
+import {StoreNavigationComponent} from "@app/shared/components/store-navigation.component";
 
 @Component({
   selector: 'app-seo-settings-page',
   standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    FormsModule,
-    MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-    MatIconModule,
-    MatProgressSpinnerModule,
-    MatSnackBarModule,
-    MatCheckboxModule,
-    MatChipsModule,
-    MatSlideToggleModule,
-    PageHeaderComponent
-  ],
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        FormsModule,
+        MatCardModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatButtonModule,
+        MatIconModule,
+        MatProgressSpinnerModule,
+        MatSnackBarModule,
+        MatCheckboxModule,
+        MatChipsModule,
+        MatSlideToggleModule,
+        PageHeaderComponent,
+        StoreNavigationComponent
+    ],
   templateUrl: './seo-settings-page.component.html',
   styleUrls: ['./seo-settings-page.component.scss']
 })

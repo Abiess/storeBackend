@@ -1,13 +1,15 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ProductService } from '@app/core/services/product.service';
 import { DropshippingService } from '@app/core/services/dropshipping.service';
+import { StoreContextService } from '@app/core/services/store-context.service';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { ProductVariant } from '@app/core/models';
 import { DropshippingSource, formatMargin } from '@app/core/models/dropshipping.model';
 import { SupplierLinkFormComponent } from './supplier-link-form.component';
+import { Subscription } from 'rxjs';
 
 interface ProductOption {
   id?: number;
@@ -648,9 +650,11 @@ interface ProductOption {
     }
   `]
 })
-export class ProductVariantsManagerComponent implements OnInit {
+export class ProductVariantsManagerComponent implements OnInit, OnDestroy {
   @Input() productId!: number;
-  @Input() storeId!: number;
+  
+  private storeId: number | null = null;
+  private storeIdSubscription?: Subscription;
 
   options: ProductOption[] = [];
   variants: ProductVariant[] = [];
@@ -669,12 +673,22 @@ export class ProductVariantsManagerComponent implements OnInit {
   constructor(
     private productService: ProductService,
     private dropshippingService: DropshippingService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private storeContext: StoreContextService
   ) {}
 
   ngOnInit() {
-    this.loadExistingData();
-    this.loadSupplierLinks();
+    this.storeIdSubscription = this.storeContext.storeId$.subscribe(id => {
+      if (id !== null) {
+        this.storeId = id;
+        this.loadExistingData();
+        this.loadSupplierLinks();
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    this.storeIdSubscription?.unsubscribe();
   }
 
   loadExistingData() {
@@ -746,6 +760,11 @@ export class ProductVariantsManagerComponent implements OnInit {
       return;
     }
 
+    if (this.storeId === null) {
+      this.errorMessage = 'Fehler: Store-Kontext nicht verfügbar';
+      return;
+    }
+
     this.generating = true;
     this.errorMessage = '';
     this.successMessage = '';
@@ -775,16 +794,18 @@ export class ProductVariantsManagerComponent implements OnInit {
   }
 
   saveOptions() {
+    if (this.storeId === null) return;
+
     // Speichere oder aktualisiere jede Option
     this.options.forEach((option, index) => {
       option.sortOrder = index;
 
-      if (option.id) {
+      if (option.id && this.storeId !== null) {
         // Update existing
         this.productService.updateProductOption(this.storeId, this.productId, option.id, option).subscribe({
           error: (err) => console.error('Error updating option:', err)
         });
-      } else {
+      } else if (this.storeId !== null) {
         // Create new
         this.productService.createProductOption(this.storeId, this.productId, option).subscribe({
           next: (created) => {
@@ -797,21 +818,28 @@ export class ProductVariantsManagerComponent implements OnInit {
   }
 
   saveAllVariants() {
+    if (this.storeId === null) {
+      this.errorMessage = 'Fehler: Store-Kontext nicht verfügbar';
+      return;
+    }
+
     this.saving = true;
     this.errorMessage = '';
     this.successMessage = '';
 
+    const storeId = this.storeId; // Capture for use in closures
+
     const updates = this.variants.map((variant) => {
       if (variant.id) {
         return this.productService.updateProductVariant(
-          this.storeId,
+          storeId,
           this.productId,
           variant.id,
           variant
         );
       } else {
         return this.productService.createProductVariant(
-          this.storeId,
+          storeId,
           this.productId,
           variant
         );
@@ -835,7 +863,7 @@ export class ProductVariantsManagerComponent implements OnInit {
   removeVariant(index: number) {
     const variant = this.variants[index];
 
-    if (variant.id) {
+    if (variant.id && this.storeId !== null) {
       // Lösche vom Server
       this.productService.deleteProductVariant(this.storeId, this.productId, variant.id).subscribe({
         next: () => {

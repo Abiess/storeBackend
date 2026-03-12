@@ -6,27 +6,20 @@ import { ProductService } from '@app/core/services/product.service';
 import { CategoryService } from '@app/core/services/category.service';
 import { MediaService } from '@app/core/services/media.service';
 import { ProductOptionService } from '@app/core/services/product-option.service';
+import { StoreContextService } from '@app/core/services/store-context.service';
 import { Category, ProductStatus } from '@app/core/models';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { TranslationService } from '@app/core/services/translation.service';
 import { ProductVariantsManagerComponent } from './product-variants-manager.component';
 import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
 import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
-
-interface UploadedImage {
-  mediaId: number;
-  url: string;
-  filename: string;
-  file?: File;
-  preview?: string;
-  uploadProgress?: number;
-  isPrimary: boolean;
-}
+import { ImageUploadComponent, UploadedImage } from '@app/shared/components/image-upload/image-upload.component';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-product-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, TranslatePipe, ProductVariantsManagerComponent, PageHeaderComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, TranslatePipe, ProductVariantsManagerComponent, PageHeaderComponent, ImageUploadComponent],
   template: `
     <div class="product-form-container">
       <app-page-header
@@ -142,79 +135,16 @@ interface UploadedImage {
         <!-- Foto-Upload Bereich (Tab: Media) -->
         <div class="form-card" *ngIf="activeTab === 'media'">
           <h2>📷 {{ 'product.images' | translate }}</h2>
-          
-          <div class="upload-area">
-            <input 
-              #fileInput
-              type="file" 
-              accept="image/*"
-              multiple
-              (change)="onFileSelected($event)"
-              style="display: none"
-            />
-            
-            <button 
-              type="button" 
-              class="btn-upload"
-              (click)="fileInput.click()"
-              [disabled]="uploading"
-            >
-              <span class="upload-icon">📁</span>
-              {{ uploading ? ('common.loading' | translate) : ('media.uploadImages' | translate) }}
-            </button>
-            
-            <p class="upload-hint">PNG, JPG, WEBP {{ 'messages.maxFileSize' | translate:  {size: '5MB'} }}</p>
-          </div>
 
-          <!-- Bildvorschau -->
-          <div class="images-preview" *ngIf="uploadedImages.length > 0">
-            <div 
-              *ngFor="let img of uploadedImages; let i = index" 
-              class="image-preview-card"
-              [class.primary]="img.isPrimary"
-            >
-              <div class="image-container">
-                <img [src]="img.preview || img.url" [alt]="img.filename" />
-                
-                <!-- Upload-Fortschritt -->
-                <div class="upload-progress" *ngIf="img.uploadProgress !== undefined && img.uploadProgress < 100">
-                  <div class="progress-bar" [style.width.%]="img.uploadProgress"></div>
-                  <span class="progress-text">{{ img.uploadProgress }}%</span>
-                </div>
-                
-                <!-- Primär-Badge -->
-                <div class="primary-badge" *ngIf="img.isPrimary">
-                  ⭐ {{ 'media.primaryImage' | translate }}
-                </div>
-              </div>
-              
-              <div class="image-actions">
-                <button 
-                  type="button" 
-                  class="btn-icon"
-                  (click)="setPrimaryImage(i)"
-                  [disabled]="img.isPrimary"
-                  [title]="'media.setPrimary' | translate"
-                >
-                  ⭐
-                </button>
-                <button 
-                  type="button" 
-                  class="btn-icon btn-danger"
-                  (click)="removeImage(i)"
-                  [title]="'common.delete' | translate"
-                >
-                  🗑️
-                </button>
-              </div>
-              
-              <p class="image-name">{{ img.filename }}</p>
-            </div>
-          </div>
-
-          <div class="upload-info" *ngIf="uploadedImages.length === 0">
-            <p>{{ 'media.noMedia' | translate }}</p>
-          </div>
+          <app-image-upload
+            mediaType="PRODUCT_IMAGE"
+            [multiple]="true"
+            [showPrimary]="true"
+            uploadLabel="{{ 'media.uploadImages' | translate }}"
+            emptyLabel="{{ 'media.noMedia' | translate }}"
+            [(images)]="uploadedImages"
+            (uploadError)="errorMessage = $event"
+          ></app-image-upload>
         </div>
 
         <!-- Varianten Konfiguration (Tab: Varianten) -->
@@ -227,8 +157,7 @@ interface UploadedImage {
               💡 Verwalten Sie hier Ihre Produktvarianten. Passen Sie Preise, SKUs und Lagerbestände individuell an.
             </p>
             <app-product-variants-manager 
-              [productId]="productId" 
-              [storeId]="storeId">
+              [productId]="productId">
             </app-product-variants-manager>
           </div>
           
@@ -452,188 +381,6 @@ interface UploadedImage {
       font-size: 1.25rem;
     }
 
-    /* Upload-Bereich */
-    .upload-area {
-      text-align: center;
-      padding: 2rem;
-      border: 2px dashed #e0e0e0;
-      border-radius: 12px;
-      background: #fafafa;
-      transition: all 0.3s;
-    }
-
-    .upload-area:hover {
-      border-color: #667eea;
-      background: #f5f7ff;
-    }
-
-    .btn-upload {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-      border: none;
-      padding: 0.875rem 2rem;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .btn-upload:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-    }
-
-    .btn-upload:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-
-    .upload-icon {
-      font-size: 1.25rem;
-    }
-
-    .upload-hint {
-      margin: 0.75rem 0 0;
-      color: #666;
-      font-size: 0.875rem;
-    }
-
-    /* Bildvorschau */
-    .images-preview {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 1rem;
-      margin-top: 1.5rem;
-    }
-
-    .image-preview-card {
-      border: 2px solid #e0e0e0;
-      border-radius: 12px;
-      overflow: hidden;
-      transition: all 0.3s;
-      background: white;
-    }
-
-    .image-preview-card.primary {
-      border-color: #ffc107;
-      box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.2);
-    }
-
-    .image-preview-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-
-    .image-container {
-      position: relative;
-      width: 100%;
-      padding-top: 100%;
-      background: #f8f9fa;
-    }
-
-    .image-container img {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .upload-progress {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: rgba(0,0,0,0.7);
-      padding: 0.5rem;
-    }
-
-    .progress-bar {
-      height: 4px;
-      background: #667eea;
-      border-radius: 2px;
-      transition: width 0.3s;
-    }
-
-    .progress-text {
-      color: white;
-      font-size: 0.75rem;
-      font-weight: 600;
-      display: block;
-      text-align: center;
-      margin-top: 0.25rem;
-    }
-
-    .primary-badge {
-      position: absolute;
-      top: 0.5rem;
-      right: 0.5rem;
-      background: #ffc107;
-      color: #333;
-      padding: 0.25rem 0.75rem;
-      border-radius: 20px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    }
-
-    .image-actions {
-      display: flex;
-      gap: 0.5rem;
-      padding: 0.5rem;
-      border-top: 1px solid #e0e0e0;
-      background: #f8f9fa;
-    }
-
-    .btn-icon {
-      flex: 1;
-      background: white;
-      border: 1px solid #ddd;
-      padding: 0.5rem;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 1.25rem;
-      transition: all 0.2s;
-    }
-
-    .btn-icon:hover:not(:disabled) {
-      background: #667eea;
-      border-color: #667eea;
-      transform: scale(1.1);
-    }
-
-    .btn-icon:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .btn-icon.btn-danger:hover:not(:disabled) {
-      background: #dc3545;
-      border-color: #dc3545;
-    }
-
-    .image-name {
-      margin: 0;
-      padding: 0.5rem;
-      font-size: 0.75rem;
-      color: #666;
-      text-align: center;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .upload-info {
-      text-align: center;
-      padding: 2rem;
-      color: #999;
-      font-style: italic;
-    }
 
     .form-group {
       margin-bottom: 1.5rem;
@@ -995,11 +742,10 @@ interface UploadedImage {
 export class ProductFormComponent implements OnInit, OnDestroy {
   productForm: FormGroup;
   categories: Category[] = [];
-  storeId!: number;
+  private storeId: number | null = null;
   productId?: number;
   isEditMode = false;
   saving = false;
-  uploading = false;
   successMessage = '';
   errorMessage = '';
   headerActions: HeaderAction[] = [];
@@ -1024,6 +770,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     { id: 'pricing' as const, label: 'Preis & Lager', icon: '💰' }
   ];
 
+  private storeIdSubscription?: Subscription;
 
   constructor(
     private fb: FormBuilder,
@@ -1033,7 +780,8 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     private categoryService: CategoryService,
     private mediaService: MediaService,
     private translationService: TranslationService,
-    private productOptionService: ProductOptionService
+    private productOptionService: ProductOptionService,
+    private storeContext: StoreContextService
   ) {
     this.productForm = this.fb.group({
       title: ['', Validators.required],
@@ -1047,26 +795,29 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-   // Unterstütze beide Route-Formate:
-    // /stores/:id/products/new und /dashboard/stores/:id/products/new
-    const idParam = this.route.snapshot.paramMap.get('id');
-    const storeIdParam = this.route.snapshot.paramMap.get('storeId');
-
-    // Verwende storeId wenn vorhanden, sonst id
-    this.storeId = storeIdParam ? Number(storeIdParam) : Number(idParam);
+    // storeId aus Context Service abonnieren
+    this.storeIdSubscription = this.storeContext.storeId$.subscribe(id => {
+      if (id !== null) {
+        this.storeId = id;
+        this.initializeComponent();
+      }
+    });
 
     // productId ist nur gesetzt bei Edit-Routen (/products/:productId/edit)
     const productIdParam = this.route.snapshot.paramMap.get('productId');
     this.productId = productIdParam ? Number(productIdParam) : undefined;
+    this.isEditMode = !!this.productId;
+  }
+
+  private initializeComponent(): void {
+    if (this.storeId === null) return;
 
     console.log('📦 Product Form Init:', {
       storeId: this.storeId,
       productId: this.productId,
-      isEditMode: !!this.productId,
+      isEditMode: this.isEditMode,
       route: window.location.pathname
     });
-
-    this.isEditMode = !!this.productId;
 
     // Kategorien immer laden (auch wenn von Kategorie-Erstellung zurückgekehrt)
     this.loadCategories();
@@ -1092,6 +843,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.storeIdSubscription?.unsubscribe();
     // Event Listener aufräumen
     window.removeEventListener('focus', () => {
       this.loadCategories();
@@ -1099,6 +851,8 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   }
 
   loadCategories(): void {
+    if (this.storeId === null) return;
+
     this.categoryService.getCategories(this.storeId).subscribe({
       next: (categories) => {
         this.categories = categories;
@@ -1111,6 +865,8 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   }
 
   loadProduct(productId: number): void {
+    if (this.storeId === null) return;
+
     this.productService.getProduct(this.storeId, productId).subscribe({
       next: (product) => {
         this.productForm.patchValue({
@@ -1130,6 +886,8 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   }
 
   loadProductImages(productId: number): void {
+    if (this.storeId === null) return;
+
     this.mediaService.getProductMedia(this.storeId, productId).subscribe({
       next: (media) => {
         console.log('📸 Loaded product media:', media);
@@ -1161,101 +919,17 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     });
   }
 
-  onFileSelected(event: any): void {
-    const files: FileList = event.target.files;
-    if (!files || files.length === 0) return;
-
-    this.uploading = true;
-
-    Array.from(files).forEach((file, index) => {
-      // Validierung
-      if (!file.type.startsWith('image/')) {
-        this.errorMessage = this.translationService.translate('media.onlyImages');
-        return;
-      }
-
-      if (file.size > 5 * 1024 * 1024) {
-        this.errorMessage = this.translationService.translate('media.maxFileSize');
-        return;
-      }
-
-      // Vorschau erstellen
-      const reader = new FileReader();
-      reader.onload = (e: any) => {
-        const tempImage: UploadedImage = {
-          mediaId: 0,
-          url: '',
-          filename: file.name,
-          file: file,
-          preview: e.target.result,
-          uploadProgress: 0,
-          isPrimary: this.uploadedImages.length === 0 && index === 0
-        };
-
-        this.uploadedImages.push(tempImage);
-
-        // Upload starten
-        this.uploadImage(file, this.uploadedImages.length - 1);
-      };
-      reader.readAsDataURL(file);
-    });
-
-    // Input zurücksetzen
-    event.target.value = '';
-  }
-
-  uploadImage(file: File, index: number): void {
-    this.mediaService.uploadMediaWithProgress(this.storeId, file, 'PRODUCT_IMAGE').subscribe({
-      next: (event) => {
-        if (event.progress !== undefined) {
-          this.uploadedImages[index].uploadProgress = event.progress;
-        }
-
-        if (event.response) {
-          this.uploadedImages[index].mediaId = event.response.mediaId;
-          this.uploadedImages[index].url = event.response.url;
-          this.uploadedImages[index].uploadProgress = 100;
-
-          console.log('✅ Bild hochgeladen:', event.response);
-        }
-      },
-      error: (error) => {
-        console.error('❌ Upload-Fehler:', error);
-        this.errorMessage = this.translationService.translate('media.uploadError');
-        this.uploadedImages.splice(index, 1);
-      },
-      complete: () => {
-        this.uploading = false;
-      }
-    });
-  }
-
-  setPrimaryImage(index: number): void {
-    this.uploadedImages.forEach((img, i) => {
-      img.isPrimary = i === index;
-    });
-  }
-
-  removeImage(index: number): void {
-    const confirmMessage = this.translationService.translate('media.confirmDelete');
-    if (confirm(confirmMessage)) {
-      const removedImage = this.uploadedImages[index];
-
-      // Falls es das Hauptbild war, setze ein neues
-      if (removedImage.isPrimary && this.uploadedImages.length > 1) {
-        const newIndex = index === 0 ? 1 : 0;
-        this.uploadedImages[newIndex].isPrimary = true;
-      }
-
-      this.uploadedImages.splice(index, 1);
-    }
-  }
 
   onSubmit(): void {
     if (this.productForm.invalid) {
       Object.keys(this.productForm.controls).forEach(key => {
         this.productForm.get(key)?.markAsTouched();
       });
+      return;
+    }
+
+    if (this.storeId === null) {
+      this.errorMessage = 'Fehler: Store-Kontext nicht verfügbar';
       return;
     }
 
@@ -1276,6 +950,8 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   }
 
   createProduct(formData: any): void {
+    if (this.storeId === null) return;
+
     // Bereite Varianten-Optionen vor
     const variantOptions = this.variantOptions
       .filter(opt => opt.name.trim() && opt.values.length > 0)
@@ -1313,6 +989,8 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   }
 
   updateProduct(formData: any): void {
+    if (this.storeId === null) return;
+
     // Stelle sicher, dass alle erforderlichen Felder vorhanden sind
     const updateData = {
       title: formData.title,
@@ -1348,6 +1026,8 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   }
 
   linkImagesToProduct(productId: number): void {
+    if (this.storeId === null) return;
+
     let completed = 0;
     const total = this.uploadedImages.filter(img => img.mediaId > 0).length;
 
@@ -1359,7 +1039,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     }
 
     this.uploadedImages.forEach((img, index) => {
-      if (img.mediaId > 0) {
+      if (img.mediaId > 0 && this.storeId !== null) {
         this.mediaService.addMediaToProduct(this.storeId, productId, {
           mediaId: img.mediaId,
           isPrimary: img.isPrimary,
@@ -1391,6 +1071,10 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   }
 
   goBack(): void {
+    if (this.storeId === null) {
+      this.router.navigate(['/dashboard']);
+      return;
+    }
     this.router.navigate(['/dashboard/stores', this.storeId, 'products']);
   }
 

@@ -154,8 +154,7 @@ export class AdminSidebarComponent implements OnInit {
                         label: 'Lieferung',
                         icon: '🚚',
                         route: `${baseRoute}/delivery`
-                    },
-                    {
+                    },                    {
                         label: 'SEO',
                         icon: '🔍',
                         route: `${baseRoute}/seo`

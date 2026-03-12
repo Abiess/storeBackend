@@ -1,13 +1,15 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CategoryService } from '@app/core/services/category.service';
+import { StoreContextService } from '@app/core/services/store-context.service';
 import { Category } from '@app/core/models';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { TranslationService } from '@app/core/services/translation.service';
 import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
 import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-category-form',
@@ -288,10 +290,11 @@ import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
     }
   `]
 })
-export class CategoryFormComponent implements OnInit {
+export class CategoryFormComponent implements OnInit, OnDestroy {
   categoryForm: FormGroup;
   availableParentCategories: Category[] = [];
-  storeId!: number;
+  private storeId: number | null = null;
+  private storeIdSubscription?: Subscription;
   categoryId?: number;
   isEditMode = false;
   saving = false;
@@ -305,7 +308,8 @@ export class CategoryFormComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private categoryService: CategoryService,
-    private translationService: TranslationService
+    private translationService: TranslationService,
+    private storeContext: StoreContextService
   ) {
     this.categoryForm = this.fb.group({
       name: ['', Validators.required],
@@ -327,17 +331,22 @@ export class CategoryFormComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Unterstütze beide Route-Formate:
-    // /stores/:id/categories/new und /dashboard/stores/:id/categories/new
-    const idParam = this.route.snapshot.paramMap.get('id');
-    const storeIdParam = this.route.snapshot.paramMap.get('storeId');
-
-    // Verwende storeId wenn vorhanden, sonst id
-    this.storeId = storeIdParam ? Number(storeIdParam) : Number(idParam);
+    // storeId aus Context Service abonnieren
+    this.storeIdSubscription = this.storeContext.storeId$.subscribe(id => {
+      if (id !== null) {
+        this.storeId = id;
+        this.initializeComponent();
+      }
+    });
 
     // categoryId ist nur gesetzt bei Edit-Routen (/categories/:categoryId/edit)
     const categoryIdParam = this.route.snapshot.paramMap.get('categoryId');
     this.categoryId = categoryIdParam ? Number(categoryIdParam) : undefined;
+    this.isEditMode = !!this.categoryId;
+  }
+
+  private initializeComponent(): void {
+    if (this.storeId === null) return;
 
     // Breadcrumbs initialisieren
     this.breadcrumbItems = [
@@ -350,15 +359,20 @@ export class CategoryFormComponent implements OnInit {
     console.log('📋 Category Form Init:', {
       storeId: this.storeId,
       categoryId: this.categoryId,
-      isEditMode: !!this.categoryId,
+      isEditMode: this.isEditMode,
       route: window.location.pathname
     });
 
-    this.isEditMode = !!this.categoryId;
     this.loadCategories();
   }
 
+  ngOnDestroy(): void {
+    this.storeIdSubscription?.unsubscribe();
+  }
+
   loadCategories(): void {
+    if (this.storeId === null) return;
+
     this.categoryService.getCategories(this.storeId).subscribe({
       next: (categories) => {
         this.availableParentCategories = categories.filter(
@@ -377,6 +391,8 @@ export class CategoryFormComponent implements OnInit {
   }
 
   loadCategory(categoryId: number): void {
+    if (this.storeId === null) return;
+
     // Lade die Kategorie direkt vom Service, nicht aus der gefilterten Liste
     this.categoryService.getCategory(this.storeId, categoryId).subscribe({
       next: (category) => {
@@ -400,6 +416,11 @@ export class CategoryFormComponent implements OnInit {
       Object.keys(this.categoryForm.controls).forEach(key => {
         this.categoryForm.get(key)?.markAsTouched();
       });
+      return;
+    }
+
+    if (this.storeId === null) {
+      this.errorMessage = 'Fehler: Store-Kontext nicht verfügbar';
       return;
     }
 
@@ -442,6 +463,10 @@ export class CategoryFormComponent implements OnInit {
   }
 
   goBack(): void {
+    if (this.storeId === null) {
+      this.router.navigate(['/dashboard']);
+      return;
+    }
     this.router.navigate(['/dashboard/stores', this.storeId, 'categories']);
   }
 }

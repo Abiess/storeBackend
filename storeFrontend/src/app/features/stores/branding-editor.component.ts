@@ -1,9 +1,11 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ThemeService } from '../../core/services/theme.service';
 import { MediaService } from '../../core/services/media.service';
+import { StoreContextService } from '../../core/services/store-context.service';
 import { StoreTheme, ThemeColors } from '../../core/models';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-branding-editor',
@@ -843,8 +845,9 @@ import { StoreTheme, ThemeColors } from '../../core/models';
     }
   `]
 })
-export class BrandingEditorComponent implements OnInit {
-  @Input() storeId!: number;
+export class BrandingEditorComponent implements OnInit, OnDestroy {
+  private storeId: number | null = null;
+  private storeIdSubscription?: Subscription;
 
   brandingForm: FormGroup;
   logoPreview: string | null = null;
@@ -893,7 +896,8 @@ export class BrandingEditorComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private themeService: ThemeService,
-    private mediaService: MediaService
+    private mediaService: MediaService,
+    private storeContext: StoreContextService
   ) {
     this.brandingForm = this.fb.group({
       primaryColor: ['#667eea', Validators.required],
@@ -904,7 +908,16 @@ export class BrandingEditorComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadCurrentTheme();
+    this.storeIdSubscription = this.storeContext.storeId$.subscribe(id => {
+      if (id !== null) {
+        this.storeId = id;
+        this.loadCurrentTheme();
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.storeIdSubscription?.unsubscribe();
   }
 
   get previewStyles() {
@@ -923,6 +936,8 @@ export class BrandingEditorComponent implements OnInit {
   }
 
   loadCurrentTheme(): void {
+    if (this.storeId === null) return;
+
     // Load active theme from API
     this.themeService.getActiveTheme(this.storeId).subscribe({
       next: (theme) => {
@@ -977,6 +992,11 @@ export class BrandingEditorComponent implements OnInit {
   }
 
   uploadLogo(file: File): void {
+    if (this.storeId === null) {
+      this.uploadError = 'Fehler: Store-Kontext nicht verfügbar';
+      return;
+    }
+
     this.uploading = true;
     this.uploadProgress = 0;
     this.uploadError = null;
@@ -1048,6 +1068,11 @@ export class BrandingEditorComponent implements OnInit {
 
   save(): void {
     if (this.brandingForm.invalid) return;
+
+    if (this.storeId === null) {
+      alert('Fehler: Store-Kontext nicht verfügbar');
+      return;
+    }
 
     // Check if upload is still in progress
     if (this.uploading) {
