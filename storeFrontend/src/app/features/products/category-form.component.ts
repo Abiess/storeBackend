@@ -71,8 +71,8 @@ import { Subscription } from 'rxjs';
             <div class="form-group">
               <label for="parentId">{{ 'category.parent' | translate }}</label>
               <select id="parentId" formControlName="parentId">
-                <option [value]="null">{{ 'category.parent.none' | translate }}</option>
-                <option *ngFor="let cat of availableParentCategories" [value]="cat.id">
+                <option [ngValue]="null">{{ 'category.parent.none' | translate }}</option>
+                <option *ngFor="let cat of availableParentCategories" [ngValue]="cat.id">
                   {{ cat.name }}
                 </option>
               </select>
@@ -331,6 +331,18 @@ export class CategoryFormComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // categoryId ist nur gesetzt bei Edit-Routen (/categories/:categoryId/edit)
+    // WICHTIG: Zuerst categoryId setzen, bevor storeId abonniert wird!
+    const categoryIdParam = this.route.snapshot.paramMap.get('categoryId');
+    this.categoryId = categoryIdParam ? Number(categoryIdParam) : undefined;
+    this.isEditMode = !!this.categoryId;
+
+    console.log('🔧 Category Form ngOnInit:', {
+      categoryIdParam,
+      categoryId: this.categoryId,
+      isEditMode: this.isEditMode
+    });
+
     // storeId aus Context Service abonnieren
     this.storeIdSubscription = this.storeContext.storeId$.subscribe(id => {
       if (id !== null) {
@@ -338,11 +350,6 @@ export class CategoryFormComponent implements OnInit, OnDestroy {
         this.initializeComponent();
       }
     });
-
-    // categoryId ist nur gesetzt bei Edit-Routen (/categories/:categoryId/edit)
-    const categoryIdParam = this.route.snapshot.paramMap.get('categoryId');
-    this.categoryId = categoryIdParam ? Number(categoryIdParam) : undefined;
-    this.isEditMode = !!this.categoryId;
   }
 
   private initializeComponent(): void {
@@ -393,9 +400,16 @@ export class CategoryFormComponent implements OnInit, OnDestroy {
   loadCategory(categoryId: number): void {
     if (this.storeId === null) return;
 
+    console.log('📥 Loading category for edit:', {
+      storeId: this.storeId,
+      categoryId: categoryId
+    });
+
     // Lade die Kategorie direkt vom Service, nicht aus der gefilterten Liste
     this.categoryService.getCategory(this.storeId, categoryId).subscribe({
       next: (category) => {
+        console.log('✅ Category loaded successfully:', category);
+        
         this.categoryForm.patchValue({
           name: category.name,
           slug: category.slug,
@@ -403,9 +417,11 @@ export class CategoryFormComponent implements OnInit, OnDestroy {
           parentId: category.parentId,
           sortOrder: category.sortOrder
         });
+
+        console.log('✅ Form patched with values:', this.categoryForm.value);
       },
       error: (error) => {
-        console.error('Fehler beim Laden der Kategorie:', error);
+        console.error('❌ Fehler beim Laden der Kategorie:', error);
         this.errorMessage = this.translationService.translate('category.error.load');
       }
     });

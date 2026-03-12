@@ -33,7 +33,7 @@ interface Category {
       <div class="header">
         <h1>{{ 'navigation.categories' | translate }}</h1>
         <button class="btn-primary" (click)="createCategory()">
-          + {{ 'category.addCategory' | translate }}
+          + {{ 'category.new' | translate }}
         </button>
       </div>
 

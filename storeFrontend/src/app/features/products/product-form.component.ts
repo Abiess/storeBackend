@@ -121,8 +121,8 @@ import { Subscription } from 'rxjs';
           <div class="form-group">
             <label for="categoryId">{{ 'product.category' | translate }} *</label>
             <select id="categoryId" formControlName="categoryId" [class.error]="productForm.get('categoryId')?.invalid && productForm.get('categoryId')?.touched">
-              <option value="">{{ 'product.selectCategory' | translate }}</option>
-              <option *ngFor="let category of categories" [value]="category.id">
+              <option [ngValue]="null">{{ 'category.select' | translate }}</option>
+              <option *ngFor="let category of categories" [ngValue]="category.id">
                 {{ category.name }}
               </option>
             </select>
@@ -795,6 +795,18 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // productId ist nur gesetzt bei Edit-Routen (/products/:productId/edit)
+    // WICHTIG: Zuerst productId setzen, bevor storeId abonniert wird!
+    const productIdParam = this.route.snapshot.paramMap.get('productId');
+    this.productId = productIdParam ? Number(productIdParam) : undefined;
+    this.isEditMode = !!this.productId;
+
+    console.log('🔧 Product Form ngOnInit:', {
+      productIdParam,
+      productId: this.productId,
+      isEditMode: this.isEditMode
+    });
+
     // storeId aus Context Service abonnieren
     this.storeIdSubscription = this.storeContext.storeId$.subscribe(id => {
       if (id !== null) {
@@ -802,11 +814,6 @@ export class ProductFormComponent implements OnInit, OnDestroy {
         this.initializeComponent();
       }
     });
-
-    // productId ist nur gesetzt bei Edit-Routen (/products/:productId/edit)
-    const productIdParam = this.route.snapshot.paramMap.get('productId');
-    this.productId = productIdParam ? Number(productIdParam) : undefined;
-    this.isEditMode = !!this.productId;
   }
 
   private initializeComponent(): void {
@@ -867,8 +874,15 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   loadProduct(productId: number): void {
     if (this.storeId === null) return;
 
+    console.log('📥 Loading product for edit:', {
+      storeId: this.storeId,
+      productId: productId
+    });
+
     this.productService.getProduct(this.storeId, productId).subscribe({
       next: (product) => {
+        console.log('✅ Product loaded successfully:', product);
+        
         this.productForm.patchValue({
           title: product.title,
           sku: product.sku,
@@ -877,9 +891,11 @@ export class ProductFormComponent implements OnInit, OnDestroy {
           status: product.status,
           categoryId: product.categoryId || null
         });
+
+        console.log('✅ Form patched with values:', this.productForm.value);
       },
       error: (error) => {
-        console.error(this.translationService.translate('product.error.load'), error);
+        console.error('❌ Fehler beim Laden des Produkts:', error);
         this.errorMessage = this.translationService.translate('product.error.load');
       }
     });

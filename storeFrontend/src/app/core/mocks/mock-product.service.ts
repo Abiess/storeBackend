@@ -29,7 +29,15 @@ export class MockProductService {
   }
 
   getProduct(storeId: number, productId: number): Observable<Product> {
-    const product = this.products.find(p => p.id === productId);
+    console.log('🎭 Mock: Loading product', productId, 'for store', storeId);
+    const product = this.products.find(p => p.id === productId && p.storeId === storeId);
+    
+    if (!product) {
+      console.error('🎭 Mock: Product not found:', productId);
+      throw new Error(`Product ${productId} not found for store ${storeId}`);
+    }
+    
+    console.log('🎭 Mock: Found product:', product);
     return of(product!).pipe(delay(300));
   }
 
@@ -53,14 +61,22 @@ export class MockProductService {
   }
 
   updateProduct(storeId: number, productId: number, request: Partial<CreateProductRequest>): Observable<Product> {
-    const product = this.products.find(p => p.id === productId);
-    if (product) {
-      if (request.title) product.title = request.title;
-      if (request.description) product.description = request.description;
-      if (request.basePrice) product.basePrice = request.basePrice;
-      if (request.status) product.status = request.status;
-      product.updatedAt = new Date().toISOString();
+    console.log('🎭 Mock: Updating product', productId, 'with data:', request);
+    const product = this.products.find(p => p.id === productId && p.storeId === storeId);
+    
+    if (!product) {
+      console.error('🎭 Mock: Product not found for update:', productId);
+      throw new Error(`Product ${productId} not found for store ${storeId}`);
     }
+    
+    if (request.title) product.title = request.title;
+    if (request.description) product.description = request.description;
+    if (request.basePrice !== undefined) product.basePrice = request.basePrice;
+    if (request.status) product.status = request.status;
+    if (request.categoryId !== undefined) product.categoryId = request.categoryId;
+    product.updatedAt = new Date().toISOString();
+    
+    console.log('🎭 Mock: Product updated successfully:', product);
     return of(product!).pipe(delay(500));
   }
 

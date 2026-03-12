@@ -32,9 +32,9 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       <div *ngIf="!loading && products.length === 0" class="empty-state">
         <div class="empty-icon">📦</div>
         <h2>{{ 'storeDetail.noProducts' | translate }}</h2>
-        <p>{{ 'storeDetail.' | translate }}</p>
+
         <button class="btn-primary" (click)="createProduct()">
-          {{ 'product.create' | translate }}
+          {{ 'product.newProduct' | translate }}
         </button>
       </div>
 
