@@ -44,10 +44,10 @@ interface Category {
 
       <div *ngIf="!loading && categories.length === 0" class="empty-state">
         <div class="empty-icon">🏷️</div>
-        <h2>{{ 'category.noCategories' | translate }}</h2>
-        <p>{{ 'category.noCategoriesAvailable' | translate }}</p>
+        <h2>{{ 'storeDetail.noCategories' | translate }}</h2>
+        <p>{{ 'storeDetail.noCategoriesAvailable' | translate }}</p>
         <button class="btn-primary" (click)="createCategory()">
-          {{ 'category.createCategory' | translate }}
+          {{ 'storeDetail.createCategory' | translate }}
         </button>
       </div>
 

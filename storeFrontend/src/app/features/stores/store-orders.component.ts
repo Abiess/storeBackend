@@ -33,12 +33,12 @@ import { toDate } from '../../core/utils/date.utils';
           <label>{{ 'order.status' | translate }}:</label>
           <select [(ngModel)]="filterStatus" (change)="applyFilters()" class="form-control">
             <option value="">{{ 'common.all' | translate }}</option>
-            <option value="PENDING">{{ 'order.pending' | translate }}</option>
-            <option value="CONFIRMED">{{ 'order.confirmed' | translate }}</option>
-            <option value="PROCESSING">{{ 'order.processing' | translate }}</option>
-            <option value="SHIPPED">{{ 'order.shipped' | translate }}</option>
-            <option value="DELIVERED">{{ 'order.delivered' | translate }}</option>
-            <option value="CANCELLED">{{ 'order.cancelled' | translate }}</option>
+            <option value="PENDING">{{ 'status.pending' | translate }}</option>
+            <option value="CONFIRMED">{{ 'status.confirmed' | translate }}</option>
+            <option value="PROCESSING">{{ 'status.processing' | translate }}</option>
+            <option value="SHIPPED">{{ 'status.shipped' | translate }}</option>
+            <option value="DELIVERED">{{ 'status.delivered' | translate }}</option>
+            <option value="CANCELLED">{{ 'status.cancelled' | translate }}</option>
           </select>
         </div>
         <div class="filter-group">
@@ -90,15 +90,42 @@ import { toDate } from '../../core/utils/date.utils';
               <td>{{ toDate(order.createdAt) | date:'dd.MM.yyyy HH:mm' }}</td>
               <td class="amount">{{ (order.totalAmount || 0) | currency:'EUR' }}</td>
               <td>
-                <span class="status-badge" [ngClass]="'status-' + order.status.toLowerCase()">
-                  {{ getStatusLabel(order.status) }}
-                </span>
+                <!-- Inline Status Editor -->
+                <div class="status-cell" *ngIf="!isEditingStatus(order.id)">
+                  <span class="status-badge" [ngClass]="'status-' + order.status.toLowerCase()">
+                    {{ getStatusLabel(order.status) }}
+                  </span>
+                </div>
+                
+                <!-- Status Dropdown Editor -->
+                <div class="status-editor" *ngIf="isEditingStatus(order.id)">
+                  <div class="status-dropdown">
+                    <button 
+                      *ngFor="let status of availableStatuses"
+                      class="status-option"
+                      [ngClass]="'status-' + status.toLowerCase()"
+                      [disabled]="updatingStatus"
+                      (click)="saveOrderStatus(order, status)">
+                      <span class="status-icon">
+                        <span *ngIf="order.status === status">✓</span>
+                      </span>
+                      {{ getStatusLabel(status) }}
+                    </button>
+                  </div>
+                  <button class="btn-cancel-edit" (click)="cancelStatusEdit()" [disabled]="updatingStatus">
+                    {{ 'common.cancel' | translate }}
+                  </button>
+                </div>
               </td>
               <td class="actions">
                 <button class="btn-icon" (click)="viewOrder(order.id)" [title]="'order.viewDetails' | translate">
                   👁️
                 </button>
-                <button class="btn-icon" (click)="updateOrderStatus(order)" [title]="'order.changeStatus' | translate">
+                <button 
+                  class="btn-icon" 
+                  (click)="updateOrderStatus(order)" 
+                  [title]="'order.changeStatus' | translate"
+                  [disabled]="isEditingStatus(order.id)">
                   ✏️
                 </button>
               </td>
@@ -331,6 +358,7 @@ import { toDate } from '../../core/utils/date.utils';
       border-radius: 12px;
       font-size: 0.875rem;
       font-weight: 600;
+      transition: all 0.3s ease;
     }
 
     .status-pending { background: #fff3cd; color: #856404; }
@@ -339,6 +367,108 @@ import { toDate } from '../../core/utils/date.utils';
     .status-shipped { background: #cce5ff; color: #004085; }
     .status-delivered { background: #d4edda; color: #155724; }
     .status-cancelled { background: #f8d7da; color: #721c24; }
+
+    /* Inline Status Editor Styles */
+    .status-cell {
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+    }
+
+    .status-editor {
+      position: relative;
+      min-width: 250px;
+    }
+
+    .status-dropdown {
+      background: white;
+      border: 2px solid #007bff;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      overflow: hidden;
+      margin-bottom: 0.5rem;
+      animation: slideDown 0.2s ease-out;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .status-option {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: none;
+      background: white;
+      text-align: left;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .status-option:last-child {
+      border-bottom: none;
+    }
+
+    .status-option:hover:not(:disabled) {
+      background: #f8f9fa;
+      padding-left: 1.25rem;
+    }
+
+    .status-option:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .status-option.status-pending { border-left: 4px solid #ffc107; }
+    .status-option.status-confirmed { border-left: 4px solid #17a2b8; }
+    .status-option.status-processing { border-left: 4px solid #17a2b8; }
+    .status-option.status-shipped { border-left: 4px solid #007bff; }
+    .status-option.status-delivered { border-left: 4px solid #28a745; }
+    .status-option.status-cancelled { border-left: 4px solid #dc3545; }
+
+    .status-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      margin-right: 0.5rem;
+      color: #28a745;
+      font-weight: bold;
+      font-size: 1rem;
+    }
+
+    .btn-cancel-edit {
+      width: 100%;
+      padding: 0.5rem;
+      background: #6c757d;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-cancel-edit:hover:not(:disabled) {
+      background: #545b62;
+    }
+
+    .btn-cancel-edit:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
 
     .actions {
       display: flex;
@@ -536,9 +666,21 @@ export class StoreOrdersComponent implements OnInit {
   error: string | null = null;
   filterStatus = '';
   searchTerm = '';
+  editingOrderId: number | null = null;
+  updatingStatus = false;
 
   // Make toDate available in template
   toDate = toDate;
+
+  // Available order statuses
+  availableStatuses: OrderStatus[] = [
+    OrderStatus.PENDING,
+    OrderStatus.CONFIRMED,
+    OrderStatus.PROCESSING,
+    OrderStatus.SHIPPED,
+    OrderStatus.DELIVERED,
+    OrderStatus.CANCELLED
+  ];
 
   constructor(
     private route: ActivatedRoute,
@@ -633,39 +775,45 @@ export class StoreOrdersComponent implements OnInit {
   }
 
   updateOrderStatus(order: Order): void {
-    const newStatus = prompt(
-      `Neuer Status für Bestellung ${order.orderNumber}:\n\n` +
-      'PENDING - Ausstehend\n' +
-      'CONFIRMED - Bestätigt\n' +
-      'PROCESSING - In Bearbeitung\n' +
-      'SHIPPED - Versandt\n' +
-      'DELIVERED - Zugestellt\n' +
-      'CANCELLED - Storniert',
-      order.status
-    );
+    this.editingOrderId = order.id;
+  }
 
-    if (newStatus && newStatus !== order.status) {
-      this.orderService.updateOrderStatus(this.storeId, order.id, newStatus as OrderStatus).subscribe({
-        next: (updatedOrder) => {
-          const index = this.orders.findIndex(o => o.id === order.id);
-          if (index !== -1) {
-            this.orders[index] = updatedOrder;
-            this.applyFilters();
-          }
-          if (this.selectedOrder?.id === order.id) {
-            this.selectedOrder = updatedOrder;
-          }
-        },
-        error: (error) => {
-          console.error('Error updating order status:', error);
-        }
-      });
+  cancelStatusEdit(): void {
+    this.editingOrderId = null;
+  }
+
+  saveOrderStatus(order: Order, newStatus: OrderStatus): void {
+    if (newStatus === order.status) {
+      this.editingOrderId = null;
+      return;
     }
+
+    this.updatingStatus = true;
+    this.orderService.updateOrderStatus(this.storeId, order.id, newStatus).subscribe({
+      next: (updatedOrder) => {
+        const index = this.orders.findIndex(o => o.id === order.id);
+        if (index !== -1) {
+          this.orders[index] = updatedOrder;
+          this.applyFilters();
+        }
+        if (this.selectedOrder?.id === order.id) {
+          this.selectedOrder = updatedOrder;
+        }
+        this.editingOrderId = null;
+        this.updatingStatus = false;
+      },
+      error: (error) => {
+        console.error('Error updating order status:', error);
+        this.error = 'Fehler beim Aktualisieren des Status';
+        this.updatingStatus = false;
+      }
+    });
   }
 
-  goBack(): void {
-    this.router.navigate(['/stores', this.storeId]);
+  isEditingStatus(orderId: number): boolean {
+    return this.editingOrderId === orderId;
   }
+
 
   getAddressObject(address: string | Address | undefined): Address | null {
     if (!address || typeof address === 'string') {
