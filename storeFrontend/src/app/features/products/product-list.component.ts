@@ -206,11 +206,20 @@ export class ProductListComponent implements OnInit {
   }
 
   createProduct(): void {
-    this.router.navigate(['/dashboard/stores', this.storeId, 'products', 'new']);
+    this.router.navigate([this.getStoreBasePath(), 'products', 'new']);
   }
 
   editProduct(productId: number): void {
-    this.router.navigate(['/dashboard/stores', this.storeId, 'products', productId, 'edit']);
+    this.router.navigate([this.getStoreBasePath(), 'products', productId, 'edit']);
+  }
+
+  /** Gibt den Basis-Pfad für den aktuellen Store zurück (/stores/:id oder /dashboard/stores/:id) */
+  private getStoreBasePath(): string {
+    const url = this.router.url;
+    if (url.startsWith('/dashboard/')) {
+      return `/dashboard/stores/${this.storeId}`;
+    }
+    return `/stores/${this.storeId}`;
   }
 
   deleteProduct(product: Product): void {

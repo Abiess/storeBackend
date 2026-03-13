@@ -537,11 +537,11 @@ export class CategoryListComponent implements OnInit {
   }
 
   createCategory() {
-    this.router.navigate(['/dashboard/stores', this.storeId, 'categories', 'new']);
+    this.router.navigate([this.getStoreBasePath(), 'categories', 'new']);
   }
 
   editCategory(categoryId: number) {
-    this.router.navigate(['/dashboard/stores', this.storeId, 'categories', categoryId, 'edit']);
+    this.router.navigate([this.getStoreBasePath(), 'categories', categoryId, 'edit']);
   }
 
   deleteCategory(category: Category) {
@@ -569,6 +569,14 @@ export class CategoryListComponent implements OnInit {
   }
 
   goToProducts() {
-    this.router.navigate(['/dashboard/stores', this.storeId, 'products']);
+    this.router.navigate([this.getStoreBasePath(), 'products']);
+  }
+
+  private getStoreBasePath(): string {
+    const url = this.router.url;
+    if (url.startsWith('/dashboard/')) {
+      return `/dashboard/stores/${this.storeId}`;
+    }
+    return `/stores/${this.storeId}`;
   }
 }

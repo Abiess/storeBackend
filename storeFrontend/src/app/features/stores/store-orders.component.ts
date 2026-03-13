@@ -118,7 +118,7 @@ import { toDate } from '../../core/utils/date.utils';
                 </div>
               </td>
               <td class="actions">
-                <button class="btn-icon" (click)="viewOrder(order.id)" [title]="'order.viewDetails' | translate">
+                <button class="btn-icon" (click)="navigateToOrder(order.id)" [title]="'order.viewDetails' | translate">
                   👁️
                 </button>
                 <button 
@@ -767,6 +767,15 @@ export class StoreOrdersComponent implements OnInit {
     const order = this.orders.find(o => o.id === orderId);
     if (order) {
       this.selectedOrder = order;
+    }
+  }
+
+  navigateToOrder(orderId: number): void {
+    const url = this.router.url;
+    if (url.startsWith('/dashboard/')) {
+      this.router.navigate(['/dashboard/stores', this.storeId, 'orders', orderId]);
+    } else {
+      this.router.navigate(['/stores', this.storeId, 'orders', orderId]);
     }
   }
 

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { filter, map, distinctUntilChanged } from 'rxjs/operators';
+import { filter } from 'rxjs/operators';
 
 /**
  * Zentraler Service, der die aktuelle storeId aus der Route extrahiert.
@@ -47,16 +47,16 @@ export class StoreContextService {
 
     // Durch alle Route-Ebenen iterieren (root -> child -> child -> ...)
     while (route) {
-      // Prüfe 'storeId' param
+      // Prüfe 'storeId' param (dashboard/stores/:storeId/...)
       const storeIdParam = route.snapshot.paramMap.get('storeId');
-      if (storeIdParam) {
+      if (storeIdParam && !isNaN(Number(storeIdParam))) {
         storeId = Number(storeIdParam);
         break;
       }
 
-      // Fallback: 'id' param (für alte Routes wie /stores/:id)
+      // Prüfe 'id' param (stores/:id/...)
       const idParam = route.snapshot.paramMap.get('id');
-      if (idParam && route.snapshot.url.some(segment => segment.path === 'stores')) {
+      if (idParam && !isNaN(Number(idParam))) {
         storeId = Number(idParam);
         break;
       }
@@ -66,6 +66,20 @@ export class StoreContextService {
         route = route.firstChild;
       } else {
         break;
+      }
+    }
+
+    // Fallback: URL direkt parsen (z.B. /stores/5/products/17)
+    if (storeId === null) {
+      const urlPath = window.location.pathname;
+      const storesMatch = urlPath.match(/\/stores\/(\d+)/);
+      if (storesMatch) {
+        storeId = Number(storesMatch[1]);
+      }
+      // Auch /dashboard/stores/:storeId/...
+      const dashboardMatch = urlPath.match(/\/dashboard\/stores\/(\d+)/);
+      if (dashboardMatch) {
+        storeId = Number(dashboardMatch[1]);
       }
     }
 

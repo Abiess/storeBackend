@@ -172,7 +172,12 @@ export class OrdersProfessionalComponent implements OnInit {
 
   // Navigation
   viewOrderDetail(orderId: number): void {
-    this.router.navigate(['/dashboard/stores', this.storeId, 'orders', orderId]);
+    const url = this.router.url;
+    if (url.startsWith('/dashboard/')) {
+      this.router.navigate(['/dashboard/stores', this.storeId, 'orders', orderId]);
+    } else {
+      this.router.navigate(['/stores', this.storeId, 'orders', orderId]);
+    }
   }
 
   // Status utilities

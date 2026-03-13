@@ -459,7 +459,10 @@ export class ProductDetailComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.storeId = Number(this.route.snapshot.paramMap.get('storeId'));
+    this.storeId = Number(
+      this.route.snapshot.paramMap.get('storeId') ||
+      this.route.snapshot.paramMap.get('id')
+    );
     this.productId = Number(this.route.snapshot.paramMap.get('productId'));
 
     if (!this.storeId || !this.productId) {

@@ -197,6 +197,14 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'stores/:id/products/:productId',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:id/products/:productId (detail)');
+      return import('./features/products/product-detail.component').then(m => m.ProductDetailComponent);
+    },
+    canActivate: [authGuard]
+  },
+  {
     path: 'stores/:id/products',
     loadComponent: () => {
       console.log('✅ Route matched: stores/:id/products');
@@ -242,6 +250,19 @@ export const routes: Routes = [
   {
     path: 'stores/:id/homepage-builder',
     loadComponent: () => import('./features/stores/homepage-builder.component').then(m => m.HomepageBuilderComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/orders/verification',
+    loadComponent: () => import('./features/stores/order-verification-center.component').then(m => m.OrderVerificationCenterComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/orders/:orderId',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:id/orders/:orderId (detail)');
+      return import('./features/stores/order-detail-professional.component').then(m => m.OrderDetailProfessionalComponent);
+    },
     canActivate: [authGuard]
   },
   {
