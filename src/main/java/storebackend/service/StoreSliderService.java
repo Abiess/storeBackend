@@ -281,7 +281,26 @@ public class StoreSliderService {
         dto.setId(image.getId());
         dto.setStoreId(image.getStore().getId());
         dto.setMediaId(image.getMedia() != null ? image.getMedia().getId() : null);
-        dto.setImageUrl(image.getImageUrl());
+        
+        // ✅ FIX: Generiere frische presigned URL wenn media vorhanden ist
+        String imageUrl;
+        if (image.getMedia() != null) {
+            // Owner-Upload: Generiere frische URL von MinIO (7 Tage gültig)
+            try {
+                imageUrl = minioService.getPresignedUrl(image.getMedia().getMinioObjectName(), 10080);
+                log.debug("Generated fresh presigned URL for slider image {} (media {})", 
+                    image.getId(), image.getMedia().getId());
+            } catch (Exception e) {
+                log.warn("Failed to generate presigned URL for slider image {}: {}", 
+                    image.getId(), e.getMessage());
+                imageUrl = image.getImageUrl(); // Fallback zur gespeicherten URL
+            }
+        } else {
+            // Default-Bild: Verwende gespeicherte URL (externe URL oder lokale)
+            imageUrl = image.getImageUrl();
+        }
+        
+        dto.setImageUrl(imageUrl);
         dto.setImageType(image.getImageType());
         dto.setDisplayOrder(image.getDisplayOrder());
         dto.setIsActive(image.getIsActive());
