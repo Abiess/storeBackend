@@ -28,6 +28,7 @@ public class StoreSliderService {
     private final StoreRepository storeRepository;
     private final MediaService mediaService;
     private final MediaRepository mediaRepository;
+    private final MinioService minioService;
 
     /**
      * Initialize slider for a new store
