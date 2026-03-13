@@ -61,7 +61,7 @@ public class MediaService {
         String folder = mediaType.name().toLowerCase();
         String minioObjectName = minioService.uploadFile(file, store.getId(), folder);
 
-        // Save media record
+        // Save media record (NO presigned URL in DB - they expire!)
         Media media = new Media();
         media.setStore(store);
         media.setFilename(file.getOriginalFilename());
@@ -76,7 +76,8 @@ public class MediaService {
 
         // ✅ WICHTIG: Wenn LOGO oder STORE_LOGO hochgeladen wird, aktualisiere store.logoUrl
         if (mediaType == MediaType.LOGO || mediaType == MediaType.STORE_LOGO) {
-            String logoUrl = minioService.getPresignedUrl(minioObjectName, 525600); // 1 Jahr gültig
+            // Generate presigned URL (Max 7 Tage = 10080 Minuten)
+            String logoUrl = minioService.getPresignedUrl(minioObjectName, 10080); // 7 Tage gültig
             store.setLogoUrl(logoUrl);
             storeRepository.save(store);
             log.info("✅ Store logo updated for store {}: {}", store.getId(), logoUrl);
@@ -86,8 +87,8 @@ public class MediaService {
         storeUsageService.incrementStorage(store, file.getSize());
         storeUsageService.incrementImageCount(store);
 
-        // Generate presigned URL
-        String url = minioService.getPresignedUrl(minioObjectName, 60); // 60 minutes
+        // Generate presigned URL for response (7 days)
+        String url = minioService.getPresignedUrl(minioObjectName, 10080); // 7 Tage
 
         log.info("Media uploaded successfully: {} for store {}", media.getId(), store.getId());
 
@@ -149,7 +150,7 @@ public class MediaService {
      */
     public String getMediaUrl(Long mediaId) {
         Media media = getMediaById(mediaId);
-        return minioService.getPresignedUrl(media.getMinioObjectName(), 60);
+        return minioService.getPresignedUrl(media.getMinioObjectName(), 10080); // 7 Tage
     }
 
     /**
@@ -211,7 +212,8 @@ public class MediaService {
         dto.setSizeBytes(media.getSizeBytes());
         dto.setMediaType(media.getMediaType().name());
         dto.setAltText(media.getAltText());
-        dto.setUrl(minioService.getPresignedUrl(media.getMinioObjectName(), 60));
+        // URLs immer frisch generieren (7 Tage Gültigkeit)
+        dto.setUrl(minioService.getPresignedUrl(media.getMinioObjectName(), 10080));
         dto.setCreatedAt(media.getCreatedAt());
         return dto;
     }

@@ -43,15 +43,27 @@ public class ThemeService {
         Store store = storeRepository.findById(request.getStoreId())
                 .orElseThrow(() -> new RuntimeException("Store not found"));
 
-        // Deaktiviere alle anderen Themes wenn dieses aktiv sein soll
-        themeRepository.findByStoreIdAndIsActive(request.getStoreId(), true)
-                .ifPresent(activeTheme -> {
-                    activeTheme.setIsActive(false);
-                    themeRepository.save(activeTheme);
-                });
+        // ✅ FIX: Prüfe ob bereits IRGENDEIN Theme für diesen Store existiert (UPSERT-Logik)
+        // Verhindert UNIQUE-Constraint-Verletzung wenn store_id UNIQUE ist
+        List<StoreTheme> existingThemes = themeRepository.findByStoreId(request.getStoreId());
+        
+        StoreTheme theme;
+        if (!existingThemes.isEmpty()) {
+            // Update das erste/aktive existierende Theme
+            theme = existingThemes.stream()
+                    .filter(StoreTheme::getIsActive)
+                    .findFirst()
+                    .orElse(existingThemes.get(0));
+            log.info("Updating existing theme {} for store {}", theme.getId(), request.getStoreId());
+        } else {
+            // Kein Theme vorhanden → Erstelle neues
+            log.info("Creating new theme for store {}", request.getStoreId());
+            theme = new StoreTheme();
+            theme.setStore(store);
+            theme.setIsActive(true);
+        }
 
-        StoreTheme theme = new StoreTheme();
-        theme.setStore(store);
+        // Aktualisiere Theme-Daten
         theme.setName(request.getName());
         theme.setType(request.getType());
         theme.setTemplate(request.getTemplate());
@@ -63,7 +75,10 @@ public class ThemeService {
         theme.setIsActive(true);
 
         StoreTheme savedTheme = themeRepository.save(theme);
-        log.info("Created theme {} for store {}", savedTheme.getId(), store.getId());
+        log.info("✅ Saved theme {} for store {} ({})", 
+                 savedTheme.getId(), 
+                 store.getId(), 
+                 existingThemes.isEmpty() ? "created" : "updated");
 
         return convertToDTO(savedTheme);
     }

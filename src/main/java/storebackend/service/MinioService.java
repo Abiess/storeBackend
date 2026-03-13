@@ -81,9 +81,23 @@ public class MinioService {
 
     /**
      * Get presigned URL for file access
+     * Max expiry: 7 days (10080 minutes)
      */
     public String getPresignedUrl(String objectName, int expiryMinutes) {
         checkMinioAvailable();
+        
+        // Validate expiry time (MinIO max is 7 days)
+        final int MAX_EXPIRY_MINUTES = 10080; // 7 days
+        if (expiryMinutes > MAX_EXPIRY_MINUTES) {
+            log.warn("Requested expiry {} minutes exceeds maximum {}. Using maximum.", expiryMinutes, MAX_EXPIRY_MINUTES);
+            expiryMinutes = MAX_EXPIRY_MINUTES;
+        }
+        
+        if (expiryMinutes < 1) {
+            log.warn("Invalid expiry {} minutes. Using default 60 minutes.", expiryMinutes);
+            expiryMinutes = 60;
+        }
+        
         try {
             String presignedUrl = minioClient.getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()
@@ -100,10 +114,11 @@ public class MinioService {
                 log.debug("Replaced internal endpoint with public endpoint in URL");
             }
 
+            log.debug("Generated presigned URL for {} with expiry {} minutes", objectName, expiryMinutes);
             return presignedUrl;
         } catch (Exception e) {
-            log.error("Error generating presigned URL", e);
-            throw new RuntimeException("Failed to generate presigned URL", e);
+            log.error("Error generating presigned URL for object: {} with expiry: {} minutes", objectName, expiryMinutes, e);
+            throw new RuntimeException("Failed to generate presigned URL: " + e.getMessage(), e);
         }
     }
 
