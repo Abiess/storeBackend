@@ -198,25 +198,31 @@ public class PublicOrderController {
 
             log.info("📦 Delivery: type={}, mode={}", deliveryType, deliveryMode);
 
+            // Helper method to safely get string from map
+            java.util.function.Function<String, String> getFromShipping = 
+                key -> shippingAddress.getOrDefault(key, "");
+            java.util.function.Function<String, String> getFromBilling = 
+                key -> billingAddress.getOrDefault(key, "");
+
             // Create order mit PaymentMethod, PhoneVerificationId und Delivery Information
             Order order = orderService.createOrderFromCart(
                 cart.getId(),
                 customerEmail,
-                shippingAddress.get("firstName"),
-                shippingAddress.get("lastName"),
-                shippingAddress.get("address1"),
-                shippingAddress.get("address2"),
-                shippingAddress.get("city"),
-                shippingAddress.get("postalCode"),
-                shippingAddress.get("country"),
-                shippingAddress.get("phone"),
-                billingAddress.get("firstName"),
-                billingAddress.get("lastName"),
-                billingAddress.get("address1"),
-                billingAddress.get("address2"),
-                billingAddress.get("city"),
-                billingAddress.get("postalCode"),
-                billingAddress.get("country"),
+                getFromShipping.apply("firstName"),
+                getFromShipping.apply("lastName"),
+                getFromShipping.apply("address1"),
+                getFromShipping.apply("address2"),
+                getFromShipping.apply("city"),
+                getFromShipping.apply("postalCode"),
+                getFromShipping.apply("country"),
+                getFromShipping.apply("phone"),
+                getFromBilling.apply("firstName"),
+                getFromBilling.apply("lastName"),
+                getFromBilling.apply("address1"),
+                getFromBilling.apply("address2"),
+                getFromBilling.apply("city"),
+                getFromBilling.apply("postalCode"),
+                getFromBilling.apply("country"),
                 notes,
                 customer,
                 paymentMethod,
