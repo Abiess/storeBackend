@@ -2,7 +2,7 @@ import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ProductService } from '@app/core/services/product.service';
 import { Product } from '@app/core/models';
-import { ProductCardComponent } from '../storefront/product-card.component';
+import { ProductCardComponent } from '../../features/storefront/product-card.component';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { TranslationService } from '@app/core/services/translation.service';
 

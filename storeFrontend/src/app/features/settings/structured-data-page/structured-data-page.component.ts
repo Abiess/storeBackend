@@ -117,7 +117,7 @@ export class StructuredDataPageComponent implements OnInit {
 
     this.saving = true;
     const request = template.id
-      ? this.seoApi.updateStructuredDataTemplate(this.storeId, template)
+      ? this.seoApi.updateStructuredDataTemplate(this.storeId, template.id, template)
       : this.seoApi.createStructuredDataTemplate(this.storeId, template);
 
     request.subscribe({

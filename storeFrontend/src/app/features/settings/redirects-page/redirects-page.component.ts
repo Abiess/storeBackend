@@ -55,7 +55,7 @@ export class RedirectsPageComponent implements OnInit {
 
   loadRedirects(): void {
     this.loading = true;
-    this.seoApi.getRedirectRules(this.storeId).subscribe({
+    this.seoApi.getRedirects(this.storeId).subscribe({
       next: (redirects) => {
         this.dataSource.data = redirects;
         this.loading = false;
@@ -101,7 +101,7 @@ export class RedirectsPageComponent implements OnInit {
 
   onToggleActive(redirect: RedirectRuleDTO): void {
     const updated = { ...redirect, isActive: !redirect.isActive };
-    this.seoApi.updateRedirectRule(this.storeId, updated).subscribe({
+    this.seoApi.updateRedirect(this.storeId, redirect.id!, updated).subscribe({
       next: () => {
         this.snackBar.open('✅ Status aktualisiert', 'OK', { duration: 2000 });
         this.loadRedirects();
@@ -116,7 +116,7 @@ export class RedirectsPageComponent implements OnInit {
   onDelete(redirect: RedirectRuleDTO): void {
     if (!confirm(`Redirect "${redirect.sourcePath}" wirklich löschen?`)) return;
 
-    this.seoApi.deleteRedirectRule(this.storeId, redirect.id!).subscribe({
+    this.seoApi.deleteRedirect(this.storeId, redirect.id!).subscribe({
       next: () => {
         this.snackBar.open('✅ Redirect gelöscht', 'OK', { duration: 2000 });
         this.loadRedirects();

@@ -5,11 +5,13 @@ import { FormsModule } from '@angular/forms';
 import { OrderService } from '../../core/services/order.service';
 import { Order, OrderStatus } from '../../core/models';
 import { StoreNavigationComponent } from '../../shared/components/store-navigation.component';
+import { ResponsiveDataListComponent, ColumnConfig, ActionConfig } from '@app/shared/components/responsive-data-list/responsive-data-list.component';
+import { toDate } from '@app/core/utils/date.utils';
 
 @Component({
   selector: 'app-orders-professional',
   standalone: true,
-  imports: [CommonModule, FormsModule, StoreNavigationComponent],
+  imports: [CommonModule, FormsModule, StoreNavigationComponent, ResponsiveDataListComponent],
   templateUrl: './orders-professional.component.html',
   styleUrls: ['./orders-professional.component.scss']
 })
@@ -41,6 +43,57 @@ export class OrdersProfessionalComponent implements OnInit {
     OrderStatus.DELIVERED,
     OrderStatus.CANCELLED,
     OrderStatus.REFUNDED
+  ];
+
+  // Spalten-Konfiguration für responsive-data-list
+  columns: ColumnConfig[] = [
+    {
+      key: 'orderNumber',
+      label: 'Bestellnummer',
+      type: 'text',
+      mobileLabel: 'Bestellung',
+      formatFn: (value) => value || '-'
+    },
+    {
+      key: 'customerName',
+      label: 'Kunde',
+      type: 'text',
+      mobileLabel: 'Kunde',
+      formatFn: (value, item) => `${value || 'Gast'}\n${item.customerEmail || ''}`
+    },
+    {
+      key: 'createdAt',
+      label: 'Datum',
+      type: 'text',
+      mobileLabel: 'Datum',
+      formatFn: (value) => {
+        const d = toDate(value);
+        return d ? d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+      }
+    },
+    {
+      key: 'totalAmount',
+      label: 'Betrag',
+      type: 'currency',
+      mobileLabel: 'Betrag'
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      type: 'badge',
+      mobileLabel: 'Status',
+      formatFn: (value) => this.getStatusLabel(value),
+      badgeClass: (value) => this.getStatusClass(value)
+    }
+  ];
+
+  // Action-Buttons
+  actions: ActionConfig[] = [
+    {
+      icon: '👁️',
+      label: 'Details anzeigen',
+      handler: (order) => this.viewOrderDetail(order.id)
+    }
   ];
 
   constructor(

@@ -70,6 +70,16 @@ export class RoleService {
     return of(true);
   }
 
+  hasPermissions(_userId: number, _storeId: number, _permissions: Permission[]): Observable<boolean> {
+    // Mock: Prüft ob User alle angegebenen Berechtigungen hat
+    return of(true);
+  }
+
+  getUserDomainAccess(_userId: number, _domainId: number): Observable<DomainRole | null> {
+    // Mock: Gibt den Domain-Zugriff des Users zurück
+    return of(null);
+  }
+
   assignStoreRole(userId: number, storeId: number, role: UserRole): Observable<StoreRole> {
     // Mock: Weist einem User eine Store-Rolle zu
     const newRole: StoreRole = {

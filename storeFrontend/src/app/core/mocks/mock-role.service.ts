@@ -180,7 +180,7 @@ export class MockRoleService {
       return of([]).pipe(delay(100));
     }
 
-    return of(role.permissions).pipe(delay(100));
+    return of(role.permissions as Permission[]).pipe(delay(100));
   }
 
   /**
@@ -296,6 +296,7 @@ export class MockRoleService {
       [UserRole.STORE_ADMIN]: 'Shop-Administrator - Fast vollständige Shop-Verwaltung',
       [UserRole.STORE_MANAGER]: 'Shop-Manager - Produkt- und Bestellverwaltung',
       [UserRole.STORE_STAFF]: 'Shop-Mitarbeiter - Eingeschränkter Zugriff',
+      [UserRole.STORE_EMPLOYEE]: 'Shop-Angestellter - Eingeschränkter Zugriff',
       [UserRole.CUSTOMER]: 'Kunde - Nur Shop-Ansicht und Bestellungen'
     };
     return descriptions[role];
@@ -310,22 +311,27 @@ export class MockRoleService {
       [Permission.STORE_READ]: 'Shop ansehen',
       [Permission.STORE_UPDATE]: 'Shop bearbeiten',
       [Permission.STORE_DELETE]: 'Shop löschen',
+      [Permission.STORE_MANAGE]: 'Shop verwalten',
       [Permission.STORE_MANAGE_SETTINGS]: 'Shop-Einstellungen verwalten',
       [Permission.DOMAIN_CREATE]: 'Domain hinzufügen',
       [Permission.DOMAIN_READ]: 'Domain ansehen',
       [Permission.DOMAIN_UPDATE]: 'Domain bearbeiten',
       [Permission.DOMAIN_DELETE]: 'Domain löschen',
       [Permission.DOMAIN_VERIFY]: 'Domain verifizieren',
+      [Permission.DOMAIN_MANAGE]: 'Domain verwalten',
       [Permission.PRODUCT_CREATE]: 'Produkt erstellen',
       [Permission.PRODUCT_READ]: 'Produkt ansehen',
-      [Permission.PRODUCT_UPDATE]: 'Produkt bearbeiten',
+      [Permission.PRODUCT_EDIT]: 'Produkt bearbeiten',
+      [Permission.PRODUCT_UPDATE]: 'Produkt aktualisieren',
       [Permission.PRODUCT_DELETE]: 'Produkt löschen',
+      [Permission.PRODUCT_VIEW]: 'Produkt ansehen (Storefront)',
       [Permission.CATEGORY_CREATE]: 'Kategorie erstellen',
       [Permission.CATEGORY_READ]: 'Kategorie ansehen',
       [Permission.CATEGORY_UPDATE]: 'Kategorie bearbeiten',
       [Permission.CATEGORY_DELETE]: 'Kategorie löschen',
       [Permission.ORDER_CREATE]: 'Bestellung erstellen',
       [Permission.ORDER_READ]: 'Bestellung ansehen',
+      [Permission.ORDER_VIEW]: 'Bestellung ansehen (Storefront)',
       [Permission.ORDER_UPDATE]: 'Bestellung bearbeiten',
       [Permission.ORDER_DELETE]: 'Bestellung löschen',
       [Permission.ORDER_MANAGE]: 'Bestellungen verwalten',
@@ -333,6 +339,11 @@ export class MockRoleService {
       [Permission.STAFF_READ]: 'Mitarbeiter ansehen',
       [Permission.STAFF_UPDATE]: 'Mitarbeiter bearbeiten',
       [Permission.STAFF_DELETE]: 'Mitarbeiter entfernen',
+      [Permission.CUSTOMER_VIEW]: 'Kunden ansehen',
+      [Permission.CUSTOMER_MANAGE]: 'Kunden verwalten',
+      [Permission.SETTINGS_VIEW]: 'Einstellungen ansehen',
+      [Permission.SETTINGS_EDIT]: 'Einstellungen bearbeiten',
+      [Permission.REPORTS_VIEW]: 'Berichte ansehen',
       [Permission.MEDIA_UPLOAD]: 'Medien hochladen',
       [Permission.MEDIA_READ]: 'Medien ansehen',
       [Permission.MEDIA_DELETE]: 'Medien löschen'

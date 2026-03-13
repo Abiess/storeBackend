@@ -8,5 +8,5 @@ export const deliveryRoutes: Routes = [
   }
 ];
 // Export all delivery models
-export * from './delivery.model';
+export * from '../../core/models/delivery.model';
 

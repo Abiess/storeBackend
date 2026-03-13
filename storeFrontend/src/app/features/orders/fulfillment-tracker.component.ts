@@ -120,7 +120,7 @@ import {
                   [(ngModel)]="item.fulfillmentStatus"
                   (change)="onStatusChange(item)"
                   class="status-select"
-                  [class]="'status-' + item.fulfillmentStatus?.toLowerCase()"
+                  [class]="'status-' + item.fulfillmentStatus.toLowerCase()"
                 >
                   <option value="PENDING">⏳ Ausstehend</option>
                   <option value="ORDERED">📦 Bestellt</option>

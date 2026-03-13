@@ -5,7 +5,7 @@
  * import { SubscriptionService, SubscriptionStateService, SubscriptionHelperService } from '@app/core/services/subscription';
  */
 
-export { SubscriptionService } from './subscription.service';
-export { SubscriptionStateService } from './subscription-state.service';
-export { SubscriptionHelperService } from './subscription-helper.service';
+export { SubscriptionService } from '../subscription.service';
+export { SubscriptionStateService } from '../subscription-state.service';
+export { SubscriptionHelperService } from '../subscription-helper.service';
 

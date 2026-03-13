@@ -60,7 +60,7 @@ export class HasPermissionDirective implements OnInit, OnDestroy {
     if (Array.isArray(this.permission)) {
       this.roleService.hasPermissions(this.userId, this.storeId, this.permission)
         .pipe(takeUntil(this.destroy$))
-        .subscribe(hasPermission => {
+        .subscribe((hasPermission: boolean) => {
           this.viewContainer.clear();
           if (hasPermission) {
             this.viewContainer.createEmbeddedView(this.templateRef);

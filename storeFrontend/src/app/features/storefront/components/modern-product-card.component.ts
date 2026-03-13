@@ -62,7 +62,7 @@ import { TranslationService } from '@app/core/services/translation.service';
         <div class="product-price-section">
           <div class="price-wrapper">
             <span class="product-price">{{ product.price | number:'1.2-2' }} €</span>
-            <span class="product-price-old" *ngIf="product.originalPrice && product.originalPrice > product.price">
+            <span class="product-price-old" *ngIf="product.originalPrice && product.originalPrice > (product.price ?? 0)">
               {{ product.originalPrice | number:'1.2-2' }} €
             </span>
           </div>

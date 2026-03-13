@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { OrderService } from '../../core/services/order.service';
 import { Order, OrderStatus, OrderStatusHistory, OrderItem, Address } from '../../core/models';
 import { StoreNavigationComponent } from '../../shared/components/store-navigation.component';
+import { toDate } from '../../core/utils/date.utils';
 
 @Component({
   selector: 'app-order-detail-professional',
@@ -219,8 +220,15 @@ export class OrderDetailProfessionalComponent implements OnInit {
     this.router.navigate(['/dashboard/stores', this.storeId, 'orders']);
   }
 
-  formatTimestamp(timestamp: string): string {
-    return new Date(timestamp).toLocaleString('de-DE');
+  formatTimestamp(timestamp: string | Date): string {
+    const date = toDate(timestamp);
+    if (!date) return '-';
+    return date.toLocaleString('de-DE');
+  }
+
+  /** Konvertiert Backend-Datum sicher zu Date-Objekt für Pipe-Usage */
+  toDateObject(value: string | Date | undefined | null): Date | null {
+    return toDate(value);
   }
 }
 

@@ -116,7 +116,7 @@ interface Product {
               <span *ngIf="getStockQuantity() > 0 && quantity > getStockQuantity()">
                 ⚠️ Nicht genug auf Lager (max. {{ getStockQuantity() }} verfügbar)
               </span>
-              <span *ngIf="product?.variants?.length > 0 && !selectedVariant">
+              <span *ngIf="(product?.variants?.length ?? 0) > 0 && !selectedVariant">
                 ℹ️ Bitte wählen Sie eine Variante aus
               </span>
             </p>
@@ -689,7 +689,7 @@ export class StorefrontProductDetailComponent implements OnInit {
       relativeTo: this.route,
       queryParams: { variant: variantId },
       queryParamsHandling: 'merge',
-      replaceState: true  // replaceState statt replaceUrl (korrekte Angular API)
+      replaceUrl: true  // replaceUrl = korrekte Angular NavigationExtras API
     });
   }
 

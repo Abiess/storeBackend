@@ -24,6 +24,7 @@ export interface LoginRequest {
 export interface RegisterRequest {
   email: string;
   password: string;
+  name?: string;
 }
 
 // ============================================
@@ -62,21 +63,55 @@ export enum UserRole {
 }
 
 export enum Permission {
+  // Store
+  STORE_CREATE = 'STORE_CREATE',
+  STORE_READ = 'STORE_READ',
+  STORE_UPDATE = 'STORE_UPDATE',
+  STORE_DELETE = 'STORE_DELETE',
+  STORE_MANAGE = 'STORE_MANAGE',
+  STORE_MANAGE_SETTINGS = 'STORE_MANAGE_SETTINGS',
+  // Domain
+  DOMAIN_CREATE = 'DOMAIN_CREATE',
+  DOMAIN_READ = 'DOMAIN_READ',
+  DOMAIN_UPDATE = 'DOMAIN_UPDATE',
+  DOMAIN_DELETE = 'DOMAIN_DELETE',
+  DOMAIN_VERIFY = 'DOMAIN_VERIFY',
+  DOMAIN_MANAGE = 'DOMAIN_MANAGE',
+  // Product
   PRODUCT_CREATE = 'PRODUCT_CREATE',
+  PRODUCT_READ = 'PRODUCT_READ',
   PRODUCT_EDIT = 'PRODUCT_EDIT',
+  PRODUCT_UPDATE = 'PRODUCT_UPDATE',
   PRODUCT_DELETE = 'PRODUCT_DELETE',
   PRODUCT_VIEW = 'PRODUCT_VIEW',
+  // Category
+  CATEGORY_CREATE = 'CATEGORY_CREATE',
+  CATEGORY_READ = 'CATEGORY_READ',
+  CATEGORY_UPDATE = 'CATEGORY_UPDATE',
+  CATEGORY_DELETE = 'CATEGORY_DELETE',
+  // Order
+  ORDER_CREATE = 'ORDER_CREATE',
+  ORDER_READ = 'ORDER_READ',
   ORDER_VIEW = 'ORDER_VIEW',
+  ORDER_UPDATE = 'ORDER_UPDATE',
+  ORDER_DELETE = 'ORDER_DELETE',
   ORDER_MANAGE = 'ORDER_MANAGE',
+  // Staff
+  STAFF_CREATE = 'STAFF_CREATE',
+  STAFF_READ = 'STAFF_READ',
+  STAFF_UPDATE = 'STAFF_UPDATE',
+  STAFF_DELETE = 'STAFF_DELETE',
+  // Customer
   CUSTOMER_VIEW = 'CUSTOMER_VIEW',
   CUSTOMER_MANAGE = 'CUSTOMER_MANAGE',
+  // Settings / Reports
   SETTINGS_VIEW = 'SETTINGS_VIEW',
   SETTINGS_EDIT = 'SETTINGS_EDIT',
   REPORTS_VIEW = 'REPORTS_VIEW',
-  DOMAIN_MANAGE = 'DOMAIN_MANAGE',
-  DOMAIN_VERIFY = 'DOMAIN_VERIFY',
-  STORE_MANAGE = 'STORE_MANAGE',
-  STORE_DELETE = 'STORE_DELETE'
+  // Media
+  MEDIA_UPLOAD = 'MEDIA_UPLOAD',
+  MEDIA_READ = 'MEDIA_READ',
+  MEDIA_DELETE = 'MEDIA_DELETE'
 }
 
 export interface UserRoleInterface {
@@ -87,10 +122,13 @@ export interface UserRoleInterface {
 export type PermissionType = string;
 
 export interface StoreRole {
+  id?: number;
   userId: number;
   storeId: number;
   role: string;
   permissions: string[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface DomainRole {
@@ -99,6 +137,63 @@ export interface DomainRole {
   role: string;
   permissions: string[];
 }
+
+export interface DomainAccess {
+  id?: number;
+  userId: number;
+  domainId: number;
+  role: string;
+  canManage: boolean;
+  canVerify: boolean;
+  createdAt?: string;
+}
+
+export const ROLE_PERMISSIONS_MAP: Record<UserRole, Permission[]> = {
+  [UserRole.SUPER_ADMIN]: Object.values(Permission),
+  [UserRole.STORE_OWNER]: [
+    Permission.STORE_READ, Permission.STORE_UPDATE, Permission.STORE_MANAGE, Permission.STORE_MANAGE_SETTINGS,
+    Permission.DOMAIN_CREATE, Permission.DOMAIN_READ, Permission.DOMAIN_UPDATE, Permission.DOMAIN_DELETE, Permission.DOMAIN_VERIFY,
+    Permission.PRODUCT_CREATE, Permission.PRODUCT_READ, Permission.PRODUCT_EDIT, Permission.PRODUCT_UPDATE, Permission.PRODUCT_DELETE, Permission.PRODUCT_VIEW,
+    Permission.CATEGORY_CREATE, Permission.CATEGORY_READ, Permission.CATEGORY_UPDATE, Permission.CATEGORY_DELETE,
+    Permission.ORDER_CREATE, Permission.ORDER_READ, Permission.ORDER_VIEW, Permission.ORDER_UPDATE, Permission.ORDER_MANAGE,
+    Permission.STAFF_CREATE, Permission.STAFF_READ, Permission.STAFF_UPDATE, Permission.STAFF_DELETE,
+    Permission.CUSTOMER_VIEW, Permission.CUSTOMER_MANAGE,
+    Permission.SETTINGS_VIEW, Permission.SETTINGS_EDIT, Permission.REPORTS_VIEW,
+    Permission.MEDIA_UPLOAD, Permission.MEDIA_READ, Permission.MEDIA_DELETE
+  ],
+  [UserRole.STORE_ADMIN]: [
+    Permission.STORE_READ, Permission.STORE_UPDATE, Permission.STORE_MANAGE_SETTINGS,
+    Permission.DOMAIN_READ, Permission.DOMAIN_VERIFY,
+    Permission.PRODUCT_CREATE, Permission.PRODUCT_READ, Permission.PRODUCT_EDIT, Permission.PRODUCT_UPDATE, Permission.PRODUCT_DELETE, Permission.PRODUCT_VIEW,
+    Permission.CATEGORY_CREATE, Permission.CATEGORY_READ, Permission.CATEGORY_UPDATE, Permission.CATEGORY_DELETE,
+    Permission.ORDER_READ, Permission.ORDER_VIEW, Permission.ORDER_UPDATE, Permission.ORDER_MANAGE,
+    Permission.STAFF_READ, Permission.CUSTOMER_VIEW, Permission.CUSTOMER_MANAGE,
+    Permission.SETTINGS_VIEW, Permission.REPORTS_VIEW,
+    Permission.MEDIA_UPLOAD, Permission.MEDIA_READ, Permission.MEDIA_DELETE
+  ],
+  [UserRole.STORE_MANAGER]: [
+    Permission.STORE_READ,
+    Permission.PRODUCT_CREATE, Permission.PRODUCT_READ, Permission.PRODUCT_EDIT, Permission.PRODUCT_UPDATE, Permission.PRODUCT_VIEW,
+    Permission.CATEGORY_READ, Permission.CATEGORY_UPDATE,
+    Permission.ORDER_READ, Permission.ORDER_VIEW, Permission.ORDER_UPDATE,
+    Permission.CUSTOMER_VIEW, Permission.SETTINGS_VIEW, Permission.REPORTS_VIEW,
+    Permission.MEDIA_UPLOAD, Permission.MEDIA_READ
+  ],
+  [UserRole.STORE_STAFF]: [
+    Permission.PRODUCT_READ, Permission.PRODUCT_VIEW,
+    Permission.ORDER_READ, Permission.ORDER_VIEW,
+    Permission.CUSTOMER_VIEW, Permission.MEDIA_READ
+  ],
+  [UserRole.STORE_EMPLOYEE]: [
+    Permission.PRODUCT_READ, Permission.PRODUCT_VIEW,
+    Permission.ORDER_READ, Permission.ORDER_VIEW,
+    Permission.MEDIA_READ
+  ],
+  [UserRole.CUSTOMER]: [
+    Permission.PRODUCT_READ, Permission.PRODUCT_VIEW,
+    Permission.ORDER_CREATE, Permission.ORDER_READ, Permission.ORDER_VIEW
+  ]
+};
 
 // ============================================
 // DOMAIN
@@ -142,6 +237,7 @@ export interface Category {
   parentId?: number;
   parent?: Category;
   children?: Category[];
+  productCount?: number;
   createdAt: string;
   updatedAt?: string;
 }
@@ -177,6 +273,8 @@ export interface Product {
   media?: ProductMedia[];
   imageUrl?: string;
   primaryImageUrl?: string; // Haupt-Bild URL
+  discountPercentage?: number; // Rabatt in Prozent
+  originalPrice?: number;     // Originalpreis vor Rabatt
 
   // Featured/Top Product Felder
   isFeatured?: boolean;
@@ -191,6 +289,7 @@ export interface Product {
 export enum ProductStatus {
   DRAFT = 'DRAFT',
   PUBLISHED = 'PUBLISHED',
+  ACTIVE = 'PUBLISHED', // Alias für PUBLISHED – rückwärtskompatibel
   ARCHIVED = 'ARCHIVED'
 }
 

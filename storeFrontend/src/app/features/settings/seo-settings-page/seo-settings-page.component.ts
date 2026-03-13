@@ -12,10 +12,9 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { SeoApiService, SeoSettingsDTO } from '../../../core/services/seo-api.service';
+import { SeoApiService, SeoSettingsDTO, AssetUploadResponse } from '../../../core/services/seo-api.service';
 import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
 import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
-import {StoreNavigationComponent} from "@app/shared/components/store-navigation.component";
 
 @Component({
   selector: 'app-seo-settings-page',
@@ -34,8 +33,7 @@ import {StoreNavigationComponent} from "@app/shared/components/store-navigation.
         MatCheckboxModule,
         MatChipsModule,
         MatSlideToggleModule,
-        PageHeaderComponent,
-        StoreNavigationComponent
+        PageHeaderComponent
     ],
   templateUrl: './seo-settings-page.component.html',
   styleUrls: ['./seo-settings-page.component.scss']
@@ -169,13 +167,13 @@ export class SeoSettingsPageComponent implements OnInit {
     if (!this.ogImageFile) return;
 
     this.saving = true;
-    this.seoApi.uploadAsset(this.storeId, this.ogImageFile).subscribe({
-      next: (response) => {
+    this.seoApi.uploadSeoAsset(this.storeId, 'og-image', this.ogImageFile).subscribe({
+      next: (response: AssetUploadResponse) => {
         this.snackBar.open('✅ Bild hochgeladen', 'OK', { duration: 2000 });
         this.settingsForm.patchValue({ ogDefaultImagePath: response.path });
         this.saving = false;
       },
-      error: (err) => {
+      error: (err: unknown) => {
         console.error('Failed to upload image', err);
         this.snackBar.open('❌ Upload fehlgeschlagen', 'OK', { duration: 3000 });
         this.saving = false;

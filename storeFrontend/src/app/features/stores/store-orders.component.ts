@@ -7,15 +7,15 @@ import { Order, OrderStatus, Address } from '../../core/models';
 import { StoreNavigationComponent } from '../../shared/components/store-navigation.component';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { toDate } from '../../core/utils/date.utils';
+import { ResponsiveDataListComponent, ColumnConfig, ActionConfig } from '@app/shared/components/responsive-data-list/responsive-data-list.component';
 
 @Component({
   selector: 'app-store-orders',
   standalone: true,
-  imports: [CommonModule, FormsModule, StoreNavigationComponent, TranslatePipe],
+  imports: [CommonModule, FormsModule, StoreNavigationComponent, TranslatePipe, ResponsiveDataListComponent],
   template: `
     <div class="store-orders-container">
-      <!-- Einheitliche Navigation -->
-      <app-store-navigation 
+      <app-store-navigation
         [currentPage]="'navigation.orders' | translate">
       </app-store-navigation>
 
@@ -28,6 +28,27 @@ import { toDate } from '../../core/utils/date.utils';
         </div>
       </div>
 
+      <!-- Stats -->
+      <div class="orders-stats" *ngIf="!loading">
+        <div class="stat-card">
+          <h3>{{ orders.length }}</h3>
+          <p>{{ 'order.totalOrders' | translate }}</p>
+        </div>
+        <div class="stat-card">
+          <h3>{{ getPendingCount() }}</h3>
+          <p>{{ 'order.pending' | translate }}</p>
+        </div>
+        <div class="stat-card">
+          <h3>{{ getProcessingCount() }}</h3>
+          <p>{{ 'order.processing' | translate }}</p>
+        </div>
+        <div class="stat-card">
+          <h3>{{ getTotalRevenue() | currency:'EUR' }}</h3>
+          <p>{{ 'order.totalRevenue' | translate }}</p>
+        </div>
+      </div>
+
+      <!-- Filter -->
       <div class="orders-filters">
         <div class="filter-group">
           <label>{{ 'order.status' | translate }}:</label>
@@ -52,107 +73,27 @@ import { toDate } from '../../core/utils/date.utils';
         </div>
       </div>
 
-      <div class="orders-stats" *ngIf="!loading">
-        <div class="stat-card">
-          <h3>{{ orders.length }}</h3>
-          <p>{{ 'order.totalOrders' | translate }}</p>
-        </div>
-        <div class="stat-card">
-          <h3>{{ getPendingCount() }}</h3>
-          <p>{{ 'order.pending' | translate }}</p>
-        </div>
-        <div class="stat-card">
-          <h3>{{ getProcessingCount() }}</h3>
-          <p>{{ 'order.processing' | translate }}</p>
-        </div>
-        <div class="stat-card">
-          <h3>{{ getTotalRevenue() | currency:'EUR' }}</h3>
-          <p>{{ 'order.totalRevenue' | translate }}</p>
-        </div>
-      </div>
-
-      <div class="orders-table" *ngIf="!loading && filteredOrders.length > 0">
-        <table>
-          <thead>
-            <tr>
-              <th>{{ 'order.orderNumber' | translate }}</th>
-              <th>{{ 'order.customer' | translate }}</th>
-              <th>{{ 'order.date' | translate }}</th>
-              <th>{{ 'order.amount' | translate }}</th>
-              <th>{{ 'order.status' | translate }}</th>
-              <th>{{ 'common.actions' | translate }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let order of filteredOrders">
-              <td class="order-number">{{ order.orderNumber }}</td>
-              <td>{{ order.customerEmail }}</td>
-              <td>{{ toDate(order.createdAt) | date:'dd.MM.yyyy HH:mm' }}</td>
-              <td class="amount">{{ (order.totalAmount || 0) | currency:'EUR' }}</td>
-              <td>
-                <!-- Inline Status Editor -->
-                <div class="status-cell" *ngIf="!isEditingStatus(order.id)">
-                  <span class="status-badge" [ngClass]="'status-' + order.status.toLowerCase()">
-                    {{ getStatusLabel(order.status) }}
-                  </span>
-                </div>
-                
-                <!-- Status Dropdown Editor -->
-                <div class="status-editor" *ngIf="isEditingStatus(order.id)">
-                  <div class="status-dropdown">
-                    <button 
-                      *ngFor="let status of availableStatuses"
-                      class="status-option"
-                      [ngClass]="'status-' + status.toLowerCase()"
-                      [disabled]="updatingStatus"
-                      (click)="saveOrderStatus(order, status)">
-                      <span class="status-icon">
-                        <span *ngIf="order.status === status">✓</span>
-                      </span>
-                      {{ getStatusLabel(status) }}
-                    </button>
-                  </div>
-                  <button class="btn-cancel-edit" (click)="cancelStatusEdit()" [disabled]="updatingStatus">
-                    {{ 'common.cancel' | translate }}
-                  </button>
-                </div>
-              </td>
-              <td class="actions">
-                <button class="btn-icon" (click)="navigateToOrder(order.id)" [title]="'order.viewDetails' | translate">
-                  👁️
-                </button>
-                <button 
-                  class="btn-icon" 
-                  (click)="updateOrderStatus(order)" 
-                  [title]="'order.changeStatus' | translate"
-                  [disabled]="isEditingStatus(order.id)">
-                  ✏️
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="empty-state" *ngIf="!loading && filteredOrders.length === 0">
-        <div class="empty-icon">📦</div>
-        <h2>{{ 'order.noOrders' | translate }}</h2>
-        <p *ngIf="searchTerm || filterStatus">{{ 'order.tryDifferentFilters' | translate }}</p>
-        <p *ngIf="!searchTerm && !filterStatus">{{ 'order.noOrdersYet' | translate }}</p>
-      </div>
-
-      <div class="loading" *ngIf="loading">
-        <div class="spinner"></div>
-        <p>{{ 'loading.orders' | translate }}</p>
-      </div>
-
-      <div class="error" *ngIf="error">
+      <!-- Error -->
+      <div class="error" *ngIf="error && !loading">
         <p>{{ error }}</p>
         <button class="btn btn-primary" (click)="loadOrders()">{{ 'common.retry' | translate }}</button>
       </div>
+
+      <!-- Responsive List: Desktop Tabelle / Mobile Cards -->
+      <app-responsive-data-list
+        [items]="filteredOrders"
+        [columns]="columns"
+        [actions]="actions"
+        [loading]="loading"
+        [emptyMessage]="(searchTerm || filterStatus) ? ('order.tryDifferentFilters' | translate) : ('order.noOrdersYet' | translate)"
+        emptyIcon="📦"
+        [loadingMessage]="'loading.orders' | translate"
+        [rowClickable]="true"
+        (rowClick)="navigateToOrder($event.id)">
+      </app-responsive-data-list>
     </div>
 
-    <!-- Modal für Bestelldetails -->
+    <!-- Detail-Modal -->
     <div class="modal" *ngIf="selectedOrder" (click)="closeModal()">
       <div class="modal-content" (click)="$event.stopPropagation()">
         <div class="modal-header">
@@ -163,14 +104,15 @@ import { toDate } from '../../core/utils/date.utils';
           <div class="order-info">
             <h3>{{ 'order.customerInfo' | translate }}</h3>
             <p><strong>Email:</strong> {{ selectedOrder.customerEmail }}</p>
-            <p><strong>{{ 'order.date' | translate }}:</strong> {{ toDate(selectedOrder.createdAt) | date:'dd.MM.yyyy HH:mm':'':'de-DE' }}</p>
+            <p><strong>{{ 'order.date' | translate }}:</strong>
+              {{ toDate(selectedOrder.createdAt) | date:'dd.MM.yyyy HH:mm' }}
+            </p>
             <p><strong>{{ 'order.status' | translate }}:</strong>
               <span class="status-badge" [ngClass]="'status-' + selectedOrder.status.toLowerCase()">
                 {{ getStatusLabel(selectedOrder.status) }}
               </span>
             </p>
           </div>
-
           <div class="order-info" *ngIf="getAddressObject(selectedOrder.shippingAddress) as address">
             <h3>{{ 'order.shippingAddress' | translate }}</h3>
             <p>{{ address.firstName }} {{ address.lastName }}</p>
@@ -178,9 +120,7 @@ import { toDate } from '../../core/utils/date.utils';
             <p *ngIf="address.address2">{{ address.address2 }}</p>
             <p>{{ address.postalCode }} {{ address.city }}</p>
             <p>{{ address.country }}</p>
-            <p *ngIf="address.phone"><strong>Tel:</strong> {{ address.phone }}</p>
           </div>
-
           <div class="order-info" *ngIf="selectedOrder.items && selectedOrder.items.length > 0">
             <h3>{{ 'order.orderedItems' | translate }}</h3>
             <table class="items-table">
@@ -208,452 +148,74 @@ import { toDate } from '../../core/utils/date.utils';
               </tfoot>
             </table>
           </div>
-
-          <div class="order-info" *ngIf="selectedOrder.notes">
-            <h3>{{ 'order.notes' | translate }}</h3>
-            <p>{{ selectedOrder.notes }}</p>
-          </div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" (click)="closeModal()">{{ 'common.close' | translate }}</button>
-          <button class="btn btn-primary" (click)="updateOrderStatus(selectedOrder)">{{ 'order.changeStatus' | translate }}</button>
+          <button class="btn btn-primary" (click)="navigateToOrder(selectedOrder.id)">
+            {{ 'order.viewDetails' | translate }}
+          </button>
         </div>
       </div>
     </div>
   `,
   styles: [`
-    .store-orders-container {
-      padding: 2rem;
-      max-width: 1400px;
-      margin: 0 auto;
+    .store-orders-container { padding: 2rem; max-width: 1400px; margin: 0 auto; }
+    .header-content { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+    h1 { font-size: 2rem; margin: 0; }
+    .orders-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
     }
-
-    .orders-header {
-      margin-bottom: 2rem;
+    .stat-card {
+      background: white;
+      padding: 1.25rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+      text-align: center;
     }
-
-    .back-button {
-      background: none;
-      border: none;
-      color: #007bff;
-      cursor: pointer;
-      font-size: 1rem;
-      margin-bottom: 1rem;
-      padding: 0.5rem 0;
-    }
-
-    .back-button:hover {
-      text-decoration: underline;
-    }
-
-    .header-content {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    h1 {
-      font-size: 2rem;
-      margin: 0;
-    }
-
+    .stat-card h3 { margin: 0; font-size: 1.75rem; color: var(--theme-primary, #007bff); }
+    .stat-card p { margin: 0.25rem 0 0; color: #666; font-size: 0.875rem; }
     .orders-filters {
       display: flex;
       gap: 1rem;
-      margin-bottom: 2rem;
-      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      padding: 1.25rem;
       background: white;
       border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+      flex-wrap: wrap;
     }
-
-    .filter-group {
-      flex: 1;
-    }
-
-    .filter-group label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-weight: 600;
-      color: #333;
-    }
-
-    .form-control {
-      width: 100%;
-      padding: 0.75rem;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-size: 1rem;
-    }
-
-    .orders-stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-
-    .stat-card {
-      background: white;
-      padding: 1.5rem;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      text-align: center;
-    }
-
-    .stat-card h3 {
-      margin: 0;
-      font-size: 2rem;
-      color: #007bff;
-    }
-
-    .stat-card p {
-      margin: 0.5rem 0 0;
-      color: #666;
-    }
-
-    .orders-table {
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      overflow: hidden;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    thead {
-      background: #f8f9fa;
-    }
-
-    th, td {
-      padding: 1rem;
-      text-align: left;
-      border-bottom: 1px solid #e0e0e0;
-    }
-
-    th {
-      font-weight: 600;
-      color: #333;
-    }
-
-    tbody tr:hover {
-      background: #f8f9fa;
-    }
-
-    .order-number {
-      font-weight: 600;
-      color: #007bff;
-    }
-
-    .amount {
-      font-weight: 600;
-    }
-
-    .status-badge {
-      display: inline-block;
-      padding: 0.25rem 0.75rem;
-      border-radius: 12px;
-      font-size: 0.875rem;
-      font-weight: 600;
-      transition: all 0.3s ease;
-    }
-
+    .filter-group { flex: 1; min-width: 200px; }
+    .filter-group label { display: block; margin-bottom: 0.4rem; font-weight: 600; color: #333; font-size: 0.875rem; }
+    .form-control { width: 100%; padding: 0.6rem 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; }
+    .error { text-align: center; padding: 2rem; background: white; border-radius: 8px; color: #dc3545; margin-bottom: 1rem; }
+    .btn { padding: 0.6rem 1.25rem; border: none; border-radius: 6px; font-size: 0.9rem; cursor: pointer; }
+    .btn-primary { background: var(--theme-primary, #007bff); color: white; }
+    .btn-secondary { background: #6c757d; color: white; }
+    .status-badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 10px; font-size: 0.8rem; font-weight: 600; }
     .status-pending { background: #fff3cd; color: #856404; }
-    .status-confirmed { background: #d1ecf1; color: #0c5460; }
-    .status-processing { background: #d1ecf1; color: #0c5460; }
+    .status-confirmed, .status-processing { background: #d1ecf1; color: #0c5460; }
     .status-shipped { background: #cce5ff; color: #004085; }
     .status-delivered { background: #d4edda; color: #155724; }
     .status-cancelled { background: #f8d7da; color: #721c24; }
-
-    /* Inline Status Editor Styles */
-    .status-cell {
-      min-height: 40px;
-      display: flex;
-      align-items: center;
-    }
-
-    .status-editor {
-      position: relative;
-      min-width: 250px;
-    }
-
-    .status-dropdown {
-      background: white;
-      border: 2px solid #007bff;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      overflow: hidden;
-      margin-bottom: 0.5rem;
-      animation: slideDown 0.2s ease-out;
-    }
-
-    @keyframes slideDown {
-      from {
-        opacity: 0;
-        transform: translateY(-10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .status-option {
-      display: flex;
-      align-items: center;
-      width: 100%;
-      padding: 0.75rem 1rem;
-      border: none;
-      background: white;
-      text-align: left;
-      font-size: 0.9rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      border-bottom: 1px solid #f0f0f0;
-    }
-
-    .status-option:last-child {
-      border-bottom: none;
-    }
-
-    .status-option:hover:not(:disabled) {
-      background: #f8f9fa;
-      padding-left: 1.25rem;
-    }
-
-    .status-option:disabled {
-      cursor: not-allowed;
-      opacity: 0.6;
-    }
-
-    .status-option.status-pending { border-left: 4px solid #ffc107; }
-    .status-option.status-confirmed { border-left: 4px solid #17a2b8; }
-    .status-option.status-processing { border-left: 4px solid #17a2b8; }
-    .status-option.status-shipped { border-left: 4px solid #007bff; }
-    .status-option.status-delivered { border-left: 4px solid #28a745; }
-    .status-option.status-cancelled { border-left: 4px solid #dc3545; }
-
-    .status-icon {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 20px;
-      height: 20px;
-      margin-right: 0.5rem;
-      color: #28a745;
-      font-weight: bold;
-      font-size: 1rem;
-    }
-
-    .btn-cancel-edit {
-      width: 100%;
-      padding: 0.5rem;
-      background: #6c757d;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      font-size: 0.875rem;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .btn-cancel-edit:hover:not(:disabled) {
-      background: #545b62;
-    }
-
-    .btn-cancel-edit:disabled {
-      cursor: not-allowed;
-      opacity: 0.6;
-    }
-
-    .actions {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .btn-icon {
-      background: none;
-      border: none;
-      font-size: 1.2rem;
-      cursor: pointer;
-      padding: 0.25rem;
-      transition: transform 0.2s;
-    }
-
-    .btn-icon:hover {
-      transform: scale(1.2);
-    }
-
-    .btn {
-      padding: 0.75rem 1.5rem;
-      border: none;
-      border-radius: 4px;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .btn-primary {
-      background: #007bff;
-      color: white;
-    }
-
-    .btn-primary:hover {
-      background: #0056b3;
-    }
-
-    .btn-secondary {
-      background: #6c757d;
-      color: white;
-    }
-
-    .btn-secondary:hover {
-      background: #545b62;
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 4rem 2rem;
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .empty-icon {
-      font-size: 4rem;
-      margin-bottom: 1rem;
-    }
-
-    .empty-state h2 {
-      color: #666;
-      margin: 0 0 0.5rem;
-    }
-
-    .empty-state p {
-      color: #999;
-    }
-
-    .loading, .error {
-      text-align: center;
-      padding: 3rem;
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .spinner {
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #007bff;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-      margin: 0 auto 1rem;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    .error {
-      color: #dc3545;
-    }
-
-    .modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-
-    .modal-content {
-      background: white;
-      border-radius: 8px;
-      max-width: 800px;
-      width: 90%;
-      max-height: 90vh;
-      overflow-y: auto;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1.5rem;
-      border-bottom: 1px solid #e0e0e0;
-    }
-
-    .modal-header h2 {
-      margin: 0;
-      font-size: 1.5rem;
-    }
-
-    .close-button {
-      background: none;
-      border: none;
-      font-size: 2rem;
-      cursor: pointer;
-      color: #666;
-      line-height: 1;
-      padding: 0;
-      width: 32px;
-      height: 32px;
-    }
-
-    .close-button:hover {
-      color: #000;
-    }
-
-    .modal-body {
-      padding: 1.5rem;
-    }
-
-    .order-info {
-      margin-bottom: 2rem;
-    }
-
-    .order-info h3 {
-      margin-top: 0;
-      margin-bottom: 1rem;
-      color: #333;
-    }
-
-    .order-info p {
-      margin: 0.5rem 0;
-    }
-
-    .items-table {
-      width: 100%;
-      margin-top: 1rem;
-    }
-
-    .items-table th,
-    .items-table td {
-      padding: 0.75rem;
-    }
-
-    .items-table tfoot td {
-      border-top: 2px solid #333;
-    }
-
-    .modal-footer {
-      display: flex;
-      justify-content: flex-end;
-      gap: 1rem;
-      padding: 1.5rem;
-      border-top: 1px solid #e0e0e0;
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .modal-content { background: white; border-radius: 8px; max-width: 700px; width: 90%; max-height: 90vh; overflow-y: auto; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; border-bottom: 1px solid #e0e0e0; }
+    .modal-header h2 { margin: 0; font-size: 1.25rem; }
+    .close-button { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #666; }
+    .modal-body { padding: 1.5rem; }
+    .order-info { margin-bottom: 1.5rem; }
+    .order-info h3 { margin: 0 0 0.75rem; color: #333; font-size: 1rem; }
+    .order-info p { margin: 0.35rem 0; font-size: 0.9rem; }
+    .items-table { width: 100%; border-collapse: collapse; margin-top: 0.75rem; }
+    .items-table th, .items-table td { padding: 0.6rem 0.75rem; border-bottom: 1px solid #eee; font-size: 0.875rem; text-align: left; }
+    .items-table tfoot td { border-top: 2px solid #333; font-weight: 600; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1.25rem 1.5rem; border-top: 1px solid #e0e0e0; }
+    @media (max-width: 640px) {
+      .store-orders-container { padding: 1rem; }
+      .orders-filters { flex-direction: column; gap: 0.75rem; }
     }
   `]
 })
@@ -669,17 +231,65 @@ export class StoreOrdersComponent implements OnInit {
   editingOrderId: number | null = null;
   updatingStatus = false;
 
-  // Make toDate available in template
+  // toDate für Template-Nutzung
   toDate = toDate;
 
-  // Available order statuses
   availableStatuses: OrderStatus[] = [
-    OrderStatus.PENDING,
-    OrderStatus.CONFIRMED,
-    OrderStatus.PROCESSING,
-    OrderStatus.SHIPPED,
-    OrderStatus.DELIVERED,
-    OrderStatus.CANCELLED
+    OrderStatus.PENDING, OrderStatus.CONFIRMED, OrderStatus.PROCESSING,
+    OrderStatus.SHIPPED, OrderStatus.DELIVERED, OrderStatus.CANCELLED
+  ];
+
+  // Spalten-Konfiguration für responsive-data-list
+  columns: ColumnConfig[] = [
+    {
+      key: 'orderNumber',
+      label: 'Bestellnr.',
+      type: 'text',
+      mobileLabel: 'Bestellung',
+      formatFn: (value) => value || '-'
+    },
+    {
+      key: 'customerEmail',
+      label: 'Kunde',
+      type: 'text',
+      mobileLabel: 'Kunde',
+      formatFn: (value, item) => item.customerName ? `${item.customerName}  ${value}` : value
+    },
+    {
+      key: 'createdAt',
+      label: 'Datum',
+      type: 'text',
+      mobileLabel: 'Datum',
+      formatFn: (value) => {
+        const d = toDate(value);
+        return d ? d.toLocaleDateString('de-DE', {
+          day: '2-digit', month: '2-digit', year: 'numeric',
+          hour: '2-digit', minute: '2-digit'
+        }) : '-';
+      }
+    },
+    {
+      key: 'totalAmount',
+      label: 'Betrag',
+      type: 'currency',
+      mobileLabel: 'Betrag'
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      type: 'badge',
+      mobileLabel: 'Status',
+      formatFn: (value) => this.getStatusLabel(value),
+      badgeClass: (value) => `status-${(value as string).toLowerCase()}`
+    }
+  ];
+
+  actions: ActionConfig[] = [
+    {
+      icon: '👁️',
+      label: 'Details',
+      handler: (order) => this.navigateToOrder(order.id)
+    }
   ];
 
   constructor(
@@ -690,31 +300,24 @@ export class StoreOrdersComponent implements OnInit {
 
   ngOnInit(): void {
     this.route.params.subscribe(params => {
-      // FIXED: Unterstütze beide Parameter-Namen: 'id' und 'storeId'
       const storeIdParam = params['id'] || params['storeId'];
-
       if (!storeIdParam || isNaN(+storeIdParam)) {
-        console.error('❌ StoreOrdersComponent: Keine gültige storeId gefunden in Route-Parametern:', params);
+        console.error('❌ StoreOrdersComponent: Keine gültige storeId:', params);
         this.error = 'Ungültige Store-ID';
         return;
       }
-
       this.storeId = +storeIdParam;
       this.loadOrders();
     });
   }
 
   loadOrders(): void {
-    // FIXED: Validiere storeId vor API-Call
     if (!this.storeId || isNaN(this.storeId)) {
-      console.error('❌ StoreOrdersComponent: Ungültige storeId, API-Call wird abgebrochen:', this.storeId);
       this.error = 'Ungültige Store-ID';
       return;
     }
-
     this.loading = true;
     this.error = null;
-
     this.orderService.getStoreOrders(this.storeId).subscribe({
       next: (orders) => {
         this.orders = orders;
@@ -753,21 +356,11 @@ export class StoreOrdersComponent implements OnInit {
 
   getStatusLabel(status: string): string {
     const labels: { [key: string]: string } = {
-      'PENDING': 'Ausstehend',
-      'CONFIRMED': 'Bestätigt',
-      'PROCESSING': 'In Bearbeitung',
-      'SHIPPED': 'Versandt',
-      'DELIVERED': 'Zugestellt',
-      'CANCELLED': 'Storniert'
+      'PENDING': 'Ausstehend', 'CONFIRMED': 'Bestätigt',
+      'PROCESSING': 'In Bearbeitung', 'SHIPPED': 'Versandt',
+      'DELIVERED': 'Zugestellt', 'CANCELLED': 'Storniert'
     };
     return labels[status] || status;
-  }
-
-  viewOrder(orderId: number): void {
-    const order = this.orders.find(o => o.id === orderId);
-    if (order) {
-      this.selectedOrder = order;
-    }
   }
 
   navigateToOrder(orderId: number): void {
@@ -792,22 +385,13 @@ export class StoreOrdersComponent implements OnInit {
   }
 
   saveOrderStatus(order: Order, newStatus: OrderStatus): void {
-    if (newStatus === order.status) {
-      this.editingOrderId = null;
-      return;
-    }
-
+    if (newStatus === order.status) { this.editingOrderId = null; return; }
     this.updatingStatus = true;
     this.orderService.updateOrderStatus(this.storeId, order.id, newStatus).subscribe({
       next: (updatedOrder) => {
         const index = this.orders.findIndex(o => o.id === order.id);
-        if (index !== -1) {
-          this.orders[index] = updatedOrder;
-          this.applyFilters();
-        }
-        if (this.selectedOrder?.id === order.id) {
-          this.selectedOrder = updatedOrder;
-        }
+        if (index !== -1) { this.orders[index] = updatedOrder; this.applyFilters(); }
+        if (this.selectedOrder?.id === order.id) this.selectedOrder = updatedOrder;
         this.editingOrderId = null;
         this.updatingStatus = false;
       },
@@ -823,11 +407,8 @@ export class StoreOrdersComponent implements OnInit {
     return this.editingOrderId === orderId;
   }
 
-
   getAddressObject(address: string | Address | undefined): Address | null {
-    if (!address || typeof address === 'string') {
-      return null;
-    }
+    if (!address || typeof address === 'string') return null;
     return address;
   }
 
@@ -835,3 +416,4 @@ export class StoreOrdersComponent implements OnInit {
     return item.productTitle || item.productName || item.name || 'Unbekanntes Produkt';
   }
 }
+

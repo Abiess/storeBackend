@@ -2,7 +2,9 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@env/environment';
-import { Cart, AddToCartRequest, CheckoutRequest, Order, PublicStore } from '../models/index';
+import { Cart, Order, PublicStore } from '../models/index';
+import {AddToCartRequest} from "@app/core/services/cart.service";
+import {CheckoutRequest} from "@app/core/services/checkout.service";
 
 @Injectable({
   providedIn: 'root'

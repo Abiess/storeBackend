@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TranslationService, SupportedLanguage } from '../../core/services/translation.service';
+import { TranslationService, SupportedLanguage } from '../../services/translation.service';
 
 @Component({
   selector: 'app-language-switcher',

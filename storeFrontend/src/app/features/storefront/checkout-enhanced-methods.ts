@@ -1,8 +1,16 @@
 // Erweiterte Checkout-Komponente mit allen Verbesserungen
 // Diese Datei zeigt die zusätzlichen Properties und Methoden
+import { parsePhoneNumber, CountryCode } from 'libphonenumber-js';
 
 export class CheckoutComponentEnhanced {
   // Bestehende Properties bleiben...
+
+  // Properties für Phone Verification (aus checkout.component.ts)
+  phoneNumber = '';
+  selectedPaymentMethod = '';
+  phoneVerificationSent = false;
+  sendingCode = false;
+  phoneVerified = false;
 
   // NEUE: Für verbesserte Phone Input
   countryCodes = [
@@ -84,4 +92,3 @@ export class CheckoutComponentEnhanced {
     this.validatePhoneNumber();
   }
 }
-

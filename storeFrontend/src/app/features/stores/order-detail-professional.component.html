@@ -31,7 +31,7 @@
           </div>
           <div class="info-item">
             <label>Bestelldatum:</label>
-            <span>{{ order?.createdAt | date:'dd.MM.yyyy HH:mm' }}</span>
+            <span>{{ toDateObject(order?.createdAt) | date:'dd.MM.yyyy HH:mm' }}</span>
           </div>
         </div>
       </div>
@@ -201,7 +201,7 @@
             <div class="timeline-content">
               <div class="timeline-header">
                 <span class="status-badge small">Erstellt</span>
-                <span class="timeline-date">{{ order?.createdAt | date:'dd.MM.yyyy HH:mm' }}</span>
+                <span class="timeline-date">{{ toDateObject(order?.createdAt) | date:'dd.MM.yyyy HH:mm' }}</span>
               </div>
             </div>
           </div>

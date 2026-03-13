@@ -2,8 +2,8 @@
 
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { CouponInputComponent } from '../../shared/components/coupon-input/coupon-input.component';
-import { CouponService, ValidateCouponsResponse } from '../../core/services/coupon.service';
+import { CouponInputComponent } from '../shared/components/coupon-input/coupon-input.component';
+import { CouponService, ValidateCouponsResponse } from '../core/services/coupon.service';
 
 @Component({
   selector: 'app-checkout-example',
@@ -87,7 +87,7 @@ export class CheckoutExampleComponent implements OnInit {
 
     this.discountCents = response.cartTotals.discountCents;
     this.totalCents = response.cartTotals.totalCents;
-    this.appliedCouponCodes = response.validCoupons.map(c => c.code);
+    this.appliedCouponCodes = response.validCoupons.map((c: { code: string }) => c.code);
   }
 
   placeOrder(): void {

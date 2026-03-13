@@ -1,4 +1,4 @@
-{
+﻿{
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/spec",
@@ -11,4 +11,3 @@
     "src/**/*.d.ts"
   ]
 }
-

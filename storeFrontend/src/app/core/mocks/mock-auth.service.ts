@@ -1,5 +1,5 @@
 import { Observable, of, delay, throwError } from 'rxjs';
-import { AuthResponse, LoginRequest, RegisterRequest, User } from '../models';
+import { AuthResponse, LoginRequest, RegisterRequest, User, Role } from '../models';
 import { MOCK_USER } from './mock-data';
 
 // Mock Credentials für Testing
@@ -15,7 +15,7 @@ export class MockAuthService {
       id: Math.floor(Math.random() * 10000),
       email: request.email,
       name: request.name,
-      role: 'ROLE_STORE_OWNER',
+      roles: [Role.STORE_OWNER],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };

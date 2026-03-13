@@ -1,3 +1,293 @@
+﻿import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '@env/environment';
+
+/**
+ * Telefonnummer-Verifizierung fÃ¼r Cash on Delivery
+ *
+ * Best Practices:
+ * - Einfache UX (max. 1 zusÃ¤tzlicher Schritt)
+ * - WhatsApp > SMS Fallback
+ * - Klare Fehlermeldungen
+ * - Mobile-First Design
+ * - Auto-Focus auf Code-Input
+ */
+@Component({
+  selector: 'app-phone-verification',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  template: `
+    <div class="phone-verification-container">
+      <!-- Step 1: Telefonnummer eingeben -->
+      <div *ngIf="step === 'phone'" class="verification-step">
+        <div class="step-header">
+          <div class="step-icon">ðŸ“±</div>
+          <h3>Telefonnummer verifizieren</h3>
+          <p class="step-description">
+            FÃ¼r Nachnahme-Bestellungen benÃ¶tigen wir eine verifizierte Telefonnummer,
+            um Fake-Bestellungen zu vermeiden.
+          </p>
+        </div>
+
+        <div class="phone-input-group">
+          <label for="phoneNumber">Telefonnummer</label>
+          <div class="input-wrapper">
+            <span class="country-code">+49</span>
+            <input
+              id="phoneNumber"
+              type="tel"
+              [(ngModel)]="phoneInput"
+              placeholder="151 23456789"
+              (keyup.enter)="sendVerificationCode()"
+              [disabled]="sending"
+              class="phone-input"
+              autocomplete="tel"
+            />
+          </div>
+          <p class="input-hint">Format: +49 151 23456789 (mit LÃ¤ndervorwahl)</p>
+        </div>
+
+        <button
+          class="btn-primary"
+          (click)="sendVerificationCode()"
+          [disabled]="sending || !isValidPhone()"
+        >
+          <span class="btn-icon" *ngIf="!sending">ðŸ“¤</span>
+          <span class="spinner-small" *ngIf="sending"></span>
+          {{ sending ? 'Wird gesendet...' : 'Code per WhatsApp/SMS senden' }}
+        </button>
+
+        <div class="info-box">
+          <svg class="info-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0zm1 15H9V9h2v6zm0-8H9V5h2v2z" fill="currentColor"/>
+          </svg>
+          <div>
+            <strong>Wie funktioniert's?</strong>
+            <p>Sie erhalten einen 6-stelligen Code per WhatsApp oder SMS. Dieser ist 10 Minuten gÃ¼ltig.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Code eingeben -->
+      <div *ngIf="step === 'code'" class="verification-step">
+        <div class="step-header">
+          <div class="step-icon">ðŸ”</div>
+          <h3>Code eingeben</h3>
+          <p class="step-description">
+            Wir haben einen Code per <strong>{{ channel === 'whatsapp' ? 'WhatsApp' : 'SMS' }}</strong>
+            an <strong>{{ formatPhoneNumber(phoneNumber) }}</strong> gesendet.
+          </p>
+        </div>
+
+        <div class="code-input-group">
+          <label for="verificationCode">Verifizierungscode</label>
+          <input
+            #codeInputRef
+            id="verificationCode"
+            type="text"
+            [(ngModel)]="codeInput"
+            placeholder="000000"
+            maxlength="6"
+            (keyup.enter)="verifyCode()"
+            [disabled]="verifying"
+            class="code-input"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            autocomplete="one-time-code"
+          />
+          <p class="input-hint">6-stelliger Code</p>
+        </div>
+
+        <button
+          class="btn-primary"
+          (click)="verifyCode()"
+          [disabled]="verifying || codeInput.length !== 6"
+        >
+          <span class="btn-icon" *ngIf="!verifying">âœ“</span>
+          <span class="spinner-small" *ngIf="verifying"></span>
+          {{ verifying ? 'Wird geprÃ¼ft...' : 'Code bestÃ¤tigen' }}
+        </button>
+
+        <div class="resend-section">
+          <p *ngIf="!canResend">Neuer Code in {{ resendCountdown }}s mÃ¶glich</p>
+          <button
+            *ngIf="canResend"
+            class="btn-link"
+            (click)="resendCode()"
+            [disabled]="sending"
+          >
+            ðŸ”„ Code erneut senden
+          </button>
+        </div>
+
+        <button class="btn-secondary" (click)="changePhoneNumber()">
+          â† Telefonnummer Ã¤ndern
+        </button>
+      </div>
+
+      <!-- Error Message -->
+      <div *ngIf="errorMessage" class="error-message">
+        <svg class="error-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0zm1 15H9v-2h2v2zm0-4H9V5h2v6z" fill="currentColor"/>
+        </svg>
+        {{ errorMessage }}
+      </div>
+
+      <!-- Success Message -->
+      <div *ngIf="successMessage" class="success-message">
+        <svg class="success-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0zm-2 15l-5-5 1.41-1.41L8 12.17l7.59-7.59L17 6l-9 9z" fill="currentColor"/>
+        </svg>
+        {{ successMessage }}
+      </div>
+    </div>
+  `,
+  styles: [`
+    /* ==================== CONTAINER ==================== */
+    .phone-verification-container {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .verification-step {
+      background: white;
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    /* ==================== HEADER ==================== */
+    .step-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .step-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .step-header h3 {
+      margin: 0 0 0.5rem;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #1d1d1f;
+      letter-spacing: -0.01em;
+    }
+
+    .step-description {
+      margin: 0;
+      color: #6e6e73;
+      line-height: 1.5;
+      font-size: 0.9375rem;
+    }
+
+    /* ==================== PHONE INPUT ==================== */
+    .phone-input-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .phone-input-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: #1d1d1f;
+      font-size: 0.9375rem;
+    }
+
+    .input-wrapper {
+      display: flex;
+      align-items: center;
+      background: #f5f5f7;
+      border: 2px solid #e8e8ed;
+      border-radius: 12px;
+      padding: 0.75rem 1rem;
+      transition: all 0.3s;
+    }
+
+    .input-wrapper:focus-within {
+      background: white;
+      border-color: #0071e3;
+      box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.1);
+    }
+
+    .country-code {
+      font-weight: 600;
+      color: #1d1d1f;
+      margin-right: 0.5rem;
+      font-size: 1rem;
+    }
+
+    .phone-input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      font-size: 1rem;
+      color: #1d1d1f;
+      outline: none;
+      font-weight: 500;
+    }
+
+    .phone-input::placeholder {
+      color: #86868b;
+    }
+
+    /* ==================== CODE INPUT ==================== */
+    .code-input-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .code-input-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: #1d1d1f;
+      font-size: 0.9375rem;
+    }
+
+    .code-input {
+      width: 100%;
+      padding: 1rem;
+      background: #f5f5f7;
+      border: 2px solid #e8e8ed;
+      border-radius: 12px;
+      font-size: 2rem;
+      font-weight: 700;
+      text-align: center;
+      letter-spacing: 0.5rem;
+      color: #1d1d1f;
+      transition: all 0.3s;
+      font-family: 'Monaco', 'Courier New', monospace;
+    }
+
+    .code-input:focus {
+      background: white;
+      border-color: #0071e3;
+      box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.1);
+      outline: none;
+    }
+
+    .code-input:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .input-hint {
+      margin: 0.5rem 0 0;
+      color: #86868b;
+      font-size: 0.8125rem;
+    }
+
+    /* ==================== BUTTONS ==================== */
+    .btn-primary {
+      width: 100%;
+      padding: 1rem;
+      background: #0071e3;
+      color: white;
+      border: none;
       border-radius: 12px;
       font-weight: 600;
       font-size: 1rem;
@@ -228,7 +518,7 @@ export class PhoneVerificationComponent {
 
   sendVerificationCode(): void {
     if (!this.isValidPhone()) {
-      this.errorMessage = 'Bitte geben Sie eine gültige Telefonnummer ein.';
+      this.errorMessage = 'Bitte geben Sie eine gÃ¼ltige Telefonnummer ein.';
       return;
     }
 
@@ -271,7 +561,7 @@ export class PhoneVerificationComponent {
 
   verifyCode(): void {
     if (this.codeInput.length !== 6) {
-      this.errorMessage = 'Bitte geben Sie den vollständigen 6-stelligen Code ein.';
+      this.errorMessage = 'Bitte geben Sie den vollstÃ¤ndigen 6-stelligen Code ein.';
       return;
     }
 
@@ -349,294 +639,3 @@ export class PhoneVerificationComponent {
     this.stopResendTimer();
   }
 }
-import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
-import { environment } from '@env/environment';
-
-/**
- * Telefonnummer-Verifizierung für Cash on Delivery
- * 
- * Best Practices:
- * - Einfache UX (max. 1 zusätzlicher Schritt)
- * - WhatsApp > SMS Fallback
- * - Klare Fehlermeldungen
- * - Mobile-First Design
- * - Auto-Focus auf Code-Input
- */
-@Component({
-  selector: 'app-phone-verification',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
-    <div class="phone-verification-container">
-      <!-- Step 1: Telefonnummer eingeben -->
-      <div *ngIf="step === 'phone'" class="verification-step">
-        <div class="step-header">
-          <div class="step-icon">📱</div>
-          <h3>Telefonnummer verifizieren</h3>
-          <p class="step-description">
-            Für Nachnahme-Bestellungen benötigen wir eine verifizierte Telefonnummer,
-            um Fake-Bestellungen zu vermeiden.
-          </p>
-        </div>
-
-        <div class="phone-input-group">
-          <label for="phoneNumber">Telefonnummer</label>
-          <div class="input-wrapper">
-            <span class="country-code">+49</span>
-            <input
-              id="phoneNumber"
-              type="tel"
-              [(ngModel)]="phoneInput"
-              placeholder="151 23456789"
-              (keyup.enter)="sendVerificationCode()"
-              [disabled]="sending"
-              class="phone-input"
-              autocomplete="tel"
-            />
-          </div>
-          <p class="input-hint">Format: +49 151 23456789 (mit Ländervorwahl)</p>
-        </div>
-
-        <button
-          class="btn-primary"
-          (click)="sendVerificationCode()"
-          [disabled]="sending || !isValidPhone()"
-        >
-          <span class="btn-icon" *ngIf="!sending">📤</span>
-          <span class="spinner-small" *ngIf="sending"></span>
-          {{ sending ? 'Wird gesendet...' : 'Code per WhatsApp/SMS senden' }}
-        </button>
-
-        <div class="info-box">
-          <svg class="info-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0zm1 15H9V9h2v6zm0-8H9V5h2v2z" fill="currentColor"/>
-          </svg>
-          <div>
-            <strong>Wie funktioniert's?</strong>
-            <p>Sie erhalten einen 6-stelligen Code per WhatsApp oder SMS. Dieser ist 10 Minuten gültig.</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Step 2: Code eingeben -->
-      <div *ngIf="step === 'code'" class="verification-step">
-        <div class="step-header">
-          <div class="step-icon">🔐</div>
-          <h3>Code eingeben</h3>
-          <p class="step-description">
-            Wir haben einen Code per <strong>{{ channel === 'whatsapp' ? 'WhatsApp' : 'SMS' }}</strong>
-            an <strong>{{ formatPhoneNumber(phoneNumber) }}</strong> gesendet.
-          </p>
-        </div>
-
-        <div class="code-input-group">
-          <label for="verificationCode">Verifizierungscode</label>
-          <input
-            #codeInput
-            id="verificationCode"
-            type="text"
-            [(ngModel)]="codeInput"
-            placeholder="000000"
-            maxlength="6"
-            (keyup.enter)="verifyCode()"
-            [disabled]="verifying"
-            class="code-input"
-            inputmode="numeric"
-            pattern="[0-9]*"
-            autocomplete="one-time-code"
-          />
-          <p class="input-hint">6-stelliger Code</p>
-        </div>
-
-        <button
-          class="btn-primary"
-          (click)="verifyCode()"
-          [disabled]="verifying || codeInput.length !== 6"
-        >
-          <span class="btn-icon" *ngIf="!verifying">✓</span>
-          <span class="spinner-small" *ngIf="verifying"></span>
-          {{ verifying ? 'Wird geprüft...' : 'Code bestätigen' }}
-        </button>
-
-        <div class="resend-section">
-          <p *ngIf="!canResend">Neuer Code in {{ resendCountdown }}s möglich</p>
-          <button
-            *ngIf="canResend"
-            class="btn-link"
-            (click)="resendCode()"
-            [disabled]="sending"
-          >
-            🔄 Code erneut senden
-          </button>
-        </div>
-
-        <button class="btn-secondary" (click)="changePhoneNumber()">
-          ← Telefonnummer ändern
-        </button>
-      </div>
-
-      <!-- Error Message -->
-      <div *ngIf="errorMessage" class="error-message">
-        <svg class="error-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <path d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0zm1 15H9v-2h2v2zm0-4H9V5h2v6z" fill="currentColor"/>
-        </svg>
-        {{ errorMessage }}
-      </div>
-
-      <!-- Success Message -->
-      <div *ngIf="successMessage" class="success-message">
-        <svg class="success-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <path d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0zm-2 15l-5-5 1.41-1.41L8 12.17l7.59-7.59L17 6l-9 9z" fill="currentColor"/>
-        </svg>
-        {{ successMessage }}
-      </div>
-    </div>
-  `,
-  styles: [`
-    /* ==================== CONTAINER ==================== */
-    .phone-verification-container {
-      max-width: 500px;
-      margin: 0 auto;
-    }
-
-    .verification-step {
-      background: white;
-      border-radius: 16px;
-      padding: 2rem;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-      border: 1px solid rgba(0, 0, 0, 0.06);
-    }
-
-    /* ==================== HEADER ==================== */
-    .step-header {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-
-    .step-icon {
-      font-size: 3rem;
-      margin-bottom: 1rem;
-    }
-
-    .step-header h3 {
-      margin: 0 0 0.5rem;
-      font-size: 1.5rem;
-      font-weight: 600;
-      color: #1d1d1f;
-      letter-spacing: -0.01em;
-    }
-
-    .step-description {
-      margin: 0;
-      color: #6e6e73;
-      line-height: 1.5;
-      font-size: 0.9375rem;
-    }
-
-    /* ==================== PHONE INPUT ==================== */
-    .phone-input-group {
-      margin-bottom: 1.5rem;
-    }
-
-    .phone-input-group label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-weight: 600;
-      color: #1d1d1f;
-      font-size: 0.9375rem;
-    }
-
-    .input-wrapper {
-      display: flex;
-      align-items: center;
-      background: #f5f5f7;
-      border: 2px solid #e8e8ed;
-      border-radius: 12px;
-      padding: 0.75rem 1rem;
-      transition: all 0.3s;
-    }
-
-    .input-wrapper:focus-within {
-      background: white;
-      border-color: #0071e3;
-      box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.1);
-    }
-
-    .country-code {
-      font-weight: 600;
-      color: #1d1d1f;
-      margin-right: 0.5rem;
-      font-size: 1rem;
-    }
-
-    .phone-input {
-      flex: 1;
-      border: none;
-      background: transparent;
-      font-size: 1rem;
-      color: #1d1d1f;
-      outline: none;
-      font-weight: 500;
-    }
-
-    .phone-input::placeholder {
-      color: #86868b;
-    }
-
-    /* ==================== CODE INPUT ==================== */
-    .code-input-group {
-      margin-bottom: 1.5rem;
-    }
-
-    .code-input-group label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-weight: 600;
-      color: #1d1d1f;
-      font-size: 0.9375rem;
-    }
-
-    .code-input {
-      width: 100%;
-      padding: 1rem;
-      background: #f5f5f7;
-      border: 2px solid #e8e8ed;
-      border-radius: 12px;
-      font-size: 2rem;
-      font-weight: 700;
-      text-align: center;
-      letter-spacing: 0.5rem;
-      color: #1d1d1f;
-      transition: all 0.3s;
-      font-family: 'Monaco', 'Courier New', monospace;
-    }
-
-    .code-input:focus {
-      background: white;
-      border-color: #0071e3;
-      box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.1);
-      outline: none;
-    }
-
-    .code-input:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-
-    .input-hint {
-      margin: 0.5rem 0 0;
-      color: #86868b;
-      font-size: 0.8125rem;
-    }
-
-    /* ==================== BUTTONS ==================== */
-    .btn-primary {
-      width: 100%;
-      padding: 1rem;
-      background: #0071e3;
-      color: white;
-      border: none;
-

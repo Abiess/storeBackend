@@ -169,9 +169,9 @@ export class RedirectDialogComponent {
       storeId: this.data.storeId
     };
 
-    const request = this.isEdit
-      ? this.seoApi.updateRedirectRule(this.data.storeId, redirect)
-      : this.seoApi.createRedirectRule(this.data.storeId, redirect);
+    const request = this.isEdit && this.data.redirect?.id
+      ? this.seoApi.updateRedirect(this.data.storeId, this.data.redirect.id, redirect)
+      : this.seoApi.createRedirect(this.data.storeId, redirect);
 
     request.subscribe({
       next: () => {
