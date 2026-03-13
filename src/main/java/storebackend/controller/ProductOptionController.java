@@ -69,16 +69,12 @@ public class ProductOptionController {
             @PathVariable Long storeId,
             @PathVariable Long productId) {
 
+        // ✅ GET-Requests auf Product Options sind ÖFFENTLICH (für Produktansicht im Frontend)
         User user = getCurrentUser();
-        log.info("GET /api/stores/{}/products/{}/options - User: {}",
-                 storeId, productId, user != null ? user.getId() : "null");
+        log.info("GET /api/stores/{}/products/{}/options - User: {} (public access)",
+                 storeId, productId, user != null ? user.getId() : "anonymous");
 
-        if (!hasStoreAccess(storeId, user)) {
-            log.error("403 Forbidden: User {} has no access to store {}",
-                      user != null ? user.getId() : "null", storeId);
-            return ResponseEntity.status(403).build();
-        }
-
+        // Nur Store-Existenz prüfen
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
 

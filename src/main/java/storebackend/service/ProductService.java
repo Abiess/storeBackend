@@ -70,6 +70,7 @@ public class ProductService {
         return toDTO(product);
     }
 
+    @Transactional
     public ProductDTO createProduct(CreateProductRequest request, Store store, User owner) {
         // Check product limit
         if (!storeUsageService.canCreateProduct(store, owner)) {
@@ -107,6 +108,7 @@ public class ProductService {
         return toDTO(product);
     }
 
+    @Transactional
     public ProductDTO updateProduct(Long productId, CreateProductRequest request, Store store) {
         Product product = productRepository.findByIdAndStoreWithCategory(productId, store)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
@@ -132,6 +134,7 @@ public class ProductService {
         return toDTO(product);
     }
 
+    @Transactional
     public void deleteProduct(Long productId, Store store) {
         Product product = productRepository.findByIdAndStore(productId, store)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
@@ -289,6 +292,7 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public void incrementViewCount(Long productId) {
         productRepository.findById(productId).ifPresent(product -> {
             product.setViewCount(product.getViewCount() + 1);
@@ -296,6 +300,7 @@ public class ProductService {
         });
     }
 
+    @Transactional
     public void incrementSalesCount(Long productId, int quantity) {
         productRepository.findById(productId).ifPresent(product -> {
             product.setSalesCount(product.getSalesCount() + quantity);
