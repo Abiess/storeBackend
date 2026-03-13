@@ -15,11 +15,8 @@ import { toDate } from '../../core/utils/date.utils';
   imports: [CommonModule, FormsModule, StoreNavigationComponent],
   template: `
 
-
       <div class="verification-center">
-
-          <app-store-navigation
-                  currentPage="COD Verifizierung">
+          <app-store-navigation currentPage="COD Verifizierung">
           </app-store-navigation>
 
           <div class="header">

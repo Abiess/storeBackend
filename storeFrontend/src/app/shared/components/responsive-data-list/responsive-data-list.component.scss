@@ -1,0 +1,367 @@
+/* ==================== Responsive Data List Component ==================== */
+
+.desktop-table-view {
+  display: block;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.mobile-list-view {
+  display: none;
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table thead {
+  background: #f8f9fa;
+}
+
+.data-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #333;
+  border-bottom: 2px solid #e9ecef;
+  white-space: nowrap;
+}
+
+.data-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+}
+
+.data-table tbody tr:hover {
+  background: #f8f9fa;
+}
+
+.data-table tbody tr.clickable {
+  cursor: pointer;
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Cell Types */
+.image-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #f0f0f0;
+}
+
+.cell-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.image-placeholder {
+  font-size: 1.5rem;
+  color: #ccc;
+}
+
+.currency-value {
+  font-weight: 600;
+  color: #667eea;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* Status Badge Variants */
+.status-active,
+.status-delivered {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-draft,
+.status-pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.status-archived,
+.status-cancelled {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.status-processing,
+.status-confirmed {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.status-shipped {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+/* Actions */
+.actions-header {
+  text-align: center;
+  width: 120px;
+}
+
+.actions-cell {
+  text-align: center;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.btn-action {
+  background: white;
+  border: 1px solid #e0e0e0;
+  padding: 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 1rem;
+  min-width: 36px;
+  height: 36px;
+}
+
+.btn-action:hover {
+  background: #f8f9fa;
+  border-color: #667eea;
+}
+
+.btn-action.btn-delete,
+.btn-action.danger {
+  border-color: #dc3545;
+}
+
+.btn-action.btn-delete:hover,
+.btn-action.danger:hover {
+  background: #fff5f5;
+  border-color: #dc3545;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 4rem 1rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.empty-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.empty-state p {
+  color: #666;
+  font-size: 1rem;
+}
+
+/* Loading State */
+.loading-state {
+  text-align: center;
+  padding: 4rem 1rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #667eea;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-state p {
+  color: #666;
+}
+
+/* ==================== Mobile View (WhatsApp-Style Cards) ==================== */
+@media (max-width: 768px) {
+  .desktop-table-view {
+    display: none;
+  }
+
+  .mobile-list-view {
+    display: block;
+  }
+
+  .card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .item-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 1rem;
+    transition: all 0.2s;
+    border: 1px solid #e9ecef;
+  }
+
+  .item-card.clickable {
+    cursor: pointer;
+  }
+
+  .item-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+  }
+
+  .card-content {
+    display: flex;
+    gap: 1rem;
+  }
+
+  /* Image Section */
+  .card-image-section {
+    flex-shrink: 0;
+    width: 70px;
+    height: 70px;
+    overflow: hidden;
+    border-radius: 8px;
+    background: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .card-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .card-image-placeholder {
+    font-size: 1.5rem;
+    color: #ccc;
+  }
+
+  /* Info Section */
+  .card-info-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  .card-field {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .field-label {
+    font-size: 0.8125rem;
+    color: #718096;
+    font-weight: 500;
+    min-width: fit-content;
+  }
+
+  .field-value {
+    font-size: 0.875rem;
+    color: #2d3748;
+    font-weight: 500;
+    word-break: break-word;
+  }
+
+  .field-value.currency-value {
+    color: #667eea;
+    font-weight: 600;
+    font-size: 1rem;
+  }
+
+  /* Card Actions */
+  .card-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #e9ecef;
+  }
+
+  .card-actions .btn-action {
+    padding: 0.5rem 0.75rem;
+    font-size: 1.125rem;
+  }
+
+  /* Compact status badges on mobile */
+  .card-field .status-badge {
+    padding: 0.2rem 0.6rem;
+    font-size: 0.7rem;
+  }
+}
+
+/* Extra small devices */
+@media (max-width: 480px) {
+  .card-content {
+    flex-direction: column;
+  }
+
+  .card-image-section {
+    width: 100%;
+    height: 150px;
+    margin-bottom: 0.5rem;
+  }
+
+  .card-info-section {
+    width: 100%;
+  }
+
+  .card-field {
+    flex-direction: row;
+  }
+
+  .field-label {
+    flex-shrink: 0;
+  }
+
+  .card-actions {
+    justify-content: stretch;
+  }
+
+  .card-actions .btn-action {
+    flex: 1;
+  }
+}
+
