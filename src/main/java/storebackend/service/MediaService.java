@@ -12,6 +12,7 @@ import storebackend.entity.Store;
 import storebackend.entity.User;
 import storebackend.enums.MediaType;
 import storebackend.repository.MediaRepository;
+import storebackend.repository.StoreRepository;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -26,6 +27,7 @@ public class MediaService {
     private final MediaRepository mediaRepository;
     private final MinioService minioService;
     private final StoreUsageService storeUsageService;
+    private final StoreRepository storeRepository;
 
     private static final List<String> ALLOWED_IMAGE_TYPES = Arrays.asList(
             "image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"
@@ -71,6 +73,14 @@ public class MediaService {
         media.setAltText(altText);
 
         media = mediaRepository.save(media);
+
+        // ✅ WICHTIG: Wenn LOGO oder STORE_LOGO hochgeladen wird, aktualisiere store.logoUrl
+        if (mediaType == MediaType.LOGO || mediaType == MediaType.STORE_LOGO) {
+            String logoUrl = minioService.getPresignedUrl(minioObjectName, 525600); // 1 Jahr gültig
+            store.setLogoUrl(logoUrl);
+            storeRepository.save(store);
+            log.info("✅ Store logo updated for store {}: {}", store.getId(), logoUrl);
+        }
 
         // Update usage
         storeUsageService.incrementStorage(store, file.getSize());

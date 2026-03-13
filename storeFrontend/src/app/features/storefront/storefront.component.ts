@@ -4,13 +4,11 @@ import { ActivatedRoute, RouterModule, Router } from '@angular/router';
 import { ProductService } from '@app/core/services/product.service';
 import { CategoryService } from '@app/core/services/category.service';
 import { CartService } from '@app/core/services/cart.service';
+import { PublicApiService } from '@app/core/services/public-api.service';
 import { ThemeService } from '@app/core/services/theme.service';
 import { ThemeApplierService } from '@app/core/services/theme-applier.service';
 import { HomepageSectionService } from '@app/core/services/homepage-section.service';
 import { Product, Category, PublicStore, ProductStatus, HomepageSection } from '@app/core/models';
-import { StorefrontHeaderComponent } from './storefront-header.component';
-import { StorefrontNavComponent } from './storefront-nav.component';
-import { ProductCardComponent } from './product-card.component';
 import { ProductQuickViewComponent } from '@app/shared/components/product-quick-view.component';
 import { FeaturedProductsComponent } from '@app/shared/components/featured-products.component';
 import { TopBarComponent } from '@app/shared/components/top-bar/top-bar.component';
@@ -32,9 +30,6 @@ import { Subscription } from 'rxjs';
   imports: [
     CommonModule,
     RouterModule,
-    StorefrontHeaderComponent,
-    StorefrontNavComponent,
-    ProductCardComponent,
     ProductQuickViewComponent,
     FeaturedProductsComponent,
     TopBarComponent,
@@ -85,6 +80,7 @@ export class StorefrontComponent implements OnInit, OnDestroy {
     private categoryService: CategoryService,
     private router: Router,
     private cartService: CartService,
+    private publicApiService: PublicApiService,
     private themeService: ThemeService,
     private themeApplier: ThemeApplierService,
     private homepageSectionService: HomepageSectionService,
@@ -107,6 +103,7 @@ export class StorefrontComponent implements OnInit, OnDestroy {
     // FIXED: Keine Session-ID mehr - JWT-basierte Authentifizierung
     console.log(`🛒 Store ${this.storeId} - JWT-basierte Authentifizierung aktiv`);
 
+    this.loadStore();
     this.loadTheme();
     this.loadStoreData();
     this.loadCartCount();
@@ -126,6 +123,28 @@ export class StorefrontComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * ✅ Lädt Store-Informationen (inkl. logoUrl) vom Backend
+   */
+  loadStore(): void {
+    const host = window.location.hostname;
+    this.publicApiService.resolveStore(host).subscribe({
+      next: (store) => {
+        this.store = store;
+        console.log('✅ Store geladen:', store);
+        
+        // Setze Logo, falls vorhanden und noch nicht aus Theme geladen
+        if (store.logoUrl && !this.storeLogo) {
+          this.storeLogo = store.logoUrl;
+          console.log('✅ Logo aus Store geladen:', store.logoUrl);
+        }
+      },
+      error: (err) => {
+        console.warn('⚠️ Store-Resolve fehlgeschlagen:', err);
+      }
+    });
+  }
+
   loadTheme(): void {
     this.themeService.getActiveTheme(this.storeId).subscribe({
       next: (theme) => {
@@ -137,7 +156,10 @@ export class StorefrontComponent implements OnInit, OnDestroy {
           // Set logo if available
           if (theme.logoUrl) {
             this.storeLogo = theme.logoUrl;
-            console.log('✅ Logo geladen:', theme.logoUrl);
+            console.log('✅ Logo aus Theme geladen:', theme.logoUrl);
+          } else if (this.store?.logoUrl) {
+            this.storeLogo = this.store.logoUrl;
+            console.log('✅ Logo aus Store geladen:', this.store.logoUrl);
           }
         } else {
           console.log('ℹ️ Kein Theme gefunden - verwende Standard-Theme');

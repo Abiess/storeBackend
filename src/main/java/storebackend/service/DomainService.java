@@ -151,9 +151,11 @@ public class DomainService {
 
                     PublicStoreDTO dto = new PublicStoreDTO();
                     dto.setStoreId(store.getId());
+                    dto.setDomainId(domain.getId());
                     dto.setName(store.getName());
                     dto.setSlug(store.getSlug());
                     dto.setDescription(store.getDescription());
+                    dto.setLogoUrl(store.getLogoUrl());
                     dto.setPrimaryDomain(domain.getHost());
                     dto.setStatus(store.getStatus().name());
                     return dto;
@@ -192,9 +194,11 @@ public class DomainService {
 
                             PublicStoreDTO dto = new PublicStoreDTO();
                             dto.setStoreId(store.getId());
+                            dto.setDomainId(domain.getId());
                             dto.setName(store.getName());
                             dto.setSlug(store.getSlug());
                             dto.setDescription(store.getDescription());
+                            dto.setLogoUrl(store.getLogoUrl());
                             dto.setPrimaryDomain(domain.getHost());
                             dto.setStatus(store.getStatus().name());
                             return dto;

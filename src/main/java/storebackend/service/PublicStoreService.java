@@ -27,7 +27,14 @@ public class PublicStoreService {
         }
 
         return new PublicStoreDTO(
-
+            store.getId(),
+            domain.getId(),
+            store.getName(),
+            store.getSlug(),
+            store.getDescription(),
+            store.getLogoUrl(),  // ✅ Logo URL
+            domain.getHost(),
+            store.getStatus().name()
         );
     }
 }

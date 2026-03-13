@@ -31,7 +31,10 @@ public class Store {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    // Banner/Slider Images
+    // Logo & Banner/Slider Images
+    @Column(name = "logo_url", columnDefinition = "TEXT")
+    private String logoUrl;
+
     @Column(name = "banner_image_url", columnDefinition = "TEXT")
     private String bannerImageUrl;
 

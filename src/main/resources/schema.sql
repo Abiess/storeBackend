@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS stores (
     slug VARCHAR(255) NOT NULL UNIQUE,
     owner_id BIGINT NOT NULL,
     description TEXT,
+    logo_url TEXT,
     banner_image_url TEXT,
     slider_images TEXT,
     status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',

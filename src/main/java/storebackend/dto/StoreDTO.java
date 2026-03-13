@@ -11,6 +11,8 @@ public class StoreDTO {
     private String name;
     private String slug;
     private String description;
+    private String logoUrl;
+    private String bannerImageUrl;
     private StoreStatus status;
     private LocalDateTime createdAt;
 }

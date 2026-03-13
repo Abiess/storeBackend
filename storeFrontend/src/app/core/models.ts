@@ -578,6 +578,8 @@ export interface Store {
   name: string;
   slug: string;
   description?: string;
+  logoUrl?: string;
+  bannerImageUrl?: string;
   ownerId: number;
   owner?: User;
   userId?: number;
@@ -591,7 +593,7 @@ export interface PublicStore {
   name: string;
   slug: string;
   description?: string;
-  logo?: string;
+  logoUrl?: string;  // ✅ Matches backend PublicStoreDTO
   status: StoreStatus;
 }
 
