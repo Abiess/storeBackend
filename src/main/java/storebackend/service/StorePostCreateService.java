@@ -33,6 +33,7 @@ public class StorePostCreateService {
 
     private final StoreDomainCreator domainCreator;
     private final StoreSliderInitializer sliderInitializer;
+    private final StoreHomepageInitializer homepageInitializer;
 
     /**
      * Executes all post-create operations safely.
@@ -57,7 +58,13 @@ public class StorePostCreateService {
             log.warn("Slider initialization failed for store {}, but store was created successfully", storeId);
         }
 
-        log.debug("Post-create operations completed for store {} (subdomain: {}, slider: {})",
-                storeId, subdomainCreated, sliderInitialized);
+        // Initialize homepage sections in separate transaction (via StoreHomepageInitializer bean)
+        boolean homepageInitialized = homepageInitializer.initializeHomepage(storeId);
+        if (!homepageInitialized) {
+            log.warn("Homepage initialization failed for store {}, but store was created successfully", storeId);
+        }
+
+        log.debug("Post-create operations completed for store {} (subdomain: {}, slider: {}, homepage: {})",
+                storeId, subdomainCreated, sliderInitialized, homepageInitialized);
     }
 }
