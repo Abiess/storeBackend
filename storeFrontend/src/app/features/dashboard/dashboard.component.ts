@@ -6,34 +6,45 @@ import { StoreService } from '@app/core/services/store.service';
 import { AuthService } from '@app/core/services/auth.service';
 import { Store, User, CreateStoreRequest } from '@app/core/models';
 import { LanguageSwitcherComponent } from '@app/shared/components/language-switcher.component';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, LanguageSwitcherComponent],
+  imports: [CommonModule, RouterModule, FormsModule, LanguageSwitcherComponent, TranslateModule],
   template: `
     <div class="dashboard">
       <nav class="navbar">
         <div class="container">
           <div class="nav-brand">
             <h1 class="logo">markt.ma</h1>
-            <span class="tagline">E-Commerce Platform</span>
+            <span class="tagline">{{ 'dashboard.tagline' | translate }}</span>
           </div>
           <div class="nav-right">
             <app-language-switcher></app-language-switcher>
-            <a routerLink="/subscription" class="btn btn-subscription" title="Abonnement">
+
+            <a
+              routerLink="/subscription"
+              class="btn btn-subscription"
+              [title]="'dashboard.subscription' | translate">
               <span class="subscription-icon">💎</span>
             </a>
-            <a routerLink="/settings" class="btn btn-settings" title="Einstellungen">
+
+            <a
+              routerLink="/settings"
+              class="btn btn-settings"
+              [title]="'navigation.settings' | translate">
               <span class="settings-icon">⚙️</span>
             </a>
+
             <div class="user-info">
               <span class="user-avatar">{{ getUserInitials() }}</span>
               <span class="user-email" *ngIf="currentUser">{{ currentUser.email }}</span>
             </div>
+
             <button class="btn btn-logout" (click)="logout()">
               <span class="logout-icon">⎋</span>
-              <span class="logout-text">Abmelden</span>
+              <span class="logout-text">{{ 'common.logout' | translate }}</span>
             </button>
           </div>
         </div>
@@ -42,27 +53,28 @@ import { LanguageSwitcherComponent } from '@app/shared/components/language-switc
       <div class="container">
         <div class="dashboard-header">
           <div>
-            <h2>Meine Stores</h2>
-            <p class="subtitle">Verwalten Sie Ihre Online-Shops</p>
+            <h2>{{ 'dashboard.myStores' | translate }}</h2>
+            <p class="subtitle">{{ 'dashboard.subtitle' | translate }}</p>
           </div>
+
           <button class="btn btn-create-store" (click)="openCreateStoreModal()">
             <span class="icon">➕</span>
-            Neuer Store
+            {{ 'dashboard.newStore' | translate }}
           </button>
         </div>
 
         <div *ngIf="loading" class="loading-container">
           <div class="spinner"></div>
-          <p>Stores werden geladen...</p>
+          <p>{{ 'dashboard.loadingStores' | translate }}</p>
         </div>
 
         <div *ngIf="!loading && stores.length === 0" class="empty-state">
           <div class="empty-icon">🏪</div>
-          <h3>Noch keine Stores vorhanden</h3>
-          <p>Erstellen Sie Ihren ersten Store und starten Sie mit dem Verkauf!</p>
+          <h3>{{ 'dashboard.emptyTitle' | translate }}</h3>
+          <p>{{ 'dashboard.emptyText' | translate }}</p>
           <button class="btn btn-primary btn-large" (click)="openCreateStoreModal()">
             <span>➕</span>
-            Ersten Store erstellen
+            {{ 'dashboard.createFirstStore' | translate }}
           </button>
         </div>
 
@@ -74,7 +86,7 @@ import { LanguageSwitcherComponent } from '@app/shared/components/language-switc
                 {{ getStatusLabel(store.status) }}
               </span>
             </div>
-            
+
             <div class="store-card-body">
               <h3>{{ store.name }}</h3>
               <p class="store-url">
@@ -86,7 +98,7 @@ import { LanguageSwitcherComponent } from '@app/shared/components/language-switc
               <div class="store-meta">
                 <span class="meta-item">
                   <span class="meta-icon">📅</span>
-                  Erstellt: {{ formatDate(store.createdAt) }}
+                  {{ 'dashboard.created' | translate }}: {{ formatDate(store.createdAt) }}
                 </span>
               </div>
             </div>
@@ -94,44 +106,43 @@ import { LanguageSwitcherComponent } from '@app/shared/components/language-switc
             <div class="store-card-footer">
               <button class="btn btn-primary btn-block" [routerLink]="['/stores', store.id]">
                 <span>📊</span>
-                Store verwalten
+                {{ 'dashboard.manageStore' | translate }}
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Create Store Modal -->
       <div class="modal-overlay" *ngIf="showCreateModal" (click)="closeCreateStoreModal()">
         <div class="modal-content" (click)="$event.stopPropagation()">
           <div class="modal-header">
-            <h2>Neuen Store erstellen</h2>
+            <h2>{{ 'dashboard.createStoreModal.title' | translate }}</h2>
             <button class="close-btn" (click)="closeCreateStoreModal()">×</button>
           </div>
 
           <div class="modal-body">
             <form #storeForm="ngForm" (ngSubmit)="createStore()">
               <div class="form-group">
-                <label for="storeName">Store Name *</label>
+                <label for="storeName">{{ 'dashboard.createStoreModal.storeName' | translate }} *</label>
                 <input
                   type="text"
                   id="storeName"
                   name="storeName"
                   [(ngModel)]="newStore.name"
                   required
-                  placeholder="z.B. Mein Online Shop"
+                  [placeholder]="'dashboard.createStoreModal.storeNamePlaceholder' | translate"
                   class="form-control"
                   [class.error]="storeForm.submitted && !newStore.name"
                   (input)="generateSlug()"
                 />
-                <small class="form-hint">Der Name Ihres Stores, wie er Kunden angezeigt wird</small>
+                <small class="form-hint">{{ 'dashboard.createStoreModal.storeNameHint' | translate }}</small>
                 <div class="error-message" *ngIf="storeForm.submitted && !newStore.name">
-                  Bitte geben Sie einen Store-Namen ein
+                  {{ 'dashboard.createStoreModal.errors.storeNameRequired' | translate }}
                 </div>
               </div>
 
               <div class="form-group">
-                <label for="storeSlug">URL-Slug *</label>
+                <label for="storeSlug">{{ 'dashboard.createStoreModal.storeSlug' | translate }} *</label>
                 <div class="slug-input-group">
                   <input
                     type="text"
@@ -139,7 +150,7 @@ import { LanguageSwitcherComponent } from '@app/shared/components/language-switc
                     name="storeSlug"
                     [(ngModel)]="newStore.slug"
                     required
-                    placeholder="mein-shop"
+                    [placeholder]="'dashboard.createStoreModal.storeSlugPlaceholder' | translate"
                     class="form-control"
                     [class.error]="storeForm.submitted && !newStore.slug"
                     pattern="^[a-z0-9-]+$"
@@ -147,11 +158,11 @@ import { LanguageSwitcherComponent } from '@app/shared/components/language-switc
                   <span class="slug-suffix">.markt.ma</span>
                 </div>
                 <small class="form-hint">
-                  Nur Kleinbuchstaben, Zahlen und Bindestriche. Dies wird Ihre Shop-URL: 
-                  <strong>{{ newStore.slug || 'mein-shop' }}.markt.ma</strong>
+                  {{ 'dashboard.createStoreModal.storeSlugHint' | translate }}
+                  <strong>{{ newStore.slug || ('dashboard.createStoreModal.slugExample' | translate) }}.markt.ma</strong>
                 </small>
                 <div class="error-message" *ngIf="storeForm.submitted && !newStore.slug">
-                  Bitte geben Sie einen URL-Slug ein
+                  {{ 'dashboard.createStoreModal.errors.storeSlugRequired' | translate }}
                 </div>
                 <div class="error-message" *ngIf="slugError">
                   {{ slugError }}
@@ -159,27 +170,28 @@ import { LanguageSwitcherComponent } from '@app/shared/components/language-switc
               </div>
 
               <div class="form-group">
-                <label for="storeDescription">Beschreibung (optional)</label>
+                <label for="storeDescription">{{ 'dashboard.createStoreModal.storeDescription' | translate }}</label>
                 <textarea
                   id="storeDescription"
                   name="storeDescription"
                   [(ngModel)]="newStore.description"
-                  placeholder="Beschreiben Sie Ihren Store..."
+                  [placeholder]="'dashboard.createStoreModal.storeDescriptionPlaceholder' | translate"
                   class="form-control"
                   rows="4"
                 ></textarea>
-                <small class="form-hint">Eine kurze Beschreibung Ihres Stores für Kunden und Suchmaschinen</small>
+                <small class="form-hint">{{ 'dashboard.createStoreModal.storeDescriptionHint' | translate }}</small>
               </div>
 
               <div class="form-actions">
                 <button type="button" class="btn btn-secondary" (click)="closeCreateStoreModal()" [disabled]="creating">
-                  Abbrechen
+                  {{ 'common.cancel' | translate }}
                 </button>
+
                 <button type="submit" class="btn btn-primary" [disabled]="creating || !storeForm.valid">
-                  <span *ngIf="!creating">✓ Store erstellen</span>
+                  <span *ngIf="!creating">{{ 'dashboard.createStoreModal.submit' | translate }}</span>
                   <span *ngIf="creating">
                     <span class="spinner-small"></span>
-                    Wird erstellt...
+                    {{ 'dashboard.createStoreModal.creating' | translate }}
                   </span>
                 </button>
               </div>
@@ -193,24 +205,23 @@ import { LanguageSwitcherComponent } from '@app/shared/components/language-switc
         </div>
       </div>
 
-      <!-- Store Limit Modal -->
       <div class="modal-overlay" *ngIf="showLimitModal" (click)="closeLimitModal()">
         <div class="modal-content" (click)="$event.stopPropagation()">
           <div class="modal-header">
-            <h2>Store-Limit erreicht</h2>
+            <h2>{{ 'dashboard.limitModal.title' | translate }}</h2>
             <button class="close-btn" (click)="closeLimitModal()">×</button>
           </div>
 
           <div class="modal-body">
-            <p>Sie haben das maximale Limit an Stores erreicht. Bitte upgraden Sie Ihr Abonnement, um weitere Stores zu erstellen.</p>
+            <p>{{ 'dashboard.limitModal.text' | translate }}</p>
           </div>
 
           <div class="modal-footer">
             <button class="btn btn-secondary" (click)="closeLimitModal()">
-              Später erinnern
+              {{ 'dashboard.limitModal.remindLater' | translate }}
             </button>
             <button class="btn btn-primary" (click)="goToSubscription()">
-              Zum Abonnement
+              {{ 'dashboard.limitModal.goToSubscription' | translate }}
             </button>
           </div>
         </div>
@@ -905,9 +916,10 @@ export class DashboardComponent implements OnInit {
   showLimitModal = false;
 
   constructor(
-    private storeService: StoreService,
-    private authService: AuthService,
-    private router: Router
+      private storeService: StoreService,
+      private authService: AuthService,
+      private router: Router,
+      private translate: TranslateService
   ) {}
 
   ngOnInit(): void {
@@ -953,25 +965,26 @@ export class DashboardComponent implements OnInit {
 
   getStatusLabel(status: string): string {
     switch (status) {
-      case 'ACTIVE': return 'Aktiv';
-      case 'SUSPENDED': return 'Gesperrt';
-      case 'PENDING_DOMAIN_VERIFICATION': return 'Verifizierung';
-      default: return status;
+      case 'ACTIVE':
+        return this.translate.instant('status.active');
+      case 'SUSPENDED':
+        return this.translate.instant('dashboard.status.suspended');
+      case 'PENDING_DOMAIN_VERIFICATION':
+        return this.translate.instant('dashboard.status.verification');
+      default:
+        return status;
     }
   }
 
   openCreateStoreModal(): void {
-    // Check if user has hit store limit
     const user = this.authService.getCurrentUser();
     if (user?.plan?.features && this.stores.length >= user.plan.features.maxStores) {
       this.showLimitModal = true;
       return;
     }
 
-    // NEW: Show store type choice if this is the first store
     const preferredType = localStorage.getItem('preferredStoreType');
     if (this.stores.length === 0 && !preferredType) {
-      // First store - show path selection
       this.router.navigate(['/choose-path']);
       return;
     }
@@ -1001,37 +1014,36 @@ export class DashboardComponent implements OnInit {
       this.newStore.slug = '';
       return;
     }
+
     const slug = this.newStore.name
-      .toLowerCase()
-      .replace(/[^a-z0-9- ]/g, '')
-      .trim()
-      .replace(/ +/g, '-');
+        .toLowerCase()
+        .replace(/[^a-z0-9- ]/g, '')
+        .trim()
+        .replace(/ +/g, '-');
+
     this.newStore.slug = slug;
     this.checkSlugAvailability(slug);
   }
 
   checkSlugAvailability(slug: string): void {
-    // Validiere Slug-Format zuerst
     if (!slug || slug.trim().length === 0) {
       this.slugError = null;
       return;
     }
 
-    // Prüfe Format mit Regex
     if (!slug.match(/^[a-z0-9-]+$/)) {
-      this.slugError = 'Nur Kleinbuchstaben, Zahlen und Bindestriche erlaubt';
+      this.slugError = this.translate.instant('settings.domain.subdomainRules');
       return;
     }
 
-    // Slug ist gültig, prüfe Verfügbarkeit
     this.storeService.checkSlugAvailability(slug).subscribe({
       next: (available) => {
-        this.slugError = available ? null : 'Dieser Slug ist bereits vergeben';
+        this.slugError = available
+            ? null
+            : this.translate.instant('settings.domain.subdomainTaken');
       },
       error: (error) => {
-        // Fehler nur loggen, nicht anzeigen - könnte am Backend liegen
         console.error('Fehler bei der Slug-Prüfung:', error);
-        // Keine Fehlermeldung anzeigen, damit User trotzdem fortfahren kann
         this.slugError = null;
       }
     });
@@ -1040,16 +1052,14 @@ export class DashboardComponent implements OnInit {
   createStore(): void {
     if (this.creating) return;
 
-    // Basic validation
     if (!this.newStore.name || !this.newStore.slug) {
-      this.createError = 'Bitte füllen Sie alle erforderlichen Felder aus';
+      this.createError = this.translate.instant('dashboard.createStoreModal.errors.requiredFields');
       return;
     }
 
     this.creating = true;
     this.createError = '';
 
-    // NEW: Add store type from localStorage if set
     const preferredType = localStorage.getItem('preferredStoreType');
     const storeData: CreateStoreRequest = {
       ...this.newStore,
@@ -1065,7 +1075,6 @@ export class DashboardComponent implements OnInit {
       error: (error) => {
         this.creating = false;
 
-        // Check if it's a store limit error
         if (error.error?.message && error.error.message.includes('Maximum stores limit reached')) {
           this.closeCreateStoreModal();
           this.showLimitModal = true;
@@ -1073,13 +1082,14 @@ export class DashboardComponent implements OnInit {
         }
 
         if (error.status === 403) {
-          this.createError = 'Authentifizierungsproblem. Bitte melden Sie sich erneut an.';
+          this.createError = this.translate.instant('dashboard.errors.authProblem');
           console.error('403-Fehler beim Erstellen des Stores. Bitte Backend neu starten und erneut anmelden.');
         } else if (error.error?.message) {
           this.createError = error.error.message;
         } else {
-          this.createError = 'Fehler beim Erstellen des Stores';
+          this.createError = this.translate.instant('dashboard.errors.createStore');
         }
+
         console.error('Fehler beim Erstellen des Stores:', error);
       }
     });
@@ -1098,37 +1108,33 @@ export class DashboardComponent implements OnInit {
     return `https://${slug}.markt.ma`;
   }
 
-    formatDate(input: any): string {
-        if (!input) return '';
+  formatDate(input: any): string {
+    if (!input) return '';
 
-        let date: Date;
+    let date: Date;
 
-        // Case 1: createdAt ist schon ein Date/ISO-String
-        if (typeof input === 'string' || input instanceof Date) {
-            date = new Date(input);
-        }
-        // Case 2: createdAt kommt als Array [YYYY, M, D, h, m, s, nanos]
-        else if (Array.isArray(input)) {
-            const [y, mon, d, h = 0, min = 0, sec = 0, nanos = 0] = input;
-            // Achtung: JS Monate sind 0-based, Backend ist 1-based
-            const ms = Math.floor((nanos ?? 0) / 1_000_000);
-            date = new Date(y, (mon ?? 1) - 1, d ?? 1, h, min, sec, ms);
-        } else {
-            // unknown format
-            return '';
-        }
-
-        if (isNaN(date.getTime())) return '';
-
-        return new Intl.DateTimeFormat('de-DE', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: false,
-        }).format(date);
+    if (typeof input === 'string' || input instanceof Date) {
+      date = new Date(input);
+    } else if (Array.isArray(input)) {
+      const [y, mon, d, h = 0, min = 0, sec = 0, nanos = 0] = input;
+      const ms = Math.floor((nanos ?? 0) / 1_000_000);
+      date = new Date(y, (mon ?? 1) - 1, d ?? 1, h, min, sec, ms);
+    } else {
+      return '';
     }
 
+    if (isNaN(date.getTime())) return '';
+
+    const currentLang = this.translate.getCurrentLang() || 'de';
+
+    return new Intl.DateTimeFormat(currentLang === 'ar' ? 'ar' : currentLang === 'en' ? 'en-GB' : 'de-DE', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    }).format(date);
+  }
 }

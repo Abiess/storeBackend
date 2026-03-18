@@ -2,11 +2,12 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { VideoPlaceholderComponent } from './video-placeholder.component';
+import {TranslatePipe} from "@app/core/pipes/translate.pipe";
 
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [CommonModule, VideoPlaceholderComponent],
+    imports: [CommonModule, VideoPlaceholderComponent, TranslatePipe],
   templateUrl: './landing.component.html',
   styleUrls: ['./landing.component.scss']
 })
@@ -14,122 +15,121 @@ export class LandingComponent {
   showComparison = false;
 
   stats = [
-    { value: '10K+', label: 'Aktive Shops' },
-    { value: '50M+', label: 'Transaktionen' },
-    { value: '99.9%', label: 'Verfügbarkeit' },
-    { value: '24/7', label: 'Support' }
+    { value: '10K+', label: 'landing.stats.activeShops' },
+    { value: '50M+', label: 'landing.stats.transactions' },
+    { value: '99.9%', label: 'landing.stats.uptime' },
+    { value: '24/7', label: 'landing.stats.support' }
   ];
 
   features = [
     {
       icon: '🎨',
-      title: 'Anpassbares Design',
-      description: 'Erstellen Sie Ihren einzigartigen Shop mit unseren professionellen Vorlagen und Anpassungsoptionen.'
+      title: 'landing.featureItems.customDesign.title',
+      description: 'landing.featureItems.customDesign.description'
     },
     {
       icon: '💳',
-      title: 'Sichere Zahlungen',
-      description: 'Integrierte Zahlungsabwicklung mit den wichtigsten Zahlungsmethoden und höchster Sicherheit.'
+      title: 'landing.featureItems.securePayments.title',
+      description: 'landing.featureItems.securePayments.description'
     },
     {
       icon: '📊',
-      title: 'Analytics & Reporting',
-      description: 'Verfolgen Sie Ihre Verkäufe, Kunden und Performance mit detaillierten Analysen in Echtzeit.'
+      title: 'landing.featureItems.analytics.title',
+      description: 'landing.featureItems.analytics.description'
     },
     {
       icon: '🚚',
-      title: 'Versandintegration',
-      description: 'Automatische Integration mit führenden Versanddienstleistern für optimierte Logistik.'
+      title: 'landing.featureItems.shipping.title',
+      description: 'landing.featureItems.shipping.description'
     },
     {
       icon: '📱',
-      title: 'Mobile-First',
-      description: 'Perfekt optimiert für mobile Geräte - Ihre Kunden kaufen überall und jederzeit ein.'
+      title: 'landing.featureItems.mobileFirst.title',
+      description: 'landing.featureItems.mobileFirst.description'
     },
     {
       icon: '🔒',
-      title: 'SSL & Sicherheit',
-      description: 'Höchste Sicherheitsstandards mit SSL-Verschlüsselung und automatischen Backups.'
+      title: 'landing.featureItems.security.title',
+      description: 'landing.featureItems.security.description'
     }
   ];
 
   tutorials = [
     {
       icon: '👤',
-      title: 'Account erstellen',
-      description: 'Lernen Sie, wie Sie in 2 Minuten Ihren eigenen Shop-Account anlegen',
+      title: 'landing.tutorialItems.createAccount.title',
+      description: 'landing.tutorialItems.createAccount.description',
       videoUrl: 'assets/videos/02-how-to-register.cy.ts.mp4',
-      duration: '2:00 min'
+      duration: 'landing.tutorialItems.createAccount.duration'
     },
     {
       icon: '📦',
-      title: 'Erstes Produkt anlegen',
-      description: 'Schritt-für-Schritt Anleitung zum Hinzufügen Ihres ersten Produkts',
+      title: 'landing.tutorialItems.createFirstProduct.title',
+      description: 'landing.tutorialItems.createFirstProduct.description',
       videoUrl: 'assets/videos/03-how-to-create-product.cy.ts.mp4',
-      duration: '2:30 min'
+      duration: 'landing.tutorialItems.createFirstProduct.duration'
     },
     {
       icon: '🎨',
-      title: 'Shop anpassen',
-      description: 'Personalisieren Sie das Design und die Einstellungen Ihres Shops',
+      title: 'landing.tutorialItems.customizeStore.title',
+      description: 'landing.tutorialItems.customizeStore.description',
       videoUrl: 'assets/videos/04-how-to-customize-store.cy.ts.mp4',
-      duration: '3:00 min'
+      duration: 'landing.tutorialItems.customizeStore.duration'
     }
   ];
 
   plans = [
     {
-      name: 'Starter',
-      description: 'Perfekt für neue Unternehmen',
+      name: 'landing.planItems.starter.name',
+      description: 'landing.planItems.starter.description',
       price: '0',
-      period: '/Monat',
-      cta: 'Kostenlos starten',
+      period: 'landing.planItems.periodMonthly',
+      cta: 'landing.planItems.starter.cta',
       features: [
-        'Bis zu 10 Produkte',
-        'Eigene Domain',
-        'SSL-Zertifikat',
-        'E-Mail-Support',
-        '99.9% Verfügbarkeit'
+        'landing.planItems.starter.features.0',
+        'landing.planItems.starter.features.1',
+        'landing.planItems.starter.features.2',
+        'landing.planItems.starter.features.3',
+        'landing.planItems.starter.features.4'
       ],
       highlighted: false
     },
     {
-      name: 'Professional',
-      description: 'Für wachsende Unternehmen',
+      name: 'landing.planItems.professional.name',
+      description: 'landing.planItems.professional.description',
       price: '29',
-      period: '/Monat',
-      badge: 'Beliebt',
-      cta: 'Jetzt starten',
+      period: 'landing.planItems.periodMonthly',
+      badge: 'landing.planItems.professional.badge',
+      cta: 'landing.planItems.professional.cta',
       features: [
-        'Unbegrenzte Produkte',
-        'Eigene Domain',
-        'SSL-Zertifikat',
-        'Prioritäts-Support',
-        'Analytics & Reports',
-        'Marketing-Tools',
-        'API-Zugang'
+        'landing.planItems.professional.features.0',
+        'landing.planItems.professional.features.1',
+        'landing.planItems.professional.features.2',
+        'landing.planItems.professional.features.3',
+        'landing.planItems.professional.features.4',
+        'landing.planItems.professional.features.5',
+        'landing.planItems.professional.features.6'
       ],
       highlighted: true
     },
     {
-      name: 'Enterprise',
-      description: 'Für große Unternehmen',
+      name: 'landing.planItems.enterprise.name',
+      description: 'landing.planItems.enterprise.description',
       price: '99',
-      period: '/Monat',
-      cta: 'Kontakt aufnehmen',
+      period: 'landing.planItems.periodMonthly',
+      cta: 'landing.planItems.enterprise.cta',
       features: [
-        'Alles aus Professional',
-        'Dedizierter Account Manager',
-        '24/7 Premium Support',
-        'Custom Integration',
-        'White-Label Option',
-        'SLA Garantie',
-        'Schulungen & Onboarding'
+        'landing.planItems.enterprise.features.0',
+        'landing.planItems.enterprise.features.1',
+        'landing.planItems.enterprise.features.2',
+        'landing.planItems.enterprise.features.3',
+        'landing.planItems.enterprise.features.4',
+        'landing.planItems.enterprise.features.5',
+        'landing.planItems.enterprise.features.6'
       ],
       highlighted: false
     }
   ];
-
   constructor(private router: Router) {}
 
   scrollToSection(sectionId: string): void {

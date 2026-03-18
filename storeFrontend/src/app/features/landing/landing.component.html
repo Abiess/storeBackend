@@ -1,301 +1,322 @@
 <div class="landing-page">
-  <!-- Navigation -->
-  <nav class="navbar">
-    <div class="container">
-      <div class="nav-brand">
-        <h1>🛍️ markt.ma</h1>
-      </div>
-      <div class="nav-links">
-        <a (click)="scrollToSection('features')">Features</a>
-        <a (click)="scrollToSection('demo')">Demo</a>
-        <a (click)="scrollToSection('pricing')">Preise</a>
-        <button class="btn btn-secondary" (click)="navigateToLogin()">Anmelden</button>
-        <button class="btn btn-primary" (click)="navigateToRegister()">Kostenlos starten</button>
-      </div>
-    </div>
-  </nav>
-
-  <!-- Hero Section -->
-  <section class="hero">
-    <div class="container">
-      <div class="hero-content">
-        <h1 class="hero-title">
-          Starten Sie Ihren Online-Shop <span class="gradient-text">in Minuten</span>
-        </h1>
-        <p class="hero-subtitle">
-          Wählen Sie Ihren Weg: Eigene Produkte verkaufen oder als Reseller durchstarten.
-          Keine Programmierkenntnisse erforderlich.
-        </p>
-
-        <!-- NEW: Two Path Selection -->
-        <div class="hero-paths">
-          <div class="path-card path-own">
-            <div class="path-icon">🏗️</div>
-            <h3>Eigenen Store bauen</h3>
-            <p class="path-for">Für Händler mit eigenen Produkten</p>
-            <ul class="path-benefits">
-              <li>✓ Volle Kontrolle über Katalog & Preise</li>
-              <li>✓ Eigene Marke & Custom Design</li>
-              <li>✓ 100% Umsatz gehört Ihnen</li>
-            </ul>
-            <button class="btn btn-path-own" (click)="navigateToRegister('own-store')">
-              🚀 Store aufbauen
-            </button>
-          </div>
-
-          <div class="path-card path-reseller">
-            <div class="path-badge">Neu</div>
-            <div class="path-icon">🤝</div>
-            <h3>Reseller Store starten</h3>
-            <p class="path-for">Für Wiederverkäufer ohne eigene Produkte</p>
-            <ul class="path-benefits">
-              <li>✓ Sofort 1000+ Produkte verfügbar</li>
-              <li>✓ Kein Lager, kein Versand nötig</li>
-              <li>✓ Attraktive Provisionen verdienen</li>
-            </ul>
-            <button class="btn btn-path-reseller" (click)="navigateToRegister('reseller')">
-              💰 Reseller werden
-            </button>
-          </div>
-        </div>
-
-        <!-- NEW: Quick Comparison -->
-        <div class="path-comparison">
-          <button class="comparison-toggle" (click)="toggleComparison()">
-            {{ showComparison ? '▼' : '▶' }} Schnellvergleich ansehen
-          </button>
-          <div class="comparison-table" *ngIf="showComparison">
-            <div class="comparison-row comparison-header">
-              <span class="comparison-label"></span>
-              <span class="comparison-own-col">Eigener Store</span>
-              <span class="comparison-reseller-col">Reseller Store</span>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h1>🛍️ markt.ma</h1>
             </div>
-            <div class="comparison-row">
-              <span class="comparison-label">Setup-Zeit</span>
-              <span class="comparison-value">~2 Stunden</span>
-              <span class="comparison-value">~15 Minuten</span>
+            <div class="nav-links">
+                <a (click)="scrollToSection('features')">{{ 'landing.nav.features' | translate }}</a>
+                <a (click)="scrollToSection('demo')">{{ 'landing.nav.demo' | translate }}</a>
+                <a (click)="scrollToSection('pricing')">{{ 'landing.nav.pricing' | translate }}</a>
+                <button class="btn btn-secondary" (click)="navigateToLogin()">
+                    {{ 'landing.nav.login' | translate }}
+                </button>
+                <button class="btn btn-primary" (click)="navigateToRegister()">
+                    {{ 'landing.nav.startFree' | translate }}
+                </button>
             </div>
-            <div class="comparison-row">
-              <span class="comparison-label">Startkapital</span>
-              <span class="comparison-value">Mittel-Hoch</span>
-              <span class="comparison-value">Kein/Gering</span>
-            </div>
-            <div class="comparison-row">
-              <span class="comparison-label">Produktauswahl</span>
-              <span class="comparison-value">Sie entscheiden</span>
-              <span class="comparison-value">Supplier-Katalog</span>
-            </div>
-            <div class="comparison-row">
-              <span class="comparison-label">Lager/Versand</span>
-              <span class="comparison-value">Sie organisieren</span>
-              <span class="comparison-value">Automatisch</span>
-            </div>
-            <div class="comparison-row">
-              <span class="comparison-label">Umsatzmodell</span>
-              <span class="comparison-value">100% Ihres Preises</span>
-              <span class="comparison-value">20-30% Provision</span>
-            </div>
-            <div class="comparison-row">
-              <span class="comparison-label">Für wen?</span>
-              <span class="comparison-value">Hersteller, Händler</span>
-              <span class="comparison-value">Affiliates, Influencer</span>
-            </div>
-          </div>
-          <p class="comparison-note">
-            💡 <strong>Gut zu wissen:</strong> Sie können später jederzeit weitere Stores erstellen - auch vom anderen Typ!
-          </p>
         </div>
+    </nav>
 
-        <div class="hero-actions">
-          <button class="btn btn-hero-primary" (click)="navigateToRegister()">
-            🚀 Jetzt kostenlos starten
-          </button>
-          <button class="btn btn-hero-secondary" (click)="scrollToSection('demo')">
-            📹 Demo ansehen
-          </button>
-        </div>
-        <div class="hero-stats">
-          <div class="stat" *ngFor="let stat of stats">
-            <div class="stat-value">{{ stat.value }}</div>
-            <div class="stat-label">{{ stat.label }}</div>
-          </div>
-        </div>
-      </div>
-      <div class="hero-image">
-        <div class="mockup-browser">
-          <div class="browser-header">
-            <div class="browser-dots">
-              <span></span><span></span><span></span>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="hero-title" [innerHTML]="'landing.hero.title' | translate"></h1>
+                <p class="hero-subtitle">
+                    {{ 'landing.hero.subtitle' | translate }}
+                </p>
+
+                <!-- Two Path Selection -->
+                <div class="hero-paths">
+                    <div class="path-card path-own">
+                        <div class="path-icon">{{ 'landing.paths.own.icon' | translate }}</div>
+                        <h3>{{ 'landing.paths.own.title' | translate }}</h3>
+                        <p class="path-for">{{ 'landing.paths.own.for' | translate }}</p>
+                        <ul class="path-benefits">
+                            <li>{{ 'landing.paths.own.benefit1' | translate }}</li>
+                            <li>{{ 'landing.paths.own.benefit2' | translate }}</li>
+                            <li>{{ 'landing.paths.own.benefit3' | translate }}</li>
+                        </ul>
+                        <button class="btn btn-path-own" (click)="navigateToRegister('own-store')">
+                            {{ 'landing.paths.own.cta' | translate }}
+                        </button>
+                    </div>
+
+                    <div class="path-card path-reseller">
+                        <div class="path-badge">{{ 'landing.paths.reseller.badge' | translate }}</div>
+                        <div class="path-icon">{{ 'landing.paths.reseller.icon' | translate }}</div>
+                        <h3>{{ 'landing.paths.reseller.title' | translate }}</h3>
+                        <p class="path-for">{{ 'landing.paths.reseller.for' | translate }}</p>
+                        <ul class="path-benefits">
+                            <li>{{ 'landing.paths.reseller.benefit1' | translate }}</li>
+                            <li>{{ 'landing.paths.reseller.benefit2' | translate }}</li>
+                            <li>{{ 'landing.paths.reseller.benefit3' | translate }}</li>
+                        </ul>
+                        <button class="btn btn-path-reseller" (click)="navigateToRegister('reseller')">
+                            {{ 'landing.paths.reseller.cta' | translate }}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Comparison -->
+                <div class="path-comparison">
+                    <button class="comparison-toggle" (click)="toggleComparison()">
+                        {{
+                            showComparison
+                                ? ('landing.comparison.toggleClose' | translate)
+                                : ('landing.comparison.toggleOpen' | translate)
+                        }}
+                    </button>
+
+                    <div class="comparison-table" *ngIf="showComparison">
+                        <div class="comparison-row comparison-header">
+                            <span class="comparison-label"></span>
+                            <span class="comparison-own-col">{{ 'landing.comparison.ownStore' | translate }}</span>
+                            <span class="comparison-reseller-col">{{ 'landing.comparison.resellerStore' | translate }}</span>
+                        </div>
+
+                        <div class="comparison-row">
+                            <span class="comparison-label">{{ 'landing.comparison.setupTime' | translate }}</span>
+                            <span class="comparison-value">{{ 'landing.comparison.setupTimeOwn' | translate }}</span>
+                            <span class="comparison-value">{{ 'landing.comparison.setupTimeReseller' | translate }}</span>
+                        </div>
+
+                        <div class="comparison-row">
+                            <span class="comparison-label">{{ 'landing.comparison.startCapital' | translate }}</span>
+                            <span class="comparison-value">{{ 'landing.comparison.startCapitalOwn' | translate }}</span>
+                            <span class="comparison-value">{{ 'landing.comparison.startCapitalReseller' | translate }}</span>
+                        </div>
+
+                        <div class="comparison-row">
+                            <span class="comparison-label">{{ 'landing.comparison.productSelection' | translate }}</span>
+                            <span class="comparison-value">{{ 'landing.comparison.productSelectionOwn' | translate }}</span>
+                            <span class="comparison-value">{{ 'landing.comparison.productSelectionReseller' | translate }}</span>
+                        </div>
+
+                        <div class="comparison-row">
+                            <span class="comparison-label">{{ 'landing.comparison.storageShipping' | translate }}</span>
+                            <span class="comparison-value">{{ 'landing.comparison.storageShippingOwn' | translate }}</span>
+                            <span class="comparison-value">{{ 'landing.comparison.storageShippingReseller' | translate }}</span>
+                        </div>
+
+                        <div class="comparison-row">
+                            <span class="comparison-label">{{ 'landing.comparison.revenueModel' | translate }}</span>
+                            <span class="comparison-value">{{ 'landing.comparison.revenueModelOwn' | translate }}</span>
+                            <span class="comparison-value">{{ 'landing.comparison.revenueModelReseller' | translate }}</span>
+                        </div>
+
+                        <div class="comparison-row">
+                            <span class="comparison-label">{{ 'landing.comparison.forWhom' | translate }}</span>
+                            <span class="comparison-value">{{ 'landing.comparison.forWhomOwn' | translate }}</span>
+                            <span class="comparison-value">{{ 'landing.comparison.forWhomReseller' | translate }}</span>
+                        </div>
+                    </div>
+
+                    <p class="comparison-note" [innerHTML]="'landing.comparison.note' | translate"></p>
+                </div>
+
+                <div class="hero-actions">
+                    <button class="btn btn-hero-primary" (click)="navigateToRegister()">
+                        {{ 'landing.hero.startNow' | translate }}
+                    </button>
+                    <button class="btn btn-hero-secondary" (click)="scrollToSection('demo')">
+                        {{ 'landing.hero.watchDemo' | translate }}
+                    </button>
+                </div>
+
+                <div class="hero-stats">
+                    <div class="stat" *ngFor="let stat of stats">
+                        <div class="stat-value">{{ stat.value | translate }}</div>
+                        <div class="stat-label">{{ stat.label | translate }}</div>
+                    </div>
+                </div>
             </div>
-            <div class="browser-url">https://ihr-shop.markt.ma</div>
-          </div>
-          <div class="browser-content">
-            <div class="shop-preview">
-              <div class="preview-header"></div>
-              <div class="preview-products">
-                <div class="preview-card"></div>
-                <div class="preview-card"></div>
-                <div class="preview-card"></div>
-              </div>
+
+            <div class="hero-image">
+                <div class="mockup-browser">
+                    <div class="browser-header">
+                        <div class="browser-dots">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <div class="browser-url">{{ 'landing.stats.shopUrl' | translate }}</div>
+                    </div>
+                    <div class="browser-content">
+                        <div class="shop-preview">
+                            <div class="preview-header"></div>
+                            <div class="preview-products">
+                                <div class="preview-card"></div>
+                                <div class="preview-card"></div>
+                                <div class="preview-card"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- Features Section -->
-  <section id="features" class="features-section">
-    <div class="container">
-      <div class="section-header">
-        <h2>Alles was Sie brauchen, um erfolgreich zu verkaufen</h2>
-        <p>Professionelle Tools für Ihren E-Commerce-Erfolg</p>
-      </div>
-      <div class="features-grid">
-        <div class="feature-card" *ngFor="let feature of features">
-          <div class="feature-icon">{{ feature.icon }}</div>
-          <h3>{{ feature.title }}</h3>
-          <p>{{ feature.description }}</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Video Demo Section -->
-  <section id="demo" class="video-demo-section">
-    <div class="container">
-      <div class="section-header">
-        <h2>Sehen Sie markt.ma in Aktion</h2>
-        <p>Entdecken Sie, wie einfach es ist, Ihren eigenen Online-Shop zu erstellen</p>
-      </div>
-
-      <!-- Main Demo Video mit Platzhalter -->
-      <div class="main-video-container">
-        <div class="video-wrapper">
-          <!-- Animierter Platzhalter - funktioniert SOFORT ohne Video-Datei! -->
-          <app-video-placeholder
-            size="large"
-            icon="🎥"
-            title="PLATTFORM DEMO">
-          </app-video-placeholder>
-        </div>
-        <div class="video-info">
-          <h3>🎥 Vollständige Plattform-Demo</h3>
-          <p>Sehen Sie alle Features von markt.ma in weniger als 2 Minuten</p>
-          <small style="color: #7f8c8d; margin-top: 0.5rem; display: block;">
-            💡 Klicken Sie auf ▶ um direkt zur Live-Demo zu gelangen
-          </small>
-        </div>
-      </div>
-
-      <!-- Tutorial Videos mit Platzhaltern -->
-      <div class="tutorials-section">
-        <h3 class="tutorials-title">📚 Schritt-für-Schritt Anleitungen</h3>
-        <div class="tutorials-grid">
-          <div class="tutorial-card" *ngFor="let tutorial of tutorials">
-            <div class="tutorial-video">
-              <!-- Animierte Platzhalter - funktionieren SOFORT! -->
-              <app-video-placeholder
-                size="small"
-                [icon]="tutorial.icon"
-                [title]="tutorial.title">
-              </app-video-placeholder>
-              <div class="tutorial-duration">{{ tutorial.duration }}</div>
+    <!-- Features Section -->
+    <section id="features" class="features-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>{{ 'landing.features.title' | translate }}</h2>
+                <p>{{ 'landing.features.subtitle' | translate }}</p>
             </div>
-            <div class="tutorial-content">
-              <div class="tutorial-icon">{{ tutorial.icon }}</div>
-              <h4>{{ tutorial.title }}</h4>
-              <p>{{ tutorial.description }}</p>
+            <div class="features-grid">
+                <div class="feature-card" *ngFor="let feature of features">
+                    <div class="feature-icon">{{ feature.icon }}</div>
+                    <h3>{{ feature.title | translate }}</h3>
+                    <p>{{ feature.description | translate }}</p>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
+    </section>
 
-      <!-- Video CTA -->
-      <div class="video-cta">
-        <p>Bereit anzufangen?</p>
-        <button class="btn btn-hero-primary" (click)="navigateToRegister()">
-          Jetzt kostenlos starten
-        </button>
-      </div>
-    </div>
-  </section>
+    <!-- Video Demo Section -->
+    <section id="demo" class="video-demo-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>{{ 'landing.demo.title' | translate }}</h2>
+                <p>{{ 'landing.demo.subtitle' | translate }}</p>
+            </div>
 
-  <!-- Pricing Section -->
-  <section id="pricing" class="pricing-section">
-    <div class="container">
-      <div class="section-header">
-        <h2>Transparente Preise für jedes Budget</h2>
-        <p>Keine versteckten Kosten, jederzeit kündbar</p>
-      </div>
-      <div class="pricing-grid">
-        <div class="pricing-card"
-             *ngFor="let plan of plans"
-             [class.highlighted]="plan.highlighted">
-          <div class="pricing-badge" *ngIf="plan.highlighted">⭐ Beliebt</div>
-          <h3 class="plan-name">{{ plan.name }}</h3>
-          <p class="plan-description">{{ plan.description }}</p>
-          <div class="plan-price">
-            <span class="price-amount">{{ plan.price }}€</span>
-            <span class="price-period">{{ plan.period }}</span>
-          </div>
-          <ul class="plan-features">
-            <li *ngFor="let feature of plan.features">
-              <span class="check-icon">✓</span> {{ feature }}
-            </li>
-          </ul>
-          <button class="btn btn-plan"
-                  [class.btn-plan-highlighted]="plan.highlighted"
-                  (click)="navigateToRegister()">
-            {{ plan.cta }}
-          </button>
-        </div>
-      </div>
-    </div>
-  </section>
+            <div class="main-video-container">
+                <div class="video-wrapper">
+                    <app-video-placeholder
+                            size="large"
+                            icon="🎥"
+                            [title]="'landing.demo.platformDemoTitle' | translate">
+                    </app-video-placeholder>
+                </div>
 
-  <!-- CTA Section -->
-  <section class="cta-section">
-    <div class="container">
-      <div class="cta-content">
-        <h2>Bereit, Ihren Online-Shop zu starten?</h2>
-        <p>Schließen Sie sich tausenden erfolgreichen Händlern an</p>
-        <button class="btn btn-cta" (click)="navigateToRegister()">
-          🚀 Jetzt kostenlos loslegen
-        </button>
-        <p class="cta-note">Keine Kreditkarte erforderlich • Jederzeit kündbar</p>
-      </div>
-    </div>
-  </section>
+                <div class="video-info">
+                    <h3>{{ 'landing.demo.platformDemoHeading' | translate }}</h3>
+                    <p>{{ 'landing.demo.platformDemoText' | translate }}</p>
+                    <small style="color: #7f8c8d; margin-top: 0.5rem; display: block;">
+                        {{ 'landing.demo.platformDemoHint' | translate }}
+                    </small>
+                </div>
+            </div>
 
-  <!-- Footer -->
-  <footer class="footer">
-    <div class="container">
-      <div class="footer-content">
-        <div class="footer-section">
-          <h3>🛍️ markt.ma</h3>
-          <p>Die moderne E-Commerce-Plattform</p>
+            <div class="tutorials-section">
+                <h3 class="tutorials-title">{{ 'landing.demo.tutorialsTitle' | translate }}</h3>
+                <div class="tutorials-grid">
+                    <div class="tutorial-card" *ngFor="let tutorial of tutorials">
+                        <div class="tutorial-video">
+                            <app-video-placeholder
+                                    size="small"
+                                    [icon]="tutorial.icon"
+                                    [title]="tutorial.title | translate">
+                            </app-video-placeholder>
+                            <div class="tutorial-duration">{{ tutorial.duration | translate }}</div>
+                        </div>
+
+                        <div class="tutorial-content">
+                            <div class="tutorial-icon">{{ tutorial.icon }}</div>
+                            <h4>{{ tutorial.title | translate }}</h4>
+                            <p>{{ tutorial.description | translate }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="video-cta">
+                <p>{{ 'landing.demo.ctaText' | translate }}</p>
+                <button class="btn btn-hero-primary" (click)="navigateToRegister()">
+                    {{ 'landing.demo.ctaButton' | translate }}
+                </button>
+            </div>
         </div>
-        <div class="footer-section">
-          <h4>Produkt</h4>
-          <ul>
-            <li><a (click)="scrollToSection('features')">Features</a></li>
-            <li><a (click)="scrollToSection('demo')">Demo</a></li>
-            <li><a (click)="scrollToSection('pricing')">Preise</a></li>
-          </ul>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="pricing-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>{{ 'landing.pricing.title' | translate }}</h2>
+                <p>{{ 'landing.pricing.subtitle' | translate }}</p>
+            </div>
+
+            <div class="pricing-grid">
+                <div class="pricing-card"
+                     *ngFor="let plan of plans"
+                     [class.highlighted]="plan.highlighted">
+
+                    <div class="pricing-badge" *ngIf="plan.highlighted">
+                        {{ 'landing.pricing.popular' | translate }}
+                    </div>
+
+                    <h3 class="plan-name">{{ plan.name | translate }}</h3>
+                    <p class="plan-description">{{ plan.description | translate }}</p>
+
+                    <div class="plan-price">
+                        <span class="price-amount">{{ plan.price }}€</span>
+                        <span class="price-period">{{ plan.period | translate }}</span>
+                    </div>
+
+                    <ul class="plan-features">
+                        <li *ngFor="let feature of plan.features">
+                            <span class="check-icon">✓</span> {{ feature | translate }}
+                        </li>
+                    </ul>
+
+                    <button class="btn btn-plan"
+                            [class.btn-plan-highlighted]="plan.highlighted"
+                            (click)="navigateToRegister()">
+                        {{ plan.cta | translate }}
+                    </button>
+                </div>
+            </div>
         </div>
-        <div class="footer-section">
-          <h4>Legal</h4>
-          <ul>
-            <li><a>Impressum</a></li>
-            <li><a>Datenschutz</a></li>
-            <li><a>AGB</a></li>
-          </ul>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-content">
+                <h2>{{ 'landing.cta.title' | translate }}</h2>
+                <p>{{ 'landing.cta.subtitle' | translate }}</p>
+                <button class="btn btn-cta" (click)="navigateToRegister()">
+                    {{ 'landing.cta.button' | translate }}
+                </button>
+                <p class="cta-note">{{ 'landing.cta.note' | translate }}</p>
+            </div>
         </div>
-      </div>
-      <div class="footer-bottom">
-        <p>&copy; 2025 markt.ma. Alle Rechte vorbehalten.</p>
-      </div>
-    </div>
-  </footer>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>🛍️ markt.ma</h3>
+                    <p>{{ 'landing.footer.tagline' | translate }}</p>
+                </div>
+
+                <div class="footer-section">
+                    <h4>{{ 'landing.footer.product' | translate }}</h4>
+                    <ul>
+                        <li><a (click)="scrollToSection('features')">{{ 'landing.nav.features' | translate }}</a></li>
+                        <li><a (click)="scrollToSection('demo')">{{ 'landing.nav.demo' | translate }}</a></li>
+                        <li><a (click)="scrollToSection('pricing')">{{ 'landing.nav.pricing' | translate }}</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h4>{{ 'landing.footer.legal' | translate }}</h4>
+                    <ul>
+                        <li><a>{{ 'landing.footer.imprint' | translate }}</a></li>
+                        <li><a>{{ 'landing.footer.privacy' | translate }}</a></li>
+                        <li><a>{{ 'landing.footer.terms' | translate }}</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>{{ 'landing.footer.copyright' | translate }}</p>
+            </div>
+        </div>
+    </footer>
 </div>

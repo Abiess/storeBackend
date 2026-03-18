@@ -396,6 +396,53 @@
     "support": "24/7 Support",
     "supportDesc": "Wir sind für Sie da"
   },
+  "dashboard": {
+    "tagline": "E-Commerce Platform",
+    "subscription": "Abonnement",
+    "myStores": "Meine Stores",
+    "subtitle": "Verwalten Sie Ihre Online-Shops",
+    "newStore": "Neuer Store",
+    "loadingStores": "Stores werden geladen...",
+    "emptyTitle": "Noch keine Stores vorhanden",
+    "emptyText": "Erstellen Sie Ihren ersten Store und starten Sie mit dem Verkauf!",
+    "createFirstStore": "Ersten Store erstellen",
+    "created": "Erstellt",
+    "manageStore": "Store verwalten",
+    "status": {
+      "suspended": "Gesperrt",
+      "verification": "Verifizierung"
+    },
+    "errors": {
+      "authProblem": "Authentifizierungsproblem. Bitte melden Sie sich erneut an.",
+      "createStore": "Fehler beim Erstellen des Stores"
+    },
+    "createStoreModal": {
+      "title": "Neuen Store erstellen",
+      "storeName": "Store Name",
+      "storeNamePlaceholder": "z.B. Mein Online Shop",
+      "storeNameHint": "Der Name Ihres Stores, wie er Kunden angezeigt wird",
+      "storeSlug": "URL-Slug",
+      "storeSlugPlaceholder": "mein-shop",
+      "storeSlugHint": "Nur Kleinbuchstaben, Zahlen und Bindestriche. Dies wird Ihre Shop-URL:",
+      "slugExample": "mein-shop",
+      "storeDescription": "Beschreibung (optional)",
+      "storeDescriptionPlaceholder": "Beschreiben Sie Ihren Store...",
+      "storeDescriptionHint": "Eine kurze Beschreibung Ihres Stores für Kunden und Suchmaschinen",
+      "submit": "✓ Store erstellen",
+      "creating": "Wird erstellt...",
+      "errors": {
+        "storeNameRequired": "Bitte geben Sie einen Store-Namen ein",
+        "storeSlugRequired": "Bitte geben Sie einen URL-Slug ein",
+        "requiredFields": "Bitte füllen Sie alle erforderlichen Felder aus"
+      }
+    },
+    "limitModal": {
+      "title": "Store-Limit erreicht",
+      "text": "Sie haben das maximale Limit an Stores erreicht. Bitte upgraden Sie Ihr Abonnement, um weitere Stores zu erstellen.",
+      "remindLater": "Später erinnern",
+      "goToSubscription": "Zum Abonnement"
+    }
+  },
   "auth": {
     "loginTitle": "markt.ma Login",
     "loginSubtitle": "Melden Sie sich bei Ihrem Store-Dashboard an",
@@ -630,5 +677,195 @@
     "loadingProducts": "Produkte werden geladen...",
     "noProducts": "Noch keine Produkte vorhanden",
     "createFirstProduct": "Erstes Produkt erstellen"
+  },
+  "landing": {
+    "nav": {
+      "features": "Features",
+      "demo": "Demo",
+      "pricing": "Preise",
+      "login": "Anmelden",
+      "startFree": "Kostenlos starten"
+    },
+    "hero": {
+      "title": "Starten Sie Ihren Online-Shop <span class=\"gradient-text\">in Minuten</span>",
+      "subtitle": "Wählen Sie Ihren Weg: Eigene Produkte verkaufen oder als Reseller durchstarten. Keine Programmierkenntnisse erforderlich.",
+      "startNow": "🚀 Jetzt kostenlos starten",
+      "watchDemo": "📹 Demo ansehen"
+    },
+    "paths": {
+      "own": {
+        "icon": "🏗️",
+        "title": "Eigenen Store bauen",
+        "for": "Für Händler mit eigenen Produkten",
+        "benefit1": "✓ Volle Kontrolle über Katalog & Preise",
+        "benefit2": "✓ Eigene Marke & Custom Design",
+        "benefit3": "✓ 100% Umsatz gehört Ihnen",
+        "cta": "🚀 Store aufbauen"
+      },
+      "reseller": {
+        "badge": "Neu",
+        "icon": "🤝",
+        "title": "Reseller Store starten",
+        "for": "Für Wiederverkäufer ohne eigene Produkte",
+        "benefit1": "✓ Sofort 1000+ Produkte verfügbar",
+        "benefit2": "✓ Kein Lager, kein Versand nötig",
+        "benefit3": "✓ Attraktive Provisionen verdienen",
+        "cta": "💰 Reseller werden"
+      }
+    },
+    "comparison": {
+      "toggleOpen": "▶ Schnellvergleich ansehen",
+      "toggleClose": "▼ Schnellvergleich ansehen",
+      "ownStore": "Eigener Store",
+      "resellerStore": "Reseller Store",
+      "setupTime": "Setup-Zeit",
+      "setupTimeOwn": "~2 Stunden",
+      "setupTimeReseller": "~15 Minuten",
+      "startCapital": "Startkapital",
+      "startCapitalOwn": "Mittel-Hoch",
+      "startCapitalReseller": "Kein/Gering",
+      "productSelection": "Produktauswahl",
+      "productSelectionOwn": "Sie entscheiden",
+      "productSelectionReseller": "Supplier-Katalog",
+      "storageShipping": "Lager/Versand",
+      "storageShippingOwn": "Sie organisieren",
+      "storageShippingReseller": "Automatisch",
+      "revenueModel": "Umsatzmodell",
+      "revenueModelOwn": "100% Ihres Preises",
+      "revenueModelReseller": "20-30% Provision",
+      "forWhom": "Für wen?",
+      "forWhomOwn": "Hersteller, Händler",
+      "forWhomReseller": "Affiliates, Influencer",
+      "note": "💡 <strong>Gut zu wissen:</strong> Sie können später jederzeit weitere Stores erstellen - auch vom anderen Typ!"
+    },
+    "stats": {
+      "shopUrl": "https://ihr-shop.markt.ma",
+      "activeShops": "Aktive Shops",
+      "transactions": "Transaktionen",
+      "uptime": "Verfügbarkeit",
+      "support": "Support"
+    },
+    "features": {
+      "title": "Alles was Sie brauchen, um erfolgreich zu verkaufen",
+      "subtitle": "Professionelle Tools für Ihren E-Commerce-Erfolg"
+    },
+    "featureItems": {
+      "customDesign": {
+        "title": "Anpassbares Design",
+        "description": "Erstellen Sie Ihren einzigartigen Shop mit unseren professionellen Vorlagen und Anpassungsoptionen."
+      },
+      "securePayments": {
+        "title": "Sichere Zahlungen",
+        "description": "Integrierte Zahlungsabwicklung mit den wichtigsten Zahlungsmethoden und höchster Sicherheit."
+      },
+      "analytics": {
+        "title": "Analytics & Reporting",
+        "description": "Verfolgen Sie Ihre Verkäufe, Kunden und Performance mit detaillierten Analysen in Echtzeit."
+      },
+      "shipping": {
+        "title": "Versandintegration",
+        "description": "Automatische Integration mit führenden Versanddienstleistern für optimierte Logistik."
+      },
+      "mobileFirst": {
+        "title": "Mobile-First",
+        "description": "Perfekt optimiert für mobile Geräte - Ihre Kunden kaufen überall und jederzeit ein."
+      },
+      "security": {
+        "title": "SSL & Sicherheit",
+        "description": "Höchste Sicherheitsstandards mit SSL-Verschlüsselung und automatischen Backups."
+      }
+    },
+    "demo": {
+      "title": "Sehen Sie markt.ma in Aktion",
+      "subtitle": "Entdecken Sie, wie einfach es ist, Ihren eigenen Online-Shop zu erstellen",
+      "platformDemoTitle": "PLATTFORM DEMO",
+      "platformDemoHeading": "🎥 Vollständige Plattform-Demo",
+      "platformDemoText": "Sehen Sie alle Features von markt.ma in weniger als 2 Minuten",
+      "platformDemoHint": "💡 Klicken Sie auf ▶ um direkt zur Live-Demo zu gelangen",
+      "tutorialsTitle": "📚 Schritt-für-Schritt Anleitungen",
+      "ctaText": "Bereit anzufangen?",
+      "ctaButton": "Jetzt kostenlos starten"
+    },
+    "tutorialItems": {
+      "createAccount": {
+        "title": "Account erstellen",
+        "description": "Lernen Sie, wie Sie in 2 Minuten Ihren eigenen Shop-Account anlegen",
+        "duration": "2:00 min"
+      },
+      "createFirstProduct": {
+        "title": "Erstes Produkt anlegen",
+        "description": "Schritt-für-Schritt Anleitung zum Hinzufügen Ihres ersten Produkts",
+        "duration": "2:30 min"
+      },
+      "customizeStore": {
+        "title": "Shop anpassen",
+        "description": "Personalisieren Sie das Design und die Einstellungen Ihres Shops",
+        "duration": "3:00 min"
+      }
+    },
+    "pricing": {
+      "title": "Transparente Preise für jedes Budget",
+      "subtitle": "Keine versteckten Kosten, jederzeit kündbar",
+      "popular": "⭐ Beliebt"
+    },
+    "planItems": {
+      "periodMonthly": "/Monat",
+      "starter": {
+        "name": "Starter",
+        "description": "Perfekt für neue Unternehmen",
+        "cta": "Kostenlos starten",
+        "features": [
+          "Bis zu 10 Produkte",
+          "Eigene Domain",
+          "SSL-Zertifikat",
+          "E-Mail-Support",
+          "99.9% Verfügbarkeit"
+        ]
+      },
+      "professional": {
+        "name": "Professional",
+        "description": "Für wachsende Unternehmen",
+        "badge": "Beliebt",
+        "cta": "Jetzt starten",
+        "features": [
+          "Unbegrenzte Produkte",
+          "Eigene Domain",
+          "SSL-Zertifikat",
+          "Prioritäts-Support",
+          "Analytics & Reports",
+          "Marketing-Tools",
+          "API-Zugang"
+        ]
+      },
+      "enterprise": {
+        "name": "Enterprise",
+        "description": "Für große Unternehmen",
+        "cta": "Kontakt aufnehmen",
+        "features": [
+          "Alles aus Professional",
+          "Dedizierter Account Manager",
+          "24/7 Premium Support",
+          "Custom Integration",
+          "White-Label Option",
+          "SLA Garantie",
+          "Schulungen & Onboarding"
+        ]
+      }
+    },
+    "cta": {
+      "title": "Bereit, Ihren Online-Shop zu starten?",
+      "subtitle": "Schließen Sie sich tausenden erfolgreichen Händlern an",
+      "button": "🚀 Jetzt kostenlos loslegen",
+      "note": "Keine Kreditkarte erforderlich • Jederzeit kündbar"
+    },
+    "footer": {
+      "tagline": "Die moderne E-Commerce-Plattform",
+      "product": "Produkt",
+      "legal": "Legal",
+      "imprint": "Impressum",
+      "privacy": "Datenschutz",
+      "terms": "AGB",
+      "copyright": "© 2026 markt.ma. Alle Rechte vorbehalten."
+    }
   }
 }

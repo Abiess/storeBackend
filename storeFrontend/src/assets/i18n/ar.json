@@ -219,19 +219,67 @@
     "newArrivalsSub": "اكتشف أحدث منتجاتنا",
     "loading": "جاري تحميل المنتجات..."
   },
+  "dashboard": {
+    "tagline": "منصة التجارة الإلكترونية",
+    "subscription": "الاشتراك",
+    "myStores": "متاجري",
+    "subtitle": "إدارة متاجرك الإلكترونية",
+    "newStore": "متجر جديد",
+    "loadingStores": "جاري تحميل المتاجر...",
+    "emptyTitle": "لا توجد متاجر بعد",
+    "emptyText": "أنشئ متجرك الأول وابدأ البيع!",
+    "createFirstStore": "إنشاء أول متجر",
+    "created": "تم الإنشاء",
+    "manageStore": "إدارة المتجر",
+    "status": {
+      "suspended": "موقوف",
+      "verification": "قيد التحقق"
+    },
+    "errors": {
+      "authProblem": "مشكلة في المصادقة. يرجى تسجيل الدخول مرة أخرى.",
+      "createStore": "خطأ أثناء إنشاء المتجر"
+    },
+    "createStoreModal": {
+      "title": "إنشاء متجر جديد",
+      "storeName": "اسم المتجر",
+      "storeNamePlaceholder": "مثال: متجري الإلكتروني",
+      "storeNameHint": "اسم متجرك كما سيظهر للعملاء",
+      "storeSlug": "رابط المتجر",
+      "storeSlugPlaceholder": "my-shop",
+      "storeSlugHint": "يسمح فقط بالأحرف الصغيرة والأرقام والشرطات. سيكون هذا رابط متجرك:",
+      "slugExample": "my-shop",
+      "storeDescription": "الوصف (اختياري)",
+      "storeDescriptionPlaceholder": "صف متجرك...",
+      "storeDescriptionHint": "وصف قصير لمتجرك للعملاء ولمحركات البحث",
+      "submit": "✓ إنشاء المتجر",
+      "creating": "جاري الإنشاء...",
+      "errors": {
+        "storeNameRequired": "يرجى إدخال اسم المتجر",
+        "storeSlugRequired": "يرجى إدخال رابط المتجر",
+        "requiredFields": "يرجى ملء جميع الحقول المطلوبة"
+      }
+    },
+    "limitModal": {
+      "title": "تم الوصول إلى حد المتاجر",
+      "text": "لقد وصلت إلى الحد الأقصى من المتاجر. يرجى ترقية اشتراكك لإنشاء المزيد من المتاجر.",
+      "remindLater": "ذكّرني لاحقاً",
+      "goToSubscription": "الانتقال إلى الاشتراك"
+    }
+  },
+
   "auth": {
     "loginTitle": "تسجيل الدخول إلى markt.ma",
     "loginSubtitle": "سجّل دخولك إلى لوحة تحكم متجرك",
     "email": "البريد الإلكتروني",
     "emailPlaceholder": "بريدك@الإلكتروني.com",
     "password": "كلمة المرور",
-    "passwordMinLength": "كلمة المرور مطلوبة",
+    "passwordMinLength": "يجب أن تتكون كلمة المرور من 6 أحرف على الأقل",
     "emailInvalid": "يرجى إدخال عنوان بريد إلكتروني صحيح",
     "loggingIn": "جاري تسجيل الدخول...",
     "login": "تسجيل الدخول",
     "forgotPassword": "نسيت كلمة المرور؟",
     "noAccount": "ليس لديك حساب؟ سجّل الآن",
-    "alreadyRegistered": "مسجّل بالفعل؟ سجّل دخولك",
+    "alreadyRegistered": "مسجّل بالفعل؟ تسجيل الدخول",
     "loginFailed": "فشل تسجيل الدخول. يرجى التحقق من بياناتك.",
     "registerFailed": "فشل التسجيل. يرجى المحاولة مرة أخرى.",
     "loginDialogFailed": "فشل تسجيل الدخول. يرجى التحقق من بيانات اعتمادك.",
@@ -242,6 +290,34 @@
     "registerBtn": "إنشاء حساب",
     "registering": "جاري التسجيل...",
     "registerSuccess": "✓ تم التسجيل بنجاح! يرجى التحقق من بريدك الإلكتروني والنقر على رابط التأكيد لتفعيل حسابك."
+  },
+  "storeDetail": {
+    "backToDashboard": "← العودة إلى لوحة التحكم",
+    "title": "نظرة عامة على المتجر",
+    "totalSales": "إجمالي المبيعات",
+    "orders": "الطلبات",
+    "products": "المنتجات",
+    "categories": "الفئات",
+    "avgOrderValue": "متوسط قيمة الطلب",
+    "quickAccess": "وصول سريع",
+    "addProduct": "إضافة منتج",
+    "createCategory": "إنشاء فئة",
+    "viewOrders": "عرض الطلبات",
+    "allProducts": "جميع المنتجات",
+    "recentOrders": "أحدث الطلبات",
+    "showAll": "عرض الكل",
+    "loadingOrders": "جاري تحميل الطلبات...",
+    "noOrders": "لا توجد طلبات بعد",
+    "noOrdersHint": "بمجرد أن يطلب العملاء من متجرك، ستظهر الطلبات هنا.",
+    "orderNumber": "رقم الطلب",
+    "customer": "العميل",
+    "status": "الحالة",
+    "amount": "المبلغ",
+    "date": "التاريخ",
+    "showAllProducts": "عرض الكل",
+    "loadingProducts": "جاري تحميل المنتجات...",
+    "noProducts": "لا توجد منتجات بعد",
+    "createFirstProduct": "إنشاء أول منتج"
   },
   "storefront": {
     "searchResults": "نتائج البحث",
@@ -288,12 +364,7 @@
     "emptyTitle": "لم يتم العثور على منتجات",
     "emptyMessage": "لا توجد منتجات متاحة في هذه الفئة حالياً."
   },
-  "auth": {
-    "password": "كلمة المرور",
-    "passwordMinLength": "يجب أن تتكون كلمة المرور من 6 أحرف على الأقل",
-    "noAccount": "ليس لديك حساب؟ سجّل الآن",
-    "alreadyRegistered": "مسجّل بالفعل؟ تسجيل الدخول"
-  },
+
   "payment": {
     "creditCard": "بطاقة الائتمان",
     "paypalHint": "ادفع بسرعة وأمان",
@@ -405,5 +476,202 @@
     "yes": "نعم",
     "no": "لا",
     "youVoted": "لقد صوّتت بالفعل"
+  },
+
+
+  "landing": {
+    "stats": {
+      "shopUrl": "https://your-shop.markt.ma",
+      "activeShops": "متاجر نشطة",
+      "transactions": "المعاملات",
+      "uptime": "التوافر",
+      "support": "الدعم"
+    },
+    "featureItems": {
+      "customDesign": {
+        "title": "تصميم قابل للتخصيص",
+        "description": "أنشئ متجرك الفريد باستخدام قوالبنا الاحترافية وخيارات التخصيص المتعددة."
+      },
+      "securePayments": {
+        "title": "مدفوعات آمنة",
+        "description": "معالجة دفع مدمجة مع أهم وسائل الدفع وأعلى معايير الأمان."
+      },
+      "analytics": {
+        "title": "التحليلات والتقارير",
+        "description": "تابع مبيعاتك وعملاءك وأداءك من خلال تحليلات مفصلة وفي الوقت الفعلي."
+      },
+      "shipping": {
+        "title": "تكامل الشحن",
+        "description": "تكامل تلقائي مع أبرز مزودي خدمات الشحن لتحسين الخدمات اللوجستية."
+      },
+      "mobileFirst": {
+        "title": "الجوال أولاً",
+        "description": "محسّن بالكامل للأجهزة المحمولة - يمكن لعملائك الشراء في أي مكان وفي أي وقت."
+      },
+      "security": {
+        "title": "SSL والأمان",
+        "description": "أعلى معايير الأمان مع تشفير SSL ونسخ احتياطية تلقائية."
+      }
+    },
+    "tutorialItems": {
+      "createAccount": {
+        "title": "إنشاء حساب",
+        "description": "تعلّم كيف تنشئ حساب متجرك الخاص خلال دقيقتين",
+        "duration": "2:00 دقيقة"
+      },
+      "createFirstProduct": {
+        "title": "إضافة أول منتج",
+        "description": "دليل خطوة بخطوة لإضافة أول منتج لك",
+        "duration": "2:30 دقيقة"
+      },
+      "customizeStore": {
+        "title": "تخصيص المتجر",
+        "description": "خصّص تصميم متجرك وإعداداته بما يناسبك",
+        "duration": "3:00 دقائق"
+      }
+    },
+    "planItems": {
+      "periodMonthly": "/شهرياً",
+      "starter": {
+        "name": "المبتدئ",
+        "description": "مثالي للشركات الجديدة",
+        "cta": "ابدأ مجاناً",
+        "features": [
+          "حتى 10 منتجات",
+          "نطاق خاص",
+          "شهادة SSL",
+          "دعم عبر البريد الإلكتروني",
+          "توافر 99.9%"
+        ]
+      },
+      "professional": {
+        "name": "الاحترافي",
+        "description": "للشركات النامية",
+        "badge": "الأكثر شيوعاً",
+        "cta": "ابدأ الآن",
+        "features": [
+          "منتجات غير محدودة",
+          "نطاق خاص",
+          "شهادة SSL",
+          "دعم ذو أولوية",
+          "التحليلات والتقارير",
+          "أدوات تسويق",
+          "وصول إلى API"
+        ]
+      },
+      "enterprise": {
+        "name": "المؤسسات",
+        "description": "للشركات الكبيرة",
+        "cta": "تواصل معنا",
+        "features": [
+          "كل ما في الخطة الاحترافية",
+          "مدير حساب مخصص",
+          "دعم مميز 24/7",
+          "تكامل مخصص",
+          "خيار العلامة البيضاء",
+          "ضمان SLA",
+          "تدريب وإعداد"
+        ]
+      }
+    },
+
+    "nav": {
+      "features": "المميزات",
+      "demo": "العرض التوضيحي",
+      "pricing": "الأسعار",
+      "login": "تسجيل الدخول",
+      "startFree": "ابدأ مجاناً"
+    },
+    "hero": {
+      "title": "ابدأ متجرك الإلكتروني <span class=\"gradient-text\">خلال دقائق</span>",
+      "subtitle": "اختر طريقك: بع منتجاتك الخاصة أو ابدأ كـ Reseller. لا حاجة إلى أي خبرة برمجية.",
+      "startNow": "🚀 ابدأ الآن مجاناً",
+      "watchDemo": "📹 شاهد العرض التوضيحي"
+    },
+    "paths": {
+      "own": {
+        "icon": "🏗️",
+        "title": "أنشئ متجرك الخاص",
+        "for": "للتجار الذين لديهم منتجاتهم الخاصة",
+        "benefit1": "✓ تحكم كامل في الكتالوج والأسعار",
+        "benefit2": "✓ علامتك التجارية وتصميمك الخاص",
+        "benefit3": "✓ 100% من الأرباح لك",
+        "cta": "🚀 أنشئ المتجر"
+      },
+      "reseller": {
+        "badge": "جديد",
+        "icon": "🤝",
+        "title": "ابدأ متجر Reseller",
+        "for": "للبائعين الذين لا يملكون منتجاتهم الخاصة",
+        "benefit1": "✓ أكثر من 1000 منتج متاح فوراً",
+        "benefit2": "✓ بدون مخزون وبدون شحن",
+        "benefit3": "✓ احصل على عمولات جذابة",
+        "cta": "💰 كن Reseller"
+      }
+    },
+    "comparison": {
+      "toggleOpen": "▶ عرض المقارنة السريعة",
+      "toggleClose": "▼ عرض المقارنة السريعة",
+      "ownStore": "متجر خاص",
+      "resellerStore": "متجر Reseller",
+      "setupTime": "مدة الإعداد",
+      "setupTimeOwn": "~ ساعتان",
+      "setupTimeReseller": "~ 15 دقيقة",
+      "startCapital": "رأس المال المبدئي",
+      "startCapitalOwn": "متوسط - مرتفع",
+      "startCapitalReseller": "بدون / منخفض",
+      "productSelection": "اختيار المنتجات",
+      "productSelectionOwn": "أنت من يقرر",
+      "productSelectionReseller": "كتالوج المورد",
+      "storageShipping": "التخزين / الشحن",
+      "storageShippingOwn": "أنت تنظمه",
+      "storageShippingReseller": "تلقائياً",
+      "revenueModel": "نموذج الإيرادات",
+      "revenueModelOwn": "100% من سعرك",
+      "revenueModelReseller": "عمولة 20-30%",
+      "forWhom": "لمن؟",
+      "forWhomOwn": "المصنّعون، التجار",
+      "forWhomReseller": "المسوّقون بالعمولة، المؤثرون",
+      "note": "💡 <strong>من الجيد أن تعرف:</strong> يمكنك لاحقاً إنشاء متاجر إضافية في أي وقت - حتى من النوع الآخر!"
+    },
+    "stats": {
+      "shopUrl": "https://your-shop.markt.ma"
+    },
+    "features": {
+      "title": "كل ما تحتاجه للبيع بنجاح",
+      "subtitle": "أدوات احترافية لنجاح تجارتك الإلكترونية"
+    },
+    "demo": {
+      "title": "شاهد markt.ma أثناء العمل",
+      "subtitle": "اكتشف مدى سهولة إنشاء متجرك الإلكتروني الخاص",
+      "platformDemoTitle": "عرض المنصة",
+      "platformDemoHeading": "🎥 عرض كامل للمنصة",
+      "platformDemoText": "شاهد جميع مميزات markt.ma في أقل من دقيقتين",
+      "platformDemoHint": "💡 اضغط على ▶ للانتقال مباشرة إلى العرض الحي",
+      "tutorialsTitle": "📚 شروحات خطوة بخطوة",
+      "ctaText": "هل أنت مستعد للبدء؟",
+      "ctaButton": "ابدأ الآن مجاناً"
+    },
+    "pricing": {
+      "title": "أسعار شفافة لكل ميزانية",
+      "subtitle": "بدون تكاليف مخفية، ويمكن الإلغاء في أي وقت",
+      "popular": "⭐ الأكثر شيوعاً"
+    },
+    "cta": {
+      "title": "هل أنت مستعد لإطلاق متجرك الإلكتروني؟",
+      "subtitle": "انضم إلى آلاف التجار الناجحين",
+      "button": "🚀 ابدأ الآن مجاناً",
+      "note": "لا حاجة لبطاقة ائتمانية • يمكنك الإلغاء في أي وقت"
+    },
+    "footer": {
+      "tagline": "منصة التجارة الإلكترونية الحديثة",
+      "product": "المنتج",
+      "legal": "قانوني",
+      "imprint": "بيانات الناشر",
+      "privacy": "الخصوصية",
+      "terms": "الشروط والأحكام",
+      "copyright": "© 2026 markt.ma. جميع الحقوق محفوظة."
+    }
   }
+
 }
