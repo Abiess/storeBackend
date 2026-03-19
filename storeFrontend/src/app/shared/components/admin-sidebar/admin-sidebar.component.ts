@@ -2,9 +2,11 @@ import { Component, Input, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { LanguageService } from '@app/core/services/language.service';
 
 export interface NavItem {
-    label: string;
+    labelKey: string;
     icon: string;
     route?: string;
     children?: NavItem[];
@@ -13,14 +15,14 @@ export interface NavItem {
 }
 
 export interface NavGroup {
-    title?: string;
+    titleKey?: string;
     items: NavItem[];
 }
 
 @Component({
     selector: 'app-admin-sidebar',
     standalone: true,
-    imports: [CommonModule, RouterModule],
+    imports: [CommonModule, RouterModule, TranslatePipe],
     templateUrl: './admin-sidebar.component.html',
     styleUrls: ['./admin-sidebar.component.scss']
 })
@@ -34,7 +36,10 @@ export class AdminSidebarComponent implements OnInit {
 
     navGroups: NavGroup[] = [];
 
-    constructor(private router: Router) {
+    constructor(
+        private router: Router,
+        public languageService: LanguageService
+    ) {
         this.router.events
             .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
             .subscribe((event) => {
@@ -66,7 +71,6 @@ export class AdminSidebarComponent implements OnInit {
     private buildNavigation(): void {
         let resolvedStoreId: number | null = this.storeId;
 
-        // Nur aus URL extrahieren, wenn Input wirklich nicht gesetzt ist
         if (resolvedStoreId == null) {
             const urlMatch = this.router.url.match(/\/stores\/(\d+)/);
 
@@ -75,7 +79,7 @@ export class AdminSidebarComponent implements OnInit {
 
                 if (!Number.isNaN(parsedId)) {
                     resolvedStoreId = parsedId;
-                    console.log('✅ StoreId aus URL extrahiert:', resolvedStoreId);
+                    console.log('✅ StoreId extracted from URL:', resolvedStoreId);
                 }
             }
         }
@@ -83,104 +87,90 @@ export class AdminSidebarComponent implements OnInit {
         const baseRoute = resolvedStoreId != null ? `/stores/${resolvedStoreId}` : '';
 
         if (resolvedStoreId == null && this.router.url.includes('/stores/')) {
-            console.warn('⚠️ Sidebar: Keine storeId gefunden, aber /stores/ Route aktiv');
+            console.warn('⚠️ Sidebar: No storeId found, but /stores/ route is active');
         }
 
         this.navGroups = [
             {
-                title: 'Übersicht',
+                titleKey: 'sidebarAdmin.groups.overview',
                 items: [
                     {
-                        label: 'Dashboard',
+                        labelKey: 'sidebarAdmin.items.dashboard',
                         icon: '📊',
                         route: '/dashboard'
                     }
                 ]
             },
             {
-                title: 'Commerce',
+                titleKey: 'sidebarAdmin.groups.commerce',
                 items: [
                     {
-                        label: 'Produkte',
+                        labelKey: 'sidebarAdmin.items.products',
                         icon: '📦',
                         route: `${baseRoute}/products`
-                    },
-                    /*{
-                        label: 'Kategorien',
-                        icon: '📁',
-                        route: `${baseRoute}/categories`
-                    },
-                    {
-                        label: 'Bestellungen',
-                        icon: '📋',
-                        route: `${baseRoute}/orders`
-                    },
-                    {
-                        label: 'Gutscheine',
-                        icon: '🎟️',
-                        route: `${baseRoute}/coupons`
-                    }*/
+                    }
                 ]
             },
             {
-                title: 'Kundenservice',
+                titleKey: 'sidebarAdmin.groups.customerService',
                 items: [
                     {
-                        label: 'Bewertungen',
+                        labelKey: 'sidebarAdmin.items.reviews',
                         icon: '⭐',
                         route: `${baseRoute}/reviews`
                     },
                     {
-                        label: 'Chatbot',
+                        labelKey: 'sidebarAdmin.items.chatbot',
                         icon: '🤖',
                         route: `${baseRoute}/chatbot`
                     }
                 ]
             },
             {
-                title: 'Store Setup',
+                titleKey: 'sidebarAdmin.groups.storeSetup',
                 items: [
                     {
-                        label: 'Store Einstellungen',
+                        labelKey: 'sidebarAdmin.items.storeSettings',
                         icon: '⚙️',
                         route: `${baseRoute}/settings`
                     },
                     {
-                        label: 'Design & Theme',
+                        labelKey: 'sidebarAdmin.items.designTheme',
                         icon: '🎨',
                         route: `${baseRoute}/theme`
                     },
                     {
-                        label: 'Lieferung',
+                        labelKey: 'sidebarAdmin.items.delivery',
                         icon: '🚚',
                         route: `${baseRoute}/delivery`
-                    },                    {
-                        label: 'SEO',
+                    },
+                    {
+                        labelKey: 'sidebarAdmin.items.seo',
                         icon: '🔍',
                         route: `${baseRoute}/seo`
                     },
                     {
-                        label: 'Marke',
+                        labelKey: 'sidebarAdmin.items.brand',
                         icon: '🏷️',
                         route: `${baseRoute}/brand`
                     }
                 ]
             },
             {
-                title: 'Account',
+                titleKey: 'sidebarAdmin.groups.account',
                 items: [
                     {
-                        label: 'Mein Account',
+                        labelKey: 'sidebarAdmin.items.myAccount',
                         icon: '👤',
                         route: '/settings'
                     },
                     {
-                        label: 'Abonnement',
+                        labelKey: 'sidebarAdmin.items.subscription',
                         icon: '💎',
                         route: '/subscription'
                     },
                     {
-                        label: 'Rollen',
+                        labelKey: 'sidebarAdmin.items.roles',
                         icon: '👥',
                         route: '/role-management'
                     }
@@ -206,9 +196,13 @@ export class AdminSidebarComponent implements OnInit {
         }
     }
 
-    isRouteActive(route?: string): boolean {
+    isRouteActive(route?: string): string | boolean {
         if (!route) return false;
         return this.activeRoute.startsWith(route);
+    }
+
+    isRTL(): boolean {
+        return this.languageService.isRTL();
     }
 
     toggleGroup(groupTitle: string): void {

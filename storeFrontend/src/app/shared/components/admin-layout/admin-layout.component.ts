@@ -2,9 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { AdminSidebarComponent } from '../admin-sidebar/admin-sidebar.component';
-import { LanguageSwitcherComponent } from '../language-switcher.component';
 import { AuthService } from '@app/core/services/auth.service';
 import { User } from '@app/core/models';
+import {LanguageSwitcherComponent} from "@app/core/i18n.exports";
 
 @Component({
   selector: 'app-admin-layout',

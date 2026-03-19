@@ -387,4 +387,62 @@
   .nav-item-active {
     border-color: #fff;
   }
+
 }
+
+//* ==================== RTL Support ==================== */
+.admin-sidebar[dir="rtl"] {
+  left: auto;
+  right: 0;
+  box-shadow: -2px 0 12px rgba(0, 0, 0, 0.15);
+}
+
+.admin-sidebar[dir="rtl"] .sidebar-header {
+  direction: rtl;
+}
+
+.admin-sidebar[dir="rtl"] .sidebar-logo {
+  flex-direction: row-reverse;
+}
+
+.admin-sidebar[dir="rtl"] .nav-group-title {
+  text-align: right;
+}
+
+.admin-sidebar[dir="rtl"] .nav-item {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+
+.admin-sidebar[dir="rtl"] .nav-label {
+  text-align: right;
+}
+
+.admin-sidebar[dir="rtl"] .footer-info {
+  text-align: center;
+}
+
+.admin-sidebar[dir="rtl"].sidebar-mobile {
+  transform: translateX(100%);
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
+}
+
+.admin-sidebar[dir="rtl"].sidebar-mobile.sidebar-open {
+  transform: translateX(0);
+  box-shadow: -4px 0 30px rgba(0, 0, 0, 0.45);
+}
+
+.admin-sidebar[dir="rtl"] ~ .btn-toggle-sidebar,
+[dir="rtl"] .btn-toggle-sidebar {
+  left: auto;
+  right: 1rem;
+}
+
+/* High Contrast Mode RTL */
+@media (prefers-contrast: high) {
+  .admin-sidebar[dir="rtl"] {
+    border-right: none;
+    border-left: 2px solid #fff;
+  }
+}
+

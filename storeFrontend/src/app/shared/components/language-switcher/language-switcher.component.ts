@@ -182,7 +182,7 @@ export class LanguageSwitcherComponent {
   }
 
   async selectLanguage(lang: string): Promise<void> {
-    await this.languageService.setLanguage(lang, true);
+    await this.languageService.setLanguage(lang,);
     this.closeDropdown();
   }
 

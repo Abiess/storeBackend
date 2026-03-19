@@ -1,82 +1,78 @@
 <aside
-  class="admin-sidebar"
-  [class.sidebar-open]="isOpen"
-  [class.sidebar-mobile]="isMobile"
-  role="navigation"
-  aria-label="Hauptnavigation"
+        class="admin-sidebar"
+        [class.sidebar-open]="isOpen"
+        [class.sidebar-mobile]="isMobile"
+        [attr.dir]="isRTL() ? 'rtl' : 'ltr'"
+        role="navigation"
+        [attr.aria-label]="'sidebarAdmin.aria.mainNavigation' | translate"
 >
-  <!-- Mobile Overlay -->
-  <div
-    *ngIf="isMobile && isOpen"
-    class="sidebar-overlay"
-    (click)="closeSidebar()"
-    aria-hidden="true"
-  ></div>
+    <div
+            *ngIf="isMobile && isOpen"
+            class="sidebar-overlay"
+            (click)="closeSidebar()"
+            aria-hidden="true"
+    ></div>
 
-  <!-- Sidebar Content -->
-  <div class="sidebar-content">
-    <!-- Header -->
-    <div class="sidebar-header">
-      <a routerLink="/dashboard" class="sidebar-logo">
-        <span class="logo-icon">🛍️</span>
-        <span class="logo-text">markt.ma</span>
-      </a>
-      <button
-        *ngIf="isMobile"
-        class="btn-close-sidebar"
-        (click)="closeSidebar()"
-        aria-label="Navigation schließen"
-      >
-        ✕
-      </button>
-    </div>
+    <div class="sidebar-content">
+        <div class="sidebar-header">
+            <a routerLink="/dashboard" class="sidebar-logo">
+                <span class="logo-icon">🛍️</span>
+                <span class="logo-text">markt.ma</span>
+            </a>
 
-    <!-- Navigation Groups -->
-    <nav class="sidebar-nav">
-      <div *ngFor="let group of navGroups" class="nav-group">
-        <div class="nav-group-title" *ngIf="group.title">
-          {{ group.title }}
+            <button
+                    *ngIf="isMobile"
+                    class="btn-close-sidebar"
+                    (click)="closeSidebar()"
+                    [attr.aria-label]="'sidebarAdmin.aria.closeNavigation' | translate"
+            >
+                ✕
+            </button>
         </div>
 
-        <div class="nav-items">
-          <a
-            *ngFor="let item of group.items"
-            [routerLink]="item.route"
-            routerLinkActive="nav-item-active"
-            [routerLinkActiveOptions]="{ exact: false }"
-            class="nav-item"
-            [attr.aria-label]="item.label"
-            [attr.aria-current]="isRouteActive(item.route) ? 'page' : null"
-          >
-            <span class="nav-icon" [attr.aria-hidden]="true">{{ item.icon }}</span>
-            <span class="nav-label">{{ item.label }}</span>
-            <span
-              *ngIf="item.badge"
-              [class]="'nav-badge ' + (item.badgeClass || 'badge-primary')"
-            >
+        <nav class="sidebar-nav">
+            <div *ngFor="let group of navGroups" class="nav-group">
+                <div class="nav-group-title" *ngIf="group.titleKey">
+                    {{ group.titleKey | translate }}
+                </div>
+
+                <div class="nav-items">
+                    <a
+                            *ngFor="let item of group.items"
+                            [routerLink]="item.route"
+                            routerLinkActive="nav-item-active"
+                            [routerLinkActiveOptions]="{ exact: false }"
+                            class="nav-item"
+                            [attr.aria-label]="item.labelKey | translate"
+                            [attr.aria-current]="isRouteActive(item.route) ? 'page' : null"
+                    >
+                        <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
+                        <span class="nav-label">{{ item.labelKey | translate }}</span>
+                        <span
+                                *ngIf="item.badge"
+                                [class]="'nav-badge ' + (item.badgeClass || 'badge-primary')"
+                        >
               {{ item.badge }}
             </span>
-          </a>
-        </div>
-      </div>
-    </nav>
+                    </a>
+                </div>
+            </div>
+        </nav>
 
-    <!-- Footer -->
-    <div class="sidebar-footer">
-      <div class="footer-info">
-        <small>© 2026 markt.ma</small>
-      </div>
+        <div class="sidebar-footer">
+            <div class="footer-info">
+                <small>© 2026 markt.ma</small>
+            </div>
+        </div>
     </div>
-  </div>
 </aside>
 
-<!-- Mobile Toggle Button -->
 <button
-  *ngIf="isMobile && !isOpen"
-  class="btn-toggle-sidebar"
-  (click)="toggleSidebar()"
-  aria-label="Navigation öffnen"
-  aria-expanded="false"
+        *ngIf="isMobile && !isOpen"
+        class="btn-toggle-sidebar"
+        (click)="toggleSidebar()"
+        [attr.aria-label]="'sidebarAdmin.aria.openNavigation' | translate"
+        aria-expanded="false"
 >
   <span class="hamburger-icon">
     <span></span>
@@ -84,4 +80,3 @@
     <span></span>
   </span>
 </button>
-

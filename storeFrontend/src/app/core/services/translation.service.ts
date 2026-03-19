@@ -21,7 +21,7 @@ export class TranslationService {
   readonly translations = this.translationsSignal.asReadonly();
 
   private readonly STORAGE_KEY = 'app_language';
-  private readonly DEFAULT_LANG: SupportedLanguage = 'de';
+  private readonly DEFAULT_LANG: SupportedLanguage = 'en';
 
   // RTL Languages
   private readonly RTL_LANGUAGES: SupportedLanguage[] = ['ar'];
@@ -69,13 +69,22 @@ export class TranslationService {
    * Set the current language and load translations
    */
   setLanguage(lang: SupportedLanguage): void {
-    this.currentLangSignal.set(lang);
-    localStorage.setItem(this.STORAGE_KEY, lang);
+    if (!['de', 'en', 'ar'].includes(lang)) {
+      lang = this.DEFAULT_LANG;
+    }
 
-    // Update document direction and language
+    localStorage.setItem(this.STORAGE_KEY, lang);
+    this.currentLangSignal.set(lang);
     this.updateDirection();
 
-    this.loadTranslations(lang).subscribe();
+    this.loadTranslations(lang).subscribe({
+      next: () => {
+        console.log(`🌍 Language switched to: ${lang}`);
+      },
+      error: (error) => {
+        console.error(`Failed to switch language to ${lang}`, error);
+      }
+    });
   }
 
   /**

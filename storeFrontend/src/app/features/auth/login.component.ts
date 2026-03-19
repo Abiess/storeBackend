@@ -1,48 +1,50 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, ActivatedRoute } from '@angular/router';
+import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
-import { LanguageSwitcherComponent } from '../../shared/components/language-switcher.component';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { LanguageService } from '../../core/services/language.service';
+import {LanguageSwitcherComponent} from "@app/core/i18n.exports";
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, LanguageSwitcherComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, LanguageSwitcherComponent, TranslatePipe],
   template: `
     <div class="auth-container">
       <div class="language-switcher-wrapper">
         <app-language-switcher></app-language-switcher>
       </div>
+
       <div class="auth-card">
-        <h1>markt.ma Login</h1>
-        <p class="subtitle">Melden Sie sich bei Ihrem Store-Dashboard an</p>
-        
+        <h1>{{ 'auth.loginTitle' | translate }}</h1>
+        <p class="subtitle">{{ 'auth.loginSubtitle' | translate }}</p>
+
         <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
           <div class="form-group">
-            <label for="email">E-Mail</label>
-            <input 
-              id="email" 
-              type="email" 
-              formControlName="email" 
-              placeholder="ihre@email.de"
+            <label for="email">{{ 'auth.email' | translate }}</label>
+            <input
+                id="email"
+                type="email"
+                formControlName="email"
+                [placeholder]="'auth.emailPlaceholder' | translate"
             />
             <div *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched" class="error">
-              Bitte geben Sie eine gültige E-Mail-Adresse ein
+              {{ 'auth.emailInvalid' | translate }}
             </div>
           </div>
 
           <div class="form-group">
-            <label for="password">Passwort</label>
-            <input 
-              id="password" 
-              type="password" 
-              formControlName="password" 
-              placeholder="••••••••"
+            <label for="password">{{ 'auth.password' | translate }}</label>
+            <input
+                id="password"
+                type="password"
+                formControlName="password"
+                [placeholder]="'auth.password' | translate"
             />
             <div *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched" class="error">
-              Passwort ist erforderlich
+              {{ 'auth.passwordMinLength' | translate }}
             </div>
           </div>
 
@@ -51,18 +53,21 @@ import { LanguageSwitcherComponent } from '../../shared/components/language-swit
           </div>
 
           <button type="submit" class="btn btn-primary" [disabled]="loginForm.invalid || loading">
-            {{ loading ? 'Wird angemeldet...' : 'Anmelden' }}
+            {{ loading ? ('auth.loggingIn' | translate) : ('auth.login' | translate) }}
           </button>
         </form>
 
         <div class="text-center mt-3">
           <a [routerLink]="['/forgot-password']" class="text-sm text-indigo-600 hover:text-indigo-500">
-            Passwort vergessen?
+            {{ 'auth.forgotPassword' | translate }}
           </a>
         </div>
 
         <p class="auth-footer">
-          Noch kein Konto? <a [routerLink]="['/register']" [queryParams]="{ returnUrl: returnUrl }">Jetzt registrieren</a>
+          {{ 'auth.noAccount' | translate }}
+          <a [routerLink]="['/register']" [queryParams]="{ returnUrl: returnUrl }">
+            {{ 'header.register' | translate }}
+          </a>
         </p>
       </div>
     </div>
@@ -117,6 +122,7 @@ import { LanguageSwitcherComponent } from '../../shared/components/language-swit
     .auth-footer a {
       color: #667eea;
       font-weight: 600;
+      margin-left: 4px;
     }
 
     .language-switcher-wrapper {
@@ -134,10 +140,11 @@ export class LoginComponent implements OnInit {
   returnUrl = '/dashboard';
 
   constructor(
-    private fb: FormBuilder,
-    private authService: AuthService,
-    private router: Router,
-    private route: ActivatedRoute
+      private fb: FormBuilder,
+      private authService: AuthService,
+      private router: Router,
+      private route: ActivatedRoute,
+      private languageService: LanguageService
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -146,15 +153,14 @@ export class LoginComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Speichere returnUrl für Template-Verwendung
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
 
-    // Prüfe auf Fehlerparameter in der URL
     this.route.queryParams.subscribe(params => {
       if (params['error'] === 'session_expired') {
-        this.errorMessage = 'Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.';
+        this.errorMessage = 'auth.sessionExpired';
       } else if (params['error'] === 'auth_required') {
-        this.errorMessage = 'Bitte melden Sie sich an, um auf diese Seite zuzugreifen.';
+        this.errorMessage = 'auth.authRequired';
+
       }
     });
   }
@@ -166,13 +172,12 @@ export class LoginComponent implements OnInit {
 
       this.authService.login(this.loginForm.value).subscribe({
         next: () => {
-          // Prüfe auf returnUrl und leite dorthin weiter
           console.log('🔄 Weiterleitung nach Login zu:', this.returnUrl);
           this.router.navigate([this.returnUrl]);
         },
         error: (error) => {
           this.loading = false;
-          this.errorMessage = error.error?.message || 'Login fehlgeschlagen. Bitte überprüfen Sie Ihre Angaben.';
+          this.errorMessage = error.error?.message || 'auth.loginFailed';
         }
       });
     }

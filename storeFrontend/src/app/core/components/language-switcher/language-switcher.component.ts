@@ -1,96 +1,95 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TranslationService, SupportedLanguage } from '../../services/translation.service';
+import { FormsModule } from '@angular/forms';
+import { LanguageService } from '../../services/language.service';
+
+type AppLanguage = 'de' | 'en' | 'ar';
 
 @Component({
   selector: 'app-language-switcher',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="language-switcher">
-      <button 
-        *ngFor="let lang of languages"
-        [class.active]="lang === currentLang()"
-        (click)="switchLanguage(lang)"
-        class="lang-button"
-        [attr.aria-label]="'Switch to ' + getLanguageName(lang)"
-        [title]="getLanguageName(lang)">
-        {{ getLanguageFlag(lang) }} <span class="lang-code">{{ lang.toUpperCase() }}</span>
-      </button>
+      <select
+        class="lang-select"
+        [ngModel]="currentLanguage"
+        (ngModelChange)="setLanguage($event)"
+      >
+        <option *ngFor="let lang of languages" [ngValue]="lang.code">
+          {{ lang.label }}
+        </option>
+      </select>
     </div>
   `,
   styles: [`
     .language-switcher {
-      display: flex;
-      gap: 0.25rem;
+      display: inline-flex;
       align-items: center;
-      background: rgba(0, 0, 0, 0.05);
-      border-radius: 8px;
-      padding: 4px;
     }
 
-    .lang-button {
-      padding: 0.5rem 0.75rem;
-      border: none;
-      background: transparent;
-      color: #666;
-      border-radius: 6px;
+    .lang-select {
+      padding: 8px 36px 8px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      background: white;
+      color: #333;
+      font-weight: 600;
+      font-size: 14px;
       cursor: pointer;
       transition: all 0.2s ease;
-      font-size: 0.875rem;
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-      font-weight: 600;
-      min-width: 65px;
-      justify-content: center;
+      min-width: 130px;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background-image:
+        linear-gradient(45deg, transparent 50%, #667eea 50%),
+        linear-gradient(135deg, #667eea 50%, transparent 50%);
+      background-position:
+        calc(100% - 18px) calc(50% - 3px),
+        calc(100% - 12px) calc(50% - 3px);
+      background-size: 6px 6px, 6px 6px;
+      background-repeat: no-repeat;
     }
 
-    .lang-button:hover {
-      background: rgba(0, 0, 0, 0.05);
-      color: #333;
+    .lang-select:hover {
+      border-color: #667eea;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.12);
     }
 
-    .lang-button.active {
-      background: white;
-      color: #667eea;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    .lang-button:focus {
+    .lang-select:focus {
       outline: 2px solid #667eea;
       outline-offset: 2px;
+      border-color: #667eea;
     }
 
-    .lang-code {
-      font-size: 0.75rem;
-      font-weight: 700;
-    }
-
-    /* RTL Support */
-    [dir="rtl"] .language-switcher {
-      flex-direction: row-reverse;
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
     }
   `]
 })
 export class LanguageSwitcherComponent {
-  languages: SupportedLanguage[] = ['de', 'en', 'ar'];
+  languages: { code: AppLanguage; label: string }[] = [
+    { code: 'de', label: 'Deutsch' },
+    { code: 'en', label: 'English' },
+    { code: 'ar', label: 'العربية' }
+  ];
 
-  constructor(private translationService: TranslationService) {}
+  constructor(public languageService: LanguageService) {}
 
-  get currentLang() {
-    return this.translationService.currentLang;
+  get currentLanguage(): AppLanguage {
+    return this.languageService.getCurrentLanguage() as AppLanguage;
   }
 
-  switchLanguage(lang: SupportedLanguage): void {
-    this.translationService.setLanguage(lang);
-  }
-
-  getLanguageName(lang: SupportedLanguage): string {
-    return this.translationService.getLanguageDisplayName(lang);
-  }
-
-  getLanguageFlag(lang: SupportedLanguage): string {
-    return this.translationService.getLanguageFlag(lang);
+  async setLanguage(lang: AppLanguage): Promise<void> {
+    await this.languageService.setLanguage(lang);
   }
 }

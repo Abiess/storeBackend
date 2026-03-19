@@ -5,13 +5,15 @@ import { FormsModule } from '@angular/forms';
 import { StoreService } from '@app/core/services/store.service';
 import { AuthService } from '@app/core/services/auth.service';
 import { Store, User, CreateStoreRequest } from '@app/core/models';
-import { LanguageSwitcherComponent } from '@app/shared/components/language-switcher.component';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { LanguageSwitcherComponent } from '@app/core/i18n.exports';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { TranslationService } from '@app/core/services/translation.service';
+import {TranslateService} from "@ngx-translate/core";
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, LanguageSwitcherComponent, TranslateModule],
+  imports: [CommonModule, RouterModule, FormsModule, LanguageSwitcherComponent, TranslatePipe],
   template: `
     <div class="dashboard">
       <nav class="navbar">
@@ -919,7 +921,7 @@ export class DashboardComponent implements OnInit {
       private storeService: StoreService,
       private authService: AuthService,
       private router: Router,
-      private translate: TranslateService
+      private translate: TranslateService,
   ) {}
 
   ngOnInit(): void {

@@ -866,6 +866,34 @@
       "privacy": "Privacy",
       "terms": "Terms",
       "copyright": "© 2026 markt.ma. All rights reserved."
+    },
+    "sidebarAdmin": {
+      "aria": {
+        "mainNavigation": "Main navigation",
+        "openNavigation": "Open navigation",
+        "closeNavigation": "Close navigation"
+      },
+      "groups": {
+        "overview": "Overview",
+        "commerce": "Commerce",
+        "customerService": "Customer Service",
+        "storeSetup": "Store Setup",
+        "account": "Account"
+      },
+      "items": {
+        "dashboard": "Dashboard",
+        "products": "Products",
+        "reviews": "Reviews",
+        "chatbot": "Chatbot",
+        "storeSettings": "Store Settings",
+        "designTheme": "Design & Theme",
+        "delivery": "Delivery",
+        "seo": "SEO",
+        "brand": "Brand",
+        "myAccount": "My Account",
+        "subscription": "Subscription",
+        "roles": "Roles"
+      }
     }
   }
 }

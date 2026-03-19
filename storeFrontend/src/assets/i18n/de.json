@@ -386,6 +386,34 @@
     "copyright": "© {{year}} Alle Rechte vorbehalten",
     "info": "Informationen"
   },
+  "sidebarAdmin": {
+    "aria": {
+      "mainNavigation": "Hauptnavigation",
+      "openNavigation": "Navigation öffnen",
+      "closeNavigation": "Navigation schließen"
+    },
+    "groups": {
+      "overview": "Übersicht",
+      "commerce": "Commerce",
+      "customerService": "Kundenservice",
+      "storeSetup": "Store Setup",
+      "account": "Account"
+    },
+    "items": {
+      "dashboard": "Dashboard",
+      "products": "Produkte",
+      "reviews": "Bewertungen",
+      "chatbot": "Chatbot",
+      "storeSettings": "Store Einstellungen",
+      "designTheme": "Design & Theme",
+      "delivery": "Lieferung",
+      "seo": "SEO",
+      "brand": "Marke",
+      "myAccount": "Mein Account",
+      "subscription": "Abonnement",
+      "roles": "Rollen"
+    }
+  },
   "trust": {
     "freeShipping": "Kostenloser Versand",
     "freeShippingDesc": "Ab 50€ Bestellwert",

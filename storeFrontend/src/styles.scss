@@ -6,7 +6,6 @@
 
 /* ==================== Theme CSS Variables ==================== */
 :root {
-  /* Default Theme Colors - werden vom ThemeService überschrieben */
   --theme-primary: #667eea;
   --theme-secondary: #764ba2;
   --theme-accent: #f093fb;
@@ -18,7 +17,6 @@
   --theme-warning: #ed8936;
   --theme-error: #f56565;
 
-  /* Typography */
   --theme-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --theme-heading-font-family: 'Poppins', sans-serif;
   --theme-font-size-small: 0.875rem;
@@ -27,16 +25,24 @@
   --theme-font-size-xl: 1.5rem;
   --theme-font-size-xxl: 2.25rem;
 
-  /* Layout */
   --theme-border-radius: 8px;
   --theme-spacing: 1rem;
 }
 
-/* Global Styles for markt.ma */
+/* ==================== Global Reset ==================== */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
@@ -46,6 +52,7 @@ body {
   color: var(--theme-text, #333);
   background-color: var(--theme-background, #f5f5f5);
   transition: background-color 0.3s ease, color 0.3s ease;
+  text-align: start;
 }
 
 a {
@@ -53,24 +60,30 @@ a {
   color: inherit;
 }
 
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
 button {
   cursor: pointer;
-  font-family: inherit;
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--theme-heading-font-family, var(--theme-font-family, inherit));
   color: var(--theme-text, #333);
+  text-align: start;
 }
 
-/* Container */
+/* ==================== Layout ==================== */
 .container {
   max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 var(--theme-spacing, 20px);
+  margin-inline: auto;
+  padding-inline: var(--theme-spacing, 20px);
 }
 
-/* Card */
 .card {
   background: white;
   border-radius: var(--theme-border-radius, 8px);
@@ -78,9 +91,10 @@ h1, h2, h3, h4, h5, h6 {
   padding: var(--theme-spacing, 20px);
   margin-bottom: var(--theme-spacing, 20px);
   border: 1px solid var(--theme-border, #e2e8f0);
+  text-align: start;
 }
 
-/* Button Styles */
+/* ==================== Buttons ==================== */
 .btn {
   padding: 10px 20px;
   border: none;
@@ -88,6 +102,7 @@ h1, h2, h3, h4, h5, h6 {
   font-size: var(--theme-font-size-base, 14px);
   font-weight: 500;
   transition: all 0.3s ease;
+  text-align: center;
 }
 
 .btn-primary {
@@ -111,14 +126,12 @@ h1, h2, h3, h4, h5, h6 {
   color: white;
 }
 
-/* Secondary Action Buttons */
 .btn-back {
   background: #6c757d;
   color: white;
   border: none;
   padding: 10px 20px;
   border-radius: var(--theme-border-radius, 6px);
-  cursor: pointer;
   font-size: var(--theme-font-size-base, 14px);
   font-weight: 500;
   transition: all 0.3s ease;
@@ -146,7 +159,6 @@ h1, h2, h3, h4, h5, h6 {
   border: none;
   padding: 10px 20px;
   border-radius: var(--theme-border-radius, 6px);
-  cursor: pointer;
   font-size: var(--theme-font-size-base, 14px);
   font-weight: 500;
   transition: all 0.3s ease;
@@ -163,7 +175,6 @@ h1, h2, h3, h4, h5, h6 {
   border: none;
   padding: 10px 20px;
   border-radius: var(--theme-border-radius, 6px);
-  cursor: pointer;
   font-size: var(--theme-font-size-base, 14px);
   font-weight: 500;
   transition: all 0.3s ease;
@@ -187,7 +198,6 @@ h1, h2, h3, h4, h5, h6 {
   border: none;
   padding: 10px 20px;
   border-radius: var(--theme-border-radius, 6px);
-  cursor: pointer;
   font-size: var(--theme-font-size-base, 14px);
   font-weight: 500;
   transition: all 0.3s ease;
@@ -210,7 +220,6 @@ h1, h2, h3, h4, h5, h6 {
   border: none;
   padding: 10px 20px;
   border-radius: var(--theme-border-radius, 6px);
-  cursor: pointer;
   font-size: var(--theme-font-size-base, 14px);
   font-weight: 500;
   transition: all 0.3s ease;
@@ -220,7 +229,6 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-/* Button Sizes */
 .btn-sm {
   padding: 6px 12px;
   font-size: var(--theme-font-size-small, 12px);
@@ -231,7 +239,6 @@ h1, h2, h3, h4, h5, h6 {
   font-size: var(--theme-font-size-large, 16px);
 }
 
-/* Button Variants */
 .btn-outline {
   background: transparent;
   border: 2px solid var(--theme-primary, #667eea);
@@ -252,7 +259,7 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-/* Form Styles */
+/* ==================== Forms ==================== */
 .form-group {
   margin-bottom: 20px;
 
@@ -261,14 +268,19 @@ h1, h2, h3, h4, h5, h6 {
     margin-bottom: 5px;
     font-weight: 500;
     color: #555;
+    text-align: start;
   }
 
-  input, textarea, select {
+  input,
+  textarea,
+  select {
     width: 100%;
     padding: 10px;
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 14px;
+    text-align: start;
+    direction: inherit;
 
     &:focus {
       outline: none;
@@ -282,11 +294,12 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-/* Alert Messages */
+/* ==================== Alerts ==================== */
 .alert {
   padding: 15px;
   border-radius: 4px;
   margin-bottom: 20px;
+  text-align: start;
 
   &.alert-success {
     background-color: #d4edda;
@@ -307,7 +320,7 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-/* Loading Spinner */
+/* ==================== Spinner ==================== */
 .spinner {
   border: 3px solid #f3f3f3;
   border-top: 3px solid #007bff;
@@ -323,15 +336,17 @@ h1, h2, h3, h4, h5, h6 {
   100% { transform: rotate(360deg); }
 }
 
-/* Table */
+/* ==================== Tables ==================== */
 .table {
   width: 100%;
   border-collapse: collapse;
 
-  th, td {
+  th,
+  td {
     padding: 12px;
-    text-align: left;
+    text-align: start;
     border-bottom: 1px solid #ddd;
+    vertical-align: middle;
   }
 
   th {
@@ -344,7 +359,7 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-/* Badge */
+/* ==================== Badges ==================== */
 .badge {
   display: inline-block;
   padding: 4px 8px;
@@ -373,7 +388,43 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-/* Material Icon Font Family Fix */
+/* ==================== RTL Helpers ==================== */
+[dir="rtl"] {
+  body {
+    text-align: start;
+  }
+
+  .btn-group,
+  .action-row,
+  .toolbar,
+  .inline-actions,
+  .form-actions {
+    flex-direction: row-reverse;
+  }
+
+  .table th,
+  .table td,
+  .card,
+  .alert,
+  .form-group label {
+    text-align: start;
+  }
+}
+
+/* Always LTR for technical values */
+.price,
+.currency,
+.number,
+.email-value,
+.domain-value,
+.url-value,
+.slug-value {
+  direction: ltr;
+  unicode-bidi: embed;
+  display: inline-block;
+}
+
+/* ==================== Angular Material ==================== */
 .mat-icon {
   font-family: 'Material Icons' !important;
 }

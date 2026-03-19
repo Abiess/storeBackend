@@ -704,6 +704,34 @@
       "terms": "الشروط والأحكام",
       "copyright": "© 2026 markt.ma. جميع الحقوق محفوظة."
     }
+  },
+  "sidebarAdmin": {
+    "aria": {
+      "mainNavigation": "التنقل الرئيسي",
+      "openNavigation": "فتح التنقل",
+      "closeNavigation": "إغلاق التنقل"
+    },
+    "groups": {
+      "overview": "نظرة عامة",
+      "commerce": "التجارة",
+      "customerService": "خدمة العملاء",
+      "storeSetup": "إعداد المتجر",
+      "account": "الحساب"
+    },
+    "items": {
+      "dashboard": "لوحة التحكم",
+      "products": "المنتجات",
+      "reviews": "التقييمات",
+      "chatbot": "الدردشة الآلية",
+      "storeSettings": "إعدادات المتجر",
+      "designTheme": "التصميم والقالب",
+      "delivery": "التوصيل",
+      "seo": "SEO",
+      "brand": "العلامة التجارية",
+      "myAccount": "حسابي",
+      "subscription": "الاشتراك",
+      "roles": "الأدوار"
+    }
   }
 
 }
