@@ -95,12 +95,17 @@ public class PhoneVerificationService {
         String channel = "unknown";
 
         try {
-            // WhatsApp via Meta Cloud API
+            // WhatsApp via Meta Cloud API (oder DEV-Simulation wenn disabled)
             if (whatsAppService.sendVerificationCode(phoneNumber, code)) {
                 sent = true;
-                channel = "whatsapp";
-                verification.setChannel("whatsapp");
-                log.info("✅ WhatsApp message sent to {}", phoneNumber);
+                // Wenn WhatsApp disabled → DEV-Simulation (Code steht im Log)
+                channel = whatsAppService.isEnabled() ? "whatsapp" : "dev-log";
+                verification.setChannel(channel);
+                if (whatsAppService.isEnabled()) {
+                    log.info("✅ WhatsApp message sent to {}", phoneNumber);
+                } else {
+                    log.info("✅ [DEV] Verification code for {} is: {} (see log above)", phoneNumber, code);
+                }
             }
         } catch (Exception e) {
             log.warn("WhatsApp send failed: {}", e.getMessage());
@@ -116,9 +121,11 @@ public class PhoneVerificationService {
         return PhoneVerificationResult.success(
             verification.getId(),
             channel,
-            String.format("Code per %s gesendet. Gültig für %d Minuten.",
-                channel.equals("whatsapp") ? "WhatsApp" : "SMS",
-                codeExpiryMinutes)
+            channel.equals("dev-log")
+                ? String.format("DEV-Modus: Code wurde in die Backend-Logs geschrieben (kein echtes WhatsApp). Gültig für %d Minuten.", codeExpiryMinutes)
+                : String.format("Code per %s gesendet. Gültig für %d Minuten.",
+                    channel.equals("whatsapp") ? "WhatsApp" : "SMS",
+                    codeExpiryMinutes)
         );
     }
 

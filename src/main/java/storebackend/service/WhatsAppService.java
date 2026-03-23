@@ -220,8 +220,12 @@ public class WhatsAppService {
     }
 
     private boolean simulateSend(String to, String message) {
-        log.info("[WhatsApp/DEV] To: {} | Message: {}", to, message);
-        log.info("[WhatsApp/DEV] Set whatsapp.enabled=true + phone-number-id + access-token to send real messages");
+        log.info("========================================");
+        log.info("[WhatsApp/DEV] SIMULATED SEND (whatsapp.enabled=false)");
+        log.info("[WhatsApp/DEV] To:      {}", to);
+        log.info("[WhatsApp/DEV] Message: {}", message);
+        log.info("[WhatsApp/DEV] Set whatsapp.enabled=true + phone-number-id + access-token for real messages");
+        log.info("========================================");
         return true;
     }
 }

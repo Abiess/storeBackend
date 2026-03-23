@@ -5,7 +5,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/storedb
     username: storeapp
-    # kommt von SPRING_DATASOURCE_PASSWORD bzw. aus /etc/storebackend.env
+    # from SPRING_DATASOURCE_PASSWORD env var or /etc/storebackend.env
     password: ${SPRING_DATASOURCE_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
     hikari:
@@ -18,9 +18,9 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update  # ✅ Auto-Update Schema - fügt fehlende Spalten hinzu (z.B. cart_items.created_at)
-    show-sql: false  # In Production: false (Performance)
-    open-in-view: false  # Verhindert lazy-loading Probleme
+      ddl-auto: update  # Auto-Update Schema - adds missing columns (e.g. cart_items.created_at)
+    show-sql: false  # In Production: false (performance)
+    open-in-view: false  # Prevents lazy-loading issues
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
@@ -32,7 +32,7 @@ spring:
 
   sql:
     init:
-      mode: never  # ✅ Deaktiviere schema.sql - Hibernate erstellt Schema aus Entities
+      mode: never  # Disable schema.sql - Hibernate creates schema from Entities
 
   servlet:
     multipart:
@@ -72,15 +72,15 @@ management:
       base-path: /actuator
   endpoint:
     health:
-      show-details: always  # Zeige Details für Debugging
+      show-details: always  # Show details for debugging
       probes:
         enabled: true
   health:
-    # NUR PostgreSQL und DiskSpace aktivieren - alles andere aus!
+    # ONLY PostgreSQL and DiskSpace enabled - everything else off!
     defaults:
-      enabled: false  # WICHTIG: Deaktiviere alle anderen Health Checks als Standard
+      enabled: false  # IMPORTANT: Disable all other health checks by default
     db:
-      enabled: true  # Nur PostgreSQL
+      enabled: true  # Only PostgreSQL
     diskSpace:
       enabled: true
       threshold: 10MB
@@ -88,11 +88,11 @@ management:
       enabled: true  # Einfacher Ping
     # Explizit alle anderen deaktivieren
     mail:
-      enabled: false  # Kein SMTP Health Check (verhindert 503)
+      enabled: false  # No SMTP health check (prevents 503)
     mongo:
-      enabled: false  # Kein MongoDB
+      enabled: false  # No MongoDB
     redis:
-      enabled: false  # Kein Redis
+      enabled: false  # No Redis
     cassandra:
       enabled: false
     couchbase:
@@ -114,7 +114,7 @@ management:
   health.livenessState.enabled: true
   health.readinessState.enabled: true
 
-# Logging für Production
+# Logging for Production
 logging:
   level:
     root: INFO
@@ -140,13 +140,13 @@ jwt:
   expiration: 86400000
 
 # WhatsApp Cloud API (Meta / Facebook)
-# Phone Number ID und Access Token aus dem Meta Developer Portal
+# Phone Number ID and Access Token from Meta Developer Portal
 whatsapp:
-  enabled: true
-  phone-number-id: 1083661678159369
-  access-token: EAAUgAfPZCuroBRPiwa0PRiSEYijZCZAG7KwhPeI7pZAZCbJlj5hZCrye37zQkQtVqNCscqbrSXQGKL6udoMFMedk1zMSgSYZCbwZBErQnZCs43OIyrTZBf7cmgizpdrhVPH6xIP4Ms9iHGCcEeYfNCyXCzAvyGD8826Rzbj6qlGOF3bEJxKZAXykzUWxTvtOZBLcE8OtC4h77S98ECguUPnrzrTCn5oFw2nttkv6OTDIg9Rwct1UQ571ZAVKJxjbsoe4nS7xMDyNpyfY8agLlU5JNTUoDiAZDZD
-  # Optional: genehmigtes Template fuer Verifizierungscode
-  # Leer lassen = Freitext-Nachricht (nur fuer verifizierte Test-Nummern)
+  enabled: ${WHATSAPP_ENABLED:true}
+  phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID:1083661678159369}
+  access-token: ${WHATSAPP_ACCESS_TOKEN:EAAUgAfPZCuroBRIhIvJvPe1o1oSdtap5IfQdklsZA2NL51SXk702S3HUFzcc1ZAbVxJvcNCUM6vJ0mZC4K5pOD3KqmcEZCjWRfZCyPVD5Y0D8iubIZBP8GHsuD3KijbvWCzyU5vzsesou2adWZB3HRJqhL7ZC6DT1Ouz8Chf5hSeZCx8IEVRUDqgXd29r1IGsQxeIORkFun0ZAcpIg8uq3ZBCtixFhbG009e1OZA2Nm1glCENwtwDsYZAjC5y8Aiqtg4qLP0DXkzUMMY4Vqrw1jHqfaUm2lpcZD}
+  # Optional: approved template for verification code
+  # Leave empty = plain text message (only for verified test numbers)
   verification-template-name: ${WHATSAPP_TEMPLATE_NAME:}
   verification-template-lang: ${WHATSAPP_TEMPLATE_LANG:de}
 
@@ -157,11 +157,11 @@ verification:
   max-attempts: 3
   rate-limit-minutes: 1
 
-# Spring Mail Configuration für Email-Verification
+# Spring Mail Configuration for Email-Verification
 mail:
   enabled: ${MAIL_ENABLED:true}
 
-# Base URL für Verification-Links
+# Base URL for Verification-Links
 app:
   base-url: ${APP_BASE_URL:https://markt.ma}
 
@@ -173,7 +173,7 @@ minio:
   bucket: ${MINIO_BUCKET:store-assets}
   region: ${MINIO_REGION:us-east-1}
 
-  # weil endpoint intern http ist → false
+  # endpoint is http internally - secure=false
 
   endpoint: ${MINIO_ENDPOINT:https://minio.markt.ma}
   secure: ${MINIO_SECURE:true}

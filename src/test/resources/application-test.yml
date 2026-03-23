@@ -1,10 +1,10 @@
-# Test Configuration für Multi-Tenant SaaS Testing
+# Test Configuration fr Multi-Tenant SaaS Testing
 
 spring:
   application:
     name: storeBackend-test
 
-  # H2 In-Memory Database für Tests
+  # H2 In-Memory Database fr Tests
   datasource:
     url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     username: sa
@@ -13,18 +13,18 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate  # ✅ Flyway verwaltet das Schema auch in Tests
+      ddl-auto: validate  #  Flyway verwaltet das Schema also in Tests
     show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
 
-  # H2 Console für Test-Debugging (nur in Tests)
+  # H2 Console fr Test-Debugging (nur in Tests)
   h2:
     console:
       enabled: true
 
-  # Flyway für Tests
+  # Flyway fr Tests
   flyway:
     enabled: true
     baseline-on-migrate: true
@@ -41,12 +41,12 @@ saas:
     txtRecordPrefix: "_test-verification"
     tokenLength: 16
 
-# JWT für Tests
+# JWT fr Tests
 jwt:
   secret: testSecretKeyForJWTTokenGenerationInTestEnvironment123456789
-  expiration: 3600000 # 1 Stunde für Tests
+  expiration: 3600000 # 1 hour fr Tests
 
-# Logging für Tests
+# Logging fr Tests
 logging:
   level:
     storebackend: INFO

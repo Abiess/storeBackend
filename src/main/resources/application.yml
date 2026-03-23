@@ -2,7 +2,7 @@ spring:
   application:
     name: storeBackend
 
-  # H2 In-Memory Database (lokale Entwicklung ohne PostgreSQL)
+  # H2 In-Memory Database (local development without PostgreSQL)
   datasource:
     url: jdbc:h2:mem:storedb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
     driver-class-name: org.h2.Driver
@@ -21,7 +21,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create-drop  # ✅ H2: Lasse Hibernate Schema erstellen (aus Entities)
+      ddl-auto: create-drop  # H2: Let Hibernate create schema from Entities
     show-sql: true
     properties:
       hibernate:
@@ -34,7 +34,7 @@ spring:
 
   sql:
     init:
-      mode: never  # ✅ Schema.sql für H2 deaktiviert - Hibernate erstellt Schema aus Entities
+      mode: never  # Schema.sql for H2 disabled - Hibernate creates schema from Entities
 
   servlet:
     multipart:
@@ -77,18 +77,18 @@ springdoc:
     tryItOutEnabled: true
 
 jwt:
-  # nur lokal hardcodiert – in production bitte über ENV (siehe unten)
+  # hardcoded locally only - in production use ENV variable (see below)
   secret: mySecretKeyForJWTTokenGenerationThatIsAtLeast256BitsLongForHS256Algorithm
   expiration: 86400000
 
-# Base URL für Verification-Links
+# Base URL for Verification-Links
 app:
   base-url: ${APP_BASE_URL:https://markt.ma}
 
 mail:
   enabled: ${MAIL_ENABLED:true}
 
-# MinIO lokal standardmäßig deaktiviert
+# MinIO disabled locally by default
 minio:
   enabled: false
   endpoint: http://localhost:9000
