@@ -26,7 +26,8 @@ import java.util.Map;
 @Slf4j
 public class WhatsAppService {
 
-    private static final String API_BASE = "https://graph.facebook.com/v23.0";
+    @Value("${whatsapp.api-version:v22.0}")
+    private String apiVersion;
 
     @Value("${whatsapp.enabled:false}")
     private boolean enabled;
@@ -97,13 +98,18 @@ public class WhatsAppService {
             return simulateSend(to, "Verification code: " + code);
         }
 
+        // Template vorhanden → Template-Nachricht (erfordert genehmigtes Template mit {{1}})
         if (verificationTemplateName != null && !verificationTemplateName.isBlank()) {
+            log.info("Sending verification code via template '{}' to {}", verificationTemplateName, to);
             return sendTemplateMessage(to, code);
         }
 
-        // Freitext-Fallback (funktioniert nur mit genehmigten Test-Nummern
-        // oder innerhalb des 24h Customer Service Window)
-        String text = "Ihr Verifizierungscode lautet: *" + code + "*\n\nGueltig fuer 10 Minuten.";
+        // Kein Template → Freitext direkt senden.
+        // Funktioniert sofort ohne Template-Genehmigung fuer:
+        // - verifizierte Test-Nummern im Meta Developer Portal
+        // - Nummern die innerhalb der letzten 24h eine Nachricht gesendet haben
+        log.info("Sending verification code as plain text to {} (no template configured)", to);
+        String text = "Ihr Bestellcode: *" + code + "*\n\nGueltig 10 Minuten. Bitte nicht weitergeben.";
         return sendMessage(to, text);
     }
 
@@ -168,7 +174,7 @@ public class WhatsAppService {
 
     private boolean doPost(String to, Map<String, Object> body) {
         try {
-            String url = API_BASE + "/" + phoneNumberId + "/messages";
+            String url = "https://graph.facebook.com/" + apiVersion + "/" + phoneNumberId + "/messages";
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -178,12 +184,16 @@ public class WhatsAppService {
             ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
 
             if (response.getStatusCode().is2xxSuccessful()) {
-                log.info("WhatsApp message sent to {} via Meta Cloud API", to);
+                log.info("WhatsApp message sent to {} via Meta Cloud API ({})", to, apiVersion);
                 return true;
             } else {
-                log.warn("Meta WhatsApp API returned {}: {}", response.getStatusCode(), response.getBody());
+                log.warn("Meta WhatsApp API error {}: {}", response.getStatusCode(), response.getBody());
                 return false;
             }
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            // Meta gibt den Fehlergrund im Body zurueck (z.B. abgelaufener Token)
+            log.error("Meta WhatsApp API client error for {}: HTTP {} | Body: {}", to, e.getStatusCode(), e.getResponseBodyAsString());
+            return false;
         } catch (Exception e) {
             log.error("Failed to send WhatsApp to {}: {}", to, e.getMessage());
             return false;
