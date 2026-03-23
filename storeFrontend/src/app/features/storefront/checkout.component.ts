@@ -1,9 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CartService, Cart } from '../../core/services/cart.service';
-import { CheckoutService, CheckoutRequest } from '../../core/services/checkout.service';
+import { CheckoutService } from '../../core/services/checkout.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CustomerProfileService, SaveAddressRequest } from '../../core/services/customer-profile.service';
 import { SubdomainService } from '../../core/services/subdomain.service';
@@ -14,8 +14,9 @@ import { PhoneVerificationService } from '../../core/services/phone-verification
 import { DeliveryService } from '../../core/services/delivery.service';
 import { DeliveryOption, DeliveryOptionsResponse } from '../../core/models';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
-import { TranslationService } from '../../core/services/translation.service';
 import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 
 @Component({
     selector: 'app-checkout',
@@ -567,6 +568,11 @@ import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-h
               </span>
             </div>
 
+            <div class="summary-row tax">
+              <span>MwSt. (19%)</span>
+              <span>{{ getTax() | number:'1.2-2' }} €</span>
+            </div>
+
             <div class="summary-row total">
               <strong>{{ 'cart.total' | translate }}</strong>
               <strong>{{ getFinalTotal() | number:'1.2-2' }} €</strong>
@@ -891,6 +897,14 @@ import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-h
     .summary-row.discount .discount-value {
       font-size: 18px;
       font-weight: 700;
+    }
+
+    .summary-row.tax {
+      color: #64748b;
+      font-size: 13px;
+      border-top: 1px dashed #e2e8f0;
+      padding-top: 6px;
+      margin-top: 2px;
     }
 
     .help-text {
@@ -1353,7 +1367,7 @@ import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-h
     }
   `]
 })
-export class CheckoutComponent implements OnInit {
+export class CheckoutComponent implements OnInit, OnDestroy {
     checkoutForm: FormGroup;
     cart: Cart | null = null;
     loading = false;
@@ -1380,6 +1394,8 @@ export class CheckoutComponent implements OnInit {
     verificationError = '';
     phoneVerificationId: number | null = null;
 
+    private destroy$ = new Subject<void>();
+
     countryCodes = [
         { code: 'DE', dialCode: '+49', flag: '🇩🇪', name: 'Deutschland' },
         { code: 'AT', dialCode: '+43', flag: '🇦🇹', name: 'Österreich' },
@@ -1396,7 +1412,6 @@ export class CheckoutComponent implements OnInit {
 
     selectedCountry = this.countryCodes[0];
     phoneNumberLocal = '';
-    phoneValidationError = '';
     isPhoneValid = false;
 
     deliveryOptions: DeliveryOptionsResponse | null = null;
@@ -1413,8 +1428,7 @@ export class CheckoutComponent implements OnInit {
         private customerProfileService: CustomerProfileService,
         private subdomainService: SubdomainService,
         private phoneVerificationService: PhoneVerificationService,
-        private deliveryService: DeliveryService,
-        private translationService: TranslationService
+        private deliveryService: DeliveryService
     ) {
         this.checkoutForm = this.fb.group({
             customerEmail: ['', [Validators.required, Validators.email]],
@@ -1452,11 +1466,21 @@ export class CheckoutComponent implements OnInit {
         this.restoreFormData();
         this.loadSavedAddresses();
 
-        this.checkoutForm.get('shippingAddress')?.valueChanges.subscribe(() => {
+        // Bug-Fix: debounce verhindert API-Calls bei jedem Tastendruck
+        // distinctUntilChanged verhindert Reload wenn PLZ/Stadt/Land gleich bleibt
+        this.checkoutForm.get('shippingAddress')?.valueChanges.pipe(
+            debounceTime(600),
+            distinctUntilChanged((a, b) =>
+                a.postalCode === b.postalCode &&
+                a.city === b.city &&
+                a.country === b.country
+            ),
+            takeUntil(this.destroy$)
+        ).subscribe(() => {
             this.loadDeliveryOptions();
         });
 
-        this.authService.currentUser$.subscribe(user => {
+        this.authService.currentUser$.pipe(takeUntil(this.destroy$)).subscribe(user => {
             if (user && user.email) {
                 console.log('✅ Setze E-Mail des eingeloggten Users:', user.email);
                 this.checkoutForm.patchValue({
@@ -1524,6 +1548,11 @@ export class CheckoutComponent implements OnInit {
         });
     }
 
+    ngOnDestroy(): void {
+        this.destroy$.next();
+        this.destroy$.complete();
+    }
+
     loadSavedPhone(phoneNumber: string): void {
         const matchedCountry = this.countryCodes.find((country: any) =>
             phoneNumber.startsWith(country.dialCode)
@@ -1585,11 +1614,21 @@ export class CheckoutComponent implements OnInit {
 
     submitOrder(): void {
         if (this.checkoutForm.invalid || !this.cart) {
+            this.checkoutForm.markAllAsTouched();
             return;
         }
 
         if (!this.selectedDeliveryOption) {
             this.errorMessage = 'Bitte wählen Sie eine Lieferoption.';
+            return;
+        }
+
+        // Bug-Fix: COD erfordert verifizierte Telefonnummer
+        if (this.selectedPaymentMethod === 'CASH_ON_DELIVERY' && !this.phoneVerified) {
+            this.errorMessage = 'Bitte verifizieren Sie Ihre Telefonnummer für Nachnahme-Zahlung.';
+            // Scroll zur Phone-Verification
+            const phoneBox = document.querySelector('.phone-verification-box');
+            phoneBox?.scrollIntoView({ behavior: 'smooth', block: 'center' });
             return;
         }
 
@@ -1722,13 +1761,20 @@ export class CheckoutComponent implements OnInit {
         return window.location.hostname;
     }
 
+    getTax(): number {
+        if (!this.cart) return 0;
+        const discounted = Math.max(0, this.cart.subtotal - this.discountAmount);
+        return discounted * 0.19;
+    }
+
     getFinalTotal(): number {
         if (!this.cart) return 0;
         const subtotal = this.cart.subtotal;
-        const deliveryFee = this.selectedDeliveryOption?.fee || 0;
-        const shippingCost = this.hasFreeShipping ? 0 : deliveryFee;
-
-        return Math.max(0, subtotal - this.discountAmount + shippingCost);
+        const deliveryFee = this.hasFreeShipping ? 0 : (this.selectedDeliveryOption?.fee || 0);
+        const discounted = Math.max(0, subtotal - this.discountAmount);
+        // Bug-Fix: Backend addiert 19% MwSt – Frontend muss dasselbe anzeigen
+        const tax = discounted * 0.19;
+        return discounted + tax + deliveryFee;
     }
 
     loadDeliveryOptions(): void {

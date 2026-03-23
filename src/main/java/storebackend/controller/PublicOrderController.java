@@ -74,8 +74,13 @@ public class PublicOrderController {
 
             // Phone Verification ID für Cash on Delivery
             Long phoneVerificationId = null;
-            if (request.containsKey("phoneVerificationId")) {
-                phoneVerificationId = Long.valueOf(request.get("phoneVerificationId").toString());
+            Object phoneVerifRaw = request.get("phoneVerificationId");
+            if (phoneVerifRaw != null && !"null".equals(phoneVerifRaw.toString().trim())) {
+                try {
+                    phoneVerificationId = Long.valueOf(phoneVerifRaw.toString());
+                } catch (NumberFormatException e) {
+                    log.warn("Invalid phoneVerificationId value: {}", phoneVerifRaw);
+                }
             }
 
             // Validiere Phone Verification für Cash on Delivery

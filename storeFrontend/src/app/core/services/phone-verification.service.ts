@@ -27,7 +27,7 @@ export interface VerifyCodeRequest {
   providedIn: 'root'
 })
 export class PhoneVerificationService {
-  private apiUrl = `${environment.apiUrl}/api/public/phone-verification`;
+  private apiUrl = `${environment.apiUrl}/public/phone-verification`;
 
   constructor(private http: HttpClient) {}
 

@@ -28,7 +28,7 @@ import java.util.Optional;
 public class PhoneVerificationService {
 
     private final PhoneVerificationRepository verificationRepository;
-    private final TwilioService twilioService;
+    private final WhatsAppService whatsAppService;
 
     @Value("${verification.code.expiry-minutes:10}")
     private int codeExpiryMinutes;
@@ -95,38 +95,23 @@ public class PhoneVerificationService {
         String channel = "unknown";
 
         try {
-            // WhatsApp Versuch
-            if (twilioService.sendWhatsAppMessage(phoneNumber,
-                String.format("Ihr Verifizierungscode lautet: %s\n\nGültig für %d Minuten.", code, codeExpiryMinutes))) {
+            // WhatsApp via Meta Cloud API
+            if (whatsAppService.sendVerificationCode(phoneNumber, code)) {
                 sent = true;
                 channel = "whatsapp";
                 verification.setChannel("whatsapp");
                 log.info("✅ WhatsApp message sent to {}", phoneNumber);
             }
         } catch (Exception e) {
-            log.warn("⚠️ WhatsApp failed, trying SMS fallback: {}", e.getMessage());
+            log.warn("WhatsApp send failed: {}", e.getMessage());
         }
 
         if (!sent) {
-            try {
-                // SMS Fallback
-                if (twilioService.sendSMS(phoneNumber,
-                    String.format("Ihr Verifizierungscode: %s (gültig %d Min.)", code, codeExpiryMinutes))) {
-                    sent = true;
-                    channel = "sms";
-                    verification.setChannel("sms");
-                    log.info("✅ SMS sent to {}", phoneNumber);
-                }
-            } catch (Exception e) {
-                log.error("❌ SMS also failed: {}", e.getMessage());
-            }
+            // Kein SMS-Fallback mehr noetig – WhatsAppService handhabt intern Fallback
+            return PhoneVerificationResult.error("Nachricht konnte nicht gesendet werden. Bitte versuchen Sie es spaeter erneut.");
         }
 
         verificationRepository.save(verification);
-
-        if (!sent) {
-            return PhoneVerificationResult.error("Nachricht konnte nicht gesendet werden. Bitte versuchen Sie es später erneut.");
-        }
 
         return PhoneVerificationResult.success(
             verification.getId(),

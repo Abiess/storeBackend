@@ -139,6 +139,24 @@ jwt:
   secret: ${JWT_SECRET:change-me-in-production}
   expiration: 86400000
 
+# WhatsApp Cloud API (Meta / Facebook)
+# Phone Number ID und Access Token aus dem Meta Developer Portal
+whatsapp:
+  enabled: true
+  phone-number-id: 1083661678159369
+  access-token: EAAUgAfPZCuroBRPiwa0PRiSEYijZCZAG7KwhPeI7pZAZCbJlj5hZCrye37zQkQtVqNCscqbrSXQGKL6udoMFMedk1zMSgSYZCbwZBErQnZCs43OIyrTZBf7cmgizpdrhVPH6xIP4Ms9iHGCcEeYfNCyXCzAvyGD8826Rzbj6qlGOF3bEJxKZAXykzUWxTvtOZBLcE8OtC4h77S98ECguUPnrzrTCn5oFw2nttkv6OTDIg9Rwct1UQ571ZAVKJxjbsoe4nS7xMDyNpyfY8agLlU5JNTUoDiAZDZD
+  # Optional: genehmigtes Template fuer Verifizierungscode
+  # Leer lassen = Freitext-Nachricht (nur fuer verifizierte Test-Nummern)
+  verification-template-name: ${WHATSAPP_TEMPLATE_NAME:}
+  verification-template-lang: ${WHATSAPP_TEMPLATE_LANG:de}
+
+# Phone Verification Settings
+verification:
+  code:
+    expiry-minutes: 10
+  max-attempts: 3
+  rate-limit-minutes: 1
+
 # Spring Mail Configuration für Email-Verification
 mail:
   enabled: ${MAIL_ENABLED:true}
