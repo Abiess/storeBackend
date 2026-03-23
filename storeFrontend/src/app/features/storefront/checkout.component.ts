@@ -1605,17 +1605,29 @@ export class CheckoutComponent implements OnInit {
         const deliveryType = this.selectedDeliveryOption.deliveryType;
         const deliveryMode = this.selectedDeliveryOption.deliveryMode;
 
-        const request: CheckoutRequest = {
+        const request: any = {
             storeId: this.cart.storeId,
             customerEmail: customerEmail,
             shippingAddress: formValue.shippingAddress,
             billingAddress: this.sameAsShipping ? formValue.shippingAddress : formValue.billingAddress,
-            notes: formValue.notes,
-            deliveryType: deliveryType,
-            deliveryMode: deliveryMode,
-            paymentMethod: this.selectedPaymentMethod,
-            phoneVerificationId: this.phoneVerificationId
+            paymentMethod: this.selectedPaymentMethod
         };
+
+        if (formValue.notes?.trim()) {
+            request.notes = formValue.notes.trim();
+        }
+
+        if (deliveryType) {
+            request.deliveryType = deliveryType;
+        }
+
+        if (deliveryMode) {
+            request.deliveryMode = deliveryMode;
+        }
+
+        if (this.phoneVerificationId != null) {
+            request.phoneVerificationId = this.phoneVerificationId;
+        }
 
         console.log('📦 Sende Checkout-Request:', {
             email: customerEmail,
