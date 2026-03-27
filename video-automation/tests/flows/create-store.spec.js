@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 const { FlowRecorder } = require('../utils/flow-recorder');
 
-test.describe('Create New Store Flow', () => {
+test.describe('Create Store Flow', () => {
   let recorder;
 
   test.beforeEach(async ({ page }) => {
@@ -9,260 +9,171 @@ test.describe('Create New Store Flow', () => {
     await recorder.start();
   });
 
-  test('Complete store creation flow demonstration', async ({ page }) => {
+  test('Complete login and create store flow demonstration', async ({ page }) => {
+    const email = process.env.DEMO_EMAIL || 'demo@markt.ma';
+    const password = process.env.DEMO_PASSWORD || 'demoatmarkt.ma';
+    const storeName = 'myfirstshop';
+    const storeDescription = 'here is my first shop ever :)';
+
     // Step 1: Navigate to homepage
-    await recorder.step('Homepage besuchen', async () => {
-      await page.goto('/');
+    await recorder.step('Homepage aufrufen', async () => {
+      await page.goto('https://markt.ma/');
       await page.waitForLoadState('networkidle');
       await recorder.pause(2000);
     });
 
-    // Step 2: Login (quick login for existing user)
-    await recorder.step('Anmelden', async () => {
-      // Try to find login button
-      const loginSelectors = [
-        'a:has-text("Anmelden")',
-        'a:has-text("Login")',
-        'button:has-text("Anmelden")',
-        '[data-test="login-button"]',
-        '[href*="/login"]',
-        '[href*="/auth/login"]',
-        'a[routerLink*="login"]'
-      ];
-
-      let clicked = false;
-      for (const selector of loginSelectors) {
-        try {
-          const element = page.locator(selector).first();
-          if (await element.isVisible({ timeout: 2000 })) {
-            await element.click();
-            clicked = true;
-            break;
-          }
-        } catch (e) {
-          continue;
-        }
-      }
-
-      // If no button found, try direct navigation
-      if (!clicked) {
-        await page.goto('/login').catch(() =>
-          page.goto('/auth/login')
-        );
-      }
-
+    // Step 2: Click Login button
+    await recorder.step('Login-Button klicken', async () => {
+      const loginButton = page.getByRole('button', { name: 'Login' });
+      await loginButton.waitFor({ state: 'visible', timeout: 10000 });
+      await loginButton.click();
       await page.waitForLoadState('networkidle');
       await recorder.pause(1500);
     });
 
-    // Step 3: Fill login credentials
-    await recorder.step('Login-Daten eingeben', async () => {
-      // Wait for login form
-      await page.waitForSelector('input[type="email"], input[name="email"], form', { timeout: 10000 });
+    // Step 3: Fill email
+    await recorder.step('E-Mail eingeben', async () => {
+      const emailInput = page.getByRole('textbox', { name: 'Email' });
+      await emailInput.waitFor({ state: 'visible', timeout: 10000 });
+      await emailInput.click();
+      await recorder.pause(500);
+      await emailInput.fill(email);
       await recorder.pause(1000);
-
-      // Email
-      const emailInput = page.locator('input[type="email"], input[name="email"], input[placeholder*="Email"], #email').first();
-      await emailInput.fill(process.env.DEMO_EMAIL || 'demo@example.com');
-      await recorder.pause(800);
-
-      // Password
-      const passwordInput = page.locator('input[type="password"], input[name="password"], #password').first();
-      await passwordInput.fill(process.env.DEMO_PASSWORD || 'DemoPass123!');
-      await recorder.pause(800);
     });
 
-    // Step 4: Submit login
-    await recorder.step('Anmeldung abschicken', async () => {
-      const submitSelectors = [
-        'button[type="submit"]',
-        'button:has-text("Anmelden")',
-        'button:has-text("Login")',
-        'button:has-text("Einloggen")',
-        'input[type="submit"]'
-      ];
-
-      for (const selector of submitSelectors) {
-        try {
-          const button = page.locator(selector).first();
-          if (await button.isVisible({ timeout: 2000 })) {
-            await button.click();
-            break;
-          }
-        } catch (e) {
-          continue;
-        }
-      }
-
-      await page.waitForLoadState('networkidle');
-      await recorder.pause(2000);
+    // Step 4: Fill password
+    await recorder.step('Passwort eingeben', async () => {
+      const passwordInput = page.getByRole('textbox', { name: 'Password' });
+      await passwordInput.click();
+      await recorder.pause(500);
+      await passwordInput.fill(password);
+      await recorder.pause(1000);
     });
 
-    // Step 5: Navigate to create store page
-    await recorder.step('Store erstellen aufrufen', async () => {
-      // Try multiple strategies to find "create store" button/link
-      const createStoreSelectors = [
-        'a:has-text("Store erstellen")',
-        'a:has-text("Neuer Store")',
-        'a:has-text("Shop erstellen")',
-        'button:has-text("Store erstellen")',
-        'button:has-text("Neuer Store")',
-        '[data-test="create-store"]',
-        '[href*="/store/create"]',
-        '[href*="/stores/new"]',
-        '[href*="/create-store"]',
-        'a[routerLink*="create"]',
-        '.create-store-button',
-        '.new-store-button'
-      ];
-
-      let clicked = false;
-      for (const selector of createStoreSelectors) {
-        try {
-          const element = page.locator(selector).first();
-          if (await element.isVisible({ timeout: 2000 })) {
-            await element.scrollIntoViewIfNeeded();
-            await element.click();
-            clicked = true;
-            break;
-          }
-        } catch (e) {
-          continue;
-        }
-      }
-
-      // If no button found, try direct navigation
-      if (!clicked) {
-        console.log('No create store button found, trying direct navigation...');
-        await page.goto('/store/create').catch(() =>
-          page.goto('/stores/new').catch(() =>
-            page.goto('/create-store').catch(() =>
-              page.goto('/dashboard/stores/new')
-            )
-          )
-        );
-      }
-
-      await page.waitForLoadState('networkidle');
-      await recorder.pause(2000);
-    });
-
-    // Step 6: Fill store details
-    await recorder.step('Store-Informationen eingeben', async () => {
-      // Wait for form
-      await page.waitForSelector('form, input[name*="name"], input[name*="store"]', { timeout: 10000 });
-      await recorder.pause(1500);
-
-      // Store Name
-      const storeNameInput = page.locator('input[name="storeName"], input[name="name"], input[name="shopName"], input[placeholder*="Store"], input[placeholder*="Shop"], #storeName, #name').first();
-      if (await storeNameInput.isVisible().catch(() => false)) {
-        await storeNameInput.fill('Demo Store ' + Date.now());
-        await recorder.pause(1000);
-      }
-
-      // Store Description (if exists)
-      const descriptionInput = page.locator('textarea[name="description"], textarea[name="storeDescription"], input[name="description"], #description').first();
-      if (await descriptionInput.isVisible().catch(() => false)) {
-        await descriptionInput.fill('Dies ist ein Demo-Store für Video-Demonstrationszwecke');
-        await recorder.pause(1000);
-      }
-
-      // Store URL/Subdomain (if exists)
-      const urlInput = page.locator('input[name="subdomain"], input[name="url"], input[name="storeUrl"], input[placeholder*="subdomain"], input[placeholder*="URL"], #subdomain').first();
-      if (await urlInput.isVisible().catch(() => false)) {
-        await urlInput.fill('demo-store-' + Date.now());
-        await recorder.pause(1000);
-      }
-
-      // Category/Type (if exists)
-      const categorySelect = page.locator('select[name="category"], select[name="type"], #category').first();
-      if (await categorySelect.isVisible().catch(() => false)) {
-        await categorySelect.selectOption({ index: 1 });
-        await recorder.pause(800);
-      }
-
-      // Address/Location fields (if exists)
-      const addressInput = page.locator('input[name="address"], input[name="street"], input[placeholder*="Adresse"], #address').first();
-      if (await addressInput.isVisible().catch(() => false)) {
-        await addressInput.fill('Musterstraße 123');
-        await recorder.pause(500);
-      }
-
-      const cityInput = page.locator('input[name="city"], input[name="stadt"], input[placeholder*="Stadt"], #city').first();
-      if (await cityInput.isVisible().catch(() => false)) {
-        await cityInput.fill('Berlin');
-        await recorder.pause(500);
-      }
-
-      const postalCodeInput = page.locator('input[name="postalCode"], input[name="zipCode"], input[name="plz"], input[placeholder*="PLZ"], #postalCode').first();
-      if (await postalCodeInput.isVisible().catch(() => false)) {
-        await postalCodeInput.fill('10115');
-        await recorder.pause(500);
-      }
-
-      // Phone (if exists)
-      const phoneInput = page.locator('input[name="phone"], input[name="telefon"], input[type="tel"], input[placeholder*="Telefon"], #phone').first();
-      if (await phoneInput.isVisible().catch(() => false)) {
-        await phoneInput.fill('+49 30 12345678');
-        await recorder.pause(500);
-      }
-
-      await recorder.pause(1500);
-    });
-
-    // Step 7: Submit store creation
-    await recorder.step('Store erstellen abschließen', async () => {
-      const submitSelectors = [
-        'button[type="submit"]',
-        'button:has-text("Store erstellen")',
-        'button:has-text("Erstellen")',
-        'button:has-text("Speichern")',
-        'button:has-text("Create")',
-        'button:has-text("Save")',
-        'input[type="submit"]'
-      ];
-
-      for (const selector of submitSelectors) {
-        try {
-          const button = page.locator(selector).first();
-          if (await button.isVisible({ timeout: 2000 })) {
-            await button.scrollIntoViewIfNeeded();
-            await button.click();
-            break;
-          }
-        } catch (e) {
-          continue;
-        }
-      }
-
+    // Step 5: Submit login
+    await recorder.step('Einloggen', async () => {
+      const loginButton = page.getByRole('button', { name: 'Login' });
+      await loginButton.click();
       await page.waitForLoadState('networkidle');
       await recorder.pause(3000);
     });
 
-    // Step 8: Verify successful store creation
-    await recorder.step('Store erfolgreich erstellt', async () => {
-      // Wait for success indicators
-      const successSelectors = [
-        'text=Erfolgreich',
-        'text=Success',
-        'text=Store erstellt',
-        'text=Shop erstellt',
-        'text=Erstellt',
-        'text=Created',
-        '.success-message',
-        '.alert-success',
-        '[data-test="success"]',
-        '.store-dashboard',
-        '[href*="/store/"]',
-        'button:has-text("Store bearbeiten")',
-        'button:has-text("Store verwalten")'
+    // Step 6: Click Create First Store
+    await recorder.step('Store erstellen starten', async () => {
+      const createStoreButton = page.getByRole('button', { name: '➕ Create first store' });
+      await createStoreButton.waitFor({ state: 'visible', timeout: 10000 });
+      await createStoreButton.click();
+      await page.waitForLoadState('networkidle');
+      await recorder.pause(2000);
+    });
+
+    // Step 7: Select Own Store option
+    await recorder.step('Eigenen Store wählen', async () => {
+      const ownStoreButton = page.getByRole('button', { name: '🚀 Eigenen Store erstellen' });
+      await ownStoreButton.waitFor({ state: 'visible', timeout: 10000 });
+      await ownStoreButton.click();
+      await recorder.pause(2000);
+    });
+
+    // Step 8: Click Create First Store again (if needed)
+    await recorder.step('Store-Formular öffnen', async () => {
+      try {
+        const createButton = page.getByRole('button', { name: '➕ Create first store' });
+        if (await createButton.isVisible({ timeout: 2000 })) {
+          await createButton.click();
+          await page.waitForLoadState('networkidle');
+        }
+      } catch (e) {
+        console.log('Store form already open');
+      }
+      await recorder.pause(2000);
+    });
+
+    // Step 9: Fill store name
+    await recorder.step('Store-Name eingeben', async () => {
+      const storeNameInput = page.getByRole('textbox', { name: 'Store name *' });
+      await storeNameInput.waitFor({ state: 'visible', timeout: 10000 });
+      await storeNameInput.click();
+      await recorder.pause(500);
+      await storeNameInput.fill(storeName);
+      await recorder.pause(1500);
+    });
+
+    // Step 10: Fill store description
+    await recorder.step('Store-Beschreibung eingeben', async () => {
+      const descriptionInput = page.getByRole('textbox', { name: 'Description (optional)' });
+      await descriptionInput.click();
+      await recorder.pause(500);
+      await descriptionInput.fill(storeDescription);
+      await recorder.pause(1500);
+    });
+
+    // Step 11: Submit store creation
+    await recorder.step('Store erstellen', async () => {
+      const createButton = page.getByRole('button', { name: '✓ Create store' });
+      await createButton.waitFor({ state: 'visible', timeout: 10000 });
+      await createButton.click();
+      await page.waitForLoadState('networkidle');
+      await recorder.pause(3000);
+    });
+
+    // Step 12: Verify store created and click store link
+    await recorder.step('Store-Link öffnen', async () => {
+      const storeLink = page.getByRole('link', { name: `${storeName}.markt.ma` });
+      await storeLink.waitFor({ state: 'visible', timeout: 10000 });
+
+      // Handle popup/new tab
+      const page1Promise = page.waitForEvent('popup');
+      await storeLink.click();
+      const page1 = await page1Promise;
+
+      await page1.waitForLoadState('networkidle');
+      await recorder.pause(2000);
+
+      // Navigate through onboarding if present
+      try {
+        const nextButton = page1.getByRole('button', { name: 'Next' });
+        if (await nextButton.isVisible({ timeout: 2000 })) {
+          await nextButton.click();
+          await recorder.pause(1500);
+          await nextButton.click();
+          await recorder.pause(1500);
+        }
+      } catch (e) {
+        console.log('No onboarding present');
+      }
+
+      // Close the popup and return to main page
+      await page1.close();
+      await recorder.pause(1000);
+    });
+
+    // Step 13: Open Store Management
+    await recorder.step('Store-Verwaltung öffnen', async () => {
+      const manageButton = page.getByRole('button', { name: '📊 Manage store' });
+      await manageButton.waitFor({ state: 'visible', timeout: 10000 });
+      await manageButton.click();
+      await page.waitForLoadState('networkidle');
+      await recorder.pause(2000);
+    });
+
+    // Step 14: Verify success
+    await recorder.step('Erfolgreich erstellt', async () => {
+      // Verify we're in store management
+      const successIndicators = [
+        'text=/.*dashboard.*/i',
+        'text=/.*verwaltung.*/i',
+        'text=/.*management.*/i',
+        'button:has-text("Add product")',
+        'button:has-text("Produkt hinzufügen")'
       ];
 
       let found = false;
-      for (const selector of successSelectors) {
+      for (const selector of successIndicators) {
         try {
           await page.waitForSelector(selector, { timeout: 5000 });
           found = true;
+          console.log('✅ Store management opened successfully');
           break;
         } catch (e) {
           continue;
@@ -270,7 +181,7 @@ test.describe('Create New Store Flow', () => {
       }
 
       if (!found) {
-        console.log('Success indicator not clearly visible, but continuing...');
+        console.log('⚠️  Success verification unclear, but continuing...');
       }
 
       await recorder.pause(2000);
@@ -279,4 +190,3 @@ test.describe('Create New Store Flow', () => {
     await recorder.finish();
   });
 });
-

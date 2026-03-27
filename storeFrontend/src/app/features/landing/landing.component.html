@@ -29,7 +29,7 @@
                 </p>
 
                 <!-- Two Path Selection -->
-                <div class="hero-paths">
+
                     <div class="path-card path-own">
                         <div class="path-icon">{{ 'landing.paths.own.icon' | translate }}</div>
                         <h3>{{ 'landing.paths.own.title' | translate }}</h3>
@@ -44,78 +44,10 @@
                         </button>
                     </div>
 
-                    <div class="path-card path-reseller">
-                        <div class="path-badge">{{ 'landing.paths.reseller.badge' | translate }}</div>
-                        <div class="path-icon">{{ 'landing.paths.reseller.icon' | translate }}</div>
-                        <h3>{{ 'landing.paths.reseller.title' | translate }}</h3>
-                        <p class="path-for">{{ 'landing.paths.reseller.for' | translate }}</p>
-                        <ul class="path-benefits">
-                            <li>{{ 'landing.paths.reseller.benefit1' | translate }}</li>
-                            <li>{{ 'landing.paths.reseller.benefit2' | translate }}</li>
-                            <li>{{ 'landing.paths.reseller.benefit3' | translate }}</li>
-                        </ul>
-                        <button class="btn btn-path-reseller" (click)="navigateToRegister('reseller')">
-                            {{ 'landing.paths.reseller.cta' | translate }}
-                        </button>
-                    </div>
-                </div>
 
-                <!-- Quick Comparison -->
-                <div class="path-comparison">
-                    <button class="comparison-toggle" (click)="toggleComparison()">
-                        {{
-                            showComparison
-                                ? ('landing.comparison.toggleClose' | translate)
-                                : ('landing.comparison.toggleOpen' | translate)
-                        }}
-                    </button>
 
-                    <div class="comparison-table" *ngIf="showComparison">
-                        <div class="comparison-row comparison-header">
-                            <span class="comparison-label"></span>
-                            <span class="comparison-own-col">{{ 'landing.comparison.ownStore' | translate }}</span>
-                            <span class="comparison-reseller-col">{{ 'landing.comparison.resellerStore' | translate }}</span>
-                        </div>
 
-                        <div class="comparison-row">
-                            <span class="comparison-label">{{ 'landing.comparison.setupTime' | translate }}</span>
-                            <span class="comparison-value">{{ 'landing.comparison.setupTimeOwn' | translate }}</span>
-                            <span class="comparison-value">{{ 'landing.comparison.setupTimeReseller' | translate }}</span>
-                        </div>
 
-                        <div class="comparison-row">
-                            <span class="comparison-label">{{ 'landing.comparison.startCapital' | translate }}</span>
-                            <span class="comparison-value">{{ 'landing.comparison.startCapitalOwn' | translate }}</span>
-                            <span class="comparison-value">{{ 'landing.comparison.startCapitalReseller' | translate }}</span>
-                        </div>
-
-                        <div class="comparison-row">
-                            <span class="comparison-label">{{ 'landing.comparison.productSelection' | translate }}</span>
-                            <span class="comparison-value">{{ 'landing.comparison.productSelectionOwn' | translate }}</span>
-                            <span class="comparison-value">{{ 'landing.comparison.productSelectionReseller' | translate }}</span>
-                        </div>
-
-                        <div class="comparison-row">
-                            <span class="comparison-label">{{ 'landing.comparison.storageShipping' | translate }}</span>
-                            <span class="comparison-value">{{ 'landing.comparison.storageShippingOwn' | translate }}</span>
-                            <span class="comparison-value">{{ 'landing.comparison.storageShippingReseller' | translate }}</span>
-                        </div>
-
-                        <div class="comparison-row">
-                            <span class="comparison-label">{{ 'landing.comparison.revenueModel' | translate }}</span>
-                            <span class="comparison-value">{{ 'landing.comparison.revenueModelOwn' | translate }}</span>
-                            <span class="comparison-value">{{ 'landing.comparison.revenueModelReseller' | translate }}</span>
-                        </div>
-
-                        <div class="comparison-row">
-                            <span class="comparison-label">{{ 'landing.comparison.forWhom' | translate }}</span>
-                            <span class="comparison-value">{{ 'landing.comparison.forWhomOwn' | translate }}</span>
-                            <span class="comparison-value">{{ 'landing.comparison.forWhomReseller' | translate }}</span>
-                        </div>
-                    </div>
-
-                    <p class="comparison-note" [innerHTML]="'landing.comparison.note' | translate"></p>
-                </div>
 
                 <div class="hero-actions">
                     <button class="btn btn-hero-primary" (click)="navigateToRegister()">
@@ -183,13 +115,17 @@
             </div>
 
             <div class="main-video-container">
-                <div class="video-wrapper">
-                    <app-video-placeholder
+
+                    <app-video-player class="video-wrapper"
                             size="large"
-                            icon="🎥"
-                            [title]="'landing.demo.platformDemoTitle' | translate">
-                    </app-video-placeholder>
-                </div>
+                            [videoUrl]="'assets/videos/platform-demo.webm'"
+                            [showControls]="true"
+                            [poster]="''"
+                            errorMessage="Demo-Video ist noch nicht verfügbar. Bitte führen Sie erst die Tests aus.">
+                    </app-video-player>
+
+
+
 
                 <div class="video-info">
                     <h3>{{ 'landing.demo.platformDemoHeading' | translate }}</h3>
@@ -205,11 +141,14 @@
                 <div class="tutorials-grid">
                     <div class="tutorial-card" *ngFor="let tutorial of tutorials">
                         <div class="tutorial-video">
-                            <app-video-placeholder
-                                    size="small"
-                                    [icon]="tutorial.icon"
-                                    [title]="tutorial.title | translate">
-                            </app-video-placeholder>
+                            <app-video-player
+                                    size="large"
+                                    [videoUrl]="'assets/videos/platform-demo.webm'"
+                                    [showControls]="true"
+                                    [poster]="''"
+                                    errorMessage="Demo-Video ist noch nicht verfügbar. Bitte führen Sie erst die Tests aus.">
+                            </app-video-player>
+
                             <div class="tutorial-duration">{{ tutorial.duration | translate }}</div>
                         </div>
 

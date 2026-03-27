@@ -9,6 +9,7 @@
     "record:checkout": "npm run record -- checkout",
     "record:products": "npm run record -- products",
     "record:create-store": "npm run record -- create-store",
+    "record:add-product": "npm run record -- add-product",
     "record": "node scripts/record-single.js",
     "process:all": "node scripts/process-all.js",
     "process": "node scripts/process-video.js",
@@ -16,6 +17,7 @@
     "howto": "node scripts/build-howto.js",
     "clean": "node scripts/clean.js",
     "test:flows": "playwright test --headed",
+    "test:add-product": "playwright test tests/flows/add-product.spec.js --headed",
     "setup": "npm install && npm run install:browsers",
     "pipeline:full": "npm run record:all && npm run process:all"
   },

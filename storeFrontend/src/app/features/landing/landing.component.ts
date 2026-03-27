@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { VideoPlaceholderComponent } from './video-placeholder.component';
 import {TranslatePipe} from "@app/core/pipes/translate.pipe";
+import {VideoPlayerComponent} from "@app/features/landing/video-player.component";
 
 @Component({
   selector: 'app-landing',
   standalone: true,
-    imports: [CommonModule, VideoPlaceholderComponent, TranslatePipe],
+  imports: [CommonModule, VideoPlaceholderComponent, TranslatePipe, VideoPlayerComponent],
   templateUrl: './landing.component.html',
   styleUrls: ['./landing.component.scss']
 })
@@ -59,24 +60,25 @@ export class LandingComponent {
       icon: '👤',
       title: 'landing.tutorialItems.createAccount.title',
       description: 'landing.tutorialItems.createAccount.description',
-      videoUrl: 'assets/videos/02-how-to-register.cy.ts.mp4',
+      videoUrl: 'assets/videos/platform-demo.webm',  // ← HIER GEÄNDERT
       duration: 'landing.tutorialItems.createAccount.duration'
     },
     {
       icon: '📦',
       title: 'landing.tutorialItems.createFirstProduct.title',
       description: 'landing.tutorialItems.createFirstProduct.description',
-      videoUrl: 'assets/videos/03-how-to-create-product.cy.ts.mp4',
+      videoUrl: 'assets/videos/platform-demo.webm',  // ← HIER GEÄNDERT
       duration: 'landing.tutorialItems.createFirstProduct.duration'
     },
     {
       icon: '🎨',
       title: 'landing.tutorialItems.customizeStore.title',
       description: 'landing.tutorialItems.customizeStore.description',
-      videoUrl: 'assets/videos/04-how-to-customize-store.cy.ts.mp4',
+      videoUrl: 'assets/videos/platform-demo.webm',  // ← HIER GEÄNDERT
       duration: 'landing.tutorialItems.customizeStore.duration'
     }
   ];
+
 
   plans = [
     {
