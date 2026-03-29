@@ -139,6 +139,46 @@ public class CartController {
         }
     }
 
+    /**
+     * PUBLIC: Get cart item count (für Header-Badge)
+     * GET /api/public/cart/count?storeId=5&sessionId=guest-xyz
+     */
+    @GetMapping("/count")
+    public ResponseEntity<Map<String, Object>> getCartCount(
+            @RequestParam(required = false) Long storeId,
+            @RequestParam(required = false) String sessionId,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+
+        try {
+            Cart cart;
+
+            // Prüfe ob User eingeloggt ist
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring(7);
+                Long userId = extractUserIdFromToken(token);
+                cart = cartService.getCartByUser(userId);
+            } else if (sessionId != null) {
+                cart = cartService.getCartBySessionId(sessionId);
+            } else {
+                // Kein Cart vorhanden - return 0
+                return ResponseEntity.ok(Map.of("count", 0, "itemCount", 0));
+            }
+
+            List<CartItem> items = cartService.getCartItems(cart.getId());
+            int itemCount = items.stream().mapToInt(CartItem::getQuantity).sum();
+
+            return ResponseEntity.ok(Map.of(
+                "count", itemCount,
+                "itemCount", itemCount,
+                "cartId", cart.getId()
+            ));
+
+        } catch (RuntimeException e) {
+            log.debug("Cart not found for count request: {}", e.getMessage());
+            return ResponseEntity.ok(Map.of("count", 0, "itemCount", 0));
+        }
+    }
+
     private Map<String, Object> buildCartResponse(Cart cart, List<CartItem> items) {
         Map<String, Object> response = new HashMap<>();
         response.put("id", cart.getId());
