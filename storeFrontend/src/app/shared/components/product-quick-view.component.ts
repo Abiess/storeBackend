@@ -52,9 +52,12 @@ import { ProductReviewsComponent } from './product-reviews.component';
                   class="variant-btn"
                   [class.active]="selectedVariant?.id === variant.id"
                   (click)="selectVariant(variant)">
-                  <span class="variant-name">{{ variant.name }}</span>
+                  <span class="variant-name">{{ getVariantDisplayName(variant) }}</span>
                   <span class="variant-price">
                     {{ variant.price | number:'1.2-2' }} €
+                  </span>
+                  <span class="variant-stock" *ngIf="variant.stock > 0">
+                    ({{ variant.stock }} verfügbar)
                   </span>
                 </button>
               </div>
@@ -84,10 +87,10 @@ import { ProductReviewsComponent } from './product-reviews.component';
               <button
                 class="btn btn-primary btn-add-to-cart"
                 (click)="addToCart()"
-                [disabled]="isAddingToCart">
+                [disabled]="isAddingToCart || !isVariantAvailable()">
                 <span class="btn-icon">🛒</span>
                 <span class="btn-text">
-                  {{ isAddingToCart ? 'Wird hinzugefügt...' : 'In den Warenkorb' }}
+                  {{ getAddToCartLabel() }}
                 </span>
               </button>
 
@@ -281,6 +284,7 @@ import { ProductReviewsComponent } from './product-reviews.component';
       cursor: pointer;
       transition: all 0.3s;
       font-size: 1rem;
+      gap: 0.75rem;
     }
 
     .variant-btn:hover {
@@ -296,10 +300,23 @@ import { ProductReviewsComponent } from './product-reviews.component';
 
     .variant-name {
       font-weight: 600;
+      flex: 1;
     }
 
     .variant-price {
       font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .variant-stock {
+      font-size: 0.875rem;
+      color: #28a745;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .variant-btn.active .variant-stock {
+      color: rgba(255, 255, 255, 0.9);
     }
 
     .quantity-section {
@@ -499,16 +516,35 @@ export class ProductQuickViewComponent implements OnInit {
   getProductImages(): string[] {
     const images: string[] = [];
 
-    if (this.product?.primaryImageUrl) {
-      images.push(this.product.primaryImageUrl);
+    // FIXED: Zeige Varianten-Bilder wenn Variante ausgewählt ist
+    if (this.selectedVariant) {
+      // Varianten-Bilder (mehrere)
+      if (this.selectedVariant.images && this.selectedVariant.images.length > 0) {
+        images.push(...this.selectedVariant.images);
+      } 
+      // Varianten-Haupt-Bild (einzelnes)
+      else if (this.selectedVariant.imageUrl) {
+        images.push(this.selectedVariant.imageUrl);
+      }
+      // Alternative field name
+      else if (this.selectedVariant.mediaUrls && this.selectedVariant.mediaUrls.length > 0) {
+        images.push(...this.selectedVariant.mediaUrls);
+      }
     }
 
-    if (this.product?.media && this.product.media.length > 0) {
-      this.product.media.forEach((media: any) => {
-        if (media.url && media.url !== this.product?.primaryImageUrl) {
-          images.push(media.url);
-        }
-      });
+    // Fallback: Produkt-Bilder wenn keine Variante oder keine Varianten-Bilder
+    if (images.length === 0) {
+      if (this.product?.primaryImageUrl) {
+        images.push(this.product.primaryImageUrl);
+      }
+
+      if (this.product?.media && this.product.media.length > 0) {
+        this.product.media.forEach((media: any) => {
+          if (media.url && media.url !== this.product?.primaryImageUrl) {
+            images.push(media.url);
+          }
+        });
+      }
     }
 
     return images;
@@ -516,6 +552,34 @@ export class ProductQuickViewComponent implements OnInit {
 
   hasVariants(): boolean {
     return !!(this.product?.variants && this.product.variants.length > 0);
+  }
+
+  /**
+   * Generiert Anzeigename für Variante aus option1/option2/option3
+   * Fallback: SKU oder "Variante #ID"
+   */
+  getVariantDisplayName(variant: ProductVariant): string {
+    // Prüfe ob name direkt vorhanden ist
+    if (variant.name) {
+      return variant.name;
+    }
+
+    // Kombiniere option1/option2/option3 (z.B. "Rot / M / Baumwolle")
+    const options = [variant.option1, variant.option2, variant.option3]
+      .filter(opt => opt && opt.trim() !== '')
+      .join(' / ');
+    
+    if (options) {
+      return options;
+    }
+
+    // Fallback: SKU
+    if (variant.sku) {
+      return variant.sku;
+    }
+
+    // Last resort: ID
+    return `Variante #${variant.id}`;
   }
 
   selectVariant(variant: ProductVariant): void {
@@ -527,6 +591,36 @@ export class ProductQuickViewComponent implements OnInit {
       return this.selectedVariant.price;
     }
     return this.product?.basePrice || 0;
+  }
+
+  /**
+   * Prüft ob die ausgewählte Variante verfügbar ist (Lagerbestand > 0)
+   */
+  isVariantAvailable(): boolean {
+    // Wenn Varianten existieren, muss eine ausgewählt sein
+    if (this.hasVariants()) {
+      if (!this.selectedVariant) {
+        return false;
+      }
+      // Prüfe Stock (stockQuantity ist das primäre Feld)
+      const stock = this.selectedVariant.stockQuantity ?? this.selectedVariant.stock ?? 0;
+      return stock > 0;
+    }
+    // Wenn keine Varianten → Produkt-Lagerbestand prüfen
+    return (this.product?.stock ?? 0) > 0;
+  }
+
+  /**
+   * Gibt das passende Label für den Add-to-Cart Button zurück
+   */
+  getAddToCartLabel(): string {
+    if (this.isAddingToCart) {
+      return 'Wird hinzugefügt...';
+    }
+    if (!this.isVariantAvailable()) {
+      return 'Nicht verfügbar';
+    }
+    return 'In den Warenkorb';
   }
 
   increaseQuantity(): void {
