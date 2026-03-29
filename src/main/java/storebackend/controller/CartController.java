@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import storebackend.entity.*;
 import storebackend.repository.*;
 import storebackend.service.CartService;
+import storebackend.service.MinioService;
 
 import java.math.BigDecimal;
 import java.util.Base64;
@@ -22,6 +23,8 @@ public class CartController {
     private final CartService cartService;
     private final StoreRepository storeRepository;
     private final UserRepository userRepository;
+    private final MinioService minioService;
+    private final ProductMediaRepository productMediaRepository;
 
     @GetMapping
     public ResponseEntity<Map<String, Object>> getCart(
@@ -162,10 +165,17 @@ public class CartController {
                 // Füge Product-Details hinzu (über Variant)
                 if (item.getVariant().getProduct() != null) {
                     Map<String, Object> productDto = new HashMap<>();
-                    productDto.put("id", item.getVariant().getProduct().getId());
-                    productDto.put("name", item.getVariant().getProduct().getTitle());
-                    productDto.put("description", item.getVariant().getProduct().getDescription());
-                    productDto.put("imageUrl", item.getVariant().getProduct().getTitle());
+                    Product product = item.getVariant().getProduct();
+                    productDto.put("id", product.getId());
+                    productDto.put("name", product.getTitle());
+                    productDto.put("description", product.getDescription());
+                    
+                    // FIXED: Hol Bild-URL - Priorität: Varianten-Bild > Produkt-Primary-Bild
+                    String imageUrl = item.getVariant().getImageUrl() != null 
+                        ? item.getVariant().getImageUrl() 
+                        : getProductImageUrl(product);
+                    productDto.put("imageUrl", imageUrl);
+                    
                     variantDto.put("product", productDto);
                 }
 
@@ -177,11 +187,14 @@ public class CartController {
                 dto.put("productId", item.getProduct().getId());
 
                 Map<String, Object> productDto = new HashMap<>();
-                productDto.put("id", item.getProduct().getId());
-                productDto.put("name", item.getProduct().getTitle());
-                productDto.put("description", item.getProduct().getDescription());
-                productDto.put("price", item.getProduct().getBasePrice());
-                productDto.put("imageUrl", item.getProduct().getTitle());
+                Product product = item.getProduct();
+                productDto.put("id", product.getId());
+                productDto.put("name", product.getTitle());
+                productDto.put("description", product.getDescription());
+                productDto.put("price", product.getBasePrice());
+                
+                // FIXED: Hole Bild-URL über ProductMedia
+                productDto.put("imageUrl", getProductImageUrl(product));
 
                 dto.put("product", productDto);
             }
@@ -218,5 +231,31 @@ public class CartController {
             throw new RuntimeException("Could not extract userId from token: " + e.getMessage());
         }
         throw new RuntimeException("Invalid token format");
+    }
+
+    /**
+     * Holt die Bild-URL eines Produkts über ProductMedia
+     * Priorität: Primary Image > Erstes Bild > Placeholder
+     */
+    private String getProductImageUrl(Product product) {
+        try {
+            List<ProductMedia> mediaList = productMediaRepository.findByProductIdOrderBySortOrderAsc(product.getId());
+            
+            if (mediaList.isEmpty()) {
+                return "/assets/placeholder-product.png";
+            }
+            
+            // Suche Primary Image
+            ProductMedia primaryMedia = mediaList.stream()
+                .filter(ProductMedia::getIsPrimary)
+                .findFirst()
+                .orElse(mediaList.get(0)); // Fallback: Erstes Bild
+            
+            // Generiere presigned URL für MinIO
+            return minioService.getPresignedUrl(primaryMedia.getMedia().getMinioObjectName(), 60);
+        } catch (Exception e) {
+            log.warn("Could not load image for product {}: {}", product.getId(), e.getMessage());
+            return "/assets/placeholder-product.png";
+        }
     }
 }
