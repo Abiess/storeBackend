@@ -12,5 +12,6 @@ import lombok.NoArgsConstructor;
 public class RedirectResolveRequest {
     private String host;
     private String path;
+
 }
 
