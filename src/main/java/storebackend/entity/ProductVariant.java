@@ -24,17 +24,45 @@ public class ProductVariant {
     @Column(nullable = false, unique = true)
     private String sku;
 
+    @Column(length = 100)
+    private String barcode;
+
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
+
+    @Column(name = "compare_price", precision = 10, scale = 2)
+    private BigDecimal comparePrice;
+
+    @Column(name = "cost_price", precision = 10, scale = 2)
+    private BigDecimal costPrice;
 
     @Column(nullable = false)
     private Integer stockQuantity;
 
-    @Column(columnDefinition = "TEXT")
-    private String attributesJson;
+    @Column(nullable = false)
+    private Integer quantity = 0;
+
+    @Column(precision = 10, scale = 3)
+    private BigDecimal weight;
+
+    @Column(length = 255)
+    private String option1;
+
+    @Column(length = 255)
+    private String option2;
+
+    @Column(length = 255)
+    private String option3;
 
     @Column(name = "image_url", length = 500)
     private String imageUrl;
+
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
+
+    @Column(columnDefinition = "TEXT")
+    private String attributesJson;
+
 
     // Explizite Getter/Setter für Lombok-Kompatibilität
     public Long getId() {

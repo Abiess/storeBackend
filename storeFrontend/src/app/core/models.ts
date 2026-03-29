@@ -298,15 +298,24 @@ export interface ProductVariant {
   productId: number;
   name?: string;
   sku: string;
+  barcode?: string;
   price: number;
+  comparePrice?: number;
+  costPrice?: number;
   stock: number;
   stockQuantity: number; // Required for inventory management
+  quantity?: number;
+  weight?: number;
+  option1?: string;
+  option2?: string;
+  option3?: string;
   attributesJson?: string;
   attributes?: { [key: string]: string }; // Parsed attributes for UI
   options?: ProductOption[];
   imageUrl?: string; // Main variant image
   images?: string[]; // Multiple variant images
   mediaUrls?: string[]; // Alternative field name for images
+  isActive?: boolean;
 }
 
 export interface CreateProductRequest {

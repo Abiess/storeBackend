@@ -15,11 +15,20 @@ public class ProductVariantDTO {
     private Long id;
     private Long productId;
     private String sku;
+    private String barcode;
     private BigDecimal price;
+    private BigDecimal comparePrice;
+    private BigDecimal costPrice;
     private Integer stockQuantity;
+    private Integer quantity;
+    private BigDecimal weight;
+    private String option1;
+    private String option2;
+    private String option3;
+    private String imageUrl;
+    private Boolean isActive;
     private String attributesJson;
     private Map<String, String> attributes; // Parsed JSON für UI (z.B. {"color":"rot","size":"M"})
-    private String imageUrl; // Haupt-Bild der Variante
-    private List<String> images; // Mehrere Bilder für die Variante
+    private List<String> images; // Mehrere Bilder für die Variante (Frontend-only)
 }
 

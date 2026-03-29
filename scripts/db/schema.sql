@@ -260,15 +260,24 @@ CREATE TABLE IF NOT EXISTS product_option_values (
 
 -- Product Variants
 CREATE TABLE IF NOT EXISTS product_variants (
-                                                id BIGSERIAL PRIMARY KEY,
-                                                product_id BIGINT NOT NULL,
-                                                sku VARCHAR(100) NOT NULL UNIQUE,
+    id BIGSERIAL PRIMARY KEY,
+    product_id BIGINT NOT NULL,
+    sku VARCHAR(100) NOT NULL UNIQUE,
+    barcode VARCHAR(100),
     price DECIMAL(10, 2) NOT NULL,
+    compare_price DECIMAL(10, 2),
+    cost_price DECIMAL(10, 2),
     stock_quantity INTEGER NOT NULL DEFAULT 0,
-    attributes_json TEXT,
+    quantity INTEGER NOT NULL DEFAULT 0,
+    weight DECIMAL(10, 3),
+    option1 VARCHAR(255),
+    option2 VARCHAR(255),
+    option3 VARCHAR(255),
     image_url VARCHAR(500),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    attributes_json TEXT,
     CONSTRAINT fk_product_variants_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
-    );
+);
 
 -- Inventory Logs
 CREATE TABLE IF NOT EXISTS inventory_logs (

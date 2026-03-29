@@ -73,9 +73,18 @@ public class ProductVariantService {
         ProductVariant variant = new ProductVariant();
         variant.setProduct(product);
         variant.setSku(request.getSku());
+        variant.setBarcode(request.getBarcode());
         variant.setPrice(request.getPrice());
+        variant.setComparePrice(request.getComparePrice());
+        variant.setCostPrice(request.getCostPrice());
         variant.setStockQuantity(request.getStockQuantity() != null ? request.getStockQuantity() : 0);
+        variant.setQuantity(request.getQuantity() != null ? request.getQuantity() : 0);
+        variant.setWeight(request.getWeight());
+        variant.setOption1(request.getOption1());
+        variant.setOption2(request.getOption2());
+        variant.setOption3(request.getOption3());
         variant.setImageUrl(request.getImageUrl());
+        variant.setIsActive(request.getIsActive() != null ? request.getIsActive() : true);
 
         // Convert attributes map to JSON string
         if (request.getAttributes() != null && !request.getAttributes().isEmpty()) {
@@ -124,6 +133,33 @@ public class ProductVariantService {
         }
         if (request.getImageUrl() != null) {
             variant.setImageUrl(request.getImageUrl());
+        }
+        if (request.getBarcode() != null) {
+            variant.setBarcode(request.getBarcode());
+        }
+        if (request.getComparePrice() != null) {
+            variant.setComparePrice(request.getComparePrice());
+        }
+        if (request.getCostPrice() != null) {
+            variant.setCostPrice(request.getCostPrice());
+        }
+        if (request.getQuantity() != null) {
+            variant.setQuantity(request.getQuantity());
+        }
+        if (request.getWeight() != null) {
+            variant.setWeight(request.getWeight());
+        }
+        if (request.getOption1() != null) {
+            variant.setOption1(request.getOption1());
+        }
+        if (request.getOption2() != null) {
+            variant.setOption2(request.getOption2());
+        }
+        if (request.getOption3() != null) {
+            variant.setOption3(request.getOption3());
+        }
+        if (request.getIsActive() != null) {
+            variant.setIsActive(request.getIsActive());
         }
 
         // Update attributes

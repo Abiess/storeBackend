@@ -156,12 +156,46 @@ interface ProductOption {
                   placeholder="Varianten-SKU"
                 />
               </div>
+
+              <div class="field">
+                <label>{{ 'product.variants.barcode' | translate }}</label>
+                <input 
+                  type="text" 
+                  [(ngModel)]="variant.barcode"
+                  class="input-sm"
+                  placeholder="EAN/Barcode"
+                />
+              </div>
               
               <div class="field">
-                <label>{{ 'product.price' | translate }} (€)</label>
+                <label>{{ 'product.price' | translate }} (€) *</label>
                 <input 
                   type="number" 
                   [(ngModel)]="variant.price"
+                  step="0.01"
+                  min="0"
+                  class="input-sm"
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div class="field">
+                <label>{{ 'product.variants.comparePrice' | translate }} (€)</label>
+                <input 
+                  type="number" 
+                  [(ngModel)]="variant.comparePrice"
+                  step="0.01"
+                  min="0"
+                  class="input-sm"
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div class="field">
+                <label>{{ 'product.variants.costPrice' | translate }} (€)</label>
+                <input 
+                  type="number" 
+                  [(ngModel)]="variant.costPrice"
                   step="0.01"
                   min="0"
                   class="input-sm"
@@ -178,6 +212,29 @@ interface ProductOption {
                   class="input-sm"
                   placeholder="0"
                 />
+              </div>
+
+              <div class="field">
+                <label>{{ 'product.variants.weight' | translate }} (kg)</label>
+                <input 
+                  type="number" 
+                  [(ngModel)]="variant.weight"
+                  step="0.001"
+                  min="0"
+                  class="input-sm"
+                  placeholder="0.000"
+                />
+              </div>
+
+              <div class="field">
+                <label>{{ 'product.variants.active' | translate }}</label>
+                <select 
+                  [(ngModel)]="variant.isActive"
+                  class="input-sm"
+                >
+                  <option [value]="true">{{ 'common.yes' | translate }}</option>
+                  <option [value]="false">{{ 'common.no' | translate }}</option>
+                </select>
               </div>
               
               <!-- DROPSHIPPING: Supplier Link Button -->
@@ -556,7 +613,7 @@ interface ProductOption {
 
     .variant-fields-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: 1rem;
       margin-bottom: 1rem;
     }
@@ -572,18 +629,25 @@ interface ProductOption {
       font-weight: 600;
       color: #666;
       text-transform: uppercase;
+      letter-spacing: 0.3px;
     }
 
-    .input-sm {
+    .input-sm, select.input-sm {
       padding: 0.5rem;
       border: 1px solid #dee2e6;
       border-radius: 6px;
       font-size: 0.875rem;
+      background: white;
     }
 
-    .input-sm:focus {
+    .input-sm:focus, select.input-sm:focus {
       outline: none;
       border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    select.input-sm {
+      cursor: pointer;
     }
 
     .variant-status {
