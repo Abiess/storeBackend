@@ -274,6 +274,7 @@ CREATE TABLE IF NOT EXISTS product_variants (
     option2 VARCHAR(255),
     option3 VARCHAR(255),
     image_url VARCHAR(500),
+    media_urls TEXT,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     attributes_json TEXT,
     CONSTRAINT fk_product_variants_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE

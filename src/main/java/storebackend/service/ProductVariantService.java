@@ -96,6 +96,19 @@ public class ProductVariantService {
             }
         }
 
+        // FIXED: Convert images array to JSON string for mediaUrls field
+        if (request.getImages() != null && !request.getImages().isEmpty()) {
+            try {
+                String json = objectMapper.writeValueAsString(request.getImages());
+                variant.setMediaUrls(json);
+                
+                // Setze imageUrl auf das erste Bild (Hauptbild)
+                variant.setImageUrl(request.getImages().get(0));
+            } catch (Exception e) {
+                log.error("Error serializing images", e);
+            }
+        }
+
         variant = variantRepository.save(variant);
         log.info("Created variant {} for product {}", variant.getId(), productId);
 
@@ -169,6 +182,21 @@ public class ProductVariantService {
                 variant.setAttributesJson(json);
             } catch (Exception e) {
                 log.error("Error serializing attributes", e);
+            }
+        }
+
+        // FIXED: Update images array (convert to JSON for mediaUrls field)
+        if (request.getImages() != null) {
+            try {
+                String json = objectMapper.writeValueAsString(request.getImages());
+                variant.setMediaUrls(json);
+                
+                // Setze auch imageUrl auf das erste Bild (Hauptbild)
+                if (!request.getImages().isEmpty()) {
+                    variant.setImageUrl(request.getImages().get(0));
+                }
+            } catch (Exception e) {
+                log.error("Error serializing images", e);
             }
         }
 
@@ -291,12 +319,21 @@ public class ProductVariantService {
         dto.setId(variant.getId());
         dto.setProductId(variant.getProduct().getId());
         dto.setSku(variant.getSku());
+        dto.setBarcode(variant.getBarcode());
         dto.setPrice(variant.getPrice());
+        dto.setComparePrice(variant.getComparePrice());
+        dto.setCostPrice(variant.getCostPrice());
         dto.setStockQuantity(variant.getStockQuantity());
-        dto.setAttributesJson(variant.getAttributesJson());
+        dto.setQuantity(variant.getQuantity());
+        dto.setWeight(variant.getWeight());
+        dto.setOption1(variant.getOption1());
+        dto.setOption2(variant.getOption2());
+        dto.setOption3(variant.getOption3());
         dto.setImageUrl(variant.getImageUrl());
+        dto.setIsActive(variant.getIsActive());
+        dto.setAttributesJson(variant.getAttributesJson());
 
-        // Parse JSON to Map for UI
+        // FIXED: Parse attributesJson to attributes map
         if (variant.getAttributesJson() != null && !variant.getAttributesJson().isEmpty()) {
             try {
                 Map<String, String> attributes = objectMapper.readValue(
@@ -307,6 +344,26 @@ public class ProductVariantService {
             } catch (Exception e) {
                 log.error("Error parsing attributes JSON", e);
             }
+        }
+
+        // FIXED: Parse mediaUrls JSON to images list (für Frontend)
+        if (variant.getMediaUrls() != null && !variant.getMediaUrls().isEmpty()) {
+            try {
+                List<String> imagesList = objectMapper.readValue(
+                        variant.getMediaUrls(),
+                        new TypeReference<List<String>>() {}
+                );
+                dto.setImages(imagesList);
+            } catch (Exception e) {
+                log.warn("Error parsing mediaUrls JSON for variant {}: {}", variant.getId(), e.getMessage());
+                // Fallback: Verwende imageUrl als einziges Bild
+                if (variant.getImageUrl() != null) {
+                    dto.setImages(List.of(variant.getImageUrl()));
+                }
+            }
+        } else if (variant.getImageUrl() != null) {
+            // Fallback: Verwende imageUrl als einziges Bild
+            dto.setImages(List.of(variant.getImageUrl()));
         }
 
         return dto;

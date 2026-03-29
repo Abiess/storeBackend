@@ -57,6 +57,9 @@ public class ProductVariant {
     @Column(name = "image_url", length = 500)
     private String imageUrl;
 
+    @Column(name = "media_urls", columnDefinition = "TEXT")
+    private String mediaUrls; // JSON array of image URLs: ["url1", "url2", ...]
+
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
