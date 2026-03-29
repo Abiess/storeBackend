@@ -787,11 +787,11 @@ export class ProductVariantsManagerComponent implements OnInit, OnDestroy {
   }
 
   canGenerate(): boolean {
-    if (this.options.length === 0) return false;
+    if (!this.options || this.options.length === 0) return false;
 
     for (const option of this.options) {
-      if (!option.name || option.name.trim() === '') return false;
-      if (option.values.length === 0) return false;
+      if (!option || !option.name || option.name.trim() === '') return false;
+      if (!option.values || option.values.length === 0) return false;
       for (const value of option.values) {
         if (!value || value.trim() === '') return false;
       }

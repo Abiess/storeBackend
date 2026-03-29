@@ -261,6 +261,7 @@ CREATE TABLE IF NOT EXISTS product_variants (
     price DECIMAL(10, 2) NOT NULL,
     stock_quantity INTEGER NOT NULL DEFAULT 0,
     attributes_json TEXT,
+    image_url VARCHAR(500),
     CONSTRAINT fk_product_variants_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
 

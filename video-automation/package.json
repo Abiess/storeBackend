@@ -10,6 +10,7 @@
     "record:products": "npm run record -- products",
     "record:create-store": "npm run record -- create-store",
     "record:add-product": "npm run record -- add-product",
+    "record:add-product-variants": "npm run record -- add-product-variants",
     "record": "node scripts/record-single.js",
     "process:all": "node scripts/process-all.js",
     "process": "node scripts/process-video.js",
@@ -18,6 +19,8 @@
     "clean": "node scripts/clean.js",
     "test:flows": "playwright test --headed",
     "test:add-product": "playwright test tests/flows/add-product.spec.js --headed",
+    "test:add-product-variants": "playwright test tests/flows/add-product-variants.spec.js --headed",
+    "test:create-store": "playwright test tests/flows/create-store.spec.js --headed",
     "setup": "npm install && npm run install:browsers",
     "pipeline:full": "npm run record:all && npm run process:all"
   },

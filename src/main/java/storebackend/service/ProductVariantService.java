@@ -75,6 +75,7 @@ public class ProductVariantService {
         variant.setSku(request.getSku());
         variant.setPrice(request.getPrice());
         variant.setStockQuantity(request.getStockQuantity() != null ? request.getStockQuantity() : 0);
+        variant.setImageUrl(request.getImageUrl());
 
         // Convert attributes map to JSON string
         if (request.getAttributes() != null && !request.getAttributes().isEmpty()) {
@@ -120,6 +121,9 @@ public class ProductVariantService {
         }
         if (request.getStockQuantity() != null) {
             variant.setStockQuantity(request.getStockQuantity());
+        }
+        if (request.getImageUrl() != null) {
+            variant.setImageUrl(request.getImageUrl());
         }
 
         // Update attributes
@@ -254,6 +258,7 @@ public class ProductVariantService {
         dto.setPrice(variant.getPrice());
         dto.setStockQuantity(variant.getStockQuantity());
         dto.setAttributesJson(variant.getAttributesJson());
+        dto.setImageUrl(variant.getImageUrl());
 
         // Parse JSON to Map for UI
         if (variant.getAttributesJson() != null && !variant.getAttributesJson().isEmpty()) {

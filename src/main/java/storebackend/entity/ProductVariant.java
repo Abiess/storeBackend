@@ -33,6 +33,9 @@ public class ProductVariant {
     @Column(columnDefinition = "TEXT")
     private String attributesJson;
 
+    @Column(name = "image_url", length = 500)
+    private String imageUrl;
+
     // Explizite Getter/Setter für Lombok-Kompatibilität
     public Long getId() {
         return id;
