@@ -192,9 +192,18 @@ public class CartController {
             dto.put("quantity", item.getQuantity());
             dto.put("price", item.getPriceSnapshot());
 
+            // FIXED: Extrahiere Bild-URL DIREKT auf Item-Ebene (für Frontend!)
+            String imageUrl = null;
+            String productTitle = null;
+            String variantSku = null;
+
             // Füge Variant-Details hinzu (wenn vorhanden)
             if (item.getVariant() != null) {
                 dto.put("variantId", item.getVariant().getId());
+                variantSku = item.getVariant().getSku();
+
+                // FIXED: Hol Bild-URL - Priorität: Varianten-Bild > Produkt-Bild
+                imageUrl = item.getVariant().getImageUrl();
 
                 Map<String, Object> variantDto = new HashMap<>();
                 variantDto.put("id", item.getVariant().getId());
@@ -204,16 +213,18 @@ public class CartController {
 
                 // Füge Product-Details hinzu (über Variant)
                 if (item.getVariant().getProduct() != null) {
-                    Map<String, Object> productDto = new HashMap<>();
                     Product product = item.getVariant().getProduct();
+                    productTitle = product.getTitle();
+                    
+                    Map<String, Object> productDto = new HashMap<>();
                     productDto.put("id", product.getId());
                     productDto.put("name", product.getTitle());
                     productDto.put("description", product.getDescription());
                     
-                    // FIXED: Hol Bild-URL - Priorität: Varianten-Bild > Produkt-Primary-Bild
-                    String imageUrl = item.getVariant().getImageUrl() != null 
-                        ? item.getVariant().getImageUrl() 
-                        : getProductImageUrl(product);
+                    // Fallback: Wenn Variante kein Bild hat, verwende Produkt-Bild
+                    if (imageUrl == null || imageUrl.isEmpty()) {
+                        imageUrl = getProductImageUrl(product);
+                    }
                     productDto.put("imageUrl", imageUrl);
                     
                     variantDto.put("product", productDto);
@@ -226,18 +237,24 @@ public class CartController {
                 dto.put("variantId", null);
                 dto.put("productId", item.getProduct().getId());
 
-                Map<String, Object> productDto = new HashMap<>();
                 Product product = item.getProduct();
+                productTitle = product.getTitle();
+                imageUrl = getProductImageUrl(product);
+
+                Map<String, Object> productDto = new HashMap<>();
                 productDto.put("id", product.getId());
                 productDto.put("name", product.getTitle());
                 productDto.put("description", product.getDescription());
                 productDto.put("price", product.getBasePrice());
-                
-                // FIXED: Hole Bild-URL über ProductMedia
-                productDto.put("imageUrl", getProductImageUrl(product));
+                productDto.put("imageUrl", imageUrl);
 
                 dto.put("product", productDto);
             }
+
+            // FIXED: Setze imageUrl, productTitle, variantSku auf oberster Ebene (für Frontend!)
+            dto.put("imageUrl", imageUrl != null ? imageUrl : "/assets/placeholder-product.png");
+            dto.put("productTitle", productTitle != null ? productTitle : "Unknown Product");
+            dto.put("variantSku", variantSku != null ? variantSku : "");
 
             return dto;
         }).toList();
@@ -275,27 +292,31 @@ public class CartController {
 
     /**
      * Holt die Bild-URL eines Produkts über ProductMedia
-     * Priorität: Primary Image > Erstes Bild > Placeholder
+     * FIXED: Mit mehreren Fallback-Optionen für Robustheit
      */
     private String getProductImageUrl(Product product) {
+        // Fallback 1: Versuche ProductMedia + MinIO
         try {
             List<ProductMedia> mediaList = productMediaRepository.findByProductIdOrderBySortOrderAsc(product.getId());
             
-            if (mediaList.isEmpty()) {
-                return "/assets/placeholder-product.png";
+            if (!mediaList.isEmpty()) {
+                // Suche Primary Image
+                ProductMedia primaryMedia = mediaList.stream()
+                    .filter(ProductMedia::getIsPrimary)
+                    .findFirst()
+                    .orElse(mediaList.get(0));
+                
+                // Generiere presigned URL für MinIO
+                String url = minioService.getPresignedUrl(primaryMedia.getMedia().getMinioObjectName(), 60);
+                if (url != null && !url.isEmpty()) {
+                    return url;
+                }
             }
-            
-            // Suche Primary Image
-            ProductMedia primaryMedia = mediaList.stream()
-                .filter(ProductMedia::getIsPrimary)
-                .findFirst()
-                .orElse(mediaList.get(0)); // Fallback: Erstes Bild
-            
-            // Generiere presigned URL für MinIO
-            return minioService.getPresignedUrl(primaryMedia.getMedia().getMinioObjectName(), 60);
         } catch (Exception e) {
-            log.warn("Could not load image for product {}: {}", product.getId(), e.getMessage());
-            return "/assets/placeholder-product.png";
+            log.debug("ProductMedia/MinIO nicht verfügbar für Produkt {}: {}", product.getId(), e.getMessage());
         }
+        
+        // Fallback 2: Verwende placeholder
+        return "/assets/placeholder-product.png";
     }
 }
