@@ -39,10 +39,10 @@ public class ProductReviewController {
      * GET /api/products/{productId}/reviews
      */
     @GetMapping("/products/{productId}/reviews")
-    @Operation(summary = "Get all approved reviews for a product")
+    @Operation(summary = "Get all approved reviews for a product (public access)")
     public ResponseEntity<List<ProductReviewDTO>> getProductReviews(
             @PathVariable Long productId,
-            @AuthenticationPrincipal User user) {
+            @AuthenticationPrincipal(errorOnInvalidType = false) User user) {
         Long currentUserId = user != null ? user.getId() : null;
         List<ProductReviewDTO> reviews = reviewService.getProductReviews(productId, currentUserId);
         return ResponseEntity.ok(reviews);
