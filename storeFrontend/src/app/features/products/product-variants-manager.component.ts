@@ -4,11 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ProductService } from '@app/core/services/product.service';
 import { DropshippingService } from '@app/core/services/dropshipping.service';
+import { MediaService } from '@app/core/services/media.service';
 import { StoreContextService } from '@app/core/services/store-context.service';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { ProductVariant } from '@app/core/models';
 import { DropshippingSource, formatMargin } from '@app/core/models/dropshipping.model';
 import { SupplierLinkFormComponent } from './supplier-link-form.component';
+import { ImageUploadComponent, UploadedImage } from '@app/shared/components/image-upload/image-upload.component';
 import { Subscription } from 'rxjs';
 
 interface ProductOption {
@@ -22,7 +24,7 @@ interface ProductOption {
 @Component({
   selector: 'app-product-variants-manager',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe, MatDialogModule],
+  imports: [CommonModule, FormsModule, TranslatePipe, MatDialogModule, ImageUploadComponent],
   template: `
     <div class="variants-manager">
       <h2>🎨 {{ 'product.variants.title' | translate }}</h2>
@@ -117,9 +119,9 @@ interface ProductOption {
         <h3>3️⃣ {{ 'product.variants.generatedVariants' | translate }} ({{ variants.length }})</h3>
         
         <div class="variants-grid">
-          <div *ngFor="let variant of variants; let i = index" class="variant-card">
+          <div *ngFor="let variant of variants; let i = index" class="variant-card-expanded">
             <div class="variant-header">
-              <div class="variant-card">
+              <div class="variant-title">
                 <span *ngFor="let attr of getAttributesArray(variant.attributes || {})" class="attribute-badge">
                   {{ attr.key }}: {{ attr.value }}
                 </span>
@@ -134,13 +136,24 @@ interface ProductOption {
               </button>
             </div>
             
-            <div class="variant-fields">
+            <!-- Varianten-Bilder -->
+            <div class="variant-images-section">
+              <h4 class="section-subtitle">📸 {{ 'product.variants.images' | translate }}</h4>
+              <app-image-upload
+                [images]="getVariantImages(variant)"
+                [multiple]="true"
+                (imagesChange)="onVariantImagesChange(variant, $event)"
+              ></app-image-upload>
+            </div>
+            
+            <div class="variant-fields-grid">
               <div class="field">
                 <label>SKU</label>
                 <input 
                   type="text" 
                   [(ngModel)]="variant.sku"
                   class="input-sm"
+                  placeholder="Varianten-SKU"
                 />
               </div>
               
@@ -152,6 +165,7 @@ interface ProductOption {
                   step="0.01"
                   min="0"
                   class="input-sm"
+                  placeholder="0.00"
                 />
               </div>
               
@@ -162,6 +176,7 @@ interface ProductOption {
                   [(ngModel)]="variant.stockQuantity"
                   min="0"
                   class="input-sm"
+                  placeholder="0"
                 />
               </div>
               
@@ -453,21 +468,27 @@ interface ProductOption {
 
     /* Variants Grid */
     .variants-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
       margin-bottom: 1.5rem;
     }
 
-    .variant-card {
+    .variant-card,
+    .variant-card-expanded {
       background: #f8f9fa;
       border: 2px solid #e9ecef;
       border-radius: 12px;
-      padding: 1.25rem;
+      padding: 1.5rem;
       transition: all 0.3s;
     }
 
-    .variant-card:hover {
+    .variant-card-expanded {
+      padding: 2rem;
+    }
+
+    .variant-card:hover,
+    .variant-card-expanded:hover {
       border-color: #667eea;
       box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
     }
@@ -476,7 +497,14 @@ interface ProductOption {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .variant-title {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      flex: 1;
     }
 
     .variant-attributes {
@@ -493,17 +521,44 @@ interface ProductOption {
       padding: 0.375rem 0.75rem;
       border-radius: 20px;
       font-size: 0.875rem;
+      font-weight: 600;
     }
 
     .attribute-badge strong {
       color: #764ba2;
     }
 
+    /* Varianten-Bilder Sektion */
+    .variant-images-section {
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      background: white;
+      border-radius: 8px;
+      border: 2px dashed #dee2e6;
+    }
+
+    .section-subtitle {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #444;
+      margin: 0 0 1rem 0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Varianten-Felder Grid */
     .variant-fields {
       display: grid;
       grid-template-columns: 2fr 1fr 1fr;
       gap: 0.75rem;
       margin-bottom: 0.75rem;
+    }
+
+    .variant-fields-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
     }
 
     .field {
@@ -673,6 +728,7 @@ export class ProductVariantsManagerComponent implements OnInit, OnDestroy {
   constructor(
     private productService: ProductService,
     private dropshippingService: DropshippingService,
+    private mediaService: MediaService,
     private dialog: MatDialog,
     private storeContext: StoreContextService
   ) {}
@@ -973,5 +1029,52 @@ export class ProductVariantsManagerComponent implements OnInit, OnDestroy {
   formatMargin(margin: number): string {
     return formatMargin(margin);
   }
-}
 
+  /**
+   * Holt die Bilder einer Variante für die Image-Upload-Komponente
+   */
+  getVariantImages(variant: ProductVariant): UploadedImage[] {
+    if (!variant.images && !variant.mediaUrls) {
+      return [];
+    }
+
+    const imageUrls = variant.images || variant.mediaUrls || [];
+    return imageUrls.map((url, index) => ({
+      mediaId: index + 1,
+      url,
+      filename: url.split('/').pop() || `variant-image-${index}`,
+      file: undefined,
+      uploadProgress: 100,
+      isPrimary: index === 0
+    }));
+  }
+
+  /**
+   * Wird aufgerufen, wenn sich die Bilder einer Variante ändern
+   */
+  onVariantImagesChange(variant: ProductVariant, images: UploadedImage[]): void {
+    console.log('📸 Variant images changed:', { variantId: variant.id, imageCount: images.length });
+
+    // Extrahiere URLs aus UploadedImage
+    const imageUrls = images
+      .filter(img => img.url)
+      .map(img => img.url as string);
+
+    // Aktualisiere die Variante
+    variant.images = imageUrls;
+    variant.mediaUrls = imageUrls;
+
+    // Wenn ein Bild vorhanden ist, setze das erste als Haupt-Bild
+    if (imageUrls.length > 0) {
+      variant.imageUrl = imageUrls[0];
+    } else {
+      variant.imageUrl = undefined;
+    }
+
+    console.log('✅ Variant updated with images:', { 
+      variantId: variant.id, 
+      imageCount: imageUrls.length,
+      mainImage: variant.imageUrl 
+    });
+  }
+}

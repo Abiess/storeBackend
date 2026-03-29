@@ -304,6 +304,9 @@ export interface ProductVariant {
   attributesJson?: string;
   attributes?: { [key: string]: string }; // Parsed attributes for UI
   options?: ProductOption[];
+  imageUrl?: string; // Main variant image
+  images?: string[]; // Multiple variant images
+  mediaUrls?: string[]; // Alternative field name for images
 }
 
 export interface CreateProductRequest {

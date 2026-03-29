@@ -41,6 +41,8 @@
     "status": "الحالة",
     "new": "جديد",
     "newProduct": "منتج جديد",
+    "edit": "تعديل المنتج",
+    "update": "تحديث المنتج",
     "price": "السعر",
     "addToCart": "أضف إلى السلة",
     "adding": "جاري الإضافة...",
@@ -65,9 +67,39 @@
     "quantity": "الكمية: {{count}}",
     "placeholder": {
       "name": "أدخل اسم المنتج",
-      "description": "أدخل وصف المنتج"
+      "description": "أدخل وصف المنتج",
+      "sku": "أدخل رمز المنتج (اختياري)"
+    },
+    "variants": {
+      "title": "المتغيرات",
+      "defineOptions": "تحديد خيارات المنتج",
+      "optionName": "اسم الخيار",
+      "optionValues": "القيم",
+      "addOption": "إضافة خيار",
+      "removeOption": "إزالة الخيار",
+      "generateVariants": "إنشاء المتغيرات",
+      "variantsList": "قائمة المتغيرات",
+      "noVariants": "لا توجد متغيرات",
+      "price": "السعر",
+      "stock": "المخزون",
+      "sku": "رمز SKU",
+      "images": "صور المتغيرات",
+      "optionsHint": "حدد خيارات المنتج (مثل: اللون، الحجم) والقيم المتاحة",
+      "generateTitle": "توليد المتغيرات",
+      "basePrice": "السعر الأساسي",
+      "baseStock": "المخزون الأساسي",
+      "generate": "إنشاء المتغيرات",
+      "willGenerate": "سيتم إنشاء",
+      "variants": "متغيرات",
+      "generatedVariants": "المتغيرات المنشأة",
+      "inStock": "متوفر",
+      "outOfStock": "غير متوفر",
+      "saveAll": "حفظ جميع المتغيرات",
+      "addValue": "إضافة قيمة"
     }
   },
+  "Basis Info": "المعلومات الأساسية",
+  "Preis & Lager": "السعر والمخزون",
   "media": {
     "uploadImages": "رفع الصور",
     "noMedia": "لا توجد وسائط"
