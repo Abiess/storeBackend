@@ -453,10 +453,8 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   clearCart(): void {
-    if (!confirm(this.translationService.translate('cart.confirmClear'))) {
-      return;
-    }
-
+    // FIXED: Kein confirm-Dialog mehr (User-Request)
+    
     // FIXED: Null-Check für storeId
     if (!this.storeId) {
       console.error('❌ Keine Store-ID vorhanden, kann Warenkorb nicht leeren');

@@ -39,7 +39,7 @@ export interface AddToCartRequest {
 })
 export class CartService {
   private mockService = new MockCartService();
-  private cartApiUrl = `${environment.publicApiUrl}/simple-cart`;
+  private cartApiUrl = `${environment.publicApiUrl}/cart`; // FIXED: /cart statt /simple-cart
   private storeId: number | null = null; // Typisierung geändert
 
   private cartUpdateSubject = new BehaviorSubject<void>(undefined);
@@ -219,7 +219,9 @@ export class CartService {
       return this.mockService.clearCart(storeId);
     }
 
-    return this.http.delete<void>(`${this.cartApiUrl}/clear?storeId=${storeId}`, {
+    // FIXED: Sende sessionId für Guest-Support (Backend benötigt entweder Token oder sessionId)
+    const sessionId = this.getOrCreateSessionId();
+    return this.http.delete<void>(`${this.cartApiUrl}/clear?storeId=${storeId}&sessionId=${sessionId}`, {
       headers: this.getAuthHeaders()
     }).pipe(
       tap(() => {
