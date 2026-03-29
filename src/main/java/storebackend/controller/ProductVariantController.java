@@ -16,6 +16,7 @@ import storebackend.entity.User;
 import storebackend.repository.StoreRepository;
 import storebackend.repository.UserRepository;
 import storebackend.service.ProductVariantService;
+import storebackend.service.StoreService;
 
 import java.util.List;
 
@@ -29,6 +30,7 @@ public class ProductVariantController {
     private final ProductVariantService variantService;
     private final StoreRepository storeRepository;
     private final UserRepository userRepository;
+    private final StoreService storeService;
 
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -40,11 +42,41 @@ public class ProductVariantController {
         return userRepository.findByEmail(email).orElse(null);
     }
 
+    /**
+     * Prüft, ob der Benutzer Zugriff auf den Store hat
+     * - Owner hat immer Zugriff
+     * - Prüft auch über StoreService.getStoresByUserId() für Team-Mitglieder
+     */
     private boolean hasStoreAccess(Long storeId, User user) {
-        if (user == null) return false;
+        if (user == null) {
+            log.warn("hasStoreAccess: User is null");
+            return false;
+        }
+
         Store store = storeRepository.findById(storeId).orElse(null);
-        if (store == null) return false;
-        return store.getOwner().getId().equals(user.getId());
+        if (store == null) {
+            log.warn("hasStoreAccess: Store {} not found", storeId);
+            return false;
+        }
+
+        // Owner hat immer Zugriff
+        boolean isOwner = store.getOwner().getId().equals(user.getId());
+        if (isOwner) {
+            log.info("hasStoreAccess: User {} is owner of store {}", user.getId(), storeId);
+            return true;
+        }
+
+        // Prüfe, ob der User über StoreService Zugriff hat (z.B. Team-Mitglied)
+        try {
+            List<Store> userStores = storeService.getStoresByUserId(user.getId());
+            boolean hasAccess = userStores.stream().anyMatch(s -> s.getId().equals(storeId));
+            log.info("hasStoreAccess: User {} has access via StoreService: {}", user.getId(), hasAccess);
+            return hasAccess;
+        } catch (Exception e) {
+            log.error("hasStoreAccess: Error checking access for user {} to store {}: {}",
+                user.getId(), storeId, e.getMessage());
+            return false;
+        }
     }
 
     @Operation(summary = "Get all variants for a product")
@@ -111,15 +143,29 @@ public class ProductVariantController {
             @PathVariable Long variantId,
             @RequestBody ProductVariantDTO request) {
 
+        log.info("=== UPDATE VARIANT REQUEST ===");
+        log.info("Store ID: {}, Product ID: {}, Variant ID: {}", storeId, productId, variantId);
+        
         User user = getCurrentUser();
+        log.info("Current user: {}", user != null ? user.getEmail() + " (ID: " + user.getId() + ")" : "NULL");
+        
         if (!hasStoreAccess(storeId, user)) {
+            log.error("Access denied for user {} to store {}", user != null ? user.getId() : "null", storeId);
             return ResponseEntity.status(403).build();
         }
 
-        Store store = storeRepository.findById(storeId).orElse(null);
-        if (store == null) return ResponseEntity.notFound().build();
+        log.info("Access granted for user {} to store {}", user.getId(), storeId);
 
+        Store store = storeRepository.findById(storeId).orElse(null);
+        if (store == null) {
+            log.error("Store {} not found", storeId);
+            return ResponseEntity.notFound().build();
+        }
+
+        log.info("Updating variant {} for product {} in store {}", variantId, productId, storeId);
         ProductVariantDTO variant = variantService.updateVariant(variantId, productId, store, request);
+        log.info("Variant {} updated successfully", variantId);
+        
         return ResponseEntity.ok(variant);
     }
 
