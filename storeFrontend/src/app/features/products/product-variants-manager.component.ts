@@ -47,11 +47,14 @@ interface ProductOption {
             </div>
             
             <div class="option-values">
-              <div *ngFor="let value of option.values; let j = index" class="value-chip">
+              <div *ngFor="let value of option.values; let j = index; trackBy: trackByIndex" class="value-chip">
                 <input 
                   type="text" 
-                  [(ngModel)]="option.values[j]"
+                  [value]="option.values[j]"
+                  (input)="updateValue(i, j, $event)"
                   class="value-input"
+                  [attr.data-option-index]="i"
+                  [attr.data-value-index]="j"
                 />
                 <button type="button" class="btn-chip-remove" (click)="removeValue(i, j)">×</button>
               </div>
@@ -850,6 +853,21 @@ export class ProductVariantsManagerComponent implements OnInit, OnDestroy {
     this.options[optionIndex].values.splice(valueIndex, 1);
   }
 
+  /**
+   * TrackBy-Funktion für ngFor um unnötiges Re-Rendering zu vermeiden
+   */
+  trackByIndex(index: number, item: any): number {
+    return index;
+  }
+
+  /**
+   * Aktualisiert einen Value ohne ngModel (verhindert Focus-Verlust)
+   */
+  updateValue(optionIndex: number, valueIndex: number, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.options[optionIndex].values[valueIndex] = input.value;
+  }
+
   canGenerate(): boolean {
     if (!this.options || this.options.length === 0) return false;
 
@@ -865,11 +883,18 @@ export class ProductVariantsManagerComponent implements OnInit, OnDestroy {
   }
 
   calculateCombinationsCount(): number {
-    if (this.options.length === 0) return 0;
+    if (!this.options || this.options.length === 0) return 0;
 
     let count = 1;
     for (const option of this.options) {
-      count *= option.values.filter(v => v && v.trim() !== '').length;
+      if (!option || !option.values || option.values.length === 0) {
+        return 0;
+      }
+      const validValues = option.values.filter(v => v && v.trim() !== '');
+      if (validValues.length === 0) {
+        return 0;
+      }
+      count *= validValues.length;
     }
     return count;
   }
