@@ -32,7 +32,7 @@ import { ProductReviewsComponent } from './product-reviews.component';
             
             <app-product-image-gallery
               [images]="getProductImages()"
-              [primaryImageUrl]="product?.primaryImageUrl"
+              [primaryImageUrl]="getPrimaryImageUrl()"
               [productTitle]="product?.title || 'Produkt'">
             </app-product-image-gallery>
           </div>
@@ -51,9 +51,9 @@ import { ProductReviewsComponent } from './product-reviews.component';
 
             <!-- Produkt-Informationen (SKU, EAN, etc.) -->
             <div *ngIf="selectedVariant || product" class="product-info-grid">
-              <div class="info-row" *ngIf="selectedVariant?.sku || product?.sku">
+              <div class="info-row" *ngIf="getCurrentSku()">
                 <span class="info-label">SKU:</span>
-                <span class="info-value">{{ selectedVariant?.sku || product?.sku }}</span>
+                <span class="info-value">{{ getCurrentSku() }}</span>
               </div>
               <div class="info-row" *ngIf="selectedVariant?.barcode">
                 <span class="info-label">EAN:</span>
@@ -689,7 +689,25 @@ export class ProductQuickViewComponent implements OnInit {
       }
     }
 
-    return images;
+    // Wichtig: Immer ein neues Array zurückgeben für Change Detection
+    return [...images];
+  }
+
+  getPrimaryImageUrl(): string | undefined {
+    // Wenn Variante ausgewählt, verwende Varianten-Bild als Primary
+    if (this.selectedVariant) {
+      if (this.selectedVariant.imageUrl) {
+        return this.selectedVariant.imageUrl;
+      }
+      if (this.selectedVariant.images && this.selectedVariant.images.length > 0) {
+        return this.selectedVariant.images[0];
+      }
+      if (this.selectedVariant.mediaUrls && this.selectedVariant.mediaUrls.length > 0) {
+        return this.selectedVariant.mediaUrls[0];
+      }
+    }
+    // Fallback: Produkt Primary Image
+    return this.product?.primaryImageUrl;
   }
 
   hasVariants(): boolean {
@@ -740,6 +758,14 @@ export class ProductQuickViewComponent implements OnInit {
       return this.selectedVariant.price;
     }
     return this.product?.basePrice || 0;
+  }
+
+  getCurrentSku(): string | undefined {
+    // Priorität: Varianten-SKU > Produkt-SKU
+    if (this.selectedVariant?.sku) {
+      return this.selectedVariant.sku;
+    }
+    return this.product?.sku;
   }
 
   getComparePrice(): number {
