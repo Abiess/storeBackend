@@ -24,10 +24,17 @@ import { ProductReviewsComponent } from './product-reviews.component';
         <div class="modal-content">
           <!-- Linke Seite: Bildgalerie -->
           <div class="image-section">
-            <!-- Lade-Indikator für Variantenwechsel -->
+            <!-- Verbesserter Lade-Indikator für Variantenwechsel -->
             <div *ngIf="isLoadingVariant" class="loading-overlay">
-              <div class="spinner"></div>
-              <p>Lade Variante...</p>
+              <div class="spinner-center">
+                <div class="spinner"></div>
+                <p class="loading-text">Lade Variante...</p>
+              </div>
+            </div>
+            
+            <!-- Kompakter Indikator oben rechts -->
+            <div *ngIf="isLoadingVariant" class="loading-indicator-corner">
+              <div class="spinner-small"></div>
             </div>
             
             <app-product-image-gallery
@@ -76,8 +83,12 @@ import { ProductReviewsComponent } from './product-reviews.component';
                   *ngFor="let variant of product?.variants"
                   class="variant-btn"
                   [class.active]="selectedVariant?.id === variant.id"
-                  [class.loading]="isLoadingVariant && selectedVariant?.id !== variant.id"
+                  [class.loading]="isLoadingVariant && loadingVariantId === variant.id"
                   (click)="selectVariant(variant)">
+                  
+                  <!-- Loading-Spinner direkt im Button beim Klick -->
+                  <span *ngIf="isLoadingVariant && loadingVariantId === variant.id" class="btn-spinner-inline"></span>
+                  
                   <span class="variant-name">{{ getVariantDisplayName(variant) }}</span>
                   <span class="variant-price">
                     {{ variant.price | number:'1.2-2' }} €
@@ -85,8 +96,6 @@ import { ProductReviewsComponent } from './product-reviews.component';
                   <span class="variant-stock" *ngIf="variant.stock > 0">
                     ({{ variant.stock }} verfügbar)
                   </span>
-                  <!-- Kleiner Spinner beim aktiven Button -->
-                  <span *ngIf="isLoadingVariant && selectedVariant?.id !== variant.id" class="btn-spinner"></span>
                 </button>
               </div>
             </div>
@@ -249,19 +258,71 @@ import { ProductReviewsComponent } from './product-reviews.component';
       bottom: 0;
       background: rgba(255, 255, 255, 0.95);
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
       z-index: 100;
       border-radius: 12px;
       animation: fadeIn 0.2s ease;
+      backdrop-filter: blur(4px);
     }
 
-    .loading-overlay p {
+    .spinner-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .loading-text {
       margin-top: 1rem;
       color: #667eea;
       font-weight: 600;
       font-size: 1rem;
+      animation: pulse-text 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-text {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.6;
+      }
+    }
+
+    /* Kompakter Indikator oben rechts im Bild-Bereich */
+    .loading-indicator-corner {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      z-index: 101;
+      background: rgba(102, 126, 234, 0.95);
+      padding: 0.75rem;
+      border-radius: 50%;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      animation: slideInRight 0.3s ease, pulse-corner 2s ease-in-out infinite;
+    }
+
+    @keyframes slideInRight {
+      from {
+        transform: translateX(50px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes pulse-corner {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      }
+      50% {
+        transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+      }
     }
 
     .spinner {
@@ -271,6 +332,15 @@ import { ProductReviewsComponent } from './product-reviews.component';
       border-top: 4px solid #667eea;
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
+    }
+
+    .spinner-small {
+      width: 24px;
+      height: 24px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-top: 3px solid white;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
     }
 
     @keyframes spin {
@@ -422,8 +492,21 @@ import { ProductReviewsComponent } from './product-reviews.component';
     }
 
     .variant-btn.loading {
-      opacity: 0.6;
+      opacity: 0.8;
       pointer-events: none;
+      position: relative;
+      animation: pulse-btn 1s ease-in-out infinite;
+    }
+
+    @keyframes pulse-btn {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+      }
+      50% {
+        transform: scale(1.02);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      }
     }
 
     .btn-spinner {
@@ -437,6 +520,16 @@ import { ProductReviewsComponent } from './product-reviews.component';
       right: 1rem;
       top: 50%;
       transform: translateY(-50%);
+    }
+
+    .btn-spinner-inline {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(102, 126, 234, 0.3);
+      border-top: 2px solid #667eea;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      margin-right: 0.5rem;
     }
 
     .variant-name {
@@ -647,6 +740,7 @@ export class ProductQuickViewComponent implements OnInit {
   quantity = 1;
   isAddingToCart = false;
   isLoadingVariant = false;
+  loadingVariantId: number | null = null;
 
   ngOnInit(): void {
     // Wähle erste Variante wenn vorhanden
@@ -745,11 +839,13 @@ export class ProductQuickViewComponent implements OnInit {
   selectVariant(variant: ProductVariant): void {
     // Zeige kurze Lade-Animation beim Wechsel
     this.isLoadingVariant = true;
+    this.loadingVariantId = variant.id;
     
     // Setze neue Variante nach kurzer Verzögerung für visuelle Rückmeldung
     setTimeout(() => {
       this.selectedVariant = variant;
       this.isLoadingVariant = false;
+      this.loadingVariantId = null;
     }, 200);
   }
 

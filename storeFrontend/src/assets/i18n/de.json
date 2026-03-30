@@ -42,6 +42,7 @@
     "new": "Neu",
     "newProduct": "Neues Produkt",
     "edit": "Produkt bearbeiten",
+    "create": "Produkt erstellen",
     "update": "Produkt aktualisieren",
     "price": "Preis",
     "addToCart": "In den Warenkorb",
@@ -105,20 +106,28 @@
   },
   "Basis Info": "Basis Informationen",
   "Preis & Lager": "Preis & Lager",
+  "Varianten": "Varianten",
+  "Bilder": "Bilder",
   "category": {
     "name": "Kategoriename",
     "slug": "URL-Slug",
     "description": "Beschreibung",
-    "parent": "Übergeordnete Kategorie",
+    "parent": {
+      "label": "Übergeordnete Kategorie",
+      "none": "Keine"
+    },
     "new": "Neue Kategorie",
     "edit": "Kategorie bearbeiten",
+    "create": "Kategorie erstellen",
+    "sortorder": "Sortierreihenfolge",
     "placeholder": {
       "name": "z.B. Elektronik, Mode, Spielzeug",
       "slug": "z.B. elektronik (nur Kleinbuchstaben und Bindestriche)",
       "description": "Beschreiben Sie diese Kategorie (optional)"
     },
     "hint": {
-      "slug": "Der Slug wird in der URL verwendet. Nur Kleinbuchstaben, Zahlen und Bindestriche sind erlaubt."
+      "slug": "Der Slug wird in der URL verwendet. Nur Kleinbuchstaben, Zahlen und Bindestriche sind erlaubt.",
+      "sortorder": "Niedrigere Werte werden zuerst angezeigt"
     },
     "error": {
       "load": "Fehler beim Laden der Kategorien",
@@ -394,6 +403,7 @@
     "draft": "Entwurf",
     "active": "Aktiv",
     "inactive": "Inaktiv",
+    "archived": "Archiviert",
     "pending": "Ausstehend",
     "confirmed": "Bestätigt",
     "processing": "In Bearbeitung",

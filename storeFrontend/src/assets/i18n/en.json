@@ -42,6 +42,7 @@
     "new": "New",
     "newProduct": "New product",
     "edit": "Edit Product",
+    "create": "Create Product",
     "update": "Update Product",
     "price": "Price",
     "addToCart": "Add to cart",
@@ -105,20 +106,28 @@
   },
   "Basis Info": "Basic Information",
   "Preis & Lager": "Price & Stock",
+  "Varianten": "Variants",
+  "Bilder": "Images",
   "category": {
     "name": "Category name",
     "slug": "URL slug",
     "description": "Description",
-    "parent": "Parent category",
+    "parent": {
+      "label": "Parent category",
+      "none": "None"
+    },
     "new": "New category",
     "edit": "Edit category",
+    "create": "Create category",
+    "sortorder": "Sort order",
     "placeholder": {
       "name": "e.g. Electronics, Fashion, Toys",
       "slug": "e.g. electronics (lowercase letters and hyphens only)",
       "description": "Describe this category (optional)"
     },
     "hint": {
-      "slug": "The slug is used in the URL. Only lowercase letters, numbers, and hyphens are allowed."
+      "slug": "The slug is used in the URL. Only lowercase letters, numbers, and hyphens are allowed.",
+      "sortorder": "Lower values are displayed first"
     },
     "error": {
       "load": "Error loading categories",
@@ -394,6 +403,7 @@
     "draft": "Draft",
     "active": "Active",
     "inactive": "Inactive",
+    "archived": "Archived",
     "pending": "Pending",
     "confirmed": "Confirmed",
     "processing": "Processing",
