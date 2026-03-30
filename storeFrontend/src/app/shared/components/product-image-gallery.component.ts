@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 /**
@@ -398,7 +398,7 @@ import { CommonModule } from '@angular/common';
     }
   `]
 })
-export class ProductImageGalleryComponent implements OnInit {
+export class ProductImageGalleryComponent implements OnInit, OnChanges {
   @Input() images: string[] = [];
   @Input() primaryImageUrl?: string;
   @Input() productTitle: string = 'Produkt';
@@ -412,6 +412,16 @@ export class ProductImageGalleryComponent implements OnInit {
   ngOnInit(): void {
     // Baue Image-Array auf
     this.buildImageArray();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    // Reagiere auf Änderungen der Input-Properties
+    if (changes['images'] || changes['primaryImageUrl']) {
+      this.buildImageArray();
+      // Reset auf erstes Bild wenn sich die Bilder ändern
+      this.currentImageIndex = 0;
+      this.imageError = false;
+    }
   }
 
   private buildImageArray(): void {

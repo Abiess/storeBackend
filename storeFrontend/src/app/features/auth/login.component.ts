@@ -156,6 +156,20 @@ export class LoginComponent implements OnInit {
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
 
     this.route.queryParams.subscribe(params => {
+      // Auto-fill Email wenn von Register weitergeleitet
+      if (params['email'] && params['autoFill'] === 'true') {
+        this.loginForm.patchValue({
+          email: params['email']
+        });
+        // Fokus auf Passwort-Feld setzen
+        setTimeout(() => {
+          const passwordInput = document.getElementById('password') as HTMLInputElement;
+          if (passwordInput) {
+            passwordInput.focus();
+          }
+        }, 100);
+      }
+      
       if (params['error'] === 'session_expired') {
         this.errorMessage = 'auth.sessionExpired';
       } else if (params['error'] === 'auth_required') {

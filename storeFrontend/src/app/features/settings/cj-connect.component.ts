@@ -249,7 +249,6 @@ export class CJConnectComponent implements OnInit {
         this.loading = false;
         this.password = ''; // Clear password
         if (response.connected) {
-          alert('✅ CJ connected successfully!');
         }
       },
       error: (err) => {
