@@ -57,7 +57,7 @@ import { ProductReviewsComponent } from './product-reviews.component';
               </div>
               <div class="info-row" *ngIf="selectedVariant?.barcode">
                 <span class="info-label">EAN:</span>
-                <span class="info-value">{{ selectedVariant.barcode }}</span>
+                <span class="info-value">{{ selectedVariant?.barcode }}</span>
               </div>
               <div class="info-row" *ngIf="getComparePrice() > 0">
                 <span class="info-label">UVP:</span>

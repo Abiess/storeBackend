@@ -263,6 +263,7 @@ export interface Product {
   description?: string;
   price?: number;
   basePrice: number;
+  comparePrice?: number; // UVP / Vergleichspreis
   stock?: number;
   status: ProductStatus;
   categoryId?: number;
