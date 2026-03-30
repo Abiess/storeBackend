@@ -24,6 +24,18 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/reset-password.component').then(m => m.ResetPasswordComponent)
   },
 
+  // ==================== Store Creation Wizard ====================
+  {
+    path: 'store-wizard',
+    loadComponent: () => import('./features/stores/store-wizard.component').then(m => m.StoreWizardComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'create-store',
+    redirectTo: 'store-wizard',
+    pathMatch: 'full'
+  },
+
   // ==================== Dashboard ====================
   {
     path: 'dashboard',

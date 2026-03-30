@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
+import { StoreService } from '../../core/services/store.service';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { LanguageService } from '../../core/services/language.service';
 import {LanguageSwitcherComponent} from "@app/core/i18n.exports";
@@ -142,6 +143,7 @@ export class LoginComponent implements OnInit {
   constructor(
       private fb: FormBuilder,
       private authService: AuthService,
+      private storeService: StoreService,
       private router: Router,
       private route: ActivatedRoute,
       private languageService: LanguageService
@@ -186,8 +188,25 @@ export class LoginComponent implements OnInit {
 
       this.authService.login(this.loginForm.value).subscribe({
         next: () => {
-          console.log('🔄 Weiterleitung nach Login zu:', this.returnUrl);
-          this.router.navigate([this.returnUrl]);
+          // Prüfe ob User bereits Stores hat
+          this.storeService.getMyStores().subscribe({
+            next: (stores: any[]) => {
+              if (stores && stores.length > 0) {
+                // User hat bereits Stores → zum Dashboard
+                console.log('🔄 User hat Stores. Weiterleitung zu:', this.returnUrl);
+                this.router.navigate([this.returnUrl]);
+              } else {
+                // Neuer User ohne Stores → zum Wizard (kann übersprungen werden)
+                console.log('✨ Neuer User ohne Store. Zeige Wizard...');
+                this.router.navigate(['/store-wizard']);
+              }
+            },
+            error: () => {
+              // Falls Store-Abfrage fehlschlägt, trotzdem zum Dashboard
+              console.log('⚠️ Store-Abfrage fehlgeschlagen. Weiterleitung zu:', this.returnUrl);
+              this.router.navigate([this.returnUrl]);
+            }
+          });
         },
         error: (error) => {
           this.loading = false;
