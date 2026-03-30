@@ -168,6 +168,18 @@ import { Subscription } from 'rxjs';
             </div>
           </div>
 
+          <!-- Edit-Modus: Varianten vorhanden, aber keine Optionen extrahierbar -->
+          <div *ngIf="isEditMode && variantOptions.length === 0 && hasExistingVariants" class="existing-variants-warning">
+            <div class="warning-banner">
+              ⚠️ <strong>Hinweis: Varianten vorhanden</strong>
+              <p>Dieses Produkt hat bereits Varianten, aber diese wurden ohne Optionen-System erstellt.</p>
+              <p class="hint-text">
+                Sie können hier neue Optionen definieren (z.B. Farbe, Größe). 
+                Beim Speichern werden die neuen Varianten zu den bestehenden hinzugefügt.
+              </p>
+            </div>
+          </div>
+
           <!-- Optionen-Liste (für Create UND Edit) -->
           <div class="options-list">
               <div *ngFor="let option of variantOptions; let i = index" class="option-card">
@@ -515,6 +527,10 @@ import { Subscription } from 'rxjs';
       margin-bottom: 1.5rem;
     }
 
+    .existing-variants-warning {
+      margin-bottom: 1.5rem;
+    }
+
     .info-banner {
       background: #e3f2fd;
       border-left: 4px solid #2196f3;
@@ -523,33 +539,68 @@ import { Subscription } from 'rxjs';
       color: #1565c0;
     }
 
-    .info-banner strong {
-      color: #0d47a1;
+    .warning-banner {
+      background: #fff3e0;
+      border-left: 4px solid #ff9800;
+      padding: 1.5rem;
+      border-radius: 8px;
+      color: #e65100;
+    }
+
+    .info-banner strong,
+    .warning-banner strong {
+      color: inherit;
       display: block;
       margin-bottom: 0.5rem;
+      font-weight: 700;
+    }
+
+    .info-banner p,
+    .warning-banner p {
+      margin: 0.5rem 0;
     }
 
     .info-banner p {
-      margin: 0.5rem 0;
       color: #1976d2;
     }
 
-    .info-banner ul {
+    .warning-banner p {
+      color: #f57c00;
+    }
+
+    .info-banner ul,
+    .warning-banner ul {
       margin: 1rem 0;
       padding-left: 1.5rem;
     }
 
-    .info-banner li {
+    .info-banner li,
+    .warning-banner li {
       margin: 0.5rem 0;
+    }
+
+    .info-banner li {
       color: #1976d2;
     }
 
-    .info-banner .hint-text {
+    .warning-banner li {
+      color: #f57c00;
+    }
+
+    .info-banner .hint-text,
+    .warning-banner .hint-text {
       margin-top: 1rem;
       padding-top: 1rem;
-      border-top: 1px solid rgba(33, 150, 243, 0.3);
       font-size: 0.9rem;
       font-style: italic;
+    }
+
+    .info-banner .hint-text {
+      border-top: 1px solid rgba(33, 150, 243, 0.3);
+    }
+
+    .warning-banner .hint-text {
+      border-top: 1px solid rgba(255, 152, 0, 0.3);
     }
 
     .options-list {
@@ -801,6 +852,9 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     newValue?: string;
   }> = [];
 
+  // Track ob Varianten in DB existieren (für besseres UX Feedback)
+  hasExistingVariants = false;
+
   // Tab Navigation
   activeTab: 'basic' | 'media' | 'variants' | 'pricing' = 'basic';
 
@@ -955,48 +1009,95 @@ export class ProductFormComponent implements OnInit, OnDestroy {
         console.log('✅ Variants loaded:', variants);
         
         if (variants && variants.length > 0) {
+          this.hasExistingVariants = true;
           // Extrahiere Optionen aus den Varianten
           this.extractOptionsFromVariants(variants);
         } else {
           console.log('ℹ️ No variants found, showing empty options form');
+          this.hasExistingVariants = false;
           this.variantOptions = [];
         }
       },
       error: (error) => {
         console.error('❌ Error loading variants:', error);
         // Nicht als Fehler anzeigen, da es normal ist wenn noch keine Varianten existieren
+        this.hasExistingVariants = false;
         this.variantOptions = [];
       }
     });
   }
 
   private extractOptionsFromVariants(variants: any[]): void {
+    console.log('🔍 Extracting options from variants:', variants);
+    
     // Sammle alle einzigartigen Optionswerte
     const optionsMap = new Map<string, Set<string>>();
 
     variants.forEach(variant => {
-      // Option1
+      console.log('🔍 Processing variant:', variant);
+      
+      // Option1, Option2, Option3
       if (variant.option1) {
         if (!optionsMap.has('Option 1')) {
           optionsMap.set('Option 1', new Set());
         }
         optionsMap.get('Option 1')!.add(variant.option1);
       }
-      // Option2
       if (variant.option2) {
         if (!optionsMap.has('Option 2')) {
           optionsMap.set('Option 2', new Set());
         }
         optionsMap.get('Option 2')!.add(variant.option2);
       }
-      // Option3
       if (variant.option3) {
         if (!optionsMap.has('Option 3')) {
           optionsMap.set('Option 3', new Set());
         }
         optionsMap.get('Option 3')!.add(variant.option3);
       }
+
+      // Attributes Object (alternatives Format)
+      if (variant.attributes && typeof variant.attributes === 'object') {
+        Object.entries(variant.attributes).forEach(([key, value]) => {
+          if (!optionsMap.has(key)) {
+            optionsMap.set(key, new Set());
+          }
+          optionsMap.get(key)!.add(value as string);
+        });
+      }
+
+      // AttributesJson String (parse JSON)
+      if (variant.attributesJson && typeof variant.attributesJson === 'string') {
+        try {
+          const attrs = JSON.parse(variant.attributesJson);
+          Object.entries(attrs).forEach(([key, value]) => {
+            if (!optionsMap.has(key)) {
+              optionsMap.set(key, new Set());
+            }
+            optionsMap.get(key)!.add(value as string);
+          });
+        } catch (e) {
+          console.warn('⚠️ Could not parse attributesJson:', variant.attributesJson, e);
+        }
+      }
+
+      // Fallback: Parse SKU (z.B. "PRODUCT-red-blue" → Farbe: red, Größe: blue)
+      if (!variant.option1 && !variant.option2 && !variant.option3 && 
+          !variant.attributes && variant.sku) {
+        const skuParts = variant.sku.split('-');
+        // Wenn SKU Teile hat (z.B. TESTMEONETIME-red), extrahiere die Werte
+        if (skuParts.length > 1) {
+          // Letzter Teil ist wahrscheinlich die Variante
+          const variantValue = skuParts[skuParts.length - 1];
+          if (!optionsMap.has('Variant')) {
+            optionsMap.set('Variant', new Set());
+          }
+          optionsMap.get('Variant')!.add(variantValue);
+        }
+      }
     });
+
+    console.log('🗺️ Options Map:', optionsMap);
 
     // Konvertiere zu variantOptions Format
     this.variantOptions = Array.from(optionsMap.entries()).map(([name, values]) => ({
