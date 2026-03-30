@@ -1,16 +1,7 @@
--- Flyway Migration: Squashed Baseline up to V9
--- Enthält: V1 initial_schema, V2 initial_data, V3 permissions, V4 delivery tables, V5 cart_items timestamps, V9 store slider feature
--- Optimiert für PostgreSQL
+
 
 SET search_path TO public;
 
--- =====================
--- V1__initial_schema.sql
--- =====================
--- Flyway Migration V1: Initial Schema
--- Erstellt alle benötigten Tabellen für das Store Backend
--- Optimiert für PostgreSQL - VOLLSTÄNDIG IDEMPOTENT
--- Explizit public Schema setzen
 SET search_path TO public;
 
 -- Plans Tabelle (muss zuerst erstellt werden wegen FK)

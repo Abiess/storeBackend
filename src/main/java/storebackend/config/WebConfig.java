@@ -41,7 +41,11 @@ public class WebConfig implements WebMvcConfigurer {
             "https://www.markt.ma",            // Production frontend with www
             "http://www.markt.ma",             // Production frontend with www (HTTP)
             "https://*.markt.ma",              // ALLE Subdomains von markt.ma (inkl. dsfsdfds.markt.ma)
-            "http://*.markt.ma"                // ALLE Subdomains von markt.ma (HTTP)
+            "http://*.markt.ma" ,               // ALLE Subdomains von markt.ma (HTTP)
+
+          // ✅ NEU: Für Testing mit Claude.ai
+          "https://claude.ai",
+          "https://*.claude.ai"
         ));
 
         // Erlaubte HTTP-Methoden
