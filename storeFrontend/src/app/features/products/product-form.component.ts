@@ -154,6 +154,20 @@ import { Subscription } from 'rxjs';
             💡 Definieren Sie Optionen wie Größe, Farbe, Material. Nach dem Speichern können Sie Varianten mit spezifischen Preisen und Lagerbeständen verwalten.
           </p>
 
+          <!-- Edit-Modus: Zeige Info über bestehende Varianten -->
+          <div *ngIf="isEditMode && variantOptions.length > 0" class="existing-variants-info">
+            <div class="info-banner">
+              ℹ️ <strong>Bestehende Varianten gefunden!</strong>
+              <p>Dieses Produkt hat bereits {{ getVariantCombinations().length }} Varianten basierend auf folgenden Optionen:</p>
+              <ul>
+                <li *ngFor="let opt of variantOptions">
+                  <strong>{{ opt.name }}:</strong> {{ opt.values.join(', ') }}
+                </li>
+              </ul>
+              <p class="hint-text">Sie können weitere Optionswerte hinzufügen. Speichern Sie, um neue Varianten zu generieren.</p>
+            </div>
+          </div>
+
           <!-- Optionen-Liste (für Create UND Edit) -->
           <div class="options-list">
               <div *ngFor="let option of variantOptions; let i = index" class="option-card">
@@ -495,6 +509,47 @@ import { Subscription } from 'rxjs';
       border-left: 4px solid #667eea;
       margin-bottom: 1.5rem;
       color: #555;
+    }
+
+    .existing-variants-info {
+      margin-bottom: 1.5rem;
+    }
+
+    .info-banner {
+      background: #e3f2fd;
+      border-left: 4px solid #2196f3;
+      padding: 1.5rem;
+      border-radius: 8px;
+      color: #1565c0;
+    }
+
+    .info-banner strong {
+      color: #0d47a1;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    .info-banner p {
+      margin: 0.5rem 0;
+      color: #1976d2;
+    }
+
+    .info-banner ul {
+      margin: 1rem 0;
+      padding-left: 1.5rem;
+    }
+
+    .info-banner li {
+      margin: 0.5rem 0;
+      color: #1976d2;
+    }
+
+    .info-banner .hint-text {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(33, 150, 243, 0.3);
+      font-size: 0.9rem;
+      font-style: italic;
     }
 
     .options-list {
@@ -879,12 +934,78 @@ export class ProductFormComponent implements OnInit, OnDestroy {
         });
 
         console.log('✅ Form patched with values:', this.productForm.value);
+
+        // Lade Varianten für Edit-Modus
+        this.loadProductVariants(productId);
       },
       error: (error) => {
         console.error('❌ Fehler beim Laden des Produkts:', error);
         this.errorMessage = this.translationService.translate('product.error.load');
       }
     });
+  }
+
+  loadProductVariants(productId: number): void {
+    if (this.storeId === null) return;
+
+    console.log('🎨 Loading product variants for productId:', productId);
+
+    this.productService.getProductVariants(this.storeId, productId).subscribe({
+      next: (variants) => {
+        console.log('✅ Variants loaded:', variants);
+        
+        if (variants && variants.length > 0) {
+          // Extrahiere Optionen aus den Varianten
+          this.extractOptionsFromVariants(variants);
+        } else {
+          console.log('ℹ️ No variants found, showing empty options form');
+          this.variantOptions = [];
+        }
+      },
+      error: (error) => {
+        console.error('❌ Error loading variants:', error);
+        // Nicht als Fehler anzeigen, da es normal ist wenn noch keine Varianten existieren
+        this.variantOptions = [];
+      }
+    });
+  }
+
+  private extractOptionsFromVariants(variants: any[]): void {
+    // Sammle alle einzigartigen Optionswerte
+    const optionsMap = new Map<string, Set<string>>();
+
+    variants.forEach(variant => {
+      // Option1
+      if (variant.option1) {
+        if (!optionsMap.has('Option 1')) {
+          optionsMap.set('Option 1', new Set());
+        }
+        optionsMap.get('Option 1')!.add(variant.option1);
+      }
+      // Option2
+      if (variant.option2) {
+        if (!optionsMap.has('Option 2')) {
+          optionsMap.set('Option 2', new Set());
+        }
+        optionsMap.get('Option 2')!.add(variant.option2);
+      }
+      // Option3
+      if (variant.option3) {
+        if (!optionsMap.has('Option 3')) {
+          optionsMap.set('Option 3', new Set());
+        }
+        optionsMap.get('Option 3')!.add(variant.option3);
+      }
+    });
+
+    // Konvertiere zu variantOptions Format
+    this.variantOptions = Array.from(optionsMap.entries()).map(([name, values]) => ({
+      name: name,
+      values: Array.from(values),
+      newValue: ''
+    }));
+
+    console.log('✅ Extracted options from variants:', this.variantOptions);
   }
 
   loadProductImages(productId: number): void {
