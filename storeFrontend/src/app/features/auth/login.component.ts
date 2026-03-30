@@ -196,9 +196,9 @@ export class LoginComponent implements OnInit {
                 console.log('🔄 User hat Stores. Weiterleitung zu:', this.returnUrl);
                 this.router.navigate([this.returnUrl]);
               } else {
-                // Neuer User ohne Stores → zum Wizard (kann übersprungen werden)
-                console.log('✨ Neuer User ohne Store. Zeige Wizard...');
-                this.router.navigate(['/store-wizard']);
+                // Neuer User ohne Stores → zur einfachen Store-Erstellung
+                console.log('✨ Neuer User ohne Store. Zeige simple Store-Erstellung...');
+                this.router.navigate(['/create-store']);
               }
             },
             error: () => {

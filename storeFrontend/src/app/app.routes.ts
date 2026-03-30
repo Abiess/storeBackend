@@ -32,8 +32,13 @@ export const routes: Routes = [
   },
   {
     path: 'create-store',
-    redirectTo: 'store-wizard',
-    pathMatch: 'full'
+    loadComponent: () => import('./features/stores/store-create-simple.component').then(m => m.StoreCreateSimpleComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'store-success',
+    loadComponent: () => import('./features/stores/store-success.component').then(m => m.StoreSuccessComponent),
+    canActivate: [authGuard]
   },
 
   // ==================== Dashboard ====================
