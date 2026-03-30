@@ -77,10 +77,15 @@ public class WizardProgressController {
      * Markiere Wizard als abgeschlossen (nach Store-Erstellung)
      */
     @PostMapping("/complete")
-    public ResponseEntity<Void> completeWizard(
+    public ResponseEntity<?> completeWizard(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam Long storeId) {
         
+        if (userDetails == null) {
+            log.warn("❌ Unauthenticated access attempt to complete wizard");
+            return ResponseEntity.status(401).body("Authentication required");
+        }
+
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -95,7 +100,12 @@ public class WizardProgressController {
      * Lösche Wizard-Fortschritt
      */
     @DeleteMapping
-    public ResponseEntity<Void> deleteProgress(@AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<?> deleteProgress(@AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            log.warn("❌ Unauthenticated access attempt to delete wizard progress");
+            return ResponseEntity.status(401).body("Authentication required");
+        }
+
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -110,7 +120,12 @@ public class WizardProgressController {
      * Prüfe ob User einen aktiven Wizard-Fortschritt hat
      */
     @GetMapping("/has-active")
-    public ResponseEntity<Boolean> hasActiveProgress(@AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<?> hasActiveProgress(@AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            log.warn("❌ Unauthenticated access attempt to check wizard progress");
+            return ResponseEntity.status(401).body("Authentication required");
+        }
+
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
