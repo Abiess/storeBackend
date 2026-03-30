@@ -10,6 +10,7 @@ import { StoreContextService } from '@app/core/services/store-context.service';
 import { Category, ProductStatus } from '@app/core/models';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { TranslationService } from '@app/core/services/translation.service';
+import { ProductVariantsManagerComponent } from './product-variants-manager.component';
 import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
 import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
 import { ImageUploadComponent, UploadedImage } from '@app/shared/components/image-upload/image-upload.component';
@@ -18,7 +19,7 @@ import { Subscription } from 'rxjs';
 @Component({
   selector: 'app-product-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, TranslatePipe, PageHeaderComponent, ImageUploadComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, TranslatePipe, ProductVariantsManagerComponent, PageHeaderComponent, ImageUploadComponent],
   template: `
     <div class="product-form-container">
       <app-page-header
@@ -151,111 +152,20 @@ import { Subscription } from 'rxjs';
           <h2>🎨 Produktvarianten</h2>
           
           <p class="variants-hint">
-            💡 Definieren Sie Optionen wie Größe, Farbe, Material. Nach dem Speichern können Sie Varianten mit spezifischen Preisen und Lagerbeständen verwalten.
+            💡 Verwalten Sie hier Ihre Produktvarianten. Passen Sie Preise, SKUs und Lagerbestände individuell an.
           </p>
 
-          <!-- Edit-Modus: Zeige Info über bestehende Varianten -->
-          <div *ngIf="isEditMode && variantOptions.length > 0" class="existing-variants-info">
-            <div class="info-banner">
-              ℹ️ <strong>Bestehende Varianten gefunden!</strong>
-              <p>Dieses Produkt hat bereits {{ getVariantCombinations().length }} Varianten basierend auf folgenden Optionen:</p>
-              <ul>
-                <li *ngFor="let opt of variantOptions">
-                  <strong>{{ opt.name }}:</strong> {{ opt.values.join(', ') }}
-                </li>
-              </ul>
-              <p class="hint-text">Sie können weitere Optionswerte hinzufügen. Speichern Sie, um neue Varianten zu generieren.</p>
-            </div>
+          <!-- Verwende die funktionierende ProductVariantsManagerComponent -->
+          <app-product-variants-manager 
+            *ngIf="productId"
+            [productId]="productId">
+          </app-product-variants-manager>
+
+          <!-- Hinweis im Create-Modus -->
+          <div *ngIf="!productId" class="info-banner">
+            ℹ️ <strong>Hinweis</strong>
+            <p>Bitte speichern Sie zuerst das Produkt. Danach können Sie Varianten hinzufügen.</p>
           </div>
-
-          <!-- Edit-Modus: Varianten vorhanden, aber keine Optionen extrahierbar -->
-          <div *ngIf="isEditMode && variantOptions.length === 0 && hasExistingVariants" class="existing-variants-warning">
-            <div class="warning-banner">
-              ⚠️ <strong>Hinweis: Varianten vorhanden</strong>
-              <p>Dieses Produkt hat bereits Varianten, aber diese wurden ohne Optionen-System erstellt.</p>
-              <p class="hint-text">
-                Sie können hier neue Optionen definieren (z.B. Farbe, Größe). 
-                Beim Speichern werden die neuen Varianten zu den bestehenden hinzugefügt.
-              </p>
-            </div>
-          </div>
-
-          <!-- Optionen-Liste (für Create UND Edit) -->
-          <div class="options-list">
-              <div *ngFor="let option of variantOptions; let i = index" class="option-card">
-                <div class="option-header">
-                  <input 
-                    type="text" 
-                    [(ngModel)]="option.name" 
-                    [ngModelOptions]="{standalone: true}"
-                    placeholder="z.B. Farbe, Größe, Material"
-                    class="option-name-input"
-                  />
-                  <button 
-                    type="button" 
-                    class="btn-remove-option"
-                    (click)="removeOption(i)"
-                    title="Option entfernen"
-                  >
-                    ✕
-                  </button>
-                </div>
-                
-                <div class="option-values">
-                  <div *ngFor="let value of option.values; let j = index" class="value-chip">
-                    <span>{{ value }}</span>
-                    <button 
-                      type="button" 
-                      (click)="removeOptionValue(i, j)"
-                      class="btn-remove-value"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                  
-                  <div class="add-value-input">
-                    <input 
-                      type="text" 
-                      [(ngModel)]="option.newValue"
-                      [ngModelOptions]="{standalone: true}"
-                      (keydown.enter)="addOptionValue(i); $event.preventDefault()"
-                      placeholder="Wert hinzufügen (z.B. Rot, S, Baumwolle)"
-                      class="value-input"
-                    />
-                    <button 
-                      type="button"
-                      class="btn-add-value"
-                      (click)="addOptionValue(i)"
-                      [disabled]="!option.newValue?.trim()"
-                    >
-                      + Hinzufügen
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <button 
-              type="button" 
-              class="btn-add-option"
-              (click)="addOption()"
-            >
-              + Neue Option hinzufügen
-            </button>
-
-            <!-- Varianten-Vorschau -->
-            <div *ngIf="getVariantCombinations().length > 0" class="variants-preview">
-              <h3>📋 Vorschau: {{ getVariantCombinations().length }} Varianten werden erstellt</h3>
-              <div class="preview-list">
-                <div *ngFor="let combo of getVariantCombinations()" class="preview-item">
-                  <span class="preview-sku">{{ productForm.get('title')?.value || 'Produkt' }}-{{ combo }}</span>
-                  <span class="preview-price">{{ productForm.get('basePrice')?.value || 0 }}€</span>
-                </div>
-              </div>
-              <p class="preview-note">
-                ℹ️ Nach dem Speichern können Sie für jede Variante individuell Preis, SKU und Lagerbestand anpassen.
-              </p>
-            </div>
         </div>
 
         <!-- Preis & Lager (Tab: Pricing) -->
@@ -845,15 +755,6 @@ export class ProductFormComponent implements OnInit, OnDestroy {
 
   uploadedImages: UploadedImage[] = [];
 
-  // Varianten-Optionen für Create-Modus
-  variantOptions: Array<{
-    name: string;
-    values: string[];
-    newValue?: string;
-  }> = [];
-
-  // Track ob Varianten in DB existieren (für besseres UX Feedback)
-  hasExistingVariants = false;
 
   // Tab Navigation
   activeTab: 'basic' | 'media' | 'variants' | 'pricing' = 'basic';
@@ -988,9 +889,6 @@ export class ProductFormComponent implements OnInit, OnDestroy {
         });
 
         console.log('✅ Form patched with values:', this.productForm.value);
-
-        // Lade Varianten für Edit-Modus
-        this.loadProductVariants(productId);
       },
       error: (error) => {
         console.error('❌ Fehler beim Laden des Produkts:', error);
@@ -999,115 +897,6 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     });
   }
 
-  loadProductVariants(productId: number): void {
-    if (this.storeId === null) return;
-
-    console.log('🎨 Loading product variants for productId:', productId);
-
-    this.productService.getProductVariants(this.storeId, productId).subscribe({
-      next: (variants) => {
-        console.log('✅ Variants loaded:', variants);
-        
-        if (variants && variants.length > 0) {
-          this.hasExistingVariants = true;
-          // Extrahiere Optionen aus den Varianten
-          this.extractOptionsFromVariants(variants);
-        } else {
-          console.log('ℹ️ No variants found, showing empty options form');
-          this.hasExistingVariants = false;
-          this.variantOptions = [];
-        }
-      },
-      error: (error) => {
-        console.error('❌ Error loading variants:', error);
-        // Nicht als Fehler anzeigen, da es normal ist wenn noch keine Varianten existieren
-        this.hasExistingVariants = false;
-        this.variantOptions = [];
-      }
-    });
-  }
-
-  private extractOptionsFromVariants(variants: any[]): void {
-    console.log('🔍 Extracting options from variants:', variants);
-    
-    // Sammle alle einzigartigen Optionswerte
-    const optionsMap = new Map<string, Set<string>>();
-
-    variants.forEach(variant => {
-      console.log('🔍 Processing variant:', variant);
-      
-      // Option1, Option2, Option3
-      if (variant.option1) {
-        if (!optionsMap.has('Option 1')) {
-          optionsMap.set('Option 1', new Set());
-        }
-        optionsMap.get('Option 1')!.add(variant.option1);
-      }
-      if (variant.option2) {
-        if (!optionsMap.has('Option 2')) {
-          optionsMap.set('Option 2', new Set());
-        }
-        optionsMap.get('Option 2')!.add(variant.option2);
-      }
-      if (variant.option3) {
-        if (!optionsMap.has('Option 3')) {
-          optionsMap.set('Option 3', new Set());
-        }
-        optionsMap.get('Option 3')!.add(variant.option3);
-      }
-
-      // Attributes Object (alternatives Format)
-      if (variant.attributes && typeof variant.attributes === 'object') {
-        Object.entries(variant.attributes).forEach(([key, value]) => {
-          if (!optionsMap.has(key)) {
-            optionsMap.set(key, new Set());
-          }
-          optionsMap.get(key)!.add(value as string);
-        });
-      }
-
-      // AttributesJson String (parse JSON)
-      if (variant.attributesJson && typeof variant.attributesJson === 'string') {
-        try {
-          const attrs = JSON.parse(variant.attributesJson);
-          Object.entries(attrs).forEach(([key, value]) => {
-            if (!optionsMap.has(key)) {
-              optionsMap.set(key, new Set());
-            }
-            optionsMap.get(key)!.add(value as string);
-          });
-        } catch (e) {
-          console.warn('⚠️ Could not parse attributesJson:', variant.attributesJson, e);
-        }
-      }
-
-      // Fallback: Parse SKU (z.B. "PRODUCT-red-blue" → Farbe: red, Größe: blue)
-      if (!variant.option1 && !variant.option2 && !variant.option3 && 
-          !variant.attributes && variant.sku) {
-        const skuParts = variant.sku.split('-');
-        // Wenn SKU Teile hat (z.B. TESTMEONETIME-red), extrahiere die Werte
-        if (skuParts.length > 1) {
-          // Letzter Teil ist wahrscheinlich die Variante
-          const variantValue = skuParts[skuParts.length - 1];
-          if (!optionsMap.has('Variant')) {
-            optionsMap.set('Variant', new Set());
-          }
-          optionsMap.get('Variant')!.add(variantValue);
-        }
-      }
-    });
-
-    console.log('🗺️ Options Map:', optionsMap);
-
-    // Konvertiere zu variantOptions Format
-    this.variantOptions = Array.from(optionsMap.entries()).map(([name, values]) => ({
-      name: name,
-      values: Array.from(values),
-      newValue: ''
-    }));
-
-    console.log('✅ Extracted options from variants:', this.variantOptions);
-  }
 
   loadProductImages(productId: number): void {
     if (this.storeId === null) return;
@@ -1176,22 +965,9 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   createProduct(formData: any): void {
     if (this.storeId === null) return;
 
-    // Bereite Varianten-Optionen vor
-    const variantOptions = this.variantOptions
-      .filter(opt => opt.name.trim() && opt.values.length > 0)
-      .map(opt => ({
-        name: opt.name.trim(),
-        values: opt.values
-      }));
+    console.log('📦 Creating product with data:', formData);
 
-    const requestData = {
-      ...formData,
-      variantOptions: variantOptions
-    };
-
-    console.log('📦 Creating product with data:', requestData);
-
-    this.productService.createProduct(this.storeId, requestData).subscribe({
+    this.productService.createProduct(this.storeId, formData).subscribe({
       next: (product) => {
         console.log('✅ Produkt erstellt:', product);
 
@@ -1302,62 +1078,6 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     this.router.navigate(['/dashboard/stores', this.storeId, 'products']);
   }
 
-  // ============ Varianten-Management (Create-Modus) ============
-
-  addOption(): void {
-    this.variantOptions.push({
-      name: '',
-      values: [],
-      newValue: ''
-    });
-  }
-
-  removeOption(index: number): void {
-    this.variantOptions.splice(index, 1);
-  }
-
-  addOptionValue(optionIndex: number): void {
-    const option = this.variantOptions[optionIndex];
-    const value = option.newValue?.trim();
-
-    if (value && !option.values.includes(value)) {
-      option.values.push(value);
-      option.newValue = '';
-    }
-  }
-
-  removeOptionValue(optionIndex: number, valueIndex: number): void {
-    this.variantOptions[optionIndex].values.splice(valueIndex, 1);
-  }
-
-  getVariantCombinations(): string[] {
-    // Filtere nur Optionen mit Namen und Werten
-    const validOptions = this.variantOptions.filter(
-      opt => opt.name.trim() && opt.values.length > 0
-    );
-
-    if (validOptions.length === 0) {
-      return [];
-    }
-
-    // Erzeuge alle Kombinationen
-    const combinations: string[] = [];
-
-    const generate = (current: string[], depth: number) => {
-      if (depth === validOptions.length) {
-        combinations.push(current.join('-'));
-        return;
-      }
-
-      const option = validOptions[depth];
-      for (const value of option.values) {
-        generate([...current, value], depth + 1);
-      }
-    };
-
-    generate([], 0);
-    return combinations;
-  }
 
   setActiveTab(tab: 'basic' | 'media' | 'variants' | 'pricing'): void {
     this.activeTab = tab;
