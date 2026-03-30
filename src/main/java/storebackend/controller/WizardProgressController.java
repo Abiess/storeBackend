@@ -16,6 +16,7 @@ import storebackend.service.WizardProgressService;
  */
 @RestController
 @RequestMapping("/api/wizard-progress")
+@CrossOrigin(origins = "*", maxAge = 3600)
 @RequiredArgsConstructor
 @Slf4j
 public class WizardProgressController {

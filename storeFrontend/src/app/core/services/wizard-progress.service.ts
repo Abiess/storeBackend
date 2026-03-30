@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, tap } from 'rxjs';
+import { Observable, BehaviorSubject, tap, catchError, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export interface WizardProgressData {
@@ -48,11 +48,15 @@ export class WizardProgressService {
   /**
    * Lade gespeicherten Wizard-Fortschritt
    */
-  loadProgress(): Observable<WizardProgress> {
+  loadProgress(): Observable<WizardProgress | null> {
     return this.http.get<WizardProgress>(this.API).pipe(
       tap(progress => {
         console.log('📂 Wizard progress loaded:', progress);
         this.progressSubject.next(progress);
+      }),
+      catchError(err => {
+        console.warn('⚠️ Could not load wizard progress (endpoint may not exist):', err.status);
+        return of(null);
       })
     );
   }
@@ -60,12 +64,16 @@ export class WizardProgressService {
   /**
    * Speichere Wizard-Fortschritt
    */
-  saveProgress(progress: WizardProgress): Observable<WizardProgress> {
+  saveProgress(progress: WizardProgress): Observable<WizardProgress | null> {
     console.log('💾 Saving wizard progress:', progress);
     return this.http.post<WizardProgress>(this.API, progress).pipe(
       tap(saved => {
         console.log('✅ Wizard progress saved:', saved);
         this.progressSubject.next(saved);
+      }),
+      catchError(err => {
+        console.warn('⚠️ Could not save wizard progress (endpoint may not exist):', err.status);
+        return of(null);
       })
     );
   }
@@ -73,7 +81,7 @@ export class WizardProgressService {
   /**
    * Markiere Wizard als übersprungen
    */
-  skipWizard(): Observable<void> {
+  skipWizard(): Observable<void | null> {
     console.log('⏭️ Skipping wizard');
     return this.http.post<void>(`${this.API}/skip`, {}).pipe(
       tap(() => {
@@ -81,6 +89,10 @@ export class WizardProgressService {
         if (current) {
           this.progressSubject.next({ ...current, status: 'SKIPPED' });
         }
+      }),
+      catchError(err => {
+        console.warn('⚠️ Could not mark wizard as skipped:', err.status);
+        return of(null);
       })
     );
   }
@@ -88,7 +100,7 @@ export class WizardProgressService {
   /**
    * Markiere Wizard als abgeschlossen
    */
-  completeWizard(storeId: number): Observable<void> {
+  completeWizard(storeId: number): Observable<void | null> {
     console.log('✅ Completing wizard for store:', storeId);
     return this.http.post<void>(`${this.API}/complete`, null, {
       params: { storeId: storeId.toString() }
@@ -103,6 +115,10 @@ export class WizardProgressService {
             createdStoreId: storeId
           });
         }
+      }),
+      catchError(err => {
+        console.warn('⚠️ Could not mark wizard as completed:', err.status);
+        return of(null);
       })
     );
   }
@@ -110,10 +126,14 @@ export class WizardProgressService {
   /**
    * Lösche Wizard-Fortschritt
    */
-  deleteProgress(): Observable<void> {
+  deleteProgress(): Observable<void | null> {
     console.log('🗑️ Deleting wizard progress');
     return this.http.delete<void>(this.API).pipe(
-      tap(() => this.progressSubject.next(null))
+      tap(() => this.progressSubject.next(null)),
+      catchError(err => {
+        console.warn('⚠️ Could not delete wizard progress:', err.status);
+        return of(null);
+      })
     );
   }
 
@@ -121,7 +141,12 @@ export class WizardProgressService {
    * Prüfe ob aktiver Fortschritt vorhanden ist
    */
   hasActiveProgress(): Observable<boolean> {
-    return this.http.get<boolean>(`${this.API}/has-active`);
+    return this.http.get<boolean>(`${this.API}/has-active`).pipe(
+      catchError(err => {
+        console.warn('⚠️ Could not check for active progress:', err.status);
+        return of(false);
+      })
+    );
   }
 
   /**
