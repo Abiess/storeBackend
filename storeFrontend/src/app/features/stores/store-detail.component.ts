@@ -165,10 +165,10 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
             <div *ngIf="!productsLoading && products.length > 0" class="products-grid">
               <div *ngFor="let product of products.slice(0, 6)" class="product-card" [routerLink]="['/stores', storeId, 'products', product.id]">
-                <div class="product-image" *ngIf="product.imageUrl">
-                  <img [src]="product.imageUrl" [alt]="product.title" />
+                <div class="product-image" *ngIf="getProductImage(product)">
+                  <img [src]="getProductImage(product)" [alt]="product.title" />
                 </div>
-                <div class="product-image placeholder" *ngIf="!product.imageUrl">
+                <div class="product-image placeholder" *ngIf="!getProductImage(product)">
                   <span class="placeholder-icon">📦</span>
                 </div>
                 <div class="product-content">
@@ -177,7 +177,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
                     {{ getProductStatusLabel(product.status) }}
                   </span>
                   <div class="product-footer">
-                    <span class="price">{{ (product.price || 0) | currency:'EUR':'symbol':'1.2-2' }}</span>
+                    <span class="price">{{ (product.basePrice || product.price || 0) | currency:'EUR':'symbol':'1.2-2' }}</span>
                   </div>
                 </div>
               </div>
@@ -754,6 +754,29 @@ export class StoreDetailComponent implements OnInit {
   getAverageOrderValue(): number {
     if (this.orders.length === 0) return 0;
     return this.getTotalSales() / this.orders.length;
+  }
+
+  getProductImage(product: Product): string | null {
+    // Priorität: primaryImageUrl > imageUrl > media[0].url
+    if (product.primaryImageUrl) {
+      return product.primaryImageUrl;
+    }
+    if (product.imageUrl) {
+      return product.imageUrl;
+    }
+    if (product.media && product.media.length > 0) {
+      // Suche nach dem primary Image oder nimm das erste
+      const primaryMedia = product.media.find(m => m.isPrimary);
+      if (primaryMedia?.url) {
+        return primaryMedia.url;
+      }
+      // Fallback: erstes Bild mit URL
+      const firstMedia = product.media.find(m => m.url);
+      if (firstMedia?.url) {
+        return firstMedia.url;
+      }
+    }
+    return null;
   }
 
   getProductStatusClass(status: string): string {

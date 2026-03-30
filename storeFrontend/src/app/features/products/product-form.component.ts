@@ -10,7 +10,6 @@ import { StoreContextService } from '@app/core/services/store-context.service';
 import { Category, ProductStatus } from '@app/core/models';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { TranslationService } from '@app/core/services/translation.service';
-import { ProductVariantsManagerComponent } from './product-variants-manager.component';
 import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
 import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
 import { ImageUploadComponent, UploadedImage } from '@app/shared/components/image-upload/image-upload.component';
@@ -19,7 +18,7 @@ import { Subscription } from 'rxjs';
 @Component({
   selector: 'app-product-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, TranslatePipe, ProductVariantsManagerComponent, PageHeaderComponent, ImageUploadComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, TranslatePipe, PageHeaderComponent, ImageUploadComponent],
   template: `
     <div class="product-form-container">
       <app-page-header
@@ -151,24 +150,12 @@ import { Subscription } from 'rxjs';
         <div class="form-card" *ngIf="activeTab === 'variants'">
           <h2>🎨 Produktvarianten</h2>
           
-          <!-- Edit-Modus: Nur Varianten verwalten -->
-          <div *ngIf="isEditMode && productId">
-            <p class="variants-hint">
-              💡 Verwalten Sie hier Ihre Produktvarianten. Passen Sie Preise, SKUs und Lagerbestände individuell an.
-            </p>
-            <app-product-variants-manager 
-              [productId]="productId">
-            </app-product-variants-manager>
-          </div>
-          
-          <!-- Create-Modus: Einfache Optionen-Eingabe -->
-          <div *ngIf="!isEditMode">
-            <p class="variants-hint">
-              💡 Definieren Sie Optionen wie Größe, Farbe, Material. Nach dem Speichern können Sie Varianten mit spezifischen Preisen und Lagerbeständen verwalten.
-            </p>
+          <p class="variants-hint">
+            💡 Definieren Sie Optionen wie Größe, Farbe, Material. Nach dem Speichern können Sie Varianten mit spezifischen Preisen und Lagerbeständen verwalten.
+          </p>
 
-            <!-- Optionen-Liste -->
-            <div class="options-list">
+          <!-- Optionen-Liste (für Create UND Edit) -->
+          <div class="options-list">
               <div *ngFor="let option of variantOptions; let i = index" class="option-card">
                 <div class="option-header">
                   <input 
@@ -243,7 +230,6 @@ import { Subscription } from 'rxjs';
                 ℹ️ Nach dem Speichern können Sie für jede Variante individuell Preis, SKU und Lagerbestand anpassen.
               </p>
             </div>
-          </div>
         </div>
 
         <!-- Preis & Lager (Tab: Pricing) -->

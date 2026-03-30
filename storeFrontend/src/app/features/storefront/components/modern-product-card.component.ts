@@ -17,7 +17,7 @@ import { TranslationService } from '@app/core/services/translation.service';
       <!-- Product Image -->
       <div class="product-image-wrapper" (click)="onQuickView()">
         <img
-          [src]="product.imageUrl || 'assets/placeholder-product.png'"
+          [src]="getProductImage() || 'assets/placeholder-product.png'"
           [alt]="product.name"
           class="product-image"
           loading="lazy">
@@ -455,6 +455,29 @@ export class ModernProductCardComponent {
 
   onQuickView(): void {
     this.quickView.emit(this.product);
+  }
+
+  getProductImage(): string | null {
+    // Priorität: primaryImageUrl > imageUrl > media[0].url
+    if (this.product.primaryImageUrl) {
+      return this.product.primaryImageUrl;
+    }
+    if (this.product.imageUrl) {
+      return this.product.imageUrl;
+    }
+    if (this.product.media && this.product.media.length > 0) {
+      // Suche nach dem primary Image oder nimm das erste
+      const primaryMedia = this.product.media.find((m: any) => m.isPrimary);
+      if (primaryMedia?.url) {
+        return primaryMedia.url;
+      }
+      // Fallback: erstes Bild mit URL
+      const firstMedia = this.product.media.find((m: any) => m.url);
+      if (firstMedia?.url) {
+        return firstMedia.url;
+      }
+    }
+    return null;
   }
 
   truncateText(text: string, maxLength: number): string {

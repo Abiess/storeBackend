@@ -49,6 +49,25 @@ import { ProductReviewsComponent } from './product-reviews.component';
 
             <p class="product-description">{{ product?.description }}</p>
 
+            <!-- Produkt-Informationen (SKU, EAN, etc.) -->
+            <div *ngIf="selectedVariant || product" class="product-info-grid">
+              <div class="info-row" *ngIf="selectedVariant?.sku || product?.sku">
+                <span class="info-label">SKU:</span>
+                <span class="info-value">{{ selectedVariant?.sku || product?.sku }}</span>
+              </div>
+              <div class="info-row" *ngIf="selectedVariant?.barcode">
+                <span class="info-label">EAN:</span>
+                <span class="info-value">{{ selectedVariant.barcode }}</span>
+              </div>
+              <div class="info-row" *ngIf="getComparePrice() > 0">
+                <span class="info-label">UVP:</span>
+                <span class="info-value compare-price">
+                  <span class="strikethrough">{{ getComparePrice() | number:'1.2-2' }} €</span>
+                  <span class="savings">Sie sparen {{ getSavings() | number:'1.2-2' }} €</span>
+                </span>
+              </div>
+            </div>
+
             <!-- Varianten-Auswahl -->
             <div *ngIf="hasVariants()" class="variants-section">
               <h3 class="section-title">Varianten</h3>
@@ -300,6 +319,51 @@ import { ProductReviewsComponent } from './product-reviews.component';
       line-height: 1.6;
       color: #666;
       margin: 0;
+    }
+
+    .product-info-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 8px;
+      margin: 1rem 0;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9375rem;
+    }
+
+    .info-label {
+      font-weight: 600;
+      color: #555;
+    }
+
+    .info-value {
+      color: #333;
+    }
+
+    .compare-price {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.25rem;
+    }
+
+    .strikethrough {
+      text-decoration: line-through;
+      color: #999;
+      font-size: 0.875rem;
+    }
+
+    .savings {
+      color: #28a745;
+      font-weight: 600;
+      font-size: 0.8125rem;
     }
 
     .section-title {
@@ -676,6 +740,22 @@ export class ProductQuickViewComponent implements OnInit {
       return this.selectedVariant.price;
     }
     return this.product?.basePrice || 0;
+  }
+
+  getComparePrice(): number {
+    if (this.selectedVariant?.comparePrice) {
+      return this.selectedVariant.comparePrice;
+    }
+    return this.product?.comparePrice || 0;
+  }
+
+  getSavings(): number {
+    const comparePrice = this.getComparePrice();
+    const currentPrice = this.getCurrentPrice();
+    if (comparePrice > currentPrice) {
+      return comparePrice - currentPrice;
+    }
+    return 0;
   }
 
   /**
