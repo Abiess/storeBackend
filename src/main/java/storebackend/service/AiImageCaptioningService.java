@@ -10,6 +10,11 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import storebackend.dto.AiProductSuggestionDTO;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Base64;
 import java.util.Map;
@@ -21,6 +26,12 @@ public class AiImageCaptioningService {
     // Using Hugging Face Router API with JSON + base64 format
     private static final String HUGGINGFACE_API_URL = "https://router.huggingface.co/v1/responses";
     private static final String MODEL_NAME = "meta-llama/Llama-3.2-11B-Vision-Instruct";
+    
+    // Image compression settings
+    private static final int MAX_IMAGE_WIDTH = 1024;
+    private static final int MAX_IMAGE_HEIGHT = 1024;
+    private static final float JPEG_QUALITY = 0.85f;
+    private static final int MAX_BASE64_SIZE = 5_000_000; // ~5MB base64 limit
 
     @Value("${huggingface.api.key:}")
     private String apiKey;
@@ -50,11 +61,14 @@ public class AiImageCaptioningService {
 
         log.info("Generating AI product suggestion for image: {}", imageFile.getOriginalFilename());
 
-        // Convert image to bytes
+        // Convert and compress image to optimized JPEG
         byte[] imageBytes = imageFile.getBytes();
+        byte[] optimizedImageBytes = compressAndResizeImage(imageBytes);
+        
+        log.info("Image optimized: {} bytes → {} bytes", imageBytes.length, optimizedImageBytes.length);
 
         // Call Hugging Face API
-        String caption = callHuggingFaceApi(imageBytes);
+        String caption = callHuggingFaceApi(optimizedImageBytes);
 
         log.info("AI generated caption: {}", caption);
 
@@ -84,20 +98,25 @@ public class AiImageCaptioningService {
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.set("Authorization", "Bearer " + apiKey);
 
-            // Build request body with Router API format
-            // IMPORTANT: Use "image_url" with data URI prefix
-            String dataUri = "data:image/png;base64," + base64Image;
+            // Build request body with correct Router API responses format
+            // Use role: "user" with content array
+            String dataUri = "data:image/jpeg;base64," + base64Image;
             
             Map<String, Object> requestBody = Map.of(
                 "model", MODEL_NAME,
                 "input", java.util.List.of(
                     Map.of(
-                        "type", "input_text",
-                        "text", "Describe this product image in detail. Focus on the main item, its features, color, and style. Be concise."
-                    ),
-                    Map.of(
-                        "type", "input_image",
-                        "image_url", dataUri
+                        "role", "user",
+                        "content", java.util.List.of(
+                            Map.of(
+                                "type", "text",
+                                "text", "Describe this product image in detail. Focus on the main item, its features, color, and style. Be concise."
+                            ),
+                            Map.of(
+                                "type", "image_url",
+                                "image_url", Map.of("url", dataUri)
+                            )
+                        )
                     )
                 )
             );
@@ -188,6 +207,81 @@ public class AiImageCaptioningService {
         } catch (Exception e) {
             log.error("Error calling Hugging Face Router API: {}", e.getMessage(), e);
             throw new IOException("Failed to generate caption: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * Compresses and resizes image to reduce base64 size
+     * Converts to JPEG format with quality optimization
+     */
+    private byte[] compressAndResizeImage(byte[] originalImageBytes) throws IOException {
+        try {
+            // Read original image
+            BufferedImage originalImage = ImageIO.read(new ByteArrayInputStream(originalImageBytes));
+            if (originalImage == null) {
+                log.warn("Could not read image, using original bytes");
+                return originalImageBytes;
+            }
+            
+            int originalWidth = originalImage.getWidth();
+            int originalHeight = originalImage.getHeight();
+            log.info("Original image dimensions: {}x{}", originalWidth, originalHeight);
+            
+            // Calculate new dimensions maintaining aspect ratio
+            int newWidth = originalWidth;
+            int newHeight = originalHeight;
+            
+            if (originalWidth > MAX_IMAGE_WIDTH || originalHeight > MAX_IMAGE_HEIGHT) {
+                double widthRatio = (double) MAX_IMAGE_WIDTH / originalWidth;
+                double heightRatio = (double) MAX_IMAGE_HEIGHT / originalHeight;
+                double ratio = Math.min(widthRatio, heightRatio);
+                
+                newWidth = (int) (originalWidth * ratio);
+                newHeight = (int) (originalHeight * ratio);
+                log.info("Resizing image to: {}x{}", newWidth, newHeight);
+            }
+            
+            // Create resized image
+            BufferedImage resizedImage = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB);
+            Graphics2D graphics = resizedImage.createGraphics();
+            
+            // Enable high-quality rendering
+            graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+            graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            
+            graphics.drawImage(originalImage, 0, 0, newWidth, newHeight, null);
+            graphics.dispose();
+            
+            // Compress to JPEG
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            javax.imageio.ImageWriter jpegWriter = ImageIO.getImageWritersByFormatName("jpeg").next();
+            javax.imageio.ImageWriteParam jpegWriteParam = jpegWriter.getDefaultWriteParam();
+            jpegWriteParam.setCompressionMode(javax.imageio.ImageWriteParam.MODE_EXPLICIT);
+            jpegWriteParam.setCompressionQuality(JPEG_QUALITY);
+            
+            jpegWriter.setOutput(ImageIO.createImageOutputStream(outputStream));
+            jpegWriter.write(null, new javax.imageio.IIOImage(resizedImage, null, null), jpegWriteParam);
+            jpegWriter.dispose();
+            
+            byte[] compressedBytes = outputStream.toByteArray();
+            log.info("Compression complete: {} bytes → {} bytes ({}% reduction)", 
+                originalImageBytes.length, 
+                compressedBytes.length,
+                100 - (compressedBytes.length * 100 / originalImageBytes.length));
+            
+            // Check if base64 size is acceptable
+            int estimatedBase64Size = (compressedBytes.length * 4 / 3) + 4;
+            if (estimatedBase64Size > MAX_BASE64_SIZE) {
+                log.warn("Base64 size still too large: {} bytes (limit: {})", estimatedBase64Size, MAX_BASE64_SIZE);
+            }
+            
+            return compressedBytes;
+            
+        } catch (Exception e) {
+            log.error("Error compressing image: {}", e.getMessage());
+            log.warn("Falling back to original image bytes");
+            return originalImageBytes;
         }
     }
 
