@@ -85,14 +85,19 @@ public class AiImageCaptioningService {
             headers.set("Authorization", "Bearer " + apiKey);
 
             // Build request body with Router API format
+            // IMPORTANT: Use "image_url" with data URI prefix
+            String dataUri = "data:image/png;base64," + base64Image;
+            
             Map<String, Object> requestBody = Map.of(
                 "model", MODEL_NAME,
                 "input", java.util.List.of(
                     Map.of(
-                        "content", java.util.List.of(
-                            Map.of("type", "input_text", "text", "Describe this product image in detail. Focus on the main item, its features, color, and style. Be concise."),
-                            Map.of("type", "input_image", "image", base64Image)
-                        )
+                        "type", "input_text",
+                        "text", "Describe this product image in detail. Focus on the main item, its features, color, and style. Be concise."
+                    ),
+                    Map.of(
+                        "type", "input_image",
+                        "image_url", dataUri
                     )
                 )
             );
@@ -136,29 +141,40 @@ public class AiImageCaptioningService {
                 
                 JsonNode jsonNode = objectMapper.readTree(response.getBody());
                 
-                // Router API response format: { "text": "..." } or { "generated_text": "..." }
-                if (jsonNode.has("text")) {
-                    String caption = jsonNode.get("text").asText();
-                    log.info("Caption generated: {}", caption);
-                    return caption;
-                }
-                
-                if (jsonNode.has("generated_text")) {
-                    String caption = jsonNode.get("generated_text").asText();
-                    log.info("Caption generated: {}", caption);
-                    return caption;
-                }
-                
-                // Try outputs array format
-                if (jsonNode.has("outputs") && jsonNode.get("outputs").isArray()) {
-                    JsonNode outputs = jsonNode.get("outputs");
-                    if (!outputs.isEmpty()) {
-                        JsonNode firstOutput = outputs.get(0);
-                        if (firstOutput.has("text")) {
-                            String caption = firstOutput.get("text").asText();
-                            log.info("Caption generated: {}", caption);
+                // PRIMARY: Router API response format: output[0].content[0].text
+                if (jsonNode.has("output") && jsonNode.get("output").isArray()) {
+                    JsonNode output = jsonNode.get("output");
+                    if (!output.isEmpty() && output.get(0).has("content")) {
+                        JsonNode content = output.get(0).get("content");
+                        if (content.isArray() && !content.isEmpty() && content.get(0).has("text")) {
+                            String caption = content.get(0).get("text").asText();
+                            log.info("Caption generated from output[0].content[0].text: {}", caption);
                             return caption;
                         }
+                    }
+                }
+                
+                // FALLBACK: Direct text field
+                if (jsonNode.has("text")) {
+                    String caption = jsonNode.get("text").asText();
+                    log.info("Caption generated from text field: {}", caption);
+                    return caption;
+                }
+                
+                // FALLBACK: generated_text field
+                if (jsonNode.has("generated_text")) {
+                    String caption = jsonNode.get("generated_text").asText();
+                    log.info("Caption generated from generated_text field: {}", caption);
+                    return caption;
+                }
+                
+                // FALLBACK: outputs array format
+                if (jsonNode.has("outputs") && jsonNode.get("outputs").isArray()) {
+                    JsonNode outputs = jsonNode.get("outputs");
+                    if (!outputs.isEmpty() && outputs.get(0).has("text")) {
+                        String caption = outputs.get(0).get("text").asText();
+                        log.info("Caption generated from outputs[0].text: {}", caption);
+                        return caption;
                     }
                 }
                 
