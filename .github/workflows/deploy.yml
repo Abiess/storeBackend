@@ -93,6 +93,9 @@ jobs:
             export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
             export JWT_SECRET="${{ secrets.JWT_SECRET }}"
             
+            # Export Hugging Face API Key for AI Product Creation
+            export HUGGINGFACE_API_KEY="${{ secrets.HUGGINGFACE_API_KEY }}"
+            
             # Execute deployment
             cd /opt/storebackend
             bash scripts/deploy.sh

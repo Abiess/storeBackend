@@ -21,6 +21,19 @@ import { Subscription } from 'rxjs';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, FormsModule, TranslatePipe, ProductVariantsManagerComponent, PageHeaderComponent, ImageUploadComponent],
   template: `
+    <!-- Fixed Top-Right Loading Indicator -->
+    <div class="ai-loading-overlay" *ngIf="aiGenerating">
+      <span class="spinner-pulse"></span>
+      <span class="loading-text">
+        <span class="dot-animation">KI analysiert Ihr Bild</span>
+        <span class="dots">
+          <span class="dot">.</span>
+          <span class="dot">.</span>
+          <span class="dot">.</span>
+        </span>
+      </span>
+    </div>
+
     <div class="product-form-container">
       <app-page-header
         [title]="isEditMode ? 'product.edit' : 'product.new'"
@@ -129,6 +142,110 @@ import { Subscription } from 'rxjs';
             <div class="error-message" *ngIf="productForm.get('categoryId')?.invalid && productForm.get('categoryId')?.touched">
               {{ 'validation.required' | translate }}
             </div>
+          </div>
+        </div>
+
+        <!-- KI-Assistent (Tab: AI) -->
+        <div class="form-card ai-assistant-card" *ngIf="activeTab === 'ai'">
+          <h2>🤖 {{ 'product.aiAssistant' | translate }}</h2>
+          
+          <div class="ai-intro">
+            <p>{{ 'product.aiIntro' | translate }}</p>
+            <ul>
+              <li>📸 Laden Sie ein Produktfoto hoch</li>
+              <li>🤖 KI analysiert das Bild</li>
+              <li>✍️ Titel und Beschreibung werden automatisch generiert</li>
+              <li>✅ Übertragen Sie die Daten in das Formular</li>
+            </ul>
+          </div>
+
+          <!-- Image Upload Area -->
+          <div class="ai-upload-section">
+            <h3>1. Produktbild hochladen</h3>
+            <div class="ai-upload-area" [class.has-image]="aiImagePreview">
+              <input 
+                type="file" 
+                id="aiImageInput" 
+                accept="image/*" 
+                (change)="onAiImageSelect($event)"
+                #aiFileInput
+                style="display: none;"
+              />
+              
+              <div *ngIf="!aiImagePreview" class="upload-placeholder" (click)="aiFileInput.click()">
+                <div class="upload-icon">📷</div>
+                <p>Klicken Sie hier, um ein Bild auszuwählen</p>
+                <p class="upload-hint">Unterstützte Formate: JPG, PNG, WebP</p>
+              </div>
+
+              <div *ngIf="aiImagePreview" class="ai-image-preview">
+                <img [src]="aiImagePreview" alt="AI Preview" />
+                <button type="button" class="btn-remove-ai-image" (click)="removeAiImage()">✕</button>
+              </div>
+            </div>
+
+            <button 
+              type="button" 
+              class="btn-ai-generate"
+              [disabled]="!aiImageFile || aiGenerating"
+              (click)="generateAiSuggestion()"
+            >
+              <span *ngIf="!aiGenerating" class="btn-content">
+                <span class="btn-icon">🚀</span>
+                <span class="btn-text">KI-Vorschlag generieren</span>
+              </span>
+              <span *ngIf="aiGenerating" class="generating-indicator">
+                <span class="spinner-pulse"></span>
+                <span class="generating-text">
+                  <span class="dot-animation">Wird generiert</span>
+                  <span class="dots">
+                    <span class="dot">.</span>
+                    <span class="dot">.</span>
+                    <span class="dot">.</span>
+                  </span>
+                </span>
+              </span>
+            </button>
+          </div>
+
+          <!-- AI Error Message -->
+          <div class="ai-error" *ngIf="aiError">
+            ⚠️ {{ aiError }}
+          </div>
+
+          <!-- AI Generated Suggestion -->
+          <div class="ai-result-section" *ngIf="aiSuggestion">
+            <h3>2. Generierter Vorschlag</h3>
+            
+            <div class="ai-result-card">
+              <div class="ai-result-field">
+                <label>📝 Produkttitel</label>
+                <div class="ai-result-value">{{ aiSuggestion.title }}</div>
+              </div>
+
+              <div class="ai-result-field">
+                <label>📄 Beschreibung</label>
+                <div class="ai-result-value ai-description">{{ aiSuggestion.description }}</div>
+              </div>
+
+              <div class="ai-result-field">
+                <label>💬 KI-Analyse</label>
+                <div class="ai-result-value ai-caption">{{ aiSuggestion.generatedCaption }}</div>
+              </div>
+            </div>
+
+            <div class="ai-actions">
+              <button type="button" class="btn-use-suggestion" (click)="useAiSuggestion()">
+                ✅ In Formular übernehmen
+              </button>
+              <button type="button" class="btn-regenerate" (click)="generateAiSuggestion()">
+                🔄 Neu generieren
+              </button>
+            </div>
+          </div>
+
+          <div class="ai-info-note">
+            💡 <strong>Hinweis:</strong> Die KI-generierten Daten sind Vorschläge. Sie können diese nach der Übernahme im "Basis Info" Tab anpassen.
           </div>
         </div>
 
@@ -715,6 +832,402 @@ import { Subscription } from 'rxjs';
       color: #555;
     }
 
+    /* ============================================ */
+    /* AI ASSISTANT STYLES */
+    /* ============================================ */
+
+    .ai-assistant-card {
+      background: linear-gradient(135deg, #f5f7ff 0%, #ffffff 100%);
+    }
+
+    .ai-intro {
+      background: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      border-left: 4px solid #667eea;
+    }
+
+    .ai-intro p {
+      margin: 0 0 1rem;
+      color: #555;
+      font-size: 1rem;
+    }
+
+    .ai-intro ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .ai-intro li {
+      padding: 0.5rem 0;
+      color: #666;
+    }
+
+    .ai-upload-section,
+    .ai-result-section {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .ai-upload-section h3,
+    .ai-result-section h3 {
+      margin: 0 0 1.5rem;
+      font-size: 1.1rem;
+      color: #333;
+      font-weight: 600;
+    }
+
+    .ai-upload-area {
+      border: 3px dashed #d0d7ff;
+      border-radius: 12px;
+      padding: 2rem;
+      text-align: center;
+      transition: all 0.3s;
+      background: #f8f9ff;
+      margin-bottom: 1.5rem;
+      min-height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ai-upload-area.has-image {
+      border-color: #667eea;
+      background: white;
+    }
+
+    .upload-placeholder {
+      cursor: pointer;
+      padding: 2rem;
+      transition: all 0.3s;
+    }
+
+    .upload-placeholder:hover {
+      transform: scale(1.05);
+    }
+
+    .upload-icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+
+    .upload-placeholder p {
+      margin: 0.5rem 0;
+      color: #555;
+      font-size: 1rem;
+      font-weight: 500;
+    }
+
+    .upload-hint {
+      color: #999 !important;
+      font-size: 0.875rem !important;
+      font-weight: 400 !important;
+    }
+
+    .ai-image-preview {
+      position: relative;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .ai-image-preview img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .btn-remove-ai-image {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      background: #dc3545;
+      color: white;
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.25rem;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4);
+      transition: all 0.2s;
+    }
+
+    .btn-remove-ai-image:hover {
+      background: #c82333;
+      transform: scale(1.1);
+    }
+
+    .btn-ai-generate {
+      width: 100%;
+      padding: 1rem 2rem;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-ai-generate:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-ai-generate:disabled {
+      opacity: 0.9;
+      cursor: not-allowed;
+    }
+
+    .btn-content {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-icon {
+      font-size: 1.25rem;
+      animation: rocket-shake 0.5s ease-in-out infinite;
+    }
+
+    @keyframes rocket-shake {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
+    }
+
+    .btn-ai-generate:hover .btn-icon {
+      animation: rocket-launch 0.6s ease-in-out;
+    }
+
+    @keyframes rocket-launch {
+      0% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-10px) scale(1.2); }
+      100% { transform: translateY(0) scale(1); }
+    }
+
+    .generating-indicator {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      animation: pulse-fade 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-fade {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.8; }
+    }
+
+    .spinner-pulse {
+      width: 24px;
+      height: 24px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin-pulse 0.8s linear infinite;
+    }
+
+    @keyframes spin-pulse {
+      0% { transform: rotate(0deg) scale(1); }
+      50% { transform: rotate(180deg) scale(1.1); }
+      100% { transform: rotate(360deg) scale(1); }
+    }
+
+    .generating-text {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-weight: 600;
+    }
+
+    .dots {
+      display: inline-flex;
+      gap: 2px;
+    }
+
+    .dot {
+      animation: dot-bounce 1.4s ease-in-out infinite;
+    }
+
+    .dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes dot-bounce {
+      0%, 80%, 100% { 
+        opacity: 0;
+        transform: translateY(0);
+      }
+      40% { 
+        opacity: 1;
+        transform: translateY(-5px);
+      }
+    }
+
+    /* Fixed Top-Right Loading Indicator */
+    .ai-loading-overlay {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      animation: slide-in-right 0.3s ease-out;
+    }
+
+    @keyframes slide-in-right {
+      from {
+        opacity: 0;
+        transform: translateX(100%);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .ai-loading-overlay .spinner-pulse {
+      width: 20px;
+      height: 20px;
+    }
+
+    .ai-loading-overlay .loading-text {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .ai-error {
+      background: #fee;
+      border-left: 4px solid #dc3545;
+      color: #721c24;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      font-weight: 500;
+    }
+
+    .ai-result-card {
+      background: #f8f9ff;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .ai-result-field {
+      margin-bottom: 1.5rem;
+    }
+
+    .ai-result-field:last-child {
+      margin-bottom: 0;
+    }
+
+    .ai-result-field label {
+      display: block;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 0.5rem;
+      font-size: 0.95rem;
+    }
+
+    .ai-result-value {
+      background: white;
+      padding: 1rem;
+      border-radius: 8px;
+      border: 2px solid #e0e0e0;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    .ai-result-value.ai-description {
+      white-space: pre-wrap;
+      min-height: 100px;
+    }
+
+    .ai-result-value.ai-caption {
+      font-style: italic;
+      color: #666;
+      background: #fafafa;
+    }
+
+    .ai-actions {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .btn-use-suggestion,
+    .btn-regenerate {
+      flex: 1;
+      padding: 0.875rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 1rem;
+    }
+
+    .btn-use-suggestion {
+      background: #28a745;
+      color: white;
+    }
+
+    .btn-use-suggestion:hover {
+      background: #218838;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+    }
+
+    .btn-regenerate {
+      background: white;
+      color: #667eea;
+      border: 2px solid #667eea;
+    }
+
+    .btn-regenerate:hover {
+      background: #f5f7ff;
+      border-color: #5568d3;
+    }
+
+    .ai-info-note {
+      background: #e3f2fd;
+      border-left: 4px solid #2196f3;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      color: #1565c0;
+      line-height: 1.6;
+    }
+
+    .ai-info-note strong {
+      color: #0d47a1;
+    }
+
     @media (max-width: 768px) {
       .form-header {
         flex-direction: column;
@@ -738,6 +1251,30 @@ import { Subscription } from 'rxjs';
       .btn-secondary {
         width: 100%;
       }
+
+      .tab-navigation {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        gap: 0.5rem;
+      }
+
+      .tab-item {
+        flex-shrink: 0;
+        min-width: 120px;
+      }
+
+      .ai-actions {
+        flex-direction: column;
+      }
+
+      .ai-upload-area {
+        min-height: 200px;
+        padding: 1rem;
+      }
+
+      .upload-icon {
+        font-size: 3rem;
+      }
     }
   `]
 })
@@ -755,15 +1292,23 @@ export class ProductFormComponent implements OnInit, OnDestroy {
 
   uploadedImages: UploadedImage[] = [];
 
+  // AI Assistant properties
+  aiImageFile: File | null = null;
+  aiImagePreview: string | null = null;
+  aiGenerating = false;
+  aiSuggestion: any = null;
+  aiError = '';
+
 
   // Tab Navigation
-  activeTab: 'basic' | 'media' | 'variants' | 'pricing' = 'basic';
+  activeTab: 'basic' | 'ai' | 'media' | 'variants' | 'pricing' = 'basic';
 
-  tabs = [
-    { id: 'basic' as const, label: 'Basis Info', icon: '📝' },
-    { id: 'media' as const, label: 'Bilder', icon: '📷' },
-    { id: 'variants' as const, label: 'Varianten', icon: '🎨' },
-    { id: 'pricing' as const, label: 'Preis & Lager', icon: '💰' }
+  tabs: Array<{ id: 'basic' | 'ai' | 'media' | 'variants' | 'pricing', label: string, icon: string }> = [
+    { id: 'basic', label: 'Basis Info', icon: '📝' },
+    { id: 'ai', label: 'KI-Assistent', icon: '🤖' },
+    { id: 'media', label: 'Bilder', icon: '📷' },
+    { id: 'variants', label: 'Varianten', icon: '🎨' },
+    { id: 'pricing', label: 'Preis & Lager', icon: '💰' }
   ];
 
   private storeIdSubscription?: Subscription;
@@ -1079,7 +1624,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   }
 
 
-  setActiveTab(tab: 'basic' | 'media' | 'variants' | 'pricing'): void {
+  setActiveTab(tab: 'basic' | 'ai' | 'media' | 'variants' | 'pricing'): void {
     this.activeTab = tab;
   }
 
@@ -1095,5 +1640,101 @@ export class ProductFormComponent implements OnInit, OnDestroy {
       default:
         return false;
     }
+  }
+
+  // ============================================
+  // AI ASSISTANT METHODS
+  // ============================================
+
+  onAiImageSelect(event: any): void {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      this.aiError = 'Bitte wählen Sie eine gültige Bilddatei aus.';
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      this.aiError = 'Die Datei ist zu groß. Maximale Größe: 10MB';
+      return;
+    }
+
+    this.aiImageFile = file;
+    this.aiError = '';
+    this.aiSuggestion = null;
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      this.aiImagePreview = e.target.result;
+    };
+    reader.readAsDataURL(file);
+
+    console.log('✅ AI image selected:', file.name, file.size, 'bytes');
+  }
+
+  removeAiImage(): void {
+    this.aiImageFile = null;
+    this.aiImagePreview = null;
+    this.aiSuggestion = null;
+    this.aiError = '';
+  }
+
+  generateAiSuggestion(): void {
+    if (!this.aiImageFile || this.storeId === null) {
+      this.aiError = 'Bitte wählen Sie zuerst ein Bild aus.';
+      return;
+    }
+
+    this.aiGenerating = true;
+    this.aiError = '';
+    this.aiSuggestion = null;
+
+    console.log('🤖 Generating AI suggestion for:', this.aiImageFile.name);
+
+    this.productService.generateAiProductSuggestion(this.storeId, this.aiImageFile).subscribe({
+      next: (suggestion) => {
+        console.log('✅ AI suggestion received:', suggestion);
+        this.aiSuggestion = suggestion;
+        this.aiGenerating = false;
+        this.successMessage = 'KI-Vorschlag erfolgreich generiert!';
+        setTimeout(() => this.successMessage = '', 3000);
+      },
+      error: (error) => {
+        console.error('❌ AI generation failed:', error);
+        this.aiGenerating = false;
+        
+        let errorMsg = 'Fehler beim Generieren des KI-Vorschlags.';
+        if (error.error?.error) {
+          errorMsg = error.error.error;
+        } else if (error.message) {
+          errorMsg = error.message;
+        }
+        
+        this.aiError = errorMsg;
+      }
+    });
+  }
+
+  useAiSuggestion(): void {
+    if (!this.aiSuggestion) return;
+
+    // Populate form with AI suggestions
+    this.productForm.patchValue({
+      title: this.aiSuggestion.title,
+      description: this.aiSuggestion.description
+    });
+
+    // Switch to basic tab to show the populated form
+    this.activeTab = 'basic';
+
+    // Show success message
+    this.successMessage = 'KI-Vorschlag wurde in das Formular übernommen. Sie können die Daten jetzt anpassen.';
+    setTimeout(() => this.successMessage = '', 5000);
+
+    console.log('✅ AI suggestion applied to form');
   }
 }

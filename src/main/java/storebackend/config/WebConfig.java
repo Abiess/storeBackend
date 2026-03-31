@@ -3,6 +3,7 @@ package storebackend.config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -17,6 +18,11 @@ import java.util.List;
 public class WebConfig implements WebMvcConfigurer {
 
     private final MetricsInterceptor metricsInterceptor;
+
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
+    }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {

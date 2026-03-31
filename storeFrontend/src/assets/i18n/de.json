@@ -159,9 +159,12 @@
       "outOfStock": "Nicht verfügbar",
       "saveAll": "Alle Varianten speichern",
       "addValue": "Wert hinzufügen"
-    }
+    },
+    "aiAssistant": "KI-Assistent",
+    "aiIntro": "Lassen Sie künstliche Intelligenz Produktinformationen aus Ihrem Bild generieren."
   },
   "Basis Info": "Basis Informationen",
+  "KI-Assistent": "KI-Assistent",
   "Preis & Lager": "Preis & Lager",
   "Varianten": "Varianten",
   "Bilder": "Bilder",

@@ -28,6 +28,15 @@ export interface RegisterRequest {
 }
 
 // ============================================
+// AI PRODUCT SUGGESTION
+// ============================================
+export interface AiProductSuggestion {
+  title: string;
+  description: string;
+  generatedCaption: string;
+}
+
+// ============================================
 // ADDRESS
 // ============================================
 export interface Address {

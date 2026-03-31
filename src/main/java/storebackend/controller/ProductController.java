@@ -10,11 +10,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import storebackend.dto.AiProductSuggestionDTO;
 import storebackend.dto.CreateProductRequest;
 import storebackend.dto.ProductDTO;
 import storebackend.entity.Store;
 import storebackend.entity.User;
 import storebackend.repository.StoreRepository;
+import storebackend.service.AiImageCaptioningService;
 import storebackend.service.ProductService;
 import storebackend.service.StoreService;
 
@@ -30,11 +33,14 @@ public class ProductController {
     private final ProductService productService;
     private final StoreService storeService;
     private final StoreRepository storeRepository;
+    private final AiImageCaptioningService aiImageCaptioningService;
 
-    public ProductController(ProductService productService, StoreService storeService, StoreRepository storeRepository) {
+    public ProductController(ProductService productService, StoreService storeService, 
+                            StoreRepository storeRepository, AiImageCaptioningService aiImageCaptioningService) {
         this.productService = productService;
         this.storeService = storeService;
         this.storeRepository = storeRepository;
+        this.aiImageCaptioningService = aiImageCaptioningService;
     }
 
     /**
@@ -297,5 +303,57 @@ public class ProductController {
         log.info("Incrementing view count for product {} in store {}", productId, storeId);
         productService.incrementViewCount(productId);
         return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "Generate AI product suggestion", description = "Uses AI to analyze product image and generate title and description")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully generated product suggestion"),
+            @ApiResponse(responseCode = "401", description = "Not authenticated"),
+            @ApiResponse(responseCode = "403", description = "Not authorized"),
+            @ApiResponse(responseCode = "400", description = "Invalid image or AI service error")
+    })
+    @PostMapping("/ai-suggest")
+    public ResponseEntity<?> generateAiProductSuggestion(
+            @Parameter(description = "Store ID") @PathVariable Long storeId,
+            @Parameter(description = "Product image file") @RequestParam("image") MultipartFile image,
+            @AuthenticationPrincipal User user) {
+
+        log.info("=== AI PRODUCT SUGGESTION REQUEST ===");
+        log.info("Store ID: {}", storeId);
+        log.info("User: {}", user != null ? user.getId() + " (" + user.getEmail() + ")" : "NULL");
+        log.info("Image: {}, size: {} bytes", image.getOriginalFilename(), image.getSize());
+
+        if (user == null) {
+            log.error("❌ User is null - authentication failed");
+            return ResponseEntity.status(401).body(Map.of("error", "Authentication required"));
+        }
+
+        if (!hasStoreAccess(storeId, user)) {
+            log.error("❌ ACCESS DENIED - User {} does not have access to Store {}", user.getId(), storeId);
+            return ResponseEntity.status(403).body(Map.of("error", "Access denied"));
+        }
+
+        // Validate image
+        if (image.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Image file is required"));
+        }
+
+        // Validate image type
+        String contentType = image.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            return ResponseEntity.badRequest().body(Map.of("error", "File must be an image"));
+        }
+
+        try {
+            log.info("✅ Calling AI service to generate product suggestion");
+            AiProductSuggestionDTO suggestion = aiImageCaptioningService.generateProductSuggestion(image);
+            log.info("✅ AI suggestion generated successfully: {}", suggestion.getTitle());
+            return ResponseEntity.ok(suggestion);
+        } catch (Exception e) {
+            log.error("❌ Error generating AI suggestion: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body(Map.of(
+                "error", "Failed to generate product suggestion: " + e.getMessage()
+            ));
+        }
     }
 }
