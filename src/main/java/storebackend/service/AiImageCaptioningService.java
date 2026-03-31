@@ -18,10 +18,9 @@ import java.util.Map;
 @Slf4j
 public class AiImageCaptioningService {
 
-    // Using ViT-GPT2 model - smaller, faster, and actively maintained
-    // The old BLIP base model returns 410 Gone (deprecated)
-    // Alternative if this fails: "microsoft/git-base"
-    private static final String HUGGINGFACE_API_URL = "https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-base";
+    // New v1 API endpoint - supports JSON + base64 images
+    private static final String HUGGINGFACE_API_URL = "https://api.huggingface.co/v1/chat/completions";
+    private static final String MODEL_NAME = "meta-llama/Llama-3.2-11B-Vision-Instruct";
 
     @Value("${huggingface.api.key:}")
     private String apiKey;
@@ -69,19 +68,42 @@ public class AiImageCaptioningService {
     }
 
     /**
-     * Calls Hugging Face API for image captioning
+     * Calls Hugging Face API for image captioning using new v1 API
      */
     private String callHuggingFaceApi(byte[] imageBytes) throws IOException {
         try {
-            log.info("Calling Hugging Face API: {}", HUGGINGFACE_API_URL);
+            log.info("Calling Hugging Face v1 API: {}", HUGGINGFACE_API_URL);
             
-            // Create headers
+            // Encode image to base64
+            String base64Image = Base64.getEncoder().encodeToString(imageBytes);
+            log.info("Image encoded to base64 ({} chars)", base64Image.length());
+            
+            // Create headers for JSON request
             HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentType(MediaType.APPLICATION_JSON);
             headers.set("Authorization", "Bearer " + apiKey);
 
+            // Build request body with new v1 format
+            Map<String, Object> requestBody = Map.of(
+                "model", MODEL_NAME,
+                "messages", java.util.List.of(
+                    Map.of(
+                        "role", "user",
+                        "content", java.util.List.of(
+                            Map.of("type", "text", "text", "Describe this product image in detail. Focus on the main item, its features, color, and style."),
+                            Map.of("type", "image_url", "image_url", Map.of("url", "data:image/jpeg;base64," + base64Image))
+                        )
+                    )
+                ),
+                "max_tokens", 500,
+                "stream", false
+            );
+
+            // Convert to JSON
+            String jsonBody = objectMapper.writeValueAsString(requestBody);
+            
             // Create request entity
-            HttpEntity<byte[]> requestEntity = new HttpEntity<>(imageBytes, headers);
+            HttpEntity<String> requestEntity = new HttpEntity<>(jsonBody, headers);
 
             // Call API with timeout handling
             ResponseEntity<String> response;
@@ -108,37 +130,33 @@ public class AiImageCaptioningService {
                 throw new IOException("Failed to call Hugging Face API: " + e.getMessage(), e);
             }
 
-            // Parse response
+            // Parse v1 API response
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
-                log.info("API response received, parsing...");
+                log.info("API response received, parsing v1 format...");
                 JsonNode jsonNode = objectMapper.readTree(response.getBody());
                 
-                // Handle array response
-                if (jsonNode.isArray() && !jsonNode.isEmpty()) {
-                    JsonNode firstResult = jsonNode.get(0);
-                    if (firstResult.has("generated_text")) {
-                        String caption = firstResult.get("generated_text").asText();
-                        log.info("Caption generated: {}", caption);
-                        return caption;
+                // v1 API response format: { "choices": [{ "message": { "content": "..." } }] }
+                if (jsonNode.has("choices") && jsonNode.get("choices").isArray()) {
+                    JsonNode choices = jsonNode.get("choices");
+                    if (!choices.isEmpty()) {
+                        JsonNode firstChoice = choices.get(0);
+                        if (firstChoice.has("message") && firstChoice.get("message").has("content")) {
+                            String caption = firstChoice.get("message").get("content").asText();
+                            log.info("Caption generated: {}", caption);
+                            return caption;
+                        }
                     }
                 }
                 
-                // Handle single object response
-                if (jsonNode.has("generated_text")) {
-                    String caption = jsonNode.get("generated_text").asText();
-                    log.info("Caption generated: {}", caption);
-                    return caption;
-                }
-                
-                log.error("Unexpected API response format: {}", response.getBody());
+                log.error("Unexpected v1 API response format: {}", response.getBody());
             }
 
-            throw new RuntimeException("Failed to parse Hugging Face API response");
+            throw new RuntimeException("Failed to parse Hugging Face v1 API response");
 
         } catch (IOException e) {
             throw e; // Re-throw IOException as-is
         } catch (Exception e) {
-            log.error("Error calling Hugging Face API: {}", e.getMessage(), e);
+            log.error("Error calling Hugging Face v1 API: {}", e.getMessage(), e);
             throw new IOException("Failed to generate caption: " + e.getMessage(), e);
         }
     }
