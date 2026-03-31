@@ -162,6 +162,9 @@ MINIO_SECURE=true
 CJ_API_BASE_URL=${CJ_API_BASE_URL:-https://developers.cjdropshipping.com/api2.0/v1}
 CJ_API_TIMEOUT=${CJ_API_TIMEOUT:-30000}
 
+# Hugging Face API Key (AI Product Creation)
+HUGGINGFACE_API_KEY=${HUGGINGFACE_API_KEY:-}
+
 EOF"
 
 sudo chown "$APP_USER:$APP_USER" "$ENV_FILE"
