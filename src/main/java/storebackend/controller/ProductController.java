@@ -335,12 +335,14 @@ public class ProductController {
 
         // Validate image
         if (image.isEmpty()) {
+            log.error("❌ Image file is empty");
             return ResponseEntity.badRequest().body(Map.of("error", "Image file is required"));
         }
 
         // Validate image type
         String contentType = image.getContentType();
         if (contentType == null || !contentType.startsWith("image/")) {
+            log.error("❌ Invalid content type: {}", contentType);
             return ResponseEntity.badRequest().body(Map.of("error", "File must be an image"));
         }
 
@@ -351,9 +353,30 @@ public class ProductController {
             return ResponseEntity.ok(suggestion);
         } catch (Exception e) {
             log.error("❌ Error generating AI suggestion: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", "Failed to generate product suggestion: " + e.getMessage()
+            String errorMsg = e.getMessage() != null ? e.getMessage() : "Unknown error occurred";
+            return ResponseEntity.status(500).body(Map.of(
+                "error", "Failed to generate product suggestion: " + errorMsg
             ));
         }
+    }
+
+    @Operation(summary = "Check AI service status", description = "Debug endpoint to check if AI service is configured")
+    @GetMapping("/ai-status")
+    public ResponseEntity<?> checkAiStatus(@PathVariable Long storeId, @AuthenticationPrincipal User user) {
+        log.info("=== AI STATUS CHECK ===");
+        log.info("User: {}", user != null ? user.getId() : "NULL");
+        
+        if (user == null) {
+            return ResponseEntity.status(401).body(Map.of("error", "Authentication required"));
+        }
+
+        if (!hasStoreAccess(storeId, user)) {
+            return ResponseEntity.status(403).body(Map.of("error", "Access denied"));
+        }
+
+        return ResponseEntity.ok(Map.of(
+            "serviceAvailable", aiImageCaptioningService != null,
+            "message", "AI service is " + (aiImageCaptioningService != null ? "available" : "NOT available")
+        ));
     }
 }

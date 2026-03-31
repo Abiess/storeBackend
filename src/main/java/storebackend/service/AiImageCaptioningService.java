@@ -29,13 +29,20 @@ public class AiImageCaptioningService {
     public AiImageCaptioningService(RestTemplate restTemplate, ObjectMapper objectMapper) {
         this.restTemplate = restTemplate;
         this.objectMapper = objectMapper;
+        log.info("🤖 AiImageCaptioningService initialized");
+        log.info("🔑 API Key configured: {}", apiKey != null && !apiKey.isBlank() ? "YES" : "NO");
     }
 
     /**
      * Generates product suggestions from an uploaded image using Hugging Face AI
      */
     public AiProductSuggestionDTO generateProductSuggestion(MultipartFile imageFile) throws IOException {
+        log.info("=== AI GENERATION START ===");
+        log.info("Image: {} ({} bytes)", imageFile.getOriginalFilename(), imageFile.getSize());
+        log.info("API Key present: {}", apiKey != null && !apiKey.isBlank());
+        
         if (apiKey == null || apiKey.isBlank()) {
+            log.error("❌ Hugging Face API key is not configured!");
             throw new RuntimeException("Hugging Face API key is not configured. Please set HUGGINGFACE_API_KEY environment variable.");
         }
 
