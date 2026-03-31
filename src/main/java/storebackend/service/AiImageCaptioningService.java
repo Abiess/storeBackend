@@ -18,8 +18,8 @@ import java.util.Map;
 @Slf4j
 public class AiImageCaptioningService {
 
-    // New v1 API endpoint - supports JSON + base64 images
-    private static final String HUGGINGFACE_API_URL = "https://api.huggingface.co/v1/chat/completions";
+    // Using Hugging Face Router API with JSON + base64 format
+    private static final String HUGGINGFACE_API_URL = "https://router.huggingface.co/v1/responses";
     private static final String MODEL_NAME = "meta-llama/Llama-3.2-11B-Vision-Instruct";
 
     @Value("${huggingface.api.key:}")
@@ -68,11 +68,12 @@ public class AiImageCaptioningService {
     }
 
     /**
-     * Calls Hugging Face API for image captioning using new v1 API
+     * Calls Hugging Face Router API with JSON + base64 format
      */
     private String callHuggingFaceApi(byte[] imageBytes) throws IOException {
         try {
-            log.info("Calling Hugging Face v1 API: {}", HUGGINGFACE_API_URL);
+            log.info("Calling Hugging Face Router API: {}", HUGGINGFACE_API_URL);
+            log.info("Model: {}", MODEL_NAME);
             
             // Encode image to base64
             String base64Image = Base64.getEncoder().encodeToString(imageBytes);
@@ -83,24 +84,22 @@ public class AiImageCaptioningService {
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.set("Authorization", "Bearer " + apiKey);
 
-            // Build request body with new v1 format
+            // Build request body with Router API format
             Map<String, Object> requestBody = Map.of(
                 "model", MODEL_NAME,
-                "messages", java.util.List.of(
+                "input", java.util.List.of(
                     Map.of(
-                        "role", "user",
                         "content", java.util.List.of(
-                            Map.of("type", "text", "text", "Describe this product image in detail. Focus on the main item, its features, color, and style."),
-                            Map.of("type", "image_url", "image_url", Map.of("url", "data:image/jpeg;base64," + base64Image))
+                            Map.of("type", "input_text", "text", "Describe this product image in detail. Focus on the main item, its features, color, and style. Be concise."),
+                            Map.of("type", "input_image", "image", base64Image)
                         )
                     )
-                ),
-                "max_tokens", 500,
-                "stream", false
+                )
             );
 
             // Convert to JSON
             String jsonBody = objectMapper.writeValueAsString(requestBody);
+            log.info("Request body size: {} chars", jsonBody.length());
             
             // Create request entity
             HttpEntity<String> requestEntity = new HttpEntity<>(jsonBody, headers);
@@ -127,36 +126,51 @@ public class AiImageCaptioningService {
                     throw new IOException("AI model is currently loading. Please wait 20-30 seconds and try again.");
                 }
                 
-                throw new IOException("Failed to call Hugging Face API: " + e.getMessage(), e);
+                throw new IOException("Failed to call Hugging Face Router API: " + e.getMessage(), e);
             }
 
-            // Parse v1 API response
+            // Parse Router API response
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
-                log.info("API response received, parsing v1 format...");
+                log.info("API response received, parsing Router API format...");
+                log.info("Response: {}", response.getBody());
+                
                 JsonNode jsonNode = objectMapper.readTree(response.getBody());
                 
-                // v1 API response format: { "choices": [{ "message": { "content": "..." } }] }
-                if (jsonNode.has("choices") && jsonNode.get("choices").isArray()) {
-                    JsonNode choices = jsonNode.get("choices");
-                    if (!choices.isEmpty()) {
-                        JsonNode firstChoice = choices.get(0);
-                        if (firstChoice.has("message") && firstChoice.get("message").has("content")) {
-                            String caption = firstChoice.get("message").get("content").asText();
+                // Router API response format: { "text": "..." } or { "generated_text": "..." }
+                if (jsonNode.has("text")) {
+                    String caption = jsonNode.get("text").asText();
+                    log.info("Caption generated: {}", caption);
+                    return caption;
+                }
+                
+                if (jsonNode.has("generated_text")) {
+                    String caption = jsonNode.get("generated_text").asText();
+                    log.info("Caption generated: {}", caption);
+                    return caption;
+                }
+                
+                // Try outputs array format
+                if (jsonNode.has("outputs") && jsonNode.get("outputs").isArray()) {
+                    JsonNode outputs = jsonNode.get("outputs");
+                    if (!outputs.isEmpty()) {
+                        JsonNode firstOutput = outputs.get(0);
+                        if (firstOutput.has("text")) {
+                            String caption = firstOutput.get("text").asText();
                             log.info("Caption generated: {}", caption);
                             return caption;
                         }
                     }
                 }
                 
-                log.error("Unexpected v1 API response format: {}", response.getBody());
+                log.error("Unexpected Router API response format: {}", response.getBody());
             }
 
-            throw new RuntimeException("Failed to parse Hugging Face v1 API response");
+            throw new RuntimeException("Failed to parse Hugging Face Router API response");
 
         } catch (IOException e) {
             throw e; // Re-throw IOException as-is
         } catch (Exception e) {
-            log.error("Error calling Hugging Face v1 API: {}", e.getMessage(), e);
+            log.error("Error calling Hugging Face Router API: {}", e.getMessage(), e);
             throw new IOException("Failed to generate caption: " + e.getMessage(), e);
         }
     }
