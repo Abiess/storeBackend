@@ -18,7 +18,10 @@ import java.util.Map;
 @Slf4j
 public class AiImageCaptioningService {
 
-    private static final String HUGGINGFACE_API_URL = "https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-base";
+    // Using ViT-GPT2 model - smaller, faster, and actively maintained
+    // The old BLIP base model returns 410 Gone (deprecated)
+    // Alternative if this fails: "microsoft/git-base"
+    private static final String HUGGINGFACE_API_URL = "https://api-inference.huggingface.co/models/nlpconnect/vit-gpt2-image-captioning";
 
     @Value("${huggingface.api.key:}")
     private String apiKey;
@@ -70,6 +73,8 @@ public class AiImageCaptioningService {
      */
     private String callHuggingFaceApi(byte[] imageBytes) throws IOException {
         try {
+            log.info("Calling Hugging Face API: {}", HUGGINGFACE_API_URL);
+            
             // Create headers
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
@@ -78,34 +83,60 @@ public class AiImageCaptioningService {
             // Create request entity
             HttpEntity<byte[]> requestEntity = new HttpEntity<>(imageBytes, headers);
 
-            // Call API
-            ResponseEntity<String> response = restTemplate.exchange(
-                HUGGINGFACE_API_URL,
-                HttpMethod.POST,
-                requestEntity,
-                String.class
-            );
+            // Call API with timeout handling
+            ResponseEntity<String> response;
+            try {
+                response = restTemplate.exchange(
+                    HUGGINGFACE_API_URL,
+                    HttpMethod.POST,
+                    requestEntity,
+                    String.class
+                );
+            } catch (Exception e) {
+                log.error("API call failed: {}", e.getMessage());
+                
+                // Check if it's a 410 Gone error (model deprecated)
+                if (e.getMessage().contains("410") || e.getMessage().contains("Gone")) {
+                    throw new IOException("The AI model is no longer available. Please update to a newer model. Error: " + e.getMessage());
+                }
+                
+                // Check if model is loading
+                if (e.getMessage().contains("503") || e.getMessage().contains("loading")) {
+                    throw new IOException("AI model is currently loading. Please wait 20-30 seconds and try again.");
+                }
+                
+                throw new IOException("Failed to call Hugging Face API: " + e.getMessage(), e);
+            }
 
             // Parse response
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                log.info("API response received, parsing...");
                 JsonNode jsonNode = objectMapper.readTree(response.getBody());
                 
                 // Handle array response
                 if (jsonNode.isArray() && !jsonNode.isEmpty()) {
                     JsonNode firstResult = jsonNode.get(0);
                     if (firstResult.has("generated_text")) {
-                        return firstResult.get("generated_text").asText();
+                        String caption = firstResult.get("generated_text").asText();
+                        log.info("Caption generated: {}", caption);
+                        return caption;
                     }
                 }
                 
                 // Handle single object response
                 if (jsonNode.has("generated_text")) {
-                    return jsonNode.get("generated_text").asText();
+                    String caption = jsonNode.get("generated_text").asText();
+                    log.info("Caption generated: {}", caption);
+                    return caption;
                 }
+                
+                log.error("Unexpected API response format: {}", response.getBody());
             }
 
             throw new RuntimeException("Failed to parse Hugging Face API response");
 
+        } catch (IOException e) {
+            throw e; // Re-throw IOException as-is
         } catch (Exception e) {
             log.error("Error calling Hugging Face API: {}", e.getMessage(), e);
             throw new IOException("Failed to generate caption: " + e.getMessage(), e);
