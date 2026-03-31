@@ -169,47 +169,76 @@ public class AiImageCaptioningService {
                 
                 JsonNode jsonNode = objectMapper.readTree(response.getBody());
                 
-                // PRIMARY: Router API response format: output[0].content[0].text
+                // 1. CHECK FOR ERRORS FIRST
+                if (jsonNode.has("error")) {
+                    JsonNode error = jsonNode.get("error");
+                    String errorMessage = error.has("message") ? error.get("message").asText() : error.toString();
+                    log.error("API returned error: {}", errorMessage);
+                    throw new IOException("Hugging Face API error: " + errorMessage);
+                }
+                
+                // 2. PREFER: output_text field (direct output)
+                if (jsonNode.has("output_text")) {
+                    String caption = jsonNode.get("output_text").asText();
+                    log.info("Caption generated from output_text field: {}", caption);
+                    return caption;
+                }
+                
+                // 3. SCAN: output[*].content[*] for type == "output_text"
                 if (jsonNode.has("output") && jsonNode.get("output").isArray()) {
-                    JsonNode output = jsonNode.get("output");
-                    if (!output.isEmpty() && output.get(0).has("content")) {
-                        JsonNode content = output.get(0).get("content");
-                        if (content.isArray() && !content.isEmpty() && content.get(0).has("text")) {
-                            String caption = content.get(0).get("text").asText();
-                            log.info("Caption generated from output[0].content[0].text: {}", caption);
-                            return caption;
+                    JsonNode outputArray = jsonNode.get("output");
+                    for (JsonNode outputItem : outputArray) {
+                        if (outputItem.has("content") && outputItem.get("content").isArray()) {
+                            JsonNode contentArray = outputItem.get("content");
+                            for (JsonNode contentItem : contentArray) {
+                                // Look for items with type == "output_text"
+                                if (contentItem.has("type") && "output_text".equals(contentItem.get("type").asText())) {
+                                    if (contentItem.has("text")) {
+                                        String caption = contentItem.get("text").asText();
+                                        log.info("Caption generated from output[*].content[*] with type=output_text: {}", caption);
+                                        return caption;
+                                    }
+                                }
+                                // Also check for plain text in content (backward compatibility)
+                                if (contentItem.has("text") && !contentItem.has("type")) {
+                                    String caption = contentItem.get("text").asText();
+                                    log.info("Caption generated from output[*].content[*].text (no type): {}", caption);
+                                    return caption;
+                                }
+                            }
                         }
                     }
                 }
                 
-                // FALLBACK: Direct text field
+                // FALLBACK 1: Direct text field (legacy)
                 if (jsonNode.has("text")) {
                     String caption = jsonNode.get("text").asText();
-                    log.info("Caption generated from text field: {}", caption);
+                    log.info("Caption generated from text field (legacy): {}", caption);
                     return caption;
                 }
                 
-                // FALLBACK: generated_text field
+                // FALLBACK 2: generated_text field (legacy)
                 if (jsonNode.has("generated_text")) {
                     String caption = jsonNode.get("generated_text").asText();
-                    log.info("Caption generated from generated_text field: {}", caption);
+                    log.info("Caption generated from generated_text field (legacy): {}", caption);
                     return caption;
                 }
                 
-                // FALLBACK: outputs array format
+                // FALLBACK 3: outputs array format (legacy)
                 if (jsonNode.has("outputs") && jsonNode.get("outputs").isArray()) {
                     JsonNode outputs = jsonNode.get("outputs");
                     if (!outputs.isEmpty() && outputs.get(0).has("text")) {
                         String caption = outputs.get(0).get("text").asText();
-                        log.info("Caption generated from outputs[0].text: {}", caption);
+                        log.info("Caption generated from outputs[0].text (legacy): {}", caption);
                         return caption;
                     }
                 }
                 
-                log.error("Unexpected Router API response format: {}", response.getBody());
+                log.error("Unexpected Router API response format - no recognized fields found");
+                log.error("Response structure: {}", response.getBody());
             }
 
-            throw new RuntimeException("Failed to parse Hugging Face Router API response");
+            throw new RuntimeException("Failed to parse Hugging Face Router API response - no text content found");
 
         } catch (IOException e) {
             throw e; // Re-throw IOException as-is
