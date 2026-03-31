@@ -224,6 +224,10 @@ Group=storebackend
 # Environment-Datei laden
 EnvironmentFile=/etc/storebackend.env
 
+# CRITICAL FIX: Hugging Face API Key direkt als Environment Variable
+# (systemd liest manchmal EnvironmentFile nicht korrekt)
+Environment="HUGGINGFACE_API_KEY=\${HUGGINGFACE_API_KEY}"
+
 # JAR ausführen
 ExecStart=/usr/bin/java \$JAVA_OPTS -jar /opt/storebackend/app.jar
 
