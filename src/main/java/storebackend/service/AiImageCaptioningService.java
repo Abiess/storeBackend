@@ -27,11 +27,11 @@ public class AiImageCaptioningService {
     private static final String HUGGINGFACE_API_URL = "https://router.huggingface.co/v1/responses";
     private static final String MODEL_NAME = "meta-llama/Llama-3.2-11B-Vision-Instruct";
     
-    // Image compression settings
-    private static final int MAX_IMAGE_WIDTH = 1024;
-    private static final int MAX_IMAGE_HEIGHT = 1024;
-    private static final float JPEG_QUALITY = 0.85f;
-    private static final int MAX_BASE64_SIZE = 5_000_000; // ~5MB base64 limit
+    // Image compression settings - aggressive to reduce payload
+    private static final int MAX_IMAGE_WIDTH = 768;
+    private static final int MAX_IMAGE_HEIGHT = 768;
+    private static final float JPEG_QUALITY = 0.65f;
+    private static final int MAX_BASE64_SIZE = 3_000_000; // ~3MB base64 hard limit
 
     @Value("${huggingface.api.key:}")
     private String apiKey;
@@ -91,15 +91,24 @@ public class AiImageCaptioningService {
             
             // Encode image to base64
             String base64Image = Base64.getEncoder().encodeToString(imageBytes);
-            log.info("Image encoded to base64 ({} chars)", base64Image.length());
+            int estimatedBase64Size = base64Image.length();
+            log.info("Image encoded to base64 ({} chars)", estimatedBase64Size);
+            
+            // Validate base64 size - abort if too large
+            if (estimatedBase64Size > MAX_BASE64_SIZE) {
+                throw new IOException(String.format(
+                    "Image payload too large: %d bytes (limit: %d bytes). Please use a smaller image or reduce quality further.",
+                    estimatedBase64Size, MAX_BASE64_SIZE
+                ));
+            }
             
             // Create headers for JSON request
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.set("Authorization", "Bearer " + apiKey);
 
-            // Build request body with correct Router API responses format
-            // Use role: "user" with content array
+            // Build request body with correct Hugging Face Responses API multimodal format
+            // Correct structure: input -> [{ role: "user", content: [{ type: "input_text", ... }, { type: "input_image", image_url: ... }] }]
             String dataUri = "data:image/jpeg;base64," + base64Image;
             
             Map<String, Object> requestBody = Map.of(
@@ -109,12 +118,12 @@ public class AiImageCaptioningService {
                         "role", "user",
                         "content", java.util.List.of(
                             Map.of(
-                                "type", "text",
+                                "type", "input_text",
                                 "text", "Describe this product image in detail. Focus on the main item, its features, color, and style. Be concise."
                             ),
                             Map.of(
-                                "type", "image_url",
-                                "image_url", Map.of("url", dataUri)
+                                "type", "input_image",
+                                "image_url", dataUri
                             )
                         )
                     )
@@ -270,10 +279,15 @@ public class AiImageCaptioningService {
                 compressedBytes.length,
                 100 - (compressedBytes.length * 100 / originalImageBytes.length));
             
-            // Check if base64 size is acceptable
+            // Check if base64 size is acceptable - ABORT if too large
             int estimatedBase64Size = (compressedBytes.length * 4 / 3) + 4;
             if (estimatedBase64Size > MAX_BASE64_SIZE) {
-                log.warn("Base64 size still too large: {} bytes (limit: {})", estimatedBase64Size, MAX_BASE64_SIZE);
+                String errorMsg = String.format(
+                    "Compressed image still too large: %d bytes (limit: %d bytes). Image cannot be processed.",
+                    estimatedBase64Size, MAX_BASE64_SIZE
+                );
+                log.error(errorMsg);
+                throw new IOException(errorMsg);
             }
             
             return compressedBytes;
