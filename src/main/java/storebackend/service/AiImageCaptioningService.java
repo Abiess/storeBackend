@@ -21,7 +21,7 @@ public class AiImageCaptioningService {
     // Using ViT-GPT2 model - smaller, faster, and actively maintained
     // The old BLIP base model returns 410 Gone (deprecated)
     // Alternative if this fails: "microsoft/git-base"
-    private static final String HUGGINGFACE_API_URL = "https://api-inference.huggingface.co/models/nlpconnect/vit-gpt2-image-captioning";
+    private static final String HUGGINGFACE_API_URL = "https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-base";
 
     @Value("${huggingface.api.key:}")
     private String apiKey;
