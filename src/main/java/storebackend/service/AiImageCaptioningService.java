@@ -26,7 +26,8 @@ public class AiImageCaptioningService {
     // Using Hugging Face Router API with JSON + base64 format
     private static final String HUGGINGFACE_API_URL = "https://router.huggingface.co/v1/responses";
     // Using router-compatible vision model (Qwen2.5-VL supports multimodal inputs)
-    private static final String MODEL_NAME = "Qwen/Qwen2.5-VL-7B-Instruct";
+    //private static final String MODEL_NAME = "Qwen/Qwen2.5-VL-7B-Instruct";
+    private static final String MODEL_NAME = "zai-org/GLM-4.5V";
     
     // Image compression settings - aggressive to reduce payload
     private static final int MAX_IMAGE_WIDTH = 768;
@@ -35,6 +36,7 @@ public class AiImageCaptioningService {
     private static final int MAX_BASE64_SIZE = 3_000_000; // ~3MB base64 hard limit
 
     @Value("${huggingface.api.key:}")
+
     private String apiKey;
 
     private final RestTemplate restTemplate;
@@ -187,24 +189,19 @@ public class AiImageCaptioningService {
                 
                 // 3. SCAN: output[*].content[*] for type == "output_text"
                 if (jsonNode.has("output") && jsonNode.get("output").isArray()) {
-                    JsonNode outputArray = jsonNode.get("output");
-                    for (JsonNode outputItem : outputArray) {
-                        if (outputItem.has("content") && outputItem.get("content").isArray()) {
+                    for (JsonNode outputItem : jsonNode.get("output")) {
+
+                        if (outputItem.has("type") && "message".equals(outputItem.get("type").asText())) {
+
                             JsonNode contentArray = outputItem.get("content");
-                            for (JsonNode contentItem : contentArray) {
-                                // Look for items with type == "output_text"
-                                if (contentItem.has("type") && "output_text".equals(contentItem.get("type").asText())) {
-                                    if (contentItem.has("text")) {
-                                        String caption = contentItem.get("text").asText();
-                                        log.info("Caption generated from output[*].content[*] with type=output_text: {}", caption);
+                            if (contentArray.isArray()) {
+                                for (JsonNode contentItem : contentArray) {
+
+                                    if ("output_text".equals(contentItem.path("type").asText())) {
+                                        String caption = contentItem.path("text").asText();
+                                        log.info("✅ Caption: {}", caption);
                                         return caption;
                                     }
-                                }
-                                // Also check for plain text in content (backward compatibility)
-                                if (contentItem.has("text") && !contentItem.has("type")) {
-                                    String caption = contentItem.get("text").asText();
-                                    log.info("Caption generated from output[*].content[*].text (no type): {}", caption);
-                                    return caption;
                                 }
                             }
                         }
