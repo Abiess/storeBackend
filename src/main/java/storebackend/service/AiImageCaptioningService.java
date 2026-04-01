@@ -55,9 +55,10 @@ public class AiImageCaptioningService {
     /**
      * Generates product suggestions from an uploaded image using Hugging Face AI
      */
-    public AiProductSuggestionDTO generateProductSuggestion(MultipartFile imageFile) throws IOException {
+    public AiProductSuggestionDTO generateProductSuggestion(MultipartFile imageFile, String language) throws IOException {
         log.info("=== AI GENERATION START ===");
         log.info("Image: {} ({} bytes)", imageFile.getOriginalFilename(), imageFile.getSize());
+        log.info("Language: {}", language);
         log.info("API Key present: {}", apiKey != null && !apiKey.isBlank());
 
         if (apiKey == null || apiKey.isBlank()) {
@@ -73,8 +74,8 @@ public class AiImageCaptioningService {
 
         log.info("Image optimized: {} bytes → {} bytes", imageBytes.length, optimizedImageBytes.length);
 
-        // Call Hugging Face API
-        String caption = callHuggingFaceApi(optimizedImageBytes);
+        // Call Hugging Face API with language context
+        String caption = callHuggingFaceApi(optimizedImageBytes, language);
 
         log.info("AI generated caption: {}", caption);
 
@@ -91,9 +92,10 @@ public class AiImageCaptioningService {
      * V2: Generates structured product suggestions from an uploaded image using Hugging Face AI
      * Returns structured JSON data instead of plain text
      */
-    public AiProductSuggestionV2DTO generateProductSuggestionV2(MultipartFile imageFile) throws IOException {
+    public AiProductSuggestionV2DTO generateProductSuggestionV2(MultipartFile imageFile, String language) throws IOException {
         log.info("=== AI GENERATION V2 START ===");
         log.info("Image: {} ({} bytes)", imageFile.getOriginalFilename(), imageFile.getSize());
+        log.info("Language: {}", language);
 
         if (apiKey == null || apiKey.isBlank()) {
             throw new AiServiceException("Hugging Face API key is not configured. Please set HUGGINGFACE_API_KEY environment variable.");
@@ -104,8 +106,8 @@ public class AiImageCaptioningService {
         byte[] optimizedImageBytes = compressAndResizeImage(imageBytes);
         log.info("Image optimized: {} bytes → {} bytes", imageBytes.length, optimizedImageBytes.length);
 
-        // Call API with V2 JSON prompt
-        String jsonResponse = callHuggingFaceApiV2(optimizedImageBytes);
+        // Call API with V2 JSON prompt and language
+        String jsonResponse = callHuggingFaceApiV2(optimizedImageBytes, language);
         log.info("AI generated JSON: {}", jsonResponse);
 
         // Parse JSON into structured DTO
@@ -118,7 +120,7 @@ public class AiImageCaptioningService {
     /**
      * Calls Hugging Face Router API with V2 prompt requesting structured JSON
      */
-    private String callHuggingFaceApiV2(byte[] imageBytes) {
+    private String callHuggingFaceApiV2(byte[] imageBytes, String language) {
         String tempImageUrl = null;
         try {
             log.info("Calling Hugging Face Router API V2: {}", HUGGINGFACE_API_URL);
@@ -135,19 +137,8 @@ public class AiImageCaptioningService {
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.set("Authorization", "Bearer " + apiKey);
 
-            // V2 Prompt - requests strict JSON format
-            String v2Prompt = "Analyze this product image and provide a JSON response with the following structure:\n" +
-                    "{\n" +
-                    "  \"title\": \"short product title\",\n" +
-                    "  \"description\": \"detailed description\",\n" +
-                    "  \"category\": \"product category\",\n" +
-                    "  \"tags\": [\"tag1\", \"tag2\", \"tag3\"],\n" +
-                    "  \"seoTitle\": \"SEO optimized title\",\n" +
-                    "  \"metaDescription\": \"SEO meta description\",\n" +
-                    "  \"slug\": \"url-friendly-slug\",\n" +
-                    "  \"suggestedPrice\": 99.99\n" +
-                    "}\n" +
-                    "Provide ONLY valid JSON, no additional text.";
+            // V2 Prompt - requests strict JSON format with language-specific instructions
+            String v2Prompt = buildV2PromptForLanguage(language);
 
             // Build request body with correct Hugging Face Responses API multimodal format
             // Use external image URL instead of base64 data URI
@@ -386,7 +377,7 @@ public class AiImageCaptioningService {
      * Router API does not support base64 images, only external URLs
      * @throws AiServiceException if API call fails or response cannot be parsed
      */
-    private String callHuggingFaceApi(byte[] imageBytes) {
+    private String callHuggingFaceApi(byte[] imageBytes, String language) {
         String tempImageUrl = null;
         try {
             log.info("Calling Hugging Face Router API: {}", HUGGINGFACE_API_URL);
@@ -403,6 +394,9 @@ public class AiImageCaptioningService {
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.set("Authorization", "Bearer " + apiKey);
 
+            // Build language-aware prompt
+            String v1Prompt = buildV1PromptForLanguage(language);
+
             // Build request body with correct Hugging Face Responses API multimodal format
             // Use external image URL instead of base64 data URI
             Map<String, Object> requestBody = Map.of(
@@ -413,7 +407,7 @@ public class AiImageCaptioningService {
                                     "content", java.util.List.of(
                                             Map.of(
                                                     "type", "input_text",
-                                                    "text", "Describe this product image in detail. Focus on the main item, its features, color, and style. Be concise."
+                                                    "text", v1Prompt
                                             ),
                                             Map.of(
                                                     "type", "input_image",
@@ -798,5 +792,74 @@ public class AiImageCaptioningService {
         }
         
         return cleaned.trim();
+    }
+
+    /**
+     * Builds V1 prompt with language-specific instructions
+     */
+    private String buildV1PromptForLanguage(String language) {
+        if (language == null) {
+            language = "en";
+        }
+        
+        switch (language.toLowerCase()) {
+            case "de":
+                return "Beschreibe dieses Produktbild detailliert auf Deutsch. Konzentriere dich auf den Hauptartikel, seine Merkmale, Farbe und Stil. Sei präzise.";
+            case "ar":
+                return "صف صورة المنتج هذه بالتفصيل باللغة العربية. ركز على العنصر الرئيسي وميزاته ولونه وأسلوبه. كن موجزاً.";
+            default: // "en"
+                return "Describe this product image in detail. Focus on the main item, its features, color, and style. Be concise.";
+        }
+    }
+
+    /**
+     * Builds V2 prompt with language-specific instructions for structured JSON output
+     */
+    private String buildV2PromptForLanguage(String language) {
+        if (language == null) {
+            language = "en";
+        }
+        
+        switch (language.toLowerCase()) {
+            case "de":
+                return "Analysiere dieses Produktbild und gib eine JSON-Antwort mit folgender Struktur zurück:\n" +
+                        "{\n" +
+                        "  \"title\": \"kurzer Produkttitel auf Deutsch\",\n" +
+                        "  \"description\": \"detaillierte Beschreibung auf Deutsch\",\n" +
+                        "  \"category\": \"Produktkategorie auf Deutsch\",\n" +
+                        "  \"tags\": [\"tag1\", \"tag2\", \"tag3\"],\n" +
+                        "  \"seoTitle\": \"SEO-optimierter Titel auf Deutsch\",\n" +
+                        "  \"metaDescription\": \"SEO Meta-Beschreibung auf Deutsch\",\n" +
+                        "  \"slug\": \"url-freundlicher-slug\",\n" +
+                        "  \"suggestedPrice\": 99.99\n" +
+                        "}\n" +
+                        "Liefere NUR gültiges JSON, keinen zusätzlichen Text. Alle Textfelder müssen auf Deutsch sein.";
+            case "ar":
+                return "قم بتحليل صورة المنتج هذه وقدم استجابة JSON بالبنية التالية:\n" +
+                        "{\n" +
+                        "  \"title\": \"عنوان المنتج القصير بالعربية\",\n" +
+                        "  \"description\": \"وصف مفصل بالعربية\",\n" +
+                        "  \"category\": \"فئة المنتج بالعربية\",\n" +
+                        "  \"tags\": [\"وسم1\", \"وسم2\", \"وسم3\"],\n" +
+                        "  \"seoTitle\": \"عنوان محسن لمحركات البحث بالعربية\",\n" +
+                        "  \"metaDescription\": \"وصف ميتا لمحركات البحث بالعربية\",\n" +
+                        "  \"slug\": \"slug-url-friendly\",\n" +
+                        "  \"suggestedPrice\": 99.99\n" +
+                        "}\n" +
+                        "قدم JSON صالحًا فقط، بدون نص إضافي. يجب أن تكون جميع الحقول النصية بالعربية.";
+            default: // "en"
+                return "Analyze this product image and provide a JSON response with the following structure:\n" +
+                        "{\n" +
+                        "  \"title\": \"short product title in English\",\n" +
+                        "  \"description\": \"detailed description in English\",\n" +
+                        "  \"category\": \"product category in English\",\n" +
+                        "  \"tags\": [\"tag1\", \"tag2\", \"tag3\"],\n" +
+                        "  \"seoTitle\": \"SEO optimized title in English\",\n" +
+                        "  \"metaDescription\": \"SEO meta description in English\",\n" +
+                        "  \"slug\": \"url-friendly-slug\",\n" +
+                        "  \"suggestedPrice\": 99.99\n" +
+                        "}\n" +
+                        "Provide ONLY valid JSON, no additional text. All text fields must be in English.";
+        }
     }
 }
