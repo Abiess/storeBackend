@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import storebackend.dto.AiProductSuggestionDTO;
+import storebackend.exception.AiServiceException;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -59,7 +60,7 @@ public class AiImageCaptioningService {
         
         if (apiKey == null || apiKey.isBlank()) {
             log.error("❌ Hugging Face API key is not configured!");
-            throw new RuntimeException("Hugging Face API key is not configured. Please set HUGGINGFACE_API_KEY environment variable.");
+            throw new AiServiceException("Hugging Face API key is not configured. Please set HUGGINGFACE_API_KEY environment variable.");
         }
 
         log.info("Generating AI product suggestion for image: {}", imageFile.getOriginalFilename());
@@ -86,8 +87,9 @@ public class AiImageCaptioningService {
 
     /**
      * Calls Hugging Face Router API with JSON + base64 format
+     * @throws AiServiceException if API call fails or response cannot be parsed
      */
-    private String callHuggingFaceApi(byte[] imageBytes) throws IOException {
+    private String callHuggingFaceApi(byte[] imageBytes) {
         try {
             log.info("Calling Hugging Face Router API: {}", HUGGINGFACE_API_URL);
             log.info("Model: {}", MODEL_NAME);
@@ -99,7 +101,7 @@ public class AiImageCaptioningService {
             
             // Validate base64 size - abort if too large
             if (estimatedBase64Size > MAX_BASE64_SIZE) {
-                throw new IOException(String.format(
+                throw new AiServiceException(String.format(
                     "Image payload too large: %d bytes (limit: %d bytes). Please use a smaller image or reduce quality further.",
                     estimatedBase64Size, MAX_BASE64_SIZE
                 ));
@@ -154,15 +156,15 @@ public class AiImageCaptioningService {
                 
                 // Check if it's a 410 Gone error (model deprecated)
                 if (e.getMessage().contains("410") || e.getMessage().contains("Gone")) {
-                    throw new IOException("The AI model is no longer available. Please update to a newer model. Error: " + e.getMessage());
+                    throw new AiServiceException("The AI model is no longer available. Please update to a newer model. Error: " + e.getMessage());
                 }
                 
                 // Check if model is loading
                 if (e.getMessage().contains("503") || e.getMessage().contains("loading")) {
-                    throw new IOException("AI model is currently loading. Please wait 20-30 seconds and try again.");
+                    throw new AiServiceException("AI model is currently loading. Please wait 20-30 seconds and try again.");
                 }
                 
-                throw new IOException("Failed to call Hugging Face Router API: " + e.getMessage(), e);
+                throw new AiServiceException("Failed to call Hugging Face Router API: " + e.getMessage(), e);
             }
 
             // Parse Router API response
@@ -177,7 +179,7 @@ public class AiImageCaptioningService {
                     JsonNode error = jsonNode.get("error");
                     String errorMessage = error.has("message") ? error.get("message").asText() : error.toString();
                     log.error("API returned error: {}", errorMessage);
-                    throw new IOException("Hugging Face API error: " + errorMessage);
+                    throw new AiServiceException("Hugging Face API error: " + errorMessage);
                 }
                 
                 // 2. PREFER: output_text field (direct output)
@@ -236,13 +238,18 @@ public class AiImageCaptioningService {
                 log.error("Response structure: {}", response.getBody());
             }
 
-            throw new RuntimeException("Failed to parse Hugging Face Router API response - no text content found");
+            throw new AiServiceException("Failed to parse Hugging Face Router API response - no text content found");
 
+        } catch (AiServiceException e) {
+            // Re-throw AiServiceException as-is
+            throw e;
         } catch (IOException e) {
-            throw e; // Re-throw IOException as-is
+            // Wrap IOException in AiServiceException with context
+            log.error("IO error during AI API call: {}", e.getMessage());
+            throw new AiServiceException("Failed to communicate with AI service: " + e.getMessage(), e);
         } catch (Exception e) {
-            log.error("Error calling Hugging Face Router API: {}", e.getMessage(), e);
-            throw new IOException("Failed to generate caption: " + e.getMessage(), e);
+            log.error("Unexpected error calling Hugging Face Router API: {}", e.getMessage(), e);
+            throw new AiServiceException("Unexpected error during AI processing: " + e.getMessage(), e);
         }
     }
     

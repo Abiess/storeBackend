@@ -39,6 +39,23 @@ public class GlobalExceptionHandler {
             .status(HttpStatus.NOT_FOUND)
             .body(errorResponse);
     }
+    
+    /**
+     * Behandelt AiServiceException (AI-bezogene Fehler)
+     * Gibt HTTP 400 BAD_REQUEST zurück für Probleme mit AI-Verarbeitung
+     */
+    @ExceptionHandler(AiServiceException.class)
+    public ResponseEntity<Map<String, Object>> handleAiServiceException(AiServiceException ex) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now().toString());
+        errorResponse.put("status", HttpStatus.BAD_REQUEST.value());
+        errorResponse.put("error", "AI Service Error");
+        errorResponse.put("message", ex.getMessage());
+
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(errorResponse);
+    }
 
     /**
      * Allgemeiner Exception Handler als Fallback
