@@ -151,19 +151,59 @@ public class AiImageCaptioningService {
                     requestEntity,
                     String.class
                 );
-            } catch (Exception e) {
-                log.error("API call failed: {}", e.getMessage());
+            } catch (org.springframework.web.client.HttpClientErrorException | org.springframework.web.client.HttpServerErrorException e) {
+                // HTTP error responses (4xx, 5xx)
+                log.error("API returned HTTP error: {} {}", e.getStatusCode(), e.getStatusText());
+                log.error("Response body: {}", e.getResponseBodyAsString());
                 
-                // Check if it's a 410 Gone error (model deprecated)
-                if (e.getMessage().contains("410") || e.getMessage().contains("Gone")) {
-                    throw new AiServiceException("The AI model is no longer available. Please update to a newer model. Error: " + e.getMessage());
+                String errorMessage = e.getStatusText();
+                String responseBody = e.getResponseBodyAsString();
+                
+                // Try to extract error message from response body
+                if (responseBody != null && !responseBody.isEmpty()) {
+                    try {
+                        JsonNode errorNode = objectMapper.readTree(responseBody);
+                        if (errorNode.has("error")) {
+                            JsonNode error = errorNode.get("error");
+                            if (error.isTextual()) {
+                                errorMessage = error.asText();
+                            } else if (error.has("message") && !error.get("message").isNull()) {
+                                errorMessage = error.get("message").asText();
+                            } else {
+                                errorMessage = error.toString();
+                            }
+                        } else if (errorNode.has("message")) {
+                            errorMessage = errorNode.get("message").asText();
+                        }
+                    } catch (Exception parseEx) {
+                        log.warn("Could not parse error response body", parseEx);
+                    }
                 }
                 
-                // Check if model is loading
-                if (e.getMessage().contains("503") || e.getMessage().contains("loading")) {
+                // Check for specific status codes
+                if (e.getStatusCode().value() == 410) {
+                    throw new AiServiceException("The AI model is no longer available. Please update to a newer model.");
+                }
+                
+                if (e.getStatusCode().value() == 503) {
                     throw new AiServiceException("AI model is currently loading. Please wait 20-30 seconds and try again.");
                 }
                 
+                if (e.getStatusCode().value() == 401) {
+                    throw new AiServiceException("Invalid API key. Please check your HUGGINGFACE_API_KEY configuration.");
+                }
+                
+                if (e.getStatusCode().value() == 429) {
+                    throw new AiServiceException("API rate limit exceeded. Please try again later.");
+                }
+                
+                throw new AiServiceException(String.format(
+                    "Hugging Face API error (HTTP %d): %s", 
+                    e.getStatusCode().value(), 
+                    errorMessage
+                ));
+            } catch (Exception e) {
+                log.error("API call failed: {}", e.getMessage(), e);
                 throw new AiServiceException("Failed to call Hugging Face Router API: " + e.getMessage(), e);
             }
 
@@ -177,7 +217,29 @@ public class AiImageCaptioningService {
                 // 1. CHECK FOR ERRORS FIRST
                 if (jsonNode.has("error")) {
                     JsonNode error = jsonNode.get("error");
-                    String errorMessage = error.has("message") ? error.get("message").asText() : error.toString();
+                    String errorMessage;
+                    
+                    if (error.isTextual()) {
+                        // Simple string error
+                        errorMessage = error.asText();
+                    } else if (error.isObject()) {
+                        // Error object - try multiple fields
+                        if (error.has("message") && !error.get("message").isNull()) {
+                            errorMessage = error.get("message").asText();
+                        } else if (error.has("error") && !error.get("error").isNull()) {
+                            errorMessage = error.get("error").asText();
+                        } else if (error.has("type") && !error.get("type").isNull()) {
+                            errorMessage = "API Error Type: " + error.get("type").asText();
+                        } else {
+                            errorMessage = "Unknown API error (see logs for details)";
+                            log.error("Full error object: {}", error.toString());
+                        }
+                    } else if (error.isNull()) {
+                        errorMessage = "API returned null error";
+                    } else {
+                        errorMessage = "API error: " + error.toString();
+                    }
+                    
                     log.error("API returned error: {}", errorMessage);
                     throw new AiServiceException("Hugging Face API error: " + errorMessage);
                 }
@@ -236,6 +298,39 @@ public class AiImageCaptioningService {
                 
                 log.error("Unexpected Router API response format - no recognized fields found");
                 log.error("Response structure: {}", response.getBody());
+            } else {
+                // Handle non-200 status codes
+                HttpStatus statusCode = (HttpStatus) response.getStatusCode();
+                String responseBody = response.getBody();
+                
+                log.error("API returned non-200 status: {} {}", statusCode.value(), statusCode.getReasonPhrase());
+                log.error("Response body: {}", responseBody);
+                
+                // Try to parse error from body
+                String errorMessage = statusCode.getReasonPhrase();
+                if (responseBody != null && !responseBody.isEmpty()) {
+                    try {
+                        JsonNode errorNode = objectMapper.readTree(responseBody);
+                        if (errorNode.has("error")) {
+                            JsonNode error = errorNode.get("error");
+                            if (error.isTextual()) {
+                                errorMessage = error.asText();
+                            } else if (error.has("message")) {
+                                errorMessage = error.get("message").asText();
+                            }
+                        } else if (errorNode.has("message")) {
+                            errorMessage = errorNode.get("message").asText();
+                        }
+                    } catch (Exception e) {
+                        log.warn("Could not parse error response body", e);
+                    }
+                }
+                
+                throw new AiServiceException(String.format(
+                    "Hugging Face API returned error status %d: %s", 
+                    statusCode.value(), 
+                    errorMessage
+                ));
             }
 
             throw new AiServiceException("Failed to parse Hugging Face Router API response - no text content found");
