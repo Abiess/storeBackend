@@ -25,7 +25,8 @@ public class AiImageCaptioningService {
 
     // Using Hugging Face Router API with JSON + base64 format
     private static final String HUGGINGFACE_API_URL = "https://router.huggingface.co/v1/responses";
-    private static final String MODEL_NAME = "meta-llama/Llama-3.2-11B-Vision-Instruct";
+    // Using router-compatible vision model (Qwen2.5-VL supports multimodal inputs)
+    private static final String MODEL_NAME = "Qwen/Qwen2.5-VL-7B-Instruct";
     
     // Image compression settings - aggressive to reduce payload
     private static final int MAX_IMAGE_WIDTH = 768;
