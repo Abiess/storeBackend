@@ -27,8 +27,7 @@ public class AiImageCaptioningService {
     private static final String HUGGINGFACE_API_URL = "https://router.huggingface.co/v1/responses";
     // Using router-compatible vision model - tested and working with curl
     private static final String MODEL_NAME = "zai-org/GLM-4.5V";
-    private static final String MODEL_NAME = "zai-org/GLM-4.5V";
-    
+
     // Image compression settings - aggressive to reduce payload
     private static final int MAX_IMAGE_WIDTH = 768;
     private static final int MAX_IMAGE_HEIGHT = 768;
