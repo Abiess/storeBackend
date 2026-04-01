@@ -205,8 +205,8 @@ public class AiImageCaptioningService {
                 
                 JsonNode jsonNode = objectMapper.readTree(response.getBody());
                 
-                // 1. CHECK FOR ERRORS FIRST
-                if (jsonNode.has("error")) {
+                // 1. CHECK FOR ERRORS FIRST - only if error exists AND is not null
+                if (jsonNode.has("error") && !jsonNode.get("error").isNull()) {
                     JsonNode error = jsonNode.get("error");
                     String errorMessage;
                     
@@ -225,8 +225,6 @@ public class AiImageCaptioningService {
                             errorMessage = "Unknown API error (see logs for details)";
                             log.error("Full error object: {}", error.toString());
                         }
-                    } else if (error.isNull()) {
-                        errorMessage = "API returned null error";
                     } else {
                         errorMessage = "API error: " + error.toString();
                     }
