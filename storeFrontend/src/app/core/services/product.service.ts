@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '@env/environment';
-import { Product, CreateProductRequest, ProductVariant, AiProductSuggestion } from '../models';
+import { Product, CreateProductRequest, ProductVariant, AiProductSuggestion, AiProductSuggestionV2 } from '../models';
 import { MockProductService } from '../mocks/mock-product.service';
 import { toDate } from '../utils/date.utils';
 
@@ -183,5 +183,12 @@ export class ProductService {
     const formData = new FormData();
     formData.append('image', imageFile);
     return this.http.post<AiProductSuggestion>(`${environment.apiUrl}/stores/${storeId}/products/ai-suggest`, formData);
+  }
+
+  // AI Product Suggestion V2 (structured JSON)
+  generateAiProductSuggestionV2(storeId: number, imageFile: File): Observable<AiProductSuggestionV2> {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+    return this.http.post<AiProductSuggestionV2>(`${environment.apiUrl}/stores/${storeId}/products/ai-suggest-v2`, formData);
   }
 }

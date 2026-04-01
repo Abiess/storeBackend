@@ -7,7 +7,7 @@ import { CategoryService } from '@app/core/services/category.service';
 import { MediaService } from '@app/core/services/media.service';
 import { ProductOptionService } from '@app/core/services/product-option.service';
 import { StoreContextService } from '@app/core/services/store-context.service';
-import { Category, ProductStatus } from '@app/core/models';
+import { Category, ProductStatus, AiProductSuggestion, AiProductSuggestionV2 } from '@app/core/models';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { TranslationService } from '@app/core/services/translation.service';
 import { ProductVariantsManagerComponent } from './product-variants-manager.component';
@@ -149,12 +149,39 @@ import { Subscription } from 'rxjs';
         <div class="form-card ai-assistant-card" *ngIf="activeTab === 'ai'">
           <h2>🤖 {{ 'product.aiAssistant' | translate }}</h2>
           
+          <!-- Mode Toggle -->
+          <div class="ai-mode-toggle">
+            <label>KI-Modus:</label>
+            <div class="toggle-buttons">
+              <button 
+                type="button" 
+                class="toggle-btn"
+                [class.active]="aiMode === 'v1'"
+                (click)="aiMode = 'v1'; aiSuggestion = null; aiSuggestionV2 = null;"
+                [disabled]="aiGenerating"
+              >
+                📝 Einfach (Titel + Beschreibung)
+              </button>
+              <button 
+                type="button" 
+                class="toggle-btn"
+                [class.active]="aiMode === 'v2'"
+                (click)="aiMode = 'v2'; aiSuggestion = null; aiSuggestionV2 = null;"
+                [disabled]="aiGenerating"
+              >
+                ⚡ Erweitert (Strukturierte Daten + SEO)
+              </button>
+            </div>
+          </div>
+          
           <div class="ai-intro">
-            <p>{{ 'product.aiIntro' | translate }}</p>
+            <p *ngIf="aiMode === 'v1'">{{ 'product.aiIntro' | translate }}</p>
+            <p *ngIf="aiMode === 'v2'">KI generiert vollständige Produktdaten inklusive Kategorie, Tags, SEO-Optimierung und Preisempfehlung.</p>
             <ul>
               <li>📸 Laden Sie ein Produktfoto hoch</li>
               <li>🤖 KI analysiert das Bild</li>
-              <li>✍️ Titel und Beschreibung werden automatisch generiert</li>
+              <li *ngIf="aiMode === 'v1'">✍️ Titel und Beschreibung werden automatisch generiert</li>
+              <li *ngIf="aiMode === 'v2'">✍️ Titel, Beschreibung, Kategorie, Tags, SEO-Daten und Preis werden generiert</li>
               <li>✅ Übertragen Sie die Daten in das Formular</li>
             </ul>
           </div>
@@ -192,7 +219,7 @@ import { Subscription } from 'rxjs';
             >
               <span *ngIf="!aiGenerating" class="btn-content">
                 <span class="btn-icon">🚀</span>
-                <span class="btn-text">KI-Vorschlag generieren</span>
+                <span class="btn-text">{{ aiMode === 'v2' ? 'Erweiterten KI-Vorschlag generieren' : 'KI-Vorschlag generieren' }}</span>
               </span>
               <span *ngIf="aiGenerating" class="generating-indicator">
                 <span class="spinner-pulse"></span>
@@ -213,9 +240,9 @@ import { Subscription } from 'rxjs';
             ⚠️ {{ aiError }}
           </div>
 
-          <!-- AI Generated Suggestion -->
-          <div class="ai-result-section" *ngIf="aiSuggestion">
-            <h3>2. Generierter Vorschlag</h3>
+          <!-- AI Generated Suggestion V1 -->
+          <div class="ai-result-section" *ngIf="aiSuggestion && aiMode === 'v1'">
+            <h3>2. Generierter Vorschlag (Einfach)</h3>
             
             <div class="ai-result-card">
               <div class="ai-result-field">
@@ -231,6 +258,67 @@ import { Subscription } from 'rxjs';
               <div class="ai-result-field">
                 <label>💬 KI-Analyse</label>
                 <div class="ai-result-value ai-caption">{{ aiSuggestion.generatedCaption }}</div>
+              </div>
+            </div>
+
+            <div class="ai-actions">
+              <button type="button" class="btn-use-suggestion" (click)="useAiSuggestion()">
+                ✅ In Formular übernehmen
+              </button>
+              <button type="button" class="btn-regenerate" (click)="generateAiSuggestion()">
+                🔄 Neu generieren
+              </button>
+            </div>
+          </div>
+
+          <!-- AI Generated Suggestion V2 -->
+          <div class="ai-result-section" *ngIf="aiSuggestionV2 && aiMode === 'v2'">
+            <h3>2. Generierter Vorschlag (Erweitert)</h3>
+            
+            <div class="ai-result-card ai-result-v2">
+              <div class="ai-result-grid">
+                <div class="ai-result-field">
+                  <label>📝 Produkttitel</label>
+                  <div class="ai-result-value">{{ aiSuggestionV2.title }}</div>
+                </div>
+
+                <div class="ai-result-field">
+                  <label>🏷️ Kategorie</label>
+                  <div class="ai-result-value">{{ aiSuggestionV2.category || 'Keine' }}</div>
+                </div>
+
+                <div class="ai-result-field">
+                  <label>💰 Preisempfehlung</label>
+                  <div class="ai-result-value ai-price">{{ aiSuggestionV2.suggestedPrice ? (aiSuggestionV2.suggestedPrice | number:'1.2-2') + ' €' : 'Keine' }}</div>
+                </div>
+
+                <div class="ai-result-field full-width">
+                  <label>📄 Beschreibung</label>
+                  <div class="ai-result-value ai-description">{{ aiSuggestionV2.description }}</div>
+                </div>
+
+                <div class="ai-result-field">
+                  <label>🔖 Tags</label>
+                  <div class="ai-result-value ai-tags">
+                    <span class="tag" *ngFor="let tag of aiSuggestionV2.tags">{{ tag }}</span>
+                    <span *ngIf="!aiSuggestionV2.tags || aiSuggestionV2.tags.length === 0" class="no-data">Keine Tags</span>
+                  </div>
+                </div>
+
+                <div class="ai-result-field">
+                  <label>🔗 URL-Slug</label>
+                  <div class="ai-result-value ai-slug">{{ aiSuggestionV2.slug || 'Kein Slug' }}</div>
+                </div>
+
+                <div class="ai-result-field full-width">
+                  <label>🔍 SEO Titel</label>
+                  <div class="ai-result-value">{{ aiSuggestionV2.seoTitle || 'Kein SEO Titel' }}</div>
+                </div>
+
+                <div class="ai-result-field full-width">
+                  <label>📊 Meta Description</label>
+                  <div class="ai-result-value ai-meta">{{ aiSuggestionV2.metaDescription || 'Keine Meta Description' }}</div>
+                </div>
               </div>
             </div>
 
@@ -1228,6 +1316,138 @@ import { Subscription } from 'rxjs';
       color: #0d47a1;
     }
 
+    /* V2 Mode Toggle */
+    .ai-mode-toggle {
+      background: #f8f9ff;
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin-bottom: 2rem;
+    }
+
+    .ai-mode-toggle label {
+      display: block;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 0.75rem;
+      font-size: 0.95rem;
+    }
+
+    .toggle-buttons {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .toggle-btn {
+      flex: 1;
+      padding: 0.875rem 1.25rem;
+      border: 2px solid #d0d7ff;
+      background: white;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: 500;
+      font-size: 0.95rem;
+      color: #666;
+    }
+
+    .toggle-btn:hover:not(:disabled) {
+      border-color: #667eea;
+      background: #f8f9ff;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+    }
+
+    .toggle-btn.active {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border-color: #667eea;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .toggle-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* V2 Result Grid */
+    .ai-result-v2 .ai-result-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    .ai-result-v2 .ai-result-field.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .ai-result-v2 .ai-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .ai-result-v2 .tag {
+      display: inline-block;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 0.375rem 0.875rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      box-shadow: 0 2px 6px rgba(102, 126, 234, 0.25);
+      animation: tag-fade-in 0.4s ease-out backwards;
+    }
+
+    @keyframes tag-fade-in {
+      from {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .ai-result-v2 .tag:nth-child(1) { animation-delay: 0.1s; }
+    .ai-result-v2 .tag:nth-child(2) { animation-delay: 0.2s; }
+    .ai-result-v2 .tag:nth-child(3) { animation-delay: 0.3s; }
+    .ai-result-v2 .tag:nth-child(4) { animation-delay: 0.4s; }
+    .ai-result-v2 .tag:nth-child(5) { animation-delay: 0.5s; }
+
+    .ai-result-v2 .ai-price {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #10b981;
+    }
+
+    .ai-result-v2 .ai-slug {
+      font-family: 'Courier New', monospace;
+      color: #6366f1;
+      font-size: 0.9rem;
+    }
+
+    .ai-result-v2 .ai-meta {
+      font-size: 0.9rem;
+      color: #64748b;
+      line-height: 1.6;
+    }
+
+    .ai-result-v2 .no-data {
+      color: #94a3b8;
+      font-style: italic;
+    }
+
+    @media (max-width: 768px) {
+      .ai-result-v2 .ai-result-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .toggle-buttons {
+        flex-direction: column;
+      }
+    }
+
     @media (max-width: 768px) {
       .form-header {
         flex-direction: column;
@@ -1296,8 +1516,10 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   aiImageFile: File | null = null;
   aiImagePreview: string | null = null;
   aiGenerating = false;
-  aiSuggestion: any = null;
+  aiSuggestion: AiProductSuggestion | null = null;
+  aiSuggestionV2: AiProductSuggestionV2 | null = null;
   aiError = '';
+  aiMode: 'v1' | 'v2' = 'v2'; // Default to V2 (structured JSON)
 
 
   // Tab Navigation
@@ -1628,19 +1850,6 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     this.activeTab = tab;
   }
 
-  hasTabError(tab: string): boolean {
-    const form = this.productForm;
-    if (!form.touched) return false;
-
-    switch (tab) {
-      case 'basic':
-        return !!(form.get('title')?.invalid || form.get('description')?.invalid || form.get('categoryId')?.invalid);
-      case 'pricing':
-        return !!form.get('basePrice')?.invalid;
-      default:
-        return false;
-    }
-  }
 
   // ============================================
   // AI ASSISTANT METHODS
@@ -1692,49 +1901,88 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     this.aiGenerating = true;
     this.aiError = '';
     this.aiSuggestion = null;
+    this.aiSuggestionV2 = null;
 
-    console.log('🤖 Generating AI suggestion for:', this.aiImageFile.name);
+    console.log(`🤖 Generating AI suggestion (${this.aiMode.toUpperCase()}) for:`, this.aiImageFile.name);
 
-    this.productService.generateAiProductSuggestion(this.storeId, this.aiImageFile).subscribe({
-      next: (suggestion) => {
-        console.log('✅ AI suggestion received:', suggestion);
-        this.aiSuggestion = suggestion;
-        this.aiGenerating = false;
-        this.successMessage = 'KI-Vorschlag erfolgreich generiert!';
-        setTimeout(() => this.successMessage = '', 3000);
-      },
-      error: (error) => {
-        console.error('❌ AI generation failed:', error);
-        this.aiGenerating = false;
-        
-        let errorMsg = 'Fehler beim Generieren des KI-Vorschlags.';
-        if (error.error?.error) {
-          errorMsg = error.error.error;
-        } else if (error.message) {
-          errorMsg = error.message;
+    // Choose API based on mode
+    if (this.aiMode === 'v2') {
+      this.productService.generateAiProductSuggestionV2(this.storeId, this.aiImageFile).subscribe({
+        next: (suggestion: AiProductSuggestionV2) => {
+          console.log(`✅ AI suggestion V2 received:`, suggestion);
+          this.aiSuggestionV2 = suggestion;
+          this.aiGenerating = false;
+          this.successMessage = 'KI-Vorschlag V2 erfolgreich generiert!';
+          setTimeout(() => this.successMessage = '', 3000);
+        },
+        error: (error: any) => {
+          console.error(`❌ AI generation V2 failed:`, error);
+          this.aiGenerating = false;
+          
+          let errorMsg = 'Fehler beim Generieren des KI-Vorschlags.';
+          if (error.error?.error) {
+            errorMsg = error.error.error;
+          } else if (error.message) {
+            errorMsg = error.message;
+          }
+          
+          this.aiError = errorMsg;
         }
-        
-        this.aiError = errorMsg;
-      }
-    });
+      });
+    } else {
+      this.productService.generateAiProductSuggestion(this.storeId, this.aiImageFile).subscribe({
+        next: (suggestion: AiProductSuggestion) => {
+          console.log(`✅ AI suggestion V1 received:`, suggestion);
+          this.aiSuggestion = suggestion;
+          this.aiGenerating = false;
+          this.successMessage = 'KI-Vorschlag V1 erfolgreich generiert!';
+          setTimeout(() => this.successMessage = '', 3000);
+        },
+        error: (error: any) => {
+          console.error(`❌ AI generation V1 failed:`, error);
+          this.aiGenerating = false;
+          
+          let errorMsg = 'Fehler beim Generieren des KI-Vorschlags.';
+          if (error.error?.error) {
+            errorMsg = error.error.error;
+          } else if (error.message) {
+            errorMsg = error.message;
+          }
+          
+          this.aiError = errorMsg;
+        }
+      });
+    }
   }
 
   useAiSuggestion(): void {
-    if (!this.aiSuggestion) return;
+    // Handle V1 suggestion
+    if (this.aiSuggestion && this.aiMode === 'v1') {
+      this.productForm.patchValue({
+        title: this.aiSuggestion.title,
+        description: this.aiSuggestion.description
+      });
 
-    // Populate form with AI suggestions
-    this.productForm.patchValue({
-      title: this.aiSuggestion.title,
-      description: this.aiSuggestion.description
-    });
+      this.activeTab = 'basic';
+      this.successMessage = 'KI-Vorschlag wurde in das Formular übernommen. Sie können die Daten jetzt anpassen.';
+      setTimeout(() => this.successMessage = '', 5000);
+      console.log('✅ AI suggestion V1 applied to form');
+      return;
+    }
 
-    // Switch to basic tab to show the populated form
-    this.activeTab = 'basic';
+    // Handle V2 suggestion
+    if (this.aiSuggestionV2 && this.aiMode === 'v2') {
+      this.productForm.patchValue({
+        title: this.aiSuggestionV2.title,
+        description: this.aiSuggestionV2.description,
+        basePrice: this.aiSuggestionV2.suggestedPrice || 0
+      });
 
-    // Show success message
-    this.successMessage = 'KI-Vorschlag wurde in das Formular übernommen. Sie können die Daten jetzt anpassen.';
-    setTimeout(() => this.successMessage = '', 5000);
-
-    console.log('✅ AI suggestion applied to form');
+      this.activeTab = 'basic';
+      this.successMessage = 'Erweiterter KI-Vorschlag wurde in das Formular übernommen. Sie können die Daten jetzt anpassen.';
+      setTimeout(() => this.successMessage = '', 5000);
+      console.log('✅ AI suggestion V2 applied to form');
+      return;
+    }
   }
 }

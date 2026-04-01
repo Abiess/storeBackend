@@ -7,11 +7,14 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import storebackend.dto.AiProductSuggestionDTO;
+import storebackend.dto.AiProductSuggestionV2DTO;
 import storebackend.dto.CreateProductRequest;
 import storebackend.dto.ProductDTO;
 import storebackend.entity.Store;
@@ -29,6 +32,9 @@ import java.util.Map;
 @Tag(name = "Products", description = "Product management APIs")
 @Slf4j
 public class ProductController {
+    
+    // Explicit logger field (fallback for @Slf4j annotation processor issue)
+    private static final Logger log = LoggerFactory.getLogger(ProductController.class);
 
     private final ProductService productService;
     private final StoreService storeService;
@@ -360,9 +366,68 @@ public class ProductController {
         }
     }
 
+    @Operation(summary = "Generate AI product suggestion V2 (structured JSON)", 
+               description = "Uploads a product image and returns structured JSON with title, description, category, tags, SEO data, slug, and suggested price")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "AI suggestion generated successfully (structured JSON)"),
+        @ApiResponse(responseCode = "400", description = "Invalid image or AI service error"),
+        @ApiResponse(responseCode = "401", description = "Authentication required"),
+        @ApiResponse(responseCode = "403", description = "Access denied"),
+        @ApiResponse(responseCode = "500", description = "Server error")
+    })
+    @PostMapping("/ai-suggest-v2")
+    public ResponseEntity<?> generateAiSuggestionV2(
+            @PathVariable Long storeId,
+            @RequestParam("image") MultipartFile image,
+            @AuthenticationPrincipal User user) {
+
+        log.info("=== AI GENERATE V2 REQUEST ===");
+        log.info("Store ID: {}", storeId);
+        log.info("User: {}", user != null ? user.getId() : "NULL");
+        log.info("Image: {}", image != null ? image.getOriginalFilename() : "NULL");
+
+        if (user == null) {
+            log.error("❌ User is null");
+            return ResponseEntity.status(401).body(Map.of("error", "Authentication required"));
+        }
+
+        if (!hasStoreAccess(storeId, user)) {
+            log.error("❌ User {} does not have access to store {}", user.getId(), storeId);
+            return ResponseEntity.status(403).body(Map.of("error", "Access denied"));
+        }
+
+        // Validate image
+        if (image.isEmpty()) {
+            log.error("❌ Image file is empty");
+            return ResponseEntity.badRequest().body(Map.of("error", "Image file is required"));
+        }
+
+        // Validate image type
+        String contentType = image.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            log.error("❌ Invalid content type: {}", contentType);
+            return ResponseEntity.badRequest().body(Map.of("error", "File must be an image"));
+        }
+
+        try {
+            log.info("✅ Calling AI service to generate product suggestion V2 (structured JSON)");
+            AiProductSuggestionV2DTO suggestion = aiImageCaptioningService.generateProductSuggestionV2(image);
+            log.info("✅ AI suggestion V2 generated successfully: title={}, category={}", 
+                suggestion.getTitle(), suggestion.getCategory());
+            return ResponseEntity.ok(suggestion);
+        } catch (Exception e) {
+            log.error("❌ Error generating AI suggestion V2: {}", e.getMessage(), e);
+            String errorMsg = e.getMessage() != null ? e.getMessage() : "Unknown error occurred";
+            return ResponseEntity.status(500).body(Map.of(
+                "error", "Failed to generate product suggestion V2: " + errorMsg
+            ));
+        }
+    }
+
     @Operation(summary = "Check AI service status", description = "Debug endpoint to check if AI service is configured")
     @GetMapping("/ai-status")
     public ResponseEntity<?> checkAiStatus(@PathVariable Long storeId, @AuthenticationPrincipal User user) {
+
         log.info("=== AI STATUS CHECK ===");
         log.info("User: {}", user != null ? user.getId() : "NULL");
         

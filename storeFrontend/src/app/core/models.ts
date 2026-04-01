@@ -36,6 +36,18 @@ export interface AiProductSuggestion {
   generatedCaption: string;
 }
 
+// V2 with structured JSON output
+export interface AiProductSuggestionV2 {
+  title: string;
+  description: string;
+  category: string;
+  tags: string[];
+  seoTitle: string;
+  metaDescription: string;
+  slug: string;
+  suggestedPrice: number;
+}
+
 // ============================================
 // ADDRESS
 // ============================================
