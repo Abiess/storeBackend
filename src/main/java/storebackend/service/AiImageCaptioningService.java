@@ -17,35 +17,34 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Base64;
 import java.util.Map;
 
 @Service
 @Slf4j
 public class AiImageCaptioningService {
 
-    // Using Hugging Face Router API with JSON + base64 format
+    // Using Hugging Face Router API with external image URLs (not base64)
     private static final String HUGGINGFACE_API_URL = "https://router.huggingface.co/v1/responses";
-    // Using router-compatible vision model (Qwen2.5-VL supports multimodal inputs)
-    //private static final String MODEL_NAME = "Qwen/Qwen2.5-VL-7B-Instruct";
+    // Using router-compatible vision model - tested and working with curl
+    private static final String MODEL_NAME = "zai-org/GLM-4.5V";
     private static final String MODEL_NAME = "zai-org/GLM-4.5V";
     
     // Image compression settings - aggressive to reduce payload
     private static final int MAX_IMAGE_WIDTH = 768;
     private static final int MAX_IMAGE_HEIGHT = 768;
     private static final float JPEG_QUALITY = 0.65f;
-    private static final int MAX_BASE64_SIZE = 3_000_000; // ~3MB base64 hard limit
 
     @Value("${huggingface.api.key:}")
-
     private String apiKey;
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
+    private final MinioService minioService;
 
-    public AiImageCaptioningService(RestTemplate restTemplate, ObjectMapper objectMapper) {
+    public AiImageCaptioningService(RestTemplate restTemplate, ObjectMapper objectMapper, MinioService minioService) {
         this.restTemplate = restTemplate;
         this.objectMapper = objectMapper;
+        this.minioService = minioService;
         log.info("🤖 AiImageCaptioningService initialized");
         log.info("🔑 API Key configured: {}", apiKey != null && !apiKey.isBlank() ? "YES" : "NO");
     }
@@ -86,26 +85,21 @@ public class AiImageCaptioningService {
     }
 
     /**
-     * Calls Hugging Face Router API with JSON + base64 format
+     * Calls Hugging Face Router API with external image URL (not base64)
+     * Router API does not support base64 images, only external URLs
      * @throws AiServiceException if API call fails or response cannot be parsed
      */
     private String callHuggingFaceApi(byte[] imageBytes) {
+        String tempImageUrl = null;
         try {
             log.info("Calling Hugging Face Router API: {}", HUGGINGFACE_API_URL);
             log.info("Model: {}", MODEL_NAME);
             
-            // Encode image to base64
-            String base64Image = Base64.getEncoder().encodeToString(imageBytes);
-            int estimatedBase64Size = base64Image.length();
-            log.info("Image encoded to base64 ({} chars)", estimatedBase64Size);
-            
-            // Validate base64 size - abort if too large
-            if (estimatedBase64Size > MAX_BASE64_SIZE) {
-                throw new AiServiceException(String.format(
-                    "Image payload too large: %d bytes (limit: %d bytes). Please use a smaller image or reduce quality further.",
-                    estimatedBase64Size, MAX_BASE64_SIZE
-                ));
-            }
+            // Upload image to MinIO temporarily and get public URL
+            // Router API requires external URL, not base64
+            log.info("Uploading compressed image to MinIO for AI processing...");
+            tempImageUrl = minioService.uploadTemporaryFile(imageBytes, "image/jpeg", 60); // 60 minutes expiry
+            log.info("Image uploaded to temporary URL: {}", tempImageUrl.substring(0, Math.min(100, tempImageUrl.length())) + "...");
             
             // Create headers for JSON request
             HttpHeaders headers = new HttpHeaders();
@@ -113,9 +107,7 @@ public class AiImageCaptioningService {
             headers.set("Authorization", "Bearer " + apiKey);
 
             // Build request body with correct Hugging Face Responses API multimodal format
-            // Correct structure: input -> [{ role: "user", content: [{ type: "input_text", ... }, { type: "input_image", image_url: ... }] }]
-            String dataUri = "data:image/jpeg;base64," + base64Image;
-            
+            // Use external image URL instead of base64 data URI
             Map<String, Object> requestBody = Map.of(
                 "model", MODEL_NAME,
                 "input", java.util.List.of(
@@ -128,7 +120,7 @@ public class AiImageCaptioningService {
                             ),
                             Map.of(
                                 "type", "input_image",
-                                "image_url", dataUri
+                                "image_url", tempImageUrl  // External URL instead of base64
                             )
                         )
                     )
@@ -407,17 +399,6 @@ public class AiImageCaptioningService {
                 originalImageBytes.length, 
                 compressedBytes.length,
                 100 - (compressedBytes.length * 100 / originalImageBytes.length));
-            
-            // Check if base64 size is acceptable - ABORT if too large
-            int estimatedBase64Size = (compressedBytes.length * 4 / 3) + 4;
-            if (estimatedBase64Size > MAX_BASE64_SIZE) {
-                String errorMsg = String.format(
-                    "Compressed image still too large: %d bytes (limit: %d bytes). Image cannot be processed.",
-                    estimatedBase64Size, MAX_BASE64_SIZE
-                );
-                log.error(errorMsg);
-                throw new IOException(errorMsg);
-            }
             
             return compressedBytes;
             

@@ -141,6 +141,34 @@ public class MinioService {
     }
 
     /**
+     * Upload temporary file from byte array (e.g., for AI processing)
+     * Returns a presigned URL that expires after specified minutes
+     */
+    public String uploadTemporaryFile(byte[] data, String contentType, int expiryMinutes) {
+        checkMinioAvailable();
+        String objectName = "temp/ai/" + UUID.randomUUID().toString() + ".jpg";
+
+        try (InputStream inputStream = new java.io.ByteArrayInputStream(data)) {
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(minioProperties.getBucket())
+                            .object(objectName)
+                            .stream(inputStream, data.length, -1)
+                            .contentType(contentType)
+                            .build()
+            );
+
+            log.info("Temporary file uploaded successfully to MinIO: {}", objectName);
+            
+            // Return presigned URL immediately
+            return getPresignedUrl(objectName, expiryMinutes);
+        } catch (Exception e) {
+            log.error("Error uploading temporary file to MinIO", e);
+            throw new RuntimeException("Failed to upload temporary file to MinIO", e);
+        }
+    }
+
+    /**
      * Generate unique object name
      */
     private String generateObjectName(Long storeId, String folder, String originalFilename) {
