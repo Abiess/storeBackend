@@ -107,7 +107,7 @@ public class AiImageCaptioningService {
                                     "content", List.of(
                                             Map.of(
                                                     "type", "input_text",
-                                                    "text", "Generate a short ecommerce product description. Focus on the item, color, and style. No filler words."
+                                                    "text", "Describe this product image in detail. Focus on the main item, its features, color, and style. Be concise."
                                             ),
                                             Map.of(
                                                     "type", "input_image",
