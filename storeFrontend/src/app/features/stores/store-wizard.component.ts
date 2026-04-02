@@ -54,7 +54,7 @@ interface WizardStep {
 
       <!-- Wizard Content -->
       <div class="wizard-content">
-        <form [formGroup]="wizardForm" class="wizard-form">
+        <form [formGroup]="wizardForm" class="wizard-form" *ngIf="wizardForm">
           
           <!-- Step 1: Basis-Informationen -->
           <div class="wizard-step" *ngIf="currentStep() === 1">
@@ -884,7 +884,7 @@ export class StoreWizardComponent implements OnInit {
   loading = signal(false);
   error = signal<string | null>(null);
 
-  wizardForm: FormGroup;
+  wizardForm!: FormGroup;
 
   steps: WizardStep[] = [
     { id: 1, title: 'wizard.step1Title', subtitle: 'wizard.step1Subtitle', icon: '🏪', completed: false },
@@ -914,29 +914,40 @@ export class StoreWizardComponent implements OnInit {
     private wizardProgressService: WizardProgressService,
     private router: Router
   ) {
+    // Initialize form immediately in constructor
+    this.initializeForm();
+  }
+
+  private initializeForm(): void {
+    // Initialize form with explicit null values and proper validators
     this.wizardForm = this.fb.group({
-      storeName: ['', Validators.required],
-      storeSlug: ['', [Validators.required, Validators.pattern(/^[a-z0-9-]+$/)]],
-      description: [''],
-      email: [''],
-      phone: [''],
-      address: [''],
-      city: [''],
-      postalCode: ['']
+      storeName: this.fb.control('', [Validators.required]),
+      storeSlug: this.fb.control('', [Validators.required, Validators.pattern(/^[a-z0-9-]+$/)]),
+      description: this.fb.control('', []),
+      email: this.fb.control('', []),
+      phone: this.fb.control('', []),
+      address: this.fb.control('', []),
+      city: this.fb.control('', []),
+      postalCode: this.fb.control('', [])
     });
 
     // Auto-generate slug from store name
-    this.wizardForm.get('storeName')?.valueChanges.subscribe(name => {
-      if (name && !this.wizardForm.get('storeSlug')?.dirty) {
-        const slug = name
-          .toLowerCase()
-          .replace(/[^a-z0-9\s-]/g, '')
-          .replace(/\s+/g, '-')
-          .replace(/-+/g, '-')
-          .trim();
-        this.wizardForm.get('storeSlug')?.setValue(slug, { emitEvent: false });
-      }
-    });
+    const storeNameControl = this.wizardForm.get('storeName');
+    const storeSlugControl = this.wizardForm.get('storeSlug');
+
+    if (storeNameControl && storeSlugControl) {
+      storeNameControl.valueChanges.subscribe(name => {
+        if (name && !storeSlugControl.dirty) {
+          const slug = name
+            .toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .trim();
+          storeSlugControl.setValue(slug, { emitEvent: false });
+        }
+      });
+    }
   }
 
   ngOnInit(): void {
