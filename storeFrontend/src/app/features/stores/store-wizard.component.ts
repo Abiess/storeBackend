@@ -1,10 +1,11 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { StoreService } from '@app/core/services/store.service';
 import { WizardProgressService, WizardProgress } from '@app/core/services/wizard-progress.service';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { AiProductImageGeneratorComponent, AiImageData } from '@app/shared/components/ai-product-image-generator.component';
 
 interface WizardStep {
   id: number;
@@ -17,7 +18,7 @@ interface WizardStep {
 @Component({
   selector: 'app-store-wizard',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TranslatePipe],
+  imports: [CommonModule, ReactiveFormsModule, TranslatePipe, AiProductImageGeneratorComponent],
   template: `
     <div class="wizard-container">
       <!-- Skip Button -->
@@ -221,12 +222,34 @@ interface WizardStep {
             </div>
           </div>
 
-          <!-- Step 4: Zusammenfassung -->
+          <!-- Step 4: KI-Produktbilder (Optional) -->
           <div class="wizard-step" *ngIf="currentStep() === 4">
             <div class="step-header">
               <span class="step-icon">{{ steps[3].icon }}</span>
               <h2>{{ steps[3].title | translate }}</h2>
               <p>{{ steps[3].subtitle | translate }}</p>
+            </div>
+
+            <app-ai-product-image-generator
+              #aiGenerator
+              [storeId]="createdStoreId || 0"
+              [autoSelectFirst]="true"
+              (imagesGenerated)="onAiImagesGenerated($event)"
+              (selectionChanged)="onAiSelectionChanged($event)">
+            </app-ai-product-image-generator>
+
+            <div class="optional-note">
+              <span class="note-icon">ℹ️</span>
+              <span>{{ 'wizard.aiImagesOptional' | translate }}</span>
+            </div>
+          </div>
+
+          <!-- Step 5: Zusammenfassung -->
+          <div class="wizard-step" *ngIf="currentStep() === 5">
+            <div class="step-header">
+              <span class="step-icon">{{ steps[4].icon }}</span>
+              <h2>{{ steps[4].title | translate }}</h2>
+              <p>{{ steps[4].subtitle | translate }}</p>
             </div>
 
             <div class="summary-card">
@@ -266,6 +289,23 @@ interface WizardStep {
               </div>
             </div>
 
+            <div class="summary-card" *ngIf="aiProductImages.length > 0">
+              <h3>{{ 'wizard.summaryAiImages' | translate }}</h3>
+              <div class="summary-item">
+                <span class="summary-label">{{ 'wizard.aiImagesCount' | translate }}:</span>
+                <span class="summary-value">{{ aiProductImages.length }} {{ 'wizard.images' | translate }}</span>
+              </div>
+              <div class="ai-images-preview">
+                <img *ngFor="let img of aiProductImages.slice(0, 5)" 
+                     [src]="img.preview" 
+                     [alt]="img.file.name"
+                     class="preview-thumbnail">
+                <span *ngIf="aiProductImages.length > 5" class="more-images">
+                  +{{ aiProductImages.length - 5 }} {{ 'wizard.moreImages' | translate }}
+                </span>
+              </div>
+            </div>
+
             @if (error()) {
               <div class="error-banner">
                 {{ error() }}
@@ -291,7 +331,7 @@ interface WizardStep {
           type="button"
           class="btn-primary"
           (click)="nextStep()"
-          *ngIf="currentStep() < 4"
+          *ngIf="currentStep() < 5"
           [disabled]="!canProceed() || loading()">
           {{ 'wizard.next' | translate }} →
         </button>
@@ -300,7 +340,7 @@ interface WizardStep {
           type="button"
           class="btn-primary btn-create"
           (click)="createStore()"
-          *ngIf="currentStep() === 4"
+          *ngIf="currentStep() === 5"
           [disabled]="loading()">
           @if (loading()) {
             <svg class="spinner" width="20" height="20" viewBox="0 0 20 20">
@@ -751,6 +791,62 @@ interface WizardStep {
       margin-top: 1rem;
     }
 
+    /* Optional Note */
+    .optional-note {
+      background: #e0f2fe;
+      border-left: 4px solid #0284c7;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      margin-top: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: #075985;
+      font-size: 0.95rem;
+    }
+
+    .note-icon {
+      font-size: 1.25rem;
+    }
+
+    /* AI Images Preview in Summary */
+    .ai-images-preview {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .preview-thumbnail {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 2px solid #e5e7eb;
+      transition: all 0.3s;
+    }
+
+    .preview-thumbnail:hover {
+      transform: scale(1.1);
+      border-color: #667eea;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .more-images {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 60px;
+      height: 60px;
+      background: #f3f4f6;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #6b7280;
+      border: 2px dashed #d1d5db;
+    }
+
     @media (max-width: 768px) {
       .wizard-container {
         padding: 1rem;
@@ -794,7 +890,8 @@ export class StoreWizardComponent implements OnInit {
     { id: 1, title: 'wizard.step1Title', subtitle: 'wizard.step1Subtitle', icon: '🏪', completed: false },
     { id: 2, title: 'wizard.step2Title', subtitle: 'wizard.step2Subtitle', icon: '🎯', completed: false },
     { id: 3, title: 'wizard.step3Title', subtitle: 'wizard.step3Subtitle', icon: '📞', completed: false },
-    { id: 4, title: 'wizard.step4Title', subtitle: 'wizard.step4Subtitle', icon: '✅', completed: false }
+    { id: 4, title: 'wizard.step4Title', subtitle: 'wizard.step4Subtitle', icon: '🤖', completed: false },
+    { id: 5, title: 'wizard.step5Title', subtitle: 'wizard.step5Subtitle', icon: '✅', completed: false }
   ];
 
   categories = [
@@ -807,6 +904,9 @@ export class StoreWizardComponent implements OnInit {
     { id: 'books', name: 'wizard.categoryBooks', description: 'wizard.categoryBooksDesc', icon: '📚' },
     { id: 'toys', name: 'wizard.categoryToys', description: 'wizard.categoryToysDesc', icon: '🧸' }
   ];
+
+  createdStoreId: number | null = null;
+  aiProductImages: AiImageData[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -942,6 +1042,8 @@ export class StoreWizardComponent implements OnInit {
         return true; // Categories are optional
       case 3:
         return true; // Contact info is optional
+      case 4:
+        return true; // AI images step is optional
       default:
         return true;
     }
@@ -951,6 +1053,13 @@ export class StoreWizardComponent implements OnInit {
     if (!this.canProceed()) return;
 
     const current = this.currentStep();
+
+    // Bei Schritt 3 -> 4: Store erstellen, damit storeId für KI-Feature verfügbar ist
+    if (current === 3 && !this.createdStoreId) {
+      this.createStoreForAiStep();
+      return; // nextStep wird nach erfolgreicher Erstellung aufgerufen
+    }
+
     this.steps[current - 1].completed = true;
     this.currentStep.set(current + 1);
     
@@ -958,6 +1067,59 @@ export class StoreWizardComponent implements OnInit {
     this.saveCurrentProgress();
     
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  /**
+   * Erstelle Store für KI-Step (wird vor Step 4 aufgerufen)
+   */
+  private async createStoreForAiStep(): Promise<void> {
+    if (this.wizardForm.invalid) {
+      this.error.set('Bitte füllen Sie alle Pflichtfelder aus.');
+      return;
+    }
+
+    this.loading.set(true);
+    this.error.set(null);
+
+    try {
+      const formValue = this.wizardForm.value;
+      const storeData = {
+        name: formValue.storeName,
+        slug: formValue.storeSlug,
+        description: formValue.description || null,
+        categories: this.selectedCategories(),
+        contactInfo: {
+          email: formValue.email || null,
+          phone: formValue.phone || null,
+          address: formValue.address || null,
+          city: formValue.city || null,
+          postalCode: formValue.postalCode || null
+        }
+      };
+
+      const result = await this.storeService.createStore(storeData).toPromise();
+
+      if (!result || !result.id) {
+        throw new Error('Store konnte nicht erstellt werden');
+      }
+
+      this.createdStoreId = result.id;
+      console.log('✅ Store erstellt für KI-Step:', result.id);
+
+      // Markiere Schritt 3 als abgeschlossen und gehe zu Schritt 4
+      this.steps[2].completed = true;
+      this.currentStep.set(4);
+      this.loading.set(false);
+
+      // Speichere Fortschritt
+      this.saveCurrentProgress();
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    } catch (err: any) {
+      this.error.set(err.error?.message || 'Fehler beim Erstellen des Stores. Bitte versuchen Sie es erneut.');
+      this.loading.set(false);
+    }
   }
 
   previousStep(): void {
@@ -1009,6 +1171,22 @@ export class StoreWizardComponent implements OnInit {
   }
 
   async createStore(): Promise<void> {
+    // Store wurde bereits bei Step 3->4 erstellt
+    if (this.createdStoreId) {
+      // Markiere Wizard als completed in DB
+      this.wizardProgressService.completeWizard(this.createdStoreId).subscribe({
+        next: () => console.log('✅ Wizard als abgeschlossen markiert'),
+        error: (err) => console.warn('⚠️ Fehler beim Markieren:', err)
+      });
+
+      // Navigate to dashboard with store
+      this.router.navigate(['/dashboard'], {
+        queryParams: { newStore: 'true', storeId: this.createdStoreId }
+      });
+      return;
+    }
+
+    // Fallback: Erstelle Store wenn noch nicht geschehen (sollte nicht auftreten)
     if (this.wizardForm.invalid) return;
 
     this.loading.set(true);
@@ -1032,11 +1210,12 @@ export class StoreWizardComponent implements OnInit {
 
       const result = await this.storeService.createStore(storeData).toPromise();
       
-      // Prüfe ob Store erfolgreich erstellt wurde
       if (!result || !result.id) {
         throw new Error('Store konnte nicht erstellt werden');
       }
       
+      this.createdStoreId = result.id;
+
       // Markiere Wizard als completed in DB
       this.wizardProgressService.completeWizard(result.id).subscribe({
         next: () => console.log('✅ Wizard als abgeschlossen markiert'),
@@ -1054,6 +1233,14 @@ export class StoreWizardComponent implements OnInit {
       this.error.set(err.error?.message || 'Fehler beim Erstellen des Stores. Bitte versuchen Sie es erneut.');
       this.loading.set(false);
     }
+  }
+
+  onAiImagesGenerated(images: AiImageData[]): void {
+    this.aiProductImages = images;
+  }
+
+  onAiSelectionChanged(selected: AiImageData[]): void {
+    // Handle AI image selection change if needed
   }
 }
 
