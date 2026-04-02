@@ -180,10 +180,25 @@ import { Subscription } from 'rxjs';
               </button>
 
               <div class="ai-images-grid" *ngIf="aiImages.length > 0">
-                <div *ngFor="let imgData of aiImages; let i = index" class="ai-image-card" [class.selected]="selectedSuggestionIndex === i">
+                <div *ngFor="let imgData of aiImages; let i = index" class="ai-image-card" 
+                     [class.selected]="selectedSuggestionIndex === i"
+                     [class.multiselected]="imgData.isSelected">
                   <div class="ai-image-wrapper">
                     <img [src]="imgData.preview" [alt]="imgData.file.name" />
                     <button type="button" class="btn-remove-small" (click)="removeAiImageAt(i)" title="Bild entfernen">✖</button>
+                    
+                    <!-- Multiselect Checkbox -->
+                    <div class="multiselect-checkbox" *ngIf="imgData.suggestion">
+                      <input 
+                        type="checkbox" 
+                        [id]="'select-img-' + i"
+                        [(ngModel)]="imgData.isSelected"
+                        (change)="onImageSelectionChange()"
+                      />
+                      <label [for]="'select-img-' + i">
+                        <span class="checkmark">{{ imgData.isSelected ? '✓' : '' }}</span>
+                      </label>
+                    </div>
                     
                     <!-- Status indicators -->
                     <div class="ai-status" *ngIf="imgData.generating">
@@ -206,8 +221,8 @@ import { Subscription } from 'rxjs';
                   <!-- Generated Suggestion Preview -->
                   <div class="ai-suggestion-preview" *ngIf="imgData.suggestion">
                     <button type="button" class="btn-select-suggestion" (click)="selectSuggestion(i)" [class.active]="selectedSuggestionIndex === i">
-                      <span *ngIf="selectedSuggestionIndex === i">✅ AusgewÃ¤hlt</span>
-                      <span *ngIf="selectedSuggestionIndex !== i">AuswÃ¤hlen</span>
+                      <span *ngIf="selectedSuggestionIndex === i">👁️ Vorschau</span>
+                      <span *ngIf="selectedSuggestionIndex !== i">Vorschau</span>
                     </button>
                     <div class="suggestion-preview-text">
                       <strong>{{ imgData.suggestion.title }}</strong>
@@ -223,6 +238,19 @@ import { Subscription } from 'rxjs';
               </div>
             </div>
 
+            <!-- Selection Actions -->
+            <div class="selection-actions" *ngIf="aiImages.length > 0 && hasAnyGeneratedSuggestions()">
+              <button 
+                type="button" 
+                class="btn-select-all"
+                (click)="toggleSelectAll()"
+              >
+                <span *ngIf="!areAllSelected()">☑️ Alle auswählen</span>
+                <span *ngIf="areAllSelected()">☐ Alle abwählen</span>
+              </button>
+              <span class="selection-count">{{ getSelectedCount() }} von {{ aiImages.length }} Bild(ern) ausgewählt</span>
+            </div>
+
             <button 
               type="button" 
               class="btn-ai-generate"
@@ -231,7 +259,7 @@ import { Subscription } from 'rxjs';
             >
               <span class="btn-content">
                 <span class="btn-icon">🚀</span>
-                <span class="btn-text">KI-Analyse fÃ¼r alle</span>
+                <span class="btn-text">KI-Analyse für alle</span>
               </span>
             </button>
           </div>
@@ -293,8 +321,10 @@ import { Subscription } from 'rxjs';
             </div>
 
             <div class="ai-actions">
-              <button type="button" class="btn-use-suggestion" (click)="useSelectedAiSuggestion()">
-                ✅ In Formular Ã¼bernehmen
+              <button type="button" class="btn-use-suggestion" 
+                      (click)="useSelectedAiSuggestion()"
+                      [disabled]="getSelectedCount() === 0">
+                ✅ {{ getSelectedCount() > 0 ? getSelectedCount() + ' Bild(er)' : 'Bilder' }} übernehmen
               </button>
               <button type="button" class="btn-regenerate" (click)="generateAiSuggestionsForAll()">
                 🔄 Alle neu generieren
@@ -303,7 +333,7 @@ import { Subscription } from 'rxjs';
           </div>
 
           <div class="ai-info-note">
-            💡 <strong>Hinweis:</strong> Alle hochgeladenen Bilder werden dem Produkt zugeordnet, wenn Sie den Vorschlag Ã¼bernehmen und speichern. Die KI-generierten Daten sind VorschlÃ¤ge und kÃ¶nnen im "Basis Info" Tab angepasst werden.
+            💡 <strong>Hinweis:</strong> Wählen Sie die gewünschten Bilder aus (Checkbox links oben auf jedem Bild). Die ausgewählten Bilder und der KI-Vorschlag werden dem Produkt hinzugefügt wenn Sie speichern.
           </div>
         </div>
 
@@ -1344,108 +1374,75 @@ import { Subscription } from 'rxjs';
       box-shadow: 0 4px 16px rgba(40, 167, 69, 0.3);
     }
 
-    .ai-image-wrapper {
-      position: relative;
-      width: 100%;
-      padding-top: 100%; /* Square aspect ratio */
-      overflow: hidden;
+    .ai-image-card.multiselected {
+      border-color: #667eea;
+      box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+      transform: scale(1.02);
     }
 
-    .ai-image-wrapper img {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
+    .ai-image-card.multiselected.selected {
+      border-color: #28a745;
+      box-shadow: 0 4px 16px rgba(40, 167, 69, 0.3), 0 0 0 3px rgba(102, 126, 234, 0.2);
     }
 
-    .btn-remove-small {
+    /* Multiselect Checkbox */
+    .multiselect-checkbox {
       position: absolute;
       top: 0.5rem;
-      right: 0.5rem;
-      background: rgba(220, 53, 69, 0.9);
-      color: white;
-      border: none;
-      border-radius: 50%;
+      left: 0.5rem;
+      z-index: 15;
+    }
+
+    .multiselect-checkbox input[type="checkbox"] {
+      display: none;
+    }
+
+    .multiselect-checkbox label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
       width: 32px;
       height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      background: white;
+      border: 2px solid #667eea;
+      border-radius: 6px;
       cursor: pointer;
-      font-size: 1.2rem;
-      line-height: 1;
-      z-index: 10;
       transition: all 0.3s;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     }
 
-    .btn-remove-small:hover {
-      background: #c82333;
+    .multiselect-checkbox label:hover {
       transform: scale(1.1);
+      border-color: #5568d3;
     }
 
-    .ai-status {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: rgba(0, 0, 0, 0.8);
+    .multiselect-checkbox input[type="checkbox"]:checked + label {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-color: #667eea;
+    }
+
+    .multiselect-checkbox .checkmark {
       color: white;
-      padding: 0.5rem;
-      font-size: 0.875rem;
+      font-weight: bold;
+      font-size: 1.25rem;
+      line-height: 1;
+    }
+
+    /* Selection Actions */
+    .selection-actions {
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1rem 1.5rem;
+      background: white;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      border: 2px solid #e0e0e0;
     }
 
-    .ai-status.success {
-      background: rgba(40, 167, 69, 0.9);
-    }
-
-    .ai-status.error {
-      background: rgba(220, 53, 69, 0.9);
-    }
-
-    .spinner-small {
-      width: 16px;
-      height: 16px;
-      border: 2px solid #ffffff40;
-      border-top-color: white;
-      border-radius: 50%;
-      animation: spinner 0.8s linear infinite;
-    }
-
-    .ai-image-info {
-      padding: 0.75rem;
-      border-bottom: 1px solid #f0f0f0;
-    }
-
-    .ai-image-info .filename {
-      display: block;
-      font-size: 0.875rem;
-      font-weight: 500;
-      color: #333;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      margin-bottom: 0.25rem;
-    }
-
-    .ai-image-info .filesize {
-      display: block;
-      font-size: 0.75rem;
-      color: #999;
-    }
-
-    .ai-suggestion-preview {
-      padding: 1rem;
-    }
-
-    .btn-select-suggestion {
-      width: 100%;
-      padding: 0.75rem;
+    .btn-select-all {
+      padding: 0.75rem 1.5rem;
       background: white;
       color: #667eea;
       border: 2px solid #667eea;
@@ -1453,234 +1450,19 @@ import { Subscription } from 'rxjs';
       cursor: pointer;
       font-weight: 600;
       transition: all 0.3s;
-      margin-bottom: 0.75rem;
-    }
-
-    .btn-select-suggestion:hover {
-      background: #f8f9ff;
-    }
-
-    .btn-select-suggestion.active {
-      background: #28a745;
-      color: white;
-      border-color: #28a745;
-    }
-
-    .suggestion-preview-text {
-      font-size: 0.875rem;
-    }
-
-    .suggestion-preview-text strong {
-      display: block;
-      color: #333;
-      margin-bottom: 0.5rem;
-    }
-
-    .suggestion-preview-text p {
-      color: #666;
-      line-height: 1.4;
-      margin: 0;
-    }
-
-    .suggestion-preview-text .truncate {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-    }
-
-    .ai-error-small {
-      padding: 0.75rem 1rem;
-      background: #fff3cd;
-      color: #856404;
-      font-size: 0.875rem;
-      border-radius: 0 0 12px 12px;
-    }
-
-    /* ============================================
-       END MULTI-IMAGE AI STYLES
-       ============================================ */
-
-    /* V2 Mode Toggle */
-    .ai-mode-toggle {
-      background: #f8f9ff;
-      padding: 1.5rem;
-      border-radius: 12px;
-      margin-bottom: 2rem;
-    }
-
-    .ai-mode-toggle label {
-      display: block;
-      font-weight: 600;
-      color: #333;
-      margin-bottom: 0.75rem;
       font-size: 0.95rem;
     }
 
-    .toggle-buttons {
-      display: flex;
-      gap: 1rem;
-    }
-
-    .toggle-btn {
-      flex: 1;
-      padding: 0.875rem 1.25rem;
-      border: 2px solid #d0d7ff;
-      background: white;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.3s;
-      font-weight: 500;
-      font-size: 0.95rem;
-      color: #666;
-    }
-
-    .toggle-btn:hover:not(:disabled) {
-      border-color: #667eea;
+    .btn-select-all:hover {
       background: #f8f9ff;
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
     }
 
-    .toggle-btn.active {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-      border-color: #667eea;
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-    }
-
-    .toggle-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    /* V2 Result Grid */
-    .ai-result-v2 .ai-result-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.5rem;
-    }
-
-    .ai-result-v2 .ai-result-field.full-width {
-      grid-column: 1 / -1;
-    }
-
-    .ai-result-v2 .ai-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-
-    .ai-result-v2 .tag {
-      display: inline-block;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 0.375rem 0.875rem;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      font-weight: 500;
-      box-shadow: 0 2px 6px rgba(102, 126, 234, 0.25);
-      animation: tag-fade-in 0.4s ease-out backwards;
-    }
-
-    @keyframes tag-fade-in {
-      from {
-        opacity: 0;
-        transform: scale(0.8);
-      }
-      to {
-        opacity: 1;
-        transform: scale(1);
-      }
-    }
-
-    .ai-result-v2 .tag:nth-child(1) { animation-delay: 0.1s; }
-    .ai-result-v2 .tag:nth-child(2) { animation-delay: 0.2s; }
-    .ai-result-v2 .tag:nth-child(3) { animation-delay: 0.3s; }
-    .ai-result-v2 .tag:nth-child(4) { animation-delay: 0.4s; }
-    .ai-result-v2 .tag:nth-child(5) { animation-delay: 0.5s; }
-
-    .ai-result-v2 .ai-price {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: #10b981;
-    }
-
-    .ai-result-v2 .ai-slug {
-      font-family: 'Courier New', monospace;
-      color: #6366f1;
-      font-size: 0.9rem;
-    }
-
-    .ai-result-v2 .ai-meta {
-      font-size: 0.9rem;
-      color: #64748b;
-      line-height: 1.6;
-    }
-
-    .ai-result-v2 .no-data {
-      color: #94a3b8;
-      font-style: italic;
-    }
-
-    @media (max-width: 768px) {
-      .ai-result-v2 .ai-result-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .toggle-buttons {
-        flex-direction: column;
-      }
-    }
-
-    @media (max-width: 768px) {
-      .form-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-      }
-
-      .form-card {
-        padding: 1.5rem;
-      }
-
-      .images-preview {
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-      }
-
-      .form-actions {
-        flex-direction: column;
-      }
-
-      .btn-primary,
-      .btn-secondary {
-        width: 100%;
-      }
-
-      .tab-navigation {
-        overflow-x: auto;
-        flex-wrap: nowrap;
-        gap: 0.5rem;
-      }
-
-      .tab-item {
-        flex-shrink: 0;
-        min-width: 120px;
-      }
-
-      .ai-actions {
-        flex-direction: column;
-      }
-
-      .ai-upload-area {
-        min-height: 200px;
-        padding: 1rem;
-      }
-
-      .upload-icon {
-        font-size: 3rem;
-      }
+    .selection-count {
+      color: #667eea;
+      font-weight: 600;
+      font-size: 0.95rem;
     }
   `]
 })
@@ -1705,6 +1487,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     suggestion: AiProductSuggestionV2 | null;
     generating: boolean;
     error: string;
+    isSelected: boolean; // FÃ¼r Multiselect
   }> = [];
 
   // Legacy single image properties (fÃ¼r AbwÃ¤rtskompatibilitÃ¤t)
@@ -1718,7 +1501,8 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   aiMode: 'v1' | 'v2' = 'v2'; // Default to V2 (structured JSON)
 
   // Multi-image AI settings
-  selectedSuggestionIndex = 0; // Welche Suggestion soll Ã¼bernommen werden?
+  selectedSuggestionIndex = 0; // Welche Suggestion soll zur Vorschau angezeigt werden?
+  selectedImageIndices: number[] = []; // Welche Bilder sind fÃ¼r Ãœbernahme ausgewÃ¤hlt?
 
 
   // Tab Navigation
@@ -2165,7 +1949,8 @@ export class ProductFormComponent implements OnInit, OnDestroy {
           preview: e.target.result,
           suggestion: null,
           generating: false,
-          error: ''
+          error: '',
+          isSelected: false // Standardmäßig nicht ausgewählt
         });
         console.log(`✅ Added AI image: ${file.name}`);
       };
@@ -2249,13 +2034,19 @@ export class ProductFormComponent implements OnInit, OnDestroy {
 
   useSelectedAiSuggestion(): void {
     if (this.aiImages.length === 0) {
-      this.aiError = 'Keine AI-VorschlÃ¤ge verfÃ¼gbar.';
+      this.aiError = 'Keine AI-Vorschläge verfügbar.';
       return;
     }
 
     const selected = this.aiImages[this.selectedSuggestionIndex];
     if (!selected || !selected.suggestion) {
-      this.aiError = 'Der ausgewÃ¤hlte Vorschlag ist noch nicht generiert.';
+      this.aiError = 'Der ausgewählte Vorschlag ist noch nicht generiert.';
+      return;
+    }
+
+    // Check if at least one image is selected
+    if (this.getSelectedCount() === 0) {
+      this.aiError = 'Bitte wählen Sie mindestens ein Bild aus, das übernommen werden soll.';
       return;
     }
 
@@ -2268,8 +2059,9 @@ export class ProductFormComponent implements OnInit, OnDestroy {
       basePrice: suggestion.suggestedPrice || 0
     });
 
-    // Add all AI images to uploadedImages for storage
-    this.aiImages.forEach((imgData, idx) => {
+    // Add ONLY SELECTED AI images to uploadedImages for storage
+    const selectedImages = this.aiImages.filter(img => img.isSelected);
+    selectedImages.forEach((imgData, idx) => {
       // Create a temporary uploaded image entry
       // Note: These will be properly uploaded when product is saved
       const uploadedImg: UploadedImage = {
@@ -2277,7 +2069,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
         url: '', // Will be set after upload
         filename: imgData.file.name,
         preview: imgData.preview,
-        isPrimary: idx === 0, // First image is primary
+        isPrimary: idx === 0, // First selected image is primary
         file: imgData.file // Store file reference for later upload
       };
 
@@ -2289,9 +2081,9 @@ export class ProductFormComponent implements OnInit, OnDestroy {
 
     // Switch to media tab to show the images
     this.activeTab = 'media';
-    this.successMessage = `✅ KI-Vorschlag übernommen! ${this.aiImages.length} Bild(er) hinzugefügt. Diese werden beim Speichern hochgeladen.`;
+    this.successMessage = `✅ KI-Vorschlag übernommen! ${selectedImages.length} ausgewählte(s) Bild(er) hinzugefügt. Diese werden beim Speichern hochgeladen.`;
     setTimeout(() => this.successMessage = '', 5000);
-    console.log(`✅ AI suggestion applied with ${this.aiImages.length} images`);
+    console.log(`✅ AI suggestion applied with ${selectedImages.length} selected images`);
   }
 
   // ============================================
@@ -2427,5 +2219,38 @@ export class ProductFormComponent implements OnInit, OnDestroy {
       console.log('✅ AI suggestion V2 applied to form');
       return;
     }
+  }
+
+  // ============================================
+  // MULTISELECT HELPER METHODS
+  // ============================================
+
+  hasAnyGeneratedSuggestions(): boolean {
+    return this.aiImages.some(img => img.suggestion !== null);
+  }
+
+  getSelectedCount(): number {
+    return this.aiImages.filter(img => img.isSelected).length;
+  }
+
+  areAllSelected(): boolean {
+    const imagesWithSuggestions = this.aiImages.filter(img => img.suggestion !== null);
+    if (imagesWithSuggestions.length === 0) return false;
+    return imagesWithSuggestions.every(img => img.isSelected);
+  }
+
+  toggleSelectAll(): void {
+    const allSelected = this.areAllSelected();
+    this.aiImages.forEach(img => {
+      if (img.suggestion) {
+        img.isSelected = !allSelected;
+      }
+    });
+  }
+
+  onImageSelectionChange(): void {
+    // This method is called when checkbox state changes
+    // It's here for future enhancements (e.g., updating UI based on selection)
+    console.log(`📋 Selection changed: ${this.getSelectedCount()} images selected`);
   }
 }
