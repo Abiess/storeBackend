@@ -147,15 +147,15 @@ import { Subscription } from 'rxjs';
 
         <!-- KI-Assistent (Tab: AI) - MULTI-IMAGE VERSION -->
         <div class="form-card ai-assistant-card" *ngIf="activeTab === 'ai'">
-          <h2>ðŸ¤– KI-Assistent (Multi-Bild)</h2>
+          <h2>🤖 KI-Assistent (Multi-Bild)</h2>
           
           <div class="ai-intro">
-            <p>âœ¨ <strong>Mehrfach-Bild KI-Analyse:</strong> Laden Sie mehrere Produktfotos hoch und die KI generiert automatisch Produktdaten fÃ¼r jedes Bild.</p>
+            <p>✨ <strong>Mehrfach-Bild KI-Analyse:</strong> Laden Sie mehrere Produktfotos hoch und die KI generiert automatisch Produktdaten fÃ¼r jedes Bild.</p>
             <ul>
-              <li>ðŸ“¸ Laden Sie ein oder mehrere Produktfotos hoch</li>
-              <li>ðŸ¤– KI analysiert jedes Bild automatisch (mehrsprachig: de/en/ar)</li>
-              <li>âœ… WÃ¤hlen Sie den besten Vorschlag aus</li>
-              <li>ðŸ’¾ Alle hochgeladenen Bilder werden beim Speichern dem Produkt zugeordnet</li>
+              <li>📸 Laden Sie ein oder mehrere Produktfotos hoch</li>
+              <li>🤖 KI analysiert jedes Bild automatisch (mehrsprachig: de/en/ar)</li>
+              <li>✅ WÃ¤hlen Sie den besten Vorschlag aus</li>
+              <li>💾 Alle hochgeladenen Bilder werden beim Speichern dem Produkt zugeordnet</li>
             </ul>
           </div>
 
@@ -174,7 +174,7 @@ import { Subscription } from 'rxjs';
               />
               
               <button type="button" class="btn-upload-images" (click)="aiMultiFileInput.click()">
-                <span class="upload-icon">ðŸ“·</span>
+                <span class="upload-icon">📷</span>
                 <span>Bilder auswÃ¤hlen (mehrere mÃ¶glich)</span>
               </button>
 
@@ -182,7 +182,7 @@ import { Subscription } from 'rxjs';
                 <div *ngFor="let imgData of aiImages; let i = index" class="ai-image-card" [class.selected]="selectedSuggestionIndex === i">
                   <div class="ai-image-wrapper">
                     <img [src]="imgData.preview" [alt]="imgData.file.name" />
-                    <button type="button" class="btn-remove-small" (click)="removeAiImageAt(i)" title="Bild entfernen">âœ•</button>
+                    <button type="button" class="btn-remove-small" (click)="removeAiImageAt(i)" title="Bild entfernen">✖</button>
                     
                     <!-- Status indicators -->
                     <div class="ai-status" *ngIf="imgData.generating">
@@ -190,10 +190,10 @@ import { Subscription } from 'rxjs';
                       <span>Analysiere...</span>
                     </div>
                     <div class="ai-status success" *ngIf="imgData.suggestion && !imgData.generating">
-                      <span>âœ… Fertig</span>
+                      <span>✅ Fertig</span>
                     </div>
                     <div class="ai-status error" *ngIf="imgData.error && !imgData.generating">
-                      <span>âŒ Fehler</span>
+                      <span>❌ Fehler</span>
                     </div>
                   </div>
                   
@@ -205,7 +205,7 @@ import { Subscription } from 'rxjs';
                   <!-- Generated Suggestion Preview -->
                   <div class="ai-suggestion-preview" *ngIf="imgData.suggestion">
                     <button type="button" class="btn-select-suggestion" (click)="selectSuggestion(i)" [class.active]="selectedSuggestionIndex === i">
-                      <span *ngIf="selectedSuggestionIndex === i">âœ… AusgewÃ¤hlt</span>
+                      <span *ngIf="selectedSuggestionIndex === i">✅ AusgewÃ¤hlt</span>
                       <span *ngIf="selectedSuggestionIndex !== i">AuswÃ¤hlen</span>
                     </button>
                     <div class="suggestion-preview-text">
@@ -229,7 +229,7 @@ import { Subscription } from 'rxjs';
               (click)="generateAiSuggestionsForAll()"
             >
               <span class="btn-content">
-                <span class="btn-icon">ðŸš€</span>
+                <span class="btn-icon">🚀</span>
                 <span class="btn-text">KI-Analyse fÃ¼r alle</span>
               </span>
             </button>
@@ -237,7 +237,7 @@ import { Subscription } from 'rxjs';
 
           <!-- AI Error Message -->
           <div class="ai-error" *ngIf="aiError">
-            âš ï¸ {{ aiError }}
+            ⚠️ {{ aiError }}
           </div>
 
           <!-- Selected AI Suggestion Details -->
@@ -247,27 +247,27 @@ import { Subscription } from 'rxjs';
             <div class="ai-result-card ai-result-v2">
               <div class="ai-result-grid">
                 <div class="ai-result-field">
-                  <label>ðŸ“ Produkttitel</label>
+                  <label>📝 Produkttitel</label>
                   <div class="ai-result-value">{{ getSelectedSuggestion()?.title }}</div>
                 </div>
 
                 <div class="ai-result-field">
-                  <label>ðŸ·ï¸ Kategorie</label>
+                  <label>🏷️ Kategorie</label>
                   <div class="ai-result-value">{{ getSelectedSuggestion()?.category || 'Keine' }}</div>
                 </div>
 
                 <div class="ai-result-field">
-                  <label>ðŸ’° Preisempfehlung</label>
+                  <label>💰 Preisempfehlung</label>
                   <div class="ai-result-value ai-price">{{ getSelectedSuggestion()?.suggestedPrice ? (getSelectedSuggestion()!.suggestedPrice | number:'1.2-2') + ' â‚¬' : 'Keine' }}</div>
                 </div>
 
                 <div class="ai-result-field full-width">
-                  <label>ðŸ“„ Beschreibung</label>
+                  <label>📄 Beschreibung</label>
                   <div class="ai-result-value ai-description">{{ getSelectedSuggestion()?.description }}</div>
                 </div>
 
                 <div class="ai-result-field">
-                  <label>ðŸ”– Tags</label>
+                  <label>🏷️ Tags</label>
                   <div class="ai-result-value ai-tags">
                     <span class="tag" *ngFor="let tag of getSelectedSuggestion()?.tags">{{ tag }}</span>
                     <span *ngIf="!getSelectedSuggestion()?.tags || getSelectedSuggestion()!.tags.length === 0" class="no-data">Keine Tags</span>
@@ -275,17 +275,17 @@ import { Subscription } from 'rxjs';
                 </div>
 
                 <div class="ai-result-field">
-                  <label>ðŸ”— URL-Slug</label>
+                  <label>🔗 URL-Slug</label>
                   <div class="ai-result-value ai-slug">{{ getSelectedSuggestion()?.slug || 'Kein Slug' }}</div>
                 </div>
 
                 <div class="ai-result-field full-width">
-                  <label>ðŸ” SEO Titel</label>
+                  <label>🔍 SEO Titel</label>
                   <div class="ai-result-value">{{ getSelectedSuggestion()?.seoTitle || 'Kein SEO Titel' }}</div>
                 </div>
 
                 <div class="ai-result-field full-width">
-                  <label>ðŸ“Š Meta Description</label>
+                  <label>📊 Meta Description</label>
                   <div class="ai-result-value ai-meta">{{ getSelectedSuggestion()?.metaDescription || 'Keine Meta Description' }}</div>
                 </div>
               </div>
@@ -293,22 +293,22 @@ import { Subscription } from 'rxjs';
 
             <div class="ai-actions">
               <button type="button" class="btn-use-suggestion" (click)="useSelectedAiSuggestion()">
-                âœ… In Formular Ã¼bernehmen
+                ✅ In Formular Ã¼bernehmen
               </button>
               <button type="button" class="btn-regenerate" (click)="generateAiSuggestionsForAll()">
-                ðŸ”„ Alle neu generieren
+                🔄 Alle neu generieren
               </button>
             </div>
           </div>
 
           <div class="ai-info-note">
-            ðŸ’¡ <strong>Hinweis:</strong> Alle hochgeladenen Bilder werden dem Produkt zugeordnet, wenn Sie den Vorschlag Ã¼bernehmen und speichern. Die KI-generierten Daten sind VorschlÃ¤ge und kÃ¶nnen im "Basis Info" Tab angepasst werden.
+            💡 <strong>Hinweis:</strong> Alle hochgeladenen Bilder werden dem Produkt zugeordnet, wenn Sie den Vorschlag Ã¼bernehmen und speichern. Die KI-generierten Daten sind VorschlÃ¤ge und kÃ¶nnen im "Basis Info" Tab angepasst werden.
           </div>
         </div>
 
         <!-- Foto-Upload Bereich (Tab: Media) -->
         <div class="form-card" *ngIf="activeTab === 'media'">
-          <h2>ðŸ“· {{ 'product.images' | translate }}</h2>
+          <h2>📷 {{ 'product.images' | translate }}</h2>
 
           <app-image-upload
             mediaType="PRODUCT_IMAGE"
@@ -323,10 +323,10 @@ import { Subscription } from 'rxjs';
 
         <!-- Varianten Konfiguration (Tab: Varianten) -->
         <div class="form-card" *ngIf="activeTab === 'variants'">
-          <h2>ðŸŽ¨ Produktvarianten</h2>
+          <h2>🎨 Produktvarianten</h2>
           
           <p class="variants-hint">
-            ðŸ’¡ Verwalten Sie hier Ihre Produktvarianten. Passen Sie Preise, SKUs und LagerbestÃ¤nde individuell an.
+            💡 Verwalten Sie hier Ihre Produktvarianten. Passen Sie Preise, SKUs und LagerbestÃ¤nde individuell an.
           </p>
 
           <!-- Verwende die funktionierende ProductVariantsManagerComponent -->
@@ -337,14 +337,14 @@ import { Subscription } from 'rxjs';
 
           <!-- Hinweis im Create-Modus -->
           <div *ngIf="!productId" class="info-banner">
-            â„¹ï¸ <strong>Hinweis</strong>
+            ℹ️ <strong>Hinweis</strong>
             <p>Bitte speichern Sie zuerst das Produkt. Danach kÃ¶nnen Sie Varianten hinzufÃ¼gen.</p>
           </div>
         </div>
 
         <!-- Preis & Lager (Tab: Pricing) -->
         <div class="form-card" *ngIf="activeTab === 'pricing'">
-          <h2>ðŸ’° Preis & Lager</h2>
+          <h2>💰 Preis & Lager</h2>
           
           <div class="form-group">
             <label for="basePrice">{{ 'product.price' | translate }} (â‚¬) *</label>
@@ -1705,7 +1705,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     generating: boolean;
     error: string;
   }> = [];
-  
+
   // Legacy single image properties (fÃ¼r AbwÃ¤rtskompatibilitÃ¤t)
   aiImageFile: File | null = null;
   aiImagePreview: string | null = null;
@@ -1714,7 +1714,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   aiSuggestionV2: AiProductSuggestionV2 | null = null;
   aiError = '';
   aiMode: 'v1' | 'v2' = 'v2'; // Default to V2 (structured JSON)
-  
+
   // Multi-image AI settings
   selectedSuggestionIndex = 0; // Welche Suggestion soll Ã¼bernommen werden?
 
@@ -1723,25 +1723,25 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   activeTab: 'basic' | 'ai' | 'media' | 'variants' | 'pricing' = 'basic';
 
   tabs: Array<{ id: 'basic' | 'ai' | 'media' | 'variants' | 'pricing', label: string, icon: string }> = [
-    { id: 'basic', label: 'Basis Info', icon: 'ðŸ“' },
-    { id: 'ai', label: 'KI-Assistent', icon: 'ðŸ¤–' },
-    { id: 'media', label: 'Bilder', icon: 'ðŸ“·' },
-    { id: 'variants', label: 'Varianten', icon: 'ðŸŽ¨' },
-    { id: 'pricing', label: 'Preis & Lager', icon: 'ðŸ’°' }
+    { id: 'basic', label: 'Basis Info', icon: '📝' },
+    { id: 'ai', label: 'KI-Assistent', icon: '🤖' },
+    { id: 'media', label: 'Bilder', icon: '📷' },
+    { id: 'variants', label: 'Varianten', icon: '🎨' },
+    { id: 'pricing', label: 'Preis & Lager', icon: '💰' }
   ];
 
   private storeIdSubscription?: Subscription;
 
   constructor(
-    private fb: FormBuilder,
-    private route: ActivatedRoute,
-    private router: Router,
-    private productService: ProductService,
-    private categoryService: CategoryService,
-    private mediaService: MediaService,
-    private translationService: TranslationService,
-    private productOptionService: ProductOptionService,
-    private storeContext: StoreContextService
+      private fb: FormBuilder,
+      private route: ActivatedRoute,
+      private router: Router,
+      private productService: ProductService,
+      private categoryService: CategoryService,
+      private mediaService: MediaService,
+      private translationService: TranslationService,
+      private productOptionService: ProductOptionService,
+      private storeContext: StoreContextService
   ) {
     this.productForm = this.fb.group({
       title: ['', Validators.required],
@@ -1761,7 +1761,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     this.productId = productIdParam ? Number(productIdParam) : undefined;
     this.isEditMode = !!this.productId;
 
-    console.log('ðŸ”§ Product Form ngOnInit:', {
+    console.log('🔧 Product Form ngOnInit:', {
       productIdParam,
       productId: this.productId,
       isEditMode: this.isEditMode
@@ -1779,7 +1779,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   private initializeComponent(): void {
     if (this.storeId === null) return;
 
-    console.log('ðŸ“¦ Product Form Init:', {
+    console.log('📦 Product Form Init:', {
       storeId: this.storeId,
       productId: this.productId,
       isEditMode: this.isEditMode,
@@ -1791,9 +1791,9 @@ export class ProductFormComponent implements OnInit, OnDestroy {
 
     // Breadcrumbs initialisieren
     this.breadcrumbItems = [
-      { label: 'navigation.dashboard', route: '/dashboard', icon: 'ðŸ ' },
-      { label: 'navigation.store', route: ['/dashboard/stores', this.storeId], icon: 'ðŸª' },
-      { label: 'navigation.products', route: ['/dashboard/stores', this.storeId, 'products'], icon: 'ðŸ“¦' },
+      { label: 'navigation.dashboard', route: '/dashboard', icon: '🏠' },
+      { label: 'navigation.store', route: ['/dashboard/stores', this.storeId], icon: '🏪' },
+      { label: 'navigation.products', route: ['/dashboard/stores', this.storeId, 'products'], icon: '📦' },
       { label: this.isEditMode ? 'product.edit' : 'product.new' }
     ];
 
@@ -1834,15 +1834,15 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   loadProduct(productId: number): void {
     if (this.storeId === null) return;
 
-    console.log('ðŸ“¥ Loading product for edit:', {
+    console.log('📥 Loading product for edit:', {
       storeId: this.storeId,
       productId: productId
     });
 
     this.productService.getProduct(this.storeId, productId).subscribe({
       next: (product) => {
-        console.log('âœ… Product loaded successfully:', product);
-        
+        console.log('✅ Product loaded successfully:', product);
+
         this.productForm.patchValue({
           title: product.title,
           sku: product.sku,
@@ -1852,10 +1852,10 @@ export class ProductFormComponent implements OnInit, OnDestroy {
           categoryId: product.categoryId || null
         });
 
-        console.log('âœ… Form patched with values:', this.productForm.value);
+        console.log('✅ Form patched with values:', this.productForm.value);
       },
       error: (error) => {
-        console.error('âŒ Fehler beim Laden des Produkts:', error);
+        console.error('❌ Fehler beim Laden des Produkts:', error);
         this.errorMessage = this.translationService.translate('product.error.load');
       }
     });
@@ -1867,7 +1867,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
 
     this.mediaService.getProductMedia(this.storeId, productId).subscribe({
       next: (media) => {
-        console.log('ðŸ“¸ Loaded product media:', media);
+        console.log('📸 Loaded product media:', media);
 
         // Konvertiere die API-Response in das richtige Format
         this.uploadedImages = media.map((m: any) => {
@@ -1885,10 +1885,10 @@ export class ProductFormComponent implements OnInit, OnDestroy {
           };
         }).filter(img => img.mediaId && img.url); // Filtere ungÃ¼ltige EintrÃ¤ge
 
-        console.log('âœ… Processed images:', this.uploadedImages);
+        console.log('✅ Processed images:', this.uploadedImages);
       },
       error: (error) => {
-        console.error('âŒ Error loading product images:', error);
+        console.error('❌ Error loading product images:', error);
         this.errorMessage = this.translationService.translate('media.uploadError');
         // Zeige trotzdem die MÃ¶glichkeit neue Bilder hochzuladen
         this.uploadedImages = [];
@@ -1929,11 +1929,11 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   createProduct(formData: any): void {
     if (this.storeId === null) return;
 
-    console.log('ðŸ“¦ Creating product with data:', formData);
+    console.log('📦 Creating product with data:', formData);
 
     this.productService.createProduct(this.storeId, formData).subscribe({
       next: (product) => {
-        console.log('âœ… Produkt erstellt:', product);
+        console.log('✅ Produkt erstellt:', product);
 
         // VerknÃ¼pfe Bilder mit Produkt
         if (this.uploadedImages.length > 0) {
@@ -1965,11 +1965,11 @@ export class ProductFormComponent implements OnInit, OnDestroy {
       storeId: this.storeId
     };
 
-    console.log('ðŸ“ Updating product with data:', updateData);
+    console.log('📝 Updating product with data:', updateData);
 
     this.productService.updateProduct(this.storeId, this.productId!, updateData).subscribe({
       next: (product) => {
-        console.log('âœ… Produkt aktualisiert:', product);
+        console.log('✅ Produkt aktualisiert:', product);
 
         // VerknÃ¼pfe neue Bilder (nur wenn welche hochgeladen wurden)
         const newImages = this.uploadedImages.filter(img => img.file && img.mediaId > 0);
@@ -1983,7 +1983,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         this.saving = false;
-        console.error('âŒ Update error:', error);
+        console.error('❌ Update error:', error);
         this.errorMessage = this.translationService.translate('product.error.update');
       }
     });
@@ -1996,7 +1996,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     const imagesToLink = this.uploadedImages.filter(img => img.mediaId > 0);
     const imagesToUpload = this.uploadedImages.filter(img => (img as any)._file && !img.mediaId);
 
-    console.log(`ðŸ“¸ Images to link: ${imagesToLink.length}, images to upload: ${imagesToUpload.length}`);
+    console.log(`📸 Images to link: ${imagesToLink.length}, images to upload: ${imagesToUpload.length}`);
 
     // Step 1: Upload new images first
     if (imagesToUpload.length > 0) {
@@ -2026,17 +2026,17 @@ export class ProductFormComponent implements OnInit, OnDestroy {
         return;
       }
 
-      console.log(`ðŸ“¤ Uploading image ${index + 1}/${totalUploads}: ${file.name}`);
+      console.log(`📤 Uploading image ${index + 1}/${totalUploads}: ${file.name}`);
 
       this.mediaService.uploadMedia(this.storeId!, file, 'PRODUCT_IMAGE').subscribe({
         next: (media) => {
-          console.log(`âœ… Image uploaded: ${media.filename}, mediaId: ${media.mediaId}`);
-          
+          console.log(`✅ Image uploaded: ${media.filename}, mediaId: ${media.mediaId}`);
+
           // Update uploadedImage with mediaId
           img.mediaId = media.mediaId;
           img.url = media.url;
           allImagesToLink.push(img);
-          
+
           uploadCompleted++;
 
           // When all uploads complete, link all images
@@ -2046,7 +2046,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
           }
         },
         error: (error: any) => {
-          console.error(`âŒ Failed to upload image ${file.name}:`, error);
+          console.error(`❌ Failed to upload image ${file.name}:`, error);
           uploadCompleted++;
 
           if (uploadCompleted === totalUploads) {
@@ -2085,7 +2085,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
         }).subscribe({
           next: () => {
             completed++;
-            console.log(`âœ… Image ${completed}/${total} linked to product`);
+            console.log(`✅ Image ${completed}/${total} linked to product`);
 
             if (completed === total) {
               this.saving = false;
@@ -2094,7 +2094,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
             }
           },
           error: (error) => {
-            console.error('âŒ Error linking image:', error);
+            console.error('❌ Error linking image:', error);
             completed++;
 
             if (completed === total) {
@@ -2136,13 +2136,13 @@ export class ProductFormComponent implements OnInit, OnDestroy {
 
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        console.warn(`âŒ Skipping non-image file: ${file.name}`);
+        console.warn(`❌ Skipping non-image file: ${file.name}`);
         continue;
       }
 
       // Validate file size (max 10MB)
       if (file.size > 10 * 1024 * 1024) {
-        console.warn(`âŒ Skipping large file: ${file.name} (${file.size} bytes)`);
+        console.warn(`❌ Skipping large file: ${file.name} (${file.size} bytes)`);
         continue;
       }
 
@@ -2156,7 +2156,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
           generating: false,
           error: ''
         });
-        console.log(`âœ… Added AI image: ${file.name}`);
+        console.log(`✅ Added AI image: ${file.name}`);
       };
       reader.readAsDataURL(file);
     }
@@ -2176,7 +2176,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     }
 
     this.aiError = '';
-    console.log(`ðŸ¤– Starting AI generation for ${this.aiImages.length} images...`);
+    console.log(`🤖 Starting AI generation for ${this.aiImages.length} images...`);
 
     // Generate for each image sequentially
     this.aiImages.forEach((imgData, index) => {
@@ -2192,30 +2192,30 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     imgData.error = '';
     imgData.suggestion = null;
 
-    console.log(`ðŸ¤– Generating AI suggestion for image ${index + 1}/${this.aiImages.length}: ${imgData.file.name}`);
+    console.log(`🤖 Generating AI suggestion for image ${index + 1}/${this.aiImages.length}: ${imgData.file.name}`);
 
     this.productService.generateAiProductSuggestionV2(this.storeId, imgData.file).subscribe({
       next: (suggestion: AiProductSuggestionV2) => {
-        console.log(`âœ… AI suggestion received for image ${index + 1}:`, suggestion);
+        console.log(`✅ AI suggestion received for image ${index + 1}:`, suggestion);
         imgData.suggestion = suggestion;
         imgData.generating = false;
-        
+
         // Auto-select first generated suggestion
         if (index === 0) {
           this.selectedSuggestionIndex = 0;
         }
       },
       error: (error: any) => {
-        console.error(`âŒ AI generation failed for image ${index + 1}:`, error);
+        console.error(`❌ AI generation failed for image ${index + 1}:`, error);
         imgData.generating = false;
-        
+
         let errorMsg = 'Fehler beim Generieren des KI-Vorschlags.';
         if (error.error?.error) {
           errorMsg = error.error.error;
         } else if (error.message) {
           errorMsg = error.message;
         }
-        
+
         imgData.error = errorMsg;
       }
     });
@@ -2269,7 +2269,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
         isPrimary: idx === 0, // First image is primary
         file: imgData.file // Store file reference for later upload
       };
-      
+
       // Check if not already added
       if (!this.uploadedImages.find(img => img.filename === uploadedImg.filename)) {
         this.uploadedImages.push(uploadedImg);
@@ -2277,9 +2277,9 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     });
 
     this.activeTab = 'basic';
-    this.successMessage = `âœ… KI-Vorschlag Ã¼bernommen! ${this.aiImages.length} Bild(er) werden beim Speichern hochgeladen.`;
+    this.successMessage = `✅ KI-Vorschlag Ã¼bernommen! ${this.aiImages.length} Bild(er) werden beim Speichern hochgeladen.`;
     setTimeout(() => this.successMessage = '', 5000);
-    console.log(`âœ… AI suggestion applied with ${this.aiImages.length} images`);
+    console.log(`✅ AI suggestion applied with ${this.aiImages.length} images`);
   }
 
   // ============================================
@@ -2313,7 +2313,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     };
     reader.readAsDataURL(file);
 
-    console.log('âœ… AI image selected:', file.name, file.size, 'bytes');
+    console.log('✅ AI image selected:', file.name, file.size, 'bytes');
   }
 
   removeAiImage(): void {
@@ -2334,52 +2334,52 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     this.aiSuggestion = null;
     this.aiSuggestionV2 = null;
 
-    console.log(`ðŸ¤– Generating AI suggestion (${this.aiMode.toUpperCase()}) for:`, this.aiImageFile.name);
+    console.log(`🤖 Generating AI suggestion (${this.aiMode.toUpperCase()}) for:`, this.aiImageFile.name);
 
     // Choose API based on mode
     if (this.aiMode === 'v2') {
       this.productService.generateAiProductSuggestionV2(this.storeId, this.aiImageFile).subscribe({
         next: (suggestion: AiProductSuggestionV2) => {
-          console.log(`âœ… AI suggestion V2 received:`, suggestion);
+          console.log(`✅ AI suggestion V2 received:`, suggestion);
           this.aiSuggestionV2 = suggestion;
           this.aiGenerating = false;
           this.successMessage = 'KI-Vorschlag V2 erfolgreich generiert!';
           setTimeout(() => this.successMessage = '', 3000);
         },
         error: (error: any) => {
-          console.error(`âŒ AI generation V2 failed:`, error);
+          console.error(`❌ AI generation V2 failed:`, error);
           this.aiGenerating = false;
-          
+
           let errorMsg = 'Fehler beim Generieren des KI-Vorschlags.';
           if (error.error?.error) {
             errorMsg = error.error.error;
           } else if (error.message) {
             errorMsg = error.message;
           }
-          
+
           this.aiError = errorMsg;
         }
       });
     } else {
       this.productService.generateAiProductSuggestion(this.storeId, this.aiImageFile).subscribe({
         next: (suggestion: AiProductSuggestion) => {
-          console.log(`âœ… AI suggestion V1 received:`, suggestion);
+          console.log(`✅ AI suggestion V1 received:`, suggestion);
           this.aiSuggestion = suggestion;
           this.aiGenerating = false;
           this.successMessage = 'KI-Vorschlag V1 erfolgreich generiert!';
           setTimeout(() => this.successMessage = '', 3000);
         },
         error: (error: any) => {
-          console.error(`âŒ AI generation V1 failed:`, error);
+          console.error(`❌ AI generation V1 failed:`, error);
           this.aiGenerating = false;
-          
+
           let errorMsg = 'Fehler beim Generieren des KI-Vorschlags.';
           if (error.error?.error) {
             errorMsg = error.error.error;
           } else if (error.message) {
             errorMsg = error.message;
           }
-          
+
           this.aiError = errorMsg;
         }
       });
@@ -2397,7 +2397,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
       this.activeTab = 'basic';
       this.successMessage = 'KI-Vorschlag wurde in das Formular Ã¼bernommen. Sie kÃ¶nnen die Daten jetzt anpassen.';
       setTimeout(() => this.successMessage = '', 5000);
-      console.log('âœ… AI suggestion V1 applied to form');
+      console.log('✅ AI suggestion V1 applied to form');
       return;
     }
 
@@ -2412,16 +2412,8 @@ export class ProductFormComponent implements OnInit, OnDestroy {
       this.activeTab = 'basic';
       this.successMessage = 'Erweiterter KI-Vorschlag wurde in das Formular Ã¼bernommen. Sie kÃ¶nnen die Daten jetzt anpassen.';
       setTimeout(() => this.successMessage = '', 5000);
-      console.log('âœ… AI suggestion V2 applied to form');
+      console.log('✅ AI suggestion V2 applied to form');
       return;
     }
   }
 }
-
-
-
-
-
-
-
-
