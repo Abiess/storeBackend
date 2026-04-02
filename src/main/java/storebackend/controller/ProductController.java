@@ -322,11 +322,13 @@ public class ProductController {
     public ResponseEntity<?> generateAiProductSuggestion(
             @Parameter(description = "Store ID") @PathVariable Long storeId,
             @Parameter(description = "Product image file") @RequestParam("image") MultipartFile image,
+            @Parameter(description = "AI Model name (optional)") @RequestParam(value = "model", required = false) String modelName, // NEU: Optional model parameter
             @AuthenticationPrincipal User user,
             jakarta.servlet.http.HttpServletRequest request) {
 
         log.info("=== AI PRODUCT SUGGESTION REQUEST ===");
         log.info("Store ID: {}", storeId);
+        log.info("Model: {}", modelName != null ? modelName : "DEFAULT");
         log.info("User: {}", user != null ? user.getId() + " (" + user.getEmail() + ")" : "NULL");
         log.info("Image: {}, size: {} bytes", image.getOriginalFilename(), image.getSize());
 
@@ -362,7 +364,8 @@ public class ProductController {
             log.info("✅ Detected language: {}", language);
             log.info("✅ Calling AI service to generate product suggestion");
             
-            AiProductSuggestionDTO suggestion = aiImageCaptioningService.generateProductSuggestion(image, language);
+            // NEU: Verwende generateProductSuggestion mit model parameter
+            AiProductSuggestionDTO suggestion = aiImageCaptioningService.generateProductSuggestion(image, language, modelName);
             log.info("✅ AI suggestion generated successfully: {}", suggestion.getTitle());
             return ResponseEntity.ok(suggestion);
         } catch (Exception e) {
@@ -387,11 +390,13 @@ public class ProductController {
     public ResponseEntity<?> generateAiSuggestionV2(
             @PathVariable Long storeId,
             @RequestParam("image") MultipartFile image,
+            @RequestParam(value = "model", required = false) String modelName, // NEU: Optional model parameter
             @AuthenticationPrincipal User user,
             jakarta.servlet.http.HttpServletRequest request) {
 
         log.info("=== AI GENERATE V2 REQUEST ===");
         log.info("Store ID: {}", storeId);
+        log.info("Model: {}", modelName != null ? modelName : "DEFAULT");
         log.info("User: {}", user != null ? user.getId() : "NULL");
         log.info("Image: {}", image != null ? image.getOriginalFilename() : "NULL");
 
@@ -427,8 +432,9 @@ public class ProductController {
             log.info("✅ Detected language: {}", language);
             log.info("✅ Calling AI service to generate product suggestion V2 (structured JSON)");
             
-            AiProductSuggestionV2DTO suggestion = aiImageCaptioningService.generateProductSuggestionV2(image, language);
-            log.info("✅ AI suggestion V2 generated successfully: title={}, category={}", 
+            // NEU: Verwende generateProductSuggestionV2 mit model parameter
+            AiProductSuggestionV2DTO suggestion = aiImageCaptioningService.generateProductSuggestionV2(image, language, modelName);
+            log.info("✅ AI suggestion V2 generated successfully: title={}, category={}",
                 suggestion.getTitle(), suggestion.getCategory());
             return ResponseEntity.ok(suggestion);
         } catch (Exception e) {

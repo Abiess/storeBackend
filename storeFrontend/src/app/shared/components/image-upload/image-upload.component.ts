@@ -19,6 +19,11 @@ export interface UploadedImage {
   preview?: string;
   uploadProgress?: number;
   isPrimary: boolean;
+  // NEU: AI-spezifische Properties
+  aiSuggestion?: any;
+  aiGenerating?: boolean;
+  aiError?: string;
+  isSelected?: boolean;
 }
 
 @Component({
@@ -39,7 +44,7 @@ export class ImageUploadComponent implements OnInit, OnDestroy {
   @Input() showPrimary: boolean = true;
 
   /** Max. Dateigröße in MB */
-  @Input() maxSizeMb: number = 5;
+  @Input() maxSizeMb: number = 10; // Erhöht für AI-Uploads
 
   /** Beschriftung des Upload-Buttons */
   @Input() uploadLabel: string = 'Bilder hochladen';
@@ -47,12 +52,27 @@ export class ImageUploadComponent implements OnInit, OnDestroy {
   /** Text, wenn keine Bilder vorhanden */
   @Input() emptyLabel: string = 'Noch keine Bilder hochgeladen.';
 
+  /** NEU: AI-Modus - deaktiviert automatischen Upload, ermöglicht AI-Generation */
+  @Input() aiMode: boolean = false;
+
+  /** NEU: Zeige AI-Generation Button */
+  @Input() showAiGenerate: boolean = false;
+
+  /** NEU: Zeige Multiselect-Checkboxen */
+  @Input() showSelection: boolean = false;
+
   /** Aktuell angezeigte Bilder (Two-Way Binding) */
   @Input() images: UploadedImage[] = [];
   @Output() imagesChange = new EventEmitter<UploadedImage[]>();
 
   /** Fehler-Event */
   @Output() uploadError = new EventEmitter<string>();
+
+  /** NEU: Event für AI-Generation Anfrage */
+  @Output() aiGenerateRequest = new EventEmitter<{ file: File; index: number }>();
+
+  /** NEU: Event für Auswahl-Änderung */
+  @Output() selectionChanged = new EventEmitter<UploadedImage[]>();
 
   uploading = false;
   private storeId: number | null = null;
@@ -113,13 +133,21 @@ export class ImageUploadComponent implements OnInit, OnDestroy {
           preview: e.target.result,
           uploadProgress: 0,
           isPrimary: this.images.length === 0 && index === 0,
+          // NEU: AI-spezifische Initialisierung
+          aiSuggestion: null,
+          aiGenerating: false,
+          aiError: '',
+          isSelected: false
         };
 
         const newImages = [...this.images, tempImage];
         this.images = newImages;
         this.imagesChange.emit(newImages);
 
-        this.doUpload(file, newImages.length - 1);
+        // NEU: Im AI-Modus KEIN automatischer Upload
+        if (!this.aiMode) {
+          this.doUpload(file, newImages.length - 1);
+        }
       };
       reader.readAsDataURL(file);
     });
@@ -195,5 +223,57 @@ export class ImageUploadComponent implements OnInit, OnDestroy {
     this.images = newImages;
     this.imagesChange.emit(newImages);
   }
-}
 
+  // ── NEU: AI-Mode Methoden ────────────────────────────────────
+
+  /** Fordert AI-Generation für ein Bild an */
+  requestAiGeneration(index: number): void {
+    const image = this.images[index];
+    if (!image.file) return;
+
+    this.aiGenerateRequest.emit({ file: image.file, index });
+  }
+
+  /** Toggled die Auswahl eines Bildes (für Multiselect) */
+  toggleSelection(index: number): void {
+    const newImages = this.images.map((img, i) => ({
+      ...img,
+      isSelected: i === index ? !img.isSelected : img.isSelected
+    }));
+    this.images = newImages;
+    this.imagesChange.emit(newImages);
+    this.selectionChanged.emit(this.getSelectedImages());
+  }
+
+  /** Wählt alle Bilder aus/ab */
+  toggleSelectAll(): void {
+    const allSelected = this.areAllSelected();
+    const newImages = this.images.map(img => ({
+      ...img,
+      isSelected: !allSelected
+    }));
+    this.images = newImages;
+    this.imagesChange.emit(newImages);
+    this.selectionChanged.emit(this.getSelectedImages());
+  }
+
+  /** Gibt zurück, ob alle Bilder ausgewählt sind */
+  areAllSelected(): boolean {
+    return this.images.length > 0 && this.images.every(img => img.isSelected);
+  }
+
+  /** Gibt die ausgewählten Bilder zurück */
+  getSelectedImages(): UploadedImage[] {
+    return this.images.filter(img => img.isSelected);
+  }
+
+  /** Gibt die Anzahl ausgewählter Bilder zurück */
+  getSelectedCount(): number {
+    return this.images.filter(img => img.isSelected).length;
+  }
+
+  /** Prüft ob irgendein Bild gerade generiert wird */
+  isAnyGenerating(): boolean {
+    return this.images.some(img => img.aiGenerating);
+  }
+}

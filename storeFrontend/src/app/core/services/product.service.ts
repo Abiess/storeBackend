@@ -179,16 +179,39 @@ export class ProductService {
   }
 
   // AI Product Suggestion
-  generateAiProductSuggestion(storeId: number, imageFile: File): Observable<AiProductSuggestion> {
+  generateAiProductSuggestion(storeId: number, imageFile: File, modelName?: string): Observable<AiProductSuggestion> {
     const formData = new FormData();
     formData.append('image', imageFile);
+    if (modelName) {
+      formData.append('model', modelName); // NEU: Optional model parameter
+    }
     return this.http.post<AiProductSuggestion>(`${environment.apiUrl}/stores/${storeId}/products/ai-suggest`, formData);
   }
 
   // AI Product Suggestion V2 (structured JSON)
-  generateAiProductSuggestionV2(storeId: number, imageFile: File): Observable<AiProductSuggestionV2> {
+  generateAiProductSuggestionV2(storeId: number, imageFile: File, modelName?: string): Observable<AiProductSuggestionV2> {
     const formData = new FormData();
     formData.append('image', imageFile);
+    if (modelName) {
+      formData.append('model', modelName); // NEU: Optional model parameter
+    }
     return this.http.post<AiProductSuggestionV2>(`${environment.apiUrl}/stores/${storeId}/products/ai-suggest-v2`, formData);
+  }
+
+  /**
+   * NEU: Hole verfügbare AI-Modelle
+   */
+  getAvailableAiModels(): string[] {
+    return [
+      'zai-org/GLM-4.5V',  // Bestehendes Modell (Default)
+      'Salesforce/blip-image-captioning-large'  // Neues kostenloses Modell
+    ];
+  }
+
+  /**
+   * NEU: Hole Default AI-Modell
+   */
+  getDefaultAiModel(): string {
+    return 'zai-org/GLM-4.5V';
   }
 }

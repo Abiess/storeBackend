@@ -43,22 +43,36 @@ public class AiImageCaptioningService {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
     private final MinioService minioService;
+    private final AiModelProvider aiModelProvider; // NEU: Model Provider für Switching
 
-    public AiImageCaptioningService(RestTemplate restTemplate, ObjectMapper objectMapper, MinioService minioService) {
+    public AiImageCaptioningService(RestTemplate restTemplate, ObjectMapper objectMapper, MinioService minioService, AiModelProvider aiModelProvider) {
         this.restTemplate = restTemplate;
         this.objectMapper = objectMapper;
         this.minioService = minioService;
+        this.aiModelProvider = aiModelProvider; // NEU
         log.info("🤖 AiImageCaptioningService initialized");
         log.info("🔑 API Key configured: {}", apiKey != null && !apiKey.isBlank() ? "YES" : "NO");
+        log.info("📋 Available AI models: {}", aiModelProvider.getAvailableModels());
     }
 
     /**
      * Generates product suggestions from an uploaded image using Hugging Face AI
+     * BESTEHENDE METHODE - keine Änderung am Verhalten
      */
     public AiProductSuggestionDTO generateProductSuggestion(MultipartFile imageFile, String language) throws IOException {
+        // Bestehendes Modell wird als Default verwendet
+        return generateProductSuggestion(imageFile, language, null);
+    }
+
+    /**
+     * NEU: Generates product suggestions with selectable AI model
+     * @param modelName Optional - wenn null, wird Default-Modell verwendet
+     */
+    public AiProductSuggestionDTO generateProductSuggestion(MultipartFile imageFile, String language, String modelName) throws IOException {
         log.info("=== AI GENERATION START ===");
         log.info("Image: {} ({} bytes)", imageFile.getOriginalFilename(), imageFile.getSize());
         log.info("Language: {}", language);
+        log.info("Model: {}", modelName != null ? modelName : "DEFAULT (" + aiModelProvider.getDefaultModel() + ")");
         log.info("API Key present: {}", apiKey != null && !apiKey.isBlank());
 
         if (apiKey == null || apiKey.isBlank()) {
@@ -74,8 +88,18 @@ public class AiImageCaptioningService {
 
         log.info("Image optimized: {} bytes → {} bytes", imageBytes.length, optimizedImageBytes.length);
 
-        // Call Hugging Face API with language context
-        String caption = callHuggingFaceApi(optimizedImageBytes, language);
+        // NEU: Verwende gewähltes Modell oder Default
+        String selectedModel = modelName != null ? modelName : aiModelProvider.getDefaultModel();
+        String caption;
+        
+        if (AiModelProvider.MODEL_BLIP.equals(selectedModel)) {
+            // BLIP Modell braucht keine URL, arbeitet direkt mit Bytes
+            caption = aiModelProvider.callModel(selectedModel, null, optimizedImageBytes, language, false);
+        } else {
+            // GLM-4.5V (bestehend) braucht URL
+            String tempImageUrl = minioService.uploadTemporaryFile(optimizedImageBytes, "image/jpeg", 60);
+            caption = aiModelProvider.callModel(selectedModel, tempImageUrl, null, language, false);
+        }
 
         log.info("AI generated caption: {}", caption);
 
@@ -91,11 +115,22 @@ public class AiImageCaptioningService {
     /**
      * V2: Generates structured product suggestions from an uploaded image using Hugging Face AI
      * Returns structured JSON data instead of plain text
+     * BESTEHENDE METHODE - keine Änderung am Verhalten
      */
     public AiProductSuggestionV2DTO generateProductSuggestionV2(MultipartFile imageFile, String language) throws IOException {
+        // Bestehendes Modell wird als Default verwendet
+        return generateProductSuggestionV2(imageFile, language, null);
+    }
+
+    /**
+     * NEU: V2 with selectable AI model
+     * @param modelName Optional - wenn null, wird Default-Modell verwendet
+     */
+    public AiProductSuggestionV2DTO generateProductSuggestionV2(MultipartFile imageFile, String language, String modelName) throws IOException {
         log.info("=== AI GENERATION V2 START ===");
         log.info("Image: {} ({} bytes)", imageFile.getOriginalFilename(), imageFile.getSize());
         log.info("Language: {}", language);
+        log.info("Model: {}", modelName != null ? modelName : "DEFAULT (" + aiModelProvider.getDefaultModel() + ")");
 
         if (apiKey == null || apiKey.isBlank()) {
             throw new AiServiceException("Hugging Face API key is not configured. Please set HUGGINGFACE_API_KEY environment variable.");
@@ -106,8 +141,20 @@ public class AiImageCaptioningService {
         byte[] optimizedImageBytes = compressAndResizeImage(imageBytes);
         log.info("Image optimized: {} bytes → {} bytes", imageBytes.length, optimizedImageBytes.length);
 
-        // Call API with V2 JSON prompt and language
-        String jsonResponse = callHuggingFaceApiV2(optimizedImageBytes, language);
+        // NEU: Verwende gewähltes Modell oder Default
+        String selectedModel = modelName != null ? modelName : aiModelProvider.getDefaultModel();
+        String jsonResponse;
+        
+        if (AiModelProvider.MODEL_BLIP.equals(selectedModel)) {
+            // BLIP gibt nur Text zurück, kein JSON - konvertieren wir
+            String caption = aiModelProvider.callModel(selectedModel, null, optimizedImageBytes, language, false);
+            jsonResponse = convertCaptionToJson(caption, language);
+        } else {
+            // GLM-4.5V (bestehend) gibt JSON zurück
+            String tempImageUrl = minioService.uploadTemporaryFile(optimizedImageBytes, "image/jpeg", 60);
+            jsonResponse = aiModelProvider.callModel(selectedModel, tempImageUrl, null, language, true);
+        }
+        
         log.info("AI generated JSON: {}", jsonResponse);
 
         // Parse JSON into structured DTO
@@ -115,6 +162,20 @@ public class AiImageCaptioningService {
         log.info("✅ V2 parsed: title={}", suggestion.getTitle());
 
         return suggestion;
+    }
+    
+    /**
+     * NEU: Konvertiert einfache Caption in JSON-Format (für BLIP Modell)
+     */
+    private String convertCaptionToJson(String caption, String language) {
+        String title = generateTitle(caption);
+        String description = generateDescription(caption);
+        
+        return String.format(
+            "{\"title\": \"%s\", \"description\": \"%s\", \"category\": \"General\", \"tags\": [], \"suggestedPrice\": 0.0}",
+            title.replace("\"", "\\\""),
+            description.replace("\"", "\\\"")
+        );
     }
 
     /**

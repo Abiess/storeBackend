@@ -25,35 +25,87 @@
 
   <!-- Bildvorschau -->
   <div class="images-preview" *ngIf="images.length > 0">
+    <!-- NEU: Selection Actions (nur im AI-Mode mit showSelection) -->
+    <div class="selection-actions" *ngIf="aiMode && showSelection && images.length > 0">
+      <button
+        type="button"
+        class="btn-select-all"
+        (click)="toggleSelectAll()"
+      >
+        <span *ngIf="!areAllSelected()">☑️ Alle auswählen</span>
+        <span *ngIf="areAllSelected()">☐ Alle abwählen</span>
+      </button>
+      <span class="selection-count">{{ getSelectedCount() }} von {{ images.length }} ausgewählt</span>
+    </div>
+
     <div
       *ngFor="let img of images; let i = index"
       class="image-preview-card"
       [class.primary]="img.isPrimary"
+      [class.ai-selected]="img.isSelected"
     >
       <div class="image-container">
         <img [src]="img.preview || img.url" [alt]="img.filename" />
 
-        <!-- Upload-Fortschritt -->
-        <div class="upload-progress" *ngIf="img.uploadProgress !== undefined && img.uploadProgress < 100">
+        <!-- NEU: Multiselect Checkbox (nur im AI-Mode mit showSelection) -->
+        <div class="multiselect-checkbox" *ngIf="aiMode && showSelection">
+          <input
+            type="checkbox"
+            [id]="'img-select-' + i"
+            [checked]="img.isSelected"
+            (change)="toggleSelection(i)"
+          />
+          <label [for]="'img-select-' + i">
+            <span class="checkmark">{{ img.isSelected ? '✓' : '' }}</span>
+          </label>
+        </div>
+
+        <!-- NEU: AI Status Indicator -->
+        <div class="ai-status" *ngIf="aiMode && img.aiGenerating">
+          <span class="spinner-small"></span>
+          <span>Analysiere...</span>
+        </div>
+        <div class="ai-status success" *ngIf="aiMode && img.aiSuggestion && !img.aiGenerating">
+          <span>✅ Fertig</span>
+        </div>
+        <div class="ai-status error" *ngIf="aiMode && img.aiError && !img.aiGenerating">
+          <span>❌ Fehler</span>
+        </div>
+
+        <!-- Upload-Fortschritt (nicht im AI-Mode) -->
+        <div class="upload-progress" *ngIf="!aiMode && img.uploadProgress !== undefined && img.uploadProgress < 100">
           <div class="progress-bar" [style.width.%]="img.uploadProgress"></div>
           <span class="progress-text">{{ img.uploadProgress }}%</span>
         </div>
 
         <!-- Primär-Badge -->
-        <div class="primary-badge" *ngIf="img.isPrimary && showPrimary">
+        <div class="primary-badge" *ngIf="img.isPrimary && showPrimary && !aiMode">
           ⭐ Hauptbild
         </div>
       </div>
 
       <div class="image-actions">
+        <!-- NEU: AI Generate Button (nur im AI-Mode mit showAiGenerate) -->
         <button
-          *ngIf="showPrimary"
+          *ngIf="aiMode && showAiGenerate && !img.aiSuggestion"
+          type="button"
+          class="btn-icon btn-ai"
+          (click)="requestAiGeneration(i)"
+          [disabled]="img.aiGenerating"
+          title="KI-Analyse"
+        >🤖</button>
+
+        <!-- Primär-Button (nur wenn nicht AI-Mode) -->
+        <button
+          *ngIf="!aiMode && showPrimary"
           type="button"
           class="btn-icon"
           (click)="setPrimary(i)"
           [disabled]="img.isPrimary"
           title="Als Hauptbild setzen"
         >⭐</button>
+
+        <!-- Entfernen Button -->
         <button
           type="button"
           class="btn-icon btn-danger"
@@ -63,6 +115,11 @@
       </div>
 
       <p class="image-name">{{ img.filename }}</p>
+
+      <!-- NEU: AI Error Message -->
+      <p class="ai-error-message" *ngIf="aiMode && img.aiError">
+        {{ img.aiError }}
+      </p>
     </div>
   </div>
 
