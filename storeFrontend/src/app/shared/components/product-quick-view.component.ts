@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Product, ProductVariant } from '@app/core/models';
@@ -193,11 +193,14 @@ import { ProductReviewsComponent } from './product-reviews.component';
       border-radius: 16px;
       max-width: 1200px;
       width: 100%;
-      max-height: 90vh;
+      max-height: 95vh;
       overflow-y: auto;
+      overflow-x: hidden;
       position: relative;
       animation: slideUp 0.3s ease;
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
     }
 
     @keyframes slideUp {
@@ -581,10 +584,12 @@ import { ProductReviewsComponent } from './product-reviews.component';
       cursor: pointer;
       font-size: 1.25rem;
       font-weight: 600;
+      line-height: 1;
       transition: all 0.3s;
       display: flex;
       align-items: center;
       justify-content: center;
+      padding: 0;
     }
 
     .qty-btn:hover:not(:disabled) {
@@ -729,7 +734,7 @@ import { ProductReviewsComponent } from './product-reviews.component';
     }
   `]
 })
-export class ProductQuickViewComponent implements OnInit {
+export class ProductQuickViewComponent implements OnInit, OnChanges {
   @Input() product: Product | null = null;
   @Input() isOpen = false;
   @Output() close = new EventEmitter<void>();
@@ -743,9 +748,40 @@ export class ProductQuickViewComponent implements OnInit {
   loadingVariantId: number | null = null;
 
   ngOnInit(): void {
+    this.initializeProduct();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    // Reagiere auf Produktwechsel
+    if (changes['product'] && !changes['product'].firstChange) {
+      console.log('🔄 Product changed in Quick View:', this.product?.title);
+      this.initializeProduct();
+    }
+
+    // Reagiere auf Modal öffnen/schließen
+    if (changes['isOpen']) {
+      if (this.isOpen) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
+    }
+  }
+
+  /**
+   * Initialisiert das Produkt und wählt erste Variante
+   */
+  private initializeProduct(): void {
+    // Reset Zustand
+    this.selectedVariant = null;
+    this.quantity = 1;
+    this.isLoadingVariant = false;
+    this.loadingVariantId = null;
+
     // Wähle erste Variante wenn vorhanden
-    if (this.hasVariants() && this.product?.variants) {
+    if (this.hasVariants() && this.product?.variants && this.product.variants.length > 0) {
       this.selectedVariant = this.product.variants[0];
+      console.log('✅ Selected first variant:', this.selectedVariant);
     }
   }
 
@@ -784,6 +820,7 @@ export class ProductQuickViewComponent implements OnInit {
     }
 
     // Wichtig: Immer ein neues Array zurückgeben für Change Detection
+    console.log('🖼️ Product images for gallery:', images.length, 'images');
     return [...images];
   }
 
@@ -837,6 +874,12 @@ export class ProductQuickViewComponent implements OnInit {
   }
 
   selectVariant(variant: ProductVariant): void {
+    if (this.selectedVariant?.id === variant.id) {
+      return; // Bereits ausgewählt, nichts zu tun
+    }
+
+    console.log('🔄 Selecting variant:', variant);
+    
     // Zeige kurze Lade-Animation beim Wechsel
     this.isLoadingVariant = true;
     this.loadingVariantId = variant.id;
@@ -846,6 +889,7 @@ export class ProductQuickViewComponent implements OnInit {
       this.selectedVariant = variant;
       this.isLoadingVariant = false;
       this.loadingVariantId = null;
+      console.log('✅ Variant selected:', variant);
     }, 200);
   }
 
@@ -955,6 +999,9 @@ export class ProductQuickViewComponent implements OnInit {
     this.isOpen = false;
     this.quantity = 1;
     this.selectedVariant = null;
+    this.isLoadingVariant = false;
+    this.loadingVariantId = null;
+    document.body.style.overflow = '';
     this.close.emit();
   }
 }
