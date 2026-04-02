@@ -22,10 +22,11 @@ import { Subscription } from 'rxjs';
   imports: [CommonModule, ReactiveFormsModule, FormsModule, TranslatePipe, ProductVariantsManagerComponent, PageHeaderComponent, ImageUploadComponent],
   template: `
     <!-- Fixed Top-Right Loading Indicator -->
-    <div class="ai-loading-overlay" *ngIf="aiGenerating">
+    <div class="ai-loading-overlay" *ngIf="aiGenerating || uploadingImages">
       <span class="spinner-pulse"></span>
       <span class="loading-text">
-        <span class="dot-animation">KI analysiert Ihr Bild</span>
+        <span class="dot-animation" *ngIf="aiGenerating">KI analysiert Ihr Bild</span>
+        <span class="dot-animation" *ngIf="uploadingImages">Bilder werden hochgeladen</span>
         <span class="dots">
           <span class="dot">.</span>
           <span class="dot">.</span>
@@ -1710,6 +1711,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   aiImageFile: File | null = null;
   aiImagePreview: string | null = null;
   aiGenerating = false;
+  uploadingImages = false; // Flag for image upload during save
   aiSuggestion: AiProductSuggestion | null = null;
   aiSuggestionV2: AiProductSuggestionV2 | null = null;
   aiError = '';
@@ -1906,11 +1908,12 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     }
 
     if (this.storeId === null) {
-      this.errorMessage = 'Fehler: Store-Kontext nicht verfÃ¼gbar';
+      this.errorMessage = 'Fehler: Store-Kontext nicht verfügbar';
       return;
     }
 
     this.saving = true;
+    this.uploadingImages = true; // Show loading indicator in top right
     this.errorMessage = '';
     this.successMessage = '';
 
@@ -1940,12 +1943,14 @@ export class ProductFormComponent implements OnInit, OnDestroy {
           this.linkImagesToProduct(product.id);
         } else {
           this.saving = false;
+          this.uploadingImages = false;
           this.successMessage = this.translationService.translate('product.created');
           setTimeout(() => this.goBack(), 1500);
         }
       },
       error: (error) => {
         this.saving = false;
+        this.uploadingImages = false;
         this.errorMessage = this.translationService.translate('product.error.create');
         console.error(error);
       }
@@ -1977,12 +1982,14 @@ export class ProductFormComponent implements OnInit, OnDestroy {
           this.linkImagesToProduct(product.id);
         } else {
           this.saving = false;
+          this.uploadingImages = false;
           this.successMessage = this.translationService.translate('product.updated');
           setTimeout(() => this.goBack(), 1500);
         }
       },
       error: (error) => {
         this.saving = false;
+        this.uploadingImages = false;
         console.error('❌ Update error:', error);
         this.errorMessage = this.translationService.translate('product.error.update');
       }
@@ -1992,9 +1999,9 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   linkImagesToProduct(productId: number): void {
     if (this.storeId === null) return;
 
-    // Separate images: those with mediaId (already uploaded) and those with _file (need upload)
+    // Separate images: those with mediaId (already uploaded) and those with file (need upload)
     const imagesToLink = this.uploadedImages.filter(img => img.mediaId > 0);
-    const imagesToUpload = this.uploadedImages.filter(img => (img as any)._file && !img.mediaId);
+    const imagesToUpload = this.uploadedImages.filter(img => img.file && img.mediaId === 0);
 
     console.log(`📸 Images to link: ${imagesToLink.length}, images to upload: ${imagesToUpload.length}`);
 
@@ -2055,6 +2062,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
               this.linkExistingImages(productId, allImages);
             } else {
               this.saving = false;
+              this.uploadingImages = false;
               this.errorMessage = 'Fehler beim Hochladen der Bilder.';
             }
           }
@@ -2071,6 +2079,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
 
     if (total === 0) {
       this.saving = false;
+      this.uploadingImages = false;
       this.successMessage = this.translationService.translate('product.created');
       setTimeout(() => this.goBack(), 1500);
       return;
@@ -2089,6 +2098,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
 
             if (completed === total) {
               this.saving = false;
+              this.uploadingImages = false;
               this.successMessage = this.translationService.translate('product.created');
               setTimeout(() => this.goBack(), 1500);
             }
@@ -2099,6 +2109,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
 
             if (completed === total) {
               this.saving = false;
+              this.uploadingImages = false;
               this.successMessage = this.translationService.translate('product.created');
               setTimeout(() => this.goBack(), 2000);
             }
@@ -2263,7 +2274,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
       // Note: These will be properly uploaded when product is saved
       const uploadedImg: UploadedImage = {
         mediaId: 0, // Will be set after upload
-        url: imgData.preview,
+        url: '', // Will be set after upload
         filename: imgData.file.name,
         preview: imgData.preview,
         isPrimary: idx === 0, // First image is primary
@@ -2276,8 +2287,9 @@ export class ProductFormComponent implements OnInit, OnDestroy {
       }
     });
 
-    this.activeTab = 'basic';
-    this.successMessage = `✅ KI-Vorschlag Ã¼bernommen! ${this.aiImages.length} Bild(er) werden beim Speichern hochgeladen.`;
+    // Switch to media tab to show the images
+    this.activeTab = 'media';
+    this.successMessage = `✅ KI-Vorschlag übernommen! ${this.aiImages.length} Bild(er) hinzugefügt. Diese werden beim Speichern hochgeladen.`;
     setTimeout(() => this.successMessage = '', 5000);
     console.log(`✅ AI suggestion applied with ${this.aiImages.length} images`);
   }
