@@ -236,16 +236,16 @@ CREATE TABLE IF NOT EXISTS product_options (
                                                id BIGSERIAL PRIMARY KEY,
                                                product_id BIGINT NOT NULL,
                                                name VARCHAR(100) NOT NULL,
-    display_order INTEGER NOT NULL DEFAULT 0,
+    sort_order INTEGER NOT NULL DEFAULT 0,  -- Hibernate-Entity: sortOrder -> sort_order
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_product_options_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
     );
 
--- Product Option Values
+-- Product Option Values (ElementCollection via ProductOption.values)
 CREATE TABLE IF NOT EXISTS product_option_values (
-                                                     id BIGSERIAL PRIMARY KEY,
                                                      option_id BIGINT NOT NULL,
                                                      option_value VARCHAR(100) NOT NULL,
-    display_order INTEGER NOT NULL DEFAULT 0,
     CONSTRAINT fk_product_option_values_option FOREIGN KEY (option_id) REFERENCES product_options(id) ON DELETE CASCADE
     );
 

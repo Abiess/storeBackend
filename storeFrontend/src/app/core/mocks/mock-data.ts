@@ -65,7 +65,6 @@ export const MOCK_PRODUCTS: Product[] = [
     description: 'High-performance laptop mit 16GB RAM und 512GB SSD',
     price: 1299.99,
     basePrice: 1299.99,
-    stock: 23,
     status: ProductStatus.PUBLISHED,
     createdAt: '2024-01-20T11:00:00',
     updatedAt: '2024-01-20T11:00:00',
@@ -75,7 +74,6 @@ export const MOCK_PRODUCTS: Product[] = [
         name: 'Silver 512GB',
         sku: 'LAPTOP-001-SILVER', productId: 1,
         price: 1299.99,
-        stock: 15,
         stockQuantity: 15,
         attributesJson: JSON.stringify({ color: 'Silver', storage: '512GB' })
       },
@@ -84,7 +82,6 @@ export const MOCK_PRODUCTS: Product[] = [
         name: 'Black 512GB',
         sku: 'LAPTOP-001-BLACK', productId: 1,
         price: 1299.99,
-        stock: 8,
         stockQuantity: 8,
         attributesJson: JSON.stringify({ color: 'Black', storage: '512GB' })
       }
@@ -98,7 +95,6 @@ export const MOCK_PRODUCTS: Product[] = [
     description: 'Ergonomische kabellose Maus mit 5 Tasten',
     price: 29.99,
     basePrice: 29.99,
-    stock: 50,
     status: ProductStatus.PUBLISHED,
     createdAt: '2024-01-22T14:30:00',
     updatedAt: '2024-01-22T14:30:00',
@@ -108,7 +104,6 @@ export const MOCK_PRODUCTS: Product[] = [
         name: 'Black',
         sku: 'MOUSE-002-BLACK', productId: 2,
         price: 29.99,
-        stock: 50,
         stockQuantity: 50,
         attributesJson: JSON.stringify({ color: 'Black' })
       }
@@ -122,7 +117,6 @@ export const MOCK_PRODUCTS: Product[] = [
     description: '2m langes USB-C zu USB-C Kabel, schnellladefähig',
     price: 14.99,
     basePrice: 14.99,
-    stock: 0,
     status: ProductStatus.DRAFT,
     createdAt: '2024-02-05T09:00:00',
     updatedAt: '2024-02-05T09:00:00',
@@ -136,7 +130,6 @@ export const MOCK_PRODUCTS: Product[] = [
     description: 'Over-Ear Kopfhörer mit Active Noise Cancelling',
     price: 199.99,
     basePrice: 199.99,
-    stock: 45,
     status: ProductStatus.PUBLISHED,
     createdAt: '2024-02-10T16:45:00',
     updatedAt: '2024-02-10T16:45:00',
@@ -146,7 +139,6 @@ export const MOCK_PRODUCTS: Product[] = [
         name: 'White',
         sku: 'HEADPHONE-004-WHITE', productId: 4,
         price: 199.99,
-        stock: 20,
         stockQuantity: 20,
         attributesJson: JSON.stringify({ color: 'White' })
       },
@@ -155,7 +147,6 @@ export const MOCK_PRODUCTS: Product[] = [
         name: 'Black',
         sku: 'HEADPHONE-004-BLACK', productId: 4,
         price: 199.99,
-        stock: 25,
         stockQuantity: 25,
         attributesJson: JSON.stringify({ color: 'Black' })
       }

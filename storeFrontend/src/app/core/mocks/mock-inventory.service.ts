@@ -74,11 +74,11 @@ export class MockInventoryService {
       throw new Error('Product or variant not found');
     }
 
-    const quantityBefore = variant.stock;
+    const quantityBefore = variant.stockQuantity;
     const quantityAfter = quantityBefore + request.quantityChange;
 
     // Update den Stock
-    variant.stock = quantityAfter;
+    variant.stockQuantity = quantityAfter;
 
     // Erstelle neuen Log-Eintrag
     const newLog: InventoryLog = {

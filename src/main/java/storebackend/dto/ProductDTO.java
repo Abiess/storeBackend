@@ -26,20 +26,10 @@ public class ProductDTO {
     private Long viewCount;
     private Long salesCount;
 
-    // Bilder-Informationen
+    // Bilder-Informationen (nutzt standalone ProductMediaDTO)
     private List<ProductMediaDTO> media;
     private String primaryImageUrl;
 
     // Varianten
     private List<ProductVariantDTO> variants;
-
-    @Data
-    public static class ProductMediaDTO {
-        private Long id;
-        private Long mediaId;
-        private String url;
-        private String filename;
-        private Boolean isPrimary;
-        private Integer sortOrder;
-    }
 }

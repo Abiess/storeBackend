@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import storebackend.dto.CreateProductRequest;
 import storebackend.dto.ProductDTO;
+import storebackend.dto.ProductMediaDTO;
 import storebackend.dto.ProductVariantDTO;
 import storebackend.entity.Category;
 import storebackend.entity.Product;
@@ -148,6 +149,7 @@ public class ProductService {
         ProductDTO dto = new ProductDTO();
         dto.setId(product.getId());
         dto.setTitle(product.getTitle());
+        dto.setSku(product.getSku());
         dto.setDescription(product.getDescription());
         dto.setBasePrice(product.getBasePrice());
         dto.setStatus(product.getStatus());
@@ -170,11 +172,12 @@ public class ProductService {
         List<ProductMedia> productMedia = productMediaRepository.findByProductIdOrderBySortOrderAsc(product.getId());
 
         if (!productMedia.isEmpty()) {
-            // Konvertiere zu DTOs
-            List<ProductDTO.ProductMediaDTO> mediaList = productMedia.stream()
+            // Konvertiere zu DTOs (nutzt standalone ProductMediaDTO)
+            List<ProductMediaDTO> mediaList = productMedia.stream()
                     .map(pm -> {
-                        ProductDTO.ProductMediaDTO mediaDTO = new ProductDTO.ProductMediaDTO();
+                        ProductMediaDTO mediaDTO = new ProductMediaDTO();
                         mediaDTO.setId(pm.getId());
+                        mediaDTO.setProductId(pm.getProduct().getId());
                         mediaDTO.setMediaId(pm.getMedia().getId());
 
                         // Generiere URL über MinioService

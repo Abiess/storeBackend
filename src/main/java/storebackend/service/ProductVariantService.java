@@ -34,8 +34,7 @@ public class ProductVariantService {
         Product product = productRepository.findByIdAndStore(productId, store)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        return variantRepository.findAll().stream()
-                .filter(v -> v.getProduct().getId().equals(productId))
+        return variantRepository.findByProductId(productId).stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
@@ -63,8 +62,7 @@ public class ProductVariantService {
 
         // Check if SKU is unique
         if (request.getSku() != null) {
-            boolean skuExists = variantRepository.findAll().stream()
-                    .anyMatch(v -> v.getSku().equalsIgnoreCase(request.getSku()));
+            boolean skuExists = variantRepository.existsBySku(request.getSku());
             if (skuExists) {
                 throw new RuntimeException("SKU already exists");
             }
@@ -130,8 +128,7 @@ public class ProductVariantService {
 
         // Check SKU uniqueness if changed
         if (request.getSku() != null && !request.getSku().equals(variant.getSku())) {
-            boolean skuExists = variantRepository.findAll().stream()
-                    .anyMatch(v -> !v.getId().equals(variantId) && v.getSku().equalsIgnoreCase(request.getSku()));
+            boolean skuExists = variantRepository.existsBySkuAndIdNot(request.getSku(), variantId);
             if (skuExists) {
                 throw new RuntimeException("SKU already exists");
             }

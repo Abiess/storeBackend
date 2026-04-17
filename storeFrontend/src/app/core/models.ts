@@ -324,19 +324,17 @@ export interface ProductVariant {
   price: number;
   comparePrice?: number;
   costPrice?: number;
-  stock: number;
-  stockQuantity: number; // Required for inventory management
-  quantity?: number;
+  stockQuantity: number; // Lagerbestand (einheitlich)
+  quantity?: number;     // Bestell-/Verpackungsmenge
   weight?: number;
   option1?: string;
   option2?: string;
   option3?: string;
   attributesJson?: string;
-  attributes?: { [key: string]: string }; // Parsed attributes for UI
+  attributes?: { [key: string]: string }; // Geparste Attribute für UI
   options?: ProductOption[];
-  imageUrl?: string; // Main variant image
-  images?: string[]; // Multiple variant images
-  mediaUrls?: string[]; // Alternative field name for images
+  imageUrl?: string;   // Hauptbild der Variante
+  images?: string[];   // Alle Bilder der Variante (vom Backend als 'images' geliefert)
   isActive?: boolean;
 }
 
@@ -659,9 +657,10 @@ export interface CreateStoreRequest {
 // ============================================
 export interface ProductOption {
   id: number;
-  variantId: number;
-  name: string;
-  value: string;
+  productId: number;   // Zugehöriges Produkt (nicht Variante!)
+  name: string;        // z.B. "Farbe", "Größe"
+  values: string[];    // z.B. ["Rot", "Blau", "Grün"]
+  sortOrder?: number;
 }
 
 export interface ProductMedia {

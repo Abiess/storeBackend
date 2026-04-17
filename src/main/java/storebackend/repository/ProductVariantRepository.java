@@ -31,6 +31,9 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
     // Check if SKU exists
     boolean existsBySku(String sku);
 
+    // Check if SKU exists excluding a specific variant (for updates)
+    boolean existsBySkuAndIdNot(String sku, Long id);
+
     // Delete all variants for a product (used for regeneration)
     @Transactional
     int deleteByProductId(Long productId);

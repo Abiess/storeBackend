@@ -97,8 +97,7 @@ export class MockProductService {
       name: variant.name || 'Variant',
       sku: 'VAR-' + this.nextVariantId,
       price: variant.price || 0,
-      stock: variant.stock || variant.stockQuantity || 0,
-      stockQuantity: variant.stockQuantity || variant.stock || 0,
+      stockQuantity: variant.stockQuantity || 0,
       attributesJson: variant.attributesJson || '{}'
     };
     const product = this.products.find(p => p.id === productId);

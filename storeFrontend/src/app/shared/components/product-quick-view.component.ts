@@ -93,8 +93,8 @@ import { ProductReviewsComponent } from './product-reviews.component';
                   <span class="variant-price">
                     {{ variant.price | number:'1.2-2' }} €
                   </span>
-                  <span class="variant-stock" *ngIf="variant.stock > 0">
-                    ({{ variant.stock }} verfügbar)
+                  <span class="variant-stock" *ngIf="variant.stockQuantity > 0">
+                    ({{ variant.stockQuantity }} verfügbar)
                   </span>
                 </button>
               </div>
@@ -798,10 +798,6 @@ export class ProductQuickViewComponent implements OnInit, OnChanges {
       else if (this.selectedVariant.imageUrl) {
         images.push(this.selectedVariant.imageUrl);
       }
-      // Alternative field name
-      else if (this.selectedVariant.mediaUrls && this.selectedVariant.mediaUrls.length > 0) {
-        images.push(...this.selectedVariant.mediaUrls);
-      }
     }
 
     // Fallback: Produkt-Bilder wenn keine Variante oder keine Varianten-Bilder
@@ -832,9 +828,6 @@ export class ProductQuickViewComponent implements OnInit, OnChanges {
       }
       if (this.selectedVariant.images && this.selectedVariant.images.length > 0) {
         return this.selectedVariant.images[0];
-      }
-      if (this.selectedVariant.mediaUrls && this.selectedVariant.mediaUrls.length > 0) {
-        return this.selectedVariant.mediaUrls[0];
       }
     }
     // Fallback: Produkt Primary Image
@@ -934,7 +927,7 @@ export class ProductQuickViewComponent implements OnInit, OnChanges {
         return false;
       }
       // Prüfe Stock (stockQuantity ist das primäre Feld)
-      const stock = this.selectedVariant.stockQuantity ?? this.selectedVariant.stock ?? 0;
+      const stock = this.selectedVariant.stockQuantity ?? 0;
       return stock > 0;
     }
     // Wenn keine Varianten → Produkt-Lagerbestand prüfen

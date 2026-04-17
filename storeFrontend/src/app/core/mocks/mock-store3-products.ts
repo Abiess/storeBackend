@@ -10,7 +10,6 @@ export const MOCK_STORE3_PRODUCTS: Product[] = [
     description: 'Hochwertiger Bio-Kaffee aus fairem Handel, 100% Arabica Bohnen',
     price: 12.99,
     basePrice: 12.99,
-    stock: 100,
     status: ProductStatus.PUBLISHED,
     createdAt: '2024-03-10T10:00:00',
     updatedAt: '2024-03-10T10:00:00',
@@ -21,7 +20,6 @@ export const MOCK_STORE3_PRODUCTS: Product[] = [
         sku: 'COFFEE-001-250',
         productId: 5,
         price: 12.99,
-        stock: 50,
         stockQuantity: 50,
         attributesJson: JSON.stringify({ weight: '250g' })
       },
@@ -31,7 +29,6 @@ export const MOCK_STORE3_PRODUCTS: Product[] = [
         sku: 'COFFEE-001-500',
         productId: 5,
         price: 22.99,
-        stock: 50,
         stockQuantity: 50,
         attributesJson: JSON.stringify({ weight: '500g' })
       }
@@ -45,7 +42,6 @@ export const MOCK_STORE3_PRODUCTS: Product[] = [
     description: 'Auswahl an regionalen Craft-Bieren, 6er Pack',
     price: 18.99,
     basePrice: 18.99,
-    stock: 45,
     status: ProductStatus.PUBLISHED,
     createdAt: '2024-03-10T10:30:00',
     updatedAt: '2024-03-10T10:30:00',
@@ -56,7 +52,6 @@ export const MOCK_STORE3_PRODUCTS: Product[] = [
         sku: 'BEER-002-6PACK',
         productId: 6,
         price: 18.99,
-        stock: 45,
         stockQuantity: 45,
         attributesJson: JSON.stringify({ pack: '6x 0.33L' })
       }
@@ -70,7 +65,6 @@ export const MOCK_STORE3_PRODUCTS: Product[] = [
     description: 'Naturbelassener Honig von lokalen Imkern',
     price: 8.49,
     basePrice: 8.49,
-    stock: 80,
     status: ProductStatus.PUBLISHED,
     createdAt: '2024-03-10T11:00:00',
     updatedAt: '2024-03-10T11:00:00',
@@ -81,7 +75,6 @@ export const MOCK_STORE3_PRODUCTS: Product[] = [
         sku: 'HONEY-003-250',
         productId: 7,
         price: 8.49,
-        stock: 80,
         stockQuantity: 80,
         attributesJson: JSON.stringify({ weight: '250g', container: 'Glas' })
       }
@@ -95,7 +88,6 @@ export const MOCK_STORE3_PRODUCTS: Product[] = [
     description: 'Extra natives Olivenoel aus Italien, kaltgepresst',
     price: 15.99,
     basePrice: 15.99,
-    stock: 60,
     status: ProductStatus.PUBLISHED,
     createdAt: '2024-03-10T11:30:00',
     updatedAt: '2024-03-10T11:30:00',
@@ -106,7 +98,6 @@ export const MOCK_STORE3_PRODUCTS: Product[] = [
         sku: 'OIL-004-500',
         productId: 8,
         price: 15.99,
-        stock: 60,
         stockQuantity: 60,
         attributesJson: JSON.stringify({ volume: '500ml' })
       }
@@ -120,7 +111,6 @@ export const MOCK_STORE3_PRODUCTS: Product[] = [
     description: 'Frische Pasta nach traditionellem Rezept',
     price: 6.99,
     basePrice: 6.99,
-    stock: 120,
     status: ProductStatus.PUBLISHED,
     createdAt: '2024-03-10T12:00:00',
     updatedAt: '2024-03-10T12:00:00',
@@ -131,7 +121,6 @@ export const MOCK_STORE3_PRODUCTS: Product[] = [
         sku: 'PASTA-005-TAG',
         productId: 9,
         price: 6.99,
-        stock: 60,
         stockQuantity: 60,
         attributesJson: JSON.stringify({ type: 'Tagliatelle', weight: '400g' })
       },
@@ -141,7 +130,6 @@ export const MOCK_STORE3_PRODUCTS: Product[] = [
         sku: 'PASTA-005-PEN',
         productId: 9,
         price: 6.99,
-        stock: 60,
         stockQuantity: 60,
         attributesJson: JSON.stringify({ type: 'Penne', weight: '400g' })
       }
@@ -155,7 +143,6 @@ export const MOCK_STORE3_PRODUCTS: Product[] = [
     description: 'Feinste Schokolade aus nachhaltigem Kakaoanbau',
     price: 4.99,
     basePrice: 4.99,
-    stock: 150,
     status: ProductStatus.PUBLISHED,
     createdAt: '2024-03-10T12:30:00',
     updatedAt: '2024-03-10T12:30:00',
@@ -166,7 +153,6 @@ export const MOCK_STORE3_PRODUCTS: Product[] = [
         sku: 'CHOCO-006-DARK',
         productId: 10,
         price: 4.99,
-        stock: 75,
         stockQuantity: 75,
         attributesJson: JSON.stringify({ type: 'Zartbitter', cocoa: '70%' })
       },
@@ -176,11 +162,9 @@ export const MOCK_STORE3_PRODUCTS: Product[] = [
         sku: 'CHOCO-006-MILK',
         productId: 10,
         price: 4.99,
-        stock: 75,
         stockQuantity: 75,
         attributesJson: JSON.stringify({ type: 'Vollmilch' })
       }
     ]
   }
 ];
-

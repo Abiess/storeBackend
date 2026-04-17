@@ -1123,11 +1123,11 @@ export class ProductVariantsManagerComponent implements OnInit, OnDestroy {
    * Holt die Bilder einer Variante für die Image-Upload-Komponente
    */
   getVariantImages(variant: ProductVariant): UploadedImage[] {
-    if (!variant.images && !variant.mediaUrls) {
+    if (!variant.images) {
       return [];
     }
 
-    const imageUrls = variant.images || variant.mediaUrls || [];
+    const imageUrls = variant.images || [];
     return imageUrls.map((url, index) => ({
       mediaId: index + 1,
       url,
@@ -1149,9 +1149,8 @@ export class ProductVariantsManagerComponent implements OnInit, OnDestroy {
       .filter(img => img.url)
       .map(img => img.url as string);
 
-    // Aktualisiere die Variante
+    // Aktualisiere die Variante (einheitlich über images)
     variant.images = imageUrls;
-    variant.mediaUrls = imageUrls;
 
     // Wenn ein Bild vorhanden ist, setze das erste als Haupt-Bild
     if (imageUrls.length > 0) {
