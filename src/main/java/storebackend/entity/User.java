@@ -50,6 +50,9 @@ public class User {
     @Column(name = "email_verified", nullable = false)
     private Boolean emailVerified = false;
 
+    @Column(name = "preferred_language", length = 5, nullable = false)
+    private String preferredLanguage = "en";
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -129,5 +132,17 @@ public class User {
         }
         String[] parts = name.trim().split("\\s+", 2);
         return parts.length > 1 ? parts[1] : "";
+    }
+
+    public String getPreferredLanguage() {
+        return preferredLanguage != null ? preferredLanguage : "en";
+    }
+
+    public void setPreferredLanguage(String preferredLanguage) {
+        if (preferredLanguage != null && Set.of("de", "en", "ar").contains(preferredLanguage.toLowerCase())) {
+            this.preferredLanguage = preferredLanguage.toLowerCase();
+        } else {
+            this.preferredLanguage = "en";
+        }
     }
 }

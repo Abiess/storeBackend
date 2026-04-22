@@ -26,8 +26,10 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     enabled BOOLEAN NOT NULL DEFAULT TRUE,
     email_verified BOOLEAN NOT NULL DEFAULT FALSE,
+    preferred_language VARCHAR(5) NOT NULL DEFAULT 'en',
     plan_id BIGINT,
-    CONSTRAINT fk_users_plan FOREIGN KEY (plan_id) REFERENCES plans(id)
+    CONSTRAINT fk_users_plan FOREIGN KEY (plan_id) REFERENCES plans(id),
+    CONSTRAINT chk_users_language CHECK (preferred_language IN ('en', 'de', 'ar'))
     );
 
 -- Email Verifications Tabelle (für Email-Verification Feature)
@@ -1895,6 +1897,27 @@ COMMENT ON TABLE seo_settings IS 'Store-specific SEO metadata and configuration'
 COMMENT ON TABLE structured_data_templates IS 'JSON-LD schema.org templates with Mustache variables';
 COMMENT ON TABLE subscriptions IS 'User subscription/plan management with billing cycles';
 COMMENT ON COLUMN coupons.status IS 'Coupon status: ACTIVE, INACTIVE, EXPIRED, SCHEDULED';
+
+-- =====================
+-- V20: preferred_language für Users (Email-Templates)
+-- =====================
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'users'
+          AND column_name = 'preferred_language'
+    ) THEN
+        ALTER TABLE users ADD COLUMN preferred_language VARCHAR(5) NOT NULL DEFAULT 'en';
+        ALTER TABLE users ADD CONSTRAINT chk_users_language CHECK (preferred_language IN ('en', 'de', 'ar'));
+        RAISE NOTICE '✅ V20: Added preferred_language to users';
+    ELSE
+        RAISE NOTICE 'preferred_language already exists in users - skipping';
+    END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_users_preferred_language ON users(preferred_language);
 
 -- =====================
 -- Final Verification

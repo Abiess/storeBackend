@@ -47,16 +47,16 @@ public class EmailVerificationService {
         log.info("Verification token created for user: {}", user.getEmail());
 
         // Sende Email asynchron NACH dem Transaction-Commit
-        sendVerificationEmailAsync(user.getEmail(), token);
+        sendVerificationEmailAsync(user.getEmail(), token, user.getPreferredLanguage());
     }
 
     /**
      * Sendet Verification-Email asynchron (ohne Transaktionskontext)
      * Failures hier blockieren NICHT die User-Registrierung
      */
-    private void sendVerificationEmailAsync(String email, String token) {
+    private void sendVerificationEmailAsync(String email, String token, String lang) {
         try {
-            emailService.sendVerificationEmail(email, token);
+            emailService.sendVerificationEmail(email, token, lang != null ? lang : "en");
         } catch (Exception e) {
             log.error("Failed to send verification email to: {}, but token was saved in DB. User can request resend.", email, e);
             // ❌ NICHT werfen - Email-Fehler dürfen Registrierung nicht blockieren
@@ -85,7 +85,7 @@ public class EmailVerificationService {
 
         // Sende Welcome Email (optional)
         try {
-            emailService.sendWelcomeEmail(user.getEmail(), user.getName());
+            emailService.sendWelcomeEmail(user.getEmail(), user.getName(), user.getPreferredLanguage());
         } catch (Exception e) {
             log.warn("Failed to send welcome email, but verification was successful", e);
         }

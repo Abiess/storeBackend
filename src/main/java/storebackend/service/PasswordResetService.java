@@ -54,7 +54,7 @@ public class PasswordResetService {
         passwordResetTokenRepository.save(resetToken);
 
         // Sende Reset Email
-        emailService.sendPasswordResetEmail(user.getEmail(), token);
+        emailService.sendPasswordResetEmail(user.getEmail(), token, user.getPreferredLanguage());
 
         log.info("Password reset token created for user: {}", user.getEmail());
     }
@@ -111,7 +111,7 @@ public class PasswordResetService {
 
         // Sende Bestätigungs-Email
         try {
-            emailService.sendPasswordResetConfirmationEmail(user.getEmail(), user.getName());
+            emailService.sendPasswordResetConfirmationEmail(user.getEmail(), user.getName(), user.getPreferredLanguage());
         } catch (Exception e) {
             log.warn("Failed to send password reset confirmation email, but reset was successful", e);
         }

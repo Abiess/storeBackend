@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="{{lang}}" dir="{{dir}}">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>{{title}}</title>
+<style>
+* { margin:0;padding:0;box-sizing:border-box; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#f4f6f9;color:#333; }
+.wrapper { max-width:620px;margin:30px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08); }
+.header { background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:36px 40px;text-align:center; }
+.header img.logo { max-height:48px;margin-bottom:12px; }
+.header h1 { color:#fff;font-size:22px;font-weight:700; }
+.header .icon { font-size:44px;margin-bottom:10px;display:block; }
+.body { padding:36px 40px; }
+.greeting { font-size:16px;color:#555;margin-bottom:18px; }
+.intro { font-size:15px;color:#444;line-height:1.7;margin-bottom:24px; }
+.order-meta { background:#f8f9ff;border:1px solid #e5e7f0;border-radius:8px;padding:20px 24px;margin:20px 0; }
+.meta-row { display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;font-size:14px; }
+.meta-row:last-child { border-bottom:none; }
+.meta-row .key { color:#666; }
+.meta-row .val { font-weight:700;color:#333; }
+.section-title { font-size:12px;font-weight:700;color:#667eea;text-transform:uppercase;letter-spacing:0.5px;margin:24px 0 10px; }
+table.items { width:100%;border-collapse:collapse;font-size:14px; }
+table.items th { background:#f0f2ff;color:#667eea;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;padding:10px 12px;text-align:left; }
+table.items td { padding:12px;border-bottom:1px solid #f5f5f5;color:#444;vertical-align:top; }
+table.items tr:last-child td { border-bottom:none; }
+.total-row td { font-weight:700!important;background:#f0f2ff;color:#333!important; }
+.address-box { background:#f8f9ff;border:1px solid #e5e7f0;border-radius:8px;padding:16px 20px;margin:12px 0;font-size:14px;color:#555;line-height:1.8; }
+.outro { font-size:14px;color:#666;line-height:1.7;margin-top:20px; }
+.btn-wrap { text-align:center;margin:24px 0; }
+.btn { display:inline-block;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff!important;text-decoration:none;padding:13px 30px;border-radius:8px;font-size:14px;font-weight:600; }
+.footer { background:#f8f9ff;border-top:1px solid #eee;padding:24px 40px;text-align:center; }
+.footer p { font-size:13px;color:#888;line-height:1.8; }
+.footer a { color:#667eea;text-decoration:none; }
+[dir="rtl"] table.items th { text-align:right; }
+[dir="rtl"] .meta-row { flex-direction:row-reverse; }
+@media(max-width:480px){
+  .body,.header,.footer{padding:20px;}
+  table.items th,table.items td{padding:8px;font-size:13px;}
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    {{#storeLogo}}<img class="logo" src="{{storeLogo}}" alt="{{storeName}}">{{/storeLogo}}
+    <span class="icon">🛍️</span>
+    <h1>{{title}}</h1>
+  </div>
+  <div class="body">
+    <p class="greeting">{{greeting}}</p>
+    <p class="intro">{{intro}}</p>
+
+    <!-- Order Meta -->
+    <div class="order-meta">
+      <div class="meta-row"><span class="key">{{labelOrderNumber}}</span><span class="val">#{{orderNumber}}</span></div>
+      <div class="meta-row"><span class="key">{{labelStore}}</span><span class="val">{{storeName}}</span></div>
+      <div class="meta-row"><span class="key">{{labelTotal}}</span><span class="val">{{totalAmount}} {{currency}}</span></div>
+    </div>
+
+    <!-- Items Table -->
+    {{#hasItems}}
+    <p class="section-title">{{labelItems}}</p>
+    <table class="items">
+      <thead>
+        <tr>
+          <th>{{labelProduct}}</th>
+          <th>{{labelQty}}</th>
+          <th>{{labelPrice}}</th>
+          <th>{{labelItemTotal}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#items}}
+        <tr>
+          <td>{{name}}{{#variantTitle}}<br><small style="color:#888">{{variantTitle}}</small>{{/variantTitle}}</td>
+          <td>{{quantity}}</td>
+          <td>{{price}} {{currency}}</td>
+          <td>{{total}} {{currency}}</td>
+        </tr>
+        {{/items}}
+        <tr class="total-row">
+          <td colspan="3">{{labelTotal}}</td>
+          <td>{{totalAmount}} {{currency}}</td>
+        </tr>
+      </tbody>
+    </table>
+    {{/hasItems}}
+
+    <!-- Shipping Address -->
+    {{#hasShipping}}
+    <p class="section-title">{{labelShipping}}</p>
+    <div class="address-box">
+      {{shippingName}}<br>
+      {{shippingAddress1}}{{#shippingAddress2}}, {{shippingAddress2}}{{/shippingAddress2}}<br>
+      {{shippingPostalCode}} {{shippingCity}}<br>
+      {{shippingCountry}}
+    </div>
+    {{/hasShipping}}
+
+    <p class="outro">{{outro}}</p>
+
+    <div class="btn-wrap">
+      <a class="btn" href="{{orderUrl}}">{{btnViewOrder}}</a>
+    </div>
+  </div>
+  <div class="footer">
+    <p>{{footerTeam}}</p>
+    <p><a href="mailto:support@markt.ma">{{footerSupport}}</a></p>
+    <p>{{footerUnsubscribe}}</p>
+  </div>
+</div>
+</body>
+</html>
+

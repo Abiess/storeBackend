@@ -6,12 +6,15 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import storebackend.entity.Order;
+import storebackend.entity.OrderItem;
 import storebackend.enums.OrderStatus;
 import storebackend.service.EmailService;
 
+import java.util.List;
+
 /**
- * Listener für Order-Status-Änderungen
- * Sendet automatisch E-Mails an Kunden wenn sich der Status ändert
+ * Listener für Order-Status-Änderungen.
+ * Sendet automatisch mehrsprachige HTML-E-Mails an Kunden wenn sich der Status ändert.
  */
 @Component
 @RequiredArgsConstructor
@@ -27,69 +30,65 @@ public class OrderStatusEventListener {
         OrderStatus newStatus = event.getNewStatus();
         OrderStatus oldStatus = event.getOldStatus();
 
-        log.info("Order status changed: Order={}, {} → {}",
-                order.getOrderNumber(), oldStatus, newStatus);
+        log.info("Order status changed: Order={}, {} → {}", order.getOrderNumber(), oldStatus, newStatus);
 
         String customerEmail = order.getCustomerEmail();
-        String orderNumber = order.getOrderNumber();
-        String storeName = order.getStore() != null ? order.getStore().getName() : "Markt.ma";
+        String orderNumber   = order.getOrderNumber();
+        String storeName     = order.getStore() != null ? order.getStore().getName() : "Markt.ma";
+        String storeLogo     = order.getStore() != null ? order.getStore().getLogoUrl() : null;
+
+        // Sprache des Kunden ermitteln – Fallback "en"
+        String lang = "en";
+        if (order.getCustomer() != null) {
+            lang = order.getCustomer().getPreferredLanguage();
+        }
 
         if (customerEmail == null || customerEmail.isEmpty()) {
-            log.warn("Cannot send email - customer email is null for order: {}", orderNumber);
+            log.warn("Cannot send email – customer email is null for order: {}", orderNumber);
             return;
         }
 
-        // Entscheide basierend auf neuem Status, welche Email gesendet werden soll
+        List<OrderItem> items = order.getOrderItems() != null ? order.getOrderItems() : List.of();
+
         switch (newStatus) {
             case PENDING:
-                // Bestellung wurde aufgegeben
                 if (oldStatus == null) {
                     emailService.sendOrderConfirmation(
-                        customerEmail,
-                        orderNumber,
-                        storeName,
-                        order.getTotalAmount().doubleValue()
+                        customerEmail, orderNumber, storeName,
+                        order.getTotalAmount().doubleValue(),
+                        items, storeLogo, lang
                     );
                 }
                 break;
 
             case CONFIRMED:
-                // Bestellung wurde bestätigt (optional - kann auch übersprungen werden)
-                log.info("Order confirmed, no email sent (already sent at PENDING)");
+                log.info("Order confirmed – no extra email (already sent at PENDING)");
                 break;
 
             case SHIPPED:
-                // Bestellung wurde versendet
+                String trackingUrl = order.getTrackingUrl();
+                String carrier     = order.getTrackingCarrier();
                 emailService.sendShippingNotification(
-                    customerEmail,
-                    orderNumber,
-                    storeName,
-                    order.getTrackingNumber()
+                    customerEmail, orderNumber, storeName,
+                    order.getTrackingNumber(), trackingUrl, carrier, storeLogo, lang
                 );
                 break;
 
             case DELIVERED:
-                // Bestellung wurde zugestellt
                 emailService.sendDeliveryConfirmation(
-                    customerEmail,
-                    orderNumber,
-                    storeName
+                    customerEmail, orderNumber, storeName, storeLogo, lang
                 );
                 break;
 
             case CANCELLED:
-                // Bestellung wurde storniert
                 emailService.sendOrderCancellation(
-                    customerEmail,
-                    orderNumber,
-                    storeName,
-                    order.getNotes() // Notes können Stornierungsgrund enthalten
+                    customerEmail, orderNumber, storeName,
+                    order.getNotes(), storeLogo, lang
                 );
                 break;
 
             case REFUNDED:
-                // Rückerstattung erfolgt (optional)
-                log.info("Order refunded: {}, consider sending refund confirmation", orderNumber);
+                log.info("Order refunded: {} – consider sending refund confirmation", orderNumber);
                 break;
 
             default:
@@ -98,4 +97,3 @@ public class OrderStatusEventListener {
         }
     }
 }
-
