@@ -465,7 +465,16 @@
     "registerSubtitle": "Create your free account",
     "registerBtn": "Create account",
     "registering": "Registering...",
-    "registerSuccess": "✓ Registration successful! Please check your emails and click the confirmation link to activate your account."
+    "registerSuccess": "✓ Registration successful! Please check your emails and click the confirmation link to activate your account.",
+    "checkInboxTitle": "Check your inbox",
+    "checkSpamHint": "Tip: Also check your spam or promotions folder.",
+    "resendVerification": "Resend verification email",
+    "resending": "Sending...",
+    "resendIn": "Resend in",
+    "resendSuccess": "✓ Verification email resent.",
+    "resendFailed": "Failed to send. Please try again later.",
+    "goToLogin": "Go to login",
+    "emailAlreadyExists": "This email is already registered."
   },
   "storefront": {
     "searchResults": "Search results",

@@ -27,8 +27,12 @@ export class ChoosePathComponent implements OnInit {
     // Store the choice in localStorage
     localStorage.setItem('preferredStoreType', pathType);
 
-    // Navigate to dashboard to open create store modal
-    this.router.navigate(['/dashboard']);
+    // FIX: Eigener Store -> Wizard (mehrstufig), Reseller -> Simple-Form
+    if (pathType === 'own-store') {
+      this.router.navigate(['/store-wizard']);
+    } else {
+      this.router.navigate(['/create-store']);
+    }
   }
 
   goBack(): void {

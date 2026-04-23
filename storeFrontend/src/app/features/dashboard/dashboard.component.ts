@@ -991,6 +991,12 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
+    // FIX: Wenn User vorher "own-store" gewählt hat -> direkt in den Wizard
+    if (preferredType === 'own-store') {
+      this.router.navigate(['/store-wizard']);
+      return;
+    }
+
     this.showCreateModal = true;
     this.newStore = { name: '', slug: '', description: '' };
     this.slugError = '';

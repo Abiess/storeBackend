@@ -637,7 +637,16 @@
     "registerSubtitle": "Erstellen Sie Ihr kostenloses Konto",
     "registerBtn": "Konto erstellen",
     "registering": "Wird registriert...",
-    "registerSuccess": "✓ Registrierung erfolgreich! Bitte überprüfen Sie Ihre E-Mails und klicken Sie auf den Bestätigungslink, um Ihr Konto zu aktivieren."
+    "registerSuccess": "✓ Registrierung erfolgreich! Bitte überprüfen Sie Ihre E-Mails und klicken Sie auf den Bestätigungslink, um Ihr Konto zu aktivieren.",
+    "checkInboxTitle": "Posteingang prüfen",
+    "checkSpamHint": "Tipp: Prüfen Sie auch Ihren Spam- oder Werbung-Ordner.",
+    "resendVerification": "E-Mail erneut senden",
+    "resending": "Wird gesendet...",
+    "resendIn": "Erneut senden in",
+    "resendSuccess": "✓ Verifikations-E-Mail erneut gesendet.",
+    "resendFailed": "Senden fehlgeschlagen. Bitte später erneut versuchen.",
+    "goToLogin": "Zum Login",
+    "emailAlreadyExists": "Diese E-Mail ist bereits registriert."
   },
   "storefront": {
     "searchResults": "Suchergebnisse",

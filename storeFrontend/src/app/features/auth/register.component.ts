@@ -17,13 +17,14 @@ import { TranslationService } from '../../core/services/translation.service';
         <h1>{{ 'auth.registerTitle' | translate }}</h1>
         <p class="subtitle">{{ 'auth.registerSubtitle' | translate }}</p>
         
-        <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+        <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" *ngIf="!successMessage">
           <div class="form-group">
             <label for="email">{{ 'auth.email' | translate }}</label>
             <input 
               id="email" 
               type="email" 
               formControlName="email" 
+              autocomplete="email"
               [placeholder]="'auth.emailPlaceholder' | translate"
             />
             <div *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched" class="error">
@@ -37,6 +38,7 @@ import { TranslationService } from '../../core/services/translation.service';
               id="password" 
               type="password" 
               formControlName="password" 
+              autocomplete="new-password"
               [placeholder]="'profile.newPasswordPlaceholder' | translate"
             />
             <div *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched" class="error">
@@ -63,16 +65,35 @@ import { TranslationService } from '../../core/services/translation.service';
             </div>
           </div>
 
-          <div *ngIf="successMessage" class="alert alert-success">
-            {{ successMessage }}
-          </div>
-
           <button type="submit" class="btn btn-primary" [disabled]="registerForm.invalid || loading">
             {{ loading ? ('auth.registering' | translate) : ('auth.registerBtn' | translate) }}
           </button>
         </form>
 
-        <p class="auth-footer">
+        <!-- Erfolgs-Panel: Hinweis Email-Verifikation + Resend + Login -->
+        <div *ngIf="successMessage" class="success-panel" role="status" aria-live="polite">
+          <div class="success-icon">📧</div>
+          <h2>{{ 'auth.checkInboxTitle' | translate }}</h2>
+          <p class="success-text">{{ successMessage }}</p>
+          <p class="hint-text">{{ 'auth.checkSpamHint' | translate }}</p>
+
+          <div *ngIf="resendMessage" class="alert" [class.alert-success]="!resendError" [class.alert-error]="resendError">
+            {{ resendMessage }}
+          </div>
+
+          <div class="success-actions">
+            <button type="button" class="btn btn-secondary" (click)="resendVerification()" [disabled]="resending || resendCooldown > 0">
+              <span *ngIf="!resending && resendCooldown === 0">{{ 'auth.resendVerification' | translate }}</span>
+              <span *ngIf="resending">{{ 'auth.resending' | translate }}</span>
+              <span *ngIf="!resending && resendCooldown > 0">{{ 'auth.resendIn' | translate }} {{ resendCooldown }}s</span>
+            </button>
+            <button type="button" class="btn btn-primary" (click)="goToLogin()">
+              {{ 'auth.goToLogin' | translate }}
+            </button>
+          </div>
+        </div>
+
+        <p class="auth-footer" *ngIf="!successMessage">
           <a [routerLink]="['/login']" [queryParams]="{ returnUrl: returnUrl }">{{ 'auth.alreadyRegistered' | translate }}</a>
         </p>
       </div>
@@ -85,6 +106,7 @@ import { TranslationService } from '../../core/services/translation.service';
       align-items: center;
       justify-content: center;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 16px;
     }
 
     .auth-card {
@@ -93,13 +115,14 @@ import { TranslationService } from '../../core/services/translation.service';
       border-radius: 12px;
       box-shadow: 0 10px 40px rgba(0,0,0,0.1);
       width: 100%;
-      max-width: 420px;
+      max-width: 460px;
     }
 
     h1 {
       margin-bottom: 10px;
       color: #333;
       text-align: center;
+      font-size: 26px;
     }
 
     .subtitle {
@@ -168,6 +191,78 @@ import { TranslationService } from '../../core/services/translation.service';
       font-weight: 700;
       color: #667eea;
     }
+
+    /* === Success Panel === */
+    .success-panel {
+      text-align: center;
+      animation: fadeIn 0.4s ease;
+    }
+    .success-icon {
+      font-size: 56px;
+      margin-bottom: 12px;
+      animation: pop 0.5s ease;
+    }
+    .success-panel h2 {
+      color: #28a745;
+      font-size: 22px;
+      margin-bottom: 12px;
+    }
+    .success-text {
+      color: #444;
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+    .hint-text {
+      color: #888;
+      font-size: 13px;
+      margin-bottom: 20px;
+    }
+    .success-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .btn-secondary {
+      background: #f4f6f9;
+      color: #555;
+      border: 1px solid #ddd;
+    }
+    .btn-secondary:hover:not(:disabled) {
+      background: #e9ecef;
+    }
+    .alert-success {
+      background: #d4edda;
+      color: #155724;
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+
+    @keyframes pop {
+      0% { transform: scale(0.5); opacity: 0; }
+      60% { transform: scale(1.15); opacity: 1; }
+      100% { transform: scale(1); }
+    }
+
+    /* === Responsive === */
+    @media (max-width: 480px) {
+      .auth-card {
+        padding: 24px 20px;
+        border-radius: 10px;
+      }
+      h1 { font-size: 22px; }
+      .subtitle { font-size: 14px; margin-bottom: 22px; }
+      .success-icon { font-size: 44px; }
+      .success-panel h2 { font-size: 18px; }
+    }
+    @media (min-width: 481px) {
+      .success-actions {
+        flex-direction: row;
+      }
+      .success-actions .btn { margin-top: 0; }
+    }
   `]
 })
 export class RegisterComponent implements OnInit, OnDestroy {
@@ -178,6 +273,14 @@ export class RegisterComponent implements OnInit, OnDestroy {
   returnUrl = '/dashboard';
   redirectCountdown = 0;
   redirectTimer: any = null;
+
+  // Resend-Verification State
+  resending = false;
+  resendMessage = '';
+  resendError = false;
+  resendCooldown = 0;
+  resendTimer: any = null;
+  registeredEmail = '';
 
   constructor(
     private fb: FormBuilder,
@@ -193,15 +296,12 @@ export class RegisterComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // FIXED: Speichere returnUrl für Template-Verwendung
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
   }
 
   ngOnDestroy(): void {
-    // Cleanup: Timer clearen wenn Component destroyed wird
-    if (this.redirectTimer) {
-      clearInterval(this.redirectTimer);
-    }
+    if (this.redirectTimer) clearInterval(this.redirectTimer);
+    if (this.resendTimer) clearInterval(this.resendTimer);
   }
 
   onSubmit(): void {
@@ -215,15 +315,15 @@ export class RegisterComponent implements OnInit, OnDestroy {
       this.authService.register(formData).subscribe({
         next: () => {
           this.loading = false;
+          this.registeredEmail = formData.email;
           this.successMessage = this.translationService.translate('auth.registerSuccess');
-          // Formular zurücksetzen
+          this.startResendCooldown(60);
           this.registerForm.reset();
         },
         error: (error) => {
           this.loading = false;
           const errorMsg = error.error?.message || '';
           
-          // Prüfe ob Email bereits registriert ist
           const emailExistsPatterns = [
             'email already exists',
             'email already registered',
@@ -237,14 +337,12 @@ export class RegisterComponent implements OnInit, OnDestroy {
           
           const isEmailExists = emailExistsPatterns.some(pattern => 
             errorMsg.toLowerCase().includes(pattern.toLowerCase())
-          ) || error.status === 409; // 409 = Conflict
-          
+          ) || error.status === 409;
+
           if (isEmailExists) {
-            // Zeige Nachricht und wechsle zum Login mit den Credentials
-            this.errorMessage = this.translationService.translate('auth.emailAlreadyExists') || 
+            this.errorMessage = this.translationService.translate('auth.emailAlreadyExists') ||
                                'Diese E-Mail ist bereits registriert.';
             
-            // Starte Countdown
             this.redirectCountdown = 3;
             this.redirectTimer = setInterval(() => {
               this.redirectCountdown--;
@@ -265,5 +363,50 @@ export class RegisterComponent implements OnInit, OnDestroy {
         }
       });
     }
+  }
+
+  resendVerification(): void {
+    if (this.resending || this.resendCooldown > 0 || !this.registeredEmail) return;
+    this.resending = true;
+    this.resendMessage = '';
+    this.resendError = false;
+
+    this.authService.resendVerificationEmail(this.registeredEmail).subscribe({
+      next: () => {
+        this.resending = false;
+        this.resendError = false;
+        this.resendMessage = this.translationService.translate('auth.resendSuccess')
+          || 'Verifikations-E-Mail wurde erneut gesendet.';
+        this.startResendCooldown(60);
+      },
+      error: (err) => {
+        this.resending = false;
+        this.resendError = true;
+        this.resendMessage = err?.error?.message
+          || this.translationService.translate('auth.resendFailed')
+          || 'Senden fehlgeschlagen. Bitte später erneut versuchen.';
+      }
+    });
+  }
+
+  private startResendCooldown(seconds: number): void {
+    this.resendCooldown = seconds;
+    if (this.resendTimer) clearInterval(this.resendTimer);
+    this.resendTimer = setInterval(() => {
+      this.resendCooldown--;
+      if (this.resendCooldown <= 0) {
+        clearInterval(this.resendTimer);
+      }
+    }, 1000);
+  }
+
+  goToLogin(): void {
+    this.router.navigate(['/login'], {
+      queryParams: {
+        returnUrl: this.returnUrl,
+        email: this.registeredEmail,
+        autoFill: 'true'
+      }
+    });
   }
 }

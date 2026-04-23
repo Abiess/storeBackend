@@ -109,6 +109,17 @@ export class AuthService {
     this.cartService = cartService;
   }
 
+  /**
+   * Sendet die Verifikations-Email erneut.
+   * Nutzt POST /api/auth/resend-verification
+   */
+  resendVerificationEmail(email: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(
+      `${environment.apiUrl}/auth/resend-verification`,
+      { email }
+    );
+  }
+
   logout(): void {
     console.log('🚪 Logout - Bereinige Session und Warenkorb');
 
