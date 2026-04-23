@@ -316,6 +316,146 @@ public class EmailService {
     }
 
     // ==================================================================================
+    // SUBSCRIPTION E-MAILS
+    // ==================================================================================
+
+    public void sendSubscriptionRenewalReminder(String toEmail, String name, String planName,
+                                                long daysLeft, Double amount, String currency,
+                                                java.time.LocalDateTime renewalDate, String lang) {
+        if (!mailEnabled) { log.info("Mail disabled – renewal reminder to: {}", toEmail); return; }
+        try {
+            Map<String, Object> vars = new HashMap<>();
+            vars.put("planName",     planName);
+            vars.put("daysLeft",     daysLeft);
+            vars.put("amount",       amount != null ? String.format("%.2f", amount) : "-");
+            vars.put("currency",     currency != null ? currency : "EUR");
+            vars.put("renewalDate",  renewalDate != null ? renewalDate.toLocalDate().toString() : "-");
+            vars.put("manageUrl",    baseUrl + "/subscription");
+            vars.put("greeting",     buildGreeting(lang, name));
+            vars.put("title",        t(lang, "subscription.reminder.title", "Your subscription renews soon"));
+            vars.put("intro",        t(lang, "subscription.reminder.intro", "Your subscription will renew automatically."));
+            vars.put("labelPlan",    t(lang, "subscription.labelPlan",      "Plan"));
+            vars.put("labelDaysLeft",t(lang, "subscription.labelDaysLeft",  "Days left"));
+            vars.put("labelAmount",  t(lang, "subscription.labelAmount",    "Amount"));
+            vars.put("labelRenewal", t(lang, "subscription.labelRenewal",   "Renewal date"));
+            vars.put("outro",        t(lang, "subscription.reminder.outro", "You can cancel anytime in your account."));
+            vars.put("btnManage",    t(lang, "subscription.btnManage",      "Manage Subscription"));
+            addFooter(lang, vars);
+
+            String subject = templateService.renderSubject(
+                t(lang, "subscription.reminder.subject", "Your subscription renews in {{daysLeft}} days"), vars);
+            sendHtml(toEmail, subject, templateService.render("subscription-renewal-reminder.html", lang, vars));
+            log.info("Subscription reminder (HTML/{}) sent to: {} ({} days left)", lang, toEmail, daysLeft);
+        } catch (Exception e) {
+            log.error("Failed to send renewal reminder to: {}", toEmail, e);
+        }
+    }
+
+    public void sendSubscriptionRenewed(String toEmail, String name, String planName,
+                                        Double amount, String currency,
+                                        java.time.LocalDateTime nextRenewalDate, String lang) {
+        if (!mailEnabled) { log.info("Mail disabled – subscription renewed to: {}", toEmail); return; }
+        try {
+            Map<String, Object> vars = new HashMap<>();
+            vars.put("planName",     planName);
+            vars.put("amount",       amount != null ? String.format("%.2f", amount) : "-");
+            vars.put("currency",     currency != null ? currency : "EUR");
+            vars.put("nextRenewal",  nextRenewalDate != null ? nextRenewalDate.toLocalDate().toString() : "-");
+            vars.put("manageUrl",    baseUrl + "/subscription");
+            vars.put("greeting",     buildGreeting(lang, name));
+            vars.put("title",        t(lang, "subscription.renewed.title", "Subscription renewed"));
+            vars.put("intro",        t(lang, "subscription.renewed.intro", "Your subscription has been renewed successfully."));
+            vars.put("labelPlan",    t(lang, "subscription.labelPlan",     "Plan"));
+            vars.put("labelAmount",  t(lang, "subscription.labelAmount",   "Amount"));
+            vars.put("labelNext",    t(lang, "subscription.labelNext",     "Next renewal"));
+            vars.put("outro",        t(lang, "subscription.renewed.outro", "Thank you for staying with us!"));
+            vars.put("btnManage",    t(lang, "subscription.btnManage",     "Manage Subscription"));
+            addFooter(lang, vars);
+
+            String subject = templateService.renderSubject(
+                t(lang, "subscription.renewed.subject", "Your {{planName}} subscription has been renewed"), vars);
+            sendHtml(toEmail, subject, templateService.render("subscription-renewed.html", lang, vars));
+            log.info("Subscription renewed mail (HTML/{}) sent to: {}", lang, toEmail);
+        } catch (Exception e) {
+            log.error("Failed to send renewal mail to: {}", toEmail, e);
+        }
+    }
+
+    public void sendSubscriptionExpired(String toEmail, String name, String planName, String lang) {
+        if (!mailEnabled) { log.info("Mail disabled – subscription expired to: {}", toEmail); return; }
+        try {
+            Map<String, Object> vars = new HashMap<>();
+            vars.put("planName",     planName);
+            vars.put("upgradeUrl",   baseUrl + "/subscription");
+            vars.put("greeting",     buildGreeting(lang, name));
+            vars.put("title",        t(lang, "subscription.expired.title",  "Subscription expired"));
+            vars.put("intro",        t(lang, "subscription.expired.intro",  "Your subscription has expired. You have been moved to the Free plan."));
+            vars.put("outro",        t(lang, "subscription.expired.outro",  "Re-activate anytime to regain premium features."));
+            vars.put("btnUpgrade",   t(lang, "subscription.btnUpgrade",     "Upgrade Now"));
+            addFooter(lang, vars);
+
+            String subject = templateService.renderSubject(
+                t(lang, "subscription.expired.subject", "Your {{planName}} subscription has expired"), vars);
+            sendHtml(toEmail, subject, templateService.render("subscription-expired.html", lang, vars));
+            log.info("Subscription expired mail (HTML/{}) sent to: {}", lang, toEmail);
+        } catch (Exception e) {
+            log.error("Failed to send expired mail to: {}", toEmail, e);
+        }
+    }
+
+    public void sendSubscriptionCancelled(String toEmail, String name, String planName,
+                                          java.time.LocalDateTime endDate, String lang) {
+        if (!mailEnabled) { log.info("Mail disabled – subscription cancelled to: {}", toEmail); return; }
+        try {
+            Map<String, Object> vars = new HashMap<>();
+            vars.put("planName",      planName);
+            vars.put("endDate",       endDate != null ? endDate.toLocalDate().toString() : "-");
+            vars.put("reactivateUrl", baseUrl + "/subscription");
+            vars.put("greeting",      buildGreeting(lang, name));
+            vars.put("title",         t(lang, "subscription.cancelled.title",  "Subscription cancelled"));
+            vars.put("intro",         t(lang, "subscription.cancelled.intro",  "Your subscription has been cancelled as requested."));
+            vars.put("labelPlan",     t(lang, "subscription.labelPlan",        "Plan"));
+            vars.put("labelEnd",      t(lang, "subscription.labelEnd",         "End date"));
+            vars.put("outro",         t(lang, "subscription.cancelled.outro",  "We'd love to have you back anytime!"));
+            vars.put("btnReactivate", t(lang, "subscription.btnReactivate",    "Reactivate"));
+            addFooter(lang, vars);
+
+            String subject = templateService.renderSubject(
+                t(lang, "subscription.cancelled.subject", "Your {{planName}} subscription has been cancelled"), vars);
+            sendHtml(toEmail, subject, templateService.render("subscription-cancelled.html", lang, vars));
+            log.info("Subscription cancelled mail (HTML/{}) sent to: {}", lang, toEmail);
+        } catch (Exception e) {
+            log.error("Failed to send cancelled mail to: {}", toEmail, e);
+        }
+    }
+
+    public void sendSubscriptionUpgraded(String toEmail, String name, String oldPlanName,
+                                         String newPlanName, String lang) {
+        if (!mailEnabled) { log.info("Mail disabled – subscription upgraded to: {}", toEmail); return; }
+        try {
+            Map<String, Object> vars = new HashMap<>();
+            vars.put("oldPlanName", oldPlanName);
+            vars.put("newPlanName", newPlanName);
+            vars.put("dashboardUrl", baseUrl + "/dashboard");
+            vars.put("greeting",     buildGreeting(lang, name));
+            vars.put("title",        t(lang, "subscription.upgraded.title", "Welcome to {{newPlanName}}!"));
+            vars.put("intro",        t(lang, "subscription.upgraded.intro", "Your subscription has been upgraded successfully."));
+            vars.put("labelOldPlan", t(lang, "subscription.labelOldPlan",   "Previous plan"));
+            vars.put("labelNewPlan", t(lang, "subscription.labelNewPlan",   "New plan"));
+            vars.put("outro",        t(lang, "subscription.upgraded.outro", "Enjoy your new features!"));
+            vars.put("btnDashboard", t(lang, "subscription.btnDashboard",   "Go to Dashboard"));
+            addFooter(lang, vars);
+
+            String subject = templateService.renderSubject(
+                t(lang, "subscription.upgraded.subject", "Welcome to {{newPlanName}}!"), vars);
+            sendHtml(toEmail, subject, templateService.render("subscription-upgraded.html", lang, vars));
+            log.info("Subscription upgraded mail (HTML/{}) sent to: {}", lang, toEmail);
+        } catch (Exception e) {
+            log.error("Failed to send upgraded mail to: {}", toEmail, e);
+        }
+    }
+
+    // ==================================================================================
     // Private Helpers
     // ==================================================================================
 

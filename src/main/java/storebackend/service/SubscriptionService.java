@@ -23,6 +23,7 @@ public class SubscriptionService {
     private final storebackend.config.PlanConfig planConfig;
     private final storebackend.repository.UserRepository userRepository;
     private final storebackend.repository.PlanRepository planRepository;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     /**
      * Hole aktuelle Subscription eines Benutzers
@@ -76,10 +77,11 @@ public class SubscriptionService {
      */
     @Transactional
     public Subscription upgradePlan(Long userId, Plan targetPlan, String billingCycle, PaymentMethod paymentMethod) {
-        log.info("Upgrade Plan für User {} zu {} ({})", userId, targetPlan, billingCycle);
+        log.info("Upgrade Plan fr User {} zu {} ({})", userId, targetPlan, billingCycle);
 
         // Finde aktuelle Subscription
         Optional<Subscription> currentSubOpt = getCurrentSubscription(userId);
+        Plan previousPlan = currentSubOpt.map(Subscription::getPlan).orElse(Plan.FREE);
 
         // ✅ SICHERHEIT: Verhindere versehentliches Downgrade von bezahltem Plan zu FREE
         if (currentSubOpt.isPresent()) {
@@ -130,7 +132,14 @@ public class SubscriptionService {
         // (StoreService prüft aktuell noch User.plan für Limits)
         updateUserPlanFromSubscription(userId, targetPlan);
 
-        log.info("✅ Plan erfolgreich aktualisiert: User {} → {}", userId, targetPlan);
+        log.info("œ… Plan erfolgreich aktualisiert: User {} †’ {}", userId, targetPlan);
+
+        // Event nur bei tatsächlicher Plan-Änderung & ACTIVE-Status (nicht für PENDING Bank-Transfer)
+        if (previousPlan != targetPlan && savedSubscription.getStatus() == SubscriptionStatus.ACTIVE) {
+            eventPublisher.publishEvent(
+                new storebackend.event.SubscriptionEvent.Upgraded(this, savedSubscription, previousPlan)
+            );
+        }
         return savedSubscription;
     }
 
@@ -187,7 +196,8 @@ public class SubscriptionService {
         subscription.setAutoRenew(false);
         subscription.setEndDate(LocalDateTime.now());
 
-        subscriptionRepository.save(subscription);
+        Subscription saved = subscriptionRepository.save(subscription);
+        eventPublisher.publishEvent(new storebackend.event.SubscriptionEvent.Cancelled(this, saved));
     }
 
     /**

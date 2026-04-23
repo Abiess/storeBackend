@@ -164,6 +164,11 @@ mail:
 # Base URL for Verification-Links
 app:
   base-url: ${APP_BASE_URL:https://markt.ma}
+  subscription:
+    cron:
+      renewal: ${APP_SUB_CRON_RENEWAL:0 0 2 * * *}
+      trial: ${APP_SUB_CRON_TRIAL:0 30 2 * * *}
+      reminder: ${APP_SUB_CRON_REMINDER:0 0 9 * * *}
 
 minio:
   enabled: ${MINIO_ENABLED:true}

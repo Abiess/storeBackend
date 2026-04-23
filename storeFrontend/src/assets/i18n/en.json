@@ -1127,6 +1127,50 @@
       "labelOrderNumber": "Order Number",
       "labelReason": "Cancellation Reason",
       "outro": "If you have questions about the cancellation, please contact our support."
+    },
+    "subscription": {
+      "labelPlan": "Plan",
+      "labelDaysLeft": "Days left",
+      "labelAmount": "Amount",
+      "labelRenewal": "Renewal date",
+      "labelNext": "Next renewal",
+      "labelEnd": "End date",
+      "labelOldPlan": "Previous plan",
+      "labelNewPlan": "New plan",
+      "btnManage": "Manage Subscription",
+      "btnUpgrade": "Upgrade Now",
+      "btnReactivate": "Reactivate",
+      "btnDashboard": "Go to Dashboard",
+      "reminder": {
+        "subject": "Your subscription renews in {{daysLeft}} days",
+        "title": "Your subscription renews soon",
+        "intro": "Your subscription will renew automatically. Here are the details:",
+        "outro": "You can cancel anytime in your account."
+      },
+      "renewed": {
+        "subject": "Your {{planName}} subscription has been renewed",
+        "title": "Subscription renewed",
+        "intro": "Your subscription has been renewed successfully.",
+        "outro": "Thank you for staying with us!"
+      },
+      "expired": {
+        "subject": "Your {{planName}} subscription has expired",
+        "title": "Subscription expired",
+        "intro": "Your subscription has expired. You have been moved to the Free plan.",
+        "outro": "You can re-activate anytime to regain premium features."
+      },
+      "cancelled": {
+        "subject": "Your {{planName}} subscription has been cancelled",
+        "title": "Subscription cancelled",
+        "intro": "Your subscription has been cancelled as requested.",
+        "outro": "We'd love to have you back anytime!"
+      },
+      "upgraded": {
+        "subject": "Welcome to {{newPlanName}}!",
+        "title": "Welcome to {{newPlanName}}!",
+        "intro": "Your subscription has been upgraded successfully.",
+        "outro": "Enjoy your new features!"
+      }
     }
   }
 }
