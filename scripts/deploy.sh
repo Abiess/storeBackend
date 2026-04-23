@@ -165,6 +165,10 @@ CJ_API_TIMEOUT=${CJ_API_TIMEOUT:-30000}
 # Hugging Face API Key (AI Product Creation)
 HUGGINGFACE_API_KEY=${HUGGINGFACE_API_KEY:-}
 
+# Hibernate DDL-Strategie (Default 'update' = neue Spalten anlegen, Daten erhalten)
+# Override für Flyway-Migration: SPRING_JPA_HIBERNATE_DDL_AUTO=validate
+SPRING_JPA_HIBERNATE_DDL_AUTO=${SPRING_JPA_HIBERNATE_DDL_AUTO:-update}
+
 EOF"
 
 sudo chown "$APP_USER:$APP_USER" "$ENV_FILE"

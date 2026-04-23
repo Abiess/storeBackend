@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="{{lang}}" dir="{{dir}}">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>{{title}}</title>
+<style>
+* { margin:0;padding:0;box-sizing:border-box; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#f4f6f9;color:#333; }
+.wrapper { max-width:620px;margin:30px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08); }
+.header { background:linear-gradient(135deg,#ec4899 0%,#db2777 100%);padding:36px 40px;text-align:center; }
+.header h1 { color:#fff;font-size:22px;font-weight:700; }
+.header .icon { font-size:44px;margin-bottom:10px;display:block; }
+.body { padding:36px 40px; }
+.greeting { font-size:16px;color:#555;margin-bottom:18px; }
+.intro { font-size:15px;color:#444;line-height:1.7;margin-bottom:24px; }
+.info-box { background:#fdf2f8;border:1px solid #fbcfe8;border-radius:10px;padding:18px 22px;margin:18px 0; }
+.info-box .row { display:flex;justify-content:space-between;padding:6px 0;font-size:14px; }
+.info-box .row strong { color:#9d174d; }
+table.items { width:100%;border-collapse:collapse;margin:16px 0; }
+table.items th, table.items td { padding:10px 8px;border-bottom:1px solid #f1f1f1;font-size:13px;text-align:start; }
+table.items th { background:#fdf2f8;color:#9d174d;font-weight:600; }
+.btn-wrap { text-align:center;margin:28px 0 8px; }
+.btn { display:inline-block;background:linear-gradient(135deg,#ec4899 0%,#db2777 100%);color:#fff!important;text-decoration:none;padding:14px 36px;border-radius:8px;font-size:15px;font-weight:600; }
+.outro { font-size:13px;color:#777;margin-top:18px;line-height:1.6; }
+.footer { background:#f8f9ff;border-top:1px solid #eee;padding:24px 40px;text-align:center; }
+.footer p { font-size:13px;color:#888;line-height:1.8; }
+.footer a { color:#667eea;text-decoration:none; }
+.logo { max-height:40px;margin-bottom:10px; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    {{#storeLogo}}<img class="logo" src="{{storeLogo}}" alt="{{storeName}}">{{/storeLogo}}
+    <span class="icon">🛒</span>
+    <h1>{{title}}</h1>
+  </div>
+  <div class="body">
+    <p class="greeting">{{greeting}}</p>
+    <p class="intro">{{intro}}</p>
+    <div class="info-box">
+      <div class="row"><span>{{labelStore}}</span><strong>{{storeName}}</strong></div>
+      <div class="row"><span>{{labelItems}}</span><strong>{{itemCount}}</strong></div>
+      <div class="row"><span>{{labelTotal}}</span><strong>{{totalAmount}} {{currency}}</strong></div>
+    </div>
+    {{#hasItems}}
+    <table class="items">
+      <thead>
+        <tr>
+          <th>{{labelProduct}}</th>
+          <th>{{labelQty}}</th>
+          <th>{{labelPrice}}</th>
+          <th>{{labelItemTotal}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#items}}
+        <tr>
+          <td>{{name}}{{#variantTitle}} <small style="color:#999">({{variantTitle}})</small>{{/variantTitle}}</td>
+          <td>{{quantity}}</td>
+          <td>{{price}} {{currency}}</td>
+          <td>{{total}} {{currency}}</td>
+        </tr>
+        {{/items}}
+      </tbody>
+    </table>
+    {{/hasItems}}
+    <div class="btn-wrap"><a class="btn" href="{{cartUrl}}">{{btnCheckout}}</a></div>
+    <p class="outro">{{outro}}</p>
+  </div>
+  <div class="footer">
+    <p>{{footerTeam}}</p>
+    <p><a href="mailto:support@markt.ma">{{footerSupport}}</a></p>
+  </div>
+</div>
+</body>
+</html>
+

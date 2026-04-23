@@ -1173,6 +1173,16 @@
         "intro": "Ihr Abonnement wurde erfolgreich aktualisiert.",
         "outro": "Viel Spaß mit Ihren neuen Funktionen!"
       }
+    },
+    "cart": {
+      "abandoned": {
+        "subject": "Sie haben {{itemCount}} Artikel im Warenkorb - {{storeName}}",
+        "title": "Ihr Warenkorb wartet auf Sie",
+        "intro": "Wir haben bemerkt, dass Sie Artikel in Ihrem Warenkorb gelassen haben. Schließen Sie Ihren Einkauf ab, bevor sie ausverkauft sind!",
+        "outro": "Dieser Warenkorb wird nach 7 Tagen automatisch geleert.",
+        "labelItems": "Artikel im Warenkorb",
+        "btnCheckout": "Zurück zum Warenkorb"
+      }
     }
   }
 }

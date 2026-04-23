@@ -18,7 +18,10 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create  # Auto-Update Schema - adds missing columns (e.g. cart_items.created_at)
+      # 'update' = additive Schema-Änderungen (neue Spalten/Tabellen werden angelegt,
+      # bestehende Daten bleiben erhalten). NIE 'create' oder 'create-drop' in Production!
+      # Override per ENV: SPRING_JPA_HIBERNATE_DDL_AUTO=validate (z.B. nach Flyway-Einführung)
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
     show-sql: false  # In Production: false (performance)
     open-in-view: false  # Prevents lazy-loading issues
     properties:
@@ -169,6 +172,12 @@ app:
       renewal: ${APP_SUB_CRON_RENEWAL:0 0 2 * * *}
       trial: ${APP_SUB_CRON_TRIAL:0 30 2 * * *}
       reminder: ${APP_SUB_CRON_REMINDER:0 0 9 * * *}
+  cart:
+    cron:
+      cleanup: ${APP_CART_CRON_CLEANUP:0 15 3 * * *}
+      reminder: ${APP_CART_CRON_REMINDER:0 0 10 * * *}
+    reminder:
+      idle-hours: ${APP_CART_REMINDER_IDLE_HOURS:24}
 
 minio:
   enabled: ${MINIO_ENABLED:true}

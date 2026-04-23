@@ -456,6 +456,56 @@ public class EmailService {
     }
 
     // ==================================================================================
+    // CART E-MAILS (Abandoned Cart Reminder)
+    // ==================================================================================
+
+    /**
+     * Sendet eine Erinnerung an einen verlassenen Warenkorb.
+     * @param items Liste von Maps mit Keys: name, variantTitle, quantity, price, total, currency
+     */
+    public void sendAbandonedCartReminder(String toEmail, String name, String storeName,
+                                          String storeLogo, int itemCount, Double totalAmount,
+                                          String currency, java.util.List<Map<String, Object>> items,
+                                          String cartUrl, String lang) {
+        if (!mailEnabled) { log.info("Mail disabled – abandoned cart reminder to: {}", toEmail); return; }
+        try {
+            Map<String, Object> vars = new HashMap<>();
+            vars.put("storeName",        storeName);
+            vars.put("storeLogo",        storeLogo);
+            vars.put("itemCount",        itemCount);
+            vars.put("totalAmount",      totalAmount != null ? String.format("%.2f", totalAmount) : "-");
+            vars.put("currency",         currency != null ? currency : "MAD");
+            vars.put("cartUrl",          cartUrl != null ? cartUrl : (baseUrl + "/cart"));
+            vars.put("greeting",         buildGreeting(lang, name));
+            vars.put("title",            t(lang, "cart.abandoned.title",         "You left items in your cart"));
+            vars.put("intro",            t(lang, "cart.abandoned.intro",         "Your cart is still waiting for you!"));
+            vars.put("labelStore",       t(lang, "orderConfirmation.labelStore", "Store"));
+            vars.put("labelItems",       t(lang, "cart.abandoned.labelItems",    "Items"));
+            vars.put("labelTotal",       t(lang, "orderConfirmation.labelTotal", "Total"));
+            vars.put("labelProduct",     t(lang, "orderConfirmation.labelProduct","Item"));
+            vars.put("labelQty",         t(lang, "orderConfirmation.labelQty",   "Qty"));
+            vars.put("labelPrice",       t(lang, "orderConfirmation.labelPrice", "Price"));
+            vars.put("labelItemTotal",   t(lang, "orderConfirmation.labelItemTotal","Total"));
+            vars.put("outro",            t(lang, "cart.abandoned.outro",         "Complete your order before items sell out."));
+            vars.put("btnCheckout",      t(lang, "cart.abandoned.btnCheckout",   "Return to Cart"));
+            addFooter(lang, vars);
+
+            if (items != null && !items.isEmpty()) {
+                vars.put("hasItems", true);
+                vars.put("items", items);
+            }
+
+            String subjectTpl = t(lang, "cart.abandoned.subject",
+                    "You left {{itemCount}} items in your cart - {{storeName}}");
+            sendHtml(toEmail, templateService.renderSubject(subjectTpl, vars),
+                     templateService.render("cart-abandoned.html", lang, vars));
+            log.info("Abandoned cart reminder (HTML/{}) sent to: {} ({} items)", lang, toEmail, itemCount);
+        } catch (Exception e) {
+            log.error("Failed to send abandoned cart reminder to: {}", toEmail, e);
+        }
+    }
+
+    // ==================================================================================
     // Private Helpers
     // ==================================================================================
 

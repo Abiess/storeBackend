@@ -1171,6 +1171,16 @@
         "intro": "Your subscription has been upgraded successfully.",
         "outro": "Enjoy your new features!"
       }
+    },
+    "cart": {
+      "abandoned": {
+        "subject": "You left {{itemCount}} items in your cart - {{storeName}}",
+        "title": "Your cart is waiting for you",
+        "intro": "We noticed you left some items in your cart. Complete your purchase before they sell out!",
+        "outro": "This cart will be cleared automatically after 7 days.",
+        "labelItems": "Items in cart",
+        "btnCheckout": "Return to Cart"
+      }
     }
   }
 }

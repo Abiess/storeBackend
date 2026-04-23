@@ -29,4 +29,21 @@ public interface CartRepository extends JpaRepository<Cart, Long> {
     List<Long> findCartIdsByStoreId(@Param("storeId") Long storeId);
 
     void deleteByStoreId(Long storeId);
+
+    /**
+     * Findet "verwaiste" Warenkörbe (Abandoned Carts) für eingeloggte Kunden:
+     *  - User vorhanden (sonst keine E-Mail möglich)
+     *  - Cart hat mind. 1 Item
+     *  - seit `cutoff` nicht mehr aktualisiert
+     *  - noch nicht abgelaufen (sonst macht Erinnerung keinen Sinn)
+     *  - reminderSentAt IS NULL (Idempotenz: nur einmal erinnern)
+     */
+    @Query("SELECT DISTINCT c FROM Cart c " +
+           "JOIN CartItem ci ON ci.cart.id = c.id " +
+           "WHERE c.user IS NOT NULL " +
+           "AND c.updatedAt < :cutoff " +
+           "AND c.expiresAt > :now " +
+           "AND c.reminderSentAt IS NULL")
+    List<Cart> findAbandonedCarts(@Param("cutoff") LocalDateTime cutoff,
+                                  @Param("now") LocalDateTime now);
 }

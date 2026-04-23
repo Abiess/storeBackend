@@ -89,6 +89,12 @@ app:
       renewal: ${APP_SUB_CRON_RENEWAL:0 0 2 * * *}
       trial: ${APP_SUB_CRON_TRIAL:0 30 2 * * *}
       reminder: ${APP_SUB_CRON_REMINDER:0 0 9 * * *}
+  cart:
+    cron:
+      cleanup: ${APP_CART_CRON_CLEANUP:0 15 3 * * *}
+      reminder: ${APP_CART_CRON_REMINDER:0 0 10 * * *}
+    reminder:
+      idle-hours: ${APP_CART_REMINDER_IDLE_HOURS:24}
 
 mail:
   enabled: ${MAIL_ENABLED:true}

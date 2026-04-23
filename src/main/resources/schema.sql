@@ -310,6 +310,7 @@ CREATE TABLE IF NOT EXISTS carts (
     expires_at TIMESTAMP NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    reminder_sent_at TIMESTAMP,
     CONSTRAINT fk_carts_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT fk_carts_store FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
 );
@@ -817,6 +818,8 @@ CREATE INDEX IF NOT EXISTS idx_carts_session_id ON carts(session_id);
 CREATE INDEX IF NOT EXISTS idx_carts_user_id ON carts(user_id);
 CREATE INDEX IF NOT EXISTS idx_carts_store_id ON carts(store_id);
 CREATE INDEX IF NOT EXISTS idx_carts_expires_at ON carts(expires_at);
+CREATE INDEX IF NOT EXISTS idx_carts_reminder_sent_at ON carts(reminder_sent_at);
+CREATE INDEX IF NOT EXISTS idx_carts_updated_at ON carts(updated_at);
 
 -- Cart Items
 CREATE INDEX IF NOT EXISTS idx_cart_items_cart_id ON cart_items(cart_id);

@@ -37,6 +37,10 @@ public class Cart {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    /** Zeitpunkt der zuletzt gesendeten Abandoned-Cart-Erinnerung (null = noch keine). */
+    @Column(name = "reminder_sent_at")
+    private LocalDateTime reminderSentAt;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -86,5 +90,13 @@ public class Cart {
 
     public void setExpiresAt(LocalDateTime expiresAt) {
         this.expiresAt = expiresAt;
+    }
+
+    public LocalDateTime getReminderSentAt() {
+        return reminderSentAt;
+    }
+
+    public void setReminderSentAt(LocalDateTime reminderSentAt) {
+        this.reminderSentAt = reminderSentAt;
     }
 }

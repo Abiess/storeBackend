@@ -637,7 +637,16 @@
     "registerSubtitle": "Erstellen Sie Ihr kostenloses Konto",
     "registerBtn": "Konto erstellen",
     "registering": "Wird registriert...",
-    "registerSuccess": "✓ Registrierung erfolgreich! Bitte überprüfen Sie Ihre E-Mails und klicken Sie auf den Bestätigungslink, um Ihr Konto zu aktivieren."
+    "registerSuccess": "✓ Registrierung erfolgreich! Bitte überprüfen Sie Ihre E-Mails und klicken Sie auf den Bestätigungslink, um Ihr Konto zu aktivieren.",
+    "checkInboxTitle": "Posteingang prüfen",
+    "checkSpamHint": "Tipp: Prüfen Sie auch Ihren Spam- oder Werbung-Ordner.",
+    "resendVerification": "E-Mail erneut senden",
+    "resending": "Wird gesendet...",
+    "resendIn": "Erneut senden in",
+    "resendSuccess": "✓ Verifikations-E-Mail erneut gesendet.",
+    "resendFailed": "Senden fehlgeschlagen. Bitte später erneut versuchen.",
+    "goToLogin": "Zum Login",
+    "emailAlreadyExists": "Diese E-Mail ist bereits registriert."
   },
   "storefront": {
     "searchResults": "Suchergebnisse",
@@ -1120,6 +1129,60 @@
       "labelOrderNumber": "Bestellnummer",
       "labelReason": "Stornierungsgrund",
       "outro": "Falls Sie Fragen zur Stornierung haben, kontaktieren Sie bitte unseren Support."
+    },
+    "subscription": {
+      "labelPlan": "Plan",
+      "labelDaysLeft": "Tage verbleibend",
+      "labelAmount": "Betrag",
+      "labelRenewal": "Verlängerungsdatum",
+      "labelNext": "Nächste Verlängerung",
+      "labelEnd": "Enddatum",
+      "labelOldPlan": "Bisheriger Plan",
+      "labelNewPlan": "Neuer Plan",
+      "btnManage": "Abonnement verwalten",
+      "btnUpgrade": "Jetzt upgraden",
+      "btnReactivate": "Reaktivieren",
+      "btnDashboard": "Zum Dashboard",
+      "reminder": {
+        "subject": "Ihr Abonnement verlängert sich in {{daysLeft}} Tagen",
+        "title": "Ihr Abonnement verlängert sich bald",
+        "intro": "Ihr Abonnement wird in Kürze automatisch verlängert. Hier sind die Details:",
+        "outro": "Sie können jederzeit in Ihrem Konto kündigen."
+      },
+      "renewed": {
+        "subject": "Ihr {{planName}}-Abonnement wurde verlängert",
+        "title": "Abonnement verlängert",
+        "intro": "Ihr Abonnement wurde erfolgreich verlängert.",
+        "outro": "Vielen Dank, dass Sie weiterhin zu unseren Kunden zählen!"
+      },
+      "expired": {
+        "subject": "Ihr {{planName}}-Abonnement ist abgelaufen",
+        "title": "Abonnement abgelaufen",
+        "intro": "Ihr Abonnement ist abgelaufen. Sie wurden auf den Free-Plan zurückgestuft.",
+        "outro": "Sie können jederzeit erneut upgraden, um wieder Zugriff auf alle Premium-Funktionen zu erhalten."
+      },
+      "cancelled": {
+        "subject": "Ihr {{planName}}-Abonnement wurde gekündigt",
+        "title": "Abonnement gekündigt",
+        "intro": "Ihr Abonnement wurde wie gewünscht gekündigt.",
+        "outro": "Wir würden uns freuen, Sie wieder bei uns begrüßen zu dürfen."
+      },
+      "upgraded": {
+        "subject": "Willkommen bei {{newPlanName}}!",
+        "title": "Willkommen bei {{newPlanName}}!",
+        "intro": "Ihr Abonnement wurde erfolgreich aktualisiert.",
+        "outro": "Viel Spaß mit Ihren neuen Funktionen!"
+      }
+    },
+    "cart": {
+      "abandoned": {
+        "subject": "Sie haben {{itemCount}} Artikel im Warenkorb - {{storeName}}",
+        "title": "Ihr Warenkorb wartet auf Sie",
+        "intro": "Wir haben bemerkt, dass Sie Artikel in Ihrem Warenkorb gelassen haben. Schließen Sie Ihren Einkauf ab, bevor sie ausverkauft sind!",
+        "outro": "Dieser Warenkorb wird nach 7 Tagen automatisch geleert.",
+        "labelItems": "Artikel im Warenkorb",
+        "btnCheckout": "Zurück zum Warenkorb"
+      }
     }
   }
 }

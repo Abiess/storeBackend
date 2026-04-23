@@ -314,6 +314,7 @@ CREATE TABLE IF NOT EXISTS carts (
     expires_at TIMESTAMP NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    reminder_sent_at TIMESTAMP,
     CONSTRAINT fk_carts_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT fk_carts_store FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
     );
@@ -700,6 +701,14 @@ END IF;
 
     IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_carts_expires_at') THEN
 CREATE INDEX idx_carts_expires_at ON carts(expires_at);
+END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_carts_reminder_sent_at') THEN
+CREATE INDEX idx_carts_reminder_sent_at ON carts(reminder_sent_at);
+END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_carts_updated_at') THEN
+CREATE INDEX idx_carts_updated_at ON carts(updated_at);
 END IF;
 
     -- Cart Items
@@ -1499,6 +1508,14 @@ END IF;
 
     IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_carts_expires_at') THEN
 CREATE INDEX idx_carts_expires_at ON carts(expires_at);
+END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_carts_reminder_sent_at') THEN
+CREATE INDEX idx_carts_reminder_sent_at ON carts(reminder_sent_at);
+END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_carts_updated_at') THEN
+CREATE INDEX idx_carts_updated_at ON carts(updated_at);
 END IF;
 
     -- Cart Items
