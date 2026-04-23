@@ -45,7 +45,9 @@ export class AdminSidebarComponent implements OnInit {
             .subscribe((event) => {
                 this.activeRoute = event.urlAfterRedirects;
 
-                if (this.isMobile) {
+                // Sidebar bleibt auf Mobile beim Klick offen UNTIL user selects an item.
+                // Auf Desktop (>=1024px) immer sichtbar – siehe SCSS.
+                if (this.isMobile && this.isOpen) {
                     this.isOpen = false;
                 }
 
@@ -198,7 +200,13 @@ export class AdminSidebarComponent implements OnInit {
 
     isRouteActive(route?: string): string | boolean {
         if (!route) return false;
-        return this.activeRoute.startsWith(route);
+        const current = (this.activeRoute || '').split('?')[0].split('#')[0];
+        // Exact match (Dashboard) – verhindert false-positive bei /dashboard/stores/...
+        if (route === '/dashboard') {
+            return current === '/dashboard';
+        }
+        // Prefix match aber nur an Segmentgrenze
+        return current === route || current.startsWith(route + '/');
     }
 
     isRTL(): boolean {

@@ -1,9 +1,6 @@
 <div class="admin-layout">
-  <!-- Sidebar -->
-    <app-admin-sidebar
-            *ngIf="storeId != null"
-            [storeId]="storeId">
-    </app-admin-sidebar>
+  <!-- Sidebar – dauerhaft sichtbar (Desktop), Toggle auf Mobile -->
+  <app-admin-sidebar [storeId]="storeId ?? null"></app-admin-sidebar>
 
   <!-- Main Content Area -->
   <div class="admin-main">
