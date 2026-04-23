@@ -34,17 +34,29 @@ public class PlanConfig {
         Plan.FREE, Map.of(
             "maxStores", 2,
             "maxProducts", 100,
-            "maxOrders", 500
+            "maxOrders", 500,
+            "maxStorageMb", 500,
+            "maxCustomDomains", 0,
+            "maxSubdomains", 1,
+            "maxAiCallsPerMonth", 20
         ),
         Plan.PRO, Map.of(
             "maxStores", 4,
             "maxProducts", 1000,
-            "maxOrders", -1 // unbegrenzt
+            "maxOrders", -1,
+            "maxStorageMb", 5000,
+            "maxCustomDomains", 2,
+            "maxSubdomains", 4,
+            "maxAiCallsPerMonth", 500
         ),
         Plan.ENTERPRISE, Map.of(
             "maxStores", -1,
             "maxProducts", -1,
-            "maxOrders", -1
+            "maxOrders", -1,
+            "maxStorageMb", -1,
+            "maxCustomDomains", -1,
+            "maxSubdomains", -1,
+            "maxAiCallsPerMonth", -1
         )
     );
 

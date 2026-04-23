@@ -1184,5 +1184,19 @@
         "btnCheckout": "Zurück zum Warenkorb"
       }
     }
+  },
+  "usage": {
+    "title": "Plan-Verbrauch",
+    "loading": "Verbrauch wird geladen...",
+    "error": "Verbrauchsdaten konnten nicht geladen werden.",
+    "unlimited": "Unbegrenzt",
+    "stores": "Shops",
+    "products": "Produkte",
+    "storage": "Speicher",
+    "customDomains": "Custom Domains",
+    "subdomains": "Subdomains",
+    "aiCalls": "KI-Generierungen (Monat)",
+    "customers": "Endkunden",
+    "unitMb": "MB"
   }
 }

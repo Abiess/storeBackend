@@ -1182,5 +1182,19 @@
         "btnCheckout": "Return to Cart"
       }
     }
+  },
+  "usage": {
+    "title": "Plan usage",
+    "loading": "Loading usage...",
+    "error": "Could not load usage data.",
+    "unlimited": "Unlimited",
+    "stores": "Stores",
+    "products": "Products",
+    "storage": "Storage",
+    "customDomains": "Custom domains",
+    "subdomains": "Subdomains",
+    "aiCalls": "AI generations (this month)",
+    "customers": "Customers",
+    "unitMb": "MB"
   }
 }

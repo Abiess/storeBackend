@@ -9,11 +9,12 @@ import { LanguageSwitcherComponent } from '@app/core/i18n.exports';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { TranslationService } from '@app/core/services/translation.service';
 import {TranslateService} from "@ngx-translate/core";
+import { UsageWidgetComponent } from '@app/shared/components/usage-widget.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, LanguageSwitcherComponent, TranslatePipe],
+  imports: [CommonModule, RouterModule, FormsModule, LanguageSwitcherComponent, TranslatePipe, UsageWidgetComponent],
   template: `
     <div class="dashboard">
       <nav class="navbar">
@@ -53,6 +54,8 @@ import {TranslateService} from "@ngx-translate/core";
       </nav>
 
       <div class="container">
+        <app-usage-widget></app-usage-widget>
+
         <div class="dashboard-header">
           <div>
             <h2>{{ 'dashboard.myStores' | translate }}</h2>

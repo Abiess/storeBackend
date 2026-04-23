@@ -56,4 +56,37 @@ BEGIN
         EXECUTE format('ALTER SEQUENCE public.%I OWNER TO storeapp', r.sequence_name);
         EXECUTE format('GRANT ALL PRIVILEGES ON SEQUENCE public.%I TO storeapp', r.sequence_name);
     END LOOP;
+
+    -- 10. Auch alle Views, Indexe und Constraints (für Hibernate's CREATE INDEX etc.)
+    FOR r IN (SELECT viewname FROM pg_views WHERE schemaname='public') LOOP
+        EXECUTE format('ALTER VIEW public.%I OWNER TO storeapp', r.viewname);
+    END LOOP;
+
+    -- 11. Funktionen / Stored Procedures
+    FOR r IN (SELECT p.proname, pg_get_function_identity_arguments(p.oid) AS args
+              FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid
+              WHERE n.nspname = 'public') LOOP
+        BEGIN
+            EXECUTE format('ALTER FUNCTION public.%I(%s) OWNER TO storeapp', r.proname, r.args);
+        EXCEPTION WHEN OTHERS THEN
+            -- Manche Funktionen können nicht übertragen werden (z.B. Extension-eigene)
+            RAISE NOTICE 'Skipping function: % (%)', r.proname, SQLERRM;
+        END;
+    END LOOP;
+END $$;
+
+-- 12. Verifikation: Liste alle Tabellen die NICHT storeapp gehören (sollte leer sein!)
+DO $$
+DECLARE
+    wrong_owner_count INTEGER;
+BEGIN
+    SELECT COUNT(*) INTO wrong_owner_count
+    FROM pg_tables
+    WHERE schemaname = 'public' AND tableowner != 'storeapp';
+
+    IF wrong_owner_count > 0 THEN
+        RAISE WARNING '⚠️  % Tabellen im public-Schema gehören NICHT storeapp!', wrong_owner_count;
+    ELSE
+        RAISE NOTICE '✅ Alle Tabellen im public-Schema gehören storeapp.';
+    END IF;
 END $$;

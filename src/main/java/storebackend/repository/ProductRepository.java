@@ -57,4 +57,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     @Query("SELECT p FROM Product p LEFT JOIN FETCH p.category WHERE p.store.id = :storeId ORDER BY p.createdAt DESC")
     List<Product> findTop10ByStoreIdOrderByCreatedAtDesc(@Param("storeId") Long storeId);
+
+    /** Anzahl aller Produkte über alle Stores eines Owners. */
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.store.owner.id = :ownerId")
+    long countByOwnerId(@Param("ownerId") Long ownerId);
 }

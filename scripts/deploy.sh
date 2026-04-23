@@ -178,6 +178,24 @@ echo "✅ Environment file written."
 echo "🔄 Reloading systemd daemon..."
 sudo systemctl daemon-reload
 
+# ==========================================================================
+# DB-Permissions absichern (verhindert "ERROR: must be owner of table xxx")
+# Lässt grant-permissions.sql idempotent durchlaufen, BEVOR die App startet.
+# ==========================================================================
+echo ""
+echo "🔐 Sichere Datenbank-Permissions ab (storeapp = Owner aller Tabellen)..."
+SCRIPT_DIR_DEPLOY="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$SCRIPT_DIR_DEPLOY/fix-db-permissions.sh" ]; then
+    if bash "$SCRIPT_DIR_DEPLOY/fix-db-permissions.sh"; then
+        echo "   ✅ Permissions ok."
+    else
+        echo "   ⚠️  Permissions-Setup fehlgeschlagen — App startet trotzdem (DDL kann fehlschlagen)"
+    fi
+else
+    echo "   ⚠️  fix-db-permissions.sh nicht gefunden — überspringe."
+fi
+echo ""
+
 # Check and install MinIO if needed
 echo ""
 echo "🗄️  Checking MinIO..."

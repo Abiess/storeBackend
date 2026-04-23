@@ -34,4 +34,8 @@ public interface DomainRepository extends JpaRepository<Domain, Long> {
 
     @Query("SELECT d FROM Domain d JOIN d.store s WHERE s.slug = :slug AND d.type = 'SUBDOMAIN' AND d.isVerified = true")
     Optional<Domain> findVerifiedSubdomainBySlug(@Param("slug") String slug);
+
+    /** Anzahl Domains eines Owners pro Typ (über alle Stores). */
+    @Query("SELECT COUNT(d) FROM Domain d WHERE d.store.owner.id = :ownerId AND d.type = :type")
+    long countByOwnerIdAndType(@Param("ownerId") Long ownerId, @Param("type") DomainType type);
 }

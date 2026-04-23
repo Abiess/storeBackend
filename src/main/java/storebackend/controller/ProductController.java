@@ -6,7 +6,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
-import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -30,7 +29,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/stores/{storeId}/products")
 @Tag(name = "Products", description = "Product management APIs")
-@Slf4j
 public class ProductController {
     
     // Explicit logger field (fallback for @Slf4j annotation processor issue)
@@ -40,13 +38,16 @@ public class ProductController {
     private final StoreService storeService;
     private final StoreRepository storeRepository;
     private final AiImageCaptioningService aiImageCaptioningService;
+    private final storebackend.service.UsageService usageService;
 
     public ProductController(ProductService productService, StoreService storeService, 
-                            StoreRepository storeRepository, AiImageCaptioningService aiImageCaptioningService) {
+                            StoreRepository storeRepository, AiImageCaptioningService aiImageCaptioningService,
+                            storebackend.service.UsageService usageService) {
         this.productService = productService;
         this.storeService = storeService;
         this.storeRepository = storeRepository;
         this.aiImageCaptioningService = aiImageCaptioningService;
+        this.usageService = usageService;
     }
 
     /**
@@ -362,10 +363,25 @@ public class ProductController {
                 language = "en"; // Default fallback
             }
             log.info("✅ Detected language: {}", language);
+
+            // AI-Quota prüfen (Plan-basiert)
+            if (!usageService.hasAiCallsLeft(user.getId())) {
+                log.warn("⛔ User {} hat AI-Limit für diesen Monat erreicht", user.getId());
+                return ResponseEntity.status(429).body(Map.of(
+                    "error", "AI quota exceeded for this month. Please upgrade your plan.",
+                    "code", "AI_QUOTA_EXCEEDED"
+                ));
+            }
+
             log.info("✅ Calling AI service to generate product suggestion");
             
             // NEU: Verwende generateProductSuggestion mit model parameter
             AiProductSuggestionDTO suggestion = aiImageCaptioningService.generateProductSuggestion(image, language, modelName);
+
+            // Counter erhöhen (nur bei Erfolg)
+            int totalThisMonth = usageService.incrementAiCalls(user.getId());
+            log.info("📊 AI-Calls dieses Monat für User {}: {}", user.getId(), totalThisMonth);
+
             log.info("✅ AI suggestion generated successfully: {}", suggestion.getTitle());
             return ResponseEntity.ok(suggestion);
         } catch (Exception e) {
@@ -430,10 +446,25 @@ public class ProductController {
                 language = "en"; // Default fallback
             }
             log.info("✅ Detected language: {}", language);
+
+            // AI-Quota prüfen (Plan-basiert)
+            if (!usageService.hasAiCallsLeft(user.getId())) {
+                log.warn("⛔ User {} hat AI-Limit für diesen Monat erreicht", user.getId());
+                return ResponseEntity.status(429).body(Map.of(
+                    "error", "AI quota exceeded for this month. Please upgrade your plan.",
+                    "code", "AI_QUOTA_EXCEEDED"
+                ));
+            }
+
             log.info("✅ Calling AI service to generate product suggestion V2 (structured JSON)");
             
             // NEU: Verwende generateProductSuggestionV2 mit model parameter
             AiProductSuggestionV2DTO suggestion = aiImageCaptioningService.generateProductSuggestionV2(image, language, modelName);
+
+            // Counter erhöhen (nur bei Erfolg)
+            int totalThisMonth = usageService.incrementAiCalls(user.getId());
+            log.info("📊 AI-Calls dieses Monat für User {}: {}", user.getId(), totalThisMonth);
+
             log.info("✅ AI suggestion V2 generated successfully: title={}, category={}",
                 suggestion.getTitle(), suggestion.getCategory());
             return ResponseEntity.ok(suggestion);

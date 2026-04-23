@@ -28,6 +28,8 @@ CREATE TABLE IF NOT EXISTS users (
     email_verified BOOLEAN NOT NULL DEFAULT FALSE,
     preferred_language VARCHAR(5) NOT NULL DEFAULT 'en',
     plan_id BIGINT,
+    ai_calls_this_month INTEGER NOT NULL DEFAULT 0,
+    ai_calls_period_start TIMESTAMP,
     CONSTRAINT fk_users_plan FOREIGN KEY (plan_id) REFERENCES plans(id),
     CONSTRAINT chk_users_language CHECK (preferred_language IN ('en', 'de', 'ar'))
     );

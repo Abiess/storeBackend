@@ -33,6 +33,9 @@ CREATE TABLE IF NOT EXISTS users (
     enabled BOOLEAN NOT NULL DEFAULT TRUE,
     email_verified BOOLEAN NOT NULL DEFAULT FALSE,
     plan_id BIGINT,
+    preferred_language VARCHAR(5) NOT NULL DEFAULT 'en',
+    ai_calls_this_month INTEGER NOT NULL DEFAULT 0,
+    ai_calls_period_start TIMESTAMP,
     CONSTRAINT fk_users_plan FOREIGN KEY (plan_id) REFERENCES plans(id)
 );
 

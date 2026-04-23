@@ -53,6 +53,14 @@ public class User {
     @Column(name = "preferred_language", length = 5, nullable = false)
     private String preferredLanguage = "en";
 
+    /** Anzahl AI-Calls (Bildgenerierung etc.) im aktuellen Monat. */
+    @Column(name = "ai_calls_this_month", nullable = false)
+    private Integer aiCallsThisMonth = 0;
+
+    /** Wird bei Monatswechsel zurückgesetzt – speichert den ersten Tag des Zähl-Monats. */
+    @Column(name = "ai_calls_period_start")
+    private LocalDateTime aiCallsPeriodStart;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
