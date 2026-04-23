@@ -18,7 +18,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update  # Auto-Update Schema - adds missing columns (e.g. cart_items.created_at)
+      ddl-auto: create  # Auto-Update Schema - adds missing columns (e.g. cart_items.created_at)
     show-sql: false  # In Production: false (performance)
     open-in-view: false  # Prevents lazy-loading issues
     properties:
