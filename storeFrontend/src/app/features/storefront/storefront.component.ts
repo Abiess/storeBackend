@@ -15,6 +15,9 @@ import { TopBarComponent } from '@app/shared/components/top-bar/top-bar.componen
 import { StoreSliderViewerComponent } from './components/store-slider-viewer.component';
 // NEW: Import moderne Layout-Komponenten
 import { StoreLayoutComponent } from './components/store-layout.component';
+import { ClassicShopLayoutComponent } from './components/classic-shop-layout.component';
+import { ElectronicsProLayoutComponent } from './components/electronics-pro-layout.component';
+import { FashionEditorialLayoutComponent } from './components/fashion-editorial-layout.component';
 import { StoreSidebarComponent } from './components/store-sidebar.component';
 import { ProductGridComponent } from './components/product-grid.component';
 import { ModernProductCardComponent } from './components/modern-product-card.component';
@@ -36,6 +39,9 @@ import { Subscription } from 'rxjs';
     StoreSliderViewerComponent,
     // NEW: Moderne Layout-Komponenten
     StoreLayoutComponent,
+    ClassicShopLayoutComponent,
+    ElectronicsProLayoutComponent,
+    FashionEditorialLayoutComponent,
     StoreSidebarComponent,
     ProductGridComponent,
     ModernProductCardComponent,
@@ -73,6 +79,18 @@ export class StorefrontComponent implements OnInit, OnDestroy {
 
   // NEW: Aktuelles Jahr für Footer
   readonly currentYear = new Date().getFullYear();
+
+  /**
+   * Layout-Slug aus dem aktiven {@link StoreTheme.template}.
+   * Steuert, welches Storefront-Wrapper-Layout gerendert wird:
+   *  - 'MODERN_GRID'        → <app-store-layout> (Default, MIT)
+   *  - 'CLASSIC_BOOTSTRAP'  → <app-classic-shop-layout> (Start Bootstrap, MIT)
+   *  - 'ELECTRONICS_PRO'    → <app-electronics-pro-layout> (Start Bootstrap Modern Business, MIT)
+   *  - 'FASHION_EDITORIAL'  → <app-fashion-editorial-layout> (HTML5UP Editorial, CC-BY 3.0 mit Footer-Credit)
+   *  - 'MINIMAL_DARK'       → <app-store-layout> + dark CSS-Vars
+   *  - sonst (Legacy/Alt)   → <app-store-layout>
+   */
+  activeLayout: 'MODERN_GRID' | 'CLASSIC_BOOTSTRAP' | 'ELECTRONICS_PRO' | 'FASHION_EDITORIAL' | 'MINIMAL_DARK' = 'MODERN_GRID';
 
   constructor(
     private route: ActivatedRoute,
@@ -152,6 +170,17 @@ export class StorefrontComponent implements OnInit, OnDestroy {
           console.log('✅ Theme geladen und wird angewendet:', theme.name);
           // Apply theme colors to document root as CSS variables
           this.themeApplier.applyTheme(theme.colors, theme.typography.fontFamily);
+
+          // NEW: Layout-Slug aus dem Theme übernehmen (steuert Wrapper-Komponente)
+          const slug = (theme.template || '').toString().toUpperCase();
+          if (slug === 'MODERN_GRID' || slug === 'CLASSIC_BOOTSTRAP'
+              || slug === 'ELECTRONICS_PRO' || slug === 'FASHION_EDITORIAL'
+              || slug === 'MINIMAL_DARK') {
+            this.activeLayout = slug;
+            console.log('🎨 Aktives Storefront-Layout:', this.activeLayout);
+          } else {
+            this.activeLayout = 'MODERN_GRID';
+          }
 
           // Set logo if available
           if (theme.logoUrl) {

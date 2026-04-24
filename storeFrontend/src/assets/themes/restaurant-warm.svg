@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" width="400" height="240">
+  <rect width="400" height="240" fill="#fffbeb"/>
+  <rect x="0" y="0" width="400" height="36" fill="#b45309"/>
+  <text x="20" y="24" font-family="Georgia, serif" font-size="16" fill="#fffbeb">Restaurant</text>
+  <rect x="12" y="48" width="376" height="56" rx="6" fill="#ffffff" stroke="#fde68a"/>
+  <text x="32" y="78" font-family="Georgia, serif" font-style="italic" font-size="14" fill="#78350f">Heute frisch · Hausgemacht</text>
+  <g fill="#ffffff" stroke="#fde68a">
+    <rect x="12" y="116" width="120" height="112" rx="6"/>
+    <rect x="140" y="116" width="120" height="112" rx="6"/>
+    <rect x="268" y="116" width="120" height="112" rx="6"/>
+  </g>
+  <rect x="22" y="200" width="60" height="8" rx="2" fill="#dc2626"/>
+  <rect x="150" y="200" width="60" height="8" rx="2" fill="#dc2626"/>
+  <rect x="278" y="200" width="60" height="8" rx="2" fill="#dc2626"/>
+</svg>
+

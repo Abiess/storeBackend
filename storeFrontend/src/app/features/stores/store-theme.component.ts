@@ -57,12 +57,22 @@ import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
           </p>
 
           <div class="presets-grid">
-            <div class="preset-card" *ngFor="let preset of presets">
-              <div class="preset-preview" [style.background]="'linear-gradient(135deg, ' + preset.colors.primary + ', ' + preset.colors.secondary + ')'">
+            <div class="preset-card"
+                 *ngFor="let preset of presets"
+                 [class.is-active]="isActiveTemplate(preset)">
+              <!-- Echtes Vorschaubild aus Backend (previewUrl) mit Fallback auf Farb-Gradient -->
+              <div class="preset-preview"
+                   [style.background]="'linear-gradient(135deg, ' + preset.colors.primary + ', ' + preset.colors.secondary + ')'">
+                <img *ngIf="getPreviewUrl(preset) as previewSrc"
+                     class="preset-preview__img"
+                     [src]="previewSrc"
+                     [alt]="preset.name + ' Preview'"
+                     loading="lazy" />
                 <div class="preview-overlay">
                   <h3>{{ preset.name }}</h3>
                 </div>
                 <span class="badge-free" *ngIf="isFreeTemplate(preset)">FREE</span>
+                <span class="badge-active" *ngIf="isActiveTemplate(preset)">✓ AKTIV</span>
               </div>
               <div class="preset-info">
                 <p>{{ preset.description }}</p>
@@ -74,9 +84,11 @@ import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
                 <div class="preset-actions">
                   <button class="btn btn-success"
                           (click)="applyTemplateImmediately(preset)"
-                          [disabled]="applyingTemplate === preset.name"
+                          [disabled]="applyingTemplate === preset.name || isActiveTemplate(preset)"
                           *ngIf="getTemplateId(preset)">
-                    {{ applyingTemplate === preset.name ? '⏳ Wende an...' : '⚡ 1-Klick anwenden' }}
+                    {{ isActiveTemplate(preset)
+                        ? '✓ Aktiv'
+                        : (applyingTemplate === preset.name ? '⏳ Wende an...' : '⚡ 1-Klick anwenden') }}
                   </button>
                   <button class="btn btn-secondary" (click)="selectPreset(preset)">
                     ✏️ Anpassen
@@ -325,9 +337,24 @@ import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
       box-shadow: 0 4px 16px rgba(0,0,0,0.15);
     }
 
+    .preset-card.is-active {
+      border: 2px solid #28a745;
+      box-shadow: 0 4px 20px rgba(40, 167, 69, 0.25);
+    }
+
     .preset-preview {
-      height: 120px;
+      height: 160px;
       position: relative;
+      overflow: hidden;
+    }
+
+    .preset-preview__img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
     }
 
     .preview-overlay {
@@ -555,6 +582,20 @@ import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
       box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
 
+    .badge-active {
+      position: absolute;
+      top: 0.5rem;
+      left: 0.5rem;
+      background: #0d6efd;
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
     /* Preset-Action-Buttons (nebeneinander) */
     .preset-actions {
       display: flex;
@@ -702,6 +743,27 @@ export class StoreThemeComponent implements OnInit {
   isFreeTemplate(preset: ThemePreset): boolean {
     const isFree = (preset as any).isFree;
     return isFree === undefined ? true : isFree;
+  }
+
+  /** Vorschaubild-URL aus Backend (previewUrl → preset.preview), Fallback null. */
+  getPreviewUrl(preset: ThemePreset): string | null {
+    const url = (preset as any).preview;
+    if (!url || typeof url !== 'string') return null;
+    // Default-Placeholder vom Service nicht anzeigen, dann Gradient nutzen
+    if (url.endsWith('/default-preview.jpg')) return null;
+    return url;
+  }
+
+  /**
+   * Markiert Karte als „aktiv", wenn der Template-Slug (oder ID) mit dem
+   * aktuell aktiven Theme übereinstimmt.
+   */
+  isActiveTemplate(preset: ThemePreset): boolean {
+    if (!this.activeTheme) return false;
+    const presetTemplate = (preset as any).template ?? preset.type;
+    const themeTemplate = this.activeTheme.template ?? this.activeTheme.type;
+    return !!presetTemplate && !!themeTemplate
+      && String(presetTemplate).toUpperCase() === String(themeTemplate).toUpperCase();
   }
 
   /**

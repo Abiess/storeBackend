@@ -105,38 +105,60 @@
     </div>
   </div>
 
-  <!-- Main Store Layout with Sidebar -->
-  <app-store-layout>
-    <!-- Sidebar: Categories -->
-    <div sidebar>
-      <app-store-sidebar
-        [categories]="categories"
-        [selectedCategory]="selectedCategory"
-        (categorySelect)="selectCategory($event)">
-      </app-store-sidebar>
-    </div>
+  <!-- Main Store Layout with Sidebar (dynamisch je nach Theme.template) -->
+  @switch (activeLayout) {
+    @case ('CLASSIC_BOOTSTRAP') {
+      <app-classic-shop-layout [showHero]="false">
+        <div sidebar><ng-container *ngTemplateOutlet="storeSidebar"></ng-container></div>
+        <div main><ng-container *ngTemplateOutlet="storeGrid"></ng-container></div>
+      </app-classic-shop-layout>
+    }
+    @case ('ELECTRONICS_PRO') {
+      <app-electronics-pro-layout [showHero]="false">
+        <div sidebar><ng-container *ngTemplateOutlet="storeSidebar"></ng-container></div>
+        <div main><ng-container *ngTemplateOutlet="storeGrid"></ng-container></div>
+      </app-electronics-pro-layout>
+    }
+    @case ('FASHION_EDITORIAL') {
+      <app-fashion-editorial-layout [showHero]="false">
+        <div sidebar><ng-container *ngTemplateOutlet="storeSidebar"></ng-container></div>
+        <div main><ng-container *ngTemplateOutlet="storeGrid"></ng-container></div>
+      </app-fashion-editorial-layout>
+    }
+    @default {
+      <app-store-layout>
+        <div sidebar><ng-container *ngTemplateOutlet="storeSidebar"></ng-container></div>
+        <div main><ng-container *ngTemplateOutlet="storeGrid"></ng-container></div>
+      </app-store-layout>
+    }
+  }
 
-    <!-- Main Content: Product Grid -->
-    <div main>
-      <app-product-grid
-        [products]="displayedProducts || filteredProducts"
-        [loading]="loading"
-        [title]="selectedCategory ? selectedCategory.name : (searchQuery ? ('storefront.searchResults' | translate) : ('storefront.allProducts' | translate))"
-        [emptyTitle]="searchQuery ? ('storefront.noSearchResults' | translate) : ('storefront.noProducts' | translate)"
-        [emptyMessage]="searchQuery ? ('storefront.noSearchResultsHint' | translate) : ('storefront.noProductsHint' | translate)">
+  <!-- Reusable Sidebar + Grid (verhindert Duplizierung über alle Layouts) -->
+  <ng-template #storeSidebar>
+    <app-store-sidebar
+      [categories]="categories"
+      [selectedCategory]="selectedCategory"
+      (categorySelect)="selectCategory($event)">
+    </app-store-sidebar>
+  </ng-template>
 
-        <!-- Product Cards -->
-        <app-modern-product-card
-          *ngFor="let product of displayedProducts || filteredProducts"
-          [product]="product"
-          [isAddingToCart]="addingToCart"
-          [showDescription]="true"
-          (addToCart)="addToCart($event)"
-          (quickView)="openQuickView($event)">
-        </app-modern-product-card>
-      </app-product-grid>
-    </div>
-  </app-store-layout>
+  <ng-template #storeGrid>
+    <app-product-grid
+      [products]="displayedProducts || filteredProducts"
+      [loading]="loading"
+      [title]="selectedCategory ? selectedCategory.name : (searchQuery ? ('storefront.searchResults' | translate) : ('storefront.allProducts' | translate))"
+      [emptyTitle]="searchQuery ? ('storefront.noSearchResults' | translate) : ('storefront.noProducts' | translate)"
+      [emptyMessage]="searchQuery ? ('storefront.noSearchResultsHint' | translate) : ('storefront.noProductsHint' | translate)">
+      <app-modern-product-card
+        *ngFor="let product of displayedProducts || filteredProducts"
+        [product]="product"
+        [isAddingToCart]="addingToCart"
+        [showDescription]="true"
+        (addToCart)="addToCart($event)"
+        (quickView)="openQuickView($event)">
+      </app-modern-product-card>
+    </app-product-grid>
+  </ng-template>
 
   <!-- QuickView Modal (unchanged) -->
   <app-product-quick-view

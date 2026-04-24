@@ -4,6 +4,9 @@
 /* Import RTL Support Styles */
 @import './styles/rtl.scss';
 
+/* Import Tabler-inspired Admin Polish (only applies inside .app-admin-shell) */
+@import './styles/admin-polish.scss';
+
 /* ==================== Theme CSS Variables ==================== */
 /* Shopify / WooCommerce inspired design tokens */
 :root {

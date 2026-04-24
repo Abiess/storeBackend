@@ -294,6 +294,11 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'stores/:id/onboarding',
+    loadComponent: () => import('./features/stores/store-onboarding.component').then(m => m.StoreOnboardingComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'stores/:id',
     loadComponent: () => import('./features/stores/store-detail.component').then(m => m.StoreDetailComponent),
     canActivate: [authGuard]

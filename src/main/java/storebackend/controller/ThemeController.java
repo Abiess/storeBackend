@@ -10,6 +10,8 @@ import storebackend.dto.StoreThemeDTO;
 import storebackend.entity.Store;
 import storebackend.entity.User;
 import storebackend.repository.StoreRepository;
+import storebackend.repository.ThemeTemplateRepository;
+import storebackend.service.DemoContentService;
 import storebackend.service.ThemeService;
 import storebackend.util.StoreAccessChecker;
 
@@ -28,6 +30,8 @@ public class ThemeController {
 
     private final ThemeService themeService;
     private final StoreRepository storeRepository;
+    private final ThemeTemplateRepository themeTemplateRepository;
+    private final DemoContentService demoContentService;
 
     /**
      * Öffentlicher Endpunkt: Hole aktives Theme eines Stores
@@ -149,5 +153,53 @@ public class ThemeController {
         log.info("Applying template {} to store {} (user: {})",
                 templateId, storeId, user.getEmail());
         return ResponseEntity.ok(themeService.applyTemplateToStore(storeId, templateId, customName));
+    }
+
+    /**
+     * Onboarding-Endpoint: Wendet ein Template per <b>Code</b> an und befüllt
+     * den Store optional mit branchenpassenden Demo-Kategorien und -Produkten.
+     * <p>
+     * Wird vom Frontend direkt nach der Store-Erstellung im Onboarding-Schritt
+     * aufgerufen. Idempotent: Demo-Daten werden nur eingefügt, wenn der Store
+     * noch leer ist.
+     * <p>
+     * POST /api/themes/store/{storeId}/onboard?templateCode=ELECTRONICS_PRO&amp;withDemoData=true
+     */
+    @PostMapping("/store/{storeId}/onboard")
+    public ResponseEntity<?> onboardStoreWithTemplate(
+            @PathVariable Long storeId,
+            @RequestParam(name = "templateCode") String templateCode,
+            @RequestParam(name = "withDemoData", defaultValue = "true") boolean withDemoData,
+            @AuthenticationPrincipal User user) {
+        if (user == null) return ResponseEntity.status(401).body("Unauthorized");
+
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+        if (!StoreAccessChecker.isOwner(store, user)) {
+            return ResponseEntity.status(403).body("Not authorized");
+        }
+
+        var template = themeTemplateRepository.findByCode(templateCode.toUpperCase())
+                .orElseThrow(() -> new RuntimeException("Template not found: " + templateCode));
+
+        log.info("🎁 Onboarding store {} with template '{}' (demoData={})",
+                storeId, templateCode, withDemoData);
+
+        // 1) Theme anwenden – nutzt bestehende Service-Methode
+        StoreThemeDTO theme = themeService.applyTemplateToStore(
+                storeId, template.getId(), template.getName() + " Theme");
+
+        // 2) Optional: Demo-Daten seeden (idempotent)
+        int productsCreated = 0;
+        if (withDemoData) {
+            productsCreated = demoContentService.seedDemoContent(store, template.getCode());
+        }
+
+        return ResponseEntity.ok(java.util.Map.of(
+                "theme", theme,
+                "demoProductsCreated", productsCreated,
+                "templateCode", template.getCode(),
+                "templateName", template.getName()
+        ));
     }
 }

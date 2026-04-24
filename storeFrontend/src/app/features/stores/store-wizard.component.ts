@@ -1190,9 +1190,9 @@ export class StoreWizardComponent implements OnInit {
         error: (err) => console.warn('⚠️ Fehler beim Markieren:', err)
       });
 
-      // Navigate to dashboard with store
-      this.router.navigate(['/dashboard'], {
-        queryParams: { newStore: 'true', storeId: this.createdStoreId }
+      // Navigate to onboarding (template selection + demo data) after store creation
+      this.router.navigate(['/stores', this.createdStoreId, 'onboarding'], {
+        queryParams: { newStore: 'true' }
       });
       return;
     }
@@ -1233,10 +1233,10 @@ export class StoreWizardComponent implements OnInit {
         error: (err) => console.warn('⚠️ Fehler beim Markieren:', err)
       });
       
-      // Success! Navigate to dashboard
+      // Success! Navigate to onboarding (template selection)
       setTimeout(() => {
-        this.router.navigate(['/dashboard'], {
-          queryParams: { newStore: 'true', storeId: result.id }
+        this.router.navigate(['/stores', result.id, 'onboarding'], {
+          queryParams: { newStore: 'true' }
         });
       }, 1000);
 

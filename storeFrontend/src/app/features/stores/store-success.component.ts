@@ -47,7 +47,10 @@ import { OnboardingService, ChecklistItem } from '@app/core/services/onboarding.
 
         <!-- Quick Actions -->
         <div class="quick-actions">
-          <a [routerLink]="['/stores', storeId(), 'preview']" class="btn-primary">
+          <a [routerLink]="['/stores', storeId(), 'onboarding']" class="btn-primary">
+            🎨 Choose template &amp; sample data
+          </a>
+          <a [routerLink]="['/stores', storeId(), 'preview']" class="btn-secondary">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
               <path d="M10 12.5C11.3807 12.5 12.5 11.3807 12.5 10C12.5 8.61929 11.3807 7.5 10 7.5C8.61929 7.5 7.5 8.61929 7.5 10C7.5 11.3807 8.61929 12.5 10 12.5Z" stroke="currentColor" stroke-width="1.5"/>
               <path d="M2.04834 10C3.11001 6.61917 6.26917 4.16666 10 4.16666C13.7317 4.16666 16.89 6.61917 17.9517 10C16.89 13.3808 13.7317 15.8333 10 15.8333C6.26917 15.8333 3.11001 13.3808 2.04834 10Z" stroke="currentColor" stroke-width="1.5"/>

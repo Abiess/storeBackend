@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" width="400" height="240">
+  <rect width="400" height="240" fill="#fdf2f8"/>
+  <rect x="0" y="0" width="400" height="40" fill="#ffffff" stroke="#fbcfe8"/>
+  <text x="20" y="26" font-family="Georgia, serif" font-size="16" fill="#831843">Beauty</text>
+  <g fill="#ffffff" stroke="#fbcfe8">
+    <rect x="12" y="56" width="120" height="172" rx="16"/>
+    <rect x="140" y="56" width="120" height="80" rx="16"/>
+    <rect x="268" y="56" width="120" height="80" rx="16"/>
+    <rect x="140" y="148" width="120" height="80" rx="16"/>
+    <rect x="268" y="148" width="120" height="80" rx="16"/>
+  </g>
+  <circle cx="72" cy="120" r="36" fill="#fbcfe8"/>
+  <rect x="22" y="170" width="100" height="6" rx="2" fill="#db2777"/>
+  <rect x="22" y="184" width="60" height="6" rx="2" fill="#9d174d"/>
+</svg>
+

@@ -361,9 +361,37 @@ export class ThemeService {
     );
   }
 
-  private convertTemplateDTOToPreset(dto: any): ThemePreset & { id?: number; isFree?: boolean; preview?: string } {
+  /**
+   * Onboarding: Wendet ein Template per Code an UND seedet (optional)
+   * branchenpassende Demo-Kategorien und -Produkte. Idempotent: Demo-Daten
+   * werden nur ergänzt, wenn der Store noch leer ist.
+   *
+   * Backend-Endpoint:
+   *   POST /api/themes/store/{storeId}/onboard?templateCode=ELECTRONICS_PRO&withDemoData=true
+   */
+  onboardStoreWithTemplate(storeId: number, templateCode: string, withDemoData: boolean = true)
+      : Observable<{ theme: any; demoProductsCreated: number; templateCode: string; templateName: string; }> {
+    const url = `${this.API_URL}/store/${storeId}/onboard`
+      + `?templateCode=${encodeURIComponent(templateCode)}`
+      + `&withDemoData=${withDemoData}`;
+    return this.http.post<any>(url, {}).pipe(
+      tap(res => {
+        console.log(`✅ Onboarding abgeschlossen: Template "${res.templateName}", `
+          + `${res.demoProductsCreated} Demo-Produkte angelegt.`);
+        if (res.theme) {
+          const theme = this.convertDTOtoTheme(res.theme);
+          this.currentTheme$.next(theme);
+          this.applyTheme(theme);
+        }
+      })
+    );
+  }
+
+  private convertTemplateDTOToPreset(dto: any): ThemePreset & { id?: number; code?: string; isFree?: boolean; preview?: string; template?: string } {
     return {
       id: dto.id,
+      code: dto.code,
+      template: dto.template,
       type: dto.type as ThemeType,
       name: dto.name,
       description: dto.description,

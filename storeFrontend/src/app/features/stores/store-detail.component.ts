@@ -5,18 +5,17 @@ import { ProductService } from '@app/core/services/product.service';
 import { OrderService } from '@app/core/services/order.service';
 import { CategoryService } from '@app/core/services/category.service';
 import { Product, Order, Category } from '@app/core/models';
-import { AdminSidebarComponent } from '@app/shared/components/admin-sidebar/admin-sidebar.component';
 import { toDate } from '@app/core/utils/date.utils';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 @Component({
   selector: 'app-store-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, AdminSidebarComponent, TranslatePipe],
+  imports: [CommonModule, RouterModule, TranslatePipe],
   template: `
-    <div class="admin-layout">
-        <app-admin-sidebar [storeId]="storeId"></app-admin-sidebar>
-
+    <!-- Sidebar wird global durch AppComponent (app-admin-shell) gerendert.
+         Keine lokale <app-admin-sidebar> mehr, sonst doppelte Sidebar / Layout-Konflikt. -->
+    <div class="store-detail-page">
       <div class="content">
         <div class="topbar">
           <a routerLink="/dashboard" class="back-link">{{ 'storeDetail.backToDashboard' | translate }}</a>
@@ -188,23 +187,15 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
     </div>
   `,
   styles: [`
-    .admin-layout {
-      display: flex;
+    .store-detail-page {
       min-height: 100vh;
       background: #f8f9fa;
     }
 
     .content {
-      flex: 1;
-      margin-left: 280px;
       background: #f8f9fa;
     }
 
-    @media (max-width: 1023px) {
-      .content {
-        margin-left: 0;
-      }
-    }
 
     .topbar {
       padding: 1.5rem 2rem;
