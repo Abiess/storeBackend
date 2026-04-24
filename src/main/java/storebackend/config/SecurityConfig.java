@@ -102,7 +102,21 @@ public class SecurityConfig {
                 .accessDeniedHandler(accessDeniedHandler)
                 .authenticationEntryPoint(authenticationEntryPoint)
             );
-        http.headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
+        // Iframe-Embedding-Policy:
+        // - Storefront-Subdomains (xyz.markt.ma) sollen sich vom Admin-Panel
+        //   (markt.ma) als Live-Preview im Theme-Editor einbetten lassen.
+        // - 'X-Frame-Options: SAMEORIGIN' wäre zu restriktiv, weil Browser
+        //   subdomain != hauptdomain als unterschiedliche Origin behandeln.
+        // - 'Content-Security-Policy: frame-ancestors' erlaubt feingranular
+        //   alle eigenen Subdomains (*.markt.ma) plus die Hauptdomain.
+        // - X-Frame-Options wird komplett deaktiviert, weil es sonst die
+        //   neuere CSP-Direktive in alten Browsern überschreiben würde.
+        http.headers(headers -> headers
+            .frameOptions(frame -> frame.disable())
+            .contentSecurityPolicy(csp -> csp
+                .policyDirectives("frame-ancestors 'self' https://markt.ma https://*.markt.ma http://localhost:* http://127.0.0.1:*")
+            )
+        );
         return http.build();
     }
 
