@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ThemeService } from '../../core/services/theme.service';
+import { StoreService } from '../../core/services/store.service';
 import {
   StoreTheme,
   ThemePreset,
@@ -250,9 +251,10 @@ import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
           <!-- Live-Iframe-Vorschau auf den echten Storefront -->
           <div class="live-preview" *ngIf="previewMode === 'live'">
             <p class="live-preview__hint">
-              Live-Vorschau des Storefronts (zeigt das aktuell gespeicherte Theme inklusive
-              Produkten, Kategorien und Bildern). Nach „Theme speichern" hier auf <strong>↻</strong>
-              klicken, um Änderungen zu sehen.
+              Live-Vorschau unter
+              <strong class="live-preview__url">{{ getStorefrontPreviewBaseUrl() }}</strong>
+              – exakt die URL, die deine Kunden sehen. Nach „Theme speichern"
+              hier auf <strong>↻</strong> klicken, um Änderungen zu sehen.
             </p>
             <iframe class="live-preview__iframe"
                     [src]="getStorefrontPreviewUrl()"
@@ -599,6 +601,15 @@ import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
       font-size: .9rem;
       line-height: 1.5;
     }
+    .live-preview__url {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .85rem;
+      color: #1d4ed8;
+      background: #ffffff;
+      padding: .1rem .4rem;
+      border-radius: 4px;
+      border: 1px solid #c7d2fe;
+    }
     .live-preview__iframe {
       width: 100%;
       height: 720px;
@@ -756,11 +767,14 @@ export class StoreThemeComponent implements OnInit {
   previewMode: 'mini' | 'live' = 'mini';
   /** Cache-Buster für das Live-Iframe (wird nach Save erhöht). */
   private livePreviewVersion = 0;
+  /** Slug des aktuellen Stores für die echte Subdomain-Vorschau (z.B. "myshop"). */
+  private storeSlug: string | null = null;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private themeService: ThemeService,
+    private storeService: StoreService,
     private sanitizer: DomSanitizer
   ) {}
 
@@ -811,6 +825,7 @@ export class StoreThemeComponent implements OnInit {
     console.log('✅ Store-ID final geladen:', this.storeId);
     this.loadThemes();
     this.loadPresets();
+    this.loadStoreSlug();
   }
 
   loadThemes(): void {
@@ -992,11 +1007,41 @@ export class StoreThemeComponent implements OnInit {
   // ----------------------------------------------------------------
 
   /**
-   * Basis-URL der öffentlichen Storefront-Vorschau für diesen Store.
-   * Verwendet die Frontend-Route /storefront/:storeId – funktioniert
-   * lokal (npm start) und auf der Subdomain gleichermaßen.
+   * Lädt den Slug des aktuellen Stores, damit die Live-Vorschau
+   * die echte Subdomain-URL `https://{slug}.markt.ma` rendern kann.
+   */
+  private loadStoreSlug(): void {
+    this.storeService.getStoreById(this.storeId).subscribe({
+      next: (store) => {
+        if (store?.slug) {
+          this.storeSlug = store.slug;
+          // Falls Live-Tab schon offen ist, sofort neu laden mit echter URL
+          this.reloadLivePreview();
+          console.log('🌐 Store-Slug für Live-Preview geladen:', this.storeSlug);
+        }
+      },
+      error: (err) => console.warn('Store-Slug konnte nicht geladen werden:', err)
+    });
+  }
+
+  /**
+   * Basis-URL der Live-Storefront-Vorschau für diesen Store.
+   *
+   * Priorität:
+   *   1. Wenn Slug bekannt → echte Subdomain `https://{slug}.markt.ma`
+   *      (so wie der Store auch von Endkunden gesehen wird).
+   *   2. Fallback: Frontend-Route `/storefront/:storeId` für lokale Entwicklung,
+   *      falls der Slug noch nicht geladen wurde oder die DNS-Subdomain
+   *      lokal nicht erreichbar ist.
+   *
+   * Hinweis: In rein lokaler Entwicklung (`localhost`) erreicht der Browser
+   * die Subdomain nicht – daher der Fallback. Auf Production (markt.ma)
+   * sieht der Owner die exakte URL, die seine Kunden sehen.
    */
   getStorefrontPreviewBaseUrl(): string {
+    if (this.storeSlug) {
+      return `https://${this.storeSlug}.markt.ma`;
+    }
     return `/storefront/${this.storeId}`;
   }
 
