@@ -179,8 +179,20 @@ public class ThemeService {
 
     /**
      * 1-Klick-Anwendung: Übernimmt eine Template-Vorlage als aktives Theme
-     * eines Stores. Falls bereits ein Theme existiert, wird es überschrieben
-     * (UPSERT-Verhalten – konsistent mit createTheme()).
+     * eines Stores.
+     * <p>
+     * <b>Datenschutz für User-Anpassungen:</b>
+     * <ul>
+     *   <li>Es wird IMMER ein <b>neues</b> {@link StoreTheme} angelegt
+     *       (Snapshot-Verhalten). Bestehende Themes werden lediglich
+     *       <i>deaktiviert</i> ({@code isActive=false}), nicht gelöscht.
+     *       Damit gehen weder Custom-CSS noch Logo, Farben o.ä. verloren –
+     *       der User kann jederzeit zu einem früheren Theme zurückwechseln.</li>
+     *   <li>Falls der User bereits ein Logo gesetzt hat
+     *       ({@code logoUrl != null}), wird es ins neue Theme übernommen.</li>
+     *   <li>Ein vom User gesetztes {@code customCss} wird beibehalten,
+     *       sofern das Template selbst kein eigenes Custom-CSS mitbringt.</li>
+     * </ul>
      */
     @Transactional
     public StoreThemeDTO applyTemplateToStore(Long storeId, Long templateId, String customName) {
@@ -193,12 +205,26 @@ public class ThemeService {
             throw new RuntimeException("Template ist deaktiviert: " + template.getCode());
         }
 
+        // 1) Logo + Custom-CSS aus dem aktuell aktiven Theme retten (falls gesetzt)
         List<StoreTheme> existing = themeRepository.findByStoreId(storeId);
-        StoreTheme theme = existing.stream()
-                .filter(StoreTheme::getIsActive)
+        StoreTheme previouslyActive = existing.stream()
+                .filter(t -> Boolean.TRUE.equals(t.getIsActive()))
                 .findFirst()
-                .orElseGet(() -> existing.isEmpty() ? new StoreTheme() : existing.get(0));
+                .orElse(null);
+        String preservedLogoUrl = previouslyActive != null ? previouslyActive.getLogoUrl() : null;
+        String preservedCustomCss = previouslyActive != null ? previouslyActive.getCustomCss() : null;
 
+        // 2) Alle bestehenden Themes deaktivieren – aber NICHT löschen.
+        //    So bleibt eine Historie der vom User benutzten Themes erhalten.
+        for (StoreTheme t : existing) {
+            if (Boolean.TRUE.equals(t.getIsActive())) {
+                t.setIsActive(false);
+                themeRepository.save(t);
+            }
+        }
+
+        // 3) Neues Theme als Snapshot anlegen
+        StoreTheme theme = new StoreTheme();
         theme.setStore(store);
         theme.setName(customName != null && !customName.isBlank()
                 ? customName : template.getName() + " Theme");
@@ -207,22 +233,19 @@ public class ThemeService {
         theme.setColorsJson(template.getColorsJson());
         theme.setTypographyJson(template.getTypographyJson());
         theme.setLayoutJson(template.getLayoutJson());
-        if (template.getCustomCss() != null) {
-            theme.setCustomCss(template.getCustomCss());
-        }
+
+        // Template-CustomCss hat Vorrang; sonst User-CustomCss aus altem Theme retten
+        theme.setCustomCss(template.getCustomCss() != null
+                ? template.getCustomCss()
+                : preservedCustomCss);
+
+        // Logo NIE verlieren – immer aus altem Theme übernehmen
+        theme.setLogoUrl(preservedLogoUrl);
         theme.setIsActive(true);
 
-        // Andere Themes deaktivieren
-        existing.stream()
-                .filter(t -> t.getId() != null && !t.getId().equals(theme.getId()) && Boolean.TRUE.equals(t.getIsActive()))
-                .forEach(t -> {
-                    t.setIsActive(false);
-                    themeRepository.save(t);
-                });
-
         StoreTheme saved = themeRepository.save(theme);
-        log.info("✅ Template '{}' auf Store {} angewendet (Theme ID {})",
-                template.getCode(), storeId, saved.getId());
+        log.info("✅ Template '{}' auf Store {} angewendet (neues Theme ID {}, {} alte Themes deaktiviert, Logo erhalten: {})",
+                template.getCode(), storeId, saved.getId(), existing.size(), preservedLogoUrl != null);
         return convertToDTO(saved);
     }
 

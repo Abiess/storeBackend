@@ -2,6 +2,11 @@
 target/
 !.mvn/wrapper/maven-wrapper.jar
 
+# Local H2 file database (must NOT be committed – contains user data)
+data/
+*.mv.db
+*.trace.db
+
 # Ignore IDE files
 .idea/
 *.iml

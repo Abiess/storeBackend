@@ -9,52 +9,73 @@ import { LanguageSwitcherComponent } from '@app/core/i18n.exports';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { TranslationService } from '@app/core/services/translation.service';
 import {TranslateService} from "@ngx-translate/core";
-import { UsageWidgetComponent } from '@app/shared/components/usage-widget.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, LanguageSwitcherComponent, TranslatePipe, UsageWidgetComponent],
+  imports: [CommonModule, RouterModule, FormsModule, LanguageSwitcherComponent, TranslatePipe],
   template: `
     <div class="dashboard">
       <nav class="navbar">
-        <div class="container">
-          <div class="nav-brand">
-            <h1 class="logo">markt.ma</h1>
-            <span class="tagline">{{ 'dashboard.tagline' | translate }}</span>
-          </div>
-          <div class="nav-right">
-            <app-language-switcher></app-language-switcher>
+        <div class="container nav-container">
+          <!-- Brand -->
+          <a routerLink="/dashboard" class="nav-brand">
+            <span class="logo-mark">M</span>
+            <span class="logo-text">markt.ma</span>
+          </a>
 
-            <a
-              routerLink="/subscription"
-              class="btn btn-subscription"
-              [title]="'dashboard.subscription' | translate">
-              <span class="subscription-icon">💎</span>
+          <!-- Burger nur < 768 px -->
+          <button class="nav-burger"
+                  type="button"
+                  (click)="mobileMenuOpen = !mobileMenuOpen"
+                  [attr.aria-expanded]="mobileMenuOpen"
+                  [attr.aria-label]="(mobileMenuOpen ? 'common.close' : 'navigation.dashboard') | translate">
+            <span class="burger-bar" [class.is-open]="mobileMenuOpen"></span>
+            <span class="burger-bar burger-bar--mid" [class.is-open]="mobileMenuOpen"></span>
+            <span class="burger-bar" [class.is-open]="mobileMenuOpen"></span>
+          </button>
+
+          <!-- Right side: actions + user (alles in einer fusionierten Leiste) -->
+          <div class="nav-right" [class.is-mobile-open]="mobileMenuOpen">
+            <a routerLink="/subscription"
+               class="plan-pill"
+               *ngIf="getPlanName() as planName"
+               (click)="mobileMenuOpen = false"
+               [title]="'dashboard.subscription' | translate">
+              <span class="plan-pill__dot"></span>
+              <span class="plan-pill__name">{{ planName }}</span>
+              <span class="plan-pill__upgrade">{{ 'dashboard.upgrade' | translate }}</span>
             </a>
 
-            <a
-              routerLink="/settings"
-              class="btn btn-settings"
-              [title]="'navigation.settings' | translate">
-              <span class="settings-icon">⚙️</span>
+            <app-language-switcher class="nav-item"></app-language-switcher>
+
+            <a routerLink="/settings"
+               class="nav-icon-btn"
+               (click)="mobileMenuOpen = false"
+               [title]="'navigation.settings' | translate">
+              <span>⚙️</span>
             </a>
 
-            <div class="user-info">
+            <div class="nav-divider"></div>
+
+            <div class="user-chip">
               <span class="user-avatar">{{ getUserInitials() }}</span>
               <span class="user-email" *ngIf="currentUser">{{ currentUser.email }}</span>
             </div>
 
-            <button class="btn btn-logout" (click)="logout()">
-              <span class="logout-icon">⎋</span>
-              <span class="logout-text">{{ 'common.logout' | translate }}</span>
+            <button class="nav-icon-btn nav-icon-btn--logout"
+                    (click)="logout()"
+                    [title]="'common.logout' | translate">
+              <span>⎋</span>
             </button>
           </div>
         </div>
       </nav>
 
       <div class="container">
-        <app-usage-widget></app-usage-widget>
+        <!-- HINWEIS: <app-usage-widget> hier bewusst entfernt –
+             Plan-Status sitzt jetzt fusioniert oben in der Navbar (.plan-pill)
+             und Detail-Verbrauch wird unten / auf /subscription gezeigt. -->
 
         <div class="dashboard-header">
           <div>
@@ -246,166 +267,263 @@ import { UsageWidgetComponent } from '@app/shared/components/usage-widget.compon
 
     .navbar {
       background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      padding: 1rem 0;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      backdrop-filter: saturate(180%) blur(14px);
+      -webkit-backdrop-filter: saturate(180%) blur(14px);
+      border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+      box-shadow: 0 1px 0 rgba(15, 23, 42, 0.02), 0 4px 24px rgba(15, 23, 42, 0.04);
       position: sticky;
       top: 0;
       z-index: 100;
     }
 
-    .navbar .container {
+    .nav-container {
       display: flex;
+      align-items: center;
       justify-content: space-between;
-      align-items: center;
       gap: 1rem;
-      flex-wrap: wrap;
+      min-height: 64px;
+      padding-top: .5rem;
+      padding-bottom: .5rem;
     }
 
+    /* Brand */
     .nav-brand {
-      display: flex;
-      align-items: baseline;
-      gap: 0.75rem;
-      flex-wrap: wrap;
-    }
-
-    .logo {
-      color: #667eea;
-      font-size: 1.5rem;
-      font-weight: 800;
-      margin: 0;
-      letter-spacing: -0.5px;
-    }
-
-    @media (min-width: 768px) {
-      .logo {
-        font-size: 1.75rem;
-      }
-    }
-
-    .tagline {
-      color: #666;
-      font-size: 0.75rem;
-      display: none;
-    }
-
-    @media (min-width: 640px) {
-      .tagline {
-        display: inline;
-        font-size: 0.875rem;
-      }
-    }
-
-    .nav-right {
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: 0.75rem;
-      flex-wrap: wrap;
+      gap: .6rem;
+      text-decoration: none;
+      color: inherit;
+      flex-shrink: 0;
     }
-
-    @media (min-width: 768px) {
-      .nav-right {
-        gap: 1rem;
-      }
-    }
-
-    .user-info {
-      display: flex;
+    .logo-mark {
+      display: inline-flex;
       align-items: center;
-      gap: 0.75rem;
-    }
-
-    .user-avatar {
+      justify-content: center;
       width: 32px;
       height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      font-weight: 800;
+      font-size: 1rem;
+      box-shadow: 0 2px 6px rgba(102, 126, 234, .35);
+    }
+    .logo-text {
+      font-weight: 800;
+      font-size: 1.1rem;
+      color: #1f2937;
+      letter-spacing: -0.01em;
+    }
+
+    /* Rechte Seite – fusionierte Pille */
+    .nav-right {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      flex-wrap: nowrap;
+    }
+
+    .nav-item {
+      display: inline-flex;
+      align-items: center;
+    }
+
+    /* Plan-Pille (Subscription) – ersetzt isolierten 💎-Button */
+    .plan-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .35rem .7rem .35rem .5rem;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #eef2ff, #f5f3ff);
+      border: 1px solid #e0e7ff;
+      color: #4338ca;
+      text-decoration: none;
+      font-size: .8rem;
+      font-weight: 600;
+      transition: all .15s ease;
+    }
+    .plan-pill:hover {
+      background: linear-gradient(135deg, #e0e7ff, #ede9fe);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(99, 102, 241, .15);
+    }
+    .plan-pill__dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, .15);
+    }
+    .plan-pill__name { font-weight: 700; letter-spacing: .02em; }
+    .plan-pill__upgrade {
+      display: none;
+      padding-left: .35rem;
+      margin-left: .35rem;
+      border-left: 1px solid rgba(67, 56, 202, .25);
+      font-weight: 500;
+      color: #6d28d9;
+    }
+    @media (min-width: 768px) {
+      .plan-pill__upgrade { display: inline; }
+    }
+
+    /* Icon-Buttons */
+    .nav-icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      background: transparent;
+      border: 1px solid #e5e7eb;
+      color: #475569;
+      font-size: 1.05rem;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all .15s ease;
+    }
+    .nav-icon-btn:hover {
+      background: #f1f5f9;
+      color: #1f2937;
+      border-color: #cbd5e1;
+    }
+    .nav-icon-btn--logout:hover {
+      color: #b91c1c;
+      border-color: #fca5a5;
+      background: #fef2f2;
+    }
+
+    .nav-divider {
+      width: 1px;
+      height: 28px;
+      background: #e5e7eb;
+      margin: 0 .25rem;
+      display: none;
+    }
+    @media (min-width: 768px) {
+      .nav-divider { display: block; }
+    }
+
+    /* User-Chip */
+    .user-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .55rem;
+      padding: .25rem .6rem .25rem .25rem;
+      border-radius: 999px;
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+    }
+    .user-avatar {
+      width: 30px;
+      height: 30px;
       border-radius: 50%;
       background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-      display: flex;
+      color: #fff;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-weight: 600;
-      font-size: 0.875rem;
+      font-weight: 700;
+      font-size: .85rem;
     }
-
-    @media (min-width: 768px) {
-      .user-avatar {
-        width: 36px;
-        height: 36px;
-      }
-    }
-
     .user-email {
-      color: #333;
-      font-size: 0.875rem;
+      font-size: .82rem;
+      color: #1f2937;
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
       display: none;
     }
-
-    @media (min-width: 768px) {
-      .user-email {
-        display: inline;
-      }
+    @media (min-width: 900px) {
+      .user-email { display: inline; }
     }
 
-    .btn-logout {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.5rem 0.75rem;
+    @media (max-width: 540px) {
+      .plan-pill__name { display: none; }
+      .plan-pill { padding: .35rem .5rem; }
+    }
+
+    /* ------------------------------------------------------------------
+       Mobile Burger (< 768 px)
+       ------------------------------------------------------------------ */
+    .nav-burger {
+      display: none;
       background: transparent;
-      color: #666;
-      border: 1px solid #ddd;
-      transition: all 0.3s;
-      font-size: 0.875rem;
-    }
-
-    @media (min-width: 768px) {
-      .btn-logout {
-        padding: 0.5rem 1rem;
-      }
-    }
-
-    .logout-text {
-      display: none;
-    }
-
-    @media (min-width: 640px) {
-      .logout-text {
-        display: inline;
-      }
-    }
-
-    .btn-logout:hover {
-      background: #f5f5f5;
-      color: #333;
-      border-color: #999;
-    }
-
-    .btn-settings {
-      display: flex;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      width: 40px; height: 40px;
+      padding: 0;
+      cursor: pointer;
       align-items: center;
       justify-content: center;
-      padding: 0.5rem;
-      background: transparent;
-      color: #666;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      transition: all 0.3s;
-      font-size: 1.25rem;
-      text-decoration: none;
-      width: 40px;
-      height: 40px;
+      flex-direction: column;
+      gap: 4px;
     }
-
-    .btn-settings:hover {
-      background: #f5f5f5;
-      color: #667eea;
-      border-color: #667eea;
-      transform: rotate(90deg);
-    }
-
-    .settings-icon {
+    .nav-burger:hover { background: #f1f5f9; }
+    .burger-bar {
       display: block;
+      width: 18px;
+      height: 2px;
+      background: #1f2937;
+      border-radius: 2px;
+      transition: transform .2s ease, opacity .2s ease;
+    }
+    .burger-bar.is-open:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+    .burger-bar.is-open.burger-bar--mid { opacity: 0; }
+    .burger-bar.is-open:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+    @media (max-width: 767px) {
+      .nav-burger { display: inline-flex; }
+
+      .nav-right {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        flex-direction: column;
+        align-items: stretch;
+        gap: .5rem;
+        padding: 1rem;
+        background: #ffffff;
+        border-bottom: 1px solid #e5e7eb;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, .08);
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transition: max-height .25s ease, opacity .2s ease, padding .25s ease;
+      }
+      .nav-right.is-mobile-open {
+        max-height: 600px;
+        opacity: 1;
+        padding: 1rem;
+      }
+      /* Im Mobile-Menü Platz lassen, da kein horizontales Layout */
+      .nav-right > * { width: 100%; }
+      .nav-right .nav-icon-btn,
+      .nav-right .nav-icon-btn--logout {
+        width: 100%;
+        height: 44px;
+        justify-content: flex-start;
+        padding: 0 .9rem;
+      }
+      .nav-right .nav-icon-btn::after {
+        content: attr(title);
+        margin-left: .6rem;
+        font-size: .9rem;
+        color: inherit;
+      }
+      .nav-right .plan-pill { width: 100%; justify-content: flex-start; }
+      .nav-right .plan-pill__name { display: inline; }
+      .nav-right .plan-pill__upgrade { display: inline; }
+      .nav-right .user-chip {
+        background: transparent;
+        border: none;
+        padding: .25rem 0;
+      }
+      .nav-right .user-email { display: inline; max-width: 100%; }
+      .nav-divider { display: none; }
+      .navbar { position: relative; }
+      .nav-container { position: relative; }
     }
 
     .container {
@@ -496,30 +614,6 @@ import { UsageWidgetComponent } from '@app/shared/components/usage-widget.compon
       }
     }
 
-    .btn-subscription {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0.5rem;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      transition: all 0.3s;
-      font-size: 1.25rem;
-      text-decoration: none;
-      width: 40px;
-      height: 40px;
-    }
-
-    .btn-subscription:hover {
-      transform: scale(1.1);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-    }
-
-    .subscription-icon {
-      display: block;
-    }
 
     .form-control.error {
       border-color: #e74c3c;
@@ -919,6 +1013,8 @@ export class DashboardComponent implements OnInit {
   slugError: string | null = null;
   createError: string | null = null;
   showLimitModal = false;
+  /** Steuert das mobile Burger-Menü in der Navbar (< 768 px). */
+  mobileMenuOpen = false;
 
   constructor(
       private storeService: StoreService,
@@ -957,6 +1053,17 @@ export class DashboardComponent implements OnInit {
   getUserInitials(): string {
     if (!this.currentUser?.email) return 'U';
     return this.currentUser.email.charAt(0).toUpperCase();
+  }
+
+  /**
+   * Lesefreundlicher Plan-Name für die Navbar-Pille.
+   * Liest `currentUser.plan.name` (falls vorhanden) und liefert
+   * sonst einen sinnvollen Fallback ("FREE").
+   */
+  getPlanName(): string {
+    const plan: any = (this.currentUser as any)?.plan;
+    if (!plan) return 'FREE';
+    return (plan.displayName || plan.name || 'FREE').toString().toUpperCase();
   }
 
   getStatusClass(status: string): string {

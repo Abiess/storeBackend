@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ThemeService } from '../../core/services/theme.service';
 import {
   StoreTheme,
@@ -194,8 +195,33 @@ import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
 
         <!-- Vorschau -->
         <div class="preview-section" *ngIf="selectedPreset">
-          <h2>Vorschau</h2>
-          <div class="theme-preview-full" 
+          <div class="preview-toolbar">
+            <h2>Vorschau</h2>
+            <div class="preview-toolbar__actions">
+              <button type="button"
+                      class="btn btn-secondary btn-sm"
+                      [class.active]="previewMode === 'mini'"
+                      (click)="previewMode = 'mini'">
+                🎨 Stil-Vorschau
+              </button>
+              <button type="button"
+                      class="btn btn-secondary btn-sm"
+                      [class.active]="previewMode === 'live'"
+                      (click)="previewMode = 'live'">
+                🌐 Live-Storefront
+              </button>
+              <button type="button"
+                      class="btn btn-secondary btn-sm"
+                      *ngIf="previewMode === 'live'"
+                      (click)="reloadLivePreview()"
+                      title="Iframe neu laden">
+                ↻
+              </button>
+            </div>
+          </div>
+
+          <!-- Mini-Vorschau (Buttons + Karte mit aktuellen Farben) -->
+          <div class="theme-preview-full" *ngIf="previewMode === 'mini'"
                [style.background]="selectedPreset.colors.background"
                [style.color]="selectedPreset.colors.text"
                [style.fontFamily]="selectedPreset.typography.fontFamily">
@@ -203,12 +229,12 @@ import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
               <h3 [style.color]="'#ffffff'">Mein Shop</h3>
             </div>
             <div class="preview-content-area">
-              <button class="preview-button" 
+              <button class="preview-button"
                       [style.background]="selectedPreset.colors.primary"
                       [style.color]="'#ffffff'">
                 Primär Button
               </button>
-              <button class="preview-button" 
+              <button class="preview-button"
                       [style.background]="selectedPreset.colors.secondary"
                       [style.color]="'#ffffff'">
                 Sekundär Button
@@ -219,6 +245,26 @@ import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
                 <span class="preview-price" [style.color]="selectedPreset.colors.accent">€99.99</span>
               </div>
             </div>
+          </div>
+
+          <!-- Live-Iframe-Vorschau auf den echten Storefront -->
+          <div class="live-preview" *ngIf="previewMode === 'live'">
+            <p class="live-preview__hint">
+              Live-Vorschau des Storefronts (zeigt das aktuell gespeicherte Theme inklusive
+              Produkten, Kategorien und Bildern). Nach „Theme speichern" hier auf <strong>↻</strong>
+              klicken, um Änderungen zu sehen.
+            </p>
+            <iframe class="live-preview__iframe"
+                    [src]="getStorefrontPreviewUrl()"
+                    title="Live Storefront Preview"
+                    loading="lazy"
+                    referrerpolicy="no-referrer">
+            </iframe>
+            <a class="live-preview__open"
+               [href]="getStorefrontPreviewBaseUrl()"
+               target="_blank" rel="noopener">
+              In neuem Tab öffnen ↗
+            </a>
           </div>
         </div>
       </div>
@@ -511,6 +557,66 @@ import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
       min-height: 400px;
     }
 
+    /* Toolbar mit Mini ↔ Live Toggle */
+    .preview-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+    .preview-toolbar h2 { margin: 0; }
+    .preview-toolbar__actions {
+      display: inline-flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+    }
+    .btn.btn-sm {
+      padding: .4rem .75rem;
+      font-size: .85rem;
+      border-radius: 6px;
+    }
+    .btn.btn-sm.active {
+      background: #2563eb;
+      color: #fff;
+      box-shadow: inset 0 0 0 1px #1d4ed8;
+    }
+
+    /* Live-Iframe-Preview */
+    .live-preview {
+      display: flex;
+      flex-direction: column;
+      gap: .75rem;
+    }
+    .live-preview__hint {
+      margin: 0;
+      padding: .75rem 1rem;
+      background: #f1f5f9;
+      border-left: 4px solid #2563eb;
+      border-radius: 6px;
+      color: #334155;
+      font-size: .9rem;
+      line-height: 1.5;
+    }
+    .live-preview__iframe {
+      width: 100%;
+      height: 720px;
+      max-height: 80vh;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      background: #ffffff;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, .06);
+    }
+    .live-preview__open {
+      align-self: flex-end;
+      color: #2563eb;
+      text-decoration: none;
+      font-size: .85rem;
+      font-weight: 500;
+    }
+    .live-preview__open:hover { text-decoration: underline; }
+
     .preview-header {
       padding: 1.5rem;
       text-align: center;
@@ -646,10 +752,16 @@ export class StoreThemeComponent implements OnInit {
   headerActions: HeaderAction[] = [];
   breadcrumbItems: BreadcrumbItem[] = [];
 
+  /** 'mini' = Buttons-/Karten-Vorschau · 'live' = echtes Storefront-Iframe */
+  previewMode: 'mini' | 'live' = 'mini';
+  /** Cache-Buster für das Live-Iframe (wird nach Save erhöht). */
+  private livePreviewVersion = 0;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private themeService: ThemeService
+    private themeService: ThemeService,
+    private sanitizer: DomSanitizer
   ) {}
 
   ngOnInit(): void {
@@ -786,6 +898,8 @@ export class StoreThemeComponent implements OnInit {
         this.activeTheme = theme;
         this.applyingTemplate = null;
         this.successMessage = `Theme "${preset.name}" wurde aktiviert und gespeichert.`;
+        // Live-Iframe automatisch refreshen, falls offen
+        this.reloadLivePreview();
         // Toast nach 4s ausblenden
         setTimeout(() => this.successMessage = null, 4000);
       },
@@ -852,6 +966,8 @@ export class StoreThemeComponent implements OnInit {
         this.themeService.applyTheme(theme);
 
         this.successMessage = `Theme "${theme.name}" wurde gespeichert und angewendet.`;
+        // Live-Iframe automatisch refreshen, falls offen
+        this.reloadLivePreview();
         setTimeout(() => this.successMessage = null, 4000);
       },
       error: (error) => {
@@ -869,6 +985,34 @@ export class StoreThemeComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/stores', this.storeId]);
+  }
+
+  // ----------------------------------------------------------------
+  //  Live-Storefront-Iframe (Vorschau-Tab "🌐 Live")
+  // ----------------------------------------------------------------
+
+  /**
+   * Basis-URL der öffentlichen Storefront-Vorschau für diesen Store.
+   * Verwendet die Frontend-Route /storefront/:storeId – funktioniert
+   * lokal (npm start) und auf der Subdomain gleichermaßen.
+   */
+  getStorefrontPreviewBaseUrl(): string {
+    return `/storefront/${this.storeId}`;
+  }
+
+  /**
+   * Iframe-`src` mit Cache-Buster, sicher als SafeResourceUrl.
+   * Wird durch {@link reloadLivePreview} neu erzeugt, sodass Hibernate-
+   * Updates nach „Theme speichern" sofort sichtbar werden.
+   */
+  getStorefrontPreviewUrl(): SafeResourceUrl {
+    const url = `${this.getStorefrontPreviewBaseUrl()}?previewKey=${this.livePreviewVersion}`;
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+  }
+
+  /** Erhöht die Version → triggert Iframe-Reload via Angular-Change-Detection. */
+  reloadLivePreview(): void {
+    this.livePreviewVersion++;
   }
 
   getThemeTypeName(type: string): string {

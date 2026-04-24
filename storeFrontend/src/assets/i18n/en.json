@@ -662,6 +662,7 @@
   "dashboard": {
     "tagline": "E-Commerce Platform",
     "subscription": "Subscription",
+    "upgrade": "Upgrade",
     "myStores": "My stores",
     "subtitle": "Manage your online stores",
     "newStore": "New store",

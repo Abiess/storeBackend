@@ -58,9 +58,13 @@ export class AppComponent implements OnInit {
   /**
    * URL-Pfade, bei denen die persistente Admin-Sidebar gerendert wird.
    * Storefront, Auth, Landing & Customer-Bereich bleiben unverändert.
+   *
+   * WICHTIG: `/dashboard` ist BEWUSST nicht enthalten – das Dashboard hat
+   * eine eigene moderne Navbar und braucht keine zusätzliche Sidebar.
+   * Sobald der User in einen konkreten Store navigiert (`/stores/123/...`),
+   * erscheint die Sidebar wieder für die Store-Verwaltung.
    */
   private readonly adminPathPrefixes = [
-    '/dashboard',
     '/settings',
     '/subscription',
     '/role-management',

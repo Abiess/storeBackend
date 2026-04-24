@@ -2,9 +2,12 @@ spring:
   application:
     name: storeBackend
 
-  # H2 In-Memory Database (local development without PostgreSQL)
+  # H2 File-Database (local development without PostgreSQL)
+  # WICHTIG: 'file:' statt 'mem:' damit Daten den App-Restart überleben.
+  # AUTO_SERVER=TRUE erlaubt parallelen Zugriff (z.B. App + H2-Console).
+  # Speicherort: ./data/storedb.mv.db (relativ zum Projekt-Root)
   datasource:
-    url: jdbc:h2:mem:storedb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    url: jdbc:h2:file:./data/storedb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
     username: sa
     password:
@@ -21,7 +24,9 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create-drop  # H2: Let Hibernate create schema from Entities
+      # WICHTIG: 'update' damit bestehende User-Daten beim Restart erhalten bleiben.
+      # NIEMALS 'create' oder 'create-drop' verwenden – das löscht alle Daten!
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
