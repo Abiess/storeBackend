@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
+import { dashboardStoresRedirectGuard } from './core/guards/dashboard-stores-redirect.guard';
 
 export const routes: Routes = [
   // ==================== Auth Routes ====================
@@ -73,127 +74,33 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
 
-  // ==================== Dashboard Routes (Legacy Support) ====================
-  // WICHTIG: Diese müssen VOR den primären Store-Routen stehen!
-  // Diese Routen unterstützen alte Links mit /dashboard/ Prefix
+  // ==================== Dashboard Legacy Redirects ====================
+  // Vorher existierten 24 doppelte Routen unter `/dashboard/stores/:storeId/...`,
+  // die jeweils dieselbe Komponente luden wie `/stores/:id/...`. Das hatte zwei
+  // Nachteile:
+  //   1. Doppelter Code/Pflege-Aufwand bei jeder neuen Route.
+  //   2. Inkonsistente UI: die globale Admin-Sidebar (Whitelist `/stores/`)
+  //      erschien NUR bei der Primärvariante.
+  //
+  // Lösung: Eine einzige Wildcard-Route + Redirect-Guard, die jede
+  // `/dashboard/stores/...`-URL inkl. Suffix, Query-Params und Fragment
+  // auf die modernen `/stores/:id/...`-Routen umleitet.
+  // Bestehende Bookmarks und externe Links funktionieren weiter, alle landen
+  // auf der konsistenten Variante – inklusive Sidebar.
+  //
+  // WICHTIG: Diese Route muss VOR den primären `/stores/:id/...`-Routen
+  // stehen, damit Angular sie bei `/dashboard/stores/...`-URLs zuerst matcht.
   {
-    path: 'dashboard/stores/:storeId',
-    loadComponent: () => import('./features/stores/store-detail.component').then(m => m.StoreDetailComponent),
-    canActivate: [authGuard]
-  },
-  {
-    path: 'dashboard/stores/:storeId/settings',
-    loadComponent: () => import('./features/stores/store-settings.component').then(m => m.StoreSettingsComponent),
-    canActivate: [authGuard]
-  },
-  {
-    path: 'dashboard/stores/:storeId/homepage-builder',
-    loadComponent: () => import('./features/stores/homepage-builder.component').then(m => m.HomepageBuilderComponent),
-    canActivate: [authGuard]
-  },
-  {
-    path: 'dashboard/stores/:storeId/orders',
-    loadComponent: () => {
-      console.log('✅ Route matched: dashboard/stores/:storeId/orders');
-      return import('./features/stores/store-orders.component').then(m => m.StoreOrdersComponent);
-    },
-    canActivate: [authGuard]
-  },
-  {
-    path: 'dashboard/stores/:storeId/orders/verification',
-    loadComponent: () => import('./features/stores/order-verification-center.component').then(m => m.OrderVerificationCenterComponent),
-    canActivate: [authGuard]
-  },
-  {
-    path: 'dashboard/stores/:storeId/orders/:orderId',
-    loadComponent: () => import('./features/stores/order-detail-professional.component').then(m => m.OrderDetailProfessionalComponent),
-    canActivate: [authGuard]
-  },
-  {
-    path: 'dashboard/stores/:storeId/theme',
-    loadComponent: () => import('./features/stores/store-theme.component').then(m => m.StoreThemeComponent),
-    canActivate: [authGuard]
-  },
-  {
-    path: 'dashboard/stores/:storeId/products/new',
-    loadComponent: () => {
-      console.log('✅ Route matched: dashboard/stores/:storeId/products/new');
-      return import('./features/products/product-form.component').then(m => m.ProductFormComponent);
-    },
-    canActivate: [authGuard]
-  },
-  {
-    path: 'dashboard/stores/:storeId/products/:productId/edit',
-    loadComponent: () => import('./features/products/product-form.component').then(m => m.ProductFormComponent),
-    canActivate: [authGuard]
-  },
-  {
-    path: 'dashboard/stores/:storeId/products',
-    loadComponent: () => import('./features/products/product-list.component').then(m => m.ProductListComponent),
-    canActivate: [authGuard]
-  },
-  {
-    path: 'dashboard/stores/:storeId/categories/new',
-    loadComponent: () => {
-      console.log('✅ Route matched: dashboard/stores/:storeId/categories/new');
-      return import('./features/products/category-form.component').then(m => m.CategoryFormComponent);
-    },
-    canActivate: [authGuard]
-  },
-  {
-    path: 'dashboard/stores/:storeId/categories/:categoryId/edit',
-    loadComponent: () => import('./features/products/category-form.component').then(m => m.CategoryFormComponent),
-    canActivate: [authGuard]
-  },
-  {
-    path: 'dashboard/stores/:storeId/categories',
-    loadComponent: () => import('./features/products/category-list.component').then(m => m.CategoryListComponent),
-    canActivate: [authGuard]
-  },
-  {
-    path: 'dashboard/stores/:storeId/coupons',
-    loadComponent: () => import('./features/coupons/coupons-list/coupons-list.component').then(m => m.CouponsListComponent),
-    canActivate: [authGuard]
-  },
-  {
-    path: 'dashboard/stores/:storeId/coupons/:couponId',
-    loadComponent: () => import('./features/coupons/coupon-editor/coupon-editor.component').then(m => m.CouponEditorComponent),
-    canActivate: [authGuard]
-  },
-  {
-    path: 'dashboard/stores/:storeId/seo/redirects',
-    loadComponent: () => import('./features/settings/redirects-page/redirects-page.component').then(m => m.RedirectsPageComponent),
-    canActivate: [authGuard]
-  },
-  {
-    path: 'dashboard/stores/:storeId/seo/structured-data',
-    loadComponent: () => import('./features/settings/structured-data-page/structured-data-page.component').then(m => m.StructuredDataPageComponent),
-    canActivate: [authGuard]
-  },
-  {
-    path: 'dashboard/stores/:storeId/seo',
-    loadComponent: () => import('./features/settings/seo-settings-page/seo-settings-page.component').then(m => m.SeoSettingsPageComponent),
-    canActivate: [authGuard]
-  },
-  {
-    path: 'dashboard/stores/:storeId/brand',
-    loadComponent: () => import('./features/settings/brand-onboarding/brand-onboarding.component').then(m => m.BrandOnboardingComponent),
-    canActivate: [authGuard]
-  },
-  {
-    path: 'dashboard/stores/:storeId/delivery',
-    loadComponent: () => import('./features/delivery/delivery-management.component').then(m => m.DeliveryManagementComponent),
-    canActivate: [authGuard]
-  },
-  {
-    path: 'dashboard/stores/:storeId/reviews',
-    loadComponent: () => import('./features/stores/store-reviews-manager.component').then(m => m.StoreReviewsManagerComponent),
-    canActivate: [authGuard]
-  },
-  {
-    path: 'dashboard/stores/:storeId/chatbot',
-    loadComponent: () => import('./components/chatbot-management/chatbot-management.component').then(m => m.ChatbotManagementComponent),
-    canActivate: [authGuard]
+    path: 'dashboard/stores',
+    canActivate: [dashboardStoresRedirectGuard],
+    // Dummy-Komponente wird nie geladen – Guard liefert vorher UrlTree zurück.
+    children: [
+      {
+        path: '**',
+        canActivate: [dashboardStoresRedirectGuard],
+        loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent)
+      }
+    ]
   },
 
   // ==================== Product Management (Primary Routes) ====================

@@ -213,12 +213,10 @@ export class ProductListComponent implements OnInit {
     this.router.navigate([this.getStoreBasePath(), 'products', productId, 'edit']);
   }
 
-  /** Gibt den Basis-Pfad für den aktuellen Store zurück (/stores/:id oder /dashboard/stores/:id) */
+  /** Gibt den kanonischen Basis-Pfad für den aktuellen Store zurück. */
   private getStoreBasePath(): string {
-    const url = this.router.url;
-    if (url.startsWith('/dashboard/')) {
-      return `/dashboard/stores/${this.storeId}`;
-    }
+    // /dashboard/stores/... wird vom dashboardStoresRedirectGuard automatisch
+    // auf /stores/... umgeleitet, daher gibt es nur noch eine Quelle der Wahrheit.
     return `/stores/${this.storeId}`;
   }
 

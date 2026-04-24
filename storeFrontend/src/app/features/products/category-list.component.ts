@@ -573,10 +573,9 @@ export class CategoryListComponent implements OnInit {
   }
 
   private getStoreBasePath(): string {
-    const url = this.router.url;
-    if (url.startsWith('/dashboard/')) {
-      return `/dashboard/stores/${this.storeId}`;
-    }
+    // Kanonische Single-Source-of-Truth-URL.
+    // /dashboard/stores/... wird vom dashboardStoresRedirectGuard automatisch
+    // hierher umgeleitet, daher reicht eine Variante.
     return `/stores/${this.storeId}`;
   }
 }
