@@ -48,17 +48,21 @@ import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
           </div>
         </div>
 
-        <!-- Theme Presets -->
+        <!-- Theme Presets aus Backend (Free-Template-Katalog) -->
         <div class="presets-section">
-          <h2>Theme-Vorlagen</h2>
-          <p class="section-description">Wählen Sie eine Vorlage als Ausgangspunkt für Ihr Theme</p>
-          
+          <h2>Kostenlose Theme-Vorlagen 🎁</h2>
+          <p class="section-description">
+            Wähle eine Vorlage und wende sie mit einem Klick auf deinen Shop an –
+            wird automatisch gespeichert und beim nächsten Mal geladen.
+          </p>
+
           <div class="presets-grid">
             <div class="preset-card" *ngFor="let preset of presets">
               <div class="preset-preview" [style.background]="'linear-gradient(135deg, ' + preset.colors.primary + ', ' + preset.colors.secondary + ')'">
                 <div class="preview-overlay">
                   <h3>{{ preset.name }}</h3>
                 </div>
+                <span class="badge-free" *ngIf="isFreeTemplate(preset)">FREE</span>
               </div>
               <div class="preset-info">
                 <p>{{ preset.description }}</p>
@@ -67,11 +71,24 @@ import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
                   <span class="color-dot" [style.background]="preset.colors.secondary" [title]="'Sekundär: ' + preset.colors.secondary"></span>
                   <span class="color-dot" [style.background]="preset.colors.accent" [title]="'Akzent: ' + preset.colors.accent"></span>
                 </div>
-                <button class="btn btn-primary" (click)="selectPreset(preset)">
-                  Verwenden
-                </button>
+                <div class="preset-actions">
+                  <button class="btn btn-success"
+                          (click)="applyTemplateImmediately(preset)"
+                          [disabled]="applyingTemplate === preset.name"
+                          *ngIf="getTemplateId(preset)">
+                    {{ applyingTemplate === preset.name ? '⏳ Wende an...' : '⚡ 1-Klick anwenden' }}
+                  </button>
+                  <button class="btn btn-secondary" (click)="selectPreset(preset)">
+                    ✏️ Anpassen
+                  </button>
+                </div>
               </div>
             </div>
+          </div>
+
+          <!-- Erfolgs-Toast -->
+          <div class="toast-success" *ngIf="successMessage" (click)="successMessage = null">
+            ✅ {{ successMessage }}
           </div>
         </div>
 
@@ -522,6 +539,55 @@ import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
     .error {
       color: #dc3545;
     }
+
+    /* Free-Badge auf Preset-Karten */
+    .badge-free {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background: #28a745;
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    /* Preset-Action-Buttons (nebeneinander) */
+    .preset-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .preset-actions .btn {
+      flex: 1;
+      min-width: 0;
+      font-size: 0.875rem;
+      padding: 0.5rem 0.75rem;
+    }
+
+    /* Erfolgs-Toast */
+    .toast-success {
+      position: fixed;
+      top: 1.5rem;
+      right: 1.5rem;
+      z-index: 9999;
+      background: #28a745;
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      cursor: pointer;
+      animation: slideInRight 0.3s ease-out;
+      max-width: 400px;
+      font-weight: 500;
+    }
+    @keyframes slideInRight {
+      from { transform: translateX(110%); opacity: 0; }
+      to   { transform: translateX(0);    opacity: 1; }
+    }
   `]
 })
 export class StoreThemeComponent implements OnInit {
@@ -533,6 +599,8 @@ export class StoreThemeComponent implements OnInit {
   selectedTemplate: ShopTemplate = ShopTemplate.FOOD;
   loading = false;
   saving = false;
+  applyingTemplate: string | null = null;
+  successMessage: string | null = null;
   error: string | null = null;
   headerActions: HeaderAction[] = [];
   breadcrumbItems: BreadcrumbItem[] = [];
@@ -610,12 +678,59 @@ export class StoreThemeComponent implements OnInit {
   }
 
   loadPresets(): void {
-    this.themeService.getThemePresets().subscribe({
+    // ✅ Lade Templates aus dem Backend (Free-Template-Katalog)
+    // Fallback auf lokale Presets falls Backend nicht erreichbar
+    this.themeService.getTemplatesFromBackend(true).subscribe({
       next: (presets) => {
         this.presets = presets;
+        console.log(`✅ ${presets.length} Theme-Templates geladen`);
       },
       error: (error) => {
         console.error('Error loading presets:', error);
+        // Fallback
+        this.themeService.getThemePresets().subscribe(p => this.presets = p);
+      }
+    });
+  }
+
+  /** Hilfsmethode: Backend-Template-ID falls vorhanden */
+  getTemplateId(preset: ThemePreset): number | undefined {
+    return (preset as any).id;
+  }
+
+  /** Free-Badge anzeigen falls Template als kostenlos markiert ist */
+  isFreeTemplate(preset: ThemePreset): boolean {
+    const isFree = (preset as any).isFree;
+    return isFree === undefined ? true : isFree;
+  }
+
+  /**
+   * 1-Klick-Anwendung: Template direkt auf Store anwenden + speichern.
+   * Kein Editor-Schritt nötig.
+   */
+  applyTemplateImmediately(preset: ThemePreset): void {
+    const templateId = this.getTemplateId(preset);
+    if (!templateId) {
+      console.warn('⚠️ Preset hat keine Backend-ID, fallback auf Editor-Modus');
+      this.selectPreset(preset);
+      return;
+    }
+
+    this.applyingTemplate = preset.name;
+    this.error = null;
+
+    this.themeService.applyTemplateToStore(this.storeId, templateId, `${preset.name} Theme`).subscribe({
+      next: (theme) => {
+        this.activeTheme = theme;
+        this.applyingTemplate = null;
+        this.successMessage = `Theme "${preset.name}" wurde aktiviert und gespeichert.`;
+        // Toast nach 4s ausblenden
+        setTimeout(() => this.successMessage = null, 4000);
+      },
+      error: (err) => {
+        console.error('Fehler beim Anwenden des Templates:', err);
+        this.error = 'Template konnte nicht angewendet werden';
+        this.applyingTemplate = null;
       }
     });
   }
@@ -674,7 +789,8 @@ export class StoreThemeComponent implements OnInit {
         // ✅ Theme sofort anwenden
         this.themeService.applyTheme(theme);
 
-        alert('✅ Theme erfolgreich in der Datenbank gespeichert!');
+        this.successMessage = `Theme "${theme.name}" wurde gespeichert und angewendet.`;
+        setTimeout(() => this.successMessage = null, 4000);
       },
       error: (error) => {
         this.error = 'Fehler beim Speichern des Themes';

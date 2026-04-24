@@ -30,11 +30,16 @@ public class WizardProgressController {
      */
     @GetMapping
     public ResponseEntity<?> getProgress(@AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            log.warn("❌ Unauthenticated access attempt to get wizard progress");
+            return ResponseEntity.status(401).body("Authentication required");
+        }
+
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         return wizardProgressService.getProgress(user.getId())
-                .map(ResponseEntity::ok)
+                .map(dto -> (ResponseEntity<?>) ResponseEntity.ok(dto))
                 .orElse(ResponseEntity.noContent().build());
     }
 
@@ -43,14 +48,19 @@ public class WizardProgressController {
      * Speichere/Update Wizard-Fortschritt
      */
     @PostMapping
-    public ResponseEntity<WizardProgressDTO> saveProgress(
+    public ResponseEntity<?> saveProgress(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody WizardProgressDTO progressDTO) {
-        
+
+        if (userDetails == null) {
+            log.warn("❌ Unauthenticated access attempt to save wizard progress");
+            return ResponseEntity.status(401).body("Authentication required");
+        }
+
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        log.info("💾 Saving wizard progress for user {}: Step {}", 
+        log.info("💾 Saving wizard progress for user {}: Step {}",
                 user.getEmail(), progressDTO.getCurrentStep());
 
         WizardProgressDTO saved = wizardProgressService.saveProgress(user.getId(), progressDTO);
@@ -62,13 +72,18 @@ public class WizardProgressController {
      * Markiere Wizard als übersprungen
      */
     @PostMapping("/skip")
-    public ResponseEntity<Void> skipWizard(@AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<?> skipWizard(@AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            log.warn("❌ Unauthenticated access attempt to skip wizard");
+            return ResponseEntity.status(401).body("Authentication required");
+        }
+
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         log.info("⏭️ User {} skipping wizard", user.getEmail());
         wizardProgressService.markAsSkipped(user.getId());
-        
+
         return ResponseEntity.ok().build();
     }
 

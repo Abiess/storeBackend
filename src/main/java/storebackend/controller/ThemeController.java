@@ -21,6 +21,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/themes")
+@CrossOrigin(origins = "*", maxAge = 3600)
 @RequiredArgsConstructor
 @Slf4j
 public class ThemeController {
@@ -110,5 +111,43 @@ public class ThemeController {
         log.info("Deleting theme: {}", themeId);
         themeService.deleteTheme(themeId);
         return ResponseEntity.noContent().build();
+    }
+
+    // =====================================================================
+    // Free / Premium Theme-Templates (Vorlagen-Katalog)
+    // =====================================================================
+
+    /**
+     * Öffentlicher Endpunkt: Alle aktiven Theme-Templates abrufen.
+     * Optional Filter ?onlyFree=true → nur kostenlose Vorlagen.
+     */
+    @GetMapping("/templates")
+    public ResponseEntity<?> listTemplates(
+            @RequestParam(name = "onlyFree", defaultValue = "false") boolean onlyFree) {
+        log.info("Listing theme templates (onlyFree={})", onlyFree);
+        return ResponseEntity.ok(themeService.listTemplates(onlyFree));
+    }
+
+    /**
+     * 1-Klick-Anwendung: Übernimmt eine Template-Vorlage als aktives Theme
+     * eines Stores. Speichert sofort in der DB.
+     *
+     * POST /api/themes/store/{storeId}/apply-template/{templateId}?name=Optional
+     */
+    @PostMapping("/store/{storeId}/apply-template/{templateId}")
+    public ResponseEntity<?> applyTemplate(
+            @PathVariable Long storeId,
+            @PathVariable Long templateId,
+            @RequestParam(name = "name", required = false) String customName,
+            @AuthenticationPrincipal User user) {
+        if (user == null) return ResponseEntity.status(401).body("Unauthorized");
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+        if (!StoreAccessChecker.isOwner(store, user)) {
+            return ResponseEntity.status(403).body("Not authorized");
+        }
+        log.info("Applying template {} to store {} (user: {})",
+                templateId, storeId, user.getEmail());
+        return ResponseEntity.ok(themeService.applyTemplateToStore(storeId, templateId, customName));
     }
 }

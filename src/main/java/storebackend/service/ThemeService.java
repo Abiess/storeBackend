@@ -7,10 +7,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import storebackend.dto.CreateThemeRequest;
 import storebackend.dto.StoreThemeDTO;
+import storebackend.dto.ThemeTemplateDTO;
 import storebackend.entity.Store;
 import storebackend.entity.StoreTheme;
+import storebackend.entity.ThemeTemplate;
 import storebackend.repository.StoreRepository;
 import storebackend.repository.StoreThemeRepository;
+import storebackend.repository.ThemeTemplateRepository;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,6 +25,7 @@ public class ThemeService {
 
     private final StoreThemeRepository themeRepository;
     private final StoreRepository storeRepository;
+    private final ThemeTemplateRepository themeTemplateRepository;
     private final ObjectMapper objectMapper;
 
     @Transactional(readOnly = true)
@@ -158,6 +162,85 @@ public class ThemeService {
         dto.setIsActive(theme.getIsActive());
         dto.setCreatedAt(theme.getCreatedAt());
         dto.setUpdatedAt(theme.getUpdatedAt());
+        return dto;
+    }
+
+    // =====================================================================
+    // Theme-Template-Katalog (Free + Premium Vorlagen)
+    // =====================================================================
+
+    @Transactional(readOnly = true)
+    public List<ThemeTemplateDTO> listTemplates(boolean onlyFree) {
+        List<ThemeTemplate> templates = onlyFree
+                ? themeTemplateRepository.findByIsFreeTrueAndIsActiveTrueOrderBySortOrderAscIdAsc()
+                : themeTemplateRepository.findByIsActiveTrueOrderBySortOrderAscIdAsc();
+        return templates.stream().map(this::convertTemplateToDTO).collect(Collectors.toList());
+    }
+
+    /**
+     * 1-Klick-Anwendung: Übernimmt eine Template-Vorlage als aktives Theme
+     * eines Stores. Falls bereits ein Theme existiert, wird es überschrieben
+     * (UPSERT-Verhalten – konsistent mit createTheme()).
+     */
+    @Transactional
+    public StoreThemeDTO applyTemplateToStore(Long storeId, Long templateId, String customName) {
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found: " + storeId));
+        ThemeTemplate template = themeTemplateRepository.findById(templateId)
+                .orElseThrow(() -> new RuntimeException("Template not found: " + templateId));
+
+        if (Boolean.FALSE.equals(template.getIsActive())) {
+            throw new RuntimeException("Template ist deaktiviert: " + template.getCode());
+        }
+
+        List<StoreTheme> existing = themeRepository.findByStoreId(storeId);
+        StoreTheme theme = existing.stream()
+                .filter(StoreTheme::getIsActive)
+                .findFirst()
+                .orElseGet(() -> existing.isEmpty() ? new StoreTheme() : existing.get(0));
+
+        theme.setStore(store);
+        theme.setName(customName != null && !customName.isBlank()
+                ? customName : template.getName() + " Theme");
+        theme.setType(template.getType());
+        theme.setTemplate(template.getTemplate());
+        theme.setColorsJson(template.getColorsJson());
+        theme.setTypographyJson(template.getTypographyJson());
+        theme.setLayoutJson(template.getLayoutJson());
+        if (template.getCustomCss() != null) {
+            theme.setCustomCss(template.getCustomCss());
+        }
+        theme.setIsActive(true);
+
+        // Andere Themes deaktivieren
+        existing.stream()
+                .filter(t -> t.getId() != null && !t.getId().equals(theme.getId()) && Boolean.TRUE.equals(t.getIsActive()))
+                .forEach(t -> {
+                    t.setIsActive(false);
+                    themeRepository.save(t);
+                });
+
+        StoreTheme saved = themeRepository.save(theme);
+        log.info("✅ Template '{}' auf Store {} angewendet (Theme ID {})",
+                template.getCode(), storeId, saved.getId());
+        return convertToDTO(saved);
+    }
+
+    private ThemeTemplateDTO convertTemplateToDTO(ThemeTemplate t) {
+        ThemeTemplateDTO dto = new ThemeTemplateDTO();
+        dto.setId(t.getId());
+        dto.setCode(t.getCode());
+        dto.setName(t.getName());
+        dto.setDescription(t.getDescription());
+        dto.setType(t.getType());
+        dto.setTemplate(t.getTemplate());
+        dto.setPreviewUrl(t.getPreviewUrl());
+        dto.setColorsJson(t.getColorsJson());
+        dto.setTypographyJson(t.getTypographyJson());
+        dto.setLayoutJson(t.getLayoutJson());
+        dto.setCustomCss(t.getCustomCss());
+        dto.setIsFree(t.getIsFree());
+        dto.setSortOrder(t.getSortOrder());
         return dto;
     }
 }

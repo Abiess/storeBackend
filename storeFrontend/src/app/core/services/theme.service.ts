@@ -323,6 +323,58 @@ export class ThemeService {
     return this.http.delete<void>(`${this.API_URL}/${themeId}`);
   }
 
+  // ===================================================================
+  // Free / Premium Theme-Templates aus dem Backend-Katalog
+  // ===================================================================
+
+  /**
+   * Lade alle Theme-Templates aus dem Backend (Free + Premium).
+   * Optional nur Free-Templates.
+   */
+  getTemplatesFromBackend(onlyFree: boolean = false): Observable<ThemePreset[]> {
+    const url = `${this.API_URL}/templates?onlyFree=${onlyFree}`;
+    return this.http.get<any[]>(url).pipe(
+      map(list => list.map(t => this.convertTemplateDTOToPreset(t))),
+      catchError(error => {
+        console.warn('⚠️ Templates konnten nicht aus DB geladen werden, fallback auf lokale Presets', error);
+        return of(this.THEME_PRESETS);
+      })
+    );
+  }
+
+  /**
+   * 1-Klick: Wende ein Free-Template auf einen Store an.
+   * Das Backend speichert sofort als aktives Theme.
+   */
+  applyTemplateToStore(storeId: number, templateId: number, customName?: string): Observable<StoreTheme> {
+    let url = `${this.API_URL}/store/${storeId}/apply-template/${templateId}`;
+    if (customName) {
+      url += `?name=${encodeURIComponent(customName)}`;
+    }
+    return this.http.post<any>(url, {}).pipe(
+      map(dto => this.convertDTOtoTheme(dto)),
+      tap(theme => {
+        console.log('✅ Template auf Store angewendet & gespeichert:', theme.name);
+        this.currentTheme$.next(theme);
+        this.applyTheme(theme);
+      })
+    );
+  }
+
+  private convertTemplateDTOToPreset(dto: any): ThemePreset & { id?: number; isFree?: boolean; preview?: string } {
+    return {
+      id: dto.id,
+      type: dto.type as ThemeType,
+      name: dto.name,
+      description: dto.description,
+      preview: dto.previewUrl || '/assets/themes/default-preview.jpg',
+      isFree: dto.isFree,
+      colors: typeof dto.colorsJson === 'string' ? JSON.parse(dto.colorsJson) : dto.colorsJson,
+      typography: typeof dto.typographyJson === 'string' ? JSON.parse(dto.typographyJson) : dto.typographyJson,
+      layout: typeof dto.layoutJson === 'string' ? JSON.parse(dto.layoutJson) : dto.layoutJson
+    } as any;
+  }
+
   /**
    * Wende Theme-CSS auf die Seite an
    */
