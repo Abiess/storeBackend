@@ -196,6 +196,45 @@ else
 fi
 echo ""
 
+# ==========================================================================
+# DB-Migrationen ausführen (idempotent)
+# Führt alle *.sql Dateien aus scripts/db/migrations/ in alphabetischer
+# Reihenfolge aus. Jede Migration MUSS idempotent sein (IF NOT EXISTS, etc.)
+# ==========================================================================
+echo "🗃️  Führe Datenbank-Migrationen aus..."
+MIGRATIONS_DIR="$SCRIPT_DIR_DEPLOY/db/migrations"
+if [ -d "$MIGRATIONS_DIR" ]; then
+    MIGRATION_FILES=$(find "$MIGRATIONS_DIR" -maxdepth 1 -name "V*.sql" -type f | sort)
+    if [ -z "$MIGRATION_FILES" ]; then
+        echo "   ℹ️  Keine Migrationen gefunden in $MIGRATIONS_DIR"
+    else
+        MIGRATION_COUNT=0
+        MIGRATION_FAILED=0
+        for migration in $MIGRATION_FILES; do
+            MIGRATION_COUNT=$((MIGRATION_COUNT + 1))
+            MIGRATION_NAME=$(basename "$migration")
+            echo "   ▶️  $MIGRATION_NAME"
+            # Ausführung als postgres-Superuser, dann an storeapp-DB
+            if sudo -u postgres psql -d storedb -v ON_ERROR_STOP=1 -q -f "$migration" > /tmp/migration-output.log 2>&1; then
+                echo "      ✅ ok"
+            else
+                MIGRATION_FAILED=$((MIGRATION_FAILED + 1))
+                print_error "Migration $MIGRATION_NAME fehlgeschlagen!"
+                echo "      Log:"
+                sed 's/^/         /' /tmp/migration-output.log
+            fi
+        done
+        if [ "$MIGRATION_FAILED" -gt 0 ]; then
+            print_error "$MIGRATION_FAILED von $MIGRATION_COUNT Migrationen fehlgeschlagen — App startet trotzdem"
+        else
+            print_success "Alle $MIGRATION_COUNT Migrationen erfolgreich angewendet."
+        fi
+    fi
+else
+    echo "   ℹ️  Migrations-Ordner $MIGRATIONS_DIR existiert nicht — überspringe."
+fi
+echo ""
+
 # Check and install MinIO if needed
 echo ""
 echo "🗄️  Checking MinIO..."
