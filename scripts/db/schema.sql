@@ -1064,10 +1064,10 @@ CREATE TABLE IF NOT EXISTS store_slider_images (
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     CONSTRAINT fk_slider_image_store FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE,
     CONSTRAINT fk_slider_image_media FOREIGN KEY (media_id) REFERENCES media(id) ON DELETE CASCADE,
-    CONSTRAINT chk_image_type CHECK (image_type IN ('default', 'owner_upload')),
+    CONSTRAINT chk_image_type CHECK (image_type IN ('DEFAULT', 'OWNER_UPLOAD')),
     CONSTRAINT chk_media_consistency CHECK (
-(image_type = 'default' AND media_id IS NULL) OR
-(image_type = 'owner_upload' AND media_id IS NOT NULL)
+(image_type = 'DEFAULT' AND media_id IS NULL) OR
+(image_type = 'OWNER_UPLOAD' AND media_id IS NOT NULL)
     )
     );
 
