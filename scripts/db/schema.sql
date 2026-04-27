@@ -182,7 +182,7 @@ CREATE TABLE IF NOT EXISTS customer_addresses (
 CREATE TABLE IF NOT EXISTS media (
                                      id BIGSERIAL PRIMARY KEY,
                                      store_id BIGINT NOT NULL,
-                                     filename VARCHAR(255) NOT NULL,
+                                     file_name VARCHAR(255) NOT NULL,
     original_filename VARCHAR(255) NOT NULL,
     content_type VARCHAR(100) NOT NULL,
     size_bytes BIGINT NOT NULL,
@@ -1046,7 +1046,7 @@ CREATE TABLE IF NOT EXISTS store_slider_settings (
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     CONSTRAINT fk_slider_store FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE,
-    CONSTRAINT chk_override_mode CHECK (override_mode IN ('default_only', 'owner_only', 'mixed')),
+    CONSTRAINT chk_override_mode CHECK (override_mode IN ('DEFAULT_ONLY', 'OWNER_ONLY', 'MIXED')),
     CONSTRAINT chk_duration_ms CHECK (duration_ms >= 1000 AND duration_ms <= 30000),
     CONSTRAINT chk_transition_ms CHECK (transition_ms >= 100 AND transition_ms <= 3000)
     );
