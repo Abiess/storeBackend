@@ -48,6 +48,57 @@
 .logo-icon { font-size: 1.25rem; line-height: 1; }
 .logo-text { transition: color var(--transition-fast); }
 
+/* ── Vorschau-Button neben Logo ── */
+.btn-preview-store {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.22rem 0.55rem;
+  background: #dcfce7;
+  color: #15803d;
+  border: 1.5px solid #86efac;
+  border-radius: 20px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-left: auto;
+  margin-right: 0.25rem;
+}
+
+.btn-preview-store:hover {
+  background: #16a34a;
+  color: #fff;
+  border-color: #16a34a;
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(22,163,74,.35);
+}
+
+.btn-preview-store__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #16a34a;
+  animation: livePulse 1.4s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.btn-preview-store:hover .btn-preview-store__dot {
+  background: #fff;
+}
+
+.btn-preview-store__label { line-height: 1; }
+.btn-preview-store__icon { font-size: 0.75rem; line-height: 1; }
+
+@keyframes livePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(1.3); }
+}
+
 .btn-close-sidebar {
   display: none;
   background: transparent;

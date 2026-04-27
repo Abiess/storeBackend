@@ -33,8 +33,10 @@ export class AdminSidebarComponent implements OnInit {
     isMobile = false;
     activeRoute = '';
     expandedGroups = new Set<string>();
-
     navGroups: NavGroup[] = [];
+
+    /** Aktuell aktive Store-ID (aus URL extrahiert) – für Vorschau-Button */
+    currentStoreId: number | null = null;
 
     constructor(
         private router: Router,
@@ -87,6 +89,7 @@ export class AdminSidebarComponent implements OnInit {
         }
 
         const baseRoute = resolvedStoreId != null ? `/stores/${resolvedStoreId}` : '';
+        this.currentStoreId = resolvedStoreId;
 
         if (resolvedStoreId == null && this.router.url.includes('/stores/')) {
             console.warn('⚠️ Sidebar: No storeId found, but /stores/ route is active');
@@ -223,5 +226,11 @@ export class AdminSidebarComponent implements OnInit {
 
     isGroupExpanded(groupTitle: string): boolean {
         return this.expandedGroups.has(groupTitle);
+    }
+
+    /** Storefront in neuem Tab öffnen */
+    openStorePreview(): void {
+        if (!this.currentStoreId) return;
+        window.open(`/storefront/${this.currentStoreId}`, '_blank', 'noopener');
     }
 }

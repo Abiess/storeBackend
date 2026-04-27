@@ -20,6 +20,17 @@
                 <span class="logo-text">markt.ma</span>
             </a>
 
+            <!-- Vorschau-Button: erscheint wenn ein Store aktiv ist -->
+            <button
+                    *ngIf="currentStoreId"
+                    class="btn-preview-store"
+                    (click)="openStorePreview()"
+                    title="Store live ansehen">
+                <span class="btn-preview-store__dot"></span>
+                <span class="btn-preview-store__label">LIVE</span>
+                <span class="btn-preview-store__icon">↗</span>
+            </button>
+
             <button
                     *ngIf="isMobile"
                     class="btn-close-sidebar"

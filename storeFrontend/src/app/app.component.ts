@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
@@ -28,62 +28,6 @@ import { FabHostComponent } from './shared/components/fab-host.component';
 
     <app-chatbot-widget></app-chatbot-widget>
     <app-fab-host></app-fab-host>
-
-    <!-- ═══════════════════════════════════════════════════
-         GLOBALER STORE-VORSCHAU-FAB
-         Erscheint auf ALLEN /stores/ID-Seiten automatisch.
-         ═══════════════════════════════════════════════════ -->
-    <ng-container *ngIf="storePreviewFab()">
-      <!-- Speed-Dial Backdrop -->
-      <ng-container *ngIf="storePreviewOpen()">
-        <div class="sp-backdrop" (click)="storePreviewOpen.set(false)"></div>
-        <div class="sp-dial">
-          <button class="sp-dial__item sp-dial__item--blue"
-                  (click)="openStorefront('tab')">
-            <span>🌐</span><span>Im neuen Tab öffnen</span>
-          </button>
-          <button class="sp-dial__item sp-dial__item--teal"
-                  (click)="openStorefront('panel')">
-            <span>📱</span><span>Mobile-Vorschau</span>
-          </button>
-          <button class="sp-dial__item sp-dial__item--purple"
-                  (click)="openStorefront('copy')">
-            <span>🔗</span><span>Link kopieren</span>
-          </button>
-        </div>
-      </ng-container>
-
-      <!-- Hauptbutton -->
-      <button class="sp-fab"
-              [class.sp-fab--open]="storePreviewOpen()"
-              (click)="toggleStorePreview()"
-              title="Store-Vorschau">
-        <span class="sp-fab__icon">{{ storePreviewOpen() ? '✕' : '👁' }}</span>
-        <span class="sp-fab__label">{{ storePreviewOpen() ? 'Schließen' : 'Vorschau' }}</span>
-      </button>
-
-      <!-- Mobile-Vorschau Panel -->
-      <ng-container *ngIf="mobilePreviewOpen()">
-        <div class="sp-backdrop" (click)="mobilePreviewOpen.set(false)"></div>
-        <div class="sp-mobile-panel">
-          <div class="sp-mobile-panel__header">
-            <span>📱 Mobile-Vorschau</span>
-            <div class="sp-mobile-panel__url">{{ currentStorefrontUrl() }}</div>
-            <button (click)="mobilePreviewOpen.set(false)">✕</button>
-          </div>
-          <div class="sp-mobile-panel__frame-wrap">
-            <div class="sp-mobile-phone">
-              <iframe [src]="safeStorefrontUrl()"
-                      class="sp-mobile-iframe"
-                      title="Mobile Storefront Vorschau"
-                      loading="lazy"
-                      referrerpolicy="no-referrer">
-              </iframe>
-            </div>
-          </div>
-        </div>
-      </ng-container>
-    </ng-container>
   `,
   styles: [`
     .app-admin-shell {
@@ -264,15 +208,6 @@ export class AppComponent implements OnInit {
   title = 'markt.ma - Multi-Tenant E-Commerce Platform';
   showAdminShell = false;
 
-  /** Aktuelle Store-ID aus URL (null = kein Store-Kontext) */
-  readonly currentStoreId = signal<number | null>(null);
-  /** Vorschau-FAB nur zeigen wenn wir in einem Store sind */
-  readonly storePreviewFab = computed(() => this.currentStoreId() !== null);
-  /** Speed-Dial offen/zu */
-  readonly storePreviewOpen = signal(false);
-  /** Mobile-Preview-Panel offen/zu */
-  readonly mobilePreviewOpen = signal(false);
-
   private readonly adminPathPrefixes = [
     '/settings',
     '/subscription',
@@ -292,12 +227,7 @@ export class AppComponent implements OnInit {
     this.evaluateShell(this.router.url);
     this.router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
-      .subscribe(e => {
-        this.evaluateShell(e.urlAfterRedirects);
-        // Speed-Dial / Panel schließen bei Navigation
-        this.storePreviewOpen.set(false);
-        this.mobilePreviewOpen.set(false);
-      });
+      .subscribe(e => this.evaluateShell(e.urlAfterRedirects));
   }
 
   private evaluateShell(url: string): void {
@@ -305,42 +235,5 @@ export class AppComponent implements OnInit {
     this.showAdminShell = this.adminPathPrefixes.some(
       p => path === p || path.startsWith(p)
     );
-    // Store-ID aus URL extrahieren (/stores/123/...)
-    const match = path.match(/\/stores\/(\d+)/);
-    this.currentStoreId.set(match ? +match[1] : null);
-  }
-
-  toggleStorePreview(): void {
-    this.storePreviewOpen.update(v => !v);
-  }
-
-  /** Storefront-URL für den aktuellen Store */
-  currentStorefrontUrl(): string {
-    const id = this.currentStoreId();
-    if (!id) return '';
-    return `/storefront/${id}`;
-  }
-
-  /** Sicher für iframe [src] */
-  safeStorefrontUrl(): string {
-    return this.currentStorefrontUrl();
-  }
-
-  /** Vorschau-Aktionen */
-  openStorefront(mode: 'tab' | 'panel' | 'copy'): void {
-    this.storePreviewOpen.set(false);
-    const url = this.currentStorefrontUrl();
-    if (mode === 'tab') {
-      window.open(url, '_blank', 'noopener');
-    } else if (mode === 'panel') {
-      this.mobilePreviewOpen.set(true);
-    } else if (mode === 'copy') {
-      const fullUrl = window.location.origin + url;
-      navigator.clipboard.writeText(fullUrl).then(() => {
-        // Kurzes visuelles Feedback
-        const btn = document.querySelector('.sp-dial__item--purple') as HTMLButtonElement;
-        if (btn) { btn.textContent = '✅ Kopiert!'; setTimeout(() => btn.innerHTML = '<span>🔗</span><span>Link kopieren</span>', 1500); }
-      });
-    }
   }
 }
