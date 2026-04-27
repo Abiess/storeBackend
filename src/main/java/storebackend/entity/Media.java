@@ -22,7 +22,7 @@ public class Media {
     @JoinColumn(name = "store_id", nullable = false)
     private Store store;
 
-    @Column(name = "file_name", nullable = false)
+    @Column(name = "filename", nullable = false)
     private String filename;
 
     @Column(name = "original_filename", nullable = false)
