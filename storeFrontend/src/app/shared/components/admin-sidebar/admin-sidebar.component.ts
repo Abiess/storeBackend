@@ -4,6 +4,7 @@ import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { LanguageService } from '@app/core/services/language.service';
+import { StoreService } from '@app/core/services/store.service';
 
 export interface NavItem {
     labelKey: string;
@@ -37,10 +38,15 @@ export class AdminSidebarComponent implements OnInit {
 
     /** Aktuell aktive Store-ID (aus URL extrahiert) – für Vorschau-Button */
     currentStoreId: number | null = null;
+    /** Slug des aktuellen Stores – für echte Subdomain-URL */
+    private currentStoreSlug: string | null = null;
+    /** Letzter Slug-geladener Store-ID – verhindert doppelte API-Calls */
+    private slugLoadedForId: number | null = null;
 
     constructor(
         private router: Router,
-        public languageService: LanguageService
+        public languageService: LanguageService,
+        private storeService: StoreService
     ) {
         this.router.events
             .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
@@ -90,6 +96,16 @@ export class AdminSidebarComponent implements OnInit {
 
         const baseRoute = resolvedStoreId != null ? `/stores/${resolvedStoreId}` : '';
         this.currentStoreId = resolvedStoreId;
+
+        // Slug laden falls Store-ID neu
+        if (resolvedStoreId != null && resolvedStoreId !== this.slugLoadedForId) {
+            this.slugLoadedForId = resolvedStoreId;
+            this.currentStoreSlug = null; // zurücksetzen bis geladen
+            this.storeService.getStoreById(resolvedStoreId).subscribe({
+                next: (store) => { this.currentStoreSlug = store?.slug ?? null; },
+                error: () => { this.currentStoreSlug = null; }
+            });
+        }
 
         if (resolvedStoreId == null && this.router.url.includes('/stores/')) {
             console.warn('⚠️ Sidebar: No storeId found, but /stores/ route is active');
@@ -228,9 +244,12 @@ export class AdminSidebarComponent implements OnInit {
         return this.expandedGroups.has(groupTitle);
     }
 
-    /** Storefront in neuem Tab öffnen */
+    /** Storefront in neuem Tab öffnen – echte Subdomain-URL wenn Slug bekannt */
     openStorePreview(): void {
         if (!this.currentStoreId) return;
-        window.open(`/storefront/${this.currentStoreId}`, '_blank', 'noopener');
+        const url = this.currentStoreSlug
+            ? `https://${this.currentStoreSlug}.markt.ma`
+            : `/storefront/${this.currentStoreId}`;
+        window.open(url, '_blank', 'noopener');
     }
 }
