@@ -1,10 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { ThemeService } from '../../core/services/theme.service';
+import { DomSanitizer } from '@angular/platform-browser';import { ThemeService } from '../../core/services/theme.service';
 import { StoreService } from '../../core/services/store.service';
+import { PreviewPanelService } from '../../core/services/preview-panel.service';
 import {
   StoreTheme,
   ThemePreset,
@@ -197,108 +197,7 @@ import { toDate } from '@app/core/utils/date.utils';
 
       </div>
 
-      <!-- ═══════════════════════════════════════════════════════
-           FLOATING PREVIEW TOGGLE BUTTON (immer sichtbar)
-           ═══════════════════════════════════════════════════════ -->
-      <button class="preview-fab"
-              (click)="togglePreviewPanel()"
-              [class.fab--active]="previewPanelOpen"
-              title="{{ previewPanelOpen ? 'Vorschau schließen' : 'Vorschau öffnen' }}">
-        <span class="fab__icon">{{ previewPanelOpen ? '✕' : '👁' }}</span>
-        <span class="fab__label">{{ previewPanelOpen ? 'Schließen' : 'Vorschau' }}</span>
-      </button>
-
-      <!-- ═══════════════════════════════════════════════════════
-           PREVIEW SIDE-PANEL (gleitet von rechts rein)
-           ═══════════════════════════════════════════════════════ -->
-      <div class="preview-panel" [class.preview-panel--open]="previewPanelOpen">
-        <!-- Panel Header -->
-        <div class="preview-panel__header">
-          <div class="preview-panel__title">
-            <span>🎨 Live-Vorschau</span>
-            <span class="preview-panel__badge" *ngIf="selectedPreset">{{ selectedPreset.name || 'Custom' }}</span>
-          </div>
-          <div class="preview-panel__tabs">
-            <button class="panel-tab" [class.panel-tab--active]="previewMode === 'mini'"
-                    (click)="previewMode = 'mini'">🎨 Stil</button>
-            <button class="panel-tab" [class.panel-tab--active]="previewMode === 'live'"
-                    (click)="previewMode = 'live'">🌐 Live</button>
-            <button class="panel-tab" *ngIf="previewMode === 'live'"
-                    (click)="reloadLivePreview()" title="Neu laden">↻</button>
-          </div>
-          <button class="preview-panel__close" (click)="togglePreviewPanel()">✕</button>
-        </div>
-
-        <!-- Panel Body: Stil-Vorschau -->
-        <div class="preview-panel__body" *ngIf="previewMode === 'mini'">
-          <ng-container *ngIf="selectedPreset; else noPresetMsg">
-            <div class="mini-preview"
-                 [style.background]="selectedPreset.colors.background"
-                 [style.color]="selectedPreset.colors.text"
-                 [style.font-family]="selectedPreset.typography.fontFamily">
-              <!-- Fake Navbar -->
-              <div class="mini-nav" [style.background]="selectedPreset.colors.primary">
-                <span class="mini-nav__logo" [style.color]="'#fff'">🛍 Mein Shop</span>
-                <div class="mini-nav__links">
-                  <span [style.color]="'rgba(255,255,255,0.8)'">Produkte</span>
-                  <span [style.color]="'rgba(255,255,255,0.8)'">Über uns</span>
-                </div>
-              </div>
-              <!-- Hero -->
-              <div class="mini-hero" [style.background]="'linear-gradient(135deg,' + selectedPreset.colors.primary + ',' + selectedPreset.colors.secondary + ')'">
-                <h3 [style.color]="'#fff'" style="margin:0 0 .5rem">Willkommen! 🎉</h3>
-                <p [style.color]="'rgba(255,255,255,0.9)'" style="margin:0 0 1rem;font-size:.85rem">Entdecke unsere Produkte</p>
-                <button class="mini-btn" [style.background]="selectedPreset.colors.accent" [style.color]="'#fff'">
-                  Jetzt shoppen
-                </button>
-              </div>
-              <!-- Produkt-Kacheln -->
-              <div class="mini-products">
-                <div class="mini-product" *ngFor="let p of [1,2,3]"
-                     [style.border]="'1px solid ' + selectedPreset.colors.border">
-                  <div class="mini-product__img" [style.background]="selectedPreset.colors.primary + '22'">🖼</div>
-                  <div class="mini-product__info">
-                    <div class="mini-product__name" [style.color]="selectedPreset.colors.text">Produkt {{ p }}</div>
-                    <div class="mini-product__price" [style.color]="selectedPreset.colors.accent">€{{ 19 * p }}.99</div>
-                    <button class="mini-btn mini-btn--sm"
-                            [style.background]="selectedPreset.colors.primary"
-                            [style.color]="'#fff'">In den Warenkorb</button>
-                  </div>
-                </div>
-              </div>
-              <!-- Footer -->
-              <div class="mini-footer" [style.background]="selectedPreset.colors.text" [style.color]="'#fff'">
-                <small>© 2026 Mein Shop · Alle Rechte vorbehalten</small>
-              </div>
-            </div>
-          </ng-container>
-          <ng-template #noPresetMsg>
-            <div class="preview-empty">
-              <p>👆 Wähle ein Theme oder passe Farben an,<br>um die Vorschau zu sehen.</p>
-            </div>
-          </ng-template>
-        </div>
-
-        <!-- Panel Body: Live-Iframe -->
-        <div class="preview-panel__body preview-panel__body--iframe" *ngIf="previewMode === 'live'">
-          <p class="live-hint">
-            <strong class="live-hint__url">{{ getStorefrontPreviewBaseUrl() }}</strong>
-            <a [href]="getStorefrontPreviewBaseUrl()" target="_blank" rel="noopener" class="live-hint__open">↗ Tab</a>
-          </p>
-          <iframe class="panel-iframe"
-                  [src]="getStorefrontPreviewUrl()"
-                  title="Live Storefront"
-                  loading="lazy"
-                  referrerpolicy="no-referrer">
-          </iframe>
-        </div>
-      </div>
-
-      <!-- Overlay (klicken schließt Panel) -->
-      <div class="preview-overlay-bg"
-           *ngIf="previewPanelOpen"
-           (click)="togglePreviewPanel()">
-      </div>
+      <!-- Vorschau-FAB + Side-Panel werden global via PreviewPanelService / app-preview-panel bereitgestellt -->
 
       <div class="loading" *ngIf="loading">
         <div class="spinner"></div>
@@ -777,264 +676,12 @@ import { toDate } from '@app/core/utils/date.utils';
     }
 
     /* ═══════════════════════════════════════════
-       FLOATING PREVIEW BUTTON (FAB)
+       FLOATING PREVIEW BUTTON (FAB) + PANEL
+       → Ausgelagert in PreviewPanelComponent (global via app.component)
        ═══════════════════════════════════════════ */
-    .preview-fab {
-      position: fixed;
-      bottom: 2rem;
-      right: 2rem;
-      z-index: 1100;
-      display: flex;
-      align-items: center;
-      gap: .5rem;
-      padding: .75rem 1.25rem;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: #fff;
-      border: none;
-      border-radius: 50px;
-      font-size: .95rem;
-      font-weight: 600;
-      cursor: pointer;
-      box-shadow: 0 4px 20px rgba(102,126,234,.5);
-      transition: all .3s cubic-bezier(.34,1.56,.64,1);
-    }
-    .preview-fab:hover {
-      transform: translateY(-3px) scale(1.04);
-      box-shadow: 0 8px 28px rgba(102,126,234,.6);
-    }
-    .preview-fab.fab--active {
-      background: linear-gradient(135deg, #e53e3e, #c53030);
-      box-shadow: 0 4px 20px rgba(229,62,62,.4);
-    }
-    .fab__icon { font-size: 1.1rem; }
-    .fab__label { font-size: .875rem; }
-
-    /* ═══════════════════════════════════════════
-       PREVIEW SIDE-PANEL
-       ═══════════════════════════════════════════ */
-    .preview-panel {
-      position: fixed;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      width: 420px;
-      max-width: 95vw;
-      z-index: 1090;
-      background: #fff;
-      box-shadow: -8px 0 40px rgba(0,0,0,.18);
-      display: flex;
-      flex-direction: column;
-      transform: translateX(100%);
-      transition: transform .35s cubic-bezier(.4,0,.2,1);
-      border-radius: 16px 0 0 16px;
-      overflow: hidden;
-    }
-    .preview-panel--open {
-      transform: translateX(0);
-    }
-
-    /* Panel Header */
-    .preview-panel__header {
-      display: flex;
-      align-items: center;
-      gap: .75rem;
-      padding: 1rem 1.25rem;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: #fff;
-      flex-shrink: 0;
-    }
-    .preview-panel__title {
-      display: flex;
-      align-items: center;
-      gap: .5rem;
-      font-weight: 700;
-      font-size: 1rem;
-      flex: 1;
-    }
-    .preview-panel__badge {
-      background: rgba(255,255,255,.25);
-      padding: .15rem .5rem;
-      border-radius: 10px;
-      font-size: .7rem;
-      font-weight: 500;
-      max-width: 120px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .preview-panel__tabs {
-      display: flex;
-      gap: .25rem;
-    }
-    .panel-tab {
-      background: rgba(255,255,255,.15);
-      color: #fff;
-      border: 1px solid rgba(255,255,255,.3);
-      border-radius: 6px;
-      padding: .3rem .65rem;
-      font-size: .78rem;
-      cursor: pointer;
-      transition: background .2s;
-    }
-    .panel-tab:hover { background: rgba(255,255,255,.25); }
-    .panel-tab--active {
-      background: rgba(255,255,255,.35);
-      border-color: rgba(255,255,255,.6);
-      font-weight: 600;
-    }
-    .preview-panel__close {
-      background: rgba(255,255,255,.15);
-      color: #fff;
-      border: none;
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      font-size: 1rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background .2s;
-      flex-shrink: 0;
-    }
-    .preview-panel__close:hover { background: rgba(255,255,255,.3); }
-
-    /* Panel Body */
-    .preview-panel__body {
-      flex: 1;
-      overflow-y: auto;
-      padding: 0;
-    }
-    .preview-panel__body--iframe {
-      display: flex;
-      flex-direction: column;
-      padding: .75rem;
-      gap: .5rem;
-    }
-
-    /* Mini-Vorschau im Panel */
-    .mini-preview {
-      display: flex;
-      flex-direction: column;
-      min-height: 100%;
-    }
-    .mini-nav {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: .75rem 1rem;
-    }
-    .mini-nav__logo { font-weight: 700; font-size: .95rem; }
-    .mini-nav__links { display: flex; gap: 1rem; font-size: .78rem; }
-    .mini-hero {
-      padding: 2rem 1.5rem;
-      text-align: center;
-    }
-    .mini-btn {
-      border: none;
-      border-radius: 6px;
-      padding: .5rem 1rem;
-      font-size: .8rem;
-      font-weight: 600;
-      cursor: default;
-    }
-    .mini-btn--sm { padding: .35rem .75rem; font-size: .72rem; margin-top: .5rem; }
-    .mini-products {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: .5rem;
-      padding: 1rem;
-    }
-    .mini-product {
-      border-radius: 6px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-    .mini-product__img {
-      height: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.5rem;
-    }
-    .mini-product__info { padding: .4rem; }
-    .mini-product__name { font-size: .72rem; font-weight: 600; margin-bottom: .2rem; }
-    .mini-product__price { font-size: .78rem; font-weight: 700; margin-bottom: .3rem; }
-    .mini-footer {
-      padding: .75rem 1rem;
-      text-align: center;
-      margin-top: auto;
-    }
-
-    /* Iframe im Panel */
-    .live-hint {
-      display: flex;
-      align-items: center;
-      gap: .5rem;
-      padding: .4rem .6rem;
-      background: #f1f5f9;
-      border-radius: 6px;
-      font-size: .75rem;
-    }
-    .live-hint__url {
-      flex: 1;
-      color: #1d4ed8;
-      font-family: monospace;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .live-hint__open {
-      color: #2563eb;
-      text-decoration: none;
-      font-weight: 600;
-      white-space: nowrap;
-    }
-    .panel-iframe {
-      flex: 1;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      min-height: 0;
-      height: calc(100vh - 120px);
-    }
-
-    /* Preview-Empty-State */
-    .preview-empty {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 300px;
-      text-align: center;
-      color: #94a3b8;
-      font-size: .9rem;
-      line-height: 1.6;
-      padding: 2rem;
-    }
-
-    /* Overlay-Hintergrund */
-    .preview-overlay-bg {
-      position: fixed;
-      inset: 0;
-      z-index: 1080;
-      background: rgba(0,0,0,.3);
-      backdrop-filter: blur(2px);
-      animation: fadeIn .25s ease;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to   { opacity: 1; }
-    }
-
-    /* Mobile: Panel full-width */
-    @media (max-width: 480px) {
-      .preview-panel { width: 100vw; border-radius: 0; }
-      .preview-fab .fab__label { display: none; }
-      .preview-fab { padding: .75rem; border-radius: 50%; }
-    }
   `]
 })
-export class StoreThemeComponent implements OnInit {
+export class StoreThemeComponent implements OnInit, OnDestroy {
   storeId!: number;
   activeTheme: StoreTheme | null = null;
   presets: ThemePreset[] = [];
@@ -1049,13 +696,7 @@ export class StoreThemeComponent implements OnInit {
   headerActions: HeaderAction[] = [];
   breadcrumbItems: BreadcrumbItem[] = [];
 
-  /** 'mini' = Buttons-/Karten-Vorschau · 'live' = echtes Storefront-Iframe */
-  previewMode: 'mini' | 'live' = 'mini';
-  /** Steuerung des Floating-Preview-Panels */
-  previewPanelOpen = false;
-  /** Cache-Buster für das Live-Iframe (wird nach Save erhöht). */
   private livePreviewVersion = 0;
-  /** Slug des aktuellen Stores für die echte Subdomain-Vorschau (z.B. "myshop"). */
   private storeSlug: string | null = null;
 
   constructor(
@@ -1063,7 +704,8 @@ export class StoreThemeComponent implements OnInit {
     private router: Router,
     private themeService: ThemeService,
     private storeService: StoreService,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
+    private previewPanel: PreviewPanelService
   ) {}
 
   ngOnInit(): void {
@@ -1114,6 +756,45 @@ export class StoreThemeComponent implements OnInit {
     this.loadThemes();
     this.loadPresets();
     this.loadStoreSlug();
+    this.registerPreviewPanel();
+  }
+
+  ngOnDestroy(): void {
+    this.previewPanel.clear();
+  }
+
+  /** Registriert das globale Preview-Panel für diese Seite */
+  private registerPreviewPanel(): void {
+    this.previewPanel.register({
+      title: '🎨 Live-Vorschau',
+      badge: this.selectedPreset?.name ?? undefined,
+      liveUrl: this.sanitizer.bypassSecurityTrustResourceUrl(
+        `${this.getStorefrontPreviewBaseUrl()}?v=${this.livePreviewVersion}`
+      ),
+      liveBaseUrl: this.getStorefrontPreviewBaseUrl(),
+      miniData: this.selectedPreset ? {
+        colors: this.selectedPreset.colors,
+        typography: this.selectedPreset.typography,
+        presetName: this.selectedPreset.name
+      } : null,
+      onReload: () => this.reloadLivePreview()
+    });
+  }
+
+  /** Aktualisiert den Panel-Service nach Preset-/Theme-Änderung */
+  private updatePreviewPanel(): void {
+    this.previewPanel.update({
+      badge: this.selectedPreset?.name ?? undefined,
+      liveUrl: this.sanitizer.bypassSecurityTrustResourceUrl(
+        `${this.getStorefrontPreviewBaseUrl()}?v=${this.livePreviewVersion}`
+      ),
+      liveBaseUrl: this.getStorefrontPreviewBaseUrl(),
+      miniData: this.selectedPreset ? {
+        colors: this.selectedPreset.colors,
+        typography: this.selectedPreset.typography,
+        presetName: this.selectedPreset.name
+      } : null
+    });
   }
 
   loadThemes(): void {
@@ -1201,9 +882,7 @@ export class StoreThemeComponent implements OnInit {
         this.activeTheme = theme;
         this.applyingTemplate = null;
         this.successMessage = `Theme "${preset.name}" wurde aktiviert und gespeichert.`;
-        // Live-Iframe automatisch refreshen, falls offen
         this.reloadLivePreview();
-        // Toast nach 4s ausblenden
         setTimeout(() => this.successMessage = null, 4000);
       },
       error: (err) => {
@@ -1217,6 +896,7 @@ export class StoreThemeComponent implements OnInit {
   selectPreset(preset: ThemePreset): void {
     this.selectedPreset = JSON.parse(JSON.stringify(preset));
     this.themeName = `${preset.name} Theme`;
+    this.updatePreviewPanel();
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
   }
 
@@ -1264,13 +944,10 @@ export class StoreThemeComponent implements OnInit {
         this.activeTheme = theme;
         this.selectedPreset = null;
         this.saving = false;
-
-        // ✅ Theme sofort anwenden
         this.themeService.applyTheme(theme);
-
         this.successMessage = `Theme "${theme.name}" wurde gespeichert und angewendet.`;
-        // Live-Iframe automatisch refreshen, falls offen
         this.reloadLivePreview();
+        this.updatePreviewPanel();
         setTimeout(() => this.successMessage = null, 4000);
       },
       error: (error) => {
@@ -1303,8 +980,8 @@ export class StoreThemeComponent implements OnInit {
       next: (store) => {
         if (store?.slug) {
           this.storeSlug = store.slug;
-          // Falls Live-Tab schon offen ist, sofort neu laden mit echter URL
           this.reloadLivePreview();
+          this.previewPanel.update({ liveBaseUrl: this.getStorefrontPreviewBaseUrl() });
           console.log('🌐 Store-Slug für Live-Preview geladen:', this.storeSlug);
         }
       },
@@ -1333,27 +1010,17 @@ export class StoreThemeComponent implements OnInit {
     return `/storefront/${this.storeId}`;
   }
 
-  /**
-   * Iframe-`src` mit Cache-Buster, sicher als SafeResourceUrl.
-   * Wird durch {@link reloadLivePreview} neu erzeugt, sodass Hibernate-
-   * Updates nach „Theme speichern" sofort sichtbar werden.
-   */
-  getStorefrontPreviewUrl(): SafeResourceUrl {
-    const url = `${this.getStorefrontPreviewBaseUrl()}?previewKey=${this.livePreviewVersion}`;
-    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
-  }
 
-  /** Erhöht die Version → triggert Iframe-Reload via Angular-Change-Detection. */
+  /** Erhöht die Version → triggert Iframe-Reload via Panel-Service */
   reloadLivePreview(): void {
     this.livePreviewVersion++;
+    this.previewPanel.update({
+      liveUrl: this.sanitizer.bypassSecurityTrustResourceUrl(
+        `${this.getStorefrontPreviewBaseUrl()}?v=${this.livePreviewVersion}`
+      )
+    });
   }
 
-  /** Floating Preview Panel öffnen/schließen */
-  togglePreviewPanel(): void {
-    this.previewPanelOpen = !this.previewPanelOpen;
-    // Body-Scroll sperren wenn Panel offen
-    document.body.style.overflow = this.previewPanelOpen ? 'hidden' : '';
-  }
 
   /** Konvertiert Spring LocalDateTime-Array zu JS Date für die date-Pipe */
   toDate = toDate;
