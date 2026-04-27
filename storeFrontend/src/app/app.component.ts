@@ -6,11 +6,12 @@ import { AuthService } from './core/services/auth.service';
 import { CartService } from './core/services/cart.service';
 import { ChatbotWidgetComponent } from './components/chatbot-widget/chatbot-widget.component';
 import { AdminSidebarComponent } from './shared/components/admin-sidebar/admin-sidebar.component';
+import { FabHostComponent } from './shared/components/fab-host.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, ChatbotWidgetComponent, AdminSidebarComponent],
+  imports: [CommonModule, RouterOutlet, ChatbotWidgetComponent, AdminSidebarComponent, FabHostComponent],
   template: `
     <ng-container *ngIf="showAdminShell; else publicShell">
       <div class="app-admin-shell">
@@ -26,6 +27,7 @@ import { AdminSidebarComponent } from './shared/components/admin-sidebar/admin-s
     </ng-template>
 
     <app-chatbot-widget></app-chatbot-widget>
+    <app-fab-host></app-fab-host>
   `,
   styles: [`
     .app-admin-shell {

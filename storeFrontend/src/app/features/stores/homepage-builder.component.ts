@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -7,6 +7,7 @@ import { HomepageSection, SectionType, HeroSectionSettings, FeaturedProductsSett
 import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
 import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
 import {StoreNavigationComponent} from "@app/shared/components/store-navigation.component";
+import { FabService } from '@app/core/services/fab.service';
 
 @Component({
   selector: 'app-homepage-builder',
@@ -561,7 +562,7 @@ import {StoreNavigationComponent} from "@app/shared/components/store-navigation.
     }
   `]
 })
-export class HomepageBuilderComponent implements OnInit {
+export class HomepageBuilderComponent implements OnInit, OnDestroy {
   storeId!: number;
   sections: HomepageSection[] = [];
   showAddModal = false;
@@ -584,7 +585,8 @@ export class HomepageBuilderComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private sectionService: HomepageSectionService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private fabService: FabService
   ) {
     this.editForm = this.fb.group({
       title: [''],
@@ -630,7 +632,22 @@ export class HomepageBuilderComponent implements OnInit {
     ];
     
     this.loadSections();
+
+    // FAB: Sektion hinzufügen + Live-Vorschau
+    this.fabService.register({
+      icon: '＋',
+      label: 'Sektion hinzufügen',
+      color: 'teal',
+      action: () => this.openAddSectionModal(),
+      speedDial: [
+        { icon: '🏷', label: 'Hero-Banner', action: () => this.openAddSectionModal(), color: '#4fd1c5' },
+        { icon: '📦', label: 'Produkte-Sektion', action: () => this.openAddSectionModal(), color: '#48bb78' },
+        { icon: '👁', label: 'Live-Vorschau', action: () => window.open(`/storefront/${this.storeId}`, '_blank'), color: '#667eea' },
+      ]
+    });
   }
+
+  ngOnDestroy(): void { this.fabService.clear(); }
 
   loadSections(): void {
     this.sectionService.getStoreSections(this.storeId).subscribe({

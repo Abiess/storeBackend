@@ -5,6 +5,7 @@ import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-
 import { StoreSliderService, StoreSliderImage, StoreSliderSettings, StoreSlider } from '../../../core/services/store-slider.service';
 import { StoreContextService } from '../../../core/services/store-context.service';
 import { Subscription } from 'rxjs';
+import { FabService } from '@app/core/services/fab.service';
 
 @Component({
   selector: 'app-store-slider-editor',
@@ -37,7 +38,8 @@ export class StoreSliderEditorComponent implements OnInit, OnDestroy {
 
   constructor(
     private sliderService: StoreSliderService,
-    private storeContext: StoreContextService
+    private storeContext: StoreContextService,
+    private fabService: FabService
   ) {}
 
   ngOnInit(): void {
@@ -45,12 +47,24 @@ export class StoreSliderEditorComponent implements OnInit, OnDestroy {
       if (id !== null) {
         this.storeId = id;
         this.loadSlider();
+        // FAB: Bild hochladen + Vorschau
+        this.fabService.register({
+          icon: '🖼',
+          label: 'Bild hochladen',
+          color: 'primary',
+          action: () => document.getElementById('slider-file-input')?.click(),
+          speedDial: [
+            { icon: '📤', label: 'Bild hochladen', action: () => document.getElementById('slider-file-input')?.click(), color: '#667eea' },
+            { icon: '👁', label: 'Slider-Vorschau', action: () => window.open(`/storefront/${id}`, '_blank'), color: '#4fd1c5' },
+          ]
+        });
       }
     });
   }
 
   ngOnDestroy(): void {
     this.storeIdSubscription?.unsubscribe();
+    this.fabService.clear();
   }
 
   loadSlider(): void {

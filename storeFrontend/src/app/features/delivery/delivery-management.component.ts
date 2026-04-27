@@ -8,6 +8,7 @@ import { StoreNavigationComponent } from '../../shared/components/store-navigati
 import { DeliverySettingsService } from '../../core/services/delivery-settings.service';
 import { DeliveryProvidersService } from '../../core/services/delivery-providers.service';
 import { DeliveryZonesService } from '../../core/services/delivery-zones.service';
+import { FabService } from '../../core/services/fab.service';
 import { ToastService } from '../../core/services/toast.service';
 import { DeliverySettings, DeliveryProvider, DeliveryZone } from '../../core/models/delivery.model';
 import { DeliverySettingsDialogComponent } from './dialogs/delivery-settings-dialog.component';
@@ -391,17 +392,29 @@ export class DeliveryManagementComponent implements OnInit, OnDestroy {
     private settingsService: DeliverySettingsService,
     private providersService: DeliveryProvidersService,
     private zonesService: DeliveryZonesService,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private fabService: FabService
   ) {}
 
   ngOnInit(): void {
-    // Versuche storeId aus verschiedenen Quellen zu laden
     this.route.parent?.paramMap.pipe(takeUntil(this.destroy$)).subscribe(params => {
       const id = params.get('storeId');
       if (id) {
         this.storeId = +id;
         console.log('✅ Store-ID für Delivery geladen:', this.storeId);
         this.loadData();
+
+        // FAB: Schnellzugriff für häufige Lieferaktionen
+        this.fabService.register({
+          icon: '🚚',
+          label: 'Neu hinzufügen',
+          color: 'teal',
+          action: () => this.openProviderDialog(),
+          speedDial: [
+            { icon: '🏭', label: 'Lieferant anlegen', action: () => this.openProviderDialog(), color: '#4fd1c5' },
+            { icon: '📍', label: 'Zone anlegen', action: () => this.openZoneDialog(), color: '#48bb78' },
+          ]
+        });
       } else {
         console.error('❌ Keine Store-ID gefunden');
         this.error = 'Keine Store-ID gefunden';
@@ -425,6 +438,7 @@ export class DeliveryManagementComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    this.fabService.clear();
   }
 
   loadData(): void {

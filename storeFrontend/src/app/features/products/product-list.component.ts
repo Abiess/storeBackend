@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ProductService } from '@app/core/services/product.service';
@@ -6,6 +6,7 @@ import { Product } from '@app/core/models';
 import { StoreNavigationComponent } from '@app/shared/components/store-navigation.component';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { ResponsiveDataListComponent, ColumnConfig, ActionConfig } from '@app/shared/components/responsive-data-list/responsive-data-list.component';
+import { FabService } from '@app/core/services/fab.service';
 
 @Component({
   selector: 'app-product-list',
@@ -89,7 +90,7 @@ import { ResponsiveDataListComponent, ColumnConfig, ActionConfig } from '@app/sh
     }
   `]
 })
-export class ProductListComponent implements OnInit {
+export class ProductListComponent implements OnInit, OnDestroy {
   products: Product[] = [];
   storeId!: number;
   loading = true;
@@ -156,8 +157,11 @@ export class ProductListComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private productService: ProductService
+    private productService: ProductService,
+    private fabService: FabService
   ) {}
+
+  ngOnDestroy(): void { this.fabService.clear(); }
 
   ngOnInit(): void {
     // Mehrstufige StoreId Extraktion
@@ -185,6 +189,19 @@ export class ProductListComponent implements OnInit {
 
     console.log('✅ Store-ID geladen:', this.storeId);
     this.loadProducts();
+
+    // FAB: Produkt hinzufügen
+    this.fabService.register({
+      icon: '＋',
+      label: 'Produkt hinzufügen',
+      color: 'green',
+      action: () => this.createProduct(),
+      speedDial: [
+        { icon: '📦', label: 'Neues Produkt', action: () => this.createProduct(), color: '#48bb78' },
+        { icon: '🤖', label: 'KI-Vorschlag', action: () => this.router.navigate([this.getStoreBasePath(), 'products', 'ai-suggest']), color: '#764ba2' },
+        { icon: '📂', label: 'Kategorie anlegen', action: () => this.router.navigate([this.getStoreBasePath(), 'categories', 'new']), color: '#4299e1' },
+      ]
+    });
   }
 
   loadProducts(): void {

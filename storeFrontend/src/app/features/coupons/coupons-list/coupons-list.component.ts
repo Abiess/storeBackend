@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
@@ -14,6 +14,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { CouponService, CouponDTO } from '../../../core/services/coupon.service';
 import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
 import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
+import { FabService } from '@app/core/services/fab.service';
 
 @Component({
   selector: 'app-coupons-list',
@@ -35,7 +36,7 @@ import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
   templateUrl: './coupons-list.component.html',
   styleUrls: ['./coupons-list.component.scss']
 })
-export class CouponsListComponent implements OnInit {
+export class CouponsListComponent implements OnInit, OnDestroy {
   storeId!: number;
   coupons: CouponDTO[] = [];
   loading = false;
@@ -49,8 +50,11 @@ export class CouponsListComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private couponService: CouponService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private fabService: FabService
   ) {}
+
+  ngOnDestroy(): void { this.fabService.clear(); }
 
   ngOnInit(): void {
     this.storeId = Number(this.route.snapshot.paramMap.get('storeId'));
@@ -68,6 +72,14 @@ export class CouponsListComponent implements OnInit {
     ];
 
     this.loadCoupons();
+
+    // FAB: Gutschein erstellen
+    this.fabService.register({
+      icon: '🎟',
+      label: 'Gutschein erstellen',
+      color: 'orange',
+      action: () => this.onCreate()
+    });
   }
 
   loadCoupons(): void {
