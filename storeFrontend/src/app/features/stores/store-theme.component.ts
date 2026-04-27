@@ -14,6 +14,7 @@ import {
 } from '../../core/models';
 import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
 import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
+import { toDate } from '@app/core/utils/date.utils';
 
 @Component({
   selector: 'app-store-theme',
@@ -42,7 +43,7 @@ import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
             </div>
             <div class="theme-info">
               <p><strong>Template:</strong> {{ getTemplateName(activeTheme.template) }}</p>
-              <p><strong>Erstellt:</strong> {{ (activeTheme.createdAt || null) | date:'dd.MM.yyyy':'':'de-DE' }}</p>
+              <p><strong>Erstellt:</strong> {{ toDate(activeTheme.createdAt) | date:'dd.MM.yyyy':'':'de-DE' }}</p>
               <button class="btn btn-primary" (click)="editTheme(activeTheme)">
                 Bearbeiten
               </button>
@@ -1059,6 +1060,9 @@ export class StoreThemeComponent implements OnInit {
   reloadLivePreview(): void {
     this.livePreviewVersion++;
   }
+
+  /** Konvertiert Spring LocalDateTime-Array zu JS Date für die date-Pipe */
+  toDate = toDate;
 
   getThemeTypeName(type: string): string {
     const names: { [key: string]: string } = {

@@ -27,7 +27,7 @@ export class ThemeService {
       type: ThemeType.MODERN,
       name: 'Modern',
       description: 'Sauberes, modernes Design mit lebendigen Farben',
-      preview: '/assets/themes/modern-preview.jpg',
+      preview: '/assets/themes/modern-grid.svg',
       colors: {
         primary: '#667eea',
         secondary: '#764ba2',
@@ -63,7 +63,7 @@ export class ThemeService {
       type: ThemeType.CLASSIC,
       name: 'Klassisch',
       description: 'Zeitloses Design für traditionelle Shops',
-      preview: '/assets/themes/classic-preview.jpg',
+      preview: '/assets/themes/classic-bootstrap.svg',
       colors: {
         primary: '#2c5282',
         secondary: '#2d3748',
@@ -99,7 +99,7 @@ export class ThemeService {
       type: ThemeType.MINIMAL,
       name: 'Minimalistisch',
       description: 'Reduziertes Design mit Fokus auf Produkte',
-      preview: '/assets/themes/minimal-preview.jpg',
+      preview: '/assets/themes/minimal-dark.svg',
       colors: {
         primary: '#000000',
         secondary: '#4a5568',
@@ -135,7 +135,7 @@ export class ThemeService {
       type: ThemeType.ELEGANT,
       name: 'Elegant',
       description: 'Luxuriöses Design für Premium-Produkte',
-      preview: '/assets/themes/elegant-preview.jpg',
+      preview: '/assets/themes/fashion-editorial.svg',
       colors: {
         primary: '#744210',
         secondary: '#2d3748',
@@ -171,7 +171,7 @@ export class ThemeService {
       type: ThemeType.DARK,
       name: 'Dunkel',
       description: 'Modernes dunkles Theme für Tech-Produkte',
-      preview: '/assets/themes/dark-preview.jpg',
+      preview: '/assets/themes/electronics-pro.svg',
       colors: {
         primary: '#818cf8',
         secondary: '#a78bfa',
@@ -395,7 +395,7 @@ export class ThemeService {
       type: dto.type as ThemeType,
       name: dto.name,
       description: dto.description,
-      preview: dto.previewUrl || '/assets/themes/default-preview.jpg',
+      preview: dto.previewUrl || '/assets/themes/modern-grid.svg',
       isFree: dto.isFree,
       colors: typeof dto.colorsJson === 'string' ? JSON.parse(dto.colorsJson) : dto.colorsJson,
       typography: typeof dto.typographyJson === 'string' ? JSON.parse(dto.typographyJson) : dto.typographyJson,
