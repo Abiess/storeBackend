@@ -320,7 +320,10 @@ public class SimpleCartController {
                     .toList();
 
             BigDecimal subtotal = items.stream()
-                    .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                    .map(item -> {
+                        BigDecimal price = item.getPrice() != null ? item.getPrice() : BigDecimal.ZERO;
+                        return price.multiply(BigDecimal.valueOf(item.getQuantity()));
+                    })
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             int itemCount = items.stream().mapToInt(CartItem::getQuantity).sum();
@@ -389,8 +392,12 @@ public class SimpleCartController {
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
         try {
             Long userId = extractUserIdFromRequest(authHeader);
-            Long storeId = Long.valueOf(request.get("storeId").toString());
-            Long productId = Long.valueOf(request.get("productId").toString());
+            Object storeIdRaw = request.get("storeId");
+            Object productIdRaw = request.get("productId");
+            if (storeIdRaw == null) throw new RuntimeException("storeId is required");
+            if (productIdRaw == null) throw new RuntimeException("productId is required");
+            Long storeId = Long.valueOf(storeIdRaw.toString());
+            Long productId = Long.valueOf(productIdRaw.toString());
             Integer quantity = Integer.valueOf(request.getOrDefault("quantity", 1).toString());
             String sessionId = (String) request.get("sessionId");
 
@@ -432,7 +439,10 @@ public class SimpleCartController {
             List<CartItem> allItems = cartItemRepository.findByCartId(cart.getId());
             int totalItemCount = allItems.stream().mapToInt(CartItem::getQuantity).sum();
             BigDecimal subtotal = allItems.stream()
-                .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                .map(item -> {
+                    BigDecimal price = item.getPrice() != null ? item.getPrice() : BigDecimal.ZERO;
+                    return price.multiply(BigDecimal.valueOf(item.getQuantity()));
+                })
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             log.info("✅ Cart now contains {} items (total quantity), subtotal: {}", totalItemCount, subtotal);
@@ -494,7 +504,9 @@ public class SimpleCartController {
             @PathVariable Long itemId,
             @RequestBody Map<String, Object> request) {
         try {
-            Integer quantity = Integer.valueOf(request.get("quantity").toString());
+            Object qtyRaw = request.get("quantity");
+            if (qtyRaw == null) throw new RuntimeException("quantity is required");
+            Integer quantity = Integer.valueOf(qtyRaw.toString());
 
             CartItem item = cartItemRepository.findById(itemId)
                     .orElseThrow(() -> new RuntimeException("Cart item not found"));
