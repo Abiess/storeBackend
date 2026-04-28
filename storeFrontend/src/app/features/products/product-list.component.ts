@@ -32,8 +32,12 @@ import { FabService } from '@app/core/services/fab.service';
         [columns]="columns"
         [actions]="actions"
         [loading]="loading"
+        [rowClickable]="true"
+        [searchable]="true"
+        searchPlaceholder="Produkt suchen..."
         [emptyMessage]="'storeDetail.noProducts' | translate"
-        emptyIcon="📦">
+        emptyIcon="📦"
+        (rowClick)="editProduct($event.id)">
       </app-responsive-data-list>
     </div>
   `,
@@ -109,6 +113,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
       label: 'Name',
       type: 'text',
       mobileLabel: 'Produkt',
+      sortable: true,
       formatFn: (value, item) => {
         const star = item.isFeatured ? ' ⭐' : '';
         return value + star;
@@ -119,6 +124,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
       label: 'Kategorie',
       type: 'text',
       mobileLabel: 'Kategorie',
+      sortable: true,
       formatFn: (value, item) => {
         return value || item.category?.name || '-';
       }
@@ -127,7 +133,8 @@ export class ProductListComponent implements OnInit, OnDestroy {
       key: 'basePrice',
       label: 'Preis',
       type: 'currency',
-      mobileLabel: 'Preis'
+      mobileLabel: 'Preis',
+      sortable: true
     },
     {
       key: 'status',
@@ -135,7 +142,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
       type: 'badge',
       mobileLabel: 'Status',
       formatFn: (value) => this.getStatusLabel(value),
-      badgeClass: (value) => `status-${value.toLowerCase()}`
+      badgeClass: (value) => `status-${value?.toLowerCase()}`
     }
   ];
 
@@ -238,7 +245,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
   }
 
   deleteProduct(product: Product): void {
-    if (confirm(`هل تريد حقاً حذف "${product.title}"؟`)) {
+    if (confirm(`Produkt "${product.title}" wirklich löschen?`)) {
       this.productService.deleteProduct(this.storeId, product.id).subscribe({
         next: () => {
           this.loadProducts();
@@ -253,9 +260,10 @@ export class ProductListComponent implements OnInit, OnDestroy {
 
   getStatusLabel(status: string): string {
     const labels: { [key: string]: string } = {
-      'DRAFT': 'مسودة',
-      'ACTIVE': 'نشط',
-      'ARCHIVED': 'مؤرشف'
+      'DRAFT': 'Entwurf',
+      'ACTIVE': 'Aktiv',
+      'ARCHIVED': 'Archiviert',
+      'INACTIVE': 'Inaktiv'
     };
     return labels[status] || status;
   }
