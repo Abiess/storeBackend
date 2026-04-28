@@ -13,11 +13,15 @@ export interface NavItem {
     children?: NavItem[];
     badge?: string;
     badgeClass?: string;
+    /** Sichtbarkeit: false = Item wird in der Sidebar ausgeblendet. Standard: true */
+    visible?: boolean;
 }
 
 export interface NavGroup {
     titleKey?: string;
     items: NavItem[];
+    /** Sichtbarkeit: false = gesamte Gruppe wird ausgeblendet. Standard: true */
+    visible?: boolean;
 }
 
 @Component({
@@ -230,6 +234,16 @@ export class AdminSidebarComponent implements OnInit {
 
     isRTL(): boolean {
         return this.languageService.isRTL();
+    }
+
+    /** Gibt nur sichtbare Gruppen zurück (visible !== false) */
+    get visibleGroups(): NavGroup[] {
+        return this.navGroups.filter(g => g.visible !== false);
+    }
+
+    /** Gibt nur sichtbare Items einer Gruppe zurück (visible !== false) */
+    visibleItems(group: NavGroup): NavItem[] {
+        return group.items.filter(i => i.visible !== false);
     }
 
     toggleGroup(groupTitle: string): void {

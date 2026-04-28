@@ -42,14 +42,14 @@
         </div>
 
         <nav class="sidebar-nav">
-            <div *ngFor="let group of navGroups" class="nav-group">
+            <div *ngFor="let group of visibleGroups" class="nav-group">
                 <div class="nav-group-title" *ngIf="group.titleKey">
                     {{ group.titleKey | translate }}
                 </div>
 
                 <div class="nav-items">
                     <a
-                            *ngFor="let item of group.items"
+                            *ngFor="let item of visibleItems(group)"
                             [routerLink]="item.route"
                             [class.nav-item-active]="isRouteActive(item.route)"
                             class="nav-item"

@@ -1,0 +1,81 @@
+#!/bin/sh
+# ============================================================
+#  pre-commit hook – AI-Kontext-Freshness-Check
+#  Warnt wenn CODEBASE_CONTEXT.md seit >14 Tagen nicht
+#  aktualisiert wurde ODER wenn neue Komponenten committed
+#  werden ohne den Kontext zu updaten.
+#
+#  Installieren: cp .githooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+# ============================================================
+
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+GREEN='\033[0;32m'
+NC='\033[0m' # No Color
+
+# ── 1. Neue Komponenten in diesem Commit? ─────────────────────────────────────
+NEW_COMPONENTS=$(git diff --cached --name-only | grep -E "\.component\.ts$" | grep -v "\.spec\." | wc -l | tr -d ' ')
+
+# ── 2. Wann wurde AI-Kontext zuletzt aktualisiert? ───────────────────────────
+TIMESTAMP_FILE=".ai-context-updated"
+CONTEXT_FILE="CODEBASE_CONTEXT.md"
+DAYS_LIMIT=14
+
+if [ -f "$TIMESTAMP_FILE" ]; then
+    LAST_UPDATE=$(cat "$TIMESTAMP_FILE")
+    TODAY=$(date +%Y-%m-%d)
+
+    # Tage berechnen (POSIX-kompatibel)
+    LAST_TS=$(date -d "$LAST_UPDATE" +%s 2>/dev/null || date -j -f "%Y-%m-%d" "$LAST_UPDATE" +%s 2>/dev/null || echo 0)
+    TODAY_TS=$(date +%s)
+
+    if [ "$LAST_TS" != "0" ]; then
+        DIFF_DAYS=$(( (TODAY_TS - LAST_TS) / 86400 ))
+    else
+        DIFF_DAYS=999
+    fi
+else
+    DIFF_DAYS=999
+    LAST_UPDATE="unbekannt"
+fi
+
+# ── 3. CODEBASE_CONTEXT.md im Commit? ────────────────────────────────────────
+CONTEXT_IN_COMMIT=$(git diff --cached --name-only | grep -c "CODEBASE_CONTEXT.md" || true)
+
+# ── 4. Bewertung ──────────────────────────────────────────────────────────────
+WARN=0
+
+if [ "$NEW_COMPONENTS" -gt 0 ] && [ "$CONTEXT_IN_COMMIT" -eq 0 ]; then
+    echo ""
+    echo "${YELLOW}⚠️  AI-KONTEXT HINWEIS${NC}"
+    echo "   Du commitest ${NEW_COMPONENTS} neue Komponente(n), aber CODEBASE_CONTEXT.md"
+    echo "   wurde nicht aktualisiert (zuletzt: ${LAST_UPDATE})."
+    WARN=1
+fi
+
+if [ "$DIFF_DAYS" -gt "$DAYS_LIMIT" ]; then
+    echo ""
+    echo "${YELLOW}⚠️  AI-KONTEXT VERALTET${NC}"
+    echo "   CODEBASE_CONTEXT.md wurde vor ${DIFF_DAYS} Tagen zuletzt aktualisiert."
+    WARN=1
+fi
+
+if [ "$WARN" -eq 1 ]; then
+    echo ""
+    echo "   ${CYAN}Empfehlung:${NC} Führe aus:"
+    echo "   ${GREEN}  .\\scripts\\update-ai-context.ps1 -Feature 'Beschreibung deines Features'${NC}"
+    echo ""
+    echo "   Oder commit trotzdem mit: ${YELLOW}git commit --no-verify${NC}"
+    echo ""
+    # Nur warnen, nicht blockieren (exit 0)
+    exit 0
+fi
+
+# Alles OK
+if [ "$NEW_COMPONENTS" -gt 0 ]; then
+    echo "${GREEN}✅  AI-Kontext ist aktuell (${DIFF_DAYS} Tage) – Commit OK${NC}"
+fi
+
+exit 0
+

@@ -131,10 +131,17 @@ export class RedirectsPageComponent implements OnInit {
       handler: (r) => this.onEdit(r)
     },
     {
-      icon: r => r.isActive ? '🔴' : '🟢',
-      label: r => r.isActive ? 'Deaktivieren' : 'Aktivieren',
-      handler: (r) => this.onToggleActive(r)
-    } as any,
+      icon: '🟢',
+      label: 'Aktivieren',
+      visible: (r: RedirectRuleDTO) => !r.isActive,
+      handler: (r: RedirectRuleDTO) => this.onToggleActive(r)
+    },
+    {
+      icon: '🔴',
+      label: 'Deaktivieren',
+      visible: (r: RedirectRuleDTO) => !!r.isActive,
+      handler: (r: RedirectRuleDTO) => this.onToggleActive(r)
+    },
     {
       icon: '🗑️',
       label: 'Löschen',

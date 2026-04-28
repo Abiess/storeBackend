@@ -1,0 +1,37 @@
+# markt.ma – Cursor AI Rules
+# Wird von Cursor automatisch als Projekt-Kontext geladen.
+
+## Projekt
+Multi-Tenant SaaS Shop-Plattform. Stack: Spring Boot 3 + Angular 17+ Standalone + PostgreSQL + MinIO.
+
+## Absolute Regeln
+
+1. **Niemals eigene Tabellen bauen** – immer `app-responsive-data-list` verwenden
+   - Import: `ResponsiveDataListComponent, ColumnConfig, ActionConfig` aus `@app/shared/components/responsive-data-list/responsive-data-list.component`
+   - Inputs: `[items]` `[columns]` `[actions]` `[loading]` `[rowClickable]` `[searchable]` `(rowClick)`
+   - Badge-Klassen: `status-active | status-draft | status-archived | status-processing | status-shipped | status-inactive`
+
+2. **Nur Standalone Components** – kein NgModule, kein `declarations: []`
+
+3. **Design-Token:** Lila-Gradient `linear-gradient(135deg, #667eea, #764ba2)` für alle Primary-Buttons
+
+4. **i18n:** Immer `{{ 'key' | translate }}` Pipe nutzen, nie Texte hardcoden (außer DE als Fallback mit Kommentar)
+
+5. **StoreId-Extraktion** immer 3-stufig:
+   ```typescript
+   // 1. route.params, 2. route.parent.params, 3. URL-Regex /\/stores\/(\d+)/
+   ```
+
+6. **DB-Änderungen:** Flyway deaktiviert → neue Felder in `@Entity`-Klasse ergänzen, nicht in schema.sql
+
+7. **API-Routen:**
+   - Authenticated: `/api/stores/{storeId}/...`
+   - Public: `/api/public/stores/{storeId}/...`
+   - Basis-URL aus `environment.apiUrl`
+
+## Datei-Referenzen
+- Zentrale Listen-Komponente: `storeFrontend/src/app/shared/components/responsive-data-list/`
+- Sidebar: `storeFrontend/src/app/shared/components/admin-sidebar/`
+- i18n-Keys: `storeFrontend/src/assets/i18n/de.json`
+- Vollständige Doku: `CODEBASE_CONTEXT.md`
+
