@@ -2,7 +2,8 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { DomSanitizer } from '@angular/platform-browser';import { ThemeService } from '../../core/services/theme.service';
+import { DomSanitizer } from '@angular/platform-browser';
+import { ThemeService } from '../../core/services/theme.service';
 import { StoreService } from '../../core/services/store.service';
 import { PreviewPanelService } from '../../core/services/preview-panel.service';
 import {

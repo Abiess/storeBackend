@@ -39,6 +39,25 @@ public class ProductVariantService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * PUBLIC: Varianten laden ohne Store-Auth (für Storefront).
+     * Prüft nur ob Produkt zum Store gehört, gibt nur aktive Varianten zurück.
+     */
+    @Transactional(readOnly = true)
+    public List<ProductVariantDTO> getPublicVariantsByProduct(Long productId, Long storeId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+
+        if (!product.getStore().getId().equals(storeId)) {
+            throw new RuntimeException("Product does not belong to this store");
+        }
+
+        return variantRepository.findByProductId(productId).stream()
+                .filter(v -> Boolean.TRUE.equals(v.getIsActive()))
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
     @Transactional(readOnly = true)
     public ProductVariantDTO getVariantById(Long variantId, Long productId, Store store) {
         // Verify product belongs to store

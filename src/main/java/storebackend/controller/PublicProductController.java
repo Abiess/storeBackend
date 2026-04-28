@@ -8,7 +8,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import storebackend.dto.ProductDTO;
+import storebackend.dto.ProductVariantDTO;
 import storebackend.service.ProductService;
+import storebackend.service.ProductVariantService;
 
 import java.util.List;
 
@@ -24,6 +26,7 @@ import java.util.List;
 public class PublicProductController {
 
     private final ProductService productService;
+    private final ProductVariantService productVariantService;
 
     @Operation(summary = "Get featured products", description = "Returns all featured products for a store")
     @GetMapping("/featured")
@@ -105,6 +108,26 @@ public class PublicProductController {
         productService.incrementViewCount(productId);
 
         return ResponseEntity.ok().build();
+    }
+
+    /**
+     * PUBLIC: Varianten für Storefront – kein Auth erforderlich.
+     * Gibt nur aktive Varianten zurück.
+     */
+    @Operation(summary = "Get public variants for a product", description = "Returns active variants for storefront (no auth)")
+    @GetMapping("/{productId}/variants")
+    public ResponseEntity<List<ProductVariantDTO>> getPublicVariants(
+            @Parameter(description = "Store ID") @PathVariable Long storeId,
+            @Parameter(description = "Product ID") @PathVariable Long productId) {
+
+        log.info("Public: Getting variants for product {} in store {}", productId, storeId);
+        try {
+            List<ProductVariantDTO> variants = productVariantService.getPublicVariantsByProduct(productId, storeId);
+            return ResponseEntity.ok(variants);
+        } catch (Exception e) {
+            log.error("Error fetching public variants for product {}: {}", productId, e.getMessage());
+            return ResponseEntity.notFound().build();
+        }
     }
 }
 

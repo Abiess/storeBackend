@@ -35,19 +35,54 @@ interface Product {
       <div class="product-detail-grid">
         <!-- Product Images -->
         <div class="product-images">
-          <div class="main-image">
-            <img [src]="currentImage || product.primaryImageUrl || 'assets/placeholder.png'" [alt]="product.title">
+          <div class="main-image" (click)="openLightbox()">
+            <img [src]="currentImage || product.primaryImageUrl || 'assets/placeholder.png'"
+                 [alt]="product.title"
+                 class="main-img"
+                 (error)="onImgError($event)">
+            <div class="zoom-hint" *ngIf="hasGalleryImages()">🔍 Klicken zum Vergrößern</div>
           </div>
-          
+
           <div class="thumbnail-gallery" *ngIf="hasGalleryImages()">
             <button
-              *ngFor="let media of getGalleryImages()"
+              *ngFor="let media of getGalleryImages(); let i = index"
               class="thumbnail"
-              [class.active]="currentImage === media.url"
-              (click)="selectImage(media.url)"
+              [class.active]="currentImageIndex === i"
+              (click)="selectImageByIndex(i)"
+              [title]="media.alt || product.title"
             >
-              <img [src]="media.url" [alt]="product.title">
+              <img [src]="media.url" [alt]="media.alt || product.title" (error)="onThumbError($event)">
+              <!-- Varianten-Info-Badge auf Thumbnail -->
+              <div class="thumb-variant-badge" *ngIf="getVariantForImage(media) as v">
+                {{ v.price | number:'1.2-2' }}€
+              </div>
             </button>
+          </div>
+
+          <!-- Varianten-Info-Panel beim Bild-Klick -->
+          <div class="image-variant-info" *ngIf="hoveredImageVariant">
+            <div class="ivar-price">{{ hoveredImageVariant.price | number:'1.2-2' }} €</div>
+            <div class="ivar-attrs" *ngIf="hoveredImageVariant.attributes">
+              <span class="ivar-attr" *ngFor="let attr of getAttrEntries(hoveredImageVariant.attributes)">
+                <strong>{{ attr.key }}:</strong> {{ attr.value }}
+              </span>
+            </div>
+            <div class="ivar-stock"
+                 [class.in]="hoveredImageVariant.stockQuantity > 0"
+                 [class.out]="hoveredImageVariant.stockQuantity === 0">
+              {{ hoveredImageVariant.stockQuantity > 0 ? '✓ verfügbar (' + hoveredImageVariant.stockQuantity + ')' : '✗ Ausverkauft' }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Lightbox -->
+        <div class="lightbox-overlay" *ngIf="lightboxOpen" (click)="closeLightbox()">
+          <button class="lb-close" (click)="closeLightbox()">✕</button>
+          <div class="lb-content" (click)="$event.stopPropagation()">
+            <img [src]="currentImage || ''" [alt]="product.title">
+            <button class="lb-nav lb-prev" *ngIf="currentImageIndex > 0" (click)="prevImage(); $event.stopPropagation()">‹</button>
+            <button class="lb-nav lb-next" *ngIf="currentImageIndex < getGalleryImages().length - 1" (click)="nextImage(); $event.stopPropagation()">›</button>
+            <div class="lb-counter">{{ currentImageIndex + 1 }} / {{ getGalleryImages().length }}</div>
           </div>
         </div>
 
@@ -210,12 +245,187 @@ interface Product {
       overflow: hidden;
       background: #f8f9fa;
       box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+      position: relative;
+      cursor: zoom-in;
     }
 
-    .main-image img {
+    .main-img {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+
+    .main-image:hover .main-img {
+      transform: scale(1.04);
+    }
+
+    .zoom-hint {
+      position: absolute;
+      bottom: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.65);
+      color: #fff;
+      padding: 0.3rem 0.9rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      white-space: nowrap;
+    }
+
+    .main-image:hover .zoom-hint {
+      opacity: 1;
+    }
+
+    /* Varianten-Info-Panel unter Thumbnails */
+    .image-variant-info {
+      background: linear-gradient(135deg, #667eea15, #764ba215);
+      border: 1.5px solid #667eea40;
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.6rem;
+      animation: fadeSlideIn 0.25s ease;
+    }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .ivar-price {
+      font-size: 1.3rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .ivar-attrs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .ivar-attr {
+      background: white;
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+      padding: 0.2rem 0.6rem;
+      font-size: 0.85rem;
+      color: #333;
+    }
+
+    .ivar-stock {
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.2rem 0.7rem;
+      border-radius: 20px;
+    }
+
+    .ivar-stock.in { background: #d4edda; color: #155724; }
+    .ivar-stock.out { background: #f8d7da; color: #721c24; }
+
+    /* Thumbnail Badge */
+    .thumb-variant-badge {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(102,126,234,0.85);
+      color: white;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-align: center;
+      padding: 0.15rem 0;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .thumbnail:hover .thumb-variant-badge,
+    .thumbnail.active .thumb-variant-badge {
+      opacity: 1;
+    }
+
+    /* Lightbox */
+    .lightbox-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.92);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.25s;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    .lb-close {
+      position: absolute;
+      top: 1.5rem;
+      right: 1.5rem;
+      background: rgba(255,255,255,0.15);
+      border: none;
+      color: white;
+      font-size: 1.5rem;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s;
+      z-index: 10001;
+    }
+
+    .lb-close:hover { background: rgba(255,255,255,0.3); transform: rotate(90deg); }
+
+    .lb-content {
+      position: relative;
+      max-width: 90vw;
+      max-height: 90vh;
+    }
+
+    .lb-content img {
+      max-width: 100%;
+      max-height: 90vh;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+
+    .lb-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255,255,255,0.85);
+      border: none;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      font-size: 2rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .lb-nav:hover { background: white; transform: translateY(-50%) scale(1.1); }
+    .lb-prev { left: -65px; }
+    .lb-next { right: -65px; }
+
+    .lb-counter {
+      position: absolute;
+      bottom: -2.5rem;
+      width: 100%;
+      text-align: center;
+      color: rgba(255,255,255,0.8);
+      font-size: 0.9rem;
     }
 
     .thumbnail-gallery {
@@ -234,7 +444,8 @@ interface Product {
       cursor: pointer;
       background: white;
       padding: 0;
-      transition: all 0.3s;
+      transition: all 0.25s;
+      position: relative;
     }
 
     .thumbnail:hover {
@@ -536,6 +747,10 @@ interface Product {
       .price {
         font-size: 2rem;
       }
+
+      .lb-prev { left: 0.5rem; }
+      .lb-next { right: 0.5rem; }
+      .lb-nav { width: 40px; height: 40px; font-size: 1.5rem; }
     }
   `]
 })
@@ -544,11 +759,15 @@ export class StorefrontProductDetailComponent implements OnInit {
   selectedVariant: any = null;
   quantity = 1;
   currentImage: string | null = null;
+  currentImageIndex = 0;
+  lightboxOpen = false;
   loading = true;
   error = '';
   adding = false;
   showSuccess = false;
-  
+  /** Variante die zum aktuell selektierten Thumbnail-Bild passt */
+  hoveredImageVariant: any = null;
+
   storeId!: number;
   productId!: number;
 
@@ -579,7 +798,15 @@ export class StorefrontProductDetailComponent implements OnInit {
     this.productService.getProduct(this.storeId, this.productId).subscribe({
       next: (product) => {
         this.product = product as any;
-        this.currentImage = product.primaryImageUrl || null;
+        // currentImage auf erstes Media-Bild setzen (nicht nur primaryImageUrl-String)
+        const media = (product as any).media;
+        if (media && media.length > 0) {
+          this.currentImage = media[0].url;
+          this.currentImageIndex = 0;
+        } else {
+          this.currentImage = product.primaryImageUrl || null;
+          this.currentImageIndex = 0;
+        }
 
         // Lade Varianten für das Produkt
         this.loadProductVariants();
@@ -663,22 +890,98 @@ export class StorefrontProductDetailComponent implements OnInit {
     // Aktuell: Varianten haben KEINE eigenen Bilder im Backend
 
     if (variant?.images && variant.images.length > 0) {
-      // Fall 1: Variante hat eigene Bilder → zeige diese
-      this.currentImage = variant.images[0].url;
+      // Fall 1: Variante hat eigene Bilder → images ist string[] (URLs direkt)
+      this.currentImage = variant.images[0]; // ← string, kein .url!
+      this.currentImageIndex = 0;
+      this.hoveredImageVariant = variant;
       console.log('🖼️ Using variant images:', variant.images.length);
     } else if (variant?.imageUrl) {
       // Fall 2: Variante hat einzelnes Bild
       this.currentImage = variant.imageUrl;
+      this.currentImageIndex = 0;
+      this.hoveredImageVariant = variant;
       console.log('🖼️ Using variant imageUrl');
     } else {
-      // Fall 3: Keine Variantenbilder → fallback auf Produktbilder
-      this.currentImage = this.product?.primaryImageUrl || null;
+      // Fall 3: Keine Variantenbilder → fallback auf Produktbilder, Index zurücksetzen
+      const media = this.product?.media;
+      if (media && media.length > 0) {
+        this.currentImage = media[0].url;
+      } else {
+        this.currentImage = this.product?.primaryImageUrl || null;
+      }
+      this.currentImageIndex = 0;
+      this.hoveredImageVariant = null;
       console.log('⚠️ Variant has no images, using product primary image');
     }
   }
 
   selectImage(url: string) {
     this.currentImage = url;
+    const images = this.getGalleryImages();
+    const idx = images.findIndex((m: any) => m.url === url);
+    this.currentImageIndex = idx >= 0 ? idx : 0;
+    this.hoveredImageVariant = this.getVariantForImage({ url });
+  }
+
+  selectImageByIndex(index: number): void {
+    const images = this.getGalleryImages();
+    if (index < 0 || index >= images.length) return;
+    this.currentImageIndex = index;
+    this.currentImage = images[index].url;
+    this.hoveredImageVariant = this.getVariantForImage(images[index]);
+  }
+
+  prevImage(): void {
+    if (this.currentImageIndex > 0) this.selectImageByIndex(this.currentImageIndex - 1);
+  }
+
+  nextImage(): void {
+    if (this.currentImageIndex < this.getGalleryImages().length - 1)
+      this.selectImageByIndex(this.currentImageIndex + 1);
+  }
+
+  openLightbox(): void {
+    if (this.hasGalleryImages()) {
+      this.lightboxOpen = true;
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  closeLightbox(): void {
+    this.lightboxOpen = false;
+    document.body.style.overflow = '';
+  }
+
+  onImgError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.src = 'assets/placeholder.png';
+  }
+
+  onThumbError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.style.opacity = '0.3';
+  }
+
+  /**
+   * Findet die Variante die zum übergebenen Bild-Objekt passt
+   * (über imageUrl-Match oder Position in media-Array).
+   */
+  getVariantForImage(media: any): any | null {
+    if (!this.product?.variants?.length) return null;
+    const url: string = media?.url ?? '';
+    if (!url) return null;
+    return this.product.variants.find((v: any) =>
+      (v.imageUrl && v.imageUrl === url) ||
+      // images ist string[] (direkte URLs), kein Objekt-Array
+      (v.images && Array.isArray(v.images) && v.images.some((imgUrl: string) => imgUrl === url))
+    ) || null;
+  }
+
+  /**
+   * Wandelt Varianten-Attribute-Objekt in Key-Value-Array für *ngFor um.
+   */
+  getAttrEntries(attrs: Record<string, string>): { key: string; value: string }[] {
+    return Object.entries(attrs).map(([key, value]) => ({ key, value }));
   }
 
   /**
@@ -693,22 +996,27 @@ export class StorefrontProductDetailComponent implements OnInit {
     });
   }
 
-  /**
-   * ✅ STEP 2: Galerie-Bilder basierend auf Varianten-Auswahl
-   * Gibt Bilder für die Galerie zurück (Varianten-Bilder oder Produkt-Bilder)
-   */
   getGalleryImages(): any[] {
-    // Fall 1: Variante ausgewählt UND Variante hat eigene Bilder
+    // Fall 1: Variante hat eigene Bilder (string[] → normalisieren zu {url, alt}[])
     if (this.selectedVariant?.images && this.selectedVariant.images.length > 0) {
-      return this.selectedVariant.images;
+      return (this.selectedVariant.images as string[]).map((url: string) => ({
+        url,
+        alt: this.selectedVariant?.sku || this.product?.title || ''
+      }));
     }
+    // Fall 2: Produkt-Media-Array (bereits {url, alt}[])
+    const media: any[] = this.product?.media || [];
+    if (media.length > 0) return media;
 
-    // Fall 2: Fallback auf Produkt-Bilder
-    return this.product?.media || [];
+    // Fall 3: Nur primaryImageUrl vorhanden → als einzelnes Bild-Objekt
+    const primary = this.product?.primaryImageUrl;
+    if (primary) return [{ url: primary, alt: this.product?.title }];
+
+    return [];
   }
 
   /**
-   * Prüft ob die Galerie Bilder anzeigen soll
+   * Prüft ob die Galerie mehr als 1 Bild hat (→ Thumbnails anzeigen)
    */
   hasGalleryImages(): boolean {
     return this.getGalleryImages().length > 1;
