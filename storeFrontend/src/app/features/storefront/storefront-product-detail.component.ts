@@ -36,23 +36,24 @@ interface Product {
         <!-- Product Images -->
         <div class="product-images">
           <div class="main-image" (click)="openLightbox()">
-            <img [src]="currentImage || product.primaryImageUrl || 'assets/placeholder.png'"
+            <img #mainImg
+                 [src]="currentImage || product.primaryImageUrl || 'assets/placeholder.png'"
                  [alt]="product.title"
                  class="main-img"
-                 (error)="onImgError($event)">
-            <div class="zoom-hint" *ngIf="hasGalleryImages()">🔍 Klicken zum Vergrößern</div>
+                 (error)="mainImg.src='assets/placeholder.png'">
+            <div class="zoom-hint" *ngIf="galleryImages.length > 1">🔍 Klicken zum Vergrößern</div>
           </div>
 
-          <div class="thumbnail-gallery" *ngIf="hasGalleryImages()">
+          <div class="thumbnail-gallery" *ngIf="galleryImages.length > 1">
             <button
-              *ngFor="let media of getGalleryImages(); let i = index"
+              *ngFor="let media of galleryImages; let i = index; trackBy: trackByUrl"
               class="thumbnail"
               [class.active]="currentImageIndex === i"
               (click)="selectImageByIndex(i)"
               [title]="media.alt || product.title"
             >
-              <img [src]="media.url" [alt]="media.alt || product.title" (error)="onThumbError($event)">
-              <!-- Varianten-Info-Badge auf Thumbnail -->
+              <img [src]="media.url" [alt]="media.alt || product.title"
+                   (error)="$any($event.target).style.opacity='0.3'">
               <div class="thumb-variant-badge" *ngIf="getVariantForImage(media) as v">
                 {{ v.price | number:'1.2-2' }}€
               </div>
@@ -81,8 +82,8 @@ interface Product {
           <div class="lb-content" (click)="$event.stopPropagation()">
             <img [src]="currentImage || ''" [alt]="product.title">
             <button class="lb-nav lb-prev" *ngIf="currentImageIndex > 0" (click)="prevImage(); $event.stopPropagation()">‹</button>
-            <button class="lb-nav lb-next" *ngIf="currentImageIndex < getGalleryImages().length - 1" (click)="nextImage(); $event.stopPropagation()">›</button>
-            <div class="lb-counter">{{ currentImageIndex + 1 }} / {{ getGalleryImages().length }}</div>
+            <button class="lb-nav lb-next" *ngIf="currentImageIndex < galleryImages.length - 1" (click)="nextImage(); $event.stopPropagation()">›</button>
+            <div class="lb-counter">{{ currentImageIndex + 1 }} / {{ galleryImages.length }}</div>
           </div>
         </div>
 
@@ -765,8 +766,10 @@ export class StorefrontProductDetailComponent implements OnInit {
   error = '';
   adding = false;
   showSuccess = false;
-  /** Variante die zum aktuell selektierten Thumbnail-Bild passt */
   hoveredImageVariant: any = null;
+
+  /** Gecachtes Galerie-Array – wird nur neu gebaut wenn nötig (nicht bei jedem Change-Detection-Zyklus) */
+  galleryImages: { url: string; alt: string }[] = [];
 
   storeId!: number;
   productId!: number;
@@ -798,10 +801,11 @@ export class StorefrontProductDetailComponent implements OnInit {
     this.productService.getProduct(this.storeId, this.productId).subscribe({
       next: (product) => {
         this.product = product as any;
-        // currentImage auf erstes Media-Bild setzen (nicht nur primaryImageUrl-String)
-        const media = (product as any).media;
-        if (media && media.length > 0) {
-          this.currentImage = media[0].url;
+        // Cache sofort aufbauen mit Produkt-Media
+        this.rebuildGallery();
+        // Erstes Bild setzen
+        if (this.galleryImages.length > 0) {
+          this.currentImage = this.galleryImages[0].url;
           this.currentImageIndex = 0;
         } else {
           this.currentImage = product.primaryImageUrl || null;
@@ -852,9 +856,14 @@ export class StorefrontProductDetailComponent implements OnInit {
             const firstAvailableVariant = variants.find(v => v.stockQuantity > 0) || variants[0];
             this.selectedVariant = firstAvailableVariant;
             console.log('🎯 Auto-selected variant:', firstAvailableVariant.sku);
-
-            // Update URL mit auto-selected Variante
             this.updateUrlWithVariant(firstAvailableVariant.id);
+          }
+
+          // Cache nach Varianten-Laden neu aufbauen
+          this.rebuildGallery();
+          if (this.galleryImages.length > 0) {
+            this.currentImage = this.galleryImages[0].url;
+            this.currentImageIndex = 0;
           }
         }
         this.loading = false;
@@ -913,6 +922,15 @@ export class StorefrontProductDetailComponent implements OnInit {
       this.hoveredImageVariant = null;
       console.log('⚠️ Variant has no images, using product primary image');
     }
+
+    // Gallery-Cache immer neu aufbauen nach Varianten-Wechsel
+    this.rebuildGallery();
+    // currentImage sicherstellen dass es im neuen galleryImages ist
+    if (this.currentImage && this.galleryImages.length > 0) {
+      const idx = this.galleryImages.findIndex(m => m.url === this.currentImage);
+      this.currentImageIndex = idx >= 0 ? idx : 0;
+      if (idx < 0) this.currentImage = this.galleryImages[0].url;
+    }
   }
 
   selectImage(url: string) {
@@ -924,11 +942,10 @@ export class StorefrontProductDetailComponent implements OnInit {
   }
 
   selectImageByIndex(index: number): void {
-    const images = this.getGalleryImages();
-    if (index < 0 || index >= images.length) return;
+    if (index < 0 || index >= this.galleryImages.length) return;
     this.currentImageIndex = index;
-    this.currentImage = images[index].url;
-    this.hoveredImageVariant = this.getVariantForImage(images[index]);
+    this.currentImage = this.galleryImages[index].url;
+    this.hoveredImageVariant = this.getVariantForImage(this.galleryImages[index]);
   }
 
   prevImage(): void {
@@ -936,12 +953,12 @@ export class StorefrontProductDetailComponent implements OnInit {
   }
 
   nextImage(): void {
-    if (this.currentImageIndex < this.getGalleryImages().length - 1)
+    if (this.currentImageIndex < this.galleryImages.length - 1)
       this.selectImageByIndex(this.currentImageIndex + 1);
   }
 
   openLightbox(): void {
-    if (this.hasGalleryImages()) {
+    if (this.galleryImages.length > 1) {
       this.lightboxOpen = true;
       document.body.style.overflow = 'hidden';
     }
@@ -950,6 +967,35 @@ export class StorefrontProductDetailComponent implements OnInit {
   closeLightbox(): void {
     this.lightboxOpen = false;
     document.body.style.overflow = '';
+  }
+
+  /**
+   * Baut galleryImages[] einmalig auf und cached es.
+   * Nur aufrufen wenn Produkt/Variante sich ändert – NICHT bei jedem CD-Zyklus.
+   */
+  rebuildGallery(): void {
+    // Fall 1: Variante hat eigene Bilder (string[])
+    if (this.selectedVariant?.images && this.selectedVariant.images.length > 0) {
+      this.galleryImages = (this.selectedVariant.images as string[]).map((url: string) => ({
+        url,
+        alt: this.selectedVariant?.sku || this.product?.title || ''
+      }));
+      return;
+    }
+    // Fall 2: Produkt-Media-Array ({url, alt}[])
+    const media: any[] = this.product?.media || [];
+    if (media.length > 0) {
+      this.galleryImages = media.map((m: any) => ({ url: m.url, alt: m.alt || this.product?.title || '' }));
+      return;
+    }
+    // Fall 3: Nur primaryImageUrl
+    const primary = this.product?.primaryImageUrl;
+    this.galleryImages = primary ? [{ url: primary, alt: this.product?.title || '' }] : [];
+  }
+
+  /** trackBy für *ngFor – verhindert DOM-Neuaufbau bei CD */
+  trackByUrl(_index: number, item: { url: string }): string {
+    return item.url;
   }
 
   onImgError(event: Event): void {
@@ -997,29 +1043,11 @@ export class StorefrontProductDetailComponent implements OnInit {
   }
 
   getGalleryImages(): any[] {
-    // Fall 1: Variante hat eigene Bilder (string[] → normalisieren zu {url, alt}[])
-    if (this.selectedVariant?.images && this.selectedVariant.images.length > 0) {
-      return (this.selectedVariant.images as string[]).map((url: string) => ({
-        url,
-        alt: this.selectedVariant?.sku || this.product?.title || ''
-      }));
-    }
-    // Fall 2: Produkt-Media-Array (bereits {url, alt}[])
-    const media: any[] = this.product?.media || [];
-    if (media.length > 0) return media;
-
-    // Fall 3: Nur primaryImageUrl vorhanden → als einzelnes Bild-Objekt
-    const primary = this.product?.primaryImageUrl;
-    if (primary) return [{ url: primary, alt: this.product?.title }];
-
-    return [];
+    return this.galleryImages;
   }
 
-  /**
-   * Prüft ob die Galerie mehr als 1 Bild hat (→ Thumbnails anzeigen)
-   */
   hasGalleryImages(): boolean {
-    return this.getGalleryImages().length > 1;
+    return this.galleryImages.length > 1;
   }
 
   getCurrentPrice(): number {
