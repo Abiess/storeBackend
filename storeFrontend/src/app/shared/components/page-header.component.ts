@@ -32,7 +32,6 @@ import { BreadcrumbComponent, BreadcrumbItem } from './breadcrumb.component';
           class="btn btn-back" 
           (click)="handleBack()"
           [attr.aria-label]="'common.back' | translate">
-          <span class="back-icon">←</span>
           <span class="back-text">{{ backButtonText || ('common.back' | translate) }}</span>
         </button>
         <h1 class="page-title">{{ title | translate }}</h1>
@@ -97,23 +96,12 @@ import { BreadcrumbComponent, BreadcrumbItem } from './breadcrumb.component';
     }
 
     .btn-back {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
+      /* Globale Styles aus styles.scss – hier nur page-header-spezifische Overrides */
       flex-shrink: 0;
     }
 
-    .back-icon {
-      font-size: 1.25rem;
-      line-height: 1;
-    }
-
     .back-text {
-      font-weight: 500;
-    }
-
-    .btn-icon {
-      font-size: 1rem;
+      font-weight: 600;
     }
 
     /* Responsive */
@@ -140,11 +128,6 @@ import { BreadcrumbComponent, BreadcrumbItem } from './breadcrumb.component';
       .page-title {
         font-size: 1.5rem;
       }
-
-      .btn-back {
-        width: 100%;
-        justify-content: center;
-      }
     }
 
     @media (max-width: 480px) {
@@ -154,10 +137,6 @@ import { BreadcrumbComponent, BreadcrumbItem } from './breadcrumb.component';
 
       .back-text {
         display: none;
-      }
-
-      .back-icon {
-        font-size: 1.5rem;
       }
     }
   `]

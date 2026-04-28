@@ -230,7 +230,45 @@ h1, h2, h3, h4, h5, h6 {
   border-color: var(--theme-accent);
 }
 
-.btn-back,
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  background: #fff;
+  color: #475569;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  padding: .5rem 1rem .5rem .75rem;
+  font-size: .875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s cubic-bezier(.4,0,.2,1);
+  white-space: nowrap;
+  text-decoration: none;
+
+  &::before {
+    content: '←';
+    font-size: 1rem;
+    transition: transform .2s;
+    display: inline-block;
+  }
+
+  &:hover:not(:disabled) {
+    background: #f5f3ff;
+    border-color: #667eea;
+    color: #667eea;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+    transform: translateX(-2px);
+
+    &::before { transform: translateX(-3px); }
+  }
+
+  &:active:not(:disabled) {
+    transform: translateX(0);
+    box-shadow: none;
+  }
+}
+
 .btn-cancel {
   background: var(--theme-surface);
   color: var(--theme-text);

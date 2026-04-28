@@ -221,20 +221,6 @@ import { toDate } from '@app/core/utils/date.utils';
       margin-bottom: 2rem;
     }
 
-    .back-button {
-      background: none;
-      border: none;
-      color: #007bff;
-      cursor: pointer;
-      font-size: 1rem;
-      margin-bottom: 1rem;
-      padding: 0.5rem 0;
-    }
-
-    .back-button:hover {
-      text-decoration: underline;
-    }
-
     .header-content h1 {
       font-size: 2rem;
       margin: 0 0 0.5rem;
@@ -1047,3 +1033,5 @@ export class StoreThemeComponent implements OnInit, OnDestroy {
     return names[template] || template;
   }
 }
+
+

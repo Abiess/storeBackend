@@ -225,19 +225,6 @@ import { BrandingEditorComponent } from './branding-editor.component';
       margin-bottom: 2rem;
     }
 
-    .back-button {
-      background: none;
-      border: none;
-      color: #007bff;
-      cursor: pointer;
-      font-size: 1rem;
-      margin-bottom: 1rem;
-      padding: 0.5rem 0;
-    }
-
-    .back-button:hover {
-      text-decoration: underline;
-    }
 
     h1 {
       font-size: 2rem;
