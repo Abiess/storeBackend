@@ -18,6 +18,9 @@ public class RegisterRequest {
     // Optional: Für Warenkorb-Migration von Gast zu User
     private String sessionId;
 
+    // Optional: Bevorzugte Sprache des Users (de/en/ar) – Default "en"
+    private String lang;
+
     // Explizite Getter für Lombok-Kompatibilität
     public String getEmail() {
         return email;
@@ -29,5 +32,9 @@ public class RegisterRequest {
 
     public String getSessionId() {
         return sessionId;
+    }
+
+    public String getLang() {
+        return lang;
     }
 }

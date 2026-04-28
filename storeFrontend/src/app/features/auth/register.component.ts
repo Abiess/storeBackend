@@ -12,6 +12,31 @@ import { TranslationService } from '../../core/services/translation.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterModule, TranslatePipe],
   template: `
+    <!-- ── Redirect-Toast (oben rechts, prominente Animation) ── -->
+    <div class="redirect-toast" *ngIf="redirectCountdown > 0" role="alert" aria-live="assertive">
+      <div class="toast-icon">🔔</div>
+      <div class="toast-body">
+        <div class="toast-title">E-Mail bereits registriert</div>
+        <div class="toast-msg">Weiterleitung zum Login in <strong>{{ redirectCountdown }}s</strong> …</div>
+        <div class="toast-bar-track">
+          <div class="toast-bar-fill" [style.width.%]="(3 - redirectCountdown) / 3 * 100"></div>
+        </div>
+      </div>
+      <div class="toast-ring">
+        <svg width="44" height="44" viewBox="0 0 44 44">
+          <circle cx="22" cy="22" r="19"
+                  fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="3"/>
+          <circle cx="22" cy="22" r="19"
+                  fill="none" stroke="#fff" stroke-width="3"
+                  stroke-linecap="round"
+                  [attr.stroke-dasharray]="119"
+                  [attr.stroke-dashoffset]="119 * (redirectCountdown / 3)"
+                  class="toast-svg-arc"/>
+        </svg>
+        <span class="toast-ring-num">{{ redirectCountdown }}</span>
+      </div>
+    </div>
+
     <div class="auth-container">
       <div class="auth-card">
         <h1>{{ 'auth.registerTitle' | translate }}</h1>
@@ -48,21 +73,6 @@ import { TranslationService } from '../../core/services/translation.service';
 
           <div *ngIf="errorMessage" class="alert alert-error">
             {{ errorMessage }}
-            <div *ngIf="redirectCountdown > 0" class="redirect-countdown">
-              <div class="countdown-circle">
-                <svg width="40" height="40">
-                  <circle cx="20" cy="20" r="18" 
-                          stroke="#667eea" 
-                          stroke-width="3" 
-                          fill="none"
-                          [attr.stroke-dasharray]="113"
-                          [attr.stroke-dashoffset]="113 - (113 * (3 - redirectCountdown) / 3)"
-                          class="countdown-svg"/>
-                </svg>
-                <span class="countdown-number">{{ redirectCountdown }}</span>
-              </div>
-              <span>Weiterleitung zum Login...</span>
-            </div>
           </div>
 
           <button type="submit" class="btn btn-primary" [disabled]="registerForm.invalid || loading">
@@ -153,45 +163,6 @@ import { TranslationService } from '../../core/services/translation.service';
       font-weight: 600;
     }
 
-    .redirect-countdown {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      margin-top: 15px;
-      padding-top: 15px;
-      border-top: 1px solid rgba(220, 53, 69, 0.2);
-      color: #666;
-      font-weight: 500;
-      animation: fadeIn 0.3s ease;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .countdown-circle {
-      position: relative;
-      width: 40px;
-      height: 40px;
-      flex-shrink: 0;
-    }
-
-    .countdown-svg {
-      transform: rotate(-90deg);
-      transition: stroke-dashoffset 1s linear;
-    }
-
-    .countdown-number {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 18px;
-      font-weight: 700;
-      color: #667eea;
-    }
-
     /* === Success Panel === */
     .success-panel {
       text-align: center;
@@ -246,8 +217,116 @@ import { TranslationService } from '../../core/services/translation.service';
       100% { transform: scale(1); }
     }
 
+    /* ──────────────────────────────────────────
+       REDIRECT TOAST (oben rechts, fixed)
+    ────────────────────────────────────────── */
+    :host {
+      display: contents;
+    }
+
+    .redirect-toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      padding: 14px 18px;
+      border-radius: 14px;
+      box-shadow: 0 8px 32px rgba(102,126,234,0.45), 0 2px 8px rgba(0,0,0,0.15);
+      min-width: 280px;
+      max-width: 360px;
+      animation: toastSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes toastSlideIn {
+      from { opacity: 0; transform: translateX(120%) scale(0.85); }
+      to   { opacity: 1; transform: translateX(0) scale(1); }
+    }
+
+    .toast-icon {
+      font-size: 1.6rem;
+      flex-shrink: 0;
+      animation: bellRing 0.6s ease 0.4s both;
+    }
+
+    @keyframes bellRing {
+      0%,100% { transform: rotate(0); }
+      20%      { transform: rotate(-20deg); }
+      40%      { transform: rotate(20deg); }
+      60%      { transform: rotate(-12deg); }
+      80%      { transform: rotate(8deg); }
+    }
+
+    .toast-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .toast-title {
+      font-size: 0.875rem;
+      font-weight: 700;
+      margin-bottom: 2px;
+      white-space: nowrap;
+    }
+
+    .toast-msg {
+      font-size: 0.8rem;
+      opacity: 0.9;
+      line-height: 1.3;
+      margin-bottom: 6px;
+    }
+
+    .toast-bar-track {
+      height: 3px;
+      background: rgba(255,255,255,0.25);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .toast-bar-fill {
+      height: 100%;
+      background: #fff;
+      border-radius: 2px;
+      transition: width 1s linear;
+    }
+
+    /* Ring-Timer */
+    .toast-ring {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      flex-shrink: 0;
+    }
+
+    .toast-svg-arc {
+      transform-origin: center;
+      transform: rotate(-90deg);
+      transition: stroke-dashoffset 1s linear;
+    }
+
+    .toast-ring-num {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      font-weight: 800;
+    }
+
     /* === Responsive === */
     @media (max-width: 480px) {
+      .redirect-toast {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        min-width: unset;
+        max-width: unset;
+      }
       .auth-card {
         padding: 24px 20px;
         border-radius: 10px;
@@ -310,7 +389,10 @@ export class RegisterComponent implements OnInit, OnDestroy {
       this.errorMessage = '';
       this.successMessage = '';
 
-      const formData = this.registerForm.value;
+      const formData = {
+        ...this.registerForm.value,
+        lang: this.translationService.currentLang() || 'en'
+      };
 
       this.authService.register(formData).subscribe({
         next: () => {

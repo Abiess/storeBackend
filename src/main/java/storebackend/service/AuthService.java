@@ -52,6 +52,11 @@ public class AuthService {
         // Set name from email if not provided
         user.setName(request.getEmail().split("@")[0]);
 
+        // Sprache setzen wenn mitgegeben (de/en/ar), sonst Default "en"
+        if (request.getLang() != null && request.getLang().matches("de|en|ar")) {
+            user.setPreferredLanguage(request.getLang());
+        }
+
         // Set default role
         Set<Role> roles = new HashSet<>();
         roles.add(Role.USER);

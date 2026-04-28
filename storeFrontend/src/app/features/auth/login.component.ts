@@ -22,6 +22,11 @@ import {LanguageSwitcherComponent} from "@app/core/i18n.exports";
         <h1>{{ 'auth.loginTitle' | translate }}</h1>
         <p class="subtitle">{{ 'auth.loginSubtitle' | translate }}</p>
 
+        <div *ngIf="autoFilled" class="autofill-banner" role="status">
+          <span>✅</span>
+          <span>E-Mail vorausgefüllt – bitte Passwort eingeben</span>
+        </div>
+
         <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
           <div class="form-group">
             <label for="email">{{ 'auth.email' | translate }}</label>
@@ -29,6 +34,7 @@ import {LanguageSwitcherComponent} from "@app/core/i18n.exports";
                 id="email"
                 type="email"
                 formControlName="email"
+                [class.autofilled]="autoFilled"
                 [placeholder]="'auth.emailPlaceholder' | translate"
             />
             <div *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched" class="error">
@@ -122,8 +128,40 @@ import {LanguageSwitcherComponent} from "@app/core/i18n.exports";
 
     .auth-footer a {
       color: #667eea;
-      font-weight: 600;
-      margin-left: 4px;
+    }
+
+    /* Auto-fill Highlight */
+    .autofill-banner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, rgba(102,126,234,0.09), rgba(118,75,162,0.07));
+      border: 1px solid rgba(102,126,234,0.3);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 13px;
+      color: #4a3f8a;
+      font-weight: 500;
+      margin-bottom: 14px;
+      animation: bannerSlide 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    }
+
+    @keyframes bannerSlide {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    input.autofilled {
+      border-color: #667eea !important;
+      background: rgba(102,126,234,0.04) !important;
+      box-shadow: 0 0 0 3px rgba(102,126,234,0.12);
+      animation: inputPop 0.5s ease;
+    }
+
+    @keyframes inputPop {
+      0%   { box-shadow: 0 0 0 0 rgba(102,126,234,0.4); }
+      50%  { box-shadow: 0 0 0 6px rgba(102,126,234,0.15); }
+      100% { box-shadow: 0 0 0 3px rgba(102,126,234,0.12); }
     }
 
     .language-switcher-wrapper {
@@ -139,6 +177,7 @@ export class LoginComponent implements OnInit {
   loading = false;
   errorMessage = '';
   returnUrl = '/dashboard';
+  autoFilled = false;
 
   constructor(
       private fb: FormBuilder,
@@ -159,11 +198,12 @@ export class LoginComponent implements OnInit {
 
     this.route.queryParams.subscribe(params => {
       // Auto-fill Email wenn von Register weitergeleitet
-      if (params['email'] && params['autoFill'] === 'true') {
-        this.loginForm.patchValue({
-          email: params['email']
-        });
-        // Fokus auf Passwort-Feld setzen
+        if (params['email'] && params['autoFill'] === 'true') {
+          this.loginForm.patchValue({
+            email: params['email']
+          });
+          this.autoFilled = true;
+          // Fokus auf Passwort-Feld setzen
         setTimeout(() => {
           const passwordInput = document.getElementById('password') as HTMLInputElement;
           if (passwordInput) {
