@@ -97,10 +97,28 @@ export class ImageUploadComponent implements OnInit, OnDestroy {
     const u = this.storageUsage;
     if (u.limit === -1 || u.limit === null) return '∞ verfügbar';
     const freeMb = (u.limit as number) - u.used;
-    if (freeMb < 0) return '0 MB frei';
-    return freeMb >= 1024
-      ? `${(freeMb / 1024).toFixed(1)} GB frei`
-      : `${freeMb} MB frei`;
+    if (freeMb <= 0) return '0 MB frei';
+    return `noch ${this.formatMb(freeMb)} frei`;
+  }
+
+  get storageUsedText(): string {
+    if (!this.storageUsage) return '';
+    return this.formatMb(this.storageUsage.used);
+  }
+
+  get storageLimitText(): string {
+    if (!this.storageUsage) return '';
+    const limit = this.storageUsage.limit;
+    if (limit === null || limit === -1) return '∞';
+    return this.formatMb(limit);
+  }
+
+  /** Gibt MB-Wert aus – rechnet nur in GB um wenn exakt teilbar durch 1024 */
+  private formatMb(mb: number): string {
+    if (mb >= 1024 && mb % 1024 === 0) {
+      return `${mb / 1024} GB`;
+    }
+    return `${mb} MB`;
   }
 
   constructor(

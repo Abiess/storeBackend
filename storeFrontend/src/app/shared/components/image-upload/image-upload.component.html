@@ -30,9 +30,12 @@
     <div class="storage-info">
       <span class="storage-icon">💾</span>
       <span class="storage-label">
-        <strong>{{ storageUsage.used }} MB</strong>
+        <strong>{{ storageUsedText }}</strong>
         <span *ngIf="storageUsage.limit !== null && storageUsage.limit !== -1">
-          &nbsp;von {{ storageUsage.limit }} MB belegt
+          &nbsp;von {{ storageLimitText }} belegt
+        </span>
+        <span *ngIf="storageUsage.limit === null || storageUsage.limit === -1">
+          &nbsp;belegt (unbegrenzt)
         </span>
       </span>
       <span class="storage-free" [class.warn]="storageWarn" [class.danger]="storageDanger">
