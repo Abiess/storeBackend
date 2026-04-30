@@ -357,3 +357,89 @@
   border-top: 1px solid #fcc;
   text-align: center;
 }
+
+/* ================================================
+   Storage-Indikator
+   ================================================ */
+.storage-indicator {
+  background: #f0f4ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.82rem;
+  transition: background 0.3s, border-color 0.3s;
+  animation: fadeInSlide 0.35s ease;
+}
+
+@keyframes fadeInSlide {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.storage-indicator.warn {
+  background: #fffbeb;
+  border-color: #fcd34d;
+}
+
+.storage-indicator.danger {
+  background: #fff1f2;
+  border-color: #fca5a5;
+  animation: pulse-danger 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse-danger {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+  50%       { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.18); }
+}
+
+.storage-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.storage-icon { font-size: 1rem; flex-shrink: 0; }
+
+.storage-label {
+  flex: 1;
+  color: #374151;
+  white-space: nowrap;
+}
+.storage-label strong { color: #111827; }
+
+.storage-free {
+  margin-inline-start: auto;
+  font-weight: 600;
+  color: #059669;
+  white-space: nowrap;
+}
+.storage-free.warn  { color: #d97706; }
+.storage-free.danger { color: #dc2626; }
+
+.storage-bar {
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.storage-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #059669);
+  border-radius: 999px;
+  transition: width 0.5s cubic-bezier(.4,0,.2,1);
+}
+.storage-bar-fill.warn   { background: linear-gradient(90deg, #f59e0b, #d97706); }
+.storage-bar-fill.danger { background: linear-gradient(90deg, #ef4444, #dc2626); }
+
+.storage-warning-msg {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #dc2626;
+}
+.storage-warning-msg.warn-msg { color: #b45309; }
+

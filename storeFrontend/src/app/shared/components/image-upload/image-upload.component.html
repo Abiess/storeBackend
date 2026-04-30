@@ -23,6 +23,37 @@
     <p class="upload-hint">PNG, JPG, WEBP · max. {{ maxSizeMb }}MB{{ multiple ? ' · Mehrere Dateien möglich' : '' }}</p>
   </div>
 
+  <!-- Storage-Indikator -->
+  <div class="storage-indicator" *ngIf="storageUsage"
+       [class.warn]="storageWarn && !storageDanger"
+       [class.danger]="storageDanger">
+    <div class="storage-info">
+      <span class="storage-icon">💾</span>
+      <span class="storage-label">
+        <strong>{{ storageUsage.used }} MB</strong>
+        <span *ngIf="storageUsage.limit !== null && storageUsage.limit !== -1">
+          &nbsp;von {{ storageUsage.limit }} MB belegt
+        </span>
+      </span>
+      <span class="storage-free" [class.warn]="storageWarn" [class.danger]="storageDanger">
+        {{ storageFreeText }}
+      </span>
+    </div>
+    <div class="storage-bar" *ngIf="storageUsage.limit !== null && storageUsage.limit !== -1">
+      <div class="storage-bar-fill"
+           [style.width.%]="storageUsage.percent ?? 0"
+           [class.warn]="storageWarn && !storageDanger"
+           [class.danger]="storageDanger">
+      </div>
+    </div>
+    <div class="storage-warning-msg" *ngIf="storageDanger">
+      ⛔ Speicher fast voll! Bitte Dateien löschen oder Plan upgraden.
+    </div>
+    <div class="storage-warning-msg warn-msg" *ngIf="storageWarn && !storageDanger">
+      ⚠️ Nur noch wenig Speicher verfügbar.
+    </div>
+  </div>
+
   <!-- Bildvorschau -->
   <div class="images-preview" *ngIf="images.length > 0">
     <!-- NEU: Selection Actions (nur im AI-Mode mit showSelection) -->

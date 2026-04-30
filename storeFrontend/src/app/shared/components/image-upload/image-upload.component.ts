@@ -9,6 +9,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { MediaService } from '@app/core/services/media.service';
 import { StoreContextService } from '@app/core/services/store-context.service';
+import { UsageService, UsageItem } from '@app/core/services/usage.service';
 import { Subscription } from 'rxjs';
 
 export interface UploadedImage {
@@ -78,20 +79,52 @@ export class ImageUploadComponent implements OnInit, OnDestroy {
   private storeId: number | null = null;
   private storeIdSubscription?: Subscription;
 
+  /** Storage-Usage aus dem Backend (wird beim Init geladen) */
+  storageUsage: UsageItem | null = null;
+
+  /** Gibt an ob der Storage fast voll ist (>= 80%) */
+  get storageWarn(): boolean {
+    return (this.storageUsage?.percent ?? 0) >= 80;
+  }
+  get storageDanger(): boolean {
+    return (this.storageUsage?.percent ?? 0) >= 95;
+  }
+  get storageUnlimited(): boolean {
+    return this.storageUsage?.limit === -1;
+  }
+  get storageFreeText(): string {
+    if (!this.storageUsage) return '';
+    const u = this.storageUsage;
+    if (u.limit === -1 || u.limit === null) return '∞ verfügbar';
+    const freeMb = (u.limit as number) - u.used;
+    if (freeMb < 0) return '0 MB frei';
+    return freeMb >= 1024
+      ? `${(freeMb / 1024).toFixed(1)} GB frei`
+      : `${freeMb} MB frei`;
+  }
+
   constructor(
     private mediaService: MediaService,
-    private storeContext: StoreContextService
+    private storeContext: StoreContextService,
+    private usageService: UsageService
   ) {}
 
   ngOnInit(): void {
-    // storeId aus Context abonnieren
     this.storeIdSubscription = this.storeContext.storeId$.subscribe(id => {
       this.storeId = id;
     });
+    this.loadStorageUsage();
   }
 
   ngOnDestroy(): void {
     this.storeIdSubscription?.unsubscribe();
+  }
+
+  loadStorageUsage(): void {
+    this.usageService.getMyUsage().subscribe({
+      next: stats => { this.storageUsage = stats.storageMb; },
+      error: () => { /* ignorieren – Widget ist optional */ }
+    });
   }
 
   // ── Drag & Drop ──────────────────────────────────────────────
@@ -194,6 +227,7 @@ export class ImageUploadComponent implements OnInit, OnDestroy {
         },
         complete: () => {
           this.uploading = false;
+          this.loadStorageUsage(); // Storage-Anzeige nach Upload aktualisieren
         },
       });
   }
