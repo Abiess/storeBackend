@@ -75,28 +75,81 @@ import { ProductReviewsComponent } from './product-reviews.component';
               </div>
             </div>
 
-            <!-- Varianten-Auswahl -->
+            <!-- Varianten-Auswahl – intelligente Option-Chips -->
             <div *ngIf="hasVariants()" class="variants-section">
-              <h3 class="section-title">Varianten</h3>
-              <div class="variant-options">
-                <button
-                  *ngFor="let variant of product?.variants"
-                  class="variant-btn"
-                  [class.active]="selectedVariant?.id === variant.id"
-                  [class.loading]="isLoadingVariant && loadingVariantId === variant.id"
-                  (click)="selectVariant(variant)">
-                  
-                  <!-- Loading-Spinner direkt im Button beim Klick -->
-                  <span *ngIf="isLoadingVariant && loadingVariantId === variant.id" class="btn-spinner-inline"></span>
-                  
-                  <span class="variant-name">{{ getVariantDisplayName(variant) }}</span>
-                  <span class="variant-price">
-                    {{ variant.price | number:'1.2-2' }} €
+
+              <!-- Kein Variant gewählt → Hinweis-Banner -->
+              <div *ngIf="!selectedVariant" class="variant-hint-banner">
+                <span class="hint-icon">👆</span>
+                <span>Bitte wählen Sie eine Kombination</span>
+              </div>
+
+              <!-- Ausgewählte Variante – Zusammenfassung -->
+              <div *ngIf="selectedVariant" class="selected-variant-summary">
+                <div class="summary-left">
+                  <span class="summary-label">Gewählt:</span>
+                  <span class="summary-value">{{ getVariantDisplayName(selectedVariant) }}</span>
+                </div>
+                <div class="summary-right">
+                  <span class="summary-price">{{ selectedVariant.price | number:'1.2-2' }} €</span>
+                  <span *ngIf="getStockBadge(selectedVariant) as badge"
+                        class="stock-badge"
+                        [ngClass]="getStockBadgeClass(selectedVariant)">
+                    {{ badge }}
                   </span>
-                  <span class="variant-stock" *ngIf="variant.stockQuantity > 0">
-                    ({{ variant.stockQuantity }} verfügbar)
+                </div>
+              </div>
+
+              <!-- Option-Gruppen als Chips -->
+              <div *ngFor="let group of getOptionGroups()" class="option-group">
+                <div class="option-group-header">
+                  <span class="option-group-name">{{ group.label }}</span>
+                  <span *ngIf="getSelectedValueForOption(group.key)" class="option-selected-label">
+                    — {{ getSelectedValueForOption(group.key) }}
                   </span>
-                </button>
+                </div>
+                <div class="option-chips">
+                  <button
+                    *ngFor="let value of group.values"
+                    class="option-chip"
+                    [class.chip-selected]="getSelectedValueForOption(group.key) === value"
+                    [class.chip-unavailable]="!isOptionCombinationAvailable(group.key, value)"
+                    [class.chip-has-color]="getColorHex(value) !== null"
+                    (click)="selectOptionValue(group.key, value)"
+                    [title]="value + (!isOptionCombinationAvailable(group.key, value) ? ' – ausverkauft' : '')">
+
+                    <!-- Farbfläche -->
+                    <span *ngIf="getColorHex(value) as hex"
+                          class="color-dot"
+                          [style.background-color]="hex"
+                          [style.border]="hex === '#fafafa' ? '1.5px solid #ccc' : 'none'">
+                    </span>
+
+                    <span class="chip-text">{{ value }}</span>
+
+                    <!-- Durchstrich-Overlay für ausverkauft -->
+                    <span *ngIf="!isOptionCombinationAvailable(group.key, value)"
+                          class="chip-cross-line"></span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Fallback: Wenn keine option-Gruppen erkannt → alte Chip-Liste -->
+              <div *ngIf="getOptionGroups().length === 0" class="option-group">
+                <div class="option-group-header">
+                  <span class="option-group-name">Variante wählen</span>
+                </div>
+                <div class="option-chips">
+                  <button
+                    *ngFor="let variant of product?.variants"
+                    class="option-chip"
+                    [class.chip-selected]="selectedVariant?.id === variant.id"
+                    [class.chip-unavailable]="variant.stockQuantity !== null && variant.stockQuantity !== undefined && variant.stockQuantity <= 0"
+                    (click)="selectVariant(variant)">
+                    <span class="chip-text">{{ getVariantDisplayName(variant) }}</span>
+                    <span class="chip-price">{{ variant.price | number:'1.2-2' }} €</span>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -124,7 +177,7 @@ import { ProductReviewsComponent } from './product-reviews.component';
               <button
                 class="btn btn-primary btn-add-to-cart"
                 (click)="addToCart()"
-                [disabled]="isAddingToCart || !isVariantAvailable()">
+                [disabled]="isAddingToCart || isAddToCartDisabled()">
                 <span class="btn-icon">🛒</span>
                 <span class="btn-text">
                   {{ getAddToCartLabel() }}
@@ -449,112 +502,235 @@ import { ProductReviewsComponent } from './product-reviews.component';
     .variants-section {
       padding: 1rem 0;
       border-top: 1px solid #e9ecef;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
     }
 
-    .variant-options {
+    /* Banner wenn nichts gewählt */
+    .variant-hint-banner {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1rem;
+      background: linear-gradient(135deg, #fff3cd, #fff8e1);
+      border: 1px solid #ffc107;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #856404;
+      animation: pulse-banner 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-banner {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.3); }
+      50%       { box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.15); }
+    }
+
+    .hint-icon { font-size: 1.1rem; }
+
+    /* Ausgewählte Variante – Zusammenfassung */
+    .selected-variant-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6rem 1rem;
+      background: linear-gradient(135deg, #f0f4ff, #e8ecff);
+      border: 1.5px solid #667eea;
+      border-radius: 10px;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .summary-left {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .summary-label {
+      font-size: 0.8rem;
+      color: #888;
+      font-weight: 500;
+    }
+
+    .summary-value {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #333;
+    }
+
+    .summary-right {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .summary-price {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #667eea;
+    }
+
+    /* Stock Badges */
+    .stock-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .badge-out {
+      background: #ffeef0;
+      color: #c62828;
+      border: 1px solid #ef9a9a;
+    }
+
+    .badge-low {
+      background: #fff3e0;
+      color: #e65100;
+      border: 1px solid #ffcc80;
+    }
+
+    .badge-limited {
+      background: #fffde7;
+      color: #f57f17;
+      border: 1px solid #fff176;
+    }
+
+    /* Option-Gruppe */
+    .option-group {
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
     }
 
-    .variant-btn {
+    .option-group-header {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      padding: 0.75rem 1rem;
-      background: #f8f9fa;
+      gap: 0.4rem;
+    }
+
+    .option-group-name {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .option-selected-label {
+      font-size: 0.85rem;
+      color: #667eea;
+      font-weight: 600;
+    }
+
+    /* Chips-Container */
+    .option-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    /* Einzelner Chip */
+    .option-chip {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.45rem 0.9rem;
       border: 2px solid #e9ecef;
-      border-radius: 8px;
+      border-radius: 24px;
+      background: #fff;
       cursor: pointer;
-      transition: all 0.3s;
-      font-size: 1rem;
-      gap: 0.75rem;
-      position: relative;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #444;
+      transition: all 0.2s ease;
+      overflow: hidden;
+      min-width: 2.5rem;
+      justify-content: center;
     }
 
-    .variant-btn:hover {
+    .option-chip:hover:not(.chip-unavailable) {
       border-color: #667eea;
+      color: #667eea;
       background: #f0f4ff;
-      transform: translateX(4px);
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(102, 126, 234, 0.2);
     }
 
-    .variant-btn.active {
+    .option-chip.chip-selected {
       border-color: #667eea;
-      background: #667eea;
+      background: linear-gradient(135deg, #667eea, #764ba2);
       color: white;
-      animation: pulse 0.4s ease;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.35);
+      transform: translateY(-1px);
     }
 
-    @keyframes pulse {
-      0%, 100% { 
-        transform: scale(1); 
-      }
-      50% { 
-        transform: scale(1.02); 
-      }
+    .option-chip.chip-unavailable {
+      opacity: 0.45;
+      cursor: not-allowed;
+      background: #f8f9fa;
+      color: #999;
     }
 
-    .variant-btn.loading {
-      opacity: 0.8;
-      pointer-events: none;
-      position: relative;
-      animation: pulse-btn 1s ease-in-out infinite;
+    .option-chip.chip-unavailable:hover {
+      transform: none;
+      box-shadow: none;
+      border-color: #e9ecef;
     }
 
-    @keyframes pulse-btn {
-      0%, 100% {
-        transform: scale(1);
-        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
-      }
-      50% {
-        transform: scale(1.02);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-      }
-    }
-
-    .btn-spinner {
+    /* Farb-Dot */
+    .color-dot {
       width: 16px;
       height: 16px;
-      border: 2px solid #f0f4ff;
-      border-top: 2px solid #667eea;
       border-radius: 50%;
-      animation: spin 0.6s linear infinite;
-      position: absolute;
-      right: 1rem;
-      top: 50%;
-      transform: translateY(-50%);
+      display: inline-block;
+      flex-shrink: 0;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
     }
 
-    .btn-spinner-inline {
-      width: 18px;
-      height: 18px;
-      border: 2px solid rgba(102, 126, 234, 0.3);
-      border-top: 2px solid #667eea;
-      border-radius: 50%;
-      animation: spin 0.6s linear infinite;
-      margin-right: 0.5rem;
+    .chip-selected .color-dot {
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,0.6);
     }
 
-    .variant-name {
-      font-weight: 600;
-      flex: 1;
+    /* Hat Farbe → etwas kompakter */
+    .option-chip.chip-has-color {
+      padding: 0.35rem 0.75rem;
     }
 
-    .variant-price {
+    /* Chip-Text */
+    .chip-text {
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    /* Preis-Badge im Chip (für Fallback-Ansicht) */
+    .chip-price {
+      font-size: 0.75rem;
       font-weight: 700;
-      white-space: nowrap;
+      opacity: 0.85;
+      margin-left: 0.2rem;
     }
 
-    .variant-stock {
-      font-size: 0.875rem;
-      color: #28a745;
-      font-weight: 500;
-      white-space: nowrap;
+    /* Durchstrich-Linie für ausverkauft */
+    .chip-cross-line {
+      position: absolute;
+      top: 50%;
+      left: 6%;
+      width: 88%;
+      height: 1.5px;
+      background: rgba(180, 0, 0, 0.45);
+      transform: rotate(-18deg);
+      pointer-events: none;
+      border-radius: 2px;
     }
 
-    .variant-btn.active .variant-stock {
-      color: rgba(255, 255, 255, 0.9);
-    }
+    /* Alte Stile entfernt: variant-options, variant-btn, variant-name, variant-price, variant-stock */
 
     .quantity-section {
       display: flex;
@@ -875,6 +1051,133 @@ export class ProductQuickViewComponent implements OnInit, OnChanges {
     return `Variante #${variant.id}`;
   }
 
+  // ============================================================
+  // OPTION-GRUPPEN & CHIP-AUSWAHL
+  // ============================================================
+
+  /** Extrahiert eindeutige Option-Gruppen aus allen Varianten. */
+  getOptionGroups(): Array<{ key: 'option1' | 'option2' | 'option3'; label: string; values: string[] }> {
+    if (!this.product?.variants || this.product.variants.length === 0) return [];
+    const groups: Array<{ key: 'option1' | 'option2' | 'option3'; label: string; values: string[] }> = [];
+
+    (['option1', 'option2', 'option3'] as const).forEach(key => {
+      const values = [
+        ...new Set(
+          this.product!.variants!
+            .map(v => v[key])
+            .filter((v): v is string => !!v && v.trim() !== '')
+        )
+      ];
+      if (values.length > 0) {
+        groups.push({ key, label: this.detectOptionLabel(values), values });
+      }
+    });
+    return groups;
+  }
+
+  /** Erkennt Label-Namen anhand der Werte (Farbe, Größe…). */
+  private detectOptionLabel(values: string[]): string {
+    const lower = values.map(v => v.toLowerCase());
+    const colorHints = ['rot','blau','grün','gruen','schwarz','weiss','weiß','grau','gelb','orange','pink','lila','braun','beige','gold','silber','red','blue','green','black','white','gray','grey','yellow','violet','navy','bordeaux','türkis','cyan','magenta','purple'];
+    const sizeHints  = ['xs','s','m','l','xl','xxl','xxxl','2xl','3xl','small','medium','large','klein','mittel','gross','groß','one size'];
+    if (lower.some(v => colorHints.includes(v))) return 'Farbe';
+    if (lower.some(v => sizeHints.includes(v)))  return 'Größe';
+    // Numerische Größen (Schuhe 36–50)
+    if (lower.every(v => /^\d{2}(\.\d)?$/.test(v))) return 'Größe';
+    return 'Option';
+  }
+
+  /** Gibt den aktuell gewählten Wert für eine Option zurück. */
+  getSelectedValueForOption(key: 'option1' | 'option2' | 'option3'): string | null {
+    return this.selectedVariant ? (this.selectedVariant[key] || null) : null;
+  }
+
+  /** Prüft ob eine Option-Kombination noch verfügbar ist. */
+  isOptionCombinationAvailable(key: 'option1' | 'option2' | 'option3', value: string): boolean {
+    if (!this.product?.variants) return false;
+    const otherSelections: Partial<Record<'option1' | 'option2' | 'option3', string>> = {};
+    (['option1', 'option2', 'option3'] as const).forEach(k => {
+      if (k !== key) {
+        const sel = this.getSelectedValueForOption(k);
+        if (sel) otherSelections[k] = sel;
+      }
+    });
+
+    return this.product.variants.some(v => {
+      if (v[key] !== value) return false;
+      for (const [k, sel] of Object.entries(otherSelections)) {
+        if (v[k as 'option1' | 'option2' | 'option3'] !== sel) return false;
+      }
+      // Verfügbar wenn kein Stock-Tracking oder Stock > 0
+      return v.stockQuantity === null || v.stockQuantity === undefined || v.stockQuantity > 0;
+    });
+  }
+
+  /** Wählt einen Wert für eine Option-Dimension und findet passende Variante. */
+  selectOptionValue(key: 'option1' | 'option2' | 'option3', value: string): void {
+    if (!this.product?.variants) return;
+
+    const desired: Partial<Record<'option1' | 'option2' | 'option3', string>> = {
+      option1: key === 'option1' ? value : (this.selectedVariant?.option1 || undefined),
+      option2: key === 'option2' ? value : (this.selectedVariant?.option2 || undefined),
+      option3: key === 'option3' ? value : (this.selectedVariant?.option3 || undefined),
+    };
+
+    // Exakte Übereinstimmung suchen
+    let found = this.product.variants.find(v =>
+      (!desired.option1 || v.option1 === desired.option1) &&
+      (!desired.option2 || v.option2 === desired.option2) &&
+      (!desired.option3 || v.option3 === desired.option3)
+    );
+    // Fallback: irgendeine Variante mit dem neuen Wert
+    if (!found) {
+      found = this.product.variants.find(v => v[key] === value);
+    }
+    if (found && found.id !== this.selectedVariant?.id) {
+      this.selectVariant(found);
+    }
+  }
+
+  /** Gibt Hex-Farbe für einen Farbwert zurück (für Farbfelder). */
+  getColorHex(value: string): string | null {
+    const map: Record<string, string> = {
+      rot:'#e53935', red:'#e53935',
+      blau:'#1e88e5', blue:'#1e88e5',
+      grün:'#43a047', gruen:'#43a047', green:'#43a047',
+      schwarz:'#212121', black:'#212121',
+      weiß:'#fafafa', weiss:'#fafafa', white:'#fafafa',
+      grau:'#9e9e9e', gray:'#9e9e9e', grey:'#9e9e9e',
+      gelb:'#fdd835', yellow:'#fdd835',
+      orange:'#fb8c00',
+      pink:'#e91e63',
+      lila:'#8e24aa', purple:'#8e24aa', violet:'#8e24aa',
+      braun:'#6d4c41', brown:'#6d4c41',
+      beige:'#f5f0e1',
+      gold:'#ffc107',
+      silber:'#b0bec5', silver:'#b0bec5',
+      türkis:'#00acc1', turquoise:'#00acc1', cyan:'#00acc1',
+      navy:'#1a237e',
+      bordeaux:'#880e4f', magenta:'#d81b60',
+    };
+    return map[value.toLowerCase()] ?? null;
+  }
+
+  /** Gibt Stock-Badge-Text zurück oder null wenn kein Badge nötig. */
+  getStockBadge(variant: ProductVariant | null): string | null {
+    if (!variant || variant.stockQuantity === null || variant.stockQuantity === undefined) return null;
+    if (variant.stockQuantity <= 0) return 'Ausverkauft';
+    if (variant.stockQuantity <= 3) return `Nur noch ${variant.stockQuantity}!`;
+    if (variant.stockQuantity <= 10) return 'Wenige übrig';
+    return null;
+  }
+
+  /** CSS-Klasse für den Stock-Badge. */
+  getStockBadgeClass(variant: ProductVariant | null): string {
+    if (!variant || !variant.stockQuantity || variant.stockQuantity <= 0) return 'badge-out';
+    if (variant.stockQuantity <= 3) return 'badge-low';
+    return 'badge-limited';
+  }
+
   selectVariant(variant: ProductVariant): void {
     if (this.selectedVariant?.id === variant.id) {
       return; // Bereits ausgewählt, nichts zu tun
@@ -936,20 +1239,51 @@ export class ProductQuickViewComponent implements OnInit, OnChanges {
   }
 
   /**
+   * Prüft ob der "In den Warenkorb" Button deaktiviert sein soll
+   */
+  isAddToCartDisabled(): boolean {
+    // Varianten vorhanden aber keine ausgewählt → deaktiviert (muss Variante wählen)
+    if (this.hasVariants() && !this.selectedVariant) {
+      return true;
+    }
+    // Explizit auf 0 gesetzter Stock → deaktiviert
+    if (this.hasVariants() && this.selectedVariant &&
+        this.selectedVariant.stockQuantity !== null &&
+        this.selectedVariant.stockQuantity !== undefined &&
+        this.selectedVariant.stockQuantity <= 0) {
+      return true;
+    }
+    if (!this.hasVariants() &&
+        this.product?.stock !== null &&
+        this.product?.stock !== undefined &&
+        this.product.stock <= 0) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
    * Prüft ob die ausgewählte Variante verfügbar ist (Lagerbestand > 0)
+   * Wenn kein Stock-Tracking konfiguriert (null/undefined) → verfügbar
    */
   isVariantAvailable(): boolean {
     // Wenn Varianten existieren, muss eine ausgewählt sein
     if (this.hasVariants()) {
       if (!this.selectedVariant) {
-        return false;
+        // Kein Variant ausgewählt → Button zeigt "Variante wählen" statt "Nicht verfügbar"
+        return true;
       }
-      // Prüfe Stock (stockQuantity ist das primäre Feld)
-      const stock = this.selectedVariant.stockQuantity ?? 0;
-      return stock > 0;
+      // Wenn stockQuantity nicht gesetzt (null/undefined) → verfügbar
+      if (this.selectedVariant.stockQuantity === null || this.selectedVariant.stockQuantity === undefined) {
+        return true;
+      }
+      return this.selectedVariant.stockQuantity > 0;
     }
-    // Wenn keine Varianten → Produkt-Lagerbestand prüfen
-    return (this.product?.stock ?? 0) > 0;
+    // Wenn keine Varianten: stock null/undefined → verfügbar (kein Tracking konfiguriert)
+    if (this.product?.stock === null || this.product?.stock === undefined) {
+      return true;
+    }
+    return this.product.stock > 0;
   }
 
   /**
@@ -959,7 +1293,22 @@ export class ProductQuickViewComponent implements OnInit, OnChanges {
     if (this.isAddingToCart) {
       return 'Wird hinzugefügt...';
     }
-    if (!this.isVariantAvailable()) {
+    // Varianten vorhanden aber keine ausgewählt
+    if (this.hasVariants() && !this.selectedVariant) {
+      return 'Variante wählen';
+    }
+    // Variante ausgewählt aber nicht auf Lager
+    if (this.hasVariants() && this.selectedVariant &&
+        this.selectedVariant.stockQuantity !== null &&
+        this.selectedVariant.stockQuantity !== undefined &&
+        this.selectedVariant.stockQuantity <= 0) {
+      return 'Nicht verfügbar';
+    }
+    // Kein Variant-Produkt aber stock explizit auf 0 gesetzt
+    if (!this.hasVariants() &&
+        this.product?.stock !== null &&
+        this.product?.stock !== undefined &&
+        this.product.stock <= 0) {
       return 'Nicht verfügbar';
     }
     return 'In den Warenkorb';
