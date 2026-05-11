@@ -88,12 +88,14 @@ public class CartService {
                 return cartItemRepository.save(item);
             }
         } else {
-            // Produkt-basierter Pfad (keine Variante)
+            // Produkt-basierter Pfad (keine Variante) → Default-Variante holen/erstellen
             Product product = productRepository.findById(productId)
                     .orElseThrow(() -> new RuntimeException("Product not found"));
 
-            Optional<CartItem> existingItem = cartItemRepository
-                    .findByCartIdAndProductIdAndVariantIsNull(cartId, productId);
+            // Default-Variante für dieses Produkt holen oder anlegen
+            ProductVariant defaultVariant = getOrCreateDefaultVariant(product);
+
+            Optional<CartItem> existingItem = cartItemRepository.findByCartIdAndVariantId(cartId, defaultVariant.getId());
             if (existingItem.isPresent()) {
                 CartItem item = existingItem.get();
                 item.setQuantity(item.getQuantity() + quantity);
@@ -102,12 +104,33 @@ public class CartService {
                 CartItem item = new CartItem();
                 item.setCart(cart);
                 item.setProduct(product);
-                item.setVariant(null);
+                item.setVariant(defaultVariant);
                 item.setQuantity(quantity);
-                item.setPriceSnapshot(product.getBasePrice());
+                item.setPriceSnapshot(product.getBasePrice() != null ? product.getBasePrice() : defaultVariant.getPrice());
                 return cartItemRepository.save(item);
             }
         }
+    }
+
+    /**
+     * Holt oder erstellt eine Default-Variante für ein Produkt ohne Varianten.
+     * Stellt sicher, dass variant_id NOT NULL niemals verletzt wird.
+     */
+    private ProductVariant getOrCreateDefaultVariant(Product product) {
+        String defaultSku = "DEFAULT-" + product.getId();
+        return productVariantRepository.findAll().stream()
+                .filter(v -> v.getProduct() != null && v.getProduct().getId().equals(product.getId()))
+                .filter(v -> defaultSku.equals(v.getSku()))
+                .findFirst()
+                .orElseGet(() -> {
+                    ProductVariant variant = new ProductVariant();
+                    variant.setProduct(product);
+                    variant.setSku(defaultSku);
+                    variant.setPrice(product.getBasePrice() != null ? product.getBasePrice() : java.math.BigDecimal.ZERO);
+                    variant.setStockQuantity(999);
+                    log.info("✅ Erstelle Default-Variante für Produkt {}", product.getId());
+                    return productVariantRepository.save(variant);
+                });
     }
 
     @Transactional

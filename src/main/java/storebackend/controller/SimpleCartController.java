@@ -410,9 +410,12 @@ public class SimpleCartController {
             Cart cart = findOrCreateCart(userId, storeId, sessionId);
             log.info("🛒 Using cart ID: {}", cart.getId());
 
-            // Für Produkte ohne Varianten: Suche nach existierendem Item mit gleicher productId und ohne Variante
+            // Default-Variante holen oder erstellen (variant_id darf nicht NULL sein in DB)
+            ProductVariant defaultVariant = getOrCreateDefaultVariant(product);
+
+            // Suche nach existierendem Item mit gleicher Variante
             Optional<CartItem> existingItem = cartItemRepository
-                    .findByCartIdAndProductIdAndVariantIsNull(cart.getId(), productId);
+                    .findByCartIdAndVariantId(cart.getId(), defaultVariant.getId());
 
             CartItem cartItem;
             if (existingItem.isPresent()) {
@@ -424,14 +427,13 @@ public class SimpleCartController {
                 log.info("✅ Updated existing cart item {} (quantity: {} -> {})",
                     cartItem.getId(), oldQuantity, cartItem.getQuantity());
             } else {
-                // Neues Item hinzufügen (ohne Variante für einfache Produkte)
+                // Neues Item hinzufügen
                 cartItem = new CartItem();
                 cartItem.setCart(cart);
                 cartItem.setProduct(product);
-                cartItem.setVariant(null); // Kein Variant für einfache Produkte
+                cartItem.setVariant(defaultVariant);
                 cartItem.setQuantity(quantity);
-                // FIXED: Schreibe Preis in price_snapshot Spalte (NOT NULL)
-                cartItem.setPriceSnapshot(product.getBasePrice());
+                cartItem.setPriceSnapshot(product.getBasePrice() != null ? product.getBasePrice() : defaultVariant.getPrice());
                 cartItemRepository.save(cartItem);
                 log.info("✅ Added new cart item {} to cart {}", cartItem.getId(), cart.getId());
             }

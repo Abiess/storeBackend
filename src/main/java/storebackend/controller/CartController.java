@@ -8,9 +8,9 @@ import storebackend.entity.*;
 import storebackend.repository.*;
 import storebackend.service.CartService;
 import storebackend.service.MinioService;
+import storebackend.security.JwtUtil;
 
 import java.math.BigDecimal;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +25,7 @@ public class CartController {
     private final UserRepository userRepository;
     private final MinioService minioService;
     private final ProductMediaRepository productMediaRepository;
+    private final JwtUtil jwtUtil;
 
     @GetMapping
     public ResponseEntity<Map<String, Object>> getCart(
@@ -282,25 +283,22 @@ public class CartController {
     }
 
     /**
-     * Extrahiert UserId aus JWT Token
+     * Extrahiert UserId aus JWT Token via JwtUtil (liest userId-Claim, nicht sub/email)
      */
     private Long extractUserIdFromToken(String token) {
         try {
-            // Parse JWT Token (Base64 decode des Payload)
-            String[] parts = token.split("\\.");
-            if (parts.length >= 2) {
-                String payload = new String(Base64.getDecoder().decode(parts[1]));
-                // Extrahiere userId aus JSON
-                // {"sub":"123","email":"user@test.de",...}
-                if (payload.contains("\"sub\":\"")) {
-                    String userIdStr = payload.split("\"sub\":\"")[1].split("\"")[0];
-                    return Long.parseLong(userIdStr);
-                }
+            Long userId = jwtUtil.extractUserId(token);
+            if (userId == null) {
+                // Fallback: userId über Email + UserRepository ermitteln
+                String email = jwtUtil.extractEmail(token);
+                return userRepository.findByEmail(email)
+                        .map(u -> u.getId())
+                        .orElseThrow(() -> new RuntimeException("User not found for email: " + email));
             }
+            return userId;
         } catch (Exception e) {
             throw new RuntimeException("Could not extract userId from token: " + e.getMessage());
         }
-        throw new RuntimeException("Invalid token format");
     }
 
     /**
