@@ -84,16 +84,9 @@ public class PublicOrderController {
             }
 
             // Validiere Phone Verification für Cash on Delivery
+            // DEAKTIVIERT: Telefonverifizierung wird vorerst nicht erzwungen
             if (paymentMethod == storebackend.enums.PaymentMethod.CASH_ON_DELIVERY) {
-                if (phoneVerificationId == null) {
-                    return ResponseEntity.badRequest().body(Map.of(
-                        "error", "Telefonnummer-Verifizierung ist erforderlich für Nachnahme",
-                        "requiresPhoneVerification", true
-                    ));
-                }
-
-                // Prüfe ob Verifizierung gültig ist (sollte im Service gemacht werden)
-                log.info("📱 Cash on Delivery order with phone verification: {}", phoneVerificationId);
+                log.info("📱 Cash on Delivery order - phone verification optional for now");
             }
 
             log.info("🛍️ Checkout - Mode: {}, storeId: {}, email: {}, payment: {}",
@@ -166,39 +159,35 @@ public class PublicOrderController {
             Map<String, String> billingAddress = (Map<String, String>) request.get("billingAddress");
             String notes = (String) request.get("notes");
 
-            // Extract delivery information (NEW)
-            storebackend.enums.DeliveryType deliveryType = null;
+            // Extract delivery information – default: PICKUP wenn nicht angegeben
+            storebackend.enums.DeliveryType deliveryType = storebackend.enums.DeliveryType.PICKUP;
             storebackend.enums.DeliveryMode deliveryMode = null;
 
-            if (request.containsKey("deliveryType")) {
-                String deliveryTypeStr = (String) request.get("deliveryType");
-                deliveryType = storebackend.enums.DeliveryType.valueOf(deliveryTypeStr);
+            if (request.containsKey("deliveryType") && request.get("deliveryType") != null) {
+                try {
+                    deliveryType = storebackend.enums.DeliveryType.valueOf((String) request.get("deliveryType"));
+                } catch (IllegalArgumentException e) {
+                    log.warn("Invalid deliveryType: {}, defaulting to PICKUP", request.get("deliveryType"));
+                }
             }
 
-            if (request.containsKey("deliveryMode")) {
-                String deliveryModeStr = (String) request.get("deliveryMode");
-                deliveryMode = deliveryModeStr != null ? storebackend.enums.DeliveryMode.valueOf(deliveryModeStr) : null;
+            if (request.containsKey("deliveryMode") && request.get("deliveryMode") != null) {
+                try {
+                    deliveryMode = storebackend.enums.DeliveryMode.valueOf((String) request.get("deliveryMode"));
+                } catch (IllegalArgumentException e) {
+                    log.warn("Invalid deliveryMode: {}", request.get("deliveryMode"));
+                }
             }
 
-            // Strict validation: deliveryType is required
-            if (deliveryType == null) {
-                return ResponseEntity.badRequest().body(Map.of(
-                    "error", "Delivery type is required"
-                ));
+            // Für PICKUP: deliveryMode muss null sein
+            if (deliveryType == storebackend.enums.DeliveryType.PICKUP) {
+                deliveryMode = null;
             }
 
-            // Strict validation: deliveryMode is required for DELIVERY type
+            // Für DELIVERY: deliveryMode erforderlich
             if (deliveryType == storebackend.enums.DeliveryType.DELIVERY && deliveryMode == null) {
-                return ResponseEntity.badRequest().body(Map.of(
-                    "error", "Delivery mode is required when delivery type is DELIVERY"
-                ));
-            }
-
-            // Strict validation: deliveryMode must be null for PICKUP type
-            if (deliveryType == storebackend.enums.DeliveryType.PICKUP && deliveryMode != null) {
-                return ResponseEntity.badRequest().body(Map.of(
-                    "error", "Delivery mode must be null for PICKUP"
-                ));
+                log.warn("DeliveryMode missing for DELIVERY type – defaulting to STANDARD");
+                deliveryMode = storebackend.enums.DeliveryMode.STANDARD;
             }
 
             log.info("📦 Delivery: type={}, mode={}", deliveryType, deliveryMode);

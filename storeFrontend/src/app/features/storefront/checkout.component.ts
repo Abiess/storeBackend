@@ -252,77 +252,17 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
             </section>
 
             <section class="form-section">
-              <h2>🚚 {{ 'checkout.shippingMethod' | translate }} {{ 'checkout.required' | translate }}</h2>
+              <h2>🚚 {{ 'checkout.shippingMethod' | translate }}</h2>
 
-              <div *ngIf="loadingDeliveryOptions" class="loading-delivery">
-                <div class="spinner"></div>
-                <p>Lade Lieferoptionen...</p>
-              </div>
-
-              <div *ngIf="deliveryOptionsError" class="error-delivery">
-                <p>{{ deliveryOptionsError }}</p>
-                <button type="button" class="btn-retry" (click)="loadDeliveryOptions()">Erneut versuchen</button>
-              </div>
-
-              <div *ngIf="!loadingDeliveryOptions && !deliveryOptions && !deliveryOptionsError" class="info-delivery">
-                <div class="info-icon">ℹ️</div>
-                <div>
-                  <strong>Bitte füllen Sie zuerst die Lieferadresse aus ↑</strong>
-                  <p>
-                    Geben Sie im Abschnitt <strong>"Lieferadresse"</strong> weiter oben Ihre
-                    <strong>Postleitzahl</strong>, <strong>Stadt</strong> und <strong>Land</strong> ein.
-                    Die verfügbaren Lieferoptionen werden dann hier automatisch angezeigt.
-                  </p>
-                  <button type="button" class="btn-scroll-to-address" (click)="scrollToAddress()">
-                    ↑ Zur Lieferadresse springen
-                  </button>
+              <!-- NUR ABHOLUNG – Versand deaktiviert -->
+              <div class="pickup-only-banner">
+                <div class="pickup-icon">🏪</div>
+                <div class="pickup-info">
+                  <strong>Abholung im Geschäft</strong>
+                  <p>Ihre Bestellung wird zur Abholung bereitgestellt. Wir informieren Sie per E-Mail, sobald sie fertig ist.</p>
+                  <small class="coming-soon">🚧 Versand-Optionen werden demnächst verfügbar sein</small>
                 </div>
-              </div>
-
-              <div *ngIf="deliveryOptions && !loadingDeliveryOptions" class="delivery-options">
-                <label
-                  *ngFor="let option of deliveryOptions.options"
-                  class="delivery-option"
-                  [class.selected]="isDeliveryOptionSelected(option)"
-                  [class.disabled]="!option.available"
-                >
-                  <input
-                    type="radio"
-                    name="deliveryOption"
-                    [value]="option"
-                    [disabled]="!option.available"
-                    [checked]="isDeliveryOptionSelected(option)"
-                    (change)="selectDeliveryOption(option)"
-                  />
-
-                  <div class="delivery-content">
-                    <div class="delivery-info">
-                      <strong>{{ getDeliveryOptionLabel(option) }}</strong>
-                      <small *ngIf="option.available && option.etaMinutes">
-                        {{ getDeliveryEta(option.etaMinutes) }}
-                      </small>
-                      <small *ngIf="option.available && option.zoneName" class="zone-name">
-                        Zone: {{ option.zoneName }}
-                      </small>
-                      <small *ngIf="!option.available" class="unavailable-reason">
-                        {{ option.reason }}
-                      </small>
-                    </div>
-
-                    <div class="delivery-price" [class.free]="option.fee === 0">
-                      <span *ngIf="option.available">
-                        {{ option.fee === 0 ? 'Kostenlos' : (option.fee | number:'1.2-2') + ' ' + (deliveryOptions.currency || '€') }}
-                      </span>
-                      <span *ngIf="!option.available" class="unavailable-text">
-                        Nicht verfügbar
-                      </span>
-                    </div>
-                  </div>
-                </label>
-              </div>
-
-              <div *ngIf="deliveryOptions && !selectedDeliveryOption" class="error">
-                Bitte wählen Sie eine Lieferoption
+                <div class="pickup-badge">✅ Kostenlos</div>
               </div>
             </section>
 
@@ -389,10 +329,11 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
                     <h3>{{ 'payment.phoneVerification' | translate }}</h3>
                     <p>{{ 'payment.phoneVerificationHint' | translate }}</p>
                   </div>
+                  <span class="coming-soon-badge">🚧 Demnächst</span>
                 </div>
 
-                <div *ngIf="!phoneVerificationSent" class="verification-step">
-                  <label>Telefonnummer (mit Ländervorwahl) *</label>
+                <div class="verification-step">
+                  <label>Telefonnummer (optional)</label>
 
                   <div class="phone-input-group">
                     <select
@@ -400,6 +341,7 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
                       [ngModelOptions]="{ standalone: true }"
                       class="country-select"
                       (change)="onCountryChange()"
+                      disabled
                     >
                       <option *ngFor="let country of countryCodes" [ngValue]="country">
                         {{ country.flag }} {{ country.name }} ({{ country.dialCode }})
@@ -412,79 +354,23 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
                       [ngModelOptions]="{ standalone: true }"
                       placeholder="1234567890"
                       class="phone-input"
-                      [disabled]="sendingCode"
+                      disabled
                     />
 
+                    <!-- DEAKTIVIERT: Telefonverifizierung noch nicht aktiv -->
                     <button
                       type="button"
                       class="btn-send-code"
-                      (click)="sendVerificationCode()"
-                      [disabled]="!phoneNumberLocal || sendingCode || codeSentRecently"
+                      disabled
+                      title="Telefonverifizierung wird demnächst aktiviert"
                     >
-                      {{ sendingCode ? '⏳ Wird gesendet...' : '📨 Code senden' }}
+                      📨 Code senden
                     </button>
                   </div>
 
-                  <small class="help-text">
-                    Sie erhalten einen 6-stelligen Code per WhatsApp oder SMS
+                  <small class="help-text coming-soon">
+                    🚧 Telefonverifizierung wird in Kürze aktiviert
                   </small>
-
-                  <div *ngIf="codeSentRecently" class="warning-text">
-                    ⏰ Bitte warten Sie {{ remainingSeconds }}s bevor Sie einen neuen Code anfordern
-                  </div>
-                </div>
-
-                <div *ngIf="phoneVerificationSent && !phoneVerified" class="verification-step">
-                  <div class="success-message">
-                    ✅ Code wurde per {{ verificationChannel === 'whatsapp' ? 'WhatsApp' : 'SMS' }} an {{ phoneNumber }} gesendet
-                  </div>
-
-                  <label>Verifizierungscode *</label>
-
-                  <div class="code-input-group">
-                    <input
-                      type="text"
-                      [(ngModel)]="verificationCode"
-                      [ngModelOptions]="{ standalone: true }"
-                      placeholder="123456"
-                      maxlength="6"
-                      class="code-input"
-                      [disabled]="verifyingCode"
-                      (input)="onCodeInput($event)"
-                    />
-                    <button
-                      type="button"
-                      class="btn-verify-code"
-                      (click)="verifyCode()"
-                      [disabled]="verificationCode.length !== 6 || verifyingCode"
-                    >
-                      {{ verifyingCode ? '⏳ Wird geprüft...' : '✓ Verifizieren' }}
-                    </button>
-                  </div>
-
-                  <div class="verification-info">
-                    <small>Code ist 10 Minuten gültig • Noch {{ remainingAttempts }} Versuche</small>
-                    <button
-                      type="button"
-                      class="btn-link-small"
-                      (click)="resendCode()"
-                      [disabled]="codeSentRecently"
-                    >
-                      Neuen Code anfordern
-                    </button>
-                  </div>
-
-                  <div *ngIf="verificationError" class="error-message">
-                    ❌ {{ verificationError }}
-                  </div>
-                </div>
-
-                <div *ngIf="phoneVerified" class="verification-success">
-                  <span class="success-icon">✅</span>
-                  <div>
-                    <strong>Telefonnummer erfolgreich verifiziert!</strong>
-                    <p>{{ phoneNumber }}</p>
-                  </div>
                 </div>
               </div>
 
@@ -559,13 +445,8 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
             </div>
 
             <div class="summary-row">
-              <span>{{ 'cart.shipping' | translate }}</span>
-              <span>
-                {{ (hasFreeShipping ? 0 : (selectedDeliveryOption?.fee || 0)) | number:'1.2-2' }} €
-                <small *ngIf="!hasFreeShipping && selectedDeliveryOption" class="shipping-method-label">
-                  ({{ getDeliveryOptionLabel(selectedDeliveryOption) }})
-                </small>
-              </span>
+              <span>🏪 Abholung</span>
+              <span class="free-shipping">Kostenlos</span>
             </div>
 
             <div class="summary-row tax">
@@ -899,6 +780,11 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
       font-weight: 700;
     }
 
+    .free-shipping {
+      color: #38a169;
+      font-weight: 600;
+    }
+
     .summary-row.tax {
       color: #64748b;
       font-size: 13px;
@@ -1018,6 +904,63 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
     .payment-icon {
       font-size: 28px;
       margin-right: 10px;
+    }
+
+    .pickup-only-banner {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 20px;
+      background: linear-gradient(135deg, #f0fff4, #e6fffa);
+      border: 2px solid #68d391;
+      border-radius: 12px;
+    }
+
+    .pickup-icon {
+      font-size: 40px;
+      flex-shrink: 0;
+    }
+
+    .pickup-info {
+      flex: 1;
+    }
+
+    .pickup-info strong {
+      display: block;
+      font-size: 16px;
+      color: #276749;
+      margin-bottom: 4px;
+    }
+
+    .pickup-info p {
+      color: #4a5568;
+      font-size: 14px;
+      margin: 0 0 4px 0;
+    }
+
+    .coming-soon {
+      color: #e67e22;
+      font-size: 12px;
+    }
+
+    .coming-soon-badge {
+      background: #fff3cd;
+      color: #856404;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .pickup-badge {
+      background: #38a169;
+      color: white;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 14px;
+      flex-shrink: 0;
     }
 
     .loading-delivery,
@@ -1618,19 +1561,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
             return;
         }
 
-        if (!this.selectedDeliveryOption) {
-            this.errorMessage = 'Bitte wählen Sie eine Lieferoption.';
-            return;
-        }
-
-        // Bug-Fix: COD erfordert verifizierte Telefonnummer
-        if (this.selectedPaymentMethod === 'CASH_ON_DELIVERY' && !this.phoneVerified) {
-            this.errorMessage = 'Bitte verifizieren Sie Ihre Telefonnummer für Nachnahme-Zahlung.';
-            // Scroll zur Phone-Verification
-            const phoneBox = document.querySelector('.phone-verification-box');
-            phoneBox?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            return;
-        }
+        // DEAKTIVIERT: Lieferoption und Telefonverifizierung vorerst nicht erforderlich
+        // selectedDeliveryOption und phoneVerified werden erst nach Aktivierung benötigt
 
         this.submitting = true;
         this.errorMessage = '';
@@ -1641,37 +1573,30 @@ export class CheckoutComponent implements OnInit, OnDestroy {
             ? this.checkoutForm.get('customerEmail')?.value
             : formValue.customerEmail;
 
-        const deliveryType = this.selectedDeliveryOption.deliveryType;
-        const deliveryMode = this.selectedDeliveryOption.deliveryMode;
-
         const request: any = {
             storeId: this.cart.storeId,
             customerEmail: customerEmail,
             shippingAddress: formValue.shippingAddress,
             billingAddress: this.sameAsShipping ? formValue.shippingAddress : formValue.billingAddress,
-            paymentMethod: this.selectedPaymentMethod
+            paymentMethod: this.selectedPaymentMethod,
+            // NUR ABHOLUNG – Versand deaktiviert
+            deliveryType: 'PICKUP',
+            deliveryMode: null
         };
 
         if (formValue.notes?.trim()) {
             request.notes = formValue.notes.trim();
         }
 
-        if (deliveryType) {
-            request.deliveryType = deliveryType;
+        // Session-ID für Guest-Checkout
+        const sessionId = localStorage.getItem('cartSessionId') || sessionStorage.getItem('cartSessionId');
+        if (sessionId && !this.isUserLoggedIn()) {
+            request.sessionId = sessionId;
         }
 
-        if (deliveryMode) {
-            request.deliveryMode = deliveryMode;
-        }
-
-        if (this.phoneVerificationId != null) {
-            request.phoneVerificationId = this.phoneVerificationId;
-        }
-
-        console.log('📦 Sende Checkout-Request:', {
+        console.log('📦 Sende Checkout-Request (Abholung):', {
             email: customerEmail,
-            deliveryType,
-            deliveryMode,
+            deliveryType: 'PICKUP',
             paymentMethod: this.selectedPaymentMethod
         });
 
@@ -1770,9 +1695,9 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     getFinalTotal(): number {
         if (!this.cart) return 0;
         const subtotal = this.cart.subtotal;
-        const deliveryFee = this.hasFreeShipping ? 0 : (this.selectedDeliveryOption?.fee || 0);
+        // NUR ABHOLUNG – kein Versandkostenzuschlag
+        const deliveryFee = 0;
         const discounted = Math.max(0, subtotal - this.discountAmount);
-        // Bug-Fix: Backend addiert 19% MwSt – Frontend muss dasselbe anzeigen
         const tax = discounted * 0.19;
         return discounted + tax + deliveryFee;
     }
