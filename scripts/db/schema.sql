@@ -228,6 +228,7 @@ CREATE TABLE IF NOT EXISTS products (
     sales_count BIGINT DEFAULT 0,
     average_rating DECIMAL(3, 2) DEFAULT 0.00,
     review_count INTEGER DEFAULT 0,
+    stock INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_products_store FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE,
@@ -1916,6 +1917,24 @@ COMMENT ON TABLE seo_settings IS 'Store-specific SEO metadata and configuration'
 COMMENT ON TABLE structured_data_templates IS 'JSON-LD schema.org templates with Mustache variables';
 COMMENT ON TABLE subscriptions IS 'User subscription/plan management with billing cycles';
 COMMENT ON COLUMN coupons.status IS 'Coupon status: ACTIVE, INACTIVE, EXPIRED, SCHEDULED';
+
+-- =====================
+-- V19: stock Spalte für Produkte (Lagerbestand für einfache Produkte ohne Varianten)
+-- =====================
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'products'
+          AND column_name = 'stock'
+    ) THEN
+        ALTER TABLE products ADD COLUMN stock INTEGER NOT NULL DEFAULT 0;
+        RAISE NOTICE '✅ V19: Added stock column to products';
+    ELSE
+        RAISE NOTICE 'stock already exists in products - skipping';
+    END IF;
+END $$;
 
 -- =====================
 -- V20: preferred_language für Users (Email-Templates)
