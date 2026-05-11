@@ -19,6 +19,10 @@
   flex-direction: column;
   height: 100%;
   overflow: hidden;
+  /* FIX: Muss über dem sidebar-overlay liegen (der z-index: 999 hat),
+     damit Nav-Items auf Mobile klickbar sind */
+  position: relative;
+  z-index: 1000;
 }
 
 /* ==================== Header ==================== */
@@ -240,8 +244,10 @@
   position: fixed;
   inset: 0;
   background: rgba(33, 43, 54, 0.45);
-  z-index: 999;
+  z-index: 0; /* Innerhalb der aside-Stacking-Context – UNTER sidebar-content */
   animation: fadeIn 0.2s ease;
+  /* Klicks auf Sidebar-Bereich durchlassen */
+  pointer-events: auto;
 }
 
 @keyframes fadeIn {
