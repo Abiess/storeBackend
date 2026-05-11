@@ -1,6 +1,7 @@
 package storebackend.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -23,5 +24,14 @@ public interface StoreSliderImageRepository extends JpaRepository<StoreSliderIma
     long countByStoreIdAndImageType(Long storeId, SliderImageType imageType);
 
     void deleteByStoreId(Long storeId);
+
+    /**
+     * Direkte JPQL-DELETE-Query – umgeht Hibernate-dirty-checking.
+     * Verhindert den chk_media_consistency-Constraint-Fehler beim Löschen
+     * von OWNER_UPLOAD-Slider-Bildern, da kein UPDATE auf media_id=NULL gemacht wird.
+     */
+    @Modifying
+    @Query("DELETE FROM StoreSliderImage si WHERE si.id = :id")
+    void deleteDirectById(@Param("id") Long id);
 }
 

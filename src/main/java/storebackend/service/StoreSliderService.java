@@ -252,15 +252,28 @@ public class StoreSliderService {
         StoreSliderImage image = imageRepository.findById(imageId)
                 .orElseThrow(() -> new RuntimeException("Slider image not found: " + imageId));
 
+        // Merke Media-ID und Store VOR dem Löschen
+        Long mediaId = null;
+        Store store = image.getStore();
         if (image.getImageType() == SliderImageType.OWNER_UPLOAD && image.getMedia() != null) {
-            try {
-                mediaService.deleteMedia(image.getMedia().getId(), image.getStore());
-            } catch (Exception e) {
-                log.error("Failed to delete media {}: {}", image.getMedia().getId(), e.getMessage());
-            }
+            mediaId = image.getMedia().getId();
         }
 
-        imageRepository.delete(image);
+        // SCHRITT 1: Slider-Image ZUERST direkt per JPQL löschen.
+        // Verhindert, dass Hibernate ein UPDATE mit media_id=NULL flusht,
+        // welches den Constraint chk_media_consistency verletzen würde.
+        imageRepository.deleteDirectById(imageId);
+        imageRepository.flush(); // sofort in DB schreiben
+
+        // SCHRITT 2: Erst DANACH das Media-Objekt löschen (MinIO + DB-Record).
+        // Die FK-Referenz existiert jetzt nicht mehr → kein Constraint-Problem.
+        if (mediaId != null) {
+            try {
+                mediaService.deleteMedia(mediaId, store);
+            } catch (Exception e) {
+                log.error("Failed to delete media {}: {}", mediaId, e.getMessage());
+            }
+        }
     }
 
     private StoreSliderSettingsDTO mapSettingsToDTO(StoreSliderSettings settings) {
