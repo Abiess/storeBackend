@@ -16,6 +16,8 @@ public class CreateProductRequest {
     @NotBlank
     private String title;
 
+    private String sku;
+
     private String description;
 
     @NotNull

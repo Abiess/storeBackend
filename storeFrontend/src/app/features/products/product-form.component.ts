@@ -1715,8 +1715,10 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     // Stelle sicher, dass alle erforderlichen Felder vorhanden sind
     const updateData = {
       title: formData.title,
+      sku: formData.sku || null,
       description: formData.description,
       basePrice: formData.basePrice,
+      stock: formData.stock ?? 0,
       status: formData.status || 'DRAFT',
       categoryId: formData.categoryId || null,
       storeId: this.storeId

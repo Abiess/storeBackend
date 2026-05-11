@@ -81,6 +81,7 @@ public class ProductService {
         Product product = new Product();
         product.setStore(store);
         product.setTitle(request.getTitle());
+        product.setSku(request.getSku());
         product.setDescription(request.getDescription());
         product.setBasePrice(request.getBasePrice());
         product.setStock(request.getStock() != null ? request.getStock() : 0);
@@ -116,6 +117,7 @@ public class ProductService {
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
     product.setTitle(request.getTitle());
+    product.setSku(request.getSku());
     product.setDescription(request.getDescription());
     product.setBasePrice(request.getBasePrice());
     product.setStock(request.getStock() != null ? request.getStock() : 0);
