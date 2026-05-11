@@ -972,25 +972,42 @@ export class StorefrontProductDetailComponent implements OnInit {
   /**
    * Baut galleryImages[] einmalig auf und cached es.
    * Nur aufrufen wenn Produkt/Variante sich ändert – NICHT bei jedem CD-Zyklus.
+   *
+   * Strategie: Immer ALLE Produktbilder anzeigen (für Blättern),
+   * Varianten-Bild als erstes Element, Produktbilder dahinter.
    */
   rebuildGallery(): void {
-    // Fall 1: Variante hat eigene Bilder (string[])
-    if (this.selectedVariant?.images && this.selectedVariant.images.length > 0) {
-      this.galleryImages = (this.selectedVariant.images as string[]).map((url: string) => ({
-        url,
-        alt: this.selectedVariant?.sku || this.product?.title || ''
-      }));
-      return;
+    const productMedia: any[] = this.product?.media || [];
+    const result: { url: string; alt: string }[] = [];
+    const addedUrls = new Set<string>();
+
+    // Varianten-Bild (falls vorhanden) zuerst einfügen
+    const variantImageUrl: string | null =
+      (this.selectedVariant?.images && this.selectedVariant.images.length > 0)
+        ? this.selectedVariant.images[0]
+        : this.selectedVariant?.imageUrl || null;
+
+    if (variantImageUrl) {
+      result.push({ url: variantImageUrl, alt: this.selectedVariant?.sku || this.product?.title || '' });
+      addedUrls.add(variantImageUrl);
     }
-    // Fall 2: Produkt-Media-Array ({url, alt}[])
-    const media: any[] = this.product?.media || [];
-    if (media.length > 0) {
-      this.galleryImages = media.map((m: any) => ({ url: m.url, alt: m.alt || this.product?.title || '' }));
-      return;
+
+    // Alle Produktbilder hinzufügen (Duplikate vermeiden)
+    if (productMedia.length > 0) {
+      productMedia.forEach((m: any) => {
+        if (m.url && !addedUrls.has(m.url)) {
+          result.push({ url: m.url, alt: m.alt || this.product?.title || '' });
+          addedUrls.add(m.url);
+        }
+      });
     }
-    // Fall 3: Nur primaryImageUrl
-    const primary = this.product?.primaryImageUrl;
-    this.galleryImages = primary ? [{ url: primary, alt: this.product?.title || '' }] : [];
+
+    // Fallback: nur primaryImageUrl
+    if (result.length === 0 && this.product?.primaryImageUrl) {
+      result.push({ url: this.product.primaryImageUrl, alt: this.product?.title || '' });
+    }
+
+    this.galleryImages = result;
   }
 
   /** trackBy für *ngFor – verhindert DOM-Neuaufbau bei CD */

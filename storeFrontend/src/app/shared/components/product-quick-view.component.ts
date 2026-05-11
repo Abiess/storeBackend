@@ -973,35 +973,34 @@ export class ProductQuickViewComponent implements OnInit, OnChanges {
 
   getProductImages(): string[] {
     const images: string[] = [];
+    const addedUrls = new Set<string>();
 
-    // FIXED: Zeige Varianten-Bilder wenn Variante ausgewählt ist
-    if (this.selectedVariant) {
-      // Varianten-Bilder (mehrere)
-      if (this.selectedVariant.images && this.selectedVariant.images.length > 0) {
-        images.push(...this.selectedVariant.images);
-      } 
-      // Varianten-Haupt-Bild (einzelnes)
-      else if (this.selectedVariant.imageUrl) {
-        images.push(this.selectedVariant.imageUrl);
-      }
+    // Varianten-Bild zuerst (als primäres Bild), dann alle Produktbilder
+    const variantImageUrl: string | null =
+      (this.selectedVariant?.images && this.selectedVariant.images.length > 0)
+        ? this.selectedVariant.images[0]
+        : (this.selectedVariant?.imageUrl || null);
+
+    if (variantImageUrl) {
+      images.push(variantImageUrl);
+      addedUrls.add(variantImageUrl);
     }
 
-    // Fallback: Produkt-Bilder wenn keine Variante oder keine Varianten-Bilder
-    if (images.length === 0) {
-      if (this.product?.primaryImageUrl) {
-        images.push(this.product.primaryImageUrl);
-      }
-
-      if (this.product?.media && this.product.media.length > 0) {
-        this.product.media.forEach((media: any) => {
-          if (media.url && media.url !== this.product?.primaryImageUrl) {
-            images.push(media.url);
-          }
-        });
-      }
+    // Immer alle Produktbilder hinzufügen (für Blättern), Duplikate vermeiden
+    if (this.product?.media && this.product.media.length > 0) {
+      this.product.media.forEach((media: any) => {
+        if (media.url && !addedUrls.has(media.url)) {
+          images.push(media.url);
+          addedUrls.add(media.url);
+        }
+      });
     }
 
-    // Wichtig: Immer ein neues Array zurückgeben für Change Detection
+    // Fallback: nur primaryImageUrl
+    if (images.length === 0 && this.product?.primaryImageUrl) {
+      images.push(this.product.primaryImageUrl);
+    }
+
     return [...images];
   }
 
@@ -1015,8 +1014,9 @@ export class ProductQuickViewComponent implements OnInit, OnChanges {
         return this.selectedVariant.images[0];
       }
     }
-    // Fallback: Produkt Primary Image
-    return this.product?.primaryImageUrl;
+    // Fallback: Primary-Bild des ersten Media-Eintrags oder primaryImageUrl
+    const primaryMedia = this.product?.media?.find((m: any) => m.isPrimary);
+    return primaryMedia?.url || this.product?.primaryImageUrl;
   }
 
   hasVariants(): boolean {
