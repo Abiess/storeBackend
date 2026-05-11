@@ -61,6 +61,8 @@ export class StorefrontLandingComponent implements OnInit {
 
   // ✅ Logo aus Store oder Theme
   storeLogo: string | null = null;
+  /** true nachdem Theme-Antwort empfangen – verhindert dass loadStoreLogo() das Logo überschreibt */
+  private themeLoaded = false;
 
   constructor(
     private subdomainService: SubdomainService,
@@ -133,32 +135,44 @@ export class StorefrontLandingComponent implements OnInit {
     
     this.themeService.getActiveTheme(this.storeId).subscribe({
       next: (theme) => {
+        this.themeLoaded = true; // ← Theme-Antwort empfangen (auch wenn null)
         if (theme) {
           console.log('🎨 Theme angewendet:', theme.name);
           this.themeService.applyTheme(theme);
-          // ✅ Logo aus Theme extrahieren (höchste Priorität)
-          if (theme.logoUrl) {
-            this.storeLogo = theme.logoUrl;
-            console.log('✅ Logo aus Theme geladen:', theme.logoUrl);
+          // ✅ Immer explizit setzen – auch null (= Logo wurde entfernt).
+          // Verhindert, dass loadStoreLogo() ein altes store.logoUrl überschreibt.
+          this.storeLogo = theme.logoUrl ?? null;
+          if (this.storeLogo) {
+            console.log('✅ Logo aus Theme geladen:', this.storeLogo);
+          } else {
+            console.log('ℹ️ Theme hat kein Logo – Store zeigt kein Logo');
           }
         } else {
           console.log('🎨 Kein Theme gefunden, verwende Standard-Theme');
+          // Kein Theme → loadStoreLogo() darf store.logoUrl als Fallback verwenden
         }
       },
       error: (error) => {
+        this.themeLoaded = true; // auch bei Fehler als "fertig" markieren
         console.warn('⚠️ Theme konnte nicht geladen werden (nicht kritisch):', error);
       }
     });
   }
 
-  /** Lädt das Store-Logo direkt via Public-API (Fallback wenn kein Theme-Logo vorhanden) */
+  /** Lädt das Store-Logo direkt via Public-API.
+   *  Nur als FALLBACK, wenn kein aktives Theme vorhanden ist.
+   *  Überschreibt NICHT wenn Theme bereits geladen und Logo explizit null gesetzt hat. */
   loadStoreLogo(): void {
     const host = window.location.hostname;
     this.publicApiService.resolveStore(host).subscribe({
       next: (store) => {
-        if (store.logoUrl && !this.storeLogo) {
+        // Nur setzen wenn:
+        // 1. Theme noch nicht geladen ODER kein Theme vorhanden (themeLoaded = false → kein Theme)
+        // 2. storeLogo noch null
+        // Verhindert, dass ein altes store.logoUrl das explizit entfernte Theme-Logo überschreibt
+        if (!this.themeLoaded && store.logoUrl && !this.storeLogo) {
           this.storeLogo = store.logoUrl;
-          console.log('✅ Logo aus Store (Public-API) geladen:', store.logoUrl);
+          console.log('✅ Logo aus Store (Public-API, Fallback) geladen:', store.logoUrl);
         }
       },
       error: () => {

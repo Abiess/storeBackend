@@ -79,10 +79,18 @@ public class ThemeService {
         theme.setIsActive(true);
 
         StoreTheme savedTheme = themeRepository.save(theme);
-        log.info("✅ Saved theme {} for store {} ({})", 
-                 savedTheme.getId(), 
-                 store.getId(), 
-                 existingThemes.isEmpty() ? "created" : "updated");
+
+        // ✅ FIX: store.logoUrl immer mit theme.logoUrl synchronisieren.
+        // Wenn der User das Logo entfernt (null), muss auch store.logoUrl gecleart werden,
+        // damit die öffentliche Storefront-API kein veraltetes Logo zurückliefert.
+        store.setLogoUrl(request.getLogoUrl());
+        storeRepository.save(store);
+
+        log.info("✅ Saved theme {} for store {} ({}, logoUrl={})",
+                 savedTheme.getId(),
+                 store.getId(),
+                 existingThemes.isEmpty() ? "created" : "updated",
+                 request.getLogoUrl() != null ? "set" : "cleared");
 
         return convertToDTO(savedTheme);
     }
