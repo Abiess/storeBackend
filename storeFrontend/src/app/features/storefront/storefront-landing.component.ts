@@ -7,6 +7,7 @@ import { CategoryService } from '@app/core/services/category.service';
 import { CartService } from '@app/core/services/cart.service';
 import { ThemeService } from '@app/core/services/theme.service';
 import { SliderService, SliderImage } from '@app/core/services/slider.service';
+import { PublicApiService } from '@app/core/services/public-api.service';
 import { Product, Category } from '@app/core/models';
 import { StorefrontHeaderComponent } from './storefront-header.component';
 import { ProductCardComponent } from './product-card.component';
@@ -58,6 +59,9 @@ export class StorefrontLandingComponent implements OnInit {
   // ✨ NEUE: Slider State
   sliderImages: SliderImage[] = [];
 
+  // ✅ Logo aus Store oder Theme
+  storeLogo: string | null = null;
+
   constructor(
     private subdomainService: SubdomainService,
     private productService: ProductService,
@@ -65,6 +69,7 @@ export class StorefrontLandingComponent implements OnInit {
     private cartService: CartService,
     private themeService: ThemeService,
     private sliderService: SliderService,
+    private publicApiService: PublicApiService,
     public router: Router  // public statt private für Template-Zugriff
   ) {}
 
@@ -98,6 +103,7 @@ export class StorefrontLandingComponent implements OnInit {
 
           // FIXED: Lade Theme, Produkte und Kategorien
           this.loadTheme();
+          this.loadStoreLogo();
           this.loadStoreData();
 
           // FIXED: loadCartCount() wird ERST nach resolveStore() aufgerufen
@@ -130,12 +136,33 @@ export class StorefrontLandingComponent implements OnInit {
         if (theme) {
           console.log('🎨 Theme angewendet:', theme.name);
           this.themeService.applyTheme(theme);
+          // ✅ Logo aus Theme extrahieren (höchste Priorität)
+          if (theme.logoUrl) {
+            this.storeLogo = theme.logoUrl;
+            console.log('✅ Logo aus Theme geladen:', theme.logoUrl);
+          }
         } else {
           console.log('🎨 Kein Theme gefunden, verwende Standard-Theme');
         }
       },
       error: (error) => {
         console.warn('⚠️ Theme konnte nicht geladen werden (nicht kritisch):', error);
+      }
+    });
+  }
+
+  /** Lädt das Store-Logo direkt via Public-API (Fallback wenn kein Theme-Logo vorhanden) */
+  loadStoreLogo(): void {
+    const host = window.location.hostname;
+    this.publicApiService.resolveStore(host).subscribe({
+      next: (store) => {
+        if (store.logoUrl && !this.storeLogo) {
+          this.storeLogo = store.logoUrl;
+          console.log('✅ Logo aus Store (Public-API) geladen:', store.logoUrl);
+        }
+      },
+      error: () => {
+        // Nicht kritisch – Store-Name ist bereits bekannt
       }
     });
   }
