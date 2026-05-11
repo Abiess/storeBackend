@@ -274,6 +274,17 @@ public class ProductVariantService {
             variant.setPrice(request.getBasePrice());
             variant.setStockQuantity(request.getBaseStock() != null ? request.getBaseStock() : 0);
 
+            // Setze option1/option2/option3 aus der Kombination (wichtig für Frontend-Anzeige)
+            List<String> optionNames = request.getOptions().stream()
+                    .map(storebackend.dto.ProductOptionDTO::getName)
+                    .toList();
+            List<String> optionValues = optionNames.stream()
+                    .map(combination::get)
+                    .toList();
+            if (optionValues.size() > 0) variant.setOption1(optionValues.get(0));
+            if (optionValues.size() > 1) variant.setOption2(optionValues.get(1));
+            if (optionValues.size() > 2) variant.setOption3(optionValues.get(2));
+
             // Speichere Attribute als JSON
             try {
                 String json = objectMapper.writeValueAsString(combination);
