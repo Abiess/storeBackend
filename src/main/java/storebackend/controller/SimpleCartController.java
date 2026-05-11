@@ -430,7 +430,8 @@ public class SimpleCartController {
                 cartItem.setProduct(product);
                 cartItem.setVariant(null); // Kein Variant für einfache Produkte
                 cartItem.setQuantity(quantity);
-                cartItem.setPrice(product.getBasePrice()); // FIXED: Verwende setPrice() statt setPriceSnapshot()
+                // FIXED: Schreibe Preis in price_snapshot Spalte (NOT NULL)
+                cartItem.setPriceSnapshot(product.getBasePrice());
                 cartItemRepository.save(cartItem);
                 log.info("✅ Added new cart item {} to cart {}", cartItem.getId(), cart.getId());
             }

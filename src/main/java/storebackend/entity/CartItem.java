@@ -33,12 +33,11 @@ public class CartItem {
     @Column(nullable = false)
     private Integer quantity = 1;
 
-    // FIXED: Map to 'price' column in database (not 'price_snapshot')
-    @Column(name = "price", nullable = false, precision = 10, scale = 2)
+    // Map to 'price_snapshot' column (canonical price column in DB, NOT NULL)
+    @Column(name = "price_snapshot", nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
-    // Keep price_snapshot as alias for compatibility
-    @Transient
+    // Alias-Methode für Kompatibilität mit bestehenden Aufrufen
     public BigDecimal getPriceSnapshot() {
         return price;
     }
