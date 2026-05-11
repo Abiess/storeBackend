@@ -61,13 +61,21 @@ public class CartController {
     }
 
     @PostMapping("/items")
-    public ResponseEntity<CartItem> addItemToCart(
+    public ResponseEntity<?> addItemToCart(
             @RequestBody Map<String, Object> request,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
-        Long storeId = Long.valueOf(request.get("storeId").toString());
-        Long variantId = Long.valueOf(request.get("variantId").toString());
-        Integer quantity = Integer.valueOf(request.get("quantity").toString());
+        Object storeIdRaw = request.get("storeId");
+        Object variantIdRaw = request.get("variantId");
+        Object quantityRaw = request.get("quantity");
+
+        if (storeIdRaw == null) return ResponseEntity.badRequest().body(Map.of("error", "storeId is required"));
+        if (variantIdRaw == null) return ResponseEntity.badRequest().body(Map.of("error", "variantId is required"));
+        if (quantityRaw == null) return ResponseEntity.badRequest().body(Map.of("error", "quantity is required"));
+
+        Long storeId = Long.valueOf(storeIdRaw.toString());
+        Long variantId = Long.valueOf(variantIdRaw.toString());
+        Integer quantity = Integer.valueOf(quantityRaw.toString());
 
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
@@ -98,11 +106,13 @@ public class CartController {
     }
 
     @PutMapping("/items/{itemId}")
-    public ResponseEntity<CartItem> updateCartItem(
+    public ResponseEntity<?> updateCartItem(
             @PathVariable Long itemId,
             @RequestBody Map<String, Object> request) {
 
-        Integer quantity = Integer.valueOf(request.get("quantity").toString());
+        Object quantityRaw = request.get("quantity");
+        if (quantityRaw == null) return ResponseEntity.badRequest().body(Map.of("error", "quantity is required"));
+        Integer quantity = Integer.valueOf(quantityRaw.toString());
         CartItem updated = cartService.updateCartItemQuantity(itemId, quantity);
 
         return ResponseEntity.ok(updated);

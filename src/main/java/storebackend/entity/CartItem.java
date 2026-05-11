@@ -46,36 +46,42 @@ public class CartItem {
         this.price = priceSnapshot;
     }
 
-    @Column(name = "added_at", nullable = false, updatable = false)
+    @Column(name = "added_at", updatable = false)
     private LocalDateTime addedAt;
 
-    // Keep created_at and updated_at for compatibility
-    @Transient
-    public LocalDateTime getCreatedAt() {
-        return addedAt;
-    }
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
-    public void setCreatedAt(LocalDateTime addedAt) {
-        this.addedAt = addedAt;
-    }
-
-    @Transient
-    public LocalDateTime getUpdatedAt() {
-        return addedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime addedAt) {
-        // Ignore updates for this field
-    }
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
 
     @PrePersist
     protected void onCreate() {
-        addedAt = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
+        if (addedAt == null) addedAt = now;
+        if (createdAt == null) createdAt = now;
+        if (updatedAt == null) updatedAt = now;
     }
 
     @PreUpdate
     protected void onUpdate() {
-        // No update timestamp needed
+        updatedAt = LocalDateTime.now();
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 
     // Explizite Getter/Setter für Lombok-Kompatibilität
