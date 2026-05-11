@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import storebackend.entity.*;
 import storebackend.repository.CartItemRepository;
 import storebackend.repository.CartRepository;
+import storebackend.repository.ProductRepository;
 import storebackend.repository.ProductVariantRepository;
 
 import java.time.LocalDateTime;
@@ -21,6 +22,7 @@ public class CartService {
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
     private final ProductVariantRepository productVariantRepository;
+    private final ProductRepository productRepository;
 
     @Transactional
     public Cart getOrCreateCart(String sessionId, User user, Store store) {
@@ -58,29 +60,53 @@ public class CartService {
 
     @Transactional
     public CartItem addItemToCart(Long cartId, Long variantId, Integer quantity) {
+        return addItemToCart(cartId, variantId, null, quantity);
+    }
+
+    @Transactional
+    public CartItem addItemToCart(Long cartId, Long variantId, Long productId, Integer quantity) {
         Cart cart = cartRepository.findById(cartId)
                 .orElseThrow(() -> new RuntimeException("Cart not found"));
 
-        ProductVariant variant = productVariantRepository.findById(variantId)
-                .orElseThrow(() -> new RuntimeException("Product variant not found"));
+        if (variantId != null) {
+            // Varianten-basierter Pfad
+            ProductVariant variant = productVariantRepository.findById(variantId)
+                    .orElseThrow(() -> new RuntimeException("Product variant not found"));
 
-        // Check if item already exists in cart
-        Optional<CartItem> existingItem = cartItemRepository.findByCartIdAndVariantId(cartId, variantId);
-
-        if (existingItem.isPresent()) {
-            // Update quantity
-            CartItem item = existingItem.get();
-            item.setQuantity(item.getQuantity() + quantity);
-            return cartItemRepository.save(item);
+            Optional<CartItem> existingItem = cartItemRepository.findByCartIdAndVariantId(cartId, variantId);
+            if (existingItem.isPresent()) {
+                CartItem item = existingItem.get();
+                item.setQuantity(item.getQuantity() + quantity);
+                return cartItemRepository.save(item);
+            } else {
+                CartItem item = new CartItem();
+                item.setCart(cart);
+                item.setVariant(variant);
+                item.setProduct(variant.getProduct());
+                item.setQuantity(quantity);
+                item.setPriceSnapshot(variant.getPrice());
+                return cartItemRepository.save(item);
+            }
         } else {
-            // Create new item
-            CartItem item = new CartItem();
-            item.setCart(cart);
-            item.setVariant(variant);
-            item.setProduct(variant.getProduct());  // Set product from variant
-            item.setQuantity(quantity);
-            item.setPriceSnapshot(variant.getPrice());
-            return cartItemRepository.save(item);
+            // Produkt-basierter Pfad (keine Variante)
+            Product product = productRepository.findById(productId)
+                    .orElseThrow(() -> new RuntimeException("Product not found"));
+
+            Optional<CartItem> existingItem = cartItemRepository
+                    .findByCartIdAndProductIdAndVariantIsNull(cartId, productId);
+            if (existingItem.isPresent()) {
+                CartItem item = existingItem.get();
+                item.setQuantity(item.getQuantity() + quantity);
+                return cartItemRepository.save(item);
+            } else {
+                CartItem item = new CartItem();
+                item.setCart(cart);
+                item.setProduct(product);
+                item.setVariant(null);
+                item.setQuantity(quantity);
+                item.setPriceSnapshot(product.getBasePrice());
+                return cartItemRepository.save(item);
+            }
         }
     }
 

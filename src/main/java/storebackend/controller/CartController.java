@@ -67,14 +67,17 @@ public class CartController {
 
         Object storeIdRaw = request.get("storeId");
         Object variantIdRaw = request.get("variantId");
+        Object productIdRaw = request.get("productId");
         Object quantityRaw = request.get("quantity");
 
         if (storeIdRaw == null) return ResponseEntity.badRequest().body(Map.of("error", "storeId is required"));
-        if (variantIdRaw == null) return ResponseEntity.badRequest().body(Map.of("error", "variantId is required"));
         if (quantityRaw == null) return ResponseEntity.badRequest().body(Map.of("error", "quantity is required"));
+        if (variantIdRaw == null && productIdRaw == null)
+            return ResponseEntity.badRequest().body(Map.of("error", "variantId or productId is required"));
 
         Long storeId = Long.valueOf(storeIdRaw.toString());
-        Long variantId = Long.valueOf(variantIdRaw.toString());
+        Long variantId = variantIdRaw != null ? Long.valueOf(variantIdRaw.toString()) : null;
+        Long productId = productIdRaw != null ? Long.valueOf(productIdRaw.toString()) : null;
         Integer quantity = Integer.valueOf(quantityRaw.toString());
 
         Store store = storeRepository.findById(storeId)
@@ -101,7 +104,7 @@ public class CartController {
             cart = cartService.getOrCreateCart(sessionId, null, store);
         }
 
-        CartItem item = cartService.addItemToCart(cart.getId(), variantId, quantity);
+        CartItem item = cartService.addItemToCart(cart.getId(), variantId, productId, quantity);
         return ResponseEntity.ok(item);
     }
 
