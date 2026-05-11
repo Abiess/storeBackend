@@ -33,17 +33,29 @@ public class CartItem {
     @Column(nullable = false)
     private Integer quantity = 1;
 
-    // Map to 'price_snapshot' column (canonical price column in DB, NOT NULL)
+    // Beide Preisspalten mappen – DB hat 'price' (alt) UND 'price_snapshot' (neu), beide NOT NULL
     @Column(name = "price_snapshot", nullable = false, precision = 10, scale = 2)
+    private BigDecimal priceSnapshot;
+
+    @Column(name = "price", nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
-    // Alias-Methode für Kompatibilität mit bestehenden Aufrufen
     public BigDecimal getPriceSnapshot() {
-        return price;
+        return priceSnapshot != null ? priceSnapshot : price;
     }
 
     public void setPriceSnapshot(BigDecimal priceSnapshot) {
-        this.price = priceSnapshot;
+        this.priceSnapshot = priceSnapshot;
+        this.price = priceSnapshot; // price-Spalte immer synchron halten
+    }
+
+    public BigDecimal getPrice() {
+        return price != null ? price : priceSnapshot;
+    }
+
+    public void setPrice(BigDecimal price) {
+        this.price = price;
+        this.priceSnapshot = price; // price_snapshot immer synchron halten
     }
 
     @Column(name = "added_at", updatable = false)
@@ -61,11 +73,19 @@ public class CartItem {
         if (addedAt == null) addedAt = now;
         if (createdAt == null) createdAt = now;
         if (updatedAt == null) updatedAt = now;
+        // Beide Preisspalten synchron halten
+        if (priceSnapshot == null && price != null) priceSnapshot = price;
+        if (price == null && priceSnapshot != null) price = priceSnapshot;
+        if (price == null) price = java.math.BigDecimal.ZERO;
+        if (priceSnapshot == null) priceSnapshot = java.math.BigDecimal.ZERO;
     }
 
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+        // Beide Preisspalten synchron halten
+        if (priceSnapshot == null && price != null) priceSnapshot = price;
+        if (price == null && priceSnapshot != null) price = priceSnapshot;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -125,13 +145,6 @@ public class CartItem {
         this.quantity = quantity;
     }
 
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    public void setPrice(BigDecimal price) {
-        this.price = price;
-    }
 
     public LocalDateTime getAddedAt() {
         return addedAt;
