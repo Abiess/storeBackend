@@ -76,6 +76,9 @@ public class SecurityConfig {
                 // Product Reviews - Public read access for storefront
                 .requestMatchers(HttpMethod.GET, "/api/products/*/reviews").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/products/*/reviews/stats").permitAll()
+                // Product Options - GET ist öffentlich (für Storefront Produktansicht)
+                .requestMatchers(HttpMethod.GET, "/api/stores/*/products/*/options").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/stores/*/products/*/options/**").permitAll()
                 // Product Variants - Authenticated users can manage their own store's variants (checked in controller)
                 .requestMatchers("/api/stores/*/products/*/variants/**").authenticated()
                 // Cart and Checkout - können öffentlich sein (verwenden Session)
