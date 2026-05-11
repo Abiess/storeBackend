@@ -80,6 +80,10 @@ public class Product {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    /** Lagerbestand für einfache Produkte (ohne Varianten) */
+    @Column(name = "stock", nullable = false)
+    private Integer stock = 0;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -89,5 +93,14 @@ public class Product {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    // Explizite Getter/Setter für stock (Lombok-Kompatibilität)
+    public Integer getStock() {
+        return stock;
+    }
+
+    public void setStock(Integer stock) {
+        this.stock = stock != null ? stock : 0;
     }
 }

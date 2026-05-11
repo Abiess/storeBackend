@@ -14,6 +14,7 @@ public class ProductDTO {
     private String sku;
     private String description;
     private BigDecimal basePrice;
+    private Integer stock;
     private ProductStatus status;
     private Long categoryId;
     private String categoryName;

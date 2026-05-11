@@ -1601,6 +1601,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
           sku: product.sku,
           description: product.description,
           basePrice: product.basePrice,
+          stock: product.stock ?? 0,
           status: product.status,
           categoryId: product.categoryId || null
         });

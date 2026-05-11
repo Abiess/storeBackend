@@ -83,6 +83,7 @@ public class ProductService {
         product.setTitle(request.getTitle());
         product.setDescription(request.getDescription());
         product.setBasePrice(request.getBasePrice());
+        product.setStock(request.getStock() != null ? request.getStock() : 0);
         product.setStatus(request.getStatus());
 
         // Set category if provided
@@ -114,10 +115,11 @@ public class ProductService {
         Product product = productRepository.findByIdAndStoreWithCategory(productId, store)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        product.setTitle(request.getTitle());
-        product.setDescription(request.getDescription());
-        product.setBasePrice(request.getBasePrice());
-        product.setStatus(request.getStatus());
+    product.setTitle(request.getTitle());
+    product.setDescription(request.getDescription());
+    product.setBasePrice(request.getBasePrice());
+    product.setStock(request.getStock() != null ? request.getStock() : 0);
+    product.setStatus(request.getStatus());
 
         // Update category if provided
         if (request.getCategoryId() != null) {
@@ -152,6 +154,7 @@ public class ProductService {
         dto.setSku(product.getSku());
         dto.setDescription(product.getDescription());
         dto.setBasePrice(product.getBasePrice());
+        dto.setStock(product.getStock() != null ? product.getStock() : 0);
         dto.setStatus(product.getStatus());
         dto.setCreatedAt(product.getCreatedAt());
         dto.setUpdatedAt(product.getUpdatedAt());

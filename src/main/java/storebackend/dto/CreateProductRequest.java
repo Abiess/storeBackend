@@ -21,6 +21,9 @@ public class CreateProductRequest {
     @NotNull
     private BigDecimal basePrice;
 
+    /** Lagerbestand für einfache Produkte (ohne Varianten) */
+    private Integer stock = 0;
+
     private ProductStatus status = ProductStatus.DRAFT;
 
     private Long categoryId;

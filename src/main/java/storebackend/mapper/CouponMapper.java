@@ -24,6 +24,7 @@ public interface CouponMapper {
     @Mapping(target = "combinable", source = "combinable", qualifiedByName = "stringToCombinable")
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "codeNormalized", ignore = true)
     Coupon toEntity(CouponDTO dto);
 
     @Named("enumToString")
