@@ -38,8 +38,8 @@ import { ProductReviewsComponent } from './product-reviews.component';
             </div>
             
             <app-product-image-gallery
-              [images]="getProductImages()"
-              [primaryImageUrl]="getPrimaryImageUrl()"
+              [images]="galleryImages"
+              [primaryImageUrl]="galleryPrimaryImageUrl"
               [productTitle]="product?.title || 'Produkt'">
             </app-product-image-gallery>
           </div>
@@ -747,6 +747,13 @@ export class ProductQuickViewComponent implements OnInit, OnChanges {
   isLoadingVariant = false;
   loadingVariantId: number | null = null;
 
+  /** ✅ FIX: Stabile Properties statt Methoden-Aufrufe im Template.
+   *  getProductImages() im Template erzeugt bei jedem Change-Detection-Zyklus
+   *  eine neue Array-Referenz → ngOnChanges der Gallery feuert konstant → Index-Reset.
+   *  Diese Properties werden nur bei echten Änderungen (Produkt/Variante) aktualisiert. */
+  galleryImages: string[] = [];
+  galleryPrimaryImageUrl: string | undefined = undefined;
+
   ngOnInit(): void {
     this.initializeProduct();
   }
@@ -783,6 +790,9 @@ export class ProductQuickViewComponent implements OnInit, OnChanges {
       this.selectedVariant = this.product.variants[0];
       console.log('✅ Selected first variant:', this.selectedVariant);
     }
+
+    // ✅ FIX: Gallery-Images jetzt einmalig berechnen und cachen
+    this.updateGalleryImages();
   }
 
   getProductImages(): string[] {
@@ -816,7 +826,6 @@ export class ProductQuickViewComponent implements OnInit, OnChanges {
     }
 
     // Wichtig: Immer ein neues Array zurückgeben für Change Detection
-    console.log('🖼️ Product images for gallery:', images.length, 'images');
     return [...images];
   }
 
@@ -882,8 +891,17 @@ export class ProductQuickViewComponent implements OnInit, OnChanges {
       this.selectedVariant = variant;
       this.isLoadingVariant = false;
       this.loadingVariantId = null;
+      // ✅ FIX: Gallery-Images nach Varianten-Wechsel aktualisieren
+      this.updateGalleryImages();
       console.log('✅ Variant selected:', variant);
     }, 200);
+  }
+
+  /** Berechnet und cached Gallery-Images + Primary-URL.
+   *  Wird nur bei Produkt-Wechsel oder Varianten-Auswahl aufgerufen – niemals aus dem Template. */
+  private updateGalleryImages(): void {
+    this.galleryImages = this.getProductImages();
+    this.galleryPrimaryImageUrl = this.getPrimaryImageUrl();
   }
 
   getCurrentPrice(): number {
