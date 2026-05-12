@@ -1,12 +1,19 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { UserRolesComponent } from './user-roles.component';
 import { RoleManagementComponent } from './role-management.component';
 import { AuditLogComponent } from './audit-log.component';
 import { AuthService } from '@app/core/services/auth.service';
+import { TranslationService, SupportedLanguage } from '@app/core/services/translation.service';
+import { UsageService, UsageStats, UsageItem } from '@app/core/services/usage.service';
+import { StoreService } from '@app/core/services/store.service';
+import { Store } from '@app/core/models';
 import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
 import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 interface SettingsCard {
   id: string;
@@ -28,7 +35,7 @@ interface SettingsSection {
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, UserRolesComponent, RoleManagementComponent, AuditLogComponent, PageHeaderComponent],
+  imports: [CommonModule, FormsModule, UserRolesComponent, RoleManagementComponent, AuditLogComponent, PageHeaderComponent, TranslatePipe],
   template: `
     <div class="settings-container">
       <app-page-header
@@ -40,35 +47,86 @@ interface SettingsSection {
       ></app-page-header>
 
       <!-- ═══════════════════════════════════════════════════════ -->
-      <!--  OVERVIEW MODE – Kachel-Navigation                    -->
+      <!--  OVERVIEW MODE                                         -->
       <!-- ═══════════════════════════════════════════════════════ -->
       <div class="settings-overview" *ngIf="!activeTab">
 
-        <!-- Benutzerkonto Quick-Info -->
+        <!-- Account-Banner mit live Daten -->
         <div class="account-banner" *ngIf="userName">
           <div class="account-avatar">{{ userInitials }}</div>
           <div class="account-info">
             <h3>{{ userName }}</h3>
             <p>{{ userEmail }}</p>
           </div>
-          <div class="account-role" *ngIf="userRole">
-            <span class="role-pill">{{ userRole }}</span>
+          <div class="account-meta">
+            <span class="role-pill" *ngIf="userRole">{{ userRole }}</span>
+            <span class="plan-pill" *ngIf="usageStats">{{ usageStats.plan | uppercase }}</span>
           </div>
         </div>
 
+        <!-- ─── Usage-Übersicht (live aus Backend) ─── -->
+        <div class="usage-overview" *ngIf="usageStats">
+          <h2 class="section-title"><span class="section-icon">📊</span> {{ 'settings.usage' | translate }}</h2>
+          <div class="usage-grid">
+            <div class="usage-card" *ngFor="let item of usageItems">
+              <div class="usage-header">
+                <span class="usage-icon">{{ item.icon }}</span>
+                <span class="usage-label">{{ item.label }}</span>
+              </div>
+              <div class="usage-value">
+                {{ item.used }}<span class="usage-limit" *ngIf="item.limit !== null && item.limit !== -1"> / {{ item.limit }}</span>
+                <span class="usage-unlimited" *ngIf="item.limit === -1">∞</span>
+              </div>
+              <div class="usage-bar" *ngIf="item.percent !== null">
+                <div class="usage-bar-fill"
+                     [style.width.%]="item.percent"
+                     [class.warn]="item.percent > 75"
+                     [class.critical]="item.percent > 90"></div>
+              </div>
+              <span class="usage-percent" *ngIf="item.percent !== null">{{ item.percent }}%</span>
+            </div>
+          </div>
+        </div>
+        <div class="usage-loading" *ngIf="usageLoading">
+          <div class="shimmer-bar"></div>
+          <div class="shimmer-bar short"></div>
+        </div>
+
+        <!-- ─── Meine Stores (live) ─── -->
+        <div class="stores-overview" *ngIf="myStores.length > 0">
+          <h2 class="section-title"><span class="section-icon">🏪</span> {{ 'settings.myStores' | translate }}</h2>
+          <div class="stores-grid">
+            <div class="store-card" *ngFor="let store of myStores" (click)="navigateToStore(store)">
+              <div class="store-logo" *ngIf="store.logoUrl">
+                <img [src]="store.logoUrl" [alt]="store.name" />
+              </div>
+              <div class="store-logo placeholder" *ngIf="!store.logoUrl">
+                {{ store.name.charAt(0) }}
+              </div>
+              <div class="store-info">
+                <h4>{{ store.name }}</h4>
+                <span class="store-slug">{{ store.slug }}.markt.ma</span>
+              </div>
+              <span class="store-status" [ngClass]="'status-' + store.status.toLowerCase()">
+                {{ store.status === 'ACTIVE' ? 'Aktiv' : store.status === 'INACTIVE' ? 'Inaktiv' : store.status }}
+              </span>
+              <span class="card-chevron">›</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ─── Settings-Kacheln ─── -->
         <div class="sections-grid" *ngFor="let section of settingsSections">
           <h2 class="section-title">
             <span class="section-icon">{{ section.icon }}</span>
             {{ section.title }}
           </h2>
           <div class="cards-grid">
-            <div
-              *ngFor="let card of section.cards"
-              class="settings-card"
-              (click)="openCard(card)"
-              tabindex="0"
-              (keydown.enter)="openCard(card)"
-              [attr.aria-label]="card.title">
+            <div *ngFor="let card of section.cards"
+                 class="settings-card"
+                 (click)="openCard(card)"
+                 tabindex="0"
+                 (keydown.enter)="openCard(card)">
               <div class="card-icon-wrapper">
                 <span class="card-icon">{{ card.icon }}</span>
               </div>
@@ -76,9 +134,7 @@ interface SettingsSection {
                 <h3>{{ card.title }}</h3>
                 <p>{{ card.description }}</p>
               </div>
-              <span *ngIf="card.badge" class="card-badge" [ngClass]="card.badgeClass || ''">
-                {{ card.badge }}
-              </span>
+              <span *ngIf="card.badge" class="card-badge" [ngClass]="card.badgeClass || ''">{{ card.badge }}</span>
               <span class="card-chevron">›</span>
             </div>
           </div>
@@ -86,831 +142,565 @@ interface SettingsSection {
       </div>
 
       <!-- ═══════════════════════════════════════════════════════ -->
-      <!--  DETAIL MODE – Eingebetteter Tab-Inhalt                -->
+      <!--  DETAIL MODE                                           -->
       <!-- ═══════════════════════════════════════════════════════ -->
       <div class="settings-detail" *ngIf="activeTab">
         <button class="back-to-overview" (click)="activeTab = null">
-          ← Zurück zur Übersicht
+          ← {{ 'common.back' | translate }}
         </button>
-
         <div class="detail-header">
           <span class="detail-icon">{{ getActiveIcon() }}</span>
           <h2>{{ getActiveTitle() }}</h2>
         </div>
-
         <div class="detail-content">
-          <!-- Benutzerrollen -->
+
+          <!-- ═══ Benutzerrollen (existierende Komponente) ═══ -->
           <app-user-roles *ngIf="activeTab === 'roles'"></app-user-roles>
 
-          <!-- Berechtigungen -->
+          <!-- ═══ Rollenverwaltung (existierende Komponente) ═══ -->
           <app-role-management *ngIf="activeTab === 'permissions'"></app-role-management>
 
-          <!-- Audit-Log -->
+          <!-- ═══ Audit-Log (existierende Komponente) ═══ -->
           <app-audit-log *ngIf="activeTab === 'audit'" [storeId]="currentStoreId"></app-audit-log>
 
-          <!-- Profil – Platzhalter -->
-          <div *ngIf="activeTab === 'profile'" class="placeholder-card">
-            <div class="placeholder-icon">👤</div>
-            <h3>Profil bearbeiten</h3>
-            <p>Ändern Sie Ihren Namen, Ihre E-Mail-Adresse und Ihr Profilbild.</p>
-            <div class="placeholder-form">
-              <div class="form-group">
-                <label>Name</label>
-                <input type="text" class="form-control" [value]="userName" readonly placeholder="Ihr Name" />
+          <!-- ═══ PROFIL – echte Daten + Aktionen ═══ -->
+          <div *ngIf="activeTab === 'profile'" class="detail-section">
+            <div class="profile-header-card">
+              <div class="profile-avatar-big">{{ userInitials }}</div>
+              <div>
+                <h3>{{ userName || 'Unbekannt' }}</h3>
+                <p class="text-muted">{{ userEmail }}</p>
+                <p class="text-muted small" *ngIf="userCreatedAt">Mitglied seit {{ userCreatedAt | date:'MMMM yyyy' }}</p>
               </div>
-              <div class="form-group">
-                <label>E-Mail</label>
-                <input type="email" class="form-control" [value]="userEmail" readonly placeholder="Ihre E-Mail" />
+            </div>
+
+            <div class="form-section">
+              <h4>Account-Informationen</h4>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Name</label>
+                  <input type="text" class="form-control" [value]="userName" readonly />
+                </div>
+                <div class="form-group">
+                  <label>E-Mail</label>
+                  <input type="email" class="form-control" [value]="userEmail" readonly />
+                </div>
+                <div class="form-group">
+                  <label>Rollen</label>
+                  <div class="role-tags">
+                    <span class="role-tag" *ngFor="let r of userRoles">{{ formatRole(r) }}</span>
+                    <span class="role-tag empty" *ngIf="userRoles.length === 0">Keine Rollen</span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Shops</label>
+                  <span class="form-value">{{ myStores.length }} Shop(s) verknüpft</span>
+                </div>
               </div>
-              <p class="info-hint">✏️ Profilbearbeitung ist über die Kontoverwaltung möglich.</p>
+            </div>
+
+            <div class="form-section" *ngIf="usageStats">
+              <h4>Plan & Nutzung</h4>
+              <div class="plan-info-row">
+                <span class="plan-badge">{{ usageStats.plan }}</span>
+                <span>{{ usageStats.products.used }} Produkte · {{ usageStats.stores.used }} Stores · {{ formatStorageMb(usageStats.storageMb.used) }} Speicher</span>
+              </div>
+              <button class="btn btn-outline" (click)="router.navigate(['/subscription'])">Tarif ändern →</button>
+            </div>
+
+            <div class="danger-zone">
+              <h4>⚠️ Gefahrenzone</h4>
+              <div class="danger-row">
+                <div>
+                  <strong>Abmelden</strong>
+                  <p>Sie werden auf allen Geräten abgemeldet.</p>
+                </div>
+                <button class="btn btn-danger-outline" (click)="onLogout()">Abmelden</button>
+              </div>
             </div>
           </div>
 
-          <!-- Sicherheit – Platzhalter -->
-          <div *ngIf="activeTab === 'security'" class="placeholder-card">
-            <div class="placeholder-icon">🔒</div>
-            <h3>Sicherheit & Passwort</h3>
+          <!-- ═══ SICHERHEIT – echte Token-Info ═══ -->
+          <div *ngIf="activeTab === 'security'" class="detail-section">
             <div class="security-options">
+              <div class="security-item">
+                <div class="security-item-info">
+                  <h4>Anmeldestatus</h4>
+                  <p>{{ authService.isAuthenticated() ? 'Sie sind eingeloggt' : 'Nicht eingeloggt' }}</p>
+                </div>
+                <span class="status-badge" [class.status-active]="authService.isAuthenticated()"
+                      [class.status-inactive]="!authService.isAuthenticated()">
+                  {{ authService.isAuthenticated() ? 'Aktiv' : 'Inaktiv' }}
+                </span>
+              </div>
+
+              <div class="security-item">
+                <div class="security-item-info">
+                  <h4>Auth-Token</h4>
+                  <p *ngIf="tokenInfo">Typ: JWT · Länge: {{ tokenInfo.length }} Zeichen</p>
+                  <p *ngIf="!tokenInfo">Kein Token vorhanden</p>
+                </div>
+                <span class="status-badge" [class.status-active]="tokenInfo" [class.status-inactive]="!tokenInfo">
+                  {{ tokenInfo ? 'Gültig' : '—' }}
+                </span>
+              </div>
+
               <div class="security-item">
                 <div class="security-item-info">
                   <h4>Passwort ändern</h4>
                   <p>Aktualisieren Sie Ihr Passwort regelmäßig für optimale Sicherheit.</p>
                 </div>
-                <button class="btn btn-outline">Ändern</button>
+                <button class="btn btn-outline" disabled title="Backend-Endpoint noch nicht verfügbar">Ändern</button>
               </div>
+
               <div class="security-item">
                 <div class="security-item-info">
                   <h4>Zwei-Faktor-Authentifizierung</h4>
                   <p>Schützen Sie Ihr Konto mit einer zusätzlichen Sicherheitsebene.</p>
                 </div>
-                <span class="status-badge status-inactive">Nicht aktiv</span>
+                <span class="status-badge status-inactive">Nicht verfügbar</span>
               </div>
+
               <div class="security-item">
                 <div class="security-item-info">
-                  <h4>Aktive Sitzungen</h4>
-                  <p>Verwalten Sie Geräte, auf denen Sie angemeldet sind.</p>
+                  <h4>Alle Sitzungen beenden</h4>
+                  <p>Melden Sie sich von allen Geräten ab und setzen den Token zurück.</p>
                 </div>
-                <span class="session-count">1 Gerät</span>
+                <button class="btn btn-danger-outline" (click)="onLogout()">Alle beenden</button>
               </div>
             </div>
           </div>
 
-          <!-- Benachrichtigungen – Platzhalter -->
-          <div *ngIf="activeTab === 'notifications'" class="placeholder-card">
-            <div class="placeholder-icon">🔔</div>
-            <h3>Benachrichtigungseinstellungen</h3>
+          <!-- ═══ BENACHRICHTIGUNGEN – echte Toggle-Logik ═══ -->
+          <div *ngIf="activeTab === 'notifications'" class="detail-section">
+            <p class="section-desc">Steuern Sie, welche Benachrichtigungen Sie per E-Mail erhalten.</p>
             <div class="notification-options">
-              <div class="notification-item">
+              <div class="notification-item" *ngFor="let n of notificationSettings">
                 <div class="notification-info">
-                  <h4>Neue Bestellungen</h4>
-                  <p>Erhalten Sie eine Nachricht bei jeder neuen Bestellung.</p>
+                  <h4>{{ n.label }}</h4>
+                  <p>{{ n.description }}</p>
                 </div>
                 <label class="toggle-switch">
-                  <input type="checkbox" checked disabled />
-                  <span class="toggle-slider"></span>
-                </label>
-              </div>
-              <div class="notification-item">
-                <div class="notification-info">
-                  <h4>Geringe Lagerbestände</h4>
-                  <p>Warnung wenn ein Produkt unter den Mindestbestand fällt.</p>
-                </div>
-                <label class="toggle-switch">
-                  <input type="checkbox" checked disabled />
-                  <span class="toggle-slider"></span>
-                </label>
-              </div>
-              <div class="notification-item">
-                <div class="notification-info">
-                  <h4>Kundenbewertungen</h4>
-                  <p>Benachrichtigung bei neuen Bewertungen.</p>
-                </div>
-                <label class="toggle-switch">
-                  <input type="checkbox" disabled />
-                  <span class="toggle-slider"></span>
-                </label>
-              </div>
-              <div class="notification-item">
-                <div class="notification-info">
-                  <h4>Marketing-Berichte</h4>
-                  <p>Wöchentliche Zusammenfassung der Shop-Performance.</p>
-                </div>
-                <label class="toggle-switch">
-                  <input type="checkbox" disabled />
+                  <input type="checkbox" [(ngModel)]="n.enabled" (change)="onNotificationChange(n)" />
                   <span class="toggle-slider"></span>
                 </label>
               </div>
             </div>
-            <p class="info-hint">💡 Diese Einstellungen werden bald vollständig konfigurierbar sein.</p>
+            <div class="save-row" *ngIf="notificationsDirty">
+              <button class="btn btn-primary" (click)="saveNotifications()">
+                Änderungen speichern
+              </button>
+              <span class="save-hint">Lokale Einstellungen – werden im Browser gespeichert.</span>
+            </div>
           </div>
 
-          <!-- Sprache & Region – Platzhalter -->
-          <div *ngIf="activeTab === 'language'" class="placeholder-card">
-            <div class="placeholder-icon">🌍</div>
-            <h3>Sprache & Region</h3>
+          <!-- ═══ SPRACHE – echtes Umschalten ═══ -->
+          <div *ngIf="activeTab === 'language'" class="detail-section">
+            <p class="section-desc">Wählen Sie Ihre bevorzugte Sprache. Die Änderung wird sofort wirksam.</p>
             <div class="language-options">
-              <div class="language-option" [class.active]="true">
-                <span class="lang-flag">🇩🇪</span>
-                <span class="lang-name">Deutsch</span>
-                <span class="lang-check" *ngIf="true">✓</span>
-              </div>
-              <div class="language-option">
-                <span class="lang-flag">🇬🇧</span>
-                <span class="lang-name">English</span>
-              </div>
-              <div class="language-option">
-                <span class="lang-flag">🇸🇦</span>
-                <span class="lang-name">العربية (RTL)</span>
+              <div class="language-option"
+                   *ngFor="let lang of availableLanguages"
+                   [class.active]="lang.code === currentLanguage"
+                   (click)="switchLanguage(lang.code)">
+                <span class="lang-flag">{{ lang.flag }}</span>
+                <div class="lang-details">
+                  <span class="lang-name">{{ lang.name }}</span>
+                  <span class="lang-native">{{ lang.nativeName }}</span>
+                </div>
+                <span class="lang-dir" *ngIf="lang.rtl">RTL</span>
+                <span class="lang-check" *ngIf="lang.code === currentLanguage">✓</span>
               </div>
             </div>
             <div class="region-info">
-              <h4>Zeitzone</h4>
-              <p>Europe/Berlin (UTC+1)</p>
-              <h4>Währung</h4>
-              <p>EUR (€)</p>
+              <div class="region-row">
+                <div>
+                  <h4>Textrichtung</h4>
+                  <p>{{ translationService.isRTL() ? 'Rechts-nach-Links (RTL)' : 'Links-nach-Rechts (LTR)' }}</p>
+                </div>
+                <div>
+                  <h4>Zeitzone</h4>
+                  <p>{{ userTimezone }}</p>
+                </div>
+                <div>
+                  <h4>Währung</h4>
+                  <p>EUR (€)</p>
+                </div>
+              </div>
             </div>
           </div>
+
         </div>
       </div>
     </div>
   `,
   styles: [`
-    /* ═══════════════════════════════════════════════════════ */
-    /*  Container & Layout                                    */
-    /* ═══════════════════════════════════════════════════════ */
-    .settings-container {
-      padding: 1.5rem 2rem;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
+    .settings-container { padding: 1.5rem 2rem; max-width: 1200px; margin: 0 auto; }
 
-    /* ═══════════════════════════════════════════════════════ */
-    /*  Account Banner                                        */
-    /* ═══════════════════════════════════════════════════════ */
+    /* ─── Account Banner ─── */
     .account-banner {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
+      display: flex; align-items: center; gap: 1rem;
       padding: 1.25rem 1.5rem;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-radius: 16px;
-      margin-bottom: 2rem;
-      color: white;
-      box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+      border-radius: 16px; margin-bottom: 1.5rem; color: white;
+      box-shadow: 0 4px 20px rgba(102,126,234,0.3);
     }
-
     .account-avatar {
-      width: 52px;
-      height: 52px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.2);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.25rem;
-      font-weight: 700;
-      flex-shrink: 0;
-      backdrop-filter: blur(4px);
+      width: 52px; height: 52px; border-radius: 50%;
+      background: rgba(255,255,255,0.2); display: flex; align-items: center;
+      justify-content: center; font-size: 1.25rem; font-weight: 700; flex-shrink: 0;
     }
-
-    .account-info h3 {
-      margin: 0;
-      font-size: 1.125rem;
-      font-weight: 600;
+    .account-info h3 { margin: 0; font-size: 1.125rem; font-weight: 600; }
+    .account-info p { margin: 0.15rem 0 0; font-size: 0.85rem; opacity: 0.85; }
+    .account-meta { margin-left: auto; display: flex; gap: 0.5rem; align-items: center; }
+    .role-pill, .plan-pill {
+      background: rgba(255,255,255,0.2); padding: 0.35rem 0.85rem;
+      border-radius: 20px; font-size: 0.78rem; font-weight: 600; white-space: nowrap;
     }
+    .plan-pill { background: rgba(255,255,255,0.35); }
 
-    .account-info p {
-      margin: 0.15rem 0 0;
-      font-size: 0.85rem;
-      opacity: 0.85;
+    /* ─── Usage Overview ─── */
+    .usage-overview { margin-bottom: 2rem; }
+    .usage-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem;
     }
-
-    .account-role {
-      margin-left: auto;
+    .usage-card {
+      background: white; border: 1px solid #e5e7eb; border-radius: 12px;
+      padding: 1rem 1.125rem; display: flex; flex-direction: column; gap: 0.4rem;
     }
-
-    .role-pill {
-      background: rgba(255,255,255,0.2);
-      padding: 0.375rem 0.875rem;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      backdrop-filter: blur(4px);
-      white-space: nowrap;
+    .usage-header { display: flex; align-items: center; gap: 0.4rem; }
+    .usage-icon { font-size: 1.1rem; }
+    .usage-label { font-size: 0.78rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em; }
+    .usage-value { font-size: 1.35rem; font-weight: 700; color: #1f2937; }
+    .usage-limit { font-size: 0.85rem; font-weight: 400; color: #9ca3af; }
+    .usage-unlimited { font-size: 0.85rem; color: #10b981; margin-left: 0.25rem; }
+    .usage-bar {
+      height: 6px; background: #f3f4f6; border-radius: 3px; overflow: hidden; margin-top: 0.15rem;
     }
+    .usage-bar-fill {
+      height: 100%; background: #667eea; border-radius: 3px; transition: width 0.6s ease;
+    }
+    .usage-bar-fill.warn { background: #f59e0b; }
+    .usage-bar-fill.critical { background: #ef4444; }
+    .usage-percent { font-size: 0.72rem; color: #9ca3af; }
+    .usage-loading { margin-bottom: 2rem; }
+    .shimmer-bar {
+      height: 80px; background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+      background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 12px; margin-bottom: 0.5rem;
+    }
+    .shimmer-bar.short { width: 60%; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-    /* ═══════════════════════════════════════════════════════ */
-    /*  Section Grid                                           */
-    /* ═══════════════════════════════════════════════════════ */
+    /* ─── Stores Overview ─── */
+    .stores-overview { margin-bottom: 2rem; }
+    .stores-grid { display: flex; flex-direction: column; gap: 0.5rem; }
+    .store-card {
+      display: flex; align-items: center; gap: 0.875rem;
+      padding: 0.875rem 1.125rem; background: white; border: 1px solid #e5e7eb;
+      border-radius: 10px; cursor: pointer; transition: all 0.2s;
+    }
+    .store-card:hover { border-color: #667eea; box-shadow: 0 2px 12px rgba(102,126,234,0.1); }
+    .store-logo {
+      width: 38px; height: 38px; border-radius: 8px; overflow: hidden; flex-shrink: 0;
+      background: #f3f4f6; display: flex; align-items: center; justify-content: center;
+    }
+    .store-logo img { width: 100%; height: 100%; object-fit: cover; }
+    .store-logo.placeholder { font-weight: 700; font-size: 1.1rem; color: #667eea; background: #667eea12; }
+    .store-info { flex: 1; min-width: 0; }
+    .store-info h4 { margin: 0; font-size: 0.9rem; font-weight: 600; color: #1f2937; }
+    .store-slug { font-size: 0.75rem; color: #9ca3af; }
+    .store-status {
+      font-size: 0.7rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 10px;
+    }
+    .status-active { background: #dcfce7; color: #166534; }
+    .status-inactive { background: #f3f4f6; color: #6b7280; }
+
+    /* ─── Section / Cards ─── */
     .section-title {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 1rem;
-      font-weight: 600;
-      color: #6b7280;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin: 0 0 1rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 1px solid #e5e7eb;
+      display: flex; align-items: center; gap: 0.5rem;
+      font-size: 0.9rem; font-weight: 600; color: #6b7280;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      margin: 0 0 0.875rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e5e7eb;
     }
-
-    .section-icon {
-      font-size: 1.1rem;
-    }
-
-    .sections-grid {
-      margin-bottom: 2rem;
-    }
-
-    .cards-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 0.875rem;
-    }
-
-    /* ═══════════════════════════════════════════════════════ */
-    /*  Settings Cards                                         */
-    /* ═══════════════════════════════════════════════════════ */
+    .section-icon { font-size: 1rem; }
+    .sections-grid { margin-bottom: 1.75rem; }
+    .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 0.75rem; }
     .settings-card {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 1.125rem 1.25rem;
-      background: white;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      position: relative;
+      display: flex; align-items: center; gap: 0.875rem;
+      padding: 1rem 1.125rem; background: white; border: 1px solid #e5e7eb;
+      border-radius: 12px; cursor: pointer; transition: all 0.2s;
     }
-
-    .settings-card:hover {
-      border-color: #667eea;
-      box-shadow: 0 4px 16px rgba(102, 126, 234, 0.12);
-      transform: translateY(-1px);
-    }
-
-    .settings-card:focus-visible {
-      outline: 2px solid #667eea;
-      outline-offset: 2px;
-    }
-
+    .settings-card:hover { border-color: #667eea; box-shadow: 0 4px 16px rgba(102,126,234,0.1); transform: translateY(-1px); }
+    .settings-card:focus-visible { outline: 2px solid #667eea; outline-offset: 2px; }
     .card-icon-wrapper {
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
-      background: #f3f4f6;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      transition: background 0.2s;
+      width: 42px; height: 42px; border-radius: 10px; background: #f3f4f6;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.2s;
     }
+    .settings-card:hover .card-icon-wrapper { background: linear-gradient(135deg, #667eea15, #764ba215); }
+    .card-icon { font-size: 1.25rem; }
+    .card-content { flex: 1; min-width: 0; }
+    .card-content h3 { margin: 0; font-size: 0.9rem; font-weight: 600; color: #1f2937; }
+    .card-content p { margin: 0.15rem 0 0; font-size: 0.78rem; color: #6b7280; line-height: 1.3; }
+    .card-badge { font-size: 0.68rem; font-weight: 600; padding: 0.2rem 0.55rem; border-radius: 10px; background: #667eea; color: white; white-space: nowrap; }
+    .card-badge.badge-pro { background: linear-gradient(135deg, #667eea, #764ba2); }
+    .card-chevron { font-size: 1.25rem; color: #d1d5db; font-weight: 300; transition: all 0.2s; flex-shrink: 0; }
+    .settings-card:hover .card-chevron, .store-card:hover .card-chevron { color: #667eea; transform: translateX(2px); }
 
-    .settings-card:hover .card-icon-wrapper {
-      background: linear-gradient(135deg, #667eea15, #764ba215);
-    }
-
-    .card-icon {
-      font-size: 1.35rem;
-    }
-
-    .card-content {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .card-content h3 {
-      margin: 0;
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: #1f2937;
-    }
-
-    .card-content p {
-      margin: 0.2rem 0 0;
-      font-size: 0.8rem;
-      color: #6b7280;
-      line-height: 1.3;
-    }
-
-    .card-badge {
-      font-size: 0.7rem;
-      font-weight: 600;
-      padding: 0.2rem 0.6rem;
-      border-radius: 10px;
-      background: #667eea;
-      color: white;
-      white-space: nowrap;
-    }
-
-    .card-badge.badge-new {
-      background: #10b981;
-    }
-
-    .card-badge.badge-pro {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-    }
-
-    .card-chevron {
-      font-size: 1.25rem;
-      color: #d1d5db;
-      font-weight: 300;
-      transition: color 0.2s, transform 0.2s;
-      flex-shrink: 0;
-    }
-
-    .settings-card:hover .card-chevron {
-      color: #667eea;
-      transform: translateX(2px);
-    }
-
-    /* ═══════════════════════════════════════════════════════ */
-    /*  Detail Mode                                            */
-    /* ═══════════════════════════════════════════════════════ */
+    /* ─── Detail Mode ─── */
     .back-to-overview {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.25rem;
-      background: none;
-      border: none;
-      color: #667eea;
-      font-weight: 600;
-      font-size: 0.9rem;
-      cursor: pointer;
-      padding: 0.5rem 0;
-      margin-bottom: 1rem;
-      transition: color 0.2s;
+      display: inline-flex; align-items: center; gap: 0.25rem;
+      background: none; border: none; color: #667eea; font-weight: 600;
+      font-size: 0.9rem; cursor: pointer; padding: 0.5rem 0; margin-bottom: 1rem;
     }
-
-    .back-to-overview:hover {
-      color: #764ba2;
-    }
-
+    .back-to-overview:hover { color: #764ba2; }
     .detail-header {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      margin-bottom: 1.5rem;
-      padding-bottom: 1rem;
-      border-bottom: 2px solid #e5e7eb;
+      display: flex; align-items: center; gap: 0.75rem;
+      margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 2px solid #e5e7eb;
     }
+    .detail-icon { font-size: 1.4rem; }
+    .detail-header h2 { margin: 0; font-size: 1.3rem; font-weight: 700; color: #1f2937; }
+    .detail-content { background: white; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); overflow: hidden; }
+    .detail-section { padding: 1.75rem 2rem; }
+    .section-desc { color: #6b7280; font-size: 0.88rem; margin: 0 0 1.25rem; }
 
-    .detail-icon {
-      font-size: 1.5rem;
+    /* ─── Profile ─── */
+    .profile-header-card {
+      display: flex; align-items: center; gap: 1.25rem;
+      padding-bottom: 1.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid #f3f4f6;
     }
-
-    .detail-header h2 {
-      margin: 0;
-      font-size: 1.375rem;
-      font-weight: 700;
-      color: #1f2937;
+    .profile-avatar-big {
+      width: 68px; height: 68px; border-radius: 50%;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white; display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; font-weight: 700; flex-shrink: 0;
     }
-
-    .detail-content {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-      overflow: hidden;
-    }
-
-    /* ═══════════════════════════════════════════════════════ */
-    /*  Placeholder Cards (Profile, Security, etc.)            */
-    /* ═══════════════════════════════════════════════════════ */
-    .placeholder-card {
-      padding: 2rem;
-    }
-
-    .placeholder-icon {
-      font-size: 2.5rem;
-      margin-bottom: 0.75rem;
-    }
-
-    .placeholder-card h3 {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: #1f2937;
-      margin: 0 0 0.5rem;
-    }
-
-    .placeholder-card > p {
-      color: #6b7280;
-      margin: 0 0 1.5rem;
-    }
-
-    .placeholder-form {
-      max-width: 500px;
-    }
-
-    .form-group {
-      margin-bottom: 1rem;
-    }
-
-    .form-group label {
-      display: block;
-      font-weight: 600;
-      font-size: 0.85rem;
-      color: #374151;
-      margin-bottom: 0.4rem;
-    }
-
+    .profile-header-card h3 { margin: 0 0 0.15rem; font-size: 1.2rem; }
+    .text-muted { color: #6b7280; margin: 0; font-size: 0.88rem; }
+    .text-muted.small { font-size: 0.78rem; margin-top: 0.2rem; }
+    .form-section { margin-bottom: 1.75rem; }
+    .form-section h4 { margin: 0 0 1rem; font-size: 1rem; font-weight: 600; color: #374151; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .form-group { display: flex; flex-direction: column; gap: 0.35rem; }
+    .form-group label { font-weight: 600; font-size: 0.8rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em; }
     .form-control {
-      width: 100%;
-      padding: 0.65rem 0.85rem;
-      border: 1px solid #d1d5db;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      transition: border-color 0.2s;
-      box-sizing: border-box;
+      width: 100%; padding: 0.6rem 0.85rem; border: 1px solid #d1d5db; border-radius: 8px;
+      font-size: 0.88rem; background: #f9fafb; box-sizing: border-box;
+    }
+    .form-value { font-size: 0.9rem; color: #1f2937; font-weight: 500; padding-top: 0.35rem; }
+    .role-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; padding-top: 0.2rem; }
+    .role-tag {
+      background: #667eea15; color: #667eea; padding: 0.3rem 0.7rem; border-radius: 6px;
+      font-size: 0.78rem; font-weight: 600;
+    }
+    .role-tag.empty { background: #f3f4f6; color: #9ca3af; }
+    .plan-info-row {
+      display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;
+      font-size: 0.88rem; color: #4b5563;
+    }
+    .plan-badge {
+      background: linear-gradient(135deg, #667eea, #764ba2); color: white;
+      padding: 0.3rem 0.85rem; border-radius: 8px; font-weight: 700; font-size: 0.82rem;
     }
 
-    .form-control:focus {
-      outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    /* ─── Danger Zone ─── */
+    .danger-zone {
+      margin-top: 1.5rem; padding-top: 1.5rem; border-top: 2px solid #fee2e2;
     }
-
-    .info-hint {
-      font-size: 0.825rem;
-      color: #6b7280;
-      margin-top: 1.25rem;
-      padding: 0.75rem 1rem;
-      background: #f9fafb;
-      border-radius: 8px;
-      border-left: 3px solid #667eea;
+    .danger-zone h4 { margin: 0 0 1rem; color: #991b1b; font-size: 0.95rem; }
+    .danger-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 1.25rem; background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px;
     }
+    .danger-row strong { font-size: 0.9rem; color: #991b1b; }
+    .danger-row p { margin: 0.15rem 0 0; font-size: 0.78rem; color: #b91c1c; }
+    .btn-danger-outline {
+      padding: 0.45rem 1rem; border: 1.5px solid #ef4444; background: none;
+      color: #ef4444; border-radius: 8px; font-weight: 600; font-size: 0.82rem; cursor: pointer;
+    }
+    .btn-danger-outline:hover { background: #ef4444; color: white; }
 
     /* ─── Security ─── */
-    .security-options {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      margin-top: 1rem;
-    }
-
+    .security-options { display: flex; flex-direction: column; gap: 0.75rem; }
     .security-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 1.125rem 1.25rem;
-      background: #f9fafb;
-      border-radius: 10px;
-      border: 1px solid #e5e7eb;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 1.125rem; background: #f9fafb; border-radius: 10px; border: 1px solid #e5e7eb;
     }
-
-    .security-item-info h4 {
-      margin: 0 0 0.2rem;
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: #1f2937;
+    .security-item-info h4 { margin: 0 0 0.15rem; font-size: 0.9rem; font-weight: 600; color: #1f2937; }
+    .security-item-info p { margin: 0; font-size: 0.78rem; color: #6b7280; }
+    .status-badge {
+      padding: 0.25rem 0.7rem; border-radius: 20px; font-size: 0.72rem; font-weight: 600;
     }
-
-    .security-item-info p {
-      margin: 0;
-      font-size: 0.8rem;
-      color: #6b7280;
-    }
-
-    .btn-outline {
-      padding: 0.45rem 1rem;
-      border: 1.5px solid #667eea;
-      background: none;
-      color: #667eea;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 0.85rem;
-      cursor: pointer;
+    .status-badge.status-active { background: #dcfce7; color: #166534; }
+    .status-badge.status-inactive { background: #f3f4f6; color: #6b7280; }
+    .btn-outline, .btn-primary {
+      padding: 0.45rem 1rem; border: 1.5px solid #667eea; background: none;
+      color: #667eea; border-radius: 8px; font-weight: 600; font-size: 0.82rem; cursor: pointer;
       transition: all 0.2s;
     }
-
-    .btn-outline:hover {
-      background: #667eea;
-      color: white;
-    }
-
-    .status-badge {
-      padding: 0.3rem 0.75rem;
-      border-radius: 20px;
-      font-size: 0.75rem;
-      font-weight: 600;
-    }
-
-    .status-inactive {
-      background: #f3f4f6;
-      color: #6b7280;
-    }
-
-    .session-count {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: #667eea;
-    }
+    .btn-outline:hover { background: #667eea; color: white; }
+    .btn-outline:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-outline:disabled:hover { background: none; color: #667eea; }
+    .btn-primary { background: #667eea; color: white; border-color: #667eea; }
+    .btn-primary:hover { background: #5568d3; }
 
     /* ─── Notifications ─── */
-    .notification-options {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-      margin-top: 1rem;
-    }
-
+    .notification-options { display: flex; flex-direction: column; gap: 0; }
     .notification-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 1rem 1.25rem;
-      border-bottom: 1px solid #f3f4f6;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 1.125rem; border-bottom: 1px solid #f3f4f6;
     }
-
-    .notification-item:last-child {
-      border-bottom: none;
-    }
-
-    .notification-info h4 {
-      margin: 0 0 0.15rem;
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: #1f2937;
-    }
-
-    .notification-info p {
-      margin: 0;
-      font-size: 0.78rem;
-      color: #6b7280;
-    }
-
-    /* Toggle Switch */
-    .toggle-switch {
-      position: relative;
-      display: inline-block;
-      width: 44px;
-      height: 24px;
-      flex-shrink: 0;
-    }
-
-    .toggle-switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-
+    .notification-item:last-child { border-bottom: none; }
+    .notification-info h4 { margin: 0 0 0.1rem; font-size: 0.88rem; font-weight: 600; color: #1f2937; }
+    .notification-info p { margin: 0; font-size: 0.75rem; color: #6b7280; }
+    .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
     .toggle-slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: #d1d5db;
-      border-radius: 24px;
-      transition: 0.3s;
+      position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+      background: #d1d5db; border-radius: 24px; transition: 0.3s;
     }
-
     .toggle-slider::before {
-      content: '';
-      position: absolute;
-      height: 18px;
-      width: 18px;
-      left: 3px;
-      bottom: 3px;
-      background: white;
-      border-radius: 50%;
-      transition: 0.3s;
+      content: ''; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px;
+      background: white; border-radius: 50%; transition: 0.3s;
     }
-
-    .toggle-switch input:checked + .toggle-slider {
-      background: #667eea;
+    .toggle-switch input:checked + .toggle-slider { background: #667eea; }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+    .save-row {
+      display: flex; align-items: center; gap: 1rem;
+      margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;
     }
-
-    .toggle-switch input:checked + .toggle-slider::before {
-      transform: translateX(20px);
-    }
+    .save-hint { font-size: 0.78rem; color: #9ca3af; }
 
     /* ─── Language ─── */
-    .language-options {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      margin-top: 1rem;
-      max-width: 400px;
-    }
-
+    .language-options { display: flex; flex-direction: column; gap: 0.5rem; max-width: 460px; }
     .language-option {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.85rem 1rem;
-      border: 1.5px solid #e5e7eb;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: all 0.2s;
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.9rem 1rem; border: 1.5px solid #e5e7eb; border-radius: 10px;
+      cursor: pointer; transition: all 0.2s;
     }
-
-    .language-option:hover {
-      border-color: #667eea;
+    .language-option:hover { border-color: #667eea; }
+    .language-option.active { border-color: #667eea; background: #667eea08; box-shadow: 0 0 0 3px rgba(102,126,234,0.08); }
+    .lang-flag { font-size: 1.5rem; }
+    .lang-details { flex: 1; display: flex; flex-direction: column; }
+    .lang-name { font-weight: 600; font-size: 0.9rem; color: #1f2937; }
+    .lang-native { font-size: 0.75rem; color: #9ca3af; }
+    .lang-dir {
+      font-size: 0.65rem; font-weight: 700; padding: 0.15rem 0.45rem; border-radius: 4px;
+      background: #fef3c7; color: #92400e;
     }
-
-    .language-option.active {
-      border-color: #667eea;
-      background: #667eea08;
-    }
-
-    .lang-flag {
-      font-size: 1.5rem;
-    }
-
-    .lang-name {
-      font-weight: 600;
-      font-size: 0.9rem;
-      color: #1f2937;
-      flex: 1;
-    }
-
-    .lang-check {
-      color: #667eea;
-      font-weight: 700;
-      font-size: 1.1rem;
-    }
-
-    .region-info {
-      margin-top: 1.5rem;
-      padding-top: 1.25rem;
-      border-top: 1px solid #e5e7eb;
-    }
-
+    .lang-check { color: #667eea; font-weight: 700; font-size: 1.1rem; }
+    .region-info { margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid #e5e7eb; }
+    .region-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
     .region-info h4 {
-      margin: 0 0 0.25rem;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: #6b7280;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
+      margin: 0 0 0.2rem; font-size: 0.75rem; font-weight: 600; color: #6b7280;
+      text-transform: uppercase; letter-spacing: 0.04em;
     }
+    .region-info p { margin: 0; font-size: 0.9rem; color: #1f2937; font-weight: 500; }
 
-    .region-info p {
-      margin: 0 0 1rem;
-      font-size: 0.95rem;
-      color: #1f2937;
-    }
-
-    /* ═══════════════════════════════════════════════════════ */
-    /*  Responsive                                             */
-    /* ═══════════════════════════════════════════════════════ */
+    /* ─── Responsive ─── */
     @media (max-width: 768px) {
-      .settings-container {
-        padding: 1rem;
-      }
-
-      .account-banner {
-        flex-wrap: wrap;
-        gap: 0.75rem;
-      }
-
-      .account-role {
-        margin-left: 0;
-        width: 100%;
-      }
-
-      .cards-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .security-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.75rem;
-      }
-
-      .notification-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.75rem;
-      }
+      .settings-container { padding: 1rem; }
+      .account-banner { flex-wrap: wrap; }
+      .account-meta { margin-left: 0; width: 100%; }
+      .cards-grid, .usage-grid { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .region-row { grid-template-columns: 1fr; }
+      .security-item, .notification-item, .danger-row { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
     }
 
-    /* ═══════════════════════════════════════════════════════ */
-    /*  Animation                                              */
-    /* ═══════════════════════════════════════════════════════ */
-    .settings-overview,
-    .settings-detail {
-      animation: fadeSlideIn 0.25s ease-out;
-    }
-
-    @keyframes fadeSlideIn {
-      from {
-        opacity: 0;
-        transform: translateY(8px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
+    /* ─── Animation ─── */
+    .settings-overview, .settings-detail { animation: fadeSlideIn 0.25s ease-out; }
+    @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
   `]
 })
-export class SettingsComponent implements OnInit {
+export class SettingsComponent implements OnInit, OnDestroy {
   activeTab: string | null = null;
   currentStoreId: number | null = null;
   breadcrumbItems: BreadcrumbItem[] = [];
   headerActions: HeaderAction[] = [];
 
-  userName: string = '';
-  userEmail: string = '';
-  userInitials: string = '';
-  userRole: string = '';
+  // User
+  userName = '';
+  userEmail = '';
+  userInitials = '';
+  userRole = '';
+  userRoles: string[] = [];
+  userCreatedAt: string | null = null;
+  tokenInfo: string | null = null;
+
+  // Usage (live vom Backend)
+  usageStats: UsageStats | null = null;
+  usageLoading = false;
+  usageItems: { icon: string; label: string; used: number; limit: number | null; percent: number | null }[] = [];
+
+  // Stores (live vom Backend)
+  myStores: Store[] = [];
+
+  // Sprache (funktioniert echt!)
+  currentLanguage: SupportedLanguage = 'de';
+  availableLanguages = [
+    { code: 'de' as SupportedLanguage, name: 'Deutsch', nativeName: 'Deutsch', flag: '🇩🇪', rtl: false },
+    { code: 'en' as SupportedLanguage, name: 'Englisch', nativeName: 'English', flag: '🇬🇧', rtl: false },
+    { code: 'ar' as SupportedLanguage, name: 'Arabisch', nativeName: 'العربية', flag: '🇸🇦', rtl: true }
+  ];
+  userTimezone: string = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  // Benachrichtigungen (localStorage-Persistenz)
+  notificationSettings = [
+    { key: 'notify_orders', label: 'Neue Bestellungen', description: 'E-Mail bei jeder neuen Bestellung erhalten.', enabled: true },
+    { key: 'notify_stock', label: 'Geringe Lagerbestände', description: 'Warnung wenn ein Produkt unter den Mindestbestand fällt.', enabled: true },
+    { key: 'notify_reviews', label: 'Kundenbewertungen', description: 'Benachrichtigung bei neuen Bewertungen.', enabled: false },
+    { key: 'notify_marketing', label: 'Marketing-Berichte', description: 'Wöchentliche Zusammenfassung der Shop-Performance.', enabled: false },
+    { key: 'notify_security', label: 'Sicherheitshinweise', description: 'Warnung bei verdächtigen Login-Versuchen.', enabled: true }
+  ];
+  notificationsDirty = false;
 
   settingsSections: SettingsSection[] = [
     {
       title: 'Konto',
       icon: '👤',
       cards: [
-        {
-          id: 'profile',
-          icon: '👤',
-          title: 'Mein Profil',
-          description: 'Name, E-Mail und Profilbild verwalten',
-          tab: 'profile'
-        },
-        {
-          id: 'security',
-          icon: '🔒',
-          title: 'Sicherheit & Passwort',
-          description: 'Passwort, 2FA und aktive Sitzungen',
-          tab: 'security'
-        },
-        {
-          id: 'notifications',
-          icon: '🔔',
-          title: 'Benachrichtigungen',
-          description: 'E-Mail- und Push-Benachrichtigungen konfigurieren',
-          tab: 'notifications'
-        },
-        {
-          id: 'language',
-          icon: '🌍',
-          title: 'Sprache & Region',
-          description: 'Sprache, Zeitzone und Währung einstellen',
-          tab: 'language'
-        }
+        { id: 'profile', icon: '👤', title: 'Mein Profil', description: 'Account-Daten, Plan-Nutzung und verknüpfte Shops', tab: 'profile' },
+        { id: 'security', icon: '🔒', title: 'Sicherheit', description: 'Anmeldestatus, Token-Info und Sitzungsverwaltung', tab: 'security' },
+        { id: 'notifications', icon: '🔔', title: 'Benachrichtigungen', description: 'E-Mail-Benachrichtigungen für Bestellungen, Bewertungen etc.', tab: 'notifications' },
+        { id: 'language', icon: '🌍', title: 'Sprache & Region', description: 'Sprache umschalten (DE / EN / AR) – sofort wirksam', tab: 'language' }
       ]
     },
     {
       title: 'Team & Zugriff',
       icon: '👥',
       cards: [
-        {
-          id: 'roles',
-          icon: '👥',
-          title: 'Benutzerrollen',
-          description: 'Ihre Rollen und Berechtigungen anzeigen',
-          tab: 'roles'
-        },
-        {
-          id: 'permissions',
-          icon: '🔐',
-          title: 'Rollenverwaltung',
-          description: 'Shop- und Domain-Rollen für Teammitglieder verwalten',
-          tab: 'permissions'
-        },
-        {
-          id: 'audit',
-          icon: '📋',
-          title: 'Änderungsprotokoll',
-          description: 'Alle Aktionen und Änderungen nachverfolgen',
-          tab: 'audit'
-        }
+        { id: 'roles', icon: '👥', title: 'Benutzerrollen', description: 'Ihre Rollen und Berechtigungen in allen Shops', tab: 'roles' },
+        { id: 'permissions', icon: '🔐', title: 'Rollenverwaltung', description: 'Shop- und Domain-Rollen für Teammitglieder verwalten', tab: 'permissions' },
+        { id: 'audit', icon: '📋', title: 'Änderungsprotokoll', description: 'Alle Aktionen und Änderungen chronologisch nachverfolgen', tab: 'audit' }
       ]
     },
     {
-      title: 'Abonnement & Abrechnung',
+      title: 'Abonnement',
       icon: '💳',
       cards: [
-        {
-          id: 'subscription',
-          icon: '💎',
-          title: 'Abo & Tarif',
-          description: 'Aktuellen Plan verwalten, upgraden oder kündigen',
-          route: '/subscription',
-          badge: 'PRO',
-          badgeClass: 'badge-pro'
-        }
+        { id: 'subscription', icon: '💎', title: 'Abo & Tarif', description: 'Aktuellen Plan verwalten, upgraden oder kündigen', route: '/subscription', badge: 'PRO', badgeClass: 'badge-pro' }
       ]
     }
   ];
 
   private tabMeta: Record<string, { icon: string; title: string }> = {
-    profile:       { icon: '👤', title: 'Mein Profil' },
-    security:      { icon: '🔒', title: 'Sicherheit & Passwort' },
+    profile: { icon: '👤', title: 'Mein Profil' },
+    security: { icon: '🔒', title: 'Sicherheit' },
     notifications: { icon: '🔔', title: 'Benachrichtigungen' },
-    language:      { icon: '🌍', title: 'Sprache & Region' },
-    roles:         { icon: '👥', title: 'Benutzerrollen' },
-    permissions:   { icon: '🔐', title: 'Rollenverwaltung' },
-    audit:         { icon: '📋', title: 'Änderungsprotokoll' }
+    language: { icon: '🌍', title: 'Sprache & Region' },
+    roles: { icon: '👥', title: 'Benutzerrollen' },
+    permissions: { icon: '🔐', title: 'Rollenverwaltung' },
+    audit: { icon: '📋', title: 'Änderungsprotokoll' }
   };
+
+  private subs: Subscription[] = [];
 
   constructor(
     private route: ActivatedRoute,
-    private router: Router,
-    private authService: AuthService
+    public router: Router,
+    public authService: AuthService,
+    public translationService: TranslationService,
+    private usageService: UsageService,
+    private storeService: StoreService
   ) {}
 
   ngOnInit(): void {
@@ -919,30 +709,131 @@ export class SettingsComponent implements OnInit {
       { label: 'settings.title', icon: '⚙️' }
     ];
 
-    // Store-ID aus Route extrahieren (3-stufig gemäß Anweisung)
+    // ── Store-ID extrahieren (3-stufig) ──
     let id = this.route.snapshot.paramMap.get('storeId') || this.route.snapshot.paramMap.get('id');
     if (!id && this.route.parent) id = this.route.parent.snapshot.paramMap.get('id');
     if (!id) { const m = this.router.url.match(/\/stores\/(\d+)/); if (m) id = m[1]; }
+    this.currentStoreId = id && !isNaN(Number(id)) ? Number(id) : null;
 
-    if (id && !isNaN(Number(id))) {
-      this.currentStoreId = Number(id);
-    } else {
-      this.currentStoreId = null;
-    }
+    // ── User-Daten laden ──
+    this.subs.push(
+      this.authService.currentUser$.subscribe(user => {
+        if (user) {
+          this.userName = user.name || '';
+          this.userEmail = user.email || '';
+          this.userInitials = this.getInitials(user.name || user.email || '?');
+          this.userRoles = user.roles || [];
+          this.userRole = this.userRoles.length > 0 ? this.formatRole(this.userRoles[0]) : '';
+          this.userCreatedAt = user.createdAt || null;
+        }
+      })
+    );
 
-    // Benutzerinformationen laden
-    this.authService.currentUser$.subscribe(user => {
-      if (user) {
-        this.userName = user.name || '';
-        this.userEmail = user.email || '';
-        this.userInitials = this.getInitials(user.name || user.email || '?');
-        this.userRole = (user.roles && user.roles.length > 0)
-          ? this.formatRole(user.roles[0])
-          : '';
-      }
-    });
+    // ── Token-Info ──
+    const token = this.authService.getToken();
+    this.tokenInfo = token ? token : null;
+
+    // ── Sprache ──
+    this.currentLanguage = this.translationService.currentLang();
+
+    // ── Benachrichtigungen aus localStorage laden ──
+    this.loadNotificationSettings();
+
+    // ── Usage-Daten vom Backend ──
+    this.loadUsageStats();
+
+    // ── Meine Stores laden ──
+    this.loadMyStores();
   }
 
+  ngOnDestroy(): void {
+    this.subs.forEach(s => s.unsubscribe());
+  }
+
+  // ═══ USAGE ═══
+  private loadUsageStats(): void {
+    this.usageLoading = true;
+    this.subs.push(
+      this.usageService.getMyUsage().subscribe({
+        next: (stats) => {
+          this.usageStats = stats;
+          this.usageItems = this.mapUsageToItems(stats);
+          this.usageLoading = false;
+        },
+        error: (err) => {
+          console.warn('⚠️ Usage-Daten konnten nicht geladen werden:', err);
+          this.usageLoading = false;
+        }
+      })
+    );
+  }
+
+  private mapUsageToItems(s: UsageStats) {
+    return [
+      { icon: '🏪', label: 'Stores', ...this.extractUsage(s.stores) },
+      { icon: '📦', label: 'Produkte', ...this.extractUsage(s.products) },
+      { icon: '💾', label: 'Speicher (MB)', ...this.extractUsage(s.storageMb) },
+      { icon: '🤖', label: 'AI-Calls / Monat', ...this.extractUsage(s.aiCallsThisMonth) },
+      { icon: '🌐', label: 'Domains', ...this.extractUsage(s.customDomains) },
+      { icon: '👥', label: 'Kunden', ...this.extractUsage(s.customers) }
+    ];
+  }
+
+  private extractUsage(item: UsageItem) {
+    return { used: item.used, limit: item.limit, percent: item.percent };
+  }
+
+  // ═══ STORES ═══
+  private loadMyStores(): void {
+    this.subs.push(
+      this.storeService.getMyStores().subscribe({
+        next: (stores) => { this.myStores = stores; },
+        error: (err) => { console.warn('⚠️ Stores konnten nicht geladen werden:', err); }
+      })
+    );
+  }
+
+  navigateToStore(store: Store): void {
+    this.router.navigate(['/stores', store.id]);
+  }
+
+  // ═══ SPRACHE (echt!) ═══
+  switchLanguage(lang: SupportedLanguage): void {
+    this.currentLanguage = lang;
+    this.translationService.setLanguage(lang);
+  }
+
+  // ═══ BENACHRICHTIGUNGEN (localStorage-Persistenz) ═══
+  private loadNotificationSettings(): void {
+    const saved = localStorage.getItem('notification_settings');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved) as Record<string, boolean>;
+        this.notificationSettings.forEach(n => {
+          if (parsed[n.key] !== undefined) n.enabled = parsed[n.key];
+        });
+      } catch { /* ignore */ }
+    }
+  }
+
+  onNotificationChange(_setting: { key: string; enabled: boolean }): void {
+    this.notificationsDirty = true;
+  }
+
+  saveNotifications(): void {
+    const map: Record<string, boolean> = {};
+    this.notificationSettings.forEach(n => map[n.key] = n.enabled);
+    localStorage.setItem('notification_settings', JSON.stringify(map));
+    this.notificationsDirty = false;
+  }
+
+  // ═══ LOGOUT ═══
+  onLogout(): void {
+    this.authService.logout();
+    this.router.navigate(['/login']);
+  }
+
+  // ═══ NAVIGATION ═══
   openCard(card: SettingsCard): void {
     if (card.route) {
       this.router.navigate([card.route]);
@@ -959,28 +850,23 @@ export class SettingsComponent implements OnInit {
     return this.tabMeta[this.activeTab || '']?.title || 'Einstellungen';
   }
 
-  private getInitials(name: string): string {
-    return name
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map(w => w[0].toUpperCase())
-      .join('');
-  }
-
-  private formatRole(role: string): string {
+  // ═══ HELPERS ═══
+  formatRole(role: string): string {
     const labels: Record<string, string> = {
-      'SUPER_ADMIN': 'Super Admin',
-      'STORE_OWNER': 'Shop-Besitzer',
-      'STORE_ADMIN': 'Shop-Admin',
-      'STORE_MANAGER': 'Shop-Manager',
-      'STORE_STAFF': 'Mitarbeiter',
-      'CUSTOMER': 'Kunde',
-      'ROLE_SUPER_ADMIN': 'Super Admin',
-      'ROLE_STORE_OWNER': 'Shop-Besitzer',
-      'ROLE_ADMIN': 'Admin',
-      'ROLE_USER': 'Benutzer'
+      'SUPER_ADMIN': 'Super Admin', 'STORE_OWNER': 'Shop-Besitzer',
+      'STORE_ADMIN': 'Shop-Admin', 'STORE_MANAGER': 'Shop-Manager',
+      'STORE_STAFF': 'Mitarbeiter', 'CUSTOMER': 'Kunde',
+      'ROLE_SUPER_ADMIN': 'Super Admin', 'ROLE_STORE_OWNER': 'Shop-Besitzer',
+      'ROLE_ADMIN': 'Admin', 'ROLE_USER': 'Benutzer'
     };
     return labels[role] || role.replace(/_/g, ' ').toLowerCase();
+  }
+
+  formatStorageMb(mb: number): string {
+    return mb >= 1024 ? (mb / 1024).toFixed(1) + ' GB' : mb + ' MB';
+  }
+
+  private getInitials(name: string): string {
+    return name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('');
   }
 }
