@@ -960,6 +960,23 @@
       "labelReason": "سبب الإلغاء",
       "outro": "إذا كانت لديك أسئلة حول الإلغاء، يرجى التواصل مع الدعم."
     },
+    "newOrderNotification": {
+      "subject": "🛒 طلب جديد #{{orderNumber}} - {{storeName}}",
+      "title": "تم استلام طلب جديد!",
+      "intro": "لقد تلقيت طلباً جديداً في متجرك. يرجى معالجته في أقرب وقت ممكن.",
+      "labelOrderNumber": "رقم الطلب",
+      "labelTotal": "المبلغ الإجمالي",
+      "labelPayment": "طريقة الدفع",
+      "labelCustomer": "العميل",
+      "labelItems": "المنتجات المطلوبة",
+      "labelShipping": "عنوان الشحن",
+      "labelProduct": "المنتج",
+      "labelQty": "الكمية",
+      "labelPrice": "السعر",
+      "labelItemTotal": "الإجمالي",
+      "outro": "سجّل الدخول إلى لوحة التحكم لإدارة هذا الطلب.",
+      "btnManageOrder": "إدارة الطلب"
+    },
     "subscription": {
       "labelPlan": "الباقة",
       "labelDaysLeft": "الأيام المتبقية",

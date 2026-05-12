@@ -1130,6 +1130,23 @@
       "labelReason": "Stornierungsgrund",
       "outro": "Falls Sie Fragen zur Stornierung haben, kontaktieren Sie bitte unseren Support."
     },
+    "newOrderNotification": {
+      "subject": "🛒 Neue Bestellung #{{orderNumber}} - {{storeName}}",
+      "title": "Neue Bestellung eingegangen!",
+      "intro": "Sie haben eine neue Bestellung in Ihrem Shop erhalten. Bitte bearbeiten Sie diese zeitnah.",
+      "labelOrderNumber": "Bestellnummer",
+      "labelTotal": "Gesamtbetrag",
+      "labelPayment": "Zahlungsmethode",
+      "labelCustomer": "Kunde",
+      "labelItems": "Bestellte Artikel",
+      "labelShipping": "Lieferadresse",
+      "labelProduct": "Artikel",
+      "labelQty": "Menge",
+      "labelPrice": "Preis",
+      "labelItemTotal": "Gesamt",
+      "outro": "Melden Sie sich in Ihrem Dashboard an, um diese Bestellung zu verwalten.",
+      "btnManageOrder": "Bestellung verwalten"
+    },
     "subscription": {
       "labelPlan": "Plan",
       "labelDaysLeft": "Tage verbleibend",

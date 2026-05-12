@@ -142,6 +142,93 @@ public class EmailService {
     }
 
     // ==================================================================================
+    // STORE OWNER NOTIFICATIONS
+    // ==================================================================================
+
+    /**
+     * Benachrichtigt den Store-Owner über eine neue Bestellung.
+     * Wird asynchron aufgerufen sobald eine Bestellung den Status PENDING erhält.
+     *
+     * @param ownerEmail     E-Mail des Store-Owners
+     * @param ownerLang      Bevorzugte Sprache des Owners (de/en/ar)
+     * @param orderNumber    Bestellnummer
+     * @param storeName      Name des Stores
+     * @param storeLogo      Logo-URL (optional)
+     * @param totalAmount    Gesamtbetrag
+     * @param customerEmail  E-Mail des Kunden
+     * @param customerName   Name des Kunden (optional)
+     * @param paymentMethod  Zahlungsmethode (optional)
+     * @param items          Bestellte Artikel
+     */
+    public void sendNewOrderNotificationToOwner(String ownerEmail, String ownerLang,
+                                                String orderNumber, String storeName,
+                                                String storeLogo, Double totalAmount,
+                                                String customerEmail, String customerName,
+                                                String paymentMethod, List<OrderItem> items) {
+        if (!mailEnabled) {
+            log.info("Mail disabled – new order notification to owner: {} order: {}", ownerEmail, orderNumber);
+            return;
+        }
+        if (ownerEmail == null || ownerEmail.isBlank()) {
+            log.warn("Cannot send owner notification – owner email is null for order: {}", orderNumber);
+            return;
+        }
+        try {
+            String lang = ownerLang != null ? ownerLang : "en";
+            Map<String, Object> vars = new HashMap<>();
+            vars.put("orderNumber",      orderNumber);
+            vars.put("storeName",        storeName);
+            vars.put("storeLogo",        storeLogo);
+            vars.put("totalAmount",      String.format("%.2f", totalAmount));
+            vars.put("currency",         "MAD");
+            vars.put("customerEmail",    customerEmail);
+            vars.put("customerName",     customerName);
+            vars.put("paymentMethod",    paymentMethod != null ? paymentMethod : "-");
+            vars.put("orderManageUrl",   baseUrl + "/stores");
+            vars.put("greeting",         buildGreeting(lang, null));
+            vars.put("title",            t(lang, "newOrderNotification.title",            "New Order Received!"));
+            vars.put("intro",            t(lang, "newOrderNotification.intro",            "You have received a new order."));
+            vars.put("labelOrderNumber", t(lang, "newOrderNotification.labelOrderNumber", "Order Number"));
+            vars.put("labelTotal",       t(lang, "newOrderNotification.labelTotal",       "Total Amount"));
+            vars.put("labelPayment",     t(lang, "newOrderNotification.labelPayment",     "Payment Method"));
+            vars.put("labelCustomer",    t(lang, "newOrderNotification.labelCustomer",    "Customer"));
+            vars.put("labelItems",       t(lang, "newOrderNotification.labelItems",       "Ordered Items"));
+            vars.put("labelShipping",    t(lang, "newOrderNotification.labelShipping",    "Shipping Address"));
+            vars.put("labelProduct",     t(lang, "newOrderNotification.labelProduct",     "Item"));
+            vars.put("labelQty",         t(lang, "newOrderNotification.labelQty",         "Qty"));
+            vars.put("labelPrice",       t(lang, "newOrderNotification.labelPrice",       "Price"));
+            vars.put("labelItemTotal",   t(lang, "newOrderNotification.labelItemTotal",   "Total"));
+            vars.put("outro",            t(lang, "newOrderNotification.outro",            "Log in to manage this order."));
+            vars.put("btnManageOrder",   t(lang, "newOrderNotification.btnManageOrder",   "Manage Order"));
+            addFooter(lang, vars);
+
+            if (items != null && !items.isEmpty()) {
+                vars.put("hasItems", true);
+                List<Map<String, Object>> itemList = new ArrayList<>();
+                for (OrderItem item : items) {
+                    Map<String, Object> row = new HashMap<>();
+                    row.put("name",         item.getName() != null ? item.getName() : item.getProductName());
+                    row.put("variantTitle", item.getVariantTitle());
+                    row.put("quantity",     item.getQuantity());
+                    row.put("price",        item.getPrice() != null ? String.format("%.2f", item.getPrice()) : "-");
+                    row.put("total",        item.getTotal() != null ? String.format("%.2f", item.getTotal()) : "-");
+                    row.put("currency",     "MAD");
+                    itemList.add(row);
+                }
+                vars.put("items", itemList);
+            }
+
+            String subjectTpl = t(lang, "newOrderNotification.subject",
+                    "🛒 New Order #{{orderNumber}} - {{storeName}}");
+            sendHtml(ownerEmail, templateService.renderSubject(subjectTpl, vars),
+                     templateService.render("new-order-notification.html", lang, vars));
+            log.info("New order notification (HTML/{}) sent to owner: {} order: {}", lang, ownerEmail, orderNumber);
+        } catch (Exception e) {
+            log.error("Failed to send new order notification to owner: {}", ownerEmail, e);
+        }
+    }
+
+    // ==================================================================================
     // ORDER E-MAILS
     // ==================================================================================
 

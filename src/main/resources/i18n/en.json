@@ -1128,6 +1128,23 @@
       "labelReason": "Cancellation Reason",
       "outro": "If you have questions about the cancellation, please contact our support."
     },
+    "newOrderNotification": {
+      "subject": "🛒 New Order #{{orderNumber}} - {{storeName}}",
+      "title": "New Order Received!",
+      "intro": "You have received a new order in your store. Please process it promptly.",
+      "labelOrderNumber": "Order Number",
+      "labelTotal": "Total Amount",
+      "labelPayment": "Payment Method",
+      "labelCustomer": "Customer",
+      "labelItems": "Ordered Items",
+      "labelShipping": "Shipping Address",
+      "labelProduct": "Item",
+      "labelQty": "Qty",
+      "labelPrice": "Price",
+      "labelItemTotal": "Total",
+      "outro": "Log in to your dashboard to manage this order.",
+      "btnManageOrder": "Manage Order"
+    },
     "subscription": {
       "labelPlan": "Plan",
       "labelDaysLeft": "Days left",

@@ -48,15 +48,33 @@ public class OrderStatusEventListener {
             return;
         }
 
+        // Store-Owner E-Mail & Sprache ermitteln
+        String ownerEmail = null;
+        String ownerLang  = "en";
+        if (order.getStore() != null && order.getStore().getOwner() != null) {
+            ownerEmail = order.getStore().getOwner().getEmail();
+            ownerLang  = order.getStore().getOwner().getPreferredLanguage();
+        }
+
         List<OrderItem> items = order.getOrderItems() != null ? order.getOrderItems() : List.of();
 
         switch (newStatus) {
             case PENDING:
                 if (oldStatus == null) {
+                    // 1) Bestätigung an den Kunden
                     emailService.sendOrderConfirmation(
                         customerEmail, orderNumber, storeName,
                         order.getTotalAmount().doubleValue(),
                         items, storeLogo, lang
+                    );
+                    // 2) Neue-Bestellung-Benachrichtigung an den Store-Owner
+                    String customerName   = order.getCustomer() != null ? order.getCustomer().getName()  : null;
+                    String paymentMethod  = order.getPaymentMethod() != null ? order.getPaymentMethod().name() : null;
+                    emailService.sendNewOrderNotificationToOwner(
+                        ownerEmail, ownerLang,
+                        orderNumber, storeName, storeLogo,
+                        order.getTotalAmount().doubleValue(),
+                        customerEmail, customerName, paymentMethod, items
                     );
                 }
                 break;
