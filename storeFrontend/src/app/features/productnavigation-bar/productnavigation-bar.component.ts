@@ -63,19 +63,12 @@ export class ProductnavigationBarComponent implements OnInit {
             label: 'navigation.orders',
             route: (id) => ['/dashboard/stores', id, 'orders'],
             exact: true
-        },/*
-        {
-            icon: '📞',
-            label: 'COD Verifizierung',
-            route: (id) => ['/dashboard/stores', id, 'orders', 'verification'],
-            exact: true,
-            showBadge: true
         },
         {
-            icon: '🚚',
-            label: 'navigation.delivery',
-            route: (id) => ['/dashboard/stores', id, 'delivery']
-        },*/
+            icon: '⭐',
+            label: 'navigation.reviews',
+            route: (id) => ['/stores', id, 'reviews']
+        },
         {
             icon: '🏠',
             label: 'navigation.homepage',
