@@ -76,6 +76,10 @@ public class SecurityConfig {
                 // Product Reviews - Public read access for storefront
                 .requestMatchers(HttpMethod.GET, "/api/products/*/reviews").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/products/*/reviews/stats").permitAll()
+                // Delivery Partner Marketplace - GET ist öffentlich (Marktplatz durchsuchen)
+                .requestMatchers(HttpMethod.GET, "/api/delivery-partners").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/delivery-partners/featured").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/delivery-partners/*/reviews").permitAll()
                 // Product Options - GET ist öffentlich (für Storefront Produktansicht)
                 .requestMatchers(HttpMethod.GET, "/api/stores/*/products/*/options").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/stores/*/products/*/options/**").permitAll()
