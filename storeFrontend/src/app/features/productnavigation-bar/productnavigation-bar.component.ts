@@ -70,6 +70,11 @@ export class ProductnavigationBarComponent implements OnInit {
             route: (id) => ['/stores', id, 'reviews']
         },
         {
+            icon: '🚚',
+            label: 'navigation.delivery',
+            route: (id) => ['/stores', id, 'delivery']
+        },
+        {
             icon: '🏠',
             label: 'navigation.homepage',
             route: (id) => ['/dashboard/stores', id, 'homepage-builder']

@@ -205,11 +205,14 @@ export const routes: Routes = [
     loadComponent: () => import('./features/stores/store-onboarding.component').then(m => m.StoreOnboardingComponent),
     canActivate: [authGuard]
   },
+
+  // ==================== Delivery Management ====================
   {
-    path: 'stores/:id',
-    loadComponent: () => import('./features/stores/store-detail.component').then(m => m.StoreDetailComponent),
+    path: 'stores/:id/delivery',
+    loadComponent: () => import('./features/delivery/delivery-management.component').then(m => m.DeliveryManagementComponent),
     canActivate: [authGuard]
   },
+
 
   // ==================== Coupon Management ====================
   {
@@ -256,6 +259,15 @@ export const routes: Routes = [
   {
     path: 'stores/:id/brand',
     loadComponent: () => import('./features/settings/brand-onboarding/brand-onboarding.component').then(m => m.BrandOnboardingComponent),
+    canActivate: [authGuard]
+  },
+
+  // ==================== Store Detail (Catch-All) ====================
+  // WICHTIG: Diese Route MUSS nach ALLEN spezifischen /stores/:id/xxx-Routen stehen!
+  // Sonst fängt sie alles ab und zeigt die Store-Übersicht statt der Unterseite.
+  {
+    path: 'stores/:id',
+    loadComponent: () => import('./features/stores/store-detail.component').then(m => m.StoreDetailComponent),
     canActivate: [authGuard]
   },
 
