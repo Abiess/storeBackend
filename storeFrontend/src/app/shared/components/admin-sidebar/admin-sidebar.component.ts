@@ -188,16 +188,6 @@ export class AdminSidebarComponent implements OnInit {
                         labelKey: 'sidebarAdmin.items.myAccount',
                         icon: '👤',
                         route: '/settings'
-                    },
-                    {
-                        labelKey: 'sidebarAdmin.items.subscription',
-                        icon: '💎',
-                        route: '/subscription'
-                    },
-                    {
-                        labelKey: 'sidebarAdmin.items.roles',
-                        icon: '👥',
-                        route: '/role-management'
                     }
                 ]
             }
