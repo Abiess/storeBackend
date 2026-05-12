@@ -107,7 +107,7 @@ import { Subscription } from 'rxjs';
 
           <div class="form-row">
             <div class="form-group">
-              <label for="basePrice">{{ 'product.price' | translate }} (â‚¬) *</label>
+              <label for="basePrice">{{ 'product.price' | translate }} (€) *</label>
               <input 
                 id="basePrice"
                 type="number" 
@@ -122,6 +122,23 @@ import { Subscription } from 'rxjs';
               </div>
             </div>
 
+            <div class="form-group">
+              <label for="stock">{{ 'product.stock' | translate }}</label>
+              <input 
+                id="stock"
+                type="number" 
+                formControlName="stock"
+                min="0"
+                placeholder="0"
+                [class.error]="productForm.get('stock')?.invalid && productForm.get('stock')?.touched"
+              />
+              <div class="error-message" *ngIf="productForm.get('stock')?.invalid && productForm.get('stock')?.touched">
+                {{ 'product.required.stock' | translate }}
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
             <div class="form-group">
               <label for="status">{{ 'product.status' | translate }}</label>
               <select id="status" formControlName="status">
@@ -304,56 +321,6 @@ import { Subscription } from 'rxjs';
           <div *ngIf="!productId" class="info-banner">
             ℹ️ <strong>Hinweis</strong>
             <p>Bitte speichern Sie zuerst das Produkt. Danach kÃ¶nnen Sie Varianten hinzufÃ¼gen.</p>
-          </div>
-        </div>
-
-        <!-- Preis & Lager (Tab: Pricing) -->
-        <div class="form-card" *ngIf="activeTab === 'pricing'">
-          <h2>💰 Preis & Lager</h2>
-          
-          <div class="form-group">
-            <label for="basePrice">{{ 'product.price' | translate }} (â‚¬) *</label>
-            <input 
-              id="basePrice"
-              type="number" 
-              formControlName="basePrice"
-              step="0.01"
-              min="0"
-              placeholder="0.00"
-              [class.error]="productForm.get('basePrice')?.invalid && productForm.get('basePrice')?.touched"
-            />
-            <div class="error-message" *ngIf="productForm.get('basePrice')?.invalid && productForm.get('basePrice')?.touched">
-              {{ 'product.required.price' | translate }}
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="stock">{{ 'product.stock' | translate }}</label>
-            <input 
-              id="stock"
-              type="number" 
-              formControlName="stock"
-              min="0"
-              placeholder="0"
-              [class.error]="productForm.get('stock')?.invalid && productForm.get('stock')?.touched"
-            />
-            <div class="error-message" *ngIf="productForm.get('stock')?.invalid && productForm.get('stock')?.touched">
-              {{ 'product.required.stock' | translate }}
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="sku">{{ 'product.sku' | translate }}</label>
-            <input 
-              id="sku"
-              type="text" 
-              formControlName="sku"
-              [placeholder]="'product.placeholder.sku' | translate"
-              [class.error]="productForm.get('sku')?.invalid && productForm.get('sku')?.touched"
-            />
-            <div class="error-message" *ngIf="productForm.get('sku')?.invalid && productForm.get('sku')?.touched">
-              {{ 'product.required.sku' | translate }}
-            </div>
           </div>
         </div>
 
@@ -1470,14 +1437,13 @@ export class ProductFormComponent implements OnInit, OnDestroy {
 
   // Multi-image AI settings
   selectedSuggestionIndex = 0;
-  activeTab: 'basic' | 'ai' | 'media' | 'variants' | 'pricing' = 'basic';
+  activeTab: 'basic' | 'ai' | 'media' | 'variants' = 'basic';
 
-  tabs: Array<{ id: 'basic' | 'ai' | 'media' | 'variants' | 'pricing', label: string, icon: string }> = [
+  tabs: Array<{ id: 'basic' | 'ai' | 'media' | 'variants', label: string, icon: string }> = [
     { id: 'basic', label: 'Basis Info', icon: '📝' },
-    { id: 'ai', label: 'KI-Assistent', icon: '🤖' },
+    //{ id: 'ai', label: 'KI-Assistent', icon: '🤖' },
     { id: 'media', label: 'Bilder', icon: '📷' },
-    { id: 'variants', label: 'Varianten', icon: '🎨' },
-    { id: 'pricing', label: 'Preis & Lager', icon: '💰' }
+    { id: 'variants', label: 'Varianten', icon: '🎨' }
   ];
 
   private storeIdSubscription?: Subscription;
@@ -1882,7 +1848,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   }
 
 
-  setActiveTab(tab: 'basic' | 'ai' | 'media' | 'variants' | 'pricing'): void {
+  setActiveTab(tab: 'basic' | 'ai' | 'media' | 'variants'): void {
     this.activeTab = tab;
   }
 
