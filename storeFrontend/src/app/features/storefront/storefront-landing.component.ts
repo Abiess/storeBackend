@@ -14,6 +14,9 @@ import { ProductCardComponent } from './product-card.component';
 import { StoreNotFoundComponent } from './store-not-found.component';
 import { ProductQuickViewComponent } from '@app/shared/components/product-quick-view.component';
 import { ImageSliderComponent } from '@app/shared/components/image-slider.component';
+import { ClassicShopLayoutComponent } from './components/classic-shop-layout.component';
+import { ElectronicsProLayoutComponent } from './components/electronics-pro-layout.component';
+import { FashionEditorialLayoutComponent } from './components/fashion-editorial-layout.component';
 
 /**
  * Dedizierte Storefront-Landing-Page für Subdomains (abc.markt.ma)
@@ -28,7 +31,10 @@ import { ImageSliderComponent } from '@app/shared/components/image-slider.compon
     ProductCardComponent,
     StoreNotFoundComponent,
     ProductQuickViewComponent,
-    ImageSliderComponent
+    ImageSliderComponent,
+    ClassicShopLayoutComponent,
+    ElectronicsProLayoutComponent,
+    FashionEditorialLayoutComponent
   ],
   templateUrl: './storefront-landing.component.html',
   styleUrls: ['./storefront-landing.component.scss']
@@ -63,6 +69,9 @@ export class StorefrontLandingComponent implements OnInit {
   storeLogo: string | null = null;
   /** true nachdem Theme-Antwort empfangen – verhindert dass loadStoreLogo() das Logo überschreibt */
   private themeLoaded = false;
+
+  /** Aktiver Template-Code für dynamisches Layout-Switching */
+  activeTemplateCode: string = 'MODERN_GRID';
 
   constructor(
     private subdomainService: SubdomainService,
@@ -139,6 +148,21 @@ export class StorefrontLandingComponent implements OnInit {
         if (theme) {
           console.log('🎨 Theme angewendet:', theme.name);
           this.themeService.applyTheme(theme);
+          // ✅ Template-Code für Layout-Switch setzen
+          const slug = (theme.template || '').toString().toUpperCase();
+          if (['MODERN_GRID', 'CLASSIC_BOOTSTRAP', 'ELECTRONICS_PRO', 'FASHION_EDITORIAL', 'MINIMAL_DARK', 'BEAUTY_SOFT', 'RESTAURANT_WARM'].includes(slug)) {
+            this.activeTemplateCode = slug;
+          } else {
+            // Fallback-Mapping: ShopTemplate enum → Layout-Slug
+            const templateMap: Record<string, string> = {
+              'FASHION': 'FASHION_EDITORIAL',
+              'ELECTRONICS': 'ELECTRONICS_PRO',
+              'FOOD': 'RESTAURANT_WARM',
+              'BEAUTY': 'BEAUTY_SOFT'
+            };
+            this.activeTemplateCode = templateMap[slug] || 'MODERN_GRID';
+          }
+          console.log('🎨 Aktives Layout-Template:', this.activeTemplateCode);
           // ✅ Immer explizit setzen – auch null (= Logo wurde entfernt).
           // Verhindert, dass loadStoreLogo() ein altes store.logoUrl überschreibt.
           this.storeLogo = theme.logoUrl ?? null;

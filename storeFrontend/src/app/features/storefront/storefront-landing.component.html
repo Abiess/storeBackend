@@ -1,4 +1,4 @@
-<!-- Modern E-Commerce Storefront - Inspired by Amazon, Zalando, About You -->
+<!-- Modern E-Commerce Storefront - Dynamic Layout Switching -->
 
 <!-- Store nicht gefunden / Reservierter Slug -->
 <app-store-not-found *ngIf="storeNotFound"></app-store-not-found>
@@ -41,157 +41,224 @@
     <p>Store wird geladen...</p>
   </div>
 
-  <!-- Main Content with Sidebar Layout -->
+  <!-- ═══════════════════════════════════════════════════════════════
+       DYNAMIC LAYOUT SWITCH – basierend auf activeTemplateCode
+       ═══════════════════════════════════════════════════════════════ -->
   <main class="storefront-main" *ngIf="!loading">
-    <div class="page-container">
 
-      <!-- Image Slider Section -->
-      <section class="slider-section" *ngIf="sliderImages && sliderImages.length > 0">
-        <app-image-slider [images]="sliderImages" [autoplay]="true" [interval]="5000"></app-image-slider>
-      </section>
+    <!-- ── CLASSIC BOOTSTRAP Layout ── -->
+    <ng-container *ngIf="activeTemplateCode === 'CLASSIC_BOOTSTRAP' || activeTemplateCode === 'RESTAURANT_WARM'">
+      <app-classic-shop-layout [showHero]="true">
+        <ng-container top>
+          <ng-container *ngTemplateOutlet="heroSection"></ng-container>
+        </ng-container>
+        <ng-container sidebar>
+          <ng-container *ngTemplateOutlet="sidebarSection"></ng-container>
+        </ng-container>
+        <ng-container main>
+          <ng-container *ngTemplateOutlet="productSections"></ng-container>
+        </ng-container>
+      </app-classic-shop-layout>
+    </ng-container>
 
-      <!-- Fallback Hero Banner (wenn keine Slider-Bilder) -->
-      <section class="hero-banner" *ngIf="!sliderImages || sliderImages.length === 0">
-        <div class="hero-content">
-          <h1 class="hero-title">{{ storeName }}</h1>
-          <p class="hero-subtitle">Entdecke unsere Produkte</p>
+    <!-- ── ELECTRONICS PRO Layout ── -->
+    <ng-container *ngIf="activeTemplateCode === 'ELECTRONICS_PRO'">
+      <app-electronics-pro-layout [showHero]="true">
+        <ng-container top>
+          <ng-container *ngTemplateOutlet="heroSection"></ng-container>
+        </ng-container>
+        <ng-container sidebar>
+          <ng-container *ngTemplateOutlet="sidebarSection"></ng-container>
+        </ng-container>
+        <ng-container main>
+          <ng-container *ngTemplateOutlet="productSections"></ng-container>
+        </ng-container>
+      </app-electronics-pro-layout>
+    </ng-container>
+
+    <!-- ── FASHION EDITORIAL Layout ── -->
+    <ng-container *ngIf="activeTemplateCode === 'FASHION_EDITORIAL'">
+      <app-fashion-editorial-layout [showHero]="true">
+        <ng-container top>
+          <ng-container *ngTemplateOutlet="heroSection"></ng-container>
+        </ng-container>
+        <ng-container sidebar>
+          <ng-container *ngTemplateOutlet="sidebarSection"></ng-container>
+        </ng-container>
+        <ng-container main>
+          <ng-container *ngTemplateOutlet="productSections"></ng-container>
+        </ng-container>
+      </app-fashion-editorial-layout>
+    </ng-container>
+
+    <!-- ── DEFAULT (MODERN_GRID / MINIMAL_DARK / BEAUTY_SOFT / andere) ── -->
+    <ng-container *ngIf="activeTemplateCode !== 'CLASSIC_BOOTSTRAP' && activeTemplateCode !== 'RESTAURANT_WARM' && activeTemplateCode !== 'ELECTRONICS_PRO' && activeTemplateCode !== 'FASHION_EDITORIAL'">
+      <div class="page-container">
+        <!-- Slider / Hero -->
+        <ng-container *ngTemplateOutlet="heroSection"></ng-container>
+
+        <!-- Breadcrumbs -->
+        <nav class="breadcrumbs" aria-label="breadcrumb">
+          <ol>
+            <li><a (click)="filterByCategory(null)">Home</a></li>
+            <li *ngIf="selectedCategory" class="active">{{ selectedCategory.name }}</li>
+          </ol>
+        </nav>
+
+        <!-- Sidebar + Grid Layout -->
+        <div class="products-layout">
+          <aside class="sidebar-filters">
+            <ng-container *ngTemplateOutlet="sidebarSection"></ng-container>
+          </aside>
+          <div class="products-area">
+            <ng-container *ngTemplateOutlet="toolbarSection"></ng-container>
+            <ng-container *ngTemplateOutlet="productSections"></ng-container>
+          </div>
         </div>
-      </section>
+      </div>
+    </ng-container>
 
-      <!-- Breadcrumbs -->
-      <nav class="breadcrumbs" aria-label="breadcrumb">
-        <ol>
-          <li><a (click)="filterByCategory(null)">Home</a></li>
-          <li *ngIf="selectedCategory" class="active">{{ selectedCategory.name }}</li>
-        </ol>
-      </nav>
-
-      <!-- Products Layout: Sidebar + Grid -->
-      <div class="products-layout">
-
-        <!-- Sidebar with Filters (Desktop) -->
-        <aside class="sidebar-filters">
-          <div class="filter-section">
-            <h3 class="filter-title">Kategorien</h3>
-            <ul class="category-list">
-              <li>
-                <button
-                  class="category-item"
-                  [class.active]="!selectedCategory"
-                  (click)="filterByCategory(null)">
-                  <span>Alle Produkte</span>
-                  <span class="count">({{ products.length }})</span>
-                </button>
-              </li>
-              <li *ngFor="let cat of categories">
-                <button
-                  class="category-item"
-                  [class.active]="selectedCategory?.id === cat.id"
-                  (click)="filterByCategory(cat)">
-                  <span>{{ cat.name }}</span>
-                  <span class="count">({{ getProductCountForCategory(cat) }})</span>
-                </button>
-              </li>
-            </ul>
-          </div>
-        </aside>
-
-        <!-- Products Grid Area -->
-        <div class="products-area">
-
-          <!-- Toolbar with Sort & View Options -->
-          <div class="products-toolbar">
-            <div class="toolbar-left">
-              <span class="result-count">
-                {{ filteredProducts.length }} {{ filteredProducts.length === 1 ? 'Produkt' : 'Produkte' }}
-                <span *ngIf="selectedCategory"> in {{ selectedCategory.name }}</span>
-              </span>
-            </div>
-            <div class="toolbar-right">
-              <label for="sortSelect" class="sr-only">Sortieren</label>
-              <select id="sortSelect" class="sort-select" (change)="onSortChange($event)">
-                <option value="relevant">Relevanz</option>
-                <option value="price-asc">Preis aufsteigend</option>
-                <option value="price-desc">Preis absteigend</option>
-                <option value="name-asc">Name A-Z</option>
-                <option value="newest">Neueste zuerst</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Featured Products Section -->
-          <section *ngIf="featuredProducts.length > 0 && !selectedCategory" class="featured-products-section">
-            <h2 class="section-heading">⭐ Highlights</h2>
-            <div class="products-grid featured">
-              <app-product-card
-                *ngFor="let product of featuredProducts.slice(0, 4)"
-                [product]="product"
-                (addToCart)="addToCart($event)"
-                (quickView)="openQuickView($event)"
-                (click)="trackProductView(product)">
-              </app-product-card>
-            </div>
-          </section>
-
-          <!-- Bestsellers Section -->
-          <section *ngIf="topProducts.length > 0 && !selectedCategory" class="bestsellers-section">
-            <h2 class="section-heading">🔥 Bestseller</h2>
-            <div class="products-grid">
-              <app-product-card
-                *ngFor="let product of topProducts.slice(0, 4)"
-                [product]="product"
-                (addToCart)="addToCart($event)"
-                (quickView)="openQuickView($event)"
-                (click)="trackProductView(product)">
-              </app-product-card>
-            </div>
-          </section>
-
-          <!-- New Arrivals -->
-          <section *ngIf="newArrivals.length > 0 && !selectedCategory" class="new-arrivals-section">
-            <h2 class="section-heading">✨ Neu eingetroffen</h2>
-            <div class="products-grid">
-              <app-product-card
-                *ngFor="let product of newArrivals.slice(0, 4)"
-                [product]="product"
-                (addToCart)="addToCart($event)"
-                (quickView)="openQuickView($event)"
-                (click)="trackProductView(product)">
-              </app-product-card>
-            </div>
-          </section>
-
-          <!-- All Products Section -->
-          <section class="all-products-section">
-            <h2 class="section-heading" *ngIf="!selectedCategory">Alle Produkte</h2>
-
-            <!-- Empty State -->
-            <div *ngIf="filteredProducts.length === 0" class="empty-state">
-              <div class="empty-icon">{{ selectedCategory ? '🔍' : '📦' }}</div>
-              <h3>{{ selectedCategory ? 'Keine Produkte gefunden' : 'Noch keine Produkte verfügbar' }}</h3>
-              <p>{{ selectedCategory ? 'In dieser Kategorie sind aktuell keine Produkte verfügbar.' : 'Wir arbeiten daran, neue Produkte bereitzustellen.' }}</p>
-              <button *ngIf="selectedCategory" class="btn-primary" (click)="filterByCategory(null)">
-                Alle Produkte anzeigen
-              </button>
-            </div>
-
-            <!-- Products Grid -->
-            <div *ngIf="filteredProducts.length > 0" class="products-grid main">
-              <app-product-card
-                *ngFor="let product of filteredProducts"
-                [product]="product"
-                (addToCart)="addToCart($event)"
-                (quickView)="openQuickView($event)"
-                (click)="trackProductView(product)">
-              </app-product-card>
-            </div>
-          </section>
-
-        </div><!-- End products-area -->
-      </div><!-- End products-layout -->
-
-    </div><!-- End page-container -->
   </main>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       REUSABLE TEMPLATE BLOCKS (ng-template)
+       ═══════════════════════════════════════════════════════════════ -->
+
+  <!-- HERO SECTION -->
+  <ng-template #heroSection>
+    <section class="slider-section" *ngIf="sliderImages && sliderImages.length > 0">
+      <app-image-slider [images]="sliderImages" [autoplay]="true" [interval]="5000"></app-image-slider>
+    </section>
+    <section class="hero-banner" *ngIf="!sliderImages || sliderImages.length === 0">
+      <div class="hero-content">
+        <h1 class="hero-title">{{ storeName }}</h1>
+        <p class="hero-subtitle">Entdecke unsere Produkte</p>
+      </div>
+    </section>
+  </ng-template>
+
+  <!-- SIDEBAR SECTION -->
+  <ng-template #sidebarSection>
+    <div class="filter-section">
+      <h3 class="filter-title">Kategorien</h3>
+      <ul class="category-list">
+        <li>
+          <button
+            class="category-item"
+            [class.active]="!selectedCategory"
+            (click)="filterByCategory(null)">
+            <span>Alle Produkte</span>
+            <span class="count">({{ products.length }})</span>
+          </button>
+        </li>
+        <li *ngFor="let cat of categories">
+          <button
+            class="category-item"
+            [class.active]="selectedCategory?.id === cat.id"
+            (click)="filterByCategory(cat)">
+            <span>{{ cat.name }}</span>
+            <span class="count">({{ getProductCountForCategory(cat) }})</span>
+          </button>
+        </li>
+      </ul>
+    </div>
+  </ng-template>
+
+  <!-- TOOLBAR SECTION -->
+  <ng-template #toolbarSection>
+    <div class="products-toolbar">
+      <div class="toolbar-left">
+        <span class="result-count">
+          {{ filteredProducts.length }} {{ filteredProducts.length === 1 ? 'Produkt' : 'Produkte' }}
+          <span *ngIf="selectedCategory"> in {{ selectedCategory.name }}</span>
+        </span>
+      </div>
+      <div class="toolbar-right">
+        <label for="sortSelect" class="sr-only">Sortieren</label>
+        <select id="sortSelect" class="sort-select" (change)="onSortChange($event)">
+          <option value="relevant">Relevanz</option>
+          <option value="price-asc">Preis aufsteigend</option>
+          <option value="price-desc">Preis absteigend</option>
+          <option value="name-asc">Name A-Z</option>
+          <option value="newest">Neueste zuerst</option>
+        </select>
+      </div>
+    </div>
+  </ng-template>
+
+  <!-- PRODUCT SECTIONS -->
+  <ng-template #productSections>
+    <!-- Toolbar (für Layout-Varianten die keinen eigenen haben) -->
+    <ng-container *ngIf="activeTemplateCode !== 'MODERN_GRID' && activeTemplateCode !== 'MINIMAL_DARK' && activeTemplateCode !== 'BEAUTY_SOFT'">
+      <ng-container *ngTemplateOutlet="toolbarSection"></ng-container>
+    </ng-container>
+
+    <!-- Featured Products -->
+    <section *ngIf="featuredProducts.length > 0 && !selectedCategory" class="featured-products-section">
+      <h2 class="section-heading">⭐ Highlights</h2>
+      <div class="products-grid featured">
+        <app-product-card
+          *ngFor="let product of featuredProducts.slice(0, 4)"
+          [product]="product"
+          (addToCart)="addToCart($event)"
+          (quickView)="openQuickView($event)"
+          (click)="trackProductView(product)">
+        </app-product-card>
+      </div>
+    </section>
+
+    <!-- Bestsellers -->
+    <section *ngIf="topProducts.length > 0 && !selectedCategory" class="bestsellers-section">
+      <h2 class="section-heading">🔥 Bestseller</h2>
+      <div class="products-grid">
+        <app-product-card
+          *ngFor="let product of topProducts.slice(0, 4)"
+          [product]="product"
+          (addToCart)="addToCart($event)"
+          (quickView)="openQuickView($event)"
+          (click)="trackProductView(product)">
+        </app-product-card>
+      </div>
+    </section>
+
+    <!-- New Arrivals -->
+    <section *ngIf="newArrivals.length > 0 && !selectedCategory" class="new-arrivals-section">
+      <h2 class="section-heading">✨ Neu eingetroffen</h2>
+      <div class="products-grid">
+        <app-product-card
+          *ngFor="let product of newArrivals.slice(0, 4)"
+          [product]="product"
+          (addToCart)="addToCart($event)"
+          (quickView)="openQuickView($event)"
+          (click)="trackProductView(product)">
+        </app-product-card>
+      </div>
+    </section>
+
+    <!-- All Products -->
+    <section class="all-products-section">
+      <h2 class="section-heading" *ngIf="!selectedCategory">Alle Produkte</h2>
+
+      <div *ngIf="filteredProducts.length === 0" class="empty-state">
+        <div class="empty-icon">{{ selectedCategory ? '🔍' : '📦' }}</div>
+        <h3>{{ selectedCategory ? 'Keine Produkte gefunden' : 'Noch keine Produkte verfügbar' }}</h3>
+        <p>{{ selectedCategory ? 'In dieser Kategorie sind aktuell keine Produkte verfügbar.' : 'Wir arbeiten daran, neue Produkte bereitzustellen.' }}</p>
+        <button *ngIf="selectedCategory" class="btn-primary" (click)="filterByCategory(null)">
+          Alle Produkte anzeigen
+        </button>
+      </div>
+
+      <div *ngIf="filteredProducts.length > 0" class="products-grid main">
+        <app-product-card
+          *ngFor="let product of filteredProducts"
+          [product]="product"
+          (addToCart)="addToCart($event)"
+          (quickView)="openQuickView($event)"
+          (click)="trackProductView(product)">
+        </app-product-card>
+      </div>
+    </section>
+  </ng-template>
 
   <!-- Quick View Modal -->
   <app-product-quick-view
