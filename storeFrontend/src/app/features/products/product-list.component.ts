@@ -21,9 +21,7 @@ import { FabService } from '@app/core/services/fab.service';
 
       <div class="header">
         <h1>{{ 'navigation.products' | translate }}</h1>
-        <button class="btn-primary" (click)="createProduct()">
-          + {{ 'product.new' | translate }}
-        </button>
+       
       </div>
 
       <!-- Responsive Data List -->
@@ -205,7 +203,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
       action: () => this.createProduct(),
       speedDial: [
         { icon: '📦', label: 'Neues Produkt', action: () => this.createProduct(), color: '#48bb78' },
-        { icon: '🤖', label: 'KI-Vorschlag', action: () => this.router.navigate([this.getStoreBasePath(), 'products', 'ai-suggest']), color: '#764ba2' },
+        //{ icon: '🤖', label: 'KI-Vorschlag', action: () => this.router.navigate([this.getStoreBasePath(), 'products', 'ai-suggest']), color: '#764ba2' },
         { icon: '📂', label: 'Kategorie anlegen', action: () => this.router.navigate([this.getStoreBasePath(), 'categories', 'new']), color: '#4299e1' },
       ]
     });

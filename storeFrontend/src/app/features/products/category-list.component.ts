@@ -7,6 +7,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { TranslationService } from '@app/core/services/translation.service';
 import { StoreNavigationComponent } from '@app/shared/components/store-navigation.component';
 import { ResponsiveDataListComponent, ColumnConfig, ActionConfig } from '@app/shared/components/responsive-data-list/responsive-data-list.component';
+import {FabService} from "@app/core/services/fab.service";
 
 interface Category {
   id: number;
@@ -133,9 +134,10 @@ export class CategoryListComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private http: HttpClient,
-    private translationService: TranslationService
+    private translationService: TranslationService,
+    private fabService: FabService
   ) {}
-
+  ngOnDestroy(): void { this.fabService.clear(); }
   ngOnInit() {
     this.route.params.subscribe(params => {
       const p = params['storeId'] || params['id'];
@@ -154,8 +156,22 @@ export class CategoryListComponent implements OnInit {
     if (!this.storeId || isNaN(this.storeId)) {
       this.router.navigate(['/dashboard']); return;
     }
+    // FAB: Produkt hinzufügen
+    this.fabService.register({
+      icon: '＋',
+      label: 'Produkt hinzufügen',
+      color: 'green',
+      action: () => this.createProduct(),
+      speedDial: [
+        { icon: '📂', label: 'Kategorie anlegen', action: () => this.router.navigate([this.getStoreBasePath(), 'categories', 'new']), color: '#4299e1' },
+        //{ icon: '🤖', label: 'KI-Vorschlag', action: () => this.router.navigate([this.getStoreBasePath(), 'products', 'ai-suggest']), color: '#764ba2' },
+        { icon: '📦', label: 'Neues Produkt', action: () => this.createProduct(), color: '#48bb78' },
+      ]
+    });
+
     this.loadCategories();
   }
+
 
   loadCategories() {
     this.loading = true;
@@ -219,5 +235,13 @@ export class CategoryListComponent implements OnInit {
         this.error = this.translationService.translate('category.error.delete');
       }
     });
+  }
+  createProduct(): void {
+    this.router.navigate([this.getStoreBasePath(), 'products', 'new']);
+  }
+  private getStoreBasePath(): string {
+    // /dashboard/stores/... wird vom dashboardStoresRedirectGuard automatisch
+    // auf /stores/... umgeleitet, daher gibt es nur noch eine Quelle der Wahrheit.
+    return `/stores/${this.storeId}`;
   }
 }
