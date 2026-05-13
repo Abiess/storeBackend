@@ -148,8 +148,8 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
   styles: [`
     .reviews-container {
       padding: 2rem;
-      background: white;
-      border-radius: 8px;
+      max-width: 1400px;
+      margin: 0 auto;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
 

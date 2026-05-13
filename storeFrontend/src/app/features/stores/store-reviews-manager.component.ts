@@ -16,7 +16,7 @@ import {StoreNavigationComponent} from "@app/shared/components/store-navigation.
   standalone: true,
   imports: [CommonModule, FormsModule, TranslatePipe, ProductnavigationBarComponent, PageHeaderComponent, StoreNavigationComponent],
   template: `
-    <app-productnavigation-bar></app-productnavigation-bar>
+    
 
     <div class="reviews-page">
       
@@ -198,7 +198,10 @@ import {StoreNavigationComponent} from "@app/shared/components/store-navigation.
     </div>
   `,
   styles: [`
-    .reviews-page { padding: 1.5rem 2rem; max-width: 1200px; margin: 0 auto; }
+    .reviews-page { 
+      padding: 2rem;
+      max-width: 1400px;
+      margin: 0 auto; }
 
     /* ─── Stats ─── */
     .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin-bottom: 1.5rem; }

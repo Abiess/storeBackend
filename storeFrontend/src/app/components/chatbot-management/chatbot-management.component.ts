@@ -5,11 +5,13 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, F
 import { ChatbotManagementService, ChatbotIntent, ChatbotStatistics } from '../../services/chatbot-management.service';
 import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
 import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
+import {StoreNavigationComponent} from "@app/shared/components/store-navigation.component";
+import {TranslatePipe} from "@app/core/pipes/translate.pipe";
 
 @Component({
   selector: 'app-chatbot-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent],
+    imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent, StoreNavigationComponent, TranslatePipe],
   templateUrl: './chatbot-management.component.html',
   styleUrls: ['./chatbot-management.component.scss']
 })

@@ -1,12 +1,15 @@
-<div class="chatbot-management">
-  <app-page-header
-    [title]="'Chatbot Verwaltung'"
-    [subtitle]="'Verwalten Sie Chatbot-Intents und Antworten'"
-    [breadcrumbs]="breadcrumbItems"
-    [showBackButton]="true"
-    [actions]="headerActions"
-  ></app-page-header>
 
+<div class="product-list-container">
+
+    <!-- Einheitliche Navigation -->
+    <app-store-navigation
+            [currentPage]="'items.chatbot' | translate">
+    </app-store-navigation>
+
+    <div class="header">
+        <h1>{{ 'items.chatbot' | translate }}</h1>
+
+    </div>
   <!-- Statistics -->
   <div class="statistics-grid" *ngIf="statistics">
     <div class="stat-card">
