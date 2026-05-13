@@ -1,26 +1,29 @@
-<nav class="nav-tabs" *ngIf="storeId$ | async as storeId">
-
+<nav class="nav-bar" *ngIf="storeId$ | async as storeId" role="tablist">
+  <div class="nav-scroll">
     <a
-            *ngFor="let tab of navTabs"
-            [routerLink]="tab.route(storeId)"
-            class="nav-tab"
-            routerLinkActive="active"
-            [routerLinkActiveOptions]="{ exact: tab.exact ?? false }">
+      *ngFor="let tab of visibleTabs"
+      [routerLink]="tab.route(storeId)"
+      class="nav-tab"
+      role="tab"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: tab.exact ?? false }">
 
-        <span class="icon">{{ tab.icon }}</span>
+      <span class="tab-icon" aria-hidden="true">{{ tab.icon }}</span>
 
-        <span class="label">
-      {{ tab.label | translate }}
-    </span>
+      <span class="tab-label">{{ tab.label | translate }}</span>
 
-        <span
-                class="badge"
-                *ngIf="tab.showBadge && (unverifiedCount$ | async) as count">
+      <!-- Beta Badge -->
+      <span class="beta-badge" *ngIf="tab.beta">Beta</span>
 
-      <span *ngIf="count > 0">{{ count }}</span>
+      <!-- Count Badge (z.B. unbestätigte Bestellungen) -->
+      <span
+        class="count-badge"
+        *ngIf="tab.showBadge && (unverifiedCount$ | async) as count">
+        <span *ngIf="count > 0">{{ count > 99 ? '99+' : count }}</span>
+      </span>
 
-    </span>
-
+      <!-- Active indicator line -->
+      <span class="active-indicator"></span>
     </a>
-
+  </div>
 </nav>

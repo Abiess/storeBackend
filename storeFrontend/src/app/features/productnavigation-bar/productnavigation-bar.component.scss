@@ -1,92 +1,128 @@
+// ─── Product Navigation Bar ─── Modern Tab Design ───
+// Design-Token: Lila-Gradient #667eea → #764ba2
 
-.store-navigation {
-  margin-bottom: 2rem;
+:host {
+  display: block;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
-.breadcrumb {
+.nav-bar {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 0 8px;
+}
+
+.nav-scroll {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-  padding: 0.75rem 0;
-  font-size: 0.875rem;
-  flex-wrap: wrap;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-behavior: smooth;
+  padding: 6px 0;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
-.breadcrumb a {
-  color: #667eea;
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-.breadcrumb a:hover {
-  color: #5568d3;
-  text-decoration: underline;
-}
-
-.breadcrumb .separator {
-  color: #999;
-}
-
-.breadcrumb .current {
-  color: #333;
-  font-weight: 600;
-}
-
-/* Navigation Tabs - Responsive Flexbox Wrap */
-.nav-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  border-bottom: 2px solid #e0e0e0;
-  padding-bottom: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
+// ─── Single Tab ───
 .nav-tab {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  color: #666;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  color: #64748b;
   text-decoration: none;
-  border-bottom: 3px solid transparent;
-  transition: all 0.2s ease;
-  white-space: nowrap;
+  font-size: 0.875rem;
   font-weight: 500;
-  position: relative;
-  border-radius: 8px 8px 0 0;
-  background: transparent;
-  min-height: 44px; /* Touch-friendly */
+  white-space: nowrap;
+  min-height: 44px;
+  transition: color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+
+  &:hover {
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.07);
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  // ─── Active State ───
+  &.active {
+    color: #667eea;
+    font-weight: 600;
+    background: rgba(102, 126, 234, 0.08);
+
+    .tab-icon {
+      transform: scale(1.12);
+    }
+
+    .active-indicator {
+      opacity: 1;
+      transform: scaleX(1);
+    }
+  }
 }
 
-.nav-tab .icon {
+.tab-icon {
   font-size: 1.125rem;
   line-height: 1;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  flex-shrink: 0;
 }
 
-.nav-tab .label {
-  font-size: 0.9375rem;
+.tab-label {
+  font-size: 0.8125rem;
+  letter-spacing: 0.01em;
 }
 
-.nav-tab:hover {
-  color: #667eea;
-  background: rgba(102, 126, 234, 0.08);
+// ─── Animated Active Indicator (bottom line) ───
+.active-indicator {
+  position: absolute;
+  bottom: -6px;
+  left: 16px;
+  right: 16px;
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  opacity: 0;
+  transform: scaleX(0);
+  transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.nav-tab.active {
-  color: #667eea;
-  border-bottom-color: #667eea;
-  font-weight: 600;
-  background: rgba(102, 126, 234, 0.05);
+// ─── Beta Badge ───
+.beta-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  line-height: 1.2;
+  animation: pulse-beta 2.5s ease-in-out infinite;
 }
 
-.nav-tab.active .icon {
-  transform: scale(1.1);
+@keyframes pulse-beta {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.75; }
 }
 
-/* Badge Styling */
-.badge {
+// ─── Count Badge ───
+.count-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -94,65 +130,43 @@
   height: 20px;
   padding: 0 6px;
   background: #ef4444;
-  color: white;
+  color: #fff;
   border-radius: 10px;
   font-size: 11px;
   font-weight: 700;
   line-height: 1;
-  margin-left: 6px;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.35);
+  animation: pop-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.nav-tab.active .badge {
-  background: #dc2626;
+@keyframes pop-in {
+  0% { transform: scale(0); }
+  100% { transform: scale(1); }
 }
 
-/* Tablet (768px - 1023px) */
+// ─── Responsive: Tablet ───
 @media (max-width: 1023px) {
   .nav-tab {
-    padding: 0.65rem 0.875rem;
-  }
-
-  .nav-tab .label {
-    font-size: 0.875rem;
+    padding: 9px 12px;
   }
 }
 
-/* Mobile (< 768px) */
+// ─── Responsive: Mobile ───
 @media (max-width: 767px) {
-  .store-navigation {
-    margin-bottom: 1.5rem;
-  }
-
-  .breadcrumb {
-    font-size: 0.8125rem;
-    padding: 0.5rem 0;
-  }
-
-  .nav-tabs {
-    gap: 0.375rem;
-    padding-bottom: 0.375rem;
+  .nav-bar {
+    padding: 0 4px;
   }
 
   .nav-tab {
-    flex: 0 0 auto;
-    padding: 0.625rem 0.75rem;
-    min-width: auto;
+    padding: 8px 10px;
+    gap: 6px;
   }
 
-  /* Kompakte Darstellung auf Mobile */
-  .nav-tab .label {
-    font-size: 0.8125rem;
+  .tab-label {
+    font-size: 0.75rem;
   }
 
-  .nav-tab .icon {
-    font-size: 1rem;
-  }
-
-  /* Badge absolute positioniert */
-  .badge {
-    position: absolute;
-    top: 4px;
-    right: 4px;
+  .count-badge {
     min-width: 18px;
     height: 18px;
     font-size: 10px;
@@ -160,39 +174,53 @@
   }
 }
 
-/* Sehr kleine Screens (< 480px) */
+// ─── Responsive: Sehr klein → Nur Icons ───
 @media (max-width: 479px) {
-  .nav-tab .label {
-    display: none; /* Nur Icons auf sehr kleinen Screens */
+  .tab-label {
+    display: none;
   }
 
   .nav-tab {
-    padding: 0.75rem;
-    flex: 0 0 auto;
+    padding: 10px;
   }
 
-  .nav-tab .icon {
+  .tab-icon {
     font-size: 1.25rem;
   }
+
+  .active-indicator {
+    left: 8px;
+    right: 8px;
+  }
 }
 
-/* Focus States für Accessibility */
-.nav-tab:focus {
+// ─── Accessibility ───
+.nav-tab:focus-visible {
   outline: 2px solid #667eea;
   outline-offset: 2px;
+  border-radius: 10px;
 }
 
-.nav-tab:focus:not(:focus-visible) {
-  outline: none;
-}
-
-/* Hover disabled auf Touch-Geräten */
+// ─── Touch-Geräte: Kein Hover-Effekt ───
 @media (hover: none) {
   .nav-tab:hover {
     background: transparent;
+    color: #64748b;
   }
 
-  .nav-tab:active {
-    background: rgba(102, 126, 234, 0.1);
+  .nav-tab.active:hover {
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.08);
+  }
+}
+
+// ─── RTL Support ───
+:host-context([dir="rtl"]) {
+  .nav-scroll {
+    direction: rtl;
+  }
+
+  .active-indicator {
+    transform-origin: right center;
   }
 }
