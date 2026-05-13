@@ -9,22 +9,26 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { ProductnavigationBarComponent } from '@app/features/productnavigation-bar/productnavigation-bar.component';
 import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
 import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
+import {StoreNavigationComponent} from "@app/shared/components/store-navigation.component";
 
 @Component({
   selector: 'app-store-reviews-manager',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe, ProductnavigationBarComponent, PageHeaderComponent],
+  imports: [CommonModule, FormsModule, TranslatePipe, ProductnavigationBarComponent, PageHeaderComponent, StoreNavigationComponent],
   template: `
     <app-productnavigation-bar></app-productnavigation-bar>
 
     <div class="reviews-page">
-      <app-page-header
-        [title]="'reviews.customerReviews'"
-        [subtitle]="'Kundenbewertungen verwalten, freigeben und analysieren'"
-        [breadcrumbs]="breadcrumbItems"
-        [showBackButton]="true"
-        [actions]="headerActions"
-      ></app-page-header>
+      
+        <!-- Einheitliche Navigation -->
+        <app-store-navigation
+            [currentPage]="'reviews.reviews' | translate">
+        </app-store-navigation>
+
+        <div class="header">
+          <h1>{{ 'reviews.reviews' | translate }}</h1>
+
+        </div>
 
       <!-- ─── Statistik-Karten ─── -->
       <div class="stats-row">
