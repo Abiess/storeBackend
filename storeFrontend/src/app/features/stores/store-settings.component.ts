@@ -9,6 +9,19 @@ import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { StoreSliderEditorComponent } from './components/store-slider-editor.component';
 import { BrandingEditorComponent } from './branding-editor.component';
 
+/**
+ * Wiederverwendbares Settings-Tab Interface.
+ * `visible` → false = ausgeblendet
+ * `beta` → true = nur für Beta-User sichtbar
+ */
+export interface SettingsTab {
+  id: string;
+  icon: string;
+  labelKey: string;
+  visible?: boolean;
+  beta?: boolean;
+}
+
 @Component({
   selector: 'app-store-settings',
   standalone: true,
@@ -21,40 +34,23 @@ import { BrandingEditorComponent } from './branding-editor.component';
       </app-store-navigation>
 
       <div class="settings-content" *ngIf="store">
-        <h1>{{ 'navigation.settings' | translate }}</h1>
+        <h1 class="settings-title">{{ 'navigation.settings' | translate }}</h1>
         
-        <div class="settings-tabs">
+        <!-- Wiederverwendbare Tab-Leiste (analog app-productnavigation-bar) -->
+        <nav class="settings-tabs" role="tablist">
           <button 
-            class="tab-button" 
-            [class.active]="activeTab === 'general'"
-            (click)="activeTab = 'general'">
-            {{ 'settings.general' | translate }}
+            *ngFor="let tab of visibleTabs"
+            class="settings-tab"
+            role="tab"
+            [class.active]="activeTab === tab.id"
+            [attr.aria-selected]="activeTab === tab.id"
+            (click)="activeTab = tab.id">
+            <span class="tab-icon" aria-hidden="true">{{ tab.icon }}</span>
+            <span class="tab-label">{{ tab.labelKey | translate }}</span>
+            <span class="beta-badge" *ngIf="tab.beta">Beta</span>
+            <span class="tab-indicator"></span>
           </button>
-          <button 
-            class="tab-button" 
-            [class.active]="activeTab === 'slider'"
-            (click)="activeTab = 'slider'">
-            🎬 Slider
-          </button>
-          <button 
-            class="tab-button" 
-            [class.active]="activeTab === 'branding'"
-            (click)="activeTab = 'branding'">
-            {{ 'settings.branding.title' | translate }}
-          </button>
-          <button 
-            class="tab-button" 
-            [class.active]="activeTab === 'domain'"
-            (click)="activeTab = 'domain'">
-            {{ 'settings.domain.title' | translate }}
-          </button>
-          <button 
-            class="tab-button" 
-            [class.active]="activeTab === 'advanced'"
-            (click)="activeTab = 'advanced'">
-            {{ 'settings.advanced.title' | translate }}
-          </button>
-        </div>
+        </nav>
 
         <!-- General Settings -->
         <div class="tab-content" *ngIf="activeTab === 'general'">
@@ -221,48 +217,149 @@ import { BrandingEditorComponent } from './branding-editor.component';
       margin: 0 auto;
     }
 
-    .settings-header {
-      margin-bottom: 2rem;
+    .settings-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #111827;
+      margin: 0 0 1.5rem 0;
     }
 
-
-    h1 {
-      font-size: 2rem;
-      margin: 0;
-    }
-
+    /* ─── Modern Tab Bar (analog productnavigation-bar) ─── */
     .settings-tabs {
       display: flex;
-      gap: 1rem;
-      border-bottom: 2px solid #e0e0e0;
-      margin-bottom: 2rem;
+      gap: 2px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      padding: 6px 0;
+      margin-bottom: 1.5rem;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+      border-radius: 12px 12px 0 0;
     }
+    .settings-tabs::-webkit-scrollbar { display: none; }
 
-    .tab-button {
-      background: none;
+    .settings-tab {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
       border: none;
-      padding: 1rem 1.5rem;
-      font-size: 1rem;
+      background: transparent;
+      border-radius: 10px;
+      color: #64748b;
+      font-size: 0.875rem;
+      font-weight: 500;
+      white-space: nowrap;
       cursor: pointer;
-      color: #666;
-      border-bottom: 3px solid transparent;
-      transition: all 0.3s ease;
+      min-height: 44px;
+      transition: color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    .tab-button:hover {
-      color: #007bff;
+    .settings-tab:hover {
+      color: #667eea;
+      background: rgba(102, 126, 234, 0.07);
     }
 
-    .tab-button.active {
-      color: #007bff;
-      border-bottom-color: #007bff;
+    .settings-tab:active {
+      transform: scale(0.97);
     }
 
+    .settings-tab.active {
+      color: #667eea;
+      font-weight: 600;
+      background: rgba(102, 126, 234, 0.08);
+    }
+
+    .settings-tab.active .tab-icon {
+      transform: scale(1.12);
+    }
+
+    .settings-tab.active .tab-indicator {
+      opacity: 1;
+      transform: scaleX(1);
+    }
+
+    .tab-icon {
+      font-size: 1.125rem;
+      line-height: 1;
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      flex-shrink: 0;
+    }
+
+    .tab-label {
+      font-size: 0.8125rem;
+      letter-spacing: 0.01em;
+    }
+
+    .tab-indicator {
+      position: absolute;
+      bottom: -6px;
+      left: 16px;
+      right: 16px;
+      height: 3px;
+      border-radius: 3px;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      opacity: 0;
+      transform: scaleX(0);
+      transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .beta-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 7px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      line-height: 1.2;
+      animation: pulse-beta 2.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-beta {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.75; }
+    }
+
+    .settings-tab:focus-visible {
+      outline: 2px solid #667eea;
+      outline-offset: 2px;
+    }
+
+    @media (max-width: 767px) {
+      .settings-tabs { gap: 1px; }
+      .settings-tab { padding: 8px 10px; gap: 6px; }
+      .tab-label { font-size: 0.75rem; }
+    }
+
+    @media (max-width: 479px) {
+      .tab-label { display: none; }
+      .settings-tab { padding: 10px; }
+      .tab-icon { font-size: 1.25rem; }
+    }
+
+    /* ─── Tab Content ─── */
     .tab-content {
       background: white;
       padding: 2rem;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.03);
+      border: 1px solid #f1f5f9;
+      animation: fadeInContent 0.25s ease;
+    }
+
+    @keyframes fadeInContent {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .form-group {
@@ -279,22 +376,23 @@ import { BrandingEditorComponent } from './branding-editor.component';
     .form-control {
       width: 100%;
       padding: 0.75rem;
-      border: 1px solid #ddd;
-      border-radius: 4px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
       font-size: 1rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
 
     .form-control:focus {
       outline: none;
-      border-color: #007bff;
-      box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
     }
 
     .form-text {
       display: block;
       margin-top: 0.5rem;
       font-size: 0.875rem;
-      color: #666;
+      color: #64748b;
     }
 
     .form-actions {
@@ -306,67 +404,48 @@ import { BrandingEditorComponent } from './branding-editor.component';
     .btn {
       padding: 0.75rem 1.5rem;
       border: none;
-      border-radius: 4px;
-      font-size: 1rem;
+      border-radius: 8px;
+      font-size: 0.9375rem;
+      font-weight: 500;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: all 0.2s ease;
     }
 
     .btn:disabled {
-      opacity: 0.6;
+      opacity: 0.5;
       cursor: not-allowed;
     }
 
     .btn-primary {
-      background: #007bff;
+      background: linear-gradient(135deg, #667eea, #764ba2);
       color: white;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
     }
 
     .btn-primary:hover:not(:disabled) {
-      background: #0056b3;
+      box-shadow: 0 4px 16px rgba(102, 126, 234, 0.45);
+      transform: translateY(-1px);
     }
 
     .btn-secondary {
-      background: #6c757d;
-      color: white;
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #e2e8f0;
     }
 
     .btn-secondary:hover {
-      background: #545b62;
+      background: #e2e8f0;
     }
 
     .btn-danger {
-      background: #dc3545;
+      background: #ef4444;
       color: white;
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
     }
 
-    .btn-danger:hover {
-      background: #c82333;
-    }
-
-    .logo-preview, .banner-preview {
-      margin-top: 1.5rem;
-      padding: 1rem;
-      background: #f8f9fa;
-      border-radius: 4px;
-    }
-
-    .logo-preview h4, .banner-preview h4 {
-      margin: 0 0 1rem;
-      font-size: 1rem;
-      color: #666;
-    }
-
-    .preview-image {
-      max-width: 200px;
-      height: auto;
-      border-radius: 4px;
-    }
-
-    .preview-banner {
-      max-width: 100%;
-      height: auto;
-      border-radius: 4px;
+    .btn-danger:hover:not(:disabled) {
+      background: #dc2626;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
     }
 
     .domain-info {
@@ -376,27 +455,29 @@ import { BrandingEditorComponent } from './branding-editor.component';
 
     .domain-info h3 {
       margin: 0 0 1rem;
+      color: #111827;
     }
 
     .domain-info p {
       margin: 0 0 2rem;
       font-size: 1.1rem;
+      color: #475569;
     }
 
     .danger-zone {
       padding: 2rem;
-      border: 2px solid #fc8181;
-      border-radius: 8px;
-      background: #fff5f5;
+      border: 2px solid #fca5a5;
+      border-radius: 12px;
+      background: #fef2f2;
     }
 
     .danger-zone h3 {
       margin: 0 0 0.5rem;
-      color: #c53030;
+      color: #b91c1c;
     }
 
     .warning-text {
-      color: #c53030;
+      color: #b91c1c;
       font-weight: 600;
       margin-bottom: 1.5rem;
     }
@@ -407,19 +488,19 @@ import { BrandingEditorComponent } from './branding-editor.component';
       align-items: center;
       padding: 1.5rem;
       background: white;
-      border-radius: 6px;
-      border: 1px solid #fed7d7;
+      border-radius: 8px;
+      border: 1px solid #fecaca;
       margin-top: 1rem;
     }
 
     .danger-info h4 {
       margin: 0 0 0.5rem 0;
-      color: #2d3748;
+      color: #111827;
     }
 
     .danger-info p {
       margin: 0;
-      color: #718096;
+      color: #64748b;
       font-size: 0.875rem;
     }
 
@@ -430,7 +511,8 @@ import { BrandingEditorComponent } from './branding-editor.component';
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0, 0, 0, 0.6);
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -445,24 +527,18 @@ import { BrandingEditorComponent } from './branding-editor.component';
 
     .modal-content {
       background: white;
-      border-radius: 12px;
+      border-radius: 16px;
       width: 90%;
       max-width: 600px;
       max-height: 90vh;
       overflow-y: auto;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-      animation: slideUp 0.3s ease-out;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
+      animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
     @keyframes slideUp {
-      from { 
-        transform: translateY(50px);
-        opacity: 0;
-      }
-      to { 
-        transform: translateY(0);
-        opacity: 1;
-      }
+      from { transform: translateY(40px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
     }
 
     .modal-header {
@@ -470,13 +546,13 @@ import { BrandingEditorComponent } from './branding-editor.component';
       justify-content: space-between;
       align-items: center;
       padding: 1.5rem;
-      border-bottom: 1px solid #e2e8f0;
+      border-bottom: 1px solid #f1f5f9;
     }
 
     .modal-header h2 {
       margin: 0;
-      color: #c53030;
-      font-size: 1.5rem;
+      color: #b91c1c;
+      font-size: 1.4rem;
     }
 
     .modal-close {
@@ -484,13 +560,15 @@ import { BrandingEditorComponent } from './branding-editor.component';
       border: none;
       font-size: 1.5rem;
       cursor: pointer;
-      color: #718096;
+      color: #64748b;
       padding: 0.25rem 0.5rem;
-      transition: color 0.2s;
+      border-radius: 6px;
+      transition: background 0.2s, color 0.2s;
     }
 
     .modal-close:hover {
-      color: #2d3748;
+      background: #f1f5f9;
+      color: #111827;
     }
 
     .modal-body {
@@ -498,45 +576,45 @@ import { BrandingEditorComponent } from './branding-editor.component';
     }
 
     .warning-box {
-      background: #fff5f5;
-      border-left: 4px solid #fc8181;
+      background: #fef2f2;
+      border-left: 4px solid #ef4444;
       padding: 1rem;
       margin-bottom: 1.5rem;
-      border-radius: 4px;
-      color: #c53030;
+      border-radius: 0 8px 8px 0;
+      color: #b91c1c;
     }
 
     .deletion-list {
-      background: #f7fafc;
+      background: #f8fafc;
       padding: 1rem 1rem 1rem 2rem;
-      border-radius: 6px;
+      border-radius: 8px;
       margin: 1rem 0;
     }
 
     .deletion-list li {
       padding: 0.5rem 0;
-      color: #2d3748;
+      color: #334155;
     }
 
     .confirmation-section {
       margin-top: 1.5rem;
       padding: 1.5rem;
-      background: #f7fafc;
-      border-radius: 8px;
+      background: #f8fafc;
+      border-radius: 10px;
     }
 
     .confirmation-section label {
       display: block;
       margin-bottom: 0.75rem;
-      color: #2d3748;
+      color: #111827;
       font-weight: 600;
     }
 
     .confirmation-input {
       width: 100%;
       padding: 0.75rem;
-      border: 2px solid #cbd5e0;
-      border-radius: 6px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
       font-size: 1rem;
       transition: border-color 0.2s;
     }
@@ -547,18 +625,18 @@ import { BrandingEditorComponent } from './branding-editor.component';
     }
 
     .confirmation-input.error {
-      border-color: #fc8181;
+      border-color: #fca5a5;
     }
 
     .helper-text {
       display: block;
       margin-top: 0.5rem;
       font-size: 0.875rem;
-      color: #fc8181;
+      color: #ef4444;
     }
 
     .helper-text.success {
-      color: #48bb78;
+      color: #10b981;
     }
 
     .modal-footer {
@@ -566,26 +644,26 @@ import { BrandingEditorComponent } from './branding-editor.component';
       justify-content: flex-end;
       gap: 1rem;
       padding: 1.5rem;
-      border-top: 1px solid #e2e8f0;
-      background: #f7fafc;
-      border-radius: 0 0 12px 12px;
+      border-top: 1px solid #f1f5f9;
+      background: #f8fafc;
+      border-radius: 0 0 16px 16px;
     }
 
     .loading, .error {
       text-align: center;
       padding: 3rem;
       background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     }
 
     .spinner {
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #007bff;
+      border: 3px solid #f1f5f9;
+      border-top: 3px solid #667eea;
       border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
+      width: 36px;
+      height: 36px;
+      animation: spin 0.8s linear infinite;
       margin: 0 auto 1rem;
     }
 
@@ -595,7 +673,15 @@ import { BrandingEditorComponent } from './branding-editor.component';
     }
 
     .error {
-      color: #dc3545;
+      color: #b91c1c;
+    }
+
+    /* RTL Support */
+    :host-context([dir="rtl"]) .settings-tabs {
+      direction: rtl;
+    }
+    :host-context([dir="rtl"]) .tab-indicator {
+      transform-origin: right center;
     }
   `]
 })
@@ -606,10 +692,31 @@ export class StoreSettingsComponent implements OnInit {
   saving = false;
   deleting = false;
   error: string | null = null;
-  activeTab: 'general' | 'slider' | 'branding' | 'domain' | 'advanced' = 'general';
+  activeTab = 'general';
 
   showDeleteModal = false;
   deleteConfirmation = '';
+
+  /** Setzt man auf true, werden beta-Tabs angezeigt */
+  isBetaUser = false;
+
+  /** Wiederverwendbare Tab-Definition – analog NavTab */
+  settingsTabs: SettingsTab[] = [
+    { id: 'general',  icon: '⚙️', labelKey: 'settings.general' },
+    { id: 'slider',   icon: '🎬', labelKey: 'settings.slider' },
+    { id: 'branding', icon: '🎨', labelKey: 'settings.branding.title' },
+    { id: 'domain',   icon: '🌐', labelKey: 'settings.domain.title' },
+    { id: 'advanced', icon: '🔧', labelKey: 'settings.advanced.title' }
+  ];
+
+  /** Gibt nur sichtbare Tabs zurück (respektiert visible + beta) */
+  get visibleTabs(): SettingsTab[] {
+    return this.settingsTabs.filter(tab => {
+      if (tab.visible === false) return false;
+      if (tab.beta && !this.isBetaUser) return false;
+      return true;
+    });
+  }
 
   settingsForm: FormGroup;
   brandingForm: FormGroup;
@@ -634,6 +741,9 @@ export class StoreSettingsComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Beta-Flag aus localStorage (oder UserService)
+    this.isBetaUser = localStorage.getItem('betaAccess') === 'true';
+
     // Mehrstufige StoreId Extraktion
     this.route.params.subscribe(params => {
       const storeIdParam = params['id'] || params['storeId'];

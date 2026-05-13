@@ -262,6 +262,8 @@
     "filters": "Filters"
   },
   "settings": {
+    "general": "General",
+    "slider": "Slider",
     "branding": {
       "title": "Branding",
       "description": "Customize the appearance and identity of your store",

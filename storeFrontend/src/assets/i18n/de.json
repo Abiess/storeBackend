@@ -359,6 +359,8 @@
     "filters": "Filter"
   },
   "settings": {
+    "general": "Allgemein",
+    "slider": "Slider",
     "branding": {
       "title": "Branding",
       "description": "Passen Sie das Erscheinungsbild und die Identität Ihres Shops an",
