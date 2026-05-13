@@ -31,9 +31,7 @@ interface Category {
 
       <div class="header">
         <h1>{{ 'navigation.categories' | translate }}</h1>
-        <button class="btn-primary" (click)="createCategory()">
-          + {{ 'category.new' | translate }}
-        </button>
+       
       </div>
 
       <app-responsive-data-list
@@ -156,10 +154,10 @@ export class CategoryListComponent implements OnInit {
     if (!this.storeId || isNaN(this.storeId)) {
       this.router.navigate(['/dashboard']); return;
     }
-    // FAB: Produkt hinzufügen
+    // FAB: Category hinzufügen
     this.fabService.register({
       icon: '＋',
-      label: 'Produkt hinzufügen',
+      label: ' Kategorie hinzufügen',
       color: 'green',
       action: () => this.createProduct(),
       speedDial: [
