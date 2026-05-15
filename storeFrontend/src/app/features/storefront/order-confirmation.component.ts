@@ -45,7 +45,8 @@ import { TranslationService } from '../../core/services/translation.service';
             </div>
             <div class="detail-row">
               <span>{{ 'order.date' | translate }}:</span>
-              <strong>{{ order.createdAt | date:'dd.MM.yyyy HH:mm' }}</strong>
+              <!-- NG02100-Fix: DatePipe wirft bei leerem String / ungültigem Datum → null-Guard -->
+              <strong>{{ order.createdAt ? (order.createdAt | date:'dd.MM.yyyy HH:mm') : '–' }}</strong>
             </div>
             <div class="detail-row">
               <span>{{ 'order.status' | translate }}:</span>
@@ -71,8 +72,9 @@ import { TranslationService } from '../../core/services/translation.service';
                   <p class="quantity">{{ 'product.quantity' | translate: { count: item.quantity } }}</p>
                 </div>
                 <div class="item-price">
-                  {{ item.price * item.quantity | number:'1.2-2' }} €
-                  <span class="unit-price">{{ 'product.unitPrice' | translate: { price: (item.price | number:'1.2-2') } }}</span>
+                  <!-- NG02100-Fix: null/undefined price → NaN → NumberPipe wirft NG02100 -->
+                  {{ ((item.price ?? 0) * item.quantity) | number:'1.2-2' }} €
+                  <span class="unit-price">{{ 'product.unitPrice' | translate: { price: ((item.price ?? 0) | number:'1.2-2') } }}</span>
                 </div>
               </div>
             </div>
@@ -109,7 +111,8 @@ import { TranslationService } from '../../core/services/translation.service';
           <section class="details-section total-section">
             <h2>{{ 'order.total' | translate }}</h2>
             <div class="total-amount">
-              {{ order.totalAmount | number:'1.2-2' }} €
+              <!-- NG02100-Fix: totalAmount als null aus API → NumberPipe wirft NG02100 -->
+              {{ (order.totalAmount ?? 0) | number:'1.2-2' }} €
             </div>
           </section>
         </div>
