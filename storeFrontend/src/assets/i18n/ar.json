@@ -1031,6 +1031,7 @@
     "unitMb": "م.ب"
   },
   "whatsapp": {
-    "contactUs": "تواصل معنا عبر واتساب"
+    "contactUs": "تواصل معنا عبر واتساب",
+    "orderOnWhatsapp": "اطلب عبر واتساب"
   }
 }

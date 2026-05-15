@@ -1203,6 +1203,7 @@
     "unitMb": "MB"
   },
   "whatsapp": {
-    "contactUs": "Auf WhatsApp kontaktieren"
+    "contactUs": "Auf WhatsApp kontaktieren",
+    "orderOnWhatsapp": "Auf WhatsApp bestellen"
   }
 }

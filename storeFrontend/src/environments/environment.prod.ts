@@ -9,5 +9,5 @@ export const environment = {
    * Leer lassen ('') = Widget unsichtbar.
    * Diese Nummer hier ist der Plattform-Fallback – wird später pro Store überschrieben.
    */
-  whatsappNumber: '+49123456789'
+  whatsappNumber: '+4917684124569'
 };

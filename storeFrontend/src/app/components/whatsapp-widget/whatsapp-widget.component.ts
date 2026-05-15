@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { WhatsappConfigService } from '@app/core/services/whatsapp-config.service';
 import { Subscription } from 'rxjs';
-
 /**
  * Statisches WhatsApp-Kontakt-Widget.
  * Erscheint als fixer grüner Button rechts unten (links neben dem Chatbot-Button).
@@ -194,6 +193,9 @@ export class WhatsappWidgetComponent implements OnInit, OnDestroy {
   /** Aktuelle Nummer aus WhatsappConfigService (null = Widget versteckt) */
   phoneNumber: string | null = null;
 
+  /** Vorbefüllte Nachricht (aus Service, überschreibbar per Store-Settings) */
+  message: string = WhatsappConfigService.DEFAULT_MESSAGE;
+
   private sub?: Subscription;
 
   constructor(private whatsappConfig: WhatsappConfigService) {}
@@ -202,16 +204,30 @@ export class WhatsappWidgetComponent implements OnInit, OnDestroy {
     this.sub = this.whatsappConfig.number$.subscribe(num => {
       this.phoneNumber = num;
     });
+    this.sub.add(
+      this.whatsappConfig.message$.subscribe(msg => {
+        this.message = msg;
+      })
+    );
   }
 
   ngOnDestroy(): void {
     this.sub?.unsubscribe();
   }
 
+  /**
+   * Baut die wa.me-URL auf:
+   *   https://wa.me/<nur Ziffern>?text=<encodeURIComponent(message)>
+   *
+   * - encodeURIComponent: kompatibel mit Arabisch, Französisch, allen Unicode-Zeichen
+   * - wa.me öffnet direkt die WhatsApp-App (mobil & desktop)
+   * - Kein + vor dem Leerzeichen – WhatsApp erwartet %20, nicht +
+   */
   get whatsappUrl(): string {
     if (!this.phoneNumber) return '#';
-    const phone = this.phoneNumber.replace(/\D/g, ''); // nur Ziffern
-    return `https://wa.me/${phone}`;
+    const phone   = this.phoneNumber.replace(/\D/g, ''); // nur Ziffern
+    const encoded = this.message ? `?text=${encodeURIComponent(this.message)}` : '';
+    return `https://wa.me/${phone}${encoded}`;
   }
 }
 

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -6,6 +6,8 @@ import { ProductService } from '@app/core/services/product.service';
 import { CartService } from '@app/core/services/cart.service';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { ProductVariantPickerComponent } from './product-variant-picker.component';
+import { WhatsappConfigService } from '@app/core/services/whatsapp-config.service';
+import { Subscription } from 'rxjs';
 
 interface Product {
   id: number;
@@ -23,8 +25,7 @@ interface Product {
 @Component({
   selector: 'app-storefront-product-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe, ProductVariantPickerComponent],
-  template: `
+  imports: [CommonModule, FormsModule, TranslatePipe, ProductVariantPickerComponent],  template: `
     <div class="product-detail-page" *ngIf="product">
       <div class="breadcrumb">
         <a (click)="goBack()">← {{ 'common.back' | translate }}</a>
@@ -190,6 +191,31 @@ interface Product {
       <!-- Success Message -->
       <div class="success-toast" *ngIf="showSuccess">
         ✅ {{ 'cart.added' | translate }}
+      </div>
+
+      <!-- ═══ Mobile Sticky WhatsApp CTA (nur < 768px) ═══ -->
+      <div class="wa-sticky-cta" *ngIf="whatsappNumber" role="complementary">
+        <a [href]="whatsappOrderUrl"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="wa-sticky-btn">
+          <!-- WhatsApp Icon SVG -->
+          <svg class="wa-sticky-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" aria-hidden="true">
+            <path fill="#fff" d="M4.868 43.303l2.694-9.835a18.97 18.97 0 01-2.542-9.489C5.022 13.066 13.988 4.1
+              24.978 4.1c5.332.002 10.338 2.078 14.108 5.851a19.77 19.77 0 015.842 14.086
+              c-.004 10.99-8.971 19.957-19.96 19.957a19.98 19.98 0 01-9.538-2.423L4.868 43.303z"/>
+            <path fill="#fff"
+              d="M32.073 27.457c-.496-.248-2.937-1.449-3.392-1.614-.455-.166-.786-.248-1.117.248
+              s-1.282 1.614-1.571 1.945c-.289.332-.579.373-1.075.124s-2.096-.772-3.992-2.464
+              c-1.476-1.317-2.473-2.943-2.762-3.44-.289-.497-.031-.765.217-1.012.223-.222.496-.58.744-.869
+              s.331-.497.497-.83.083-.621-.041-.869-1.117-2.69-1.53-3.683c-.403-.968-.812-.837-1.117-.852
+              a20.142 20.142 0 00-.951-.018c-.331 0-.869.124-1.324.621-.455.497-1.737 1.697-1.737 4.14
+              s1.778 4.802 2.026 5.134c.248.331 3.5 5.341 8.48 7.489 1.184.511 2.108.817 2.828 1.045
+              1.188.378 2.27.325 3.125.197 1.353-.203 2.936-1.2 3.349-2.358.413-1.158.413-2.15.289-2.357
+              s-.455-.331-.951-.579z"/>
+          </svg>
+          <span>{{ 'whatsapp.orderOnWhatsapp' | translate }}</span>
+        </a>
       </div>
     </div>
 
@@ -753,9 +779,73 @@ interface Product {
       .lb-next { right: 0.5rem; }
       .lb-nav { width: 40px; height: 40px; font-size: 1.5rem; }
     }
+
+    /* ═══════════════════════════════════════════════
+       MOBILE STICKY WHATSAPP CTA  –  nur < 768 px
+       ═══════════════════════════════════════════════ */
+
+    /* Desktop: komplett ausgeblendet, kein Layout-Impact */
+    .wa-sticky-cta { display: none; }
+
+    @media (max-width: 767px) {
+      /* Produkt-Inhalt nicht unter dem CTA verbergen */
+      .product-detail-page {
+        padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+      }
+
+      /* Sticky-Wrapper */
+      .wa-sticky-cta {
+        display: block;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 900; /* Unter Modals/Chatbot, aber über normalem Content */
+        padding: 12px 16px;
+        padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
+        background: rgba(255, 255, 255, 0.97);
+        backdrop-filter: blur(8px);
+        border-top: 1px solid rgba(0, 0, 0, 0.08);
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      /* RTL: kein Spiegeln nötig da full-width */
+      [dir="rtl"] .wa-sticky-cta { direction: rtl; }
+
+      /* Der Button selbst */
+      .wa-sticky-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        min-height: 52px; /* Thumb-freundlich */
+        background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+        color: #fff;
+        font-size: 1rem;
+        font-weight: 700;
+        text-decoration: none;
+        border-radius: 14px;
+        box-shadow: 0 4px 16px rgba(37, 211, 102, 0.4);
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        letter-spacing: 0.01em;
+      }
+
+      .wa-sticky-btn:active {
+        transform: scale(0.97);
+        box-shadow: 0 2px 8px rgba(37, 211, 102, 0.3);
+      }
+
+      /* Icon */
+      .wa-sticky-icon {
+        width: 26px;
+        height: 26px;
+        flex-shrink: 0;
+      }
+    }
   `]
 })
-export class StorefrontProductDetailComponent implements OnInit {
+export class StorefrontProductDetailComponent implements OnInit, OnDestroy {
   product: Product | null = null;
   selectedVariant: any = null;
   quantity = 1;
@@ -768,6 +858,10 @@ export class StorefrontProductDetailComponent implements OnInit {
   showSuccess = false;
   hoveredImageVariant: any = null;
 
+  /** WhatsApp-Nummer aus Service (null = CTA versteckt) */
+  whatsappNumber: string | null = null;
+  private waSub?: Subscription;
+
   /** Gecachtes Galerie-Array – wird nur neu gebaut wenn nötig (nicht bei jedem Change-Detection-Zyklus) */
   galleryImages: { url: string; alt: string }[] = [];
 
@@ -778,13 +872,19 @@ export class StorefrontProductDetailComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private productService: ProductService,
-    private cartService: CartService
+    private cartService: CartService,
+    private whatsappConfig: WhatsappConfigService
   ) {}
 
   ngOnInit() {
     this.storeId = Number(this.route.snapshot.paramMap.get('storeId'));
     this.productId = Number(this.route.snapshot.paramMap.get('productId'));
-    
+
+    // WhatsApp-Nummer reaktiv abonnieren
+    this.waSub = this.whatsappConfig.number$.subscribe(num => {
+      this.whatsappNumber = num;
+    });
+
     if (!this.storeId || !this.productId) {
       this.error = 'Ungültige Parameter';
       this.loading = false;
@@ -792,6 +892,23 @@ export class StorefrontProductDetailComponent implements OnInit {
     }
 
     this.loadProduct();
+  }
+
+  ngOnDestroy(): void {
+    this.waSub?.unsubscribe();
+  }
+
+  /**
+   * WhatsApp-URL mit produktspezifischer Nachricht und vorbefülltem Text.
+   * Produktname wird in die Nachricht eingebettet für bessere Conversion.
+   */
+  get whatsappOrderUrl(): string {
+    if (!this.whatsappNumber) return '#';
+    const phone   = this.whatsappNumber.replace(/\D/g, '');
+    const base    = this.whatsappConfig.currentMessage;
+    const product = this.product?.title ? ` – ${this.product.title}` : '';
+    const msg     = `${base}${product}`;
+    return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
   }
 
   loadProduct() {
