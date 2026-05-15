@@ -29,7 +29,7 @@ import { PreviewPanelComponent } from './shared/components/preview-panel.compone
     </ng-template>
 
     <app-chatbot-widget></app-chatbot-widget>
-    <app-whatsapp-widget *ngIf="!showAdminShell"></app-whatsapp-widget>
+    <app-whatsapp-widget></app-whatsapp-widget>
     <app-fab-host></app-fab-host>
     <app-preview-panel></app-preview-panel>
   `,

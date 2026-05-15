@@ -5,8 +5,9 @@ export const environment = {
   publicApiUrl: 'https://api.markt.ma/api/public',
 
   /**
-   * Produktion: leer = Widget versteckt, bis Store-Settings gesetzt werden.
-   * TODO: Später per Store-Settings-API befüllen.
+   * WhatsApp-Kontaktnummer (Plattform-weit).
+   * Leer lassen ('') = Widget unsichtbar.
+   * Diese Nummer hier ist der Plattform-Fallback – wird später pro Store überschrieben.
    */
-  whatsappNumber: ''
+  whatsappNumber: '+49123456789'
 };
