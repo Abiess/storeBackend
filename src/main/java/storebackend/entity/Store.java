@@ -41,6 +41,13 @@ public class Store {
     @Column(name = "slider_images", columnDefinition = "TEXT")
     private String sliderImages; // JSON array: ["url1", "url2", "url3"]
 
+    // WhatsApp-Kontakt
+    @Column(name = "whatsapp_number")
+    private String whatsappNumber;
+
+    @Column(name = "greeting_message", columnDefinition = "TEXT")
+    private String greetingMessage;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private StoreStatus status = StoreStatus.ACTIVE;

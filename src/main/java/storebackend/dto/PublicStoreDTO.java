@@ -16,4 +16,6 @@ public class PublicStoreDTO {
     private String logoUrl;      // ✅ Store-Logo URL
     private String primaryDomain;
     private String status;
+    private String whatsappNumber;
+    private String greetingMessage;
 }

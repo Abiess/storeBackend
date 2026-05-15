@@ -34,7 +34,9 @@ public class PublicStoreService {
             store.getDescription(),
             store.getLogoUrl(),  // ✅ Logo URL
             domain.getHost(),
-            store.getStatus().name()
+            store.getStatus().name(),
+            store.getWhatsappNumber(),
+            store.getGreetingMessage()
         );
     }
 }

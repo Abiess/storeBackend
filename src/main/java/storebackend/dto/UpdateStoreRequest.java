@@ -18,5 +18,10 @@ public class UpdateStoreRequest {
 
     // Beschreibung ist optional
     private String description;
+
+    // WhatsApp-Kontaktdaten – optional, null = nicht ändern
+    private String whatsappNumber;
+
+    private String greetingMessage;
 }
 

@@ -15,4 +15,6 @@ public class StoreDTO {
     private String bannerImageUrl;
     private StoreStatus status;
     private LocalDateTime createdAt;
+    private String whatsappNumber;
+    private String greetingMessage;
 }

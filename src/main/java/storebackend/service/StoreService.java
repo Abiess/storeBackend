@@ -212,6 +212,15 @@ public class StoreService {
             store.setDescription(request.getDescription());
         }
 
+        // WhatsApp-Felder nur überschreiben wenn explizit mitgeliefert (null = nicht ändern)
+        if (request.getWhatsappNumber() != null) {
+            store.setWhatsappNumber(request.getWhatsappNumber().isBlank() ? null : request.getWhatsappNumber().trim());
+        }
+
+        if (request.getGreetingMessage() != null) {
+            store.setGreetingMessage(request.getGreetingMessage().isBlank() ? null : request.getGreetingMessage().trim());
+        }
+
         store = storeRepository.save(store);
         log.info("Store {} updated by user {}", storeId, user.getEmail());
 
@@ -366,6 +375,8 @@ public class StoreService {
         dto.setStatus(store.getStatus());
         dto.setDescription(store.getDescription());
         dto.setCreatedAt(store.getCreatedAt());
+        dto.setWhatsappNumber(store.getWhatsappNumber());
+        dto.setGreetingMessage(store.getGreetingMessage());
         return dto;
     }
 

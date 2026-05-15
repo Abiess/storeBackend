@@ -158,6 +158,8 @@ public class DomainService {
                     dto.setLogoUrl(store.getLogoUrl());
                     dto.setPrimaryDomain(domain.getHost());
                     dto.setStatus(store.getStatus().name());
+                    dto.setWhatsappNumber(store.getWhatsappNumber());
+                    dto.setGreetingMessage(store.getGreetingMessage());
                     return dto;
                 });
 
@@ -201,6 +203,8 @@ public class DomainService {
                             dto.setLogoUrl(store.getLogoUrl());
                             dto.setPrimaryDomain(domain.getHost());
                             dto.setStatus(store.getStatus().name());
+                            dto.setWhatsappNumber(store.getWhatsappNumber());
+                            dto.setGreetingMessage(store.getGreetingMessage());
                             return dto;
                         });
 
