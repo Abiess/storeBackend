@@ -8,6 +8,7 @@ import { CartService } from '@app/core/services/cart.service';
 import { ThemeService } from '@app/core/services/theme.service';
 import { SliderService, SliderImage } from '@app/core/services/slider.service';
 import { PublicApiService } from '@app/core/services/public-api.service';
+import { WhatsappConfigService } from '@app/core/services/whatsapp-config.service';
 import { Product, Category } from '@app/core/models';
 import { StorefrontHeaderComponent } from './storefront-header.component';
 import { ProductCardComponent } from './product-card.component';
@@ -81,6 +82,7 @@ export class StorefrontLandingComponent implements OnInit {
     private themeService: ThemeService,
     private sliderService: SliderService,
     private publicApiService: PublicApiService,
+    private whatsappConfig: WhatsappConfigService,
     public router: Router  // public statt private für Template-Zugriff
   ) {}
 
@@ -120,6 +122,9 @@ export class StorefrontLandingComponent implements OnInit {
           // FIXED: loadCartCount() wird ERST nach resolveStore() aufgerufen
           // damit die storeId im SubdomainService bereits gesetzt ist
           this.loadCartCount();
+
+          // ✅ WhatsApp-Config aus PublicStoreDTO laden (für Widget + Produkt-CTA)
+          this._loadStoreWhatsappConfig();
         } else if (info.isSubdomain && !info.storeId) {
           // NEUE: Subdomain erkannt, aber kein Store gefunden
           console.warn('⚠️ Subdomain erkannt, aber Store nicht gefunden');
@@ -556,5 +561,27 @@ export class StorefrontLandingComponent implements OnInit {
     }
 
     this.filteredProducts = sorted;
+  }
+
+  /**
+   * Lädt WhatsApp-Nummer + Greeting aus dem PublicStoreDTO und
+   * schreibt sie in den WhatsappConfigService (Singleton).
+   * Dadurch sind Widget + Produkt-Sticky-CTA sofort konfiguriert,
+   * sobald der User von der Landing-Page auf ein Produkt navigiert.
+   */
+  private _loadStoreWhatsappConfig(): void {
+    const host = window.location.hostname;
+    this.publicApiService.resolveStore(host).subscribe({
+      next: (store) => {
+        this.whatsappConfig.setNumber(store.whatsappNumber ?? null);
+        this.whatsappConfig.setMessage(
+          store.greetingMessage?.trim()
+            ? store.greetingMessage.trim()
+            : WhatsappConfigService.DEFAULT_MESSAGE
+        );
+        console.log('📱 WhatsApp-Config aus Store gesetzt:', store.whatsappNumber ?? 'kein Wert');
+      },
+      error: () => { /* env-Fallback bleibt aktiv */ }
+    });
   }
 }

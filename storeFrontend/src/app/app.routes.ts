@@ -276,6 +276,14 @@ export const routes: Routes = [
     path: 'storefront-landing',
     loadComponent: () => import('./features/storefront/storefront-landing.component').then(m => m.StorefrontLandingComponent)
   },
+  // ── Öffentliche Produkt-Detailseite (Subdomain-Storefront) ──────────
+  // Muss VOR dem Wildcard-Handler stehen, damit /products/:productId
+  // nicht von ** abgefangen und als StorefrontLanding gerendert wird.
+  {
+    path: 'products/:productId',
+    loadComponent: () => import('./features/storefront/storefront-product-detail.component')
+      .then(m => m.StorefrontProductDetailComponent)
+  },
   {
     path: 'storefront/profile',
     loadComponent: () => import('./features/storefront/customer-profile.component').then(m => m.CustomerProfileComponent),

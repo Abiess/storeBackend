@@ -8,6 +8,8 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { ProductVariantPickerComponent } from './product-variant-picker.component';
 import { WhatsappConfigService } from '@app/core/services/whatsapp-config.service';
 import { WhatsappTrackingService } from '@app/core/services/whatsapp-tracking.service';
+import { SubdomainService } from '@app/core/services/subdomain.service';
+import { PublicApiService } from '@app/core/services/public-api.service';
 import { Subscription } from 'rxjs';
 
 interface Product {
@@ -885,25 +887,71 @@ export class StorefrontProductDetailComponent implements OnInit, OnDestroy {
     private productService: ProductService,
     private cartService: CartService,
     private whatsappConfig: WhatsappConfigService,
-    private whatsappTracking: WhatsappTrackingService
+    private whatsappTracking: WhatsappTrackingService,
+    private subdomainService: SubdomainService,
+    private publicApiService: PublicApiService
   ) {}
 
   ngOnInit() {
-    this.storeId = Number(this.route.snapshot.paramMap.get('storeId'));
-    this.productId = Number(this.route.snapshot.paramMap.get('productId'));
+    // productId immer aus Route
+    this.productId = Number(
+      this.route.snapshot.paramMap.get('productId') ||
+      this.route.snapshot.paramMap.get('id')
+    );
+
+    // storeId: Route-Param oder via SubdomainService ermitteln
+    const routeStoreId = Number(this.route.snapshot.paramMap.get('storeId'));
+    if (routeStoreId) {
+      this.storeId = routeStoreId;
+      this._initAfterStoreId();
+    } else {
+      // Kein storeId im URL (z.B. /products/:productId auf Subdomain)
+      this.subdomainService.resolveStore().subscribe({
+        next: (info) => {
+          if (info.storeId) {
+            this.storeId = info.storeId;
+            // WhatsApp-Config aus PublicStoreDTO laden (Direktaufruf ohne Landing)
+            this._loadStoreWhatsappConfig();
+          }
+          this._initAfterStoreId();
+        },
+        error: () => this._initAfterStoreId()
+      });
+    }
 
     // WhatsApp-Nummer reaktiv abonnieren
     this.waSub = this.whatsappConfig.number$.subscribe(num => {
       this.whatsappNumber = num;
     });
+  }
 
+  /** Setzt das Produktlade-Verhalten sobald die storeId bekannt ist. */
+  private _initAfterStoreId(): void {
     if (!this.storeId || !this.productId) {
       this.error = 'Ungültige Parameter';
       this.loading = false;
       return;
     }
-
     this.loadProduct();
+  }
+
+  /**
+   * Lädt Store-Settings (WhatsApp-Nummer) direkt, wenn das Produkt
+   * ohne vorherige Landing-Page aufgerufen wird (z.B. Ad-Link).
+   */
+  private _loadStoreWhatsappConfig(): void {
+    const host = window.location.hostname;
+    this.publicApiService.resolveStore(host).subscribe({
+      next: (store) => {
+        this.whatsappConfig.setNumber(store.whatsappNumber ?? null);
+        this.whatsappConfig.setMessage(
+          store.greetingMessage?.trim()
+            ? store.greetingMessage.trim()
+            : WhatsappConfigService.DEFAULT_MESSAGE
+        );
+      },
+      error: () => { /* Silently ignore – Service hat bereits env-Fallback */ }
+    });
   }
 
   ngOnDestroy(): void {
