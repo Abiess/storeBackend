@@ -3,7 +3,7 @@ export const environment = {
   useMockData: false,
   apiUrl: 'https://api.markt.ma/api',
   publicApiUrl: 'https://api.markt.ma/api/public',
-  whatsappNumber: '+49123456789',
+  whatsappNumber: '+212675522961',
 
   /**
    * Meta Pixel ID für Production.
