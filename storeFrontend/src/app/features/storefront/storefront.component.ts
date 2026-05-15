@@ -8,6 +8,7 @@ import { PublicApiService } from '@app/core/services/public-api.service';
 import { ThemeService } from '@app/core/services/theme.service';
 import { ThemeApplierService } from '@app/core/services/theme-applier.service';
 import { HomepageSectionService } from '@app/core/services/homepage-section.service';
+import { WhatsappConfigService } from '@app/core/services/whatsapp-config.service';
 import { Product, Category, PublicStore, ProductStatus, HomepageSection } from '@app/core/models';
 import { ProductQuickViewComponent } from '@app/shared/components/product-quick-view.component';
 import { FeaturedProductsComponent } from '@app/shared/components/featured-products.component';
@@ -102,7 +103,8 @@ export class StorefrontComponent implements OnInit, OnDestroy {
     private themeService: ThemeService,
     private themeApplier: ThemeApplierService,
     private homepageSectionService: HomepageSectionService,
-    private translationService: TranslationService
+    private translationService: TranslationService,
+    private whatsappConfig: WhatsappConfigService
   ) {}
 
   ngOnInit(): void {
@@ -139,6 +141,9 @@ export class StorefrontComponent implements OnInit, OnDestroy {
     if (this.cartUpdateSubscription) {
       this.cartUpdateSubscription.unsubscribe();
     }
+    // WhatsApp-Config zurücksetzen wenn Storefront verlassen wird
+    this.whatsappConfig.setNumber(null);
+    this.whatsappConfig.setMessage(WhatsappConfigService.DEFAULT_MESSAGE);
   }
 
   /**
@@ -150,15 +155,27 @@ export class StorefrontComponent implements OnInit, OnDestroy {
       next: (store) => {
         this.store = store;
         console.log('✅ Store geladen:', store);
-        
+
         // Setze Logo, falls vorhanden und noch nicht aus Theme geladen
         if (store.logoUrl && !this.storeLogo) {
           this.storeLogo = store.logoUrl;
           console.log('✅ Logo aus Store geladen:', store.logoUrl);
         }
+
+        // ✅ WhatsApp-Konfiguration aus Store-Settings übernehmen (Priorität vor environment)
+        this.whatsappConfig.setNumber(store.whatsappNumber ?? null);
+        this.whatsappConfig.setMessage(
+          store.greetingMessage?.trim()
+            ? store.greetingMessage.trim()
+            : WhatsappConfigService.DEFAULT_MESSAGE
+        );
+        console.log('📱 WhatsApp-Config aus Store gesetzt:', store.whatsappNumber ?? 'kein Wert');
       },
       error: (err) => {
         console.warn('⚠️ Store-Resolve fehlgeschlagen:', err);
+        // Bei Fehler: auf sichere Defaults zurückfallen
+        this.whatsappConfig.setNumber(null);
+        this.whatsappConfig.setMessage(WhatsappConfigService.DEFAULT_MESSAGE);
       }
     });
   }

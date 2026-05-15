@@ -86,6 +86,38 @@ export interface SettingsTab {
                 placeholder="Beschreiben Sie Ihren Store..."></textarea>
             </div>
 
+            <!-- ─── WhatsApp-Einstellungen ─── -->
+            <div class="whatsapp-section">
+              <h3 class="section-title">
+                <span class="section-icon">📱</span>
+                {{ 'settings.whatsapp.title' | translate }}
+              </h3>
+
+              <div class="form-group">
+                <label for="whatsappNumber">{{ 'settings.whatsapp.number' | translate }}</label>
+                <input
+                  id="whatsappNumber"
+                  type="tel"
+                  formControlName="whatsappNumber"
+                  class="form-control"
+                  [placeholder]="'settings.whatsapp.numberPlaceholder' | translate"
+                  maxlength="20">
+                <small class="form-text">{{ 'settings.whatsapp.numberHint' | translate }}</small>
+              </div>
+
+              <div class="form-group">
+                <label for="greetingMessage">{{ 'settings.whatsapp.greetingMessage' | translate }}</label>
+                <textarea
+                  id="greetingMessage"
+                  formControlName="greetingMessage"
+                  class="form-control"
+                  rows="3"
+                  [placeholder]="'settings.whatsapp.greetingMessagePlaceholder' | translate"
+                  maxlength="500"></textarea>
+                <small class="form-text">{{ 'settings.whatsapp.greetingMessageHint' | translate }}</small>
+              </div>
+            </div>
+
             <div class="form-group">
               <label for="status">Status</label>
               <select id="status" formControlName="status" class="form-control">
@@ -683,6 +715,30 @@ export interface SettingsTab {
     :host-context([dir="rtl"]) .tab-indicator {
       transform-origin: right center;
     }
+
+    /* ─── WhatsApp Section ─── */
+    .whatsapp-section {
+      margin-top: 2rem;
+      padding: 1.5rem;
+      background: linear-gradient(135deg, rgba(37, 211, 102, 0.06), rgba(18, 140, 126, 0.04));
+      border: 1px solid rgba(37, 211, 102, 0.25);
+      border-radius: 12px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #128c7e;
+      margin: 0 0 1.25rem 0;
+    }
+
+    .section-icon {
+      font-size: 1.2rem;
+      line-height: 1;
+    }
   `]
 })
 export class StoreSettingsComponent implements OnInit {
@@ -731,7 +787,9 @@ export class StoreSettingsComponent implements OnInit {
       name: ['', Validators.required],
       slug: ['', Validators.required],
       description: [''],
-      status: ['ACTIVE']
+      status: ['ACTIVE'],
+      whatsappNumber: ['', [Validators.maxLength(20)]],
+      greetingMessage: ['', [Validators.maxLength(500)]]
     });
 
     this.brandingForm = this.fb.group({
@@ -789,7 +847,9 @@ export class StoreSettingsComponent implements OnInit {
           name: store.name,
           slug: store.slug,
           description: store.description,
-          status: store.status
+          status: store.status,
+          whatsappNumber: store.whatsappNumber ?? '',
+          greetingMessage: store.greetingMessage ?? ''
         });
         this.loading = false;
       },

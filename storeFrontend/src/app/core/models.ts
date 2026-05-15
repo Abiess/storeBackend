@@ -618,6 +618,10 @@ export interface Store {
   status: StoreStatus;
   createdAt: string;
   updatedAt: string;
+  /** WhatsApp-Kontaktnummer im internationalen Format, z. B. +212600123456 */
+  whatsappNumber?: string;
+  /** Vorbefüllte Begrüßungsnachricht beim WhatsApp-Klick */
+  greetingMessage?: string;
 }
 
 export interface PublicStore {
@@ -627,8 +631,10 @@ export interface PublicStore {
   description?: string;
   logoUrl?: string;  // ✅ Matches backend PublicStoreDTO
   status: StoreStatus;
-  /** WhatsApp-Kontaktnummer (optional – wird erst nach Backend-Erweiterung befüllt) */
+  /** WhatsApp-Kontaktnummer (optional) */
   whatsappNumber?: string;
+  /** Vorbefüllte WhatsApp-Begrüßungsnachricht (optional) */
+  greetingMessage?: string;
 }
 
 export enum StoreStatus {

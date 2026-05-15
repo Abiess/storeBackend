@@ -222,6 +222,29 @@
     "image": "الصورة",
     "featured": "مميز"
   },
+  "settings": {
+    "general": "عام",
+    "slider": "شرائح",
+    "whatsapp": {
+      "title": "التواصل عبر واتساب",
+      "number": "رقم واتساب",
+      "numberPlaceholder": "+212600123456",
+      "numberHint": "الصيغة الدولية، مثال: +212600123456 (بدون مسافات)",
+      "greetingMessage": "رسالة مسبقة التعبئة",
+      "greetingMessagePlaceholder": "مرحباً، أنا مهتم بمنتجاتكم...",
+      "greetingMessageHint": "تظهر هذه الرسالة مُعبَّأة مسبقاً في محادثة واتساب",
+      "saveSuccess": "تم حفظ إعدادات واتساب!"
+    },
+    "branding": {
+      "title": "العلامة التجارية"
+    },
+    "domain": {
+      "title": "النطاق والرابط"
+    },
+    "advanced": {
+      "title": "الإعدادات المتقدمة"
+    }
+  },
   "status": {
     "draft": "مسودة",
     "active": "نشط",

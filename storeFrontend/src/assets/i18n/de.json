@@ -361,6 +361,16 @@
   "settings": {
     "general": "Allgemein",
     "slider": "Slider",
+    "whatsapp": {
+      "title": "WhatsApp-Kontakt",
+      "number": "WhatsApp-Nummer",
+      "numberPlaceholder": "+212600123456",
+      "numberHint": "Internationale Format, z. B. +212600123456 (ohne Leerzeichen)",
+      "greetingMessage": "Vorbefüllte Nachricht",
+      "greetingMessagePlaceholder": "Hallo, ich interessiere mich für Ihre Produkte...",
+      "greetingMessageHint": "Diese Nachricht erscheint vorausgefüllt im WhatsApp-Chat",
+      "saveSuccess": "WhatsApp-Einstellungen gespeichert!"
+    },
     "branding": {
       "title": "Branding",
       "description": "Passen Sie das Erscheinungsbild und die Identität Ihres Shops an",
