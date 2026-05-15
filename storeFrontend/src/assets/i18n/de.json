@@ -1201,5 +1201,8 @@
     "aiCalls": "KI-Generierungen (Monat)",
     "customers": "Endkunden",
     "unitMb": "MB"
+  },
+  "whatsapp": {
+    "contactUs": "Auf WhatsApp kontaktieren"
   }
 }

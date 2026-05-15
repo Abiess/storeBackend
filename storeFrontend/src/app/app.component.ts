@@ -5,6 +5,7 @@ import { filter } from 'rxjs/operators';
 import { AuthService } from './core/services/auth.service';
 import { CartService } from './core/services/cart.service';
 import { ChatbotWidgetComponent } from './components/chatbot-widget/chatbot-widget.component';
+import { WhatsappWidgetComponent } from './components/whatsapp-widget/whatsapp-widget.component';
 import { AdminSidebarComponent } from './shared/components/admin-sidebar/admin-sidebar.component';
 import { FabHostComponent } from './shared/components/fab-host.component';
 import { PreviewPanelComponent } from './shared/components/preview-panel.component';
@@ -12,7 +13,7 @@ import { PreviewPanelComponent } from './shared/components/preview-panel.compone
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, ChatbotWidgetComponent, AdminSidebarComponent, FabHostComponent, PreviewPanelComponent],
+  imports: [CommonModule, RouterOutlet, ChatbotWidgetComponent, WhatsappWidgetComponent, AdminSidebarComponent, FabHostComponent, PreviewPanelComponent],
   template: `
     <ng-container *ngIf="showAdminShell; else publicShell">
       <div class="app-admin-shell">
@@ -28,6 +29,7 @@ import { PreviewPanelComponent } from './shared/components/preview-panel.compone
     </ng-template>
 
     <app-chatbot-widget></app-chatbot-widget>
+    <app-whatsapp-widget *ngIf="!showAdminShell"></app-whatsapp-widget>
     <app-fab-host></app-fab-host>
     <app-preview-panel></app-preview-panel>
   `,

@@ -1199,5 +1199,8 @@
     "aiCalls": "AI generations (this month)",
     "customers": "Customers",
     "unitMb": "MB"
+  },
+  "whatsapp": {
+    "contactUs": "Contact us on WhatsApp"
   }
 }

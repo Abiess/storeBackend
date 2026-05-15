@@ -627,6 +627,8 @@ export interface PublicStore {
   description?: string;
   logoUrl?: string;  // ✅ Matches backend PublicStoreDTO
   status: StoreStatus;
+  /** WhatsApp-Kontaktnummer (optional – wird erst nach Backend-Erweiterung befüllt) */
+  whatsappNumber?: string;
 }
 
 export enum StoreStatus {
