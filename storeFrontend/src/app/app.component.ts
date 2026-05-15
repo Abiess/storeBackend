@@ -4,6 +4,7 @@ import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { AuthService } from './core/services/auth.service';
 import { CartService } from './core/services/cart.service';
+import { MetaPixelService } from './core/services/meta-pixel.service';
 import { ChatbotWidgetComponent } from './components/chatbot-widget/chatbot-widget.component';
 import { WhatsappWidgetComponent } from './components/whatsapp-widget/whatsapp-widget.component';
 import { AdminSidebarComponent } from './shared/components/admin-sidebar/admin-sidebar.component';
@@ -222,16 +223,25 @@ export class AppComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private cartService: CartService,
-    private router: Router
+    private router: Router,
+    private metaPixel: MetaPixelService
   ) {}
 
   ngOnInit(): void {
     this.authService.setCartService(this.cartService);
 
+    // Meta Pixel initialisieren (no-op wenn metaPixelId leer)
+    // TODO(consent): Erst nach User-Consent aufrufen (DSGVO/RGPD)
+    this.metaPixel.init();
+
     this.evaluateShell(this.router.url);
     this.router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
-      .subscribe(e => this.evaluateShell(e.urlAfterRedirects));
+      .subscribe(e => {
+        this.evaluateShell(e.urlAfterRedirects);
+        // PageView pro Navigation tracken (no-op wenn Pixel nicht aktiv)
+        this.metaPixel.trackPageView();
+      });
   }
 
   private evaluateShell(url: string): void {

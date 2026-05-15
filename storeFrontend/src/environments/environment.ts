@@ -1,13 +1,14 @@
 export const environment = {
   production: false,
-  useMockData: false,  // ✅ Verwende echtes Backend für Themes
+  useMockData: false,
   apiUrl: 'http://localhost:8080/api',
   publicApiUrl: 'http://localhost:8080/api/public',
+  whatsappNumber: '+49123456789',
 
   /**
-   * Plattform-weiter WhatsApp-Fallback (dev/demo).
-   * Leer lassen ('') = Widget wird ausgeblendet.
-   * TODO: Später pro Store aus Store-Settings überschreiben.
+   * Meta/Facebook Pixel ID.
+   * Leer ('') = Pixel komplett deaktiviert (no-op), kein Script wird geladen.
+   * TODO: Consent-Gate davor schalten bevor in Prod aktiviert wird (DSGVO/RGPD).
    */
-  whatsappNumber: '+49123456789'
+  metaPixelId: ''
 };

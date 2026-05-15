@@ -3,11 +3,13 @@ export const environment = {
   useMockData: false,
   apiUrl: 'https://api.markt.ma/api',
   publicApiUrl: 'https://api.markt.ma/api/public',
+  whatsappNumber: '+49123456789',
 
   /**
-   * WhatsApp-Kontaktnummer (Plattform-weit).
-   * Leer lassen ('') = Widget unsichtbar.
-   * Diese Nummer hier ist der Plattform-Fallback – wird später pro Store überschrieben.
+   * Meta Pixel ID für Production.
+   * Leer ('') = kein Pixel, kein Script wird geladen.
+   * TODO: Erst nach DSGVO/RGPD-Consent-Implementation befüllen.
+   * Beispiel: metaPixelId: '1234567890123456'
    */
-  whatsappNumber: '+4917684124569'
+  metaPixelId: ''
 };

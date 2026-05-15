@@ -7,6 +7,7 @@ import { CartService } from '@app/core/services/cart.service';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { ProductVariantPickerComponent } from './product-variant-picker.component';
 import { WhatsappConfigService } from '@app/core/services/whatsapp-config.service';
+import { WhatsappTrackingService } from '@app/core/services/whatsapp-tracking.service';
 import { Subscription } from 'rxjs';
 
 interface Product {
@@ -41,6 +42,9 @@ interface Product {
                  [src]="currentImage || product.primaryImageUrl || 'assets/placeholder.png'"
                  [alt]="product.title"
                  class="main-img"
+                 loading="eager"
+                 fetchpriority="high"
+                 decoding="async"
                  (error)="mainImg.src='assets/placeholder.png'">
             <div class="zoom-hint" *ngIf="galleryImages.length > 1">🔍 Klicken zum Vergrößern</div>
           </div>
@@ -198,7 +202,8 @@ interface Product {
         <a [href]="whatsappOrderUrl"
            target="_blank"
            rel="noopener noreferrer"
-           class="wa-sticky-btn">
+           class="wa-sticky-btn"
+           (click)="trackWhatsappClick()">
           <!-- WhatsApp Icon SVG -->
           <svg class="wa-sticky-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" aria-hidden="true">
             <path fill="#fff" d="M4.868 43.303l2.694-9.835a18.97 18.97 0 01-2.542-9.489C5.022 13.066 13.988 4.1
@@ -762,9 +767,15 @@ interface Product {
 
     /* Responsive */
     @media (max-width: 968px) {
+      /* QW2: Padding reduzieren → mehr Above-Fold-Platz für Preis/CTA */
+      .product-detail-page {
+        padding: 1rem;
+      }
+
+      /* QW3: Grid-Gap reduzieren → Preis rückt näher ans Bild */
       .product-detail-grid {
         grid-template-columns: 1fr;
-        gap: 2rem;
+        gap: 1rem;
       }
 
       .product-title {
@@ -873,7 +884,8 @@ export class StorefrontProductDetailComponent implements OnInit, OnDestroy {
     private router: Router,
     private productService: ProductService,
     private cartService: CartService,
-    private whatsappConfig: WhatsappConfigService
+    private whatsappConfig: WhatsappConfigService,
+    private whatsappTracking: WhatsappTrackingService
   ) {}
 
   ngOnInit() {
@@ -896,6 +908,21 @@ export class StorefrontProductDetailComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.waSub?.unsubscribe();
+  }
+
+  /**
+   * Tracking-Call für den Sticky CTA.
+   * Synchron & lightweight – blockiert NICHT den WhatsApp-Link.
+   * Enthält storeId + productId + productName für vollständige Attribution.
+   */
+  trackWhatsappClick(): void {
+    this.whatsappTracking.track({
+      source:      'product_sticky_cta',
+      storeId:     this.storeId   || undefined,
+      productId:   this.productId || undefined,
+      productName: this.product?.title,
+      url:         this.whatsappOrderUrl
+    });
   }
 
   /**

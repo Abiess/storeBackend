@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { WhatsappConfigService } from '@app/core/services/whatsapp-config.service';
+import { WhatsappTrackingService } from '@app/core/services/whatsapp-tracking.service';
 import { Subscription } from 'rxjs';
 /**
  * Statisches WhatsApp-Kontakt-Widget.
@@ -32,7 +33,8 @@ import { Subscription } from 'rxjs';
           target="_blank"
           rel="noopener noreferrer"
           class="wa-btn"
-          [attr.aria-label]="'whatsapp.contactUs' | translate">
+          [attr.aria-label]="'whatsapp.contactUs' | translate"
+          (click)="trackClick()">
 
           <!-- WhatsApp SVG-Logo (offizielles Icon) -->
           <svg class="wa-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" aria-hidden="true">
@@ -198,7 +200,10 @@ export class WhatsappWidgetComponent implements OnInit, OnDestroy {
 
   private sub?: Subscription;
 
-  constructor(private whatsappConfig: WhatsappConfigService) {}
+  constructor(
+    private whatsappConfig: WhatsappConfigService,
+    private tracking: WhatsappTrackingService
+  ) {}
 
   ngOnInit(): void {
     this.sub = this.whatsappConfig.number$.subscribe(num => {
@@ -213,6 +218,17 @@ export class WhatsappWidgetComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.sub?.unsubscribe();
+  }
+
+  /**
+   * Tracking-Call: synchron, lightweight – blockiert den WhatsApp-Klick NICHT.
+   * Der Browser öffnet target="_blank" sofort, trackClick() läuft daneben.
+   */
+  trackClick(): void {
+    this.tracking.track({
+      source:  'widget',
+      url:     this.whatsappUrl
+    });
   }
 
   /**
