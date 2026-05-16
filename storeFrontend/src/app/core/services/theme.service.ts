@@ -229,6 +229,7 @@ export class ThemeService {
     console.log('🎨 Creating theme', request);
 
     // ✅ Serialisiere die komplexen Objekte zu JSON-Strings für das Backend
+    // ✅ BUG FIX: logoUrl muss mit übergeben werden, sonst wird store.logoUrl auf null gesetzt!
     const backendRequest = {
       storeId: request.storeId,
       name: request.name,
@@ -237,7 +238,8 @@ export class ThemeService {
       colorsJson: JSON.stringify(request.colors),
       typographyJson: JSON.stringify(request.typography),
       layoutJson: JSON.stringify(request.layout),
-      customCss: request.customCss
+      customCss: request.customCss,
+      logoUrl: request.logoUrl ?? null   // ← war bisher vergessen → Logo wurde beim Speichern gelöscht
     };
 
     return this.http.post<any>(this.API_URL, backendRequest).pipe(
@@ -263,6 +265,7 @@ export class ThemeService {
       typography: typeof dto.typographyJson === 'string' ? JSON.parse(dto.typographyJson) : dto.typographyJson,
       layout: typeof dto.layoutJson === 'string' ? JSON.parse(dto.layoutJson) : dto.layoutJson,
       customCss: dto.customCss,
+      logoUrl: dto.logoUrl ?? null,  // ✅ BUG FIX: logoUrl wurde nie gemappt → loadCurrentTheme() zeigte nie das Logo
       isActive: dto.isActive,
       createdAt: dto.createdAt,
       updatedAt: dto.updatedAt
