@@ -209,6 +209,7 @@
     "name": "Kategoriename",
     "slug": "URL-Slug",
     "description": "Beschreibung",
+    "info": "Kategorie-Informationen",
     "parent": {
       "label": "Übergeordnete Kategorie",
       "none": "Keine"
@@ -216,7 +217,12 @@
     "new": "Neue Kategorie",
     "edit": "Kategorie bearbeiten",
     "create": "Kategorie erstellen",
+    "update": "Änderungen speichern",
     "sortorder": "Sortierreihenfolge",
+    "required": {
+      "name": "Bitte geben Sie einen Kategorienamen ein",
+      "slug": "Bitte geben Sie einen gültigen URL-Slug ein"
+    },
     "placeholder": {
       "name": "z.B. Elektronik, Mode, Spielzeug",
       "slug": "z.B. elektronik (nur Kleinbuchstaben und Bindestriche)",

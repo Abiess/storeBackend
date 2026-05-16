@@ -69,7 +69,7 @@ import { Subscription } from 'rxjs';
 
           <div class="form-row">
             <div class="form-group">
-              <label for="parentId">{{ 'category.parent' | translate }}</label>
+              <label for="parentId">{{ 'category.parent.label' | translate }}</label>
               <select id="parentId" formControlName="parentId">
                 <option [ngValue]="null">{{ 'category.parent.none' | translate }}</option>
                 <option *ngFor="let cat of availableParentCategories" [ngValue]="cat.id">
@@ -79,7 +79,7 @@ import { Subscription } from 'rxjs';
             </div>
 
             <div class="form-group">
-              <label for="sortOrder">{{ 'category.sortOrder' | translate }}</label>
+              <label for="sortOrder">{{ 'category.sortorder' | translate }}</label>
               <input 
                 id="sortOrder"
                 type="number" 
@@ -87,7 +87,7 @@ import { Subscription } from 'rxjs';
                 min="0"
                 placeholder="0"
               />
-              <p class="hint">{{ 'category.hint.sortOrder' | translate }}</p>
+              <p class="hint">{{ 'category.hint.sortorder' | translate }}</p>
             </div>
           </div>
         </div>

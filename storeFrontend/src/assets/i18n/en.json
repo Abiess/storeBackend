@@ -112,6 +112,7 @@
     "name": "Category name",
     "slug": "URL slug",
     "description": "Description",
+    "info": "Category information",
     "parent": {
       "label": "Parent category",
       "none": "None"
@@ -119,7 +120,12 @@
     "new": "New category",
     "edit": "Edit category",
     "create": "Create category",
+    "update": "Save changes",
     "sortorder": "Sort order",
+    "required": {
+      "name": "Please enter a category name",
+      "slug": "Please enter a valid URL slug"
+    },
     "placeholder": {
       "name": "e.g. Electronics, Fashion, Toys",
       "slug": "e.g. electronics (lowercase letters and hyphens only)",
