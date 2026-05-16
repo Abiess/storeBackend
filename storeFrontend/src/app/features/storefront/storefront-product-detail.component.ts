@@ -116,6 +116,12 @@ interface Product {
             </span>
           </div>
 
+          <!-- Description – direkt nach dem Preis für bessere Lesbarkeit (vor Varianten/CTA) -->
+          <div class="description-section" *ngIf="product.description">
+            <h2>{{ 'product.description' | translate }}</h2>
+            <p>{{ product.description }}</p>
+          </div>
+
           <!-- Variant Picker -->
           <app-product-variant-picker
             *ngIf="product.variants && product.variants.length > 0"
@@ -126,7 +132,7 @@ interface Product {
 
           <!-- Quantity Selector -->
           <div class="quantity-section">
-            <label>{{ 'product.quantity' | translate }}</label>
+            <label>{{ 'cart.quantity' | translate }}</label>
             <div class="quantity-control">
               <button (click)="decrementQuantity()" [disabled]="quantity <= 1">-</button>
               <input type="number" [(ngModel)]="quantity" min="1" [max]="getMaxQuantity()">
@@ -184,12 +190,6 @@ interface Product {
                 ✗ Ausverkauft
               </span>
             </span>
-          </div>
-
-          <!-- Description -->
-          <div class="description-section">
-            <h2>{{ 'product.description' | translate }}</h2>
-            <p>{{ product.description }}</p>
           </div>
         </div>
       </div>
