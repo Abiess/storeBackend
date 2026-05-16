@@ -975,14 +975,53 @@ export class StorefrontProductDetailComponent implements OnInit, OnDestroy {
 
   /**
    * WhatsApp-URL mit produktspezifischer Nachricht und vorbefülltem Text.
-   * Produktname wird in die Nachricht eingebettet für bessere Conversion.
+   * Enthält: greetingMessage + Produktname + gewählte Varianten-Attribute + Preis.
+   * Defensiv gegen null/undefined bei Variante, Attributen und Preis.
    */
   get whatsappOrderUrl(): string {
     if (!this.whatsappNumber) return '#';
-    const phone   = this.whatsappNumber.replace(/\D/g, '');
-    const base    = this.whatsappConfig.currentMessage;
-    const product = this.product?.title ? ` – ${this.product.title}` : '';
-    const msg     = `${base}${product}`;
+    const phone = this.whatsappNumber.replace(/\D/g, '');
+
+    const lines: string[] = [];
+
+    // 1) Greeting-Nachricht aus Service (konfigurierbar per Store-Settings)
+    const greeting = this.whatsappConfig.currentMessage?.trim();
+    if (greeting) lines.push(greeting);
+
+    // Leerzeile als Trenner zwischen Intro und Produkt-Details
+    lines.push('');
+
+    // 2) Produktname
+    if (this.product?.title) {
+      lines.push(`Produkt: ${this.product.title}`);
+    }
+
+    // 3) Varianten-Attribute – defensiv gegen null/undefined
+    if (this.selectedVariant) {
+      const attrs = this.selectedVariant.attributes as Record<string, string> | null | undefined;
+      if (attrs && typeof attrs === 'object' && Object.keys(attrs).length > 0) {
+        const attrStr = Object.entries(attrs)
+          .filter(([, v]) => v != null && String(v).trim() !== '')
+          .map(([k, v]) => `${k}: ${v}`)
+          .join(' | ');
+        if (attrStr) lines.push(`Variante: ${attrStr}`);
+      } else if (this.selectedVariant.sku) {
+        // Fallback: SKU wenn keine strukturierten Attribute vorhanden
+        lines.push(`Variante: ${this.selectedVariant.sku}`);
+      }
+    }
+
+    // 4) Preis – getCurrentPrice() liefert immer einen validen Wert
+    const price = this.getCurrentPrice();
+    if (price > 0) {
+      const formatted = new Intl.NumberFormat('de-DE', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(price);
+      lines.push(`Preis: ${formatted} €`);
+    }
+
+    const msg = lines.join('\n');
     return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
   }
 
