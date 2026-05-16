@@ -24,27 +24,28 @@ import { LanguageSelectorComponent } from '../../shared/components/language-sele
             </div>
           </div>
         </div>
-        <div class="header-actions">
+
+        <nav class="header-actions" aria-label="Header-Navigation">
           <!-- Language Selector -->
           <app-language-selector></app-language-selector>
-          
-          <!-- Login/Register Button -->
-          <button 
-            *ngIf="!(isLoggedIn$ | async)" 
-            class="btn btn-login" 
+
+          <!-- Login-Button (nicht eingeloggt) -->
+          <button
+            *ngIf="!(isLoggedIn$ | async)"
+            class="btn btn-login"
             (click)="showAuthDialog = true"
             [attr.aria-label]="'common.login' | translate"
           >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
               <path d="M10 10a4 4 0 100-8 4 4 0 000 8zm0 2c-4.42 0-8 1.79-8 4v2h16v-2c0-2.21-3.58-4-8-4z" fill="currentColor"/>
             </svg>
             <span>{{ 'common.login' | translate }}</span>
           </button>
-          
-          <!-- User Menu wenn eingeloggt -->
+
+          <!-- User-Menu (eingeloggt) -->
           <div *ngIf="isLoggedIn$ | async" class="user-menu">
             <a routerLink="/storefront/profile" class="btn btn-profile" [attr.aria-label]="'navigation.myAccount' | translate">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                 <path d="M10 10a4 4 0 100-8 4 4 0 000 8zm0 2c-4.42 0-8 1.79-8 4v2h16v-2c0-2.21-3.58-4-8-4z" fill="currentColor"/>
               </svg>
               <span>{{ 'navigation.myAccount' | translate }}</span>
@@ -53,17 +54,18 @@ import { LanguageSelectorComponent } from '../../shared/components/language-sele
               {{ 'common.logout' | translate }}
             </button>
           </div>
-          
+
+          <!-- Warenkorb -->
           <button class="btn btn-cart" (click)="cartClick.emit()" [attr.aria-label]="'cart.title' | translate">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
               <path d="M3 1h2.59l.83 2H17a1 1 0 01.97 1.24l-2 7A1 1 0 0115 12H8.36l-.5 2H14a1 1 0 110 2H7a1 1 0 01-.97-1.24l.5-2H4a1 1 0 01-1-1V3H2a1 1 0 110-2zm5 16a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm6 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" fill="currentColor"/>
             </svg>
             <span class="cart-badge" *ngIf="cartItemCount > 0">{{ cartItemCount }}</span>
           </button>
-        </div>
+        </nav>
       </div>
     </header>
-    
+
     <!-- Auth Dialog -->
     <app-storefront-auth-dialog
       *ngIf="showAuthDialog"
@@ -294,29 +296,123 @@ import { LanguageSelectorComponent } from '../../shared/components/language-sele
     
     /* ==================== RESPONSIVE ==================== */
     @media (max-width: 768px) {
-      .store-header { 
-        padding: 0.875rem 0;
-        /* Safe-Area nur auf Mobile wo Notch relevant */
-        padding-top: calc(0.875rem + env(safe-area-inset-top, 0px));
+      .store-header {
+        padding: 0.75rem 0;
+        padding-top: calc(0.75rem + env(safe-area-inset-top, 0px));
       }
-      
+
       .container {
-        gap: 1rem;
+        gap: 0.625rem;
+        padding: 0 clamp(0.75rem, 4vw, 1.5rem);
       }
-      
+
+      /* Brand darf schrumpfen, aber nicht überlaufen */
+      .header-content {
+        flex: 1 1 0;
+        min-width: 0;
+        overflow: hidden;
+      }
+
+      .store-brand {
+        gap: 0.5rem;
+        min-width: 0;
+      }
+
+      .store-logo {
+        max-height: 36px;
+        max-width: 90px;
+        flex-shrink: 0;
+      }
+
+      .store-info {
+        min-width: 0;
+        overflow: hidden;
+      }
+
+      .store-name {
+        font-size: clamp(0.9375rem, 4vw, 1.25rem);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* Tagline auf Mobile ausblenden – spart Platz */
+      .store-tagline {
+        display: none;
+      }
+
+      /* Actions nie schrumpfen */
+      .header-actions {
+        flex-shrink: 0;
+        gap: 0.375rem;
+      }
+
+      /* Alle Button-Texte ausblenden – nur Icons */
       .btn span:not(.cart-badge) {
         display: none;
       }
-      
+
       .btn {
-        padding: 0.625rem;
-        min-width: 44px;   /* Touch-Target minimum */
+        padding: 0;
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
         min-height: 44px;
         justify-content: center;
+        border-radius: 50%;
       }
-      
-      .store-tagline {
-        font-size: 0.8125rem;
+
+      /* Logout auf Mobile komplett ausblenden (User-Icon reicht) */
+      .btn-logout {
+        display: none;
+      }
+
+      /* Language-Selector auf sehr kleinen Screens ausblenden */
+      app-language-selector {
+        display: none;
+      }
+    }
+
+    /* Sehr kleine Displays (z.B. iPhone SE) */
+    @media (max-width: 380px) {
+      .store-logo {
+        max-height: 28px;
+        max-width: 70px;
+      }
+
+      .store-name {
+        font-size: 0.875rem;
+      }
+
+      .header-actions {
+        gap: 0.25rem;
+      }
+
+      .btn {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        min-height: 40px;
+      }
+    }
+
+    /* RTL-Support */
+    :host-context([dir="rtl"]) {
+      .store-brand {
+        flex-direction: row-reverse;
+      }
+
+      .cart-badge {
+        right: auto;
+        left: -6px;
+      }
+
+      .header-actions {
+        flex-direction: row-reverse;
+      }
+
+      .user-menu {
+        flex-direction: row-reverse;
       }
     }
   `]
