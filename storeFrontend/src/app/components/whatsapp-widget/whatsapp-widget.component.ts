@@ -188,6 +188,15 @@ import { Subscription } from 'rxjs';
         height: 26px;
       }
     }
+
+    /* ── Produktdetail-Seite: Globales FAB auf Mobile ausblenden ──
+       Der Product Sticky CTA (volle Breite, unten) übernimmt dort die Rolle.
+       Desktop (> 767px) bleibt unverändert. */
+    @media (max-width: 767px) {
+      :host-context(body.is-product-detail) {
+        display: none !important;
+      }
+    }
   `]
 })
 export class WhatsappWidgetComponent implements OnInit, OnDestroy {

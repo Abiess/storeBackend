@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Renderer2 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
@@ -220,11 +220,15 @@ export class AppComponent implements OnInit {
     '/stores/'
   ];
 
+  /** Erkennt Produktdetail-URLs (z.B. /stores/5/products/12 oder /products/12) */
+  private readonly productDetailPattern = /\/products\/\d+/;
+
   constructor(
     private authService: AuthService,
     private cartService: CartService,
     private router: Router,
-    private metaPixel: MetaPixelService
+    private metaPixel: MetaPixelService,
+    private renderer: Renderer2
   ) {}
 
   ngOnInit(): void {
@@ -249,5 +253,12 @@ export class AppComponent implements OnInit {
     this.showAdminShell = this.adminPathPrefixes.some(
       p => path === p || path.startsWith(p)
     );
+
+    // body.is-product-detail setzen/entfernen → CSS in Widget-Styles reagiert darauf
+    if (this.productDetailPattern.test(path)) {
+      this.renderer.addClass(document.body, 'is-product-detail');
+    } else {
+      this.renderer.removeClass(document.body, 'is-product-detail');
+    }
   }
 }

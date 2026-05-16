@@ -421,3 +421,12 @@
   }
 }
 
+/* ── Produktdetail-Seite: Chatbot-FAB über den Sticky Product CTA heben ──
+   Der Sticky CTA ist ~80px + safe-area hoch. FAB wird nach oben verschoben,
+   damit kein Overlap entsteht. Desktop (> 767px) bleibt unverändert. */
+@media (max-width: 767px) {
+  :host-context(body.is-product-detail) .chatbot-widget {
+    bottom: calc(80px + env(safe-area-inset-bottom, 0px) + 16px);
+  }
+}
+
