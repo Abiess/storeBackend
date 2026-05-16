@@ -60,7 +60,9 @@ public class StoreDeliverySettingsService {
 
         StoreDeliverySettings settings = new StoreDeliverySettings();
         settings.setStore(store);
-        settings.setStoreId(storeId);
+        // KEIN settings.setStoreId() – @MapsId übernimmt die PK-Ableitung aus store.getId().
+        // Wird storeId manuell gesetzt, denkt Hibernate die Entity existiert bereits
+        // und versucht ein UPDATE → OptimisticLockException.
         settings.setPickupEnabled(true);
         settings.setDeliveryEnabled(false);
         settings.setExpressEnabled(false);

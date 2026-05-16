@@ -20,17 +20,28 @@ public interface DeliveryPartnerRepository extends JpaRepository<DeliveryPartner
 
     List<DeliveryPartner> findByFeaturedTrueAndActiveTrue();
 
-    @Query("SELECT p FROM DeliveryPartner p WHERE p.active = true " +
-           "AND (:type IS NULL OR p.type = :type) " +
-           "AND (:verified IS NULL OR p.verified = :verified) " +
-           "AND (:search IS NULL OR LOWER(p.companyName) LIKE LOWER(CONCAT('%', :search, '%')) " +
-           "    OR LOWER(p.contactName) LIKE LOWER(CONCAT('%', :search, '%')) " +
-           "    OR LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%'))) " +
-           "ORDER BY p.featured DESC, p.averageRating DESC, p.completedDeliveries DESC")
+    /**
+     * Native Query mit PostgreSQL ILIKE + CAST AS TEXT, um den
+     * "lower(bytea) does not exist"-Fehler zu vermeiden.
+     * ILIKE ist bereits case-insensitiv – kein LOWER() nötig.
+     */
+    @Query(value = """
+        SELECT * FROM delivery_partners dp
+        WHERE dp.active = true
+          AND (:type    IS NULL OR dp.partner_type = :type)
+          AND (:verified IS NULL OR dp.verified    = :verified)
+          AND (
+               CAST(:search AS TEXT) IS NULL
+            OR CAST(dp.company_name  AS TEXT) ILIKE CONCAT('%', CAST(:search AS TEXT), '%')
+            OR CAST(dp.contact_name  AS TEXT) ILIKE CONCAT('%', CAST(:search AS TEXT), '%')
+            OR CAST(dp.description   AS TEXT) ILIKE CONCAT('%', CAST(:search AS TEXT), '%')
+          )
+        ORDER BY dp.featured DESC, dp.average_rating DESC, dp.completed_deliveries DESC
+        """, nativeQuery = true)
     List<DeliveryPartner> searchPartners(
-        @Param("type") String type,
+        @Param("type")     String  type,
         @Param("verified") Boolean verified,
-        @Param("search") String search
+        @Param("search")   String  search
     );
 }
 

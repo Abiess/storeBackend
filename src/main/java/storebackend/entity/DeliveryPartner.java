@@ -38,13 +38,13 @@ public class DeliveryPartner {
     @Column(name = "partner_type", nullable = false, length = 20)
     private String type; // COMPANY | INDIVIDUAL
 
-    @Column(name = "company_name")
+    @Column(name = "company_name", columnDefinition = "TEXT")
     private String companyName;
 
-    @Column(name = "contact_name", nullable = false)
+    @Column(name = "contact_name", nullable = false, columnDefinition = "TEXT")
     private String contactName;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String email;
 
     @Column(nullable = false, length = 30)
