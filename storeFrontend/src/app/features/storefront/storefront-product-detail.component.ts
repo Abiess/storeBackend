@@ -790,7 +790,8 @@ interface Product {
 
       .lb-prev { left: 0.5rem; }
       .lb-next { right: 0.5rem; }
-      .lb-nav { width: 40px; height: 40px; font-size: 1.5rem; }
+      /* Touch-Target: 44px auf Mobile */
+      .lb-nav { width: 44px; height: 44px; font-size: 1.5rem; }
     }
 
     /* ═══════════════════════════════════════════════

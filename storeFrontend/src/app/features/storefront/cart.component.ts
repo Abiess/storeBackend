@@ -386,8 +386,8 @@ import { Subscription } from 'rxjs';
     }
 
     .qty-btn {
-      width: 36px;
-      height: 36px;
+      width: 44px;   /* Touch-Target: 44px (war 36px) */
+      height: 44px;
       background: #f8f8f8;
       border: none;
       font-size: 1.2rem;
@@ -668,6 +668,51 @@ import { Subscription } from 'rxjs';
       }
       .card-qty { flex-direction: row; align-items: center; }
       .card-total { text-align: left; }
+    }
+
+    /* ── Mobile: Sticky Checkout-Bar ──────────────────
+       Checkout-Button fixiert am unteren Rand, damit er
+       immer sichtbar ist – unabhängig von Scroll-Position. */
+    @media (max-width: 900px) {
+      /* Platz schaffen für die sticky Bar */
+      .cart-page {
+        padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+      }
+
+      /* Sticky Checkout-Button */
+      .btn-checkout {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        border-radius: 0;
+        padding: 1rem 1.5rem;
+        padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+        z-index: 200;
+        box-shadow: 0 -4px 20px rgba(102, 126, 234, 0.25);
+        /* Kein transform:translateY hover auf Mobile – würde springen */
+        transform: none !important;
+      }
+      .btn-checkout:hover {
+        transform: none !important;
+        box-shadow: 0 -4px 20px rgba(102, 126, 234, 0.35);
+      }
+
+      /* Summary-Card oben umstrukturieren: Checkout-Button verstecken,
+         damit er nicht doppelt erscheint (einmal im Card, einmal sticky) */
+      .trust-row {
+        margin-bottom: 0.25rem;
+      }
+
+      /* Summary-Card braucht kein sticky mehr auf Mobile */
+      .summary-column {
+        position: static;
+      }
+    }
+
+    /* ── Safe-Area: Toast nicht hinter Home-Indicator ── */
+    .toast {
+      bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
     }
   `]
 })

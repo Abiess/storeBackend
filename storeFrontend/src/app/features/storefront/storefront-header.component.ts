@@ -78,6 +78,8 @@ import { LanguageSelectorComponent } from '../../shared/components/language-sele
       background: var(--theme-background, white);
       border-bottom: 1px solid var(--theme-border, rgba(0, 0, 0, 0.08));
       padding: 1.5rem 0;
+      /* Safe-Area oben: iPhone-Notch / Dynamic Island */
+      padding-top: calc(1.5rem + env(safe-area-inset-top, 0px));
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
       position: sticky;
       top: 0;
@@ -293,7 +295,9 @@ import { LanguageSelectorComponent } from '../../shared/components/language-sele
     /* ==================== RESPONSIVE ==================== */
     @media (max-width: 768px) {
       .store-header { 
-        padding: 1rem 0; 
+        padding: 0.875rem 0;
+        /* Safe-Area nur auf Mobile wo Notch relevant */
+        padding-top: calc(0.875rem + env(safe-area-inset-top, 0px));
       }
       
       .container {
@@ -306,7 +310,8 @@ import { LanguageSelectorComponent } from '../../shared/components/language-sele
       
       .btn {
         padding: 0.625rem;
-        min-width: 44px;
+        min-width: 44px;   /* Touch-Target minimum */
+        min-height: 44px;
         justify-content: center;
       }
       

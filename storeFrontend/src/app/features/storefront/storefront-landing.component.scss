@@ -61,7 +61,10 @@
 
 .category-pill {
   flex-shrink: 0;
-  padding: 0.5rem 1rem;
+  padding: 0.625rem 1rem;   /* erhöht von 0.5rem → min-height ~44px (Touch-Target) */
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
   border: 1px solid var(--border-color);
   border-radius: 20px;
   background: var(--bg-white);
@@ -501,6 +504,27 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+/* ==================== RTL Support ==================== */
+[dir="rtl"] {
+  .breadcrumbs li:not(:last-child)::after {
+    content: '‹';  /* Pfeil spiegeln für RTL */
+  }
+
+  .category-pills {
+    direction: rtl;
+  }
+
+  .sidebar-filters {
+    border-right: none;
+    border-left: 1px solid var(--border-light);
+  }
+}
+
+/* ==================== Safe-Area (iPhone Notch/Home) ==================== */
+.storefront-footer {
+  padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
 }
 
 /* Print styles */

@@ -31,6 +31,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
              [src]="getProductImage()" 
              [alt]="product.title"
              class="product-img"
+             loading="lazy"
              (error)="onImageError($event)">
         
         <div *ngIf="!getProductImage() || imageError" class="image-placeholder">
@@ -345,26 +346,53 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       }
 
       .product-info {
-        padding: 1.25rem;
+        padding: 1rem;
       }
 
       .product-title {
         font-size: 0.9375rem;
       }
 
+      /* Beschreibung auf 2-Spalten-Mobile ausblenden – zu wenig Platz */
+      .product-description {
+        display: none;
+      }
+
       .price-amount {
         font-size: 1.25rem;
       }
 
+      /* Touch-Target: mindestens 44px (Apple/Google HIG) */
       .btn-add-cart {
-        width: 40px;
-        height: 40px;
+        width: 44px;
+        height: 44px;
       }
-      
+
+      /* Quick-View auf Touch immer sichtbar (kein hover auf Mobile) */
       .quick-view-btn {
-        font-size: 0.8125rem;
-        padding: 10px 20px;
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+        font-size: 0.75rem;
+        padding: 8px 14px;
+        bottom: 12px;
       }
+    }
+
+    /* RTL: Wishlist-Button und Badge spiegeln */
+    :host-context([dir="rtl"]) .wishlist-btn {
+      left: auto;
+      right: 16px;
+    }
+    :host-context([dir="rtl"]) .image-count-badge {
+      right: auto;
+      left: 16px;
+    }
+    :host-context([dir="rtl"]) .product-footer {
+      flex-direction: row-reverse;
+    }
+    :host-context([dir="rtl"]) .card-info {
+      padding-right: 0;
+      padding-left: 0.5rem;
     }
   `]
 })
