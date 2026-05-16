@@ -68,16 +68,17 @@ import { Subscription } from 'rxjs';
     :host {
       position: fixed;
       bottom: 20px;
-      /* Chatbot-Button sitzt bei right:20px mit 60px Breite → 30px Abstand */
-      right: 90px;
+      /* Chatbot-Button sitzt bei left:20px mit 60px Breite → 10px Abstand */
+      left: 90px;
+      right: auto;
       z-index: 9998; /* Knapp unter dem Chatbot (9999) */
       display: block;
     }
 
-    /* RTL-Support */
+    /* RTL-Support: auf rechte Seite spiegeln */
     :host-context([dir="rtl"]) {
-      right: auto;
-      left: 90px;
+      left: auto;
+      right: 90px;
     }
 
     .wa-widget {
@@ -139,7 +140,7 @@ import { Subscription } from 'rxjs';
     .wa-tooltip {
       position: absolute;
       bottom: calc(100% + 10px);
-      right: 0;
+      left: 0;
       background: #1f2937;
       color: #fff;
       font-size: 12px;
@@ -159,7 +160,7 @@ import { Subscription } from 'rxjs';
       content: '';
       position: absolute;
       top: 100%;
-      right: 18px;
+      left: 18px;
       border: 6px solid transparent;
       border-top-color: #1f2937;
     }
@@ -173,11 +174,12 @@ import { Subscription } from 'rxjs';
     @media (max-width: 480px) {
       :host {
         bottom: 10px;
-        right: 80px;
+        left: 80px;
+        right: auto;
       }
       :host-context([dir="rtl"]) {
-        right: auto;
-        left: 80px;
+        left: auto;
+        right: 80px;
       }
       .wa-btn {
         width: 52px;
