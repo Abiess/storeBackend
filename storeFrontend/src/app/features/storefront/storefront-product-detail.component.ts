@@ -1404,7 +1404,19 @@ export class StorefrontProductDetailComponent implements OnInit, OnDestroy {
   }
 
   goBack() {
-    this.router.navigate(['/stores', this.storeId, 'products']);
+    // Wenn storeId aus Route-Param kommt → Admin-Bereich → zurück zu Admin-Produktliste
+    const routeStoreId = Number(this.route.snapshot.paramMap.get('storeId'));
+    if (routeStoreId) {
+      this.router.navigate(['/stores', routeStoreId, 'products']);
+    } else {
+      // Subdomain-Storefront → zurück zur Startseite
+      // Wenn Browser-History verfügbar, nutze sie; sonst /
+      if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        this.router.navigate(['/']);
+      }
+    }
   }
 }
 

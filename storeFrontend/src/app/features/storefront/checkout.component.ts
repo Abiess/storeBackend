@@ -464,10 +464,15 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
     </div>
   `,
     styles: [`
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
     .checkout-container {
       max-width: 1200px;
       margin: 0 auto;
       padding: 20px;
+      overflow-x: hidden;
     }
 
     .checkout-header {
@@ -548,6 +553,10 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
     }
 
     @media (max-width: 576px) {
+      .checkout-container {
+        padding: 12px;
+      }
+
       .step-indicator {
         padding: 15px 10px;
       }
@@ -589,6 +598,12 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
       padding: 30px;
     }
 
+    @media (max-width: 576px) {
+      .checkout-form {
+        padding: 16px;
+      }
+    }
+
     .form-section {
       margin-bottom: 30px;
       padding-bottom: 30px;
@@ -620,10 +635,12 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
     .form-group select,
     .form-group textarea {
       width: 100%;
+      max-width: 100%;
       padding: 12px;
       border: 1px solid #ddd;
       border-radius: 6px;
       font-size: 14px;
+      box-sizing: border-box;
     }
 
     .form-group input:focus,
@@ -681,6 +698,12 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
       height: fit-content;
       position: sticky;
       top: 20px;
+    }
+
+    @media (max-width: 968px) {
+      .order-summary {
+        position: static;
+      }
     }
 
     .order-summary h2 {
@@ -811,20 +834,25 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
       display: flex;
       align-items: flex-start;
       gap: 15px;
+      flex-wrap: wrap;
     }
 
     .hint-icon {
       font-size: 28px;
       color: #667eea;
+      flex-shrink: 0;
     }
 
     .hint-text {
       flex: 1;
+      min-width: 150px;
     }
 
     .hint-actions {
       display: flex;
       gap: 10px;
+      flex-wrap: wrap;
+      width: 100%;
     }
 
     .logged-in-banner {
@@ -836,6 +864,8 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
     }
 
     .banner-content {
@@ -914,6 +944,18 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
       background: linear-gradient(135deg, #f0fff4, #e6fffa);
       border: 2px solid #68d391;
       border-radius: 12px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 576px) {
+      .pickup-only-banner {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .pickup-badge {
+        align-self: flex-start;
+      }
     }
 
     .pickup-icon {
@@ -1228,16 +1270,38 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
     .phone-input-group {
       display: flex;
       gap: 10px;
+      flex-wrap: wrap;
     }
 
     .phone-input {
       flex: 1;
+      min-width: 100px;
     }
 
     .btn-send-code {
       flex-shrink: 0;
       padding: 12px 20px;
       font-size: 14px;
+    }
+
+    @media (max-width: 576px) {
+      .phone-input-group {
+        flex-direction: column;
+      }
+
+      .country-select {
+        flex: none;
+        width: 100%;
+      }
+
+      .phone-input {
+        flex: none;
+        width: 100%;
+      }
+
+      .btn-send-code {
+        width: 100%;
+      }
     }
 
     .code-input-group {
@@ -1298,11 +1362,13 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 
     .country-select {
       flex: 0 0 160px;
+      max-width: 100%;
       padding: 10px;
       border: 1px solid #ddd;
       border-radius: 6px;
       font-size: 14px;
       cursor: pointer;
+      box-sizing: border-box;
     }
 
     .country-select option {

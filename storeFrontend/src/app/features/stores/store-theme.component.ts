@@ -828,12 +828,31 @@ export class StoreThemeComponent implements OnInit, OnDestroy {
     return isFree === undefined ? true : isFree;
   }
 
-  /** Vorschaubild-URL aus Backend (previewUrl → preset.preview), Fallback null. */
+  /** Vorschaubild-URL aus Backend (previewUrl → preset.preview), Fallback auf lokale SVGs. */
+  private readonly previewJpgToSvgMap: Record<string, string> = {
+    'modern-preview.jpg':    '/assets/themes/modern-grid.svg',
+    'classic-preview.jpg':   '/assets/themes/classic-bootstrap.svg',
+    'minimal-preview.jpg':   '/assets/themes/minimal-dark.svg',
+    'elegant-preview.jpg':   '/assets/themes/fashion-editorial.svg',
+    'dark-preview.jpg':      '/assets/themes/minimal-dark.svg',
+    'fashion-preview.jpg':   '/assets/themes/fashion-editorial.svg',
+    'beauty-preview.jpg':    '/assets/themes/beauty-soft.svg',
+    'electronics-preview.jpg': '/assets/themes/electronics-pro.svg',
+    'restaurant-preview.jpg':  '/assets/themes/restaurant-warm.svg',
+  };
+
   getPreviewUrl(preset: ThemePreset): string | null {
     const url = (preset as any).preview;
     if (!url || typeof url !== 'string') return null;
     // Default-Placeholder vom Service nicht anzeigen, dann Gradient nutzen
     if (url.endsWith('/default-preview.jpg')) return null;
+    // Bekannte .jpg-Pfade auf lokal vorhandene .svg Dateien umleiten (kein 404)
+    const filename = url.split('/').pop() ?? '';
+    if (filename && this.previewJpgToSvgMap[filename]) {
+      return this.previewJpgToSvgMap[filename];
+    }
+    // .jpg-Dateien die nicht in der Map sind → Gradient-Fallback statt 404
+    if (url.endsWith('.jpg') || url.endsWith('.jpeg')) return null;
     return url;
   }
 

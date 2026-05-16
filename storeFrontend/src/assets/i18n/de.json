@@ -1215,5 +1215,9 @@
   "whatsapp": {
     "contactUs": "Auf WhatsApp kontaktieren",
     "orderOnWhatsapp": "Auf WhatsApp bestellen"
+  },
+  "theme": {
+    "management": "Theme-Verwaltung",
+    "subtitle": "Passen Sie das Aussehen Ihres Shops an"
   }
 }

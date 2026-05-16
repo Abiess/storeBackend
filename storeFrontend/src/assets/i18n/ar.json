@@ -1056,5 +1056,9 @@
   "whatsapp": {
     "contactUs": "تواصل معنا عبر واتساب",
     "orderOnWhatsapp": "اطلب عبر واتساب"
+  },
+  "theme": {
+    "management": "إدارة المظهر",
+    "subtitle": "خصّص شكل ومظهر متجرك"
   }
 }
