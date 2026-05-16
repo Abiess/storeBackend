@@ -265,7 +265,8 @@
     "homepage": "Homepage",
     "settings": "Settings",
     "myAccount": "My account",
-    "filters": "Filters"
+    "filters": "Filters",
+    "reviews": "Reviews"
   },
   "settings": {
     "general": "General",

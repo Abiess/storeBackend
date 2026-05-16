@@ -362,7 +362,8 @@
     "homepage": "Homepage",
     "settings": "Einstellungen",
     "myAccount": "Mein Konto",
-    "filters": "Filter"
+    "filters": "Filter",
+    "reviews": "Bewertungen"
   },
   "settings": {
     "general": "Allgemein",
