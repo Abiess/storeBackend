@@ -255,8 +255,12 @@ public class StoreService {
             bulk("DELETE FROM FaqCategory fc WHERE fc.store.id = :sid", storeId, "FaqCategories");
 
             // === REVIEWS & VOTES ===
-            bulk("DELETE FROM ReviewVote rv WHERE rv.review.product.store.id = :sid", storeId, "ReviewVotes");
-            bulk("DELETE FROM ProductReview pr WHERE pr.store.id = :sid", storeId, "ProductReviews");
+            // ReviewVote → review.id (Subquery, da kein direkter store-Pfad)
+            bulk("DELETE FROM ReviewVote rv WHERE rv.review.id IN " +
+                 "(SELECT pr.id FROM ProductReview pr WHERE pr.product.store.id = :sid)",
+                 storeId, "ReviewVotes");
+            // ProductReview → product.store.id (kein direktes store-Feld!)
+            bulk("DELETE FROM ProductReview pr WHERE pr.product.store.id = :sid", storeId, "ProductReviews");
 
             // === COMMISSIONS (vor Orders!) ===
             bulk("DELETE FROM Commission c WHERE c.order.store.id = :sid", storeId, "Commissions");
@@ -270,20 +274,20 @@ public class StoreService {
             // === ORDERS ===
             bulk("DELETE FROM Order o WHERE o.store.id = :sid", storeId, "Orders");
 
-            // === PHONE VERIFICATIONS ===
-            bulk("DELETE FROM PhoneVerification pv WHERE pv.store.id = :sid", storeId, "PhoneVerifications");
+            // === PHONE VERIFICATIONS (storeId = Long-Spalte, keine ManyToOne) ===
+            bulk("DELETE FROM PhoneVerification pv WHERE pv.storeId = :sid", storeId, "PhoneVerifications");
 
-            // === WISHLIST ITEMS + WISHLISTS ===
-            bulk("DELETE FROM WishlistItem wi WHERE wi.wishlist.store.id = :sid", storeId, "WishlistItems");
-            bulk("DELETE FROM Wishlist w WHERE w.store.id = :sid", storeId, "Wishlists");
+            // === WISHLIST ITEMS + WISHLISTS (Wishlist.storeId = Long-Feld, keine ManyToOne) ===
+            bulk("DELETE FROM WishlistItem wi WHERE wi.wishlist.storeId = :sid", storeId, "WishlistItems");
+            bulk("DELETE FROM Wishlist w WHERE w.storeId = :sid", storeId, "Wishlists");
 
             // === CART ITEMS + CARTS ===
             bulk("DELETE FROM CartItem ci WHERE ci.cart.store.id = :sid", storeId, "CartItems");
             bulk("DELETE FROM Cart c WHERE c.store.id = :sid", storeId, "Carts");
 
-            // === COUPON REDEMPTIONS + COUPONS ===
-            bulk("DELETE FROM CouponRedemption cr WHERE cr.store.id = :sid", storeId, "CouponRedemptions");
-            bulk("DELETE FROM Coupon c WHERE c.store.id = :sid", storeId, "Coupons");
+            // === COUPON REDEMPTIONS + COUPONS (beide: storeId = Long-Feld) ===
+            bulk("DELETE FROM CouponRedemption cr WHERE cr.storeId = :sid", storeId, "CouponRedemptions");
+            bulk("DELETE FROM Coupon c WHERE c.storeId = :sid", storeId, "Coupons");
 
             // === STORE PRODUCTS ===
             bulk("DELETE FROM StoreProduct sp WHERE sp.store.id = :sid", storeId, "StoreProducts");
@@ -291,8 +295,8 @@ public class StoreService {
             // === HOMEPAGE SECTIONS ===
             bulk("DELETE FROM HomepageSection hs WHERE hs.store.id = :sid", storeId, "HomepageSections");
 
-            // === REDIRECT RULES ===
-            bulk("DELETE FROM RedirectRule rr WHERE rr.store.id = :sid", storeId, "RedirectRules");
+            // === REDIRECT RULES (storeId = Long-Feld) ===
+            bulk("DELETE FROM RedirectRule rr WHERE rr.storeId = :sid", storeId, "RedirectRules");
 
             // === SUPPLIER CONNECTIONS ===
             bulk("DELETE FROM SupplierConnection sc WHERE sc.store.id = :sid", storeId, "SupplierConnections");
@@ -301,8 +305,8 @@ public class StoreService {
             bulk("DELETE FROM DeliveryZone dz WHERE dz.store.id = :sid", storeId, "DeliveryZones");
             bulk("DELETE FROM DeliveryProvider dp WHERE dp.store.id = :sid", storeId, "DeliveryProviders");
 
-            // === SEO ===
-            bulk("DELETE FROM SeoSettings ss WHERE ss.store.id = :sid", storeId, "SeoSettings");
+            // === SEO (storeId = Long-Feld) ===
+            bulk("DELETE FROM SeoSettings ss WHERE ss.storeId = :sid", storeId, "SeoSettings");
 
             // === WIZARD PROGRESS ===
             entityManager.createNativeQuery(
