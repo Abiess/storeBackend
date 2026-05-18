@@ -1,5 +1,7 @@
 package storebackend.service;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class StoreService {
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     private final StoreRepository storeRepository;
     private final UserRepository userRepository;
@@ -354,6 +359,12 @@ public class StoreService {
             // - Store Themes
             // - Store Usage
             log.info("Phase 10: Deleting store entity (CASCADE: products, categories, themes, etc.)...");
+
+            // WICHTIG: Session-Cache leeren, damit keine verbleibenden Entities
+            // mehr auf den Store zeigen → verhindert TransientObjectException
+            entityManager.flush();
+            entityManager.clear();
+
             storeRepository.deleteById(storeId);
 
             log.info("🎉 Store {} COMPLETELY deleted: {} orders, {} commissions, {} reviews, {} carts, {} domains, {} media files, by user {}",
