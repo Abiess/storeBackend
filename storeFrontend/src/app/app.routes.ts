@@ -356,7 +356,8 @@ export const routes: Routes = [
       const isSubdomain = hostname.endsWith('.markt.ma') &&
                          hostname !== 'markt.ma' &&
                          hostname !== 'www.markt.ma' &&
-                         hostname !== 'api.markt.ma';
+                         hostname !== 'api.markt.ma' &&
+                         hostname !== 'grafana.markt.ma';
 
       console.log('🌐 Root Route - Hostname:', hostname, 'isSubdomain:', isSubdomain);
 

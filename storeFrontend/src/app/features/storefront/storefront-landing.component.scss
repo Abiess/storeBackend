@@ -501,6 +501,22 @@
 
 /* ==================== MOBILE OPTIMIERUNGEN ==================== */
 @media (max-width: 767px) {
+  /* Sidebar komplett ausblenden – Category Pills übernehmen die Navigation */
+  .sidebar-filters {
+    display: none !important;
+  }
+
+  /* products-layout ohne Sidebar: volle Breite */
+  .products-layout {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+  }
+
+  /* Breadcrumbs auf Mobile ausblenden – spart Platz */
+  .breadcrumbs {
+    display: none;
+  }
+
   /* Sections – weniger Luft auf kleinen Screens */
   .featured-products-section,
   .bestsellers-section,

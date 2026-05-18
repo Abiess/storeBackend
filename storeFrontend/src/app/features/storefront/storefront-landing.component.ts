@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { SubdomainService } from '@app/core/services/subdomain.service';
 import { ProductService } from '@app/core/services/product.service';
 import { CategoryService } from '@app/core/services/category.service';
@@ -28,6 +29,7 @@ import { FashionEditorialLayoutComponent } from './components/fashion-editorial-
   standalone: true,
   imports: [
     CommonModule,
+    TranslatePipe,
     StorefrontHeaderComponent,
     ProductCardComponent,
     StoreNotFoundComponent,

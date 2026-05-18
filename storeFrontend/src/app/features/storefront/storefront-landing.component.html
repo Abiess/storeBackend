@@ -22,7 +22,7 @@
           class="category-pill"
           [class.active]="!selectedCategory"
           (click)="filterByCategory(null)">
-          Alle
+          {{ 'common.all' | translate }}
         </button>
         <button
           *ngFor="let cat of categories"
@@ -38,7 +38,7 @@
   <!-- Loading Indicator -->
   <div *ngIf="loading" class="loading-container">
     <div class="spinner"></div>
-    <p>Store wird geladen...</p>
+    <p>{{ 'storefront.loading' | translate }}</p>
   </div>
 
   <!-- ═══════════════════════════════════════════════════════════════
@@ -100,7 +100,7 @@
         <!-- Breadcrumbs -->
         <nav class="breadcrumbs" aria-label="breadcrumb">
           <ol>
-            <li><a (click)="filterByCategory(null)">Home</a></li>
+            <li><a (click)="filterByCategory(null)">{{ 'header.home' | translate }}</a></li>
             <li *ngIf="selectedCategory" class="active">{{ selectedCategory.name }}</li>
           </ol>
         </nav>
@@ -132,7 +132,7 @@
     <section class="hero-banner" *ngIf="!sliderImages || sliderImages.length === 0">
       <div class="hero-content">
         <h1 class="hero-title">{{ storeName }}</h1>
-        <p class="hero-subtitle">Entdecke unsere Produkte</p>
+        <p class="hero-subtitle">{{ 'storefront.discoverProducts' | translate }}</p>
       </div>
     </section>
   </ng-template>
@@ -140,14 +140,14 @@
   <!-- SIDEBAR SECTION -->
   <ng-template #sidebarSection>
     <div class="filter-section">
-      <h3 class="filter-title">Kategorien</h3>
+      <h3 class="filter-title">{{ 'navigation.categories' | translate }}</h3>
       <ul class="category-list">
         <li>
           <button
             class="category-item"
             [class.active]="!selectedCategory"
             (click)="filterByCategory(null)">
-            <span>Alle Produkte</span>
+            <span>{{ 'storefront.allProducts' | translate }}</span>
             <span class="count">({{ products.length }})</span>
           </button>
         </li>
@@ -174,13 +174,13 @@
         </span>
       </div>
       <div class="toolbar-right">
-        <label for="sortSelect" class="sr-only">Sortieren</label>
+        <label for="sortSelect" class="sr-only">{{ 'common.filter' | translate }}</label>
         <select id="sortSelect" class="sort-select" (change)="onSortChange($event)">
-          <option value="relevant">Relevanz</option>
-          <option value="price-asc">Preis aufsteigend</option>
-          <option value="price-desc">Preis absteigend</option>
-          <option value="name-asc">Name A-Z</option>
-          <option value="newest">Neueste zuerst</option>
+          <option value="relevant">{{ 'storefront.sort.relevant' | translate }}</option>
+          <option value="price-asc">{{ 'storefront.sort.priceAsc' | translate }}</option>
+          <option value="price-desc">{{ 'storefront.sort.priceDesc' | translate }}</option>
+          <option value="name-asc">{{ 'storefront.sort.nameAsc' | translate }}</option>
+          <option value="newest">{{ 'storefront.sort.newest' | translate }}</option>
         </select>
       </div>
     </div>
@@ -195,7 +195,7 @@
 
     <!-- Featured Products -->
     <section *ngIf="featuredProducts.length > 0 && !selectedCategory" class="featured-products-section">
-      <h2 class="section-heading">⭐ Highlights</h2>
+      <h2 class="section-heading">{{ 'storefront.highlights' | translate }}</h2>
       <div class="products-grid featured">
         <app-product-card
           *ngFor="let product of featuredProducts.slice(0, 4)"
@@ -209,7 +209,7 @@
 
     <!-- Bestsellers -->
     <section *ngIf="topProducts.length > 0 && !selectedCategory" class="bestsellers-section">
-      <h2 class="section-heading">🔥 Bestseller</h2>
+      <h2 class="section-heading">{{ 'storefront.bestsellers' | translate }}</h2>
       <div class="products-grid">
         <app-product-card
           *ngFor="let product of topProducts.slice(0, 4)"
@@ -223,7 +223,7 @@
 
     <!-- New Arrivals -->
     <section *ngIf="newArrivals.length > 0 && !selectedCategory" class="new-arrivals-section">
-      <h2 class="section-heading">✨ Neu eingetroffen</h2>
+      <h2 class="section-heading">{{ 'storefront.newArrivals' | translate }}</h2>
       <div class="products-grid">
         <app-product-card
           *ngFor="let product of newArrivals.slice(0, 4)"
@@ -237,14 +237,14 @@
 
     <!-- All Products -->
     <section class="all-products-section">
-      <h2 class="section-heading" *ngIf="!selectedCategory">Alle Produkte</h2>
+      <h2 class="section-heading" *ngIf="!selectedCategory">{{ 'storefront.allProducts' | translate }}</h2>
 
       <div *ngIf="filteredProducts.length === 0" class="empty-state">
         <div class="empty-icon">{{ selectedCategory ? '🔍' : '📦' }}</div>
-        <h3>{{ selectedCategory ? 'Keine Produkte gefunden' : 'Noch keine Produkte verfügbar' }}</h3>
-        <p>{{ selectedCategory ? 'In dieser Kategorie sind aktuell keine Produkte verfügbar.' : 'Wir arbeiten daran, neue Produkte bereitzustellen.' }}</p>
+        <h3>{{ selectedCategory ? ('storefront.noProducts' | translate) : ('storefront.noProductsYet' | translate) }}</h3>
+        <p>{{ selectedCategory ? ('storefront.noProductsHint' | translate) : ('storefront.noProductsYetHint' | translate) }}</p>
         <button *ngIf="selectedCategory" class="btn-primary" (click)="filterByCategory(null)">
-          Alle Produkte anzeigen
+          {{ 'storefront.showAllProducts' | translate }}
         </button>
       </div>
 
@@ -274,6 +274,6 @@
 <!-- Footer -->
 <footer class="storefront-footer">
   <div class="footer-container">
-    <p>&copy; 2026 {{ storeName || 'Store' }} · Powered by Markt.ma</p>
+  <p>&copy; 2026 {{ storeName || 'Store' }} · {{ 'common.poweredBy' | translate }}</p>
   </div>
 </footer>
