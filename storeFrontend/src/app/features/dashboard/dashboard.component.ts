@@ -1089,8 +1089,28 @@ export class DashboardComponent implements OnInit {
   }
 
   openCreateStoreModal(): void {
+    // Immer frisch laden, damit kein Stale-Data-Problem beim Limit-Check entsteht
+    this.storeService.getMyStores().subscribe({
+      next: (stores) => {
+        this.stores = stores;
+        this._doOpenCreateStoreModal();
+      },
+      error: () => {
+        // Im Fehlerfall trotzdem öffnen – Backend prüft nochmal
+        this._doOpenCreateStoreModal();
+      }
+    });
+  }
+
+  private _doOpenCreateStoreModal(): void {
     const user = this.authService.getCurrentUser();
-    if (user?.plan?.features && this.stores.length >= user.plan.features.maxStores) {
+    // Plan-Limit prüfen: Backend liefert plan.maxStores direkt (kein features-Wrapper)
+    // Frontend-Modell hat plan.features.maxStores – beide Strukturen unterstützen
+    const planAny = user?.plan as any;
+    const maxStores: number | undefined =
+      planAny?.features?.maxStores ?? planAny?.maxStores;
+    // maxStores <= 0 → unbegrenzt (Enterprise-Plan mit -1)
+    if (maxStores != null && maxStores > 0 && this.stores.length >= maxStores) {
       this.showLimitModal = true;
       return;
     }

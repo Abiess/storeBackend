@@ -102,10 +102,20 @@ public class StoreService {
             throw new RuntimeException("Slug '" + request.getSlug() + "' is reserved for technical purposes and cannot be used");
         }
 
-        // Check max stores limit
+        // Check max stores limit – immer frisch aus der DB zählen
         long currentStoreCount = storeRepository.countByOwner(owner);
-        if (owner.getPlan() != null && currentStoreCount >= owner.getPlan().getMaxStores()) {
-            throw new RuntimeException("Maximum stores limit reached for your plan");
+        log.info("Store-Limit-Prüfung für User {} (Plan={}): {} von {} Stores genutzt",
+                owner.getEmail(),
+                owner.getPlan() != null ? owner.getPlan().getName() : "KEIN PLAN",
+                currentStoreCount,
+                owner.getPlan() != null ? owner.getPlan().getMaxStores() : "∞");
+
+        if (owner.getPlan() != null) {
+            int maxStores = owner.getPlan().getMaxStores() != null ? owner.getPlan().getMaxStores() : 0;
+            // maxStores <= 0 → unbegrenzt (z. B. Enterprise-Plan mit -1)
+            if (maxStores > 0 && currentStoreCount >= maxStores) {
+                throw new RuntimeException("Maximum stores limit reached for your plan");
+            }
         }
 
         // Check if slug already exists
@@ -262,6 +272,33 @@ public class StoreService {
             // ProductReview → product.store.id (kein direktes store-Feld!)
             bulk("DELETE FROM ProductReview pr WHERE pr.product.store.id = :sid", storeId, "ProductReviews");
 
+            // === INVENTORY LOGS (vor ProductVariant!) ===
+            bulk("DELETE FROM InventoryLog il WHERE il.variant.product.store.id = :sid", storeId, "InventoryLogs");
+
+            // === PRODUCT MEDIA (vor Product!) ===
+            bulk("DELETE FROM ProductMedia pm WHERE pm.product.store.id = :sid", storeId, "ProductMedia");
+
+            // === PRODUCT OPTION VALUES (ElementCollection – native SQL vor ProductOption!) ===
+            entityManager.createNativeQuery(
+                "DELETE FROM product_option_values WHERE option_id IN " +
+                "(SELECT po.id FROM product_options po JOIN products p ON po.product_id = p.id WHERE p.store_id = ?1)")
+                .setParameter(1, storeId)
+                .executeUpdate();
+            log.info("✅ Deleted ProductOptionValues (native)");
+
+            // === PRODUCT OPTIONS (vor Product!) ===
+            bulk("DELETE FROM ProductOption po WHERE po.product.store.id = :sid", storeId, "ProductOptions");
+
+            // === PRODUCT VARIANTS (vor Product!) ===
+            bulk("DELETE FROM ProductVariant pv WHERE pv.product.store.id = :sid", storeId, "ProductVariants");
+
+            // === SAVED CART ITEMS + SAVED CARTS (storeId = Long-Feld) ===
+            bulk("DELETE FROM SavedCartItem sci WHERE sci.savedCart.storeId = :sid", storeId, "SavedCartItems");
+            bulk("DELETE FROM SavedCart sc WHERE sc.storeId = :sid", storeId, "SavedCarts");
+
+            // === PRODUCTS ===
+            bulk("DELETE FROM Product p WHERE p.store.id = :sid", storeId, "Products");
+
             // === COMMISSIONS (vor Orders!) ===
             bulk("DELETE FROM Commission c WHERE c.order.store.id = :sid", storeId, "Commissions");
 
@@ -307,6 +344,26 @@ public class StoreService {
 
             // === SEO (storeId = Long-Feld) ===
             bulk("DELETE FROM SeoSettings ss WHERE ss.storeId = :sid", storeId, "SeoSettings");
+            bulk("DELETE FROM SeoAsset sa WHERE sa.storeId = :sid", storeId, "SeoAssets");
+            bulk("DELETE FROM SitemapConfig sc WHERE sc.storeId = :sid", storeId, "SitemapConfigs");
+            bulk("DELETE FROM StructuredDataTemplate sdt WHERE sdt.storeId = :sid", storeId, "StructuredDataTemplates");
+
+            // === STORE SLIDER IMAGES + SETTINGS ===
+            bulk("DELETE FROM StoreSliderImage ssi WHERE ssi.store.id = :sid", storeId, "StoreSliderImages");
+            bulk("DELETE FROM StoreSliderSettings sss WHERE sss.store.id = :sid", storeId, "StoreSliderSettings");
+
+            // === STORE THEME ===
+            bulk("DELETE FROM StoreTheme st WHERE st.store.id = :sid", storeId, "StoreThemes");
+
+            // === STORE USAGE ===
+            bulk("DELETE FROM StoreUsage su WHERE su.store.id = :sid", storeId, "StoreUsage");
+
+            // === STORE DELIVERY SETTINGS ===
+            entityManager.createNativeQuery(
+                "DELETE FROM store_delivery_settings WHERE store_id = ?1")
+                .setParameter(1, storeId)
+                .executeUpdate();
+            log.info("✅ Deleted StoreDeliverySettings (native)");
 
             // === WIZARD PROGRESS ===
             entityManager.createNativeQuery(
@@ -327,8 +384,8 @@ public class StoreService {
             // === DOMAINS ===
             bulk("DELETE FROM Domain d WHERE d.store.id = :sid", storeId, "Domains");
 
-            // === STORE THEMES, USAGE, SLIDER, etc. – per DB CASCADE ===
-            // Session sauber machen BEVOR der Store-Datensatz gelöscht wird
+            // Alle abhängigen Entitäten wurden explizit per JPQL gelöscht.
+            // Session sauber machen BEVOR der Store-Datensatz gelöscht wird.
             entityManager.flush();
             entityManager.clear();
 

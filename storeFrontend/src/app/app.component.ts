@@ -5,6 +5,7 @@ import { filter } from 'rxjs/operators';
 import { AuthService } from './core/services/auth.service';
 import { CartService } from './core/services/cart.service';
 import { MetaPixelService } from './core/services/meta-pixel.service';
+import { WhatsappConfigService } from './core/services/whatsapp-config.service';
 import { ChatbotWidgetComponent } from './components/chatbot-widget/chatbot-widget.component';
 import { WhatsappWidgetComponent } from './components/whatsapp-widget/whatsapp-widget.component';
 import { AdminSidebarComponent } from './shared/components/admin-sidebar/admin-sidebar.component';
@@ -29,8 +30,8 @@ import { PreviewPanelComponent } from './shared/components/preview-panel.compone
       <router-outlet></router-outlet>
     </ng-template>
 
-    <app-chatbot-widget></app-chatbot-widget>
-    <app-whatsapp-widget></app-whatsapp-widget>
+    <app-chatbot-widget *ngIf="showWidgets"></app-chatbot-widget>
+    <app-whatsapp-widget *ngIf="showWidgets"></app-whatsapp-widget>
     <app-fab-host></app-fab-host>
     <app-preview-panel></app-preview-panel>
   `,
@@ -212,12 +213,21 @@ import { PreviewPanelComponent } from './shared/components/preview-panel.compone
 export class AppComponent implements OnInit {
   title = 'markt.ma - Multi-Tenant E-Commerce Platform';
   showAdminShell = false;
+  /** Widgets (WhatsApp, Chatbot) nur auf Storefront-Seiten anzeigen */
+  showWidgets = false;
 
   private readonly adminPathPrefixes = [
     '/settings',
     '/subscription',
     '/role-management',
-    '/stores/'
+    '/stores/',
+    '/dashboard',
+    '/store-wizard',
+    '/choose-path',
+    '/login',
+    '/register',
+    '/store-onboarding',
+    '/store-success'
   ];
 
   /** Erkennt Produktdetail-URLs (z.B. /stores/5/products/12 oder /products/12) */
@@ -228,7 +238,8 @@ export class AppComponent implements OnInit {
     private cartService: CartService,
     private router: Router,
     private metaPixel: MetaPixelService,
-    private renderer: Renderer2
+    private renderer: Renderer2,
+    private whatsappConfig: WhatsappConfigService
   ) {}
 
   ngOnInit(): void {
@@ -253,6 +264,17 @@ export class AppComponent implements OnInit {
     this.showAdminShell = this.adminPathPrefixes.some(
       p => path === p || path.startsWith(p)
     );
+
+    // Widgets nur auf Storefront-Seiten zeigen (z. B. /storefront/ oder public StoreRoutes)
+    // Niemals auf Dashboard, Admin, Login, Settings usw.
+    this.showWidgets = path.includes('/storefront/') || path.startsWith('/s/');
+
+    // Wenn wir NICHT auf einer Storefront-Seite sind → WhatsApp-Nummer zurücksetzen
+    // damit das Widget beim Zurückkehren zur Admin-Seite verschwindet
+    if (!this.showWidgets) {
+      // WhatsApp-Nummer löschen → Widget wird ausgeblendet (zusätzlich zu *ngIf)
+      this.whatsappConfig.setNumber(null);
+    }
 
     // body.is-product-detail setzen/entfernen → CSS in Widget-Styles reagiert darauf
     if (this.productDetailPattern.test(path)) {
