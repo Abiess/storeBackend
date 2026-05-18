@@ -42,7 +42,7 @@ export interface OrderDetails {
   id: number;
   orderNumber: string;
   status: string;
-  totalAmount: number;
+  totalAmount: number | null;
   createdAt: string;
   customerEmail: string;
   customer?: {
@@ -60,8 +60,8 @@ export interface OrderItem {
   productName: string;
   variantName?: string;
   quantity: number;
-  price: number;
-  subtotal: number;
+  price: number | null;
+  subtotal: number | null;
   productSnapshot?: string;
 }
 

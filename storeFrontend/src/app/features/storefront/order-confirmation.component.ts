@@ -73,8 +73,8 @@ import { TranslationService } from '../../core/services/translation.service';
                 </div>
                 <div class="item-price">
                   <!-- Gesamtpreis -->
-                  {{ (item.price * item.quantity) | number:'1.2-2' }} €
-                  <span class="unit-price">{{ 'product.unitPrice' | translate: { price: (item.price | number:'1.2-2') } }}</span>
+                  {{ ((item.price ?? 0) * item.quantity) | number:'1.2-2' }} €
+                  <span class="unit-price">{{ 'product.unitPrice' | translate: { price: ((item.price ?? 0) | number:'1.2-2') } }}</span>
                 </div>
               </div>
             </div>
@@ -111,8 +111,7 @@ import { TranslationService } from '../../core/services/translation.service';
           <section class="details-section total-section">
             <h2>{{ 'order.total' | translate }}</h2>
             <div class="total-amount">
-              <!-- Gesamtbetrag -->
-              {{ order.totalAmount | number:'1.2-2' }} €
+              {{ (order.totalAmount ?? 0) | number:'1.2-2' }} €
             </div>
           </section>
         </div>
