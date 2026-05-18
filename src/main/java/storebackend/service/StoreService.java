@@ -278,16 +278,22 @@ public class StoreService {
             // === PRODUCT MEDIA (vor Product!) ===
             bulk("DELETE FROM ProductMedia pm WHERE pm.product.store.id = :sid", storeId, "ProductMedia");
 
-            // === PRODUCT OPTION VALUES (ElementCollection – native SQL vor ProductOption!) ===
+            // === PRODUCT OPTION VALUES (ElementCollection – native SQL, weil Hibernate 6
+            //     bei JPQL-Bulk-Delete auf ElementCollection JOIN falsch generiert!) ===
             entityManager.createNativeQuery(
                 "DELETE FROM product_option_values WHERE option_id IN " +
-                "(SELECT po.id FROM product_options po JOIN products p ON po.product_id = p.id WHERE p.store_id = ?1)")
+                "(SELECT id FROM product_options WHERE product_id IN " +
+                " (SELECT id FROM products WHERE store_id = ?1))")
                 .setParameter(1, storeId)
                 .executeUpdate();
             log.info("✅ Deleted ProductOptionValues (native)");
 
-            // === PRODUCT OPTIONS (vor Product!) ===
-            bulk("DELETE FROM ProductOption po WHERE po.product.store.id = :sid", storeId, "ProductOptions");
+            // === PRODUCT OPTIONS (native SQL – JPQL würde ElementCollection erneut fälschl. generieren!) ===
+            entityManager.createNativeQuery(
+                "DELETE FROM product_options WHERE product_id IN (SELECT id FROM products WHERE store_id = ?1)")
+                .setParameter(1, storeId)
+                .executeUpdate();
+            log.info("✅ Deleted ProductOptions (native)");
 
             // === PRODUCT VARIANTS (vor Product!) ===
             bulk("DELETE FROM ProductVariant pv WHERE pv.product.store.id = :sid", storeId, "ProductVariants");
