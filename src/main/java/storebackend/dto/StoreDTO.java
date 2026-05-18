@@ -16,5 +16,6 @@ public class StoreDTO {
     private StoreStatus status;
     private LocalDateTime createdAt;
     private String whatsappNumber;
+    private boolean whatsappNotificationsEnabled;
     private String greetingMessage;
 }

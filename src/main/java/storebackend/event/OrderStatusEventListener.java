@@ -7,8 +7,10 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import storebackend.entity.Order;
 import storebackend.entity.OrderItem;
+import storebackend.entity.Store;
 import storebackend.enums.OrderStatus;
 import storebackend.service.EmailService;
+import storebackend.service.WhatsAppService;
 
 import java.util.List;
 
@@ -22,6 +24,7 @@ import java.util.List;
 public class OrderStatusEventListener {
 
     private final EmailService emailService;
+    private final WhatsAppService whatsAppService;
 
     @Async
     @EventListener
@@ -56,18 +59,35 @@ public class OrderStatusEventListener {
             ownerLang  = order.getStore().getOwner().getPreferredLanguage();
         }
 
+        // WhatsApp: Kundennummer aus Lieferadresse + Store-Flag prüfen
+        Store store = order.getStore();
+        boolean waEnabled = store != null && store.isWhatsappNotificationsEnabled();
+        String customerPhone = null;
+        if (waEnabled && order.getShippingAddress() != null) {
+            customerPhone = order.getShippingAddress().getPhone();
+        }
+        // Owner-WhatsApp: die im Store hinterlegte Nummer des Inhabers
+        String ownerWhatsapp = (store != null) ? store.getWhatsappNumber() : null;
+
         List<OrderItem> items = order.getOrderItems() != null ? order.getOrderItems() : List.of();
 
         switch (newStatus) {
             case PENDING:
                 if (oldStatus == null) {
-                    // 1) Bestätigung an den Kunden
+                    // 1) E-Mail-Bestätigung an den Kunden
                     emailService.sendOrderConfirmation(
                         customerEmail, orderNumber, storeName,
                         order.getTotalAmount().doubleValue(),
                         items, storeLogo, lang
                     );
-                    // 2) Neue-Bestellung-Benachrichtigung an den Store-Owner
+                    // 2) WhatsApp-Bestätigung an den Kunden (wenn aktiviert + Nummer vorhanden)
+                    if (waEnabled && customerPhone != null && !customerPhone.isBlank()) {
+                        whatsAppService.sendOrderConfirmation(
+                            customerPhone, orderNumber, storeName,
+                            order.getTotalAmount().doubleValue(), lang);
+                        log.info("[WA] Order confirmation sent to customer {}", customerPhone);
+                    }
+                    // 3) Neue-Bestellung-Benachrichtigung an den Store-Owner (E-Mail)
                     String customerName   = order.getCustomer() != null ? order.getCustomer().getName()  : null;
                     String paymentMethod  = order.getPaymentMethod() != null ? order.getPaymentMethod().name() : null;
                     emailService.sendNewOrderNotificationToOwner(
@@ -76,6 +96,13 @@ public class OrderStatusEventListener {
                         order.getTotalAmount().doubleValue(),
                         customerEmail, customerName, paymentMethod, items
                     );
+                    // 4) Neue-Bestellung-Benachrichtigung an Owner via WhatsApp
+                    if (ownerWhatsapp != null && !ownerWhatsapp.isBlank()) {
+                        whatsAppService.sendNewOrderToOwner(
+                            ownerWhatsapp, orderNumber, storeName,
+                            order.getTotalAmount().doubleValue(), customerEmail, ownerLang);
+                        log.info("[WA] New order notification sent to owner {}", ownerWhatsapp);
+                    }
                 }
                 break;
 
@@ -90,12 +117,22 @@ public class OrderStatusEventListener {
                     customerEmail, orderNumber, storeName,
                     order.getTrackingNumber(), trackingUrl, carrier, storeLogo, lang
                 );
+                if (waEnabled && customerPhone != null && !customerPhone.isBlank()) {
+                    whatsAppService.sendShippingNotification(
+                        customerPhone, orderNumber, storeName, order.getTrackingNumber(), lang);
+                    log.info("[WA] Shipping notification sent to customer {}", customerPhone);
+                }
                 break;
 
             case DELIVERED:
                 emailService.sendDeliveryConfirmation(
                     customerEmail, orderNumber, storeName, storeLogo, lang
                 );
+                if (waEnabled && customerPhone != null && !customerPhone.isBlank()) {
+                    whatsAppService.sendDeliveryConfirmation(
+                        customerPhone, orderNumber, storeName, lang);
+                    log.info("[WA] Delivery confirmation sent to customer {}", customerPhone);
+                }
                 break;
 
             case CANCELLED:
@@ -103,6 +140,11 @@ public class OrderStatusEventListener {
                     customerEmail, orderNumber, storeName,
                     order.getNotes(), storeLogo, lang
                 );
+                if (waEnabled && customerPhone != null && !customerPhone.isBlank()) {
+                    whatsAppService.sendOrderCancellation(
+                        customerPhone, orderNumber, storeName, lang);
+                    log.info("[WA] Cancellation notification sent to customer {}", customerPhone);
+                }
                 break;
 
             case REFUNDED:
@@ -110,7 +152,7 @@ public class OrderStatusEventListener {
                 break;
 
             default:
-                log.info("No email configured for status: {}", newStatus);
+                log.info("No notification configured for status: {}", newStatus);
                 break;
         }
     }

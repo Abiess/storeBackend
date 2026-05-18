@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, ViewChild } from '@angular/core';
+﻿import { Component, OnInit, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -23,7 +23,7 @@ interface WizardStep {
     <div class="wizard-container">
       <!-- Skip Button -->
       <button class="skip-btn" (click)="skip()" *ngIf="!hasStore()">
-        {{ 'wizard.skip' | translate }} →
+        {{ 'wizard.skip' | translate }} â†’
       </button>
 
       <!-- Progress Header -->
@@ -180,6 +180,31 @@ interface WizardStep {
               </div>
             </div>
 
+            <!-- WhatsApp-Konfiguration -->
+            <div class="whatsapp-section">
+              <div class="whatsapp-header">
+                <span class="whatsapp-icon">ðŸ’¬</span>
+                <div>
+                  <h4>{{ 'wizard.whatsappNumber' | translate }}</h4>
+                  <p class="whatsapp-desc">{{ 'wizard.whatsappNumberHint' | translate }}</p>
+                </div>
+              </div>
+              <div class="form-group">
+                <input
+                  id="whatsappNumber"
+                  type="tel"
+                  formControlName="whatsappNumber"
+                  [placeholder]="'wizard.whatsappNumberPlaceholder' | translate"
+                  class="form-control"
+                />
+              </div>
+              <label class="wa-toggle">
+                <input type="checkbox" formControlName="whatsappNotificationsEnabled" />
+                <span class="wa-toggle-label">{{ 'wizard.whatsappNotifications' | translate }}</span>
+              </label>
+              <p class="hint wa-hint">{{ 'wizard.whatsappNotificationsHint' | translate }}</p>
+            </div>
+
             <div class="form-group">
               <label for="address">
                 {{ 'wizard.address' | translate }}
@@ -239,7 +264,7 @@ interface WizardStep {
             </app-ai-product-image-generator>
 
             <div class="optional-note">
-              <span class="note-icon">ℹ️</span>
+              <span class="note-icon">â„¹ï¸</span>
               <span>{{ 'wizard.aiImagesOptional' | translate }}</span>
             </div>
           </div>
@@ -324,7 +349,7 @@ interface WizardStep {
           (click)="previousStep()"
           *ngIf="currentStep() > 1"
           [disabled]="loading()">
-          ← {{ 'wizard.back' | translate }}
+          â† {{ 'wizard.back' | translate }}
         </button>
 
         <button 
@@ -333,7 +358,7 @@ interface WizardStep {
           (click)="nextStep()"
           *ngIf="currentStep() < 5"
           [disabled]="!canProceed() || loading()">
-          {{ 'wizard.next' | translate }} →
+          {{ 'wizard.next' | translate }} â†’
         </button>
 
         <button 
@@ -349,7 +374,7 @@ interface WizardStep {
             </svg>
             {{ 'wizard.creating' | translate }}
           } @else {
-            🚀 {{ 'wizard.createStore' | translate }}
+            ðŸš€ {{ 'wizard.createStore' | translate }}
           }
         </button>
       </div>
@@ -887,22 +912,22 @@ export class StoreWizardComponent implements OnInit {
   wizardForm!: FormGroup;
 
   steps: WizardStep[] = [
-    { id: 1, title: 'wizard.step1Title', subtitle: 'wizard.step1Subtitle', icon: '🏪', completed: false },
-    { id: 2, title: 'wizard.step2Title', subtitle: 'wizard.step2Subtitle', icon: '🎯', completed: false },
-    { id: 3, title: 'wizard.step3Title', subtitle: 'wizard.step3Subtitle', icon: '📞', completed: false },
-    { id: 4, title: 'wizard.step4Title', subtitle: 'wizard.step4Subtitle', icon: '🤖', completed: false },
-    { id: 5, title: 'wizard.step5Title', subtitle: 'wizard.step5Subtitle', icon: '✅', completed: false }
+    { id: 1, title: 'wizard.step1Title', subtitle: 'wizard.step1Subtitle', icon: 'ðŸª', completed: false },
+    { id: 2, title: 'wizard.step2Title', subtitle: 'wizard.step2Subtitle', icon: 'ðŸŽ¯', completed: false },
+    { id: 3, title: 'wizard.step3Title', subtitle: 'wizard.step3Subtitle', icon: 'ðŸ“ž', completed: false },
+    { id: 4, title: 'wizard.step4Title', subtitle: 'wizard.step4Subtitle', icon: 'ðŸ¤–', completed: false },
+    { id: 5, title: 'wizard.step5Title', subtitle: 'wizard.step5Subtitle', icon: 'âœ…', completed: false }
   ];
 
   categories = [
-    { id: 'fashion', name: 'wizard.categoryFashion', description: 'wizard.categoryFashionDesc', icon: '👗' },
-    { id: 'electronics', name: 'wizard.categoryElectronics', description: 'wizard.categoryElectronicsDesc', icon: '📱' },
-    { id: 'food', name: 'wizard.categoryFood', description: 'wizard.categoryFoodDesc', icon: '🍔' },
-    { id: 'beauty', name: 'wizard.categoryBeauty', description: 'wizard.categoryBeautyDesc', icon: '💄' },
-    { id: 'home', name: 'wizard.categoryHome', description: 'wizard.categoryHomeDesc', icon: '🏠' },
-    { id: 'sports', name: 'wizard.categorySports', description: 'wizard.categorySportsDesc', icon: '⚽' },
-    { id: 'books', name: 'wizard.categoryBooks', description: 'wizard.categoryBooksDesc', icon: '📚' },
-    { id: 'toys', name: 'wizard.categoryToys', description: 'wizard.categoryToysDesc', icon: '🧸' }
+    { id: 'fashion', name: 'wizard.categoryFashion', description: 'wizard.categoryFashionDesc', icon: 'ðŸ‘—' },
+    { id: 'electronics', name: 'wizard.categoryElectronics', description: 'wizard.categoryElectronicsDesc', icon: 'ðŸ“±' },
+    { id: 'food', name: 'wizard.categoryFood', description: 'wizard.categoryFoodDesc', icon: 'ðŸ”' },
+    { id: 'beauty', name: 'wizard.categoryBeauty', description: 'wizard.categoryBeautyDesc', icon: 'ðŸ’„' },
+    { id: 'home', name: 'wizard.categoryHome', description: 'wizard.categoryHomeDesc', icon: 'ðŸ ' },
+    { id: 'sports', name: 'wizard.categorySports', description: 'wizard.categorySportsDesc', icon: 'âš½' },
+    { id: 'books', name: 'wizard.categoryBooks', description: 'wizard.categoryBooksDesc', icon: 'ðŸ“š' },
+    { id: 'toys', name: 'wizard.categoryToys', description: 'wizard.categoryToysDesc', icon: 'ðŸ§¸' }
   ];
 
   createdStoreId: number | null = null;
@@ -926,6 +951,8 @@ export class StoreWizardComponent implements OnInit {
       description: this.fb.control('', []),
       email: this.fb.control('', []),
       phone: this.fb.control('', []),
+      whatsappNumber: this.fb.control('', []),
+      whatsappNotificationsEnabled: this.fb.control(false, []),
       address: this.fb.control('', []),
       city: this.fb.control('', []),
       postalCode: this.fb.control('', [])
@@ -973,7 +1000,7 @@ export class StoreWizardComponent implements OnInit {
     this.wizardProgressService.loadProgress().subscribe({
       next: (progress) => {
         if (progress && progress.status === 'IN_PROGRESS') {
-          console.log('📂 Fortschritt geladen - Setze Wizard fort ab Schritt', progress.currentStep);
+          console.log('ðŸ“‚ Fortschritt geladen - Setze Wizard fort ab Schritt', progress.currentStep);
           
           // Setze aktuellen Schritt
           this.currentStep.set(progress.currentStep);
@@ -987,7 +1014,7 @@ export class StoreWizardComponent implements OnInit {
             });
           }
           
-          // Fülle Formular mit gespeicherten Daten
+          // FÃ¼lle Formular mit gespeicherten Daten
           if (progress.data) {
             this.wizardForm.patchValue({
               storeName: progress.data.storeName || '',
@@ -1000,7 +1027,7 @@ export class StoreWizardComponent implements OnInit {
               postalCode: progress.data.contactInfo?.postalCode || ''
             });
 
-            // Setze ausgewählte Kategorien
+            // Setze ausgewÃ¤hlte Kategorien
             if (progress.data.selectedCategories) {
               this.selectedCategories.set(progress.data.selectedCategories);
             }
@@ -1009,7 +1036,7 @@ export class StoreWizardComponent implements OnInit {
       },
       error: (err) => {
         // Kein gespeicherter Fortschritt = Start bei Schritt 1
-        console.log('ℹ️ Kein gespeicherter Fortschritt gefunden. Starte neu.');
+        console.log('â„¹ï¸ Kein gespeicherter Fortschritt gefunden. Starte neu.');
       }
     });
   }
@@ -1040,8 +1067,8 @@ export class StoreWizardComponent implements OnInit {
     };
 
     this.wizardProgressService.saveProgress(progress).subscribe({
-      next: () => console.log('✅ Fortschritt gespeichert'),
-      error: (err) => console.error('❌ Fehler beim Speichern:', err)
+      next: () => console.log('âœ… Fortschritt gespeichert'),
+      error: (err) => console.error('âŒ Fehler beim Speichern:', err)
     });
   }
 
@@ -1065,7 +1092,7 @@ export class StoreWizardComponent implements OnInit {
 
     const current = this.currentStep();
 
-    // Bei Schritt 3 -> 4: Store erstellen, damit storeId für KI-Feature verfügbar ist
+    // Bei Schritt 3 -> 4: Store erstellen, damit storeId fÃ¼r KI-Feature verfÃ¼gbar ist
     if (current === 3 && !this.createdStoreId) {
       this.createStoreForAiStep();
       return; // nextStep wird nach erfolgreicher Erstellung aufgerufen
@@ -1081,11 +1108,11 @@ export class StoreWizardComponent implements OnInit {
   }
 
   /**
-   * Erstelle Store für KI-Step (wird vor Step 4 aufgerufen)
+   * Erstelle Store fÃ¼r KI-Step (wird vor Step 4 aufgerufen)
    */
   private async createStoreForAiStep(): Promise<void> {
     if (this.wizardForm.invalid) {
-      this.error.set('Bitte füllen Sie alle Pflichtfelder aus.');
+      this.error.set('Bitte fÃ¼llen Sie alle Pflichtfelder aus.');
       return;
     }
 
@@ -1099,7 +1126,9 @@ export class StoreWizardComponent implements OnInit {
         slug: formValue.storeSlug,
         description: formValue.description || null,
         categories: this.selectedCategories(),
-        contactInfo: {
+        whatsappNumber: formValue.whatsappNumber || null,
+          whatsappNotificationsEnabled: formValue.whatsappNotificationsEnabled || false,
+          contactInfo: {
           email: formValue.email || null,
           phone: formValue.phone || null,
           address: formValue.address || null,
@@ -1115,7 +1144,7 @@ export class StoreWizardComponent implements OnInit {
       }
 
       this.createdStoreId = result.id;
-      console.log('✅ Store erstellt für KI-Step:', result.id);
+      console.log('âœ… Store erstellt fÃ¼r KI-Step:', result.id);
 
       // Markiere Schritt 3 als abgeschlossen und gehe zu Schritt 4
       this.steps[2].completed = true;
@@ -1167,14 +1196,14 @@ export class StoreWizardComponent implements OnInit {
   }
 
   skip(): void {
-    // Markiere als übersprungen in DB
+    // Markiere als Ã¼bersprungen in DB
     this.wizardProgressService.skipWizard().subscribe({
       next: () => {
-        console.log('⏭️ Wizard übersprungen');
+        console.log('â­ï¸ Wizard Ã¼bersprungen');
         this.router.navigate(['/dashboard']);
       },
       error: (err) => {
-        console.error('❌ Fehler beim Überspringen:', err);
+        console.error('âŒ Fehler beim Ãœberspringen:', err);
         // Navigiere trotzdem zum Dashboard
         this.router.navigate(['/dashboard']);
       }
@@ -1186,8 +1215,8 @@ export class StoreWizardComponent implements OnInit {
     if (this.createdStoreId) {
       // Markiere Wizard als completed in DB
       this.wizardProgressService.completeWizard(this.createdStoreId).subscribe({
-        next: () => console.log('✅ Wizard als abgeschlossen markiert'),
-        error: (err) => console.warn('⚠️ Fehler beim Markieren:', err)
+        next: () => console.log('âœ… Wizard als abgeschlossen markiert'),
+        error: (err) => console.warn('âš ï¸ Fehler beim Markieren:', err)
       });
 
       // Navigate to onboarding (template selection + demo data) after store creation
@@ -1210,7 +1239,9 @@ export class StoreWizardComponent implements OnInit {
         slug: formValue.storeSlug,
         description: formValue.description || null,
         categories: this.selectedCategories(),
-        contactInfo: {
+        whatsappNumber: formValue.whatsappNumber || null,
+          whatsappNotificationsEnabled: formValue.whatsappNotificationsEnabled || false,
+          contactInfo: {
           email: formValue.email || null,
           phone: formValue.phone || null,
           address: formValue.address || null,
@@ -1229,8 +1260,8 @@ export class StoreWizardComponent implements OnInit {
 
       // Markiere Wizard als completed in DB
       this.wizardProgressService.completeWizard(result.id).subscribe({
-        next: () => console.log('✅ Wizard als abgeschlossen markiert'),
-        error: (err) => console.warn('⚠️ Fehler beim Markieren:', err)
+        next: () => console.log('âœ… Wizard als abgeschlossen markiert'),
+        error: (err) => console.warn('âš ï¸ Fehler beim Markieren:', err)
       });
       
       // Success! Navigate to onboarding (template selection)
@@ -1254,4 +1285,5 @@ export class StoreWizardComponent implements OnInit {
     // Handle AI image selection change if needed
   }
 }
+
 

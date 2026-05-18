@@ -1,4 +1,4 @@
-﻿{
+{
     "header":  {
                    "home":  "Home",
                    "products":  "Products",
@@ -279,7 +279,9 @@
                                       "greetingMessage":  "Pre-filled Message",
                                       "greetingMessagePlaceholder":  "Hello, I\u0027m interested in your products...",
                                       "greetingMessageHint":  "This message appears pre-filled in the WhatsApp chat",
-                                      "saveSuccess":  "WhatsApp settings saved!"
+                                      "saveSuccess":  "WhatsApp settings saved!",
+                                      "notificationsEnabled":  "Notify customers via WhatsApp",
+                                      "notificationsHint":  "Customers automatically receive WhatsApp messages for orders \u0026 status updates (phone from shipping address is used)"
                                   },
                      "branding":  {
                                       "title":  "Branding",
@@ -1049,7 +1051,12 @@
                    "images":  "Images",
                    "moreImages":  "more",
                    "aiImagesOptional":  "This step is optional. You can add products later.",
-                   "storeUrl":  "Store URL"
+                   "storeUrl":  "Store URL",
+                   "whatsappNumber":  "WhatsApp Number",
+                   "whatsappNumberPlaceholder":  "+212600123456",
+                   "whatsappNumberHint":  "Your WhatsApp number for customer orders (international format)",
+                   "whatsappNotifications":  "Notify customers via WhatsApp",
+                   "whatsappNotificationsHint":  "Customers automatically receive WhatsApp messages for orders \u0026 status updates"
                },
     "aiGenerator":  {
                         "intro":  "AI Product Image Analysis: Upload multiple product photos and AI automatically generates product data.",

@@ -14,4 +14,10 @@ public class CreateStoreRequest {
     private String description;
 
     private String category; // Kategorie für Slider-Initialisierung (z.B. "fashion", "electronics", "food", "general")
+
+    /** WhatsApp-Nummer des Store-Inhabers (für Bestellbenachrichtigungen an Owner). */
+    private String whatsappNumber;
+
+    /** Wenn true: Kunden erhalten WA-Nachrichten bei Bestellungen & Status-Updates. */
+    private boolean whatsappNotificationsEnabled = false;
 }

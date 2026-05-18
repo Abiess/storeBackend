@@ -116,6 +116,15 @@ export interface SettingsTab {
                   maxlength="500"></textarea>
                 <small class="form-text">{{ 'settings.whatsapp.greetingMessageHint' | translate }}</small>
               </div>
+
+              <!-- WhatsApp-Benachrichtigungen Toggle -->
+              <div class="form-group wa-notifications-toggle">
+                <label class="toggle-label">
+                  <input type="checkbox" formControlName="whatsappNotificationsEnabled" />
+                  <span class="toggle-text">{{ 'settings.whatsapp.notificationsEnabled' | translate }}</span>
+                </label>
+                <small class="form-text">{{ 'settings.whatsapp.notificationsHint' | translate }}</small>
+              </div>
             </div>
 
             <div class="form-group">
@@ -725,6 +734,29 @@ export interface SettingsTab {
       border-radius: 12px;
     }
 
+    .wa-notifications-toggle {
+      margin-top: 1rem;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 0.875rem 1rem;
+    }
+    .toggle-label {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+      cursor: pointer;
+      font-weight: 600;
+      color: #166534;
+    }
+    .toggle-label input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #16a34a;
+      cursor: pointer;
+    }
+    .toggle-text { font-size: 0.9rem; }
+
     .section-title {
       display: flex;
       align-items: center;
@@ -789,7 +821,8 @@ export class StoreSettingsComponent implements OnInit {
       description: [''],
       status: ['ACTIVE'],
       whatsappNumber: ['', [Validators.maxLength(20)]],
-      greetingMessage: ['', [Validators.maxLength(500)]]
+      greetingMessage: ['', [Validators.maxLength(500)]],
+      whatsappNotificationsEnabled: [false]
     });
 
     this.brandingForm = this.fb.group({
@@ -849,7 +882,8 @@ export class StoreSettingsComponent implements OnInit {
           description: store.description,
           status: store.status,
           whatsappNumber: store.whatsappNumber ?? '',
-          greetingMessage: store.greetingMessage ?? ''
+          greetingMessage: store.greetingMessage ?? '',
+          whatsappNotificationsEnabled: store.whatsappNotificationsEnabled ?? false
         });
         this.loading = false;
       },

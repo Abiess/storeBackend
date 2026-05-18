@@ -1,4 +1,4 @@
-﻿{
+{
     "wizard":  {
                    "skip":  "Ãœberspringen",
                    "createStore":  "Store erstellen",
@@ -61,7 +61,12 @@
                    "images":  "Bilder",
                    "moreImages":  "weitere",
                    "aiImagesOptional":  "Dieser Schritt ist optional. Sie kÃ¶nnen auch spÃ¤ter Produkte hinzufÃ¼gen.",
-                   "storeUrl":  "Store-URL"
+                   "storeUrl":  "Store-URL",
+                   "whatsappNumber":  "WhatsApp-Nummer",
+                   "whatsappNumberPlaceholder":  "+212600123456",
+                   "whatsappNumberHint":  "Ihre WhatsApp-Nummer für Kundenbestellungen (internationales Format)",
+                   "whatsappNotifications":  "Kunden per WhatsApp benachrichtigen",
+                   "whatsappNotificationsHint":  "Kunden erhalten automatisch WhatsApp-Nachrichten bei Bestellungen \u0026 Status-Updates"
                },
     "aiGenerator":  {
                         "intro":  "KI-Produktbilder-Analyse: Laden Sie mehrere Produktfotos hoch und die KI generiert automatisch Produktdaten.",
@@ -376,7 +381,9 @@
                                       "greetingMessage":  "VorbefÃ¼llte Nachricht",
                                       "greetingMessagePlaceholder":  "Hallo, ich interessiere mich fÃ¼r Ihre Produkte...",
                                       "greetingMessageHint":  "Diese Nachricht erscheint vorausgefÃ¼llt im WhatsApp-Chat",
-                                      "saveSuccess":  "WhatsApp-Einstellungen gespeichert!"
+                                      "saveSuccess":  "WhatsApp-Einstellungen gespeichert!",
+                                      "notificationsEnabled":  "Kunden per WhatsApp benachrichtigen",
+                                      "notificationsHint":  "Bei neuen Bestellungen \u0026 Status-Änderungen erhalten Kunden automatisch eine WhatsApp-Nachricht (Kundennummer aus Lieferadresse wird verwendet)"
                                   },
                      "branding":  {
                                       "title":  "Branding",

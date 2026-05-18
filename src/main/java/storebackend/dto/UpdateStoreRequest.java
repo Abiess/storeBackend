@@ -21,7 +21,7 @@ public class UpdateStoreRequest {
 
     // WhatsApp-Kontaktdaten – optional, null = nicht ändern
     private String whatsappNumber;
+    private Boolean whatsappNotificationsEnabled;
 
     private String greetingMessage;
 }
-

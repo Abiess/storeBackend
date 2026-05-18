@@ -129,6 +129,10 @@ public class StoreService {
         store.setName(request.getName());
         store.setSlug(request.getSlug());
         store.setStatus(StoreStatus.ACTIVE);
+        if (request.getWhatsappNumber() != null && !request.getWhatsappNumber().isBlank()) {
+            store.setWhatsappNumber(request.getWhatsappNumber().trim());
+        }
+        store.setWhatsappNotificationsEnabled(request.isWhatsappNotificationsEnabled());
 
         store = storeRepository.save(store);
 
@@ -215,6 +219,9 @@ public class StoreService {
         // WhatsApp-Felder nur überschreiben wenn explizit mitgeliefert (null = nicht ändern)
         if (request.getWhatsappNumber() != null) {
             store.setWhatsappNumber(request.getWhatsappNumber().isBlank() ? null : request.getWhatsappNumber().trim());
+        }
+        if (request.getWhatsappNotificationsEnabled() != null) {
+            store.setWhatsappNotificationsEnabled(request.getWhatsappNotificationsEnabled());
         }
 
         if (request.getGreetingMessage() != null) {
@@ -376,6 +383,7 @@ public class StoreService {
         dto.setDescription(store.getDescription());
         dto.setCreatedAt(store.getCreatedAt());
         dto.setWhatsappNumber(store.getWhatsappNumber());
+        dto.setWhatsappNotificationsEnabled(store.isWhatsappNotificationsEnabled());
         dto.setGreetingMessage(store.getGreetingMessage());
         return dto;
     }

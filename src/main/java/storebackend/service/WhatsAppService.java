@@ -124,8 +124,78 @@ public class WhatsAppService {
      * SMS-Fallback – nicht verfuegbar, leitet auf WhatsApp weiter.
      */
     public boolean sendSMS(String to, String message) {
-        log.warn("SMS not supported – falling back to WhatsApp for {}", to);
+        log.warn("SMS not supported - falling back to WhatsApp for {}", to);
         return sendMessage(to, message);
+    }
+
+    // ──────────────────────────────────────────────────────────────────
+    // Order-Benachrichtigungen für Kunden & Store-Owner
+    // ──────────────────────────────────────────────────────────────────
+
+    /** Bestellbestätigung an Kunden (PENDING/neu). */
+    public boolean sendOrderConfirmation(String to, String orderNumber, String storeName, double total, String lang) {
+        String msg = buildOrderMsg(lang,
+            "✅ Bestellung bestätigt!\n\nBestellnr: *%s*\nShop: %s\nGesamt: *%.2f €*\n\nVielen Dank für Ihre Bestellung! 🎉",
+            "✅ Order confirmed!\n\nOrder: *%s*\nShop: %s\nTotal: *€%.2f*\n\nThank you for your purchase! 🎉",
+            "✅ تأكيد الطلب!\n\nرقم الطلب: *%s*\nالمتجر: %s\nالمجموع: *%.2f €*\n\nشكراً لطلبك! 🎉",
+            orderNumber, storeName, total);
+        return sendMessage(to, msg);
+    }
+
+    /** Versandbenachrichtigung an Kunden (SHIPPED). */
+    public boolean sendShippingNotification(String to, String orderNumber, String storeName,
+                                             String trackingNumber, String lang) {
+        String tracking = (trackingNumber != null && !trackingNumber.isBlank())
+            ? "\nTracking: *" + trackingNumber + "*" : "";
+        String msg = buildOrderMsg(lang,
+            "🚚 Ihre Bestellung wurde versendet!\n\nBestellnr: *%s*\nShop: %s" + tracking + "\n\nIhr Paket ist auf dem Weg! 📦",
+            "🚚 Your order has been shipped!\n\nOrder: *%s*\nShop: %s" + tracking + "\n\nYour package is on its way! 📦",
+            "🚚 تم شحن طلبك!\n\nرقم الطلب: *%s*\nالمتجر: %s" + tracking + "\n\nطلبك في الطريق إليك! 📦",
+            orderNumber, storeName, 0.0);
+        return sendMessage(to, msg);
+    }
+
+    /** Zustellbestätigung an Kunden (DELIVERED). */
+    public boolean sendDeliveryConfirmation(String to, String orderNumber, String storeName, String lang) {
+        String msg = buildOrderMsg(lang,
+            "✅ Ihre Bestellung wurde zugestellt!\n\nBestellnr: *%s*\nShop: %s\n\nWir hoffen, Sie sind zufrieden! 😊",
+            "✅ Your order has been delivered!\n\nOrder: *%s*\nShop: %s\n\nWe hope you enjoy it! 😊",
+            "✅ تم تسليم طلبك!\n\nرقم الطلب: *%s*\nالمتجر: %s\n\nنأمل أن تكون راضياً! 😊",
+            orderNumber, storeName, 0.0);
+        return sendMessage(to, msg);
+    }
+
+    /** Stornierungsbenachrichtigung an Kunden (CANCELLED). */
+    public boolean sendOrderCancellation(String to, String orderNumber, String storeName, String lang) {
+        String msg = buildOrderMsg(lang,
+            "❌ Bestellung storniert\n\nBestellnr: *%s*\nShop: %s\n\nBei Fragen kontaktieren Sie uns bitte.",
+            "❌ Order cancelled\n\nOrder: *%s*\nShop: %s\n\nPlease contact us if you have questions.",
+            "❌ تم إلغاء الطلب\n\nرقم الطلب: *%s*\nالمتجر: %s\n\nتواصل معنا إذا كان لديك أي استفسار.",
+            orderNumber, storeName, 0.0);
+        return sendMessage(to, msg);
+    }
+
+    /** Neue-Bestellung-Benachrichtigung an den Store-Owner. */
+    public boolean sendNewOrderToOwner(String to, String orderNumber, String storeName,
+                                        double total, String customerEmail, String lang) {
+        String customer = customerEmail != null ? customerEmail : "-";
+        String msg = buildOrderMsg(lang,
+            "🛍️ Neue Bestellung!\n\nBestellnr: *%s*\nShop: %s\nGesamt: *%.2f €*\nKunde: " + customer,
+            "🛍️ New order received!\n\nOrder: *%s*\nShop: %s\nTotal: *€%.2f*\nCustomer: " + customer,
+            "🛍️ طلب جديد!\n\nرقم الطلب: *%s*\nالمتجر: %s\nالمجموع: *%.2f €*\nالعميل: " + customer,
+            orderNumber, storeName, total);
+        return sendMessage(to, msg);
+    }
+
+    /** Mehrsprachige Nachricht bauen und formatieren. */
+    private String buildOrderMsg(String lang, String de, String en, String ar,
+                                  String orderNumber, String storeName, double total) {
+        String tpl = switch (lang != null ? lang : "en") {
+            case "de" -> de;
+            case "ar" -> ar;
+            default   -> en;
+        };
+        return String.format(tpl, orderNumber, storeName, total);
     }
 
     public boolean isEnabled() {

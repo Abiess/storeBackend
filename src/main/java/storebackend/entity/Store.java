@@ -48,6 +48,13 @@ public class Store {
     @Column(name = "greeting_message", columnDefinition = "TEXT")
     private String greetingMessage;
 
+    /**
+     * Wenn true: Kunden erhalten WhatsApp-Benachrichtigungen bei Order-Status-Änderungen
+     * (analog zu E-Mail-Benachrichtigungen, sofern Kundennummer vorhanden).
+     */
+    @Column(name = "whatsapp_notifications_enabled", nullable = false)
+    private boolean whatsappNotificationsEnabled = false;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private StoreStatus status = StoreStatus.ACTIVE;
