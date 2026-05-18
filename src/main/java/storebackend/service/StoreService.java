@@ -10,7 +10,6 @@ import storebackend.config.SaasProperties;
 import storebackend.dto.CreateStoreRequest;
 import storebackend.dto.UpdateStoreRequest;
 import storebackend.dto.StoreDTO;
-import storebackend.entity.Domain;
 import storebackend.entity.Store;
 import storebackend.entity.User;
 import storebackend.enums.Role;
@@ -32,19 +31,9 @@ public class StoreService {
 
     private final StoreRepository storeRepository;
     private final UserRepository userRepository;
-    private final DomainRepository domainRepository;
     private final MediaService mediaService;
     private final SaasProperties saasProperties;
     private final StorePostCreateService postCreateService;
-
-    // Repositories für Cascade-Deletion
-    private final CommissionRepository commissionRepository;
-    private final OrderRepository orderRepository;
-    private final OrderItemRepository orderItemRepository;
-    private final OrderStatusHistoryRepository orderStatusHistoryRepository;
-    private final CartRepository cartRepository;
-    private final CartItemRepository cartItemRepository;
-    private final ProductReviewRepository productReviewRepository;
 
     // NEUE: Liste der reservierten Slugs, die NICHT als Stores verwendet werden dürfen
     private static final Set<String> RESERVED_SLUGS = Set.of(
@@ -244,7 +233,6 @@ public class StoreService {
         Store store = storeRepository.findByIdWithOwner(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
 
-        // Verify ownership (Store Manager kann seinen eigenen Store löschen)
         if (!store.getOwner().getId().equals(user.getId())) {
             throw new RuntimeException("You are not authorized to delete this store");
         }
@@ -253,85 +241,77 @@ public class StoreService {
                  storeId, store.getName(), user.getEmail());
 
         try {
-            // === PHASE 1: Commissions (ZUERST - haben FK zu Orders!) ===
-            log.info("Phase 1: Deleting commissions...");
-            List<Long> orderIds = orderRepository.findByStoreIdOrderByCreatedAtDesc(storeId)
-                .stream()
-                .map(o -> o.getId())
-                .toList();
+            // Hilfsmethode: JPQL-Bulk-Delete mit Logging
+            // Quell-Reihenfolge: Blätter zuerst, Store zuletzt
 
-            int commissionCount = 0;
-            for (Long orderId : orderIds) {
-                List<Long> commissionIds = commissionRepository.findByOrderId(orderId)
-                    .stream()
-                    .map(c -> c.getId())
-                    .toList();
-                commissionCount += commissionIds.size();
-                commissionIds.forEach(id -> commissionRepository.deleteById(id));
-            }
-            log.info("✅ Deleted {} commissions", commissionCount);
+            // === CHATBOT ===
+            bulk("DELETE FROM ChatMessage cm WHERE cm.session.store.id = :sid", storeId, "ChatMessages");
+            bulk("DELETE FROM ChatSession cs WHERE cs.store.id = :sid", storeId, "ChatSessions");
+            bulk("DELETE FROM ChatbotIntent ci WHERE ci.store.id = :sid", storeId, "ChatbotIntents");
+            bulk("DELETE FROM CannedResponse cr WHERE cr.store.id = :sid", storeId, "CannedResponses");
 
-            // === PHASE 2: Order Status History ===
-            log.info("Phase 2: Deleting order status history...");
-            int statusHistoryCount = 0;
-            for (Long orderId : orderIds) {
-                List<Long> historyIds = orderStatusHistoryRepository.findByOrderIdOrderByTimestampDesc(orderId)
-                    .stream()
-                    .map(h -> h.getId())
-                    .toList();
-                statusHistoryCount += historyIds.size();
-                historyIds.forEach(id -> orderStatusHistoryRepository.deleteById(id));
-            }
-            log.info("✅ Deleted {} order status histories", statusHistoryCount);
+            // === FAQ ===
+            bulk("DELETE FROM FaqItem fi WHERE fi.store.id = :sid", storeId, "FaqItems");
+            bulk("DELETE FROM FaqCategory fc WHERE fc.store.id = :sid", storeId, "FaqCategories");
 
-            // === PHASE 3: Order Items ===
-            log.info("Phase 3: Deleting order items...");
-            int orderItemCount = 0;
-            for (Long orderId : orderIds) {
-                List<Long> itemIds = orderItemRepository.findByOrderId(orderId)
-                    .stream()
-                    .map(i -> i.getId())
-                    .toList();
-                orderItemCount += itemIds.size();
-                itemIds.forEach(id -> orderItemRepository.deleteById(id));
-            }
-            log.info("✅ Deleted {} order items", orderItemCount);
+            // === REVIEWS & VOTES ===
+            bulk("DELETE FROM ReviewVote rv WHERE rv.review.product.store.id = :sid", storeId, "ReviewVotes");
+            bulk("DELETE FROM ProductReview pr WHERE pr.store.id = :sid", storeId, "ProductReviews");
 
-            // === PHASE 4: Orders ===
-            log.info("Phase 4: Deleting orders...");
-            int orderCount = orderIds.size();
-            orderIds.forEach(id -> orderRepository.deleteById(id));
-            log.info("✅ Deleted {} orders", orderCount);
+            // === COMMISSIONS (vor Orders!) ===
+            bulk("DELETE FROM Commission c WHERE c.order.store.id = :sid", storeId, "Commissions");
 
-            // === PHASE 5: Product Reviews ===
-            log.info("Phase 5: Deleting product reviews...");
-            List<Long> reviewIds = productReviewRepository.findReviewIdsByStoreId(storeId);
-            int reviewCount = reviewIds.size();
-            reviewIds.forEach(id -> productReviewRepository.deleteById(id));
-            log.info("✅ Deleted {} product reviews", reviewCount);
+            // === ORDER STATUS HISTORY ===
+            bulk("DELETE FROM OrderStatusHistory osh WHERE osh.order.store.id = :sid", storeId, "OrderStatusHistory");
 
-            // === PHASE 6: Cart Items ===
-            log.info("Phase 6: Deleting cart items...");
-            List<Long> cartIds = cartRepository.findCartIdsByStoreId(storeId);
-            int cartItemCount = 0;
-            for (Long cartId : cartIds) {
-                List<Long> itemIds = cartItemRepository.findByCartId(cartId)
-                    .stream()
-                    .map(i -> i.getId())
-                    .toList();
-                cartItemCount += itemIds.size();
-                itemIds.forEach(id -> cartItemRepository.deleteById(id));
-            }
-            log.info("✅ Deleted {} cart items from {} carts", cartItemCount, cartIds.size());
+            // === ORDER ITEMS ===
+            bulk("DELETE FROM OrderItem oi WHERE oi.order.store.id = :sid", storeId, "OrderItems");
 
-            // === PHASE 7: Carts ===
-            log.info("Phase 7: Deleting carts...");
-            int cartCount = cartIds.size();
-            cartIds.forEach(id -> cartRepository.deleteById(id));
-            log.info("✅ Deleted {} carts", cartCount);
+            // === ORDERS ===
+            bulk("DELETE FROM Order o WHERE o.store.id = :sid", storeId, "Orders");
 
-            // === PHASE 8: Media Files (MinIO) ===
-            log.info("Phase 8: Deleting media files from MinIO...");
+            // === PHONE VERIFICATIONS ===
+            bulk("DELETE FROM PhoneVerification pv WHERE pv.store.id = :sid", storeId, "PhoneVerifications");
+
+            // === WISHLIST ITEMS + WISHLISTS ===
+            bulk("DELETE FROM WishlistItem wi WHERE wi.wishlist.store.id = :sid", storeId, "WishlistItems");
+            bulk("DELETE FROM Wishlist w WHERE w.store.id = :sid", storeId, "Wishlists");
+
+            // === CART ITEMS + CARTS ===
+            bulk("DELETE FROM CartItem ci WHERE ci.cart.store.id = :sid", storeId, "CartItems");
+            bulk("DELETE FROM Cart c WHERE c.store.id = :sid", storeId, "Carts");
+
+            // === COUPON REDEMPTIONS + COUPONS ===
+            bulk("DELETE FROM CouponRedemption cr WHERE cr.store.id = :sid", storeId, "CouponRedemptions");
+            bulk("DELETE FROM Coupon c WHERE c.store.id = :sid", storeId, "Coupons");
+
+            // === STORE PRODUCTS ===
+            bulk("DELETE FROM StoreProduct sp WHERE sp.store.id = :sid", storeId, "StoreProducts");
+
+            // === HOMEPAGE SECTIONS ===
+            bulk("DELETE FROM HomepageSection hs WHERE hs.store.id = :sid", storeId, "HomepageSections");
+
+            // === REDIRECT RULES ===
+            bulk("DELETE FROM RedirectRule rr WHERE rr.store.id = :sid", storeId, "RedirectRules");
+
+            // === SUPPLIER CONNECTIONS ===
+            bulk("DELETE FROM SupplierConnection sc WHERE sc.store.id = :sid", storeId, "SupplierConnections");
+
+            // === DELIVER ZONES + PROVIDERS + SETTINGS ===
+            bulk("DELETE FROM DeliveryZone dz WHERE dz.store.id = :sid", storeId, "DeliveryZones");
+            bulk("DELETE FROM DeliveryProvider dp WHERE dp.store.id = :sid", storeId, "DeliveryProviders");
+
+            // === SEO ===
+            bulk("DELETE FROM SeoSettings ss WHERE ss.store.id = :sid", storeId, "SeoSettings");
+
+            // === WIZARD PROGRESS ===
+            entityManager.createNativeQuery(
+                "UPDATE wizard_progress SET created_store_id = NULL WHERE created_store_id = ?1")
+                .setParameter(1, storeId)
+                .executeUpdate();
+
+            // === MEDIA FILES (MinIO) ===
+            log.info("Deleting media files from MinIO...");
             int deletedMediaCount = 0;
             try {
                 deletedMediaCount = mediaService.deleteAllMediaForStore(store);
@@ -340,40 +320,31 @@ public class StoreService {
                 log.error("⚠️ Error deleting media files (continuing): {}", e.getMessage());
             }
 
-            // === PHASE 9: Domains ===
-            log.info("Phase 9: Deleting domains...");
-            List<Long> domainIds = domainRepository.findByStore(store)
-                .stream()
-                .map(d -> d.getId())
-                .toList();
-            int domainCount = domainIds.size();
-            domainIds.forEach(id -> domainRepository.deleteById(id));
-            log.info("✅ Deleted {} domains", domainCount);
+            // === DOMAINS ===
+            bulk("DELETE FROM Domain d WHERE d.store.id = :sid", storeId, "Domains");
 
-            // === PHASE 10: Store (mit CASCADE für Products, Variants, Categories, Themes, etc.) ===
-            // JPA CASCADE wird automatisch folgendes löschen:
-            // - Products → Product Options → Product Option Values
-            // - Products → Product Variants
-            // - Products → Inventory
-            // - Categories
-            // - Store Themes
-            // - Store Usage
-            log.info("Phase 10: Deleting store entity (CASCADE: products, categories, themes, etc.)...");
-
-            // WICHTIG: Session-Cache leeren, damit keine verbleibenden Entities
-            // mehr auf den Store zeigen → verhindert TransientObjectException
+            // === STORE THEMES, USAGE, SLIDER, etc. – per DB CASCADE ===
+            // Session sauber machen BEVOR der Store-Datensatz gelöscht wird
             entityManager.flush();
             entityManager.clear();
 
             storeRepository.deleteById(storeId);
 
-            log.info("🎉 Store {} COMPLETELY deleted: {} orders, {} commissions, {} reviews, {} carts, {} domains, {} media files, by user {}",
-                     storeId, orderCount, commissionCount, reviewCount, cartCount, domainCount, deletedMediaCount, user.getEmail());
+            log.info("🎉 Store {} COMPLETELY deleted ({} MinIO files) by user {}",
+                     storeId, deletedMediaCount, user.getEmail());
 
         } catch (Exception e) {
             log.error("❌ Error during store deletion: {}", e.getMessage(), e);
             throw new RuntimeException("Fehler beim Löschen des Stores: " + e.getMessage(), e);
         }
+    }
+
+    /** Hilfsmethode: JPQL-Bulk-Delete mit Logging */
+    private void bulk(String jpql, Long storeId, String label) {
+        int count = entityManager.createQuery(jpql)
+                .setParameter("sid", storeId)
+                .executeUpdate();
+        log.info("✅ Deleted {} {}", count, label);
     }
 
     public List<Store> getStoresByUserId(Long userId) {
