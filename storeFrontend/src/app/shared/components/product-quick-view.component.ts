@@ -147,7 +147,7 @@ import { ProductReviewsComponent } from './product-reviews.component';
                     [class.chip-unavailable]="variant.stockQuantity !== null && variant.stockQuantity !== undefined && variant.stockQuantity <= 0"
                     (click)="selectVariant(variant)">
                     <span class="chip-text">{{ getVariantDisplayName(variant) }}</span>
-                    <span class="chip-price">{{ variant.price | number:'1.2-2' }} €</span>
+                     <span class="chip-price">{{ variant.price | number:'1.2-2' }} €</span>
                   </button>
                 </div>
               </div>

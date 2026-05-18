@@ -622,6 +622,8 @@ export interface Store {
   whatsappNumber?: string;
   /** Vorbefüllte Begrüßungsnachricht beim WhatsApp-Klick */
   greetingMessage?: string;
+  /** Kunden automatisch per WhatsApp bei Bestellungen benachrichtigen */
+  whatsappNotificationsEnabled?: boolean;
 }
 
 export interface PublicStore {
