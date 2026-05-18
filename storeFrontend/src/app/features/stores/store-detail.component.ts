@@ -4,14 +4,16 @@ import { RouterModule, ActivatedRoute } from '@angular/router';
 import { ProductService } from '@app/core/services/product.service';
 import { OrderService } from '@app/core/services/order.service';
 import { CategoryService } from '@app/core/services/category.service';
+import { StoreService } from '@app/core/services/store.service';
 import { Product, Order, Category } from '@app/core/models';
 import { toDate } from '@app/core/utils/date.utils';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { OnboardingChecklistComponent } from '@app/shared/components/onboarding-checklist/onboarding-checklist.component';
 
 @Component({
   selector: 'app-store-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, TranslatePipe],
+  imports: [CommonModule, RouterModule, TranslatePipe, OnboardingChecklistComponent],
   template: `
     <!-- Sidebar wird global durch AppComponent (app-admin-shell) gerendert.
          Keine lokale <app-admin-sidebar> mehr, sonst doppelte Sidebar / Layout-Konflikt. -->
@@ -23,6 +25,14 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
         </div>
 
         <div class="container">
+          <!-- ✅ Onboarding-Checklist (nur sichtbar wenn noch nicht alle Schritte erledigt) -->
+          @if (storeId) {
+            <app-onboarding-checklist
+              [storeId]="storeId"
+              [storeSlug]="storeSlug">
+            </app-onboarding-checklist>
+          }
+
           <!-- Stats Cards -->
           <div class="stats-grid">
             <!-- Total Sales -->
@@ -668,6 +678,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 })
 export class StoreDetailComponent implements OnInit {
   storeId!: number;
+  storeSlug: string = '';
   products: Product[] = [];
   orders: Order[] = [];
   categories: Category[] = [];
@@ -682,17 +693,29 @@ export class StoreDetailComponent implements OnInit {
     private route: ActivatedRoute,
     private productService: ProductService,
     private orderService: OrderService,
-    private categoryService: CategoryService
+    private categoryService: CategoryService,
+    private storeService: StoreService
   ) {}
 
   ngOnInit(): void {
     this.route.params.subscribe(params => {
       this.storeId = +params['id'] || +params['storeId'];
       if (this.storeId) {
+        this.loadStoreInfo();
         this.loadProducts();
         this.loadOrders();
         this.loadCategories();
       }
+    });
+  }
+
+  loadStoreInfo(): void {
+    this.storeService.getMyStores().subscribe({
+      next: (stores) => {
+        const store = stores.find(s => s.id === this.storeId);
+        if (store) this.storeSlug = store.slug;
+      },
+      error: () => {}
     });
   }
 

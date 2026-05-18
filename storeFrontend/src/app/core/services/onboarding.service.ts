@@ -1,6 +1,6 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, tap, catchError, of } from 'rxjs';
+import { Observable, BehaviorSubject, tap, catchError, of, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export interface ChecklistItem {
@@ -29,48 +29,49 @@ export interface OnboardingProgress {
   providedIn: 'root'
 })
 export class OnboardingService {
-  private readonly API = `${environment.apiUrl}/onboarding`;
-  
+  // Korrekte URL: /api/stores/{storeId}/onboarding (Backend-Konvention)
+  private readonly API = `${environment.apiUrl}/stores`;
+
   private progressSubject = new BehaviorSubject<OnboardingProgress | null>(null);
   public progress$ = this.progressSubject.asObservable();
 
-  // Default checklist
+  // Default checklist – Routen mit storeId werden dynamisch ersetzt
   private defaultChecklist: ChecklistItem[] = [
     {
       id: 'product',
-      title: 'Add your first product',
-      description: 'Start selling by adding products to your store',
+      title: 'Erstes Produkt hinzufügen',
+      description: 'Beginne mit dem Verkauf durch Hinzufügen deiner ersten Produkte',
       icon: '📦',
       completed: false,
-      route: '/products/new',
+      route: '/products/new',   // wird in getChecklist() mit storeId vervollständigt
       priority: 10
     },
     {
-      id: 'payment',
-      title: 'Setup payments',
-      description: 'Connect payment provider to accept orders',
-      icon: '💳',
+      id: 'theme',
+      title: 'Design & Template wählen',
+      description: 'Wähle ein professionelles Layout für deinen Shop',
+      icon: '🎨',
       completed: false,
-      route: '/settings/payments',
+      route: '/theme',
       priority: 9
     },
     {
-      id: 'logo',
-      title: 'Upload your logo',
-      description: 'Make your store recognizable with a custom logo',
-      icon: '🎨',
+      id: 'branding',
+      title: 'Logo & Branding einrichten',
+      description: 'Lade dein Logo hoch und passe Farben & Typografie an',
+      icon: '🖼️',
       completed: false,
-      route: '/settings/branding',
-      priority: 5
+      route: '/brand',
+      priority: 8
     },
     {
-      id: 'theme',
-      title: 'Choose a theme',
-      description: 'Pick a design that matches your brand',
-      icon: '🖌️',
+      id: 'delivery',
+      title: 'Lieferung konfigurieren',
+      description: 'Richte Lieferzonen und Versandkosten ein',
+      icon: '🚚',
       completed: false,
-      route: '/settings/theme',
-      priority: 3
+      route: '/delivery',
+      priority: 7
     }
   ];
 
@@ -80,14 +81,29 @@ export class OnboardingService {
    * Load onboarding progress for a store
    */
   loadProgress(storeId: number): Observable<OnboardingProgress | null> {
-    return this.http.get<OnboardingProgress>(`${this.API}/${storeId}`).pipe(
-      tap(progress => {
-        console.log('📂 Onboarding progress loaded:', progress);
+    return this.http.get<any>(`${this.API}/${storeId}/onboarding`).pipe(
+      tap(response => {
+        // Backend liefert steps mit echten completed-Flags
+        const progress: OnboardingProgress = {
+          storeId: response.storeId,
+          completedSteps: response.completedSteps || [],
+          currentStep: response.currentStep,
+          completionPercentage: response.completionPercentage || 25
+        };
+        // Steps aus Backend übernehmen falls vorhanden
+        if (response.steps) {
+          this.defaultChecklist = response.steps;
+        }
         this.progressSubject.next(progress);
       }),
+      map(response => ({
+        storeId: response.storeId,
+        completedSteps: response.completedSteps || [],
+        currentStep: response.currentStep,
+        completionPercentage: response.completionPercentage || 25
+      })),
       catchError(err => {
         console.warn('⚠️ Could not load onboarding progress:', err.status);
-        // Return default progress
         return of(this.createDefaultProgress(storeId));
       })
     );
@@ -97,16 +113,25 @@ export class OnboardingService {
    * Mark a checklist item as completed
    */
   completeStep(storeId: number, stepId: string): Observable<OnboardingProgress | null> {
-    console.log(`✅ Marking step '${stepId}' as completed for store ${storeId}`);
-    
-    return this.http.post<OnboardingProgress>(`${this.API}/${storeId}/complete/${stepId}`, {}).pipe(
-      tap(progress => {
+    return this.http.post<any>(`${this.API}/${storeId}/onboarding/complete/${stepId}`, {}).pipe(
+      tap(response => {
+        const progress: OnboardingProgress = {
+          storeId: response.storeId,
+          completedSteps: response.completedSteps || [],
+          currentStep: response.currentStep,
+          completionPercentage: response.completionPercentage || 25
+        };
         this.progressSubject.next(progress);
         this.celebrateCompletion(stepId);
       }),
+      map(response => ({
+        storeId: response.storeId,
+        completedSteps: response.completedSteps || [],
+        currentStep: response.currentStep,
+        completionPercentage: response.completionPercentage || 25
+      })),
       catchError(err => {
         console.warn('⚠️ Could not mark step as completed:', err.status);
-        // Update locally
         const current = this.progressSubject.value;
         if (current && !current.completedSteps.includes(stepId)) {
           current.completedSteps.push(stepId);
@@ -119,7 +144,7 @@ export class OnboardingService {
   }
 
   /**
-   * Get checklist with current completion status
+   * Get checklist with current completion status, routes with storeId aufgelöst
    */
   getChecklist(storeId: number): ChecklistItem[] {
     const progress = this.progressSubject.value;
@@ -127,6 +152,10 @@ export class OnboardingService {
 
     return this.defaultChecklist.map(item => ({
       ...item,
+      // Route mit storeId-Präfix /stores/:id/ aufbauen
+      route: item.route.startsWith('/') && !item.route.startsWith('/stores/')
+        ? `/stores/${storeId}${item.route}`
+        : item.route,
       completed: completed.includes(item.id)
     })).sort((a, b) => b.priority - a.priority);
   }
