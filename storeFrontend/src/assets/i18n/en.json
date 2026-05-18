@@ -1,4 +1,4 @@
-{
+﻿{
     "header":  {
                    "home":  "Home",
                    "products":  "Products",
@@ -30,7 +30,7 @@
                  "shipping":  "Shipping",
                  "clearCart":  "Clear cart",
                  "loading":  "Loading cart...",
-                 "backToShop":  "â† Back to shop",
+                 "backToShop":  "← Back to shop",
                  "noStoreId":  "No store ID found. Please open the cart via a store subdomain.",
                  "confirmRemove":  "Remove {{name}} from cart?",
                  "confirmClear":  "Do you want to clear the entire cart?"
@@ -63,7 +63,7 @@
                     "trending":  "Trending",
                     "newArrival":  "New arrival",
                     "discount":  "-{{value}}%",
-                    "unitPrice":  "({{price}} â‚¬ / unit)",
+                    "unitPrice":  "({{price}} € / unit)",
                     "sku":  "SKU: {{sku}}",
                     "quantity":  "Quantity: {{count}}",
                     "placeholder":  {
@@ -157,7 +157,7 @@
                  },
     "checkout":  {
                      "title":  "Checkout",
-                     "back":  "â† Back to cart",
+                     "back":  "← Back to cart",
                      "step1":  "Cart",
                      "step2":  "Checkout",
                      "step3":  "Confirmation",
@@ -189,8 +189,8 @@
                      "loggedInAs":  "Logged in as",
                      "logout":  "Logout",
                      "guestHint":  "New here? Simply continue as a guest below.",
-                     "loginBtn":  "ðŸ” Login",
-                     "registerBtn":  "ðŸ“ Register",
+                     "loginBtn":  "🔐 Login",
+                     "registerBtn":  "📝 Register",
                      "required":  "*",
                      "errors":  {
                                     "email":  "Please enter a valid email address",
@@ -211,13 +211,13 @@
                                    }
                  },
     "featured":  {
-                     "recommended":  "â­ Recommended products",
+                     "recommended":  "⭐ Recommended products",
                      "recommendedSub":  "Our top picks for you",
-                     "bestseller":  "ðŸ† Bestsellers",
+                     "bestseller":  "🏆 Bestsellers",
                      "bestsellerSub":  "The most popular products",
-                     "trending":  "ðŸ”¥ Trending",
+                     "trending":  "🔥 Trending",
                      "trendingSub":  "These products are popular right now",
-                     "newArrivals":  "âœ¨ New arrivals",
+                     "newArrivals":  "✨ New arrivals",
                      "newArrivalsSub":  "Discover our latest products",
                      "loading":  "Loading products..."
                  },
@@ -318,9 +318,9 @@
                                     "subdomainPlaceholder":  "your-store",
                                     "subdomainHint":  "Your store is available at: {{subdomain}}.markt.ma",
                                     "subdomainRules":  "Only lowercase letters, numbers, and hyphens allowed",
-                                    "subdomainAvailable":  "âœ“ This subdomain is available",
-                                    "subdomainTaken":  "âœ— This subdomain is already taken",
-                                    "subdomainInvalid":  "âœ— Invalid subdomain format",
+                                    "subdomainAvailable":  "✓ This subdomain is available",
+                                    "subdomainTaken":  "✗ This subdomain is already taken",
+                                    "subdomainInvalid":  "✗ Invalid subdomain format",
                                     "checkAvailability":  "Check availability",
                                     "customDomain":  "Custom domain",
                                     "customDomainLabel":  "Your own domain",
@@ -337,9 +337,9 @@
                                     "verifyDomain":  "Verify domain",
                                     "verifying":  "Verifying...",
                                     "sslCertificate":  "SSL certificate",
-                                    "sslActive":  "âœ“ Active and valid",
-                                    "sslPending":  "â³ Being generated",
-                                    "sslError":  "âœ— Error",
+                                    "sslActive":  "✓ Active and valid",
+                                    "sslPending":  "⏳ Being generated",
+                                    "sslError":  "✗ Error",
                                     "renewSsl":  "Renew certificate",
                                     "saveSuccess":  "Domain settings saved successfully!",
                                     "saveError":  "Error saving domain settings",
@@ -352,7 +352,7 @@
                                       "maintenanceLabel":  "Enable maintenance mode",
                                       "maintenanceHint":  "Visitors will see a maintenance page. You can still access the admin area.",
                                       "maintenanceMessage":  "Maintenance message",
-                                      "maintenanceMessagePlaceholder":  "Weâ€™ll be back soon! Our store is currently under maintenance.",
+                                      "maintenanceMessagePlaceholder":  "We’ll be back soon! Our store is currently under maintenance.",
                                       "analytics":  "Analytics \u0026 tracking",
                                       "googleAnalytics":  "Google Analytics ID",
                                       "googleAnalyticsPlaceholder":  "G-XXXXXXXXXX or UA-XXXXXXXXX-X",
@@ -409,7 +409,7 @@
                                       "downloadBackup":  "Download backup",
                                       "dangerZone":  "Danger zone",
                                       "deleteStore":  "Delete store",
-                                      "deleteStoreWarning":  "âš ï¸ Warning: This action cannot be undone!",
+                                      "deleteStoreWarning":  "⚠️ Warning: This action cannot be undone!",
                                       "deleteStoreHint":  "Permanently delete the store and all associated data",
                                       "deleteStoreButton":  "Permanently delete store",
                                       "saveSuccess":  "Advanced settings saved successfully!",
@@ -451,18 +451,18 @@
                    "shipping":  "Shipping \u0026 Payment",
                    "faq":  "FAQ",
                    "support":  "Support",
-                   "copyright":  "Â© {{year}} All rights reserved",
+                   "copyright":  "© {{year}} All rights reserved",
                    "info":  "Information"
                },
     "trust":  {
                   "freeShipping":  "Free shipping",
-                  "freeShippingDesc":  "On orders over â‚¬50",
+                  "freeShippingDesc":  "On orders over €50",
                   "easyReturns":  "Easy returns",
                   "easyReturnsDesc":  "30-day return policy",
                   "securePayment":  "Secure payment",
                   "securePaymentDesc":  "SSL encrypted",
                   "support":  "24/7 support",
-                  "supportDesc":  "Weâ€™re here for you"
+                  "supportDesc":  "We’re here for you"
               },
     "auth":  {
                  "loginTitle":  "markt.ma Login",
@@ -475,7 +475,7 @@
                  "loggingIn":  "Signing in...",
                  "login":  "Login",
                  "forgotPassword":  "Forgot password?",
-                 "noAccount":  "Donâ€™t have an account yet? Register now",
+                 "noAccount":  "Don’t have an account yet? Register now",
                  "alreadyRegistered":  "Already registered? Login",
                  "loginFailed":  "Login failed. Please check your details.",
                  "registerFailed":  "Registration failed. Please try again.",
@@ -486,13 +486,13 @@
                  "registerSubtitle":  "Create your free account",
                  "registerBtn":  "Create account",
                  "registering":  "Registering...",
-                 "registerSuccess":  "âœ“ Registration successful! Please check your emails and click the confirmation link to activate your account.",
+                 "registerSuccess":  "✓ Registration successful! Please check your emails and click the confirmation link to activate your account.",
                  "checkInboxTitle":  "Check your inbox",
                  "checkSpamHint":  "Tip: Also check your spam or promotions folder.",
                  "resendVerification":  "Resend verification email",
                  "resending":  "Sending...",
                  "resendIn":  "Resend in",
-                 "resendSuccess":  "âœ“ Verification email resent.",
+                 "resendSuccess":  "✓ Verification email resent.",
                  "resendFailed":  "Failed to send. Please try again later.",
                  "goToLogin":  "Go to login",
                  "emailAlreadyExists":  "This email is already registered."
@@ -515,9 +515,9 @@
                        "noProductsYet":  "No products available yet",
                        "noProductsYetHint":  "We are working on adding new products.",
                        "showAllProducts":  "Show all products",
-                       "highlights":  "⭐ Highlights",
-                       "bestsellers":  "🔥 Bestsellers",
-                       "newArrivals":  "✨ New Arrivals",
+                       "highlights":  "? Highlights",
+                       "bestsellers":  "?? Bestsellers",
+                       "newArrivals":  "? New Arrivals",
                        "sort":  {
                                     "relevant":  "Relevance",
                                     "priceAsc":  "Price: Low to High",
@@ -546,7 +546,7 @@
                   "loadError":  "Could not load order",
                   "loading":  "Loading order...",
                   "continueShopping":  "Continue shopping",
-                  "print":  "ðŸ–¨ï¸ Print order",
+                  "print":  "🖨️ Print order",
                   "backToShop":  "Back to shop",
                   "confirmed":  "Order confirmed",
                   "orderNumber":  "Order #",
@@ -639,9 +639,9 @@
                     "tip3":  "Add numbers and special characters",
                     "tip4":  "Avoid personal information",
                     "tip5":  "Use a different password for each account",
-                    "strengthWeak":  "Weak â€“ Please choose a stronger password",
-                    "strengthMedium":  "Medium â€“ Good, but can still be improved",
-                    "strengthStrong":  "Strong â€“ Very secure password!",
+                    "strengthWeak":  "Weak – Please choose a stronger password",
+                    "strengthMedium":  "Medium – Good, but can still be improved",
+                    "strengthStrong":  "Strong – Very secure password!",
                     "passwordChangedSuccess":  "Password changed successfully!",
                     "errorWrongCurrentPassword":  "The current password is incorrect",
                     "errorChangePassword":  "Error changing password"
@@ -660,10 +660,10 @@
                           "registerText":  "Log in or register to secure {{slug}}.markt.ma.",
                           "registerBtn":  "Register now",
                           "loginBtn":  "Login",
-                          "freeHint":  "Start for free â€¢ No credit card required",
-                          "backToMarketplace":  "â† Back to marketplace",
+                          "freeHint":  "Start for free • No credit card required",
+                          "backToMarketplace":  "← Back to marketplace",
                           "toDashboard":  "Go to dashboard",
-                          "howItWorksTitle":  "ðŸ’¡ How it works:",
+                          "howItWorksTitle":  "💡 How it works:",
                           "step1":  "Register for free or log in",
                           "step2":  "Create your store with your desired subdomain",
                           "step3":  "Add products and customize the design",
@@ -728,7 +728,7 @@
                                                "storeDescription":  "Description (optional)",
                                                "storeDescriptionPlaceholder":  "Describe your store...",
                                                "storeDescriptionHint":  "A short description of your store for customers and search engines",
-                                               "submit":  "âœ“ Create store",
+                                               "submit":  "✓ Create store",
                                                "creating":  "Creating...",
                                                "errors":  {
                                                               "storeNameRequired":  "Please enter a store name",
@@ -744,7 +744,7 @@
                                      }
                   },
     "storeDetail":  {
-                        "backToDashboard":  "â† Back to dashboard",
+                        "backToDashboard":  "← Back to dashboard",
                         "title":  "Store overview",
                         "totalSales":  "Total sales",
                         "orders":  "Orders",
@@ -782,33 +782,33 @@
                     "hero":  {
                                  "title":  "Launch your online store \u003cspan class=\"gradient-text\"\u003ein minutes\u003c/span\u003e",
                                  "subtitle":  "Choose your path: sell your own products or get started as a reseller. No coding skills required.",
-                                 "startNow":  "ðŸš€ Start for free now",
-                                 "watchDemo":  "ðŸ“¹ Watch demo"
+                                 "startNow":  "🚀 Start for free now",
+                                 "watchDemo":  "📹 Watch demo"
                              },
                     "paths":  {
                                   "own":  {
-                                              "icon":  "ðŸ—ï¸",
+                                              "icon":  "🏗️",
                                               "title":  "Build your own store",
                                               "for":  "For merchants with their own products",
-                                              "benefit1":  "âœ“ Full control over catalog \u0026 pricing",
-                                              "benefit2":  "âœ“ Your own brand \u0026 custom design",
-                                              "benefit3":  "âœ“ 100% of the revenue is yours",
-                                              "cta":  "ðŸš€ Build store"
+                                              "benefit1":  "✓ Full control over catalog \u0026 pricing",
+                                              "benefit2":  "✓ Your own brand \u0026 custom design",
+                                              "benefit3":  "✓ 100% of the revenue is yours",
+                                              "cta":  "🚀 Build store"
                                           },
                                   "reseller":  {
                                                    "badge":  "New",
-                                                   "icon":  "ðŸ¤",
+                                                   "icon":  "🤝",
                                                    "title":  "Start a reseller store",
                                                    "for":  "For resellers without their own products",
-                                                   "benefit1":  "âœ“ 1000+ products instantly available",
-                                                   "benefit2":  "âœ“ No inventory, no shipping required",
-                                                   "benefit3":  "âœ“ Earn attractive commissions",
-                                                   "cta":  "ðŸ’° Become a reseller"
+                                                   "benefit1":  "✓ 1000+ products instantly available",
+                                                   "benefit2":  "✓ No inventory, no shipping required",
+                                                   "benefit3":  "✓ Earn attractive commissions",
+                                                   "cta":  "💰 Become a reseller"
                                                }
                               },
                     "comparison":  {
-                                       "toggleOpen":  "â–¶ View quick comparison",
-                                       "toggleClose":  "â–¼ View quick comparison",
+                                       "toggleOpen":  "▶ View quick comparison",
+                                       "toggleClose":  "▼ View quick comparison",
                                        "ownStore":  "Own store",
                                        "resellerStore":  "Reseller store",
                                        "setupTime":  "Setup time",
@@ -829,7 +829,7 @@
                                        "forWhom":  "Who is it for?",
                                        "forWhomOwn":  "Manufacturers, merchants",
                                        "forWhomReseller":  "Affiliates, influencers",
-                                       "note":  "ðŸ’¡ \u003cstrong\u003eGood to know:\u003c/strong\u003e You can create additional stores at any time later - even of the other type!"
+                                       "note":  "💡 \u003cstrong\u003eGood to know:\u003c/strong\u003e You can create additional stores at any time later - even of the other type!"
                                    },
                     "stats":  {
                                   "shopUrl":  "https://your-shop.markt.ma",
@@ -872,10 +872,10 @@
                                  "title":  "See markt.ma in action",
                                  "subtitle":  "Discover how easy it is to create your own online store",
                                  "platformDemoTitle":  "PLATFORM DEMO",
-                                 "platformDemoHeading":  "ðŸŽ¥ Full platform demo",
+                                 "platformDemoHeading":  "🎥 Full platform demo",
                                  "platformDemoText":  "See all features of markt.ma in less than 2 minutes",
-                                 "platformDemoHint":  "ðŸ’¡ Click â–¶ to go directly to the live demo",
-                                 "tutorialsTitle":  "ðŸ“š Step-by-step tutorials",
+                                 "platformDemoHint":  "💡 Click ▶ to go directly to the live demo",
+                                 "tutorialsTitle":  "📚 Step-by-step tutorials",
                                  "ctaText":  "Ready to get started?",
                                  "ctaButton":  "Start for free now"
                              },
@@ -899,7 +899,7 @@
                     "pricing":  {
                                     "title":  "Transparent pricing for every budget",
                                     "subtitle":  "No hidden costs, cancel anytime",
-                                    "popular":  "â­ Popular"
+                                    "popular":  "⭐ Popular"
                                 },
                     "planItems":  {
                                       "periodMonthly":  "/month",
@@ -948,8 +948,8 @@
                     "cta":  {
                                 "title":  "Ready to launch your online store?",
                                 "subtitle":  "Join thousands of successful merchants",
-                                "button":  "ðŸš€ Get started for free",
-                                "note":  "No credit card required â€¢ Cancel anytime"
+                                "button":  "🚀 Get started for free",
+                                "note":  "No credit card required • Cancel anytime"
                             },
                     "footer":  {
                                    "tagline":  "The modern e-commerce platform",
@@ -958,7 +958,7 @@
                                    "imprint":  "Imprint",
                                    "privacy":  "Privacy",
                                    "terms":  "Terms",
-                                   "copyright":  "Â© 2026 markt.ma. All rights reserved."
+                                   "copyright":  "© 2026 markt.ma. All rights reserved."
                                }
                 },
     "sidebarAdmin":  {
@@ -1060,10 +1060,10 @@
                },
     "aiGenerator":  {
                         "intro":  "AI Product Image Analysis: Upload multiple product photos and AI automatically generates product data.",
-                        "step1":  "ðŸ“¸ Upload one or more product photos",
-                        "step2":  "ðŸ¤– AI analyzes each image automatically (multilingual: de/en/ar)",
-                        "step3":  "âœ… Select the desired images",
-                        "step4":  "ðŸ’¾ Selected images will be saved as products",
+                        "step1":  "📸 Upload one or more product photos",
+                        "step2":  "🤖 AI analyzes each image automatically (multilingual: de/en/ar)",
+                        "step3":  "✅ Select the desired images",
+                        "step4":  "💾 Selected images will be saved as products",
                         "uploadTitle":  "1. Upload product images (multiple selection)",
                         "selectImages":  "Select images (multiple possible)",
                         "analyzing":  "Analyzing",
@@ -1108,7 +1108,7 @@
                                        "ignore":  "If you did not create an account, please ignore this email."
                                    },
                   "welcome":  {
-                                  "subject":  "Welcome to Markt.ma â€“ Your email has been verified!",
+                                  "subject":  "Welcome to Markt.ma – Your email has been verified!",
                                   "title":  "Welcome to Markt.ma!",
                                   "intro":  "Your email address has been successfully verified. You can now log in and enjoy all features.",
                                   "button":  "Log In Now"
@@ -1247,3 +1247,4 @@
                   "subtitle":  "Customize the look and feel of your store"
               }
 }
+

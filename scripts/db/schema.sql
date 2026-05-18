@@ -74,6 +74,8 @@ CREATE TABLE IF NOT EXISTS stores (
     logo_url TEXT,
     banner_image_url TEXT,
     slider_images TEXT,
+    whatsapp_number VARCHAR(50),
+    whatsapp_notifications_enabled BOOLEAN NOT NULL DEFAULT FALSE,
     status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -1981,3 +1983,26 @@ BEGIN
         RAISE EXCEPTION 'V17 Extended failed - coupon status migration incomplete: status=% is_active=%', status_exists, is_active_exists;
     END IF;
 END $$;
+
+-- ==================================================================================
+-- V18: WhatsApp Notifications für bestehende Datenbanken
+-- ==================================================================================
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'stores' AND column_name = 'whatsapp_number'
+    ) THEN
+        ALTER TABLE public.stores ADD COLUMN whatsapp_number VARCHAR(50);
+        RAISE NOTICE '✅ V18: stores.whatsapp_number hinzugefügt';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'stores' AND column_name = 'whatsapp_notifications_enabled'
+    ) THEN
+        ALTER TABLE public.stores ADD COLUMN whatsapp_notifications_enabled BOOLEAN NOT NULL DEFAULT FALSE;
+        RAISE NOTICE '✅ V18: stores.whatsapp_notifications_enabled hinzugefügt';
+    END IF;
+END $$;
+

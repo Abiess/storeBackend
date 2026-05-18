@@ -1,21 +1,21 @@
-{
+﻿{
     "wizard":  {
-                   "skip":  "Ãœberspringen",
+                   "skip":  "Überspringen",
                    "createStore":  "Store erstellen",
                    "createStoreSubtitle":  "Erstellen Sie in wenigen Schritten Ihren eigenen Online-Shop",
-                   "back":  "ZurÃ¼ck",
+                   "back":  "Zurück",
                    "next":  "Weiter",
                    "creating":  "Wird erstellt...",
                    "step1Title":  "Basis-Info",
                    "step1Subtitle":  "Name und URL Ihres Stores",
                    "step2Title":  "Bereiche",
-                   "step2Subtitle":  "Was mÃ¶chten Sie verkaufen?",
+                   "step2Subtitle":  "Was möchten Sie verkaufen?",
                    "step3Title":  "Kontakt",
                    "step3Subtitle":  "Ihre Kontaktinformationen",
                    "step4Title":  "KI-Produkte",
                    "step4Subtitle":  "Erstellen Sie Produkte mit KI (optional)",
-                   "step5Title":  "Ãœbersicht",
-                   "step5Subtitle":  "ÃœberprÃ¼fen und abschlieÃŸen",
+                   "step5Title":  "Übersicht",
+                   "step5Subtitle":  "Überprüfen und abschließen",
                    "storeName":  "Store-Name",
                    "storeNamePlaceholder":  "z.B. Mein Super Shop",
                    "storeNameHint":  "Der Name erscheint in Ihrem Shop-Header und E-Mails",
@@ -23,69 +23,69 @@
                    "storeSlug":  "Store-URL",
                    "storeSlugPlaceholder":  "mein-shop",
                    "storeSlugHint":  "Nur Kleinbuchstaben, Zahlen und Bindestriche",
-                   "storeSlugRequired":  "Bitte geben Sie eine gÃ¼ltige URL ein",
+                   "storeSlugRequired":  "Bitte geben Sie eine gültige URL ein",
                    "description":  "Beschreibung",
                    "descriptionPlaceholder":  "Beschreiben Sie Ihren Store (optional)",
-                   "descriptionHint":  "Eine kurze Beschreibung fÃ¼r Ihre Kunden",
+                   "descriptionHint":  "Eine kurze Beschreibung für Ihre Kunden",
                    "categoryFashion":  "Mode \u0026 Bekleidung",
                    "categoryFashionDesc":  "Kleidung, Schuhe, Accessoires",
                    "categoryElectronics":  "Elektronik",
-                   "categoryElectronicsDesc":  "Computer, Handys, ZubehÃ¶r",
+                   "categoryElectronicsDesc":  "Computer, Handys, Zubehör",
                    "categoryFood":  "Lebensmittel",
-                   "categoryFoodDesc":  "Essen, GetrÃ¤nke, Snacks",
+                   "categoryFoodDesc":  "Essen, Getränke, Snacks",
                    "categoryBeauty":  "Beauty \u0026 Kosmetik",
-                   "categoryBeautyDesc":  "Makeup, Pflege, DÃ¼fte",
+                   "categoryBeautyDesc":  "Makeup, Pflege, Düfte",
                    "categoryHome":  "Haus \u0026 Garten",
-                   "categoryHomeDesc":  "MÃ¶bel, Deko, Werkzeug",
+                   "categoryHomeDesc":  "Möbel, Deko, Werkzeug",
                    "categorySports":  "Sport \u0026 Freizeit",
-                   "categorySportsDesc":  "SportgerÃ¤te, Outdoor, Fitness",
-                   "categoryBooks":  "BÃ¼cher \u0026 Medien",
-                   "categoryBooksDesc":  "BÃ¼cher, Filme, Musik",
+                   "categorySportsDesc":  "Sportgeräte, Outdoor, Fitness",
+                   "categoryBooks":  "Bücher \u0026 Medien",
+                   "categoryBooksDesc":  "Bücher, Filme, Musik",
                    "categoryToys":  "Spielzeug",
-                   "categoryToysDesc":  "Spielwaren fÃ¼r alle Altersgruppen",
+                   "categoryToysDesc":  "Spielwaren für alle Altersgruppen",
                    "email":  "E-Mail",
                    "emailPlaceholder":  "ihre@email.de",
                    "phone":  "Telefon",
                    "phonePlaceholder":  "+49 123 456789",
                    "address":  "Adresse",
-                   "addressPlaceholder":  "StraÃŸe und Hausnummer",
+                   "addressPlaceholder":  "Straße und Hausnummer",
                    "city":  "Stadt",
                    "cityPlaceholder":  "Berlin",
                    "postalCode":  "PLZ",
                    "postalCodePlaceholder":  "10115",
                    "summaryBasic":  "Grundinformationen",
-                   "summaryCategories":  "AusgewÃ¤hlte Bereiche",
+                   "summaryCategories":  "Ausgewählte Bereiche",
                    "summaryContact":  "Kontaktinformationen",
                    "summaryAiImages":  "KI-Produktbilder",
                    "aiImagesCount":  "Anzahl Bilder",
                    "images":  "Bilder",
                    "moreImages":  "weitere",
-                   "aiImagesOptional":  "Dieser Schritt ist optional. Sie kÃ¶nnen auch spÃ¤ter Produkte hinzufÃ¼gen.",
+                   "aiImagesOptional":  "Dieser Schritt ist optional. Sie können auch später Produkte hinzufügen.",
                    "storeUrl":  "Store-URL",
                    "whatsappNumber":  "WhatsApp-Nummer",
                    "whatsappNumberPlaceholder":  "+212600123456",
-                   "whatsappNumberHint":  "Ihre WhatsApp-Nummer für Kundenbestellungen (internationales Format)",
+                   "whatsappNumberHint":  "Ihre WhatsApp-Nummer f�r Kundenbestellungen (internationales Format)",
                    "whatsappNotifications":  "Kunden per WhatsApp benachrichtigen",
                    "whatsappNotificationsHint":  "Kunden erhalten automatisch WhatsApp-Nachrichten bei Bestellungen \u0026 Status-Updates"
                },
     "aiGenerator":  {
                         "intro":  "KI-Produktbilder-Analyse: Laden Sie mehrere Produktfotos hoch und die KI generiert automatisch Produktdaten.",
-                        "step1":  "ðŸ“¸ Laden Sie ein oder mehrere Produktfotos hoch",
-                        "step2":  "ðŸ¤– KI analysiert jedes Bild automatisch (mehrsprachig: de/en/ar)",
-                        "step3":  "âœ… WÃ¤hlen Sie die gewÃ¼nschten Bilder aus",
-                        "step4":  "ðŸ’¾ AusgewÃ¤hlte Bilder werden als Produkte gespeichert",
+                        "step1":  "📸 Laden Sie ein oder mehrere Produktfotos hoch",
+                        "step2":  "🤖 KI analysiert jedes Bild automatisch (mehrsprachig: de/en/ar)",
+                        "step3":  "✅ Wählen Sie die gewünschten Bilder aus",
+                        "step4":  "💾 Ausgewählte Bilder werden als Produkte gespeichert",
                         "uploadTitle":  "1. Produktbilder hochladen (Mehrfachauswahl)",
-                        "selectImages":  "Bilder auswÃ¤hlen (mehrere mÃ¶glich)",
+                        "selectImages":  "Bilder auswählen (mehrere möglich)",
                         "analyzing":  "Analysiere",
                         "ready":  "Fertig",
                         "error":  "Fehler",
                         "preview":  "Vorschau",
-                        "selectAll":  "Alle auswÃ¤hlen",
-                        "deselectAll":  "Alle abwÃ¤hlen",
+                        "selectAll":  "Alle auswählen",
+                        "deselectAll":  "Alle abwählen",
                         "of":  "von",
-                        "selected":  "ausgewÃ¤hlt",
-                        "analyzeAll":  "KI-Analyse fÃ¼r alle",
-                        "selectedSuggestion":  "2. AusgewÃ¤hlter KI-Vorschlag (Vorschau)",
+                        "selected":  "ausgewählt",
+                        "analyzeAll":  "KI-Analyse für alle",
+                        "selectedSuggestion":  "2. Ausgewählter KI-Vorschlag (Vorschau)",
                         "productTitle":  "Produkttitel",
                         "category":  "Kategorie",
                         "suggestedPrice":  "Preisempfehlung",
@@ -96,7 +96,7 @@
                         "noTags":  "Keine Tags",
                         "noSlug":  "Kein Slug",
                         "hint":  "Hinweis:",
-                        "hintText":  "WÃ¤hlen Sie die gewÃ¼nschten Bilder aus (Checkbox links oben). Diese werden als Produkte in Ihrem Store gespeichert."
+                        "hintText":  "Wählen Sie die gewünschten Bilder aus (Checkbox links oben). Diese werden als Produkte in Ihrem Store gespeichert."
                     },
     "header":  {
                    "home":  "Startseite",
@@ -111,13 +111,13 @@
                    "search":  "Suchen...",
                    "searchPlaceholder":  "Produkte durchsuchen...",
                    "searchPlaceholderMobile":  "Produkte suchen...",
-                   "searchClear":  "Suche lÃ¶schen",
+                   "searchClear":  "Suche löschen",
                    "language":  "Sprache"
                },
     "cart":  {
                  "title":  "Warenkorb",
                  "empty":  "Ihr Warenkorb ist leer",
-                 "emptyAdd":  "FÃ¼gen Sie Produkte hinzu, um fortzufahren",
+                 "emptyAdd":  "Fügen Sie Produkte hinzu, um fortzufahren",
                  "items":  "{{count}} Artikel",
                  "subtotal":  "Zwischensumme",
                  "total":  "Gesamt",
@@ -129,10 +129,10 @@
                  "shipping":  "Versand",
                  "clearCart":  "Warenkorb leeren",
                  "loading":  "Warenkorb wird geladen...",
-                 "backToShop":  "â† ZurÃ¼ck zum Shop",
-                 "noStoreId":  "Keine Store-ID gefunden. Bitte Ã¶ffnen Sie den Warenkorb Ã¼ber eine Store-Subdomain.",
+                 "backToShop":  "← Zurück zum Shop",
+                 "noStoreId":  "Keine Store-ID gefunden. Bitte öffnen Sie den Warenkorb über eine Store-Subdomain.",
                  "confirmRemove":  "{{name}} aus dem Warenkorb entfernen?",
-                 "confirmClear":  "MÃ¶chten Sie den gesamten Warenkorb leeren?"
+                 "confirmClear":  "Möchten Sie den gesamten Warenkorb leeren?"
              },
     "product":  {
                     "name":  "Produktname",
@@ -145,11 +145,11 @@
                     "update":  "Produkt aktualisieren",
                     "price":  "Preis",
                     "addToCart":  "In den Warenkorb",
-                    "adding":  "Wird hinzugefÃ¼gt...",
+                    "adding":  "Wird hinzugefügt...",
                     "addToWishlist":  "Zur Wunschliste",
-                    "outOfStock":  "Nicht verfÃ¼gbar",
+                    "outOfStock":  "Nicht verfügbar",
                     "inStock":  "Auf Lager",
-                    "lowStock":  "Nur noch {{count}} verfÃ¼gbar",
+                    "lowStock":  "Nur noch {{count}} verfügbar",
                     "soldOut":  "Ausverkauft",
                     "description":  "Beschreibung",
                     "details":  "Details",
@@ -162,7 +162,7 @@
                     "trending":  "Im Trend",
                     "newArrival":  "Neuheit",
                     "discount":  "-{{value}}%",
-                    "unitPrice":  "({{price}} â‚¬ / Stk.)",
+                    "unitPrice":  "({{price}} € / Stk.)",
                     "sku":  "SKU: {{sku}}",
                     "quantity":  "Menge: {{count}}",
                     "placeholder":  {
@@ -175,7 +175,7 @@
                                      "defineOptions":  "Produktoptionen definieren",
                                      "optionName":  "Optionsname",
                                      "optionValues":  "Werte",
-                                     "addOption":  "Option hinzufÃ¼gen",
+                                     "addOption":  "Option hinzufügen",
                                      "removeOption":  "Option entfernen",
                                      "generateVariants":  "Varianten generieren",
                                      "variantsList":  "Variantenliste",
@@ -189,7 +189,7 @@
                                      "weight":  "Gewicht",
                                      "active":  "Aktiv",
                                      "images":  "Varianten-Bilder",
-                                     "optionsHint":  "Definieren Sie Produktoptionen (z.B. Farbe, GrÃ¶ÃŸe) und deren verfÃ¼gbare Werte",
+                                     "optionsHint":  "Definieren Sie Produktoptionen (z.B. Farbe, Größe) und deren verfügbare Werte",
                                      "generateTitle":  "Varianten generieren",
                                      "basePrice":  "Basispreis",
                                      "baseStock":  "Basislagerbestand",
@@ -198,12 +198,12 @@
                                      "variants":  "Varianten generiert",
                                      "generatedVariants":  "Generierte Varianten",
                                      "inStock":  "Auf Lager",
-                                     "outOfStock":  "Nicht verfÃ¼gbar",
+                                     "outOfStock":  "Nicht verfügbar",
                                      "saveAll":  "Alle Varianten speichern",
-                                     "addValue":  "Wert hinzufÃ¼gen"
+                                     "addValue":  "Wert hinzufügen"
                                  },
                     "aiAssistant":  "KI-Assistent",
-                    "aiIntro":  "Lassen Sie kÃ¼nstliche Intelligenz Produktinformationen aus Ihrem Bild generieren."
+                    "aiIntro":  "Lassen Sie künstliche Intelligenz Produktinformationen aus Ihrem Bild generieren."
                 },
     "Basis Info":  "Basis Informationen",
     "KI-Assistent":  "KI-Assistent",
@@ -216,17 +216,17 @@
                      "description":  "Beschreibung",
                      "info":  "Kategorie-Informationen",
                      "parent":  {
-                                    "label":  "Ãœbergeordnete Kategorie",
+                                    "label":  "Übergeordnete Kategorie",
                                     "none":  "Keine"
                                 },
                      "new":  "Neue Kategorie",
                      "edit":  "Kategorie bearbeiten",
                      "create":  "Kategorie erstellen",
-                     "update":  "Ã„nderungen speichern",
+                     "update":  "Änderungen speichern",
                      "sortorder":  "Sortierreihenfolge",
                      "required":  {
                                       "name":  "Bitte geben Sie einen Kategorienamen ein",
-                                      "slug":  "Bitte geben Sie einen gÃ¼ltigen URL-Slug ein"
+                                      "slug":  "Bitte geben Sie einen gültigen URL-Slug ein"
                                   },
                      "placeholder":  {
                                          "name":  "z.B. Elektronik, Mode, Spielzeug",
@@ -246,7 +246,7 @@
                                      "created":  "Kategorie erfolgreich erstellt!",
                                      "updated":  "Kategorie erfolgreich aktualisiert!"
                                  },
-                     "select":  "Kategorie auswÃ¤hlen (optional)",
+                     "select":  "Kategorie auswählen (optional)",
                      "none":  "Keine (Hauptkategorie)"
                  },
     "media":  {
@@ -254,48 +254,48 @@
                   "noMedia":  "Keine Medien vorhanden"
               },
     "messages":  {
-                     "maxFileSize":  "Maximale DateigrÃ¶ÃŸe: {{size}}",
-                     "allowedFormats":  "PNG, JPG, WEBP unterstÃ¼tzt"
+                     "maxFileSize":  "Maximale Dateigröße: {{size}}",
+                     "allowedFormats":  "PNG, JPG, WEBP unterstützt"
                  },
     "checkout":  {
                      "title":  "Kasse",
-                     "back":  "â† ZurÃ¼ck zum Warenkorb",
+                     "back":  "← Zurück zum Warenkorb",
                      "step1":  "Warenkorb",
                      "step2":  "Kasse",
-                     "step3":  "BestÃ¤tigung",
+                     "step3":  "Bestätigung",
                      "shippingAddress":  "Lieferadresse",
                      "billingAddress":  "Rechnungsadresse",
                      "sameBilling":  "Rechnungsadresse ist identisch mit Lieferadresse",
                      "shippingMethod":  "Versandmethode",
                      "paymentMethod":  "Zahlungsmethode",
-                     "orderSummary":  "BestellÃ¼bersicht",
+                     "orderSummary":  "Bestellübersicht",
                      "placeOrder":  "Bestellung aufgeben",
                      "firstName":  "Vorname",
                      "lastName":  "Nachname",
                      "email":  "E-Mail-Adresse",
                      "emailPlaceholder":  "ihre@email.de",
                      "phone":  "Telefon (optional)",
-                     "address":  "StraÃŸe und Hausnummer",
+                     "address":  "Straße und Hausnummer",
                      "addressOptional":  "Adresszusatz (optional)",
                      "city":  "Stadt",
                      "postalCode":  "PLZ",
                      "country":  "Land",
-                     "selectCountry":  "Bitte wÃ¤hlen",
+                     "selectCountry":  "Bitte wählen",
                      "contactInfo":  "Kontaktinformationen",
                      "loading":  "Warenkorb wird geladen...",
                      "emptyCart":  "Ihr Warenkorb ist leer",
-                     "emptyCartHint":  "Bitte fÃ¼gen Sie Artikel hinzu, bevor Sie zur Kasse gehen",
+                     "emptyCartHint":  "Bitte fügen Sie Artikel hinzu, bevor Sie zur Kasse gehen",
                      "goToShop":  "Zum Shop",
                      "alreadyCustomer":  "Bereits Kunde?",
                      "loginHint":  "Melden Sie sich an, um Ihre gespeicherten Adressen zu nutzen und Bestellungen zu verfolgen.",
                      "loggedInAs":  "Angemeldet als",
                      "logout":  "Abmelden",
                      "guestHint":  "Neu hier? Bestellen Sie einfach als Gast weiter unten.",
-                     "loginBtn":  "ðŸ” Anmelden",
-                     "registerBtn":  "ðŸ“ Registrieren",
+                     "loginBtn":  "🔐 Anmelden",
+                     "registerBtn":  "📝 Registrieren",
                      "required":  "*",
                      "errors":  {
-                                    "email":  "Bitte geben Sie eine gÃ¼ltige E-Mail-Adresse ein",
+                                    "email":  "Bitte geben Sie eine gültige E-Mail-Adresse ein",
                                     "firstName":  "Vorname ist erforderlich",
                                     "lastName":  "Nachname ist erforderlich",
                                     "address":  "Adresse ist erforderlich",
@@ -305,7 +305,7 @@
                                 },
                      "countries":  {
                                        "de":  "Deutschland",
-                                       "at":  "Ã–sterreich",
+                                       "at":  "Österreich",
                                        "ch":  "Schweiz",
                                        "nl":  "Niederlande",
                                        "be":  "Belgien",
@@ -313,13 +313,13 @@
                                    }
                  },
     "featured":  {
-                     "recommended":  "â­ Empfohlene Produkte",
-                     "recommendedSub":  "Unsere Top-Auswahl fÃ¼r Sie",
-                     "bestseller":  "ðŸ† Bestseller",
+                     "recommended":  "⭐ Empfohlene Produkte",
+                     "recommendedSub":  "Unsere Top-Auswahl für Sie",
+                     "bestseller":  "🏆 Bestseller",
                      "bestsellerSub":  "Die beliebtesten Produkte",
-                     "trending":  "ðŸ”¥ Im Trend",
+                     "trending":  "🔥 Im Trend",
                      "trendingSub":  "Diese Produkte sind gerade beliebt",
-                     "newArrivals":  "âœ¨ Neu eingetroffen",
+                     "newArrivals":  "✨ Neu eingetroffen",
                      "newArrivalsSub":  "Entdecken Sie unsere neuesten Produkte",
                      "loading":  "Produkte werden geladen..."
                  },
@@ -328,13 +328,13 @@
                    "save":  "Speichern",
                    "saving":  "Wird gespeichert...",
                    "generating":  "Wird generiert...",
-                   "loading":  "LÃ¤dt...",
-                   "back":  "ZurÃ¼ck",
+                   "loading":  "Lädt...",
+                   "back":  "Zurück",
                    "cancel":  "Abbrechen",
-                   "delete":  "LÃ¶schen",
+                   "delete":  "Löschen",
                    "edit":  "Bearbeiten",
-                   "close":  "SchlieÃŸen",
-                   "confirm":  "BestÃ¤tigen",
+                   "close":  "Schließen",
+                   "confirm":  "Bestätigen",
                    "yes":  "Ja",
                    "no":  "Nein",
                    "error":  "Fehler",
@@ -348,9 +348,9 @@
                    "all":  "Alle",
                    "showAll":  "Alle anzeigen",
                    "poweredBy":  "Powered by markt.ma",
-                   "saveChanges":  "Ã„nderungen speichern",
-                   "reset":  "ZurÃ¼cksetzen",
-                   "addAddress":  "Adresse hinzufÃ¼gen"
+                   "saveChanges":  "Änderungen speichern",
+                   "reset":  "Zurücksetzen",
+                   "addAddress":  "Adresse hinzufügen"
                },
     "loading":  {
                     "orders":  "Bestellungen werden geladen..."
@@ -358,7 +358,7 @@
     "navigation":  {
                        "dashboard":  "Dashboard",
                        "store":  "Shop",
-                       "overview":  "Ãœbersicht",
+                       "overview":  "Übersicht",
                        "categories":  "Kategorien",
                        "allProducts":  "Alle Produkte",
                        "products":  "Produkte",
@@ -378,16 +378,16 @@
                                       "number":  "WhatsApp-Nummer",
                                       "numberPlaceholder":  "+212600123456",
                                       "numberHint":  "Internationale Format, z. B. +212600123456 (ohne Leerzeichen)",
-                                      "greetingMessage":  "VorbefÃ¼llte Nachricht",
-                                      "greetingMessagePlaceholder":  "Hallo, ich interessiere mich fÃ¼r Ihre Produkte...",
-                                      "greetingMessageHint":  "Diese Nachricht erscheint vorausgefÃ¼llt im WhatsApp-Chat",
+                                      "greetingMessage":  "Vorbefüllte Nachricht",
+                                      "greetingMessagePlaceholder":  "Hallo, ich interessiere mich für Ihre Produkte...",
+                                      "greetingMessageHint":  "Diese Nachricht erscheint vorausgefüllt im WhatsApp-Chat",
                                       "saveSuccess":  "WhatsApp-Einstellungen gespeichert!",
                                       "notificationsEnabled":  "Kunden per WhatsApp benachrichtigen",
-                                      "notificationsHint":  "Bei neuen Bestellungen \u0026 Status-Änderungen erhalten Kunden automatisch eine WhatsApp-Nachricht (Kundennummer aus Lieferadresse wird verwendet)"
+                                      "notificationsHint":  "Bei neuen Bestellungen \u0026 Status-�nderungen erhalten Kunden automatisch eine WhatsApp-Nachricht (Kundennummer aus Lieferadresse wird verwendet)"
                                   },
                      "branding":  {
                                       "title":  "Branding",
-                                      "description":  "Passen Sie das Erscheinungsbild und die IdentitÃ¤t Ihres Shops an",
+                                      "description":  "Passen Sie das Erscheinungsbild und die Identität Ihres Shops an",
                                       "storeName":  "Shop-Name",
                                       "storeNamePlaceholder":  "Geben Sie Ihren Shop-Namen ein",
                                       "storeNameHint":  "Dieser Name wird in Ihrem Shop-Header und E-Mails angezeigt",
@@ -398,15 +398,15 @@
                                       "favicon":  "Favicon",
                                       "faviconUpload":  "Favicon hochladen",
                                       "faviconRecommendation":  "Empfohlen: 32x32px oder 64x64px, PNG oder ICO",
-                                      "primaryColor":  "PrimÃ¤rfarbe",
-                                      "primaryColorHint":  "Hauptfarbe fÃ¼r Buttons und Akzente",
-                                      "secondaryColor":  "SekundÃ¤rfarbe",
-                                      "secondaryColorHint":  "UnterstÃ¼tzende Farbe fÃ¼r sekundÃ¤re Elemente",
+                                      "primaryColor":  "Primärfarbe",
+                                      "primaryColorHint":  "Hauptfarbe für Buttons und Akzente",
+                                      "secondaryColor":  "Sekundärfarbe",
+                                      "secondaryColorHint":  "Unterstützende Farbe für sekundäre Elemente",
                                       "accentColor":  "Akzentfarbe",
-                                      "accentColorHint":  "Hervorhebungsfarbe fÃ¼r besondere Elemente",
+                                      "accentColorHint":  "Hervorhebungsfarbe für besondere Elemente",
                                       "textColor":  "Textfarbe",
                                       "backgroundColor":  "Hintergrundfarbe",
-                                      "resetColors":  "Auf Standardfarben zurÃ¼cksetzen",
+                                      "resetColors":  "Auf Standardfarben zurücksetzen",
                                       "previewTheme":  "Theme-Vorschau",
                                       "saveSuccess":  "Branding-Einstellungen erfolgreich gespeichert!",
                                       "saveError":  "Fehler beim Speichern der Branding-Einstellungen"
@@ -420,10 +420,10 @@
                                     "subdomainPlaceholder":  "ihr-shop",
                                     "subdomainHint":  "Ihr Shop ist erreichbar unter: {{subdomain}}.markt.ma",
                                     "subdomainRules":  "Nur Kleinbuchstaben, Zahlen und Bindestriche erlaubt",
-                                    "subdomainAvailable":  "âœ“ Diese Subdomain ist verfÃ¼gbar",
-                                    "subdomainTaken":  "âœ— Diese Subdomain ist bereits vergeben",
-                                    "subdomainInvalid":  "âœ— UngÃ¼ltiges Subdomain-Format",
-                                    "checkAvailability":  "VerfÃ¼gbarkeit prÃ¼fen",
+                                    "subdomainAvailable":  "✓ Diese Subdomain ist verfügbar",
+                                    "subdomainTaken":  "✗ Diese Subdomain ist bereits vergeben",
+                                    "subdomainInvalid":  "✗ Ungültiges Subdomain-Format",
+                                    "checkAvailability":  "Verfügbarkeit prüfen",
                                     "customDomain":  "Eigene Domain",
                                     "customDomainLabel":  "Ihre eigene Domain",
                                     "customDomainPlaceholder":  "www.ihr-shop.de",
@@ -433,28 +433,28 @@
                                     "customDomainPending":  "DNS-Konfiguration ausstehend",
                                     "customDomainInactive":  "Nicht konfiguriert",
                                     "dnsInstructions":  "DNS-Konfigurationsanleitung",
-                                    "dnsStep1":  "1. FÃ¼gen Sie einen CNAME-Eintrag in Ihren Domain-DNS-Einstellungen hinzu",
+                                    "dnsStep1":  "1. Fügen Sie einen CNAME-Eintrag in Ihren Domain-DNS-Einstellungen hinzu",
                                     "dnsStep2":  "2. Verweisen Sie ihn auf: {{target}}",
                                     "dnsStep3":  "3. Warten Sie auf die DNS-Propagierung (kann bis zu 48 Stunden dauern)",
-                                    "verifyDomain":  "Domain Ã¼berprÃ¼fen",
-                                    "verifying":  "Wird Ã¼berprÃ¼ft...",
+                                    "verifyDomain":  "Domain überprüfen",
+                                    "verifying":  "Wird überprüft...",
                                     "sslCertificate":  "SSL-Zertifikat",
-                                    "sslActive":  "âœ“ Aktiv und gÃ¼ltig",
-                                    "sslPending":  "â³ Wird generiert",
-                                    "sslError":  "âœ— Fehler",
+                                    "sslActive":  "✓ Aktiv und gültig",
+                                    "sslPending":  "⏳ Wird generiert",
+                                    "sslError":  "✗ Fehler",
                                     "renewSsl":  "Zertifikat erneuern",
                                     "saveSuccess":  "Domain-Einstellungen erfolgreich gespeichert!",
                                     "saveError":  "Fehler beim Speichern der Domain-Einstellungen",
-                                    "changeWarning":  "Warnung: Eine Ã„nderung der Subdomain betrifft alle bestehenden Links zu Ihrem Shop"
+                                    "changeWarning":  "Warnung: Eine Änderung der Subdomain betrifft alle bestehenden Links zu Ihrem Shop"
                                 },
                      "advanced":  {
                                       "title":  "Erweiterte Einstellungen",
-                                      "description":  "Erweiterte Konfigurationsoptionen fÃ¼r Ihren Shop",
+                                      "description":  "Erweiterte Konfigurationsoptionen für Ihren Shop",
                                       "maintenance":  "Wartungsmodus",
                                       "maintenanceLabel":  "Wartungsmodus aktivieren",
-                                      "maintenanceHint":  "Besucher sehen eine Wartungsseite. Sie kÃ¶nnen weiterhin auf den Admin-Bereich zugreifen.",
+                                      "maintenanceHint":  "Besucher sehen eine Wartungsseite. Sie können weiterhin auf den Admin-Bereich zugreifen.",
                                       "maintenanceMessage":  "Wartungsnachricht",
-                                      "maintenanceMessagePlaceholder":  "Wir sind bald zurÃ¼ck! Unser Shop wird gerade gewartet.",
+                                      "maintenanceMessagePlaceholder":  "Wir sind bald zurück! Unser Shop wird gerade gewartet.",
                                       "analytics":  "Analyse \u0026 Tracking",
                                       "googleAnalytics":  "Google Analytics ID",
                                       "googleAnalyticsPlaceholder":  "G-XXXXXXXXXX oder UA-XXXXXXXXX-X",
@@ -464,9 +464,9 @@
                                       "facebookPixelHint":  "Verfolgen Sie Conversions und erstellen Sie Remarketing-Zielgruppen",
                                       "customCode":  "Eigener Code",
                                       "customHeadCode":  "Eigener HEAD-Code",
-                                      "customHeadCodeHint":  "Code zum EinfÃ¼gen vor dem \u003c/head\u003e-Tag",
+                                      "customHeadCodeHint":  "Code zum Einfügen vor dem \u003c/head\u003e-Tag",
                                       "customBodyCode":  "Eigener BODY-Code",
-                                      "customBodyCodeHint":  "Code zum EinfÃ¼gen vor dem \u003c/body\u003e-Tag",
+                                      "customBodyCodeHint":  "Code zum Einfügen vor dem \u003c/body\u003e-Tag",
                                       "seo":  "SEO-Einstellungen",
                                       "robotsTxt":  "Robots.txt",
                                       "allowIndexing":  "Suchmaschinen-Indexierung erlauben",
@@ -474,12 +474,12 @@
                                       "sitemapUrl":  "Sitemap-URL",
                                       "sitemapGenerated":  "Automatisch generiert unter: {{url}}",
                                       "api":  "API \u0026 Integrationen",
-                                      "apiKey":  "API-SchlÃ¼ssel",
-                                      "apiKeyHint":  "Verwenden Sie diesen SchlÃ¼ssel fÃ¼r den Zugriff auf die Shop-API",
-                                      "regenerateApiKey":  "API-SchlÃ¼ssel neu generieren",
-                                      "apiKeyWarning":  "Warnung: Die Neugenerierung macht den aktuellen API-SchlÃ¼ssel ungÃ¼ltig",
+                                      "apiKey":  "API-Schlüssel",
+                                      "apiKeyHint":  "Verwenden Sie diesen Schlüssel für den Zugriff auf die Shop-API",
+                                      "regenerateApiKey":  "API-Schlüssel neu generieren",
+                                      "apiKeyWarning":  "Warnung: Die Neugenerierung macht den aktuellen API-Schlüssel ungültig",
                                       "webhooks":  "Webhooks",
-                                      "webhooksHint":  "Konfigurieren Sie Webhooks fÃ¼r externe Integrationen",
+                                      "webhooksHint":  "Konfigurieren Sie Webhooks für externe Integrationen",
                                       "manageWebhooks":  "Webhooks verwalten",
                                       "performance":  "Performance",
                                       "cacheEnabled":  "Caching aktivieren",
@@ -502,18 +502,18 @@
                                       "backup":  "Backup \u0026 Export",
                                       "autoBackup":  "Automatische Backups",
                                       "autoBackupHint":  "Automatisch Backups Ihrer Shop-Daten erstellen",
-                                      "backupFrequency":  "Backup-HÃ¤ufigkeit",
-                                      "daily":  "TÃ¤glich",
-                                      "weekly":  "WÃ¶chentlich",
+                                      "backupFrequency":  "Backup-Häufigkeit",
+                                      "daily":  "Täglich",
+                                      "weekly":  "Wöchentlich",
                                       "monthly":  "Monatlich",
                                       "exportData":  "Shop-Daten exportieren",
                                       "exportHint":  "Laden Sie alle Ihre Shop-Daten als JSON herunter",
                                       "downloadBackup":  "Backup herunterladen",
                                       "dangerZone":  "Gefahrenzone",
-                                      "deleteStore":  "Shop lÃ¶schen",
-                                      "deleteStoreWarning":  "âš ï¸ Warnung: Diese Aktion kann nicht rÃ¼ckgÃ¤ngig gemacht werden!",
-                                      "deleteStoreHint":  "Shop und alle zugehÃ¶rigen Daten dauerhaft lÃ¶schen",
-                                      "deleteStoreButton":  "Shop dauerhaft lÃ¶schen",
+                                      "deleteStore":  "Shop löschen",
+                                      "deleteStoreWarning":  "⚠️ Warnung: Diese Aktion kann nicht rückgängig gemacht werden!",
+                                      "deleteStoreHint":  "Shop und alle zugehörigen Daten dauerhaft löschen",
+                                      "deleteStoreButton":  "Shop dauerhaft löschen",
                                       "saveSuccess":  "Erweiterte Einstellungen erfolgreich gespeichert!",
                                       "saveError":  "Fehler beim Speichern der erweiterten Einstellungen"
                                   }
@@ -528,7 +528,7 @@
                    "inactive":  "Inaktiv",
                    "archived":  "Archiviert",
                    "pending":  "Ausstehend",
-                   "confirmed":  "BestÃ¤tigt",
+                   "confirmed":  "Bestätigt",
                    "processing":  "In Bearbeitung",
                    "shipped":  "Versandt",
                    "delivered":  "Zugestellt",
@@ -542,10 +542,10 @@
                  },
     "actions":  {
                     "edit":  "Bearbeiten",
-                    "delete":  "LÃ¶schen"
+                    "delete":  "Löschen"
                 },
     "footer":  {
-                   "about":  "Ãœber uns",
+                   "about":  "Über uns",
                    "contact":  "Kontakt",
                    "terms":  "AGB",
                    "privacy":  "Datenschutz",
@@ -553,17 +553,17 @@
                    "shipping":  "Versand \u0026 Zahlung",
                    "faq":  "FAQ",
                    "support":  "Support",
-                   "copyright":  "Â© {{year}} Alle Rechte vorbehalten",
+                   "copyright":  "© {{year}} Alle Rechte vorbehalten",
                    "info":  "Informationen"
                },
     "sidebarAdmin":  {
                          "aria":  {
                                       "mainNavigation":  "Hauptnavigation",
-                                      "openNavigation":  "Navigation Ã¶ffnen",
-                                      "closeNavigation":  "Navigation schlieÃŸen"
+                                      "openNavigation":  "Navigation öffnen",
+                                      "closeNavigation":  "Navigation schließen"
                                   },
                          "groups":  {
-                                        "overview":  "Ãœbersicht",
+                                        "overview":  "Übersicht",
                                         "commerce":  "Commerce",
                                         "customerService":  "Kundenservice",
                                         "storeSetup":  "Store Setup",
@@ -586,13 +586,13 @@
                      },
     "trust":  {
                   "freeShipping":  "Kostenloser Versand",
-                  "freeShippingDesc":  "Ab 50â‚¬ Bestellwert",
-                  "easyReturns":  "Einfache RÃ¼ckgabe",
-                  "easyReturnsDesc":  "30 Tage RÃ¼ckgaberecht",
+                  "freeShippingDesc":  "Ab 50€ Bestellwert",
+                  "easyReturns":  "Einfache Rückgabe",
+                  "easyReturnsDesc":  "30 Tage Rückgaberecht",
                   "securePayment":  "Sichere Zahlung",
-                  "securePaymentDesc":  "SSL-verschlÃ¼sselt",
+                  "securePaymentDesc":  "SSL-verschlüsselt",
                   "support":  "24/7 Support",
-                  "supportDesc":  "Wir sind fÃ¼r Sie da"
+                  "supportDesc":  "Wir sind für Sie da"
               },
     "dashboard":  {
                       "tagline":  "E-Commerce Platform",
@@ -626,19 +626,19 @@
                                                "slugExample":  "mein-shop",
                                                "storeDescription":  "Beschreibung (optional)",
                                                "storeDescriptionPlaceholder":  "Beschreiben Sie Ihren Store...",
-                                               "storeDescriptionHint":  "Eine kurze Beschreibung Ihres Stores fÃ¼r Kunden und Suchmaschinen",
-                                               "submit":  "âœ“ Store erstellen",
+                                               "storeDescriptionHint":  "Eine kurze Beschreibung Ihres Stores für Kunden und Suchmaschinen",
+                                               "submit":  "✓ Store erstellen",
                                                "creating":  "Wird erstellt...",
                                                "errors":  {
                                                               "storeNameRequired":  "Bitte geben Sie einen Store-Namen ein",
                                                               "storeSlugRequired":  "Bitte geben Sie einen URL-Slug ein",
-                                                              "requiredFields":  "Bitte fÃ¼llen Sie alle erforderlichen Felder aus"
+                                                              "requiredFields":  "Bitte füllen Sie alle erforderlichen Felder aus"
                                                           }
                                            },
                       "limitModal":  {
                                          "title":  "Store-Limit erreicht",
                                          "text":  "Sie haben das maximale Limit an Stores erreicht. Bitte upgraden Sie Ihr Abonnement, um weitere Stores zu erstellen.",
-                                         "remindLater":  "SpÃ¤ter erinnern",
+                                         "remindLater":  "Später erinnern",
                                          "goToSubscription":  "Zum Abonnement"
                                      }
                   },
@@ -649,29 +649,29 @@
                  "emailPlaceholder":  "ihre@email.de",
                  "password":  "Passwort",
                  "passwordMinLength":  "Passwort muss mindestens 6 Zeichen lang sein",
-                 "emailInvalid":  "Bitte geben Sie eine gÃ¼ltige E-Mail-Adresse ein",
+                 "emailInvalid":  "Bitte geben Sie eine gültige E-Mail-Adresse ein",
                  "loggingIn":  "Wird angemeldet...",
                  "login":  "Anmelden",
                  "forgotPassword":  "Passwort vergessen?",
                  "noAccount":  "Noch kein Konto? Jetzt registrieren",
                  "alreadyRegistered":  "Bereits registriert? Anmelden",
-                 "loginFailed":  "Login fehlgeschlagen. Bitte Ã¼berprÃ¼fen Sie Ihre Angaben.",
+                 "loginFailed":  "Login fehlgeschlagen. Bitte überprüfen Sie Ihre Angaben.",
                  "registerFailed":  "Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.",
-                 "loginDialogFailed":  "Anmeldung fehlgeschlagen. Bitte Ã¼berprÃ¼fen Sie Ihre Zugangsdaten.",
+                 "loginDialogFailed":  "Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Zugangsdaten.",
                  "sessionExpired":  "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
                  "authRequired":  "Bitte melden Sie sich an, um auf diese Seite zuzugreifen.",
                  "registerTitle":  "Registrieren",
                  "registerSubtitle":  "Erstellen Sie Ihr kostenloses Konto",
                  "registerBtn":  "Konto erstellen",
                  "registering":  "Wird registriert...",
-                 "registerSuccess":  "âœ“ Registrierung erfolgreich! Bitte Ã¼berprÃ¼fen Sie Ihre E-Mails und klicken Sie auf den BestÃ¤tigungslink, um Ihr Konto zu aktivieren.",
-                 "checkInboxTitle":  "Posteingang prÃ¼fen",
-                 "checkSpamHint":  "Tipp: PrÃ¼fen Sie auch Ihren Spam- oder Werbung-Ordner.",
+                 "registerSuccess":  "✓ Registrierung erfolgreich! Bitte überprüfen Sie Ihre E-Mails und klicken Sie auf den Bestätigungslink, um Ihr Konto zu aktivieren.",
+                 "checkInboxTitle":  "Posteingang prüfen",
+                 "checkSpamHint":  "Tipp: Prüfen Sie auch Ihren Spam- oder Werbung-Ordner.",
                  "resendVerification":  "E-Mail erneut senden",
                  "resending":  "Wird gesendet...",
                  "resendIn":  "Erneut senden in",
-                 "resendSuccess":  "âœ“ Verifikations-E-Mail erneut gesendet.",
-                 "resendFailed":  "Senden fehlgeschlagen. Bitte spÃ¤ter erneut versuchen.",
+                 "resendSuccess":  "✓ Verifikations-E-Mail erneut gesendet.",
+                 "resendFailed":  "Senden fehlgeschlagen. Bitte später erneut versuchen.",
                  "goToLogin":  "Zum Login",
                  "emailAlreadyExists":  "Diese E-Mail ist bereits registriert."
              },
@@ -681,21 +681,21 @@
                        "noSearchResults":  "Keine Suchergebnisse",
                        "noSearchResultsHint":  "Versuche es mit anderen Suchbegriffen.",
                        "noProducts":  "Keine Produkte gefunden",
-                       "noProductsHint":  "In dieser Kategorie sind aktuell keine Produkte verfÃ¼gbar.",
+                       "noProductsHint":  "In dieser Kategorie sind aktuell keine Produkte verfügbar.",
                        "products":  "{{count}} Produkt",
                        "productsPlural":  "{{count}} Produkte",
-                       "addedToCart":  "{{count}}x {{name}} wurde zum Warenkorb hinzugefÃ¼gt!",
-                       "addToCartError":  "Fehler beim HinzufÃ¼gen zum Warenkorb. Bitte versuchen Sie es erneut.",
-                       "shopByCategory":  "Nach Kategorie stÃ¶bern",
+                       "addedToCart":  "{{count}}x {{name}} wurde zum Warenkorb hinzugefügt!",
+                       "addToCartError":  "Fehler beim Hinzufügen zum Warenkorb. Bitte versuchen Sie es erneut.",
+                       "shopByCategory":  "Nach Kategorie stöbern",
                        "shopByCategoryDesc":  "Finden Sie genau das, was Sie suchen",
                        "loading":  "Store wird geladen...",
                        "discoverProducts":  "Entdecke unsere Produkte",
-                       "noProductsYet":  "Noch keine Produkte verfügbar",
+                       "noProductsYet":  "Noch keine Produkte verf�gbar",
                        "noProductsYetHint":  "Wir arbeiten daran, neue Produkte bereitzustellen.",
                        "showAllProducts":  "Alle Produkte anzeigen",
-                       "highlights":  "⭐ Highlights",
-                       "bestsellers":  "🔥 Bestseller",
-                       "newArrivals":  "✨ Neu eingetroffen",
+                       "highlights":  "? Highlights",
+                       "bestsellers":  "?? Bestseller",
+                       "newArrivals":  "? Neu eingetroffen",
                        "sort":  {
                                     "relevant":  "Relevanz",
                                     "priceAsc":  "Preis aufsteigend",
@@ -715,18 +715,18 @@
                   "billingAddress":  "Rechnungsadresse",
                   "notes":  "Anmerkungen",
                   "total":  "Gesamtsumme",
-                  "thankYou":  "Vielen Dank fÃ¼r Ihre Bestellung!",
+                  "thankYou":  "Vielen Dank für Ihre Bestellung!",
                   "numberLabel":  "Bestellnummer:",
-                  "confirmationText":  "Wir haben Ihre Bestellung erhalten und werden sie schnellstmÃ¶glichst bearbeiten.",
-                  "emailSent":  "Eine BestÃ¤tigungs-E-Mail wurde an {{email}} gesendet.",
+                  "confirmationText":  "Wir haben Ihre Bestellung erhalten und werden sie schnellstmöglichst bearbeiten.",
+                  "emailSent":  "Eine Bestätigungs-E-Mail wurde an {{email}} gesendet.",
                   "notFound":  "Bestellung nicht gefunden",
                   "missingInfo":  "Bestellinformationen fehlen",
                   "loadError":  "Bestellung konnte nicht geladen werden",
                   "loading":  "Bestellung wird geladen...",
                   "continueShopping":  "Weiter einkaufen",
-                  "print":  "ðŸ–¨ï¸ Bestellung drucken",
-                  "backToShop":  "ZurÃ¼ck zum Shop",
-                  "confirmed":  "Bestellung bestÃ¤tigt",
+                  "print":  "🖨️ Bestellung drucken",
+                  "backToShop":  "Zurück zum Shop",
+                  "confirmed":  "Bestellung bestätigt",
                   "orderNumber":  "Bestellung #",
                   "customer":  "Kunde",
                   "amount":  "Betrag",
@@ -741,7 +741,7 @@
                   "tryDifferentFilters":  "Versuchen Sie andere Filter, um Bestellungen zu finden",
                   "noOrdersYet":  "Es wurden noch keine Bestellungen aufgegeben",
                   "viewDetails":  "Details anzeigen",
-                  "changeStatus":  "Status Ã¤ndern",
+                  "changeStatus":  "Status ändern",
                   "orderDetails":  "Bestelldetails",
                   "customerInfo":  "Kundeninformationen",
                   "orderedItems":  "Bestellte Artikel",
@@ -759,25 +759,25 @@
                 },
     "grid":  {
                  "emptyTitle":  "Keine Produkte gefunden",
-                 "emptyMessage":  "In dieser Kategorie sind aktuell keine Produkte verfÃ¼gbar."
+                 "emptyMessage":  "In dieser Kategorie sind aktuell keine Produkte verfügbar."
              },
     "payment":  {
                     "creditCard":  "Kreditkarte",
                     "paypalHint":  "Schnell und sicher bezahlen",
-                    "bankTransfer":  "Ãœberweisung",
-                    "bankTransferHint":  "Zahlung per BankÃ¼berweisung",
+                    "bankTransfer":  "Überweisung",
+                    "bankTransferHint":  "Zahlung per Banküberweisung",
                     "cashOnDelivery":  "Nachnahme",
                     "cashOnDeliveryHint":  "Bar bei Lieferung (Telefon-Verifizierung erforderlich)",
                     "phoneVerification":  "Telefonnummer-Verifizierung",
-                    "phoneVerificationHint":  "Aus SicherheitsgrÃ¼nden benÃ¶tigen wir eine verifizierte Telefonnummer fÃ¼r Nachnahme-Bestellungen"
+                    "phoneVerificationHint":  "Aus Sicherheitsgründen benötigen wir eine verifizierte Telefonnummer für Nachnahme-Bestellungen"
                 },
     "profile":  {
                     "myOrders":  "Meine Bestellungen",
                     "profileData":  "Profildaten",
                     "addresses":  "Adressen",
-                    "changePassword":  "Passwort Ã¤ndern",
-                    "changePasswordHint":  "Ã„ndern Sie Ihr Passwort fÃ¼r mehr Sicherheit",
-                    "welcomeBack":  "Willkommen zurÃ¼ck, {{name}}!",
+                    "changePassword":  "Passwort ändern",
+                    "changePasswordHint":  "Ändern Sie Ihr Passwort für mehr Sicherheit",
+                    "welcomeBack":  "Willkommen zurück, {{name}}!",
                     "customer":  "Kunde",
                     "completed":  "Abgeschlossen",
                     "inProgress":  "In Bearbeitung",
@@ -797,54 +797,54 @@
                     "sameBillingAddress":  "Rechnungsadresse entspricht Lieferadresse",
                     "firstName":  "Vorname",
                     "lastName":  "Nachname",
-                    "managePersonalInfo":  "Verwalten Sie Ihre persÃ¶nlichen Informationen",
+                    "managePersonalInfo":  "Verwalten Sie Ihre persönlichen Informationen",
                     "firstNamePlaceholder":  "Ihr Vorname",
                     "lastNamePlaceholder":  "Ihr Nachname",
-                    "emailReadonly":  "Die E-Mail-Adresse kann nicht geÃ¤ndert werden",
+                    "emailReadonly":  "Die E-Mail-Adresse kann nicht geändert werden",
                     "currentPassword":  "Aktuelles Passwort",
                     "newPassword":  "Neues Passwort",
-                    "confirmPassword":  "Neues Passwort bestÃ¤tigen",
+                    "confirmPassword":  "Neues Passwort bestätigen",
                     "currentPasswordPlaceholder":  "Geben Sie Ihr aktuelles Passwort ein",
                     "newPasswordPlaceholder":  "Mindestens 6 Zeichen",
                     "confirmPasswordPlaceholder":  "Passwort erneut eingeben",
-                    "passwordMismatch":  "Die PasswÃ¶rter stimmen nicht Ã¼berein",
-                    "passwordMatch":  "Die PasswÃ¶rter stimmen Ã¼berein",
-                    "passwordStrength":  "PasswortstÃ¤rke",
+                    "passwordMismatch":  "Die Passwörter stimmen nicht überein",
+                    "passwordMatch":  "Die Passwörter stimmen überein",
+                    "passwordStrength":  "Passwortstärke",
                     "passwordMinLength":  "Das Passwort sollte mindestens 6 Zeichen lang sein",
-                    "securityTips":  "Tipps fÃ¼r ein sicheres Passwort",
+                    "securityTips":  "Tipps für ein sicheres Passwort",
                     "tip1":  "Verwenden Sie mindestens 8 Zeichen",
-                    "tip2":  "Kombinieren Sie GroÃŸ- und Kleinbuchstaben",
-                    "tip3":  "FÃ¼gen Sie Zahlen und Sonderzeichen hinzu",
-                    "tip4":  "Vermeiden Sie persÃ¶nliche Informationen",
-                    "tip5":  "Nutzen Sie fÃ¼r jeden Account ein anderes Passwort",
-                    "strengthWeak":  "Schwach â€“ Bitte ein sichereres Passwort wÃ¤hlen",
-                    "strengthMedium":  "Mittel â€“ Gut, aber kann noch verbessert werden",
-                    "strengthStrong":  "Stark â€“ Sehr sicheres Passwort!",
-                    "passwordChangedSuccess":  "Passwort erfolgreich geÃ¤ndert!",
+                    "tip2":  "Kombinieren Sie Groß- und Kleinbuchstaben",
+                    "tip3":  "Fügen Sie Zahlen und Sonderzeichen hinzu",
+                    "tip4":  "Vermeiden Sie persönliche Informationen",
+                    "tip5":  "Nutzen Sie für jeden Account ein anderes Passwort",
+                    "strengthWeak":  "Schwach – Bitte ein sichereres Passwort wählen",
+                    "strengthMedium":  "Mittel – Gut, aber kann noch verbessert werden",
+                    "strengthStrong":  "Stark – Sehr sicheres Passwort!",
+                    "passwordChangedSuccess":  "Passwort erfolgreich geändert!",
                     "errorWrongCurrentPassword":  "Das aktuelle Passwort ist falsch",
-                    "errorChangePassword":  "Fehler beim Ã„ndern des Passworts"
+                    "errorChangePassword":  "Fehler beim Ändern des Passworts"
                 },
     "storeNotFound":  {
                           "title":  "Store nicht gefunden",
                           "subtitleSlug":  "Der Store \u003cstrong\u003e{{slug}}.markt.ma\u003c/strong\u003e existiert noch nicht.",
-                          "subtitleReserved":  "Die Subdomain \u003cstrong\u003e{{slug}}.markt.ma\u003c/strong\u003e ist fÃ¼r technische Zwecke reserviert und kann nicht als Store verwendet werden.",
+                          "subtitleReserved":  "Die Subdomain \u003cstrong\u003e{{slug}}.markt.ma\u003c/strong\u003e ist für technische Zwecke reserviert und kann nicht als Store verwendet werden.",
                           "warningTitle":  "Technische Subdomain",
-                          "warningText":  "Diese Subdomain ist fÃ¼r Systemdienste reserviert (API, Datenbank, etc.) und kann nicht als Store registriert werden.",
-                          "createStoreTitle":  "MÃ¶chten Sie diesen Store erstellen?",
-                          "createStoreText":  "Sie kÃ¶nnen jetzt Ihren eigenen Online-Shop unter dieser Adresse erstellen!",
+                          "warningText":  "Diese Subdomain ist für Systemdienste reserviert (API, Datenbank, etc.) und kann nicht als Store registriert werden.",
+                          "createStoreTitle":  "Möchten Sie diesen Store erstellen?",
+                          "createStoreText":  "Sie können jetzt Ihren eigenen Online-Shop unter dieser Adresse erstellen!",
                           "createStoreBtn":  "Store erstellen: {{slug}}.markt.ma",
                           "createStoreHint":  "Mit Ihrem eigenen Online-Shop auf markt.ma",
                           "registerTitle":  "Erstellen Sie Ihren eigenen Store!",
                           "registerText":  "Melden Sie sich an oder registrieren Sie sich, um {{slug}}.markt.ma zu sichern.",
                           "registerBtn":  "Jetzt registrieren",
                           "loginBtn":  "Anmelden",
-                          "freeHint":  "Kostenlos starten â€¢ Keine Kreditkarte erforderlich",
-                          "backToMarketplace":  "â† ZurÃ¼ck zum Marketplace",
+                          "freeHint":  "Kostenlos starten • Keine Kreditkarte erforderlich",
+                          "backToMarketplace":  "← Zurück zum Marketplace",
                           "toDashboard":  "Zum Dashboard",
-                          "howItWorksTitle":  "ðŸ’¡ So funktioniert\u0027s:",
+                          "howItWorksTitle":  "💡 So funktioniert\u0027s:",
                           "step1":  "Registrieren Sie sich kostenlos oder melden Sie sich an",
                           "step2":  "Erstellen Sie Ihren Store mit Ihrer Wunsch-Subdomain",
-                          "step3":  "FÃ¼gen Sie Produkte hinzu und passen Sie das Design an",
+                          "step3":  "Fügen Sie Produkte hinzu und passen Sie das Design an",
                           "step4":  "Ihr Store ist sofort online unter ihrer-name.markt.ma"
                       },
     "reviews":  {
@@ -874,15 +874,15 @@
                     "youVoted":  "Sie haben bereits abgestimmt"
                 },
     "storeDetail":  {
-                        "backToDashboard":  "â† ZurÃ¼ck zum Dashboard",
-                        "title":  "Store Ãœbersicht",
+                        "backToDashboard":  "← Zurück zum Dashboard",
+                        "title":  "Store Übersicht",
                         "totalSales":  "Gesamtumsatz",
                         "orders":  "Bestellungen",
                         "products":  "Produkte",
                         "categories":  "Kategorien",
-                        "avgOrderValue":  "Ã˜ Bestellwert",
+                        "avgOrderValue":  "Ø Bestellwert",
                         "quickAccess":  "Schnellzugriff",
-                        "addProduct":  "Produkt hinzufÃ¼gen",
+                        "addProduct":  "Produkt hinzufügen",
                         "createCategory":  "Kategorie erstellen",
                         "viewOrders":  "Bestellungen ansehen",
                         "allProducts":  "Alle Produkte",
@@ -911,34 +911,34 @@
                             },
                     "hero":  {
                                  "title":  "Starten Sie Ihren Online-Shop \u003cspan class=\"gradient-text\"\u003ein Minuten\u003c/span\u003e",
-                                 "subtitle":  "WÃ¤hlen Sie Ihren Weg: Eigene Produkte verkaufen oder als Reseller durchstarten. Keine Programmierkenntnisse erforderlich.",
-                                 "startNow":  "ðŸš€ Jetzt kostenlos starten",
-                                 "watchDemo":  "ðŸ“¹ Demo ansehen"
+                                 "subtitle":  "Wählen Sie Ihren Weg: Eigene Produkte verkaufen oder als Reseller durchstarten. Keine Programmierkenntnisse erforderlich.",
+                                 "startNow":  "🚀 Jetzt kostenlos starten",
+                                 "watchDemo":  "📹 Demo ansehen"
                              },
                     "paths":  {
                                   "own":  {
-                                              "icon":  "ðŸ—ï¸",
+                                              "icon":  "🏗️",
                                               "title":  "Eigenen Store bauen",
-                                              "for":  "FÃ¼r HÃ¤ndler mit eigenen Produkten",
-                                              "benefit1":  "âœ“ Volle Kontrolle Ã¼ber Katalog \u0026 Preise",
-                                              "benefit2":  "âœ“ Eigene Marke \u0026 Custom Design",
-                                              "benefit3":  "âœ“ 100% Umsatz gehÃ¶rt Ihnen",
-                                              "cta":  "ðŸš€ Store aufbauen"
+                                              "for":  "Für Händler mit eigenen Produkten",
+                                              "benefit1":  "✓ Volle Kontrolle über Katalog \u0026 Preise",
+                                              "benefit2":  "✓ Eigene Marke \u0026 Custom Design",
+                                              "benefit3":  "✓ 100% Umsatz gehört Ihnen",
+                                              "cta":  "🚀 Store aufbauen"
                                           },
                                   "reseller":  {
                                                    "badge":  "Neu",
-                                                   "icon":  "ðŸ¤",
+                                                   "icon":  "🤝",
                                                    "title":  "Reseller Store starten",
-                                                   "for":  "FÃ¼r WiederverkÃ¤ufer ohne eigene Produkte",
-                                                   "benefit1":  "âœ“ Sofort 1000+ Produkte verfÃ¼gbar",
-                                                   "benefit2":  "âœ“ Kein Lager, kein Versand nÃ¶tig",
-                                                   "benefit3":  "âœ“ Attraktive Provisionen verdienen",
-                                                   "cta":  "ðŸ’° Reseller werden"
+                                                   "for":  "Für Wiederverkäufer ohne eigene Produkte",
+                                                   "benefit1":  "✓ Sofort 1000+ Produkte verfügbar",
+                                                   "benefit2":  "✓ Kein Lager, kein Versand nötig",
+                                                   "benefit3":  "✓ Attraktive Provisionen verdienen",
+                                                   "cta":  "💰 Reseller werden"
                                                }
                               },
                     "comparison":  {
-                                       "toggleOpen":  "â–¶ Schnellvergleich ansehen",
-                                       "toggleClose":  "â–¼ Schnellvergleich ansehen",
+                                       "toggleOpen":  "▶ Schnellvergleich ansehen",
+                                       "toggleClose":  "▼ Schnellvergleich ansehen",
                                        "ownStore":  "Eigener Store",
                                        "resellerStore":  "Reseller Store",
                                        "setupTime":  "Setup-Zeit",
@@ -956,21 +956,21 @@
                                        "revenueModel":  "Umsatzmodell",
                                        "revenueModelOwn":  "100% Ihres Preises",
                                        "revenueModelReseller":  "20-30% Provision",
-                                       "forWhom":  "FÃ¼r wen?",
-                                       "forWhomOwn":  "Hersteller, HÃ¤ndler",
+                                       "forWhom":  "Für wen?",
+                                       "forWhomOwn":  "Hersteller, Händler",
                                        "forWhomReseller":  "Affiliates, Influencer",
-                                       "note":  "ðŸ’¡ \u003cstrong\u003eGut zu wissen:\u003c/strong\u003e Sie kÃ¶nnen spÃ¤ter jederzeit weitere Stores erstellen - auch vom anderen Typ!"
+                                       "note":  "💡 \u003cstrong\u003eGut zu wissen:\u003c/strong\u003e Sie können später jederzeit weitere Stores erstellen - auch vom anderen Typ!"
                                    },
                     "stats":  {
                                   "shopUrl":  "https://ihr-shop.markt.ma",
                                   "activeShops":  "Aktive Shops",
                                   "transactions":  "Transaktionen",
-                                  "uptime":  "VerfÃ¼gbarkeit",
+                                  "uptime":  "Verfügbarkeit",
                                   "support":  "Support"
                               },
                     "features":  {
                                      "title":  "Alles was Sie brauchen, um erfolgreich zu verkaufen",
-                                     "subtitle":  "Professionelle Tools fÃ¼r Ihren E-Commerce-Erfolg"
+                                     "subtitle":  "Professionelle Tools für Ihren E-Commerce-Erfolg"
                                  },
                     "featureItems":  {
                                          "customDesign":  {
@@ -979,33 +979,33 @@
                                                           },
                                          "securePayments":  {
                                                                 "title":  "Sichere Zahlungen",
-                                                                "description":  "Integrierte Zahlungsabwicklung mit den wichtigsten Zahlungsmethoden und hÃ¶chster Sicherheit."
+                                                                "description":  "Integrierte Zahlungsabwicklung mit den wichtigsten Zahlungsmethoden und höchster Sicherheit."
                                                             },
                                          "analytics":  {
                                                            "title":  "Analytics \u0026 Reporting",
-                                                           "description":  "Verfolgen Sie Ihre VerkÃ¤ufe, Kunden und Performance mit detaillierten Analysen in Echtzeit."
+                                                           "description":  "Verfolgen Sie Ihre Verkäufe, Kunden und Performance mit detaillierten Analysen in Echtzeit."
                                                        },
                                          "shipping":  {
                                                           "title":  "Versandintegration",
-                                                          "description":  "Automatische Integration mit fÃ¼hrenden Versanddienstleistern fÃ¼r optimierte Logistik."
+                                                          "description":  "Automatische Integration mit führenden Versanddienstleistern für optimierte Logistik."
                                                       },
                                          "mobileFirst":  {
                                                              "title":  "Mobile-First",
-                                                             "description":  "Perfekt optimiert fÃ¼r mobile GerÃ¤te - Ihre Kunden kaufen Ã¼berall und jederzeit ein."
+                                                             "description":  "Perfekt optimiert für mobile Geräte - Ihre Kunden kaufen überall und jederzeit ein."
                                                          },
                                          "security":  {
                                                           "title":  "SSL \u0026 Sicherheit",
-                                                          "description":  "HÃ¶chste Sicherheitsstandards mit SSL-VerschlÃ¼sselung und automatischen Backups."
+                                                          "description":  "Höchste Sicherheitsstandards mit SSL-Verschlüsselung und automatischen Backups."
                                                       }
                                      },
                     "demo":  {
                                  "title":  "Sehen Sie markt.ma in Aktion",
                                  "subtitle":  "Entdecken Sie, wie einfach es ist, Ihren eigenen Online-Shop zu erstellen",
                                  "platformDemoTitle":  "PLATTFORM DEMO",
-                                 "platformDemoHeading":  "ðŸŽ¥ VollstÃ¤ndige Plattform-Demo",
+                                 "platformDemoHeading":  "🎥 Vollständige Plattform-Demo",
                                  "platformDemoText":  "Sehen Sie alle Features von markt.ma in weniger als 2 Minuten",
-                                 "platformDemoHint":  "ðŸ’¡ Klicken Sie auf â–¶ um direkt zur Live-Demo zu gelangen",
-                                 "tutorialsTitle":  "ðŸ“š Schritt-fÃ¼r-Schritt Anleitungen",
+                                 "platformDemoHint":  "💡 Klicken Sie auf ▶ um direkt zur Live-Demo zu gelangen",
+                                 "tutorialsTitle":  "📚 Schritt-für-Schritt Anleitungen",
                                  "ctaText":  "Bereit anzufangen?",
                                  "ctaButton":  "Jetzt kostenlos starten"
                              },
@@ -1017,7 +1017,7 @@
                                                             },
                                           "createFirstProduct":  {
                                                                      "title":  "Erstes Produkt anlegen",
-                                                                     "description":  "Schritt-fÃ¼r-Schritt Anleitung zum HinzufÃ¼gen Ihres ersten Produkts",
+                                                                     "description":  "Schritt-für-Schritt Anleitung zum Hinzufügen Ihres ersten Produkts",
                                                                      "duration":  "2:30 min"
                                                                  },
                                           "customizeStore":  {
@@ -1027,34 +1027,34 @@
                                                              }
                                       },
                     "pricing":  {
-                                    "title":  "Transparente Preise fÃ¼r jedes Budget",
-                                    "subtitle":  "Keine versteckten Kosten, jederzeit kÃ¼ndbar",
-                                    "popular":  "â­ Beliebt"
+                                    "title":  "Transparente Preise für jedes Budget",
+                                    "subtitle":  "Keine versteckten Kosten, jederzeit kündbar",
+                                    "popular":  "⭐ Beliebt"
                                 },
                     "planItems":  {
                                       "periodMonthly":  "/Monat",
                                       "starter":  {
                                                       "name":  "Starter",
-                                                      "description":  "Perfekt fÃ¼r neue Unternehmen",
+                                                      "description":  "Perfekt für neue Unternehmen",
                                                       "cta":  "Kostenlos starten",
                                                       "features":  [
                                                                        "Bis zu 10 Produkte",
                                                                        "Eigene Domain",
                                                                        "SSL-Zertifikat",
                                                                        "E-Mail-Support",
-                                                                       "99.9% VerfÃ¼gbarkeit"
+                                                                       "99.9% Verfügbarkeit"
                                                                    ]
                                                   },
                                       "professional":  {
                                                            "name":  "Professional",
-                                                           "description":  "FÃ¼r wachsende Unternehmen",
+                                                           "description":  "Für wachsende Unternehmen",
                                                            "badge":  "Beliebt",
                                                            "cta":  "Jetzt starten",
                                                            "features":  [
                                                                             "Unbegrenzte Produkte",
                                                                             "Eigene Domain",
                                                                             "SSL-Zertifikat",
-                                                                            "PrioritÃ¤ts-Support",
+                                                                            "Prioritäts-Support",
                                                                             "Analytics \u0026 Reports",
                                                                             "Marketing-Tools",
                                                                             "API-Zugang"
@@ -1062,7 +1062,7 @@
                                                        },
                                       "enterprise":  {
                                                          "name":  "Enterprise",
-                                                         "description":  "FÃ¼r groÃŸe Unternehmen",
+                                                         "description":  "Für große Unternehmen",
                                                          "cta":  "Kontakt aufnehmen",
                                                          "features":  [
                                                                           "Alles aus Professional",
@@ -1077,9 +1077,9 @@
                                   },
                     "cta":  {
                                 "title":  "Bereit, Ihren Online-Shop zu starten?",
-                                "subtitle":  "SchlieÃŸen Sie sich tausenden erfolgreichen HÃ¤ndlern an",
-                                "button":  "ðŸš€ Jetzt kostenlos loslegen",
-                                "note":  "Keine Kreditkarte erforderlich â€¢ Jederzeit kÃ¼ndbar"
+                                "subtitle":  "Schließen Sie sich tausenden erfolgreichen Händlern an",
+                                "button":  "🚀 Jetzt kostenlos loslegen",
+                                "note":  "Keine Kreditkarte erforderlich • Jederzeit kündbar"
                             },
                     "footer":  {
                                    "tagline":  "Die moderne E-Commerce-Plattform",
@@ -1088,7 +1088,7 @@
                                    "imprint":  "Impressum",
                                    "privacy":  "Datenschutz",
                                    "terms":  "AGB",
-                                   "copyright":  "Â© 2026 markt.ma. Alle Rechte vorbehalten."
+                                   "copyright":  "© 2026 markt.ma. Alle Rechte vorbehalten."
                                }
                 },
     "email":  {
@@ -1103,37 +1103,37 @@
                   "btnSupport":  "Support kontaktieren",
                   "btnAccount":  "Mein Konto",
                   "verification":  {
-                                       "subject":  "E-Mail-Adresse bestÃ¤tigen - Markt.ma",
-                                       "title":  "E-Mail bestÃ¤tigen",
-                                       "intro":  "Willkommen bei Markt.ma! Bitte bestÃ¤tigen Sie Ihre E-Mail-Adresse, um Ihr Konto zu aktivieren.",
-                                       "button":  "E-Mail bestÃ¤tigen",
-                                       "expiry":  "Dieser Link ist 24 Stunden gÃ¼ltig.",
+                                       "subject":  "E-Mail-Adresse bestätigen - Markt.ma",
+                                       "title":  "E-Mail bestätigen",
+                                       "intro":  "Willkommen bei Markt.ma! Bitte bestätigen Sie Ihre E-Mail-Adresse, um Ihr Konto zu aktivieren.",
+                                       "button":  "E-Mail bestätigen",
+                                       "expiry":  "Dieser Link ist 24 Stunden gültig.",
                                        "ignore":  "Falls Sie kein Konto erstellt haben, ignorieren Sie diese E-Mail."
                                    },
                   "welcome":  {
-                                  "subject":  "Willkommen bei Markt.ma â€“ Ihre E-Mail wurde bestÃ¤tigt!",
+                                  "subject":  "Willkommen bei Markt.ma – Ihre E-Mail wurde bestätigt!",
                                   "title":  "Willkommen bei Markt.ma!",
-                                  "intro":  "Ihre E-Mail-Adresse wurde erfolgreich bestÃ¤tigt. Sie kÃ¶nnen sich jetzt anmelden und alle Funktionen nutzen.",
+                                  "intro":  "Ihre E-Mail-Adresse wurde erfolgreich bestätigt. Sie können sich jetzt anmelden und alle Funktionen nutzen.",
                                   "button":  "Jetzt anmelden"
                               },
                   "passwordReset":  {
-                                        "subject":  "Passwort zurÃ¼cksetzen - Markt.ma",
-                                        "title":  "Passwort zurÃ¼cksetzen",
-                                        "intro":  "Wir haben eine Anfrage zum ZurÃ¼cksetzen Ihres Passworts erhalten.",
-                                        "button":  "Passwort zurÃ¼cksetzen",
-                                        "expiry":  "Dieser Link ist 1 Stunde gÃ¼ltig.",
-                                        "ignore":  "Falls Sie kein Passwort-Reset angefordert haben, ignorieren Sie diese E-Mail. Ihr Passwort bleibt unverÃ¤ndert."
+                                        "subject":  "Passwort zurücksetzen - Markt.ma",
+                                        "title":  "Passwort zurücksetzen",
+                                        "intro":  "Wir haben eine Anfrage zum Zurücksetzen Ihres Passworts erhalten.",
+                                        "button":  "Passwort zurücksetzen",
+                                        "expiry":  "Dieser Link ist 1 Stunde gültig.",
+                                        "ignore":  "Falls Sie kein Passwort-Reset angefordert haben, ignorieren Sie diese E-Mail. Ihr Passwort bleibt unverändert."
                                     },
                   "passwordChanged":  {
-                                          "subject":  "Ihr Passwort wurde geÃ¤ndert - Markt.ma",
-                                          "title":  "Passwort erfolgreich geÃ¤ndert",
-                                          "intro":  "Ihr Passwort wurde erfolgreich geÃ¤ndert.",
-                                          "warning":  "Falls Sie diese Ã„nderung nicht vorgenommen haben, kontaktieren Sie sofort unseren Support."
+                                          "subject":  "Ihr Passwort wurde geändert - Markt.ma",
+                                          "title":  "Passwort erfolgreich geändert",
+                                          "intro":  "Ihr Passwort wurde erfolgreich geändert.",
+                                          "warning":  "Falls Sie diese Änderung nicht vorgenommen haben, kontaktieren Sie sofort unseren Support."
                                       },
                   "orderConfirmation":  {
-                                            "subject":  "BestellbestÃ¤tigung #{{orderNumber}} - {{storeName}}",
-                                            "title":  "Bestellung bestÃ¤tigt!",
-                                            "intro":  "Vielen Dank fÃ¼r Ihre Bestellung! Wir haben sie erhalten und bearbeiten sie.",
+                                            "subject":  "Bestellbestätigung #{{orderNumber}} - {{storeName}}",
+                                            "title":  "Bestellung bestätigt!",
+                                            "intro":  "Vielen Dank für Ihre Bestellung! Wir haben sie erhalten und bearbeiten sie.",
                                             "labelOrderNumber":  "Bestellnummer",
                                             "labelStore":  "Shop",
                                             "labelTotal":  "Gesamtbetrag",
@@ -1152,8 +1152,8 @@
                                    "labelOrderNumber":  "Bestellnummer",
                                    "labelTracking":  "Sendungsverfolgungsnummer",
                                    "labelCarrier":  "Versanddienstleister",
-                                   "outro":  "Ihr Paket sollte in den nÃ¤chsten Tagen ankommen.",
-                                   "noTracking":  "Die Sendungsverfolgungsnummer wird in KÃ¼rze verfÃ¼gbar sein.",
+                                   "outro":  "Ihr Paket sollte in den nächsten Tagen ankommen.",
+                                   "noTracking":  "Die Sendungsverfolgungsnummer wird in Kürze verfügbar sein.",
                                    "btnTrack":  "Sendung verfolgen"
                                },
                   "delivery":  {
@@ -1162,7 +1162,7 @@
                                    "intro":  "Ihre Bestellung wurde erfolgreich zugestellt. Wir hoffen, Sie sind zufrieden!",
                                    "labelOrderNumber":  "Bestellnummer",
                                    "rating":  "Wie war Ihre Erfahrung? Hinterlassen Sie eine Bewertung!",
-                                   "outro":  "Vielen Dank fÃ¼r Ihren Einkauf bei {{storeName}}!"
+                                   "outro":  "Vielen Dank für Ihren Einkauf bei {{storeName}}!"
                                },
                   "cancellation":  {
                                        "subject":  "Bestellung #{{orderNumber}} storniert - {{storeName}}",
@@ -1176,8 +1176,8 @@
                                        "labelPlan":  "Plan",
                                        "labelDaysLeft":  "Tage verbleibend",
                                        "labelAmount":  "Betrag",
-                                       "labelRenewal":  "VerlÃ¤ngerungsdatum",
-                                       "labelNext":  "NÃ¤chste VerlÃ¤ngerung",
+                                       "labelRenewal":  "Verlängerungsdatum",
+                                       "labelNext":  "Nächste Verlängerung",
                                        "labelEnd":  "Enddatum",
                                        "labelOldPlan":  "Bisheriger Plan",
                                        "labelNewPlan":  "Neuer Plan",
@@ -1186,44 +1186,44 @@
                                        "btnReactivate":  "Reaktivieren",
                                        "btnDashboard":  "Zum Dashboard",
                                        "reminder":  {
-                                                        "subject":  "Ihr Abonnement verlÃ¤ngert sich in {{daysLeft}} Tagen",
-                                                        "title":  "Ihr Abonnement verlÃ¤ngert sich bald",
-                                                        "intro":  "Ihr Abonnement wird in KÃ¼rze automatisch verlÃ¤ngert. Hier sind die Details:",
-                                                        "outro":  "Sie kÃ¶nnen jederzeit in Ihrem Konto kÃ¼ndigen."
+                                                        "subject":  "Ihr Abonnement verlängert sich in {{daysLeft}} Tagen",
+                                                        "title":  "Ihr Abonnement verlängert sich bald",
+                                                        "intro":  "Ihr Abonnement wird in Kürze automatisch verlängert. Hier sind die Details:",
+                                                        "outro":  "Sie können jederzeit in Ihrem Konto kündigen."
                                                     },
                                        "renewed":  {
-                                                       "subject":  "Ihr {{planName}}-Abonnement wurde verlÃ¤ngert",
-                                                       "title":  "Abonnement verlÃ¤ngert",
-                                                       "intro":  "Ihr Abonnement wurde erfolgreich verlÃ¤ngert.",
-                                                       "outro":  "Vielen Dank, dass Sie weiterhin zu unseren Kunden zÃ¤hlen!"
+                                                       "subject":  "Ihr {{planName}}-Abonnement wurde verlängert",
+                                                       "title":  "Abonnement verlängert",
+                                                       "intro":  "Ihr Abonnement wurde erfolgreich verlängert.",
+                                                       "outro":  "Vielen Dank, dass Sie weiterhin zu unseren Kunden zählen!"
                                                    },
                                        "expired":  {
                                                        "subject":  "Ihr {{planName}}-Abonnement ist abgelaufen",
                                                        "title":  "Abonnement abgelaufen",
-                                                       "intro":  "Ihr Abonnement ist abgelaufen. Sie wurden auf den Free-Plan zurÃ¼ckgestuft.",
-                                                       "outro":  "Sie kÃ¶nnen jederzeit erneut upgraden, um wieder Zugriff auf alle Premium-Funktionen zu erhalten."
+                                                       "intro":  "Ihr Abonnement ist abgelaufen. Sie wurden auf den Free-Plan zurückgestuft.",
+                                                       "outro":  "Sie können jederzeit erneut upgraden, um wieder Zugriff auf alle Premium-Funktionen zu erhalten."
                                                    },
                                        "cancelled":  {
-                                                         "subject":  "Ihr {{planName}}-Abonnement wurde gekÃ¼ndigt",
-                                                         "title":  "Abonnement gekÃ¼ndigt",
-                                                         "intro":  "Ihr Abonnement wurde wie gewÃ¼nscht gekÃ¼ndigt.",
-                                                         "outro":  "Wir wÃ¼rden uns freuen, Sie wieder bei uns begrÃ¼ÃŸen zu dÃ¼rfen."
+                                                         "subject":  "Ihr {{planName}}-Abonnement wurde gekündigt",
+                                                         "title":  "Abonnement gekündigt",
+                                                         "intro":  "Ihr Abonnement wurde wie gewünscht gekündigt.",
+                                                         "outro":  "Wir würden uns freuen, Sie wieder bei uns begrüßen zu dürfen."
                                                      },
                                        "upgraded":  {
                                                         "subject":  "Willkommen bei {{newPlanName}}!",
                                                         "title":  "Willkommen bei {{newPlanName}}!",
                                                         "intro":  "Ihr Abonnement wurde erfolgreich aktualisiert.",
-                                                        "outro":  "Viel SpaÃŸ mit Ihren neuen Funktionen!"
+                                                        "outro":  "Viel Spaß mit Ihren neuen Funktionen!"
                                                     }
                                    },
                   "cart":  {
                                "abandoned":  {
                                                  "subject":  "Sie haben {{itemCount}} Artikel im Warenkorb - {{storeName}}",
                                                  "title":  "Ihr Warenkorb wartet auf Sie",
-                                                 "intro":  "Wir haben bemerkt, dass Sie Artikel in Ihrem Warenkorb gelassen haben. SchlieÃŸen Sie Ihren Einkauf ab, bevor sie ausverkauft sind!",
+                                                 "intro":  "Wir haben bemerkt, dass Sie Artikel in Ihrem Warenkorb gelassen haben. Schließen Sie Ihren Einkauf ab, bevor sie ausverkauft sind!",
                                                  "outro":  "Dieser Warenkorb wird nach 7 Tagen automatisch geleert.",
                                                  "labelItems":  "Artikel im Warenkorb",
-                                                 "btnCheckout":  "ZurÃ¼ck zum Warenkorb"
+                                                 "btnCheckout":  "Zurück zum Warenkorb"
                                              }
                            }
               },
@@ -1250,3 +1250,4 @@
                   "subtitle":  "Passen Sie das Aussehen Ihres Shops an"
               }
 }
+

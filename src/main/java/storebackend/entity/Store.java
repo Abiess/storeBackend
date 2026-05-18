@@ -52,7 +52,8 @@ public class Store {
      * Wenn true: Kunden erhalten WhatsApp-Benachrichtigungen bei Order-Status-Änderungen
      * (analog zu E-Mail-Benachrichtigungen, sofern Kundennummer vorhanden).
      */
-    @Column(name = "whatsapp_notifications_enabled", nullable = false)
+    @Column(name = "whatsapp_notifications_enabled", nullable = false,
+            columnDefinition = "boolean default false")
     private boolean whatsappNotificationsEnabled = false;
 
     @Enumerated(EnumType.STRING)

@@ -77,6 +77,8 @@ CREATE TABLE IF NOT EXISTS stores (
     logo_url TEXT,
     banner_image_url TEXT,
     slider_images TEXT,
+    whatsapp_number VARCHAR(50),
+    whatsapp_notifications_enabled BOOLEAN NOT NULL DEFAULT FALSE,
     status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
