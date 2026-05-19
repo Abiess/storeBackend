@@ -4,7 +4,7 @@ SET search_path TO public;
 
 SET search_path TO public;
 
--- Plans Tabelle (muss zuerst erstellt werden wegen FK)
+-- Plans Tabelle   (muss zuerst erstellt werden wegen FK)
 CREATE TABLE IF NOT EXISTS plans (
                                      id BIGSERIAL PRIMARY KEY,
                                      name VARCHAR(50) NOT NULL UNIQUE,
