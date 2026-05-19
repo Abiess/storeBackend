@@ -1,27 +1,25 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
 import { Product, Category } from '@app/core/models';
+import { ProductCardComponent } from '../product-card.component';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 /**
  * Template 3: Compact Market Grid
- * - Inline compact filter bar (dropdown + sort)
- * - Denser 5-col grid (many products at a glance)
- * - Compact horizontal product cards
+ * - Compact inline filter bar (category dropdown + sort) — always visible
+ * - Dense 5-col grid using app-product-card with compact CSS
  * - Suited for electronics / large catalogues
  */
 @Component({
   selector: 'app-product-grid-compact',
   standalone: true,
-  imports: [CommonModule, RouterModule, TranslatePipe],
+  imports: [CommonModule, ProductCardComponent, TranslatePipe],
   template: `
     <div class="compact-wrapper">
 
-      <!-- ── INLINE FILTER BAR ── -->
+      <!-- ── INLINE FILTER BAR (always visible) ── -->
       <div class="compact-filterbar">
         <div class="filterbar-left">
-          <!-- Category dropdown -->
           <select class="filter-select" (change)="onCatChange($event)">
             <option value="">{{ 'storefront.allProducts' | translate }} ({{ products.length }})</option>
             <option *ngFor="let cat of categories" [value]="cat.id"
@@ -30,27 +28,21 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
             </option>
           </select>
 
-          <!-- Active badge -->
           <span class="active-badge" *ngIf="selectedCategory">
             {{ selectedCategory.name }}
-            <button (click)="onFilter(null)" class="badge-remove">✕</button>
+            <button (click)="onFilter(null)" class="badge-remove" aria-label="Filter entfernen">✕</button>
           </span>
         </div>
 
         <div class="filterbar-right">
           <span class="result-label">{{ filteredProducts.length }} Treffer</span>
           <select class="filter-select" (change)="onSort($event)">
-            <option value="relevant">Relevanz</option>
-            <option value="price-asc">Preis ↑</option>
-            <option value="price-desc">Preis ↓</option>
-            <option value="name-asc">Name A-Z</option>
-            <option value="newest">Neueste</option>
+            <option value="relevant">{{ 'storefront.sort.relevant' | translate }}</option>
+            <option value="price-asc">{{ 'storefront.sort.priceAsc' | translate }}</option>
+            <option value="price-desc">{{ 'storefront.sort.priceDesc' | translate }}</option>
+            <option value="name-asc">{{ 'storefront.sort.nameAsc' | translate }}</option>
+            <option value="newest">{{ 'storefront.sort.newest' | translate }}</option>
           </select>
-          <!-- View toggle (decorative) -->
-          <div class="view-toggle">
-            <button class="vt-btn vt-btn--active" title="Kompaktansicht">⊞</button>
-            <button class="vt-btn" title="Listenansicht">☰</button>
-          </div>
         </div>
       </div>
 
@@ -61,39 +53,14 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
         <button (click)="onFilter(null)" *ngIf="selectedCategory">Alle anzeigen</button>
       </div>
 
-      <!-- ── COMPACT GRID ── -->
+      <!-- ── KOMPAKTES 5-COL GRID (echte Produkte via app-product-card) ── -->
       <div class="compact-grid" *ngIf="filteredProducts.length > 0">
-        <div class="compact-card" *ngFor="let p of filteredProducts"
-             [routerLink]="['/products', p.id]">
-
-          <!-- Image -->
-          <div class="compact-image">
-            <img *ngIf="getImg(p)" [src]="getImg(p)" [alt]="p.title"
-                 loading="lazy" (error)="onErr($event)" />
-            <div class="compact-placeholder" *ngIf="!getImg(p)">📦</div>
-
-            <!-- Quick view on hover -->
-            <button class="compact-qv"
-                    (click)="$event.stopPropagation(); $event.preventDefault(); quickView.emit(p)">
-              👁
-            </button>
-          </div>
-
-          <!-- Info -->
-          <div class="compact-info">
-            <p class="compact-title">{{ p.title }}</p>
-            <div class="compact-footer">
-              <span class="compact-price">{{ p.basePrice | number:'1.2-2' }} €</span>
-              <button class="compact-cart"
-                      (click)="$event.stopPropagation(); $event.preventDefault(); addToCart.emit(p)"
-                      aria-label="In den Warenkorb">
-                <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M3 1h2.59l.83 2H17a1 1 0 01.97 1.24l-2 7A1 1 0 0115 12H8.36l-.5 2H14a1 1 0 110 2H7a1 1 0 01-.97-1.24l.5-2H4a1 1 0 01-1-1V3H2a1 1 0 110-2zm5 16a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm6 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/>
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
+        <app-product-card
+          *ngFor="let p of filteredProducts"
+          [product]="p"
+          (addToCart)="addToCart.emit(p)"
+          (quickView)="quickView.emit(p)">
+        </app-product-card>
       </div>
     </div>
   `,
@@ -138,7 +105,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       display: inline-flex;
       align-items: center;
       gap: 0.25rem;
-      background: linear-gradient(135deg, #667eea20, #764ba220);
+      background: #f0ecff;
       border: 1px solid #764ba240;
       color: #5b21b6;
       font-size: 0.775rem;
@@ -160,24 +127,8 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       color: #6b7280;
       white-space: nowrap;
     }
-    .view-toggle {
-      display: flex;
-      border: 1px solid #d1d5db;
-      border-radius: 6px;
-      overflow: hidden;
-    }
-    .vt-btn {
-      border: none;
-      background: #fff;
-      padding: 0.3rem 0.55rem;
-      cursor: pointer;
-      font-size: 0.9rem;
-      color: #9ca3af;
-      line-height: 1;
-    }
-    .vt-btn--active { background: #f3f4f6; color: #374151; }
 
-    /* ── COMPACT GRID ── */
+    /* ── KOMPAKTES GRID – 5 Spalten Desktop ── */
     .compact-grid {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
@@ -187,108 +138,24 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
     @media (max-width: 900px)  { .compact-grid { grid-template-columns: repeat(3, 1fr); } }
     @media (max-width: 600px)  { .compact-grid { grid-template-columns: repeat(2, 1fr); } }
 
-    /* ── COMPACT CARD ── */
-    .compact-card {
-      background: #fff;
-      border: 1px solid #e5e7eb;
+    /* Karten im kompakten Grid kleiner machen */
+    .compact-grid ::ng-deep .product-card {
       border-radius: 10px;
-      overflow: hidden;
-      cursor: pointer;
-      transition: box-shadow 0.2s, transform 0.2s;
-      display: flex;
-      flex-direction: column;
     }
-    .compact-card:hover {
-      box-shadow: 0 6px 20px rgba(0,0,0,0.09);
-      transform: translateY(-3px);
+    .compact-grid ::ng-deep .product-image-section {
+      padding-top: 75%; /* 4:3 Landscape */
     }
-
-    /* Image: landscape 4:3 */
-    .compact-image {
-      position: relative;
-      aspect-ratio: 4 / 3;
-      background: #f3f4f6;
-      overflow: hidden;
+    .compact-grid ::ng-deep .product-info {
+      padding: 0.625rem 0.75rem 0.75rem;
     }
-    .compact-image img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: transform 0.4s ease;
-    }
-    .compact-card:hover .compact-image img { transform: scale(1.04); }
-    .compact-placeholder {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2rem;
-      color: #d1d5db;
-    }
-    .compact-qv {
-      position: absolute;
-      bottom: 6px;
-      right: 6px;
-      width: 28px;
-      height: 28px;
-      border: none;
-      border-radius: 6px;
-      background: rgba(255,255,255,0.92);
-      cursor: pointer;
-      font-size: 0.875rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      transition: opacity 0.2s;
-    }
-    .compact-card:hover .compact-qv { opacity: 1; }
-
-    /* Info */
-    .compact-info {
-      padding: 0.6rem 0.75rem 0.75rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.35rem;
-      flex: 1;
-    }
-    .compact-title {
-      margin: 0;
+    .compact-grid ::ng-deep .product-title {
       font-size: 0.8rem;
-      color: #1f2937;
-      line-height: 1.35;
-      overflow: hidden;
-      display: -webkit-box;
       -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      flex: 1;
+      min-height: unset;
     }
-    .compact-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-top: auto;
-    }
-    .compact-price {
-      font-size: 0.9rem;
-      font-weight: 700;
-      color: #111827;
-    }
-    .compact-cart {
-      width: 28px;
-      height: 28px;
-      border: none;
-      border-radius: 6px;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: opacity 0.2s;
-    }
-    .compact-cart:hover { opacity: 0.85; }
+    .compact-grid ::ng-deep .product-description { display: none; }
+    .compact-grid ::ng-deep .price-amount { font-size: 1rem; }
+    .compact-grid ::ng-deep .btn-add-cart { width: 36px; height: 36px; }
 
     /* ── EMPTY ── */
     .compact-empty {
@@ -334,16 +201,4 @@ export class ProductGridCompactComponent {
   }
 
   onSort(event: Event): void { this.sortChange.emit((event.target as HTMLSelectElement).value); }
-
-  getImg(p: Product): string | null {
-    if (p.primaryImageUrl) return p.primaryImageUrl;
-    if (p.media?.length) {
-      const pr = p.media.find((m: any) => m.isPrimary);
-      return pr?.url ?? p.media[0]?.url ?? null;
-    }
-    return p.imageUrl ?? null;
-  }
-
-  onErr(e: Event): void { (e.target as HTMLImageElement).style.display = 'none'; }
 }
-
