@@ -26,7 +26,7 @@ export interface CustomerAddress {
   providedIn: 'root'
 })
 export class AddressBookService {
-  private apiUrl = `${environment.apiUrl}/api/customer/addresses`;
+  private apiUrl = `${environment.apiUrl}/customer/addresses`;
 
   constructor(private http: HttpClient) {}
 

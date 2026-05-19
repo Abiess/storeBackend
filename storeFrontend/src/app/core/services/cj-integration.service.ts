@@ -16,7 +16,7 @@ import {
   providedIn: 'root'
 })
 export class CJIntegrationService {
-  private apiUrl = `${environment.apiUrl}/api/cj`;
+  private apiUrl = `${environment.apiUrl}/cj`;
 
   constructor(private http: HttpClient) {}
 

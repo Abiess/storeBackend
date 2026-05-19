@@ -35,7 +35,7 @@ export interface SavedCart {
   providedIn: 'root'
 })
 export class SavedCartService {
-  private apiUrl = `${environment.apiUrl}/api/customer/saved-carts`;
+  private apiUrl = `${environment.apiUrl}/customer/saved-carts`;
 
   constructor(private http: HttpClient) {}
 

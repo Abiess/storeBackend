@@ -93,7 +93,7 @@ export interface CouponUsageDTO {
   providedIn: 'root'
 })
 export class CouponService {
-  private apiUrl = environment.apiUrl || 'http://localhost:8080';
+  private apiUrl = environment.apiUrl || 'http://localhost:8080/api';
 
   constructor(private http: HttpClient) {}
 
@@ -103,45 +103,45 @@ export class CouponService {
     if (status) {
       params = params.set('status', status);
     }
-    return this.http.get<CouponDTO[]>(`${this.apiUrl}/api/stores/${storeId}/coupons`, { params });
+    return this.http.get<CouponDTO[]>(`${this.apiUrl}/stores/${storeId}/coupons`, { params });
   }
 
   getCoupon(storeId: number, id: number): Observable<CouponDTO> {
-    return this.http.get<CouponDTO>(`${this.apiUrl}/api/stores/${storeId}/coupons/${id}`);
+    return this.http.get<CouponDTO>(`${this.apiUrl}/stores/${storeId}/coupons/${id}`);
   }
 
   createCoupon(storeId: number, coupon: CouponDTO): Observable<CouponDTO> {
-    return this.http.post<CouponDTO>(`${this.apiUrl}/api/stores/${storeId}/coupons`, coupon);
+    return this.http.post<CouponDTO>(`${this.apiUrl}/stores/${storeId}/coupons`, coupon);
   }
 
   updateCoupon(storeId: number, id: number, coupon: CouponDTO): Observable<CouponDTO> {
-    return this.http.put<CouponDTO>(`${this.apiUrl}/api/stores/${storeId}/coupons/${id}`, coupon);
+    return this.http.put<CouponDTO>(`${this.apiUrl}/stores/${storeId}/coupons/${id}`, coupon);
   }
 
   pauseCoupon(storeId: number, id: number): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/api/stores/${storeId}/coupons/${id}/pause`, {});
+    return this.http.post<void>(`${this.apiUrl}/stores/${storeId}/coupons/${id}/pause`, {});
   }
 
   resumeCoupon(storeId: number, id: number): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/api/stores/${storeId}/coupons/${id}/resume`, {});
+    return this.http.post<void>(`${this.apiUrl}/stores/${storeId}/coupons/${id}/resume`, {});
   }
 
   archiveCoupon(storeId: number, id: number): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/api/stores/${storeId}/coupons/${id}/archive`, {});
+    return this.http.post<void>(`${this.apiUrl}/stores/${storeId}/coupons/${id}/archive`, {});
   }
 
   getCouponUsage(storeId: number, id: number): Observable<CouponUsageDTO> {
-    return this.http.get<CouponUsageDTO>(`${this.apiUrl}/api/stores/${storeId}/coupons/${id}/usage`);
+    return this.http.get<CouponUsageDTO>(`${this.apiUrl}/stores/${storeId}/coupons/${id}/usage`);
   }
 
   importCoupons(storeId: number, csvContent: string): Observable<string> {
-    return this.http.post(`${this.apiUrl}/api/stores/${storeId}/coupons/import`, csvContent, {
+    return this.http.post(`${this.apiUrl}/stores/${storeId}/coupons/import`, csvContent, {
       responseType: 'text'
     });
   }
 
   exportCoupons(storeId: number): Observable<string> {
-    return this.http.get(`${this.apiUrl}/api/stores/${storeId}/coupons/export`, {
+    return this.http.get(`${this.apiUrl}/stores/${storeId}/coupons/export`, {
       responseType: 'text'
     });
   }

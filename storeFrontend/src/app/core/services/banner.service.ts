@@ -34,7 +34,7 @@ export class BannerService {
   /** Public: Storefront – kein Auth. Gibt null zurück wenn Banner deaktiviert oder Fehler. */
   getPublicBanner(storeId: number): Observable<BannerSettings | null> {
     return this.http.get<BannerSettings>(
-      `${this.base}/api/public/stores/${storeId}/banner`,
+      `${this.base}/public/stores/${storeId}/banner`,
       // Wichtig: 204 No Content nicht als Fehler behandeln
       { observe: 'response' }
     ).pipe(
@@ -46,14 +46,14 @@ export class BannerService {
   /** Admin: aktuellen Banner-Stand laden (mit Auth) */
   getAdminBanner(storeId: number): Observable<BannerSettings> {
     return this.http.get<BannerSettings>(
-      `${this.base}/api/stores/${storeId}/banner`
+      `${this.base}/stores/${storeId}/banner`
     );
   }
 
   /** Admin: Banner-Einstellungen speichern */
   saveBanner(storeId: number, settings: Partial<BannerSettings>): Observable<BannerSettings> {
     return this.http.put<BannerSettings>(
-      `${this.base}/api/stores/${storeId}/banner`,
+      `${this.base}/stores/${storeId}/banner`,
       settings
     );
   }
