@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { Product, ProductVariant } from '@app/core/models';
 import { ProductImageGalleryComponent } from './product-image-gallery.component';
 import { ProductReviewsComponent } from './product-reviews.component';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { TranslationService } from '@app/core/services/translation.service';
 
 /**
  * Product Quick View Modal Component
@@ -12,7 +14,7 @@ import { ProductReviewsComponent } from './product-reviews.component';
 @Component({
   selector: 'app-product-quick-view',
   standalone: true,
-  imports: [CommonModule, FormsModule, ProductImageGalleryComponent, ProductReviewsComponent],
+  imports: [CommonModule, FormsModule, ProductImageGalleryComponent, ProductReviewsComponent, TranslatePipe],
   template: `
     <div *ngIf="isOpen" class="quick-view-overlay" (click)="closeModal()">
       <div class="quick-view-modal" (click)="$event.stopPropagation()">
@@ -28,7 +30,7 @@ import { ProductReviewsComponent } from './product-reviews.component';
             <div *ngIf="isLoadingVariant" class="loading-overlay">
               <div class="spinner-center">
                 <div class="spinner"></div>
-                <p class="loading-text">Lade Variante...</p>
+                <p class="loading-text">{{ 'quickView.loadingVariant' | translate }}</p>
               </div>
             </div>
             
@@ -40,7 +42,7 @@ import { ProductReviewsComponent } from './product-reviews.component';
             <app-product-image-gallery
               [images]="galleryImages"
               [primaryImageUrl]="galleryPrimaryImageUrl"
-              [productTitle]="product?.title || 'Produkt'">
+              [productTitle]="product?.title || ('quickView.product' | translate)">
             </app-product-image-gallery>
           </div>
 
@@ -50,7 +52,7 @@ import { ProductReviewsComponent } from './product-reviews.component';
               <h2 class="product-title">{{ product?.title }}</h2>
               <div class="product-price">
                 <span class="price-amount">{{ getCurrentPrice() | number:'1.2-2' }} €</span>
-                <span class="price-label">inkl. MwSt.</span>
+                <span class="price-label">{{ 'quickView.inclTax' | translate }}</span>
               </div>
             </div>
 
@@ -59,18 +61,18 @@ import { ProductReviewsComponent } from './product-reviews.component';
             <!-- Produkt-Informationen (SKU, EAN, etc.) -->
             <div *ngIf="selectedVariant || product" class="product-info-grid">
               <div class="info-row" *ngIf="getCurrentSku()">
-                <span class="info-label">SKU:</span>
+                <span class="info-label">{{ 'quickView.sku' | translate }}</span>
                 <span class="info-value">{{ getCurrentSku() }}</span>
               </div>
               <div class="info-row" *ngIf="selectedVariant?.barcode">
-                <span class="info-label">EAN:</span>
+                <span class="info-label">{{ 'quickView.ean' | translate }}</span>
                 <span class="info-value">{{ selectedVariant?.barcode }}</span>
               </div>
               <div class="info-row" *ngIf="getComparePrice() > 0">
-                <span class="info-label">UVP:</span>
+                <span class="info-label">{{ 'quickView.rrp' | translate }}</span>
                 <span class="info-value compare-price">
                   <span class="strikethrough">{{ getComparePrice() | number:'1.2-2' }} €</span>
-                  <span class="savings">Sie sparen {{ getSavings() | number:'1.2-2' }} €</span>
+                  <span class="savings">{{ getYouSaveText() }}</span>
                 </span>
               </div>
             </div>
@@ -81,13 +83,13 @@ import { ProductReviewsComponent } from './product-reviews.component';
               <!-- Kein Variant gewählt → Hinweis-Banner -->
               <div *ngIf="!selectedVariant" class="variant-hint-banner">
                 <span class="hint-icon">👆</span>
-                <span>Bitte wählen Sie eine Kombination</span>
+                <span>{{ 'quickView.selectVariantHint' | translate }}</span>
               </div>
 
               <!-- Ausgewählte Variante – Zusammenfassung -->
               <div *ngIf="selectedVariant" class="selected-variant-summary">
                 <div class="summary-left">
-                  <span class="summary-label">Gewählt:</span>
+                  <span class="summary-label">{{ 'quickView.chosen' | translate }}</span>
                   <span class="summary-value">{{ getVariantDisplayName(selectedVariant) }}</span>
                 </div>
                 <div class="summary-right">
@@ -116,7 +118,7 @@ import { ProductReviewsComponent } from './product-reviews.component';
                     [class.chip-unavailable]="!isOptionCombinationAvailable(group.key, value)"
                     [class.chip-has-color]="getColorHex(value) !== null"
                     (click)="selectOptionValue(group.key, value)"
-                    [title]="value + (!isOptionCombinationAvailable(group.key, value) ? ' – ausverkauft' : '')">
+                    [title]="value + (!isOptionCombinationAvailable(group.key, value) ? ' ' + ('quickView.soldOutTooltip' | translate) : '')">
 
                     <!-- Farbfläche -->
                     <span *ngIf="getColorHex(value) as hex"
@@ -137,7 +139,7 @@ import { ProductReviewsComponent } from './product-reviews.component';
               <!-- Fallback: Wenn keine option-Gruppen erkannt → alte Chip-Liste -->
               <div *ngIf="getOptionGroups().length === 0" class="option-group">
                 <div class="option-group-header">
-                  <span class="option-group-name">Variante wählen</span>
+                  <span class="option-group-name">{{ 'quickView.selectVariantGroup' | translate }}</span>
                 </div>
                 <div class="option-chips">
                   <button
@@ -155,7 +157,7 @@ import { ProductReviewsComponent } from './product-reviews.component';
 
             <!-- Menge -->
             <div class="quantity-section">
-              <label class="quantity-label">Menge:</label>
+              <label class="quantity-label">{{ 'quickView.quantity' | translate }}</label>
               <div class="quantity-controls">
                 <button class="qty-btn" (click)="decreaseQuantity()" [disabled]="quantity <= 1">
                   −
@@ -186,7 +188,7 @@ import { ProductReviewsComponent } from './product-reviews.component';
 
               <button class="btn btn-secondary btn-view-details" (click)="viewDetails()">
                 <span class="btn-icon">👁️</span>
-                <span class="btn-text">Details ansehen</span>
+                <span class="btn-text">{{ 'quickView.viewDetails' | translate }}</span>
               </button>
             </div>
 
@@ -194,15 +196,15 @@ import { ProductReviewsComponent } from './product-reviews.component';
             <div class="additional-info">
               <div class="info-item">
                 <span class="info-icon">✓</span>
-                <span class="info-text">Kostenloser Versand ab 50€</span>
+                <span class="info-text">{{ 'quickView.freeShippingInfo' | translate }}</span>
               </div>
               <div class="info-item">
                 <span class="info-icon">↩</span>
-                <span class="info-text">30 Tage Rückgaberecht</span>
+                <span class="info-text">{{ 'quickView.returnsInfo' | translate }}</span>
               </div>
               <div class="info-item">
                 <span class="info-icon">🔒</span>
-                <span class="info-text">Sichere Bezahlung</span>
+                <span class="info-text">{{ 'quickView.securePaymentInfo' | translate }}</span>
               </div>
             </div>
           </div>
@@ -923,12 +925,10 @@ export class ProductQuickViewComponent implements OnInit, OnChanges {
   isLoadingVariant = false;
   loadingVariantId: number | null = null;
 
-  /** ✅ FIX: Stabile Properties statt Methoden-Aufrufe im Template.
-   *  getProductImages() im Template erzeugt bei jedem Change-Detection-Zyklus
-   *  eine neue Array-Referenz → ngOnChanges der Gallery feuert konstant → Index-Reset.
-   *  Diese Properties werden nur bei echten Änderungen (Produkt/Variante) aktualisiert. */
   galleryImages: string[] = [];
   galleryPrimaryImageUrl: string | undefined = undefined;
+
+  constructor(private translationService: TranslationService) {}
 
   ngOnInit(): void {
     this.initializeProduct();
@@ -1023,9 +1023,15 @@ export class ProductQuickViewComponent implements OnInit, OnChanges {
     return !!(this.product?.variants && this.product.variants.length > 0);
   }
 
+  /** Übersetzter "Sie sparen X €" Text – für Template */
+  getYouSaveText(): string {
+    const amount = this.getSavings().toFixed(2);
+    return this.translationService.translate('quickView.youSave', { amount });
+  }
+
   /**
    * Generiert Anzeigename für Variante aus option1/option2/option3
-   * Fallback: SKU oder "Variante #ID"
+   * Fallback: SKU oder übersetzter "Variante #ID"
    */
   getVariantDisplayName(variant: ProductVariant): string {
     // Prüfe ob name direkt vorhanden ist
@@ -1047,8 +1053,8 @@ export class ProductQuickViewComponent implements OnInit, OnChanges {
       return variant.sku;
     }
 
-    // Last resort: ID
-    return `Variante #${variant.id}`;
+    // Last resort: ID (übersetzt)
+    return this.translationService.translate('quickView.variantFallback', { id: variant.id });
   }
 
   // ============================================================
@@ -1080,11 +1086,11 @@ export class ProductQuickViewComponent implements OnInit, OnChanges {
     const lower = values.map(v => v.toLowerCase());
     const colorHints = ['rot','blau','grün','gruen','schwarz','weiss','weiß','grau','gelb','orange','pink','lila','braun','beige','gold','silber','red','blue','green','black','white','gray','grey','yellow','violet','navy','bordeaux','türkis','cyan','magenta','purple'];
     const sizeHints  = ['xs','s','m','l','xl','xxl','xxxl','2xl','3xl','small','medium','large','klein','mittel','gross','groß','one size'];
-    if (lower.some(v => colorHints.includes(v))) return 'Farbe';
-    if (lower.some(v => sizeHints.includes(v)))  return 'Größe';
+    if (lower.some(v => colorHints.includes(v))) return this.translationService.translate('quickView.optionColor');
+    if (lower.some(v => sizeHints.includes(v)))  return this.translationService.translate('quickView.optionSize');
     // Numerische Größen (Schuhe 36–50)
-    if (lower.every(v => /^\d{2}(\.\d)?$/.test(v))) return 'Größe';
-    return 'Option';
+    if (lower.every(v => /^\d{2}(\.\d)?$/.test(v))) return this.translationService.translate('quickView.optionSize');
+    return this.translationService.translate('quickView.optionGeneric');
   }
 
   /** Gibt den aktuell gewählten Wert für eine Option zurück. */
@@ -1165,9 +1171,9 @@ export class ProductQuickViewComponent implements OnInit, OnChanges {
   /** Gibt Stock-Badge-Text zurück oder null wenn kein Badge nötig. */
   getStockBadge(variant: ProductVariant | null): string | null {
     if (!variant || variant.stockQuantity === null || variant.stockQuantity === undefined) return null;
-    if (variant.stockQuantity <= 0) return 'Ausverkauft';
-    if (variant.stockQuantity <= 3) return `Nur noch ${variant.stockQuantity}!`;
-    if (variant.stockQuantity <= 10) return 'Wenige übrig';
+    if (variant.stockQuantity <= 0) return this.translationService.translate('product.soldOut');
+    if (variant.stockQuantity <= 3) return this.translationService.translate('quickView.stockVeryLow', { count: variant.stockQuantity });
+    if (variant.stockQuantity <= 10) return this.translationService.translate('quickView.stockLow');
     return null;
   }
 
@@ -1291,27 +1297,27 @@ export class ProductQuickViewComponent implements OnInit, OnChanges {
    */
   getAddToCartLabel(): string {
     if (this.isAddingToCart) {
-      return 'Wird hinzugefügt...';
+      return this.translationService.translate('product.adding');
     }
     // Varianten vorhanden aber keine ausgewählt
     if (this.hasVariants() && !this.selectedVariant) {
-      return 'Variante wählen';
+      return this.translationService.translate('quickView.selectVariantGroup');
     }
     // Variante ausgewählt aber nicht auf Lager
     if (this.hasVariants() && this.selectedVariant &&
         this.selectedVariant.stockQuantity !== null &&
         this.selectedVariant.stockQuantity !== undefined &&
         this.selectedVariant.stockQuantity <= 0) {
-      return 'Nicht verfügbar';
+      return this.translationService.translate('product.outOfStock');
     }
     // Kein Variant-Produkt aber stock explizit auf 0 gesetzt
     if (!this.hasVariants() &&
         this.product?.stock !== null &&
         this.product?.stock !== undefined &&
         this.product.stock <= 0) {
-      return 'Nicht verfügbar';
+      return this.translationService.translate('product.outOfStock');
     }
-    return 'In den Warenkorb';
+    return this.translationService.translate('product.addToCart');
   }
 
   increaseQuantity(): void {

@@ -888,6 +888,30 @@
                   "management":  "إدارة الثيم",
                   "subtitle":  "خصّص مظهر متجرك"
               },
+    "quickView":  {
+                      "loadingVariant":  "جاري تحميل المتغير...",
+                      "product":  "منتج",
+                      "inclTax":  "شامل الضريبة",
+                      "sku":  "رمز المنتج:",
+                      "ean":  "الباركود:",
+                      "rrp":  "السعر المقترح:",
+                      "youSave":  "توفر {{amount}} €",
+                      "selectVariantHint":  "يرجى اختيار تركيبة",
+                      "chosen":  "المختار:",
+                      "selectVariantGroup":  "اختر الخيار",
+                      "soldOutTooltip":  "– نفد المخزون",
+                      "quantity":  "الكمية:",
+                      "viewDetails":  "عرض التفاصيل",
+                      "freeShippingInfo":  "شحن مجاني من 50€",
+                      "returnsInfo":  "سياسة إرجاع 30 يوماً",
+                      "securePaymentInfo":  "دفع آمن",
+                      "optionColor":  "اللون",
+                      "optionSize":  "الحجم",
+                      "optionGeneric":  "الخيار",
+                      "stockVeryLow":  "بقي {{count}} فقط!",
+                      "stockLow":  "كمية محدودة",
+                      "variantFallback":  "متغير #{{id}}"
+                  },
     "banner":  {
                    "settings":  {
                                     "title":  "إعدادات شريط الإعلانات",

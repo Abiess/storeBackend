@@ -1257,6 +1257,30 @@
                   "management":  "Theme Management",
                   "subtitle":  "Customize the look and feel of your store"
               },
+    "quickView":  {
+                      "loadingVariant":  "Loading variant...",
+                      "product":  "Product",
+                      "inclTax":  "incl. VAT",
+                      "sku":  "SKU:",
+                      "ean":  "EAN:",
+                      "rrp":  "RRP:",
+                      "youSave":  "You save {{amount}} €",
+                      "selectVariantHint":  "Please select a combination",
+                      "chosen":  "Selected:",
+                      "selectVariantGroup":  "Choose variant",
+                      "soldOutTooltip":  "– sold out",
+                      "quantity":  "Quantity:",
+                      "viewDetails":  "View details",
+                      "freeShippingInfo":  "Free shipping from €50",
+                      "returnsInfo":  "30-day return policy",
+                      "securePaymentInfo":  "Secure payment",
+                      "optionColor":  "Color",
+                      "optionSize":  "Size",
+                      "optionGeneric":  "Option",
+                      "stockVeryLow":  "Only {{count}} left!",
+                      "stockLow":  "Limited stock",
+                      "variantFallback":  "Variant #{{id}}"
+                  },
     "banner":  {
                    "settings":  {
                                     "title":  "Promo Banner Settings",

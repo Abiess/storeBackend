@@ -1260,6 +1260,30 @@
                    "management":  "Theme-Verwaltung",
                    "subtitle":  "Passen Sie das Aussehen Ihres Shops an"
                },
+    "quickView":  {
+                      "loadingVariant":  "Lade Variante...",
+                      "product":  "Produkt",
+                      "inclTax":  "inkl. MwSt.",
+                      "sku":  "SKU:",
+                      "ean":  "EAN:",
+                      "rrp":  "UVP:",
+                      "youSave":  "Sie sparen {{amount}} €",
+                      "selectVariantHint":  "Bitte wählen Sie eine Kombination",
+                      "chosen":  "Gewählt:",
+                      "selectVariantGroup":  "Variante wählen",
+                      "soldOutTooltip":  "– ausverkauft",
+                      "quantity":  "Menge:",
+                      "viewDetails":  "Details ansehen",
+                      "freeShippingInfo":  "Kostenloser Versand ab 50€",
+                      "returnsInfo":  "30 Tage Rückgaberecht",
+                      "securePaymentInfo":  "Sichere Bezahlung",
+                      "optionColor":  "Farbe",
+                      "optionSize":  "Größe",
+                      "optionGeneric":  "Option",
+                      "stockVeryLow":  "Nur noch {{count}}!",
+                      "stockLow":  "Wenige übrig",
+                      "variantFallback":  "Variante #{{id}}"
+                  },
     "banner":  {
                    "settings":  {
                                     "title":  "Promo-Banner Einstellungen",
