@@ -56,9 +56,14 @@ export class BannerService {
 
   /**
    * Public: Storefront – kein Auth.
-   * • 200 OK + body → Gibt die konfigurierten Settings zurück (enabled=false respektiert)
-   * • 204 No Content → Noch nicht konfiguriert → Client-Default mit enabled=true
-   * • Fehler         → Client-Default mit enabled=true (Storefront crasht nie wegen Banner)
+   *
+   * Logik:
+   * • 204 No Content           → noch nie konfiguriert → Client-Default (enabled=true)
+   * • 200 + enabled=false      → prüfen ob jemals gespeichert (updatedAt):
+   *     – updatedAt fehlt/null → Backend-Default, nie explizit gespeichert → Client-Default
+   *     – updatedAt vorhanden  → Admin hat bewusst deaktiviert → respektieren (kein Banner)
+   * • 200 + enabled=true       → zeigen
+   * • Fehler                   → Client-Default (Storefront crasht nie wegen Banner)
    */
   getPublicBanner(storeId: number): Observable<BannerSettings> {
     return this.http.get<BannerSettings>(
@@ -66,11 +71,17 @@ export class BannerService {
       { observe: 'response' }
     ).pipe(
       map(response => {
+        // 204 = noch nicht konfiguriert → Defaults anzeigen
         if (response.status === 204 || !response.body) {
-          // 204 = noch nicht konfiguriert → Client-Default anzeigen
           return this.buildClientDefault(storeId);
         }
-        return response.body;
+        const settings = response.body;
+        // enabled=false OHNE updatedAt = Server-Default, Admin hat nie gespeichert → Defaults
+        // enabled=false MIT updatedAt  = Admin hat explizit deaktiviert → respektieren
+        if (!settings.enabled && !settings.updatedAt) {
+          return this.buildClientDefault(storeId);
+        }
+        return settings;
       }),
       catchError(() => of(this.buildClientDefault(storeId)))
     );

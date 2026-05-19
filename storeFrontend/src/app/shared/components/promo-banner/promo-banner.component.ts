@@ -196,6 +196,7 @@ export class PromoBannerComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     // Sofort Defaults anzeigen – BEVOR API-Antwort kommt (kein leeres Flash)
     this.applySettings(this.defaultSettings());
+    this.cdr.markForCheck(); // OnPush: explizit triggern damit Defaults sofort gerendert werden
 
     if (!this.storeId) {
       // Kein storeId → Defaults behalten und anzeigen
