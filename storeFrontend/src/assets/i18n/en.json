@@ -515,9 +515,9 @@
                        "noProductsYet":  "No products available yet",
                        "noProductsYetHint":  "We are working on adding new products.",
                        "showAllProducts":  "Show all products",
-                       "highlights":  "? Highlights",
-                       "bestsellers":  "?? Bestsellers",
-                       "newArrivals":  "? New Arrivals",
+                       "highlights":  "Highlights",
+                       "bestsellers":  "Bestsellers",
+                       "newArrivals":  "New Arrivals",
                        "sort":  {
                                     "relevant":  "Relevance",
                                     "priceAsc":  "Price: Low to High",
