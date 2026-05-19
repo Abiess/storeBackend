@@ -85,8 +85,7 @@ import {TranslateService} from "@ngx-translate/core";
           </button>
           <button class="hint-banner__close" aria-label="Close">✕</button>
         </div>
-             Plan-Status sitzt jetzt fusioniert oben in der Navbar (.plan-pill)
-             und Detail-Verbrauch wird unten / auf /subscription gezeigt. -->
+             
 
         <div class="dashboard-header">
           <div>
