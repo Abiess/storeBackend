@@ -147,7 +147,7 @@ jwt:
 whatsapp:
   enabled: ${WHATSAPP_ENABLED:true}
   phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID:1083661678159369}
-  access-token: ${WHATSAPP_ACCESS_TOKEN:EAAUgAfPZCuroBRIhIvJvPe1o1oSdtap5IfQdklsZA2NL51SXk702S3HUFzcc1ZAbVxJvcNCUM6vJ0mZC4K5pOD3KqmcEZCjWRfZCyPVD5Y0D8iubIZBP8GHsuD3KijbvWCzyU5vzsesou2adWZB3HRJqhL7ZC6DT1Ouz8Chf5hSeZCx8IEVRUDqgXd29r1IGsQxeIORkFun0ZAcpIg8uq3ZBCtixFhbG009e1OZA2Nm1glCENwtwDsYZAjC5y8Aiqtg4qLP0DXkzUMMY4Vqrw1jHqfaUm2lpcZD}
+  access-token: ${WHATSAPP_ACCESS_TOKEN:EAAUgAfPZCuroBRYon0KaFhgUXfJGIhTsno4ZC6wqIZC3dWAKaDBg3CY2t1zfnRTZADypLErxqbzYE1lAZA9JOXhpWVojZBHAvTUtVwZAmZAiXPznazCLfmZCn42RdzCFevr5ZCb9HeNUIEZByAz2sOoQ9ZBsQxwAvSGe0z2oSZCaH7I9Br5ZAkVyh4ZB6kaNthPZCRnehjqxJQuZA7C8cR4drLUnTqZAzlKDBLu2Gx58RWOiGxIGpqYc6PRetkXHssgKXJnuttRx4jYA7aoTojX0FJyG5zqverfpkZD}
   # Optional: approved template for verification code
   # Leave empty = plain text message (only for verified test numbers)
   verification-template-name: ${WHATSAPP_TEMPLATE_NAME:}
