@@ -1596,9 +1596,11 @@ export class StoreThemeComponent implements OnInit, OnDestroy {
     this.applyingTemplate = code;
     this.error = null;
     this.themeService.updateTheme(this.activeTheme.id, { template: code as any }).subscribe({
-      next: (theme) => {
-        this.activeTheme = theme;
-        this.themeService.applyTheme(theme);
+      next: () => {
+        // Nur template-Feld lokal überschreiben – applyTheme() NICHT aufrufen,
+        // weil das Backend-DTO colorsJson als String zurückgibt (nicht geparst).
+        // Grid-Layout ändert keine CSS-Variablen, nur die Struktur der Storefront.
+        this.activeTheme = { ...this.activeTheme!, template: code as any };
         this.applyingTemplate = null;
         this.successMessage = `Grid-Layout auf "${this.getGridTemplateName(code)}" gesetzt ✓`;
         this.reloadLivePreview();

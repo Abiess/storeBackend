@@ -302,10 +302,29 @@ export class ThemeService {
    * Aktualisiere ein Theme
    */
   updateTheme(themeId: number, updates: Partial<StoreTheme>): Observable<StoreTheme> {
-    console.log('🎨 Updating theme', themeId, updates);
-    return this.http.put<StoreTheme>(`${this.API_URL}/${themeId}`, updates).pipe(
-      tap(theme => this.currentTheme$.next(theme))
+    return this.http.put<any>(`${this.API_URL}/${themeId}`, updates).pipe(
+      map(dto => this.convertThemeDto(dto)),
+      tap(theme => {
+        // Nur in currentTheme$ pushen wenn vollständig (hat colors-Objekt)
+        if (theme.colors) this.currentTheme$.next(theme);
+      })
     );
+  }
+
+  /** Konvertiert ein rohes Backend-Theme-DTO zu einem vollständigen StoreTheme-Objekt.
+   *  Parst colorsJson / typographyJson / layoutJson falls sie als Strings kommen. */
+  private convertThemeDto(dto: any): StoreTheme {
+    const parse = (val: any) => {
+      if (!val) return val;
+      if (typeof val === 'string') { try { return JSON.parse(val); } catch { return val; } }
+      return val;
+    };
+    return {
+      ...dto,
+      colors:     parse(dto.colorsJson    ?? dto.colors),
+      typography: parse(dto.typographyJson ?? dto.typography),
+      layout:     parse(dto.layoutJson    ?? dto.layout),
+    } as StoreTheme;
   }
 
   /**
