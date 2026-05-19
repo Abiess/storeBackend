@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
+import { AuthService } from './auth.service';
 
 export interface WishlistItem {
   id: number;
@@ -41,8 +42,11 @@ export class WishlistService {
   private wishlistCountSubject = new BehaviorSubject<number>(0);
   public wishlistCount$ = this.wishlistCountSubject.asObservable();
 
-  constructor(private http: HttpClient) {
-    this.loadWishlistCount();
+  constructor(private http: HttpClient, private authService: AuthService) {
+    // Nur laden wenn User eingeloggt ist – kein unnötiger Auth-Fehler für Gäste
+    if (this.authService.isLoggedIn()) {
+      this.loadWishlistCount();
+    }
   }
 
   /**

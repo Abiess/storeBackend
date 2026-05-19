@@ -22,6 +22,7 @@ export class AuthInterceptor implements HttpInterceptor {
       '/api/public/simple-cart',
       '/api/public/stores/',
       '/api/cart/',
+      '/api/customer/',  // Kunden-Endpoints: Token wenn vorhanden, sonst still ignorieren
     ];
 
     // FIXED: Checkout braucht IMMER einen Token!
@@ -52,7 +53,6 @@ export class AuthInterceptor implements HttpInterceptor {
     // FIXED: Checkout erfordert IMMER Token
     if (requiresAuth) {
       if (token) {
-        console.log('🔒 Authenticated request with token:', req.url);
         const clonedReq = req.clone({
           headers: req.headers.set('Authorization', `Bearer ${token}`)
         });
@@ -65,34 +65,30 @@ export class AuthInterceptor implements HttpInterceptor {
 
     // Öffentliche Endpoints ohne Token
     if (isPublicEndpoint || isPublicStorefrontRequest) {
-      console.log('🔓 Public request, no token:', req.url);
       return next.handle(req);
     }
 
     // Optionale Auth-Endpoints: Token senden falls vorhanden
     if (isOptionalAuth) {
       if (token) {
-        console.log('🔒 Authenticated request with token:', req.url);
         const clonedReq = req.clone({
           headers: req.headers.set('Authorization', `Bearer ${token}`)
         });
         return next.handle(clonedReq);
       } else {
-        console.log('🔓 Public request, no token:', req.url);
         return next.handle(req);
       }
     }
 
     // Für alle anderen Requests: Token hinzufügen wenn vorhanden
     if (token) {
-      console.log('🔒 Authenticated request with token:', req.url);
       const clonedReq = req.clone({
         headers: req.headers.set('Authorization', `Bearer ${token}`)
       });
       return next.handle(clonedReq);
     }
 
-    console.log('⚠️ No token available for:', req.url);
+    console.debug('🔕 No token for request (not logged in):', req.url);
     return next.handle(req);
   }
 }
