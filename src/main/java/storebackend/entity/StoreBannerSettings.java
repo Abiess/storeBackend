@@ -2,8 +2,11 @@ package storebackend.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 
@@ -11,12 +14,18 @@ import java.time.LocalDateTime;
  * Ein-Zu-Eins-Zuordnung pro Store.
  * Speichert alle Konfigurationsparameter für das „Breaking News / Promo Banner".
  * Texte werden mehrsprachig als JSON gespeichert: {"de": "...", "en": "...", "ar": "..."}
+ *
+ * WICHTIG: @Data wird NICHT verwendet – es würde das lazy `store`-Feld in hashCode/equals
+ * einbeziehen und Hibernate's Entity-Tracking korrumpieren → StaleObjectStateException.
  */
 @Entity
 @Table(name = "store_banner_settings")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = "store")
+@EqualsAndHashCode(of = "storeId")
 public class StoreBannerSettings {
 
     @Id

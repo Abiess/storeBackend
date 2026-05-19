@@ -53,8 +53,9 @@ public class StoreBannerService {
                 .orElseGet(() -> {
                     StoreBannerSettings s = new StoreBannerSettings();
                     s.setStore(store);
-                    // Explizit setzen – wichtig für @MapsId damit save() korrekt arbeitet
-                    s.setStoreId(store.getId());
+                    // KEIN s.setStoreId() – @MapsId leitet die PK automatisch aus store.getId() ab.
+                    // Wird storeId manuell gesetzt, hält Hibernate die Entity für detached
+                    // → versucht UPDATE statt INSERT → StaleObjectStateException.
                     return s;
                 });
 
