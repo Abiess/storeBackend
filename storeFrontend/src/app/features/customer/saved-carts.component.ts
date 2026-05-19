@@ -6,6 +6,7 @@ import { SavedCartService, SavedCart, SavedCartItem } from '../../core/services/
 import { CartService, Cart, CartItem } from '../../core/services/cart.service';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { take } from 'rxjs/operators';
+import { toDate } from '../../core/utils/date.utils';
 
 @Component({
   selector: 'app-saved-carts',
@@ -132,6 +133,11 @@ export class SavedCartsComponent implements OnInit {
 
   getProductImage(item: SavedCartItem): string {
     return item.productImageUrl || '/assets/placeholder.png';
+  }
+
+  /** Spring LocalDateTime-Array oder ISO-String → JS Date für DatePipe */
+  parseDate(value: any): Date | null {
+    return toDate(value);
   }
 
   isExpired(cart: SavedCart): boolean {

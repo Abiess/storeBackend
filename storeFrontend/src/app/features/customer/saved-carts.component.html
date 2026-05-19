@@ -48,7 +48,7 @@
         <div class="cart-info">
           <h3>{{ cart.name }}</h3>
           <p class="cart-date">
-            <i class="fas fa-calendar"></i> {{ cart.createdAt | date: 'dd.MM.yyyy HH:mm' }}
+            <i class="fas fa-calendar"></i> {{ parseDate(cart.createdAt) | date: 'dd.MM.yyyy HH:mm' }}
           </p>
           <p class="cart-description" *ngIf="cart.description">{{ cart.description }}</p>
         </div>

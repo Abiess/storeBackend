@@ -12,6 +12,7 @@ import { CustomerAddressesComponent } from './customer-addresses.component';
 import { CustomerPasswordChangeComponent } from './customer-password-change.component';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { TranslationService } from '@app/core/services/translation.service';
+import { toDate } from '../../core/utils/date.utils';
 
 type CustomerTab = 'overview' | 'orders' | 'profile' | 'addresses' | 'password';
 
@@ -133,7 +134,7 @@ interface OrderHistoryVM {
                   <div class="order-info">
                     <strong>{{ order.orderNumber }}</strong>
                     <span class="order-date">
-                      {{ order.createdAt ? (order.createdAt | date:'dd.MM.yyyy') : '-' }}
+                      {{ parseDate(order.createdAt) | date:'dd.MM.yyyy' }}
                     </span>
                   </div>
                   <span class="status-badge" [class]="'status-' + (order.status || 'PENDING').toLowerCase()">
@@ -170,7 +171,7 @@ interface OrderHistoryVM {
                   <div>
                     <h3>{{ 'profile.orderLabel' | translate }} {{ order.orderNumber }}</h3>
                     <p class="order-date">
-                      {{ order.createdAt ? (order.createdAt | date:'dd.MM.yyyy HH:mm') : '-' }}
+                      {{ parseDate(order.createdAt) | date:'dd.MM.yyyy HH:mm' }}
                     </p>
                   </div>
                   <span class="status-badge" [class]="'status-' + (order.status || 'PENDING').toLowerCase()">
@@ -716,5 +717,10 @@ export class CustomerProfileComponent implements OnInit {
 
     goToShop(): void {
         this.router.navigate(['/storefront']);
+    }
+
+    /** Spring LocalDateTime-Array oder ISO-String → JS Date für DatePipe */
+    parseDate(value: any): Date | null {
+        return toDate(value);
     }
 }

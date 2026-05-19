@@ -13,6 +13,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
+import { toDate } from '../../core/utils/date.utils';
 import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
 import {
   DeliverySettings, DeliveryProvider, DeliveryZone,
@@ -279,7 +280,7 @@ import {
                   <div class="review-head">
                     <strong>{{ rev.reviewerStoreName }}</strong>
                     <span class="stars small">{{ renderStars(rev.rating) }}</span>
-                    <span class="review-date">{{ rev.createdAt | date:'dd.MM.yyyy' }}</span>
+                    <span class="review-date">{{ parseDate(rev.createdAt) | date:'dd.MM.yyyy' }}</span>
                   </div>
                   <p class="review-comment">{{ rev.comment }}</p>
                   <div class="review-scores">
@@ -1053,5 +1054,10 @@ export class DeliveryManagementComponent implements OnInit, OnDestroy {
       estimatedInternationalDays: undefined,
       maxWeightKg: undefined
     };
+  }
+
+  /** Spring LocalDateTime-Array oder ISO-String → JS Date für DatePipe */
+  parseDate(value: any): Date | null {
+    return toDate(value);
   }
 }

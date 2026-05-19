@@ -10,6 +10,7 @@ import { ProductnavigationBarComponent } from '@app/features/productnavigation-b
 import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
 import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
 import {StoreNavigationComponent} from "@app/shared/components/store-navigation.component";
+import { toDate } from '@app/core/utils/date.utils';
 
 @Component({
   selector: 'app-store-reviews-manager',
@@ -136,7 +137,7 @@ import {StoreNavigationComponent} from "@app/shared/components/store-navigation.
                 <div class="reviewer-avatar">{{ getInitials(review.customerName) }}</div>
                 <div>
                   <strong class="reviewer-name">{{ review.customerName }}</strong>
-                  <span class="review-date">{{ review.createdAt | date:'dd.MM.yyyy HH:mm' }}</span>
+                  <span class="review-date">{{ parseDate(review.createdAt) | date:'dd.MM.yyyy HH:mm' }}</span>
                 </div>
               </div>
               <div class="review-badges">
@@ -547,6 +548,11 @@ export class StoreReviewsManagerComponent implements OnInit, OnDestroy {
   loadPage(page: number): void {
     this.currentPage = page;
     this.loadReviews();
+  }
+
+  /** Spring LocalDateTime-Array oder ISO-String → JS Date für DatePipe */
+  parseDate(value: any): Date | null {
+    return toDate(value);
   }
 }
 

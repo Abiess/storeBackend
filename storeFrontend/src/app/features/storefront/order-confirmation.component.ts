@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { CheckoutService, OrderDetails } from '../../core/services/checkout.service';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { TranslationService } from '../../core/services/translation.service';
+import { toDate } from '../../core/utils/date.utils';
 
 @Component({
   selector: 'app-order-confirmation',
@@ -45,8 +46,8 @@ import { TranslationService } from '../../core/services/translation.service';
             </div>
             <div class="detail-row">
               <span>{{ 'order.date' | translate }}:</span>
-              <!-- NG02100-Fix: DatePipe wirft bei leerem String / ungültigem Datum → null-Guard -->
-              <strong>{{ order.createdAt ? (order.createdAt | date:'dd.MM.yyyy HH:mm') : '–' }}</strong>
+              <!-- toDate() konvertiert Spring-LocalDateTime-Array → JS Date, DatePipe-sicher -->
+              <strong>{{ parseDate(order.createdAt) | date:'dd.MM.yyyy HH:mm' }}</strong>
             </div>
             <div class="detail-row">
               <span>{{ 'order.status' | translate }}:</span>
@@ -364,6 +365,11 @@ export class OrderConfirmationComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  /** Spring LocalDateTime-Array oder ISO-String → JS Date für DatePipe */
+  parseDate(value: any): Date | null {
+    return toDate(value);
   }
 
   getStatusLabel(status: string): string {

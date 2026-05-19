@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { ProductReviewService, ProductReview, CreateReviewRequest } from '@app/core/services/product-review.service';
 import { AuthService } from '@app/core/services/auth.service';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { toDate } from '@app/core/utils/date.utils';
 
 @Component({
   selector: 'app-product-reviews',
@@ -113,7 +114,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
                 ✓ {{ 'reviews.verifiedPurchase' | translate }}
               </span>
             </div>
-            <div class="review-date">{{ review.createdAt | date:'shortDate' }}</div>
+            <div class="review-date">{{ parseDate(review.createdAt) | date:'shortDate' }}</div>
           </div>
 
           <div class="review-rating">
@@ -581,6 +582,11 @@ export class ProductReviewsComponent implements OnInit {
       case 1: return this.stats.oneStarCount || 0;
       default: return 0;
     }
+  }
+
+  /** Spring LocalDateTime-Array oder ISO-String → JS Date für DatePipe */
+  parseDate(value: any): Date | null {
+    return toDate(value);
   }
 }
 
