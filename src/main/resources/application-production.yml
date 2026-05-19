@@ -146,6 +146,8 @@ jwt:
 # Phone Number ID and Access Token from Meta Developer Portal
 whatsapp:
   enabled: ${WHATSAPP_ENABLED:true}
+  order-template-name: ${WHATSAPP_ORDER_TEMPLATE_NAME:order_confirmation_de}
+  order-template-lang: ${WHATSAPP_ORDER_TEMPLATE_LANG:de}
   phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID:1083661678159369}
   access-token: ${WHATSAPP_ACCESS_TOKEN:EAAUgAfPZCuroBRYon0KaFhgUXfJGIhTsno4ZC6wqIZC3dWAKaDBg3CY2t1zfnRTZADypLErxqbzYE1lAZA9JOXhpWVojZBHAvTUtVwZAmZAiXPznazCLfmZCn42RdzCFevr5ZCb9HeNUIEZByAz2sOoQ9ZBsQxwAvSGe0z2oSZCaH7I9Br5ZAkVyh4ZB6kaNthPZCRnehjqxJQuZA7C8cR4drLUnTqZAzlKDBLu2Gx58RWOiGxIGpqYc6PRetkXHssgKXJnuttRx4jYA7aoTojX0FJyG5zqverfpkZD}
   # Optional: approved template for verification code
