@@ -20,6 +20,10 @@ import { ClassicShopLayoutComponent } from './components/classic-shop-layout.com
 import { ElectronicsProLayoutComponent } from './components/electronics-pro-layout.component';
 import { FashionEditorialLayoutComponent } from './components/fashion-editorial-layout.component';
 import { PromoBannerComponent } from '@app/shared/components/promo-banner/promo-banner.component';
+import { ProductGridClassicComponent } from './components/product-grid-classic.component';
+import { ProductGridFashionComponent } from './components/product-grid-fashion.component';
+import { ProductGridCompactComponent } from './components/product-grid-compact.component';
+import { ProductGridMarketplaceComponent } from './components/product-grid-marketplace.component';
 
 /**
  * Dedizierte Storefront-Landing-Page für Subdomains (abc.markt.ma)
@@ -39,7 +43,11 @@ import { PromoBannerComponent } from '@app/shared/components/promo-banner/promo-
     ClassicShopLayoutComponent,
     ElectronicsProLayoutComponent,
     FashionEditorialLayoutComponent,
-    PromoBannerComponent
+    PromoBannerComponent,
+    ProductGridClassicComponent,
+    ProductGridFashionComponent,
+    ProductGridCompactComponent,
+    ProductGridMarketplaceComponent
   ],
   templateUrl: './storefront-landing.component.html',
   styleUrls: ['./storefront-landing.component.scss']
@@ -77,6 +85,20 @@ export class StorefrontLandingComponent implements OnInit {
 
   /** Aktiver Template-Code für dynamisches Layout-Switching */
   activeTemplateCode: string = 'MODERN_GRID';
+
+  /**
+   * Gruppiert den activeTemplateCode in 4 Grid-Template-Gruppen.
+   * CLASSIC | FASHION | COMPACT | MARKETPLACE
+   */
+  get activeGridTemplate(): string {
+    const classic   = ['CLASSIC_BOOTSTRAP', 'RESTAURANT_WARM'];
+    const fashion   = ['FASHION_EDITORIAL', 'BEAUTY_SOFT'];
+    const compact   = ['ELECTRONICS_PRO', 'MINIMAL_DARK'];
+    if (classic.includes(this.activeTemplateCode))  return 'CLASSIC';
+    if (fashion.includes(this.activeTemplateCode))  return 'FASHION';
+    if (compact.includes(this.activeTemplateCode))  return 'COMPACT';
+    return 'MARKETPLACE';
+  }
 
   constructor(
     private subdomainService: SubdomainService,
@@ -538,9 +560,16 @@ export class StorefrontLandingComponent implements OnInit {
 
   onSortChange(event: Event): void {
     const value = (event.target as HTMLSelectElement).value;
-    console.log('🔄 Sort changed:', value);
+    this._applySortValue(value);
+  }
 
-    let sorted = [...this.filteredProducts];
+  /** Wird von den Grid-Template-Komponenten aufgerufen (emittieren String direkt). */
+  onSortChangeStr(value: string): void {
+    this._applySortValue(value);
+  }
+
+  private _applySortValue(value: string): void {
+    const sorted = [...this.filteredProducts];
 
     switch (value) {
       case 'price-asc':

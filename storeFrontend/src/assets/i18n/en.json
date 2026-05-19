@@ -1303,6 +1303,9 @@
                                     "texts":  "Texts per Language",
                                     "textsHint":  "Enter the banner text for each language. If a text is missing, the German version will be used as fallback."
                                 }
-               }
+               },
+    "filter": {
+        "priceRange": "Price Range"
+    }
 }
 

@@ -52,6 +52,170 @@ import { toDate } from '@app/core/utils/date.utils';
           </div>
         </div>
 
+        <!-- ══════════════════════════════════════════════════════════
+             PRODUKTGRID-LAYOUT AUSWAHL (strukturell unterschiedlich)
+             ══════════════════════════════════════════════════════════ -->
+        <div class="grid-layout-section">
+          <h2>📐 Produktgrid-Layout wählen</h2>
+          <p class="section-description">
+            Wähle die <strong>Grundstruktur</strong> deines Shops – Filter + Produktgrid.
+            Jedes Layout hat eine eigene UX-Struktur. Farben & Fonts kommen vom Theme-Preset.
+          </p>
+
+          <div class="no-theme-hint" *ngIf="!activeTheme">
+            ⚠️ Bitte zuerst ein Theme-Preset aktivieren, dann kannst du das Grid-Layout wechseln.
+          </div>
+
+          <div class="grid-templates" *ngIf="activeTheme">
+            <div class="grid-template-card"
+                 *ngFor="let gt of gridTemplates"
+                 [class.grid-template-card--active]="isActiveGridTemplate(gt.code)"
+                 (click)="applyGridTemplate(gt.code)">
+
+              <!-- ── MINI STRUKTUR-VORSCHAU ── -->
+              <div class="gt-mini-preview" [class]="'gt-mini--' + gt.previewClass">
+
+                <!-- Classic: Sidebar links + 3-col Grid -->
+                <ng-container *ngIf="gt.previewClass === 'classic'">
+                  <div class="pv-classic">
+                    <div class="pv-sidebar">
+                      <div class="pv-sb-header"></div>
+                      <div class="pv-sb-item pv-sb-item--active"></div>
+                      <div class="pv-sb-item"></div>
+                      <div class="pv-sb-item" style="width:70%"></div>
+                      <div class="pv-sb-item" style="width:55%"></div>
+                      <div class="pv-sb-divider"></div>
+                      <div class="pv-sb-header" style="margin-top:4px"></div>
+                      <div class="pv-price-bar"><div class="pv-price-fill"></div></div>
+                    </div>
+                    <div class="pv-main">
+                      <div class="pv-toolbar">
+                        <div class="pv-tb-count"></div>
+                        <div class="pv-tb-sort"></div>
+                      </div>
+                      <div class="pv-grid pv-grid--3">
+                        <div class="pv-card" *ngFor="let _ of [1,2,3,4,5,6]">
+                          <div class="pv-card-img"></div>
+                          <div class="pv-card-line"></div>
+                          <div class="pv-card-line pv-card-line--short"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </ng-container>
+
+                <!-- Fashion: Chips + Editorial-Grid -->
+                <ng-container *ngIf="gt.previewClass === 'fashion'">
+                  <div class="pv-fashion">
+                    <div class="pv-chips">
+                      <div class="pv-chip pv-chip--active"></div>
+                      <div class="pv-chip"></div>
+                      <div class="pv-chip"></div>
+                      <div class="pv-chip"></div>
+                    </div>
+                    <div class="pv-editorial">
+                      <div class="pv-hero-card">
+                        <div class="pv-overlay"></div>
+                      </div>
+                      <div class="pv-small-col">
+                        <div class="pv-sm-card pv-sm-card--top"></div>
+                        <div class="pv-sm-card pv-sm-card--bottom"></div>
+                      </div>
+                    </div>
+                    <div class="pv-row3">
+                      <div class="pv-reg-card" *ngFor="let _ of [1,2,3]"></div>
+                    </div>
+                  </div>
+                </ng-container>
+
+                <!-- Compact: Filterbar + dichtes 5-col Grid -->
+                <ng-container *ngIf="gt.previewClass === 'compact'">
+                  <div class="pv-compact">
+                    <div class="pv-cfilter">
+                      <div class="pv-cf-select"></div>
+                      <div class="pv-cf-select" style="width:60px"></div>
+                      <div class="pv-cf-count"></div>
+                      <div class="pv-cf-toggle"></div>
+                    </div>
+                    <div class="pv-dense">
+                      <div class="pv-dense-card" *ngFor="let _ of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]">
+                        <div class="pv-dc-img"></div>
+                        <div class="pv-dc-line"></div>
+                        <div class="pv-dc-price"></div>
+                      </div>
+                    </div>
+                  </div>
+                </ng-container>
+
+                <!-- Marketplace: Bottom Sheet + OLX-Style -->
+                <ng-container *ngIf="gt.previewClass === 'marketplace'">
+                  <div class="pv-marketplace">
+                    <div class="pv-mp-chips">
+                      <div class="pv-mpc pv-mpc--active"></div>
+                      <div class="pv-mpc"></div>
+                      <div class="pv-mpc"></div>
+                    </div>
+                    <div class="pv-mp-grid">
+                      <div class="pv-mp-card" *ngFor="let _ of [1,2,3,4]">
+                        <div class="pv-mp-img">
+                          <div class="pv-mp-heart">♡</div>
+                        </div>
+                        <div class="pv-mp-price"></div>
+                        <div class="pv-mp-title"></div>
+                        <div class="pv-mp-meta">
+                          <div class="pv-mp-loc"></div>
+                          <div class="pv-mp-btn"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="pv-mp-bottombar">
+                      <div class="pv-mp-bb-btn">⚙ Filter</div>
+                      <div class="pv-mp-bb-div"></div>
+                      <div class="pv-mp-bb-btn">↕ Sortieren</div>
+                    </div>
+                  </div>
+                </ng-container>
+
+              </div>
+
+              <!-- ── KARTEN-INHALT ── -->
+              <div class="gt-body">
+                <div class="gt-header-row">
+                  <span class="gt-icon">{{ gt.icon }}</span>
+                  <h4 class="gt-name">{{ gt.name }}</h4>
+                  <span class="gt-active-badge" *ngIf="isActiveGridTemplate(gt.code)">✓ Aktiv</span>
+                </div>
+                <p class="gt-desc">{{ gt.description }}</p>
+
+                <!-- Features List -->
+                <ul class="gt-features">
+                  <li *ngFor="let f of gt.features">{{ f }}</li>
+                </ul>
+
+                <!-- Empfohlen für -->
+                <div class="gt-recommended">
+                  <span class="gt-rec-label">Empfohlen für:</span>
+                  <div class="gt-rec-tags">
+                    <span class="gt-rec-tag" *ngFor="let r of gt.recommendedFor">{{ r }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="gt-footer">
+                <button class="btn btn-sm"
+                        [class.btn-success]="!isActiveGridTemplate(gt.code)"
+                        [class.btn-outline-active]="isActiveGridTemplate(gt.code)"
+                        [disabled]="isActiveGridTemplate(gt.code) || applyingTemplate === gt.code"
+                        (click)="$event.stopPropagation(); applyGridTemplate(gt.code)">
+                  {{ isActiveGridTemplate(gt.code)
+                      ? '✓ Bereits aktiv'
+                      : (applyingTemplate === gt.code ? '⏳ Wende an...' : '⚡ Aktivieren') }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Theme Presets aus Backend (Free-Template-Katalog) -->
         <div class="presets-section">
           <h2>Kostenlose Theme-Vorlagen 🎁</h2>
@@ -119,13 +283,15 @@ import { toDate } from '@app/core/utils/date.utils';
             </div>
 
             <div class="form-group">
-              <label>Template</label>
+              <label>Produktgrid-Layout</label>
               <select [(ngModel)]="selectedTemplate" name="template" class="form-control">
-                <option value="ELECTRONICS">Elektronik</option>
-                <option value="FASHION">Mode</option>
-                <option value="FOOD">Lebensmittel</option>
-                <option value="BEAUTY">Beauty</option>
-                <option value="GENERAL">Allgemein</option>
+                <option value="MODERN_GRID">📱 Mobile Marketplace (Standard)</option>
+                <option value="CLASSIC_BOOTSTRAP">🏛️ Classic Sidebar Grid</option>
+                <option value="FASHION_EDITORIAL">👗 Fashion Editorial</option>
+                <option value="ELECTRONICS_PRO">📦 Compact Market</option>
+                <option value="RESTAURANT_WARM">🍽️ Classic Sidebar (Restaurant)</option>
+                <option value="BEAUTY_SOFT">💄 Fashion Editorial (Beauty)</option>
+                <option value="MINIMAL_DARK">🌑 Compact Market (Dark)</option>
               </select>
             </div>
 
@@ -666,6 +832,305 @@ import { toDate } from '@app/core/utils/date.utils';
        FLOATING PREVIEW BUTTON (FAB) + PANEL
        → Ausgelagert in PreviewPanelComponent (global via app.component)
        ═══════════════════════════════════════════ */
+
+    /* ═══════════════════════════════════════════
+       PRODUKTGRID-LAYOUT PICKER
+       ═══════════════════════════════════════════ */
+    .grid-layout-section {
+      margin-bottom: 3rem;
+    }
+
+    .no-theme-hint {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      border-radius: 8px;
+      padding: 0.875rem 1rem;
+      font-size: 0.9rem;
+      color: #856404;
+    }
+
+    .grid-templates {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-top: 1.25rem;
+    }
+
+    .grid-template-card {
+      background: #fff;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      display: flex;
+      flex-direction: column;
+    }
+    .grid-template-card:hover {
+      border-color: #764ba2;
+      box-shadow: 0 4px 16px rgba(118,75,162,0.15);
+    }
+    .grid-template-card--active {
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
+    }
+
+    /* Mini-Vorschau-Area */
+    .gt-mini-preview {
+      background: #f8f9fa;
+      padding: 0.875rem;
+      height: 90px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      overflow: hidden;
+    }
+
+    /* Classic preview layout */
+    .gt-mini--classic { flex-direction: row; gap: 6px; }
+    .mp-sidebar { width: 28%; display: flex; flex-direction: column; gap: 3px; }
+    .mp-bar { height: 7px; background: #d1d5db; border-radius: 3px; }
+    .mp-bar:nth-child(2) { width: 80%; }
+    .mp-bar:nth-child(3) { width: 60%; }
+    .mp-right { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+    .mp-row { display: flex; gap: 4px; }
+    .mp-card {
+      flex: 1;
+      background: #e5e7eb;
+      border-radius: 3px;
+      height: 22px;
+    }
+
+    /* Fashion preview */
+    .gt-mini--fashion { gap: 6px; }
+    .mp-chips { display: flex; gap: 4px; }
+    .mp-chip { height: 7px; width: 28px; background: #d1d5db; border-radius: 999px; }
+    .mp-row--2col { flex: 1; }
+    .mp-card--tall { height: 50px; }
+    .mp-col2 { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+    .mp-card--sm { height: 22px; }
+
+    /* Compact preview */
+    .gt-mini--compact { gap: 5px; }
+    .mp-filterbar {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    .mp-fb-item { height: 7px; width: 35px; background: #d1d5db; border-radius: 3px; }
+    .mp-fb-dot { width: 7px; height: 7px; border-radius: 50%; background: #9ca3af; margin-left: auto; }
+    .mp-dense-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 3px;
+      flex: 1;
+    }
+    .mp-sm-card { background: #e5e7eb; border-radius: 2px; height: 14px; }
+
+    /* Marketplace preview */
+    .gt-mini--marketplace { justify-content: space-between; }
+    .mp-bottom-strip {
+      display: flex;
+      gap: 4px;
+      margin-top: auto;
+    }
+    .mp-bs-btn { flex: 1; height: 8px; background: #667eea; border-radius: 3px; opacity: 0.6; }
+
+    /* Card content */
+    .gt-body {
+      padding: 0.75rem;
+      flex: 1;
+    }
+    .gt-name {
+      margin: 0 0 0.25rem;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #111827;
+    }
+    .gt-desc {
+      margin: 0;
+      font-size: 0.75rem;
+      color: #6b7280;
+      line-height: 1.4;
+    }
+    .gt-footer {
+      padding: 0.5rem 0.75rem 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+    .gt-active-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #667eea;
+    }
+    .btn-sm {
+      font-size: 0.75rem;
+      padding: 0.3rem 0.75rem;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      transition: opacity 0.2s;
+    }
+    .btn-success { background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; }
+    .btn-success:hover:not(:disabled) { opacity: 0.85; }
+    .btn-outline-active { background: #f0ecff; color: #5b21b6; border: 1px solid #c4b5fd; cursor: default; }
+    .btn-sm:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ═══════════════════════════════════════════
+       DETAIL-MINI-PREVIEWS (pv-*)
+       ═══════════════════════════════════════════ */
+
+    /* -- Übergreifend -- */
+    .gt-mini-preview { height: 130px; background: #f1f5f9; border-bottom: 1px solid #e5e7eb; }
+
+    /* ── CLASSIC ── */
+    .pv-classic { display: flex; gap: 5px; width: 100%; height: 100%; }
+    .pv-sidebar {
+      width: 28%; background: #fff; border-radius: 4px; padding: 5px;
+      display: flex; flex-direction: column; gap: 3px; border: 1px solid #e5e7eb;
+    }
+    .pv-sb-header { height: 6px; background: #9ca3af; border-radius: 2px; width: 80%; margin-bottom: 2px; }
+    .pv-sb-item {
+      height: 8px; background: #e5e7eb; border-radius: 3px; width: 100%;
+      transition: background 0.15s;
+    }
+    .pv-sb-item--active { background: linear-gradient(90deg, #667eea, #764ba2); }
+    .pv-sb-divider { height: 1px; background: #e5e7eb; margin: 2px 0; }
+    .pv-price-bar { height: 4px; background: #e5e7eb; border-radius: 999px; margin-top: 2px; }
+    .pv-price-fill { height: 100%; width: 65%; background: linear-gradient(90deg, #667eea, #764ba2); border-radius: 999px; }
+    .pv-main { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+    .pv-toolbar {
+      display: flex; justify-content: space-between; align-items: center;
+      background: #fff; border-radius: 3px; padding: 3px 5px; border: 1px solid #e5e7eb;
+    }
+    .pv-tb-count { height: 5px; width: 40%; background: #d1d5db; border-radius: 2px; }
+    .pv-tb-sort { height: 5px; width: 30%; background: #d1d5db; border-radius: 2px; }
+    .pv-grid { display: grid; gap: 4px; flex: 1; }
+    .pv-grid--3 { grid-template-columns: repeat(3, 1fr); }
+    .pv-card { background: #fff; border-radius: 3px; padding: 3px; border: 1px solid #e5e7eb; display: flex; flex-direction: column; gap: 2px; }
+    .pv-card-img { background: #e5e7eb; border-radius: 2px; flex: 1; min-height: 12px; }
+    .pv-card-line { height: 4px; background: #d1d5db; border-radius: 2px; }
+    .pv-card-line--short { width: 60%; }
+
+    /* ── FASHION ── */
+    .pv-fashion { display: flex; flex-direction: column; gap: 4px; height: 100%; }
+    .pv-chips { display: flex; gap: 3px; }
+    .pv-chip { height: 8px; width: 26px; background: #d1d5db; border-radius: 999px; }
+    .pv-chip--active { background: linear-gradient(90deg, #667eea, #764ba2); width: 32px; }
+    .pv-editorial { display: flex; gap: 4px; flex: 1; }
+    .pv-hero-card {
+      flex: 2; background: linear-gradient(135deg, #e5e7eb, #d1d5db);
+      border-radius: 4px; position: relative; overflow: hidden;
+    }
+    .pv-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(102,126,234,0.5) 0%, transparent 60%);
+    }
+    .pv-small-col { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+    .pv-sm-card { flex: 1; border-radius: 3px; }
+    .pv-sm-card--top { background: #ddd6fe; }
+    .pv-sm-card--bottom { background: #e0e7ff; }
+    .pv-row3 { display: flex; gap: 4px; }
+    .pv-reg-card { flex: 1; height: 18px; background: #e5e7eb; border-radius: 3px; }
+
+    /* ── COMPACT ── */
+    .pv-compact { display: flex; flex-direction: column; gap: 4px; height: 100%; }
+    .pv-cfilter {
+      display: flex; gap: 4px; align-items: center;
+      background: #fff; border-radius: 3px; padding: 3px 5px; border: 1px solid #e5e7eb;
+    }
+    .pv-cf-select { height: 7px; width: 50px; background: #d1d5db; border-radius: 3px; }
+    .pv-cf-count { height: 7px; width: 25px; background: #e5e7eb; border-radius: 3px; margin-left: auto; }
+    .pv-cf-toggle { display: flex; gap: 2px; }
+    .pv-cf-toggle::before, .pv-cf-toggle::after {
+      content: ''; display: block; width: 7px; height: 7px;
+      background: #d1d5db; border-radius: 1px;
+    }
+    .pv-dense { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; flex: 1; }
+    .pv-dense-card {
+      background: #fff; border-radius: 2px; border: 1px solid #e5e7eb;
+      display: flex; flex-direction: column; gap: 1px; padding: 2px; overflow: hidden;
+    }
+    .pv-dc-img { background: #e5e7eb; flex: 1; border-radius: 1px; min-height: 8px; }
+    .pv-dc-line { height: 3px; background: #d1d5db; border-radius: 1px; }
+    .pv-dc-price { height: 3px; width: 60%; background: #667eea; border-radius: 1px; opacity: 0.6; }
+
+    /* ── MARKETPLACE ── */
+    .pv-marketplace { display: flex; flex-direction: column; gap: 4px; height: 100%; }
+    .pv-mp-chips { display: flex; gap: 3px; }
+    .pv-mpc { height: 8px; width: 24px; background: #d1d5db; border-radius: 999px; }
+    .pv-mpc--active { background: #1d1d1f; width: 28px; }
+    .pv-mp-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 3px; flex: 1; }
+    .pv-mp-card {
+      background: #fff; border-radius: 3px; border: 1px solid #e5e7eb;
+      display: flex; flex-direction: column; gap: 2px; padding: 2px; overflow: hidden;
+    }
+    .pv-mp-img {
+      background: linear-gradient(135deg, #e5e7eb, #d1d5db);
+      border-radius: 2px; aspect-ratio: 1; position: relative;
+      display: flex; align-items: flex-start; justify-content: flex-end; padding: 2px;
+    }
+    .pv-mp-heart { font-size: 6px; color: #9ca3af; line-height: 1; }
+    .pv-mp-price { height: 5px; background: #1f2937; border-radius: 1px; width: 55%; }
+    .pv-mp-title { height: 3px; background: #d1d5db; border-radius: 1px; }
+    .pv-mp-meta { display: flex; gap: 2px; align-items: center; }
+    .pv-mp-loc { height: 3px; width: 40%; background: #e5e7eb; border-radius: 1px; }
+    .pv-mp-btn { height: 5px; width: 30%; background: #667eea; border-radius: 2px; opacity: 0.7; margin-left: auto; }
+    .pv-mp-bottombar {
+      display: flex; align-items: center; justify-content: center; gap: 0;
+      background: #fff; border-radius: 3px; border: 1px solid #e5e7eb;
+      padding: 3px 4px;
+    }
+    .pv-mp-bb-btn { flex: 1; font-size: 5px; color: #374151; font-weight: 700; text-align: center; }
+    .pv-mp-bb-div { width: 1px; height: 8px; background: #e5e7eb; }
+
+    /* ── KARTEN-INHALT CSS ── */
+    .gt-header-row {
+      display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.3rem;
+    }
+    .gt-icon { font-size: 1.1rem; flex-shrink: 0; }
+    .gt-name { margin: 0; font-size: 0.875rem; font-weight: 700; color: #111827; flex: 1; }
+    .gt-active-badge {
+      font-size: 0.65rem; font-weight: 700; color: #fff;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-radius: 999px; padding: 1px 7px; flex-shrink: 0;
+    }
+    .gt-desc { margin: 0 0 0.6rem; font-size: 0.72rem; color: #6b7280; line-height: 1.4; }
+
+    .gt-features {
+      list-style: none; margin: 0 0 0.6rem; padding: 0;
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .gt-features li {
+      font-size: 0.68rem; color: #374151; padding-left: 1rem; position: relative;
+    }
+    .gt-features li::before {
+      content: '✓'; position: absolute; left: 0;
+      color: #667eea; font-weight: 700; font-size: 0.6rem;
+    }
+
+    .gt-recommended { margin-top: auto; }
+    .gt-rec-label {
+      font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.06em; color: #9ca3af; display: block; margin-bottom: 4px;
+    }
+    .gt-rec-tags { display: flex; flex-wrap: wrap; gap: 3px; }
+    .gt-rec-tag {
+      font-size: 0.62rem; padding: 2px 6px;
+      background: #f3f4f6; border: 1px solid #e5e7eb;
+      border-radius: 4px; color: #374151; white-space: nowrap;
+    }
+
+    /* Grid: 4 Karten nebeneinander auf Desktop */
+    .grid-templates {
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    }
+    @media (min-width: 1100px) {
+      .grid-templates { grid-template-columns: repeat(4, 1fr); }
+    }
   `]
 })
 export class StoreThemeComponent implements OnInit, OnDestroy {
@@ -1044,14 +1509,106 @@ export class StoreThemeComponent implements OnInit, OnDestroy {
 
   getTemplateName(template: string): string {
     const names: { [key: string]: string } = {
-      'ELECTRONICS': 'Elektronik',
-      'FASHION': 'Mode',
-      'FOOD': 'Lebensmittel',
-      'BEAUTY': 'Beauty',
-      'GENERAL': 'Allgemein'
+      'MODERN_GRID':        '📱 Mobile Marketplace',
+      'CLASSIC_BOOTSTRAP':  '🏛️ Classic Sidebar Grid',
+      'FASHION_EDITORIAL':  '👗 Fashion Editorial',
+      'ELECTRONICS_PRO':    '📦 Compact Market',
+      'RESTAURANT_WARM':    '🍽️ Classic Sidebar (Restaurant)',
+      'BEAUTY_SOFT':        '💄 Fashion Editorial (Beauty)',
+      'MINIMAL_DARK':       '🌑 Compact Market (Dark)',
+      // Legacy
+      'ELECTRONICS': 'Elektronik (alt)',
+      'FASHION': 'Mode (alt)',
+      'FOOD': 'Lebensmittel (alt)',
+      'BEAUTY': 'Beauty (alt)',
+      'GENERAL': 'Allgemein (alt)'
     };
     return names[template] || template;
   }
-}
 
+  // ─── Grid-Template Picker ───────────────────────────────────────────────────
+
+  readonly gridTemplates: {
+    code: string; name: string; icon: string;
+    description: string; previewClass: string;
+    features: string[]; recommendedFor: string[];
+  }[] = [
+    {
+      code: 'MODERN_GRID',
+      icon: '📱',
+      name: 'Mobile Marketplace',
+      description: 'OLX/Avito-Stil: 2–4 Spalten, Preis fett oben, Herz-Button, Bottom-Sheet Filter auf Mobil.',
+      previewClass: 'marketplace',
+      features: ['Filter als Bottom-Sheet Drawer', '2-Spalten Mobile / 4-Spalten Desktop', 'Preis + Standort-Meta', 'Herz-Merken Button', 'Sticky Aktionsleiste unten'],
+      recommendedFor: ['🛒 Allgemein', '📦 Marktplatz', '🏠 Immobilien', '🚗 Fahrzeuge']
+    },
+    {
+      code: 'CLASSIC_BOOTSTRAP',
+      icon: '🏛️',
+      name: 'Classic Sidebar',
+      description: 'Sticky Sidebar links mit Kategorienfilter & Preisbereich, 3-Spalten Grid rechts.',
+      previewClass: 'classic',
+      features: ['Sticky Sidebar mit Kategorienliste', 'Preisbereich-Anzeige', '3-Spalten Desktop / 2-Spalten Tablet', 'Sort + Trefferanzahl', 'Aktiver Filter-Badge'],
+      recommendedFor: ['🖥️ Elektronik', '🏪 Allgemein', '🎮 Gaming', '📚 Bücher']
+    },
+    {
+      code: 'FASHION_EDITORIAL',
+      icon: '👗',
+      name: 'Fashion Editorial',
+      description: 'Magazin-Ästhetik: Chip-Filter, Hero-Karte groß, Hover-Overlay mit Cart + Quick View.',
+      previewClass: 'fashion',
+      features: ['Horizontale scrollbare Chip-Filter', 'Hero-Karte (2×2) + kleine Karten', '3:4 Portrait-Bild-Ratio', 'Hover-Overlay mit zwei Buttons', 'Featured-Badge'],
+      recommendedFor: ['👗 Mode', '💄 Beauty', '💍 Schmuck', '🏠 Wohnen']
+    },
+    {
+      code: 'ELECTRONICS_PRO',
+      icon: '📦',
+      name: 'Compact Market',
+      description: 'Maximum Katalogdichte: 5 Spalten, kleine 4:3-Karten, Dropdown-Filter in einer Zeile.',
+      previewClass: 'compact',
+      features: ['5-Spalten Desktop / 3-Spalten Tablet', 'Kompakte 4:3-Karten', 'Inline Filterleiste (Dropdown)', 'Ansichtsumschalter', 'Quick-View bei Hover'],
+      recommendedFor: ['⚡ Elektronik', '🔧 Werkzeuge', '💊 Apotheke', '📦 Großhandel']
+    }
+  ];
+
+  /** Prüft ob der übergebene Template-Code aktuell aktiv ist (inkl. Legacy-Mapping) */
+  isActiveGridTemplate(code: string): boolean {
+    if (!this.activeTheme) return false;
+    const t = (this.activeTheme.template ?? '').toString().toUpperCase();
+    if (t === code) return true;
+    // Legacy enum → neuer Code
+    const legacyMap: Record<string, string> = {
+      'FASHION': 'FASHION_EDITORIAL',
+      'ELECTRONICS': 'ELECTRONICS_PRO',
+      'FOOD': 'RESTAURANT_WARM',
+      'BEAUTY': 'BEAUTY_SOFT'
+    };
+    return legacyMap[t] === code;
+  }
+
+  getGridTemplateName(code: string): string {
+    return this.gridTemplates.find(g => g.code === code)?.name ?? code;
+  }
+
+  /** Setzt nur das Grid-Layout des aktiven Themes (1-Klick, kein Editor). */
+  applyGridTemplate(code: string): void {
+    if (!this.activeTheme || this.isActiveGridTemplate(code) || this.applyingTemplate === code) return;
+    this.applyingTemplate = code;
+    this.error = null;
+    this.themeService.updateTheme(this.activeTheme.id, { template: code as any }).subscribe({
+      next: (theme) => {
+        this.activeTheme = theme;
+        this.themeService.applyTheme(theme);
+        this.applyingTemplate = null;
+        this.successMessage = `Grid-Layout auf "${this.getGridTemplateName(code)}" gesetzt ✓`;
+        this.reloadLivePreview();
+        setTimeout(() => this.successMessage = null, 4000);
+      },
+      error: () => {
+        this.error = 'Grid-Layout konnte nicht gespeichert werden.';
+        this.applyingTemplate = null;
+      }
+    });
+  }
+}
 

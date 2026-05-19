@@ -1306,6 +1306,9 @@
                                     "texts":  "Texte pro Sprache",
                                     "textsHint":  "Gib den Bannertext für jede Sprache ein. Fehlt ein Text, wird auf Deutsch (Fallback) zurückgegriffen."
                                 }
-               }
+               },
+    "filter": {
+        "priceRange": "Preisbereich"
+    }
 }
 
