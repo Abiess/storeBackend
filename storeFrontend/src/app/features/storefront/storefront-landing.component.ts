@@ -19,6 +19,7 @@ import { ImageSliderComponent } from '@app/shared/components/image-slider.compon
 import { ClassicShopLayoutComponent } from './components/classic-shop-layout.component';
 import { ElectronicsProLayoutComponent } from './components/electronics-pro-layout.component';
 import { FashionEditorialLayoutComponent } from './components/fashion-editorial-layout.component';
+import { PromoBannerComponent } from '@app/shared/components/promo-banner/promo-banner.component';
 
 /**
  * Dedizierte Storefront-Landing-Page für Subdomains (abc.markt.ma)
@@ -37,7 +38,8 @@ import { FashionEditorialLayoutComponent } from './components/fashion-editorial-
     ImageSliderComponent,
     ClassicShopLayoutComponent,
     ElectronicsProLayoutComponent,
-    FashionEditorialLayoutComponent
+    FashionEditorialLayoutComponent,
+    PromoBannerComponent
   ],
   templateUrl: './storefront-landing.component.html',
   styleUrls: ['./storefront-landing.component.scss']

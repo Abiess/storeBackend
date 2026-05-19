@@ -980,19 +980,20 @@
                                         "account":  "Account"
                                     },
                          "items":  {
-                                       "dashboard":  "Dashboard",
-                                       "products":  "Products",
-                                       "reviews":  "Reviews",
-                                       "chatbot":  "Chatbot",
-                                       "storeSettings":  "Store Settings",
-                                       "designTheme":  "Design \u0026 Theme",
-                                       "delivery":  "Delivery",
-                                       "seo":  "SEO",
-                                       "brand":  "Brand",
-                                       "myAccount":  "My Account",
-                                       "subscription":  "Subscription",
-                                       "roles":  "Roles"
-                                   },
+                                        "dashboard":  "Dashboard",
+                                        "products":  "Products",
+                                        "reviews":  "Reviews",
+                                        "chatbot":  "Chatbot",
+                                        "storeSettings":  "Store Settings",
+                                        "designTheme":  "Design \u0026 Theme",
+                                        "banner":  "Promo Banner",
+                                        "delivery":  "Delivery",
+                                        "seo":  "SEO",
+                                        "brand":  "Brand",
+                                        "myAccount":  "My Account",
+                                        "subscription":  "Subscription",
+                                        "roles":  "Roles"
+                                    },
                          "noStore":  {
                                          "hint":  "No store selected",
                                          "cta":  "Create a store",
@@ -1255,6 +1256,29 @@
     "theme":  {
                   "management":  "Theme Management",
                   "subtitle":  "Customize the look and feel of your store"
-              }
+              },
+    "banner":  {
+                   "settings":  {
+                                    "title":  "Promo Banner Settings",
+                                    "subtitle":  "Add an animated ticker banner to your store – multilingual and fully configurable.",
+                                    "preview":  "Live Preview",
+                                    "disabledHint":  "Banner is disabled – it will not be shown to visitors.",
+                                    "general":  "General Settings",
+                                    "enabled":  "Enable Banner",
+                                    "position":  "Position",
+                                    "positionTop":  "Top",
+                                    "positionBottom":  "Bottom",
+                                    "bgColor":  "Background Color",
+                                    "textColor":  "Text Color",
+                                    "animationSpeed":  "Animation Speed",
+                                    "staticMode":  "Static Text",
+                                    "static":  "Static",
+                                    "slow":  "Slow",
+                                    "fast":  "Fast",
+                                    "icon":  "Icon / Emoji",
+                                    "texts":  "Texts per Language",
+                                    "textsHint":  "Enter the banner text for each language. If a text is missing, the German version will be used as fallback."
+                                }
+               }
 }
 

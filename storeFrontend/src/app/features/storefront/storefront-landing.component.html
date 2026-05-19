@@ -3,6 +3,9 @@
 <!-- Store nicht gefunden / Reservierter Slug -->
 <app-store-not-found *ngIf="storeNotFound"></app-store-not-found>
 
+<!-- Promo-Banner (fixed, position: top/bottom per Konfiguration) -->
+<app-promo-banner *ngIf="storeId" [storeId]="storeId"></app-promo-banner>
+
 <!-- Normaler Store-Inhalt -->
 <div *ngIf="!storeNotFound" class="storefront-wrapper">
   <!-- Sticky Header mit Store-Name und Warenkorb -->

@@ -173,6 +173,12 @@ export class AdminSidebarComponent implements OnInit {
                         requiresStore: true
                     },
                     {
+                        labelKey: 'sidebarAdmin.items.banner',
+                        icon: '📢',
+                        route: `${baseRoute}/banner`,
+                        requiresStore: true
+                    },
+                    {
                         labelKey: 'sidebarAdmin.items.delivery',
                         icon: '🚚',
                         route: `${baseRoute}/delivery`,

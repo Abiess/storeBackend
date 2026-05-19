@@ -1984,6 +1984,29 @@ BEGIN
     END IF;
 END $$;
 
+-- =====================
+-- V21: Store Banner Settings (Promo / Breaking-News Banner)
+-- =====================
+SET search_path TO public;
+
+CREATE TABLE IF NOT EXISTS store_banner_settings (
+    store_id BIGINT PRIMARY KEY,
+    enabled BOOLEAN NOT NULL DEFAULT FALSE,
+    position VARCHAR(10) NOT NULL DEFAULT 'top',
+    bg_color VARCHAR(30) NOT NULL DEFAULT '#667eea',
+    text_color VARCHAR(30) NOT NULL DEFAULT '#ffffff',
+    animation_speed INTEGER NOT NULL DEFAULT 60,
+    texts_json TEXT DEFAULT '{"de":"🎉 Du erhältst heute Rabatt auf ausgewählte Produkte!","en":"🎉 Get a discount on selected products today!","ar":"🎉 احصل على خصم على منتجات مختارة اليوم!"}',
+    icon VARCHAR(50),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_store_banner_settings_store FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE,
+    CONSTRAINT chk_banner_position CHECK (position IN ('top', 'bottom')),
+    CONSTRAINT chk_banner_speed CHECK (animation_speed >= 0 AND animation_speed <= 500)
+);
+
+CREATE INDEX IF NOT EXISTS idx_banner_store_id ON store_banner_settings(store_id);
+
 -- ==================================================================================
 -- V18: WhatsApp Notifications für bestehende Datenbanken
 -- ==================================================================================

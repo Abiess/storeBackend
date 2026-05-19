@@ -18,6 +18,37 @@ export const translations = {
     create: 'إنشاء',
     back: 'رجوع',
     search: 'بحث',
+
+    // Common misc
+    'common.back': 'رجوع',
+    'common.save': 'حفظ',
+    'common.saving': 'جاري الحفظ...',
+    'common.loading': 'جاري التحميل...',
+    'common.active': 'مفعّل',
+    'common.inactive': 'معطّل',
+    'common.retry': 'إعادة المحاولة',
+
+    // Banner Settings
+    'banner.settings.title': 'إعدادات شريط الإعلانات',
+    'banner.settings.subtitle': 'أضف شريط إعلانات متحركاً لمتجرك مع دعم متعدد اللغات',
+    'banner.settings.preview': 'معاينة مباشرة',
+    'banner.settings.disabledHint': 'الشريط معطّل حالياً – لن يظهر للزوار',
+    'banner.settings.general': 'الإعدادات الأساسية',
+    'banner.settings.enabled': 'تفعيل الشريط',
+    'banner.settings.position': 'موضع الشريط',
+    'banner.settings.positionTop': 'أعلى الصفحة',
+    'banner.settings.positionBottom': 'أسفل الصفحة',
+    'banner.settings.bgColor': 'لون الخلفية',
+    'banner.settings.textColor': 'لون النص',
+    'banner.settings.animationSpeed': 'سرعة الحركة',
+    'banner.settings.staticMode': 'نص ثابت',
+    'banner.settings.static': 'ثابت',
+    'banner.settings.slow': 'بطيء',
+    'banner.settings.fast': 'سريع',
+    'banner.settings.icon': 'أيقونة أو رمز',
+    'banner.settings.texts': 'النصوص حسب اللغة',
+    'banner.settings.textsHint': 'أدخل نص الشريط لكل لغة. في حال عدم وجود نص للغة المطلوبة، سيتم الرجوع إلى اللغة الافتراضية.',
+    'sidebarAdmin.items.banner': 'شريط الإعلانات',
     filter: 'تصفية',
     loading: 'جاري التحميل...',
     saving: 'جاري الحفظ...',
@@ -328,6 +359,39 @@ export const translations = {
     'validation.maxLength': 'Maximal {max} Zeichen',
     'validation.min': 'Wert muss mindestens {min} sein',
     'validation.max': 'Wert darf {max} nicht überschreiten',
+
+    // Common misc (DE)
+    'common.back': 'Zurück',
+    'common.save': 'Speichern',
+    'common.saving': 'Wird gespeichert...',
+    'common.loading': 'Wird geladen...',
+    'common.active': 'Aktiv',
+    'common.inactive': 'Inaktiv',
+    'common.retry': 'Erneut versuchen',
+
+    // Banner Settings (DE)
+    'banner.settings.title': 'Promo-Banner Einstellungen',
+    'banner.settings.subtitle': 'Füge deinem Store einen animierten Lauftext-Banner hinzu – mehrsprachig und frei konfigurierbar.',
+    'banner.settings.preview': 'Live-Vorschau',
+    'banner.settings.disabledHint': 'Banner ist deaktiviert – wird für Besucher nicht angezeigt.',
+    'banner.settings.general': 'Grundeinstellungen',
+    'banner.settings.enabled': 'Banner aktivieren',
+    'banner.settings.position': 'Position',
+    'banner.settings.positionTop': 'Oben',
+    'banner.settings.positionBottom': 'Unten',
+    'banner.settings.bgColor': 'Hintergrundfarbe',
+    'banner.settings.textColor': 'Textfarbe',
+    'banner.settings.animationSpeed': 'Animationsgeschwindigkeit',
+    'banner.settings.staticMode': 'Statischer Text',
+    'banner.settings.static': 'Statisch',
+    'banner.settings.slow': 'Langsam',
+    'banner.settings.fast': 'Schnell',
+    'banner.settings.icon': 'Icon / Emoji',
+    'banner.settings.texts': 'Texte pro Sprache',
+    'banner.settings.textsHint': 'Gib den Bannertext für jede Sprache ein. Fehlt ein Text, wird auf Deutsch (Fallback) zurückgegriffen.',
+
+    // Sidebar
+    'sidebarAdmin.items.banner': 'Promo-Banner',
   }
 };
 

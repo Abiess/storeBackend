@@ -262,6 +262,13 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
 
+  // ==================== Promo Banner Settings ====================
+  {
+    path: 'stores/:id/banner',
+    loadComponent: () => import('./features/settings/banner-settings/banner-settings.component').then(m => m.BannerSettingsComponent),
+    canActivate: [authGuard]
+  },
+
   // ==================== Store Detail (Catch-All) ====================
   // WICHTIG: Diese Route MUSS nach ALLEN spezifischen /stores/:id/xxx-Routen stehen!
   // Sonst fängt sie alles ab und zeigt die Store-Übersicht statt der Unterseite.
