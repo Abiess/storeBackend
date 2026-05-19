@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Product, ProductStatus } from '@app/core/models';
 import { WishlistService } from '../../core/services/wishlist.service';
+import { AuthService } from '../../core/services/auth.service';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 @Component({
@@ -398,15 +399,18 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 })
 export class ProductCardComponent {
   @Input() product!: Product;
+  @Input() storeId: number = 0;   // wird von Parent übergeben
   @Output() quickView = new EventEmitter<Product>();
   @Output() addToCart = new EventEmitter<Product>();
 
   imageError = false;
   isAddingToCart = false;
   isInWishlist = false;
-  private storeId = 1; // TODO: Get from context
 
-  constructor(private wishlistService: WishlistService) {}
+  constructor(
+    private wishlistService: WishlistService,
+    private authService: AuthService
+  ) {}
 
   getProductImage(): string | null {
     if (this.product.primaryImageUrl) {
@@ -460,43 +464,36 @@ export class ProductCardComponent {
     event.stopPropagation();
     event.preventDefault();
 
+    // Nicht eingeloggt → still abbrechen (kein console.error, kein toast)
+    if (!this.authService.isLoggedIn()) {
+      return;
+    }
+
     if (this.isInWishlist) {
       // TODO: Remove from wishlist
       this.isInWishlist = false;
       return;
     }
 
-    // ✅ Lade Default-Wishlist und prüfe auf gültige ID
-    this.wishlistService.getDefaultWishlist(this.storeId).subscribe({
+    const sid = this.storeId;
+    if (!sid) return;
+
+    this.wishlistService.getDefaultWishlist(sid).subscribe({
       next: (wishlist) => {
-        // ✅ Prüfe ob es eine echte Wishlist ist (nicht Gast-Wishlist mit ID=0)
         if (!wishlist || wishlist.id === 0) {
-          console.error('⚠️ Ungültige Wishlist-ID:', wishlist?.id);
+          // Stille Rückgabe – User ist eingeloggt aber hat noch keine Wishlist
           return;
         }
-
-        // ✅ Füge Item zur echten Wishlist hinzu
         this.wishlistService.addToWishlist(wishlist.id, this.product.id).subscribe({
-          next: () => {
-            this.isInWishlist = true;
-            console.log('✅ Zur Wunschliste hinzugefügt!');
-          },
+          next: () => { this.isInWishlist = true; },
           error: (error) => {
-            console.error('❌ Fehler beim Hinzufügen zur Wunschliste:', error);
-            if (error.status === 401) {
-            } else if (error.status === 500 && error.error?.message) {
+            if (error.status === 500 && error.error?.message) {
               alert(error.error.message);
-            } else {
             }
           }
         });
       },
-      error: (error) => {
-        console.error('❌ Fehler beim Laden der Wunschliste:', error);
-        if (error.status === 401) {
-        } else {
-        }
-      }
+      error: () => { /* 401 / Netzwerk – still ignorieren */ }
     });
   }
 }

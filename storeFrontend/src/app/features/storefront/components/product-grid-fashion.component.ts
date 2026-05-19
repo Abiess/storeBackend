@@ -59,6 +59,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
         <div class="editorial-cell editorial-cell--hero">
           <app-product-card
             [product]="filteredProducts[0]"
+            [storeId]="storeId"
             (addToCart)="addToCart.emit(filteredProducts[0])"
             (quickView)="quickView.emit(filteredProducts[0])">
           </app-product-card>
@@ -69,6 +70,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
              *ngFor="let p of filteredProducts.slice(1, 3)">
           <app-product-card
             [product]="p"
+            [storeId]="storeId"
             (addToCart)="addToCart.emit(p)"
             (quickView)="quickView.emit(p)">
           </app-product-card>
@@ -79,6 +81,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
              *ngFor="let p of filteredProducts.slice(3)">
           <app-product-card
             [product]="p"
+            [storeId]="storeId"
             (addToCart)="addToCart.emit(p)"
             (quickView)="quickView.emit(p)">
           </app-product-card>
@@ -215,6 +218,7 @@ export class ProductGridFashionComponent {
   @Input() categories: Category[] = [];
   @Input() filteredProducts: Product[] = [];
   @Input() selectedCategory: Category | null = null;
+  @Input() storeId: number = 0;
 
   @Output() filterChange = new EventEmitter<Category | null>();
   @Output() addToCart = new EventEmitter<Product>();

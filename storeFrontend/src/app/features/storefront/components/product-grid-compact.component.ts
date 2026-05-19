@@ -58,6 +58,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
         <app-product-card
           *ngFor="let p of filteredProducts"
           [product]="p"
+          [storeId]="storeId"
           (addToCart)="addToCart.emit(p)"
           (quickView)="quickView.emit(p)">
         </app-product-card>
@@ -181,6 +182,7 @@ export class ProductGridCompactComponent {
   @Input() categories: Category[] = [];
   @Input() filteredProducts: Product[] = [];
   @Input() selectedCategory: Category | null = null;
+  @Input() storeId: number = 0;
 
   @Output() filterChange = new EventEmitter<Category | null>();
   @Output() addToCart = new EventEmitter<Product>();
