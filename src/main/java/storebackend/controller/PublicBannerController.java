@@ -26,10 +26,12 @@ public class PublicBannerController {
     @GetMapping
     public ResponseEntity<StoreBannerSettingsDTO> getBanner(@PathVariable Long storeId) {
         try {
-            StoreBannerSettingsDTO dto = bannerService.getBanner(storeId);
-            return ResponseEntity.ok(dto);
+            // Optional.empty() → 204 No Content = "nicht konfiguriert" → Frontend nutzt Client-Default
+            // Optional.of(dto) → 200 OK mit enabled-Flag → Frontend respektiert enabled=false
+            return bannerService.getBanner(storeId)
+                    .map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.noContent().build());
         } catch (Exception e) {
-            // Fehler im Banner-Load dürfen den Storefront NIEMALS crashen
             log.warn("[PublicBanner] Fehler beim Laden des Banners für Store {}: {}", storeId, e.getMessage());
             return ResponseEntity.noContent().build();
         }

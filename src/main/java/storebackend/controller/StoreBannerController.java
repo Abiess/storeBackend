@@ -35,7 +35,7 @@ public class StoreBannerController {
         if (!StoreAccessChecker.isOwner(store, user)) {
             return ResponseEntity.status(403).body("Not authorized");
         }
-        return ResponseEntity.ok(bannerService.getBanner(storeId));
+        return ResponseEntity.ok(bannerService.getAdminBanner(storeId));
     }
 
     @PutMapping

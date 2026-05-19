@@ -31,15 +31,48 @@ export class BannerService {
 
   constructor(private http: HttpClient) {}
 
-  /** Public: Storefront – kein Auth. Gibt null zurück wenn Banner deaktiviert oder Fehler. */
-  getPublicBanner(storeId: number): Observable<BannerSettings | null> {
+  /**
+   * Liefert Client-seitige Default-Einstellungen.
+   * Wird genutzt wenn:
+   *  – API antwortet mit 204 (kein DB-Eintrag, noch nicht konfiguriert)
+   *  – API-Fehler (Netzwerk, Timeout, etc.)
+   * Default = enabled:true → Banner sofort sichtbar ohne Konfiguration.
+   */
+  private buildClientDefault(storeId: number = 0): BannerSettings {
+    return {
+      storeId,
+      enabled: true,
+      position: 'top',
+      bgColor: '#667eea',
+      textColor: '#ffffff',
+      animationSpeed: 60,
+      texts: {
+        de: '🎉 Heute Rabatt auf ausgewählte Produkte!',
+        en: '🎉 Special discounts available today!',
+        ar: '🎉 خصومات مميزة متوفرة اليوم!'
+      }
+    };
+  }
+
+  /**
+   * Public: Storefront – kein Auth.
+   * • 200 OK + body → Gibt die konfigurierten Settings zurück (enabled=false respektiert)
+   * • 204 No Content → Noch nicht konfiguriert → Client-Default mit enabled=true
+   * • Fehler         → Client-Default mit enabled=true (Storefront crasht nie wegen Banner)
+   */
+  getPublicBanner(storeId: number): Observable<BannerSettings> {
     return this.http.get<BannerSettings>(
       `${this.base}/public/stores/${storeId}/banner`,
-      // Wichtig: 204 No Content nicht als Fehler behandeln
       { observe: 'response' }
     ).pipe(
-      map(response => response.status === 204 || !response.body ? null : response.body),
-      catchError(() => of(null))
+      map(response => {
+        if (response.status === 204 || !response.body) {
+          // 204 = noch nicht konfiguriert → Client-Default anzeigen
+          return this.buildClientDefault(storeId);
+        }
+        return response.body;
+      }),
+      catchError(() => of(this.buildClientDefault(storeId)))
     );
   }
 

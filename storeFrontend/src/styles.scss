@@ -1,6 +1,27 @@
 /* Import Angular Material Theme */
 @import '@angular/material/prebuilt-themes/indigo-pink.css';
 
+/* ==================== PROMO BANNER – Layout-Offset ==================== */
+/* Wenn Banner aktiv ist (Klasse auf body), Header und Content nach unten schieben */
+$banner-height: 40px;
+
+body.promo-banner-active {
+  /* Sticky-Header: auch wenn banner top:0 ist, header darunter */
+  .sticky-header {
+    top: $banner-height !important;
+  }
+  /* Storefront-Wrapper: Platz für Banner freihalten */
+  .storefront-wrapper {
+    padding-top: $banner-height;
+  }
+}
+
+/* Smooth transition beim Banner-Öffnen/Schließen */
+.sticky-header,
+.storefront-wrapper {
+  transition: padding-top 0.2s ease, top 0.2s ease;
+}
+
 /* Import RTL Support Styles */
 @import './styles/rtl.scss';
 

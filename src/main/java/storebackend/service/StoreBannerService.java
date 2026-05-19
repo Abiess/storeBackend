@@ -26,19 +26,30 @@ public class StoreBannerService {
 
     /**
      * Lädt die Banner-Einstellungen für einen Store.
-     * Existiert kein Store oder kein Eintrag → werden Default-Werte zurückgegeben (NICHT persistiert).
-     * Rückwärtskompatibel: Alte Stores ohne Banner-Eintrag erhalten enabled=false.
+     * Existiert kein Store oder kein Eintrag → wird Optional.empty() zurückgegeben.
+     * Das Frontend nutzt dann Client-seitige Defaults und zeigt einen Standard-Banner.
+     *
+     * Semantik:
+     *  • Optional.empty()          = noch nicht konfiguriert → Frontend zeigt Default
+     *  • Optional.of(dto, enabled=false) = explizit deaktiviert → Frontend zeigt NICHTS
+     *  • Optional.of(dto, enabled=true)  = aktiv konfiguriert → Frontend zeigt Banner
      */
     @Transactional(readOnly = true)
-    public StoreBannerSettingsDTO getBanner(Long storeId) {
-        // Store existiert überhaupt nicht: sicher Default zurückgeben statt Exception
+    public java.util.Optional<StoreBannerSettingsDTO> getBanner(Long storeId) {
         if (!storeRepo.existsById(storeId)) {
-            log.debug("[Banner] Store {} nicht gefunden – gebe Default zurück", storeId);
-            return buildDefault(storeId);
+            log.debug("[Banner] Store {} nicht gefunden – kein Banner", storeId);
+            return java.util.Optional.empty();
         }
-        return bannerRepo.findByStoreId(storeId)
-                .map(this::toDto)
-                .orElseGet(() -> buildDefault(storeId));
+        return bannerRepo.findByStoreId(storeId).map(this::toDto);
+    }
+
+    /**
+     * Für den Admin-Controller: immer eine DTO zurückgeben (mit Defaults wenn kein Eintrag).
+     * Erlaubt dem Admin, die Settings im UI zu sehen/bearbeiten, auch bevor sie je gespeichert wurden.
+     */
+    @Transactional(readOnly = true)
+    public StoreBannerSettingsDTO getAdminBanner(Long storeId) {
+        return getBanner(storeId).orElseGet(() -> buildDefault(storeId));
     }
 
     /**
