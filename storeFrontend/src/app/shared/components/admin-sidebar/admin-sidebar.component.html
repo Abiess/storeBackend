@@ -41,6 +41,15 @@
             </button>
         </div>
 
+        <!-- Kein Store – Hinweisbanner -->
+        <div class="no-store-banner" *ngIf="!hasStore" (click)="onNoStoreClick()">
+            <span class="no-store-banner__icon">🏪</span>
+            <div class="no-store-banner__text">
+                <strong>{{ 'sidebarAdmin.noStore.hint' | translate }}</strong>
+                <span>{{ 'sidebarAdmin.noStore.cta' | translate }} →</span>
+            </div>
+        </div>
+
         <nav class="sidebar-nav">
             <div *ngFor="let group of visibleGroups" class="nav-group">
                 <div class="nav-group-title" *ngIf="group.titleKey">
@@ -48,13 +57,17 @@
                 </div>
 
                 <div class="nav-items">
+                    <!-- Normaler Link (hat Store oder benötigt keinen) -->
                     <a
                             *ngFor="let item of visibleItems(group)"
-                            [routerLink]="item.route"
                             [class.nav-item-active]="isRouteActive(item.route)"
+                            [class.nav-item-disabled]="item.requiresStore && !hasStore"
                             class="nav-item"
                             [attr.aria-label]="item.labelKey | translate"
                             [attr.aria-current]="isRouteActive(item.route) ? 'page' : null"
+                            [attr.title]="(item.requiresStore && !hasStore) ? ('sidebarAdmin.noStore.tooltip' | translate) : null"
+                            [routerLink]="(item.requiresStore && !hasStore) ? null : item.route"
+                            (click)="(item.requiresStore && !hasStore) ? onNoStoreClick() : closeSidebar()"
                     >
                         <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
                         <span class="nav-label">{{ item.labelKey | translate }}</span>
@@ -64,6 +77,8 @@
                         >
               {{ item.badge }}
             </span>
+                        <!-- Lock-Icon wenn Store fehlt -->
+                        <span *ngIf="item.requiresStore && !hasStore" class="nav-item-lock" aria-hidden="true">🔒</span>
                     </a>
                 </div>
             </div>

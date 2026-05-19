@@ -15,6 +15,9 @@ export interface NavItem {
     badgeClass?: string;
     /** Sichtbarkeit: false = Item wird in der Sidebar ausgeblendet. Standard: true */
     visible?: boolean;
+    /** true = Dieses Item benötigt einen aktiven Store (storeId in URL).
+     *  Ohne Store wird es deaktiviert dargestellt und leitet zum Dashboard. */
+    requiresStore?: boolean;
 }
 
 export interface NavGroup {
@@ -132,7 +135,8 @@ export class AdminSidebarComponent implements OnInit {
                     {
                         labelKey: 'sidebarAdmin.items.products',
                         icon: '📦',
-                        route: `${baseRoute}/products`
+                        route: `${baseRoute}/products`,
+                        requiresStore: true
                     }
                 ]
             },
@@ -142,12 +146,14 @@ export class AdminSidebarComponent implements OnInit {
                     {
                         labelKey: 'sidebarAdmin.items.reviews',
                         icon: '⭐',
-                        route: `${baseRoute}/reviews`
+                        route: `${baseRoute}/reviews`,
+                        requiresStore: true
                     },
                     {
                         labelKey: 'sidebarAdmin.items.chatbot',
                         icon: '🤖',
-                        route: `${baseRoute}/chatbot`
+                        route: `${baseRoute}/chatbot`,
+                        requiresStore: true
                     }
                 ]
             },
@@ -157,27 +163,32 @@ export class AdminSidebarComponent implements OnInit {
                     {
                         labelKey: 'sidebarAdmin.items.storeSettings',
                         icon: '⚙️',
-                        route: `${baseRoute}/settings`
+                        route: `${baseRoute}/settings`,
+                        requiresStore: true
                     },
                     {
                         labelKey: 'sidebarAdmin.items.designTheme',
                         icon: '🎨',
-                        route: `${baseRoute}/theme`
+                        route: `${baseRoute}/theme`,
+                        requiresStore: true
                     },
                     {
                         labelKey: 'sidebarAdmin.items.delivery',
                         icon: '🚚',
-                        route: `${baseRoute}/delivery`
+                        route: `${baseRoute}/delivery`,
+                        requiresStore: true
                     },
                     {
                         labelKey: 'sidebarAdmin.items.seo',
                         icon: '🔍',
-                        route: `${baseRoute}/seo`
+                        route: `${baseRoute}/seo`,
+                        requiresStore: true
                     },
                     {
                         labelKey: 'sidebarAdmin.items.brand',
                         icon: '🏷️',
-                        route: `${baseRoute}/brand`
+                        route: `${baseRoute}/brand`,
+                        requiresStore: true
                     }
                 ]
             },
@@ -224,6 +235,17 @@ export class AdminSidebarComponent implements OnInit {
 
     isRTL(): boolean {
         return this.languageService.isRTL();
+    }
+
+    /** true wenn ein aktiver Store in der URL erkannt wurde */
+    get hasStore(): boolean {
+        return this.currentStoreId != null;
+    }
+
+    /** Klick auf store-spezifisches Item ohne aktiven Store → Dashboard mit Hinweis */
+    onNoStoreClick(): void {
+        this.router.navigate(['/dashboard'], { queryParams: { hint: 'createStore' } });
+        if (this.isMobile) this.isOpen = false;
     }
 
     /** Gibt nur sichtbare Gruppen zurück (visible !== false) */

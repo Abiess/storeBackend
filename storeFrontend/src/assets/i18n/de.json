@@ -582,7 +582,12 @@
                                        "myAccount":  "Mein Account",
                                        "subscription":  "Abonnement",
                                        "roles":  "Rollen"
-                                   }
+                                   },
+                         "noStore":  {
+                                         "hint":  "Kein Store ausgewählt",
+                                         "cta":  "Store erstellen",
+                                         "tooltip":  "Bitte zuerst einen Store erstellen oder auswählen"
+                                     }
                      },
     "trust":  {
                   "freeShipping":  "Kostenloser Versand",
@@ -607,6 +612,11 @@
                       "createFirstStore":  "Ersten Store erstellen",
                       "created":  "Erstellt",
                       "manageStore":  "Store verwalten",
+                      "noStoreHint":  {
+                                          "title":  "Kein Store ausgewählt",
+                                          "text":  "Um Produkte, Bewertungen oder Store-Einstellungen zu verwalten, müssen Sie zuerst einen Store erstellen oder auswählen.",
+                                          "cta":  "➕ Store erstellen"
+                                      },
                       "status":  {
                                      "suspended":  "Gesperrt",
                                      "verification":  "Verifizierung"

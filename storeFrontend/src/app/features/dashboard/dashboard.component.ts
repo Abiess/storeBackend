@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { StoreService } from '@app/core/services/store.service';
 import { AuthService } from '@app/core/services/auth.service';
@@ -73,7 +73,18 @@ import {TranslateService} from "@ngx-translate/core";
       </nav>
 
       <div class="container">
-        <!-- HINWEIS: <app-usage-widget> hier bewusst entfernt –
+        <!-- Kein-Store-Hinweis (ausgelöst via Sidebar-Klick ohne Store) -->
+        <div class="hint-banner" *ngIf="showCreateStoreHint" (click)="showCreateStoreHint = false">
+          <span class="hint-banner__icon">💡</span>
+          <div class="hint-banner__body">
+            <strong>{{ 'dashboard.noStoreHint.title' | translate }}</strong>
+            <span>{{ 'dashboard.noStoreHint.text' | translate }}</span>
+          </div>
+          <button class="hint-banner__cta" (click)="$event.stopPropagation(); openCreateStoreModal()">
+            {{ 'dashboard.noStoreHint.cta' | translate }}
+          </button>
+          <button class="hint-banner__close" aria-label="Close">✕</button>
+        </div>
              Plan-Status sitzt jetzt fusioniert oben in der Navbar (.plan-pill)
              und Detail-Verbrauch wird unten / auf /subscription gezeigt. -->
 
@@ -997,6 +1008,62 @@ import {TranslateService} from "@ngx-translate/core";
       font-size: 0.875rem;
       margin: 0;
     }
+
+    /* Hint-Banner */
+    .hint-banner {
+      display: flex;
+      align-items: center;
+      gap: 0.875rem;
+      background: linear-gradient(135deg, #667eea15, #764ba215);
+      border: 1.5px solid #667eea55;
+      border-radius: 12px;
+      padding: 0.875rem 1.125rem;
+      margin-bottom: 1.25rem;
+      cursor: pointer;
+      animation: slideDown 0.4s ease;
+    }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .hint-banner__icon { font-size: 1.5rem; flex-shrink: 0; }
+    .hint-banner__body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+    .hint-banner__body strong {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #5c6ac4;
+    }
+    .hint-banner__body span {
+      font-size: 0.82rem;
+      color: #764ba2;
+    }
+    .hint-banner__cta {
+      padding: 0.45rem 1rem;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .hint-banner__cta:hover { opacity: 0.88; }
+    .hint-banner__close {
+      background: none;
+      border: none;
+      color: #9ca3af;
+      cursor: pointer;
+      font-size: 0.875rem;
+      padding: 0.25rem;
+      flex-shrink: 0;
+    }
+    .hint-banner__close:hover { color: #374151; }
   `]
 })
 export class DashboardComponent implements OnInit {
@@ -1004,6 +1071,7 @@ export class DashboardComponent implements OnInit {
   currentUser: User | null = null;
   loading = true;
   showCreateModal = false;
+  showCreateStoreHint = false;
   newStore: CreateStoreRequest = {
     name: '',
     slug: '',
@@ -1020,12 +1088,28 @@ export class DashboardComponent implements OnInit {
       private storeService: StoreService,
       private authService: AuthService,
       private router: Router,
+      private route: ActivatedRoute,
       private translate: TranslateService,
   ) {}
 
   ngOnInit(): void {
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
+    });
+
+    // Hint-Banner anzeigen wenn Sidebar-Item ohne Store geklickt wurde
+    this.route.queryParams.subscribe(params => {
+      if (params['hint'] === 'createStore') {
+        this.showCreateStoreHint = true;
+        // URL bereinigen ohne Navigation zu triggern
+        this.router.navigate([], {
+          queryParams: { hint: null },
+          queryParamsHandling: 'merge',
+          replaceUrl: true
+        });
+        // Auto-hide nach 8 Sekunden
+        setTimeout(() => { this.showCreateStoreHint = false; }, 8000);
+      }
     });
 
     this.loadStores();

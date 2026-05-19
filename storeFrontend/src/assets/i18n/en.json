@@ -708,6 +708,11 @@
                       "createFirstStore":  "Create first store",
                       "created":  "Created",
                       "manageStore":  "Manage store",
+                      "noStoreHint":  {
+                                          "title":  "No store selected",
+                                          "text":  "To manage products, reviews or store settings, you need to create or select a store first.",
+                                          "cta":  "➕ Create store"
+                                      },
                       "status":  {
                                      "suspended":  "Suspended",
                                      "verification":  "Verification"
@@ -987,7 +992,12 @@
                                        "myAccount":  "My Account",
                                        "subscription":  "Subscription",
                                        "roles":  "Roles"
-                                   }
+                                   },
+                         "noStore":  {
+                                         "hint":  "No store selected",
+                                         "cta":  "Create a store",
+                                         "tooltip":  "Please create or select a store first"
+                                     }
                      },
     "wizard":  {
                    "skip":  "Skip",
