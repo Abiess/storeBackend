@@ -185,10 +185,12 @@ def make_client(api_id: int, api_hash: str, session_string: Optional[str] = None
     )
 
 async def _safe_disconnect(client: TelegramClient) -> None:
-    """Trennt Client ohne Exception zu werfen."""
+    """Trennt Client ohne Exception zu werfen. Max. 3 Sekunden Timeout."""
     try:
         if client and client.is_connected():
-            await client.disconnect()
+            await asyncio.wait_for(client.disconnect(), timeout=3.0)
+    except asyncio.TimeoutError:
+        logger.warning("[Auth] safe_disconnect: Timeout nach 3s – Client wird aufgegeben")
     except Exception as e:
         logger.warning(f"[Auth] safe_disconnect: {e}")
 
@@ -205,20 +207,22 @@ async def request_code(req: RequestCodeRequest):
     cache_key = f"{req.api_id}:{req.phone}"
     logger.info(f"[Auth] Sende Code an {req.phone} (key={cache_key})")
 
-    # Alten Client aufräumen falls vorhanden
+    # Alten Client aufräumen falls vorhanden (mit Timeout – kann sonst hängen!)
     old_client: TelegramClient = _pending_auth.pop(cache_key, None)
     if old_client:
         try:
-            await old_client.disconnect()
+            await asyncio.wait_for(old_client.disconnect(), timeout=3.0)
             logger.info(f"[Auth] Alter Client getrennt (key={cache_key})")
+        except asyncio.TimeoutError:
+            logger.warning(f"[Auth] Alter Client Disconnect-Timeout – wird aufgegeben (key={cache_key})")
         except Exception as cleanup_err:
             logger.warning(f"[Auth] Cleanup alter Client fehlgeschlagen (wird ignoriert): {cleanup_err}")
 
     client = make_client(req.api_id, req.api_hash)
 
     try:
-        await client.connect()
-        result = await client.send_code_request(req.phone)
+        await asyncio.wait_for(client.connect(), timeout=10.0)
+        result = await asyncio.wait_for(client.send_code_request(req.phone), timeout=15.0)
 
         # Client VERBUNDEN lassen – verify-code braucht denselben Client!
         _pending_auth[cache_key] = client
@@ -250,6 +254,9 @@ async def request_code(req: RequestCodeRequest):
     except FloodWaitError as e:
         await _safe_disconnect(client)
         raise HTTPException(429, f"Zu viele Versuche. Bitte {e.seconds} Sekunden warten.")
+    except asyncio.TimeoutError:
+        await _safe_disconnect(client)
+        raise HTTPException(504, "Timeout beim Verbinden mit Telegram – bitte erneut versuchen.")
     except Exception as e:
         logger.error(f"[Auth] request-code Fehler: {type(e).__name__}: {e}")
         await _safe_disconnect(client)

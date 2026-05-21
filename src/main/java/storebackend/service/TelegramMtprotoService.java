@@ -31,7 +31,6 @@ import java.util.regex.Pattern;
  *   TelegramBotService = Schreiben / Benachrichtigungen (Bot Token)
  */
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class TelegramMtprotoService {
 
@@ -47,7 +46,33 @@ public class TelegramMtprotoService {
     private final MediaService mediaService;
     private final ObjectMapper objectMapper;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
+
+    public TelegramMtprotoService(
+            TelegramMtprotoConfigRepository mtprotoRepository,
+            TelegramImportLogRepository importLogRepository,
+            StoreRepository storeRepository,
+            ProductService productService,
+            CategoryService categoryService,
+            CategoryRepository categoryRepository,
+            MediaService mediaService,
+            ObjectMapper objectMapper) {
+        this.mtprotoRepository = mtprotoRepository;
+        this.importLogRepository = importLogRepository;
+        this.storeRepository = storeRepository;
+        this.productService = productService;
+        this.categoryService = categoryService;
+        this.categoryRepository = categoryRepository;
+        this.mediaService = mediaService;
+        this.objectMapper = objectMapper;
+
+        // Timeout: 5s connect, 60s read (Telegram-Code kann länger dauern)
+        org.springframework.http.client.SimpleClientHttpRequestFactory factory =
+            new org.springframework.http.client.SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(5_000);
+        factory.setReadTimeout(60_000);
+        this.restTemplate = new RestTemplate(factory);
+    }
 
     private static final Pattern PRICE_PATTERN = Pattern.compile(
         "(\\d{1,6}(?:[.,]\\d{1,3})?)\\s*(?:€|\\$|MAD|DH|DZD|درهم|دج|EUR|USD)",
