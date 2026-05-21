@@ -2083,3 +2083,39 @@ COMMENT ON COLUMN telegram_import_log.telegram_msg_id IS 'Telegram Message-ID f�
 
 RAISE NOTICE '✅ V22: Telegram-Tabellen erstellt (telegram_store_config, telegram_import_log)';
 
+-- ==================================================================================
+-- V23: Telegram MTProto Channel Importer
+-- Tabelle: telegram_mtproto_config (api_id + api_hash + session_string pro Store)
+-- VOLLSTÄNDIG IDEMPOTENT
+-- ==================================================================================
+SET search_path TO public;
+
+CREATE TABLE IF NOT EXISTS telegram_mtproto_config (
+    id                      BIGSERIAL PRIMARY KEY,
+    store_id                BIGINT NOT NULL UNIQUE,
+    api_id                  INTEGER,
+    api_hash                VARCHAR(255),
+    phone                   VARCHAR(50),
+    session_string          TEXT,               -- Telethon StringSession (verschlüsselt empfohlen)
+    is_authenticated        BOOLEAN NOT NULL DEFAULT FALSE,
+    watched_channels        TEXT DEFAULT '[]',  -- JSON-Array: ["@kanal1", "@kanal2"]
+    last_message_ids        TEXT DEFAULT '{}',  -- JSON-Map: {"@kanal": 1234} für Delta-Import
+    import_limit            INTEGER NOT NULL DEFAULT 50,
+    is_active               BOOLEAN NOT NULL DEFAULT FALSE,
+    pending_phone_code_hash VARCHAR(255),       -- Temporär während Auth-Flow
+    created_at              TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at              TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_telegram_mtproto_store
+        FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_telegram_mtproto_store ON telegram_mtproto_config(store_id);
+CREATE INDEX IF NOT EXISTS idx_telegram_mtproto_active ON telegram_mtproto_config(is_authenticated, is_active);
+
+COMMENT ON TABLE telegram_mtproto_config IS 'MTProto-Credentials pro Store (api_id+api_hash+session). NIEMALS session_string in Logs drucken!';
+COMMENT ON COLUMN telegram_mtproto_config.session_string IS 'Telethon StringSession – bleibt gültig bis Logout. Nicht im Frontend anzeigen.';
+COMMENT ON COLUMN telegram_mtproto_config.watched_channels IS 'JSON-Array der zu importierenden Channels';
+COMMENT ON COLUMN telegram_mtproto_config.last_message_ids IS 'Delta-Import: letzte importierte Message-ID je Channel';
+
+RAISE NOTICE '✅ V23: telegram_mtproto_config erstellt';
+

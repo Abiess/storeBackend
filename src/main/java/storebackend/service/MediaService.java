@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -214,6 +215,66 @@ public class MediaService {
             log.info("[MediaService] uploadFromUrl ✅ mediaId={} für store={}", media.getId(), store.getId());
             return media;
         }
+    }
+
+    /**
+     * Speichert ein Bild aus Base64-String (vom Telegram MTProto Scraper).
+     * Wird beim Channel-Import verwendet.
+     */
+    @Transactional
+    public Media uploadFromBase64(Store store, String base64Data, String altText) throws IOException {
+        byte[] data = Base64.getDecoder().decode(base64Data);
+        long sizeBytes = data.length;
+
+        // Inhalt prüfen (Magic Bytes)
+        String contentType = detectContentType(data);
+        String ext = contentType.replace("image/", "").replace("jpeg", "jpg");
+        String filename = "telegram_" + UUID.randomUUID() + "." + ext;
+        String objectName = "stores/" + store.getId() + "/telegram/" + filename;
+
+        try (InputStream uploadStream = new java.io.ByteArrayInputStream(data)) {
+            minioService.uploadInputStream(uploadStream, sizeBytes, contentType, objectName);
+        }
+
+        Media media = new Media();
+        media.setStore(store);
+        media.setFilename(filename);
+        media.setOriginalFilename(filename);
+        media.setContentType(contentType);
+        media.setSizeBytes(sizeBytes);
+        media.setMinioObjectName(objectName);
+        media.setMediaType(storebackend.enums.MediaType.PRODUCT_IMAGE);
+        media.setAltText(altText);
+
+        media = mediaRepository.save(media);
+        storeUsageService.incrementStorage(store, sizeBytes);
+        storeUsageService.incrementImageCount(store);
+
+        log.info("[MediaService] uploadFromBase64 ✅ mediaId={} voor store={}", media.getId(), store.getId());
+        return media;
+    }
+
+    /** Erkennt Bild-Content-Type anhand der Magic Bytes. */
+    private String detectContentType(byte[] data) {
+        if (data.length >= 3
+            && data[0] == (byte) 0xFF && data[1] == (byte) 0xD8 && data[2] == (byte) 0xFF) {
+            return "image/jpeg";
+        }
+        if (data.length >= 4
+            && data[0] == (byte) 0x89 && data[1] == (byte) 0x50
+            && data[2] == (byte) 0x4E && data[3] == (byte) 0x47) {
+            return "image/png";
+        }
+        if (data.length >= 6
+            && data[0] == (byte) 0x47 && data[1] == (byte) 0x49 && data[2] == (byte) 0x46) {
+            return "image/gif";
+        }
+        if (data.length >= 4
+            && data[0] == (byte) 0x52 && data[1] == (byte) 0x49
+            && data[2] == (byte) 0x46 && data[3] == (byte) 0x46) {
+            return "image/webp";
+        }
+        return "image/jpeg"; // Fallback
     }
 
     /**
