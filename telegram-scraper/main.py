@@ -49,6 +49,14 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger(__name__)
 
 # ─────────────────────────────────────────────────────────────────────────────
+# In-Memory Auth-Client-Cache
+# Hält den Telethon-Client zwischen request-code und verify-code am Leben.
+# Schlüssel: "{api_id}:{phone}" → TelegramClient
+# Ohne das verliert Telethon den MTProto-Handshake-State → "Code abgelaufen"
+# ─────────────────────────────────────────────────────────────────────────────
+_pending_auth: dict = {}   # key: "{api_id}:{phone}" → TelegramClient
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Pydantic Models
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -134,6 +142,13 @@ class LogoutRequest(BaseModel):
 async def lifespan(app: FastAPI):
     logger.info("🚀 Telegram MTProto Scraper gestartet")
     yield
+    # Beim Shutdown alle offenen Auth-Clients trennen
+    for key, client in list(_pending_auth.items()):
+        try:
+            await client.disconnect()
+        except Exception:
+            pass
+    _pending_auth.clear()
     logger.info("✅ Telegram Scraper beendet")
 
 app = FastAPI(
@@ -173,43 +188,76 @@ def make_client(api_id: int, api_hash: str, session_string: Optional[str] = None
 async def request_code(req: RequestCodeRequest):
     """
     Schritt 1: Code ans Telefon senden.
-    Gibt phone_code_hash zurück – wird für verify-code benötigt.
+    Der Client bleibt im RAM bis verify-code aufgerufen wird.
     """
-    logger.info(f"[Auth] Sende Code an {req.phone}")
+    cache_key = f"{req.api_id}:{req.phone}"
+    logger.info(f"[Auth] Sende Code an {req.phone} (key={cache_key})")
+
+    # Alten Client aufräumen falls vorhanden
+    old_client: TelegramClient = _pending_auth.pop(cache_key, None)
+    if old_client:
+        try:
+            await old_client.disconnect()
+        except Exception:
+            pass
+
     client = make_client(req.api_id, req.api_hash)
 
     try:
         await client.connect()
         result = await client.send_code_request(req.phone)
-        # Teil-Session speichern – dieselbe Session MUSS für verify-code verwendet werden!
+
+        # Client VERBUNDEN lassen – verify-code braucht denselben Client!
+        _pending_auth[cache_key] = client
+
+        # Teil-Session zusätzlich zurückgeben (Fallback)
         auth_session_string = client.session.save()
+
+        logger.info(f"[Auth] Code gesendet, Client gecacht (key={cache_key})")
         return RequestCodeResponse(
             phone_code_hash=result.phone_code_hash,
             auth_session_string=auth_session_string,
             message=f"Code an {req.phone} gesendet"
         )
     except FloodWaitError as e:
+        await client.disconnect()
         raise HTTPException(429, f"Zu viele Versuche. Warte {e.seconds} Sekunden.")
     except Exception as e:
         logger.error(f"[Auth] request-code error: {e}")
+        try:
+            await client.disconnect()
+        except Exception:
+            pass
         raise HTTPException(400, str(e))
-    finally:
-        await client.disconnect()
 
 
 @app.post("/auth/verify-code", response_model=VerifyCodeResponse)
 async def verify_code(req: VerifyCodeRequest):
     """
     Schritt 2: Code verifizieren → gibt session_string zurück.
-    Den session_string im Backend DB speichern (pro Store/User).
+    Verwendet den gecachten Client aus request-code (gleicher MTProto-State).
     """
-    logger.info(f"[Auth] Verifiziere Code für {req.phone}")
-    # KRITISCH: dieselbe Session aus request-code wiederverwenden!
-    # Ohne das erkennt Telegram den phone_code_hash nicht → "Code abgelaufen"
-    client = make_client(req.api_id, req.api_hash, req.auth_session_string)
+    cache_key = f"{req.api_id}:{req.phone}"
+    logger.info(f"[Auth] Verifiziere Code für {req.phone} (key={cache_key})")
+
+    # Gecachten Client holen (ODER Fallback: neue Session mit auth_session_string)
+    client: TelegramClient = _pending_auth.pop(cache_key, None)
+
+    if client is None:
+        logger.warning(f"[Auth] Kein gecachter Client für {cache_key} – versuche Fallback mit auth_session_string")
+        if req.auth_session_string:
+            client = make_client(req.api_id, req.api_hash, req.auth_session_string)
+        else:
+            raise HTTPException(
+                400,
+                "Kein aktiver Auth-Flow gefunden. Bitte erst POST /auth/request-code aufrufen."
+            )
+    else:
+        # Sicherstellen dass der Client noch verbunden ist
+        if not client.is_connected():
+            await client.connect()
 
     try:
-        await client.connect()
         try:
             await client.sign_in(req.phone, req.code, phone_code_hash=req.phone_code_hash)
         except SessionPasswordNeededError:
