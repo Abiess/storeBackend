@@ -509,10 +509,28 @@ export class TelegramMtprotoComponent implements OnInit {
         this.loadStatus();
       },
       error: err => {
-        const msg = err.error?.detail || err.error?.message || 'Falscher Code';
-        if (msg.includes('2FA') || msg.includes('password')) this.needs2FA = true;
-        this.errorMsg = msg;
         this.verifying = false;
+        const errorCode = err.error?.error;
+        const msg = err.error?.message || err.error?.detail || err.error?.error || 'Falscher Code';
+
+        // 410: Code abgelaufen → automatisch zurück zu Schritt 1
+        if (err.status === 410 || errorCode === 'CODE_EXPIRED' ||
+            msg.toLowerCase().includes('abgelaufen') || msg.toLowerCase().includes('expired')) {
+          this.currentStep = 'credentials';
+          this.verifyCode = '';
+          this.errorMsg = '⏱️ Der Code ist abgelaufen. Bitte fordere einen neuen Code an.';
+          return;
+        }
+
+        // 401: 2FA erforderlich
+        if (err.status === 401 || errorCode === 'TWO_FA_REQUIRED' ||
+            msg.includes('2FA') || msg.includes('password') || msg.includes('Passwort')) {
+          this.needs2FA = true;
+          this.errorMsg = '🔐 Zwei-Faktor-Authentifizierung aktiv – bitte Passwort eingeben.';
+          return;
+        }
+
+        this.errorMsg = msg;
       }
     });
   }
