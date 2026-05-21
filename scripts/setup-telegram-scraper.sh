@@ -1,0 +1,147 @@
+#!/usr/bin/env bash
+# =============================================================================
+# setup-telegram-scraper.sh
+# Installiert und startet den Telegram MTProto Scraper (Python-Microservice)
+# als systemd-Service auf Port 8001.
+# Analog zu deploy.sh / fix-db-permissions.sh etc.
+# =============================================================================
+set -euo pipefail
+
+SCRAPER_DIR="/opt/telegram-scraper"
+SERVICE_NAME="telegram-scraper"
+SYSTEMD_SERVICE="/etc/systemd/system/${SERVICE_NAME}.service"
+VENV_DIR="$SCRAPER_DIR/.venv"
+PORT=8001
+
+# ── Hilfsfunktionen ────────────────────────────────────────────────────────────
+print_ok()      { echo "   ✅ $1"; }
+print_warn()    { echo "   ⚠️  $1"; }
+print_error()   { echo "   ❌ $1"; }
+print_section() { echo ""; echo "🤖 $1"; }
+
+# ==============================================================================
+# 1. Port-Check: Läuft bereits etwas auf Port 8001?
+# ==============================================================================
+print_section "Prüfe Port $PORT..."
+if ss -tlnp 2>/dev/null | grep -q ":${PORT} " || \
+   netstat -tlnp 2>/dev/null | grep -q ":${PORT} "; then
+    print_ok "Port $PORT ist bereits belegt – Telegram Scraper läuft."
+    # Prüfe ob der Health-Endpoint antwortet
+    HEALTH_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+        "http://localhost:${PORT}/health" 2>/dev/null || echo "000")
+    if [ "$HEALTH_CODE" = "200" ]; then
+        print_ok "Health-Check OK (HTTP 200) – kein Neustart nötig."
+        exit 0
+    else
+        print_warn "Port belegt, aber Health-Check schlägt fehl (HTTP $HEALTH_CODE) – Neustart..."
+        sudo systemctl restart "$SERVICE_NAME" 2>/dev/null || true
+        sleep 3
+        exit 0
+    fi
+else
+    print_warn "Port $PORT ist frei – Telegram Scraper wird eingerichtet..."
+fi
+
+# ==============================================================================
+# 2. Quellcode deployen (vom Upload in /opt/storebackend/telegram-scraper)
+# ==============================================================================
+print_section "Installiere Telegram Scraper nach $SCRAPER_DIR ..."
+sudo mkdir -p "$SCRAPER_DIR"
+
+SRC_DIR="/opt/storebackend/telegram-scraper"
+if [ -d "$SRC_DIR" ]; then
+    sudo cp -r "$SRC_DIR/." "$SCRAPER_DIR/"
+    print_ok "Quellcode nach $SCRAPER_DIR kopiert."
+else
+    print_error "Quellcode-Verzeichnis nicht gefunden: $SRC_DIR"
+    print_error "Stelle sicher, dass 'telegram-scraper/' im Repository enthalten ist."
+    exit 1
+fi
+
+# ==============================================================================
+# 3. Python 3 & venv
+# ==============================================================================
+print_section "Prüfe Python-Installation..."
+if ! command -v python3 &>/dev/null; then
+    print_warn "python3 nicht gefunden – installiere..."
+    sudo apt-get update -qq
+    sudo apt-get install -y python3 python3-pip python3-venv
+fi
+print_ok "Python $(python3 --version)"
+
+# ==============================================================================
+# 4. Virtuelle Umgebung & Abhängigkeiten
+# ==============================================================================
+print_section "Erstelle/Aktualisiere Virtual Environment..."
+if [ ! -d "$VENV_DIR" ]; then
+    sudo python3 -m venv "$VENV_DIR"
+fi
+
+sudo "$VENV_DIR/bin/pip" install --quiet --upgrade pip
+sudo "$VENV_DIR/bin/pip" install --quiet -r "$SCRAPER_DIR/requirements.txt"
+print_ok "Abhängigkeiten installiert."
+
+# ==============================================================================
+# 5. systemd Service einrichten
+# ==============================================================================
+print_section "Richte systemd Service ein: $SERVICE_NAME"
+sudo bash -c "cat > '$SYSTEMD_SERVICE' <<'EOF'
+[Unit]
+Description=Telegram MTProto Scraper (Microservice Port 8001)
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/telegram-scraper
+ExecStart=/opt/telegram-scraper/.venv/bin/uvicorn main:app --host 0.0.0.0 --port 8001 --workers 1
+Restart=on-failure
+RestartSec=10s
+StartLimitInterval=120s
+StartLimitBurst=5
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=telegram-scraper
+
+[Install]
+WantedBy=multi-user.target
+EOF"
+
+sudo systemctl daemon-reload
+sudo systemctl enable "$SERVICE_NAME"
+
+# ==============================================================================
+# 6. Service starten / neu starten
+# ==============================================================================
+print_section "Starte $SERVICE_NAME ..."
+if sudo systemctl is-active --quiet "$SERVICE_NAME"; then
+    sudo systemctl restart "$SERVICE_NAME"
+    print_ok "Service neu gestartet."
+else
+    sudo systemctl start "$SERVICE_NAME"
+    print_ok "Service gestartet."
+fi
+
+# ==============================================================================
+# 7. Health-Check (max. 15 Versuche × 2s = 30s)
+# ==============================================================================
+print_section "Warte auf Health-Endpoint http://localhost:${PORT}/health ..."
+for i in $(seq 1 15); do
+    HEALTH=$(curl -s -o /dev/null -w "%{http_code}" \
+        "http://localhost:${PORT}/health" 2>/dev/null || echo "000")
+    if [ "$HEALTH" = "200" ]; then
+        print_ok "Telegram Scraper ist healthy (HTTP 200) 🎉"
+        exit 0
+    fi
+    echo "   ⏳ Versuch $i/15 (HTTP $HEALTH)..."
+    sleep 2
+done
+
+print_error "Telegram Scraper antwortet nicht nach 30s!"
+echo ""
+echo "📋 Journal-Logs:"
+sudo journalctl -u "$SERVICE_NAME" -n 30 --no-pager || true
+exit 1
+
