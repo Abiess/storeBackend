@@ -82,17 +82,26 @@ print_ok "python-venv bereit."
 # 4. Virtuelle Umgebung & Abhängigkeiten
 # ==============================================================================
 print_section "Erstelle/Aktualisiere Virtual Environment..."
-# Altes venv entfernen falls es defekt ist
-if [ -d "$VENV_DIR" ] && ! "$VENV_DIR/bin/python3" --version &>/dev/null 2>&1; then
+# Altes venv entfernen falls es defekt oder unvollständig ist
+if [ -d "$VENV_DIR" ] && ! sudo "$VENV_DIR/bin/python3" --version &>/dev/null 2>&1; then
     print_warn "Defektes venv gefunden – wird neu erstellt..."
     sudo rm -rf "$VENV_DIR"
 fi
 if [ ! -d "$VENV_DIR" ]; then
-    sudo python3 -m venv "$VENV_DIR"
+    # --without-pip vermeidet den ensurepip-Fehler; pip wird danach manuell installiert
+    sudo python3 -m venv --without-pip "$VENV_DIR"
 fi
 
-sudo "$VENV_DIR/bin/pip" install --quiet --upgrade pip
-sudo "$VENV_DIR/bin/pip" install --quiet -r "$SCRAPER_DIR/requirements.txt"
+# pip via get-pip.py bootstrappen (funktioniert immer, unabhängig von ensurepip)
+if ! sudo "$VENV_DIR/bin/python3" -m pip --version &>/dev/null 2>&1; then
+    print_warn "pip nicht im venv – bootstrappe via get-pip.py..."
+    curl -sSL https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py
+    sudo "$VENV_DIR/bin/python3" /tmp/get-pip.py --quiet
+    rm -f /tmp/get-pip.py
+fi
+
+sudo "$VENV_DIR/bin/python3" -m pip install --quiet --upgrade pip
+sudo "$VENV_DIR/bin/python3" -m pip install --quiet -r "$SCRAPER_DIR/requirements.txt"
 print_ok "Abhängigkeiten installiert."
 
 # ==============================================================================
@@ -109,7 +118,7 @@ Wants=network-online.target
 Type=simple
 User=root
 WorkingDirectory=/opt/telegram-scraper
-ExecStart=/opt/telegram-scraper/.venv/bin/uvicorn main:app --host 0.0.0.0 --port 8001 --workers 1
+ExecStart=/opt/telegram-scraper/.venv/bin/python3 -m uvicorn main:app --host 0.0.0.0 --port 8001 --workers 1
 Restart=on-failure
 RestartSec=10s
 StartLimitInterval=120s
