@@ -269,6 +269,13 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
 
+  // ==================== Telegram Integration ====================
+  {
+    path: 'stores/:id/telegram',
+    loadComponent: () => import('./features/settings/telegram/telegram-page.component').then(m => m.TelegramPageComponent),
+    canActivate: [authGuard]
+  },
+
   // ==================== Store Detail (Catch-All) ====================
   // WICHTIG: Diese Route MUSS nach ALLEN spezifischen /stores/:id/xxx-Routen stehen!
   // Sonst fängt sie alles ab und zeigt die Store-Übersicht statt der Unterseite.

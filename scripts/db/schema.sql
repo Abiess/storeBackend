@@ -2029,3 +2029,57 @@ BEGIN
     END IF;
 END $$;
 
+-- ==================================================================================
+-- V22: Telegram Bot Integration
+-- Neue Tabellen: telegram_store_config + telegram_import_log
+-- VOLLSTÄNDIG IDEMPOTENT
+-- ==================================================================================
+SET search_path TO public;
+
+-- Telegram Konfiguration pro Store (Bot-Token + Channel + Flags)
+CREATE TABLE IF NOT EXISTS telegram_store_config (
+    id                   BIGSERIAL PRIMARY KEY,
+    store_id             BIGINT NOT NULL UNIQUE,
+    bot_token            VARCHAR(500),
+    channel_id           VARCHAR(100),
+    notify_new_orders    BOOLEAN NOT NULL DEFAULT TRUE,
+    notify_low_stock     BOOLEAN NOT NULL DEFAULT FALSE,
+    post_new_products    BOOLEAN NOT NULL DEFAULT FALSE,
+    low_stock_threshold  INTEGER NOT NULL DEFAULT 5,
+    import_limit         INTEGER NOT NULL DEFAULT 50,
+    is_active            BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_telegram_config_store
+        FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_telegram_config_store ON telegram_store_config(store_id);
+
+-- Telegram Import-Protokoll (Deduplizierung via UNIQUE constraint)
+CREATE TABLE IF NOT EXISTS telegram_import_log (
+    id                BIGSERIAL PRIMARY KEY,
+    store_id          BIGINT NOT NULL,
+    channel_id        VARCHAR(100) NOT NULL,
+    telegram_msg_id   BIGINT NOT NULL,
+    product_id        BIGINT,
+    status            VARCHAR(20) NOT NULL DEFAULT 'SUCCESS',
+    error_message     TEXT,
+    imported_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_telegram_import_log_store
+        FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE,
+    CONSTRAINT uq_telegram_import
+        UNIQUE (store_id, channel_id, telegram_msg_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_telegram_import_store ON telegram_import_log(store_id);
+CREATE INDEX IF NOT EXISTS idx_telegram_import_status ON telegram_import_log(store_id, status);
+
+COMMENT ON TABLE telegram_store_config IS 'Telegram Bot Konfiguration pro Store (BotFather Token + Channel)';
+COMMENT ON TABLE telegram_import_log IS 'Protokoll der Telegram-Channel-Imports mit Deduplizierung';
+COMMENT ON COLUMN telegram_store_config.bot_token IS 'BotFather Token – Bot muss Channel-Admin sein';
+COMMENT ON COLUMN telegram_store_config.channel_id IS '@username oder numerische Channel-ID';
+COMMENT ON COLUMN telegram_import_log.telegram_msg_id IS 'Telegram Message-ID für Duplikat-Check';
+
+RAISE NOTICE '✅ V22: Telegram-Tabellen erstellt (telegram_store_config, telegram_import_log)';
+

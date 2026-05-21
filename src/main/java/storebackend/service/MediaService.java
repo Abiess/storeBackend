@@ -15,8 +15,12 @@ import storebackend.repository.MediaRepository;
 import storebackend.repository.StoreRepository;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -154,11 +158,69 @@ public class MediaService {
     }
 
     /**
+     * Lädt ein Bild von einer URL herunter und speichert es in MinIO + DB.
+     * Wird für den Telegram-Channel-Import verwendet.
+     *
+     * @param store    Ziel-Store
+     * @param imageUrl Öffentliche Download-URL (z.B. von Telegram CDN)
+     * @param altText  Alt-Text für das Bild
+     * @return gespeichertes Media-Entity
+     */
+    @Transactional
+    public Media uploadFromUrl(Store store, String imageUrl, String altText) throws IOException {
+        log.info("[MediaService] uploadFromUrl: store={}, url={}", store.getId(), imageUrl);
+
+        URL url = new URL(imageUrl);
+        URLConnection conn = url.openConnection();
+        conn.setConnectTimeout(10_000);
+        conn.setReadTimeout(30_000);
+        conn.setRequestProperty("User-Agent", "markt.ma/1.0");
+
+        String contentType = conn.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            contentType = "image/jpeg"; // Fallback
+        }
+
+        String ext = contentType.replace("image/", "").replace("jpeg", "jpg");
+        String filename = "telegram_" + UUID.randomUUID() + "." + ext;
+
+        try (InputStream inputStream = conn.getInputStream()) {
+            byte[] data = inputStream.readAllBytes();
+            long sizeBytes = data.length;
+
+            // Upload zu MinIO via vorhandenem uploadTemporaryFile-Muster
+            String objectName = "stores/" + store.getId() + "/telegram/" + filename;
+            try (InputStream uploadStream = new java.io.ByteArrayInputStream(data)) {
+                minioService.uploadInputStream(uploadStream, sizeBytes, contentType, objectName);
+            }
+
+            // Media-Entity speichern
+            Media media = new Media();
+            media.setStore(store);
+            media.setFilename(filename);
+            media.setOriginalFilename(filename);
+            media.setContentType(contentType);
+            media.setSizeBytes(sizeBytes);
+            media.setMinioObjectName(objectName);
+            media.setMediaType(storebackend.enums.MediaType.PRODUCT_IMAGE);
+            media.setAltText(altText);
+
+            media = mediaRepository.save(media);
+
+            // Usage aktualisieren
+            storeUsageService.incrementStorage(store, sizeBytes);
+            storeUsageService.incrementImageCount(store);
+
+            log.info("[MediaService] uploadFromUrl ✅ mediaId={} für store={}", media.getId(), store.getId());
+            return media;
+        }
+    }
+
+    /**
      * Delete all media for a store (used when deleting a store)
      */
     @Transactional
-    public int deleteAllMediaForStore(Store store) {
-        List<Media> mediaList = mediaRepository.findByStore(store);
+    public int deleteAllMediaForStore(Store store) {        List<Media> mediaList = mediaRepository.findByStore(store);
         int deletedCount = 0;
 
         for (Media media : mediaList) {

@@ -8,8 +8,11 @@ import org.springframework.stereotype.Component;
 import storebackend.entity.Order;
 import storebackend.entity.OrderItem;
 import storebackend.entity.Store;
+import storebackend.entity.TelegramStoreConfig;
 import storebackend.enums.OrderStatus;
+import storebackend.repository.TelegramStoreConfigRepository;
 import storebackend.service.EmailService;
+import storebackend.service.TelegramBotService;
 import storebackend.service.WhatsAppService;
 
 import java.util.List;
@@ -25,6 +28,8 @@ public class OrderStatusEventListener {
 
     private final EmailService emailService;
     private final WhatsAppService whatsAppService;
+    private final TelegramBotService telegramBotService;
+    private final TelegramStoreConfigRepository telegramConfigRepository;
 
     @Async
     @EventListener
@@ -69,6 +74,11 @@ public class OrderStatusEventListener {
         // Owner-WhatsApp: die im Store hinterlegte Nummer des Inhabers
         String ownerWhatsapp = (store != null) ? store.getWhatsappNumber() : null;
 
+        // Telegram-Konfiguration des Stores laden (für Bot-Notifications)
+        TelegramStoreConfig telegramCfg = (store != null)
+            ? telegramConfigRepository.findByStoreId(store.getId()).orElse(null)
+            : null;
+
         List<OrderItem> items = order.getOrderItems() != null ? order.getOrderItems() : List.of();
 
         switch (newStatus) {
@@ -102,6 +112,11 @@ public class OrderStatusEventListener {
                             ownerWhatsapp, orderNumber, storeName,
                             order.getTotalAmount().doubleValue(), customerEmail, ownerLang);
                         log.info("[WA] New order notification sent to owner {}", ownerWhatsapp);
+                    }
+                    // 5) Neue-Bestellung-Benachrichtigung an Owner via Telegram Bot
+                    if (telegramCfg != null && telegramBotService.isConfigured(telegramCfg)) {
+                        telegramBotService.sendNewOrderNotification(telegramCfg, order);
+                        log.info("[Telegram] New order notification sent via Bot for store {}", store.getId());
                     }
                 }
                 break;

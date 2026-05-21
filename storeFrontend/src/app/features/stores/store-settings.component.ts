@@ -38,13 +38,13 @@ export interface SettingsTab {
         
         <!-- Wiederverwendbare Tab-Leiste (analog app-productnavigation-bar) -->
         <nav class="settings-tabs" role="tablist">
-          <button 
+          <button
             *ngFor="let tab of visibleTabs"
             class="settings-tab"
             role="tab"
             [class.active]="activeTab === tab.id"
             [attr.aria-selected]="activeTab === tab.id"
-            (click)="activeTab = tab.id">
+            (click)="onTabClick(tab.id)">
             <span class="tab-icon" aria-hidden="true">{{ tab.icon }}</span>
             <span class="tab-label">{{ tab.labelKey | translate }}</span>
             <span class="beta-badge" *ngIf="tab.beta">Beta</span>
@@ -794,6 +794,7 @@ export class StoreSettingsComponent implements OnInit {
     { id: 'slider',   icon: '🎬', labelKey: 'settings.slider' },
     { id: 'branding', icon: '🎨', labelKey: 'settings.branding.title' },
     { id: 'domain',   icon: '🌐', labelKey: 'settings.domain.title' },
+    { id: 'telegram', icon: '✈️', labelKey: 'Telegram' },
     { id: 'advanced', icon: '🔧', labelKey: 'settings.advanced.title' }
   ];
 
@@ -804,6 +805,15 @@ export class StoreSettingsComponent implements OnInit {
       if (tab.beta && !this.isBetaUser) return false;
       return true;
     });
+  }
+
+  /** Tab-Klick: bei 'telegram' direkt zur eigenen Route navigieren */
+  onTabClick(tabId: string): void {
+    if (tabId === 'telegram') {
+      this.router.navigate([`/stores/${this.storeId}/telegram`]);
+      return;
+    }
+    this.activeTab = tabId;
   }
 
   settingsForm: FormGroup;

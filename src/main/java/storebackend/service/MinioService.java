@@ -61,6 +61,29 @@ public class MinioService {
     }
 
     /**
+     * Upload eines InputStream mit bekannter Größe zu einem vorgegebenen objectName.
+     * Wird von MediaService.uploadFromUrl() genutzt (Telegram-Import).
+     */
+    public void uploadInputStream(InputStream inputStream, long sizeBytes,
+                                  String contentType, String objectName) {
+        checkMinioAvailable();
+        try {
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(minioProperties.getBucket())
+                            .object(objectName)
+                            .stream(inputStream, sizeBytes, -1)
+                            .contentType(contentType)
+                            .build()
+            );
+            log.info("InputStream uploaded to MinIO: {}", objectName);
+        } catch (Exception e) {
+            log.error("Error uploading InputStream to MinIO: {}", objectName, e);
+            throw new RuntimeException("Failed to upload to MinIO", e);
+        }
+    }
+
+    /**
      * Delete file from MinIO
      */
     public void deleteFile(String objectName) {
