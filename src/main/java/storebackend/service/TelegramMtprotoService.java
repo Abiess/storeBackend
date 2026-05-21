@@ -74,6 +74,7 @@ public class TelegramMtprotoService {
 
         JsonNode response = postToScraper("/auth/request-code", body);
         String phoneCodeHash = response.path("phone_code_hash").asText();
+        String authSession   = response.path("auth_session_string").asText();
 
         if (phoneCodeHash == null || phoneCodeHash.isBlank()) {
             throw new RuntimeException("Kein phone_code_hash erhalten vom Scraper");
@@ -93,6 +94,7 @@ public class TelegramMtprotoService {
         cfg.setApiHash(apiHash);
         cfg.setPhone(phone);
         cfg.setPendingPhoneCodeHash(phoneCodeHash);
+        cfg.setPendingAuthSession(authSession.isBlank() ? null : authSession);  // Teil-Session merken
         cfg.setAuthenticated(false);
         mtprotoRepository.save(cfg);
 
@@ -117,6 +119,10 @@ public class TelegramMtprotoService {
         body.put("phone", cfg.getPhone());
         body.put("code", code);
         body.put("phone_code_hash", cfg.getPendingPhoneCodeHash());
+        // Teil-Session aus Schritt 1 mitsenden – KRITISCH für korrekte Session-Kontinuität
+        if (cfg.getPendingAuthSession() != null && !cfg.getPendingAuthSession().isBlank()) {
+            body.put("auth_session_string", cfg.getPendingAuthSession());
+        }
         if (password != null && !password.isBlank()) {
             body.put("password", password);
         }
@@ -129,9 +135,10 @@ public class TelegramMtprotoService {
             // Code abgelaufen → Hash zurücksetzen, damit User erneut Code anfordern kann
             if (msg.toLowerCase().contains("abgelaufen") || msg.toLowerCase().contains("expired")) {
                 cfg.setPendingPhoneCodeHash(null);
+                cfg.setPendingAuthSession(null);
                 cfg.setAuthenticated(false);
                 mtprotoRepository.save(cfg);
-                log.warn("[MTProto] Code für store={} abgelaufen – Hash zurückgesetzt", storeId);
+                log.warn("[MTProto] Code für store={} abgelaufen – Hash + Session zurückgesetzt", storeId);
             }
             throw e;
         }
@@ -144,6 +151,7 @@ public class TelegramMtprotoService {
         cfg.setSessionString(sessionString);
         cfg.setAuthenticated(true);
         cfg.setPendingPhoneCodeHash(null);
+        cfg.setPendingAuthSession(null);  // Teil-Session nicht mehr benötigt
         return mtprotoRepository.save(cfg);
     }
 

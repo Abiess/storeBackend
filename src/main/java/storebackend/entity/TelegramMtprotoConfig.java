@@ -84,6 +84,14 @@ public class TelegramMtprotoConfig {
     @Column(name = "pending_phone_code_hash", length = 255)
     private String pendingPhoneCodeHash;
 
+    /**
+     * Temporär: Teil-Session aus request-code Schritt.
+     * MUSS für verify-code mitgegeben werden, damit Telegram denselben Client erkennt.
+     * Wird nach erfolgreichem Login gelöscht.
+     */
+    @Column(name = "pending_auth_session", columnDefinition = "TEXT")
+    private String pendingAuthSession;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

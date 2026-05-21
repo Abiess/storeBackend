@@ -20,7 +20,30 @@ print_error()   { echo "   ❌ $1"; }
 print_section() { echo ""; echo "🤖 $1"; }
 
 # ==============================================================================
-# 1. Port-Check: Läuft bereits etwas auf Port 8001?
+# 1. NTP-Sync sicherstellen (PFLICHT für Telegram-Auth – ohne korrekte Uhrzeit
+#    schlägt die Code-Verifikation sofort mit "expired" fehl!)
+# ==============================================================================
+print_section "Prüfe Systemzeit (NTP-Sync für Telegram-Auth erforderlich)..."
+if command -v timedatectl &>/dev/null; then
+    NTP_ACTIVE=$(timedatectl show --property=NTPSynchronized --value 2>/dev/null || echo "unknown")
+    if [ "$NTP_ACTIVE" = "yes" ]; then
+        print_ok "NTP aktiv und synchronisiert."
+    else
+        print_warn "NTP nicht synchronisiert – installiere/starte systemd-timesyncd..."
+        sudo apt-get install -y -qq systemd-timesyncd 2>/dev/null || true
+        sudo systemctl enable --now systemd-timesyncd 2>/dev/null || true
+        sudo timedatectl set-ntp true 2>/dev/null || true
+        sleep 2
+        print_ok "NTP-Sync gestartet (Uhrzeit: $(date -u))"
+    fi
+else
+    print_warn "timedatectl nicht verfügbar – installiere ntpdate..."
+    sudo apt-get install -y -qq ntpdate 2>/dev/null || true
+    sudo ntpdate -u pool.ntp.org 2>/dev/null || true
+fi
+
+# ==============================================================================
+# 2. Port-Check: Läuft bereits etwas auf Port 8001?
 # ==============================================================================
 print_section "Prüfe Port $PORT..."
 if ss -tlnp 2>/dev/null | grep -q ":${PORT} " || \
@@ -43,7 +66,7 @@ else
 fi
 
 # ==============================================================================
-# 2. Quellcode deployen (vom Upload in /opt/storebackend/telegram-scraper)
+# 3. Quellcode deployen (vom Upload in /opt/storebackend/telegram-scraper)
 # ==============================================================================
 print_section "Installiere Telegram Scraper nach $SCRAPER_DIR ..."
 sudo mkdir -p "$SCRAPER_DIR"

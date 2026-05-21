@@ -59,6 +59,7 @@ class RequestCodeRequest(BaseModel):
 
 class RequestCodeResponse(BaseModel):
     phone_code_hash: str
+    auth_session_string: str   # Teil-Session – muss für verify-code mitgegeben werden!
     message: str
 
 class VerifyCodeRequest(BaseModel):
@@ -67,6 +68,7 @@ class VerifyCodeRequest(BaseModel):
     phone: str
     code: str
     phone_code_hash: str
+    auth_session_string: Optional[str] = None  # Teil-Session aus request-code
     password: Optional[str] = None   # 2FA-Passwort falls aktiv
 
 class VerifyCodeResponse(BaseModel):
@@ -179,8 +181,11 @@ async def request_code(req: RequestCodeRequest):
     try:
         await client.connect()
         result = await client.send_code_request(req.phone)
+        # Teil-Session speichern – dieselbe Session MUSS für verify-code verwendet werden!
+        auth_session_string = client.session.save()
         return RequestCodeResponse(
             phone_code_hash=result.phone_code_hash,
+            auth_session_string=auth_session_string,
             message=f"Code an {req.phone} gesendet"
         )
     except FloodWaitError as e:
@@ -199,7 +204,9 @@ async def verify_code(req: VerifyCodeRequest):
     Den session_string im Backend DB speichern (pro Store/User).
     """
     logger.info(f"[Auth] Verifiziere Code für {req.phone}")
-    client = make_client(req.api_id, req.api_hash)
+    # KRITISCH: dieselbe Session aus request-code wiederverwenden!
+    # Ohne das erkennt Telegram den phone_code_hash nicht → "Code abgelaufen"
+    client = make_client(req.api_id, req.api_hash, req.auth_session_string)
 
     try:
         await client.connect()
