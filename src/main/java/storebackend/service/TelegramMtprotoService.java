@@ -462,10 +462,23 @@ public class TelegramMtprotoService {
             return objectMapper.readTree(response.getBody());
         } catch (org.springframework.web.client.HttpClientErrorException e) {
             String errBody = e.getResponseBodyAsString();
+            // FastAPI gibt {"detail": "..."} zurück – detail extrahieren
             try {
                 JsonNode errJson = objectMapper.readTree(errBody);
-                String detail = errJson.path("detail").asText(errBody);
+                // "detail" kann String oder Objekt sein
+                JsonNode detailNode = errJson.path("detail");
+                String detail;
+                if (detailNode.isTextual()) {
+                    detail = detailNode.asText();
+                } else if (!detailNode.isMissingNode()) {
+                    detail = detailNode.toString();
+                } else {
+                    // Kein "detail" → ganzen Body nehmen
+                    detail = errBody;
+                }
                 throw new RuntimeException(detail);
+            } catch (RuntimeException re) {
+                throw re;
             } catch (Exception ex) {
                 throw new RuntimeException(errBody);
             }

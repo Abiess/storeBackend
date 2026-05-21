@@ -480,6 +480,11 @@ export class TelegramMtprotoComponent implements OnInit {
     });
   }
 
+  private extractSeconds(msg: string): number {
+    const match = msg.match(/(\d+)\s*Sekunden/i) || msg.match(/(\d+)\s*seconds/i);
+    return match ? parseInt(match[1], 10) : 0;
+  }
+
   // ── Step 1: Code senden ──────────────────────────────────────────────────
 
   requestCode(): void {
@@ -496,7 +501,19 @@ export class TelegramMtprotoComponent implements OnInit {
         const msg = err.error?.message || err.error?.error || err.error?.detail || err.message || 'Fehler beim Senden des Codes';
 
         if (status === 429) {
-          this.errorMsg = `⏳ ${msg}`;
+          // Sekunden aus Fehlermeldung extrahieren und lesbar anzeigen
+          const seconds = this.extractSeconds(msg);
+          if (seconds > 3600) {
+            const h = Math.ceil(seconds / 3600);
+            this.errorMsg = `⏳ Zu viele Versuche. Telegram hat diese Nummer für ~${h} Stunden gesperrt. Bitte morgen erneut versuchen.`;
+          } else if (seconds > 60) {
+            const m = Math.ceil(seconds / 60);
+            this.errorMsg = `⏳ Zu viele Versuche. Bitte ${m} Minuten warten.`;
+          } else if (seconds > 0) {
+            this.errorMsg = `⏳ Zu viele Versuche. Bitte ${seconds} Sekunden warten.`;
+          } else {
+            this.errorMsg = `⏳ ${msg}`;
+          }
         } else if (status === 403) {
           this.errorMsg = `🚫 ${msg}`;
         } else if (status === 0 || !status) {
