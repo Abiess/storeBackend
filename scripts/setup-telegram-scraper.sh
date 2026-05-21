@@ -62,17 +62,31 @@ fi
 # 3. Python 3 & venv
 # ==============================================================================
 print_section "Prüfe Python-Installation..."
+sudo apt-get update -qq
+
+# Python 3 installieren falls nicht vorhanden
 if ! command -v python3 &>/dev/null; then
     print_warn "python3 nicht gefunden – installiere..."
-    sudo apt-get update -qq
-    sudo apt-get install -y python3 python3-pip python3-venv
+    sudo apt-get install -y python3 python3-pip
 fi
 print_ok "Python $(python3 --version)"
+
+# python3-venv sicherstellen (auf Debian/Ubuntu oft separat erforderlich)
+PY_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+print_warn "Stelle sicher, dass python${PY_VERSION}-venv installiert ist..."
+sudo apt-get install -y "python${PY_VERSION}-venv" python3-venv 2>/dev/null || \
+    sudo apt-get install -y python3-full 2>/dev/null || true
+print_ok "python-venv bereit."
 
 # ==============================================================================
 # 4. Virtuelle Umgebung & Abhängigkeiten
 # ==============================================================================
 print_section "Erstelle/Aktualisiere Virtual Environment..."
+# Altes venv entfernen falls es defekt ist
+if [ -d "$VENV_DIR" ] && ! "$VENV_DIR/bin/python3" --version &>/dev/null 2>&1; then
+    print_warn "Defektes venv gefunden – wird neu erstellt..."
+    sudo rm -rf "$VENV_DIR"
+fi
 if [ ! -d "$VENV_DIR" ]; then
     sudo python3 -m venv "$VENV_DIR"
 fi
