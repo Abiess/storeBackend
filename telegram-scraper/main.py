@@ -487,8 +487,19 @@ async def debug_pending():
     """Zeigt aktive Auth-Sessions im RAM (nur für Debugging)."""
     result = {}
     for key, client in _pending_auth.items():
-        result[key] = {
-            "connected": client.is_connected(),
-        }
+        result[key] = {"connected": client.is_connected()}
     return {"pending": result, "count": len(_pending_auth)}
+
+@app.post("/debug/reset-pending")
+async def reset_pending():
+    """Räumt alle hängenden Auth-Sessions auf (Admin-Reset)."""
+    count = len(_pending_auth)
+    for key, client in list(_pending_auth.items()):
+        try:
+            await asyncio.wait_for(client.disconnect(), timeout=2.0)
+        except Exception:
+            pass
+    _pending_auth.clear()
+    logger.info(f"[Debug] Pending-Auth-Cache geleert: {count} Sessions entfernt")
+    return {"cleared": count, "message": f"{count} hängende Sessions entfernt"}
 

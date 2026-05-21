@@ -325,6 +325,46 @@ public class TelegramMtprotoController {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // Debug / Admin
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Zeigt hängende Auth-Sessions im Scraper (nur für Stores-Owner sichtbar).
+     * GET /api/stores/{storeId}/telegram/mtproto/debug/pending
+     */
+    @GetMapping("/debug/pending")
+    public ResponseEntity<Object> debugPending(
+            @PathVariable Long storeId,
+            @AuthenticationPrincipal User user) {
+        verifyOwnership(storeId, user);
+        try {
+            org.springframework.web.client.RestTemplate rt = new org.springframework.web.client.RestTemplate();
+            String scraperUrl = "http://localhost:8001";
+            return ResponseEntity.ok(rt.getForObject(scraperUrl + "/debug/pending", Object.class));
+        } catch (Exception e) {
+            return ResponseEntity.ok(java.util.Map.of("error", e.getMessage(), "scraper", "nicht erreichbar"));
+        }
+    }
+
+    /**
+     * Räumt alle hängenden Auth-Sessions im Scraper auf.
+     * POST /api/stores/{storeId}/telegram/mtproto/debug/reset-pending
+     */
+    @PostMapping("/debug/reset-pending")
+    public ResponseEntity<Object> resetPending(
+            @PathVariable Long storeId,
+            @AuthenticationPrincipal User user) {
+        verifyOwnership(storeId, user);
+        try {
+            org.springframework.web.client.RestTemplate rt = new org.springframework.web.client.RestTemplate();
+            String scraperUrl = "http://localhost:8001";
+            return ResponseEntity.ok(rt.postForObject(scraperUrl + "/debug/reset-pending", null, Object.class));
+        } catch (Exception e) {
+            return ResponseEntity.ok(java.util.Map.of("error", e.getMessage()));
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Helper
     // ─────────────────────────────────────────────────────────────────────────
 
