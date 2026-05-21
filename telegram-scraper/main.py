@@ -41,6 +41,7 @@ from telethon.tl.types import (
 from telethon.errors import (
     SessionPasswordNeededError,
     PhoneCodeInvalidError,
+    PhoneCodeExpiredError,
     FloodWaitError,
 )
 
@@ -208,8 +209,14 @@ async def verify_code(req: VerifyCodeRequest):
             if not req.password:
                 raise HTTPException(401, "2FA aktiv – bitte Passwort mitschicken (password-Feld)")
             await client.sign_in(password=req.password)
+        except PhoneCodeExpiredError:
+            raise HTTPException(
+                410,
+                "Der Bestätigungscode ist abgelaufen. Bitte fordere einen neuen Code an "
+                "(POST /auth/request-code erneut aufrufen)."
+            )
         except PhoneCodeInvalidError:
-            raise HTTPException(400, "Falscher Code")
+            raise HTTPException(400, "Falscher Code – bitte nochmal prüfen.")
 
         session_string = client.session.save()
         me = await client.get_me()

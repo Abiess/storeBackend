@@ -72,11 +72,19 @@ public class TelegramMtprotoController {
             return ResponseEntity.badRequest().body(Map.of("error", "apiId, apiHash und phone sind erforderlich"));
         }
 
-        String phoneCodeHash = mtprotoService.requestAuthCode(storeId, apiId, apiHash, phone);
-        return ResponseEntity.ok(Map.of(
-            "phoneCodeHash", phoneCodeHash,
-            "message", "Code an " + phone + " gesendet"
-        ));
+        try {
+            String phoneCodeHash = mtprotoService.requestAuthCode(storeId, apiId, apiHash, phone);
+            return ResponseEntity.ok(Map.of(
+                "phoneCodeHash", phoneCodeHash,
+                "message", "Code an " + phone + " gesendet"
+            ));
+        } catch (RuntimeException e) {
+            String msg = e.getMessage() != null ? e.getMessage() : "Fehler beim Senden des Codes";
+            if (msg.contains("429") || msg.toLowerCase().contains("flood") || msg.toLowerCase().contains("warte")) {
+                return ResponseEntity.status(429).body(Map.of("error", "RATE_LIMIT", "message", msg));
+            }
+            return ResponseEntity.badRequest().body(Map.of("error", msg));
+        }
     }
 
     /**
@@ -98,12 +106,40 @@ public class TelegramMtprotoController {
             return ResponseEntity.badRequest().body(Map.of("error", "code ist erforderlich"));
         }
 
-        TelegramMtprotoConfig cfg = mtprotoService.verifyAuthCode(storeId, code, password);
-        return ResponseEntity.ok(Map.of(
-            "authenticated", cfg.isAuthenticated(),
-            "phone", cfg.getPhone() != null ? cfg.getPhone() : "",
-            "message", "Telegram-Account erfolgreich verbunden!"
-        ));
+        try {
+            TelegramMtprotoConfig cfg = mtprotoService.verifyAuthCode(storeId, code, password);
+            return ResponseEntity.ok(Map.of(
+                "authenticated", cfg.isAuthenticated(),
+                "phone", cfg.getPhone() != null ? cfg.getPhone() : "",
+                "message", "Telegram-Account erfolgreich verbunden!"
+            ));
+        } catch (RuntimeException e) {
+            String msg = e.getMessage() != null ? e.getMessage() : "Unbekannter Fehler";
+            // Code abgelaufen → 410 Gone mit Hinweis, neuen Code anzufordern
+            if (msg.toLowerCase().contains("abgelaufen") || msg.toLowerCase().contains("expired")) {
+                return ResponseEntity.status(410).body(Map.of(
+                    "error", "CODE_EXPIRED",
+                    "message", "Der Bestätigungscode ist abgelaufen. Bitte fordere einen neuen Code an.",
+                    "action", "REQUEST_NEW_CODE"
+                ));
+            }
+            // Falscher Code → 400
+            if (msg.toLowerCase().contains("falscher") || msg.toLowerCase().contains("invalid")) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "error", "CODE_INVALID",
+                    "message", msg
+                ));
+            }
+            // 2FA → 401
+            if (msg.toLowerCase().contains("2fa") || msg.toLowerCase().contains("passwort")) {
+                return ResponseEntity.status(401).body(Map.of(
+                    "error", "TWO_FA_REQUIRED",
+                    "message", msg
+                ));
+            }
+            // Sonstige Fehler → 400 (kein 500!)
+            return ResponseEntity.badRequest().body(Map.of("error", msg));
+        }
     }
 
     /**

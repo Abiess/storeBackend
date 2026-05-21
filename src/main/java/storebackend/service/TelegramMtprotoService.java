@@ -121,7 +121,20 @@ public class TelegramMtprotoService {
             body.put("password", password);
         }
 
-        JsonNode response = postToScraper("/auth/verify-code", body);
+        JsonNode response;
+        try {
+            response = postToScraper("/auth/verify-code", body);
+        } catch (RuntimeException e) {
+            String msg = e.getMessage() != null ? e.getMessage() : "";
+            // Code abgelaufen → Hash zurücksetzen, damit User erneut Code anfordern kann
+            if (msg.toLowerCase().contains("abgelaufen") || msg.toLowerCase().contains("expired")) {
+                cfg.setPendingPhoneCodeHash(null);
+                cfg.setAuthenticated(false);
+                mtprotoRepository.save(cfg);
+                log.warn("[MTProto] Code für store={} abgelaufen – Hash zurückgesetzt", storeId);
+            }
+            throw e;
+        }
         String sessionString = response.path("session_string").asText();
 
         if (sessionString == null || sessionString.isBlank()) {
@@ -502,7 +515,7 @@ public class TelegramMtprotoService {
     }
 
     @Transactional
-    private void updateLastMessageId(TelegramMtprotoConfig cfg, String channel, int msgId) {
+    void updateLastMessageId(TelegramMtprotoConfig cfg, String channel, int msgId) {
         try {
             Map<String, Integer> map;
             if (cfg.getLastMessageIds() != null && !cfg.getLastMessageIds().equals("{}")) {
