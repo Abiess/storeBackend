@@ -491,8 +491,20 @@ export class TelegramMtprotoComponent implements OnInit {
         this.sendingCode = false;
       },
       error: err => {
-        this.errorMsg = err.error?.detail || err.error?.message || 'Fehler beim Senden des Codes';
         this.sendingCode = false;
+        const status = err.status;
+        const msg = err.error?.message || err.error?.error || err.error?.detail || err.message || 'Fehler beim Senden des Codes';
+
+        if (status === 429) {
+          this.errorMsg = `⏳ ${msg}`;
+        } else if (status === 403) {
+          this.errorMsg = `🚫 ${msg}`;
+        } else if (status === 0 || !status) {
+          this.errorMsg = '🔌 Scraper nicht erreichbar – bitte kurz warten und erneut versuchen.';
+        } else {
+          this.errorMsg = `❌ ${msg}`;
+        }
+        console.error('[Telegram Auth] requestCode Fehler:', err);
       }
     });
   }

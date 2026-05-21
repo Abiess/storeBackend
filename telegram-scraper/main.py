@@ -43,6 +43,10 @@ from telethon.errors import (
     PhoneCodeInvalidError,
     PhoneCodeExpiredError,
     FloodWaitError,
+    PhoneNumberFloodError,
+    PhoneNumberBannedError,
+    PhoneNumberInvalidError,
+    ApiIdInvalidError,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -67,7 +71,7 @@ class RequestCodeRequest(BaseModel):
 
 class RequestCodeResponse(BaseModel):
     phone_code_hash: str
-    auth_session_string: str   # Teil-Session – muss für verify-code mitgegeben werden!
+    auth_session_string: Optional[str] = None  # Kann leer sein – Optional!
     message: str
 
 class VerifyCodeRequest(BaseModel):
@@ -180,6 +184,14 @@ def make_client(api_id: int, api_hash: str, session_string: Optional[str] = None
         app_version="1.0",
     )
 
+async def _safe_disconnect(client: TelegramClient) -> None:
+    """Trennt Client ohne Exception zu werfen."""
+    try:
+        if client and client.is_connected():
+            await client.disconnect()
+    except Exception as e:
+        logger.warning(f"[Auth] safe_disconnect: {e}")
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Auth Endpoints
 # ─────────────────────────────────────────────────────────────────────────────
@@ -198,8 +210,9 @@ async def request_code(req: RequestCodeRequest):
     if old_client:
         try:
             await old_client.disconnect()
-        except Exception:
-            pass
+            logger.info(f"[Auth] Alter Client getrennt (key={cache_key})")
+        except Exception as cleanup_err:
+            logger.warning(f"[Auth] Cleanup alter Client fehlgeschlagen (wird ignoriert): {cleanup_err}")
 
     client = make_client(req.api_id, req.api_hash)
 
@@ -210,25 +223,37 @@ async def request_code(req: RequestCodeRequest):
         # Client VERBUNDEN lassen – verify-code braucht denselben Client!
         _pending_auth[cache_key] = client
 
-        # Teil-Session zusätzlich zurückgeben (Fallback)
-        auth_session_string = client.session.save()
+        # Teil-Session als Fallback speichern (optional)
+        try:
+            auth_session_string = client.session.save() or None
+        except Exception:
+            auth_session_string = None
 
-        logger.info(f"[Auth] Code gesendet, Client gecacht (key={cache_key})")
+        logger.info(f"[Auth] ✅ Code gesendet, Client gecacht (key={cache_key})")
         return RequestCodeResponse(
             phone_code_hash=result.phone_code_hash,
             auth_session_string=auth_session_string,
             message=f"Code an {req.phone} gesendet"
         )
+    except ApiIdInvalidError:
+        await _safe_disconnect(client)
+        raise HTTPException(400, "Ungültige API ID oder API Hash. Bitte auf my.telegram.org prüfen.")
+    except PhoneNumberInvalidError:
+        await _safe_disconnect(client)
+        raise HTTPException(400, f"Ungültige Telefonnummer: {req.phone}. Format: +491234567890")
+    except PhoneNumberBannedError:
+        await _safe_disconnect(client)
+        raise HTTPException(403, f"Telefonnummer {req.phone} ist bei Telegram gesperrt.")
+    except PhoneNumberFloodError:
+        await _safe_disconnect(client)
+        raise HTTPException(429, "Zu viele Code-Anfragen für diese Nummer. Bitte morgen erneut versuchen.")
     except FloodWaitError as e:
-        await client.disconnect()
-        raise HTTPException(429, f"Zu viele Versuche. Warte {e.seconds} Sekunden.")
+        await _safe_disconnect(client)
+        raise HTTPException(429, f"Zu viele Versuche. Bitte {e.seconds} Sekunden warten.")
     except Exception as e:
-        logger.error(f"[Auth] request-code error: {e}")
-        try:
-            await client.disconnect()
-        except Exception:
-            pass
-        raise HTTPException(400, str(e))
+        logger.error(f"[Auth] request-code Fehler: {type(e).__name__}: {e}")
+        await _safe_disconnect(client)
+        raise HTTPException(400, f"Fehler beim Senden des Codes: {type(e).__name__}: {e}")
 
 
 @app.post("/auth/verify-code", response_model=VerifyCodeResponse)
@@ -286,10 +311,10 @@ async def verify_code(req: VerifyCodeRequest):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"[Auth] verify-code error: {e}")
-        raise HTTPException(400, str(e))
+        logger.error(f"[Auth] verify-code error: {type(e).__name__}: {e}")
+        raise HTTPException(400, f"{type(e).__name__}: {e}")
     finally:
-        await client.disconnect()
+        await _safe_disconnect(client)
 
 
 @app.post("/auth/check-session", response_model=CheckSessionResponse)
@@ -448,5 +473,15 @@ async def get_channel_history(req: ChannelHistoryRequest):
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "service": "telegram-scraper"}
+    return {"status": "ok", "service": "telegram-scraper", "pending_auth_sessions": len(_pending_auth)}
+
+@app.get("/debug/pending")
+async def debug_pending():
+    """Zeigt aktive Auth-Sessions im RAM (nur für Debugging)."""
+    result = {}
+    for key, client in _pending_auth.items():
+        result[key] = {
+            "connected": client.is_connected(),
+        }
+    return {"pending": result, "count": len(_pending_auth)}
 
