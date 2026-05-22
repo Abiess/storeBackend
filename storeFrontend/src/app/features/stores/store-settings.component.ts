@@ -7,7 +7,6 @@ import { Store } from '../../core/models';
 import { StoreNavigationComponent } from '../../shared/components/store-navigation.component';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { StoreSliderEditorComponent } from './components/store-slider-editor.component';
-import { BrandingEditorComponent } from './branding-editor.component';
 
 /**
  * Wiederverwendbares Settings-Tab Interface.
@@ -25,7 +24,7 @@ export interface SettingsTab {
 @Component({
   selector: 'app-store-settings',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, StoreNavigationComponent, TranslatePipe, StoreSliderEditorComponent, BrandingEditorComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, StoreNavigationComponent, TranslatePipe, StoreSliderEditorComponent],
   template: `
     <div class="store-settings-container">
       <!-- Einheitliche Navigation -->
@@ -148,10 +147,16 @@ export interface SettingsTab {
           <app-store-slider-editor></app-store-slider-editor>
         </div>
 
-        <!-- Branding Settings -->
-        <!-- Branding Settings -->
+        <!-- Branding Settings: redirect zur Brand-Seite -->
         <div class="tab-content" *ngIf="activeTab === 'branding'">
-          <app-branding-editor></app-branding-editor>
+          <div class="brand-redirect-info">
+            <span class="brand-redirect-icon">🎨</span>
+            <h3>Branding & Design</h3>
+            <p>Verwalte Logo, Farben und KI-Brand-Kit auf der Branding-Seite.</p>
+            <button class="btn btn-primary" (click)="router.navigate(['/stores', storeId, 'brand'])">
+              🚀 Zur Branding-Seite
+            </button>
+          </div>
         </div>
 
         <!-- Domain Settings -->
@@ -724,6 +729,20 @@ export interface SettingsTab {
     :host-context([dir="rtl"]) .tab-indicator {
       transform-origin: right center;
     }
+
+    /* ─── Brand Redirect ─── */
+    .brand-redirect-info {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      padding: 3rem 2rem;
+      text-align: center;
+    }
+    .brand-redirect-icon { font-size: 3rem; }
+    .brand-redirect-info h3 { margin: 0; font-size: 1.3rem; color: #111827; }
+    .brand-redirect-info p { margin: 0; color: #64748b; font-size: 0.95rem; }
 
     /* ─── WhatsApp Section ─── */
     .whatsapp-section {

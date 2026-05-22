@@ -5,12 +5,66 @@
 
   h1 {
     margin-bottom: 24px;
-    color: #333;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #111827;
+  }
+}
+
+// ── Section-Header (teilt die Seite in zwei Bereiche) ─────────────────────
+.section-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 32px 0 16px;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #f0f4ff, #faf5ff);
+  border: 1px solid #c7d2fe;
+  border-radius: 12px;
+
+  &:first-of-type { margin-top: 8px; }
+
+  &--ai {
+    background: linear-gradient(135deg, #f0fdf4, #f0f9ff);
+    border-color: #86efac;
   }
 
-  // SAFETY RULE: No global pseudo-elements or absolute positioning on container
-  // All decorative elements scoped to .brand-preview .brand-decor
+  h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1e1b4b;
+  }
+
+  .section-desc {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #64748b;
+  }
 }
+
+.section-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  width: fit-content;
+
+  &.primary-badge {
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #86efac;
+  }
+
+  &.ai-badge {
+    background: #dbeafe;
+    color: #1e40af;
+    border: 1px solid #93c5fd;
+  }
+}
+// ──────────────────────────────────────────────────────────────────────────
 
 .content-grid {
   display: grid;
@@ -350,145 +404,5 @@ mat-card-actions {
   font-size: 12px;
   color: #6b7280;
 }
-// ──────────────────────────────────────────────────────────────────────────
-.logo-upload-section {
-  margin-bottom: 24px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid #e0e0e0;
-}
 
-.logo-upload-title {
-  font-size: 16px;
-  font-weight: 500;
-  margin-bottom: 12px;
-  color: #333;
-}
-
-.upload-error-banner {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: #fff2f2;
-  border: 1px solid #fca5a5;
-  border-radius: 8px;
-  padding: 10px 14px;
-  margin-bottom: 12px;
-  font-size: 13px;
-  color: #b91c1c;
-  flex-wrap: wrap;
-}
-
-.btn-retry-small {
-  margin-inline-start: auto;
-  padding: 4px 12px;
-  font-size: 12px;
-  background: #fff;
-  border: 1px solid #fca5a5;
-  border-radius: 6px;
-  color: #b91c1c;
-  cursor: pointer;
-  white-space: nowrap;
-
-  &:hover { background: #fee2e2; }
-}
-
-.upload-area {
-  border: 2px dashed #d1d5db;
-  border-radius: 12px;
-  padding: 28px 20px;
-  text-align: center;
-  cursor: pointer;
-  transition: border-color 0.2s, background 0.2s;
-  background: #fafafa;
-
-  &:hover:not(.is-uploading) {
-    border-color: #667eea;
-    background: #f5f7ff;
-  }
-
-  &.is-uploading {
-    cursor: wait;
-    border-color: #667eea;
-    background: #f5f7ff;
-  }
-}
-
-.upload-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  color: #6b7280;
-
-  p { margin: 0; font-size: 14px; }
-  small { font-size: 12px; }
-}
-
-.upload-icon { font-size: 2rem; }
-
-.upload-progress-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-
-  p { margin: 0; color: #667eea; font-weight: 600; font-size: 14px; }
-}
-
-.upload-progress-bar {
-  width: 100%;
-  max-width: 280px;
-  height: 6px;
-  background: #e5e7eb;
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.upload-progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #667eea, #764ba2);
-  border-radius: 999px;
-  transition: width 0.3s ease;
-}
-
-.logo-preview-wrap {
-  position: relative;
-  display: inline-block;
-
-  img.logo-preview-img {
-    max-width: 200px;
-    max-height: 100px;
-    border-radius: 8px;
-    object-fit: contain;
-    display: block;
-  }
-}
-
-.btn-remove-logo {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  width: 24px;
-  height: 24px;
-  background: #ef4444;
-  color: #fff;
-  border: none;
-  border-radius: 50%;
-  font-size: 11px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-
-  &:hover { background: #dc2626; }
-}
-
-.upload-success {
-  margin: 8px 0 0;
-  font-size: 13px;
-  color: #059669;
-  font-weight: 500;
-}
-// ──────────────────────────────────────────────────────────────────────────
 

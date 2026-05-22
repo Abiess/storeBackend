@@ -11,8 +11,9 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BrandService, BrandGenerateRequest, BrandGenerateResponse } from '../../../core/services/brand.service';
-import { MediaService } from '../../../core/services/media.service';
 import { StoreService } from '../../../core/services/store.service';
+import { ThemeService } from '../../../core/services/theme.service';
+import { BrandingEditorComponent } from '../../stores/branding-editor.component';
 import { ProductnavigationBarComponent } from '@app/features/productnavigation-bar/productnavigation-bar.component';
 
 @Component({
@@ -29,6 +30,7 @@ import { ProductnavigationBarComponent } from '@app/features/productnavigation-b
         MatChipsModule,
         MatProgressSpinnerModule,
         MatIconModule,
+        BrandingEditorComponent,
         ProductnavigationBarComponent
     ],
     templateUrl: './brand-onboarding.component.html',
@@ -39,22 +41,16 @@ export class BrandOnboardingComponent implements OnInit {
     private route = inject(ActivatedRoute);
     private router = inject(Router);
     private brandService = inject(BrandService);
-    private mediaService = inject(MediaService);
     private storeService = inject(StoreService);
+    private themeService = inject(ThemeService);
 
     brandForm!: FormGroup;
     storeId: number | null = null;
-    storeName: string | null = null;      // ← vorgeladener Shop-Name
+    storeName: string | null = null;
     loading = false;
     generatedBrand: BrandGenerateResponse | null = null;
     previewPalette: { [key: string]: string } = {};
 
-    // Logo Upload State
-    logoPreview: string | null = null;
-    uploadedLogoUrl: string | null = null;
-    uploading = false;
-    uploadProgress = 0;
-    uploadError: string | null = null;
 
     styles = [
         { value: 'minimal', label: 'Minimal' },
@@ -197,11 +193,43 @@ export class BrandOnboardingComponent implements OnInit {
 
     savePalette(): void {
         if (this.previewPalette && this.storeId != null) {
+            // 1. In MinIO speichern (BrandService)
             this.brandService.savePalette(this.storeId, this.previewPalette).subscribe({
                 next: () => {},
-                error: (error: unknown) => {
-                    console.error('Failed to save palette', error);
+                error: (error: unknown) => console.error('Failed to save palette', error)
+            });
+
+            // 2. Farben ins aktive Theme übernehmen → Storefront zeigt sie sofort
+            const primary = this.previewPalette['--color-primary'] || '#667eea';
+            const secondary = this.previewPalette['--color-secondary'] || '#764ba2';
+            const accent = this.previewPalette['--color-accent'] || primary;
+
+            const themeRequest = {
+                storeId: this.storeId,
+                name: 'AI Brand Theme',
+                type: 'MODERN' as any,
+                template: 'CUSTOM' as any,
+                colors: {
+                    primary, secondary, accent,
+                    background: this.previewPalette['--color-background'] || '#ffffff',
+                    text: this.previewPalette['--color-text'] || '#1a202c',
+                    textSecondary: '#718096', border: '#e2e8f0',
+                    success: '#48bb78', warning: '#ed8936', error: '#f56565'
+                },
+                typography: {
+                    fontFamily: "'Inter', sans-serif",
+                    headingFontFamily: "'Inter', sans-serif",
+                    fontSize: { small: '0.875rem', base: '1rem', large: '1.125rem', xl: '1.5rem', xxl: '2.25rem' }
+                },
+                layout: {
+                    headerStyle: 'fixed' as any, footerStyle: 'full' as any,
+                    productGridColumns: 3 as any, borderRadius: 'medium' as any, spacing: 'normal' as any
                 }
+            };
+
+            this.themeService.createTheme(themeRequest).subscribe({
+                next: () => console.log('✅ KI-Palette in Storefront-Theme gespeichert'),
+                error: (err: unknown) => console.error('Theme-Update fehlgeschlagen:', err)
             });
         }
     }
@@ -223,80 +251,5 @@ export class BrandOnboardingComponent implements OnInit {
 
     getAssetKeys(): string[] {
         return this.generatedBrand ? Object.keys(this.generatedBrand.assets) : [];
-    }
-
-    // ──────────────────────────────────────────────
-    // Logo Upload
-    // ──────────────────────────────────────────────
-
-    onFileSelected(event: Event): void {
-        const input = event.target as HTMLInputElement;
-        const file = input.files?.[0];
-        if (!file) return;
-
-        this.uploadError = null;
-
-        if (!file.type.startsWith('image/')) {
-            this.uploadError = 'Bitte nur Bild-Dateien hochladen (PNG, JPG, SVG)';
-            return;
-        }
-
-        const maxSize = 2 * 1024 * 1024;
-        if (file.size > maxSize) {
-            this.uploadError = `Datei zu groß (${(file.size / 1024 / 1024).toFixed(2)} MB). Maximum: 2 MB`;
-            return;
-        }
-
-        // Sofort-Preview lokal
-        const reader = new FileReader();
-        reader.onload = (e: ProgressEvent<FileReader>) => {
-            this.logoPreview = e.target?.result as string;
-        };
-        reader.readAsDataURL(file);
-
-        this.uploadLogo(file);
-    }
-
-    uploadLogo(file: File): void {
-        if (this.storeId === null) {
-            this.uploadError = 'Fehler: Store-Kontext nicht verfügbar';
-            return;
-        }
-        this.uploading = true;
-        this.uploadProgress = 0;
-        this.uploadError = null;
-
-        this.mediaService.uploadMediaWithProgress(this.storeId, file, 'LOGO').subscribe({
-            next: (event) => {
-                if (event.progress !== undefined) {
-                    this.uploadProgress = event.progress;
-                }
-                if (event.response) {
-                    this.uploadedLogoUrl = event.response.url;
-                    this.uploading = false;
-                    this.uploadProgress = 100;
-                }
-            },
-            error: (err: any) => {
-                this.uploading = false;
-                this.uploadProgress = 0;
-                this.uploadError = err?.error?.message || 'Upload fehlgeschlagen. Bitte erneut versuchen.';
-                this.logoPreview = null;
-                this.uploadedLogoUrl = null;
-            }
-        });
-    }
-
-    removeLogo(event: Event): void {
-        event.stopPropagation();
-        this.logoPreview = null;
-        this.uploadedLogoUrl = null;
-        this.uploadError = null;
-        this.uploadProgress = 0;
-    }
-
-    retryUpload(): void {
-        const fileInput = document.querySelector<HTMLInputElement>('input[type="file"]');
-        if (fileInput) fileInput.click();
     }
 }

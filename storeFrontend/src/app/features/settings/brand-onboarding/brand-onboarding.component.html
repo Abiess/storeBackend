@@ -1,99 +1,57 @@
 <div class="brand-onboarding-container">
-    <h1>Brand Kit Generator</h1>
+    <h1>🎨 Branding & Design</h1>
 
-    <app-productnavigation-bar
-            *ngIf="storeId != null"
-            >
-    </app-productnavigation-bar>
+    <app-productnavigation-bar *ngIf="storeId != null"></app-productnavigation-bar>
+
+    <!-- ═══ SECTION 1: Logo, Farben & Theme (direkt im Storefront sichtbar) ═══ -->
+    <div class="section-header">
+        <span class="section-badge primary-badge">✅ Storefront-aktiv</span>
+        <h2>Logo, Farben & Theme</h2>
+        <p class="section-desc">Änderungen hier werden sofort im Storefront angezeigt.</p>
+    </div>
+    <app-branding-editor></app-branding-editor>
+
+    <!-- ═══ SECTION 2: KI-Brand-Kit-Generator (optional) ═══ -->
+    <div class="section-header section-header--ai">
+        <span class="section-badge ai-badge">🤖 KI-gestützt</span>
+        <h2>KI Brand Kit Generator</h2>
+        <p class="section-desc">KI generiert automatisch Farbpalette, Logo-SVG, Hero-Banner, Favicons und OG-Bild.
+            Nach dem Speichern werden die Farben ebenfalls im Storefront aktiv.</p>
+    </div>
+
     <div class="content-grid">
-
         <mat-card class="form-section">
             <mat-card-header>
                 <mat-card-title>Brand Information</mat-card-title>
             </mat-card-header>
 
             <mat-card-content>
-
-                <!-- ── Logo Upload ──────────────────────────────── -->
-                <div class="logo-upload-section">
-                    <h3 class="logo-upload-title">📷 Store Logo</h3>
-
-                    <div *ngIf="uploadError" class="upload-error-banner">
-                        <span>⚠️ {{ uploadError }}</span>
-                        <button type="button" class="btn-retry-small" (click)="retryUpload()">Erneut versuchen</button>
+                <!-- Shop-Name: read-only aus Store-Daten -->
+                <div class="shop-name-readonly">
+                    <label class="shop-name-label">🏪 Shop Name</label>
+                    <div class="shop-name-value">
+                        <span *ngIf="storeName">{{ storeName }}</span>
+                        <span *ngIf="!storeName" class="shop-name-loading">Wird geladen…</span>
                     </div>
-
-                    <div class="upload-area"
-                         [class.is-uploading]="uploading"
-                         (click)="!uploading && logoFileInput.click()">
-                        <input #logoFileInput type="file" accept="image/*"
-                               (change)="onFileSelected($event)" style="display:none">
-
-                        <!-- Uploading -->
-                        <div *ngIf="uploading" class="upload-progress-wrap">
-                            <div class="upload-progress-bar">
-                                <div class="upload-progress-fill" [style.width.%]="uploadProgress"></div>
-                            </div>
-                            <p>Hochladen... {{ uploadProgress }}%</p>
-                        </div>
-
-                        <!-- Leer -->
-                        <div *ngIf="!logoPreview && !uploading" class="upload-placeholder">
-                            <span class="upload-icon">📁</span>
-                            <p>Klicken um Logo hochzuladen</p>
-                            <small>PNG, JPG, SVG (max. 2 MB)</small>
-                        </div>
-
-                        <!-- Preview -->
-                        <div *ngIf="logoPreview && !uploading" class="logo-preview-wrap">
-                            <img [src]="logoPreview" alt="Logo Vorschau" class="logo-preview-img">
-                            <button type="button" class="btn-remove-logo" (click)="removeLogo($event)">✕</button>
-                        </div>
-                    </div>
-
-                    <p *ngIf="uploadedLogoUrl" class="upload-success">
-                        ✅ Logo erfolgreich hochgeladen
-                    </p>
+                    <small class="shop-name-hint">Wird automatisch aus deinen Store-Einstellungen übernommen.</small>
                 </div>
-                <!-- ─────────────────────────────────────────────── -->
+                <input type="hidden" formControlName="shopName" [formGroup]="brandForm">
 
                 <form [formGroup]="brandForm">
-                    <!-- Shop-Name: read-only aus Store-Daten -->
-                    <div class="shop-name-readonly">
-                        <label class="shop-name-label">🏪 Shop Name</label>
-                        <div class="shop-name-value">
-                            <span *ngIf="storeName">{{ storeName }}</span>
-                            <span *ngIf="!storeName" class="shop-name-loading">Wird geladen…</span>
-                        </div>
-                        <small class="shop-name-hint">Der Shop-Name wird automatisch aus deinen Store-Einstellungen übernommen.</small>
-                    </div>
-                    <!-- Dieser Input bleibt im Form für Validierung, ist aber ausgeblendet -->
-                    <input type="hidden" formControlName="shopName">
-
                     <mat-form-field appearance="outline" class="full-width">
                         <mat-label>Slogan (Optional)</mat-label>
-                        <input
-                                matInput
-                                formControlName="slogan"
-                                placeholder="Your brand slogan"
-                                data-testid="slogan-input">
+                        <input matInput formControlName="slogan" placeholder="Your brand slogan" data-testid="slogan-input">
                     </mat-form-field>
 
                     <mat-form-field appearance="outline" class="full-width">
                         <mat-label>Industry (Optional)</mat-label>
-                        <input
-                                matInput
-                                formControlName="industry"
-                                placeholder="e.g., Fashion, Electronics"
-                                data-testid="industry-input">
+                        <input matInput formControlName="industry" placeholder="e.g., Fashion, Electronics" data-testid="industry-input">
                     </mat-form-field>
 
                     <mat-form-field appearance="outline" class="full-width">
                         <mat-label>Brand Style</mat-label>
                         <mat-select formControlName="style" data-testid="style-select">
-                            <mat-option *ngFor="let style of styles" [value]="style.value">
-                                {{ style.label }}
-                            </mat-option>
+                            <mat-option *ngFor="let style of styles" [value]="style.value">{{ style.label }}</mat-option>
                         </mat-select>
                     </mat-form-field>
 
@@ -102,27 +60,12 @@
                         <div class="color-input-group">
                             <mat-form-field appearance="outline" class="color-input">
                                 <mat-label>Add Color (e.g., #FF5733)</mat-label>
-                                <input
-                                        matInput
-                                        formControlName="preferredColorInput"
-                                        placeholder="#FF5733"
-                                        data-testid="preferred-color-input">
+                                <input matInput formControlName="preferredColorInput" placeholder="#FF5733" data-testid="preferred-color-input">
                             </mat-form-field>
-
-                            <button
-                                    mat-raised-button
-                                    type="button"
-                                    (click)="addPreferredColor()"
-                                    data-testid="add-preferred-color-btn">
-                                Add
-                            </button>
+                            <button mat-raised-button type="button" (click)="addPreferredColor()" data-testid="add-preferred-color-btn">Add</button>
                         </div>
-
                         <mat-chip-set>
-                            <mat-chip
-                                    *ngFor="let color of preferredColors"
-                                    [removable]="true"
-                                    (removed)="removePreferredColor(color)">
+                            <mat-chip *ngFor="let color of preferredColors" [removable]="true" (removed)="removePreferredColor(color)">
                                 <div class="chip-content">
                                     <span class="color-swatch" [style.background-color]="color"></span>
                                     {{ color }}
@@ -137,27 +80,12 @@
                         <div class="color-input-group">
                             <mat-form-field appearance="outline" class="color-input">
                                 <mat-label>Add Color (e.g., #000000)</mat-label>
-                                <input
-                                        matInput
-                                        formControlName="forbiddenColorInput"
-                                        placeholder="#000000"
-                                        data-testid="forbidden-color-input">
+                                <input matInput formControlName="forbiddenColorInput" placeholder="#000000" data-testid="forbidden-color-input">
                             </mat-form-field>
-
-                            <button
-                                    mat-raised-button
-                                    type="button"
-                                    (click)="addForbiddenColor()"
-                                    data-testid="add-forbidden-color-btn">
-                                Add
-                            </button>
+                            <button mat-raised-button type="button" (click)="addForbiddenColor()" data-testid="add-forbidden-color-btn">Add</button>
                         </div>
-
                         <mat-chip-set>
-                            <mat-chip
-                                    *ngFor="let color of forbiddenColors"
-                                    [removable]="true"
-                                    (removed)="removeForbiddenColor(color)">
+                            <mat-chip *ngFor="let color of forbiddenColors" [removable]="true" (removed)="removeForbiddenColor(color)">
                                 <div class="chip-content">
                                     <span class="color-swatch" [style.background-color]="color"></span>
                                     {{ color }}
@@ -170,24 +98,13 @@
             </mat-card-content>
 
             <mat-card-actions>
-                <button
-                        mat-raised-button
-                        color="primary"
-                        (click)="generateBrand()"
-                        [disabled]="!brandForm.valid || loading || storeId == null"
-                        data-testid="generate-btn">
-                    <mat-icon>auto_awesome</mat-icon>
-                    Generate Brand Kit
+                <button mat-raised-button color="primary" (click)="generateBrand()"
+                        [disabled]="!brandForm.valid || loading || storeId == null" data-testid="generate-btn">
+                    <mat-icon>auto_awesome</mat-icon> Generate Brand Kit
                 </button>
-
-                <button
-                        mat-raised-button
-                        color="accent"
-                        (click)="regenerateBrand()"
-                        [disabled]="!brandForm.valid || loading || !generatedBrand || storeId == null"
-                        data-testid="regenerate-btn">
-                    <mat-icon>refresh</mat-icon>
-                    Regenerate
+                <button mat-raised-button color="accent" (click)="regenerateBrand()"
+                        [disabled]="!brandForm.valid || loading || !generatedBrand || storeId == null" data-testid="regenerate-btn">
+                    <mat-icon>refresh</mat-icon> Regenerate
                 </button>
             </mat-card-actions>
         </mat-card>
@@ -209,8 +126,7 @@
                 </div>
 
                 <div *ngIf="!loading && generatedBrand" class="brand-preview">
-                    <div class="brand-decor" aria-hidden="true">
-                    </div>
+                    <div class="brand-decor" aria-hidden="true"></div>
 
                     <div class="brand-content">
                         <div class="palette-display">
@@ -238,19 +154,10 @@
                             <div class="assets-grid">
                                 <div *ngFor="let key of getAssetKeys()" class="asset-item">
                                     <strong>{{ key }}</strong>
-
-                                    <img
-                                            *ngIf="key.includes('png') || key.includes('jpg')"
-                                            [src]="generatedBrand.assets[key]"
-                                            [alt]="key"
-                                            class="asset-preview">
-
-                                    <a
-                                            *ngIf="!key.includes('png') && !key.includes('jpg')"
-                                            [href]="generatedBrand.assets[key]"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            class="asset-link">
+                                    <img *ngIf="key.includes('png') || key.includes('jpg')"
+                                         [src]="generatedBrand.assets[key]" [alt]="key" class="asset-preview">
+                                    <a *ngIf="!key.includes('png') && !key.includes('jpg')"
+                                       [href]="generatedBrand.assets[key]" target="_blank" rel="noopener noreferrer" class="asset-link">
                                         View {{ key }}
                                     </a>
                                 </div>
@@ -258,23 +165,11 @@
                         </div>
 
                         <div class="preview-actions">
-                            <button
-                                    mat-raised-button
-                                    color="primary"
-                                    (click)="savePalette()"
-                                    [disabled]="storeId == null"
-                                    data-testid="save-palette-btn">
-                                <mat-icon>save</mat-icon>
-                                Save Palette
+                            <button mat-raised-button color="primary" (click)="savePalette()" [disabled]="storeId == null" data-testid="save-palette-btn">
+                                <mat-icon>save</mat-icon> Palette speichern & in Storefront aktivieren
                             </button>
-
-                            <button
-                                    mat-raised-button
-                                    (click)="downloadZip()"
-                                    [disabled]="storeId == null"
-                                    data-testid="download-zip-btn">
-                                <mat-icon>download</mat-icon>
-                                Download ZIP
+                            <button mat-raised-button (click)="downloadZip()" [disabled]="storeId == null" data-testid="download-zip-btn">
+                                <mat-icon>download</mat-icon> Download ZIP
                             </button>
                         </div>
                     </div>
@@ -283,5 +178,3 @@
         </mat-card>
     </div>
 </div>
-
-
