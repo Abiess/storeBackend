@@ -13,6 +13,50 @@
             </mat-card-header>
 
             <mat-card-content>
+
+                <!-- ── Logo Upload ──────────────────────────────── -->
+                <div class="logo-upload-section">
+                    <h3 class="logo-upload-title">📷 Store Logo</h3>
+
+                    <div *ngIf="uploadError" class="upload-error-banner">
+                        <span>⚠️ {{ uploadError }}</span>
+                        <button type="button" class="btn-retry-small" (click)="retryUpload()">Erneut versuchen</button>
+                    </div>
+
+                    <div class="upload-area"
+                         [class.is-uploading]="uploading"
+                         (click)="!uploading && logoFileInput.click()">
+                        <input #logoFileInput type="file" accept="image/*"
+                               (change)="onFileSelected($event)" style="display:none">
+
+                        <!-- Uploading -->
+                        <div *ngIf="uploading" class="upload-progress-wrap">
+                            <div class="upload-progress-bar">
+                                <div class="upload-progress-fill" [style.width.%]="uploadProgress"></div>
+                            </div>
+                            <p>Hochladen... {{ uploadProgress }}%</p>
+                        </div>
+
+                        <!-- Leer -->
+                        <div *ngIf="!logoPreview && !uploading" class="upload-placeholder">
+                            <span class="upload-icon">📁</span>
+                            <p>Klicken um Logo hochzuladen</p>
+                            <small>PNG, JPG, SVG (max. 2 MB)</small>
+                        </div>
+
+                        <!-- Preview -->
+                        <div *ngIf="logoPreview && !uploading" class="logo-preview-wrap">
+                            <img [src]="logoPreview" alt="Logo Vorschau" class="logo-preview-img">
+                            <button type="button" class="btn-remove-logo" (click)="removeLogo($event)">✕</button>
+                        </div>
+                    </div>
+
+                    <p *ngIf="uploadedLogoUrl" class="upload-success">
+                        ✅ Logo erfolgreich hochgeladen
+                    </p>
+                </div>
+                <!-- ─────────────────────────────────────────────── -->
+
                 <form [formGroup]="brandForm">
                     <mat-form-field appearance="outline" class="full-width">
                         <mat-label>Shop Name</mat-label>

@@ -9,8 +9,9 @@ import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { BrandService, BrandGenerateRequest, BrandGenerateResponse } from '../../../core/services/brand.service';
+import { MediaService } from '../../../core/services/media.service';
 import { ProductnavigationBarComponent } from '@app/features/productnavigation-bar/productnavigation-bar.component';
 
 @Component({
@@ -35,13 +36,22 @@ import { ProductnavigationBarComponent } from '@app/features/productnavigation-b
 export class BrandOnboardingComponent implements OnInit {
     private fb = inject(FormBuilder);
     private route = inject(ActivatedRoute);
+    private router = inject(Router);
     private brandService = inject(BrandService);
+    private mediaService = inject(MediaService);
 
     brandForm!: FormGroup;
     storeId: number | null = null;
     loading = false;
     generatedBrand: BrandGenerateResponse | null = null;
     previewPalette: { [key: string]: string } = {};
+
+    // Logo Upload State
+    logoPreview: string | null = null;
+    uploadedLogoUrl: string | null = null;
+    uploading = false;
+    uploadProgress = 0;
+    uploadError: string | null = null;
 
     styles = [
         { value: 'minimal', label: 'Minimal' },
@@ -69,30 +79,20 @@ export class BrandOnboardingComponent implements OnInit {
     }
 
     private extractStoreId(): number | null {
-        const ownParam = this.route.snapshot.paramMap.get('storeId');
-        if (ownParam !== null) {
-            const parsed = Number(ownParam);
-            return Number.isNaN(parsed) ? null : parsed;
+        // 3-stufige StoreId-Extraktion (Workspace-Standard)
+        let id: string | null = this.route.snapshot.paramMap.get('storeId') || this.route.snapshot.paramMap.get('id');
+        if (!id && this.route.parent) {
+            id = this.route.parent.snapshot.paramMap.get('storeId') || this.route.parent.snapshot.paramMap.get('id');
         }
-
-        const parentParam = this.route.parent?.snapshot.paramMap.get('storeId');
-        if (parentParam !== null && parentParam !== undefined) {
-            const parsed = Number(parentParam);
-            return Number.isNaN(parsed) ? null : parsed;
+        if (!id) {
+            const m = this.router.url.match(/\/stores\/(\d+)/);
+            if (m) id = m[1];
         }
-
-        let current = this.route.parent;
-        while (current) {
-            const value = current.snapshot.paramMap.get('storeId');
-            if (value !== null) {
-                const parsed = Number(value);
-                return Number.isNaN(parsed) ? null : parsed;
-            }
-            current = current.parent;
-        }
-
-        return null;
+        if (id === null) return null;
+        const parsed = Number(id);
+        return Number.isNaN(parsed) ? null : parsed;
     }
+
 
     addPreferredColor(): void {
         const colorInput = this.brandForm.get('preferredColorInput')?.value;
@@ -207,5 +207,80 @@ export class BrandOnboardingComponent implements OnInit {
 
     getAssetKeys(): string[] {
         return this.generatedBrand ? Object.keys(this.generatedBrand.assets) : [];
+    }
+
+    // ──────────────────────────────────────────────
+    // Logo Upload
+    // ──────────────────────────────────────────────
+
+    onFileSelected(event: Event): void {
+        const input = event.target as HTMLInputElement;
+        const file = input.files?.[0];
+        if (!file) return;
+
+        this.uploadError = null;
+
+        if (!file.type.startsWith('image/')) {
+            this.uploadError = 'Bitte nur Bild-Dateien hochladen (PNG, JPG, SVG)';
+            return;
+        }
+
+        const maxSize = 2 * 1024 * 1024;
+        if (file.size > maxSize) {
+            this.uploadError = `Datei zu groß (${(file.size / 1024 / 1024).toFixed(2)} MB). Maximum: 2 MB`;
+            return;
+        }
+
+        // Sofort-Preview lokal
+        const reader = new FileReader();
+        reader.onload = (e: ProgressEvent<FileReader>) => {
+            this.logoPreview = e.target?.result as string;
+        };
+        reader.readAsDataURL(file);
+
+        this.uploadLogo(file);
+    }
+
+    uploadLogo(file: File): void {
+        if (this.storeId === null) {
+            this.uploadError = 'Fehler: Store-Kontext nicht verfügbar';
+            return;
+        }
+        this.uploading = true;
+        this.uploadProgress = 0;
+        this.uploadError = null;
+
+        this.mediaService.uploadMediaWithProgress(this.storeId, file, 'LOGO').subscribe({
+            next: (event) => {
+                if (event.progress !== undefined) {
+                    this.uploadProgress = event.progress;
+                }
+                if (event.response) {
+                    this.uploadedLogoUrl = event.response.url;
+                    this.uploading = false;
+                    this.uploadProgress = 100;
+                }
+            },
+            error: (err: any) => {
+                this.uploading = false;
+                this.uploadProgress = 0;
+                this.uploadError = err?.error?.message || 'Upload fehlgeschlagen. Bitte erneut versuchen.';
+                this.logoPreview = null;
+                this.uploadedLogoUrl = null;
+            }
+        });
+    }
+
+    removeLogo(event: Event): void {
+        event.stopPropagation();
+        this.logoPreview = null;
+        this.uploadedLogoUrl = null;
+        this.uploadError = null;
+        this.uploadProgress = 0;
+    }
+
+    retryUpload(): void {
+        const fileInput = document.querySelector<HTMLInputElement>('input[type="file"]');
+        if (fileInput) fileInput.click();
     }
 }
