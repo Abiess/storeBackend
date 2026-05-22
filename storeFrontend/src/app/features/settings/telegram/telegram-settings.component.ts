@@ -24,7 +24,7 @@ import { TelegramService, TelegramConfig } from '@app/core/services/telegram.ser
           <h2>Telegram Bot</h2>
           <p>Importiere Produkte aus deinem Telegram-Channel und erhalte Bestellbenachrichtigungen.</p>
         </div>
-        <div class="connection-badge" [class.connected]="config?.connected" *ngIf="config">
+        <div class="connection-badge" [class.connected]="config.connected" *ngIf="config">
           <span>{{ config.connected ? '✅ Verbunden' : '🔴 Nicht verbunden' }}</span>
         </div>
       </div>

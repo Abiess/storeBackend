@@ -153,7 +153,7 @@ export interface SettingsTab {
             <span class="brand-redirect-icon">🎨</span>
             <h3>Branding & Design</h3>
             <p>Verwalte Logo, Farben und KI-Brand-Kit auf der Branding-Seite.</p>
-            <button class="btn btn-primary" (click)="router.navigate(['/stores', storeId, 'brand'])">
+            <button class="btn btn-primary" (click)="navigateToBrand()">
               🚀 Zur Branding-Seite
             </button>
           </div>
@@ -959,6 +959,10 @@ export class StoreSettingsComponent implements OnInit {
 
   manageDomains(): void {
     this.router.navigate(['/stores', this.storeId, 'domains']);
+  }
+
+  navigateToBrand(): void {
+    this.router.navigate(['/stores', this.storeId, 'brand']);
   }
 
   executeDeleteStore(): void {
