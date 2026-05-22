@@ -48,16 +48,7 @@ export class StoreSliderEditorComponent implements OnInit, OnDestroy {
         this.storeId = id;
         this.loadSlider();
         // FAB: Bild hochladen + Vorschau
-        this.fabService.register({
-          icon: '🖼',
-          label: 'Bild hochladen',
-          color: 'primary',
-          action: () => document.getElementById('slider-file-input')?.click(),
-          speedDial: [
-            { icon: '📤', label: 'Bild hochladen', action: () => document.getElementById('slider-file-input')?.click(), color: '#667eea' },
-            { icon: '👁', label: 'Slider-Vorschau', action: () => window.open(`/storefront/${id}`, '_blank'), color: '#4fd1c5' },
-          ]
-        });
+
       }
     });
   }
