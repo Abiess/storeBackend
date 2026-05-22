@@ -1,173 +1,270 @@
-<div class="seo-settings-container">
-  <app-page-header
-    [title]="'SEO Einstellungen'"
-    [breadcrumbs]="breadcrumbItems"
-    [showBackButton]="true"
-    [actions]="headerActions"
-  ></app-page-header>
+<div class="seo-page">
 
-  <mat-card>
+  <!-- Store Navigation -->
+  <app-store-navigation [currentPage]="'SEO Einstellungen'"></app-store-navigation>
 
-    <mat-card-content>
-      <div *ngIf="loading" class="loading-spinner">
-        <mat-spinner diameter="40"></mat-spinner>
+  <!-- Page Header -->
+  <div class="page-hero">
+    <div class="page-hero-left">
+      <button class="back-btn" (click)="navigateBack()">← Zurück</button>
+      <div>
+        <h1>🔍 SEO Einstellungen</h1>
+        <p class="hero-sub">Optimiere deine Sichtbarkeit in Suchmaschinen & sozialen Netzwerken</p>
+      </div>
+    </div>
+    <div class="page-hero-actions">
+      <button class="btn-reset" (click)="onReset()" [disabled]="saving || loading">
+        ↺ Zurücksetzen
+      </button>
+      <button class="btn-save" (click)="onSave()" [disabled]="saving || loading">
+        <span *ngIf="!saving && !saveSuccess">💾 Speichern</span>
+        <span *ngIf="saving">⏳ Speichern...</span>
+        <span *ngIf="saveSuccess && !saving">✅ Gespeichert!</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-overlay" *ngIf="loading">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Einstellungen werden geladen...</p>
+  </div>
+
+  <form [formGroup]="settingsForm" *ngIf="!loading" class="seo-grid">
+
+    <!-- ══════════════ LINKE SPALTE ══════════════ -->
+    <div class="seo-main">
+
+      <!-- SECTION: Grundeinstellungen -->
+      <div class="seo-card">
+        <div class="card-header">
+          <span class="card-icon">📋</span>
+          <div>
+            <h2>Grundeinstellungen</h2>
+            <p>Name, Titel-Template und Meta-Description</p>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Site Name <span class="required">*</span></label>
+          <input class="field-input" formControlName="siteName" placeholder="Mein Shop" />
+          <span class="field-error" *ngIf="settingsForm.get('siteName')?.invalid && settingsForm.get('siteName')?.touched">
+            Pflichtfeld
+          </span>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">
+            Titel-Template
+            <span class="field-hint">z.B. {{'{'}}page.title{{'}'}} | {{'{'}}store.siteName{{'}'}}</span>
+          </label>
+          <input class="field-input" formControlName="defaultTitleTemplate"
+                 placeholder="Produktname | Mein Shop" />
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">
+            Meta Description <span class="required">*</span>
+            <span class="char-counter" [class.warn]="descLength > 140" [class.danger]="descLength > 160">
+              {{ descLength }}/160
+            </span>
+          </label>
+          <textarea class="field-input field-textarea" formControlName="defaultMetaDescription"
+                    rows="3" placeholder="Willkommen in unserem Shop. Entdecke unsere Produkte..."></textarea>
+          <span class="field-error" *ngIf="settingsForm.get('defaultMetaDescription')?.hasError('maxlength')">
+            Maximal 160 Zeichen
+          </span>
+          <span class="field-error" *ngIf="settingsForm.get('defaultMetaDescription')?.hasError('required') && settingsForm.get('defaultMetaDescription')?.touched">
+            Pflichtfeld
+          </span>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Meta Keywords <span class="field-hint">kommagetrennt</span></label>
+          <input class="field-input" formControlName="defaultMetaKeywords"
+                 placeholder="shop, produkte, markt" />
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Canonical Base URL</label>
+          <input class="field-input" formControlName="canonicalBaseUrl"
+                 placeholder="https://mein-shop.markt.ma" />
+        </div>
       </div>
 
-      <form [formGroup]="settingsForm" *ngIf="!loading">
-        <!-- Basic Settings -->
-        <section class="settings-section">
-          <h3>Grundeinstellungen</h3>
-
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Site Name</mat-label>
-            <input matInput formControlName="siteName" placeholder="Mein Shop" data-testid="seo-site-name">
-            <mat-error>Site Name ist erforderlich</mat-error>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Standard Title Template</mat-label>
-            <input matInput formControlName="defaultTitleTemplate"
-                   placeholder="Beispiel: Seitentitel | Shopname"
-                   data-testid="seo-title-template">
-            <mat-hint>Verfügbare Platzhalter: page.title, store.siteName, product.title</mat-hint>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Standard Meta Description</mat-label>
-            <textarea matInput formControlName="defaultMetaDescription"
-                      rows="3"
-                      placeholder="Willkommen in unserem Shop..."
-                      data-testid="seo-meta-description"></textarea>
-            <mat-hint>Empfohlen: 150-160 Zeichen</mat-hint>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Canonical Base URL</mat-label>
-            <input matInput formControlName="canonicalBaseUrl"
-                   placeholder="https://mein-shop.markt.ma"
-                   data-testid="seo-canonical-url">
-            <mat-error>Muss eine absolute HTTPS URL sein</mat-error>
-          </mat-form-field>
-
-          <mat-slide-toggle formControlName="robotsIndex" data-testid="seo-robots-toggle">
-            Suchmaschinen-Indexierung aktivieren
-          </mat-slide-toggle>
-        </section>
-
-        <!-- Social Media -->
-        <section class="settings-section">
-          <h3>
-            <mat-icon>share</mat-icon>
-            Social Media
-          </h3>
-
-          <div class="image-upload-section">
-            <label>Open Graph Standard-Bild</label>
-            <div class="image-preview" *ngIf="ogImagePreview">
-              <img [src]="ogImagePreview" alt="OG Image Preview">
-            </div>
-            <input type="file"
-                   accept="image/*"
-                   (change)="onImageSelect($event)"
-                   #fileInput
-                   style="display: none"
-                   data-testid="seo-og-image-input">
-            <button mat-raised-button type="button" (click)="fileInput.click()" data-testid="seo-og-image-upload">
-              <mat-icon>upload</mat-icon>
-              Bild hochladen
-            </button>
-            <mat-hint>Empfohlen: 1200x630px (Open Graph)</mat-hint>
+      <!-- SECTION: Social Media -->
+      <div class="seo-card">
+        <div class="card-header">
+          <span class="card-icon">📱</span>
+          <div>
+            <h2>Social Media</h2>
+            <p>Profile-Links & Open Graph Bild</p>
           </div>
-
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Twitter Handle</mat-label>
-            <input matInput formControlName="twitterHandle" placeholder="@meinshop" data-testid="seo-twitter">
-            <mat-icon matPrefix>alternate_email</mat-icon>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Facebook Seite</mat-label>
-            <input matInput formControlName="facebookPageUrl"
-                   placeholder="https://facebook.com/meinshop"
-                   data-testid="seo-facebook">
-            <mat-icon matPrefix>link</mat-icon>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Instagram</mat-label>
-            <input matInput formControlName="instagramUrl"
-                   placeholder="https://instagram.com/meinshop"
-                   data-testid="seo-instagram">
-            <mat-icon matPrefix>link</mat-icon>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>YouTube</mat-label>
-            <input matInput formControlName="youtubeUrl" data-testid="seo-youtube">
-            <mat-icon matPrefix>link</mat-icon>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>LinkedIn</mat-label>
-            <input matInput formControlName="linkedinUrl" data-testid="seo-linkedin">
-            <mat-icon matPrefix>link</mat-icon>
-          </mat-form-field>
-        </section>
-
-        <!-- Hreflang -->
-        <section class="settings-section">
-          <h3>
-            <mat-icon>language</mat-icon>
-            Hreflang (Mehrsprachigkeit)
-          </h3>
-
-          <div class="hreflang-list">
-            <div class="hreflang-entry" *ngFor="let entry of hreflangEntries; let i = index; trackBy: trackByIndex">
-              <mat-form-field appearance="outline" class="lang-code">
-                <mat-label>Sprachcode</mat-label>
-                <input matInput [(ngModel)]="entry.langCode"
-                       [ngModelOptions]="{standalone: true}"
-                       placeholder="de"
-                       [attr.data-testid]="'hreflang-code-' + i">
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="lang-url">
-                <mat-label>URL</mat-label>
-                <input matInput [(ngModel)]="entry.absoluteUrlBase"
-                       [ngModelOptions]="{standalone: true}"
-                       placeholder="https://mein-shop.de"
-                       [attr.data-testid]="'hreflang-url-' + i">
-              </mat-form-field>
-
-              <button mat-icon-button color="warn" (click)="removeHreflang(i)" type="button" [attr.data-testid]="'hreflang-remove-' + i">
-                <mat-icon>delete</mat-icon>
-              </button>
-            </div>
-          </div>
-
-          <button mat-stroked-button (click)="addHreflang()" type="button" data-testid="hreflang-add">
-            <mat-icon>add</mat-icon>
-            Sprache hinzufügen
-          </button>
-        </section>
-
-        <!-- Actions -->
-        <div class="actions">
-          <button mat-raised-button color="primary"
-                  (click)="onSave()"
-                  [disabled]="saving || settingsForm.invalid"
-                  data-testid="seo-save">
-            <mat-icon>save</mat-icon>
-            <span *ngIf="!saving">Speichern</span>
-            <span *ngIf="saving">Speichern...</span>
-          </button>
-
-          <button mat-stroked-button (click)="onReset()" [disabled]="saving" data-testid="seo-reset">
-            <mat-icon>refresh</mat-icon>
-            Zurücksetzen
-          </button>
         </div>
-      </form>
-    </mat-card-content>
-  </mat-card>
+
+        <!-- OG Image Upload -->
+        <div class="og-upload-section">
+          <label class="field-label">Open Graph Bild <span class="field-hint">Empfohlen: 1200×630px</span></label>
+          <div class="og-upload-area" (click)="!ogImageUploading && ogFileInput.click()">
+            <input #ogFileInput type="file" accept="image/*" (change)="onImageSelect($event)" style="display:none">
+            <div *ngIf="ogImageUploading" class="og-uploading">
+              <mat-spinner diameter="24"></mat-spinner>
+              <span>Wird hochgeladen...</span>
+            </div>
+            <img *ngIf="ogImagePreview && !ogImageUploading" [src]="ogImagePreview" alt="OG Vorschau" class="og-preview-img">
+            <div *ngIf="!ogImagePreview && !ogImageUploading" class="og-placeholder">
+              <span>🖼️</span>
+              <p>Klicken zum Hochladen</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="social-grid">
+          <div class="field-group">
+            <label class="field-label">🐦 Twitter / X Handle</label>
+            <input class="field-input" formControlName="twitterHandle" placeholder="@meinshop" />
+          </div>
+          <div class="field-group">
+            <label class="field-label">📘 Facebook</label>
+            <input class="field-input" formControlName="facebookPageUrl" placeholder="https://facebook.com/meinshop" />
+          </div>
+          <div class="field-group">
+            <label class="field-label">📸 Instagram</label>
+            <input class="field-input" formControlName="instagramUrl" placeholder="https://instagram.com/meinshop" />
+          </div>
+          <div class="field-group">
+            <label class="field-label">▶️ YouTube</label>
+            <input class="field-input" formControlName="youtubeUrl" placeholder="https://youtube.com/@meinshop" />
+          </div>
+          <div class="field-group">
+            <label class="field-label">💼 LinkedIn</label>
+            <input class="field-input" formControlName="linkedinUrl" placeholder="https://linkedin.com/..." />
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION: Hreflang -->
+      <div class="seo-card">
+        <div class="card-header">
+          <span class="card-icon">🌍</span>
+          <div>
+            <h2>Hreflang (Mehrsprachigkeit)</h2>
+            <p>Regionsspezifische URLs für verschiedene Sprachen</p>
+          </div>
+        </div>
+
+        <div class="hreflang-list">
+          <div class="hreflang-entry" *ngFor="let entry of hreflangEntries; let i = index; trackBy: trackByIndex">
+            <input class="field-input hreflang-code" [(ngModel)]="entry.langCode"
+                   [ngModelOptions]="{standalone: true}" placeholder="de" />
+            <input class="field-input hreflang-url" [(ngModel)]="entry.absoluteUrlBase"
+                   [ngModelOptions]="{standalone: true}" placeholder="https://mein-shop.de" />
+            <button class="btn-remove" type="button" (click)="removeHreflang(i)">✕</button>
+          </div>
+        </div>
+
+        <button class="btn-add-hreflang" type="button" (click)="addHreflang()">
+          + Sprache hinzufügen
+        </button>
+      </div>
+
+      <!-- SECTION: Technisch -->
+      <div class="seo-card">
+        <div class="card-header">
+          <span class="card-icon">⚙️</span>
+          <div>
+            <h2>Technisches SEO</h2>
+            <p>Robots.txt, Sitemap und Indexierung</p>
+          </div>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <strong>Suchmaschinen-Indexierung</strong>
+            <span>Erlaubt Suchmaschinen diese Seite zu indexieren</span>
+          </div>
+          <mat-slide-toggle formControlName="robotsIndex"></mat-slide-toggle>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <strong>Sitemap.xml aktivieren</strong>
+            <span>Automatische Sitemap für besseres Crawling</span>
+          </div>
+          <mat-slide-toggle formControlName="enableSitemapXml"></mat-slide-toggle>
+        </div>
+
+        <div class="field-group" style="margin-top: 16px">
+          <label class="field-label">robots.txt Inhalt <span class="field-hint">optional</span></label>
+          <textarea class="field-input field-textarea field-mono" formControlName="robotsTxtContent"
+                    rows="5" placeholder="User-agent: *&#10;Disallow: /admin/"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ RECHTE SPALTE ══════════════ -->
+    <div class="seo-sidebar">
+
+      <!-- SERP-Vorschau -->
+      <div class="seo-card serp-card">
+        <div class="card-header">
+          <span class="card-icon">🔍</span>
+          <h2>Google Vorschau</h2>
+        </div>
+        <p class="serp-hint">Live-Vorschau wie dein Eintrag in Google aussieht</p>
+        <div class="serp-preview">
+          <div class="serp-url">{{ serpUrl }}</div>
+          <div class="serp-title">{{ serpTitle }}</div>
+          <div class="serp-desc">{{ serpDesc | slice:0:160 }}</div>
+        </div>
+      </div>
+
+      <!-- Quick Tipps -->
+      <div class="seo-card tips-card">
+        <div class="card-header">
+          <span class="card-icon">💡</span>
+          <h2>SEO Tipps</h2>
+        </div>
+        <ul class="tips-list">
+          <li [class.tip-ok]="serpTitle.length >= 30 && serpTitle.length <= 60"
+              [class.tip-warn]="serpTitle.length < 30 || serpTitle.length > 60">
+            <span>{{ serpTitle.length >= 30 && serpTitle.length <= 60 ? '✅' : '⚠️' }}</span>
+            Titel: {{ serpTitle.length }}/60 Zeichen (optimal 30-60)
+          </li>
+          <li [class.tip-ok]="descLength >= 120 && descLength <= 160"
+              [class.tip-warn]="descLength < 120 || descLength > 160">
+            <span>{{ descLength >= 120 && descLength <= 160 ? '✅' : '⚠️' }}</span>
+            Description: {{ descLength }}/160 (optimal 120-160)
+          </li>
+          <li [class.tip-ok]="!!settingsForm.get('canonicalBaseUrl')?.value"
+              [class.tip-warn]="!settingsForm.get('canonicalBaseUrl')?.value">
+            <span>{{ settingsForm.get('canonicalBaseUrl')?.value ? '✅' : '⚠️' }}</span>
+            Canonical URL gesetzt
+          </li>
+          <li [class.tip-ok]="!!ogImagePreview"
+              [class.tip-warn]="!ogImagePreview">
+            <span>{{ ogImagePreview ? '✅' : '⚠️' }}</span>
+            OG-Bild für Social Media
+          </li>
+        </ul>
+      </div>
+
+      <!-- Sitemap Link -->
+      <div class="seo-card sitemap-card" *ngIf="settingsForm.get('canonicalBaseUrl')?.value">
+        <div class="card-header">
+          <span class="card-icon">🗺️</span>
+          <h2>Sitemap & Robots</h2>
+        </div>
+        <div class="sitemap-links">
+          <a [href]="serpUrl + '/sitemap.xml'" target="_blank" class="sitemap-link">
+            📄 sitemap.xml öffnen ↗
+          </a>
+          <a [href]="serpUrl + '/robots.txt'" target="_blank" class="sitemap-link">
+            🤖 robots.txt öffnen ↗
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </form>
 </div>

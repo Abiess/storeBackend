@@ -10,6 +10,8 @@ import { ThemeService } from '@app/core/services/theme.service';
 import { SliderService, SliderImage } from '@app/core/services/slider.service';
 import { PublicApiService } from '@app/core/services/public-api.service';
 import { WhatsappConfigService } from '@app/core/services/whatsapp-config.service';
+import { SeoApiService } from '@app/core/services/seo-api.service';
+import { SeoMetaService } from '@app/core/services/seo-meta.service';
 import { Product, Category } from '@app/core/models';
 import { StorefrontHeaderComponent } from './storefront-header.component';
 import { ProductCardComponent } from './product-card.component';
@@ -109,6 +111,8 @@ export class StorefrontLandingComponent implements OnInit {
     private sliderService: SliderService,
     private publicApiService: PublicApiService,
     private whatsappConfig: WhatsappConfigService,
+    private seoApi: SeoApiService,
+    private seoMeta: SeoMetaService,
     public router: Router  // public statt private für Template-Zugriff
   ) {}
 
@@ -144,6 +148,7 @@ export class StorefrontLandingComponent implements OnInit {
           this.loadTheme();
           this.loadStoreLogo();
           this.loadStoreData();
+          this.loadSeoMeta(); // ← SEO-Tags aus gespeicherten Einstellungen
 
           // FIXED: loadCartCount() wird ERST nach resolveStore() aufgerufen
           // damit die storeId im SubdomainService bereits gesetzt ist
@@ -232,6 +237,68 @@ export class StorefrontLandingComponent implements OnInit {
       },
       error: () => {
         // Nicht kritisch – Store-Name ist bereits bekannt
+      }
+    });
+  }
+
+  /**
+   * Lädt SEO-Einstellungen aus dem Backend und setzt Meta-Tags im <head>.
+   * title, description, og:image, canonical, hreflang, robots, Twitter-Cards
+   */
+  loadSeoMeta(): void {
+    if (!this.storeId) return;
+
+    this.seoApi.getSeoSettings(this.storeId).subscribe({
+      next: (settings: any) => {
+        // Hreflang JSON parsen
+        let hreflang: { lang: string; url: string }[] = [];
+        if (settings.hreflangConfigJson) {
+          try {
+            hreflang = JSON.parse(settings.hreflangConfigJson).map((e: any) => ({
+              lang: e.langCode,
+              url: e.absoluteUrlBase
+            }));
+          } catch { /* ignorieren */ }
+        }
+
+        // Page-Meta: title, description, canonical, robots, hreflang
+        this.seoMeta.applyPageMeta({
+          title: settings.siteName || this.storeName || undefined,
+          description: settings.defaultMetaDescription || undefined,
+          canonical: settings.canonicalBaseUrl || undefined,
+          robots: settings.robotsIndex === false ? 'noindex, nofollow' : 'index, follow',
+          hreflang: hreflang.length > 0 ? hreflang : undefined
+        });
+
+        // Social-Meta: Open Graph + Twitter Cards
+        this.seoMeta.applySocialMeta({
+          ogTitle:            settings.siteName || this.storeName || undefined,
+          ogDescription:      settings.defaultMetaDescription || undefined,
+          ogImage:            settings.ogDefaultImageUrl || undefined,
+          ogUrl:              settings.canonicalBaseUrl || undefined,
+          ogType:             'website',
+          twitterCard:        'summary_large_image',
+          twitterSite:        settings.twitterHandle || undefined,
+          twitterTitle:       settings.siteName || undefined,
+          twitterDescription: settings.defaultMetaDescription || undefined,
+          twitterImage:       settings.ogDefaultImageUrl || undefined
+        });
+
+        // Organization JSON-LD strukturierte Daten
+        if (settings.siteName) {
+          this.seoMeta.injectJsonLd('organization',
+            this.seoMeta.buildOrganizationJsonLd(settings)
+          );
+        }
+
+        console.log('✅ SEO-Meta-Tags gesetzt für Store', this.storeId);
+      },
+      error: () => {
+        // Nicht kritisch – Storefront funktioniert auch ohne SEO-Settings
+        // Fallback: Store-Name als Tab-Titel
+        if (this.storeName) {
+          this.seoMeta.applyPageMeta({ title: this.storeName });
+        }
       }
     });
   }
