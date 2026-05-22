@@ -811,7 +811,7 @@ export class StoreSettingsComponent implements OnInit {
   settingsTabs: SettingsTab[] = [
     { id: 'general',  icon: '⚙️', labelKey: 'settings.general' },
     { id: 'slider',   icon: '🎬', labelKey: 'settings.slider' },
-    { id: 'branding', icon: '🎨', labelKey: 'settings.branding.title' },
+    { id: 'branding', icon: '🎨', labelKey: 'settings.branding.title', visible : false },
     { id: 'domain',   icon: '🌐', labelKey: 'settings.domain.title' },
     { id: 'telegram', icon: '✈️', labelKey: 'Telegram' },
     { id: 'advanced', icon: '🔧', labelKey: 'settings.advanced.title' }
