@@ -1,6 +1,7 @@
 ﻿import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '@env/environment';
 
 export interface SeoSettingsDTO {
   id?: number;
@@ -65,7 +66,7 @@ export interface AssetUploadResponse {
   providedIn: 'root'
 })
 export class SeoApiService {
-  private baseUrl = '/api/stores';
+  private baseUrl = `${environment.apiUrl}/stores`;
 
   constructor(private http: HttpClient) {}
 
