@@ -7,11 +7,13 @@ import io.minio.http.Method;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import storebackend.dto.BrandAssetsResponse;
 import storebackend.dto.BrandGenerateRequest;
 import storebackend.dto.BrandGenerateResponse;
 
 import java.io.ByteArrayInputStream;
 import java.util.*;
+import java.util.LinkedHashMap;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -124,6 +126,67 @@ public class BrandKitService {
                 .expiry(7, TimeUnit.DAYS)
                 .build()
         );
+    }
+
+    /**
+     * Gibt gespeicherte Brand-Assets zurück (presigned URLs aus MinIO).
+     * Bekannte Pfade werden versucht abzurufen; fehlende werden übersprungen.
+     */
+    public BrandAssetsResponse getAssets(Long storeId) {
+        Map<String, String> assetUrls = new HashMap<>();
+        Map<String, String> knownPaths = new LinkedHashMap<>();
+        knownPaths.put("logo-svg",     "brand/logo/primary.svg");
+        knownPaths.put("logo-png",     "brand/logo/primary.png");
+        knownPaths.put("hero-1920x1080", "brand/hero/hero-1920x1080.jpg");
+        knownPaths.put("og-1200x630",  "brand/og/og-1200x630.jpg");
+        knownPaths.put("favicon-32",   "brand/favicon/icon-32.png");
+        knownPaths.put("favicon-192",  "brand/favicon/icon-192.png");
+        knownPaths.put("palette-json", "brand/palette.json");
+
+        if (minioClient == null) {
+            return BrandAssetsResponse.builder()
+                    .assets(assetUrls)
+                    .paletteTokens(new HashMap<>())
+                    .build();
+        }
+
+        for (Map.Entry<String, String> entry : knownPaths.entrySet()) {
+            try {
+                String fullPath = "store-" + storeId + "/" + entry.getValue();
+                String url = minioClient.getPresignedObjectUrl(
+                    GetPresignedObjectUrlArgs.builder()
+                        .bucket(bucketName)
+                        .object(fullPath)
+                        .method(Method.GET)
+                        .expiry(7, TimeUnit.DAYS)
+                        .build()
+                );
+                assetUrls.put(entry.getKey(), url);
+            } catch (Exception ignored) {
+                // Asset noch nicht generiert – überspringen
+            }
+        }
+
+        return BrandAssetsResponse.builder()
+                .assets(assetUrls)
+                .paletteTokens(new HashMap<>())
+                .build();
+    }
+
+    /**
+     * Speichert eine Farbpalette (CSS-Tokens) als JSON in MinIO.
+     */
+    public Map<String, String> savePalette(Long storeId, Map<String, String> tokens) {
+        if (minioClient == null) {
+            return tokens; // MinIO nicht verfügbar – zurückgeben ohne Speichern
+        }
+        try {
+            String paletteJson = convertPaletteToJson(tokens);
+            uploadToMinio(storeId, "brand/palette.json", paletteJson.getBytes(), "application/json");
+        } catch (Exception e) {
+            throw new RuntimeException("Palette konnte nicht gespeichert werden: " + e.getMessage(), e);
+        }
+        return tokens;
     }
 
     private String convertPaletteToJson(Map<String, String> palette) {

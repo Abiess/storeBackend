@@ -314,7 +314,43 @@ mat-card-actions {
 // NO body::before, NO *::before for decorations
 // All decorations in .brand-preview .brand-decor only
 
-// ── Logo Upload ────────────────────────────────────────────────────────────
+// ── Shop-Name readonly ─────────────────────────────────────────────────────
+.shop-name-readonly {
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  background: #f0f4ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 10px;
+}
+
+.shop-name-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.shop-name-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e1b4b;
+  margin-bottom: 4px;
+}
+
+.shop-name-loading {
+  font-size: 14px;
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.shop-name-hint {
+  font-size: 12px;
+  color: #6b7280;
+}
+// ──────────────────────────────────────────────────────────────────────────
 .logo-upload-section {
   margin-bottom: 24px;
   padding-bottom: 24px;

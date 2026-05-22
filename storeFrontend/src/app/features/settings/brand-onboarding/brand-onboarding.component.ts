@@ -12,6 +12,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BrandService, BrandGenerateRequest, BrandGenerateResponse } from '../../../core/services/brand.service';
 import { MediaService } from '../../../core/services/media.service';
+import { StoreService } from '../../../core/services/store.service';
 import { ProductnavigationBarComponent } from '@app/features/productnavigation-bar/productnavigation-bar.component';
 
 @Component({
@@ -39,9 +40,11 @@ export class BrandOnboardingComponent implements OnInit {
     private router = inject(Router);
     private brandService = inject(BrandService);
     private mediaService = inject(MediaService);
+    private storeService = inject(StoreService);
 
     brandForm!: FormGroup;
     storeId: number | null = null;
+    storeName: string | null = null;      // ← vorgeladener Shop-Name
     loading = false;
     generatedBrand: BrandGenerateResponse | null = null;
     previewPalette: { [key: string]: string } = {};
@@ -69,13 +72,24 @@ export class BrandOnboardingComponent implements OnInit {
         console.log('✅ BrandOnboarding storeId:', this.storeId);
 
         this.brandForm = this.fb.group({
-            shopName: ['', Validators.required],
+            shopName: [{ value: '', disabled: true }, Validators.required],  // Read-only: kommt aus Store
             slogan: [''],
             industry: [''],
             style: ['minimal', Validators.required],
             preferredColorInput: [''],
             forbiddenColorInput: ['']
         });
+
+        // Store-Name laden und Feld vorausfüllen
+        if (this.storeId !== null) {
+            this.storeService.getStoreById(this.storeId).subscribe({
+                next: (store) => {
+                    this.storeName = store.name;
+                    this.brandForm.patchValue({ shopName: store.name });
+                },
+                error: (err) => console.error('Fehler beim Laden des Stores:', err)
+            });
+        }
     }
 
     private extractStoreId(): number | null {
@@ -125,12 +139,13 @@ export class BrandOnboardingComponent implements OnInit {
     generateBrand(): void {
         if (this.brandForm.valid && this.storeId != null) {
             this.loading = true;
+            const raw = this.brandForm.getRawValue();   // ← getRawValue holt auch disabled fields
 
             const request: BrandGenerateRequest = {
-                shopName: this.brandForm.value.shopName,
-                slogan: this.brandForm.value.slogan,
-                industry: this.brandForm.value.industry,
-                style: this.brandForm.value.style,
+                shopName: raw.shopName,
+                slogan: raw.slogan,
+                industry: raw.industry,
+                style: raw.style,
                 preferredColors: this.preferredColors.length > 0 ? this.preferredColors : undefined,
                 forbiddenColors: this.forbiddenColors.length > 0 ? this.forbiddenColors : undefined
             };
@@ -153,12 +168,13 @@ export class BrandOnboardingComponent implements OnInit {
     regenerateBrand(): void {
         if (this.brandForm.valid && this.storeId != null) {
             this.loading = true;
+            const raw = this.brandForm.getRawValue();
 
             const request: BrandGenerateRequest = {
-                shopName: this.brandForm.value.shopName,
-                slogan: this.brandForm.value.slogan,
-                industry: this.brandForm.value.industry,
-                style: this.brandForm.value.style,
+                shopName: raw.shopName,
+                slogan: raw.slogan,
+                industry: raw.industry,
+                style: raw.style,
                 preferredColors: this.preferredColors.length > 0 ? this.preferredColors : undefined,
                 forbiddenColors: this.forbiddenColors.length > 0 ? this.forbiddenColors : undefined,
                 salt: Math.random().toString(36).substring(7)

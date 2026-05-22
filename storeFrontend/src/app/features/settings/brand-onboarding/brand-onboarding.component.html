@@ -58,14 +58,17 @@
                 <!-- ─────────────────────────────────────────────── -->
 
                 <form [formGroup]="brandForm">
-                    <mat-form-field appearance="outline" class="full-width">
-                        <mat-label>Shop Name</mat-label>
-                        <input
-                                matInput
-                                formControlName="shopName"
-                                placeholder="Enter your shop name"
-                                data-testid="shop-name-input">
-                    </mat-form-field>
+                    <!-- Shop-Name: read-only aus Store-Daten -->
+                    <div class="shop-name-readonly">
+                        <label class="shop-name-label">🏪 Shop Name</label>
+                        <div class="shop-name-value">
+                            <span *ngIf="storeName">{{ storeName }}</span>
+                            <span *ngIf="!storeName" class="shop-name-loading">Wird geladen…</span>
+                        </div>
+                        <small class="shop-name-hint">Der Shop-Name wird automatisch aus deinen Store-Einstellungen übernommen.</small>
+                    </div>
+                    <!-- Dieser Input bleibt im Form für Validierung, ist aber ausgeblendet -->
+                    <input type="hidden" formControlName="shopName">
 
                     <mat-form-field appearance="outline" class="full-width">
                         <mat-label>Slogan (Optional)</mat-label>
