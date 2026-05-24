@@ -7,42 +7,32 @@
         role="navigation"
         [attr.aria-label]="'sidebarAdmin.aria.mainNavigation' | translate"
 >
-    <div
-            *ngIf="isMobile && isOpen"
-            class="sidebar-overlay"
-            (click)="closeSidebar()"
-            aria-hidden="true"
-    ></div>
+    <div *ngIf="isMobile && isOpen" class="sidebar-overlay" (click)="closeSidebar()" aria-hidden="true"></div>
 
     <div class="sidebar-content">
         <!-- Header -->
         <div class="sidebar-header">
-            <a routerLink="/dashboard" class="sidebar-logo" [title]="'markt.ma Dashboard'">
+            <a routerLink="/dashboard" class="sidebar-logo">
                 <span class="logo-icon">🛍️</span>
                 <span class="logo-text" *ngIf="!isCollapsed">markt.ma</span>
             </a>
 
-            <button
-                    *ngIf="currentStoreId && !isCollapsed"
-                    class="btn-preview-store"
-                    (click)="openStorePreview()"
-                    title="Store live ansehen">
+            <button *ngIf="currentStoreId && !isCollapsed" class="btn-preview-store"
+                    (click)="openStorePreview()" title="Store live ansehen">
                 <span class="btn-preview-store__dot"></span>
                 <span class="btn-preview-store__label">LIVE</span>
-                <span class="btn-preview-store__icon">↗</span>
+                <lucide-angular name="arrow-up-right" [size]="12" class="btn-preview-store__icon"></lucide-angular>
             </button>
 
-            <button
-                    *ngIf="isMobile"
-                    class="btn-close-sidebar"
-                    (click)="closeSidebar()"
-                    [attr.aria-label]="'sidebarAdmin.aria.closeNavigation' | translate"
-            >✕</button>
+            <button *ngIf="isMobile" class="btn-close-sidebar" (click)="closeSidebar()"
+                    [attr.aria-label]="'sidebarAdmin.aria.closeNavigation' | translate">
+                <lucide-angular name="x" [size]="18" strokeWidth="2"></lucide-angular>
+            </button>
         </div>
 
-        <!-- Kein Store – Hinweisbanner -->
+        <!-- Kein Store Banner -->
         <div class="no-store-banner" *ngIf="!hasStore && !isCollapsed" (click)="onNoStoreClick()">
-            <span class="no-store-banner__icon">🏪</span>
+            <lucide-angular name="store" [size]="18" class="no-store-banner__icon" strokeWidth="1.75"></lucide-angular>
             <div class="no-store-banner__text">
                 <strong>{{ 'sidebarAdmin.noStore.hint' | translate }}</strong>
                 <span>{{ 'sidebarAdmin.noStore.cta' | translate }} →</span>
@@ -69,13 +59,16 @@
                             [routerLink]="(item.requiresStore && !hasStore) ? null : item.route"
                             (click)="(item.requiresStore && !hasStore) ? onNoStoreClick() : closeSidebar()"
                     >
-                        <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
+                        <span class="nav-icon">
+                            <lucide-angular [name]="item.icon" [size]="17" strokeWidth="1.75"></lucide-angular>
+                        </span>
                         <span class="nav-label" *ngIf="!isCollapsed">{{ item.labelKey | translate }}</span>
-                        <span
-                                *ngIf="item.badge && !isCollapsed"
-                                [class]="'nav-badge ' + (item.badgeClass || 'badge-primary')"
-                        >{{ item.badge }}</span>
-                        <span *ngIf="item.requiresStore && !hasStore && !isCollapsed" class="nav-item-lock" aria-hidden="true">🔒</span>
+                        <span *ngIf="item.badge && !isCollapsed" [class]="'nav-badge ' + (item.badgeClass || 'badge-primary')">
+                            {{ item.badge }}
+                        </span>
+                        <lucide-angular *ngIf="item.requiresStore && !hasStore && !isCollapsed"
+                                        name="lock" [size]="13" class="nav-item-lock" strokeWidth="2">
+                        </lucide-angular>
                     </a>
                 </div>
             </div>
@@ -85,23 +78,26 @@
         <div class="sidebar-upgrade-card" *ngIf="!isCollapsed">
             <div class="upgrade-card-inner">
                 <div class="upgrade-card-header">
-                    <span class="upgrade-icon">💎</span>
+                    <lucide-angular name="gem" [size]="22" class="upgrade-icon" strokeWidth="1.5"></lucide-angular>
                     <div>
                         <div class="upgrade-title">Pro Plan</div>
                         <div class="upgrade-sub">Mehr Funktionen freischalten</div>
                     </div>
                 </div>
                 <button class="upgrade-btn" routerLink="/subscription">
-                    Upgrade jetzt <span>›</span>
+                    Upgrade jetzt
+                    <lucide-angular name="chevron-right" [size]="16" strokeWidth="2"></lucide-angular>
                 </button>
             </div>
         </div>
 
         <!-- Footer -->
         <div class="sidebar-footer">
-            <!-- Collapse Toggle Button -->
-            <button class="btn-collapse" (click)="toggleCollapse()" [title]="isCollapsed ? 'Sidebar aufklappen' : 'Sidebar einklappen'">
-                <span class="btn-collapse__icon" [class.rotated]="isCollapsed">‹</span>
+            <button class="btn-collapse" (click)="toggleCollapse()"
+                    [title]="isCollapsed ? 'Sidebar aufklappen' : 'Sidebar einklappen'">
+                <span class="btn-collapse__icon" [class.rotated]="isCollapsed">
+                    <lucide-angular name="chevron-left" [size]="16" strokeWidth="2"></lucide-angular>
+                </span>
                 <span class="btn-collapse__label" *ngIf="!isCollapsed">Sidebar einklappen</span>
             </button>
             <div class="footer-info" *ngIf="!isCollapsed">
@@ -111,14 +107,9 @@
     </div>
 </aside>
 
-<button
-        *ngIf="isMobile && !isOpen"
-        class="btn-toggle-sidebar"
-        (click)="toggleSidebar()"
-        [attr.aria-label]="'sidebarAdmin.aria.openNavigation' | translate"
-        aria-expanded="false"
->
-  <span class="hamburger-icon">
-    <span></span><span></span><span></span>
-  </span>
+<button *ngIf="isMobile && !isOpen" class="btn-toggle-sidebar" (click)="toggleSidebar()"
+        [attr.aria-label]="'sidebarAdmin.aria.openNavigation' | translate" aria-expanded="false">
+    <span class="hamburger-icon">
+        <span></span><span></span><span></span>
+    </span>
 </button>

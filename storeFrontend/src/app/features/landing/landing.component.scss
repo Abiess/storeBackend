@@ -228,16 +228,10 @@ $bg:         #f9fafb;
   }
 
   .trust-check {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 18px; height: 18px;
-    background: $success;
-    color: #fff;
-    border-radius: 50%;
-    font-size: 0.7rem;
-    font-weight: 700;
+    color: $success;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
   }
 
   // ─ Stats ─
@@ -475,7 +469,7 @@ section {
   background: #fff;
 }
 
-.features-grid {
+  .features-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1.25rem;
@@ -495,8 +489,19 @@ section {
       border-color: rgba($primary, 0.35);
     }
 
-    .feature-icon { font-size: 2.25rem; margin-bottom: 0.875rem; }
-    h3 { margin: 0 0 0.625rem; color: $text-dark; font-size: 1.1rem; font-weight: 700; }
+    .feature-icon {
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba($primary, 0.1), rgba($secondary, 0.1));
+      border-radius: 10px;
+      margin-bottom: 1rem;
+      color: $primary;
+    }
+
+    h3 { margin: 0 0 0.625rem; color: $text-dark; font-size: 1.0625rem; font-weight: 700; }
     p  { margin: 0; color: $text-light; line-height: 1.65; font-size: 0.9375rem; }
   }
 }

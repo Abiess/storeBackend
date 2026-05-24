@@ -224,8 +224,6 @@ $secondary:       #764ba2;
 
 /* ── Icon Wrapper ── */
 .nav-icon {
-  font-size: 1rem;
-  line-height: 1;
   flex-shrink: 0;
   width: 32px;
   height: 32px;
@@ -235,15 +233,30 @@ $secondary:       #764ba2;
   background: $sidebar-hover;
   border-radius: 8px;
   transition: background 0.15s;
+  color: $text-secondary;
+
+  lucide-angular {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
   .nav-item-active & {
     background: rgba($active-color, 0.12);
+    color: $active-color;
   }
 
   .nav-item:hover & {
     background: rgba($active-color, 0.08);
+    color: $active-color;
   }
 }
+
+/* Lucide icon color inheritance */
+.nav-item-active lucide-angular { color: $active-color; }
+.upgrade-icon { color: rgba(255,255,255,0.9); }
+.no-store-banner__icon { color: $active-color; }
+.nav-item-lock { color: $text-secondary; flex-shrink: 0; margin-inline-start: auto; }
 
 .nav-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 

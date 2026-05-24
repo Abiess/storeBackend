@@ -5,6 +5,12 @@ import { filter } from 'rxjs/operators';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { LanguageService } from '@app/core/services/language.service';
 import { StoreService } from '@app/core/services/store.service';
+import {
+  LucideAngularModule,
+  LayoutDashboard, Package, Star, Bot, Settings, Palette, Megaphone, Truck,
+  Search, Tag, User, Gem, ChevronLeft, ChevronRight, ArrowUpRight, Store,
+  X, Lock
+} from 'lucide-angular';
 
 export interface NavItem {
     labelKey: string;
@@ -30,7 +36,9 @@ export interface NavGroup {
 @Component({
     selector: 'app-admin-sidebar',
     standalone: true,
-    imports: [CommonModule, RouterModule, TranslatePipe],
+    imports: [CommonModule, RouterModule, TranslatePipe,
+      LucideAngularModule.pick({ LayoutDashboard, Package, Star, Bot, Settings, Palette, Megaphone, Truck, Search, Tag, User, Gem, ChevronLeft, ChevronRight, ArrowUpRight, Store, X, Lock })
+    ],
     templateUrl: './admin-sidebar.component.html',
     styleUrls: ['./admin-sidebar.component.scss']
 })
@@ -125,7 +133,7 @@ export class AdminSidebarComponent implements OnInit {
                 items: [
                     {
                         labelKey: 'sidebarAdmin.items.dashboard',
-                        icon: '📊',
+                        icon: 'layout-dashboard',
                         route: '/dashboard'
                     }
                 ]
@@ -135,7 +143,7 @@ export class AdminSidebarComponent implements OnInit {
                 items: [
                     {
                         labelKey: 'sidebarAdmin.items.products',
-                        icon: '📦',
+                        icon: 'package',
                         route: `${baseRoute}/products`,
                         requiresStore: true
                     }
@@ -146,13 +154,13 @@ export class AdminSidebarComponent implements OnInit {
                 items: [
                     {
                         labelKey: 'sidebarAdmin.items.reviews',
-                        icon: '⭐',
+                        icon: 'star',
                         route: `${baseRoute}/reviews`,
                         requiresStore: true
                     },
                     {
                         labelKey: 'sidebarAdmin.items.chatbot',
-                        icon: '🤖',
+                        icon: 'bot',
                         route: `${baseRoute}/chatbot`,
                         requiresStore: true
                     }
@@ -163,37 +171,37 @@ export class AdminSidebarComponent implements OnInit {
                 items: [
                     {
                         labelKey: 'sidebarAdmin.items.storeSettings',
-                        icon: '⚙️',
+                        icon: 'settings',
                         route: `${baseRoute}/settings`,
                         requiresStore: true
                     },
                     {
                         labelKey: 'sidebarAdmin.items.designTheme',
-                        icon: '🎨',
+                        icon: 'palette',
                         route: `${baseRoute}/theme`,
                         requiresStore: true
                     },
                     {
                         labelKey: 'sidebarAdmin.items.banner',
-                        icon: '📢',
+                        icon: 'megaphone',
                         route: `${baseRoute}/banner`,
                         requiresStore: true
                     },
                     {
                         labelKey: 'sidebarAdmin.items.delivery',
-                        icon: '🚚',
+                        icon: 'truck',
                         route: `${baseRoute}/delivery`,
                         requiresStore: true
                     },
                     {
                         labelKey: 'sidebarAdmin.items.seo',
-                        icon: '🔍',
+                        icon: 'search',
                         route: `${baseRoute}/seo`,
                         requiresStore: true
                     },
                     {
                         labelKey: 'sidebarAdmin.items.brand',
-                        icon: '🏷️',
+                        icon: 'tag',
                         route: `${baseRoute}/brand`,
                         requiresStore: true
                     }
@@ -204,7 +212,7 @@ export class AdminSidebarComponent implements OnInit {
                 items: [
                     {
                         labelKey: 'sidebarAdmin.items.myAccount',
-                        icon: '👤',
+                        icon: 'user',
                         route: '/settings'
                     }
                 ]

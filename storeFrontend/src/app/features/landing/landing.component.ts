@@ -1,13 +1,20 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import {TranslatePipe} from "@app/core/pipes/translate.pipe";
-import {VideoPlayerComponent} from "@app/features/landing/video-player.component";
+import { TranslatePipe } from "@app/core/pipes/translate.pipe";
+import { VideoPlayerComponent } from "@app/features/landing/video-player.component";
+import {
+  LucideAngularModule,
+  Palette, CreditCard, ChartColumn, Truck, Smartphone, ShieldCheck,
+  CircleCheck, User, Package
+} from 'lucide-angular';
 
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [CommonModule, TranslatePipe, VideoPlayerComponent],
+  imports: [CommonModule, TranslatePipe, VideoPlayerComponent,
+    LucideAngularModule.pick({ Palette, CreditCard, ChartColumn, Truck, Smartphone, ShieldCheck, CircleCheck, User, Package })
+  ],
   templateUrl: './landing.component.html',
   styleUrls: ['./landing.component.scss']
 })
@@ -23,32 +30,32 @@ export class LandingComponent {
 
   features = [
     {
-      icon: '🎨',
+      icon: 'palette',
       title: 'landing.featureItems.customDesign.title',
       description: 'landing.featureItems.customDesign.description'
     },
     {
-      icon: '💳',
+      icon: 'credit-card',
       title: 'landing.featureItems.securePayments.title',
       description: 'landing.featureItems.securePayments.description'
     },
     {
-      icon: '📊',
+      icon: 'chart-column',
       title: 'landing.featureItems.analytics.title',
       description: 'landing.featureItems.analytics.description'
     },
     {
-      icon: '🚚',
+      icon: 'truck',
       title: 'landing.featureItems.shipping.title',
       description: 'landing.featureItems.shipping.description'
     },
     {
-      icon: '📱',
+      icon: 'smartphone',
       title: 'landing.featureItems.mobileFirst.title',
       description: 'landing.featureItems.mobileFirst.description'
     },
     {
-      icon: '🔒',
+      icon: 'shield-check',
       title: 'landing.featureItems.security.title',
       description: 'landing.featureItems.security.description'
     }
@@ -56,24 +63,24 @@ export class LandingComponent {
 
   tutorials = [
     {
-      icon: '👤',
+      icon: 'user',
       title: 'landing.tutorialItems.createAccount.title',
       description: 'landing.tutorialItems.createAccount.description',
-      videoUrl: 'assets/videos/platform-demo.webm',  // ← HIER GEÄNDERT
+      videoUrl: 'assets/videos/platform-demo.webm',
       duration: 'landing.tutorialItems.createAccount.duration'
     },
     {
-      icon: '📦',
+      icon: 'package',
       title: 'landing.tutorialItems.createFirstProduct.title',
       description: 'landing.tutorialItems.createFirstProduct.description',
-      videoUrl: 'assets/videos/platform-demo.webm',  // ← HIER GEÄNDERT
+      videoUrl: 'assets/videos/platform-demo.webm',
       duration: 'landing.tutorialItems.createFirstProduct.duration'
     },
     {
-      icon: '🎨',
+      icon: 'palette',
       title: 'landing.tutorialItems.customizeStore.title',
       description: 'landing.tutorialItems.customizeStore.description',
-      videoUrl: 'assets/videos/platform-demo.webm',  // ← HIER GEÄNDERT
+      videoUrl: 'assets/videos/platform-demo.webm',
       duration: 'landing.tutorialItems.customizeStore.duration'
     }
   ];

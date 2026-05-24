@@ -37,9 +37,18 @@
         </div>
 
         <div class="trust-badges">
-          <span class="trust-item"><span class="trust-check">✓</span> {{ 'landing.hero.trustFreeTrial' | translate }}</span>
-          <span class="trust-item"><span class="trust-check">✓</span> {{ 'landing.hero.trustNoCard' | translate }}</span>
-          <span class="trust-item"><span class="trust-check">✓</span> {{ 'landing.hero.trustCancel' | translate }}</span>
+          <span class="trust-item">
+            <lucide-angular name="circle-check" [size]="16" class="trust-check" strokeWidth="2"></lucide-angular>
+            {{ 'landing.hero.trustFreeTrial' | translate }}
+          </span>
+          <span class="trust-item">
+            <lucide-angular name="circle-check" [size]="16" class="trust-check" strokeWidth="2"></lucide-angular>
+            {{ 'landing.hero.trustNoCard' | translate }}
+          </span>
+          <span class="trust-item">
+            <lucide-angular name="circle-check" [size]="16" class="trust-check" strokeWidth="2"></lucide-angular>
+            {{ 'landing.hero.trustCancel' | translate }}
+          </span>
         </div>
 
         <div class="hero-stats">
@@ -110,7 +119,9 @@
       </div>
       <div class="features-grid">
         <div class="feature-card" *ngFor="let feature of features">
-          <div class="feature-icon">{{ feature.icon }}</div>
+          <div class="feature-icon">
+            <lucide-angular [name]="feature.icon" [size]="24" strokeWidth="1.75"></lucide-angular>
+          </div>
           <h3>{{ feature.title | translate }}</h3>
           <p>{{ feature.description | translate }}</p>
         </div>
@@ -142,8 +153,7 @@
             <div class="tutorial-step">{{ i + 1 }}.</div>
             <h4>{{ tutorial.title | translate }}</h4>
             <p>{{ tutorial.description | translate }}</p>
-          </div>
-        </div>
+          </div>        </div>
       </div>
 
       <div class="video-cta">
