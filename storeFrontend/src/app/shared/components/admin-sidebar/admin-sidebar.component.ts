@@ -5,12 +5,8 @@ import { filter } from 'rxjs/operators';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { LanguageService } from '@app/core/services/language.service';
 import { StoreService } from '@app/core/services/store.service';
-import {
-  LucideAngularModule,
-  LayoutDashboard, Package, Star, Bot, Settings, Palette, Megaphone, Truck,
-  Search, Tag, User, Gem, ChevronLeft, ChevronRight, ArrowUpRight, Store,
-  X, Lock
-} from 'lucide-angular';
+import { LucideAngularModule } from 'lucide-angular';
+// Icons global registriert via LUCIDE_ICONS in app.config.ts
 
 export interface NavItem {
     labelKey: string;
@@ -36,9 +32,7 @@ export interface NavGroup {
 @Component({
     selector: 'app-admin-sidebar',
     standalone: true,
-    imports: [CommonModule, RouterModule, TranslatePipe,
-      LucideAngularModule.pick({ LayoutDashboard, Package, Star, Bot, Settings, Palette, Megaphone, Truck, Search, Tag, User, Gem, ChevronLeft, ChevronRight, ArrowUpRight, Store, X, Lock })
-    ],
+    imports: [CommonModule, RouterModule, TranslatePipe, LucideAngularModule],
     templateUrl: './admin-sidebar.component.html',
     styleUrls: ['./admin-sidebar.component.scss']
 })

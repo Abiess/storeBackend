@@ -4,17 +4,14 @@ import { Router } from '@angular/router';
 import { TranslatePipe } from "@app/core/pipes/translate.pipe";
 import { VideoPlayerComponent } from "@app/features/landing/video-player.component";
 import {
-  LucideAngularModule,
-  Palette, CreditCard, ChartColumn, Truck, Smartphone, ShieldCheck,
-  CircleCheck, User, Package
+  LucideAngularModule
 } from 'lucide-angular';
+// Icons global registriert via LUCIDE_ICONS in app.config.ts
 
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [CommonModule, TranslatePipe, VideoPlayerComponent,
-    LucideAngularModule.pick({ Palette, CreditCard, ChartColumn, Truck, Smartphone, ShieldCheck, CircleCheck, User, Package })
-  ],
+  imports: [CommonModule, TranslatePipe, VideoPlayerComponent, LucideAngularModule],
   templateUrl: './landing.component.html',
   styleUrls: ['./landing.component.scss']
 })

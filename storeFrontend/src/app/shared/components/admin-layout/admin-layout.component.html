@@ -3,25 +3,86 @@
   <app-admin-sidebar [storeId]="storeId ?? null"></app-admin-sidebar>
 
   <!-- Main Content Area -->
-  <div class="admin-main">
-    <!-- Top Bar -->
+  <div class="admin-main" [class.sidebar-collapsed]="false">
+
+    <!-- ══ Topbar ══ -->
     <header class="admin-topbar">
       <div class="topbar-content">
-        <div class="topbar-left">
-          <!-- Breadcrumbs or page title will be here -->
+
+        <!-- Left: Brand -->
+        <div class="topbar-brand">
+          <div class="brand-logo">
+            <span class="brand-letter">M</span>
+          </div>
+          <span class="brand-name">markt.ma</span>
         </div>
 
-        <div class="topbar-right">
+        <!-- Right: Actions -->
+        <div class="topbar-actions">
+
+          <!-- Plan Badge -->
+          <div class="plan-badge" [class.plan-paid]="isPaidPlan">
+            <span class="plan-dot"></span>
+            <span class="plan-label">{{ getPlanLabel() }}</span>
+          </div>
+
+          <!-- Upgrade Button (nur wenn FREE) -->
+          <button *ngIf="!isPaidPlan" class="btn-upgrade" (click)="navigateToSubscription()">
+            <lucide-angular name="crown" [size]="14" strokeWidth="2"></lucide-angular>
+            <span>Upgrade</span>
+          </button>
+
+          <!-- Divider -->
+          <div class="topbar-divider"></div>
+
+          <!-- Language Switcher -->
           <app-language-switcher></app-language-switcher>
 
-          <div class="user-menu">
-            <div class="user-avatar" [title]="currentUser?.email || ''">
-              {{ getUserInitials() }}
+          <!-- Divider -->
+          <div class="topbar-divider"></div>
+
+          <!-- Notification Bell -->
+          <button class="topbar-icon-btn" title="Benachrichtigungen">
+            <lucide-angular name="bell" [size]="18" strokeWidth="1.75"></lucide-angular>
+            <span class="notification-badge" *ngIf="notificationCount > 0">
+              {{ notificationCount > 9 ? '9+' : notificationCount }}
+            </span>
+          </button>
+
+          <!-- Divider -->
+          <div class="topbar-divider"></div>
+
+          <!-- User Account Dropdown -->
+          <div class="user-account" (click)="toggleUserDropdown()">
+            <div class="user-avatar">{{ getUserInitials() }}</div>
+            <lucide-angular name="chevron-down" [size]="14" strokeWidth="2"
+                            class="user-chevron" [class.open]="userDropdownOpen">
+            </lucide-angular>
+
+            <!-- Dropdown Menu -->
+            <div class="user-dropdown" *ngIf="userDropdownOpen" (click)="$event.stopPropagation()">
+              <div class="dropdown-header">
+                <div class="dropdown-avatar">{{ getUserInitials() }}</div>
+                <div class="dropdown-info">
+                  <div class="dropdown-name">{{ getUserDisplayName() }}</div>
+                  <div class="dropdown-plan">{{ getPlanLabel() }} Plan</div>
+                </div>
+              </div>
+              <div class="dropdown-divider"></div>
+              <button class="dropdown-item" (click)="navigateToSettings()">
+                Einstellungen
+              </button>
+              <button class="dropdown-item" (click)="navigateToSubscription()">
+                Plan & Abonnement
+              </button>
+              <div class="dropdown-divider"></div>
+              <button class="dropdown-item dropdown-item--danger" (click)="logout()">
+                <lucide-angular name="log-out" [size]="14" strokeWidth="2"></lucide-angular>
+                Abmelden
+              </button>
             </div>
-            <button class="btn btn-logout" (click)="logout()" title="Abmelden">
-              <span class="logout-icon">⎋</span>
-            </button>
           </div>
+
         </div>
       </div>
     </header>
@@ -32,4 +93,3 @@
     </main>
   </div>
 </div>
-

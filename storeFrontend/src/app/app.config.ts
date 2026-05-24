@@ -1,4 +1,13 @@
 import { ApplicationConfig, APP_INITIALIZER, LOCALE_ID } from '@angular/core';
+import { LUCIDE_ICONS, LucideIconProvider } from 'lucide-angular';
+import {
+  LayoutDashboard, Package, Star, Bot, Settings, Palette, Megaphone, Truck,
+  Search, Tag, User, UserPlus, LogIn, CreditCard, ChartColumn, Smartphone,
+  ShieldCheck, Gem, ChevronLeft, ChevronRight, ChevronDown, ArrowUpRight,
+  ExternalLink, Check, CircleCheck, Store, X, ShoppingBag, MessageCircle,
+  PlayCircle, Zap, Globe, Link2, Brain, Users, HardDrive, Lock,
+  Bell, Crown, LogOut, Menu
+} from 'lucide-angular';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS, HttpClient } from '@angular/common/http';
 import { provideAnimations } from '@angular/platform-browser/animations';
@@ -31,6 +40,19 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptorsFromDi()),
     provideAnimations(),
     provideCouponService(),
+    // Lucide Icons – global für alle Standalone-Components
+    {
+      provide: LUCIDE_ICONS,
+      multi: true,
+      useValue: new LucideIconProvider({
+        LayoutDashboard, Package, Star, Bot, Settings, Palette, Megaphone, Truck,
+        Search, Tag, User, UserPlus, LogIn, CreditCard, ChartColumn, Smartphone,
+        ShieldCheck, Gem, ChevronLeft, ChevronRight, ChevronDown, ArrowUpRight,
+        ExternalLink, Check, CircleCheck, Store, X, ShoppingBag, MessageCircle,
+        PlayCircle, Zap, Globe, Link2, Brain, Users, HardDrive, Lock,
+        Bell, Crown, LogOut, Menu
+      })
+    },
     // Standard Locale (kann dynamisch überschrieben werden)
     { provide: LOCALE_ID, useValue: 'de-DE' },
     // ngx-translate Setup für Angular 17
