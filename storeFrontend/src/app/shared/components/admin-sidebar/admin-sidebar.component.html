@@ -2,6 +2,7 @@
         class="admin-sidebar"
         [class.sidebar-open]="isOpen"
         [class.sidebar-mobile]="isMobile"
+        [class.sidebar-collapsed]="isCollapsed"
         [attr.dir]="isRTL() ? 'rtl' : 'ltr'"
         role="navigation"
         [attr.aria-label]="'sidebarAdmin.aria.mainNavigation' | translate"
@@ -14,15 +15,15 @@
     ></div>
 
     <div class="sidebar-content">
+        <!-- Header -->
         <div class="sidebar-header">
-            <a routerLink="/dashboard" class="sidebar-logo">
+            <a routerLink="/dashboard" class="sidebar-logo" [title]="'markt.ma Dashboard'">
                 <span class="logo-icon">🛍️</span>
-                <span class="logo-text">markt.ma</span>
+                <span class="logo-text" *ngIf="!isCollapsed">markt.ma</span>
             </a>
 
-            <!-- Vorschau-Button: erscheint wenn ein Store aktiv ist -->
             <button
-                    *ngIf="currentStoreId"
+                    *ngIf="currentStoreId && !isCollapsed"
                     class="btn-preview-store"
                     (click)="openStorePreview()"
                     title="Store live ansehen">
@@ -36,13 +37,11 @@
                     class="btn-close-sidebar"
                     (click)="closeSidebar()"
                     [attr.aria-label]="'sidebarAdmin.aria.closeNavigation' | translate"
-            >
-                ✕
-            </button>
+            >✕</button>
         </div>
 
         <!-- Kein Store – Hinweisbanner -->
-        <div class="no-store-banner" *ngIf="!hasStore" (click)="onNoStoreClick()">
+        <div class="no-store-banner" *ngIf="!hasStore && !isCollapsed" (click)="onNoStoreClick()">
             <span class="no-store-banner__icon">🏪</span>
             <div class="no-store-banner__text">
                 <strong>{{ 'sidebarAdmin.noStore.hint' | translate }}</strong>
@@ -50,14 +49,15 @@
             </div>
         </div>
 
+        <!-- Navigation -->
         <nav class="sidebar-nav">
             <div *ngFor="let group of visibleGroups" class="nav-group">
-                <div class="nav-group-title" *ngIf="group.titleKey">
+                <div class="nav-group-title" *ngIf="group.titleKey && !isCollapsed">
                     {{ group.titleKey | translate }}
                 </div>
+                <div class="nav-group-divider" *ngIf="group.titleKey && isCollapsed"></div>
 
                 <div class="nav-items">
-                    <!-- Normaler Link (hat Store oder benötigt keinen) -->
                     <a
                             *ngFor="let item of visibleItems(group)"
                             [class.nav-item-active]="isRouteActive(item.route)"
@@ -65,27 +65,46 @@
                             class="nav-item"
                             [attr.aria-label]="item.labelKey | translate"
                             [attr.aria-current]="isRouteActive(item.route) ? 'page' : null"
-                            [attr.title]="(item.requiresStore && !hasStore) ? ('sidebarAdmin.noStore.tooltip' | translate) : null"
+                            [attr.title]="isCollapsed ? (item.labelKey | translate) : ((item.requiresStore && !hasStore) ? ('sidebarAdmin.noStore.tooltip' | translate) : null)"
                             [routerLink]="(item.requiresStore && !hasStore) ? null : item.route"
                             (click)="(item.requiresStore && !hasStore) ? onNoStoreClick() : closeSidebar()"
                     >
                         <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
-                        <span class="nav-label">{{ item.labelKey | translate }}</span>
+                        <span class="nav-label" *ngIf="!isCollapsed">{{ item.labelKey | translate }}</span>
                         <span
-                                *ngIf="item.badge"
+                                *ngIf="item.badge && !isCollapsed"
                                 [class]="'nav-badge ' + (item.badgeClass || 'badge-primary')"
-                        >
-              {{ item.badge }}
-            </span>
-                        <!-- Lock-Icon wenn Store fehlt -->
-                        <span *ngIf="item.requiresStore && !hasStore" class="nav-item-lock" aria-hidden="true">🔒</span>
+                        >{{ item.badge }}</span>
+                        <span *ngIf="item.requiresStore && !hasStore && !isCollapsed" class="nav-item-lock" aria-hidden="true">🔒</span>
                     </a>
                 </div>
             </div>
         </nav>
 
+        <!-- Pro Plan Upgrade Card -->
+        <div class="sidebar-upgrade-card" *ngIf="!isCollapsed">
+            <div class="upgrade-card-inner">
+                <div class="upgrade-card-header">
+                    <span class="upgrade-icon">💎</span>
+                    <div>
+                        <div class="upgrade-title">Pro Plan</div>
+                        <div class="upgrade-sub">Mehr Funktionen freischalten</div>
+                    </div>
+                </div>
+                <button class="upgrade-btn" routerLink="/settings/billing">
+                    Upgrade jetzt <span>›</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Footer -->
         <div class="sidebar-footer">
-            <div class="footer-info">
+            <!-- Collapse Toggle Button -->
+            <button class="btn-collapse" (click)="toggleCollapse()" [title]="isCollapsed ? 'Sidebar aufklappen' : 'Sidebar einklappen'">
+                <span class="btn-collapse__icon" [class.rotated]="isCollapsed">‹</span>
+                <span class="btn-collapse__label" *ngIf="!isCollapsed">Sidebar einklappen</span>
+            </button>
+            <div class="footer-info" *ngIf="!isCollapsed">
                 <small>© 2026 markt.ma</small>
             </div>
         </div>
@@ -100,8 +119,6 @@
         aria-expanded="false"
 >
   <span class="hamburger-icon">
-    <span></span>
-    <span></span>
-    <span></span>
+    <span></span><span></span><span></span>
   </span>
 </button>

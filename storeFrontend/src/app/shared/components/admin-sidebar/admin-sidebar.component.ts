@@ -39,6 +39,7 @@ export class AdminSidebarComponent implements OnInit {
 
     isOpen = false;
     isMobile = false;
+    isCollapsed = false;
     activeRoute = '';
     expandedGroups = new Set<string>();
     navGroups: NavGroup[] = [];
@@ -270,6 +271,10 @@ export class AdminSidebarComponent implements OnInit {
         } else {
             this.expandedGroups.add(groupTitle);
         }
+    }
+
+    toggleCollapse(): void {
+        this.isCollapsed = !this.isCollapsed;
     }
 
     isGroupExpanded(groupTitle: string): boolean {
