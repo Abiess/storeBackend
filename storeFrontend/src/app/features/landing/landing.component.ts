@@ -1,14 +1,13 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { VideoPlaceholderComponent } from './video-placeholder.component';
 import {TranslatePipe} from "@app/core/pipes/translate.pipe";
 import {VideoPlayerComponent} from "@app/features/landing/video-player.component";
 
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [CommonModule, VideoPlaceholderComponent, TranslatePipe, VideoPlayerComponent],
+  imports: [CommonModule, TranslatePipe, VideoPlayerComponent],
   templateUrl: './landing.component.html',
   styleUrls: ['./landing.component.scss']
 })
@@ -141,9 +140,7 @@ export class LandingComponent {
     }
   }
 
-  toggleComparison(): void {
-    this.showComparison = !this.showComparison;
-  }
+  toggleComparison(): void { /* nicht mehr verwendet */ }
 
   navigateToRegister(storeType?: 'own-store' | 'reseller'): void {
     if (storeType) {

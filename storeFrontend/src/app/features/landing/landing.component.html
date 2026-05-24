@@ -1,261 +1,254 @@
 <div class="landing-page">
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="container">
-            <div class="nav-brand">
-                <h1>🛍️ markt.ma</h1>
-            </div>
-            <div class="nav-links">
-                <a (click)="scrollToSection('features')">{{ 'landing.nav.features' | translate }}</a>
-                <a (click)="scrollToSection('demo')">{{ 'landing.nav.demo' | translate }}</a>
-                <a (click)="scrollToSection('pricing')">{{ 'landing.nav.pricing' | translate }}</a>
-                <button class="btn btn-secondary" (click)="navigateToLogin()">
-                    {{ 'landing.nav.login' | translate }}
-                </button>
-                <button class="btn btn-primary" (click)="navigateToRegister()">
-                    {{ 'landing.nav.startFree' | translate }}
-                </button>
-            </div>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="container">
+      <div class="nav-brand">
+        <h1>🛍️ markt.ma</h1>
+      </div>
+      <div class="nav-links">
+        <a (click)="scrollToSection('features')">{{ 'landing.nav.features' | translate }}</a>
+        <a (click)="scrollToSection('demo')">{{ 'landing.nav.demo' | translate }}</a>
+        <a (click)="scrollToSection('pricing')">{{ 'landing.nav.pricing' | translate }}</a>
+        <button class="btn btn-secondary" (click)="navigateToLogin()">
+          {{ 'landing.nav.login' | translate }}
+        </button>
+        <button class="btn btn-primary" (click)="navigateToRegister()">
+          {{ 'landing.nav.startFree' | translate }}
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-content">
+        <h1 class="hero-title" [innerHTML]="'landing.hero.title' | translate"></h1>
+        <p class="hero-subtitle">{{ 'landing.hero.subtitle' | translate }}</p>
+
+        <div class="hero-actions">
+          <button class="btn btn-hero-primary" (click)="navigateToRegister()">
+            {{ 'landing.hero.startNow' | translate }} →
+          </button>
+          <button class="btn btn-hero-secondary" (click)="scrollToSection('demo')">
+            ▷ {{ 'landing.hero.watchDemo' | translate }}
+          </button>
         </div>
-    </nav>
 
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="container">
-            <div class="hero-content">
-                <h1 class="hero-title" [innerHTML]="'landing.hero.title' | translate"></h1>
-                <p class="hero-subtitle">
-                    {{ 'landing.hero.subtitle' | translate }}
-                </p>
-
-                <!-- Two Path Selection -->
-
-                    <div class="path-card path-own">
-                        <div class="path-icon">{{ 'landing.paths.own.icon' | translate }}</div>
-                        <h3>{{ 'landing.paths.own.title' | translate }}</h3>
-                        <p class="path-for">{{ 'landing.paths.own.for' | translate }}</p>
-                        <ul class="path-benefits">
-                            <li>{{ 'landing.paths.own.benefit1' | translate }}</li>
-                            <li>{{ 'landing.paths.own.benefit2' | translate }}</li>
-                            <li>{{ 'landing.paths.own.benefit3' | translate }}</li>
-                        </ul>
-                        <button class="btn btn-path-own" (click)="navigateToRegister('own-store')">
-                            {{ 'landing.paths.own.cta' | translate }}
-                        </button>
-                    </div>
-
-
-
-
-
-
-                <div class="hero-actions">
-                    <button class="btn btn-hero-primary" (click)="navigateToRegister()">
-                        {{ 'landing.hero.startNow' | translate }}
-                    </button>
-                    <button class="btn btn-hero-secondary" (click)="scrollToSection('demo')">
-                        {{ 'landing.hero.watchDemo' | translate }}
-                    </button>
-                </div>
-
-                <div class="hero-stats">
-                    <div class="stat" *ngFor="let stat of stats">
-                        <div class="stat-value">{{ stat.value | translate }}</div>
-                        <div class="stat-label">{{ stat.label | translate }}</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="hero-image">
-                <div class="mockup-browser">
-                    <div class="browser-header">
-                        <div class="browser-dots">
-                            <span></span><span></span><span></span>
-                        </div>
-                        <div class="browser-url">{{ 'landing.stats.shopUrl' | translate }}</div>
-                    </div>
-                    <div class="browser-content">
-                        <div class="shop-preview">
-                            <div class="preview-header"></div>
-                            <div class="preview-products">
-                                <div class="preview-card"></div>
-                                <div class="preview-card"></div>
-                                <div class="preview-card"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="trust-badges">
+          <span class="trust-item"><span class="trust-check">✓</span> {{ 'landing.hero.trustFreeTrial' | translate }}</span>
+          <span class="trust-item"><span class="trust-check">✓</span> {{ 'landing.hero.trustNoCard' | translate }}</span>
+          <span class="trust-item"><span class="trust-check">✓</span> {{ 'landing.hero.trustCancel' | translate }}</span>
         </div>
-    </section>
 
-    <!-- Features Section -->
-    <section id="features" class="features-section">
-        <div class="container">
-            <div class="section-header">
-                <h2>{{ 'landing.features.title' | translate }}</h2>
-                <p>{{ 'landing.features.subtitle' | translate }}</p>
-            </div>
-            <div class="features-grid">
-                <div class="feature-card" *ngFor="let feature of features">
-                    <div class="feature-icon">{{ feature.icon }}</div>
-                    <h3>{{ feature.title | translate }}</h3>
-                    <p>{{ feature.description | translate }}</p>
-                </div>
-            </div>
+        <div class="hero-stats">
+          <div class="stat" *ngFor="let stat of stats">
+            <div class="stat-value">{{ stat.value }}</div>
+            <div class="stat-label">{{ stat.label | translate }}</div>
+          </div>
         </div>
-    </section>
+      </div>
 
-    <!-- Video Demo Section -->
-    <section id="demo" class="video-demo-section">
-        <div class="container">
-            <div class="section-header">
-                <h2>{{ 'landing.demo.title' | translate }}</h2>
-                <p>{{ 'landing.demo.subtitle' | translate }}</p>
+      <div class="hero-image">
+        <div class="mockup-browser">
+          <div class="browser-header">
+            <div class="browser-dots">
+              <span></span><span></span><span></span>
             </div>
-
-            <div class="main-video-container">
-
-                    <app-video-player class="video-wrapper"
-                            size="large"
-                            [videoUrl]="'assets/videos/platform-demo.webm'"
-                            [showControls]="true"
-                            [poster]="''"
-                            errorMessage="Demo-Video ist noch nicht verfügbar. Bitte führen Sie erst die Tests aus.">
-                    </app-video-player>
-
-
-
-
-                <div class="video-info">
-                    <h3>{{ 'landing.demo.platformDemoHeading' | translate }}</h3>
-                    <p>{{ 'landing.demo.platformDemoText' | translate }}</p>
-                    <small style="color: #7f8c8d; margin-top: 0.5rem; display: block;">
-                        {{ 'landing.demo.platformDemoHint' | translate }}
-                    </small>
+            <div class="browser-url">{{ 'landing.stats.shopUrl' | translate }}</div>
+          </div>
+          <div class="browser-content">
+            <div class="shop-preview">
+              <div class="preview-topbar">
+                <span class="preview-tab">Shop</span>
+                <span class="preview-tab">Kategorien</span>
+                <span class="preview-tab active">Neuheiten</span>
+                <span class="preview-tab sale">Sale</span>
+              </div>
+              <div class="preview-products">
+                <div class="preview-card">
+                  <div class="preview-card-img pci-1"></div>
+                  <div class="preview-card-price">129,00€</div>
+                  <button class="preview-cart-btn">In den Warenkorb</button>
                 </div>
-            </div>
-
-            <div class="tutorials-section">
-                <h3 class="tutorials-title">{{ 'landing.demo.tutorialsTitle' | translate }}</h3>
-                <div class="tutorials-grid">
-                    <div class="tutorial-card" *ngFor="let tutorial of tutorials">
-                        <div class="tutorial-video">
-                            <app-video-player
-                                    size="large"
-                                    [videoUrl]="'assets/videos/platform-demo.webm'"
-                                    [showControls]="true"
-                                    [poster]="''"
-                                    errorMessage="Demo-Video ist noch nicht verfügbar. Bitte führen Sie erst die Tests aus.">
-                            </app-video-player>
-
-                            <div class="tutorial-duration">{{ tutorial.duration | translate }}</div>
-                        </div>
-
-                        <div class="tutorial-content">
-                            <div class="tutorial-icon">{{ tutorial.icon }}</div>
-                            <h4>{{ tutorial.title | translate }}</h4>
-                            <p>{{ tutorial.description | translate }}</p>
-                        </div>
-                    </div>
+                <div class="preview-card">
+                  <div class="preview-card-img pci-2"></div>
+                  <div class="preview-card-price">39,00€</div>
+                  <button class="preview-cart-btn">In den Warenkorb</button>
                 </div>
+                <div class="preview-card">
+                  <div class="preview-card-img pci-3"></div>
+                  <div class="preview-card-price">19,00€</div>
+                  <button class="preview-cart-btn">In den Warenkorb</button>
+                </div>
+              </div>
+              <div class="preview-stats-badge">
+                <div class="preview-stats-text">
+                  <span class="preview-stats-label">Umsatz</span>
+                  <span class="preview-stats-value">+24%</span>
+                  <span class="preview-stats-sub">vs. letzter Monat</span>
+                </div>
+                <svg class="preview-chart" viewBox="0 0 80 32" fill="none" preserveAspectRatio="none">
+                  <polyline points="0,28 16,22 32,16 52,8 70,11 80,5"
+                            stroke="#667eea" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
             </div>
-
-            <div class="video-cta">
-                <p>{{ 'landing.demo.ctaText' | translate }}</p>
-                <button class="btn btn-hero-primary" (click)="navigateToRegister()">
-                    {{ 'landing.demo.ctaButton' | translate }}
-                </button>
-            </div>
+          </div>
         </div>
-    </section>
+      </div>
+    </div>
+  </section>
 
-    <!-- Pricing Section -->
-    <section id="pricing" class="pricing-section">
-        <div class="container">
-            <div class="section-header">
-                <h2>{{ 'landing.pricing.title' | translate }}</h2>
-                <p>{{ 'landing.pricing.subtitle' | translate }}</p>
-            </div>
-
-            <div class="pricing-grid">
-                <div class="pricing-card"
-                     *ngFor="let plan of plans"
-                     [class.highlighted]="plan.highlighted">
-
-                    <div class="pricing-badge" *ngIf="plan.highlighted">
-                        {{ 'landing.pricing.popular' | translate }}
-                    </div>
-
-                    <h3 class="plan-name">{{ plan.name | translate }}</h3>
-                    <p class="plan-description">{{ plan.description | translate }}</p>
-
-                    <div class="plan-price">
-                        <span class="price-amount">{{ plan.price }}€</span>
-                        <span class="price-period">{{ plan.period | translate }}</span>
-                    </div>
-
-                    <ul class="plan-features">
-                        <li *ngFor="let feature of plan.features">
-                            <span class="check-icon">✓</span> {{ feature | translate }}
-                        </li>
-                    </ul>
-
-                    <button class="btn btn-plan"
-                            [class.btn-plan-highlighted]="plan.highlighted"
-                            (click)="navigateToRegister()">
-                        {{ plan.cta | translate }}
-                    </button>
-                </div>
-            </div>
+  <!-- Features -->
+  <section id="features" class="features-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>{{ 'landing.features.title' | translate }}</h2>
+        <p>{{ 'landing.features.subtitle' | translate }}</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card" *ngFor="let feature of features">
+          <div class="feature-icon">{{ feature.icon }}</div>
+          <h3>{{ feature.title | translate }}</h3>
+          <p>{{ feature.description | translate }}</p>
         </div>
-    </section>
+      </div>
+    </div>
+  </section>
 
-    <!-- CTA Section -->
-    <section class="cta-section">
-        <div class="container">
-            <div class="cta-content">
-                <h2>{{ 'landing.cta.title' | translate }}</h2>
-                <p>{{ 'landing.cta.subtitle' | translate }}</p>
-                <button class="btn btn-cta" (click)="navigateToRegister()">
-                    {{ 'landing.cta.button' | translate }}
-                </button>
-                <p class="cta-note">{{ 'landing.cta.note' | translate }}</p>
-            </div>
+  <!-- Video Demo -->
+  <section id="demo" class="video-demo-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>{{ 'landing.demo.title' | translate }}</h2>
+        <p>{{ 'landing.demo.subtitle' | translate }}</p>
+      </div>
+
+      <div class="tutorials-list">
+        <div class="tutorial-row" *ngFor="let tutorial of tutorials; let i = index">
+          <div class="tutorial-thumb">
+            <app-video-player
+              size="large"
+              [videoUrl]="'assets/videos/platform-demo.webm'"
+              [showControls]="true"
+              [poster]="''"
+              errorMessage="Video nicht verfügbar">
+            </app-video-player>
+            <div class="tutorial-duration">{{ tutorial.duration | translate }}</div>
+          </div>
+          <div class="tutorial-info">
+            <div class="tutorial-step">{{ i + 1 }}.</div>
+            <h4>{{ tutorial.title | translate }}</h4>
+            <p>{{ tutorial.description | translate }}</p>
+          </div>
         </div>
-    </section>
+      </div>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h3>🛍️ markt.ma</h3>
-                    <p>{{ 'landing.footer.tagline' | translate }}</p>
-                </div>
+      <div class="video-cta">
+        <p>{{ 'landing.demo.ctaText' | translate }}</p>
+        <button class="btn btn-hero-primary" (click)="navigateToRegister()">
+          {{ 'landing.demo.ctaButton' | translate }}
+        </button>
+      </div>
+    </div>
+  </section>
 
-                <div class="footer-section">
-                    <h4>{{ 'landing.footer.product' | translate }}</h4>
-                    <ul>
-                        <li><a (click)="scrollToSection('features')">{{ 'landing.nav.features' | translate }}</a></li>
-                        <li><a (click)="scrollToSection('demo')">{{ 'landing.nav.demo' | translate }}</a></li>
-                        <li><a (click)="scrollToSection('pricing')">{{ 'landing.nav.pricing' | translate }}</a></li>
-                    </ul>
-                </div>
-
-                <div class="footer-section">
-                    <h4>{{ 'landing.footer.legal' | translate }}</h4>
-                    <ul>
-                        <li><a>{{ 'landing.footer.imprint' | translate }}</a></li>
-                        <li><a>{{ 'landing.footer.privacy' | translate }}</a></li>
-                        <li><a>{{ 'landing.footer.terms' | translate }}</a></li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="footer-bottom">
-                <p>{{ 'landing.footer.copyright' | translate }}</p>
-            </div>
+  <!-- Pricing -->
+  <section id="pricing" class="pricing-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>{{ 'landing.pricing.title' | translate }}</h2>
+        <p>{{ 'landing.pricing.subtitle' | translate }}</p>
+      </div>
+      <div class="pricing-grid">
+        <div class="pricing-card" *ngFor="let plan of plans" [class.highlighted]="plan.highlighted">
+          <div class="pricing-badge" *ngIf="plan.highlighted">{{ 'landing.pricing.popular' | translate }}</div>
+          <h3 class="plan-name">{{ plan.name | translate }}</h3>
+          <p class="plan-description">{{ plan.description | translate }}</p>
+          <div class="plan-price">
+            <span class="price-amount">{{ plan.price }}€</span>
+            <span class="price-period">{{ plan.period | translate }}</span>
+          </div>
+          <ul class="plan-features">
+            <li *ngFor="let feature of plan.features">
+              <span class="check-icon">✓</span> {{ feature | translate }}
+            </li>
+          </ul>
+          <button class="btn btn-plan" [class.btn-plan-highlighted]="plan.highlighted" (click)="navigateToRegister()">
+            {{ plan.cta | translate }}
+          </button>
         </div>
-    </footer>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <div class="container">
+      <div class="cta-content">
+        <h2>{{ 'landing.cta.title' | translate }}</h2>
+        <p>{{ 'landing.cta.subtitle' | translate }}</p>
+        <button class="btn btn-cta" (click)="navigateToRegister()">{{ 'landing.cta.button' | translate }}</button>
+        <p class="cta-note">{{ 'landing.cta.note' | translate }}</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h3>🛍️ markt.ma</h3>
+          <p>{{ 'landing.footer.tagline' | translate }}</p>
+        </div>
+        <div class="footer-section">
+          <h4>{{ 'landing.footer.product' | translate }}</h4>
+          <ul>
+            <li><a (click)="scrollToSection('features')">{{ 'landing.nav.features' | translate }}</a></li>
+            <li><a (click)="scrollToSection('demo')">{{ 'landing.nav.demo' | translate }}</a></li>
+            <li><a (click)="scrollToSection('pricing')">{{ 'landing.nav.pricing' | translate }}</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4>{{ 'landing.footer.legal' | translate }}</h4>
+          <ul>
+            <li><a>{{ 'landing.footer.imprint' | translate }}</a></li>
+            <li><a>{{ 'landing.footer.privacy' | translate }}</a></li>
+            <li><a>{{ 'landing.footer.terms' | translate }}</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>{{ 'landing.footer.copyright' | translate }}</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Mobile Bottom Tab Bar (nur sichtbar auf Mobile) -->
+  <nav class="mobile-bottom-nav">
+    <a class="mobile-nav-item" (click)="scrollToSection('features')">
+      <span class="mobile-nav-icon">⊞</span>
+      <span class="mobile-nav-label">{{ 'landing.nav.features' | translate }}</span>
+    </a>
+    <a class="mobile-nav-item" (click)="scrollToSection('demo')">
+      <span class="mobile-nav-icon">▷</span>
+      <span class="mobile-nav-label">{{ 'landing.nav.demo' | translate }}</span>
+    </a>
+    <a class="mobile-nav-item" (click)="scrollToSection('pricing')">
+      <span class="mobile-nav-icon">◈</span>
+      <span class="mobile-nav-label">{{ 'landing.nav.pricing' | translate }}</span>
+    </a>
+    <a class="mobile-nav-item" (click)="navigateToLogin()">
+      <span class="mobile-nav-icon">👤</span>
+      <span class="mobile-nav-label">{{ 'landing.nav.login' | translate }}</span>
+    </a>
+    <a class="mobile-nav-item mobile-nav-cta" (click)="navigateToRegister()">
+      <span class="mobile-nav-icon">🚀</span>
+      <span class="mobile-nav-label">{{ 'landing.nav.startFree' | translate }}</span>
+    </a>
+  </nav>
+
 </div>

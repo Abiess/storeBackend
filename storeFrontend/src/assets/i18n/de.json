@@ -923,8 +923,11 @@
                     "hero":  {
                                  "title":  "Starten Sie Ihren Online-Shop \u003cspan class=\"gradient-text\"\u003ein Minuten\u003c/span\u003e",
                                  "subtitle":  "Wählen Sie Ihren Weg: Eigene Produkte verkaufen oder als Reseller durchstarten. Keine Programmierkenntnisse erforderlich.",
-                                 "startNow":  "🚀 Jetzt kostenlos starten",
-                                 "watchDemo":  "📹 Demo ansehen"
+                                 "startNow":  "Jetzt kostenlos starten",
+                                 "watchDemo":  "Demo ansehen",
+                                 "trustFreeTrial": "14 Tage kostenlos testen",
+                                 "trustNoCard": "Keine Kreditkarte nötig",
+                                 "trustCancel": "Jederzeit kündbar"
                              },
                     "paths":  {
                                   "own":  {

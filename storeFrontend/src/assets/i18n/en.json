@@ -787,8 +787,11 @@
                     "hero":  {
                                  "title":  "Launch your online store \u003cspan class=\"gradient-text\"\u003ein minutes\u003c/span\u003e",
                                  "subtitle":  "Choose your path: sell your own products or get started as a reseller. No coding skills required.",
-                                 "startNow":  "🚀 Start for free now",
-                                 "watchDemo":  "📹 Watch demo"
+                                 "startNow":  "Start for free now",
+                                 "watchDemo":  "Watch demo",
+                                 "trustFreeTrial": "14 days free trial",
+                                 "trustNoCard": "No credit card required",
+                                 "trustCancel": "Cancel anytime"
                              },
                     "paths":  {
                                   "own":  {
