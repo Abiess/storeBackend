@@ -1,6 +1,7 @@
 package storebackend.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -48,13 +49,18 @@ public class TelegramMtprotoController {
     private final TelegramMtprotoConfigRepository configRepository;
     private final StoreRepository storeRepository;
 
+    /** Ist die Plattform-App konfiguriert? (api_id > 0 in env) – sicher ans Frontend */
+    @Value("${telegram.app.api-id:0}")
+    private int platformApiId;
+
     // ─────────────────────────────────────────────────────────────────────────
     // Auth-Flow
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
-     * Schritt 1: Sendet Verifizierungscode an Telefon.
-     * Body: { apiId, apiHash, phone }
+     * Schritt 1: Code ans Telefon senden.
+     * Standard-Flow: nur { phone } → Backend nutzt Plattform-App-Credentials
+     * Advanced-Flow:  { phone, apiId, apiHash } → nutzt User-eigene Credentials
      */
     @PostMapping("/auth/request-code")
     public ResponseEntity<Map<String, Object>> requestCode(
@@ -64,19 +70,21 @@ public class TelegramMtprotoController {
 
         verifyOwnership(storeId, user);
 
-        Integer apiId = (Integer) body.get("apiId");
-        String apiHash = (String) body.get("apiHash");
-        String phone   = (String) body.get("phone");
-
-        if (apiId == null || apiHash == null || phone == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "apiId, apiHash und phone sind erforderlich"));
+        String phone = (String) body.get("phone");
+        if (phone == null || phone.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "phone ist erforderlich"));
         }
+
+        // apiId und apiHash sind optional – fehlen sie, nutzt der Service Plattform-Credentials
+        Integer apiId   = body.get("apiId") != null ? ((Number) body.get("apiId")).intValue() : null;
+        String  apiHash = (String) body.get("apiHash");
 
         try {
             String phoneCodeHash = mtprotoService.requestAuthCode(storeId, apiId, apiHash, phone);
             return ResponseEntity.ok(Map.of(
                 "phoneCodeHash", phoneCodeHash,
-                "message", "Code an " + phone + " gesendet"
+                "message", "Code an " + phone + " gesendet",
+                "usingPlatformApp", (apiId == null || apiId <= 0)
             ));
         } catch (RuntimeException e) {
             String msg = e.getMessage() != null ? e.getMessage() : "Fehler beim Senden des Codes";
@@ -85,6 +93,24 @@ public class TelegramMtprotoController {
             }
             return ResponseEntity.badRequest().body(Map.of("error", msg));
         }
+    }
+
+    /**
+     * GET /api/stores/{storeId}/telegram/mtproto/auth/platform-app-available
+     * Teilt dem Frontend mit ob eine Plattform-App konfiguriert ist.
+     * Gibt NIE api_hash zurück – nur ein boolean-Flag!
+     */
+    @GetMapping("/auth/platform-app-available")
+    public ResponseEntity<Map<String, Object>> platformAppAvailable(
+            @PathVariable Long storeId,
+            @AuthenticationPrincipal User user) {
+        verifyOwnership(storeId, user);
+        return ResponseEntity.ok(Map.of(
+            "available", platformApiId > 0,
+            "message", platformApiId > 0
+                ? "Plattform-App verfügbar – nur Telefonnummer erforderlich"
+                : "Keine Plattform-App konfiguriert – bitte eigene API-Credentials angeben"
+        ));
     }
 
     /**
@@ -375,4 +401,3 @@ public class TelegramMtprotoController {
         }
     }
 }
-

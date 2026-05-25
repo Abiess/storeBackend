@@ -37,6 +37,17 @@ public class TelegramMtprotoService {
     @Value("${telegram.scraper.url:http://localhost:8001}")
     private String scraperUrl;
 
+    /**
+     * Zentrale Plattform-Telegram-App Credentials.
+     * Werden genutzt wenn der User keine eigene api_id/api_hash angibt (Standard-Flow).
+     * NIEMALS ans Frontend zurückgeben!
+     */
+    @Value("${telegram.app.api-id:0}")
+    private int platformApiId;
+
+    @Value("${telegram.app.api-hash:}")
+    private String platformApiHash;
+
     private final TelegramMtprotoConfigRepository mtprotoRepository;
     private final TelegramImportLogRepository importLogRepository;
     private final StoreRepository storeRepository;
@@ -92,15 +103,31 @@ public class TelegramMtprotoService {
 
     /**
      * Schritt 1: Sendet Verifizierungscode an Telefonnummer via Telegram.
-     * Gibt phone_code_hash zurück (wird für Schritt 2 benötigt).
+     *
+     * Standard-Flow: apiId=null, apiHash=null → Plattform-Credentials aus application.properties
+     * Advanced-Flow: User gibt eigene api_id/api_hash an
      */
     @Transactional
     public String requestAuthCode(Long storeId, Integer apiId, String apiHash, String phone) {
-        log.info("[MTProto] Requesting auth code for store={}, phone={}", storeId, phone);
+        // Credentials auflösen: User-eigene haben Priorität, sonst Plattform-Credentials
+        int resolvedApiId = (apiId != null && apiId > 0) ? apiId : platformApiId;
+        String resolvedApiHash = (apiHash != null && !apiHash.isBlank()) ? apiHash : platformApiHash;
+
+        if (resolvedApiId <= 0 || resolvedApiHash == null || resolvedApiHash.isBlank()) {
+            throw new RuntimeException(
+                "Keine Telegram API-Credentials konfiguriert. " +
+                "Bitte TELEGRAM_APP_API_ID und TELEGRAM_APP_API_HASH als Umgebungsvariablen setzen " +
+                "oder eigene Credentials im Advanced Mode angeben."
+            );
+        }
+
+        boolean usingPlatformCredentials = (apiId == null || apiId <= 0);
+        log.info("[MTProto] Requesting auth code for store={}, phone={}, usingPlatformCredentials={}",
+            storeId, phone, usingPlatformCredentials);
 
         ObjectNode body = objectMapper.createObjectNode();
-        body.put("api_id", apiId);
-        body.put("api_hash", apiHash);
+        body.put("api_id", resolvedApiId);
+        body.put("api_hash", resolvedApiHash);
         body.put("phone", phone);
 
         JsonNode response = postToScraper("/auth/request-code", body);
@@ -135,8 +162,8 @@ public class TelegramMtprotoService {
                 c.setStore(store);
                 return c;
             });
-        cfg.setApiId(apiId);
-        cfg.setApiHash(apiHash);
+        cfg.setApiId(usingPlatformCredentials ? null : apiId);
+        cfg.setApiHash(usingPlatformCredentials ? null : apiHash);
         cfg.setPhone(phone);
         cfg.setPendingPhoneCodeHash(phoneCodeHash);
         cfg.setPendingAuthSession(authSession.isBlank() ? null : authSession);  // Teil-Session merken
@@ -180,8 +207,11 @@ public class TelegramMtprotoService {
         // ──────────────────────────────────────────────────────────────────────
 
         ObjectNode body = objectMapper.createObjectNode();
-        body.put("api_id", cfg.getApiId());
-        body.put("api_hash", cfg.getApiHash());
+        // api_id/api_hash: eigene Credentials des Users oder Plattform-Fallback
+        int verifyApiId = (cfg.getApiId() != null && cfg.getApiId() > 0) ? cfg.getApiId() : platformApiId;
+        String verifyApiHash = (cfg.getApiHash() != null && !cfg.getApiHash().isBlank()) ? cfg.getApiHash() : platformApiHash;
+        body.put("api_id", verifyApiId);
+        body.put("api_hash", verifyApiHash);
         body.put("phone", cfg.getPhone());
         body.put("code", code);
         body.put("phone_code_hash", cfg.getPendingPhoneCodeHash());

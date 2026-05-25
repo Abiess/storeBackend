@@ -92,10 +92,22 @@ export class TelegramService {
 
   // ── MTProto API ──────────────────────────────────────────────────────────
 
-  /** Schritt 1: Code ans Telefon senden */
-  mtprotoRequestCode(storeId: number, apiId: number, apiHash: string, phone: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/stores/${storeId}/telegram/mtproto/auth/request-code`,
-      { apiId, apiHash, phone });
+  /** Prüft ob die Plattform eine eigene Telegram-App konfiguriert hat */
+  mtprotoPlatformAppAvailable(storeId: number): Observable<{ available: boolean; message: string }> {
+    return this.http.get<{ available: boolean; message: string }>(
+      `${this.apiUrl}/stores/${storeId}/telegram/mtproto/auth/platform-app-available`);
+  }
+
+  /**
+   * Schritt 1: Code ans Telefon senden.
+   * Standard-Flow: apiId/apiHash weglassen → Backend nutzt Plattform-App
+   * Advanced-Flow:  apiId + apiHash mitgeben → User-eigene Credentials
+   */
+  mtprotoRequestCode(storeId: number, phone: string, apiId?: number, apiHash?: string): Observable<any> {
+    const body: any = { phone };
+    if (apiId && apiId > 0) body['apiId'] = apiId;
+    if (apiHash?.trim())   body['apiHash'] = apiHash;
+    return this.http.post(`${this.apiUrl}/stores/${storeId}/telegram/mtproto/auth/request-code`, body);
   }
 
   /** Schritt 2: Code verifizieren → Session erstellen */
