@@ -42,9 +42,9 @@ export class LandingComponent {
       description: 'landing.featureItems.analytics.description'
     },
     {
-      icon: 'truck',
-      title: 'landing.featureItems.shipping.title',
-      description: 'landing.featureItems.shipping.description'
+      icon: 'send',
+      title: 'landing.featureItems.telegramImport.title',
+      description: 'landing.featureItems.telegramImport.description'
     },
     {
       icon: 'smartphone',

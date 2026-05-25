@@ -331,6 +331,21 @@ interface WizardStep {
               </div>
             </div>
 
+            <!-- Telegram Import Feature Spotlight -->
+            <div class="telegram-spotlight">
+              <div class="telegram-spotlight__icon">📡</div>
+              <div class="telegram-spotlight__body">
+                <h4 class="telegram-spotlight__title">{{ 'wizard.telegramFeatureTitle' | translate }}</h4>
+                <p class="telegram-spotlight__desc">{{ 'wizard.telegramFeatureDesc' | translate }}</p>
+                <ul class="telegram-spotlight__points">
+                  <li>{{ 'wizard.telegramFeaturePoint1' | translate }}</li>
+                  <li>{{ 'wizard.telegramFeaturePoint2' | translate }}</li>
+                  <li>{{ 'wizard.telegramFeaturePoint3' | translate }}</li>
+                </ul>
+              </div>
+              <div class="telegram-spotlight__badge">{{ 'wizard.telegramFeatureBadge' | translate }}</div>
+            </div>
+
             @if (error()) {
               <div class="error-banner">
                 {{ error() }}
@@ -870,6 +885,91 @@ interface WizardStep {
       font-weight: 600;
       color: #6b7280;
       border: 2px dashed #d1d5db;
+    }
+
+    /* Telegram Import Spotlight */
+    .telegram-spotlight {
+      display: flex;
+      align-items: flex-start;
+      gap: 1.25rem;
+      padding: 1.5rem 1.75rem;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #0f2027 0%, #1a3a4a 50%, #1a1a2e 100%);
+      border: 1px solid rgba(255,255,255,0.1);
+      margin-top: 1.25rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .telegram-spotlight::before {
+      content: '';
+      position: absolute;
+      top: -30px; right: -30px;
+      width: 120px; height: 120px;
+      background: radial-gradient(circle, rgba(41, 182, 246, 0.25) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .telegram-spotlight__icon {
+      font-size: 2.5rem;
+      flex-shrink: 0;
+      line-height: 1;
+      filter: drop-shadow(0 0 8px rgba(41,182,246,0.5));
+    }
+
+    .telegram-spotlight__body {
+      flex: 1;
+    }
+
+    .telegram-spotlight__title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin: 0 0 0.4rem;
+    }
+
+    .telegram-spotlight__desc {
+      font-size: 0.875rem;
+      color: rgba(255,255,255,0.75);
+      margin: 0 0 0.75rem;
+      line-height: 1.5;
+    }
+
+    .telegram-spotlight__points {
+      list-style: none;
+      padding: 0; margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .telegram-spotlight__points li {
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.85);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .telegram-spotlight__points li::before {
+      content: '✓';
+      color: #29b6f6;
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    .telegram-spotlight__badge {
+      flex-shrink: 0;
+      background: linear-gradient(135deg, #29b6f6, #0288d1);
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.35rem 0.75rem;
+      border-radius: 20px;
+      align-self: flex-start;
+      white-space: nowrap;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
     }
 
     @media (max-width: 768px) {

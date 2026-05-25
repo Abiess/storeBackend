@@ -789,9 +789,9 @@
                                  "subtitle":  "Choose your path: sell your own products or get started as a reseller. No coding skills required.",
                                  "startNow":  "Start for free now",
                                  "watchDemo":  "Watch demo",
-                                 "trustFreeTrial": "14 days free trial",
-                                 "trustNoCard": "No credit card required",
-                                 "trustCancel": "Cancel anytime"
+                                 "trustFreeTrial":  "14 days free trial",
+                                 "trustNoCard":  "No credit card required",
+                                 "trustCancel":  "Cancel anytime"
                              },
                     "paths":  {
                                   "own":  {
@@ -874,7 +874,11 @@
                                          "security":  {
                                                           "title":  "SSL \u0026 security",
                                                           "description":  "Highest security standards with SSL encryption and automatic backups."
-                                                      }
+                                                      },
+                                         "telegramImport":  {
+                                                                "title":  "📡 Telegram Channel Import",
+                                                                "description":  "Import products directly from Telegram channels in seconds – instantly saved as product drafts in your store."
+                                                            }
                                      },
                     "demo":  {
                                  "title":  "See markt.ma in action",
@@ -983,20 +987,20 @@
                                         "account":  "Account"
                                     },
                          "items":  {
-                                        "dashboard":  "Dashboard",
-                                        "products":  "Products",
-                                        "reviews":  "Reviews",
-                                        "chatbot":  "Chatbot",
-                                        "storeSettings":  "Store Settings",
-                                        "designTheme":  "Design \u0026 Theme",
-                                        "banner":  "Promo Banner",
-                                        "delivery":  "Delivery",
-                                        "seo":  "SEO",
-                                        "brand":  "Brand",
-                                        "myAccount":  "My Account",
-                                        "subscription":  "Subscription",
-                                        "roles":  "Roles"
-                                    },
+                                       "dashboard":  "Dashboard",
+                                       "products":  "Products",
+                                       "reviews":  "Reviews",
+                                       "chatbot":  "Chatbot",
+                                       "storeSettings":  "Store Settings",
+                                       "designTheme":  "Design \u0026 Theme",
+                                       "banner":  "Promo Banner",
+                                       "delivery":  "Delivery",
+                                       "seo":  "SEO",
+                                       "brand":  "Brand",
+                                       "myAccount":  "My Account",
+                                       "subscription":  "Subscription",
+                                       "roles":  "Roles"
+                                   },
                          "noStore":  {
                                          "hint":  "No store selected",
                                          "cta":  "Create a store",
@@ -1070,7 +1074,13 @@
                    "whatsappNumberPlaceholder":  "+212600123456",
                    "whatsappNumberHint":  "Your WhatsApp number for customer orders (international format)",
                    "whatsappNotifications":  "Notify customers via WhatsApp",
-                   "whatsappNotificationsHint":  "Customers automatically receive WhatsApp messages for orders \u0026 status updates"
+                   "whatsappNotificationsHint":  "Customers automatically receive WhatsApp messages for orders \u0026 status updates",
+                   "telegramFeatureTitle":  "📡 Next Step: Import Products via Telegram",
+                   "telegramFeatureDesc":  "After creating your store, you can instantly import products from any Telegram channel – no manual effort needed.",
+                   "telegramFeaturePoint1":  "Import from public \u0026 private channels",
+                   "telegramFeaturePoint2":  "Automatically grab images \u0026 descriptions",
+                   "telegramFeaturePoint3":  "Products appear as drafts for your review",
+                   "telegramFeatureBadge":  "New"
                },
     "aiGenerator":  {
                         "intro":  "AI Product Image Analysis: Upload multiple product photos and AI automatically generates product data.",
@@ -1307,8 +1317,7 @@
                                     "textsHint":  "Enter the banner text for each language. If a text is missing, the German version will be used as fallback."
                                 }
                },
-    "filter": {
-        "priceRange": "Price Range"
-    }
+    "filter":  {
+                   "priceRange":  "Price Range"
+               }
 }
-

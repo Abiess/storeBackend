@@ -642,7 +642,13 @@
                    "whatsappNumberPlaceholder":  "+212600123456",
                    "whatsappNumberHint":  "رقم واتساب الخاص بك للطلبات",
                    "whatsappNotifications":  "إشعار العملاء عبر واتساب",
-                   "whatsappNotificationsHint":  "سيتلقى العملاء رسائل واتساب تلقائيًا"
+                   "whatsappNotificationsHint":  "سيتلقى العملاء رسائل واتساب تلقائيًا",
+                   "telegramFeatureTitle":  "📡 الخطوة التالية: استيراد المنتجات عبر Telegram",
+                   "telegramFeatureDesc":  "بعد إنشاء متجرك، يمكنك استيراد المنتجات من أي قناة Telegram على الفور – دون أي جهد يدوي.",
+                   "telegramFeaturePoint1":  "الاستيراد من القنوات العامة والخاصة",
+                   "telegramFeaturePoint2":  "يتم جلب الصور والأوصاف تلقائياً",
+                   "telegramFeaturePoint3":  "تظهر المنتجات كمسودات للمراجعة",
+                   "telegramFeatureBadge":  "جديد"
                },
     "aiGenerator":  {
                         "intro":  "تحليل صور المنتجات بالذكاء الاصطناعي: ارفع صور المنتجات وسيقوم الذكاء الاصطناعي تلقائياً بإنشاء بيانات المنتج.",
@@ -944,13 +950,13 @@
                                 "startFree":  "ابدأ مجاناً"
                             },
                     "hero":  {
-                                 "title":  "أطلق متجرك الإلكتروني <span class=\"gradient-text\">في دقائق</span>",
+                                 "title":  "أطلق متجرك الإلكتروني \u003cspan class=\"gradient-text\"\u003eفي دقائق\u003c/span\u003e",
                                  "subtitle":  "اختر طريقك: بيع منتجاتك الخاصة أو ابدأ كموزّع. لا تحتاج لمهارات برمجية.",
                                  "startNow":  "ابدأ مجاناً الآن",
                                  "watchDemo":  "شاهد العرض التوضيحي",
-                                 "trustFreeTrial": "14 يوم مجاناً",
-                                 "trustNoCard": "لا بطاقة ائتمان",
-                                 "trustCancel": "إلغاء في أي وقت"
+                                 "trustFreeTrial":  "14 يوم مجاناً",
+                                 "trustNoCard":  "لا بطاقة ائتمان",
+                                 "trustCancel":  "إلغاء في أي وقت"
                              },
                     "paths":  {
                                   "own":  {
@@ -996,7 +1002,7 @@
                                        "forWhom":  "لمن؟",
                                        "forWhomOwn":  "المصنّعون، التجار",
                                        "forWhomReseller":  "المسوّقون، المؤثرون",
-                                       "note":  "💡 <strong>معلومة مفيدة:</strong> يمكنك لاحقاً إنشاء متاجر إضافية - حتى من النوع الآخر!"
+                                       "note":  "💡 \u003cstrong\u003eمعلومة مفيدة:\u003c/strong\u003e يمكنك لاحقاً إنشاء متاجر إضافية - حتى من النوع الآخر!"
                                    },
                     "stats":  {
                                   "shopUrl":  "https://متجرك.markt.ma",
@@ -1033,7 +1039,11 @@
                                          "security":  {
                                                           "title":  "SSL والأمان",
                                                           "description":  "أعلى معايير الأمان مع تشفير SSL ونسخ احتياطية تلقائية."
-                                                      }
+                                                      },
+                                         "telegramImport":  {
+                                                                "title":  "📡 استيراد قنوات Telegram",
+                                                                "description":  "استيراد المنتجات مباشرةً من قنوات Telegram في ثوانٍ – تُحفظ فوراً كمسودات منتجات في متجرك."
+                                                            }
                                      },
                     "demo":  {
                                  "title":  "شاهد markt.ma في العمل",
@@ -1127,10 +1137,8 @@
                                    "terms":  "الشروط والأحكام",
                                    "copyright":  "© 2026 markt.ma. جميع الحقوق محفوظة."
                                }
-                }
-,
-    "filter": {
-        "priceRange": "???? ?????"
-    }
+                },
+    "filter":  {
+                   "priceRange":  "???? ?????"
+               }
 }
-
