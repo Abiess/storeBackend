@@ -1,6 +1,7 @@
 import { Component, Input, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import { TelegramService, MtprotoStatus, ChannelInfo } from '@app/core/services/telegram.service';
 
 type Step = 'credentials' | 'verify-code' | 'channels' | 'import';
@@ -472,6 +473,9 @@ export class TelegramMtprotoComponent implements OnInit, OnDestroy {
   private _countdownInterval: ReturnType<typeof setInterval> | null = null;
   private readonly CODE_TTL = 120; // Sekunden
 
+  // Subscription-Management: verhindert Race Conditions bei schnellem Back/Resend
+  private _verifySub: Subscription | null = null;
+
   // Channels
   availableChannels: ChannelInfo[] = [];
   watchedChannels: string[] = [];
@@ -499,6 +503,7 @@ export class TelegramMtprotoComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.stopCountdown();
+    this._cancelVerify();
   }
 
   // ── Countdown-Timer ───────────────────────────────────────────────────────
@@ -522,6 +527,15 @@ export class TelegramMtprotoComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Bricht einen laufenden verify-Request sauber ab – verhindert Race Conditions */
+  private _cancelVerify(): void {
+    if (this._verifySub) {
+      this._verifySub.unsubscribe();
+      this._verifySub = null;
+    }
+    this.verifying = false;
+  }
+
   formatCountdown(seconds: number): string {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
@@ -530,8 +544,10 @@ export class TelegramMtprotoComponent implements OnInit, OnDestroy {
 
   // ── Navigation ────────────────────────────────────────────────────────────
 
-  /** Zurück zu Schritt 1 – leert Code-Feld damit kein alter Code versehentlich abgeschickt wird */
+  /** Zurück zu Schritt 1 – leert Code-Feld UND bricht laufende verify-Requests ab */
   goBackToCredentials(): void {
+    // Laufenden verify-Request SOFORT abbrechen – verhindert Race Condition
+    this._cancelVerify();
     this.currentStep = 'credentials';
     this.verifyCode = '';
     this.twoFaPassword = '';
@@ -564,7 +580,9 @@ export class TelegramMtprotoComponent implements OnInit, OnDestroy {
   requestCode(): void {
     this.errorMsg = '';
     this.sendingCode = true;
-    // WICHTIG: alten Code und Timer immer leeren – verhindert dass abgelaufener Code abgeschickt wird
+    // WICHTIG: laufenden verify-Request abbrechen UND alten Code leeren
+    // verhindert Race Condition + dass abgelaufener Code abgeschickt wird
+    this._cancelVerify();
     this.verifyCode = '';
     this.twoFaPassword = '';
     this.needs2FA = false;
@@ -612,15 +630,22 @@ export class TelegramMtprotoComponent implements OnInit, OnDestroy {
   // ── Step 2: Code verifizieren ────────────────────────────────────────────
 
   verify(): void {
+    // Guard: kein Doppel-Submit, kein Submit wenn nicht auf verify-code Step
+    if (this.verifying || this.currentStep !== 'verify-code' || !this.verifyCode) return;
+
     this.errorMsg = '';
     this.verifying = true;
     const pw = this.needs2FA ? this.twoFaPassword : undefined;
-    this.telegramService.mtprotoVerifyCode(this.storeId, this.verifyCode, pw).subscribe({
+
+    // Subscription speichern damit sie bei Back/Resend abgebrochen werden kann
+    this._verifySub = this.telegramService.mtprotoVerifyCode(this.storeId, this.verifyCode, pw).subscribe({
       next: () => {
+        this._verifySub = null;
         this.verifying = false;
         this.loadStatus();
       },
       error: err => {
+        this._verifySub = null;
         this.verifying = false;
         const errorCode = err.error?.error;
         const msg = err.error?.message || err.error?.detail || err.error?.error || 'Falscher Code';
