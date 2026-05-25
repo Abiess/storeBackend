@@ -538,6 +538,8 @@ export class TelegramMtprotoComponent implements OnInit, OnDestroy {
       next: () => {
         this._verifySub = null;
         this.verifying = false;
+        this.stopCountdown();
+        this.currentStep = 'channels'; // Sofort navigieren – verhindert Doppel-Submit
         this.loadStatus();
       },
       error: err => {
@@ -550,6 +552,13 @@ export class TelegramMtprotoComponent implements OnInit, OnDestroy {
             msg.toLowerCase().includes('abgelaufen') || msg.toLowerCase().includes('expired')) {
           this.goBackToCredentials();
           this.errorMsg = '⏱️ Code abgelaufen. Bitte neuen Code anfordern.';
+          return;
+        }
+        // 409: Kein ausstehender Code / Session unterbrochen → zurück zu Schritt 1
+        if (err.status === 409 || errorCode === 'NO_PENDING_CODE' ||
+            msg.toLowerCase().includes('kein ausstehender') || msg.toLowerCase().includes('erst schritt 1')) {
+          this.goBackToCredentials();
+          this.errorMsg = '🔄 Sitzung unterbrochen. Bitte erneut Code anfordern.';
           return;
         }
         if (err.status === 401 || msg.includes('2FA') || msg.includes('password') || msg.includes('Passwort')) {

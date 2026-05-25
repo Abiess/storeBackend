@@ -141,11 +141,19 @@ public class TelegramMtprotoController {
             ));
         } catch (RuntimeException e) {
             String msg = e.getMessage() != null ? e.getMessage() : "Unbekannter Fehler";
-            // Code abgelaufen → 410 Gone mit Hinweis, neuen Code anzufordern
+            // Code abgelaufen → 410 Gone
             if (msg.toLowerCase().contains("abgelaufen") || msg.toLowerCase().contains("expired")) {
                 return ResponseEntity.status(410).body(Map.of(
                     "error", "CODE_EXPIRED",
                     "message", "Der Bestätigungscode ist abgelaufen. Bitte fordere einen neuen Code an.",
+                    "action", "REQUEST_NEW_CODE"
+                ));
+            }
+            // Kein ausstehender Code (Session unterbrochen / Doppel-Submit) → 409 Conflict
+            if (msg.toLowerCase().contains("kein ausstehender") || msg.toLowerCase().contains("keine ausstehende")) {
+                return ResponseEntity.status(409).body(Map.of(
+                    "error", "NO_PENDING_CODE",
+                    "message", "Keine ausstehende Code-Anfrage. Bitte erneut Code anfordern.",
                     "action", "REQUEST_NEW_CODE"
                 ));
             }
@@ -163,7 +171,7 @@ public class TelegramMtprotoController {
                     "message", msg
                 ));
             }
-            // Sonstige Fehler → 400 (kein 500!)
+            // Sonstige Fehler → 400
             return ResponseEntity.badRequest().body(Map.of("error", msg));
         }
     }
