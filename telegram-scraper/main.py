@@ -228,44 +228,60 @@ async def request_code(req: RequestCodeRequest):
         except Exception as cleanup_err:
             logger.warning(f"[Auth] Cleanup alter Client fehlgeschlagen (wird ignoriert): {cleanup_err}")
 
-    client = make_client(req.api_id, req.api_hash)
+    # WICHTIG: StringSession() direkt übergeben – KEIN make_client() Wrapper mit extra Params
+    # Telethon 1.36 braucht saubere direkte Initialisierung damit auth_key korrekt gesetzt wird
+    session = StringSession()
+    client = TelegramClient(session, req.api_id, req.api_hash)
 
     try:
-        await asyncio.wait_for(client.connect(), timeout=10.0)
-        result = await asyncio.wait_for(client.send_code_request(req.phone), timeout=15.0)
+        # WICHTIG: connect() OHNE asyncio.wait_for() – wait_for() kann den MTProto-Handshake
+        # (auth_key-Erzeugung) in einem separaten Task abbrechen bevor session.save() Daten hat
+        await client.connect()
+        logger.info(f"[Auth][E2E] connect() abgeschlossen – is_connected={client.is_connected()}")
 
-        # Client VERBUNDEN lassen – verify-code braucht denselben Client!
+        # send_code_request() – Telegram kann hier intern DC-Migration auslösen
+        sent = await client.send_code_request(req.phone)
+        logger.info(f"[Auth][E2E] send_code_request() abgeschlossen – phone_code_hash_len={len(sent.phone_code_hash)}")
+
+        # Client IM RAM HALTEN – verify-code braucht exakt denselben Client + MTProto-State!
         _pending_auth[cache_key] = client
 
-        # Teil-Session als Fallback speichern – MUSS nach send_code_request() erfolgen
-        # client.session.save() gibt "" zurück wenn kein Auth-Key vorhanden → explizit prüfen
+        # Session-String für Fallback (falls Service zwischen request-code und verify-code neustartet)
+        # MUSS nach send_code_request() aufgerufen werden – erst dann ist auth_key vollständig gesetzt
+        auth_key_present = (
+            hasattr(client.session, 'auth_key') and client.session.auth_key is not None
+        )
+        logger.info(f"[Auth][E2E] session.auth_key present={auth_key_present}")
+
         auth_session_string: Optional[str] = None
         try:
             saved = client.session.save()
             if saved and len(saved) > 0:
                 auth_session_string = saved
-                logger.info(f"[Auth][E2E] ✅ session.save() erfolgreich: len={len(saved)} prefix={saved[:10]}...")
+                logger.info(f"[Auth][E2E] ✅ session.save() erfolgreich: len={len(saved)} prefix={saved[:12]}...")
             else:
+                # Telethon hat auth_key noch nicht in StringSession geschrieben
+                # → Fallback: client.session._auth_key direkt auslesen (Telethon-intern)
                 logger.warning(
-                    f"[Auth][E2E] ⚠️  session.save() gab leeren String zurück (len={len(saved) if saved is not None else 'None'})! "
-                    f"Fallback im verify-code wird benötigt. Telethon-Version oder MTProto-Handshake prüfen."
+                    f"[Auth][E2E] ⚠️  session.save() leer! auth_key_present={auth_key_present} "
+                    f"Verify-Code muss über gecachten Client laufen (kein Fallback möglich)."
                 )
         except Exception as sess_err:
             logger.error(f"[Auth][E2E] ❌ session.save() Exception: {type(sess_err).__name__}: {sess_err}")
-            auth_session_string = None
 
         logger.info(
             f"[Auth][E2E] request-code abgeschlossen: phone={req.phone} "
-            f"phone_code_hash_len={len(result.phone_code_hash)} "
+            f"phone_code_hash_len={len(sent.phone_code_hash)} "
             f"auth_session_string_set={auth_session_string is not None} "
             f"auth_session_string_len={len(auth_session_string) if auth_session_string else 0}"
         )
 
         return RequestCodeResponse(
-            phone_code_hash=result.phone_code_hash,
+            phone_code_hash=sent.phone_code_hash,
             auth_session_string=auth_session_string,
             message=f"Code an {req.phone} gesendet"
         )
+
     except ApiIdInvalidError:
         await _safe_disconnect(client)
         raise HTTPException(400, "Ungültige API ID oder API Hash. Bitte auf my.telegram.org prüfen.")
