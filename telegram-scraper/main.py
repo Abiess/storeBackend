@@ -145,6 +145,16 @@ class LogoutRequest(BaseModel):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("🚀 Telegram MTProto Scraper gestartet")
+    # ⚠️  WICHTIG: Der In-Memory-Auth-Cache (_pending_auth) funktioniert NUR bei einem Worker!
+    #     Bei mehreren Workern (--workers 2+) trifft verify-code ggf. einen anderen Prozess
+    #     als request-code → Cache leer → PHONE_CODE_EXPIRED.
+    #     Lösung: Immer mit einem Worker starten (Standard in start.sh) ODER Redis verwenden.
+    workers = os.environ.get("WEB_CONCURRENCY", "1")
+    if workers != "1":
+        logger.warning(
+            f"⚠️  WEB_CONCURRENCY={workers} – Bei mehreren Workern kann PHONE_CODE_EXPIRED auftreten! "
+            "Bitte auf 1 Worker reduzieren oder Redis-Cache einbauen."
+        )
     yield
     # Beim Shutdown alle offenen Auth-Clients trennen
     for key, client in list(_pending_auth.items()):
@@ -277,17 +287,40 @@ async def verify_code(req: VerifyCodeRequest):
 
     if client is None:
         logger.warning(f"[Auth] Kein gecachter Client für {cache_key} – versuche Fallback mit auth_session_string")
+        # ⚠️  Häufigste Ursache: Service-Neustart, mehrere Worker oder Load-Balancer
+        #     Der In-Memory-Cache (_pending_auth) war leer.
         if req.auth_session_string:
             client = make_client(req.api_id, req.api_hash, req.auth_session_string)
+            # KRITISCH: connect() MUSS vor sign_in() aufgerufen werden!
+            try:
+                await asyncio.wait_for(client.connect(), timeout=10.0)
+                logger.info(f"[Auth] Fallback-Client verbunden via auth_session_string (key={cache_key})")
+            except asyncio.TimeoutError:
+                raise HTTPException(504, "Timeout beim Verbinden mit Telegram. Bitte neu anmelden.")
+            except Exception as conn_err:
+                raise HTTPException(
+                    400,
+                    f"Verbindung fehlgeschlagen (Fallback-Session): {conn_err}. "
+                    "Bitte POST /auth/request-code erneut aufrufen."
+                )
         else:
             raise HTTPException(
                 400,
-                "Kein aktiver Auth-Flow gefunden. Bitte erst POST /auth/request-code aufrufen."
+                "Kein aktiver Auth-Flow gefunden. Bitte erst POST /auth/request-code aufrufen. "
+                "(Hinweis: Bei mehreren Service-Instanzen muss auth_session_string immer mitgegeben werden.)"
             )
     else:
-        # Sicherstellen dass der Client noch verbunden ist
+        # Sicherstellen dass der gecachte Client noch verbunden ist
         if not client.is_connected():
-            await client.connect()
+            logger.info(f"[Auth] Gecachter Client war getrennt – reconnect (key={cache_key})")
+            try:
+                await asyncio.wait_for(client.connect(), timeout=10.0)
+            except Exception as reconnect_err:
+                raise HTTPException(
+                    400,
+                    f"Reconnect des gecachten Clients fehlgeschlagen: {reconnect_err}. "
+                    "Bitte POST /auth/request-code erneut aufrufen."
+                )
 
     try:
         try:

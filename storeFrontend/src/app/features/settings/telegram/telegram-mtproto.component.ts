@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TelegramService, MtprotoStatus, ChannelInfo } from '@app/core/services/telegram.service';
@@ -110,6 +110,16 @@ type Step = 'credentials' | 'verify-code' | 'channels' | 'import';
           Öffne Telegram auf deinem Gerät und gib den empfangenen Code ein.
         </div>
 
+        <!-- Countdown-Timer -->
+        <div class="countdown-bar" [class.warn]="codeSecondsLeft <= 30 && codeSecondsLeft > 0" [class.expired]="codeSecondsLeft === 0">
+          <span *ngIf="codeSecondsLeft > 0">
+            ⏱️ Code läuft ab in: <strong>{{ formatCountdown(codeSecondsLeft) }}</strong>
+          </span>
+          <span *ngIf="codeSecondsLeft === 0">
+            ⚠️ Code abgelaufen – bitte neuen Code anfordern!
+          </span>
+        </div>
+
         <div class="form-group">
           <label>Telegram-Code <span class="required">*</span></label>
           <input type="text" [(ngModel)]="verifyCode" name="code"
@@ -125,11 +135,14 @@ type Step = 'credentials' | 'verify-code' | 'channels' | 'import';
         </div>
 
         <div class="action-bar">
-          <button class="btn-secondary" (click)="currentStep = 'credentials'" [disabled]="verifying">
+          <button class="btn-secondary" (click)="goBackToCredentials()" [disabled]="verifying">
             ← Zurück
           </button>
+          <button class="btn-resend" (click)="requestCode()" [disabled]="sendingCode || verifying">
+            {{ sendingCode ? '⏳ Sende...' : '🔄 Neuen Code senden' }}
+          </button>
           <button class="btn-primary" (click)="verify()"
-            [disabled]="verifying || !verifyCode">
+            [disabled]="verifying || !verifyCode || codeSecondsLeft === 0">
             {{ verifying ? '⏳ Verifiziere...' : '✅ Bestätigen' }}
           </button>
         </div>
@@ -331,8 +344,18 @@ type Step = 'credentials' | 'verify-code' | 'channels' | 'import';
     .checkbox-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #374151; cursor: pointer; }
     .action-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
 
+    /* Countdown */
+    .countdown-bar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 14px; border-radius: 8px; font-size: 13px;
+      background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534;
+      margin-bottom: 14px; transition: background .3s, color .3s;
+    }
+    .countdown-bar.warn { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+    .countdown-bar.expired { background: #fef2f2; border-color: #fecaca; color: #b91c1c; font-weight: 700; }
+
     /* Buttons */
-    .btn-primary, .btn-secondary, .btn-sm, .btn-import, .btn-danger-sm {
+    .btn-primary, .btn-secondary, .btn-sm, .btn-import, .btn-danger-sm, .btn-resend {
       padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px;
       font-weight: 600; cursor: pointer; transition: opacity .15s, transform .1s;
     }
@@ -340,6 +363,8 @@ type Step = 'credentials' | 'verify-code' | 'channels' | 'import';
     .btn-primary { background: linear-gradient(135deg,#667eea,#764ba2); color: #fff; }
     .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
     .btn-secondary { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+    .btn-resend { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; padding: 10px 16px; }
+    .btn-resend:disabled { opacity: .5; cursor: not-allowed; }
     .btn-sm { padding: 7px 14px; font-size: 13px; background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
     .btn-sm:disabled { opacity: .5; cursor: not-allowed; }
     .btn-import {
@@ -423,7 +448,7 @@ type Step = 'credentials' | 'verify-code' | 'channels' | 'import';
     }
   `]
 })
-export class TelegramMtprotoComponent implements OnInit {
+export class TelegramMtprotoComponent implements OnInit, OnDestroy {
   @Input() storeId!: number;
 
   // Auth State
@@ -441,6 +466,11 @@ export class TelegramMtprotoComponent implements OnInit {
   twoFaPassword = '';
   needs2FA = false;
   verifying = false;
+
+  // Countdown: Telegram-Codes laufen nach ~120s ab
+  codeSecondsLeft = 0;
+  private _countdownInterval: ReturnType<typeof setInterval> | null = null;
+  private readonly CODE_TTL = 120; // Sekunden
 
   // Channels
   availableChannels: ChannelInfo[] = [];
@@ -467,6 +497,50 @@ export class TelegramMtprotoComponent implements OnInit {
     this.loadStatus();
   }
 
+  ngOnDestroy(): void {
+    this.stopCountdown();
+  }
+
+  // ── Countdown-Timer ───────────────────────────────────────────────────────
+
+  private startCountdown(): void {
+    this.stopCountdown();
+    this.codeSecondsLeft = this.CODE_TTL;
+    this._countdownInterval = setInterval(() => {
+      if (this.codeSecondsLeft > 0) {
+        this.codeSecondsLeft--;
+      } else {
+        this.stopCountdown();
+      }
+    }, 1000);
+  }
+
+  private stopCountdown(): void {
+    if (this._countdownInterval) {
+      clearInterval(this._countdownInterval);
+      this._countdownInterval = null;
+    }
+  }
+
+  formatCountdown(seconds: number): string {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  // ── Navigation ────────────────────────────────────────────────────────────
+
+  /** Zurück zu Schritt 1 – leert Code-Feld damit kein alter Code versehentlich abgeschickt wird */
+  goBackToCredentials(): void {
+    this.currentStep = 'credentials';
+    this.verifyCode = '';
+    this.twoFaPassword = '';
+    this.needs2FA = false;
+    this.errorMsg = '';
+    this.stopCountdown();
+    this.codeSecondsLeft = 0;
+  }
+
   private loadStatus(): void {
     this.telegramService.mtprotoStatus(this.storeId).subscribe({
       next: s => {
@@ -490,10 +564,19 @@ export class TelegramMtprotoComponent implements OnInit {
   requestCode(): void {
     this.errorMsg = '';
     this.sendingCode = true;
+    // WICHTIG: alten Code und Timer immer leeren – verhindert dass abgelaufener Code abgeschickt wird
+    this.verifyCode = '';
+    this.twoFaPassword = '';
+    this.needs2FA = false;
+    this.stopCountdown();
+    this.codeSecondsLeft = 0;
+
     this.telegramService.mtprotoRequestCode(this.storeId, this.apiId!, this.apiHash, this.phone).subscribe({
       next: () => {
         this.currentStep = 'verify-code';
         this.sendingCode = false;
+        // Countdown starten – Telegram-Codes laufen nach ~120s ab
+        this.startCountdown();
       },
       error: err => {
         this.sendingCode = false;
@@ -545,8 +628,7 @@ export class TelegramMtprotoComponent implements OnInit {
         // 410: Code abgelaufen → automatisch zurück zu Schritt 1
         if (err.status === 410 || errorCode === 'CODE_EXPIRED' ||
             msg.toLowerCase().includes('abgelaufen') || msg.toLowerCase().includes('expired')) {
-          this.currentStep = 'credentials';
-          this.verifyCode = '';
+          this.goBackToCredentials();
           this.errorMsg = '⏱️ Der Code ist abgelaufen. Bitte fordere einen neuen Code an.';
           return;
         }
