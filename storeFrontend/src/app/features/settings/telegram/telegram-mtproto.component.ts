@@ -166,6 +166,18 @@ type Step = 'credentials' | 'verify-code' | 'channels' | 'import';
         <div class="feedback error" *ngIf="errorMsg">❌ {{ errorMsg }}</div>
       </div>
 
+      <!-- ─── SCHRITT 3 – Connecting (kurze Übergangsphase) ─── -->
+      <div class="step-card connecting-card" *ngIf="!status?.sessionValid && currentStep === 'channels'">
+        <div class="connecting-anim">
+          <span class="connecting-icon">📡</span>
+          <div class="connecting-dots"><span></span><span></span><span></span></div>
+        </div>
+        <h3>Verbindung wird hergestellt…</h3>
+        <p style="color:#6b7280;font-size:13px;margin:0">
+          Dein Telegram-Account wird verbunden. Einen Moment bitte.
+        </p>
+      </div>
+
       <!-- ─── VERBUNDEN ─── -->
       <div *ngIf="status?.sessionValid">
         <div class="connected-bar">
@@ -197,8 +209,20 @@ type Step = 'credentials' | 'verify-code' | 'channels' | 'import';
               </div>
             </div>
           </div>
+
+          <!-- Lade-Spinner beim Laden -->
+          <div class="channels-loading" *ngIf="loadingChannels">
+            <span class="spinner-inline" style="border-color:rgba(102,126,234,.3);border-top-color:#667eea;width:20px;height:20px;"></span>
+            <span style="font-size:13px;color:#6b7280">Lade deine Telegram-Channels…</span>
+          </div>
+
+          <!-- Leer-Zustand mit besserem Hinweis -->
           <div class="empty-channels" *ngIf="!loadingChannels && availableChannels.length === 0">
-            <p>Noch keine Channels geladen. Klicke "Channels laden".</p>
+            <div class="empty-channels-icon">📋</div>
+            <p><strong>Keine Channels gefunden</strong></p>
+            <p style="font-size:12px;color:#9ca3af;margin:4px 0 0">
+              Falls du Channels hast, klicke "🔄 Channels laden". Oder füge einen Channel manuell ein.
+            </p>
           </div>
 
           <div class="manual-input">
@@ -299,6 +323,24 @@ type Step = 'credentials' | 'verify-code' | 'channels' | 'import';
     .advanced-toggle { margin-top: 16px; text-align: center; }
     .btn-link { background: none; border: none; color: #6b7280; font-size: 13px; cursor: pointer; text-decoration: underline; padding: 0; }
     .btn-link:hover { color: #667eea; }
+
+    /* Connecting-Übergangs-Card */
+    .connecting-card { text-align: center; padding: 32px 24px; }
+    .connecting-card h3 { margin: 12px 0 8px; font-size: 15px; color: #111827; }
+    .connecting-anim { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 8px; }
+    .connecting-icon { font-size: 2rem; animation: pulse 1.5s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; transform: scale(1); } 50% { opacity:.5; transform: scale(.9); } }
+    .connecting-dots { display: flex; gap: 5px; }
+    .connecting-dots span { width: 7px; height: 7px; border-radius: 50%; background: #667eea; animation: bounce 1.2s ease-in-out infinite; }
+    .connecting-dots span:nth-child(2) { animation-delay: .2s; }
+    .connecting-dots span:nth-child(3) { animation-delay: .4s; }
+    @keyframes bounce { 0%,80%,100% { transform: translateY(0); } 40% { transform: translateY(-8px); } }
+
+    /* Channels Loading & Empty */
+    .channels-loading { display: flex; align-items: center; gap: 10px; padding: 20px; justify-content: center; }
+    .empty-channels { text-align: center; padding: 24px 16px; }
+    .empty-channels-icon { font-size: 2rem; margin-bottom: 8px; opacity: .5; }
+    .empty-channels p { margin: 0; font-size: 13px; color: #6b7280; }
 
     .countdown-bar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 8px; font-size: 13px; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; margin-bottom: 14px; }
     .countdown-bar.warn { background: #fffbeb; border-color: #fde68a; color: #92400e; }
@@ -439,6 +481,10 @@ export class TelegramMtprotoComponent implements OnInit, OnDestroy {
         this.importLimit = s.importLimit || 50;
         if (s.watchedChannels) {
           try { this.watchedChannels = JSON.parse(s.watchedChannels); } catch { }
+        }
+        // Auto-load Channels wenn verbunden und noch nicht geladen
+        if (s.sessionValid && !this.loadingChannels && this.availableChannels.length === 0) {
+          this.loadChannels();
         }
       },
       error: () => { this.status = null; }
