@@ -45,6 +45,8 @@ public class TelegramMtprotoService {
     private final CategoryRepository categoryRepository;
     private final MediaService mediaService;
     private final ObjectMapper objectMapper;
+    private final ProductMediaRepository productMediaRepository;
+    private final ProductRepository productRepository;
 
     private final RestTemplate restTemplate;
 
@@ -56,7 +58,9 @@ public class TelegramMtprotoService {
             CategoryService categoryService,
             CategoryRepository categoryRepository,
             MediaService mediaService,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            ProductMediaRepository productMediaRepository,
+            ProductRepository productRepository) {
         this.mtprotoRepository = mtprotoRepository;
         this.importLogRepository = importLogRepository;
         this.storeRepository = storeRepository;
@@ -65,6 +69,8 @@ public class TelegramMtprotoService {
         this.categoryRepository = categoryRepository;
         this.mediaService = mediaService;
         this.objectMapper = objectMapper;
+        this.productMediaRepository = productMediaRepository;
+        this.productRepository = productRepository;
 
         // Timeout: 5s connect, 60s read (Telegram-Code kann länger dauern)
         org.springframework.http.client.SimpleClientHttpRequestFactory factory =
@@ -455,18 +461,39 @@ public class TelegramMtprotoService {
 
         var productDto = productService.createProduct(req, store, owner);
 
-        // Bilder speichern (Base64 → MinIO)
+        // Bilder speichern (Base64 → MinIO) und sofort mit dem Produkt verknüpfen
         JsonNode photoBytesArr = post.path("photo_bytes_list");
-        if (photoBytesArr.isArray()) {
-            for (JsonNode photoNode : photoBytesArr) {
-                String b64 = photoNode.asText();
-                if (b64 != null && !b64.isBlank()) {
-                    try {
-                        mediaService.uploadFromBase64(store, b64, title + " (Telegram)");
-                    } catch (Exception imgErr) {
-                        log.warn("[MTProto] Bild-Upload fehlgeschlagen: {}", imgErr.getMessage());
+        if (photoBytesArr.isArray() && photoBytesArr.size() > 0) {
+            // Produkt-Entität für ProductMedia-Verknüpfung laden
+            Product product = productRepository.findById(productDto.getId())
+                .orElse(null);
+
+            if (product != null) {
+                int sortOrder = 0;
+                for (JsonNode photoNode : photoBytesArr) {
+                    String b64 = photoNode.asText();
+                    if (b64 != null && !b64.isBlank()) {
+                        try {
+                            // Bild hochladen → Media-Eintrag erstellen
+                            Media media = mediaService.uploadFromBase64(store, b64, title + " (Telegram)");
+
+                            // ProductMedia-Verknüpfung erstellen (fehlte bisher!)
+                            ProductMedia productMedia = new ProductMedia();
+                            productMedia.setProduct(product);
+                            productMedia.setMedia(media);
+                            productMedia.setSortOrder(sortOrder);
+                            productMedia.setIsPrimary(sortOrder == 0); // erstes Bild = Hauptbild
+                            productMediaRepository.save(productMedia);
+                            sortOrder++;
+
+                            log.info("[MTProto] ✅ Bild {} verknüpft mit Produkt {}", media.getId(), product.getId());
+                        } catch (Exception imgErr) {
+                            log.warn("[MTProto] Bild-Upload fehlgeschlagen: {}", imgErr.getMessage());
+                        }
                     }
                 }
+            } else {
+                log.warn("[MTProto] Produkt {} nicht gefunden – Bilder nicht verknüpft", productDto.getId());
             }
         }
 
