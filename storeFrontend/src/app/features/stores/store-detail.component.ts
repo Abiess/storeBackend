@@ -9,11 +9,12 @@ import { Product, Order, Category } from '@app/core/models';
 import { toDate } from '@app/core/utils/date.utils';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { OnboardingChecklistComponent } from '@app/shared/components/onboarding-checklist/onboarding-checklist.component';
+import { TelegramNotificationBadgeComponent } from '@app/shared/components/telegram-notification-badge/telegram-notification-badge.component';
 
 @Component({
   selector: 'app-store-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, TranslatePipe, OnboardingChecklistComponent],
+  imports: [CommonModule, RouterModule, TranslatePipe, OnboardingChecklistComponent, TelegramNotificationBadgeComponent],
   template: `
     <!-- Sidebar wird global durch AppComponent (app-admin-shell) gerendert.
          Keine lokale <app-admin-sidebar> mehr, sonst doppelte Sidebar / Layout-Konflikt. -->
@@ -22,6 +23,11 @@ import { OnboardingChecklistComponent } from '@app/shared/components/onboarding-
         <div class="topbar">
           <a routerLink="/dashboard" class="back-link">{{ 'storeDetail.backToDashboard' | translate }}</a>
           <h1 class="page-title">{{ 'storeDetail.title' | translate }}</h1>
+          <!-- Telegram Notification Badge – dezent, oben rechts -->
+          <app-telegram-notification-badge
+            *ngIf="storeId"
+            [storeId]="storeId">
+          </app-telegram-notification-badge>
         </div>
 
         <div class="container">

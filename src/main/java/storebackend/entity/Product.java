@@ -84,6 +84,26 @@ public class Product {
     @Column(name = "stock", nullable = false)
     private Integer stock = 0;
 
+    // ── Telegram Import Flags ───────────────────────────────────────────────
+
+    /**
+     * Kein Preis im Telegram-Post erkannt → basePrice=1 gesetzt.
+     * User muss vor Aktivierung manuell prüfen.
+     */
+    @Column(name = "price_needs_review", nullable = false)
+    private boolean priceNeedsReview = false;
+
+    /**
+     * Herkunfts-Channel (@username oder ID) wenn aus Telegram importiert.
+     * Null bei manuell angelegten Produkten.
+     */
+    @Column(name = "telegram_source", length = 255)
+    private String telegramSource;
+
+    /** Telegram Message-ID für Deduplizierung */
+    @Column(name = "telegram_msg_id")
+    private Long telegramMsgId;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

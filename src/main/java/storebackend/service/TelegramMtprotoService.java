@@ -58,6 +58,7 @@ public class TelegramMtprotoService {
     private final ObjectMapper objectMapper;
     private final ProductMediaRepository productMediaRepository;
     private final ProductRepository productRepository;
+    private final TelegramSyncNotificationRepository notificationRepository;
 
     private final RestTemplate restTemplate;
 
@@ -71,7 +72,8 @@ public class TelegramMtprotoService {
             MediaService mediaService,
             ObjectMapper objectMapper,
             ProductMediaRepository productMediaRepository,
-            ProductRepository productRepository) {
+            ProductRepository productRepository,
+            TelegramSyncNotificationRepository notificationRepository) {
         this.mtprotoRepository = mtprotoRepository;
         this.importLogRepository = importLogRepository;
         this.storeRepository = storeRepository;
@@ -82,6 +84,7 @@ public class TelegramMtprotoService {
         this.objectMapper = objectMapper;
         this.productMediaRepository = productMediaRepository;
         this.productRepository = productRepository;
+        this.notificationRepository = notificationRepository;
 
         // Timeout: 5s connect, 60s read (Telegram-Code kann länger dauern)
         org.springframework.http.client.SimpleClientHttpRequestFactory factory =
@@ -416,7 +419,7 @@ public class TelegramMtprotoService {
 
             try {
                 // Produkt aus Post erstellen
-                Long productId = createProductFromPost(post, store, owner, channel);
+                Long productId = createProductFromPost(post, store, owner, channel, cfg);
 
                 // Log-Eintrag
                 saveMtprotoLog(store, channel, msgId, productId, "SUCCESS", null);
@@ -424,6 +427,15 @@ public class TelegramMtprotoService {
 
                 String title = extractTitle(text);
                 result.getImportedTitles().add(title.isEmpty() ? "Post #" + msgId : title);
+
+                // Counter für Preis/Bild-Warnungen
+                BigDecimal detectedPrice = extractPrice(text);
+                if (detectedPrice == null || detectedPrice.compareTo(BigDecimal.ZERO) <= 0) {
+                    result.setNoPriceCount(result.getNoPriceCount() + 1);
+                }
+                boolean hasImg = post.path("photo_bytes_list").isArray()
+                    && post.path("photo_bytes_list").size() > 0;
+                if (!hasImg) result.setNoImageCount(result.getNoImageCount() + 1);
 
                 if (msgId > maxMsgId) maxMsgId = (int) msgId;
 
@@ -441,7 +453,63 @@ public class TelegramMtprotoService {
             updateLastMessageId(cfg, channel, maxMsgId);
         }
 
+        // ── Notifications erstellen ───────────────────────────────────────
+        createImportNotifications(storeId, channel, result, cfg);
+
         return result;
+    }
+
+    /**
+     * Erstellt Sync-Benachrichtigungen nach einem Import.
+     */
+    private void createImportNotifications(Long storeId, String channel,
+                                           TelegramImportResultDto result,
+                                           TelegramMtprotoConfig cfg) {
+        if (!cfg.isShowNewProductNotifications()) return;
+
+        // Neue Produkte
+        if (result.getImported() > 0) {
+            String msg = result.getImported() == 1
+                ? "1 neues Telegram-Produkt importiert aus " + channel
+                : result.getImported() + " neue Telegram-Produkte importiert aus " + channel;
+            notificationRepository.save(
+                new TelegramSyncNotification(storeId, "NEW_PRODUCTS", msg, result.getImported(), channel));
+        }
+
+        // Produkte ohne Preis (priceNeedsReview)
+        int noPricCount = result.getNoPriceCount();
+        if (noPricCount > 0) {
+            String msg = noPricCount == 1
+                ? "1 importiertes Produkt hat keinen erkennbaren Preis (Standardpreis 1 gesetzt)"
+                : noPricCount + " importierte Produkte haben keinen erkennbaren Preis (Standardpreis 1 gesetzt)";
+            notificationRepository.save(
+                new TelegramSyncNotification(storeId, "PRICE_MISSING", msg, noPricCount, channel));
+        }
+
+        // Import-Fehler
+        if (result.getErrors() > 0) {
+            String msg = result.getErrors() + " Posts konnten nicht importiert werden aus " + channel;
+            notificationRepository.save(
+                new TelegramSyncNotification(storeId, "IMPORT_ERROR", msg, result.getErrors(), channel));
+        }
+
+        // Keine Bilder erkannt (abzüglich Duplikate)
+        int noImgCount = result.getNoImageCount();
+        if (noImgCount > 0) {
+            String msg = noImgCount + " importierte Produkte haben kein Bild";
+            notificationRepository.save(
+                new TelegramSyncNotification(storeId, "IMAGE_MISSING", msg, noImgCount, channel));
+        }
+
+        // Duplikate
+        if (result.getSkipped() > 0) {
+            // Nur als Notification wenn > 5 übersprungen (verhindert Spam)
+            if (result.getSkipped() > 5) {
+                notificationRepository.save(new TelegramSyncNotification(storeId, "DUPLICATE",
+                    result.getSkipped() + " bereits bekannte Posts übersprungen aus " + channel,
+                    result.getSkipped(), channel));
+            }
+        }
     }
 
     /**
@@ -473,82 +541,111 @@ public class TelegramMtprotoService {
     // Produkt aus Post erstellen
     // ─────────────────────────────────────────────────────────────────────────
 
-    private Long createProductFromPost(JsonNode post, Store store, User owner, String channel)
+    private Long createProductFromPost(JsonNode post, Store store, User owner, String channel,
+                                       TelegramMtprotoConfig cfg)
             throws Exception {
         String text = post.path("text").asText("");
         String title = extractTitle(text);
         if (title.isBlank()) title = "Telegram Import – Channel: " + channel;
 
         BigDecimal price = extractPrice(text);
-        if (price == null) price = BigDecimal.ZERO;
+        boolean priceDetected = (price != null && price.compareTo(BigDecimal.ZERO) > 0);
+
+        // ── BasePrice-Fallback: nie null/0, immer mindestens 1 ──────────
+        if (!priceDetected) {
+            price = BigDecimal.ONE;  // Fallback: 1 statt 0 – verhindert Validierungs-Fehler
+        }
+
+        boolean hasImage = post.path("photo_bytes_list").isArray()
+            && post.path("photo_bytes_list").size() > 0;
+
+        // Auto-Publish Entscheidung: erst wenn alle Bedingungen erfüllt
+        ProductStatus status = ProductStatus.DRAFT; // Default: immer DRAFT
+        if (cfg.isAutoPublishEnabled()) {
+            boolean canPublish = !cfg.isPublishOnlyWithPriceAndImage()
+                || (priceDetected && hasImage);
+            if (canPublish) status = ProductStatus.ACTIVE;
+        }
 
         List<String> hashtags = extractHashtags(text);
-        String description = buildDescription(text, channel, post.path("date").asText(""));
+        String description = buildDescription(text, channel, post.path("date").asText(""),
+            priceDetected, hasImage);
 
-        // Kategorie aus erstem Hashtag
         Long categoryId = null;
         if (!hashtags.isEmpty()) {
             categoryId = findOrCreateCategory(store, hashtags.get(0));
         }
 
-        // Produkt als DRAFT erstellen
+        long msgId = post.path("message_id").asLong();
+
+        // Produkt erstellen
         CreateProductRequest req = new CreateProductRequest();
         req.setTitle(title);
         req.setDescription(description);
         req.setBasePrice(price);
-        req.setStatus(ProductStatus.DRAFT);   // ← Immer DRAFT für manuelle Review
+        req.setStatus(status);
         req.setStock(0);
         req.setCategoryId(categoryId);
 
         var productDto = productService.createProduct(req, store, owner);
 
-        // Bilder speichern (Base64 → MinIO) und sofort mit dem Produkt verknüpfen
-        JsonNode photoBytesArr = post.path("photo_bytes_list");
-        if (photoBytesArr.isArray() && photoBytesArr.size() > 0) {
-            // Produkt-Entität für ProductMedia-Verknüpfung laden
-            Product product = productRepository.findById(productDto.getId())
-                .orElse(null);
+        // Flags setzen + Bilder verknüpfen
+        Product product = productRepository.findById(productDto.getId()).orElse(null);
+        if (product != null) {
+            product.setPriceNeedsReview(!priceDetected);
+            product.setTelegramSource(channel);
+            product.setTelegramMsgId(msgId);
+            productRepository.save(product);
 
-            if (product != null) {
+            // Bilder speichern (Base64 → MinIO)
+            JsonNode photoBytesArr = post.path("photo_bytes_list");
+            if (photoBytesArr.isArray() && photoBytesArr.size() > 0) {
                 int sortOrder = 0;
                 for (JsonNode photoNode : photoBytesArr) {
                     String b64 = photoNode.asText();
                     if (b64 != null && !b64.isBlank()) {
                         try {
-                            // Bild hochladen → Media-Eintrag erstellen
                             Media media = mediaService.uploadFromBase64(store, b64, title + " (Telegram)");
-
-                            // ProductMedia-Verknüpfung erstellen (fehlte bisher!)
                             ProductMedia productMedia = new ProductMedia();
                             productMedia.setProduct(product);
                             productMedia.setMedia(media);
                             productMedia.setSortOrder(sortOrder);
-                            productMedia.setIsPrimary(sortOrder == 0); // erstes Bild = Hauptbild
+                            productMedia.setIsPrimary(sortOrder == 0);
                             productMediaRepository.save(productMedia);
                             sortOrder++;
-
                             log.info("[MTProto] ✅ Bild {} verknüpft mit Produkt {}", media.getId(), product.getId());
                         } catch (Exception imgErr) {
                             log.warn("[MTProto] Bild-Upload fehlgeschlagen: {}", imgErr.getMessage());
                         }
                     }
                 }
-            } else {
-                log.warn("[MTProto] Produkt {} nicht gefunden – Bilder nicht verknüpft", productDto.getId());
             }
+        } else {
+            log.warn("[MTProto] Produkt {} nicht gefunden – Flags/Bilder nicht gesetzt", productDto.getId());
         }
 
+        log.info("[MTProto] ✅ Importiert: msgId={} productId={} priceDetected={} hasImage={}",
+            msgId, productDto.getId(), priceDetected, hasImage);
         return productDto.getId();
     }
 
-    private String buildDescription(String text, String channel, String date) {
+    private String buildDescription(String text, String channel, String date,
+                                    boolean priceDetected, boolean hasImage) {
         StringBuilder sb = new StringBuilder();
         if (!text.isBlank()) {
             sb.append(text.replaceAll("#\\w+", "").trim());
         }
         sb.append("\n\n---\n");
         sb.append("📱 Importiert aus: ").append(channel).append("\n");
-        if (!date.isBlank()) sb.append("📅 Datum: ").append(date.substring(0, 10)).append("\n");
+        if (!date.isBlank() && date.length() >= 10) {
+            sb.append("📅 Datum: ").append(date.substring(0, 10)).append("\n");
+        }
+        if (!priceDetected) {
+            sb.append("⚠️ Kein Preis erkannt – bitte manuell setzen.\n");
+        }
+        if (!hasImage) {
+            sb.append("⚠️ Kein Bild vorhanden – bitte manuell ergänzen.\n");
+        }
         sb.append("⚠️ Bitte vor Veröffentlichung prüfen.");
         return sb.toString();
     }

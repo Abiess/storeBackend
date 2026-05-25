@@ -23,8 +23,27 @@ export interface TelegramImportResult {
   imported: number;
   skipped: number;
   errors: number;
+  noPriceCount: number;
+  noImageCount: number;
   importedTitles: string[];
   errorMessages: string[];
+}
+
+export interface TelegramSyncSettings {
+  autoImportEnabled: boolean;
+  autoPublishEnabled: boolean;
+  publishOnlyWithPriceAndImage: boolean;
+  showNewProductNotifications: boolean;
+}
+
+export interface TelegramSyncNotification {
+  id: number;
+  type: 'NEW_PRODUCTS' | 'IMPORT_ERROR' | 'PRICE_MISSING' | 'IMAGE_MISSING' | 'DUPLICATE';
+  message: string;
+  count: number;
+  channel: string;
+  read: boolean;
+  createdAt: string;
 }
 
 export interface TelegramImportLogEntry {
@@ -156,6 +175,40 @@ export class TelegramService {
   /** Import-Einstellungen speichern */
   mtprotoUpdateConfig(storeId: number, data: { importLimit?: number; active?: boolean }): Observable<any> {
     return this.http.put(`${this.apiUrl}/stores/${storeId}/telegram/mtproto/config`, data);
+  }
+
+  // ── Sync-Einstellungen ───────────────────────────────────────────────────
+
+  mtprotoGetSyncSettings(storeId: number): Observable<TelegramSyncSettings> {
+    return this.http.get<TelegramSyncSettings>(
+      `${this.apiUrl}/stores/${storeId}/telegram/mtproto/sync-settings`);
+  }
+
+  mtprotoUpdateSyncSettings(storeId: number, settings: Partial<TelegramSyncSettings>): Observable<any> {
+    return this.http.put(
+      `${this.apiUrl}/stores/${storeId}/telegram/mtproto/sync-settings`, settings);
+  }
+
+  // ── Notification Center ──────────────────────────────────────────────────
+
+  mtprotoGetNotifications(storeId: number): Observable<{ notifications: TelegramSyncNotification[]; unreadCount: number }> {
+    return this.http.get<{ notifications: TelegramSyncNotification[]; unreadCount: number }>(
+      `${this.apiUrl}/stores/${storeId}/telegram/mtproto/notifications`);
+  }
+
+  mtprotoGetNotificationCount(storeId: number): Observable<{ unreadCount: number }> {
+    return this.http.get<{ unreadCount: number }>(
+      `${this.apiUrl}/stores/${storeId}/telegram/mtproto/notifications/count`);
+  }
+
+  mtprotoMarkNotificationsRead(storeId: number): Observable<any> {
+    return this.http.post(
+      `${this.apiUrl}/stores/${storeId}/telegram/mtproto/notifications/mark-read`, {});
+  }
+
+  mtprotoDeleteReadNotifications(storeId: number): Observable<any> {
+    return this.http.delete(
+      `${this.apiUrl}/stores/${storeId}/telegram/mtproto/notifications`);
   }
 }
 

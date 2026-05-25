@@ -399,6 +399,117 @@ public class TelegramMtprotoController {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // Sync-Einstellungen
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private final storebackend.repository.TelegramSyncNotificationRepository syncNotificationRepository;
+
+    /**
+     * GET /sync-settings – Aktuelle Auto-Sync Einstellungen laden
+     */
+    @GetMapping("/sync-settings")
+    public ResponseEntity<Map<String, Object>> getSyncSettings(
+            @PathVariable Long storeId,
+            @AuthenticationPrincipal User user) {
+        verifyOwnership(storeId, user);
+        var cfg = configRepository.findByStoreId(storeId).orElse(null);
+        if (cfg == null) return ResponseEntity.ok(Map.of(
+            "autoImportEnabled", false,
+            "autoPublishEnabled", false,
+            "publishOnlyWithPriceAndImage", true,
+            "showNewProductNotifications", true
+        ));
+        return ResponseEntity.ok(Map.of(
+            "autoImportEnabled", cfg.isAutoImportEnabled(),
+            "autoPublishEnabled", cfg.isAutoPublishEnabled(),
+            "publishOnlyWithPriceAndImage", cfg.isPublishOnlyWithPriceAndImage(),
+            "showNewProductNotifications", cfg.isShowNewProductNotifications()
+        ));
+    }
+
+    /**
+     * PUT /sync-settings – Sync-Einstellungen speichern
+     */
+    @PutMapping("/sync-settings")
+    public ResponseEntity<Map<String, Object>> updateSyncSettings(
+            @PathVariable Long storeId,
+            @RequestBody Map<String, Object> body,
+            @AuthenticationPrincipal User user) {
+        verifyOwnership(storeId, user);
+        var cfg = configRepository.findByStoreId(storeId)
+            .orElseThrow(() -> new RuntimeException("Keine MTProto-Konfiguration"));
+
+        if (body.containsKey("autoImportEnabled"))
+            cfg.setAutoImportEnabled(Boolean.TRUE.equals(body.get("autoImportEnabled")));
+        if (body.containsKey("autoPublishEnabled"))
+            cfg.setAutoPublishEnabled(Boolean.TRUE.equals(body.get("autoPublishEnabled")));
+        if (body.containsKey("publishOnlyWithPriceAndImage"))
+            cfg.setPublishOnlyWithPriceAndImage(Boolean.TRUE.equals(body.get("publishOnlyWithPriceAndImage")));
+        if (body.containsKey("showNewProductNotifications"))
+            cfg.setShowNewProductNotifications(Boolean.TRUE.equals(body.get("showNewProductNotifications")));
+
+        configRepository.save(cfg);
+        return ResponseEntity.ok(Map.of("message", "Einstellungen gespeichert"));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Notification Center
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * GET /notifications – Alle ungelesenen Notifications
+     */
+    @GetMapping("/notifications")
+    public ResponseEntity<Object> getNotifications(
+            @PathVariable Long storeId,
+            @AuthenticationPrincipal User user) {
+        verifyOwnership(storeId, user);
+        var notifications = syncNotificationRepository.findByStoreIdAndReadFalseOrderByCreatedAtDesc(storeId);
+        return ResponseEntity.ok(Map.of(
+            "notifications", notifications,
+            "unreadCount", notifications.size()
+        ));
+    }
+
+    /**
+     * GET /notifications/count – Badge-Zähler (schnell, nur Integer)
+     */
+    @GetMapping("/notifications/count")
+    public ResponseEntity<Map<String, Object>> getNotificationCount(
+            @PathVariable Long storeId,
+            @AuthenticationPrincipal User user) {
+        verifyOwnership(storeId, user);
+        long count = syncNotificationRepository.countByStoreIdAndReadFalse(storeId);
+        return ResponseEntity.ok(Map.of("unreadCount", count));
+    }
+
+    /**
+     * POST /notifications/mark-read – Alle als gelesen markieren
+     */
+    @PostMapping("/notifications/mark-read")
+    @org.springframework.transaction.annotation.Transactional
+    public ResponseEntity<Map<String, Object>> markAllRead(
+            @PathVariable Long storeId,
+            @AuthenticationPrincipal User user) {
+        verifyOwnership(storeId, user);
+        syncNotificationRepository.markAllReadByStoreId(storeId);
+        return ResponseEntity.ok(Map.of("message", "Alle Notifications als gelesen markiert"));
+    }
+
+    /**
+     * DELETE /notifications – Gelesene Notifications löschen
+     */
+    @DeleteMapping("/notifications")
+    @org.springframework.transaction.annotation.Transactional
+    public ResponseEntity<Map<String, Object>> deleteRead(
+            @PathVariable Long storeId,
+            @AuthenticationPrincipal User user) {
+        verifyOwnership(storeId, user);
+        syncNotificationRepository.deleteReadByStoreId(storeId);
+        return ResponseEntity.ok(Map.of("message", "Gelesene Notifications gelöscht"));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Helper
     // ─────────────────────────────────────────────────────────────────────────
 

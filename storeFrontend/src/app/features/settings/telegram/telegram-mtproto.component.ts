@@ -2,7 +2,7 @@ import { Component, Input, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
-import { TelegramService, MtprotoStatus, ChannelInfo } from '@app/core/services/telegram.service';
+import { TelegramService, MtprotoStatus, ChannelInfo, TelegramSyncSettings } from '@app/core/services/telegram.service';
 
 type Step = 'credentials' | 'verify-code' | 'channels' | 'import';
 
@@ -276,10 +276,80 @@ type Step = 'credentials' | 'verify-code' | 'channels' | 'import';
                 <span class="result-stats-sm">
                   ✅ {{ entry.result.imported }} • ⏩ {{ entry.result.skipped }} • ❌ {{ entry.result.errors }}
                 </span>
+                <!-- Preis/Bild-Warnungen -->
+                <div class="result-warnings" *ngIf="entry.result.noPriceCount > 0 || entry.result.noImageCount > 0">
+                  <span class="warn-badge" *ngIf="entry.result.noPriceCount > 0">
+                    💰 {{ entry.result.noPriceCount }} ohne Preis (Standardpreis 1 gesetzt)
+                  </span>
+                  <span class="warn-badge" *ngIf="entry.result.noImageCount > 0">
+                    🖼️ {{ entry.result.noImageCount }} ohne Bild
+                  </span>
+                </div>
               </div>
             </div>
             <p class="review-hint">⚠️ Importierte Produkte sind <strong>Entwürfe</strong> – bitte unter <em>Produkte → Entwurf</em> prüfen.</p>
+            <p class="review-hint" style="background:#fffbeb;border-color:#fde68a;color:#92400e" *ngIf="hasPriceWarning">
+              💰 Produkte mit Standardpreis 1 in der Produktliste mit „Preis prüfen" markiert.
+            </p>
           </div>
+        </div>
+
+        <!-- ─── Auto-Sync Einstellungen ─── -->
+        <div class="section-box sync-settings-box">
+          <h3>⚙️ Auto-Sync Einstellungen</h3>
+          <p class="section-desc">Steuere wie neue Telegram-Posts verarbeitet werden.</p>
+
+          <div class="sync-setting-row">
+            <div class="sync-setting-info">
+              <strong>Automatisch importieren</strong>
+              <small>Neue Posts werden automatisch als Entwürfe importiert (ohne manuellen Klick)</small>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" [(ngModel)]="syncSettings.autoImportEnabled"
+                     (change)="saveSyncSettings()">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="sync-setting-row" [class.disabled-row]="!syncSettings.autoImportEnabled">
+            <div class="sync-setting-info">
+              <strong>Auto-Publish</strong>
+              <small>Produkte direkt aktivieren statt als Entwurf speichern</small>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" [(ngModel)]="syncSettings.autoPublishEnabled"
+                     [disabled]="!syncSettings.autoImportEnabled"
+                     (change)="saveSyncSettings()">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="sync-setting-row" [class.disabled-row]="!syncSettings.autoPublishEnabled">
+            <div class="sync-setting-info">
+              <strong>Nur mit Preis & Bild veröffentlichen</strong>
+              <small>Auto-Publish nur wenn Preis UND Bild erkannt wurden – sonst immer DRAFT</small>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" [(ngModel)]="syncSettings.publishOnlyWithPriceAndImage"
+                     [disabled]="!syncSettings.autoPublishEnabled"
+                     (change)="saveSyncSettings()">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="sync-setting-row">
+            <div class="sync-setting-info">
+              <strong>Dashboard-Benachrichtigungen</strong>
+              <small>Dezente Meldung wenn neue Produkte importiert wurden</small>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" [(ngModel)]="syncSettings.showNewProductNotifications"
+                     (change)="saveSyncSettings()">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="feedback success" *ngIf="syncSettingsSaved">✅ Einstellungen gespeichert</div>
         </div>
       </div>
 
@@ -392,7 +462,33 @@ type Step = 'credentials' | 'verify-code' | 'channels' | 'import';
     .result-channel { margin-bottom: 10px; }
     .result-channel strong { display: block; font-size: 14px; }
     .result-stats-sm { font-size: 12px; color: #6b7280; }
+    .result-warnings { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+    .warn-badge { font-size: 11px; background: #fffbeb; border: 1px solid #fde68a; color: #92400e; padding: 2px 8px; border-radius: 10px; }
     .review-hint { font-size: 13px; color: #92400e; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 14px; margin-top: 12px; }
+
+    /* Auto-Sync Settings */
+    .sync-settings-box { margin-top: 0; }
+    .sync-setting-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 0; border-bottom: 1px solid #f3f4f6; gap: 16px;
+    }
+    .sync-setting-row:last-of-type { border-bottom: none; }
+    .sync-setting-row.disabled-row { opacity: .45; pointer-events: none; }
+    .sync-setting-info { flex: 1; }
+    .sync-setting-info strong { display: block; font-size: 13px; font-weight: 600; color: #111827; }
+    .sync-setting-info small { display: block; font-size: 12px; color: #6b7280; margin-top: 2px; line-height: 1.4; }
+    .toggle-switch { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; cursor: pointer; inset: 0; background: #d1d5db;
+      border-radius: 22px; transition: .2s;
+    }
+    .toggle-slider:before {
+      position: absolute; content: ''; height: 16px; width: 16px;
+      left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: .2s;
+    }
+    input:checked + .toggle-slider { background: #667eea; }
+    input:checked + .toggle-slider:before { transform: translateX(18px); }
 
     .feedback { padding: 10px 16px; border-radius: 8px; font-size: 14px; margin-top: 12px; }
     .feedback.error { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
@@ -412,7 +508,16 @@ export class TelegramMtprotoComponent implements OnInit, OnDestroy {
 
   currentStep: Step = 'credentials';
   status: MtprotoStatus | null = null;
-  platformAppAvailable: boolean | null = null; // null = wird noch geladen
+  platformAppAvailable: boolean | null = null;
+
+  // Sync Settings
+  syncSettings: TelegramSyncSettings = {
+    autoImportEnabled: false,
+    autoPublishEnabled: false,
+    publishOnlyWithPriceAndImage: true,
+    showNewProductNotifications: true
+  };
+  syncSettingsSaved = false;
 
   // Standard-Flow
   phone = '';
@@ -456,11 +561,33 @@ export class TelegramMtprotoComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadStatus();
     this.checkPlatformApp();
+    this.loadSyncSettings();
   }
 
   ngOnDestroy(): void {
     this.stopCountdown();
     this._cancelVerify();
+  }
+
+  private loadSyncSettings(): void {
+    this.telegramService.mtprotoGetSyncSettings(this.storeId).subscribe({
+      next: s => { this.syncSettings = s; },
+      error: () => {} // Defaults bleiben
+    });
+  }
+
+  saveSyncSettings(): void {
+    this.telegramService.mtprotoUpdateSyncSettings(this.storeId, this.syncSettings).subscribe({
+      next: () => {
+        this.syncSettingsSaved = true;
+        setTimeout(() => this.syncSettingsSaved = false, 2500);
+      }
+    });
+  }
+
+  get hasPriceWarning(): boolean {
+    if (!this.importResults) return false;
+    return Object.values(this.importResults).some((r: any) => r.noPriceCount > 0);
   }
 
   private checkPlatformApp(): void {

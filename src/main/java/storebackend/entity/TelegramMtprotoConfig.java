@@ -80,6 +80,36 @@ public class TelegramMtprotoConfig {
     @Column(name = "is_active", nullable = false)
     private boolean active = false;
 
+    // ── Auto-Sync Einstellungen ──────────────────────────────────────────────
+
+    /**
+     * Neue Posts automatisch als DRAFT importieren (ohne manuelle Auslösung).
+     * false = User muss Import manuell starten.
+     */
+    @Column(name = "auto_import_enabled", nullable = false)
+    private boolean autoImportEnabled = false;
+
+    /**
+     * Falls autoImportEnabled=true: Produkt direkt veröffentlichen (ACTIVE)
+     * ODER als DRAFT lassen. Default: DRAFT (empfohlen).
+     */
+    @Column(name = "auto_publish_enabled", nullable = false)
+    private boolean autoPublishEnabled = false;
+
+    /**
+     * Auto-Publish nur wenn Preis UND Bild erkannt wurden.
+     * Bei fehlendem Preis oder Bild → immer DRAFT, nie ACTIVE.
+     */
+    @Column(name = "publish_only_with_price_and_image", nullable = false)
+    private boolean publishOnlyWithPriceAndImage = true;
+
+    /**
+     * Benachrichtigung im Dashboard anzeigen wenn neue Telegram-Produkte importiert.
+     * false = keine Notification (für User die nicht gestört werden möchten).
+     */
+    @Column(name = "show_new_product_notifications", nullable = false)
+    private boolean showNewProductNotifications = true;
+
     /** Temporär: phone_code_hash für Verifizierungsflow */
     @Column(name = "pending_phone_code_hash", length = 255)
     private String pendingPhoneCodeHash;
