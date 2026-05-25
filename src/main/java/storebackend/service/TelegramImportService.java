@@ -43,6 +43,8 @@ public class TelegramImportService {
     private final CategoryService categoryService;
     private final CategoryRepository categoryRepository;
     private final MediaService mediaService;
+    private final ProductMediaRepository productMediaRepository;
+    private final ProductRepository productRepository;
 
     // Regex: erkennt Preise in €, $, MAD, DH, DZD, درهم, دج, EUR, USD
     private static final Pattern PRICE_PATTERN = Pattern.compile(
@@ -65,16 +67,19 @@ public class TelegramImportService {
     /**
      * Importiert Channel-Posts für einen Store.
      * Benötigt aktive TelegramStoreConfig mit Bot-Token + Channel-ID.
+     * KEIN @Transactional auf Methoden-Ebene – jeder Post hat eigene Transaktion
+     * damit ein Fehler bei Post N nicht Posts 1..N-1 zurückrollt.
      */
-    @Transactional
     public TelegramImportResultDto importFromChannel(Long storeId, User owner) {
         TelegramImportResultDto result = new TelegramImportResultDto();
 
         TelegramStoreConfig cfg = configRepository.findByStoreId(storeId)
-            .orElseThrow(() -> new RuntimeException("Keine Telegram-Konfiguration gefunden. Bitte zuerst Bot-Token und Channel-ID eingeben."));
+            .orElseThrow(() -> new RuntimeException(
+                "Keine Telegram-Konfiguration gefunden. Bitte zuerst Bot-Token und Channel-ID unter Einstellungen → Telegram eingeben."));
 
         if (!telegramBotService.isConfigured(cfg)) {
-            throw new RuntimeException("Telegram nicht konfiguriert oder deaktiviert.");
+            throw new RuntimeException(
+                "Telegram nicht konfiguriert oder deaktiviert. Bitte Bot-Token und Channel-ID prüfen.");
         }
 
         Store store = storeRepository.findById(storeId)
@@ -84,6 +89,10 @@ public class TelegramImportService {
         List<TelegramMessageDto> posts = telegramBotService.getChannelHistory(cfg.getChannelId(), cfg.getBotToken(), limit);
 
         log.info("[TelegramImport] Store={} – {} Posts geladen aus {}", storeId, posts.size(), cfg.getChannelId());
+
+        if (posts.isEmpty()) {
+            log.info("[TelegramImport] Keine neuen Posts – nichts zu importieren");
+        }
 
         for (TelegramMessageDto post : posts) {
             processPost(post, cfg, store, owner, result);
@@ -108,7 +117,7 @@ public class TelegramImportService {
     // Interner Ablauf
     // ─────────────────────────────────────────────────────────────────────────
 
-    private void processPost(TelegramMessageDto post, TelegramStoreConfig cfg,
+    protected void processPost(TelegramMessageDto post, TelegramStoreConfig cfg,
                               Store store, User owner, TelegramImportResultDto result) {
         Long storeId = store.getId();
         Long msgId = post.getMessageId();
@@ -129,24 +138,18 @@ public class TelegramImportService {
         }
 
         try {
-            // 3. Preis extrahieren
             BigDecimal price = extractPrice(text);
             if (price == null) price = BigDecimal.ZERO;
 
-            // 4. Hashtags → Kategorie
             List<String> hashtags = extractHashtags(text);
             Long categoryId = null;
             if (!hashtags.isEmpty()) {
                 categoryId = findOrCreateCategory(store, hashtags.get(0));
             }
 
-            // 5. Titel = erste nicht-leere Zeile (max. 255 Zeichen)
             String title = extractTitle(text);
-
-            // 6. Beschreibung = gesamter Text (Hashtags entfernt)
             String description = text.replaceAll("#\\w+", "").trim();
 
-            // 7. Produkt erstellen via existierendem ProductService
             CreateProductRequest req = new CreateProductRequest();
             req.setTitle(title);
             req.setDescription(description);
@@ -158,18 +161,32 @@ public class TelegramImportService {
             var productDto = productService.createProduct(req, store, owner);
             Long productId = productDto.getId();
 
-            // 8. Bilder hochladen via MediaService.uploadFromUrl()
-            if (post.getPhotoUrls() != null) {
-                for (String photoUrl : post.getPhotoUrls()) {
-                    try {
-                        mediaService.uploadFromUrl(store, photoUrl, title + " (Telegram)");
-                    } catch (Exception imgEx) {
-                        log.warn("[TelegramImport] Bild-Upload fehlgeschlagen für msgId={}: {}", msgId, imgEx.getMessage());
+            // Bilder hochladen UND mit Produkt verknüpfen via ProductMedia
+            if (post.getPhotoUrls() != null && !post.getPhotoUrls().isEmpty()) {
+                Product product = productRepository.findById(productId).orElse(null);
+                if (product != null) {
+                    int sortOrder = 0;
+                    for (String photoUrl : post.getPhotoUrls()) {
+                        try {
+                            Media media = mediaService.uploadFromUrl(store, photoUrl, title + " (Telegram)");
+
+                            // ProductMedia-Verknüpfung erstellen
+                            ProductMedia productMedia = new ProductMedia();
+                            productMedia.setProduct(product);
+                            productMedia.setMedia(media);
+                            productMedia.setSortOrder(sortOrder);
+                            productMedia.setIsPrimary(sortOrder == 0);
+                            productMediaRepository.save(productMedia);
+                            sortOrder++;
+
+                            log.info("[TelegramImport] ✅ Bild {} verknüpft mit Produkt {}", media.getId(), productId);
+                        } catch (Exception imgEx) {
+                            log.warn("[TelegramImport] Bild-Upload fehlgeschlagen für msgId={}: {}", msgId, imgEx.getMessage());
+                        }
                     }
                 }
             }
 
-            // 9. Erfolgreich protokollieren
             saveLog(store, cfg.getChannelId(), msgId, productId, "SUCCESS", null);
             result.setImported(result.getImported() + 1);
             result.getImportedTitles().add(title);

@@ -139,14 +139,26 @@ public class TelegramController {
      * Löst den Channel-Import aus (Polling der letzten Posts).
      */
     @PostMapping("/import")
-    public ResponseEntity<TelegramImportResultDto> triggerImport(
+    public ResponseEntity<?> triggerImport(
             @PathVariable Long storeId,
             @AuthenticationPrincipal User user) {
 
         verifyOwnership(storeId, user);
 
-        TelegramImportResultDto result = telegramImportService.importFromChannel(storeId, user);
-        return ResponseEntity.ok(result);
+        try {
+            TelegramImportResultDto result = telegramImportService.importFromChannel(storeId, user);
+            return ResponseEntity.ok(result);
+        } catch (RuntimeException e) {
+            String msg = e.getMessage() != null ? e.getMessage() : "Import fehlgeschlagen";
+            // Konfigurationsfehler → 422 (verständliche Fehlermeldung statt 500)
+            if (msg.contains("Konfiguration") || msg.contains("konfiguriert") || msg.contains("Token")) {
+                return ResponseEntity.unprocessableEntity()
+                    .body(Map.of("error", "CONFIG_MISSING", "message", msg));
+            }
+            // Sonstige Fehler → 400 mit Fehlermeldung (kein 500)
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", "IMPORT_FAILED", "message", msg));
+        }
     }
 
     /**
