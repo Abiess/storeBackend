@@ -123,6 +123,9 @@ public class TelegramMtprotoService {
         cfg.setAuthenticated(false);
         mtprotoRepository.save(cfg);
 
+        log.info("[MTProto][E2E] request-code gespeichert storeId={} phoneCodeHashLen={} authSessionPersisted={}",
+            storeId, phoneCodeHash.length(), !authSession.isBlank());
+
         return phoneCodeHash;
     }
 
@@ -138,6 +141,24 @@ public class TelegramMtprotoService {
             throw new RuntimeException("Kein ausstehender Auth-Code. Erst Schritt 1 ausführen.");
         }
 
+        // ── E2E Diagnose-Logging ───────────────────────────────────────────────
+        String hashPreview = cfg.getPendingPhoneCodeHash().length() > 6
+            ? cfg.getPendingPhoneCodeHash().substring(0, 6) + "..."
+            : cfg.getPendingPhoneCodeHash();
+        String sessionPreview = cfg.getPendingAuthSession() != null
+            ? "len=" + cfg.getPendingAuthSession().length() + " prefix=" + cfg.getPendingAuthSession().substring(0, Math.min(10, cfg.getPendingAuthSession().length())) + "..."
+            : "NULL";
+        log.info("[MTProto][E2E] verify storeId={} phone={} hasPendingPhoneCodeHash={} phoneCodeHashLen={} hashPrefix={} hasPendingAuthSession={} sessionInfo=({})",
+            storeId,
+            cfg.getPhone(),
+            cfg.getPendingPhoneCodeHash() != null,
+            cfg.getPendingPhoneCodeHash().length(),
+            hashPreview,
+            cfg.getPendingAuthSession() != null,
+            sessionPreview
+        );
+        // ──────────────────────────────────────────────────────────────────────
+
         ObjectNode body = objectMapper.createObjectNode();
         body.put("api_id", cfg.getApiId());
         body.put("api_hash", cfg.getApiHash());
@@ -147,6 +168,9 @@ public class TelegramMtprotoService {
         // Teil-Session aus Schritt 1 mitsenden – KRITISCH für korrekte Session-Kontinuität
         if (cfg.getPendingAuthSession() != null && !cfg.getPendingAuthSession().isBlank()) {
             body.put("auth_session_string", cfg.getPendingAuthSession());
+            log.info("[MTProto][E2E] auth_session_string wird mitgesendet (len={})", cfg.getPendingAuthSession().length());
+        } else {
+            log.warn("[MTProto][E2E] ⚠️  KEIN auth_session_string! Python nutzt Fallback oder cached client.");
         }
         if (password != null && !password.isBlank()) {
             body.put("password", password);
@@ -154,16 +178,19 @@ public class TelegramMtprotoService {
 
         JsonNode response;
         try {
+            log.info("[MTProto][E2E] Sende verify-code Request an Python-Scraper...");
             response = postToScraper("/auth/verify-code", body);
+            log.info("[MTProto][E2E] ✅ verify-code erfolgreich – Session erhalten");
         } catch (RuntimeException e) {
             String msg = e.getMessage() != null ? e.getMessage() : "";
+            log.error("[MTProto][E2E] ❌ verify-code Fehler: '{}'", msg);
             // Code abgelaufen → Hash zurücksetzen, damit User erneut Code anfordern kann
             if (msg.toLowerCase().contains("abgelaufen") || msg.toLowerCase().contains("expired")) {
                 cfg.setPendingPhoneCodeHash(null);
                 cfg.setPendingAuthSession(null);
                 cfg.setAuthenticated(false);
                 mtprotoRepository.save(cfg);
-                log.warn("[MTProto] Code für store={} abgelaufen – Hash + Session zurückgesetzt", storeId);
+                log.warn("[MTProto][E2E] Code für store={} abgelaufen – Hash + Session zurückgesetzt", storeId);
             }
             throw e;
         }

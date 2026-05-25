@@ -280,30 +280,50 @@ async def verify_code(req: VerifyCodeRequest):
     Verwendet den gecachten Client aus request-code (gleicher MTProto-State).
     """
     cache_key = f"{req.api_id}:{req.phone}"
+
+    # ── E2E Diagnose-Logging ──────────────────────────────────────────────────
+    has_session_str = bool(req.auth_session_string and req.auth_session_string.strip())
+    has_phone_code_hash = bool(req.phone_code_hash and req.phone_code_hash.strip())
+    session_len = len(req.auth_session_string) if has_session_str else 0
+    hash_len = len(req.phone_code_hash) if has_phone_code_hash else 0
+    hash_preview = req.phone_code_hash[:6] + "..." if has_phone_code_hash and hash_len > 6 else req.phone_code_hash
+    session_preview = req.auth_session_string[:10] + "..." if has_session_str and session_len > 10 else req.auth_session_string
+
+    logger.info(
+        f"[Auth][E2E] verify-code eingetroffen: phone={req.phone} "
+        f"has_auth_session_string={has_session_str} session_len={session_len} session_prefix=({session_preview}) "
+        f"has_phone_code_hash={has_phone_code_hash} hash_len={hash_len} hash_prefix=({hash_preview}) "
+        f"pending_cache_keys={list(_pending_auth.keys())}"
+    )
+    # ─────────────────────────────────────────────────────────────────────────
+
     logger.info(f"[Auth] Verifiziere Code für {req.phone} (key={cache_key})")
 
     # Gecachten Client holen (ODER Fallback: neue Session mit auth_session_string)
     client: TelegramClient = _pending_auth.pop(cache_key, None)
 
     if client is None:
-        logger.warning(f"[Auth] Kein gecachter Client für {cache_key} – versuche Fallback mit auth_session_string")
+        logger.warning(f"[Auth][E2E] ⚠️  FALLBACK-PFAD: Kein gecachter Client für key={cache_key} – versuche StringSession(auth_session_string)")
         # ⚠️  Häufigste Ursache: Service-Neustart, mehrere Worker oder Load-Balancer
         #     Der In-Memory-Cache (_pending_auth) war leer.
         if req.auth_session_string:
+            logger.info(f"[Auth][E2E] Erstelle Client via StringSession(auth_session_string) len={len(req.auth_session_string)}")
             client = make_client(req.api_id, req.api_hash, req.auth_session_string)
             # KRITISCH: connect() MUSS vor sign_in() aufgerufen werden!
             try:
                 await asyncio.wait_for(client.connect(), timeout=10.0)
-                logger.info(f"[Auth] Fallback-Client verbunden via auth_session_string (key={cache_key})")
+                logger.info(f"[Auth][E2E] Fallback-Client verbunden: is_connected={client.is_connected()} (key={cache_key})")
             except asyncio.TimeoutError:
                 raise HTTPException(504, "Timeout beim Verbinden mit Telegram. Bitte neu anmelden.")
             except Exception as conn_err:
+                logger.error(f"[Auth][E2E] ❌ Fallback-Connect fehlgeschlagen: {type(conn_err).__name__}: {conn_err}")
                 raise HTTPException(
                     400,
                     f"Verbindung fehlgeschlagen (Fallback-Session): {conn_err}. "
                     "Bitte POST /auth/request-code erneut aufrufen."
                 )
         else:
+            logger.error(f"[Auth][E2E] ❌ Kein auth_session_string + kein cached client → Flow komplett verloren!")
             raise HTTPException(
                 400,
                 "Kein aktiver Auth-Flow gefunden. Bitte erst POST /auth/request-code aufrufen. "
@@ -311,11 +331,14 @@ async def verify_code(req: VerifyCodeRequest):
             )
     else:
         # Sicherstellen dass der gecachte Client noch verbunden ist
+        logger.info(f"[Auth][E2E] ✅ CACHED-PFAD: Gecachter Client gefunden für key={cache_key} is_connected={client.is_connected()}")
         if not client.is_connected():
-            logger.info(f"[Auth] Gecachter Client war getrennt – reconnect (key={cache_key})")
+            logger.info(f"[Auth][E2E] Gecachter Client war getrennt – reconnect (key={cache_key})")
             try:
                 await asyncio.wait_for(client.connect(), timeout=10.0)
+                logger.info(f"[Auth][E2E] Reconnect erfolgreich: is_connected={client.is_connected()}")
             except Exception as reconnect_err:
+                logger.error(f"[Auth][E2E] ❌ Reconnect fehlgeschlagen: {type(reconnect_err).__name__}: {reconnect_err}")
                 raise HTTPException(
                     400,
                     f"Reconnect des gecachten Clients fehlgeschlagen: {reconnect_err}. "
@@ -324,19 +347,27 @@ async def verify_code(req: VerifyCodeRequest):
 
     try:
         try:
+            logger.info(f"[Auth][E2E] Rufe sign_in() auf: phone={req.phone} phone_code_hash_len={len(req.phone_code_hash)} code_len={len(req.code)}")
             await client.sign_in(req.phone, req.code, phone_code_hash=req.phone_code_hash)
+            logger.info(f"[Auth][E2E] ✅ sign_in() erfolgreich!")
         except SessionPasswordNeededError:
+            logger.info(f"[Auth][E2E] 2FA erforderlich für {req.phone}")
             if not req.password:
                 raise HTTPException(401, "2FA aktiv – bitte Passwort mitschicken (password-Feld)")
             await client.sign_in(password=req.password)
-        except PhoneCodeExpiredError:
+        except PhoneCodeExpiredError as e:
+            logger.error(f"[Auth][E2E] ❌ PhoneCodeExpiredError: {type(e).__name__}: {e}")
             raise HTTPException(
                 410,
                 "Der Bestätigungscode ist abgelaufen. Bitte fordere einen neuen Code an "
                 "(POST /auth/request-code erneut aufrufen)."
             )
-        except PhoneCodeInvalidError:
+        except PhoneCodeInvalidError as e:
+            logger.error(f"[Auth][E2E] ❌ PhoneCodeInvalidError: {type(e).__name__}: {e}")
             raise HTTPException(400, "Falscher Code – bitte nochmal prüfen.")
+        except Exception as sign_err:
+            logger.error(f"[Auth][E2E] ❌ sign_in() unbekannter Fehler: {type(sign_err).__name__}: {sign_err}")
+            raise
 
         session_string = client.session.save()
         me = await client.get_me()
