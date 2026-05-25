@@ -208,10 +208,8 @@ public class TelegramMtprotoService {
 
         ObjectNode body = objectMapper.createObjectNode();
         // api_id/api_hash: eigene Credentials des Users oder Plattform-Fallback
-        int verifyApiId = (cfg.getApiId() != null && cfg.getApiId() > 0) ? cfg.getApiId() : platformApiId;
-        String verifyApiHash = (cfg.getApiHash() != null && !cfg.getApiHash().isBlank()) ? cfg.getApiHash() : platformApiHash;
-        body.put("api_id", verifyApiId);
-        body.put("api_hash", verifyApiHash);
+        body.put("api_id", resolveApiId(cfg));
+        body.put("api_hash", resolveApiHash(cfg));
         body.put("phone", cfg.getPhone());
         body.put("code", code);
         body.put("phone_code_hash", cfg.getPendingPhoneCodeHash());
@@ -258,6 +256,19 @@ public class TelegramMtprotoService {
     }
 
     /**
+     * Löst api_id/api_hash auf: User-eigene Credentials haben Priorität,
+     * sonst Plattform-Credentials (für Standard-Flow).
+     * NIEMALS null an den Scraper senden!
+     */
+    private int resolveApiId(TelegramMtprotoConfig cfg) {
+        return (cfg.getApiId() != null && cfg.getApiId() > 0) ? cfg.getApiId() : platformApiId;
+    }
+
+    private String resolveApiHash(TelegramMtprotoConfig cfg) {
+        return (cfg.getApiHash() != null && !cfg.getApiHash().isBlank()) ? cfg.getApiHash() : platformApiHash;
+    }
+
+    /**
      * Prüft ob Session noch gültig ist.
      */
     public boolean checkSession(Long storeId) {
@@ -266,8 +277,8 @@ public class TelegramMtprotoService {
 
         try {
             ObjectNode body = objectMapper.createObjectNode();
-            body.put("api_id", cfg.getApiId());
-            body.put("api_hash", cfg.getApiHash());
+            body.put("api_id", resolveApiId(cfg));
+            body.put("api_hash", resolveApiHash(cfg));
             body.put("session_string", cfg.getSessionString());
 
             JsonNode response = postToScraper("/auth/check-session", body);
@@ -294,8 +305,8 @@ public class TelegramMtprotoService {
 
         try {
             ObjectNode body = objectMapper.createObjectNode();
-            body.put("api_id", cfg.getApiId());
-            body.put("api_hash", cfg.getApiHash());
+            body.put("api_id", resolveApiId(cfg));
+            body.put("api_hash", resolveApiHash(cfg));
             body.put("session_string", cfg.getSessionString());
             postToScraper("/auth/logout", body);
         } catch (Exception e) {
@@ -318,8 +329,8 @@ public class TelegramMtprotoService {
         TelegramMtprotoConfig cfg = getAuthenticatedConfig(storeId);
 
         ObjectNode body = objectMapper.createObjectNode();
-        body.put("api_id", cfg.getApiId());
-        body.put("api_hash", cfg.getApiHash());
+        body.put("api_id", resolveApiId(cfg));
+        body.put("api_hash", resolveApiHash(cfg));
         body.put("session_string", cfg.getSessionString());
 
         return postToScraper("/channels/list", body);
@@ -366,8 +377,8 @@ public class TelegramMtprotoService {
 
         // Posts vom Python-Service holen
         ObjectNode body = objectMapper.createObjectNode();
-        body.put("api_id", cfg.getApiId());
-        body.put("api_hash", cfg.getApiHash());
+        body.put("api_id", resolveApiId(cfg));
+        body.put("api_hash", resolveApiHash(cfg));
         body.put("session_string", cfg.getSessionString());
         body.put("channel", channel);
         body.put("limit", cfg.getImportLimit());
