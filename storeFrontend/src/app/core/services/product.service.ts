@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, forkJoin, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import { Product, CreateProductRequest, ProductVariant, AiProductSuggestion, AiProductSuggestionV2 } from '../models';
@@ -115,7 +115,31 @@ export class ProductService {
     );
   }
 
-  // ✅ Helper: Konvertiere Date-Arrays für ein Produkt
+  /**
+   * Bulk: Status mehrerer Produkte gleichzeitig ändern (parallele Requests)
+   */
+  bulkUpdateStatus(storeId: number, productIds: number[], status: string): Observable<any[]> {
+    if (!productIds.length) return of([]);
+    const requests = productIds.map(id =>
+      this.http.put<Product>(`${environment.apiUrl}/stores/${storeId}/products/${id}`, { status })
+    );
+    return forkJoin(requests);
+  }
+
+  /**
+   * Bulk: Mehrere Produkte gleichzeitig löschen (parallele Requests)
+   */
+  bulkDelete(storeId: number, productIds: number[]): Observable<any[]> {
+    if (!productIds.length) return of([]);
+    const requests = productIds.map(id =>
+      this.http.delete<void>(`${environment.apiUrl}/stores/${storeId}/products/${id}`)
+    );
+    return forkJoin(requests);
+  }
+
+  /**
+   * Helper: Konvertiere Date-Arrays für ein Produkt
+   */
   private convertProductDates(product: Product): Product {
     product.createdAt = toDate(product.createdAt) as any;
     product.updatedAt = toDate(product.updatedAt) as any;

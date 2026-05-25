@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, TemplateRef, ContentChild } from '@angular/core';
+import { Component, Input, Output, EventEmitter, TemplateRef, ContentChild, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -22,14 +22,50 @@ export interface ActionConfig {
   visible?: (item: any) => boolean;
 }
 
+export interface BulkActionConfig {
+  icon: string;
+  label: string;
+  class?: string;
+  handler: (selectedItems: any[]) => void;
+}
+
 @Component({
   selector: 'app-responsive-data-list',
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
+    <!-- ─── Bulk-Action Bar (erscheint wenn Einträge ausgewählt) ─── -->
+    <div class="rdl-bulk-bar" *ngIf="selectable && selectedIds.size > 0">
+      <div class="rdl-bulk-bar__info">
+        <input type="checkbox" class="rdl-cb rdl-cb--all"
+               [checked]="isAllSelected()"
+               [indeterminate]="isPartialSelected()"
+               (change)="toggleAll($event)">
+        <strong>{{ selectedIds.size }}</strong>&nbsp;ausgewählt
+        <button class="rdl-bulk-bar__clear" (click)="clearSelection()">✕ Abwählen</button>
+      </div>
+      <div class="rdl-bulk-bar__actions">
+        <button *ngFor="let ba of bulkActions"
+                class="rdl-bulk-btn"
+                [ngClass]="ba.class"
+                (click)="executeBulkAction(ba)">
+          {{ ba.icon }} {{ ba.label }}
+        </button>
+      </div>
+    </div>
+
     <!-- ─── Toolbar ──────────────────────────────────────────── -->
     <div class="rdl-toolbar" *ngIf="showToolbar">
       <div class="rdl-toolbar__left">
+        <!-- Select-All Checkbox (nur wenn kein Item ausgewählt, um Dopplung zu vermeiden) -->
+        <label *ngIf="selectable && selectedIds.size === 0" class="rdl-select-all-label">
+          <input type="checkbox"
+                 [checked]="isAllSelected()"
+                 [indeterminate]="isPartialSelected()"
+                 (change)="toggleAll($event)"
+                 class="rdl-cb">
+          Alle
+        </label>
         <div class="rdl-search" *ngIf="searchable">
           <span class="rdl-search__icon">🔍</span>
           <input
@@ -94,6 +130,13 @@ export interface ActionConfig {
       <table class="rdl-table">
         <thead>
           <tr>
+            <!-- Checkbox-Spalte -->
+            <th *ngIf="selectable" class="rdl-th--cb">
+              <input type="checkbox" class="rdl-cb"
+                     [checked]="isAllSelected()"
+                     [indeterminate]="isPartialSelected()"
+                     (change)="toggleAll($event)">
+            </th>
             <th *ngFor="let col of columns" [style.width]="col.width"
                 [class.rdl-th--sortable]="col.sortable"
                 (click)="col.sortable && sort(col.key)">
@@ -109,8 +152,14 @@ export interface ActionConfig {
         <tbody>
           <tr *ngFor="let item of sortedItems"
               [class.rdl-row--clickable]="rowClickable"
+              [class.rdl-row--selected]="isSelected(item)"
               (click)="onRowClick(item)">
-            <td *ngFor="let col of columns" [attr.data-label]="col.label">
+            <!-- Checkbox-Zelle -->
+            <td *ngIf="selectable" class="rdl-td--cb" (click)="$event.stopPropagation()">
+              <input type="checkbox" class="rdl-cb"
+                     [checked]="isSelected(item)"
+                     (change)="toggleItem(item)">
+            </td>            <td *ngFor="let col of columns" [attr.data-label]="col.label">
               <!-- Image -->
               <div *ngIf="col.type === 'image'" class="rdl-img-cell">
                 <img *ngIf="getCellValue(item, col.key)" [src]="getCellValue(item, col.key)"
@@ -171,7 +220,12 @@ export interface ActionConfig {
       <div *ngFor="let item of sortedItems"
            class="rdl-card"
            [class.rdl-card--clickable]="rowClickable"
+           [class.rdl-card--selected]="isSelected(item)"
            (click)="onRowClick(item)">
+        <!-- Card Checkbox -->
+        <div *ngIf="selectable" class="rdl-card__cb" (click)="$event.stopPropagation()">
+          <input type="checkbox" class="rdl-cb" [checked]="isSelected(item)" (change)="toggleItem(item)">
+        </div>
         <!-- Card Image -->
         <div *ngIf="hasImageColumn()" class="rdl-card__img-wrap">
           <img *ngIf="getImageUrl(item)" [src]="getImageUrl(item)" alt="Vorschaubild" class="rdl-card__img" (error)="onImageError($event)">
@@ -216,10 +270,11 @@ export interface ActionConfig {
   `,
   styleUrls: ['./responsive-data-list.component.scss']
 })
-export class ResponsiveDataListComponent {
+export class ResponsiveDataListComponent implements OnChanges {
   @Input() items: any[] = [];
   @Input() columns: ColumnConfig[] = [];
   @Input() actions: ActionConfig[] = [];
+  @Input() bulkActions: BulkActionConfig[] = [];
   @Input() loading = false;
   @Input() emptyMessage = 'Keine Einträge vorhanden';
   @Input() emptyIcon = '📭';
@@ -230,9 +285,12 @@ export class ResponsiveDataListComponent {
   @Input() searchPlaceholder = 'Suchen...';
   @Input() showToolbar = true;
   @Input() defaultView: 'table' | 'cards' = 'table';
+  @Input() selectable = false;
+  @Input() trackBy: string = 'id'; // Welches Feld als eindeutiger Key genutzt wird
 
   @Output() rowClick = new EventEmitter<any>();
   @Output() searchChange = new EventEmitter<string>();
+  @Output() selectionChange = new EventEmitter<any[]>();
 
   @ContentChild('customCell') customCellTemplate: TemplateRef<any> | null = null;
 
@@ -242,10 +300,74 @@ export class ResponsiveDataListComponent {
   sortDir: 'asc' | 'desc' = 'asc';
   skeletonRows = [1, 2, 3, 4, 5];
 
+  // Multiselect State – Set von IDs der ausgewählten Einträge
+  selectedIds = new Set<any>();
+
+  ngOnChanges(changes: SimpleChanges): void {
+    // Wenn items sich ändern (z.B. nach Reload), Auswahl bereinigen
+    if (changes['items']) {
+      const newIds = new Set((this.items || []).map(i => i[this.trackBy]));
+      for (const id of this.selectedIds) {
+        if (!newIds.has(id)) this.selectedIds.delete(id);
+      }
+    }
+  }
+
   ngOnInit() {
     this.viewMode = this.defaultView;
-    // Mobile default → cards
     if (window.innerWidth < 768) this.viewMode = 'cards';
+  }
+
+  // ── Multiselect ────────────────────────────────────────────────────────────
+
+  isSelected(item: any): boolean {
+    return this.selectedIds.has(item[this.trackBy]);
+  }
+
+  toggleItem(item: any): void {
+    const id = item[this.trackBy];
+    if (this.selectedIds.has(id)) {
+      this.selectedIds.delete(id);
+    } else {
+      this.selectedIds.add(id);
+    }
+    this.selectedIds = new Set(this.selectedIds); // trigger change detection
+    this.selectionChange.emit(this.getSelectedItems());
+  }
+
+  isAllSelected(): boolean {
+    return this.sortedItems.length > 0 &&
+           this.sortedItems.every(i => this.selectedIds.has(i[this.trackBy]));
+  }
+
+  isPartialSelected(): boolean {
+    return this.sortedItems.some(i => this.selectedIds.has(i[this.trackBy])) &&
+           !this.isAllSelected();
+  }
+
+  toggleAll(event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    if (checked) {
+      this.sortedItems.forEach(i => this.selectedIds.add(i[this.trackBy]));
+    } else {
+      this.sortedItems.forEach(i => this.selectedIds.delete(i[this.trackBy]));
+    }
+    this.selectedIds = new Set(this.selectedIds);
+    this.selectionChange.emit(this.getSelectedItems());
+  }
+
+  clearSelection(): void {
+    this.selectedIds.clear();
+    this.selectedIds = new Set();
+    this.selectionChange.emit([]);
+  }
+
+  getSelectedItems(): any[] {
+    return this.items.filter(i => this.selectedIds.has(i[this.trackBy]));
+  }
+
+  executeBulkAction(action: BulkActionConfig): void {
+    action.handler(this.getSelectedItems());
   }
 
   get filteredItems(): any[] {

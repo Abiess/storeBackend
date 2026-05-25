@@ -5,7 +5,7 @@ import { ProductService } from '@app/core/services/product.service';
 import { Product } from '@app/core/models';
 import { StoreNavigationComponent } from '@app/shared/components/store-navigation.component';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
-import { ResponsiveDataListComponent, ColumnConfig, ActionConfig } from '@app/shared/components/responsive-data-list/responsive-data-list.component';
+import { ResponsiveDataListComponent, ColumnConfig, ActionConfig, BulkActionConfig } from '@app/shared/components/responsive-data-list/responsive-data-list.component';
 import { FabService } from '@app/core/services/fab.service';
 
 @Component({
@@ -29,14 +29,22 @@ import { FabService } from '@app/core/services/fab.service';
         [items]="products"
         [columns]="columns"
         [actions]="actions"
+        [bulkActions]="bulkActions"
         [loading]="loading"
+        [selectable]="true"
         [rowClickable]="true"
         [searchable]="true"
         searchPlaceholder="Produkt suchen..."
         [emptyMessage]="'storeDetail.noProducts' | translate"
         emptyIcon="📦"
-        (rowClick)="editProduct($event.id)">
+        (rowClick)="editProduct($event.id)"
+        (selectionChange)="onSelectionChange($event)">
       </app-responsive-data-list>
+
+      <!-- Bulk-Feedback Toast -->
+      <div class="bulk-toast" *ngIf="bulkMsg" [class.bulk-toast--error]="bulkError">
+        {{ bulkMsg }}
+      </div>
     </div>
   `,
   styles: [`
@@ -76,19 +84,30 @@ import { FabService } from '@app/core/services/fab.service';
     }
 
     @media (max-width: 768px) {
-      .product-list-container {
-        padding: 1rem;
-      }
+      .product-list-container { padding: 1rem; }
+      .header { flex-direction: column; align-items: stretch; gap: 1rem; }
+      .btn-primary { width: 100%; }
+    }
 
-      .header {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 1rem;
-      }
-
-      .btn-primary {
-        width: 100%;
-      }
+    .bulk-toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #166534;
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      z-index: 9999;
+      animation: toast-in 0.2s ease;
+    }
+    .bulk-toast--error { background: #991b1b; }
+    @keyframes toast-in {
+      from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
     }
   `]
 })
@@ -97,65 +116,54 @@ export class ProductListComponent implements OnInit, OnDestroy {
   storeId!: number;
   loading = true;
 
+  // Bulk-State
+  selectedProducts: Product[] = [];
+  bulkMsg = '';
+  bulkError = false;
+  private _bulkToastTimer: any;
+
   // Spalten-Konfiguration für responsive-data-list
   columns: ColumnConfig[] = [
+    { key: 'primaryImageUrl', label: 'Bild', type: 'image', width: '80px', hideOnMobile: true },
     {
-      key: 'primaryImageUrl',
-      label: 'Bild',
-      type: 'image',
-      width: '80px',
-      hideOnMobile: true
+      key: 'title', label: 'Name', type: 'text', mobileLabel: 'Produkt', sortable: true,
+      formatFn: (value, item) => value + (item.isFeatured ? ' ⭐' : '')
     },
     {
-      key: 'title',
-      label: 'Name',
-      type: 'text',
-      mobileLabel: 'Produkt',
-      sortable: true,
-      formatFn: (value, item) => {
-        const star = item.isFeatured ? ' ⭐' : '';
-        return value + star;
-      }
+      key: 'categoryName', label: 'Kategorie', type: 'text', mobileLabel: 'Kategorie', sortable: true,
+      formatFn: (value, item) => value || item.category?.name || '-'
     },
+    { key: 'basePrice', label: 'Preis', type: 'currency', mobileLabel: 'Preis', sortable: true },
     {
-      key: 'categoryName',
-      label: 'Kategorie',
-      type: 'text',
-      mobileLabel: 'Kategorie',
-      sortable: true,
-      formatFn: (value, item) => {
-        return value || item.category?.name || '-';
-      }
-    },
-    {
-      key: 'basePrice',
-      label: 'Preis',
-      type: 'currency',
-      mobileLabel: 'Preis',
-      sortable: true
-    },
-    {
-      key: 'status',
-      label: 'Status',
-      type: 'badge',
-      mobileLabel: 'Status',
+      key: 'status', label: 'Status', type: 'badge', mobileLabel: 'Status',
       formatFn: (value) => this.getStatusLabel(value),
       badgeClass: (value) => `status-${value?.toLowerCase()}`
     }
   ];
 
-  // Action-Buttons
+  // Einzel-Aktionen
   actions: ActionConfig[] = [
+    { icon: '✏️', label: 'Bearbeiten', handler: (p) => this.editProduct(p.id) },
+    { icon: '🗑️', label: 'Löschen', class: 'danger', handler: (p) => this.deleteProduct(p) }
+  ];
+
+  // Bulk-Aktionen (erscheinen in der lila Bulk-Bar)
+  bulkActions: BulkActionConfig[] = [
     {
-      icon: '✏️',
-      label: 'Bearbeiten',
-      handler: (product) => this.editProduct(product.id)
+      icon: '🟢', label: 'Aktivieren',
+      handler: (items) => this.bulkSetStatus(items, 'ACTIVE')
     },
     {
-      icon: '🗑️',
-      label: 'Löschen',
-      class: 'danger',
-      handler: (product) => this.deleteProduct(product)
+      icon: '📝', label: 'Als Entwurf',
+      handler: (items) => this.bulkSetStatus(items, 'DRAFT')
+    },
+    {
+      icon: '🗄️', label: 'Archivieren',
+      handler: (items) => this.bulkSetStatus(items, 'ARCHIVED')
+    },
+    {
+      icon: '🗑️', label: 'Löschen', class: 'danger',
+      handler: (items) => this.bulkDeleteProducts(items)
     }
   ];
 
@@ -166,7 +174,10 @@ export class ProductListComponent implements OnInit, OnDestroy {
     private fabService: FabService
   ) {}
 
-  ngOnDestroy(): void { this.fabService.clear(); }
+  ngOnDestroy(): void {
+    this.fabService.clear();
+    if (this._bulkToastTimer) clearTimeout(this._bulkToastTimer);
+  }
 
   ngOnInit(): void {
     // Mehrstufige StoreId Extraktion
@@ -207,6 +218,43 @@ export class ProductListComponent implements OnInit, OnDestroy {
         { icon: '📂', label: 'Kategorie anlegen', action: () => this.router.navigate([this.getStoreBasePath(), 'categories', 'new']), color: '#4299e1' },
       ]
     });
+  }
+
+  onSelectionChange(selected: Product[]): void {
+    this.selectedProducts = selected;
+  }
+
+  bulkSetStatus(items: Product[], status: string): void {
+    if (!items.length) return;
+    const ids = items.map(p => p.id);
+    const label = this.getStatusLabel(status);
+    this.productService.bulkUpdateStatus(this.storeId, ids, status).subscribe({
+      next: () => {
+        this.showToast(`✅ ${ids.length} Produkte → ${label}`, false);
+        this.loadProducts();
+      },
+      error: () => this.showToast(`❌ Status-Änderung fehlgeschlagen`, true)
+    });
+  }
+
+  bulkDeleteProducts(items: Product[]): void {
+    if (!items.length) return;
+    if (!confirm(`${items.length} Produkte wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`)) return;
+    const ids = items.map(p => p.id);
+    this.productService.bulkDelete(this.storeId, ids).subscribe({
+      next: () => {
+        this.showToast(`✅ ${ids.length} Produkte gelöscht`, false);
+        this.loadProducts();
+      },
+      error: () => this.showToast(`❌ Löschen fehlgeschlagen`, true)
+    });
+  }
+
+  private showToast(msg: string, error: boolean): void {
+    this.bulkMsg = msg;
+    this.bulkError = error;
+    if (this._bulkToastTimer) clearTimeout(this._bulkToastTimer);
+    this._bulkToastTimer = setTimeout(() => { this.bulkMsg = ''; }, 3500);
   }
 
   loadProducts(): void {
