@@ -43,26 +43,16 @@ else
 fi
 
 # ==============================================================================
-# 2. Port-Check: Läuft bereits etwas auf Port 8001?
+# 2. Port-Check: Nur zur Info – kein vorzeitiger Exit mehr!
+#    (Früher wurde hier exit 0 aufgerufen, bevor der neue Code kopiert wurde →
+#     main.py auf dem Server wurde nie aktualisiert. Jetzt immer vollständig deployen.)
 # ==============================================================================
-print_section "Prüfe Port $PORT..."
+print_section "Prüfe Port $PORT (nur Info – Deploy läuft immer vollständig durch)..."
 if ss -tlnp 2>/dev/null | grep -q ":${PORT} " || \
    netstat -tlnp 2>/dev/null | grep -q ":${PORT} "; then
-    print_ok "Port $PORT ist bereits belegt – Telegram Scraper läuft."
-    # Prüfe ob der Health-Endpoint antwortet
-    HEALTH_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-        "http://localhost:${PORT}/health" 2>/dev/null || echo "000")
-    if [ "$HEALTH_CODE" = "200" ]; then
-        print_ok "Health-Check OK (HTTP 200) – kein Neustart nötig."
-        exit 0
-    else
-        print_warn "Port belegt, aber Health-Check schlägt fehl (HTTP $HEALTH_CODE) – Neustart..."
-        sudo systemctl restart "$SERVICE_NAME" 2>/dev/null || true
-        sleep 3
-        exit 0
-    fi
+    print_ok "Port $PORT belegt – Scraper läuft. Neuer Code wird trotzdem eingespielt + Service neu gestartet."
 else
-    print_warn "Port $PORT ist frei – Telegram Scraper wird eingerichtet..."
+    print_warn "Port $PORT ist frei – Telegram Scraper wird erstmalig eingerichtet..."
 fi
 
 # ==============================================================================
@@ -159,15 +149,16 @@ sudo systemctl daemon-reload
 sudo systemctl enable "$SERVICE_NAME"
 
 # ==============================================================================
-# 6. Service starten / neu starten
+# 6. Service starten / neu starten – IMMER, damit neue main.py aktiv wird
 # ==============================================================================
-print_section "Starte $SERVICE_NAME ..."
+print_section "Starte $SERVICE_NAME (immer neu starten damit neuer Code aktiv wird)..."
+sudo systemctl daemon-reload
 if sudo systemctl is-active --quiet "$SERVICE_NAME"; then
     sudo systemctl restart "$SERVICE_NAME"
-    print_ok "Service neu gestartet."
+    print_ok "Service neu gestartet – neuer Code ist jetzt aktiv."
 else
     sudo systemctl start "$SERVICE_NAME"
-    print_ok "Service gestartet."
+    print_ok "Service erstmalig gestartet."
 fi
 
 # ==============================================================================
