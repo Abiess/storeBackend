@@ -99,7 +99,21 @@ public class TelegramMtprotoService {
 
         JsonNode response = postToScraper("/auth/request-code", body);
         String phoneCodeHash = response.path("phone_code_hash").asText();
-        String authSession   = response.path("auth_session_string").asText();
+
+        // Robustes Mapping: asText() gibt "" für null-Nodes, "null" für JSON-null in manchen Versionen
+        // → explizit auf null, "null", "" prüfen
+        JsonNode authSessionNode = response.path("auth_session_string");
+        String authSession = "";
+        if (!authSessionNode.isNull() && !authSessionNode.isMissingNode()) {
+            String raw = authSessionNode.asText("");
+            authSession = ("null".equals(raw)) ? "" : raw;
+        }
+
+        log.info("[MTProto][E2E] request-code Response: phoneCodeHashLen={} authSessionRawLen={} authSessionPresent={}",
+            phoneCodeHash != null ? phoneCodeHash.length() : 0,
+            authSession.length(),
+            !authSession.isBlank()
+        );
 
         if (phoneCodeHash == null || phoneCodeHash.isBlank()) {
             throw new RuntimeException("Kein phone_code_hash erhalten vom Scraper");

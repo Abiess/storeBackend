@@ -237,13 +237,30 @@ async def request_code(req: RequestCodeRequest):
         # Client VERBUNDEN lassen – verify-code braucht denselben Client!
         _pending_auth[cache_key] = client
 
-        # Teil-Session als Fallback speichern (optional)
+        # Teil-Session als Fallback speichern – MUSS nach send_code_request() erfolgen
+        # client.session.save() gibt "" zurück wenn kein Auth-Key vorhanden → explizit prüfen
+        auth_session_string: Optional[str] = None
         try:
-            auth_session_string = client.session.save() or None
-        except Exception:
+            saved = client.session.save()
+            if saved and len(saved) > 0:
+                auth_session_string = saved
+                logger.info(f"[Auth][E2E] ✅ session.save() erfolgreich: len={len(saved)} prefix={saved[:10]}...")
+            else:
+                logger.warning(
+                    f"[Auth][E2E] ⚠️  session.save() gab leeren String zurück (len={len(saved) if saved is not None else 'None'})! "
+                    f"Fallback im verify-code wird benötigt. Telethon-Version oder MTProto-Handshake prüfen."
+                )
+        except Exception as sess_err:
+            logger.error(f"[Auth][E2E] ❌ session.save() Exception: {type(sess_err).__name__}: {sess_err}")
             auth_session_string = None
 
-        logger.info(f"[Auth] ✅ Code gesendet, Client gecacht (key={cache_key})")
+        logger.info(
+            f"[Auth][E2E] request-code abgeschlossen: phone={req.phone} "
+            f"phone_code_hash_len={len(result.phone_code_hash)} "
+            f"auth_session_string_set={auth_session_string is not None} "
+            f"auth_session_string_len={len(auth_session_string) if auth_session_string else 0}"
+        )
+
         return RequestCodeResponse(
             phone_code_hash=result.phone_code_hash,
             auth_session_string=auth_session_string,
