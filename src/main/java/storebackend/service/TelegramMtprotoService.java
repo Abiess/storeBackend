@@ -39,6 +39,9 @@ public class TelegramMtprotoService {
     @Value("${telegram.scraper.url:http://localhost:8001}")
     private String scraperUrl;
 
+    @Value("${huggingface.api.key:}")
+    private String huggingfaceApiKey;
+
     /**
      * Zentrale Plattform-Telegram-App Credentials.
      * Werden genutzt wenn der User keine eigene api_id/api_hash angibt (Standard-Flow).
@@ -61,6 +64,7 @@ public class TelegramMtprotoService {
     private final ProductMediaRepository productMediaRepository;
     private final ProductRepository productRepository;
     private final TelegramSyncNotificationRepository notificationRepository;
+    private final AiModelProvider aiModelProvider;
 
     /**
      * Self-Referenz durch Spring-Proxy – KRITISCH damit importChannel()
@@ -85,7 +89,8 @@ public class TelegramMtprotoService {
             ObjectMapper objectMapper,
             ProductMediaRepository productMediaRepository,
             ProductRepository productRepository,
-            TelegramSyncNotificationRepository notificationRepository) {
+            TelegramSyncNotificationRepository notificationRepository,
+            AiModelProvider aiModelProvider) {
         this.mtprotoRepository = mtprotoRepository;
         this.importLogRepository = importLogRepository;
         this.storeRepository = storeRepository;
@@ -97,6 +102,7 @@ public class TelegramMtprotoService {
         this.productMediaRepository = productMediaRepository;
         this.productRepository = productRepository;
         this.notificationRepository = notificationRepository;
+        this.aiModelProvider = aiModelProvider;
 
         // Timeout: 5s connect, 60s read (Telegram-Code kann länger dauern)
         org.springframework.http.client.SimpleClientHttpRequestFactory factory =
@@ -620,8 +626,12 @@ public class TelegramMtprotoService {
         }
 
         List<String> hashtags = extractHashtags(text);
-        String description = buildDescription(text, channel, post.path("date").asText(""),
-            priceDetected, hasImage);
+        String description = buildSmartDescription(
+            text, title, hashtags, channel,
+            post.path("date").asText(""),
+            price, priceDetected, hasImage,
+            post.path("photo_bytes_list")
+        );
 
         Long categoryId = null;
         if (!hashtags.isEmpty()) {
@@ -631,12 +641,13 @@ public class TelegramMtprotoService {
         long msgId = post.path("message_id").asLong();
 
         // Produkt erstellen
+        // Stock = 1 (nicht 0): sonst ist "In den Warenkorb"-Button disabled im Storefront
         CreateProductRequest req = new CreateProductRequest();
         req.setTitle(title);
         req.setDescription(description);
         req.setBasePrice(price);
         req.setStatus(status);
-        req.setStock(0);
+        req.setStock(1);
         req.setCategoryId(categoryId);
 
         var productDto = productService.createProduct(req, store, owner);
@@ -681,25 +692,130 @@ public class TelegramMtprotoService {
         return productDto.getId();
     }
 
-    private String buildDescription(String text, String channel, String date,
-                                    boolean priceDetected, boolean hasImage) {
-        StringBuilder sb = new StringBuilder();
-        if (!text.isBlank()) {
-            sb.append(text.replaceAll("#\\w+", "").trim());
+    /**
+     * Erstellt eine intelligente Produktbeschreibung.
+     *
+     * Strategie (Priorität):
+     *  1. Post-Text vorhanden UND ausreichend lang (≥ 80 Zeichen) → direkt verwenden
+     *  2. HuggingFace API konfiguriert UND Bild vorhanden → BLIP-Caption als Beschreibung
+     *  3. Fallback: Strukturiertes Template aus Titel, Hashtags, Preis, Channel
+     */
+    private String buildSmartDescription(String text, String title, List<String> hashtags,
+                                         String channel, String date,
+                                         BigDecimal price, boolean priceDetected,
+                                         boolean hasImage, JsonNode photoBytesArr) {
+        String cleanText = (text != null) ? text.replaceAll("#\\w+", "").trim() : "";
+
+        // ── 1. Ausreichend langer Post-Text → direkt + Metadaten ──────────────
+        if (cleanText.length() >= 80) {
+            return buildMetaFooter(cleanText, channel, date, priceDetected, hasImage);
         }
+
+        // ── 2. AI-Beschreibung via BLIP (kostenlos, kein API-Key-Verbrauch) ───
+        if (!cleanText.isEmpty() || hasImage) {
+            String aiDesc = tryAiDescription(photoBytesArr, title, hashtags);
+            if (aiDesc != null) {
+                return buildMetaFooter(aiDesc, channel, date, priceDetected, hasImage);
+            }
+        }
+
+        // ── 3. Intelligentes Template (immer funktionierend, kein API-Call) ───
+        return buildTemplateDescription(cleanText, title, hashtags, channel, date, price, priceDetected, hasImage);
+    }
+
+    /**
+     * Versucht eine KI-generierte Beschreibung via HuggingFace BLIP.
+     * Gibt null zurück wenn kein API-Key oder kein Bild oder Fehler.
+     */
+    private String tryAiDescription(JsonNode photoBytesArr, String title, List<String> hashtags) {
+        if (huggingfaceApiKey == null || huggingfaceApiKey.isBlank()) return null;
+        if (!photoBytesArr.isArray() || photoBytesArr.isEmpty()) return null;
+
+        try {
+            String b64 = photoBytesArr.get(0).asText();
+            if (b64 == null || b64.isBlank()) return null;
+
+            byte[] imageBytes = java.util.Base64.getDecoder().decode(b64);
+            String caption = aiModelProvider.callModel(
+                AiModelProvider.MODEL_BLIP, null, imageBytes, "de", false);
+
+            if (caption != null && !caption.isBlank()) {
+                // Caption mit Titel anreichern
+                StringBuilder sb = new StringBuilder();
+                if (!title.isBlank() && !title.startsWith("Telegram Import")) {
+                    sb.append("**").append(title).append("**\n\n");
+                }
+                sb.append(caption.trim());
+                if (!hashtags.isEmpty()) {
+                    sb.append("\n\n🏷️ ").append(String.join(" · ", hashtags));
+                }
+                log.info("[MTProto] 🤖 AI-Beschreibung generiert: {} Zeichen", sb.length());
+                return sb.toString();
+            }
+        } catch (Exception e) {
+            log.debug("[MTProto] AI-Beschreibung fehlgeschlagen (kein Problem): {}", e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Template-Beschreibung wenn kein Text und kein AI verfügbar.
+     * Erzeugt immer eine sinnvolle, strukturierte Beschreibung.
+     */
+    private String buildTemplateDescription(String cleanText, String title, List<String> hashtags,
+                                            String channel, String date,
+                                            BigDecimal price, boolean priceDetected, boolean hasImage) {
+        StringBuilder sb = new StringBuilder();
+
+        // Titel als Überschrift
+        if (!title.isBlank() && !title.startsWith("Telegram Import")) {
+            sb.append("**").append(title).append("**\n\n");
+        }
+
+        // Vorhandener (kurzer) Text
+        if (!cleanText.isBlank()) {
+            sb.append(cleanText).append("\n\n");
+        }
+
+        // Eigenschaften aus Hashtags
+        if (!hashtags.isEmpty()) {
+            sb.append("🏷️ Eigenschaften: ").append(String.join(" · ", hashtags)).append("\n");
+        }
+
+        // Preis
+        if (priceDetected && price != null) {
+            sb.append("💰 Preis: ").append(price).append("\n");
+        }
+
+        sb.append("\n");
+        return buildMetaFooter(sb.toString().trim(), channel, date, priceDetected, hasImage);
+    }
+
+    /** Fügt Quell-Metadaten und Review-Hinweise ans Ende der Beschreibung. */
+    private String buildMetaFooter(String mainContent, String channel, String date,
+                                   boolean priceDetected, boolean hasImage) {
+        StringBuilder sb = new StringBuilder(mainContent != null ? mainContent : "");
         sb.append("\n\n---\n");
-        sb.append("📱 Importiert aus: ").append(channel).append("\n");
-        if (!date.isBlank() && date.length() >= 10) {
-            sb.append("📅 Datum: ").append(date.substring(0, 10)).append("\n");
+        sb.append("📱 Quelle: ").append(channel).append("\n");
+        if (date != null && date.length() >= 10) {
+            sb.append("📅 Datum: ").append(date, 0, 10).append("\n");
         }
         if (!priceDetected) {
-            sb.append("⚠️ Kein Preis erkannt – bitte manuell setzen.\n");
+            sb.append("⚠️ Preis bitte manuell setzen (automatisch auf 1 gesetzt).\n");
         }
         if (!hasImage) {
-            sb.append("⚠️ Kein Bild vorhanden – bitte manuell ergänzen.\n");
+            sb.append("⚠️ Bitte Produktbild manuell hochladen.\n");
         }
-        sb.append("⚠️ Bitte vor Veröffentlichung prüfen.");
+        sb.append("📝 Bitte vor Veröffentlichung prüfen.");
         return sb.toString();
+    }
+
+    private String buildDescription(String text, String channel, String date,
+                                    boolean priceDetected, boolean hasImage) {
+        // Legacy – wird nur noch intern verwendet
+        return buildMetaFooter(
+            text != null ? text.replaceAll("#\\w+", "").trim() : "",
+            channel, date, priceDetected, hasImage);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
