@@ -21,12 +21,25 @@ import { FabService } from '@app/core/services/fab.service';
 
       <div class="header">
         <h1>{{ 'navigation.products' | translate }}</h1>
-       
+      </div>
+
+      <!-- Telegram-Filter-Leiste -->
+      <div class="filter-bar" *ngIf="hasTelegramProducts">
+        <button class="filter-btn" [class.active]="filterMode === 'all'" (click)="setFilter('all')">
+          📦 Alle ({{ products.length }})
+        </button>
+        <button class="filter-btn filter-btn--telegram" [class.active]="filterMode === 'telegram'" (click)="setFilter('telegram')">
+          📡 Telegram-Importe ({{ telegramCount }})
+        </button>
+        <button class="filter-btn filter-btn--review" [class.active]="filterMode === 'review'" (click)="setFilter('review')"
+                *ngIf="priceReviewCount > 0">
+          ⚠️ Preis prüfen ({{ priceReviewCount }})
+        </button>
       </div>
 
       <!-- Responsive Data List -->
       <app-responsive-data-list
-        [items]="products"
+        [items]="filteredProducts"
         [columns]="columns"
         [actions]="actions"
         [bulkActions]="bulkActions"
@@ -35,8 +48,8 @@ import { FabService } from '@app/core/services/fab.service';
         [rowClickable]="true"
         [searchable]="true"
         searchPlaceholder="Produkt suchen..."
-        [emptyMessage]="'storeDetail.noProducts' | translate"
-        emptyIcon="📦"
+        [emptyMessage]="filterMode === 'telegram' ? 'Keine Telegram-Importe vorhanden' : ('storeDetail.noProducts' | translate)"
+        emptyIcon="{{ filterMode === 'telegram' ? '📡' : '📦' }}"
         (rowClick)="editProduct($event.id)"
         (selectionChange)="onSelectionChange($event)">
       </app-responsive-data-list>
@@ -109,12 +122,55 @@ import { FabService } from '@app/core/services/fab.service';
       from { opacity: 0; transform: translateX(-50%) translateY(12px); }
       to   { opacity: 1; transform: translateX(-50%) translateY(0); }
     }
+
+    /* Telegram Filter Bar */
+    .filter-bar {
+      display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem;
+    }
+    .filter-btn {
+      padding: 6px 14px; border-radius: 20px; border: 1.5px solid #e5e7eb;
+      background: #f9fafb; color: #374151; font-size: 13px; font-weight: 500;
+      cursor: pointer; transition: all .15s ease;
+    }
+    .filter-btn:hover { border-color: #667eea; color: #667eea; }
+    .filter-btn.active { background: linear-gradient(135deg,#667eea,#764ba2); color: #fff; border-color: transparent; }
+    .filter-btn--telegram { border-color: #2481cc; color: #2481cc; }
+    .filter-btn--telegram.active { background: linear-gradient(135deg,#2481cc,#1a6db8); }
+    .filter-btn--review { border-color: #d97706; color: #d97706; }
+    .filter-btn--review.active { background: linear-gradient(135deg,#f59e0b,#d97706); }
   `]
 })
 export class ProductListComponent implements OnInit, OnDestroy {
   products: Product[] = [];
+  filteredProducts: Product[] = [];
   storeId!: number;
   loading = true;
+  filterMode: 'all' | 'telegram' | 'review' = 'all';
+
+  get hasTelegramProducts(): boolean {
+    return this.products.some(p => !!p.telegramSource);
+  }
+  get telegramCount(): number {
+    return this.products.filter(p => !!p.telegramSource).length;
+  }
+  get priceReviewCount(): number {
+    return this.products.filter(p => p.priceNeedsReview).length;
+  }
+
+  setFilter(mode: 'all' | 'telegram' | 'review'): void {
+    this.filterMode = mode;
+    this.applyFilter();
+  }
+
+  private applyFilter(): void {
+    if (this.filterMode === 'telegram') {
+      this.filteredProducts = this.products.filter(p => !!p.telegramSource);
+    } else if (this.filterMode === 'review') {
+      this.filteredProducts = this.products.filter(p => p.priceNeedsReview);
+    } else {
+      this.filteredProducts = [...this.products];
+    }
+  }
 
   // Bulk-State
   selectedProducts: Product[] = [];
@@ -127,7 +183,12 @@ export class ProductListComponent implements OnInit, OnDestroy {
     { key: 'primaryImageUrl', label: 'Bild', type: 'image', width: '80px', hideOnMobile: true },
     {
       key: 'title', label: 'Name', type: 'text', mobileLabel: 'Produkt', sortable: true,
-      formatFn: (value, item) => value + (item.isFeatured ? ' ⭐' : '')
+      formatFn: (value, item) => {
+        let label = value + (item.isFeatured ? ' ⭐' : '');
+        if (item.telegramSource) label = '📡 ' + label;
+        if (item.priceNeedsReview) label = label + ' ⚠️';
+        return label;
+      }
     },
     {
       key: 'categoryName', label: 'Kategorie', type: 'text', mobileLabel: 'Kategorie', sortable: true,
@@ -261,11 +322,11 @@ export class ProductListComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.productService.getProducts(this.storeId).subscribe({
       next: (products) => {
-        // Stelle sicher, dass primaryImageUrl gesetzt ist
         this.products = products.map(p => ({
           ...p,
           primaryImageUrl: this.getProductImage(p) || undefined
         }));
+        this.applyFilter();
         this.loading = false;
       },
       error: (error) => {

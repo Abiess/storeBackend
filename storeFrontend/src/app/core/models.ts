@@ -304,6 +304,11 @@ export interface Product {
   viewCount?: number;
   salesCount?: number;
 
+  // Telegram-Import Felder
+  telegramSource?: string;    // Channel @username, z.B. "@meinchannel"
+  telegramMsgId?: number;     // Telegram Message-ID (für Deduplizierung)
+  priceNeedsReview?: boolean; // true = kein Preis erkannt, Standardpreis 1 gesetzt
+
   createdAt: string;
   updatedAt: string;
 }
