@@ -16,7 +16,7 @@ import { TelegramNotificationBadgeComponent } from '@app/shared/components/teleg
   standalone: true,
   imports: [CommonModule, RouterModule, TranslatePipe, OnboardingChecklistComponent, TelegramNotificationBadgeComponent],
   template: `
-    <!-- Sidebar wird global durch AppComponent (app-admin-shell) gerendert.
+    <!--   Sidebar wird global durch AppComponent (app-admin-shell) gerendert.
          Keine lokale <app-admin-sidebar> mehr, sonst doppelte Sidebar / Layout-Konflikt. -->
     <div class="store-detail-page">
       <div class="content">
