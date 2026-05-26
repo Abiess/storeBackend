@@ -37,7 +37,7 @@ jobs:
           strip_components: 1
 
       - name: Rename JAR to app.jar
-        uses: appleboy/ssh-action@1.2.2
+        uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
@@ -81,7 +81,7 @@ jobs:
           strip_components: 0
 
       - name: Check Port 8001 & Setup Telegram Scraper
-        uses: appleboy/ssh-action@1.2.2
+        uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
@@ -106,7 +106,7 @@ jobs:
             bash /opt/storebackend/scripts/setup-telegram-scraper.sh
 
       - name: Execute deployment script
-        uses: appleboy/ssh-action@1.2.2
+        uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
@@ -137,7 +137,7 @@ jobs:
             bash scripts/deploy.sh
 
       - name: Health Check
-        uses: appleboy/ssh-action@1.2.2
+        uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
