@@ -18,7 +18,7 @@ import { TelegramService, TelegramSyncNotification } from '@app/core/services/te
 @Component({
   selector: 'app-telegram-notification-badge',
   standalone: true,
-  imports: [CommonModule],
+  imports: [ CommonModule],
   template: `
     <div class="tg-notif-wrapper" *ngIf="unreadCount > 0 || panelOpen">
 
