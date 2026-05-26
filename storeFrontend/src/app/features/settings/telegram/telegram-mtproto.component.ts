@@ -1,5 +1,5 @@
 import { Component, Input, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, SlicePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { TelegramService, MtprotoStatus, ChannelInfo, TelegramSyncSettings } from '@app/core/services/telegram.service';
@@ -9,7 +9,7 @@ type Step = 'credentials' | 'verify-code' | 'channels' | 'import';
 @Component({
   selector: 'app-telegram-mtproto',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SlicePipe],
   template: `
     <div class="mtproto-container">
 
@@ -201,11 +201,32 @@ type Step = 'credentials' | 'verify-code' | 'channels' | 'import';
           <div class="channel-list" *ngIf="availableChannels.length > 0">
             <div class="channel-item" *ngFor="let ch of availableChannels"
               [class.selected]="isWatched(ch)" (click)="toggleChannel(ch)">
-              <div class="channel-check">{{ isWatched(ch) ? '✅' : '⬜' }}</div>
+
+              <!-- Avatar -->
+              <div class="channel-avatar">
+                <img *ngIf="ch.photo_base64" [src]="ch.photo_base64" [alt]="ch.title" class="avatar-img">
+                <span *ngIf="!ch.photo_base64" class="avatar-placeholder">
+                  {{ ch.title.charAt(0).toUpperCase() }}
+                </span>
+              </div>
+
+              <!-- Info -->
               <div class="channel-info">
-                <strong>{{ ch.title }}</strong>
-                <small *ngIf="ch.username">&#64;{{ ch.username }}</small>
-                <small *ngIf="ch.members_count">{{ ch.members_count | number }} Mitglieder</small>
+                <div class="channel-title-row">
+                  <strong>{{ ch.title }}</strong>
+                  <span class="channel-type-badge" *ngIf="ch.is_broadcast === false">👥 Gruppe</span>
+                  <span class="channel-type-badge channel-type-badge--channel" *ngIf="ch.is_broadcast !== false">📢 Kanal</span>
+                </div>
+                <small class="channel-username" *ngIf="ch.username">&#64;{{ ch.username }}</small>
+                <small class="channel-members" *ngIf="ch.members_count">{{ ch.members_count | number }} Mitglieder</small>
+                <small class="channel-about" *ngIf="ch.about">{{ ch.about | slice:0:80 }}{{ ch.about.length > 80 ? '…' : '' }}</small>
+              </div>
+
+              <!-- Auswahl-Checkbox -->
+              <div class="channel-check">
+                <span class="check-icon" [class.checked]="isWatched(ch)">
+                  {{ isWatched(ch) ? '✅' : '' }}
+                </span>
               </div>
             </div>
           </div>
@@ -439,11 +460,34 @@ type Step = 'credentials' | 'verify-code' | 'channels' | 'import';
     .section-desc { font-size: 13px; color: #6b7280; margin: 0 0 16px; }
 
     .channel-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
-    .channel-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: border-color .15s; }
+    .channel-item {
+      display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+      background: #fff; border: 1.5px solid #e5e7eb; border-radius: 10px;
+      cursor: pointer; transition: border-color .15s, background .15s, box-shadow .15s;
+    }
+    .channel-item:hover { border-color: #a5b4fc; box-shadow: 0 2px 8px rgba(102,126,234,.08); }
     .channel-item.selected { border-color: #667eea; background: #eff6ff; }
-    .channel-check { font-size: 18px; }
-    .channel-info strong { display: block; font-size: 14px; color: #111827; }
-    .channel-info small { font-size: 12px; color: #6b7280; display: block; }
+
+    /* Avatar */
+    .channel-avatar { flex-shrink: 0; width: 44px; height: 44px; border-radius: 50%; overflow: hidden; background: linear-gradient(135deg,#667eea,#764ba2); display: flex; align-items: center; justify-content: center; }
+    .avatar-img { width: 100%; height: 100%; object-fit: cover; }
+    .avatar-placeholder { color: #fff; font-size: 18px; font-weight: 700; }
+
+    /* Channel Info */
+    .channel-info { flex: 1; min-width: 0; }
+    .channel-title-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .channel-info strong { font-size: 14px; color: #111827; }
+    .channel-type-badge { font-size: 10px; padding: 2px 7px; border-radius: 10px; background: #e0e7ff; color: #4338ca; font-weight: 600; white-space: nowrap; }
+    .channel-type-badge--channel { background: #dcfce7; color: #166534; }
+    .channel-username { font-size: 12px; color: #6b7280; display: block; }
+    .channel-members { font-size: 12px; color: #9ca3af; display: block; }
+    .channel-about { font-size: 11px; color: #9ca3af; display: block; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
+
+    /* Check-Icon rechts */
+    .channel-check { flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: border-color .15s; }
+    .channel-item.selected .channel-check { border-color: #667eea; }
+    .check-icon { line-height: 1; }
+
     .empty-channels { text-align: center; padding: 20px; color: #9ca3af; font-size: 13px; }
     .manual-input { margin-top: 12px; }
     .manual-input label { font-size: 13px; font-weight: 600; color: #374151; display: block; margin-bottom: 6px; }

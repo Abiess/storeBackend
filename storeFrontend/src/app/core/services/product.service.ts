@@ -116,12 +116,12 @@ export class ProductService {
   }
 
   /**
-   * Bulk: Status mehrerer Produkte gleichzeitig ändern (parallele Requests)
+   * Bulk: Status mehrerer Produkte gleichzeitig ändern (PATCH – partial update)
    */
   bulkUpdateStatus(storeId: number, productIds: number[], status: string): Observable<any[]> {
     if (!productIds.length) return of([]);
     const requests = productIds.map(id =>
-      this.http.put<Product>(`${environment.apiUrl}/stores/${storeId}/products/${id}`, { status })
+      this.http.patch<Product>(`${environment.apiUrl}/stores/${storeId}/products/${id}`, { status })
     );
     return forkJoin(requests);
   }

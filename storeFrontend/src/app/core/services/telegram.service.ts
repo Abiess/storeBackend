@@ -78,6 +78,9 @@ export interface ChannelInfo {
   title: string;
   username?: string;
   members_count?: number;
+  about?: string;           // Channel-Beschreibung
+  photo_base64?: string;    // Profilbild als data:image/jpeg;base64,...
+  is_broadcast?: boolean;   // true = Channel, false = Gruppe
 }
 
 @Injectable({ providedIn: 'root' })

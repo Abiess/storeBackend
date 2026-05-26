@@ -202,6 +202,26 @@ public class ProductController {
         return ResponseEntity.ok(productService.updateProduct(productId, request, store));
     }
 
+    @Operation(summary = "Partial update product", description = "Updates only the provided fields (status, featured, etc.)")
+    @PatchMapping("/{productId}")
+    public ResponseEntity<ProductDTO> patchProduct(
+            @Parameter(description = "Store ID") @PathVariable Long storeId,
+            @Parameter(description = "Product ID") @PathVariable Long productId,
+            @RequestBody Map<String, Object> fields,
+            @AuthenticationPrincipal User user) {
+
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        if (!hasStoreAccess(storeId, user)) {
+            return ResponseEntity.status(403).build();
+        }
+
+        Store store = storeService.getStoreById(storeId);
+        return ResponseEntity.ok(productService.patchProduct(productId, fields, store));
+    }
+
     @Operation(summary = "Delete product", description = "Deletes a product")
     @DeleteMapping("/{productId}")
     public ResponseEntity<Void> deleteProduct(

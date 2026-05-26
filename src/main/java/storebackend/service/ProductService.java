@@ -15,11 +15,13 @@ import storebackend.entity.ProductMedia;
 import storebackend.entity.ProductVariant;
 import storebackend.entity.Store;
 import storebackend.entity.User;
+import storebackend.enums.ProductStatus;
 import storebackend.repository.CategoryRepository;
 import storebackend.repository.ProductMediaRepository;
 import storebackend.repository.ProductRepository;
 import storebackend.repository.ProductVariantRepository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -139,9 +141,59 @@ public class ProductService {
         return toDTO(product);
     }
 
+    /**
+     * Partial update – nur angegebene Felder werden überschrieben.
+     * Unterstützt: status, title, basePrice, stock, categoryId, featured, featuredOrder
+     * Wird vom PATCH-Endpunkt und vom bulkUpdateStatus (Frontend) genutzt.
+     */
     @Transactional
-    public void deleteProduct(Long productId, Store store) {
-        Product product = productRepository.findByIdAndStore(productId, store)
+    public ProductDTO patchProduct(Long productId, Map<String, Object> fields, Store store) {
+        Product product = productRepository.findByIdAndStoreWithCategory(productId, store)
+                .orElseThrow(() -> new RuntimeException("Product not found: " + productId));
+
+        if (fields.containsKey("status")) {
+            String statusVal = fields.get("status").toString();
+            try { product.setStatus(ProductStatus.valueOf(statusVal)); }
+            catch (IllegalArgumentException e) { throw new RuntimeException("Ungültiger Status: " + statusVal); }
+        }
+        if (fields.containsKey("title") && fields.get("title") != null) {
+            product.setTitle(fields.get("title").toString());
+        }
+        if (fields.containsKey("basePrice") && fields.get("basePrice") != null) {
+            product.setBasePrice(new BigDecimal(fields.get("basePrice").toString()));
+        }
+        if (fields.containsKey("stock") && fields.get("stock") != null) {
+            product.setStock(Integer.parseInt(fields.get("stock").toString()));
+        }
+        if (fields.containsKey("description")) {
+            product.setDescription(fields.get("description") != null ? fields.get("description").toString() : null);
+        }
+        if (fields.containsKey("categoryId")) {
+            Object catId = fields.get("categoryId");
+            if (catId == null) {
+                product.setCategory(null);
+            } else {
+                Long categoryId = Long.parseLong(catId.toString());
+                Category category = categoryRepository.findById(categoryId)
+                        .orElseThrow(() -> new RuntimeException("Category not found"));
+                if (!category.getStore().getId().equals(store.getId())) {
+                    throw new RuntimeException("Category does not belong to this store");
+                }
+                product.setCategory(category);
+            }
+        }
+        if (fields.containsKey("featured") && fields.get("featured") != null) {
+            product.setIsFeatured(Boolean.parseBoolean(fields.get("featured").toString()));
+        }
+        if (fields.containsKey("featuredOrder") && fields.get("featuredOrder") != null) {
+            product.setFeaturedOrder(Integer.parseInt(fields.get("featuredOrder").toString()));
+        }
+
+        return toDTO(productRepository.save(product));
+    }
+
+    @Transactional
+    public void deleteProduct(Long productId, Store store) {        Product product = productRepository.findByIdAndStore(productId, store)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
         productRepository.delete(product);
 

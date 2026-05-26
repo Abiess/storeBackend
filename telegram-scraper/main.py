@@ -108,6 +108,9 @@ class ChannelInfo(BaseModel):
     title: str
     username: Optional[str] = None
     members_count: Optional[int] = None
+    about: Optional[str] = None          # Channel-Beschreibung
+    photo_base64: Optional[str] = None   # Profilbild als Base64 (data:image/jpeg;base64,...)
+    is_broadcast: bool = True            # True = Channel, False = Gruppe
 
 class ChannelListResponse(BaseModel):
     channels: List[ChannelInfo]
@@ -465,7 +468,10 @@ async def list_channels(req: ChannelListRequest):
     """
     Listet alle abonnierten Channels/Gruppen des Accounts.
     Gibt nur Channels zurück (kein DMs, keine normalen Gruppen).
+    Inkl. Profilbild (Base64) und Beschreibung.
     """
+    import base64
+
     client = make_client(req.api_id, req.api_hash, req.session_string)
     channels = []
 
@@ -477,11 +483,36 @@ async def list_channels(req: ChannelListRequest):
         async for dialog in client.iter_dialogs():
             entity = dialog.entity
             if isinstance(entity, Channel):
+                # Profilbild herunterladen
+                photo_b64 = None
+                try:
+                    buf = io.BytesIO()
+                    result = await client.download_profile_photo(entity, file=buf)
+                    if result is not None:
+                        buf.seek(0)
+                        raw = buf.read()
+                        if raw:
+                            photo_b64 = "data:image/jpeg;base64," + base64.b64encode(raw).decode("utf-8")
+                except Exception as photo_err:
+                    logger.debug(f"[Channels] Profilbild nicht ladbar für {dialog.title}: {photo_err}")
+
+                # Beschreibung laden
+                about = None
+                try:
+                    full = await client.get_entity(entity.id)
+                    if hasattr(full, 'about') and full.about:
+                        about = full.about
+                except Exception:
+                    pass
+
                 ch = ChannelInfo(
                     id=entity.id,
                     title=dialog.title,
                     username=entity.username,
-                    members_count=getattr(entity, "participants_count", None)
+                    members_count=getattr(entity, "participants_count", None),
+                    about=about,
+                    photo_base64=photo_b64,
+                    is_broadcast=getattr(entity, "broadcast", True)
                 )
                 channels.append(ch)
 
