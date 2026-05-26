@@ -433,10 +433,13 @@ public class TelegramMtprotoService {
             }
 
             try {
-                // Produkt aus Post erstellen
-                Long productId = createProductFromPost(post, store, owner, channel, cfg);
+                // Produkt via self-Proxy in EIGENER Transaktion (REQUIRES_NEW) erstellen.
+                // → Wenn ein Post fehlschlägt (z.B. "null identifier", unlesbarer Inhalt),
+                //   wird NUR dieser Post zurückgerollt. Die Channel-Transaktion bleibt sauber
+                //   und alle anderen Posts laufen weiter.
+                Long productId = self.saveOneProductFromPost(post, store, owner, channel, cfg);
 
-                // Log-Eintrag
+                // Log-Eintrag (innerhalb Channel-Transaktion – separater Commit)
                 saveMtprotoLog(store, channel, msgId, productId, "SUCCESS", null);
                 result.setImported(result.getImported() + 1);
 
@@ -456,10 +459,24 @@ public class TelegramMtprotoService {
 
                 log.info("[MTProto] ✅ Importiert: msgId={}, productId={}", msgId, productId);
             } catch (Exception e) {
-                log.error("[MTProto] Fehler bei msgId={}: {}", msgId, e.getMessage());
-                saveMtprotoLog(store, channel, msgId, null, "ERROR", e.getMessage());
-                result.setErrors(result.getErrors() + 1);
-                result.getErrorMessages().add("msgId=" + msgId + ": " + e.getMessage());
+                String errMsg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+
+                // "null identifier" = Telegram-Post hatte keinen verwertbaren Inhalt
+                // (kein Titel, kein Preis, kein Bild → Produkt konnte nicht angelegt werden).
+                // Nicht dramatisch – als übersprungen zählen, nicht als Fehler.
+                boolean isSoftSkip = errMsg.contains("null identifier")
+                    || errMsg.contains("transient value")
+                    || errMsg.contains("unsaved transient");
+
+                if (isSoftSkip) {
+                    log.warn("[MTProto] ⏭ Post msgId={} übersprungen (unvollständiger Inhalt): {}", msgId, errMsg);
+                    result.setSkipped(result.getSkipped() + 1);
+                } else {
+                    log.error("[MTProto] ❌ Fehler bei msgId={}: {}", msgId, errMsg);
+                    saveMtprotoLog(store, channel, msgId, null, "ERROR", errMsg);
+                    result.setErrors(result.getErrors() + 1);
+                    result.getErrorMessages().add("msgId=" + msgId + ": " + errMsg);
+                }
             }
         }
 
@@ -559,6 +576,20 @@ public class TelegramMtprotoService {
     // ─────────────────────────────────────────────────────────────────────────
     // Produkt aus Post erstellen
     // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Wrapper mit REQUIRES_NEW: Jeder Post läuft in seiner eigenen Transaktion.
+     * Schlägt ein Post fehl (z.B. "null identifier", unlesbarer Inhalt), wird NUR
+     * dieser Post zurückgerollt. Die übergeordnete Channel-Transaktion bleibt sauber
+     * und verarbeitet alle anderen Posts weiter.
+     *
+     * MUSS über self-Proxy aufgerufen werden (self.saveOneProductFromPost(...)).
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public Long saveOneProductFromPost(JsonNode post, Store store, User owner,
+                                       String channel, TelegramMtprotoConfig cfg) throws Exception {
+        return createProductFromPost(post, store, owner, channel, cfg);
+    }
 
     private Long createProductFromPost(JsonNode post, Store store, User owner, String channel,
                                        TelegramMtprotoConfig cfg)
