@@ -2,6 +2,8 @@ import { Component, Input, OnInit, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { OnboardingService, ChecklistItem, OnboardingProgress } from '@app/core/services/onboarding.service';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { LucideAngularModule } from 'lucide-angular';
 
 /**
  * Onboarding-Checklist Komponente.
@@ -18,7 +20,7 @@ import { OnboardingService, ChecklistItem, OnboardingProgress } from '@app/core/
 @Component({
   selector: 'app-onboarding-checklist',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe, LucideAngularModule],
   template: `
     @if (show && progress) {
       <div class="oc-card">
@@ -27,22 +29,22 @@ import { OnboardingService, ChecklistItem, OnboardingProgress } from '@app/core/
           <div class="oc-header__text">
             <h3 class="oc-title">
               @if (progress.completionPercentage < 100) {
-                🚀 Richte deinen Shop ein
+                {{ 'onboarding.title' | translate }}
               } @else {
-                🎉 Shop vollständig eingerichtet!
+                {{ 'onboarding.titleDone' | translate }}
               }
             </h3>
             <p class="oc-subtitle">
               @if (progress.completionPercentage < 100) {
-                {{ completedCount }} von {{ checklist.length }} Schritten abgeschlossen
+                {{ 'onboarding.subtitle' | translate : { completed: completedCount, total: checklist.length } }}
               } @else {
-                Du bist startklar – öffne deinen Shop!
+                {{ 'onboarding.subtitleDone' | translate }}
               }
             </p>
           </div>
           <div class="oc-header__right">
             <span class="oc-percent">{{ progress.completionPercentage }}%</span>
-            <button class="oc-dismiss" (click)="dismiss()" title="Ausblenden">×</button>
+            <button class="oc-dismiss" (click)="dismiss()" [title]="'onboarding.dismiss' | translate">×</button>
           </div>
         </div>
 
@@ -61,21 +63,21 @@ import { OnboardingService, ChecklistItem, OnboardingProgress } from '@app/core/
                  (click)="!step.completed && navigate(step)">
               <div class="oc-step__icon">
                 @if (step.completed) {
-                  <span class="oc-check">✓</span>
+                  <lucide-icon name="check" [size]="18" class="oc-check"></lucide-icon>
                 } @else {
-                  <span class="oc-num">{{ step.icon }}</span>
+                  <lucide-icon [name]="step.icon" [size]="18"></lucide-icon>
                 }
               </div>
               <div class="oc-step__body">
-                <span class="oc-step__title">{{ step.title }}</span>
-                <span class="oc-step__desc">{{ step.description }}</span>
+                <span class="oc-step__title">{{ (step.titleKey ? (step.titleKey | translate) : step.title) }}</span>
+                <span class="oc-step__desc">{{ (step.descKey ? (step.descKey | translate) : step.description) }}</span>
               </div>
               @if (!step.completed) {
                 <button class="oc-step__cta" (click)="$event.stopPropagation(); navigate(step)">
-                  Einrichten →
+                  {{ 'onboarding.cta' | translate }}
                 </button>
               } @else {
-                <span class="oc-step__done-badge">Erledigt ✓</span>
+                <span class="oc-step__done-badge">{{ 'onboarding.doneBadge' | translate }}</span>
               }
             </div>
           }
@@ -86,7 +88,8 @@ import { OnboardingService, ChecklistItem, OnboardingProgress } from '@app/core/
           <a [href]="'https://' + storeSlug + '.markt.ma'"
              target="_blank" rel="noopener"
              class="oc-preview-btn">
-            🌐 Shop in neuem Tab öffnen
+            <lucide-icon name="external-link" [size]="14"></lucide-icon>
+            {{ 'onboarding.openPreview' | translate }}
           </a>
         </div>
       </div>
@@ -190,16 +193,14 @@ import { OnboardingService, ChecklistItem, OnboardingProgress } from '@app/core/
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      font-size: 1.15rem;
       background: #f1f5f9;
+      color: #6b7280;
     }
     .oc-step--done .oc-step__icon {
       background: #dcfce7;
     }
     .oc-check {
       color: #16a34a;
-      font-weight: 800;
-      font-size: 1rem;
     }
 
     .oc-step__body {

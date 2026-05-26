@@ -1322,5 +1322,21 @@
                },
     "filter":  {
                    "priceRange":  "Preisbereich"
-               }
+               },
+    "onboarding": {
+        "title":       "🚀 Richte deinen Shop ein",
+        "titleDone":   "🎉 Shop vollständig eingerichtet!",
+        "subtitle":    "{{completed}} von {{total}} Schritten abgeschlossen",
+        "subtitleDone":"Du bist startklar – öffne deinen Shop!",
+        "cta":         "Einrichten →",
+        "doneBadge":   "Erledigt ✓",
+        "openPreview": "🌐 Shop in neuem Tab öffnen",
+        "dismiss":     "Ausblenden",
+        "steps": {
+            "product":  { "title": "Erstes Produkt hinzufügen",        "desc": "Beginne mit dem Verkauf durch Hinzufügen deiner ersten Produkte" },
+            "theme":    { "title": "Design & Template wählen",          "desc": "Wähle ein professionelles Layout für deinen Shop" },
+            "branding": { "title": "Logo & Branding einrichten",        "desc": "Lade dein Logo hoch und passe Farben & Typografie an" },
+            "telegram": { "title": "Telegram Import einrichten",        "desc": "Importiere Produkte direkt aus deinem Telegram-Kanal" }
+        }
+    }
 }

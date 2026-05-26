@@ -7,6 +7,10 @@ export interface ChecklistItem {
   id: string;
   title: string;
   description: string;
+  /** i18n-Key für den Titel (überschreibt `title` im Template) */
+  titleKey?: string;
+  /** i18n-Key für die Beschreibung (überschreibt `description` im Template) */
+  descKey?: string;
   icon: string;
   completed: boolean;
   route: string;
@@ -40,17 +44,21 @@ export class OnboardingService {
     {
       id: 'product',
       title: 'Erstes Produkt hinzufügen',
+      titleKey: 'onboarding.steps.product.title',
       description: 'Beginne mit dem Verkauf durch Hinzufügen deiner ersten Produkte',
-      icon: '📦',
+      descKey: 'onboarding.steps.product.desc',
+      icon: 'Package',
       completed: false,
-      route: '/products/new',   // wird in getChecklist() mit storeId vervollständigt
+      route: '/products/new',
       priority: 10
     },
     {
       id: 'theme',
       title: 'Design & Template wählen',
+      titleKey: 'onboarding.steps.theme.title',
       description: 'Wähle ein professionelles Layout für deinen Shop',
-      icon: '🎨',
+      descKey: 'onboarding.steps.theme.desc',
+      icon: 'Palette',
       completed: false,
       route: '/theme',
       priority: 9
@@ -58,19 +66,23 @@ export class OnboardingService {
     {
       id: 'branding',
       title: 'Logo & Branding einrichten',
+      titleKey: 'onboarding.steps.branding.title',
       description: 'Lade dein Logo hoch und passe Farben & Typografie an',
-      icon: '🖼️',
+      descKey: 'onboarding.steps.branding.desc',
+      icon: 'Store',
       completed: false,
       route: '/brand',
       priority: 8
     },
     {
-      id: 'delivery',
-      title: 'Lieferung konfigurieren',
-      description: 'Richte Lieferzonen und Versandkosten ein',
-      icon: '🚚',
+      id: 'telegram',
+      title: 'Telegram Import einrichten',
+      titleKey: 'onboarding.steps.telegram.title',
+      description: 'Importiere Produkte direkt aus deinem Telegram-Kanal',
+      descKey: 'onboarding.steps.telegram.desc',
+      icon: 'Bot',
       completed: false,
-      route: '/delivery',
+      route: '/telegram',
       priority: 7
     }
   ];

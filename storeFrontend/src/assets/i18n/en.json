@@ -1319,5 +1319,21 @@
                },
     "filter":  {
                    "priceRange":  "Price Range"
-               }
+               },
+    "onboarding": {
+        "title":       "🚀 Set up your store",
+        "titleDone":   "🎉 Store fully set up!",
+        "subtitle":    "{{completed}} of {{total}} steps completed",
+        "subtitleDone":"You're ready to go – open your store!",
+        "cta":         "Set up →",
+        "doneBadge":   "Done ✓",
+        "openPreview": "🌐 Open store in new tab",
+        "dismiss":     "Dismiss",
+        "steps": {
+            "product":  { "title": "Add your first product",           "desc": "Start selling by adding your first products" },
+            "theme":    { "title": "Choose design & template",         "desc": "Pick a professional layout for your store" },
+            "branding": { "title": "Set up logo & branding",           "desc": "Upload your logo and customize colors & typography" },
+            "telegram": { "title": "Set up Telegram import",           "desc": "Import products directly from your Telegram channel" }
+        }
+    }
 }
