@@ -3,11 +3,13 @@ package storebackend.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import storebackend.dto.*;
@@ -59,6 +61,16 @@ public class TelegramMtprotoService {
     private final ProductMediaRepository productMediaRepository;
     private final ProductRepository productRepository;
     private final TelegramSyncNotificationRepository notificationRepository;
+
+    /**
+     * Self-Referenz durch Spring-Proxy – KRITISCH damit importChannel()
+     * bei direktem Aufruf aus importAllWatchedChannels() eine eigene Transaktion
+     * (REQUIRES_NEW) bekommt und ein fehlgeschlagener Channel die anderen nicht
+     * vergiftet ("transaction marked as rollback-only").
+     */
+    @Autowired
+    @Lazy
+    private TelegramMtprotoService self;
 
     private final RestTemplate restTemplate;
 
@@ -363,12 +375,15 @@ public class TelegramMtprotoService {
      * Importiert Posts aus einem Channel als Produkt-Entwürfe.
      * Nur Posts mit Medien (Bilder) werden verarbeitet.
      *
+     * REQUIRES_NEW: Jeder Channel-Import läuft in einer eigenständigen Transaktion.
+     * Dadurch vergiftet ein fehlgeschlagener Channel nicht die Imports der anderen.
+     *
      * @param storeId  Store ID
      * @param channel  Channel @username oder ID
      * @param owner    Store-Besitzer (für Produkt-Erstellung)
      * @return Import-Ergebnis
      */
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public TelegramImportResultDto importChannel(Long storeId, String channel, User owner) {
         TelegramImportResultDto result = new TelegramImportResultDto();
         TelegramMtprotoConfig cfg = getAuthenticatedConfig(storeId);
@@ -514,8 +529,11 @@ public class TelegramMtprotoService {
 
     /**
      * Importiert aus allen überwachten Channels des Stores.
+     *
+     * KEIN @Transactional hier – jeder Channel-Import läuft in seiner eigenen
+     * Transaktion (REQUIRES_NEW in importChannel via self-Proxy).
+     * Ein fehlgeschlagener Channel bricht die anderen nicht ab.
      */
-    @Transactional
     public Map<String, TelegramImportResultDto> importAllWatchedChannels(Long storeId, User owner) {
         TelegramMtprotoConfig cfg = mtprotoRepository.findByStoreId(storeId)
             .orElseThrow(() -> new RuntimeException("Keine Konfiguration"));
@@ -525,7 +543,8 @@ public class TelegramMtprotoService {
 
         for (String channel : channels) {
             try {
-                results.put(channel, importChannel(storeId, channel, owner));
+                // Aufruf über self (Spring-Proxy) → REQUIRES_NEW Transaktion greift
+                results.put(channel, self.importChannel(storeId, channel, owner));
             } catch (Exception e) {
                 log.error("[MTProto] Fehler beim Import von {}: {}", channel, e.getMessage());
                 TelegramImportResultDto errResult = new TelegramImportResultDto();
