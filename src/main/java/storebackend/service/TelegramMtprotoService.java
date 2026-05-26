@@ -419,9 +419,11 @@ public class TelegramMtprotoService {
             String text = post.path("text").asText("");
             boolean hasMedia = post.path("has_media").asBoolean(false);
 
-            // Duplikat-Check
-            if (importLogRepository.existsByStoreIdAndChannelIdAndTelegramMsgId(
-                    storeId, channel, msgId)) {
+            // Duplikat-Check: nur ERFOLGREICH importierte Posts überspringen.
+            // ERROR-Logs nicht als Duplikat werten → fehlgeschlagene Posts können
+            // nach einem Fix erneut importiert werden.
+            if (importLogRepository.existsByStoreIdAndChannelIdAndTelegramMsgIdAndStatus(
+                    storeId, channel, msgId, "SUCCESS")) {
                 result.setSkipped(result.getSkipped() + 1);
                 continue;
             }
