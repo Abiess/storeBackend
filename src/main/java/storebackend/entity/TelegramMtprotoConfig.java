@@ -30,7 +30,9 @@ public class TelegramMtprotoConfig {
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "store_id", nullable = false, unique = true)
+    @JoinColumn(name = "store_id", nullable = false, unique = true,
+        foreignKey = @ForeignKey(name = "fk_telegram_mtproto_config_store",
+            foreignKeyDefinition = "FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE"))
     private Store store;
 
     /** Von my.telegram.org */

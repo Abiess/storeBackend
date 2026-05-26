@@ -29,7 +29,9 @@ public class TelegramImportLog {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "store_id", nullable = false)
+    @JoinColumn(name = "store_id", nullable = false,
+        foreignKey = @ForeignKey(name = "fk_telegram_import_log_store",
+            foreignKeyDefinition = "FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE"))
     private Store store;
 
     @Column(name = "channel_id", nullable = false, length = 100)
