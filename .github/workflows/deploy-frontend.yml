@@ -63,7 +63,7 @@ jobs:
           tar -czf ../../frontend-dist.tar.gz *
 
       - name: Deploy to VPS
-        uses: appleboy/scp-action@master
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
@@ -73,7 +73,7 @@ jobs:
           strip_components: 1
 
       - name: Extract and setup on VPS
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
