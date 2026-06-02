@@ -1,10 +1,22 @@
 /**
- * Avito.ma Scraper – v3
- * Strategie: Seller-Daten direkt aus __NEXT_DATA__ der Suchergebnisseite
- * extrahieren und nach Seller-ID GRUPPIEREN → ein Lead pro Händler,
- * productCount = Anzahl seiner gefundenen Anzeigen.
- * KEINE einzelnen Listing-HTTP-Requests mehr.
+ * Avito.ma Scraper – v4 (Datenqualität-Fix)
+ *
+ * Strategie:
+ *  1. Suchergebnis-Seiten laden → componentProps.ads.ads
+ *  2. Einzigartige Händler nach seller.id gruppieren
+ *  3. Pro Händler: /fr/vendeur/{id} laden → echte Profildaten
+ *  4. Max. maxSellers Profile laden (Standard: 150)
+ *
+ * Fixes gegenüber v3:
+ *  - Korrekter JSON-Pfad: componentProps.ads.ads
+ *  - phone.number statt phone (war [object Object])
+ *  - price.value statt price (war [object Object])
+ *  - location ist String "Stadt, Viertel" → korrekt aufgeteilt
+ *  - memberSince aus HTML der Profilseite
+ *  - productCount = Anzahl Seiten × Ads + Rest
  */
+
+'use strict';
 
 const cheerio     = require('cheerio');
 const BaseScraper = require('./base-scraper');
@@ -22,226 +34,284 @@ const CATEGORY_MAP = {
 class AvitoScraper extends BaseScraper {
   constructor() {
     super('avito', 'https://www.avito.ma');
+    this.maxSellers = 150; // Max. Profil-Besuche pro Lauf
   }
+
+  // ── Haupt-Methode ─────────────────────────────────────────────────
 
   async scrapeListings(options = {}) {
     const { category = '', city = '', maxPages = 3, keywords = '' } = options;
 
-    // Seller nach ID gruppieren (mehrere Listings desselben Händlers → ein Lead)
-    const sellerMap = new Map(); // sellerId → { hint, listingCount, lastActivity }
+    // Schritt 1: Eindeutige Händler-IDs aus Suchergebnissen sammeln
+    const sellerMap = new Map(); // id → { rawSeller, ads[] }
 
     for (let page = 1; page <= maxPages; page++) {
       const url = this._buildSearchUrl(category, city, keywords, page);
-      this.log(`Seite ${page}/${maxPages}: ${url}`);
+      this.log(`Suchergebnis Seite ${page}/${maxPages}: ${url}`);
 
-      let html;
-      try {
-        const res = await this.get(url);
-        html = res.data;
-      } catch (err) {
-        this.warn(`Seite ${page} nicht ladbar: ${err.message}`);
-        break;
-      }
+      const html = await this._fetchHtml(url);
+      if (!html) { this.warn('Seite nicht ladbar'); break; }
 
-      // ── __NEXT_DATA__ JSON parsen ─────────────────────────────────
-      const nextData = this._parseNextData(html);
-      let pageAds = [];
+      const ads = this._extractAds(html);
+      if (ads.length === 0) { this.log('Keine weiteren Anzeigen.'); break; }
+      this.log(`${ads.length} Anzeigen, ${new Set(ads.map(a => a.seller?.id)).size} Händler`);
 
-      if (nextData) {
-        pageAds = this._extractAdsFromJson(nextData);
-        this.log(`JSON: ${pageAds.length} Anzeigen gefunden`);
-      }
-
-      // ── HTML-Fallback ─────────────────────────────────────────────
-      if (pageAds.length === 0) {
-        const $ = cheerio.load(html);
-        pageAds = this._extractAdsFromHtml($, category);
-        this.log(`HTML-Fallback: ${pageAds.length} Anzeigen`);
-      }
-
-      if (pageAds.length === 0) {
-        this.log('Keine weiteren Anzeigen – Abbruch.');
-        break;
-      }
-
-      // ── Nach Seller gruppieren ────────────────────────────────────
-      for (const ad of pageAds) {
-        const sid = ad.sellerId || ad.sellerUrl || ad.listingUrl || `anon_${Math.random()}`;
+      for (const ad of ads) {
+        const sid = String(ad.seller?.id || '');
+        if (!sid) continue;
         if (!sellerMap.has(sid)) {
-          sellerMap.set(sid, { ...ad, listingCount: 0 });
+          sellerMap.set(sid, { rawSeller: ad.seller, ads: [] });
         }
-        const entry = sellerMap.get(sid);
-        entry.listingCount++;
-        // Neueste Aktivität behalten
-        if (ad.lastActivity && (!entry.lastActivity || ad.lastActivity > entry.lastActivity)) {
-          entry.lastActivity = ad.lastActivity;
-        }
-        // Höheren adCount bevorzugen
-        if (ad.sellerAdCount > (entry.sellerAdCount || 0)) entry.sellerAdCount = ad.sellerAdCount;
+        sellerMap.get(sid).ads.push(ad);
       }
     }
 
-    this.log(`Einzigartige Händler: ${sellerMap.size}`);
+    this.log(`Einzigartige Händler: ${sellerMap.size} → lade Profile...`);
 
-    // ── Ein Lead pro Händler bauen ────────────────────────────────────
+    // Schritt 2: Für jeden Händler das vollständige Profil laden
     const leads = [];
-    for (const [, hint] of sellerMap) {
-      leads.push(this._buildLead(hint));
+    let count = 0;
+    for (const [sellerId, { rawSeller, ads }] of sellerMap) {
+      if (count >= this.maxSellers) {
+        this.log(`Max. ${this.maxSellers} Profil-Besuche erreicht – Abbruch`);
+        break;
+      }
+      count++;
+
+      try {
+        const lead = await this._buildProfileLead(sellerId, rawSeller, ads);
+        if (lead) leads.push(lead);
+      } catch (err) {
+        this.warn(`Händler ${sellerId}: ${err.message}`);
+        // Fallback: Lead aus Suchergebnis-Daten bauen
+        const fallback = this._buildFallbackLead(sellerId, rawSeller, ads);
+        if (fallback) leads.push(fallback);
+      }
     }
+
     return leads;
   }
 
-  // scrapeProfile wird nicht mehr für Batch-Läufe benötigt,
-  // bleibt für manuelle Einzelabfragen erhalten
-  async scrapeProfile(profileUrl, hint = {}) {
-    return this._buildLead({ ...hint, profileUrl });
-  }
+  // ── Profil-Seite laden und Lead bauen ────────────────────────────
 
-  // ── JSON-Extraktion ───────────────────────────────────────────────
+  async _buildProfileLead(sellerId, rawSeller, searchAds) {
+    const profileUrl = `${this.baseUrl}/fr/vendeur/${sellerId}`;
+    const html       = await this._fetchHtml(profileUrl);
 
-  _extractAdsFromJson(data) {
-    const ads = [];
-    try {
-      // Mögliche Pfade in Avito Next.js JSON
-      const pageProps = data?.props?.pageProps || data?.pageProps || data || {};
-
-      const rawAds =
-        pageProps.ads ||
-        pageProps.data?.ads ||
-        pageProps.listings ||
-        pageProps.data?.listings ||
-        pageProps.searchResults?.ads ||
-        this._deepFindArray(data, ['ads', 'listings', 'items', 'annonces']) ||
-        [];
-
-      for (const ad of rawAds) {
-        const seller   = ad.store  || ad.seller || ad.user || {};
-        const location = ad.location || {};
-
-        const sellerName = seller.name || seller.storeName || seller.username || ad.userName || '';
-        const sellerId   = String(seller.id || seller.storeId || seller.userId || ad.userId || '');
-        const sellerUrl  = seller.url || seller.profileUrl || '';
-        const listingUrl = ad.url || ad.listingUrl || (ad.id ? `/fr/annonce/${ad.id}` : '');
-
-        const publishedRaw = ad.publishedAt || ad.createdAt || ad.date || ad.publishedAgo || '';
-        const lastActivity = publishedRaw
-          ? (/^\d{4}/.test(publishedRaw)
-              ? new Date(publishedRaw).toISOString()
-              : this._parseRelDate(publishedRaw))
-          : new Date().toISOString(); // Fallback: heute
-
-        ads.push({
-          sellerId,
-          sellerUrl:    sellerUrl   ? this._abs(sellerUrl)   : '',
-          profileUrl:   sellerUrl   ? this._abs(sellerUrl)   : this._abs(listingUrl),
-          listingUrl:   this._abs(listingUrl),
-          sellerName,
-          sellerAdCount: seller.adCount || seller.nbAds || 0,
-          hasAvatar:    !!(seller.avatar || seller.photo),
-          isPro:        !!(seller.isPro || seller.isStore || seller.isProfessional),
-          hasDescription: !!(seller.description && seller.description.length > 5),
-          sellerDescription: seller.description || '',
-          phone:        seller.phone || ad.phone || '',
-          city:         (typeof location === 'string' ? location : location.city || location.name || ''),
-          memberSince:  seller.memberSince || seller.createdAt || '',
-          lastActivity,
-          price:        ad.price || 0,
-          category:     ad.category?.label || ad.categoryLabel || '',
-          // Social-Links aus dem Seller-Objekt
-          instagram:    seller.instagram || '',
-          facebook:     seller.facebook  || '',
-          website:      seller.website   || seller.externalUrl || '',
-        });
-      }
-    } catch (e) {
-      this.warn(`JSON-Parse-Fehler: ${e.message}`);
-    }
-    return ads;
-  }
-
-  _extractAdsFromHtml($, category) {
-    const ads = [];
-    const seen = new Set();
-
-    // Anzeigen-Karten
-    const cards = $('article, li[data-id], [class*="listing-item"], [class*="ListingItem"]');
-    cards.each((_, el) => {
-      const card = $(el);
-
-      // Anzeigen-Link
-      const link = card.find('a[href*="/fr/annonce/"], a[href*="/ar/annonce/"]').first();
-      const href = link.attr('href') || '';
-      if (!href || seen.has(href)) return;
-      seen.add(href);
-
-      // Verkäufer-Info
-      const sellerLink = card.find('a[href*="/fr/vendeur/"], a[href*="/ar/vendeur/"], a[href*="/fr/boutique/"]').first();
-      const sellerUrl  = sellerLink.attr('href') || '';
-      const sellerName = sellerLink.text().trim() || card.find('[class*="seller"], [class*="Seller"]').first().text().trim();
-
-      // Datum
-      const dateText = card.find('time, [class*="date"], [class*="Date"]').first().text().trim();
-
-      ads.push({
-        sellerId:    sellerUrl || href,
-        profileUrl:  sellerUrl ? this._abs(sellerUrl) : this._abs(href),
-        listingUrl:  this._abs(href),
-        sellerName,
-        city:        card.find('[class*="location"], [class*="city"]').first().text().trim().split(',')[0],
-        lastActivity: this._parseRelDate(dateText) || new Date().toISOString(),
-        price:       this._parseNum(card.find('[class*="price"], [class*="Price"]').first().text()),
-        category,
-        sellerAdCount: 0,
-        hasAvatar:   false,
-        isPro:       card.find('[class*="pro"], [class*="Pro"]').length > 0,
-      });
-    });
-    return ads;
-  }
-
-  // ── Lead-Builder ──────────────────────────────────────────────────
-
-  _buildLead(hint) {
     const lead = new Lead();
     lead.source     = 'avito';
-    lead.id         = `avito_${hint.sellerId || Math.random().toString(36).slice(2, 10)}`;
-    lead.profileUrl = hint.profileUrl || hint.listingUrl || '';
+    lead.id         = `avito_${sellerId}`;
+    lead.profileUrl = profileUrl;
     lead.scrapedAt  = new Date().toISOString();
+    lead.country    = 'MA';
 
-    lead.businessName   = hint.sellerName || '';
-    lead.city           = hint.city        || '';
-    lead.memberSince    = hint.memberSince  || '';
-    lead.phone          = hint.phone        || '';
-    lead.hasProfilePic  = !!hint.hasAvatar;
-    lead.hasLogo        = lead.hasProfilePic;
-    lead.hasDescription = !!hint.hasDescription;
-    lead.description    = hint.sellerDescription || '';
+    // ── Grunddaten aus Suchergebnis (bereits bekannt) ──────────────
+    this._applySellerData(lead, rawSeller, searchAds);
 
-    // productCount: gesehene Anzeigen ODER bekannter adCount
-    const seenListings = hint.listingCount || 1;
-    lead.productCount   = Math.max(seenListings, hint.sellerAdCount || 0);
+    if (!html) return lead; // Profil nicht ladbar → Fallback reicht
+
+    // ── Profil-JSON ────────────────────────────────────────────────
+    const profileAds = this._extractAds(html);
+    if (profileAds.length > 0) {
+      // Seller-Daten aus Profil-Ads überschreiben (mehr Details möglich)
+      this._applySellerData(lead, profileAds[0].seller || rawSeller, profileAds);
+    }
+
+    // Gesamte Produktanzahl = Anzahl Anzeigen auf der Profilseite
+    // (Avito zeigt auf Profilseite alle aktuellen Anzeigen, paginiert)
+    lead.productCount   = Math.max(lead.productCount, profileAds.length);
     lead.activeListings = lead.productCount;
 
-    // Letzte Aktivität = Datum der neuesten Anzeige im Suchergebnis
-    lead.lastActivity   = hint.lastActivity || new Date().toISOString();
-
-    lead.sellerType  = hint.isPro ? 'pro' : 'individual';
-    lead.avgPrice    = hint.price || 0;
-    lead.categories  = hint.category ? [hint.category] : [];
-    lead.country     = 'MA';
-
-    // Website / Social
-    if (hint.website) this._detectSocial(lead, hint.website);
-    if (hint.instagram) { lead.hasInstagram = true; lead.instagramHandle = hint.instagram; }
-    if (hint.facebook)  { lead.hasFacebook  = true; lead.facebookUrl    = hint.facebook;  }
-
-    lead.hasOwnWebsite  = !!hint.website && !['instagram.com','facebook.com','wa.me'].some(d => (hint.website||'').includes(d));
-    lead.hasBrandedName = this._isBrandedName(lead.businessName);
+    // ── HTML-Extraktion für Felder die nicht im JSON sind ──────────
+    const $ = cheerio.load(html);
+    this._enrichFromProfileHtml(lead, $);
 
     return lead;
   }
 
-  // ── URL-Builder ────────────────────────────────────────────────────
+  _buildFallbackLead(sellerId, rawSeller, searchAds) {
+    const lead = new Lead();
+    lead.source     = 'avito';
+    lead.id         = `avito_${sellerId}`;
+    lead.profileUrl = `${this.baseUrl}/fr/vendeur/${sellerId}`;
+    lead.scrapedAt  = new Date().toISOString();
+    lead.country    = 'MA';
+    this._applySellerData(lead, rawSeller, searchAds);
+    return lead;
+  }
+
+  // ── Seller-Daten aus JSON-Feldern korrekt extrahieren ────────────
+
+  _applySellerData(lead, seller, ads) {
+    if (!seller) return;
+
+    // Name
+    if (!lead.businessName && seller.name) lead.businessName = seller.name;
+
+    // Telefon: seller.phone ist { number: "...", verified: bool }
+    if (!lead.phone) {
+      const p = seller.phone;
+      if (typeof p === 'string')           lead.phone = p;
+      else if (p && typeof p === 'object') lead.phone = p.number || p.value || '';
+    }
+
+    // Profilbild
+    if (!lead.hasProfilePic && (seller.img || seller.avatar || seller.photo)) {
+      lead.hasProfilePic = true;
+      lead.hasLogo       = true;
+    }
+
+    // Händlertyp
+    const type = (seller.type || '').toUpperCase();
+    if (type === 'STORE' || type === 'SHOP' || type === 'PRO') {
+      lead.sellerType = 'business';
+    } else if (type === 'PROFESSIONAL') {
+      lead.sellerType = 'pro';
+    } else {
+      lead.sellerType = lead.sellerType || 'individual';
+    }
+
+    // Aus den Anzeigen: Stadt, Kategorie, Datum, Preis
+    if (ads && ads.length > 0) {
+      // productCount = Anzeigen dieses Händlers die wir gesehen haben
+      lead.productCount   = Math.max(lead.productCount, ads.length);
+      lead.activeListings = lead.productCount;
+
+      // Neueste Anzeige = letzte Aktivität
+      const firstAd = ads[0];
+
+      // Stadt: ad.location ist ein String z.B. "Fès, Hay Saada"
+      if (!lead.city && firstAd.location) {
+        const parts = String(firstAd.location).split(',');
+        lead.city   = parts[0].trim();
+        if (parts[1]) lead.region = parts[1].trim();
+      }
+
+      // Datum der Anzeige (relativ)
+      if (!lead.lastActivity && firstAd.date) {
+        lead.lastActivity = this._parseRelDate(String(firstAd.date));
+      }
+      if (!lead.lastActivity) lead.lastActivity = new Date().toISOString();
+
+      // Preis: ad.price ist { value: 1900, currency: "DH" }
+      if (!lead.avgPrice && firstAd.price) {
+        const pr = firstAd.price;
+        lead.avgPrice = typeof pr === 'number' ? pr
+          : (pr && typeof pr === 'object') ? (pr.value || pr.amount || 0)
+          : 0;
+        lead.currency = (pr && pr.currency) ? pr.currency : 'MAD';
+      }
+
+      // Kategorien aus Anzeigen
+      const cats = new Set();
+      for (const ad of ads.slice(0, 5)) {
+        const cat = ad.category?.name || ad.category?.formatted || '';
+        if (cat) cats.add(cat.split('-').pop().trim());
+      }
+      if (cats.size > 0) lead.categories = [...cats];
+    }
+
+    lead.hasBrandedName = this._isBrandedName(lead.businessName);
+    lead.hasOwnWebsite  = false; // Avito-Händler haben standardmäßig keinen eigenen Shop
+  }
+
+  // ── HTML-Felder die nicht im JSON verfügbar sind ──────────────────
+
+  _enrichFromProfileHtml(lead, $) {
+    // Mitglied seit (typischerweise im HTML sichtbar)
+    if (!lead.memberSince) {
+      const memberSinceText = [
+        '[class*="member"] [class*="since"]',
+        '[class*="memberSince"]',
+        '[class*="joinDate"]',
+        '[class*="inscription"]',
+        '[class*="Inscription"]',
+      ].reduce((acc, sel) => acc || $(sel).first().text().trim(), '');
+      if (memberSinceText) {
+        lead.memberSince = memberSinceText
+          .replace(/Membre depuis|منذ|Member since|Inscrit le|Inscrit depuis/gi, '')
+          .trim();
+      }
+    }
+
+    // Beschreibung / Shop-Bio
+    if (!lead.hasDescription) {
+      const desc = [
+        '[class*="description"]',
+        '[class*="about"]',
+        '[class*="bio"]',
+        '[class*="shopDescription"]',
+      ].reduce((acc, sel) => acc || $(sel).first().text().trim(), '');
+      if (desc && desc.length > 10) {
+        lead.hasDescription = true;
+        lead.description    = desc.slice(0, 300);
+      }
+    }
+
+    // Social-Media-Links & Website
+    $('a[href]').each((_, el) => {
+      this._detectSocial(lead, $(el).attr('href'));
+    });
+
+    // Gesamte Anzeigenanzahl (falls als Text sichtbar)
+    const totalAdsText = [
+      '[class*="adCount"]',
+      '[class*="nbAds"]',
+      '[class*="listings-count"]',
+      '[class*="total"]',
+    ].reduce((acc, sel) => acc || $(sel).first().text().trim(), '');
+    if (totalAdsText) {
+      const n = parseInt(totalAdsText.replace(/\D/g, ''), 10);
+      if (n > lead.productCount) {
+        lead.productCount   = n;
+        lead.activeListings = n;
+      }
+    }
+  }
+
+  // ── JSON extrahieren ──────────────────────────────────────────────
+
+  _extractAds(html) {
+    try {
+      const m = html.match(/<script[^>]+id="__NEXT_DATA__"[^>]*>([\s\S]+?)<\/script>/i);
+      if (!m) return this._extractAdsFromHtml(html);
+      const data = JSON.parse(m[1]);
+      // Korrekter Pfad: componentProps.ads.ads
+      const ads =
+        data?.props?.pageProps?.componentProps?.ads?.ads ||
+        data?.pageProps?.componentProps?.ads?.ads ||
+        [];
+      return Array.isArray(ads) ? ads : [];
+    } catch {
+      return [];
+    }
+  }
+
+  _extractAdsFromHtml(html) {
+    // Fallback: Links aus HTML
+    const $ = cheerio.load(html);
+    const results = [];
+    $('a[href*="/fr/annonce/"], a[href*="/fr/vendeur/"]').each((_, el) => {
+      const href = $(el).attr('href') || '';
+      if (href.includes('/vendeur/')) {
+        const m = href.match(/\/vendeur\/(\d+)/);
+        if (m) results.push({ seller: { id: m[1], name: $(el).text().trim() } });
+      }
+    });
+    return results;
+  }
+
+  // ── Helpers ────────────────────────────────────────────────────────
+
+  async _fetchHtml(url) {
+    try {
+      const res = await this.get(url);
+      return res.data;
+    } catch (err) {
+      this.warn(`Fetch fehlgeschlagen: ${url} – ${err.message}`);
+      return null;
+    }
+  }
 
   _buildSearchUrl(category, city, keywords, page) {
     const slug = CATEGORY_MAP[category] || category.toLowerCase().replace(/\s+/g, '_') || '';
@@ -255,66 +325,45 @@ class AvitoScraper extends BaseScraper {
     return `${this.baseUrl}${path}${qs ? '?' + qs : ''}`;
   }
 
-  // ── Helpers ────────────────────────────────────────────────────────
-
-  _parseNextData(html) {
-    try {
-      const m = html.match(/<script[^>]+id=["']__NEXT_DATA__["'][^>]*>([\s\S]+?)<\/script>/i);
-      if (m) return JSON.parse(m[1]);
-    } catch { /* ignorieren */ }
-    return null;
-  }
-
-  _deepFindArray(obj, keys, depth = 0) {
-    if (!obj || typeof obj !== 'object' || depth > 8) return null;
-    for (const key of keys) {
-      if (Array.isArray(obj[key]) && obj[key].length > 0) return obj[key];
-    }
-    for (const val of Object.values(obj)) {
-      const found = this._deepFindArray(val, keys, depth + 1);
-      if (found) return found;
-    }
-    return null;
-  }
-
   _parseRelDate(text) {
-    if (!text) return null;
+    if (!text) return new Date().toISOString();
     const t = text.toLowerCase();
     const now = Date.now();
     if (t.includes("aujourd'hui") || t.includes('today')     || t.includes('اليوم')) return new Date(now).toISOString();
     if (t.includes('hier')        || t.includes('yesterday') || t.includes('أمس'))   return new Date(now - 86400000).toISOString();
-    const d = t.match(/(\d+)\s*(jour|day|يوم)/);
-    if (d) return new Date(now - parseInt(d[1]) * 86400000).toISOString();
-    const w = t.match(/(\d+)\s*(semaine|week|أسبوع)/);
-    if (w) return new Date(now - parseInt(w[1]) * 7 * 86400000).toISOString();
+    const h = t.match(/il y a (\d+) heure/); if (h) return new Date(now - parseInt(h[1]) * 3600000).toISOString();
+    const d = t.match(/(\d+)\s*(jour|day|يوم)/);  if (d) return new Date(now - parseInt(d[1]) * 86400000).toISOString();
+    const w = t.match(/(\d+)\s*(semaine|week)/);   if (w) return new Date(now - parseInt(w[1]) * 7 * 86400000).toISOString();
     if (/\d{4}-\d{2}-\d{2}/.test(text)) return new Date(text).toISOString();
-    return null;
-  }
-
-  _parseNum(text) {
-    const m = (text || '').replace(/[\s,.]/g, '').match(/\d+/);
-    return m ? parseInt(m[0], 10) : 0;
+    return new Date().toISOString();
   }
 
   _detectSocial(lead, href) {
-    if (!href) return;
-    if (href.includes('instagram.com')) { lead.hasInstagram = true; const m = href.match(/instagram\.com\/([^/?]+)/); if (m) lead.instagramHandle = m[1]; }
+    if (!href || typeof href !== 'string') return;
+    if (href.includes('instagram.com')) {
+      lead.hasInstagram = true;
+      const m = href.match(/instagram\.com\/([^/?&#]+)/);
+      if (m && !['p', 'reel', 'stories'].includes(m[1])) lead.instagramHandle = m[1];
+    }
     if (href.includes('facebook.com'))  { lead.hasFacebook  = true; lead.facebookUrl = href; }
-    if (href.includes('wa.me') || href.includes('whatsapp')) { lead.hasWhatsAppBusiness = true; const m = href.match(/wa\.me\/(\d+)/); if (m && !lead.whatsapp) lead.whatsapp = `+${m[1]}`; }
+    if (href.includes('wa.me') || href.includes('api.whatsapp')) {
+      lead.hasWhatsAppBusiness = true;
+      const m = href.match(/wa\.me\/(\d+)/);
+      if (m && !lead.whatsapp) lead.whatsapp = `+${m[1]}`;
+    }
     if (href.includes('tiktok.com')) lead.hasTikTok = true;
+    if (href.match(/^https?:\/\//) &&
+        !['avito.ma','instagram.com','facebook.com','wa.me','tiktok.com','whatsapp.com'].some(d => href.includes(d))) {
+      lead.hasOwnWebsite = true;
+      if (!lead.websiteUrl) lead.websiteUrl = href;
+    }
   }
 
   _isBrandedName(name) {
     if (!name || name.length < 3) return false;
-    if (/^(user|seller|vendeur|vendor|membre|عضو)\d*$/i.test(name)) return false;
+    if (/^(user|seller|vendeur|vendor|membre|عضو)\s*\d*$/i.test(name.trim())) return false;
     if (/^\+?\d[\d\s]{8,}$/.test(name)) return false;
     return true;
-  }
-
-  _abs(href) {
-    if (!href || href === '#') return '';
-    if (href.startsWith('http')) return href;
-    return `${this.baseUrl}${href.startsWith('/') ? '' : '/'}${href}`;
   }
 }
 

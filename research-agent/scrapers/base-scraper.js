@@ -5,7 +5,11 @@
  */
 
 const axios   = require('axios');
+const https   = require('https');
 const robotsParser = require('robots-parser');
+
+// SSL-Bypass nur wenn lokal nötig (Windows corporate proxy)
+const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 
 const RATE_LIMITS = {
   avito:    2500,   // ms zwischen Requests
@@ -27,6 +31,7 @@ class BaseScraper {
 
     this.client = axios.create({
       timeout: 20000,
+      httpsAgent,
       headers: {
         'Accept':          'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'fr-FR,fr;q=0.9,ar;q=0.8,en;q=0.7',
