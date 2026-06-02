@@ -8,87 +8,83 @@ export class AuthInterceptor implements HttpInterceptor {
   constructor(private authService: AuthService) {}
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    // Liste der öffentlichen Endpunkte, die KEINEN Token brauchen
+    // Liste der Endpoints, die nie einen Token brauchen (werden ohne Auth gesendet)
     const publicEndpoints = [
-      '/api/auth/',
+      '/api/auth/login',
+      '/api/auth/register',
+      '/api/auth/validate',
+      '/api/auth/forgot-password',
+      '/api/auth/reset-password',
+      '/api/auth/verify',
+      '/api/auth/resend-verification',
       '/api/stores/by-domain/',
       '/api/stores/by-slug/',
       '/api/subscriptions/plans',
-      '/api/me/stores/check-slug/'
+      '/api/me/stores/check-slug/',
+      // Theme-Endpunkte für Storefront (immer öffentlich)
+      '/api/themes/store/',
+      '/api/themes/templates',
     ];
 
-    // FIXED: Öffentliche Endpoints die auch MIT Token funktionieren sollen
+    // Öffentliche Storefront-Endpoints bei GET-Methode (kein Auth nötig)
+    const publicStoreSubRoutes = [
+      '/products',
+      '/categories',
+      '/slider/active',
+      '/public/',
+      '/seo',
+    ];
+
+    // Endpoints mit optionalem Auth (Token senden falls vorhanden, sonst ohne)
     const optionalAuthEndpoints = [
-      '/api/public/simple-cart',
-      '/api/public/stores/',
+      '/api/public/',
       '/api/cart/',
-      '/api/customer/',  // Kunden-Endpoints: Token wenn vorhanden, sonst still ignorieren
+      '/api/customer/',
     ];
 
-    // FIXED: Checkout braucht IMMER einen Token!
+    // Checkout/Bezahlung erfordert IMMER Auth-Token
     const requiresAuthEndpoints = [
       '/api/public/orders/checkout',
       '/api/checkout/',
-      '/api/orders/create'
     ];
 
-    // Prüfe ob es sich um einen öffentlichen Storefront-Request handelt
-    const isPublicStorefrontRequest =
-      req.url.includes('/api/stores/') &&
-      (req.url.includes('/products') || req.url.includes('/public/')) &&
-      req.method === 'GET';
-
-    // FIXED: Checkout braucht immer Token, auch wenn in /api/public/
-    const requiresAuth = requiresAuthEndpoints.some(endpoint => req.url.includes(endpoint));
-
-    // Prüfe ob URL zu öffentlichen Endpunkten gehört (ohne Token)
-    const isPublicEndpoint = publicEndpoints.some(endpoint => req.url.includes(endpoint));
-
-    // Prüfe ob URL zu optionalen Auth-Endpunkten gehört (Token falls vorhanden)
-    const isOptionalAuth = optionalAuthEndpoints.some(endpoint => req.url.includes(endpoint));
-
-    // Hole Token
+    const url = req.url;
+    const method = req.method;
     const token = this.authService.getToken();
 
-    // FIXED: Checkout erfordert IMMER Token
-    if (requiresAuth) {
+    // 1. Checkout: immer mit Token
+    if (requiresAuthEndpoints.some(e => url.includes(e))) {
       if (token) {
-        const clonedReq = req.clone({
-          headers: req.headers.set('Authorization', `Bearer ${token}`)
-        });
-        return next.handle(clonedReq);
-      } else {
-        console.warn('⚠️ Auth required but no token for:', req.url);
-        return next.handle(req);
+        return next.handle(req.clone({ headers: req.headers.set('Authorization', `Bearer ${token}`) }));
       }
-    }
-
-    // Öffentliche Endpoints ohne Token
-    if (isPublicEndpoint || isPublicStorefrontRequest) {
       return next.handle(req);
     }
 
-    // Optionale Auth-Endpoints: Token senden falls vorhanden
-    if (isOptionalAuth) {
-      if (token) {
-        const clonedReq = req.clone({
-          headers: req.headers.set('Authorization', `Bearer ${token}`)
-        });
-        return next.handle(clonedReq);
-      } else {
-        return next.handle(req);
+    // 2. Explizit öffentliche Endpunkte → niemals Token senden
+    if (publicEndpoints.some(e => url.includes(e))) {
+      return next.handle(req);
+    }
+
+    // 3. Öffentliche Store-Unterseiten (GET) → kein Token
+    if (method === 'GET' && url.includes('/api/stores/') &&
+        publicStoreSubRoutes.some(p => url.includes(p))) {
+      return next.handle(req);
+    }
+
+    // 4. Optionale Auth (z.B. Warenkorb, Public-API): Token falls vorhanden
+    if (optionalAuthEndpoints.some(e => url.includes(e))) {
+      if (token && !this.authService.isTokenExpired(token)) {
+        return next.handle(req.clone({ headers: req.headers.set('Authorization', `Bearer ${token}`) }));
       }
+      return next.handle(req);
     }
 
-    // Für alle anderen Requests: Token hinzufügen wenn vorhanden
-    if (token) {
-      const clonedReq = req.clone({
-        headers: req.headers.set('Authorization', `Bearer ${token}`)
-      });
-      return next.handle(clonedReq);
+    // 5. Für alle anderen Requests: Token hinzufügen wenn vorhanden und gültig
+    if (token && !this.authService.isTokenExpired(token)) {
+      return next.handle(req.clone({ headers: req.headers.set('Authorization', `Bearer ${token}`) }));
     }
 
-    console.debug('🔕 No token for request (not logged in):', req.url);
+    console.debug('🔕 No valid token for request:', url);
     return next.handle(req);
   }
 }

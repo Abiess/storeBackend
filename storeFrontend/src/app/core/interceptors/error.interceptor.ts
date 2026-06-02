@@ -32,24 +32,28 @@ export class ErrorInterceptor implements HttpInterceptor {
         // Prüfe ob es sich um einen öffentlichen Storefront-Request handelt
         const isPublicStorefrontRequest = this.isPublicStorefrontEndpoint(req.url);
 
+        // NEU: Prüfe ob wir uns auf einer Store-Subdomain befinden.
+        // Auf Subdomains (andalous.markt.ma) ist die App öffentlich – nie zu Login weiterleiten!
+        const isStorefrontSubdomain = this.isOnStorefrontSubdomain();
+
         // Prüfe ob User eingeloggt ist
         const currentUser = this.authService.getCurrentUser();
         const token = this.authService.getToken();
         console.log('Current User:', currentUser);
         console.log('Token exists:', !!token);
         console.log('Is public storefront request:', isPublicStorefrontRequest);
+        console.log('Is storefront subdomain:', isStorefrontSubdomain);
 
         if (error.status === 401) {
           // Unauthorized - nur umleiten wenn es KEIN öffentlicher Storefront-Request ist
-          if (!isPublicStorefrontRequest && !this.isLoggingOut) {
+          // UND wir uns NICHT auf einer Store-Subdomain befinden
+          if (!isPublicStorefrontRequest && !isStorefrontSubdomain && !this.isLoggingOut) {
             // FIXED: Token client-seitig prüfen bevor wir logout auslösen
-            // Wenn Token noch gültig ist → Backend-Problem, kein client-seitiger Logout nötig
             const tokenExpired = this.authService.isTokenExpired();
             const hadToken = !!token;
 
             if (hadToken && !tokenExpired) {
               // Token ist noch gültig → 401 kommt vom Backend (z.B. Rechte-Problem, nicht Expiry)
-              // Nur warnen, NICHT ausloggen – der Service handled es selbst
               console.warn('⚠️ 401 erhalten, aber Token ist noch gültig – kein automatischer Logout:', req.url);
             } else {
               // Token fehlt oder abgelaufen → echte Session-Expiry → Logout
@@ -59,12 +63,11 @@ export class ErrorInterceptor implements HttpInterceptor {
               this.router.navigate(['/login'], {
                 queryParams: { returnUrl: this.router.url, error: 'session_expired' }
               }).then(() => {
-                // Flag nach Navigation zurücksetzen
                 setTimeout(() => { this.isLoggingOut = false; }, 2000);
               });
             }
-          } else if (isPublicStorefrontRequest) {
-            console.warn('401 auf öffentlichem Endpoint - ignoriere für Storefront:', req.url);
+          } else if (isPublicStorefrontRequest || isStorefrontSubdomain) {
+            console.warn('401 auf öffentlichem/Storefront-Endpoint - ignoriere für Storefront:', req.url);
           }
         } else if (error.status === 403) {
           // Forbidden - Keine Berechtigung
@@ -72,11 +75,9 @@ export class ErrorInterceptor implements HttpInterceptor {
           console.error('User beim 403-Fehler:', currentUser);
           console.error('Token beim 403-Fehler:', token ? 'vorhanden' : 'fehlt');
 
-          // Wenn öffentlicher Storefront-Request: NICHT umleiten!
-          if (isPublicStorefrontRequest) {
-            console.warn('403 auf öffentlichem Storefront-Endpoint - keine Umleitung zum Login');
-            console.warn('Komponente sollte Fallback-Werte verwenden (z.B. count=0, leere Arrays)');
-            // Fehler wird an die Komponente weitergegeben, die ihn graceful handled
+          // Wenn öffentlicher Storefront-Request oder Subdomain: NICHT umleiten!
+          if (isPublicStorefrontRequest || isStorefrontSubdomain) {
+            console.warn('403 auf öffentlichem/Storefront-Endpoint - keine Umleitung zum Login');
             return throwError(() => error);
           }
 
@@ -87,12 +88,7 @@ export class ErrorInterceptor implements HttpInterceptor {
               queryParams: { returnUrl: this.router.url, error: 'auth_required' }
             });
           } else {
-            // Eingeloggt aber keine Berechtigung
             console.error('User authentifiziert aber 403-Fehler erhalten');
-            console.error('Möglicherweise wurde das Backend noch nicht aktualisiert oder Sie müssen sich erneut anmelden');
-
-            // KEIN Alert mehr - Fehler wird in der Komponente behandelt
-            // Versuche User vom Backend neu zu laden (leise im Hintergrund)
             this.authService.reloadCurrentUser().subscribe({
               next: (user) => {
                 if (user) {
@@ -107,10 +103,8 @@ export class ErrorInterceptor implements HttpInterceptor {
             });
           }
         } else if (error.status === 404) {
-          // Not found
           console.error('Ressource nicht gefunden');
         } else if (error.status >= 500) {
-          // Server error
           console.error('Serverfehler:', error.message);
         }
 
@@ -120,11 +114,23 @@ export class ErrorInterceptor implements HttpInterceptor {
   }
 
   /**
+   * Erkennt ob die App auf einer Store-Subdomain läuft (z.B. andalous.markt.ma).
+   * Auf Subdomains ist die gesamte App öffentlich → kein Login-Redirect bei 401/403.
+   */
+  private isOnStorefrontSubdomain(): boolean {
+    const hostname = window.location.hostname;
+    const reservedSubdomains = ['api', 'www', 'grafana', 'admin'];
+    if (!hostname.endsWith('.markt.ma')) return false;
+    const subdomain = hostname.replace('.markt.ma', '');
+    return !reservedSubdomains.includes(subdomain);
+  }
+
+  /**
    * Prüft ob es sich um einen öffentlichen Storefront-Endpoint handelt.
    * Diese Endpoints sollten NICHT zum Login umleiten bei 401/403.
    *
    * WICHTIG: '/api/stores/' darf hier NICHT pauschal stehen –
-   * Store-Admin-Endpoints (/seo, /orders, /settings …) benötigen Auth!
+   * Store-Admin-Endpoints (/orders, /settings …) benötigen Auth!
    */
   private isPublicStorefrontEndpoint(url: string): boolean {
     const publicPatterns = [
@@ -133,7 +139,10 @@ export class ErrorInterceptor implements HttpInterceptor {
       '/api/checkout/',
       '/api/phone-verification/',
       'by-domain',
-      'resolve?host='
+      'resolve?host=',
+      // Theme-Endpunkte sind für die Storefront öffentlich (Subdomain-Besucher ohne Auth)
+      '/api/themes/store/',
+      '/api/themes/templates',
     ];
 
     // Öffentliche Store-Unterseiten (Storefront)
@@ -149,16 +158,15 @@ export class ErrorInterceptor implements HttpInterceptor {
       '/categories',
       '/slider/active',
       '/public/',
+      // SEO-Einstellungen werden auf der Storefront für Meta-Tags benötigt (kein Auth nötig)
+      '/seo',
     ];
 
     if (publicPatterns.some(p => url.includes(p))) return true;
     if (publicStorePatterns.some(p => url.includes(p))) return true;
 
-    // /api/stores/{id}/products, /api/stores/{id}/categories, etc. sind öffentlich
-    if (url.includes('/api/stores/') && publicStoreSubRoutes.some(p => url.includes(p))) {
-      return true;
-    }
-
-    return false;
+    // /api/stores/{id}/products, /api/stores/{id}/categories,
+    // /api/stores/{id}/seo etc. sind für die Storefront öffentlich
+    return url.includes('/api/stores/') && publicStoreSubRoutes.some(p => url.includes(p));
   }
 }
