@@ -173,17 +173,28 @@ jobs:
               echo "⚠️  Keine CSV gefunden – leere Datei erstellt"
             fi
 
-      # Feste Datei /tmp/latest-leads.csv herunterladen (kein Wildcard)
+      # SSH-Key vorbereiten und CSV direkt per scp herunterladen (VPS → Runner)
       - name: Download latest CSV from VPS
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          source: "/tmp/latest-leads.csv"
-          target: "./leads-output/"
-          strip_components: 1
+        run: |
+          mkdir -p ~/.ssh leads-output
+
+          # SSH-Key schreiben
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/vps_dl_key
+          chmod 600 ~/.ssh/vps_dl_key
+
+          # Datei direkt vom VPS auf den Runner ziehen
+          scp -i ~/.ssh/vps_dl_key \
+              -P "${{ secrets.VPS_PORT }}" \
+              -o StrictHostKeyChecking=no \
+              -o ConnectTimeout=30 \
+              "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/tmp/latest-leads.csv" \
+              "./leads-output/latest-leads.csv"
+
+          # Key wieder löschen
+          rm ~/.ssh/vps_dl_key
+
+          echo "✅ CSV erfolgreich heruntergeladen:"
+          ls -lh leads-output/latest-leads.csv
 
       # Als GitHub Actions Artifact speichern (30 Tage abrufbar)
       - name: Upload CSV als GitHub Artifact
