@@ -153,7 +153,27 @@ jobs:
             echo "📂 Letzte Output-Dateien:"
             ls -lht "$AGENT_DIR/output/" | head -5
 
-      # Neueste CSV zurück in GitHub Actions herunterladen (als Artifact)
+      # Neueste CSV in bekannte Datei kopieren (Wildcard-Problem bei SCP vermeiden)
+      - name: Prepare CSV for download
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            LATEST=$(ls -t /opt/research-agent/output/*.csv 2>/dev/null | head -1)
+            if [ -n "$LATEST" ]; then
+              cp "$LATEST" /tmp/latest-leads.csv
+              echo "✅ Bereit zum Download: $LATEST"
+            else
+              # Fallback: leere CSV erstellen damit SCP nicht fehlschlägt
+              echo "Status;Nachricht" > /tmp/latest-leads.csv
+              echo "WARN;Keine Leads gefunden" >> /tmp/latest-leads.csv
+              echo "⚠️  Keine CSV gefunden – leere Datei erstellt"
+            fi
+
+      # Feste Datei /tmp/latest-leads.csv herunterladen (kein Wildcard)
       - name: Download latest CSV from VPS
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -161,17 +181,16 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          # Neueste CSV-Datei holen
-          source: "/opt/research-agent/output/*.csv"
+          source: "/tmp/latest-leads.csv"
           target: "./leads-output/"
-          strip_components: 3
+          strip_components: 2
 
       # Als GitHub Actions Artifact speichern (30 Tage abrufbar)
       - name: Upload CSV als GitHub Artifact
         uses: actions/upload-artifact@v4
         with:
           name: markt-ma-leads-${{ github.run_number }}-${{ github.run_attempt }}
-          path: ./leads-output/*.csv
+          path: ./leads-output/latest-leads.csv
           retention-days: 30
           if-no-files-found: warn
 
