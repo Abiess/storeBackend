@@ -266,7 +266,7 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
               </div>
             </section>
 
-            <section class="form-section">
+           <!-- <section class="form-section">
               <h2>💳 {{ 'checkout.paymentMethod' | translate }} {{ 'checkout.required' | translate }}</h2>
 
               <div class="payment-methods">
@@ -357,7 +357,7 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
                       disabled
                     />
 
-                    <!-- DEAKTIVIERT: Telefonverifizierung noch nicht aktiv -->
+                     DEAKTIVIERT: Telefonverifizierung noch nicht aktiv 
                     <button
                       type="button"
                       class="btn-send-code"
@@ -377,7 +377,7 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
               <div *ngIf="!selectedPaymentMethod" class="error">
                 {{ 'checkout.paymentMethod' | translate }}
               </div>
-            </section>
+            </section> -->
 
             <section class="form-section" *ngIf="isUserLoggedIn()">
               <div class="checkbox-wrapper">

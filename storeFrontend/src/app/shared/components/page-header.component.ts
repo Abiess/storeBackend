@@ -32,7 +32,7 @@ import { BreadcrumbComponent, BreadcrumbItem } from './breadcrumb.component';
           class="btn btn-back" 
           (click)="handleBack()"
           [attr.aria-label]="'common.back' | translate">
-          <span class="back-text">{{ backButtonText || ('common.back' | translate) }}</span>
+          <span class="back-text">{{ (backButtonText ? (backButtonText | translate) : ('common.back' | translate)) }}</span>
         </button>
         <h1 class="page-title">{{ title | translate }}</h1>
         <span *ngIf="subtitle" class="page-subtitle">{{ subtitle | translate }}</span>
