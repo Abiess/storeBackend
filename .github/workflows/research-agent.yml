@@ -47,14 +47,15 @@ jobs:
           target: "/opt/"
           strip_components: 0
 
-      # npm install + Verzeichnisse anlegen + Cron einrichten
-      - name: Setup on VPS (npm install + Cron)
+      # Node.js installieren + npm install + Verzeichnisse + Cron
+      - name: Setup on VPS (Node.js + npm install + Cron)
         uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
+          command_timeout: 10m
           script: |
             set -e
             echo "════════════════════════════════════════"
@@ -63,11 +64,28 @@ jobs:
 
             AGENT_DIR="/opt/research-agent"
 
+            # ── Node.js installieren falls nicht vorhanden ──────────────
+            if ! command -v node &>/dev/null; then
+              echo "📦 Node.js nicht gefunden – installiere v20 LTS..."
+              curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - 2>/dev/null
+              sudo apt-get install -y nodejs 2>/dev/null
+              echo "✅ Node.js $(node --version) installiert"
+            else
+              echo "✅ Node.js $(node --version) bereits vorhanden"
+            fi
+
+            # npm ggf. separat aktualisieren
+            if ! command -v npm &>/dev/null; then
+              sudo apt-get install -y npm 2>/dev/null || \
+              sudo ln -sf "$(which node)" /usr/local/bin/node || true
+            fi
+            echo "✅ npm $(npm --version)"
+
             # Ausgabe-Verzeichnis anlegen
             mkdir -p "$AGENT_DIR/output"
             mkdir -p "$AGENT_DIR/logs"
 
-            # npm install (nur wenn package.json sich geändert hat)
+            # npm install
             echo "📦 npm install..."
             cd "$AGENT_DIR"
             npm install --production --silent
