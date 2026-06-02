@@ -156,7 +156,10 @@
                    "faq":  "الأسئلة الشائعة",
                    "support":  "الدعم",
                    "copyright":  "© {{year}} جميع الحقوق محفوظة",
-                   "info":  "معلومات"
+                   "info":  "معلومات",
+                   "followUs":  "تابعنا",
+                   "poweredBy":  "مشغّل بواسطة markt.ma",
+                   "contactUs":  "تواصل معنا"
                },
     "auth":  {
                  "loginTitle":  "تسجيل الدخول إلى markt.ma",
@@ -413,6 +416,24 @@
                                     "saveSuccess":  "تم حفظ إعدادات النطاق بنجاح!",
                                     "saveError":  "خطأ أثناء حفظ إعدادات النطاق",
                                     "changeWarning":  "تحذير: تغيير النطاق الفرعي يؤثر على جميع الروابط الموجودة لمتجرك"
+                                },
+                     "social":  {
+                                    "title":  "التواصل الاجتماعي والتواصل",
+                                    "contactEmail":  "البريد الإلكتروني",
+                                    "contactEmailPlaceholder":  "info@متجرك.com",
+                                    "contactEmailHint":  "بريد إلكتروني للتواصل العام يُعرض في التذييل",
+                                    "contactPhone":  "الهاتف / واتساب",
+                                    "contactPhonePlaceholder":  "+212 6XX XXX XXX",
+                                    "contactPhoneHint":  "يُعرض كرابط هاتف قابل للنقر",
+                                    "socialMedia":  "روابط التواصل الاجتماعي",
+                                    "socialMediaHint":  "أضف ملفاتك الشخصية على وسائل التواصل الاجتماعي – ستظهر كأيقونات في التذييل.",
+                                    "telegramUrl":  "تيليغرام",
+                                    "facebookUrl":  "فيسبوك",
+                                    "instagramUrl":  "إنستغرام",
+                                    "tiktokUrl":  "تيك توك",
+                                    "footerTextTitle":  "نص التذييل",
+                                    "footerTextHint":  "شعار قصير أسفل الشعار في التذييل (بحد أقصى 200 حرف).",
+                                    "footerTextPlaceholder":  "متجرك للجميع – سريع، ميسور، موثوق."
                                 }
                  },
     "loading":  {
@@ -648,7 +669,18 @@
                    "telegramFeaturePoint1":  "الاستيراد من القنوات العامة والخاصة",
                    "telegramFeaturePoint2":  "يتم جلب الصور والأوصاف تلقائياً",
                    "telegramFeaturePoint3":  "تظهر المنتجات كمسودات للمراجعة",
-                   "telegramFeatureBadge":  "جديد"
+                   "telegramFeatureBadge":  "جديد",
+                   "socialSectionTitle":  "وسائل التواصل الاجتماعي",
+                   "socialSectionHint":  "ستظهر كأيقونات في تذييل متجرك.",
+                   "socialOptional":  "اختياري",
+                   "socialTelegram":  "تيليغرام",
+                   "socialFacebook":  "فيسبوك",
+                   "socialInstagram":  "إنستغرام",
+                   "socialTiktok":  "تيك توك",
+                   "socialTelegramPlaceholder":  "https://t.me/قناتك",
+                   "socialFacebookPlaceholder":  "https://facebook.com/متجرك",
+                   "socialInstagramPlaceholder":  "https://instagram.com/متجرك",
+                   "socialTiktokPlaceholder":  "https://tiktok.com/@متجرك"
                },
     "aiGenerator":  {
                         "intro":  "تحليل صور المنتجات بالذكاء الاصطناعي: ارفع صور المنتجات وسيقوم الذكاء الاصطناعي تلقائياً بإنشاء بيانات المنتج.",
@@ -1141,20 +1173,32 @@
     "filter":  {
                    "priceRange":  "???? ?????"
                },
-    "onboarding": {
-        "title":       "🚀 قم بإعداد متجرك",
-        "titleDone":   "🎉 تم إعداد المتجر بالكامل!",
-        "subtitle":    "{{completed}} من {{total}} خطوات مكتملة",
-        "subtitleDone":"أنت جاهز للبدء – افتح متجرك!",
-        "cta":         "إعداد →",
-        "doneBadge":   "تم ✓",
-        "openPreview": "🌐 فتح المتجر في تبويب جديد",
-        "dismiss":     "إخفاء",
-        "steps": {
-            "product":  { "title": "إضافة أول منتج",             "desc": "ابدأ البيع بإضافة منتجاتك الأولى" },
-            "theme":    { "title": "اختيار التصميم والقالب",      "desc": "اختر تخطيطاً احترافياً لمتجرك" },
-            "branding": { "title": "إعداد الشعار والهوية",        "desc": "ارفع شعارك وخصّص الألوان والخطوط" },
-            "telegram": { "title": "إعداد استيراد تيليغرام",      "desc": "استورد المنتجات مباشرة من قناتك على تيليغرام" }
-        }
-    }
+    "onboarding":  {
+                       "title":  "🚀 قم بإعداد متجرك",
+                       "titleDone":  "🎉 تم إعداد المتجر بالكامل!",
+                       "subtitle":  "{{completed}} من {{total}} خطوات مكتملة",
+                       "subtitleDone":  "أنت جاهز للبدء – افتح متجرك!",
+                       "cta":  "إعداد →",
+                       "doneBadge":  "تم ✓",
+                       "openPreview":  "🌐 فتح المتجر في تبويب جديد",
+                       "dismiss":  "إخفاء",
+                       "steps":  {
+                                     "product":  {
+                                                     "title":  "إضافة أول منتج",
+                                                     "desc":  "ابدأ البيع بإضافة منتجاتك الأولى"
+                                                 },
+                                     "theme":  {
+                                                   "title":  "اختيار التصميم والقالب",
+                                                   "desc":  "اختر تخطيطاً احترافياً لمتجرك"
+                                               },
+                                     "branding":  {
+                                                      "title":  "إعداد الشعار والهوية",
+                                                      "desc":  "ارفع شعارك وخصّص الألوان والخطوط"
+                                                  },
+                                     "telegram":  {
+                                                      "title":  "إعداد استيراد تيليغرام",
+                                                      "desc":  "استورد المنتجات مباشرة من قناتك على تيليغرام"
+                                                  }
+                                 }
+                   }
 }
