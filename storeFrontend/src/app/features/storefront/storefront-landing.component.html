@@ -144,14 +144,16 @@
 <footer class="storefront-footer">
   <div class="footer-container">
     <!-- Brand + Beschreibung -->
-    <div class="footer-brand">
+    <div class="footer-brand"
+         [class.has-links]="storeContactEmail || storeContactPhone || storeTelegramUrl || storeFacebookUrl || storeInstagramUrl || storeTiktokUrl">
       <img *ngIf="storeLogo" [src]="storeLogo" [alt]="storeName || 'Store'" class="footer-logo" />
       <span *ngIf="!storeLogo" class="footer-store-name">{{ storeName }}</span>
       <p *ngIf="storeFooterText" class="footer-tagline">{{ storeFooterText }}</p>
       <p *ngIf="!storeFooterText && storeDescription" class="footer-tagline">{{ storeDescription }}</p>
     </div>
-    <!-- Kontakt + Social -->
-    <div class="footer-links-row">
+    <!-- Kontakt + Social – nur wenn mindestens ein Wert vorhanden -->
+    <div class="footer-links-row"
+         *ngIf="storeContactEmail || storeContactPhone || storeTelegramUrl || storeFacebookUrl || storeInstagramUrl || storeTiktokUrl">
       <!-- Kontakt-Spalte -->
       <div class="footer-col" *ngIf="storeContactEmail || storeContactPhone">
         <h4 class="footer-col-title">{{ 'footer.contactUs' | translate }}</h4>

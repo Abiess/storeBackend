@@ -479,15 +479,20 @@
 .footer-brand {
   text-align: center;
   margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
 .footer-logo {
-  height: 48px;
+  height: 52px;
+  max-width: 200px;
   width: auto;
   object-fit: contain;
-  filter: brightness(0) invert(1);  /* Weiß auf dunklem Hintergrund */
-  opacity: 0.9;
-  margin-bottom: 0.75rem;
+  /* Kein brightness-Filter – Logo wird as-is angezeigt, leichter Schatten für Kontrast */
+  filter: drop-shadow(0 1px 4px rgba(0,0,0,0.4));
+  opacity: 0.92;
+  display: block;
+  margin: 0 auto 0.75rem;
 }
 
 .footer-store-name {
