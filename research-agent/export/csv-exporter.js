@@ -75,7 +75,7 @@ class CsvExporter {
   }
 
   /** Gibt eine Zusammenfassung der Leads auf der Konsole aus */
-  printSummary(leads) {
+  printSummary(leads, topN = 20) {
     const byCategory = { HOT: [], WARM: [], MEDIUM: [], COLD: [] };
     for (const l of leads) {
       (byCategory[l.leadCategory] || []).push(l);
@@ -91,14 +91,13 @@ class CsvExporter {
     console.log(`  ❄️  COLD:  ${byCategory.COLD.length}`);
     console.log('─'.repeat(60));
 
-    // Top 5 Leads
-    const top5 = [...leads].sort((a, b) => b.totalScore - a.totalScore).slice(0, 5);
-    console.log('  🏆  TOP 5 LEADS:');
-    top5.forEach((l, i) => {
-      console.log(`    ${i+1}. ${l.leadEmoji} [${l.totalScore}/100] ${l.businessName} (${l.source}) – ${l.city}`);
-      console.log(`       → ${l.recommendedAction}`);
-      if (l.phone)    console.log(`       📞 ${l.phone}`);
-      if (l.whatsapp) console.log(`       💬 ${l.whatsapp}`);
+    const top = [...leads].sort((a, b) => b.totalScore - a.totalScore).slice(0, topN);
+    console.log(`  🏆  TOP ${topN} LEADS:`);
+    top.forEach((l, i) => {
+      console.log(`    ${String(i+1).padStart(2)}. ${l.leadEmoji} [${String(l.totalScore).padStart(3)}/100] ${(l.businessName||'(kein Name)').slice(0,35).padEnd(35)} ${l.city || ''}`);
+      if (l.phone)    console.log(`        📞 ${l.phone}`);
+      if (l.whatsapp) console.log(`        💬 ${l.whatsapp}`);
+      console.log(`        → ${l.recommendedAction}`);
     });
     console.log('═'.repeat(60) + '\n');
   }

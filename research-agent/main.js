@@ -38,15 +38,17 @@ const generateDemoLeads = require('./models/demo-data');
 
 // ── Konfiguration aus CLI-Args ────────────────────────────────────────────────
 const CONFIG = {
-  source:   (args.source  || 'all').toLowerCase(),
-  city:     args.city     || '',
-  category: args.category || '',
-  maxPages: parseInt(args.pages || args['max-pages'] || '3', 10),
-  handles:  args.handles  ? String(args.handles).split(',').map(h => h.trim()) : [],
-  minScore: parseInt(args['min-score'] || '0', 10),
-  outputDir: args.output  || path.join(__dirname, 'output'),
-  demoMode: !!args.demo,
-  keywords: args.keywords || '',
+  source:      (args.source  || 'all').toLowerCase(),
+  city:        args.city     || '',
+  category:    args.category || '',
+  maxPages:    parseInt(args.pages || args['max-pages'] || '3', 10),
+  handles:     args.handles  ? String(args.handles).split(',').map(h => h.trim()) : [],
+  minScore:    parseInt(args['min-score'] ?? '0', 10),   // Default 0 = alle
+  outputDir:   args.output   || path.join(__dirname, 'output'),
+  demoMode:    !!args.demo,
+  keywords:    args.keywords || '',
+  debugScoring: !!args['debug-scoring'],
+  top:         parseInt(args.top || '20', 10),
 };
 
 // ── Standard-Suchkonfigurationen für Marokko ──────────────────────────────────
@@ -75,6 +77,7 @@ function printBanner() {
   console.log(`  Max Seiten: ${CONFIG.maxPages}`);
   console.log(`  Min. Score: ${CONFIG.minScore}`);
   console.log(`  Demo-Modus: ${CONFIG.demoMode ? 'JA' : 'NEIN'}`);
+  console.log(`  Debug:      ${CONFIG.debugScoring ? 'JA' : 'NEIN'}`);
   console.log('═'.repeat(62) + '\n');
 }
 
@@ -117,6 +120,14 @@ async function run() {
     scorer.score(lead);
   }
 
+  // ── SCORE-VERTEILUNG (immer anzeigen) ────────────────────────────────
+  printScoreDistribution(allLeads);
+
+  // ── DEBUG: erste 3 Leads im Detail ───────────────────────────────────
+  if (CONFIG.debugScoring) {
+    printDebugSample(allLeads);
+  }
+
   // ── FILTERN ──────────────────────────────────────────────────────────
   let filteredLeads = allLeads;
   if (CONFIG.minScore > 0) {
@@ -127,8 +138,8 @@ async function run() {
   // ── SORTIEREN (absteigend nach Score) ────────────────────────────────
   filteredLeads.sort((a, b) => b.totalScore - a.totalScore);
 
-  // ── ZUSAMMENFASSUNG ──────────────────────────────────────────────────
-  exporter.printSummary(filteredLeads);
+  // ── TOP-N ANZEIGEN ────────────────────────────────────────────────────
+  exporter.printSummary(filteredLeads, CONFIG.top);
 
   // ── CSV-EXPORT ────────────────────────────────────────────────────────
   console.log(`💾  Exportiere CSV nach: ${CONFIG.outputDir}`);
@@ -195,6 +206,73 @@ function buildScrapingTasks() {
   }
 
   return tasks;
+}
+
+// ── Score-Verteilung ──────────────────────────────────────────────────────────
+function printScoreDistribution(leads) {
+  if (!leads.length) return;
+  const scores = leads.map(l => l.totalScore).sort((a, b) => a - b);
+  const sum    = scores.reduce((s, v) => s + v, 0);
+  const avg    = (sum / scores.length).toFixed(1);
+  const min    = scores[0];
+  const max    = scores[scores.length - 1];
+  const p50    = scores[Math.floor(scores.length * 0.5)];
+  const p75    = scores[Math.floor(scores.length * 0.75)];
+  const p90    = scores[Math.floor(scores.length * 0.90)];
+
+  // Buckets
+  const buckets = { '0–19': 0, '20–39': 0, '40–59': 0, '60–79': 0, '80–100': 0 };
+  for (const s of scores) {
+    if (s < 20) buckets['0–19']++;
+    else if (s < 40) buckets['20–39']++;
+    else if (s < 60) buckets['40–59']++;
+    else if (s < 80) buckets['60–79']++;
+    else              buckets['80–100']++;
+  }
+
+  console.log('\n' + '─'.repeat(62));
+  console.log('  📈  SCORE-VERTEILUNG');
+  console.log('─'.repeat(62));
+  console.log(`  Leads gesamt: ${leads.length}`);
+  console.log(`  Min:  ${min}  |  Max: ${max}  |  Ø: ${avg}`);
+  console.log(`  P50:  ${p50}  |  P75: ${p75}  |  P90: ${p90}`);
+  console.log('');
+  for (const [range, cnt] of Object.entries(buckets)) {
+    const bar = '█'.repeat(Math.round(cnt / leads.length * 30));
+    console.log(`  ${range.padEnd(7)} │ ${bar.padEnd(30)} ${cnt} Leads`);
+  }
+  console.log('─'.repeat(62));
+
+  // Fehlende Felder analysieren
+  const noName  = leads.filter(l => !l.businessName).length;
+  const noAct   = leads.filter(l => !l.lastActivity).length;
+  const noPic   = leads.filter(l => !l.hasProfilePic).length;
+  const noDesc  = leads.filter(l => !l.hasDescription).length;
+  const noSoc   = leads.filter(l => !l.hasInstagram && !l.hasFacebook).length;
+  console.log('  📋  Feld-Analyse (leere Werte):');
+  console.log(`      businessName leer: ${noName}/${leads.length}`);
+  console.log(`      lastActivity leer: ${noAct}/${leads.length}`);
+  console.log(`      kein Profilbild:   ${noPic}/${leads.length}`);
+  console.log(`      keine Beschreibung:${noDesc}/${leads.length}`);
+  console.log(`      kein Social-Media: ${noSoc}/${leads.length}`);
+  console.log('─'.repeat(62) + '\n');
+}
+
+// ── Debug-Sample ──────────────────────────────────────────────────────────────
+function printDebugSample(leads) {
+  const sample = [...leads].sort((a, b) => b.totalScore - a.totalScore).slice(0, 3);
+  console.log('  🔬  DEBUG – Top 3 Leads im Detail:');
+  for (const l of sample) {
+    console.log(`\n  ┌─ [${l.totalScore}/100] ${l.businessName || '(kein Name)'} (${l.source})`);
+    console.log(`  │  Stadt: ${l.city || '-'} | Typ: ${l.sellerType}`);
+    console.log(`  │  Produkte: ${l.productCount} | Aktiv: ${l.lastActivity || '-'}`);
+    console.log(`  │  Profilbild: ${l.hasProfilePic} | Beschreibung: ${l.hasDescription}`);
+    console.log(`  │  Instagram: ${l.hasInstagram} | Facebook: ${l.hasFacebook} | WhatsApp: ${l.hasWhatsAppBusiness}`);
+    console.log(`  │  Website: ${l.hasOwnWebsite} (${l.websiteUrl || '-'})`);
+    console.log(`  │  Score-Details: ${JSON.stringify(l.scoreBreakdown)}`);
+    console.log(`  └─ URL: ${l.profileUrl}`);
+  }
+  console.log('');
 }
 
 // ── Start ──────────────────────────────────────────────────────────────────────
