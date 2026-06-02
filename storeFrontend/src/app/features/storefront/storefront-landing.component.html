@@ -66,8 +66,9 @@
     <!-- ── HERO / SLIDER – immer sichtbar, unabhängig vom Template ── -->
     <ng-container *ngTemplateOutlet="heroSection"></ng-container>
 
-    <!-- ── PRODUCT GRID + FILTER – Template-Switch ── -->
-    <ng-container [ngSwitch]="activeGridTemplate">
+  <!-- ── PRODUCT GRID + FILTER – Template-Switch ── -->
+  <div id="products">
+  <ng-container [ngSwitch]="activeGridTemplate">
 
       <!-- Template 1: Classic Sidebar Grid (CLASSIC_BOOTSTRAP, RESTAURANT_WARM) -->
       <app-product-grid-classic *ngSwitchCase="'CLASSIC'"
@@ -122,6 +123,7 @@
       </app-product-grid-marketplace>
 
     </ng-container>
+  </div><!-- #products -->
 
   </main>
 

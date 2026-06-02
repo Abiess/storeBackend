@@ -572,14 +572,20 @@ export class ProductGridMarketplaceComponent implements OnChanges {
   ];
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['filteredProducts'] || changes['products']) {
+    // Wenn selectedCategory von außen geändert wird (z.B. Header-Pills) → Suche zurücksetzen
+    if (changes['selectedCategory'] && !changes['selectedCategory'].firstChange) {
+      this.searchQuery = '';
+    }
+    if (changes['filteredProducts'] || changes['products'] || changes['selectedCategory']) {
       this.applyLocalFilters();
     }
   }
 
   /** Lokale Suche on top von dem was die Parent-Komponente filtert */
   private applyLocalFilters(): void {
-    let base = this.filteredProducts.length > 0 ? this.filteredProducts : this.products;
+    // BUG FIX: Wenn eine Kategorie aktiv ist, immer filteredProducts verwenden –
+    // auch wenn sie leer ist (Kategorie hat 0 Produkte → leeres Ergebnis zeigen, nicht alle Produkte)
+    let base = this.selectedCategory !== null ? this.filteredProducts : this.products;
     if (this.searchQuery.trim()) {
       const q = this.searchQuery.trim().toLowerCase();
       base = base.filter(p =>

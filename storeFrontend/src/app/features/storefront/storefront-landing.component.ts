@@ -566,17 +566,16 @@ export class StorefrontLandingComponent implements OnInit {
 
     if (category) {
       console.log('🏷️ Filter nach Kategorie:', category.name, '(ID:', category.id, ')');
-
-      // Filter Produkte nach Kategorie-ID
-      this.filteredProducts = this.products.filter(product => {
-        return product.categoryId === category.id;
-      });
-
+      this.filteredProducts = this.products.filter(product => product.categoryId === category.id);
       console.log(`📊 Gefilterte Produkte: ${this.filteredProducts.length} von ${this.products.length}`);
     } else {
       console.log('🏷️ Filter zurückgesetzt - zeige alle Produkte');
       this.filteredProducts = [...this.products];
     }
+
+    // Mobile UX: Automatisch zum Produktbereich scrollen wenn Kategorie gewählt
+    // Kleine Verzögerung damit Angular das Grid zuerst aktualisiert
+    setTimeout(() => this.scrollToProducts(), 80);
   }
 
   scrollToProducts(): void {

@@ -42,55 +42,64 @@ interface OrderHistoryVM {
     ],
     template: `
     <div class="profile-container">
-      <div class="profile-header">
-        <h1>{{ 'navigation.myAccount' | translate }}</h1>
-        <button class="btn-logout" (click)="logout()">
-          <span class="icon">🚪</span> {{ 'common.logout' | translate }}
+      <!-- Mobile-Header (nur auf kleinen Screens) -->
+      <div class="profile-topbar">
+        <button class="topbar-back" (click)="goToShop()" aria-label="Zurück">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <h1 class="topbar-title">{{ 'navigation.myAccount' | translate }}</h1>
+        <button class="topbar-logout" (click)="logout()" [title]="'common.logout' | translate">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
         </button>
       </div>
 
-      <div class="profile-content">
-        <!-- Navigation Sidebar -->
-        <nav class="profile-nav">
-          <button
-            class="nav-item"
-            [class.active]="activeTab === 'overview'"
-            (click)="activeTab = 'overview'">
-            <span class="icon">📊</span>
-            <span>{{ 'navigation.overview' | translate }}</span>
-          </button>
+      <!-- Tab Bar (Mobile: Icon + kurzer Text, Desktop: versteckt hinter Sidebar) -->
+      <nav class="profile-tabs">
+        <button class="tab-btn" [class.tab-btn--active]="activeTab === 'overview'" (click)="activeTab = 'overview'">
+          <span class="tab-icon">📊</span>
+          <span class="tab-label">{{ 'navigation.overview' | translate }}</span>
+        </button>
+        <button class="tab-btn" [class.tab-btn--active]="activeTab === 'orders'" (click)="activeTab = 'orders'">
+          <span class="tab-icon">📦</span>
+          <span class="tab-label">{{ 'profile.myOrders' | translate }}</span>
+          <span class="tab-badge" *ngIf="orderHistory.length > 0">{{ orderHistory.length }}</span>
+        </button>
+        <button class="tab-btn" [class.tab-btn--active]="activeTab === 'profile'" (click)="activeTab = 'profile'">
+          <span class="tab-icon">👤</span>
+          <span class="tab-label">{{ 'profile.profileData' | translate }}</span>
+        </button>
+        <button class="tab-btn" [class.tab-btn--active]="activeTab === 'addresses'" (click)="activeTab = 'addresses'">
+          <span class="tab-icon">📍</span>
+          <span class="tab-label">{{ 'profile.addresses' | translate }}</span>
+        </button>
+        <button class="tab-btn" [class.tab-btn--active]="activeTab === 'password'" (click)="activeTab = 'password'">
+          <span class="tab-icon">🔒</span>
+          <span class="tab-label">{{ 'profile.changePassword' | translate }}</span>
+        </button>
+      </nav>
 
-          <button
-            class="nav-item"
-            [class.active]="activeTab === 'orders'"
-            (click)="activeTab = 'orders'">
-            <span class="icon">📦</span>
-            <span>{{ 'profile.myOrders' | translate }}</span>
+      <div class="profile-content">
+        <!-- Desktop Sidebar -->
+        <nav class="profile-sidebar">
+          <button class="sidebar-item" [class.active]="activeTab === 'overview'" (click)="activeTab = 'overview'">
+            <span class="icon">📊</span><span>{{ 'navigation.overview' | translate }}</span>
+          </button>
+          <button class="sidebar-item" [class.active]="activeTab === 'orders'" (click)="activeTab = 'orders'">
+            <span class="icon">📦</span><span>{{ 'profile.myOrders' | translate }}</span>
             <span class="badge" *ngIf="orderHistory.length > 0">{{ orderHistory.length }}</span>
           </button>
-
-          <button
-            class="nav-item"
-            [class.active]="activeTab === 'profile'"
-            (click)="activeTab = 'profile'">
-            <span class="icon">👤</span>
-            <span>{{ 'profile.profileData' | translate }}</span>
+          <button class="sidebar-item" [class.active]="activeTab === 'profile'" (click)="activeTab = 'profile'">
+            <span class="icon">👤</span><span>{{ 'profile.profileData' | translate }}</span>
           </button>
-
-          <button
-            class="nav-item"
-            [class.active]="activeTab === 'addresses'"
-            (click)="activeTab = 'addresses'">
-            <span class="icon">📍</span>
-            <span>{{ 'profile.addresses' | translate }}</span>
+          <button class="sidebar-item" [class.active]="activeTab === 'addresses'" (click)="activeTab = 'addresses'">
+            <span class="icon">📍</span><span>{{ 'profile.addresses' | translate }}</span>
           </button>
-
-          <button
-            class="nav-item"
-            [class.active]="activeTab === 'password'"
-            (click)="activeTab = 'password'">
-            <span class="icon">🔒</span>
-            <span>{{ 'profile.changePassword' | translate }}</span>
+          <button class="sidebar-item" [class.active]="activeTab === 'password'" (click)="activeTab = 'password'">
+            <span class="icon">🔒</span><span>{{ 'profile.changePassword' | translate }}</span>
+          </button>
+          <div class="sidebar-divider"></div>
+          <button class="sidebar-item sidebar-item--logout" (click)="logout()">
+            <span class="icon">🚪</span><span>{{ 'common.logout' | translate }}</span>
           </button>
         </nav>
 
@@ -224,335 +233,357 @@ interface OrderHistoryVM {
     </div>
   `,
     styles: [`
+      /* ═══════════════════════════════════════════════
+         PROFIL – MOBILE-FIRST, dann Desktop-Erweiterung
+         ═══════════════════════════════════════════════ */
+
+      :host {
+        --profile-primary: #667eea;
+        --profile-primary-end: #764ba2;
+        --profile-radius: 12px;
+        --profile-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      }
+
       .profile-container {
         min-height: 100vh;
         background: #f5f7fa;
-        padding: 20px;
+        padding-bottom: 80px; /* Platz für ggf. Bottom-Nav */
       }
 
-      .profile-header {
-        max-width: 1200px;
-        margin: 0 auto 30px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-
-      .profile-header h1 {
-        margin: 0;
-        color: #333;
-      }
-
-      .btn-logout {
+      /* ── TOP BAR (sichtbar auf allen Screens) ── */
+      .profile-topbar {
         display: flex;
         align-items: center;
-        gap: 8px;
-        padding: 10px 20px;
-        background: #dc3545;
-        color: white;
+        gap: 0.75rem;
+        padding: 0.875rem 1rem;
+        background: #fff;
+        border-bottom: 1px solid #e9ecef;
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      }
+      .topbar-back {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
         border: none;
-        border-radius: 8px;
+        background: #f3f4f6;
+        border-radius: 50%;
         cursor: pointer;
-        font-size: 14px;
-        transition: background 0.3s;
+        flex-shrink: 0;
+        color: #374151;
+        transition: background 0.2s;
+      }
+      .topbar-back:hover { background: #e5e7eb; }
+      .topbar-title {
+        flex: 1;
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #1f2937;
+      }
+      .topbar-logout {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border: none;
+        background: #fef2f2;
+        border-radius: 50%;
+        cursor: pointer;
+        flex-shrink: 0;
+        color: #dc2626;
+        transition: background 0.2s;
+      }
+      .topbar-logout:hover { background: #fee2e2; }
+
+      /* ── TAB BAR (Mobile / Tablet: sichtbar) ── */
+      .profile-tabs {
+        display: flex;
+        overflow-x: auto;
+        background: #fff;
+        border-bottom: 2px solid #f0f0f0;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+        padding: 0 0.5rem;
+      }
+      .profile-tabs::-webkit-scrollbar { display: none; }
+
+      .tab-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        flex-shrink: 0;
+        padding: 0.625rem 0.875rem;
+        border: none;
+        background: transparent;
+        color: #6b7280;
+        cursor: pointer;
+        font-size: 0.7rem;
+        font-weight: 500;
+        border-bottom: 2.5px solid transparent;
+        margin-bottom: -2px;
+        transition: all 0.2s;
+        position: relative;
+        min-width: 60px;
+      }
+      .tab-btn:hover { color: #374151; background: #f9fafb; }
+      .tab-btn--active {
+        color: var(--profile-primary);
+        border-bottom-color: var(--profile-primary);
+        font-weight: 700;
+      }
+      .tab-icon { font-size: 1.15rem; line-height: 1; }
+      .tab-label { white-space: nowrap; }
+      .tab-badge {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        background: var(--profile-primary);
+        color: #fff;
+        font-size: 0.6rem;
+        font-weight: 700;
+        padding: 1px 5px;
+        border-radius: 20px;
+        min-width: 16px;
+        text-align: center;
       }
 
-      .btn-logout:hover {
-        background: #c82333;
-      }
-
+      /* ── CONTENT LAYOUT ── */
       .profile-content {
         max-width: 1200px;
         margin: 0 auto;
-        display: grid;
-        grid-template-columns: 250px 1fr;
-        gap: 20px;
+        padding: 1rem;
+        display: flex;
+        gap: 1.25rem;
       }
 
-      .profile-nav {
-        background: white;
-        border-radius: 12px;
-        padding: 10px;
+      /* ── DESKTOP SIDEBAR (versteckt auf Mobile) ── */
+      .profile-sidebar {
+        display: none;
+        flex-direction: column;
+        gap: 2px;
+        width: 240px;
+        flex-shrink: 0;
+        background: #fff;
+        border-radius: var(--profile-radius);
+        padding: 0.75rem;
         height: fit-content;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        box-shadow: var(--profile-shadow);
       }
-
-      .nav-item {
+      .sidebar-item {
         width: 100%;
         display: flex;
         align-items: center;
-        gap: 12px;
-        padding: 12px 16px;
+        gap: 10px;
+        padding: 0.75rem 1rem;
         border: none;
         background: transparent;
-        color: #666;
+        color: #4b5563;
         cursor: pointer;
         border-radius: 8px;
-        font-size: 15px;
-        transition: all 0.3s;
-        position: relative;
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: all 0.2s;
       }
-
-      .nav-item:hover {
-        background: #f8f9fa;
-        color: #333;
+      .sidebar-item:hover { background: #f3f4f6; color: #1f2937; }
+      .sidebar-item.active {
+        background: linear-gradient(135deg, var(--profile-primary) 0%, var(--profile-primary-end) 100%);
+        color: #fff;
       }
-
-      .nav-item.active {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-      }
-
-      .nav-item .icon {
-        font-size: 20px;
-      }
-
-      .nav-item .badge {
+      .sidebar-item .icon { font-size: 1.1rem; flex-shrink: 0; }
+      .sidebar-item .badge {
         margin-left: auto;
-        background: #667eea;
-        color: white;
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 12px;
-        font-weight: 600;
+        background: rgba(102,126,234,0.15);
+        color: var(--profile-primary);
+        padding: 1px 7px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
       }
+      .sidebar-item.active .badge { background: rgba(255,255,255,0.25); color: #fff; }
+      .sidebar-item--logout { color: #dc2626; }
+      .sidebar-item--logout:hover { background: #fef2f2; }
+      .sidebar-divider { height: 1px; background: #f0f0f0; margin: 0.5rem 0; }
 
-      .nav-item.active .badge {
-        background: rgba(255,255,255,0.3);
-      }
-
+      /* ── MAIN CONTENT ── */
       .profile-main {
-        background: white;
-        border-radius: 12px;
-        padding: 30px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        flex: 1;
+        min-width: 0;
+        background: #fff;
+        border-radius: var(--profile-radius);
+        padding: 1.25rem 1rem;
+        box-shadow: var(--profile-shadow);
       }
 
+      /* ── TAB CONTENT ── */
       .tab-content h2 {
-        margin-top: 0;
-        margin-bottom: 30px;
-        color: #333;
-      }
-
-      .overview-cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 20px;
-        margin-bottom: 40px;
-      }
-
-      .overview-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 24px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        gap: 16px;
-      }
-
-      .card-icon {
-        font-size: 40px;
-      }
-
-      .card-content h3 {
-        margin: 0;
-        font-size: 32px;
+        margin: 0 0 1.25rem 0;
+        font-size: 1.1rem;
+        color: #1f2937;
         font-weight: 700;
       }
 
-      .card-content p {
-        margin: 4px 0 0 0;
-        opacity: 0.9;
-        font-size: 14px;
+      /* ── OVERVIEW CARDS ── */
+      .overview-cards {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
       }
-
-      .recent-orders {
-        margin-top: 40px;
+      .overview-card {
+        background: linear-gradient(135deg, var(--profile-primary) 0%, var(--profile-primary-end) 100%);
+        color: #fff;
+        padding: 1rem 0.875rem;
+        border-radius: var(--profile-radius);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
       }
+      .card-icon { font-size: 1.75rem; flex-shrink: 0; }
+      .card-content h3 { margin: 0; font-size: 1.6rem; font-weight: 700; }
+      .card-content p { margin: 2px 0 0 0; opacity: 0.88; font-size: 0.75rem; }
 
-      .recent-orders h3 {
-        margin-bottom: 20px;
-        color: #333;
-      }
-
+      /* ── RECENT ORDERS ── */
+      .recent-orders { margin-top: 1.5rem; }
+      .recent-orders h3 { margin: 0 0 0.875rem 0; font-size: 0.95rem; font-weight: 700; color: #374151; }
       .order-list-compact {
-        background: #f8f9fa;
-        border-radius: 8px;
-        padding: 16px;
-        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
       }
-
       .order-item-compact {
         display: flex;
         align-items: center;
-        gap: 16px;
-        padding: 12px;
-        background: white;
-        border-radius: 8px;
-        margin-bottom: 10px;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        background: #f8f9fa;
+        border-radius: 10px;
+        flex-wrap: wrap;
       }
+      .order-info { flex: 1; min-width: 100px; }
+      .order-info strong { font-size: 0.875rem; color: #1f2937; }
+      .order-date { display: block; font-size: 0.75rem; color: #6b7280; margin-top: 1px; }
+      .order-total { color: var(--profile-primary); font-weight: 700; font-size: 0.95rem; flex-shrink: 0; }
 
-      .order-item-compact:last-child {
-        margin-bottom: 0;
-      }
-
-      .order-info {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      }
-
-      .order-date {
-        font-size: 13px;
-        color: #666;
-      }
-
-      .order-total {
-        color: #667eea;
-        font-size: 18px;
-      }
-
-      .orders-list {
-        display: grid;
-        gap: 20px;
-      }
-
+      /* ── ORDERS LIST ── */
+      .orders-list { display: flex; flex-direction: column; gap: 0.875rem; }
       .order-card {
-        border: 1px solid #e0e0e0;
-        border-radius: 12px;
-        padding: 20px;
-        transition: box-shadow 0.3s;
+        border: 1px solid #e5e7eb;
+        border-radius: var(--profile-radius);
+        padding: 1rem;
+        transition: box-shadow 0.2s;
       }
-
-      .order-card:hover {
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      }
-
+      .order-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
       .order-header {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        margin-bottom: 16px;
-        padding-bottom: 16px;
+        margin-bottom: 0.875rem;
+        padding-bottom: 0.875rem;
         border-bottom: 1px solid #f0f0f0;
+        flex-wrap: wrap;
+        gap: 0.5rem;
       }
+      .order-header h3 { margin: 0 0 2px 0; font-size: 0.95rem; color: #1f2937; }
+      .order-body { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.75rem; }
+      .order-detail { display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; }
+      .order-detail .label { color: #6b7280; }
+      .order-detail .total { color: var(--profile-primary); font-size: 1.05rem; font-weight: 700; }
+      .order-actions { display: flex; gap: 8px; }
 
-      .order-header h3 {
-        margin: 0 0 4px 0;
-        font-size: 18px;
-      }
-
-      .order-body {
-        display: grid;
-        gap: 12px;
-        margin-bottom: 16px;
-      }
-
-      .order-detail {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-
-      .order-detail .label {
-        color: #666;
-        font-size: 14px;
-      }
-
-      .order-detail .total {
-        color: #667eea;
-        font-size: 20px;
-      }
-
-      .order-actions {
-        display: flex;
-        gap: 10px;
-      }
-
+      /* ── STATUS BADGES ── */
       .status-badge {
-        padding: 6px 12px;
+        padding: 4px 10px;
         border-radius: 20px;
-        font-size: 12px;
-        font-weight: 600;
+        font-size: 0.7rem;
+        font-weight: 700;
         text-transform: uppercase;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
       }
+      .status-pending    { background: #fff3cd; color: #856404; }
+      .status-confirmed,
+      .status-processing { background: #d1ecf1; color: #0c5460; }
+      .status-shipped,
+      .status-delivered  { background: #d4edda; color: #155724; }
+      .status-cancelled  { background: #f8d7da; color: #721c24; }
 
-      .status-pending {
-        background: #fff3cd;
-        color: #856404;
+      /* ── BUTTONS ── */
+      .btn-primary {
+        padding: 0.75rem 1.5rem;
+        background: linear-gradient(135deg, var(--profile-primary) 0%, var(--profile-primary-end) 100%);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: 600;
+        transition: opacity 0.2s;
+        width: 100%;
       }
-
-      .status-confirmed, .status-processing {
-        background: #d1ecf1;
-        color: #0c5460;
+      .btn-primary:hover { opacity: 0.9; }
+      .btn-secondary {
+        padding: 0.625rem 1.25rem;
+        background: #fff;
+        color: var(--profile-primary);
+        border: 1.5px solid var(--profile-primary);
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-weight: 600;
+        transition: all 0.2s;
       }
+      .btn-secondary:hover { background: var(--profile-primary); color: #fff; }
 
-      .status-shipped, .status-delivered {
-        background: #d4edda;
-        color: #155724;
-      }
-
-      .status-cancelled {
-        background: #f8d7da;
-        color: #721c24;
-      }
-
-      .loading, .empty-state {
-        text-align: center;
-        padding: 60px 20px;
-      }
-
+      /* ── SPINNER ── */
+      .loading, .empty-state { text-align: center; padding: 3rem 1rem; }
       .spinner {
-        border: 4px solid #f3f3f3;
-        border-top: 4px solid #667eea;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid var(--profile-primary);
         border-radius: 50%;
-        width: 40px;
-        height: 40px;
+        width: 36px; height: 36px;
         animation: spin 1s linear infinite;
-        margin: 0 auto 20px;
+        margin: 0 auto 1rem;
+      }
+      @keyframes spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+      .empty-icon { font-size: 3.5rem; margin-bottom: 0.875rem; }
+      .empty-state h3 { margin: 0 0 0.5rem 0; color: #1f2937; }
+      .empty-state p { color: #6b7280; margin-bottom: 1.5rem; font-size: 0.875rem; }
+
+      /* ══════════════════════════════════════
+         RESPONSIVE BREAKPOINTS
+         ══════════════════════════════════════ */
+
+      /* Kleine Smartphones (< 400px): kompaktere Overview-Cards */
+      @media (max-width: 399px) {
+        .overview-cards { grid-template-columns: 1fr; }
+        .overview-card { padding: 0.875rem; }
+        .card-icon { font-size: 1.4rem; }
+        .card-content h3 { font-size: 1.3rem; }
       }
 
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+      /* Tablets & kleine Desktops (>= 768px): Sidebar zeigen, Tabs verstecken */
+      @media (min-width: 768px) {
+        .profile-tabs { display: none; }
+        .profile-sidebar { display: flex; }
+        .profile-main { padding: 1.5rem; }
+        .overview-cards { gap: 1rem; }
+        .card-icon { font-size: 2rem; }
+        .card-content h3 { font-size: 2rem; }
+        .card-content p { font-size: 0.825rem; }
       }
 
-      .empty-icon {
-        font-size: 80px;
-        margin-bottom: 20px;
-      }
-
-      .empty-state h3 {
-        margin: 0 0 10px 0;
-        color: #333;
-      }
-
-      .empty-state p {
-        color: #666;
-        margin-bottom: 30px;
-      }
-
-      @media (max-width: 768px) {
-        .profile-content {
-          grid-template-columns: 1fr;
-        }
-
-        .profile-nav {
-          display: flex;
-          overflow-x: auto;
-          padding: 10px;
-        }
-
-        .nav-item {
-          flex-shrink: 0;
-          min-width: 140px;
-        }
-
-        .overview-cards {
-          grid-template-columns: 1fr;
-        }
+      /* Große Desktops (>= 1024px) */
+      @media (min-width: 1024px) {
+        .profile-content { padding: 1.5rem; }
+        .profile-main { padding: 2rem; }
       }
     `]
 
