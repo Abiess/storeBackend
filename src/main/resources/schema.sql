@@ -78,12 +78,31 @@ CREATE TABLE IF NOT EXISTS stores (
     banner_image_url TEXT,
     slider_images TEXT,
     whatsapp_number VARCHAR(50),
+    greeting_message TEXT,
     whatsapp_notifications_enabled BOOLEAN NOT NULL DEFAULT FALSE,
     status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
+    -- ─── Social Media & Kontakt-Links ─────────────────────
+    contact_email VARCHAR(255),
+    contact_phone VARCHAR(50),
+    telegram_url TEXT,
+    facebook_url TEXT,
+    instagram_url TEXT,
+    tiktok_url TEXT,
+    footer_text TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_stores_owner FOREIGN KEY (owner_id) REFERENCES users(id)
 );
+
+-- Migration: Fehlende Spalten für bestehende stores-Tabellen hinzufügen
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS greeting_message TEXT;
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS contact_email VARCHAR(255);
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS contact_phone VARCHAR(50);
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS telegram_url TEXT;
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS facebook_url TEXT;
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS instagram_url TEXT;
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS tiktok_url TEXT;
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS footer_text TEXT;
 
 -- Domains Tabelle
 CREATE TABLE IF NOT EXISTS domains (

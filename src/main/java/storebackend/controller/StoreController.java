@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.*;
 import storebackend.dto.CreateStoreRequest;
 import storebackend.dto.UpdateStoreRequest;
 import storebackend.dto.StoreDTO;
-import storebackend.entity.Store;
 import storebackend.entity.User;
 import storebackend.service.StoreService;
 
@@ -57,21 +56,8 @@ class StoreManagementController {
     public ResponseEntity<StoreDTO> getStoreById(
             @PathVariable Long storeId,
             @AuthenticationPrincipal User user) {
-        Store store = storeService.getStoreById(storeId);
-
-        // Public access is allowed for basic store information
-
-        StoreDTO dto = new StoreDTO();
-        dto.setId(store.getId());
-        dto.setName(store.getName());
-        dto.setSlug(store.getSlug());
-        dto.setStatus(store.getStatus());
-        if (store.getDescription() != null) {
-            dto.setDescription(store.getDescription());
-        }
-        dto.setCreatedAt(store.getCreatedAt());
-
-        return ResponseEntity.ok(dto);
+        // Nutzt toDTO() aus dem Service → alle Felder inkl. Social/Kontakt werden gemappt
+        return ResponseEntity.ok(storeService.getStoreDTOById(storeId));
     }
 
     @PutMapping("/{storeId}")

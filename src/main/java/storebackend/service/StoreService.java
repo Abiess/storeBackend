@@ -232,6 +232,29 @@ public class StoreService {
             store.setGreetingMessage(request.getGreetingMessage().isBlank() ? null : request.getGreetingMessage().trim());
         }
 
+        // ─── Social Media & Kontakt-Links ─────────────────────────────
+        if (request.getContactEmail() != null) {
+            store.setContactEmail(request.getContactEmail().isBlank() ? null : request.getContactEmail().trim());
+        }
+        if (request.getContactPhone() != null) {
+            store.setContactPhone(request.getContactPhone().isBlank() ? null : request.getContactPhone().trim());
+        }
+        if (request.getTelegramUrl() != null) {
+            store.setTelegramUrl(request.getTelegramUrl().isBlank() ? null : request.getTelegramUrl().trim());
+        }
+        if (request.getFacebookUrl() != null) {
+            store.setFacebookUrl(request.getFacebookUrl().isBlank() ? null : request.getFacebookUrl().trim());
+        }
+        if (request.getInstagramUrl() != null) {
+            store.setInstagramUrl(request.getInstagramUrl().isBlank() ? null : request.getInstagramUrl().trim());
+        }
+        if (request.getTiktokUrl() != null) {
+            store.setTiktokUrl(request.getTiktokUrl().isBlank() ? null : request.getTiktokUrl().trim());
+        }
+        if (request.getFooterText() != null) {
+            store.setFooterText(request.getFooterText().isBlank() ? null : request.getFooterText().trim());
+        }
+
         store = storeRepository.save(store);
         log.info("Store {} updated by user {}", storeId, user.getEmail());
 
@@ -423,6 +446,10 @@ public class StoreService {
                 .orElseThrow(() -> new RuntimeException("Store not found"));
     }
 
+    public StoreDTO getStoreDTOById(Long storeId) {
+        return toDTO(getStoreById(storeId));
+    }
+
     private StoreDTO toDTO(Store store) {
         StoreDTO dto = new StoreDTO();
         dto.setId(store.getId());
@@ -434,6 +461,14 @@ public class StoreService {
         dto.setWhatsappNumber(store.getWhatsappNumber());
         dto.setWhatsappNotificationsEnabled(store.isWhatsappNotificationsEnabled());
         dto.setGreetingMessage(store.getGreetingMessage());
+        // ─── Social Media & Kontakt-Links ─────────────────────────────
+        dto.setContactEmail(store.getContactEmail());
+        dto.setContactPhone(store.getContactPhone());
+        dto.setTelegramUrl(store.getTelegramUrl());
+        dto.setFacebookUrl(store.getFacebookUrl());
+        dto.setInstagramUrl(store.getInstagramUrl());
+        dto.setTiktokUrl(store.getTiktokUrl());
+        dto.setFooterText(store.getFooterText());
         return dto;
     }
 

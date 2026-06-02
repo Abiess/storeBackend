@@ -19,9 +19,20 @@ public class UpdateStoreRequest {
     // Beschreibung ist optional
     private String description;
 
+    // Status – optional, null = nicht ändern
+    private String status;
+
     // WhatsApp-Kontaktdaten – optional, null = nicht ändern
     private String whatsappNumber;
     private Boolean whatsappNotificationsEnabled;
-
     private String greetingMessage;
+
+    // ─── Social Media & Kontakt-Links ─────────────────────
+    private String contactEmail;
+    private String contactPhone;
+    private String telegramUrl;
+    private String facebookUrl;
+    private String instagramUrl;
+    private String tiktokUrl;
+    private String footerText;
 }
