@@ -15,9 +15,9 @@ on:
         required: false
         default: 'avito'
       min_score:
-        description: 'Mindest-Score (0–100)'
+        description: 'Mindest-Score (0–100) – 0 = alle anzeigen'
         required: false
-        default: '50'
+        default: '0'
 
   # Täglich um 05:00 UTC (= 06:00 Marokko-Zeit) automatisch
   schedule:
@@ -95,7 +95,7 @@ jobs:
             chmod +x "$AGENT_DIR/main.js" 2>/dev/null || true
 
             # ── Cron-Job einrichten (täglich 06:00 Marokko-Zeit = 05:00 UTC) ──
-            CRON_JOB="0 5 * * * cd $AGENT_DIR && /usr/bin/node main.js --source all --min-score 40 >> $AGENT_DIR/logs/cron.log 2>&1"
+            CRON_JOB="0 5 * * * cd $AGENT_DIR && /usr/bin/node main.js --source all --min-score 0 >> $LOG_DIR/cron.log 2>&1"
             CRON_MARKER="research-agent-daily"
 
             # Alte Einträge entfernen, neuen hinzufügen
@@ -133,7 +133,7 @@ jobs:
           script: |
             AGENT_DIR="/opt/research-agent"
             SOURCE="${{ github.event.inputs.source || 'all' }}"
-            MIN_SCORE="${{ github.event.inputs.min_score || '40' }}"
+            MIN_SCORE="${{ github.event.inputs.min_score || '0' }}"
 
             echo "════════════════════════════════════════"
             echo "  🔍 Research Agent – Scraping Start"
@@ -183,7 +183,7 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           source: "/tmp/latest-leads.csv"
           target: "./leads-output/"
-          strip_components: 2
+          strip_components: 1
 
       # Als GitHub Actions Artifact speichern (30 Tage abrufbar)
       - name: Upload CSV als GitHub Artifact

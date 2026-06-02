@@ -77,9 +77,8 @@ class AvitoScraper extends BaseScraper {
   }
 
   async scrapeProfile(profileUrl, hint = {}) {
-    // Wenn hint bereits vollständige Daten enthält (aus __NEXT_DATA__),
-    // kein extra HTTP-Request nötig
-    if (hint.fullData) {
+    // Wenn hint bereits vollständige Daten enthält (aus __NEXT_DATA__ mit echten Feldern)
+    if (hint.fullData && hint.businessName && hint.productCount > 0) {
       return this._buildLeadFromHint(profileUrl, hint);
     }
 
@@ -89,45 +88,131 @@ class AvitoScraper extends BaseScraper {
       const res = await this.get(profileUrl);
       html = res.data;
     } catch (err) {
-      this.warn(`Profil nicht ladbar: ${err.message}`);
-      // Lead trotzdem aus hint bauen
+      this.warn(`Nicht ladbar: ${err.message}`);
       return this._buildLeadFromHint(profileUrl, hint);
     }
 
     const $ = cheerio.load(html);
     const lead = this._buildLeadFromHint(profileUrl, hint);
 
-    // Aus Profil-HTML nachbessern
-    if (!lead.businessName) {
-      lead.businessName = this._t($, [
-        'h1', '[class*="username"]', '[class*="sellerName"]',
-        '[class*="seller-name"]', '[class*="UserName"]',
-      ]);
-    }
-
-    if (!lead.memberSince) {
-      lead.memberSince = this._t($, [
-        '[class*="memberSince"]', '[class*="member-since"]',
-        '[class*="joinDate"]',
-      ]).replace(/Membre depuis|عضو منذ/i, '').trim();
-    }
-
-    // Telefon (nur öffentlich sichtbar)
-    lead.phone = lead.phone || this._t($, [
-      '[class*="phone"]', '[data-type="phone"]',
-    ]).replace(/\s+/g, '');
-
-    // Social-Media-Links aus Profil
-    $('a[href]').each((_, el) => this._detectSocial(lead, $(el).attr('href')));
-
-    // __NEXT_DATA__ auch aus Profilseite extrahieren
-    const profileNext = this._parseNextData(html);
-    if (profileNext) {
-      this._enrichFromNextData(lead, profileNext);
+    // ── __NEXT_DATA__ aus der Seite lesen (Listing oder Profil) ─────
+    const nextData = this._parseNextData(html);
+    if (nextData) {
+      this._enrichLeadFromPageJson(lead, nextData, $);
+    } else {
+      this._enrichLeadFromHtml(lead, $);
     }
 
     lead.hasBrandedName = this._isBrandedName(lead.businessName);
     return lead;
+  }
+
+  /** Daten aus Next.js JSON einer Listing- oder Profilseite extrahieren */
+  _enrichLeadFromPageJson(lead, data, $) {
+    try {
+      // ── Händler/Store-Objekt finden ──────────────────────────────
+      const pageProps = data?.props?.pageProps || data?.pageProps || {};
+
+      // Listing-Seite: ad.store oder ad.user
+      const ad = pageProps.ad || pageProps.listing || pageProps.annonce || {};
+      const store = ad.store || ad.seller || ad.user || pageProps.store || pageProps.seller || {};
+
+      if (store.name      && !lead.businessName)  lead.businessName  = store.name;
+      if (store.adCount   && !lead.productCount)  { lead.productCount = store.adCount; lead.activeListings = store.adCount; }
+      if (store.avatar    && !lead.hasProfilePic) { lead.hasProfilePic = true; lead.hasLogo = true; }
+      if (store.memberSince && !lead.memberSince) lead.memberSince   = store.memberSince;
+      if (store.phone     && !lead.phone)         lead.phone         = store.phone;
+      if (store.isPro)                             lead.sellerType   = 'pro';
+      if (store.description && store.description.length > 5) lead.hasDescription = true;
+
+      // Stadt aus Anzeige
+      const loc = ad.location || ad.city || {};
+      if (!lead.city) lead.city = typeof loc === 'string' ? loc : (loc.city || loc.name || '');
+
+      // Datum der Anzeige
+      const publishedAt = ad.publishedAt || ad.createdAt || ad.date || '';
+      if (publishedAt && !hint?.lastActivity) {
+        lead.lastActivity = /^\d{4}/.test(publishedAt)
+          ? new Date(publishedAt).toISOString()
+          : this._parseRelativeDate(publishedAt);
+      }
+
+      // Preis
+      if (ad.price && !lead.avgPrice) lead.avgPrice = ad.price;
+
+      // Kategorie
+      const cat = ad.category?.label || ad.categoryLabel || '';
+      if (cat && !lead.categories.length) lead.categories = [cat];
+
+      // Website/Social aus Store
+      const links = store.links || store.socialLinks || [];
+      for (const lnk of (Array.isArray(links) ? links : [])) {
+        this._detectSocial(lead, typeof lnk === 'string' ? lnk : lnk.url || '');
+      }
+      if (store.website) this._detectSocial(lead, store.website);
+    } catch { /* ignorieren */ }
+
+    // Zusätzlich HTML-Fallback
+    this._enrichLeadFromHtml(lead, $);
+  }
+
+  /** HTML-basiertes Anreichern eines Leads (Listing- oder Profilseite) */
+  _enrichLeadFromHtml(lead, $) {
+    // Händlername
+    if (!lead.businessName) {
+      lead.businessName = this._t($, [
+        '[class*="seller-name"]', '[class*="sellerName"]', '[class*="StoreName"]',
+        '[class*="username"]', '[class*="UserName"]', 'h1',
+      ]);
+    }
+
+    // Anzeigenanzahl des Händlers
+    if (lead.productCount <= 1) {
+      const cntText = this._t($, [
+        '[class*="adCount"]', '[class*="ad-count"]', '[class*="listingCount"]',
+        '[class*="adsNumber"]', '[class*="nbAds"]',
+      ]);
+      const cnt = this._parseCount(cntText);
+      if (cnt > 1) { lead.productCount = cnt; lead.activeListings = cnt; }
+    }
+
+    // Profilbild
+    if (!lead.hasProfilePic) {
+      const avatar = $('[class*="avatar"] img, [class*="Avatar"] img, [class*="seller"] img').first().attr('src') || '';
+      if (avatar && !avatar.includes('default') && !avatar.includes('placeholder')) {
+        lead.hasProfilePic = true;
+        lead.hasLogo = true;
+      }
+    }
+
+    // Stadt
+    if (!lead.city) {
+      lead.city = this._t($, [
+        '[class*="location"]', '[class*="Location"]', '[class*="city"]', '[class*="City"]',
+      ]).split(',')[0].trim();
+    }
+
+    // Telefon
+    if (!lead.phone) {
+      lead.phone = this._t($, ['[class*="phone"]', '[data-type="phone"]', '[class*="Phone"]'])
+        .replace(/\s+/g, '');
+    }
+
+    // Beschreibung
+    if (!lead.hasDescription) {
+      const desc = this._t($, ['[class*="description"]', '[class*="Description"]', '[class*="about"]']);
+      lead.hasDescription = desc.length > 10;
+    }
+
+    // Mitglied seit
+    if (!lead.memberSince) {
+      lead.memberSince = this._t($, [
+        '[class*="memberSince"]', '[class*="member-since"]', '[class*="joinDate"]',
+      ]).replace(/Membre depuis|عضو منذ|Member since/i, '').trim();
+    }
+
+    // Social-Media-Links
+    $('a[href]').each((_, el) => this._detectSocial(lead, $(el).attr('href')));
   }
 
   // ── Next.js JSON-Extraktion ────────────────────────────────────────
@@ -212,15 +297,13 @@ class AvitoScraper extends BaseScraper {
   }
 
   _enrichFromNextData(lead, data) {
-    try {
-      const user = this._deepFind(data, ['user', 'seller', 'store', 'profile']);
-      if (!user) return;
-      if (!lead.businessName && user.name)       lead.businessName  = user.name;
-      if (!lead.memberSince  && user.memberSince) lead.memberSince   = user.memberSince;
-      if (!lead.phone        && user.phone)       lead.phone         = user.phone;
-      if (user.avatar && !lead.hasProfilePic)     lead.hasProfilePic = true;
-      if (user.adCount && !lead.productCount)     lead.productCount  = user.adCount;
-    } catch { /* ignorieren */ }
+    // Legacy – wird nicht mehr direkt aufgerufen, bleibt für Kompatibilität
+    this._enrichLeadFromPageJson(lead, data, null);
+  }
+
+  _parseCount(text) {
+    const m = (text || '').replace(/[\s,]/g, '').match(/\d+/);
+    return m ? parseInt(m[0], 10) : 0;
   }
 
   // ── HTML-Fallback-Extraktion ───────────────────────────────────────
@@ -282,12 +365,17 @@ class AvitoScraper extends BaseScraper {
     lead.phone          = hint.phone         || '';
     lead.hasProfilePic  = !!hint.hasProfilePic;
     lead.hasLogo        = lead.hasProfilePic;
-    lead.productCount   = hint.productCount  || 0;
+    // ⚡ Minimum 1: wenn wir das Listing in der Suche gefunden haben,
+    //    gibt es mindestens diese eine Anzeige
+    lead.productCount   = hint.productCount  || 1;
     lead.activeListings = lead.productCount;
-    lead.lastActivity   = hint.lastActivity  || null;
+    // ⚡ Default: Listing in Suche gefunden = heute aktiv
+    lead.lastActivity   = hint.lastActivity  || new Date().toISOString();
     lead.sellerType     = hint.sellerType    || 'individual';
     lead.avgPrice       = hint.avgPrice      || 0;
-    lead.hasDescription = false;
+    lead.hasDescription = !!hint.hasDescription;
+    // ⚡ Avito-Händler haben standardmäßig keine eigene Website
+    lead.hasOwnWebsite  = hint.hasOwnWebsite || false;
 
     if (hint.category) lead.categories = [hint.category];
 
