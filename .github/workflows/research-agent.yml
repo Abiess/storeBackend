@@ -1,0 +1,159 @@
+name: Research Agent – Deploy & Cron
+
+on:
+  # Manuell aus GitHub Actions UI triggern (einmalig oder zum Testen)
+  workflow_dispatch:
+    inputs:
+      run_now:
+        description: 'Jetzt direkt einen Scraping-Lauf starten?'
+        required: false
+        default: 'false'
+        type: choice
+        options: ['false', 'true']
+      source:
+        description: 'Quelle (all / avito / opensooq / jumia / instagram)'
+        required: false
+        default: 'avito'
+      min_score:
+        description: 'Mindest-Score (0–100)'
+        required: false
+        default: '50'
+
+  # Täglich um 05:00 UTC (= 06:00 Marokko-Zeit) automatisch
+  schedule:
+    - cron: '0 5 * * *'
+
+jobs:
+  # ══════════════════════════════════════════════════════════════
+  # JOB 1: Research-Agent auf VPS deployen (Dateien + npm install)
+  # ══════════════════════════════════════════════════════════════
+  deploy-agent:
+    name: Deploy Research Agent
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # research-agent/ auf den VPS hochladen
+      - name: Upload research-agent to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          source: "research-agent/"
+          target: "/opt/"
+          strip_components: 0
+
+      # npm install + Verzeichnisse anlegen + Cron einrichten
+      - name: Setup on VPS (npm install + Cron)
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            set -e
+            echo "════════════════════════════════════════"
+            echo "  🏪 Research Agent – VPS Setup"
+            echo "════════════════════════════════════════"
+
+            AGENT_DIR="/opt/research-agent"
+
+            # Ausgabe-Verzeichnis anlegen
+            mkdir -p "$AGENT_DIR/output"
+            mkdir -p "$AGENT_DIR/logs"
+
+            # npm install (nur wenn package.json sich geändert hat)
+            echo "📦 npm install..."
+            cd "$AGENT_DIR"
+            npm install --production --silent
+            echo "✅ Dependencies installiert"
+
+            # Skript ausführbar machen
+            chmod +x "$AGENT_DIR/main.js" 2>/dev/null || true
+
+            # ── Cron-Job einrichten (täglich 06:00 Marokko-Zeit = 05:00 UTC) ──
+            CRON_JOB="0 5 * * * cd $AGENT_DIR && /usr/bin/node main.js --source all --min-score 40 >> $AGENT_DIR/logs/cron.log 2>&1"
+            CRON_MARKER="research-agent-daily"
+
+            # Alte Einträge entfernen, neuen hinzufügen
+            (crontab -l 2>/dev/null | grep -v "$CRON_MARKER" || true) > /tmp/crontab_new
+            echo "# $CRON_MARKER" >> /tmp/crontab_new
+            echo "$CRON_JOB" >> /tmp/crontab_new
+            crontab /tmp/crontab_new
+            rm /tmp/crontab_new
+
+            echo "✅ Cron-Job eingerichtet: täglich 06:00 Marokko-Zeit"
+            echo ""
+            echo "📋 Aktuelle Crontab:"
+            crontab -l
+
+  # ══════════════════════════════════════════════════════════════
+  # JOB 2: Sofort-Lauf (nur wenn manuell mit run_now=true oder täglich via schedule)
+  # ══════════════════════════════════════════════════════════════
+  run-agent:
+    name: Run Scraping Now
+    runs-on: ubuntu-latest
+    needs: deploy-agent
+    # Läuft bei: schedule ODER manuell mit run_now=true
+    if: github.event_name == 'schedule' || github.event.inputs.run_now == 'true'
+
+    steps:
+      - name: Run Research Agent on VPS
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          # Timeout: 45 Min (genug für alle Quellen mit Rate-Limiting)
+          command_timeout: 45m
+          script: |
+            AGENT_DIR="/opt/research-agent"
+            SOURCE="${{ github.event.inputs.source || 'all' }}"
+            MIN_SCORE="${{ github.event.inputs.min_score || '40' }}"
+
+            echo "════════════════════════════════════════"
+            echo "  🔍 Research Agent – Scraping Start"
+            echo "  Quelle:    $SOURCE"
+            echo "  Min.Score: $MIN_SCORE"
+            echo "  Zeitpunkt: $(date '+%Y-%m-%d %H:%M:%S')"
+            echo "════════════════════════════════════════"
+
+            cd "$AGENT_DIR"
+            node main.js \
+              --source "$SOURCE" \
+              --min-score "$MIN_SCORE" \
+              --pages 3 \
+              --output "$AGENT_DIR/output"
+
+            echo ""
+            echo "📂 Letzte Output-Dateien:"
+            ls -lht "$AGENT_DIR/output/" | head -5
+
+      # Neueste CSV zurück in GitHub Actions herunterladen (als Artifact)
+      - name: Download latest CSV from VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          # Neueste CSV-Datei holen
+          source: "/opt/research-agent/output/*.csv"
+          target: "./leads-output/"
+          strip_components: 3
+
+      # Als GitHub Actions Artifact speichern (30 Tage abrufbar)
+      - name: Upload CSV als GitHub Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: markt-ma-leads-${{ github.run_number }}-${{ github.run_attempt }}
+          path: ./leads-output/*.csv
+          retention-days: 30
+          if-no-files-found: warn
+
