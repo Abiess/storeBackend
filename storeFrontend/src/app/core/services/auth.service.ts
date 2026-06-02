@@ -17,20 +17,51 @@ export class AuthService {
     // Load user from localStorage if exists
     const token = this.getToken();
     if (token) {
-      const storedUser = localStorage.getItem('currentUser');
-      if (storedUser && storedUser !== 'undefined') {
-        try {
-          const user = JSON.parse(storedUser);
-          this.currentUserSubject.next(user);
-        } catch (e) {
-          console.error('Fehler beim Parsen des gespeicherten Users:', e);
+      // FIXED: Zuerst prüfen ob Token client-seitig noch gültig ist
+      if (this.isTokenExpired(token)) {
+        console.warn('⏰ JWT Token ist abgelaufen – bereinige Session automatisch');
+        this.clearSession();
+      } else {
+        const storedUser = localStorage.getItem('currentUser');
+        if (storedUser && storedUser !== 'undefined') {
+          try {
+            const user = JSON.parse(storedUser);
+            this.currentUserSubject.next(user);
+          } catch (e) {
+            console.error('Fehler beim Parsen des gespeicherten Users:', e);
+            this.validateTokenWithBackend();
+          }
+        } else {
+          // Token vorhanden, aber kein User gespeichert - hole vom Backend
           this.validateTokenWithBackend();
         }
-      } else {
-        // Token vorhanden, aber kein User gespeichert - hole vom Backend
-        this.validateTokenWithBackend();
       }
     }
+  }
+
+  /**
+   * Prüft ob ein JWT Token client-seitig abgelaufen ist (ohne Backend-Aufruf)
+   */
+  isTokenExpired(token?: string | null): boolean {
+    const t = token ?? this.getToken();
+    if (!t) return true;
+    try {
+      const payload = JSON.parse(atob(t.split('.')[1]));
+      // exp ist in Sekunden, Date.now() in Millisekunden
+      return payload.exp * 1000 < Date.now();
+    } catch {
+      return true; // Im Zweifel: als abgelaufen behandeln
+    }
+  }
+
+  /**
+   * Bereinigt Session ohne Redirect (z.B. bei abgelaufenem Token beim App-Start)
+   */
+  private clearSession(): void {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('cart_session_id');
+    this.currentUserSubject.next(null);
   }
 
   /**
@@ -141,7 +172,16 @@ export class AuthService {
   }
 
   isAuthenticated(): boolean {
-    return this.currentUserSubject.value !== null && !!this.getToken();
+    const token = this.getToken();
+    if (!token || this.isTokenExpired(token)) {
+      // Token fehlt oder abgelaufen → Session bereinigen
+      if (token) {
+        console.warn('⏰ isAuthenticated: Token abgelaufen – bereinige Session');
+        this.clearSession();
+      }
+      return false;
+    }
+    return this.currentUserSubject.value !== null;
   }
 
   getToken(): string | null {
@@ -178,10 +218,10 @@ export class AuthService {
   }
 
   /**
-   * Prüft ob User eingeloggt ist
+   * Prüft ob User eingeloggt ist (inkl. Token-Expiry-Check)
    */
   isLoggedIn(): boolean {
-    return !!this.getToken() && this.currentUserSubject.value !== null;
+    return this.isAuthenticated();
   }
 
   /**

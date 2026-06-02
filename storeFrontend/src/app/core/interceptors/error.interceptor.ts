@@ -7,6 +7,10 @@ import { AuthService } from '../services/auth.service';
 
 @Injectable()
 export class ErrorInterceptor implements HttpInterceptor {
+
+  // Flag verhindert doppelte Logout-Navigation (Race Condition bei mehreren parallelen 401s)
+  private isLoggingOut = false;
+
   constructor(
     private router: Router,
     private authService: AuthService
@@ -36,15 +40,30 @@ export class ErrorInterceptor implements HttpInterceptor {
         console.log('Is public storefront request:', isPublicStorefrontRequest);
 
         if (error.status === 401) {
-          // Unauthorized - Token abgelaufen oder ungültig
-          // Nur umleiten wenn es KEIN öffentlicher Storefront-Request ist
-          if (!isPublicStorefrontRequest) {
-            console.error('Authentifizierung fehlgeschlagen - bitte erneut anmelden');
-            this.authService.logout();
-            this.router.navigate(['/login'], {
-              queryParams: { returnUrl: this.router.url, error: 'session_expired' }
-            });
-          } else {
+          // Unauthorized - nur umleiten wenn es KEIN öffentlicher Storefront-Request ist
+          if (!isPublicStorefrontRequest && !this.isLoggingOut) {
+            // FIXED: Token client-seitig prüfen bevor wir logout auslösen
+            // Wenn Token noch gültig ist → Backend-Problem, kein client-seitiger Logout nötig
+            const tokenExpired = this.authService.isTokenExpired();
+            const hadToken = !!token;
+
+            if (hadToken && !tokenExpired) {
+              // Token ist noch gültig → 401 kommt vom Backend (z.B. Rechte-Problem, nicht Expiry)
+              // Nur warnen, NICHT ausloggen – der Service handled es selbst
+              console.warn('⚠️ 401 erhalten, aber Token ist noch gültig – kein automatischer Logout:', req.url);
+            } else {
+              // Token fehlt oder abgelaufen → echte Session-Expiry → Logout
+              console.error('⏰ Token abgelaufen oder fehlt – leite zum Login weiter');
+              this.isLoggingOut = true;
+              this.authService.logout();
+              this.router.navigate(['/login'], {
+                queryParams: { returnUrl: this.router.url, error: 'session_expired' }
+              }).then(() => {
+                // Flag nach Navigation zurücksetzen
+                setTimeout(() => { this.isLoggingOut = false; }, 2000);
+              });
+            }
+          } else if (isPublicStorefrontRequest) {
             console.warn('401 auf öffentlichem Endpoint - ignoriere für Storefront:', req.url);
           }
         } else if (error.status === 403) {

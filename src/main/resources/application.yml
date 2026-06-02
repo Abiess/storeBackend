@@ -84,7 +84,7 @@ springdoc:
 jwt:
   # hardcoded locally only - in production use ENV variable (see below)
   secret: mySecretKeyForJWTTokenGenerationThatIsAtLeast256BitsLongForHS256Algorithm
-  expiration: 86400000
+  expiration: 604800000  # 7 Tage (war: 86400000 = 1 Tag)
 
 # Base URL for Verification-Links
 app:
