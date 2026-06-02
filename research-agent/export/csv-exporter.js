@@ -3,105 +3,110 @@
  * Exportiert alle Leads in eine strukturierte CSV-Datei.
  */
 
-const { createObjectCsvWriter } = require('csv-writer');
 const path = require('path');
 const fs   = require('fs');
 
 const CSV_COLUMNS = [
-  { id: 'leadEmoji',         title: 'Status' },
-  { id: 'leadCategory',      title: 'Lead-Kategorie' },
-  { id: 'totalScore',        title: 'Score (0-100)' },
-  { id: 'source',            title: 'Quelle' },
-  { id: 'businessName',      title: 'Händlername' },
-  { id: 'sellerType',        title: 'Händlertyp' },
-  { id: 'city',              title: 'Stadt' },
-  { id: 'region',            title: 'Region' },
-  { id: 'phone',             title: 'Telefon' },
-  { id: 'whatsapp',          title: 'WhatsApp' },
-  { id: 'email',             title: 'E-Mail' },
-  { id: 'memberSince',       title: 'Mitglied seit' },
-  { id: 'productCount',      title: 'Produktanzahl' },
-  { id: 'activeListings',    title: 'Aktive Anzeigen' },
-  { id: 'categories',        title: 'Kategorien' },
-  { id: 'avgPrice',          title: 'Ø Preis (MAD)' },
-  { id: 'lastActivity',      title: 'Letzte Aktivität' },
-  { id: 'hasOwnWebsite',     title: 'Eigene Website?' },
-  { id: 'websiteUrl',        title: 'Website-URL' },
-  { id: 'hasInstagram',      title: 'Instagram?' },
-  { id: 'instagramHandle',   title: 'Instagram Handle' },
-  { id: 'instagramFollowers',title: 'Instagram Follower' },
-  { id: 'hasFacebook',       title: 'Facebook?' },
-  { id: 'hasTikTok',         title: 'TikTok?' },
+  // Conversion-Potenzial (Händler-Finder – wichtigste Spalten)
+  { id: 'conversionEmoji',    title: 'Shop-Potenzial' },
+  { id: 'conversionLabel',    title: 'Conversion-Kategorie' },
+  { id: 'conversionScore',    title: 'Conversion-Score (0-100)' },
+  { id: 'conversionReason',   title: 'Conversion-Begründung' },
+  // Lead-Score
+  { id: 'leadEmoji',          title: 'Lead-Status' },
+  { id: 'leadCategory',       title: 'Lead-Kategorie' },
+  { id: 'totalScore',         title: 'Lead-Score (0-100)' },
+  // Identifikation
+  { id: 'source',             title: 'Quelle' },
+  { id: 'businessName',       title: 'Händlername' },
+  { id: 'sellerType',         title: 'Händlertyp' },
+  { id: 'city',               title: 'Stadt' },
+  { id: 'region',             title: 'Region/Viertel' },
+  // Kontakt
+  { id: 'phone',              title: 'Telefon' },
+  { id: 'whatsapp',           title: 'WhatsApp' },
+  { id: 'outreachChannel',    title: 'Empfohlener Kontaktkanal' },
+  // Produkte
+  { id: 'productCount',       title: 'Produktanzahl' },
+  { id: 'activeListings',     title: 'Aktive Anzeigen' },
+  { id: 'categories',         title: 'Kategorien' },
+  { id: 'avgPrice',           title: 'Ø Preis' },
+  { id: 'currency',           title: 'Währung' },
+  { id: 'lastActivity',       title: 'Letzte Aktivität' },
+  { id: 'memberSince',        title: 'Mitglied seit' },
+  // Online-Präsenz
+  { id: 'hasOwnWebsite',      title: 'Eigene Website?' },
+  { id: 'websiteUrl',         title: 'Website-URL' },
+  { id: 'hasInstagram',       title: 'Instagram?' },
+  { id: 'instagramHandle',    title: 'Instagram Handle' },
+  { id: 'instagramFollowers', title: 'Instagram Follower' },
+  { id: 'hasFacebook',        title: 'Facebook?' },
+  { id: 'hasTikTok',          title: 'TikTok?' },
   { id: 'hasWhatsAppBusiness',title: 'WhatsApp Business?' },
-  { id: 'hasLogo',           title: 'Logo/Profilbild?' },
-  { id: 'hasDescription',    title: 'Beschreibung?' },
-  { id: 'potentialRevenue',  title: 'Umsatzpotenzial' },
-  { id: 'recommendedAction', title: 'Empfohlene Aktion' },
-  { id: 'notes',             title: 'Notizen' },
-  { id: 'profileUrl',        title: 'Profil-URL' },
-  { id: 'scrapedAt',         title: 'Erfasst am' },
-  { id: 'scoreBreakdown',    title: 'Score-Details (JSON)' },
+  { id: 'hasLogo',            title: 'Logo/Profilbild?' },
+  { id: 'hasDescription',     title: 'Beschreibung?' },
+  // Meta
+  { id: 'recommendedAction',  title: 'Empfohlene Aktion' },
+  { id: 'notes',              title: 'Notizen' },
+  { id: 'profileUrl',         title: 'Profil-URL' },
+  { id: 'scrapedAt',          title: 'Erfasst am' },
+  { id: 'scoreBreakdown',     title: 'Score-Details (JSON)' },
 ];
 
 class CsvExporter {
-  /**
-   * @param {Lead[]} leads
-   * @param {string} outputDir - Pfad zum Ausgabeverzeichnis
-   * @returns {string} Dateipfad der erstellten CSV
-   */
   export(leads, outputDir) {
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir, { recursive: true });
-    }
-
+    if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    const filename  = `markt-ma-leads_${timestamp}.csv`;
+    const filename  = `markt-ma-haendler_${timestamp}.csv`;
     const filepath  = path.join(outputDir, filename);
 
-    // Zeilen konvertieren
-    const rows = leads.map(l => l.toCSVRow());
-
-    // ── CSV manuell aufbauen (UTF-8 BOM für Excel) ────────────────────
     const header = CSV_COLUMNS.map(c => `"${c.title}"`).join(';');
+    const rows   = leads.map(l => l.toCSVRow());
     const lines  = rows.map(row =>
       CSV_COLUMNS.map(c => {
         const val = row[c.id] !== undefined && row[c.id] !== null ? String(row[c.id]) : '';
         return `"${val.replace(/"/g, '""')}"`;
       }).join(';')
     );
-    const csvContent = '\uFEFF' + [header, ...lines].join('\r\n');
-    fs.writeFileSync(filepath, csvContent, 'utf8');
+    fs.writeFileSync(filepath, '\uFEFF' + [header, ...lines].join('\r\n'), 'utf8');
     return filepath;
   }
 
-  /** Gibt eine Zusammenfassung der Leads auf der Konsole aus */
   printSummary(leads, topN = 20) {
     const byCategory = { HOT: [], WARM: [], MEDIUM: [], COLD: [] };
+    const byConversion = { SEHR_HOCH: [], HOCH: [], MITTEL: [], GERING: [] };
     for (const l of leads) {
       (byCategory[l.leadCategory] || []).push(l);
+      (byConversion[l.conversionLabel] || []).push(l);
     }
 
-    console.log('\n' + '═'.repeat(60));
-    console.log('  📊  LEAD-AUSWERTUNG – markt.ma');
-    console.log('═'.repeat(60));
-    console.log(`  Gesamt:   ${leads.length} Leads`);
-    console.log(`  🔥 HOT:   ${byCategory.HOT.length}`);
-    console.log(`  ☀️  WARM:  ${byCategory.WARM.length}`);
-    console.log(`  🌤️  MEDIUM: ${byCategory.MEDIUM.length}`);
-    console.log(`  ❄️  COLD:  ${byCategory.COLD.length}`);
-    console.log('─'.repeat(60));
+    console.log('\n' + '═'.repeat(65));
+    console.log('  📊  HÄNDLER-FINDER AUSWERTUNG – markt.ma');
+    console.log('═'.repeat(65));
+    console.log(`  Händler gesamt: ${leads.length}`);
+    console.log('');
+    console.log('  Lead-Score:');
+    console.log(`    🔥 HOT:    ${byCategory.HOT.length}  │  ☀️  WARM:   ${byCategory.WARM.length}`);
+    console.log(`    🌤️  MEDIUM: ${byCategory.MEDIUM.length}  │  ❄️  COLD:   ${byCategory.COLD.length}`);
+    console.log('');
+    console.log('  Shop-Eröffnungs-Potenzial:');
+    console.log(`    🎯 SEHR HOCH: ${byConversion.SEHR_HOCH.length}  │  ✅ HOCH:  ${byConversion.HOCH.length}`);
+    console.log(`    ⚡ MITTEL:    ${byConversion.MITTEL.length}  │  📊 GERING: ${byConversion.GERING.length}`);
+    console.log('─'.repeat(65));
 
-    const top = [...leads].sort((a, b) => b.totalScore - a.totalScore).slice(0, topN);
-    console.log(`  🏆  TOP ${topN} LEADS:`);
-    top.forEach((l, i) => {
-      console.log(`    ${String(i+1).padStart(2)}. ${l.leadEmoji} [${String(l.totalScore).padStart(3)}/100] ${(l.businessName||'(kein Name)').slice(0,35).padEnd(35)} ${l.city || ''}`);
-      if (l.phone)    console.log(`        📞 ${l.phone}`);
-      if (l.whatsapp) console.log(`        💬 ${l.whatsapp}`);
-      console.log(`        → ${l.recommendedAction}`);
+    // Top nach Conversion-Score
+    const topConversion = [...leads].sort((a, b) => b.conversionScore - a.conversionScore).slice(0, topN);
+    console.log(`\n  🎯  TOP ${topN} NACH SHOP-POTENZIAL:`);
+    topConversion.forEach((l, i) => {
+      const name = (l.businessName || '(kein Name)').slice(0, 32).padEnd(32);
+      console.log(`  ${String(i+1).padStart(2)}. ${l.conversionEmoji} [${String(l.conversionScore).padStart(3)}] ${name} ${l.city || ''}`);
+      if (l.phone || l.whatsapp) console.log(`      📞 ${l.phone || l.whatsapp}`);
+      console.log(`      ↳ ${l.conversionReason}`);
+      console.log(`      📬 ${l.outreachChannel}`);
     });
-    console.log('═'.repeat(60) + '\n');
+
+    console.log('═'.repeat(65) + '\n');
   }
 }
 
 module.exports = CsvExporter;
-
