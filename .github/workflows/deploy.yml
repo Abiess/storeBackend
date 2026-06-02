@@ -6,12 +6,25 @@ on:
       - main
       - master
   workflow_dispatch:
+    inputs:
+      run_research_agent:
+        description: 'Research Agent jetzt ausführen?'
+        required: false
+        default: 'false'
+        type: choice
+        options: ['false', 'true']
+      agent_source:
+        description: 'Agent-Quelle (avito / opensooq / jumia / all)'
+        required: false
+        default: 'avito'
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
+      # ...existing code...
+
       - name: Checkout code
         uses: actions/checkout@v3
 
@@ -45,7 +58,6 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           script: |
             cd /tmp
-            # Find the JAR file and rename it to app.jar
             JAR_FILE=$(ls -1 *.jar 2>/dev/null | grep -E '^storeBackend.*\.jar$' | head -n1)
             if [ -n "$JAR_FILE" ]; then
               echo "Found JAR: $JAR_FILE"
@@ -80,6 +92,50 @@ jobs:
           target: "/opt/storebackend/"
           strip_components: 0
 
+      # ── Research Agent deployen ─────────────────────────────────────
+      - name: Upload Research Agent
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          source: "research-agent/"
+          target: "/opt/"
+          strip_components: 0
+
+      - name: Setup Research Agent (Node.js + npm + Cron)
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          command_timeout: 10m
+          script: |
+            # Node.js installieren falls nicht vorhanden
+            if ! command -v node &>/dev/null; then
+              echo "📦 Installiere Node.js 20 LTS..."
+              curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - 2>/dev/null
+              sudo apt-get install -y nodejs 2>/dev/null
+            fi
+            echo "✅ Node.js $(node --version) | npm $(npm --version)"
+
+            # Verzeichnisse anlegen + npm install
+            mkdir -p /opt/research-agent/output /opt/research-agent/logs
+            cd /opt/research-agent
+            npm install --production --silent
+            echo "✅ Dependencies installiert"
+
+            # Täglicher Cron-Job (06:00 Marokko = 05:00 UTC)
+            CRON_JOB="0 5 * * * cd /opt/research-agent && /usr/bin/node main.js --source all --min-score 0 >> /opt/research-agent/logs/cron.log 2>&1"
+            MARKER="research-agent-daily"
+            (crontab -l 2>/dev/null | grep -v "$MARKER" || true) > /tmp/_cron
+            echo "# $MARKER" >> /tmp/_cron
+            echo "$CRON_JOB" >> /tmp/_cron
+            crontab /tmp/_cron && rm /tmp/_cron
+            echo "✅ Cron-Job aktiv: täglich 06:00 Marokko-Zeit"
+
       - name: Check Port 8001 & Setup Telegram Scraper
         uses: appleboy/ssh-action@v1.2.2
         with:
@@ -113,10 +169,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
           script: |
-            # Make scripts executable
             chmod +x /opt/storebackend/scripts/*.sh
-            
-            # Export SMTP configuration from GitHub Secrets
             export SMTP_HOST="${{ secrets.SMTP_HOST }}"
             export SMTP_PORT="${{ secrets.SMTP_PORT }}"
             export SMTP_USER="${{ secrets.SMTP_USER }}"
@@ -124,15 +177,9 @@ jobs:
             export MAIL_FROM="${{ secrets.MAIL_FROM }}"
             export APP_BASE_URL="${{ secrets.APP_BASE_URL }}"
             export MAIL_ENABLED="true"
-            
-            # Export other required secrets
             export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
             export JWT_SECRET="${{ secrets.JWT_SECRET }}"
-            
-            # Export Hugging Face API Key for AI Product Creation
             export HUGGINGFACE_API_KEY="${{ secrets.HUGGINGFACE_API_KEY }}"
-            
-            # Execute deployment
             cd /opt/storebackend
             bash scripts/deploy.sh
 
@@ -160,49 +207,76 @@ jobs:
               if [ "$SCRAPER_HEALTH" = "200" ]; then
                 echo "   ✅ Telegram Scraper nach Neustart healthy"
               else
-                echo "   ❌ Telegram Scraper nicht erreichbar (HTTP $SCRAPER_HEALTH) – Telegram-Import nicht verfügbar"
+                echo "   ❌ Telegram Scraper nicht erreichbar (HTTP $SCRAPER_HEALTH)"
                 sudo journalctl -u telegram-scraper -n 20 --no-pager || true
               fi
             fi
             echo ""
             echo "🏥 Waiting for app..."
-            
             for i in $(seq 1 30); do
               HTTP_CODE=$(curl -fsS -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health || echo "000")
-            
               if [ "$HTTP_CODE" = "200" ]; then
                 echo "✅ Healthy"
                 curl -fsS http://localhost:8080/actuator/health
                 exit 0
               fi
-            
               echo "⏳ Attempt $i/30 (HTTP $HTTP_CODE)..."
-            
-              # Auto-recovery bei 503 (Service Unavailable)
               if [ "$HTTP_CODE" = "503" ] && [ "$i" -eq 10 ]; then
-                echo "⚠️  HTTP 503 detected - attempting auto-recovery..."
-                echo "🔧 Step 1: Checking PostgreSQL..."
-                if sudo systemctl is-active --quiet postgresql; then
-                  echo "   ✅ PostgreSQL is responding"
-                else
-                  echo "   ❌ PostgreSQL is not running - starting..."
-                  sudo systemctl start postgresql
-                  sleep 3
-                fi
-            
-                echo "🔧 Step 2: Restarting StoreBackend service..."
+                echo "⚠️  HTTP 503 – Auto-Recovery..."
+                sudo systemctl is-active --quiet postgresql || sudo systemctl start postgresql
                 sudo systemctl restart storebackend
-                echo "   ✅ Service restarted, continuing health checks..."
                 sleep 5
               fi
-            
               sleep 2
             done
-            
             echo "❌ Health check failed after 30 attempts"
-            echo "📊 Service Status:"
             sudo systemctl status storebackend --no-pager || true
-            echo ""
-            echo "❌ Last 120 log lines:"
             sudo journalctl -u storebackend -n 120 --no-pager || true
             exit 1
+
+      # ── Research Agent ausführen + CSV herunterladen ────────────────
+      - name: Run Research Agent (optional)
+        if: github.event_name == 'schedule' || github.event.inputs.run_research_agent == 'true'
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          command_timeout: 45m
+          script: |
+            SOURCE="${{ github.event.inputs.agent_source || 'avito' }}"
+            echo "🔍 Research Agent startet – Quelle: $SOURCE"
+            cd /opt/research-agent
+            node main.js --source "$SOURCE" --min-score 0 --pages 3
+            # Neueste CSV für Download vorbereiten
+            LATEST=$(ls -t /opt/research-agent/output/*.csv 2>/dev/null | head -1)
+            if [ -n "$LATEST" ]; then
+              cp "$LATEST" /tmp/latest-leads.csv
+              echo "✅ CSV bereit: $LATEST"
+            fi
+
+      - name: Download CSV (Research Agent Ergebnisse)
+        if: github.event_name == 'schedule' || github.event.inputs.run_research_agent == 'true'
+        run: |
+          mkdir -p ~/.ssh leads-output
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/vps_dl_key
+          chmod 600 ~/.ssh/vps_dl_key
+          scp -i ~/.ssh/vps_dl_key \
+              -P "${{ secrets.VPS_PORT }}" \
+              -o StrictHostKeyChecking=no \
+              -o ConnectTimeout=30 \
+              "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/tmp/latest-leads.csv" \
+              "./leads-output/latest-leads.csv"
+          rm ~/.ssh/vps_dl_key
+          echo "✅ CSV heruntergeladen ($(wc -l < leads-output/latest-leads.csv) Zeilen)"
+
+      - name: Upload CSV als Artifact
+        if: github.event_name == 'schedule' || github.event.inputs.run_research_agent == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: markt-ma-leads-${{ github.run_number }}
+          path: leads-output/latest-leads.csv
+          retention-days: 30
+          if-no-files-found: warn
+
