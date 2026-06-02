@@ -545,7 +545,34 @@
                                     "priceDesc":  "Price: High to Low",
                                     "nameAsc":  "Name A-Z",
                                     "newest":  "Newest first"
-                                }
+                                },
+                       "filter":  {
+                                      "chooseCategory":  "Choose Category",
+                                      "sortBy":  "Sort by",
+                                      "close":  "Close",
+                                      "done":  "Done",
+                                      "filter":  "Filter",
+                                      "sort":  "Sort",
+                                      "search":  "Search",
+                                      "searchPlaceholder":  "Search products...",
+                                      "searchClear":  "Clear search",
+                                      "noResults":  "No products found",
+                                      "noResultsHint":  "Try other search terms or reset filters.",
+                                      "showAll":  "Show all",
+                                      "resetFilter":  "Reset filter",
+                                      "loadMore":  "Load more",
+                                      "loadMoreOf":  "{{loaded}} of {{total}} products",
+                                      "product":  "Product",
+                                      "products":  "Products",
+                                      "priceRangeFrom":  "Price: Low → High",
+                                      "priceRangeTo":  "Price: High → Low",
+                                      "nameAZ":  "Name A–Z",
+                                      "newestFirst":  "Newest first",
+                                      "relevance":  "Relevance",
+                                      "activeFilters":  "Active Filters",
+                                      "clearAll":  "Clear all filters",
+                                      "allLoaded":  "All {{total}} products loaded"
+                                  }
                    },
     "order":  {
                   "title":  "Order details",
@@ -1379,5 +1406,22 @@
                                                       "desc":  "Import products directly from your Telegram channel"
                                                   }
                                  }
-                   }
+                   },
+    "bottomNav":  {
+                      "home":  "Home",
+                      "categories":  "Categories",
+                      "search":  "Search",
+                      "cart":  "Cart",
+                      "account":  "Account"
+                  },
+    "mobile":  {
+                   "installApp":  "Install App",
+                   "installPrompt":  "Save as app for a better experience",
+                   "installBtn":  "Install",
+                   "later":  "Later",
+                   "offlineMode":  "Offline mode – limited features",
+                   "updateAvailable":  "Update available",
+                   "updateNow":  "Update now",
+                   "skeleton":  "Loading..."
+               }
 }

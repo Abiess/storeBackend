@@ -38,10 +38,23 @@
     </div>
   </div>
 
-  <!-- Loading Indicator -->
-  <div *ngIf="loading" class="loading-container">
-    <div class="spinner"></div>
-    <p>{{ 'storefront.loading' | translate }}</p>
+  <!-- Loading: Skeleton Loader (ersetzt Spinner) -->
+  <div *ngIf="loading" class="skeleton-screen" aria-busy="true" [attr.aria-label]="'mobile.skeleton' | translate">
+    <!-- Category Pills Skeleton -->
+    <div class="skeleton-pills">
+      <span class="skel skel-pill" *ngFor="let i of [1,2,3,4,5]"></span>
+    </div>
+    <!-- Product Grid Skeleton: 6 Cards -->
+    <div class="skeleton-grid">
+      <div class="skel-card" *ngFor="let i of [1,2,3,4,5,6]">
+        <div class="skel skel-img"></div>
+        <div class="skel-body">
+          <div class="skel skel-line skel-line--wide"></div>
+          <div class="skel skel-line skel-line--narrow"></div>
+          <div class="skel skel-line skel-line--price"></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- ═══════════════════════════════════════════════════════════════
@@ -139,6 +152,16 @@
   </app-product-quick-view>
 
 </div><!-- End storefront-wrapper -->
+
+<!-- Mobile Bottom Navigation (nur auf < 768px sichtbar) -->
+<app-storefront-bottom-nav
+  *ngIf="!storeNotFound"
+  [cartCount]="cartItemCount"
+  [categoryActive]="bottomNavCategoryActive"
+  [searchActive]="bottomNavSearchActive"
+  (categoryClick)="onBottomNavCategory()"
+  (searchClick)="onBottomNavSearch()">
+</app-storefront-bottom-nav>
 
 <!-- Footer -->
 <footer class="storefront-footer">

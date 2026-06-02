@@ -39,6 +39,8 @@ public class SeoSettingsController {
 
         Store store = storeRepository.findById(storeId).orElse(null);
         if (store == null) return ResponseEntity.notFound().build();
+        // Kein Token → 401; falscher Owner → 403
+        if (user == null) return ResponseEntity.status(401).build();
         if (!StoreAccessChecker.isOwner(store, user)) return ResponseEntity.status(403).build();
 
         SeoSettings settings = seoSettingsService.getOrCreateSettings(storeId);
@@ -54,6 +56,7 @@ public class SeoSettingsController {
 
         Store store = storeRepository.findById(storeId).orElse(null);
         if (store == null) return ResponseEntity.notFound().build();
+        if (user == null) return ResponseEntity.status(401).build();
         if (!StoreAccessChecker.isOwner(store, user)) return ResponseEntity.status(403).build();
 
         SeoSettings settings = seoSettingsService.getOrCreateSettings(storeId);
@@ -73,6 +76,7 @@ public class SeoSettingsController {
 
         Store store = storeRepository.findById(storeId).orElse(null);
         if (store == null) return ResponseEntity.notFound().build();
+        if (user == null) return ResponseEntity.status(401).build();
         if (!StoreAccessChecker.isOwner(store, user)) return ResponseEntity.status(403).build();
 
         try {

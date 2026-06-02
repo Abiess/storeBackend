@@ -219,7 +219,34 @@
                                     "priceDesc":  "السعر: من الأعلى",
                                     "nameAsc":  "الاسم أ-ي",
                                     "newest":  "الأحدث أولاً"
-                                }
+                                },
+                       "filter":  {
+                                      "chooseCategory":  "اختر الفئة",
+                                      "sortBy":  "الترتيب حسب",
+                                      "close":  "إغلاق",
+                                      "done":  "تم",
+                                      "filter":  "تصفية",
+                                      "sort":  "ترتيب",
+                                      "search":  "بحث",
+                                      "searchPlaceholder":  "البحث في المنتجات...",
+                                      "searchClear":  "مسح البحث",
+                                      "noResults":  "لم يتم العثور على منتجات",
+                                      "noResultsHint":  "جرّب كلمات بحث أخرى أو أعد ضبط الفلاتر.",
+                                      "showAll":  "عرض الكل",
+                                      "resetFilter":  "إعادة ضبط الفلاتر",
+                                      "loadMore":  "تحميل المزيد",
+                                      "loadMoreOf":  "{{loaded}} من {{total}} منتج",
+                                      "product":  "منتج",
+                                      "products":  "منتجات",
+                                      "priceRangeFrom":  "السعر: من الأقل إلى الأعلى",
+                                      "priceRangeTo":  "السعر: من الأعلى إلى الأقل",
+                                      "nameAZ":  "الاسم أ–ي",
+                                      "newestFirst":  "الأحدث أولاً",
+                                      "relevance":  "الأكثر صلة",
+                                      "activeFilters":  "الفلاتر النشطة",
+                                      "clearAll":  "مسح جميع الفلاتر",
+                                      "allLoaded":  "تم تحميل جميع المنتجات {{total}}"
+                                  }
                    },
     "order":  {
                   "title":  "تفاصيل الطلب",
@@ -1200,5 +1227,22 @@
                                                       "desc":  "استورد المنتجات مباشرة من قناتك على تيليغرام"
                                                   }
                                  }
-                   }
+                   },
+    "bottomNav":  {
+                      "home":  "الرئيسية",
+                      "categories":  "الفئات",
+                      "search":  "بحث",
+                      "cart":  "السلة",
+                      "account":  "حسابي"
+                  },
+    "mobile":  {
+                   "installApp":  "تثبيت التطبيق",
+                   "installPrompt":  "احفظ التطبيق لتجربة أفضل",
+                   "installBtn":  "تثبيت",
+                   "later":  "لاحقاً",
+                   "offlineMode":  "وضع عدم الاتصال – وظائف محدودة",
+                   "updateAvailable":  "تحديث متاح",
+                   "updateNow":  "تحديث الآن",
+                   "skeleton":  "جارٍ التحميل..."
+               }
 }

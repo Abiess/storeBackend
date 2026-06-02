@@ -1,6 +1,43 @@
 /* Import Angular Material Theme */
 @import '@angular/material/prebuilt-themes/indigo-pink.css';
 
+/* ============================================================
+   SAFE-AREA – iPhone Notch / Dynamic Island / Home-Indicator
+   Alle Komponenten nutzen diese CSS-Variablen statt direktem env()
+   ============================================================ */
+:root {
+  --safe-area-top:    env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left:   env(safe-area-inset-left, 0px);
+  --safe-area-right:  env(safe-area-inset-right, 0px);
+  /* Bottom-Nav Höhe (mobile) – auch für Content-Abstand genutzt */
+  --bottom-nav-height: 60px;
+}
+
+/* Storefront Footer: nie vom Home-Indicator verdeckt */
+.storefront-footer {
+  padding-bottom: calc(1.5rem + var(--safe-area-bottom));
+}
+
+/* Mobile: Footer-Abstand für Bottom-Navigation */
+@media (max-width: 767px) {
+  .storefront-footer {
+    padding-bottom: calc(var(--bottom-nav-height) + var(--safe-area-bottom) + 1.5rem);
+  }
+  /* Storefront-Wrapper: genug Abstand nach unten für Bottom-Nav */
+  .storefront-wrapper {
+    padding-bottom: calc(var(--bottom-nav-height) + var(--safe-area-bottom));
+  }
+}
+
+/* WhatsApp + Chatbot Widget: über Home-Indicator auf Mobile */
+@media (max-width: 767px) {
+  app-whatsapp-widget .wa-btn,
+  app-chatbot-widget .chatbot-fab {
+    bottom: calc(var(--bottom-nav-height) + var(--safe-area-bottom) + 0.75rem) !important;
+  }
+}
+
 /* ==================== PROMO BANNER – Layout-Offset ==================== */
 /* Wenn Banner aktiv ist (Klasse auf body), Header und Content nach unten schieben */
 $banner-height: 40px;

@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+﻿import { Component, Input, Output, EventEmitter, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Product, Category } from '@app/core/models';
 import { ProductCardComponent } from '../product-card.component';
@@ -17,7 +17,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
   template: `
     <div class="fashion-wrapper">
 
-      <!-- ── CHIP FILTER BAR (always visible) ── -->
+      <!-- â”€â”€ CHIP FILTER BAR (always visible) â”€â”€ -->
       <div class="chip-filter-bar">
         <div class="chip-scroll">
           <button class="chip" [class.chip--active]="!selectedCategory"
@@ -39,23 +39,23 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
         </select>
       </div>
 
-      <!-- ── RESULT META ── -->
+      <!-- â”€â”€ RESULT META â”€â”€ -->
       <div class="fashion-meta">
         <span>{{ filteredProducts.length }} {{ filteredProducts.length === 1 ? 'Artikel' : 'Artikel' }}</span>
-        <span *ngIf="selectedCategory" class="meta-sep"> · {{ selectedCategory.name }}</span>
+        <span *ngIf="selectedCategory" class="meta-sep"> Â· {{ selectedCategory.name }}</span>
       </div>
 
-      <!-- ── EMPTY STATE ── -->
+      <!-- â”€â”€ EMPTY STATE â”€â”€ -->
       <div class="fashion-empty" *ngIf="filteredProducts.length === 0">
-        <span>🔍</span>
+        <span>ðŸ”</span>
         <p>Keine Produkte gefunden</p>
         <button (click)="onFilter(null)" *ngIf="selectedCategory">Alle anzeigen</button>
       </div>
 
-      <!-- ── EDITORIAL GRID (echte Produkte via app-product-card) ── -->
+      <!-- â”€â”€ EDITORIAL GRID (echte Produkte via app-product-card) â”€â”€ -->
       <div class="editorial-grid" *ngIf="filteredProducts.length > 0">
 
-        <!-- Hero – erstes Produkt groß (2-col, 2-row) -->
+        <!-- Hero â€“ erstes Produkt groÃŸ (2-col, 2-row) -->
         <div class="editorial-cell editorial-cell--hero">
           <app-product-card
             [product]="filteredProducts[0]"
@@ -76,9 +76,9 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
           </app-product-card>
         </div>
 
-        <!-- Rest: normales 3-col Grid -->
+        <!-- Rest: normales 3-col Grid (paginiert) -->
         <div class="editorial-cell editorial-cell--regular"
-             *ngFor="let p of filteredProducts.slice(3)">
+             *ngFor="let p of visibleRest">
           <app-product-card
             [product]="p"
             [storeId]="storeId"
@@ -86,6 +86,13 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
             (quickView)="quickView.emit(p)">
           </app-product-card>
         </div>
+      </div>
+
+      <!-- Mehr laden -->
+      <div class="load-more-wrap" *ngIf="hasMore">
+        <button class="load-more-btn" (click)="loadMore()" type="button">
+          {{ 'storefront.filter.loadMore' | translate }} â†“
+        </button>
       </div>
     </div>
   `,
@@ -98,7 +105,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       padding: 1.5rem 1.5rem 3rem;
     }
 
-    /* ── CHIP FILTER BAR ── */
+    /* â”€â”€ CHIP FILTER BAR â”€â”€ */
     .chip-filter-bar {
       display: flex;
       align-items: center;
@@ -151,7 +158,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       flex-shrink: 0;
     }
 
-    /* ── META ── */
+    /* â”€â”€ META â”€â”€ */
     .fashion-meta {
       font-size: 0.8rem;
       color: #9ca3af;
@@ -161,7 +168,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
     }
     .meta-sep { color: #9ca3af; }
 
-    /* ── EMPTY ── */
+    /* â”€â”€ EMPTY â”€â”€ */
     .fashion-empty {
       text-align: center;
       padding: 5rem 1rem;
@@ -178,7 +185,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       cursor: pointer;
     }
 
-    /* ── EDITORIAL GRID ── */
+    /* â”€â”€ EDITORIAL GRID â”€â”€ */
     .editorial-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -195,7 +202,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
     /* Kleine Seitenkarten: 1-col */
     .editorial-cell--side { grid-column: span 1; }
 
-    /* Reguläre Karten: 1-col */
+    /* RegulÃ¤re Karten: 1-col */
     .editorial-cell--regular { grid-column: span 1; }
 
     /* Bilder in der Hero-Karte taller machen */
@@ -211,9 +218,17 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       .editorial-grid { grid-template-columns: 1fr; }
       .editorial-cell--hero { grid-column: span 1; }
     }
+
+    .load-more-wrap { text-align: center; padding: 1.5rem 1rem; }
+    .load-more-btn {
+      padding: 0.65rem 2rem; border: 1.5px solid #667eea; border-radius: 999px;
+      background: #fff; color: #667eea; font-weight: 600; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .load-more-btn:hover { background: #667eea; color: #fff; }
   `]
 })
-export class ProductGridFashionComponent {
+export class ProductGridFashionComponent implements OnChanges {
   @Input() products: Product[] = [];
   @Input() categories: Category[] = [];
   @Input() filteredProducts: Product[] = [];
@@ -225,10 +240,19 @@ export class ProductGridFashionComponent {
   @Output() quickView = new EventEmitter<Product>();
   @Output() sortChange = new EventEmitter<string>();
 
+  private readonly REST_PAGE = 21;
+  private readonly STEP = 12;
+  private restLimit = this.REST_PAGE;
+
+  get visibleRest(): Product[] { return this.filteredProducts.slice(3, 3 + this.restLimit); }
+  get hasMore(): boolean { return this.filteredProducts.length > 3 + this.restLimit; }
+
+  ngOnChanges(): void { this.restLimit = this.REST_PAGE; }
+  loadMore(): void { this.restLimit += this.STEP; }
+
   countFor(cat: Category): number {
     return this.products.filter(p => p.categoryId === cat.id).length;
   }
-
   onFilter(cat: Category | null): void { this.filterChange.emit(cat); }
   onSort(event: Event): void { this.sortChange.emit((event.target as HTMLSelectElement).value); }
 }

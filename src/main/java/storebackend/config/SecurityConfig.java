@@ -72,6 +72,13 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/stores/*/categories/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/stores/*/slider/active").permitAll() // Slider für Storefront
                 .requestMatchers(HttpMethod.GET, "/api/stores/by-domain/**").permitAll()
+                // SEO / Redirects / Structured Data – Controller prüft Eigentümerschaft (→ 403 bei fremdem Store)
+                .requestMatchers(HttpMethod.GET, "/api/stores/*/seo").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/stores/*/seo/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/stores/*/redirects").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/stores/*/redirects/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/stores/*/structured-data").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/stores/*/structured-data/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/themes/**").permitAll()
                 // Product Reviews - Public read access for storefront
                 .requestMatchers(HttpMethod.GET, "/api/products/*/reviews").permitAll()

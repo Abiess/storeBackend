@@ -6,7 +6,9 @@ import {
   ShieldCheck, Gem, ChevronLeft, ChevronRight, ChevronDown, ArrowUpRight,
   ExternalLink, Check, CircleCheck, Store, X, ShoppingBag, MessageCircle,
   PlayCircle, Zap, Globe, Link2, Brain, Users, HardDrive, Lock,
-  Bell, Crown, LogOut, Menu, Send
+  Bell, Crown, LogOut, Menu, Send,
+  // Bottom-Nav Icons
+  House, ShoppingCart, LayoutGrid
 } from 'lucide-angular';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS, HttpClient } from '@angular/common/http';
@@ -50,7 +52,9 @@ export const appConfig: ApplicationConfig = {
         ShieldCheck, Gem, ChevronLeft, ChevronRight, ChevronDown, ArrowUpRight,
         ExternalLink, Check, CircleCheck, Store, X, ShoppingBag, MessageCircle,
         PlayCircle, Zap, Globe, Link2, Brain, Users, HardDrive, Lock,
-        Bell, Crown, LogOut, Menu, Send
+        Bell, Crown, LogOut, Menu, Send,
+        // Bottom-Nav
+        House, ShoppingCart, LayoutGrid
       })
     },
     // Standard Locale (kann dynamisch überschrieben werden)

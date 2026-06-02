@@ -87,7 +87,85 @@
   }
 }
 
-/* ==================== LOADING ==================== */
+/* ==================== LOADING / SKELETON ==================== */
+
+/* Shimmer-Animation */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skel {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite linear;
+  border-radius: 6px;
+}
+
+/* Skeleton Pill-Leiste */
+.skeleton-pills {
+  display: flex;
+  gap: 8px;
+  padding: 0.75rem 1rem;
+  overflow: hidden;
+}
+.skel-pill {
+  height: 32px;
+  border-radius: 20px;
+  flex-shrink: 0;
+}
+.skel-pill:nth-child(1) { width: 60px; }
+.skel-pill:nth-child(2) { width: 90px; }
+.skel-pill:nth-child(3) { width: 75px; }
+.skel-pill:nth-child(4) { width: 110px; }
+.skel-pill:nth-child(5) { width: 65px; }
+
+/* Skeleton Produkt-Grid */
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding: 0.75rem 1rem;
+}
+@media (min-width: 640px)  { .skeleton-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 1024px) { .skeleton-grid { grid-template-columns: repeat(4, 1fr); } }
+
+.skel-card {
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #f1f5f9;
+}
+.skel-img {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 0;
+}
+.skel-body {
+  padding: 10px 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.skel-line {
+  height: 12px;
+  border-radius: 4px;
+}
+.skel-line--wide   { width: 85%; }
+.skel-line--narrow { width: 55%; }
+.skel-line--price  { width: 40%; height: 16px; margin-top: 4px; }
+
+/* Category-Pills Highlight (bei Bottom-Nav-Tap) */
+.category-pills-wrapper.highlight-pulse .category-pills {
+  animation: pulseHighlight 0.6s ease;
+}
+@keyframes pulseHighlight {
+  0%   { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4); }
+  50%  { box-shadow: 0 0 0 8px rgba(102, 126, 234, 0); }
+  100% { box-shadow: none; }
+}
+
+/* ==================== LOADING (alt – Fallback) ==================== */
 .loading-container {
   display: flex;
   flex-direction: column;

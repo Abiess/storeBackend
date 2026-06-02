@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
@@ -14,6 +14,7 @@ import { SeoApiService } from '@app/core/services/seo-api.service';
 import { SeoMetaService } from '@app/core/services/seo-meta.service';
 import { Product, Category } from '@app/core/models';
 import { StorefrontHeaderComponent } from './storefront-header.component';
+import { StorefrontBottomNavComponent } from './storefront-bottom-nav.component';
 import { ProductCardComponent } from './product-card.component';
 import { StoreNotFoundComponent } from './store-not-found.component';
 import { ProductQuickViewComponent } from '@app/shared/components/product-quick-view.component';
@@ -38,6 +39,7 @@ import { ProductGridMarketplaceComponent } from './components/product-grid-marke
     CommonModule,
     TranslatePipe,
     StorefrontHeaderComponent,
+    StorefrontBottomNavComponent,
     ProductCardComponent,
     StoreNotFoundComponent,
     ProductQuickViewComponent,
@@ -73,9 +75,13 @@ export class StorefrontLandingComponent implements OnInit {
   quickViewProduct: Product | null = null;
   isQuickViewOpen = false;
 
-  // ✨ NEUE: Filter State
+  // œ NEUE: Filter State
   selectedCategory: Category | null = null;
   filteredProducts: Product[] = [];
+
+  /** Mobile Bottom-Nav State */
+  bottomNavCategoryActive = false;
+  bottomNavSearchActive = false;
 
   // ✨ NEUE: Slider State
   sliderImages: SliderImage[] = [];
@@ -578,6 +584,34 @@ export class StorefrontLandingComponent implements OnInit {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     }
+  }
+
+  /** Bottom-Nav: Kategorien-Button → Drawer öffnen / Kategorie-Pills fokussieren */
+  onBottomNavCategory(): void {
+    this.bottomNavCategoryActive = true;
+    // Scrolle zu den Category-Chips und fokussiere sie
+    const el = document.querySelector('.category-pills-wrapper') as HTMLElement | null;
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Ersten Chip kurz hervorheben
+      el.classList.add('highlight-pulse');
+      setTimeout(() => el.classList.remove('highlight-pulse'), 800);
+    }
+    setTimeout(() => { this.bottomNavCategoryActive = false; }, 600);
+  }
+
+  /** Bottom-Nav: Suche-Button → Suchfeld fokussieren */
+  onBottomNavSearch(): void {
+    this.bottomNavSearchActive = true;
+    // Suche im Marketplace-Grid fokussieren (input[type=search])
+    setTimeout(() => {
+      const searchInput = document.querySelector('input[type="search"]') as HTMLInputElement | null;
+      if (searchInput) {
+        searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        searchInput.focus();
+      }
+    }, 100);
+    setTimeout(() => { this.bottomNavSearchActive = false; }, 600);
   }
 
   // NEUE: Quick View Handlers

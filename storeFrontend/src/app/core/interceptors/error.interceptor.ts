@@ -120,21 +120,45 @@ export class ErrorInterceptor implements HttpInterceptor {
   }
 
   /**
-   * Prüft ob es sich um einen öffentlichen Storefront-Endpoint handelt
-   * Diese Endpoints sollten NICHT zum Login umleiten bei 401/403
+   * Prüft ob es sich um einen öffentlichen Storefront-Endpoint handelt.
+   * Diese Endpoints sollten NICHT zum Login umleiten bei 401/403.
+   *
+   * WICHTIG: '/api/stores/' darf hier NICHT pauschal stehen –
+   * Store-Admin-Endpoints (/seo, /orders, /settings …) benötigen Auth!
    */
   private isPublicStorefrontEndpoint(url: string): boolean {
     const publicPatterns = [
       '/api/public/',
-      '/api/stores/',
-      '/products',
-      '/categories',
       '/api/cart/',
       '/api/checkout/',
+      '/api/phone-verification/',
       'by-domain',
       'resolve?host='
     ];
 
-    return publicPatterns.some(pattern => url.includes(pattern));
+    // Öffentliche Store-Unterseiten (Storefront)
+    const publicStorePatterns = [
+      '/api/stores/by-domain/',
+      '/api/stores/by-slug/',
+      '/api/stores/public/',
+    ];
+
+    // Spezifische öffentliche Sub-Routen eines Stores (Storefront-Ansicht)
+    const publicStoreSubRoutes = [
+      '/products',
+      '/categories',
+      '/slider/active',
+      '/public/',
+    ];
+
+    if (publicPatterns.some(p => url.includes(p))) return true;
+    if (publicStorePatterns.some(p => url.includes(p))) return true;
+
+    // /api/stores/{id}/products, /api/stores/{id}/categories, etc. sind öffentlich
+    if (url.includes('/api/stores/') && publicStoreSubRoutes.some(p => url.includes(p))) {
+      return true;
+    }
+
+    return false;
   }
 }

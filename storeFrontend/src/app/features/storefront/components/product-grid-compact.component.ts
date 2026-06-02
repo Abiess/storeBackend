@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Product, Category } from '@app/core/models';
 import { ProductCardComponent } from '../product-card.component';
@@ -56,12 +56,18 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       <!-- ── KOMPAKTES 5-COL GRID (echte Produkte via app-product-card) ── -->
       <div class="compact-grid" *ngIf="filteredProducts.length > 0">
         <app-product-card
-          *ngFor="let p of filteredProducts"
+          *ngFor="let p of visibleProducts; trackBy: trackById"
           [product]="p"
           [storeId]="storeId"
           (addToCart)="addToCart.emit(p)"
           (quickView)="quickView.emit(p)">
         </app-product-card>
+      </div>
+      <!-- Mehr laden -->
+      <div class="load-more-wrap" *ngIf="hasMore">
+        <button class="load-more-btn" (click)="loadMore()" type="button">
+          {{ 'storefront.filter.loadMore' | translate }} ↓
+        </button>
       </div>
     </div>
   `,
@@ -129,6 +135,15 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       white-space: nowrap;
     }
 
+    /* ── LOAD MORE ── */
+    .load-more-wrap { text-align: center; padding: 1.5rem 1rem; }
+    .load-more-btn {
+      padding: 0.65rem 2rem; border: 1.5px solid #667eea; border-radius: 999px;
+      background: #fff; color: #667eea; font-weight: 600; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .load-more-btn:hover { background: #667eea; color: #fff; }
+
     /* ── KOMPAKTES GRID – 5 Spalten Desktop ── */
     .compact-grid {
       display: grid;
@@ -177,7 +192,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
     }
   `]
 })
-export class ProductGridCompactComponent {
+export class ProductGridCompactComponent implements OnChanges {
   @Input() products: Product[] = [];
   @Input() categories: Category[] = [];
   @Input() filteredProducts: Product[] = [];
@@ -188,6 +203,17 @@ export class ProductGridCompactComponent {
   @Output() addToCart = new EventEmitter<Product>();
   @Output() quickView = new EventEmitter<Product>();
   @Output() sortChange = new EventEmitter<string>();
+
+  private readonly PAGE_SIZE = 24;
+  private readonly STEP = 12;
+  private visibleCount = this.PAGE_SIZE;
+
+  get visibleProducts(): Product[] { return this.filteredProducts.slice(0, this.visibleCount); }
+  get hasMore(): boolean { return this.visibleProducts.length < this.filteredProducts.length; }
+
+  ngOnChanges(): void { this.visibleCount = this.PAGE_SIZE; }
+  loadMore(): void { this.visibleCount += this.STEP; }
+  trackById(_: number, p: Product): number { return p.id; }
 
   countFor(cat: Category): number {
     return this.products.filter(p => p.categoryId === cat.id).length;

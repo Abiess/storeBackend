@@ -751,7 +751,35 @@
                                     "priceDesc":  "Preis absteigend",
                                     "nameAsc":  "Name A-Z",
                                     "newest":  "Neueste zuerst"
-                                }
+                                },
+                       "filter":  {
+                                      "chooseCategory":  "Kategorie wählen",
+                                      "sortBy":  "Sortieren nach",
+                                      "close":  "Schließen",
+                                      "done":  "Fertig",
+                                      "filter":  "Filter",
+                                      "sort":  "Sortieren",
+                                      "search":  "Suchen",
+                                      "searchPlaceholder":  "Produkte suchen...",
+                                      "searchClear":  "Suche löschen",
+                                      "noResults":  "Keine Produkte gefunden",
+                                      "noResultsHint":  "Versuche andere Suchbegriffe oder setze Filter zurück.",
+                                      "showAll":  "Alle anzeigen",
+                                      "resetFilter":  "Filter zurücksetzen",
+                                      "loadMore":  "Mehr laden",
+                                      "loadMoreOf":  "{{loaded}} von {{total}} Produkten",
+                                      "product":  "Produkt",
+                                      "products":  "Produkte",
+                                      "priceRangeFrom":  "Preis: Niedrig → Hoch",
+                                      "priceRangeTo":  "Preis: Hoch → Niedrig",
+                                      "nameAZ":  "Name A–Z",
+                                      "newestFirst":  "Neueste zuerst",
+                                      "relevance":  "Relevanz",
+                                      "activeFilters":  "Aktive Filter",
+                                      "clearAll":  "Alle Filter löschen",
+                                      "allLoaded":  "Alle {{total}} Produkte geladen"
+                                  },
+                       "allLoaded":  "Alle {{total}} Produkte geladen"
                    },
     "order":  {
                   "title":  "Bestelldetails",
@@ -1382,5 +1410,22 @@
                                                       "desc":  "Importiere Produkte direkt aus deinem Telegram-Kanal"
                                                   }
                                  }
-                   }
+                   },
+    "bottomNav":  {
+                      "home":  "Start",
+                      "categories":  "Kategorien",
+                      "search":  "Suchen",
+                      "cart":  "Warenkorb",
+                      "account":  "Konto"
+                  },
+    "mobile":  {
+                   "installApp":  "App installieren",
+                   "installPrompt":  "Für ein besseres Erlebnis als App speichern",
+                   "installBtn":  "Installieren",
+                   "later":  "Später",
+                   "offlineMode":  "Offline-Modus – begrenzte Funktionen",
+                   "updateAvailable":  "Update verfügbar",
+                   "updateNow":  "Jetzt aktualisieren",
+                   "skeleton":  "Wird geladen..."
+               }
 }
