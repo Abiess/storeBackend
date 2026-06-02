@@ -465,20 +465,170 @@
 /* ==================== FOOTER ==================== */
 .storefront-footer {
   background: var(--secondary-color);
-  color: white;
-  padding: 2rem 1rem;
+  color: rgba(255,255,255,0.85);
+  padding: 3rem 1.5rem 1.5rem;
   margin-top: 4rem;
-  text-align: center;
 }
 
 .footer-container {
   max-width: var(--max-width);
   margin: 0 auto;
+}
+
+/* Brand / Logo */
+.footer-brand {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.footer-logo {
+  height: 48px;
+  width: auto;
+  object-fit: contain;
+  filter: brightness(0) invert(1);  /* Weiß auf dunklem Hintergrund */
+  opacity: 0.9;
+  margin-bottom: 0.75rem;
+}
+
+.footer-store-name {
+  display: block;
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.01em;
+}
+
+.footer-tagline {
+  font-size: 0.875rem;
+  opacity: 0.65;
+  margin: 0.25rem 0 0;
+  max-width: 480px;
+  margin-inline: auto;
+  line-height: 1.6;
+}
+
+/* Links Row */
+.footer-links-row {
+  display: flex;
+  justify-content: center;
+  gap: 3rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.footer-col {
+  min-width: 140px;
+}
+
+.footer-col-title {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.5);
+  margin: 0 0 0.875rem;
+}
+
+.footer-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: rgba(255,255,255,0.75);
+  font-size: 0.875rem;
+  text-decoration: none;
+  margin-bottom: 0.5rem;
+  transition: color 0.2s;
+  word-break: break-all;
+
+  svg { flex-shrink: 0; opacity: 0.7; }
+
+  &:hover {
+    color: #fff;
+    svg { opacity: 1; }
+  }
+}
+
+/* Social Icons */
+.footer-social-icons {
+  display: flex;
+  gap: 0.625rem;
+  flex-wrap: wrap;
+}
+
+.social-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s, opacity 0.2s;
+  opacity: 0.8;
+  background: rgba(255,255,255,0.1);
+
+  svg { width: 18px; height: 18px; color: #fff; fill: #fff; }
+
+  &:hover {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+
+  &.whatsapp  { background: #25d366; }
+  &.telegram  { background: #229ed9; }
+  &.facebook  { background: #1877f2; }
+  &.instagram { background: linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888); }
+  &.tiktok    { background: #010101; }
+}
+
+/* Divider */
+.footer-divider {
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  margin: 0 0 1.25rem;
+}
+
+/* Bottom row */
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 
   p {
     margin: 0;
-    font-size: 0.875rem;
-    opacity: 0.9;
+    font-size: 0.8125rem;
+    opacity: 0.5;
+  }
+
+  .footer-powered {
+    opacity: 0.35;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .storefront-footer {
+    padding: 2rem 1rem 1rem;
+    margin-bottom: 0;
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .footer-links-row {
+    gap: 2rem;
+    justify-content: flex-start;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  /* Letzter Content-Bereich bekommt Abstand für Sticky CTA */
+  .storefront-main {
+    padding-bottom: 80px;
   }
 }
 
@@ -654,23 +804,7 @@
 }
 
 /* ==================== Safe-Area (iPhone Notch/Home) ==================== */
-.storefront-footer {
-  padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
-}
-
-/* Auf Mobile: Footer-Abstand groß genug damit kein Sticky-CAT überlappt */
-@media (max-width: 767px) {
-  .storefront-footer {
-    /* WhatsApp Sticky CTA ist ca. 80px – zusätzlicher Puffer */
-    margin-bottom: 0;
-    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
-  }
-
-  /* Letzter Content-Bereich bekommt Abstand für Sticky CTA */
-  .storefront-main {
-    padding-bottom: 80px;
-  }
-}
+/* Footer safe-area und mobile Anpassungen sind in der .storefront-footer-Sektion enthalten */
 
 /* Print styles */
 @media print {

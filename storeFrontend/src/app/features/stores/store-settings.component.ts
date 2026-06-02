@@ -147,6 +147,87 @@ export interface SettingsTab {
           <app-store-slider-editor></app-store-slider-editor>
         </div>
 
+        <!-- ─── Social & Kontakt ─── -->
+        <div class="tab-content" *ngIf="activeTab === 'social'">
+          <form [formGroup]="settingsForm" (ngSubmit)="saveSettings()">
+            <div class="settings-section-header">
+              <h3>📇 Kontaktdaten</h3>
+              <p class="section-hint">Werden im Footer deines Stores angezeigt.</p>
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="contactEmail">E-Mail-Adresse</label>
+                <input id="contactEmail" type="email" formControlName="contactEmail"
+                       class="form-control" placeholder="kontakt@deinshop.de" />
+                <small class="form-text">Öffentliche Kontakt-E-Mail im Footer</small>
+              </div>
+              <div class="form-group">
+                <label for="contactPhone">Telefon / WhatsApp</label>
+                <input id="contactPhone" type="tel" formControlName="contactPhone"
+                       class="form-control" placeholder="+49 123 456789" />
+                <small class="form-text">Wird als Telefon-Link angezeigt</small>
+              </div>
+            </div>
+
+            <div class="settings-section-header" style="margin-top:1.5rem">
+              <h3>📱 Social Media Links</h3>
+              <p class="section-hint">Füge deine Social-Media-Profile hinzu – sie erscheinen als Icons im Footer.</p>
+            </div>
+
+            <div class="social-links-grid">
+              <div class="form-group social-input-group">
+                <label for="telegramUrl">
+                  <span class="social-label-icon" style="color:#229ed9">✈</span> Telegram
+                </label>
+                <input id="telegramUrl" type="url" formControlName="telegramUrl"
+                       class="form-control" placeholder="https://t.me/deinkanal" />
+              </div>
+
+              <div class="form-group social-input-group">
+                <label for="facebookUrl">
+                  <span class="social-label-icon" style="color:#1877f2">f</span> Facebook
+                </label>
+                <input id="facebookUrl" type="url" formControlName="facebookUrl"
+                       class="form-control" placeholder="https://facebook.com/deinshop" />
+              </div>
+
+              <div class="form-group social-input-group">
+                <label for="instagramUrl">
+                  <span class="social-label-icon" style="color:#e1306c">◉</span> Instagram
+                </label>
+                <input id="instagramUrl" type="url" formControlName="instagramUrl"
+                       class="form-control" placeholder="https://instagram.com/deinshop" />
+              </div>
+
+              <div class="form-group social-input-group">
+                <label for="tiktokUrl">
+                  <span class="social-label-icon">♪</span> TikTok
+                </label>
+                <input id="tiktokUrl" type="url" formControlName="tiktokUrl"
+                       class="form-control" placeholder="https://tiktok.com/@deinshop" />
+              </div>
+            </div>
+
+            <div class="settings-section-header" style="margin-top:1.5rem">
+              <h3>📝 Footer-Text</h3>
+              <p class="section-hint">Kurzer Slogan oder Beschreibung unter dem Logo im Footer.</p>
+            </div>
+
+            <div class="form-group">
+              <textarea id="footerText" formControlName="footerText" class="form-control"
+                        rows="2" placeholder="Dein Shop für alles – schnell, günstig, zuverlässig."></textarea>
+              <small class="form-text">Max. 200 Zeichen · {{ settingsForm.get('footerText')?.value?.length || 0 }}/200</small>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary" [disabled]="saving">
+                {{ saving ? 'Speichern...' : '💾 Speichern' }}
+              </button>
+            </div>
+          </form>
+        </div>
+
         <!-- Branding Settings: redirect zur Brand-Seite -->
         <div class="tab-content" *ngIf="activeTab === 'branding'">
           <div class="brand-redirect-info">
@@ -744,9 +825,55 @@ export interface SettingsTab {
     .brand-redirect-info h3 { margin: 0; font-size: 1.3rem; color: #111827; }
     .brand-redirect-info p { margin: 0; color: #64748b; font-size: 0.95rem; }
 
+    /* ─── Social & Kontakt Tab ─── */
+    .settings-section-header {
+      margin-bottom: 1.25rem;
+    }
+    .settings-section-header h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #1f2937;
+      margin: 0 0 0.25rem;
+    }
+    .section-hint {
+      font-size: 0.8125rem;
+      color: #6b7280;
+      margin: 0;
+    }
+    .form-row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    @media (max-width: 640px) {
+      .form-row-2 { grid-template-columns: 1fr; }
+    }
+    .social-links-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    @media (max-width: 640px) {
+      .social-links-grid { grid-template-columns: 1fr; }
+    }
+    .social-input-group label {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: #374151;
+      margin-bottom: 0.375rem;
+    }
+    .social-label-icon {
+      font-weight: 900;
+      font-size: 1rem;
+      width: 18px;
+      text-align: center;
+    }
+
     /* ─── WhatsApp Section ─── */
-    .whatsapp-section {
-      margin-top: 2rem;
+    .whatsapp-section {      margin-top: 2rem;
       padding: 1.5rem;
       background: linear-gradient(135deg, rgba(37, 211, 102, 0.06), rgba(18, 140, 126, 0.04));
       border: 1px solid rgba(37, 211, 102, 0.25);
@@ -810,6 +937,7 @@ export class StoreSettingsComponent implements OnInit {
   /** Wiederverwendbare Tab-Definition – analog NavTab */
   settingsTabs: SettingsTab[] = [
     { id: 'general',  icon: '⚙️', labelKey: 'settings.general' },
+    { id: 'social',   icon: '🔗', labelKey: 'Social & Kontakt' },
     { id: 'slider',   icon: '🎬', labelKey: 'settings.slider' },
     { id: 'branding', icon: '🎨', labelKey: 'settings.branding.title', visible : false },
     { id: 'domain',   icon: '🌐', labelKey: 'settings.domain.title' },
@@ -851,7 +979,15 @@ export class StoreSettingsComponent implements OnInit {
       status: ['ACTIVE'],
       whatsappNumber: ['', [Validators.maxLength(20)]],
       greetingMessage: ['', [Validators.maxLength(500)]],
-      whatsappNotificationsEnabled: [false]
+      whatsappNotificationsEnabled: [false],
+      // ─── Social & Kontakt ──────────────────────────────────────
+      contactEmail: ['', [Validators.email]],
+      contactPhone: [''],
+      telegramUrl: [''],
+      facebookUrl: [''],
+      instagramUrl: [''],
+      tiktokUrl: [''],
+      footerText: ['', [Validators.maxLength(200)]]
     });
 
     this.brandingForm = this.fb.group({
@@ -912,7 +1048,14 @@ export class StoreSettingsComponent implements OnInit {
           status: store.status,
           whatsappNumber: store.whatsappNumber ?? '',
           greetingMessage: store.greetingMessage ?? '',
-          whatsappNotificationsEnabled: store.whatsappNotificationsEnabled ?? false
+          whatsappNotificationsEnabled: store.whatsappNotificationsEnabled ?? false,
+          contactEmail:  store.contactEmail  ?? '',
+          contactPhone:  store.contactPhone  ?? '',
+          telegramUrl:   store.telegramUrl   ?? '',
+          facebookUrl:   store.facebookUrl   ?? '',
+          instagramUrl:  store.instagramUrl  ?? '',
+          tiktokUrl:     store.tiktokUrl     ?? '',
+          footerText:    store.footerText    ?? ''
         });
         this.loading = false;
       },

@@ -32,11 +32,18 @@ public class PublicStoreService {
             store.getName(),
             store.getSlug(),
             store.getDescription(),
-            store.getLogoUrl(),  // ✅ Logo URL
+            store.getLogoUrl(),
             domain.getHost(),
             store.getStatus().name(),
             store.getWhatsappNumber(),
-            store.getGreetingMessage()
+            store.getGreetingMessage(),
+            store.getContactEmail(),
+            store.getContactPhone(),
+            store.getTelegramUrl(),
+            store.getFacebookUrl(),
+            store.getInstagramUrl(),
+            store.getTiktokUrl(),
+            store.getFooterText()
         );
     }
 }

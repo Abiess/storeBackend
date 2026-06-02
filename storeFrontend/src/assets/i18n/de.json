@@ -72,7 +72,18 @@
                    "telegramFeaturePoint1":  "Aus öffentlichen \u0026 privaten Channels importieren",
                    "telegramFeaturePoint2":  "Bilder \u0026 Beschreibungen automatisch übernehmen",
                    "telegramFeaturePoint3":  "Produkte erscheinen als Entwürfe zur Review",
-                   "telegramFeatureBadge":  "Neu"
+                   "telegramFeatureBadge":  "Neu",
+                   "socialSectionTitle":  "Social Media",
+                   "socialSectionHint":  "Erscheinen als Icons im Footer deines Stores.",
+                   "socialOptional":  "optional",
+                   "socialTelegram":  "Telegram",
+                   "socialFacebook":  "Facebook",
+                   "socialInstagram":  "Instagram",
+                   "socialTiktok":  "TikTok",
+                   "socialTelegramPlaceholder":  "https://t.me/deinkanal",
+                   "socialFacebookPlaceholder":  "https://facebook.com/deinshop",
+                   "socialInstagramPlaceholder":  "https://instagram.com/deinshop",
+                   "socialTiktokPlaceholder":  "https://tiktok.com/@deinshop"
                },
     "aiGenerator":  {
                         "intro":  "KI-Produktbilder-Analyse: Laden Sie mehrere Produktfotos hoch und die KI generiert automatisch Produktdaten.",
@@ -522,7 +533,25 @@
                                       "deleteStoreButton":  "Shop dauerhaft löschen",
                                       "saveSuccess":  "Erweiterte Einstellungen erfolgreich gespeichert!",
                                       "saveError":  "Fehler beim Speichern der erweiterten Einstellungen"
-                                  }
+                                  },
+                     "social":  {
+                                    "title":  "Social \u0026 Kontakt",
+                                    "contactEmail":  "E-Mail-Adresse",
+                                    "contactEmailPlaceholder":  "kontakt@deinshop.de",
+                                    "contactEmailHint":  "Öffentliche Kontakt-E-Mail im Footer",
+                                    "contactPhone":  "Telefon / WhatsApp",
+                                    "contactPhonePlaceholder":  "+49 123 456789",
+                                    "contactPhoneHint":  "Wird als Telefon-Link angezeigt",
+                                    "socialMedia":  "Social Media Links",
+                                    "socialMediaHint":  "Füge deine Social-Media-Profile hinzu – sie erscheinen als Icons im Footer.",
+                                    "telegramUrl":  "Telegram",
+                                    "facebookUrl":  "Facebook",
+                                    "instagramUrl":  "Instagram",
+                                    "tiktokUrl":  "TikTok",
+                                    "footerTextTitle":  "Footer-Text",
+                                    "footerTextHint":  "Kurzer Slogan unter dem Logo im Footer (max. 200 Zeichen).",
+                                    "footerTextPlaceholder":  "Dein Shop für alles – schnell, günstig, zuverlässig."
+                                }
                  },
     "table":  {
                   "image":  "Bild",
@@ -560,7 +589,10 @@
                    "faq":  "FAQ",
                    "support":  "Support",
                    "copyright":  "© {{year}} Alle Rechte vorbehalten",
-                   "info":  "Informationen"
+                   "info":  "Informationen",
+                   "followUs":  "Folge uns",
+                   "poweredBy":  "Powered by markt.ma",
+                   "contactUs":  "Kontakt"
                },
     "sidebarAdmin":  {
                          "aria":  {
@@ -1323,20 +1355,32 @@
     "filter":  {
                    "priceRange":  "Preisbereich"
                },
-    "onboarding": {
-        "title":       "🚀 Richte deinen Shop ein",
-        "titleDone":   "🎉 Shop vollständig eingerichtet!",
-        "subtitle":    "{{completed}} von {{total}} Schritten abgeschlossen",
-        "subtitleDone":"Du bist startklar – öffne deinen Shop!",
-        "cta":         "Einrichten →",
-        "doneBadge":   "Erledigt ✓",
-        "openPreview": "🌐 Shop in neuem Tab öffnen",
-        "dismiss":     "Ausblenden",
-        "steps": {
-            "product":  { "title": "Erstes Produkt hinzufügen",        "desc": "Beginne mit dem Verkauf durch Hinzufügen deiner ersten Produkte" },
-            "theme":    { "title": "Design & Template wählen",          "desc": "Wähle ein professionelles Layout für deinen Shop" },
-            "branding": { "title": "Logo & Branding einrichten",        "desc": "Lade dein Logo hoch und passe Farben & Typografie an" },
-            "telegram": { "title": "Telegram Import einrichten",        "desc": "Importiere Produkte direkt aus deinem Telegram-Kanal" }
-        }
-    }
+    "onboarding":  {
+                       "title":  "🚀 Richte deinen Shop ein",
+                       "titleDone":  "🎉 Shop vollständig eingerichtet!",
+                       "subtitle":  "{{completed}} von {{total}} Schritten abgeschlossen",
+                       "subtitleDone":  "Du bist startklar – öffne deinen Shop!",
+                       "cta":  "Einrichten →",
+                       "doneBadge":  "Erledigt ✓",
+                       "openPreview":  "🌐 Shop in neuem Tab öffnen",
+                       "dismiss":  "Ausblenden",
+                       "steps":  {
+                                     "product":  {
+                                                     "title":  "Erstes Produkt hinzufügen",
+                                                     "desc":  "Beginne mit dem Verkauf durch Hinzufügen deiner ersten Produkte"
+                                                 },
+                                     "theme":  {
+                                                   "title":  "Design \u0026 Template wählen",
+                                                   "desc":  "Wähle ein professionelles Layout für deinen Shop"
+                                               },
+                                     "branding":  {
+                                                      "title":  "Logo \u0026 Branding einrichten",
+                                                      "desc":  "Lade dein Logo hoch und passe Farben \u0026 Typografie an"
+                                                  },
+                                     "telegram":  {
+                                                      "title":  "Telegram Import einrichten",
+                                                      "desc":  "Importiere Produkte direkt aus deinem Telegram-Kanal"
+                                                  }
+                                 }
+                   }
 }

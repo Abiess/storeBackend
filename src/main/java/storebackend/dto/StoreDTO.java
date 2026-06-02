@@ -18,4 +18,12 @@ public class StoreDTO {
     private String whatsappNumber;
     private boolean whatsappNotificationsEnabled;
     private String greetingMessage;
+    // ─── Social & Kontakt ─────────────────────────────────
+    private String contactEmail;
+    private String contactPhone;
+    private String telegramUrl;
+    private String facebookUrl;
+    private String instagramUrl;
+    private String tiktokUrl;
+    private String footerText;
 }

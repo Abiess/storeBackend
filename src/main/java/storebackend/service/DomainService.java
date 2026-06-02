@@ -160,6 +160,13 @@ public class DomainService {
                     dto.setStatus(store.getStatus().name());
                     dto.setWhatsappNumber(store.getWhatsappNumber());
                     dto.setGreetingMessage(store.getGreetingMessage());
+                    dto.setContactEmail(store.getContactEmail());
+                    dto.setContactPhone(store.getContactPhone());
+                    dto.setTelegramUrl(store.getTelegramUrl());
+                    dto.setFacebookUrl(store.getFacebookUrl());
+                    dto.setInstagramUrl(store.getInstagramUrl());
+                    dto.setTiktokUrl(store.getTiktokUrl());
+                    dto.setFooterText(store.getFooterText());
                     return dto;
                 });
 
@@ -205,6 +212,13 @@ public class DomainService {
                             dto.setStatus(store.getStatus().name());
                             dto.setWhatsappNumber(store.getWhatsappNumber());
                             dto.setGreetingMessage(store.getGreetingMessage());
+                            dto.setContactEmail(store.getContactEmail());
+                            dto.setContactPhone(store.getContactPhone());
+                            dto.setTelegramUrl(store.getTelegramUrl());
+                            dto.setFacebookUrl(store.getFacebookUrl());
+                            dto.setInstagramUrl(store.getInstagramUrl());
+                            dto.setTiktokUrl(store.getTiktokUrl());
+                            dto.setFooterText(store.getFooterText());
                             return dto;
                         });
 

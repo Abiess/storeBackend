@@ -85,6 +85,17 @@ export class StorefrontLandingComponent implements OnInit {
   /** true nachdem Theme-Antwort empfangen – verhindert dass loadStoreLogo() das Logo überschreibt */
   private themeLoaded = false;
 
+  /** Social & Kontakt-Daten des Stores (für Footer) */
+  storeContactEmail: string | null = null;
+  storeContactPhone: string | null = null;
+  storeTelegramUrl: string | null = null;
+  storeFacebookUrl: string | null = null;
+  storeInstagramUrl: string | null = null;
+  storeTiktokUrl: string | null = null;
+  storeFooterText: string | null = null;
+  storeDescription: string | null = null;
+  readonly currentYear = new Date().getFullYear();
+
   /** Aktiver Template-Code für dynamisches Layout-Switching */
   activeTemplateCode: string = 'MODERN_GRID';
 
@@ -679,6 +690,15 @@ export class StorefrontLandingComponent implements OnInit {
             ? store.greetingMessage.trim()
             : WhatsappConfigService.DEFAULT_MESSAGE
         );
+        // Social & Kontakt für Footer
+        this.storeContactEmail  = store.contactEmail  ?? null;
+        this.storeContactPhone  = store.contactPhone  ?? null;
+        this.storeTelegramUrl   = store.telegramUrl   ?? null;
+        this.storeFacebookUrl   = store.facebookUrl   ?? null;
+        this.storeInstagramUrl  = store.instagramUrl  ?? null;
+        this.storeTiktokUrl     = store.tiktokUrl     ?? null;
+        this.storeFooterText    = store.footerText    ?? null;
+        this.storeDescription   = store.description   ?? null;
         console.log('📱 WhatsApp-Config aus Store gesetzt:', store.whatsappNumber ?? 'kein Wert');
       },
       error: () => { /* env-Fallback bleibt aktiv */ }

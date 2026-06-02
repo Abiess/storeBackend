@@ -56,6 +56,28 @@ public class Store {
             columnDefinition = "boolean default false")
     private boolean whatsappNotificationsEnabled = false;
 
+    // ─── Social Media & Kontakt-Links ────────────────────────
+    @Column(name = "contact_email")
+    private String contactEmail;
+
+    @Column(name = "contact_phone")
+    private String contactPhone;
+
+    @Column(name = "telegram_url")
+    private String telegramUrl;
+
+    @Column(name = "facebook_url")
+    private String facebookUrl;
+
+    @Column(name = "instagram_url")
+    private String instagramUrl;
+
+    @Column(name = "tiktok_url")
+    private String tiktokUrl;
+
+    @Column(name = "footer_text", columnDefinition = "TEXT")
+    private String footerText;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private StoreStatus status = StoreStatus.ACTIVE;

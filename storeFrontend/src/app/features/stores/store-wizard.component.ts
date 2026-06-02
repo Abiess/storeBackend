@@ -272,6 +272,49 @@ interface WizardStep {
                 />
               </div>
             </div>
+
+            <!-- Social Media Links -->
+            <div class="social-section">
+              <div class="social-section-header">
+                <span>📱</span>
+                <div>
+                  <h4>
+                    {{ 'wizard.socialSectionTitle' | translate }}
+                    <span class="optional-tag">{{ 'wizard.socialOptional' | translate }}</span>
+                  </h4>
+                  <p class="hint">{{ 'wizard.socialSectionHint' | translate }}</p>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="telegramUrl">✈ {{ 'wizard.socialTelegram' | translate }}</label>
+                  <input id="telegramUrl" type="url" formControlName="telegramUrl"
+                         class="form-control"
+                         [placeholder]="'wizard.socialTelegramPlaceholder' | translate" />
+                </div>
+                <div class="form-group">
+                  <label for="facebookUrl">f {{ 'wizard.socialFacebook' | translate }}</label>
+                  <input id="facebookUrl" type="url" formControlName="facebookUrl"
+                         class="form-control"
+                         [placeholder]="'wizard.socialFacebookPlaceholder' | translate" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="instagramUrl">◉ {{ 'wizard.socialInstagram' | translate }}</label>
+                  <input id="instagramUrl" type="url" formControlName="instagramUrl"
+                         class="form-control"
+                         [placeholder]="'wizard.socialInstagramPlaceholder' | translate" />
+                </div>
+                <div class="form-group">
+                  <label for="tiktokUrl">♪ {{ 'wizard.socialTiktok' | translate }}</label>
+                  <input id="tiktokUrl" type="url" formControlName="tiktokUrl"
+                         class="form-control"
+                         [placeholder]="'wizard.socialTiktokPlaceholder' | translate" />
+                </div>
+              </div>
+            </div>
+
           </div>
 
           <!-- Step 4: KI-Produktbilder (Optional) -->
@@ -671,6 +714,41 @@ interface WizardStep {
       color: #374151;
       margin-bottom: 0.5rem;
       font-size: 0.9375rem;
+    }
+
+    /* ─── Social Section (Schritt 3) ─── */
+    .social-section {
+      margin-top: 2rem;
+      padding: 1.25rem 1.5rem;
+      background: linear-gradient(135deg,rgba(102,126,234,0.05),rgba(118,75,162,0.04));
+      border: 1px solid rgba(102,126,234,0.2);
+      border-radius: 12px;
+    }
+    .social-section-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+      font-size: 1.5rem;
+    }
+    .social-section-header h4 {
+      font-size: 0.9375rem;
+      font-weight: 700;
+      color: #374151;
+      margin: 0 0 0.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .optional-tag {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      background: #f3f4f6;
+      color: #6b7280;
+      padding: 0.125rem 0.5rem;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
 
     .form-control {
@@ -1144,7 +1222,12 @@ export class StoreWizardComponent implements OnInit {
       whatsappNotificationsEnabled: this.fb.control(false, []),
       address: this.fb.control('', []),
       city: this.fb.control('', []),
-      postalCode: this.fb.control('', [])
+      postalCode: this.fb.control('', []),
+      // ─── Social Links ─────────────────────────────────────────
+      telegramUrl: this.fb.control('', []),
+      facebookUrl: this.fb.control('', []),
+      instagramUrl: this.fb.control('', []),
+      tiktokUrl: this.fb.control('', [])
     });
 
     // Auto-generate slug from store name
@@ -1323,7 +1406,11 @@ export class StoreWizardComponent implements OnInit {
           address: formValue.address || null,
           city: formValue.city || null,
           postalCode: formValue.postalCode || null
-        }
+        },
+        telegramUrl: formValue.telegramUrl || null,
+        facebookUrl: formValue.facebookUrl || null,
+        instagramUrl: formValue.instagramUrl || null,
+        tiktokUrl: formValue.tiktokUrl || null
       };
 
       const result = await this.storeService.createStore(storeData).toPromise();

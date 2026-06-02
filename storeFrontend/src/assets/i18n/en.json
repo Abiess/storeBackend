@@ -414,7 +414,25 @@
                                       "deleteStoreButton":  "Permanently delete store",
                                       "saveSuccess":  "Advanced settings saved successfully!",
                                       "saveError":  "Error saving advanced settings"
-                                  }
+                                  },
+                     "social":  {
+                                    "title":  "Social \u0026 Contact",
+                                    "contactEmail":  "Email Address",
+                                    "contactEmailPlaceholder":  "contact@yourshop.com",
+                                    "contactEmailHint":  "Public contact email displayed in the footer",
+                                    "contactPhone":  "Phone / WhatsApp",
+                                    "contactPhonePlaceholder":  "+1 234 567890",
+                                    "contactPhoneHint":  "Displayed as a clickable phone link",
+                                    "socialMedia":  "Social Media Links",
+                                    "socialMediaHint":  "Add your social media profiles – they appear as icons in your footer.",
+                                    "telegramUrl":  "Telegram",
+                                    "facebookUrl":  "Facebook",
+                                    "instagramUrl":  "Instagram",
+                                    "tiktokUrl":  "TikTok",
+                                    "footerTextTitle":  "Footer Text",
+                                    "footerTextHint":  "A short tagline below your logo in the footer (max. 200 characters).",
+                                    "footerTextPlaceholder":  "Your one-stop shop – fast, affordable, reliable."
+                                }
                  },
     "table":  {
                   "image":  "Image",
@@ -452,7 +470,10 @@
                    "faq":  "FAQ",
                    "support":  "Support",
                    "copyright":  "© {{year}} All rights reserved",
-                   "info":  "Information"
+                   "info":  "Information",
+                   "followUs":  "Follow us",
+                   "poweredBy":  "Powered by markt.ma",
+                   "contactUs":  "Contact"
                },
     "trust":  {
                   "freeShipping":  "Free shipping",
@@ -1080,7 +1101,18 @@
                    "telegramFeaturePoint1":  "Import from public \u0026 private channels",
                    "telegramFeaturePoint2":  "Automatically grab images \u0026 descriptions",
                    "telegramFeaturePoint3":  "Products appear as drafts for your review",
-                   "telegramFeatureBadge":  "New"
+                   "telegramFeatureBadge":  "New",
+                   "socialSectionTitle":  "Social Media",
+                   "socialSectionHint":  "These will appear as icons in your store footer.",
+                   "socialOptional":  "optional",
+                   "socialTelegram":  "Telegram",
+                   "socialFacebook":  "Facebook",
+                   "socialInstagram":  "Instagram",
+                   "socialTiktok":  "TikTok",
+                   "socialTelegramPlaceholder":  "https://t.me/yourchannel",
+                   "socialFacebookPlaceholder":  "https://facebook.com/yourshop",
+                   "socialInstagramPlaceholder":  "https://instagram.com/yourshop",
+                   "socialTiktokPlaceholder":  "https://tiktok.com/@yourshop"
                },
     "aiGenerator":  {
                         "intro":  "AI Product Image Analysis: Upload multiple product photos and AI automatically generates product data.",
@@ -1320,20 +1352,32 @@
     "filter":  {
                    "priceRange":  "Price Range"
                },
-    "onboarding": {
-        "title":       "🚀 Set up your store",
-        "titleDone":   "🎉 Store fully set up!",
-        "subtitle":    "{{completed}} of {{total}} steps completed",
-        "subtitleDone":"You're ready to go – open your store!",
-        "cta":         "Set up →",
-        "doneBadge":   "Done ✓",
-        "openPreview": "🌐 Open store in new tab",
-        "dismiss":     "Dismiss",
-        "steps": {
-            "product":  { "title": "Add your first product",           "desc": "Start selling by adding your first products" },
-            "theme":    { "title": "Choose design & template",         "desc": "Pick a professional layout for your store" },
-            "branding": { "title": "Set up logo & branding",           "desc": "Upload your logo and customize colors & typography" },
-            "telegram": { "title": "Set up Telegram import",           "desc": "Import products directly from your Telegram channel" }
-        }
-    }
+    "onboarding":  {
+                       "title":  "🚀 Set up your store",
+                       "titleDone":  "🎉 Store fully set up!",
+                       "subtitle":  "{{completed}} of {{total}} steps completed",
+                       "subtitleDone":  "You\u0027re ready to go – open your store!",
+                       "cta":  "Set up →",
+                       "doneBadge":  "Done ✓",
+                       "openPreview":  "🌐 Open store in new tab",
+                       "dismiss":  "Dismiss",
+                       "steps":  {
+                                     "product":  {
+                                                     "title":  "Add your first product",
+                                                     "desc":  "Start selling by adding your first products"
+                                                 },
+                                     "theme":  {
+                                                   "title":  "Choose design \u0026 template",
+                                                   "desc":  "Pick a professional layout for your store"
+                                               },
+                                     "branding":  {
+                                                      "title":  "Set up logo \u0026 branding",
+                                                      "desc":  "Upload your logo and customize colors \u0026 typography"
+                                                  },
+                                     "telegram":  {
+                                                      "title":  "Set up Telegram import",
+                                                      "desc":  "Import products directly from your Telegram channel"
+                                                  }
+                                 }
+                   }
 }

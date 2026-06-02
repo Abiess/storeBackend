@@ -629,6 +629,14 @@ export interface Store {
   greetingMessage?: string;
   /** Kunden automatisch per WhatsApp bei Bestellungen benachrichtigen */
   whatsappNotificationsEnabled?: boolean;
+  // ─── Social Media & Kontakt ───────────────────────────────────
+  contactEmail?: string;
+  contactPhone?: string;
+  telegramUrl?: string;
+  facebookUrl?: string;
+  instagramUrl?: string;
+  tiktokUrl?: string;
+  footerText?: string;
 }
 
 export interface PublicStore {
@@ -636,12 +644,20 @@ export interface PublicStore {
   name: string;
   slug: string;
   description?: string;
-  logoUrl?: string;  // ✅ Matches backend PublicStoreDTO
+  logoUrl?: string;
   status: StoreStatus;
   /** WhatsApp-Kontaktnummer (optional) */
   whatsappNumber?: string;
   /** Vorbefüllte WhatsApp-Begrüßungsnachricht (optional) */
   greetingMessage?: string;
+  // ─── Social Media & Kontakt ───────────────────────────────────
+  contactEmail?: string;
+  contactPhone?: string;
+  telegramUrl?: string;
+  facebookUrl?: string;
+  instagramUrl?: string;
+  tiktokUrl?: string;
+  footerText?: string;
 }
 
 export enum StoreStatus {
