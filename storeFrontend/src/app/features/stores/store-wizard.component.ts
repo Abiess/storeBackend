@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, OnInit, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -23,32 +23,59 @@ interface WizardStep {
     <div class="wizard-container">
       <!-- Skip Button -->
       <button class="skip-btn" (click)="skip()" *ngIf="!hasStore()">
-        {{ 'wizard.skip' | translate }} â†’
+        {{ 'wizard.skip' | translate }}
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </button>
 
       <!-- Progress Header -->
       <div class="wizard-header">
+        <p class="wizard-eyebrow">markt.ma</p>
         <h1 class="wizard-title">{{ 'wizard.createStore' | translate }}</h1>
         <p class="wizard-subtitle">{{ 'wizard.createStoreSubtitle' | translate }}</p>
-        
-        <!-- Progress Steps -->
-        <div class="progress-steps">
-          <div 
-            *ngFor="let step of steps; let i = index"
-            class="progress-step"
-            [class.active]="currentStep() === step.id"
-            [class.completed]="step.completed"
-            (click)="goToStep(step.id)">
-            <div class="step-circle">
-              <span *ngIf="!step.completed" class="step-number">{{ step.id }}</span>
-              <svg *ngIf="step.completed" class="step-check" width="20" height="20" viewBox="0 0 20 20">
-                <path d="M7 10l2 2 4-4" stroke="white" stroke-width="2" fill="none"/>
-              </svg>
+
+        <!-- Modern Stepper -->
+        <div class="stepper">
+          <ng-container *ngFor="let step of steps; let i = index; let last = last">
+
+            <!-- Step Item -->
+            <div class="stepper__item"
+                 [class.is-active]="currentStep() === step.id"
+                 [class.is-done]="step.completed"
+                 [class.is-future]="!step.completed && currentStep() !== step.id"
+                 (click)="goToStep(step.id)"
+                 [attr.title]="step.title | translate">
+
+              <div class="stepper__bubble">
+                <!-- Completed: checkmark -->
+                <svg *ngIf="step.completed" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                <!-- Active or Future: step number -->
+                <span *ngIf="!step.completed" class="stepper__num">{{ step.id }}</span>
+              </div>
+
+              <div class="stepper__meta">
+                <span class="stepper__step-of">Schritt {{ step.id }} / {{ steps.length }}</span>
+                <span class="stepper__label">{{ step.title | translate }}</span>
+              </div>
             </div>
-            <div class="step-info">
-              <span class="step-title">{{ step.title | translate }}</span>
-            </div>
+
+            <!-- Connector Line (not after last item) -->
+            <div *ngIf="!last" class="stepper__line"
+                 [class.is-done]="step.completed"></div>
+
+          </ng-container>
+        </div>
+
+        <!-- Mobile: compact progress bar -->
+        <div class="stepper-mobile">
+          <div class="stepper-mobile__bar">
+            <div class="stepper-mobile__fill" [style.width.%]="((currentStep() - 1) / (steps.length - 1)) * 100"></div>
           </div>
+          <span class="stepper-mobile__label">
+            Schritt {{ currentStep() }} von {{ steps.length }}: {{ steps[currentStep()-1].title | translate }}
+          </span>
         </div>
       </div>
 
@@ -183,7 +210,7 @@ interface WizardStep {
             <!-- WhatsApp-Konfiguration -->
             <div class="whatsapp-section">
               <div class="whatsapp-header">
-                <span class="whatsapp-icon">ðŸ’¬</span>
+                <span class="whatsapp-icon">💬</span>
                 <div>
                   <h4>{{ 'wizard.whatsappNumber' | translate }}</h4>
                   <p class="whatsapp-desc">{{ 'wizard.whatsappNumberHint' | translate }}</p>
@@ -264,7 +291,7 @@ interface WizardStep {
             </app-ai-product-image-generator>
 
             <div class="optional-note">
-              <span class="note-icon">â„¹ï¸</span>
+              <span class="note-icon">ℹ️</span>
               <span>{{ 'wizard.aiImagesOptional' | translate }}</span>
             </div>
           </div>
@@ -333,7 +360,7 @@ interface WizardStep {
 
             <!-- Telegram Import Feature Spotlight -->
             <div class="telegram-spotlight">
-              <div class="telegram-spotlight__icon">📡</div>
+              <div class="telegram-spotlight__icon">??</div>
               <div class="telegram-spotlight__body">
                 <h4 class="telegram-spotlight__title">{{ 'wizard.telegramFeatureTitle' | translate }}</h4>
                 <p class="telegram-spotlight__desc">{{ 'wizard.telegramFeatureDesc' | translate }}</p>
@@ -364,7 +391,7 @@ interface WizardStep {
           (click)="previousStep()"
           *ngIf="currentStep() > 1"
           [disabled]="loading()">
-          â† {{ 'wizard.back' | translate }}
+          ← {{ 'wizard.back' | translate }}
         </button>
 
         <button 
@@ -373,7 +400,7 @@ interface WizardStep {
           (click)="nextStep()"
           *ngIf="currentStep() < 5"
           [disabled]="!canProceed() || loading()">
-          {{ 'wizard.next' | translate }} â†’
+          {{ 'wizard.next' | translate }} →
         </button>
 
         <button 
@@ -389,7 +416,7 @@ interface WizardStep {
             </svg>
             {{ 'wizard.creating' | translate }}
           } @else {
-            ðŸš€ {{ 'wizard.createStore' | translate }}
+            🚀 {{ 'wizard.createStore' | translate }}
           }
         </button>
       </div>
@@ -399,117 +426,190 @@ interface WizardStep {
     .wizard-container {
       min-height: 100vh;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      padding: 2rem;
+      padding: 2rem 1.5rem 4rem;
       position: relative;
     }
 
     .skip-btn {
       position: absolute;
-      top: 2rem;
-      right: 2rem;
-      background: rgba(255, 255, 255, 0.2);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      color: white;
-      padding: 0.75rem 1.5rem;
-      border-radius: 8px;
-      cursor: pointer;
+      top: 1.5rem;
+      right: 1.5rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.25);
+      color: rgba(255,255,255,0.9);
+      padding: 0.5rem 1rem;
+      border-radius: 999px;
+      font-size: 0.8125rem;
       font-weight: 500;
-      transition: all 0.3s;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s;
       z-index: 100;
+      backdrop-filter: blur(4px);
     }
-
     .skip-btn:hover {
-      background: rgba(255, 255, 255, 0.3);
-      transform: translateX(4px);
+      background: rgba(255,255,255,0.25);
+      transform: translateX(2px);
     }
 
+    /* ─── Header ─────────────────────────────────── */
     .wizard-header {
-      max-width: 900px;
-      margin: 0 auto 3rem;
+      max-width: 860px;
+      margin: 0 auto 2.5rem;
       text-align: center;
       color: white;
     }
 
+    .wizard-eyebrow {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      opacity: 0.6;
+      margin: 0 0 0.75rem;
+    }
+
     .wizard-title {
-      font-size: 2.5rem;
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
       font-weight: 800;
       margin: 0 0 0.5rem;
-      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      text-shadow: 0 2px 12px rgba(0,0,0,0.18);
+      letter-spacing: -0.02em;
     }
 
     .wizard-subtitle {
-      font-size: 1.125rem;
-      opacity: 0.9;
-      margin: 0 0 3rem;
+      font-size: 1rem;
+      opacity: 0.8;
+      margin: 0 0 2.5rem;
     }
 
-    .progress-steps {
+    /* ─── Desktop Stepper ─────────────────────────── */
+    .stepper {
       display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      max-width: 700px;
+      align-items: center;
+      justify-content: center;
+      max-width: 760px;
       margin: 0 auto;
-      position: relative;
     }
 
-    .progress-steps::before {
-      content: '';
-      position: absolute;
-      top: 20px;
-      left: 10%;
-      right: 10%;
-      height: 2px;
-      background: rgba(255, 255, 255, 0.3);
-      z-index: 0;
-    }
-
-    .progress-step {
+    /* Connector line between steps */
+    .stepper__line {
       flex: 1;
+      height: 2px;
+      background: rgba(255,255,255,0.25);
+      position: relative;
+      min-width: 24px;
+      transition: background 0.4s;
+    }
+    .stepper__line.is-done {
+      background: rgba(255,255,255,0.85);
+    }
+
+    /* Step item */
+    .stepper__item {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.5rem;
       cursor: pointer;
-      transition: all 0.3s;
-      position: relative;
-      z-index: 1;
+      flex-shrink: 0;
+      min-width: 64px;
+      transition: opacity 0.2s;
     }
+    .stepper__item.is-future { opacity: 0.5; }
+    .stepper__item:hover { opacity: 1; }
 
-    .step-circle {
-      width: 40px;
-      height: 40px;
+    /* Bubble (circle) */
+    .stepper__bubble {
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
-      background: rgba(255, 255, 255, 0.2);
-      border: 2px solid rgba(255, 255, 255, 0.5);
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 700;
-      color: white;
-      transition: all 0.3s;
+      transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      /* Default: future */
+      background: rgba(255,255,255,0.15);
+      border: 2px solid rgba(255,255,255,0.35);
+      color: rgba(255,255,255,0.8);
     }
-
-    .progress-step.active .step-circle {
+    .stepper__item.is-active .stepper__bubble {
       background: white;
-      color: #667eea;
       border-color: white;
-      transform: scale(1.1);
-      box-shadow: 0 4px 12px rgba(255, 255, 255, 0.4);
+      color: #7c3aed;
+      box-shadow: 0 0 0 6px rgba(255,255,255,0.2), 0 4px 16px rgba(0,0,0,0.2);
+      transform: scale(1.12);
     }
-
-    .progress-step.completed .step-circle {
+    .stepper__item.is-done .stepper__bubble {
       background: #10b981;
       border-color: #10b981;
+      color: white;
+      box-shadow: 0 2px 8px rgba(16,185,129,0.4);
     }
 
-    .step-info {
-      text-align: center;
+    .stepper__num {
+      font-size: 0.9375rem;
+      font-weight: 700;
+      line-height: 1;
     }
 
-    .step-title {
-      font-size: 0.875rem;
+    /* Label below bubble */
+    .stepper__meta {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+    }
+    .stepper__step-of {
+      font-size: 0.625rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      opacity: 0.55;
+      display: none; /* shown only on active */
+    }
+    .stepper__item.is-active .stepper__step-of {
+      display: block;
+    }
+    .stepper__label {
+      font-size: 0.75rem;
       font-weight: 600;
-      opacity: 0.9;
+      color: rgba(255,255,255,0.9);
+      white-space: nowrap;
+    }
+    .stepper__item.is-active .stepper__label {
+      color: white;
+      font-weight: 700;
+    }
+
+    /* ─── Mobile Progress Bar (hidden on desktop) ─── */
+    .stepper-mobile {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 0;
+    }
+    .stepper-mobile__bar {
+      width: 100%;
+      max-width: 320px;
+      height: 6px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .stepper-mobile__fill {
+      height: 100%;
+      background: white;
+      border-radius: 999px;
+      transition: width 0.4s ease;
+    }
+    .stepper-mobile__label {
+      font-size: 0.8125rem;
+      color: rgba(255,255,255,0.85);
+      font-weight: 500;
     }
 
     .wizard-content {
@@ -952,7 +1052,7 @@ interface WizardStep {
     }
 
     .telegram-spotlight__points li::before {
-      content: '✓';
+      content: '?';
       color: #29b6f6;
       font-weight: 700;
       font-size: 0.85rem;
@@ -973,33 +1073,22 @@ interface WizardStep {
     }
 
     @media (max-width: 768px) {
-      .wizard-container {
-        padding: 1rem;
-      }
+      .wizard-container { padding: 1rem 1rem 3rem; }
 
-      .wizard-content {
-        padding: 2rem 1.5rem;
-      }
+      /* Hide desktop stepper, show mobile progress bar */
+      .stepper { display: none; }
+      .stepper-mobile { display: flex; }
+      .wizard-subtitle { margin-bottom: 1.25rem; }
 
-      .form-row {
-        grid-template-columns: 1fr;
-      }
+      .wizard-content { padding: 1.75rem 1.25rem; }
+      .form-row { grid-template-columns: 1fr; }
+      .categories-grid { grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+      .wizard-footer { flex-direction: column; }
+      .btn-primary { margin-left: 0; }
+    }
 
-      .categories-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .progress-steps {
-        flex-wrap: wrap;
-      }
-
-      .wizard-footer {
-        flex-direction: column;
-      }
-
-      .btn-primary {
-        margin-left: 0;
-      }
+    @media (max-width: 480px) {
+      .categories-grid { grid-template-columns: 1fr; }
     }
   `]
 })
@@ -1012,22 +1101,22 @@ export class StoreWizardComponent implements OnInit {
   wizardForm!: FormGroup;
 
   steps: WizardStep[] = [
-    { id: 1, title: 'wizard.step1Title', subtitle: 'wizard.step1Subtitle', icon: 'ðŸª', completed: false },
-    { id: 2, title: 'wizard.step2Title', subtitle: 'wizard.step2Subtitle', icon: 'ðŸŽ¯', completed: false },
-    { id: 3, title: 'wizard.step3Title', subtitle: 'wizard.step3Subtitle', icon: 'ðŸ“ž', completed: false },
-    { id: 4, title: 'wizard.step4Title', subtitle: 'wizard.step4Subtitle', icon: 'ðŸ¤–', completed: false },
-    { id: 5, title: 'wizard.step5Title', subtitle: 'wizard.step5Subtitle', icon: 'âœ…', completed: false }
+    { id: 1, title: 'wizard.step1Title', subtitle: 'wizard.step1Subtitle', icon: '🏪', completed: false },
+    { id: 2, title: 'wizard.step2Title', subtitle: 'wizard.step2Subtitle', icon: '🎯', completed: false },
+    { id: 3, title: 'wizard.step3Title', subtitle: 'wizard.step3Subtitle', icon: '📞', completed: false },
+    { id: 4, title: 'wizard.step4Title', subtitle: 'wizard.step4Subtitle', icon: '🤖', completed: false },
+    { id: 5, title: 'wizard.step5Title', subtitle: 'wizard.step5Subtitle', icon: '✅', completed: false }
   ];
 
   categories = [
-    { id: 'fashion', name: 'wizard.categoryFashion', description: 'wizard.categoryFashionDesc', icon: 'ðŸ‘—' },
-    { id: 'electronics', name: 'wizard.categoryElectronics', description: 'wizard.categoryElectronicsDesc', icon: 'ðŸ“±' },
-    { id: 'food', name: 'wizard.categoryFood', description: 'wizard.categoryFoodDesc', icon: 'ðŸ”' },
-    { id: 'beauty', name: 'wizard.categoryBeauty', description: 'wizard.categoryBeautyDesc', icon: 'ðŸ’„' },
-    { id: 'home', name: 'wizard.categoryHome', description: 'wizard.categoryHomeDesc', icon: 'ðŸ ' },
-    { id: 'sports', name: 'wizard.categorySports', description: 'wizard.categorySportsDesc', icon: 'âš½' },
-    { id: 'books', name: 'wizard.categoryBooks', description: 'wizard.categoryBooksDesc', icon: 'ðŸ“š' },
-    { id: 'toys', name: 'wizard.categoryToys', description: 'wizard.categoryToysDesc', icon: 'ðŸ§¸' }
+    { id: 'fashion', name: 'wizard.categoryFashion', description: 'wizard.categoryFashionDesc', icon: '👗' },
+    { id: 'electronics', name: 'wizard.categoryElectronics', description: 'wizard.categoryElectronicsDesc', icon: '📱' },
+    { id: 'food', name: 'wizard.categoryFood', description: 'wizard.categoryFoodDesc', icon: '🍔' },
+    { id: 'beauty', name: 'wizard.categoryBeauty', description: 'wizard.categoryBeautyDesc', icon: '💄' },
+    { id: 'home', name: 'wizard.categoryHome', description: 'wizard.categoryHomeDesc', icon: '🏠' },
+    { id: 'sports', name: 'wizard.categorySports', description: 'wizard.categorySportsDesc', icon: '⚽' },
+    { id: 'books', name: 'wizard.categoryBooks', description: 'wizard.categoryBooksDesc', icon: '📚' },
+    { id: 'toys', name: 'wizard.categoryToys', description: 'wizard.categoryToysDesc', icon: '🧸' }
   ];
 
   createdStoreId: number | null = null;
@@ -1100,8 +1189,8 @@ export class StoreWizardComponent implements OnInit {
     this.wizardProgressService.loadProgress().subscribe({
       next: (progress) => {
         if (progress && progress.status === 'IN_PROGRESS') {
-          console.log('ðŸ“‚ Fortschritt geladen - Setze Wizard fort ab Schritt', progress.currentStep);
-          
+          console.log('📂 Fortschritt geladen - Setze Wizard fort ab Schritt', progress.currentStep);
+
           // Setze aktuellen Schritt
           this.currentStep.set(progress.currentStep);
           
@@ -1114,7 +1203,7 @@ export class StoreWizardComponent implements OnInit {
             });
           }
           
-          // FÃ¼lle Formular mit gespeicherten Daten
+          // Fülle Formular mit gespeicherten Daten
           if (progress.data) {
             this.wizardForm.patchValue({
               storeName: progress.data.storeName || '',
@@ -1127,7 +1216,7 @@ export class StoreWizardComponent implements OnInit {
               postalCode: progress.data.contactInfo?.postalCode || ''
             });
 
-            // Setze ausgewÃ¤hlte Kategorien
+            // Setze ausgewählte Kategorien
             if (progress.data.selectedCategories) {
               this.selectedCategories.set(progress.data.selectedCategories);
             }
@@ -1136,7 +1225,7 @@ export class StoreWizardComponent implements OnInit {
       },
       error: (err) => {
         // Kein gespeicherter Fortschritt = Start bei Schritt 1
-        console.log('â„¹ï¸ Kein gespeicherter Fortschritt gefunden. Starte neu.');
+        console.log('ℹ️ Kein gespeicherter Fortschritt gefunden. Starte neu.');
       }
     });
   }
@@ -1167,8 +1256,8 @@ export class StoreWizardComponent implements OnInit {
     };
 
     this.wizardProgressService.saveProgress(progress).subscribe({
-      next: () => console.log('âœ… Fortschritt gespeichert'),
-      error: (err) => console.error('âŒ Fehler beim Speichern:', err)
+      next: () => console.log('✅ Fortschritt gespeichert'),
+      error: (err) => console.error('❌ Fehler beim Speichern:', err)
     });
   }
 
@@ -1192,7 +1281,7 @@ export class StoreWizardComponent implements OnInit {
 
     const current = this.currentStep();
 
-    // Bei Schritt 3 -> 4: Store erstellen, damit storeId fÃ¼r KI-Feature verfÃ¼gbar ist
+    // Bei Schritt 3 -> 4: Store erstellen, damit storeId für KI-Feature verfügbar ist
     if (current === 3 && !this.createdStoreId) {
       this.createStoreForAiStep();
       return; // nextStep wird nach erfolgreicher Erstellung aufgerufen
@@ -1208,11 +1297,11 @@ export class StoreWizardComponent implements OnInit {
   }
 
   /**
-   * Erstelle Store fÃ¼r KI-Step (wird vor Step 4 aufgerufen)
+   * Erstelle Store für KI-Step (wird vor Step 4 aufgerufen)
    */
   private async createStoreForAiStep(): Promise<void> {
     if (this.wizardForm.invalid) {
-      this.error.set('Bitte fÃ¼llen Sie alle Pflichtfelder aus.');
+      this.error.set('Bitte füllen Sie alle Pflichtfelder aus.');
       return;
     }
 
@@ -1244,7 +1333,7 @@ export class StoreWizardComponent implements OnInit {
       }
 
       this.createdStoreId = result.id;
-      console.log('âœ… Store erstellt fÃ¼r KI-Step:', result.id);
+      console.log('✅ Store erstellt für KI-Step:', result.id);
 
       // Markiere Schritt 3 als abgeschlossen und gehe zu Schritt 4
       this.steps[2].completed = true;
@@ -1296,14 +1385,14 @@ export class StoreWizardComponent implements OnInit {
   }
 
   skip(): void {
-    // Markiere als Ã¼bersprungen in DB
+    // Markiere als übersprungen in DB
     this.wizardProgressService.skipWizard().subscribe({
       next: () => {
-        console.log('â­ï¸ Wizard Ã¼bersprungen');
+        console.log('⏭️ Wizard übersprungen');
         this.router.navigate(['/dashboard']);
       },
       error: (err) => {
-        console.error('âŒ Fehler beim Ãœberspringen:', err);
+        console.error('❌ Fehler beim Überspringen:', err);
         // Navigiere trotzdem zum Dashboard
         this.router.navigate(['/dashboard']);
       }
@@ -1315,8 +1404,8 @@ export class StoreWizardComponent implements OnInit {
     if (this.createdStoreId) {
       // Markiere Wizard als completed in DB
       this.wizardProgressService.completeWizard(this.createdStoreId).subscribe({
-        next: () => console.log('âœ… Wizard als abgeschlossen markiert'),
-        error: (err) => console.warn('âš ï¸ Fehler beim Markieren:', err)
+        next: () => console.log('✅ Wizard als abgeschlossen markiert'),
+        error: (err) => console.warn('⚠️ Fehler beim Markieren:', err)
       });
 
       // Navigate to onboarding (template selection + demo data) after store creation
@@ -1360,8 +1449,8 @@ export class StoreWizardComponent implements OnInit {
 
       // Markiere Wizard als completed in DB
       this.wizardProgressService.completeWizard(result.id).subscribe({
-        next: () => console.log('âœ… Wizard als abgeschlossen markiert'),
-        error: (err) => console.warn('âš ï¸ Fehler beim Markieren:', err)
+        next: () => console.log('✅ Wizard als abgeschlossen markiert'),
+        error: (err) => console.warn('⚠️ Fehler beim Markieren:', err)
       });
       
       // Success! Navigate to onboarding (template selection)
@@ -1385,5 +1474,3 @@ export class StoreWizardComponent implements OnInit {
     // Handle AI image selection change if needed
   }
 }
-
-
