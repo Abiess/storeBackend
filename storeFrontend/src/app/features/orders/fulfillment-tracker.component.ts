@@ -1,11 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
-import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { DropshippingService } from '@app/core/services/dropshipping.service';
 import { CJIntegrationService } from '@app/core/services/cj-integration.service';
 import {
@@ -20,12 +15,7 @@ import {
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
-    MatFormFieldModule,
-    MatSelectModule,
-    MatInputModule,
-    MatButtonModule,
-    MatSnackBarModule
+    FormsModule
   ],
   template: `
     <div class="fulfillment-tracker" *ngIf="items.length > 0">
@@ -193,6 +183,13 @@ import {
         </div>
       </div>
     </div>
+
+    <!-- Toast -->
+    @if (toast) {
+      <div class="ft-toast" [class.ft-toast--success]="toast.type==='success'" [class.ft-toast--error]="toast.type==='error'">
+        {{ toast.message }}
+      </div>
+    }
   `,
   styles: [`
     .fulfillment-tracker {
@@ -522,14 +519,13 @@ import {
     }
 
     @media (max-width: 768px) {
-      .status-row, .field-row {
-        grid-template-columns: 1fr;
-      }
-
-      .tracking-row {
-        grid-template-columns: 1fr;
-      }
+      .status-row, .field-row { grid-template-columns: 1fr; }
+      .tracking-row { grid-template-columns: 1fr; }
     }
+    .ft-toast { position: fixed; bottom: 2rem; right: 2rem; padding: 0.875rem 1.5rem; border-radius: 8px; font-weight: 600; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.2); animation: slideIn 0.3s ease; }
+    .ft-toast--success { background: #10b981; color: white; }
+    .ft-toast--error { background: #ef4444; color: white; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
   `]
 })
 export class FulfillmentTrackerComponent implements OnInit {
@@ -538,11 +534,11 @@ export class FulfillmentTrackerComponent implements OnInit {
   items: OrderItemWithDropshipping[] = [];
   updatingItems = new Set<number>();
   placingCJOrders = new Set<number>();
+  toast: { message: string; type: 'success' | 'error' } | null = null;
 
   constructor(
     private dropshippingService: DropshippingService,
-    private cjIntegrationService: CJIntegrationService,
-    private snackBar: MatSnackBar
+    private cjIntegrationService: CJIntegrationService
   ) {}
 
   ngOnInit() {
@@ -551,21 +547,12 @@ export class FulfillmentTrackerComponent implements OnInit {
 
   loadItems() {
     if (!this.orderId) return;
-
     this.dropshippingService.getOrderItemsWithDropshipping(this.orderId).subscribe({
-      next: (items) => {
-        this.items = items;
-      },
+      next: (items) => { this.items = items; },
       error: (err) => {
         console.error('Error loading order items with dropshipping:', err);
-
-        // Wenn 403/401 → wahrscheinlich kein ROLE_RESELLER, ignorieren
         if (err.status !== 403 && err.status !== 401) {
-          this.snackBar.open(
-            'Fehler beim Laden der Fulfillment-Daten',
-            'OK',
-            { duration: 5000 }
-          );
+          this.showToast('Fehler beim Laden der Fulfillment-Daten', 'error');
         }
       }
     });
@@ -588,9 +575,7 @@ export class FulfillmentTrackerComponent implements OnInit {
 
   saveFulfillment(item: OrderItemWithDropshipping) {
     if (this.updatingItems.has(item.id)) return;
-
     this.updatingItems.add(item.id);
-
     const updateData = {
       status: item.fulfillmentStatus,
       supplierOrderId: item.supplierOrderId,
@@ -598,73 +583,49 @@ export class FulfillmentTrackerComponent implements OnInit {
       carrier: item.carrier,
       notes: item.notes
     };
-
     this.dropshippingService.updateFulfillment(item.id, updateData).subscribe({
       next: () => {
-        this.snackBar.open('Fulfillment aktualisiert', 'OK', { duration: 2000 });
+        this.showToast('Fulfillment aktualisiert', 'success');
         this.updatingItems.delete(item.id);
       },
       error: (err) => {
         console.error('Error updating fulfillment:', err);
-        this.snackBar.open(
-          'Fehler: ' + (err.error?.message || 'Unbekannter Fehler'),
-          'OK',
-          { duration: 5000 }
-        );
+        this.showToast('Fehler: ' + (err.error?.message || 'Unbekannter Fehler'), 'error');
         this.updatingItems.delete(item.id);
       }
     });
   }
 
   placeCJOrder(item: OrderItemWithDropshipping) {
-    if (!confirm('🤖 Automatisch bei CJ bestellen?\n\nDies wird die Bestellung direkt an CJ senden.')) {
-      return;
-    }
-
+    if (!confirm('🤖 Automatisch bei CJ bestellen?\n\nDies wird die Bestellung direkt an CJ senden.')) return;
     this.placingCJOrders.add(item.id);
-
-    // TODO: Shipping Info aus Order laden (für jetzt: Mock)
     const orderRequest = {
-      shippingFirstName: 'Test',
-      shippingLastName: 'Customer',
-      shippingAddress: '123 Main St',
-      shippingCity: 'Berlin',
-      shippingPostalCode: '10115',
-      shippingCountryCode: 'DE',
+      shippingFirstName: 'Test', shippingLastName: 'Customer',
+      shippingAddress: '123 Main St', shippingCity: 'Berlin',
+      shippingPostalCode: '10115', shippingCountryCode: 'DE',
       shippingPhone: '+49123456789'
     };
-
     this.cjIntegrationService.placeOrder(item.id, orderRequest).subscribe({
       next: (response) => {
         this.placingCJOrders.delete(item.id);
-
         if (response.success) {
-          this.snackBar.open(
-            `✅ CJ Order placed: ${response.cjOrderId}`,
-            'OK',
-            { duration: 5000 }
-          );
-
-          // Reload items to show updated status
+          this.showToast(`✅ CJ Order placed: ${response.cjOrderId}`, 'success');
           this.loadItems();
         } else {
-          this.snackBar.open(
-            `❌ CJ Order failed: ${response.message}`,
-            'OK',
-            { duration: 7000 }
-          );
+          this.showToast(`❌ CJ Order failed: ${response.message}`, 'error');
         }
       },
       error: (err) => {
         console.error('Error placing CJ order:', err);
         this.placingCJOrders.delete(item.id);
-        this.snackBar.open(
-          'Fehler beim CJ Order: ' + (err.error?.message || 'Unbekannter Fehler'),
-          'OK',
-          { duration: 7000 }
-        );
+        this.showToast('Fehler beim CJ Order: ' + (err.error?.message || 'Unbekannter Fehler'), 'error');
       }
     });
+  }
+
+  private showToast(message: string, type: 'success' | 'error'): void {
+    this.toast = { message, type };
+    setTimeout(() => this.toast = null, 4000);
   }
 
   getStatusLabel(status: FulfillmentStatus): string {

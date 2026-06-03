@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '@app/core/services/auth.service';
 import { RoleService } from '@app/core/services/role.service';
-import { User, UserRole, Permission, StoreRole } from '@app/core/models';
+import { User, StoreRole } from '@app/core/models';
 
 @Component({
   selector: 'app-user-roles',
@@ -192,7 +192,7 @@ export class UserRolesComponent implements OnInit {
   }
 
   loadStoreRoles(userId: number): void {
-    this.roleService.getStoreRoles(1).subscribe({
+    this.roleService.getStoreRoles(userId).subscribe({
       next: (roles) => {
         this.storeRoles = roles.filter(r => r.userId === userId);
       },

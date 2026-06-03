@@ -3,6 +3,7 @@ import { Router, CanActivateFn } from '@angular/router';
 import { map, catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { RoleService } from '../services/role.service';
+import { AuthService } from '../services/auth.service';
 import { Permission } from '../models';
 
 /**
@@ -19,13 +20,14 @@ import { Permission } from '../models';
  *   }
  * }
  */
-export const permissionGuard: CanActivateFn = (route, state) => {
+export const permissionGuard: CanActivateFn = (route, _state) => {
   const roleService = inject(RoleService);
+  const authService = inject(AuthService);
   const router = inject(Router);
 
   const requiredPermission = route.data['requiredPermission'] as Permission;
-  const storeId = route.params['storeId'] || route.data['storeId'];
-  const userId = 1; // TODO: Aus AuthService holen
+  const storeId = route.params['storeId'] || route.params['id'] || route.data['storeId'];
+  const userId = authService.getCurrentUser()?.id ?? 0;
 
   if (!requiredPermission || !storeId) {
     console.error('Permission Guard: requiredPermission und storeId müssen angegeben werden');
@@ -33,7 +35,7 @@ export const permissionGuard: CanActivateFn = (route, state) => {
     return false;
   }
 
-  return roleService.hasPermission(userId, storeId, requiredPermission).pipe(
+  return roleService.hasPermission(userId, +storeId, requiredPermission).pipe(
     map(hasPermission => {
       if (!hasPermission) {
         console.warn(`User ${userId} hat keine Berechtigung: ${requiredPermission}`);
@@ -63,13 +65,14 @@ export const permissionGuard: CanActivateFn = (route, state) => {
  *   }
  * }
  */
-export const multiplePermissionsGuard: CanActivateFn = (route, state) => {
+export const multiplePermissionsGuard: CanActivateFn = (route, _state) => {
   const roleService = inject(RoleService);
+  const authService = inject(AuthService);
   const router = inject(Router);
 
   const requiredPermissions = route.data['requiredPermissions'] as Permission[];
-  const storeId = route.params['storeId'] || route.data['storeId'];
-  const userId = 1; // TODO: Aus AuthService holen
+  const storeId = route.params['storeId'] || route.params['id'] || route.data['storeId'];
+  const userId = authService.getCurrentUser()?.id ?? 0;
 
   if (!requiredPermissions || !storeId) {
     console.error('Multiple Permissions Guard: requiredPermissions und storeId müssen angegeben werden');
@@ -77,7 +80,7 @@ export const multiplePermissionsGuard: CanActivateFn = (route, state) => {
     return false;
   }
 
-  return roleService.hasPermissions(userId, storeId, requiredPermissions).pipe(
+  return roleService.hasPermissions(userId, +storeId, requiredPermissions).pipe(
     map(hasPermissions => {
       if (!hasPermissions) {
         console.warn(`User ${userId} hat nicht alle erforderlichen Berechtigungen`);
@@ -96,12 +99,13 @@ export const multiplePermissionsGuard: CanActivateFn = (route, state) => {
 /**
  * Domain Access Guard - Prüft ob der User Zugriff auf eine Domain hat
  */
-export const domainAccessGuard: CanActivateFn = (route, state) => {
+export const domainAccessGuard: CanActivateFn = (route, _state) => {
   const roleService = inject(RoleService);
+  const authService = inject(AuthService);
   const router = inject(Router);
 
   const domainId = route.params['domainId'] || route.data['domainId'];
-  const userId = 1; // TODO: Aus AuthService holen
+  const userId = authService.getCurrentUser()?.id ?? 0;
   const requireManage = route.data['requireManage'] || false;
 
   if (!domainId) {
@@ -111,8 +115,8 @@ export const domainAccessGuard: CanActivateFn = (route, state) => {
   }
 
   const checkFn = requireManage
-    ? roleService.canManageDomain(userId, domainId)
-    : roleService.getUserDomainAccess(userId, domainId).pipe(map(access => !!access));
+    ? roleService.canManageDomain(userId, +domainId)
+    : roleService.getUserDomainAccess(userId, +domainId).pipe(map(access => !!access));
 
   return checkFn.pipe(
     map(hasAccess => {
@@ -129,4 +133,3 @@ export const domainAccessGuard: CanActivateFn = (route, state) => {
     })
   );
 };
-

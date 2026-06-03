@@ -1032,7 +1032,8 @@
                                         "commerce":  "Commerce",
                                         "customerService":  "Customer Service",
                                         "storeSetup":  "Store Setup",
-                                        "account":  "Account"
+                                        "account":  "Account",
+                                        "team":  "Team \u0026 Roles"
                                     },
                          "items":  {
                                        "dashboard":  "Dashboard",
@@ -1047,7 +1048,8 @@
                                        "brand":  "Brand",
                                        "myAccount":  "My Account",
                                        "subscription":  "Subscription",
-                                       "roles":  "Roles"
+                                       "roles":  "Roles",
+                                       "teamRoles":  "Team \u0026 Roles"
                                    },
                          "noStore":  {
                                          "hint":  "No store selected",

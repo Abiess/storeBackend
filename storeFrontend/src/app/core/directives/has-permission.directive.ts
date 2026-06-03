@@ -1,6 +1,7 @@
 import { Directive, Input, TemplateRef, ViewContainerRef, OnInit, OnDestroy } from '@angular/core';
 import { Subject, takeUntil } from 'rxjs';
 import { RoleService } from '../services/role.service';
+import { AuthService } from '../services/auth.service';
 import { Permission } from '../models';
 
 /**
@@ -23,7 +24,6 @@ import { Permission } from '../models';
 export class HasPermissionDirective implements OnInit, OnDestroy {
   private permission: Permission | Permission[] | null = null;
   private storeId: number | null = null;
-  private userId: number = 1; // TODO: Aus AuthService holen
   private destroy$ = new Subject<void>();
 
   @Input() set hasPermission(permission: Permission | Permission[]) {
@@ -39,7 +39,8 @@ export class HasPermissionDirective implements OnInit, OnDestroy {
   constructor(
     private templateRef: TemplateRef<any>,
     private viewContainer: ViewContainerRef,
-    private roleService: RoleService
+    private roleService: RoleService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
@@ -51,14 +52,19 @@ export class HasPermissionDirective implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  private get userId(): number {
+    return this.authService.getCurrentUser()?.id ?? 0;
+  }
+
   private updateView(): void {
     if (!this.permission || !this.storeId) {
       return;
     }
 
-    // Array von Berechtigungen
+    const userId = this.userId;
+
     if (Array.isArray(this.permission)) {
-      this.roleService.hasPermissions(this.userId, this.storeId, this.permission)
+      this.roleService.hasPermissions(userId, this.storeId, this.permission)
         .pipe(takeUntil(this.destroy$))
         .subscribe((hasPermission: boolean) => {
           this.viewContainer.clear();
@@ -69,7 +75,7 @@ export class HasPermissionDirective implements OnInit, OnDestroy {
     }
     // Einzelne Berechtigung
     else {
-      this.roleService.hasPermission(this.userId, this.storeId, this.permission)
+      this.roleService.hasPermission(userId, this.storeId, this.permission)
         .pipe(takeUntil(this.destroy$))
         .subscribe(hasPermission => {
           this.viewContainer.clear();
@@ -80,4 +86,3 @@ export class HasPermissionDirective implements OnInit, OnDestroy {
     }
   }
 }
-

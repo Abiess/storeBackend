@@ -600,7 +600,8 @@
                                         "commerce":  "التجارة",
                                         "customerService":  "خدمة العملاء",
                                         "storeSetup":  "إعداد المتجر",
-                                        "account":  "الحساب"
+                                        "account":  "الحساب",
+                                        "team":  "الفريق والأدوار"
                                     },
                          "items":  {
                                        "dashboard":  "لوحة التحكم",
@@ -615,7 +616,8 @@
                                        "brand":  "العلامة التجارية",
                                        "myAccount":  "حسابي",
                                        "subscription":  "الاشتراك",
-                                       "roles":  "الأدوار"
+                                       "roles":  "الأدوار",
+                                       "teamRoles":  "الفريق والأدوار"
                                    },
                          "noStore":  {
                                          "hint":  "لم يتم اختيار متجر",

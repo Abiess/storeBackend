@@ -276,6 +276,13 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
 
+  // ==================== Team & Rollen Management ====================
+  {
+    path: 'stores/:id/roles',
+    loadComponent: () => import('./features/settings/store-role-management.component').then(m => m.StoreRoleManagementComponent),
+    canActivate: [authGuard]
+  },
+
   // ==================== Store Detail (Catch-All) ====================
   // WICHTIG: Diese Route MUSS nach ALLEN spezifischen /stores/:id/xxx-Routen stehen!
   // Sonst fängt sie alles ab und zeigt die Store-Übersicht statt der Unterseite.

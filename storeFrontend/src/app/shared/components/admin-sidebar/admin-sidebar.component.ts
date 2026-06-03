@@ -202,6 +202,17 @@ export class AdminSidebarComponent implements OnInit {
                 ]
             },
             {
+                titleKey: 'sidebarAdmin.groups.team',
+                items: [
+                    {
+                        labelKey: 'sidebarAdmin.items.teamRoles',
+                        icon: 'users',
+                        route: `${baseRoute}/roles`,
+                        requiresStore: true
+                    }
+                ]
+            },
+            {
                 titleKey: 'sidebarAdmin.groups.account',
                 items: [
                     {
