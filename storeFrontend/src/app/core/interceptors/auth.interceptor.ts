@@ -21,9 +21,8 @@ export class AuthInterceptor implements HttpInterceptor {
       '/api/stores/by-slug/',
       '/api/subscriptions/plans',
       '/api/me/stores/check-slug/',
-      // Theme-Endpunkte für Storefront (immer öffentlich)
-      '/api/themes/store/',
-      '/api/themes/templates',
+      // HINWEIS: /api/themes/** wurde hier entfernt!
+      // GET ist öffentlich (→ eigene Prüfung unten), POST/PUT/DELETE braucht Auth.
     ];
 
     // Öffentliche Storefront-Endpoints bei GET-Methode (kein Auth nötig)
@@ -65,7 +64,13 @@ export class AuthInterceptor implements HttpInterceptor {
       return next.handle(req);
     }
 
-    // 3. Öffentliche Store-Unterseiten (GET) → kein Token
+    // 3a. Theme-Endpunkte: nur GET ist öffentlich (für Storefront-Vorschau).
+    //     POST/PUT/DELETE (z.B. /onboard, Template speichern) brauchen zwingend Auth.
+    if (method === 'GET' && url.includes('/api/themes/')) {
+      return next.handle(req);
+    }
+
+    // 3b. Öffentliche Store-Unterseiten (GET) → kein Token
     if (method === 'GET' && url.includes('/api/stores/') &&
         publicStoreSubRoutes.some(p => url.includes(p))) {
       return next.handle(req);
