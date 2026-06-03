@@ -1,7 +1,6 @@
 name: Research Agent – Deploy & Cron
 
 on:
-  # Manuell aus GitHub Actions UI triggern (einmalig oder zum Testen)
   workflow_dispatch:
     inputs:
       run_now:
@@ -14,10 +13,52 @@ on:
         description: 'Quelle (all / avito / opensooq / jumia / instagram)'
         required: false
         default: 'avito'
-      min_score:
-        description: 'Mindest-Score (0–100) – 0 = alle anzeigen'
+        type: choice
+        options: ['avito', 'all', 'opensooq', 'jumia', 'instagram']
+      hot_only:
+        description: 'Nur HOT_LEAD-Händler (≥ 20 Produkte) scrapen + Produktbilder?'
+        required: false
+        default: 'false'
+        type: choice
+        options: ['false', 'true']
+      min_saas:
+        description: 'Mindest-SaaS-Fit-Score (0–100) – 0 = kein Filter'
         required: false
         default: '0'
+      min_score:
+        description: 'Mindest-Lead-Score (0–100) – 0 = alle anzeigen'
+        required: false
+        default: '0'
+      min_conversion:
+        description: 'Mindest-Conversion-Score (0–100) – 0 = kein Filter'
+        required: false
+        default: '0'
+      min_products:
+        description: 'Mindest-Produktanzahl pro Händler – 0 = kein Filter'
+        required: false
+        default: '0'
+      seller_type:
+        description: 'Händlertyp filtern (all / business / individual)'
+        required: false
+        default: 'all'
+        type: choice
+        options: ['all', 'business', 'individual']
+      city:
+        description: 'Stadt filtern (leer = alle Städte)'
+        required: false
+        default: ''
+      category:
+        description: 'Kategorie filtern (leer = alle Kategorien)'
+        required: false
+        default: ''
+      pages:
+        description: 'Anzahl Suchergebnis-Seiten pro Kategorie (1–10)'
+        required: false
+        default: '3'
+      top:
+        description: 'Top-N Händler in der Ausgabe anzeigen'
+        required: false
+        default: '20'
 
   # Täglich um 05:00 UTC (= 06:00 Marokko-Zeit) automatisch
   schedule:
@@ -35,7 +76,6 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # research-agent/ auf den VPS hochladen
       - name: Upload research-agent to VPS
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -47,7 +87,6 @@ jobs:
           target: "/opt/"
           strip_components: 0
 
-      # Node.js installieren + npm install + Verzeichnisse + Cron
       - name: Setup on VPS (Node.js + npm install + Cron)
         uses: appleboy/ssh-action@v1.2.2
         with:
@@ -60,9 +99,11 @@ jobs:
             set -e
             echo "════════════════════════════════════════"
             echo "  🏪 Research Agent – VPS Setup"
+            echo "  Tier-System: IGNORED/BASIC/PRIORITY/HOT_LEAD"
             echo "════════════════════════════════════════"
 
             AGENT_DIR="/opt/research-agent"
+            LOG_DIR="$AGENT_DIR/logs"
 
             # ── Node.js installieren falls nicht vorhanden ──────────────
             if ! command -v node &>/dev/null; then
@@ -74,31 +115,39 @@ jobs:
               echo "✅ Node.js $(node --version) bereits vorhanden"
             fi
 
-            # npm ggf. separat aktualisieren
             if ! command -v npm &>/dev/null; then
-              sudo apt-get install -y npm 2>/dev/null || \
-              sudo ln -sf "$(which node)" /usr/local/bin/node || true
+              sudo apt-get install -y npm 2>/dev/null || true
             fi
             echo "✅ npm $(npm --version)"
 
-            # Ausgabe-Verzeichnis anlegen
             mkdir -p "$AGENT_DIR/output"
-            mkdir -p "$AGENT_DIR/logs"
+            mkdir -p "$LOG_DIR"
 
-            # npm install
             echo "📦 npm install..."
             cd "$AGENT_DIR"
             npm install --production --silent
             echo "✅ Dependencies installiert"
 
-            # Skript ausführbar machen
             chmod +x "$AGENT_DIR/main.js" 2>/dev/null || true
 
-            # ── Cron-Job einrichten (täglich 06:00 Marokko-Zeit = 05:00 UTC) ──
-            CRON_JOB="0 5 * * * cd $AGENT_DIR && /usr/bin/node main.js --source all --min-score 0 >> $LOG_DIR/cron.log 2>&1"
+            # ── Cron-Job: täglich 06:00 Marokko-Zeit ──────────────────
+            # Standard-Lauf: alle Quellen, nur IGNORED herausfiltern,
+            # HOT_LEADs bekommen automatisch Produktbilder (im Scraper)
+            CRON_CMD="cd $AGENT_DIR && /usr/bin/node main.js"
+            CRON_CMD="$CRON_CMD --source all"
+            CRON_CMD="$CRON_CMD --pages 3"
+            CRON_CMD="$CRON_CMD --seller-type all"
+            CRON_CMD="$CRON_CMD --min-score 0"
+            CRON_CMD="$CRON_CMD --min-conversion 0"
+            CRON_CMD="$CRON_CMD --min-saas 0"
+            CRON_CMD="$CRON_CMD --min-products 0"
+            CRON_CMD="$CRON_CMD --top 20"
+            CRON_CMD="$CRON_CMD --output $AGENT_DIR/output"
+            CRON_CMD="$CRON_CMD >> $LOG_DIR/cron.log 2>&1"
+
+            CRON_JOB="0 5 * * * $CRON_CMD"
             CRON_MARKER="research-agent-daily"
 
-            # Alte Einträge entfernen, neuen hinzufügen
             (crontab -l 2>/dev/null | grep -v "$CRON_MARKER" || true) > /tmp/crontab_new
             echo "# $CRON_MARKER" >> /tmp/crontab_new
             echo "$CRON_JOB" >> /tmp/crontab_new
@@ -106,18 +155,18 @@ jobs:
             rm /tmp/crontab_new
 
             echo "✅ Cron-Job eingerichtet: täglich 06:00 Marokko-Zeit"
+            echo "   Tier-System aktiv: IGNORED <5 / BASIC 5-9 / PRIORITY 10-19 / HOT_LEAD ≥20"
             echo ""
             echo "📋 Aktuelle Crontab:"
             crontab -l
 
   # ══════════════════════════════════════════════════════════════
-  # JOB 2: Sofort-Lauf (nur wenn manuell mit run_now=true oder täglich via schedule)
+  # JOB 2: Sofort-Lauf (manuell mit run_now=true oder täglich via schedule)
   # ══════════════════════════════════════════════════════════════
   run-agent:
     name: Run Scraping Now
     runs-on: ubuntu-latest
     needs: deploy-agent
-    # Läuft bei: schedule ODER manuell mit run_now=true
     if: github.event_name == 'schedule' || github.event.inputs.run_now == 'true'
 
     steps:
@@ -128,32 +177,74 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          # Timeout: 45 Min (genug für alle Quellen mit Rate-Limiting)
           command_timeout: 45m
           script: |
             AGENT_DIR="/opt/research-agent"
+
+            # ── Parameter aus Workflow-Input (mit Defaults für schedule) ──
             SOURCE="${{ github.event.inputs.source || 'all' }}"
+            HOT_ONLY="${{ github.event.inputs.hot_only || 'false' }}"
+            MIN_SAAS="${{ github.event.inputs.min_saas || '0' }}"
             MIN_SCORE="${{ github.event.inputs.min_score || '0' }}"
+            MIN_CONVERSION="${{ github.event.inputs.min_conversion || '0' }}"
+            MIN_PRODUCTS="${{ github.event.inputs.min_products || '0' }}"
+            SELLER_TYPE="${{ github.event.inputs.seller_type || 'all' }}"
+            CITY="${{ github.event.inputs.city || '' }}"
+            CATEGORY="${{ github.event.inputs.category || '' }}"
+            PAGES="${{ github.event.inputs.pages || '3' }}"
+            TOP="${{ github.event.inputs.top || '20' }}"
 
             echo "════════════════════════════════════════"
             echo "  🔍 Research Agent – Scraping Start"
-            echo "  Quelle:    $SOURCE"
-            echo "  Min.Score: $MIN_SCORE"
-            echo "  Zeitpunkt: $(date '+%Y-%m-%d %H:%M:%S')"
+            echo "  Quelle:       $SOURCE"
+            echo "  Nur Hot Leads: $HOT_ONLY"
+            echo "  Min SaaS-Fit: $MIN_SAAS"
+            echo "  Min Score:    $MIN_SCORE"
+            echo "  Min Conv.:    $MIN_CONVERSION"
+            echo "  Min Produkte: $MIN_PRODUCTS"
+            echo "  Händlertyp:   $SELLER_TYPE"
+            echo "  Stadt:        ${CITY:-(alle)}"
+            echo "  Kategorie:    ${CATEGORY:-(alle)}"
+            echo "  Seiten:       $PAGES"
+            echo "  Top-N:        $TOP"
+            echo "  Zeitpunkt:    $(date '+%Y-%m-%d %H:%M:%S')"
+            echo "  Tier-System:  IGNORED<5 / BASIC 5-9 / PRIORITY 10-19 / HOT_LEAD≥20"
             echo "════════════════════════════════════════"
 
             cd "$AGENT_DIR"
-            node main.js \
-              --source "$SOURCE" \
-              --min-score "$MIN_SCORE" \
-              --pages 3 \
-              --output "$AGENT_DIR/output"
+
+            # ── Befehl zusammenbauen ──────────────────────────────────
+            CMD="node main.js"
+            CMD="$CMD --source $SOURCE"
+            CMD="$CMD --pages $PAGES"
+            CMD="$CMD --seller-type $SELLER_TYPE"
+            CMD="$CMD --min-score $MIN_SCORE"
+            CMD="$CMD --min-conversion $MIN_CONVERSION"
+            CMD="$CMD --min-saas $MIN_SAAS"
+            CMD="$CMD --min-products $MIN_PRODUCTS"
+            CMD="$CMD --top $TOP"
+            CMD="$CMD --output $AGENT_DIR/output"
+
+            # Optionale Flags nur anhängen wenn gesetzt
+            [ "$HOT_ONLY" = "true" ]      && CMD="$CMD --hot-only"
+            [ -n "$CITY" ]                && CMD="$CMD --city \"$CITY\""
+            [ -n "$CATEGORY" ]            && CMD="$CMD --category \"$CATEGORY\""
+
+            echo "▶️  Ausführen: $CMD"
+            eval $CMD
 
             echo ""
             echo "📂 Letzte Output-Dateien:"
-            ls -lht "$AGENT_DIR/output/" | head -5
+            ls -lht "$AGENT_DIR/output/" | head -10
 
-      # Neueste CSV in bekannte Datei kopieren (Wildcard-Problem bei SCP vermeiden)
+            echo ""
+            echo "📊 Tier-Statistik aus letztem Lauf:"
+            ls -t "$AGENT_DIR/output/"*.csv 2>/dev/null | head -1 | xargs -I{} awk -F';' '
+              NR==1 { for(i=1;i<=NF;i++) if($i=="tier") col=i }
+              NR>1  { count[$col]++ }
+              END   { for(t in count) print "  " t ": " count[t] " Händler" }
+            ' {} 2>/dev/null || echo "  (CSV-Auswertung nicht verfügbar)"
+
       - name: Prepare CSV for download
         uses: appleboy/ssh-action@v1.2.2
         with:
@@ -166,37 +257,31 @@ jobs:
             if [ -n "$LATEST" ]; then
               cp "$LATEST" /tmp/latest-leads.csv
               echo "✅ Bereit zum Download: $LATEST"
+              echo "   Zeilen: $(wc -l < /tmp/latest-leads.csv)"
+              # Tier-Zusammenfassung im Log
+              echo "   HOT_LEAD-Händler: $(grep -c 'HOT_LEAD' /tmp/latest-leads.csv 2>/dev/null || echo 0)"
+              echo "   Import-bereit:    $(grep -c 'JA' /tmp/latest-leads.csv 2>/dev/null || echo 0)"
             else
-              # Fallback: leere CSV erstellen damit SCP nicht fehlschlägt
               echo "Status;Nachricht" > /tmp/latest-leads.csv
               echo "WARN;Keine Leads gefunden" >> /tmp/latest-leads.csv
               echo "⚠️  Keine CSV gefunden – leere Datei erstellt"
             fi
 
-      # SSH-Key vorbereiten und CSV direkt per scp herunterladen (VPS → Runner)
       - name: Download latest CSV from VPS
         run: |
           mkdir -p ~/.ssh leads-output
-
-          # SSH-Key schreiben
           echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/vps_dl_key
           chmod 600 ~/.ssh/vps_dl_key
-
-          # Datei direkt vom VPS auf den Runner ziehen
           scp -i ~/.ssh/vps_dl_key \
               -P "${{ secrets.VPS_PORT }}" \
               -o StrictHostKeyChecking=no \
               -o ConnectTimeout=30 \
               "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/tmp/latest-leads.csv" \
               "./leads-output/latest-leads.csv"
-
-          # Key wieder löschen
           rm ~/.ssh/vps_dl_key
-
           echo "✅ CSV erfolgreich heruntergeladen:"
           ls -lh leads-output/latest-leads.csv
 
-      # Als GitHub Actions Artifact speichern (30 Tage abrufbar)
       - name: Upload CSV als GitHub Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -204,4 +289,3 @@ jobs:
           path: ./leads-output/latest-leads.csv
           retention-days: 30
           if-no-files-found: warn
-
