@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RoleService } from '@app/core/services/role.service';
 import { StoreRole, UserRole, ROLE_PERMISSIONS_MAP } from '@app/core/models';
-import { AdminLayoutComponent } from '@app/shared/components/admin-layout/admin-layout.component';
 import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
 import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
 import {
@@ -26,13 +25,11 @@ interface TeamMemberForm {
   imports: [
     CommonModule,
     FormsModule,
-    AdminLayoutComponent,
     PageHeaderComponent,
     ResponsiveDataListComponent
   ],
   template: `
-    <app-admin-layout>
-      <div class="role-page">
+    <div class="role-page">
         <app-page-header
           title="Team & Rollen"
           subtitle="Verwalten Sie Teammitglieder und deren Berechtigungen für diesen Shop"
@@ -197,10 +194,9 @@ interface TeamMemberForm {
           </div>
         }
       </div>
-    </app-admin-layout>
   `,
   styles: [`
-    .role-page { padding: 2rem; max-width: 1200px; margin: 0 auto; }
+    .role-page { padding: 2rem; max-width: 1200px; margin: 0 auto; min-height: 100vh; background: #f6f6f7; }
 
     /* Rollen-Übersicht */
     .role-overview {
