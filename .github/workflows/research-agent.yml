@@ -182,6 +182,22 @@ jobs:
           command_timeout: 45m
           script: |
             AGENT_DIR="/opt/research-agent"
+            OUTPUT_DIR="$AGENT_DIR/output"
+
+            # ── SICHERHEITSPRÜFUNG: Demo-/Error-CSVs aus Output entfernen ─
+            # Verhindert dass ls -t die falsche (DEMO/ERROR) CSV zurückgibt
+            echo "🧹 Bereinige alte DEMO/ERROR-CSVs aus $OUTPUT_DIR ..."
+            find "$OUTPUT_DIR" -name "*_DEMO_*.csv" -delete 2>/dev/null && echo "   DEMO-CSVs entfernt" || true
+            find "$OUTPUT_DIR" -name "*_ERROR_*.csv" -delete 2>/dev/null && echo "   ERROR-CSVs entfernt" || true
+            # Alte CSVs ohne REAL/DEMO-Markierung (vor dem Refactoring) archivieren
+            OLD_CSV_COUNT=$(find "$OUTPUT_DIR" -name "markt-ma-leads_*.csv" | wc -l)
+            if [ "$OLD_CSV_COUNT" -gt 0 ]; then
+              mkdir -p "$OUTPUT_DIR/archive"
+              find "$OUTPUT_DIR" -maxdepth 1 -name "markt-ma-leads_*.csv" -exec mv {} "$OUTPUT_DIR/archive/" \;
+              echo "   $OLD_CSV_COUNT alte CSVs (ohne REAL-Markierung) nach archive/ verschoben"
+            fi
+            echo "   Output-Verzeichnis nach Bereinigung:"
+            ls -lht "$OUTPUT_DIR"/*.csv 2>/dev/null || echo "   (keine CSVs mehr vorhanden)"
 
             # ── Parameter aus Workflow-Input (mit Defaults für schedule) ──
             SOURCE="${{ github.event.inputs.source || 'all' }}"
@@ -260,112 +276,129 @@ jobs:
             echo "════════════════════════════════════════"
             echo "  📂 CSV-Verifikation"
             echo "════════════════════════════════════════"
-
-            # ── Alle CSVs im Output-Verzeichnis anzeigen ───────────────
             echo "  Output-Verzeichnis: $OUTPUT_DIR"
-            echo "  Dateien gesamt:"
+            echo "  Alle Dateien:"
             ls -lht "$OUTPUT_DIR" 2>/dev/null || echo "  (leer oder nicht vorhanden)"
 
-            # ── Neueste CSV suchen ─────────────────────────────────────
-            LATEST=$(ls -t "$OUTPUT_DIR"/*.csv 2>/dev/null | head -1)
-
-            if [ -z "$LATEST" ]; then
-              echo ""
-              echo "❌ FEHLER: Keine CSV-Datei gefunden in $OUTPUT_DIR"
-              echo "   Mögliche Ursachen:"
-              echo "   - node main.js ist abgestürzt (Exit-Code prüfen)"
-              echo "   - Alle Leads herausgefiltert → ERROR-CSV wurde geschrieben?"
-              # Fallback-Fehler-CSV (EINHEITLICHES FORMAT wie echte Leads-CSV)
-              echo '# MARKT_MA_LEADS_CSV_V2'         > /tmp/latest-leads.csv
-              echo '# DATA_SOURCE=ERROR'             >> /tmp/latest-leads.csv
-              echo "# GENERATED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> /tmp/latest-leads.csv
-              echo '# TOTAL_LEADS=0'                 >> /tmp/latest-leads.csv
-              echo '# DEMO_MODE=false'               >> /tmp/latest-leads.csv
-              echo '# ERROR_REASON=Keine CSV-Datei im Output-Verzeichnis gefunden' >> /tmp/latest-leads.csv
-              echo '"Status";"Nachricht";"Zeitpunkt"' >> /tmp/latest-leads.csv
-              echo "\"ERROR\";\"Keine echten Leads gefunden\";\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"" >> /tmp/latest-leads.csv
-              exit 0
-            fi
+            # ── NUR REAL-CSVs akzeptieren (explizit nach *_REAL_*.csv suchen) ──
+            REAL_CSV=$(ls -t "$OUTPUT_DIR"/*_REAL_*.csv 2>/dev/null | head -1)
+            ANY_CSV=$(ls -t  "$OUTPUT_DIR"/*.csv 2>/dev/null | head -1)
 
             echo ""
-            echo "  ✅ Neueste CSV: $LATEST"
+            echo "  Neueste REAL-CSV:  ${REAL_CSV:-(keine gefunden)}"
+            echo "  Neueste ANY-CSV:   ${ANY_CSV:-(keine)}"
 
-            # ── Absolute Pfad + Dateigröße ─────────────────────────────
-            echo "  Absoluter Pfad: $(realpath $LATEST)"
-            echo "  Dateigröße:     $(du -h $LATEST | cut -f1) ($(wc -c < $LATEST) Bytes)"
-            echo "  Geändert:       $(stat -c '%y' $LATEST 2>/dev/null || stat -f '%Sm' $LATEST 2>/dev/null)"
+            # ── Sicherheitscheck: neueste CSV ist DEMO oder ERROR? ─────────
+            if [ -z "$REAL_CSV" ]; then
+              # Kein REAL-File vorhanden – prüfen was da ist
+              if [ -n "$ANY_CSV" ]; then
+                DATA_SOURCE=$(grep '^# DATA_SOURCE=' "$ANY_CSV" 2>/dev/null | cut -d'=' -f2 | tr -d '[:space:]')
+                echo ""
+                echo "  ⚠️  Keine *_REAL_*.csv gefunden!"
+                echo "  Neueste verfügbare CSV: $ANY_CSV"
+                echo "  DATA_SOURCE dieser Datei: ${DATA_SOURCE:-(kein Metaheader – altes Format)}"
+                if [ "$DATA_SOURCE" = "DEMO" ]; then
+                  echo "  ❌ FEHLER: Neueste CSV ist eine DEMO-Datei!"
+                  echo "     Mögliche Ursache: jemand hat manuell --demo auf dem Server ausgeführt."
+                  echo "     Diese DEMO-CSV wird NICHT als Artifact hochgeladen."
+                elif [ "$DATA_SOURCE" = "ERROR" ]; then
+                  echo "  ❌ FEHLER: Neueste CSV ist eine ERROR-Datei (Scraper fand keine Leads)."
+                else
+                  echo "  ⚠️  CSV ohne REAL-Markierung (altes Format vor Refactoring)."
+                fi
+              else
+                echo ""
+                echo "  ❌ FEHLER: Keine CSV-Datei im Output-Verzeichnis gefunden."
+                echo "     Prüfe ob node main.js erfolgreich war (Exit-Code, Logs)."
+              fi
+              # Fehler-CSV schreiben (einheitliches Format)
+              {
+                echo '# MARKT_MA_LEADS_CSV_V2'
+                echo '# DATA_SOURCE=ERROR'
+                echo "# GENERATED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+                echo '# TOTAL_LEADS=0'
+                echo '# DEMO_MODE=false'
+                echo "# ERROR_REASON=Keine REAL-CSV gefunden (DEMO/ERROR/altes Format vorhanden)"
+                echo '"Status";"Nachricht";"Zeitpunkt"'
+                echo "\"ERROR\";\"Keine echten Leads gefunden\";\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\""
+              } > /tmp/latest-leads.csv
+              echo "  ❌ Fehler-CSV nach /tmp/latest-leads.csv geschrieben"
+              exit 1
+            fi
 
-            # ── CSV-Metadaten auslesen (# Zeilen) ──────────────────────
+            # ── REAL-CSV gefunden – vollständige Verifikation ──────────────
+            echo ""
+            echo "  ✅ REAL-CSV gefunden: $REAL_CSV"
+            echo "  Absoluter Pfad:  $(realpath $REAL_CSV)"
+            echo "  Dateigröße:      $(du -h $REAL_CSV | cut -f1) ($(wc -c < $REAL_CSV) Bytes)"
+            echo "  Geändert:        $(stat -c '%y' $REAL_CSV 2>/dev/null || stat -f '%Sm' $REAL_CSV 2>/dev/null)"
+
+            # ── Metadaten aus CSV lesen ─────────────────────────────────────
             echo ""
             echo "  📋 CSV-Metadaten:"
-            grep '^#' "$LATEST" | while read line; do echo "    $line"; done
+            grep '^#' "$REAL_CSV" | while IFS= read -r line; do echo "    $line"; done
 
-            # ── Verifikation: echte Leads-CSV oder Fehler-/Demo-CSV? ───
-            DATA_SOURCE=$(grep '^# DATA_SOURCE=' "$LATEST" | cut -d'=' -f2 | tr -d '[:space:]')
-            DEMO_MODE=$(grep '^# DEMO_MODE=' "$LATEST" | cut -d'=' -f2 | tr -d '[:space:]')
-            TOTAL_LEADS=$(grep '^# TOTAL_LEADS=' "$LATEST" | cut -d'=' -f2 | tr -d '[:space:]')
+            DATA_SOURCE=$(grep '^# DATA_SOURCE=' "$REAL_CSV" | cut -d'=' -f2 | tr -d '[:space:]')
+            DEMO_MODE=$(grep '^# DEMO_MODE='   "$REAL_CSV" | cut -d'=' -f2 | tr -d '[:space:]')
+            TOTAL_LEADS=$(grep '^# TOTAL_LEADS=' "$REAL_CSV" | cut -d'=' -f2 | tr -d '[:space:]')
 
             echo ""
-            echo "  ── Verifikation ──────────────────────────────────────"
-            echo "  DATA_SOURCE:  ${DATA_SOURCE:-(nicht lesbar – altes CSV-Format?)}"
-            echo "  DEMO_MODE:    ${DEMO_MODE:-(unbekannt)}"
-            echo "  TOTAL_LEADS:  ${TOTAL_LEADS:-(unbekannt)}"
+            echo "  ── Verifikationsergebnis ─────────────────────────────────"
+            echo "  DATA_SOURCE:  $DATA_SOURCE"
+            echo "  DEMO_MODE:    $DEMO_MODE"
+            echo "  TOTAL_LEADS:  $TOTAL_LEADS"
 
-            if [ "$DATA_SOURCE" = "DEMO" ]; then
-              echo ""
-              echo "  ⚠️  WARNUNG: CSV enthält DEMO-DATEN (nicht echte Leads)!"
-              echo "     Prüfen ob --demo Flag versehentlich gesetzt wurde."
-            elif [ "$DATA_SOURCE" = "ERROR" ]; then
-              echo ""
-              echo "  ❌ FEHLER: CSV ist eine Fehler-Datei (keine echten Leads)!"
-            elif [ "$DATA_SOURCE" = "REAL" ]; then
-              echo "  ✅ CSV enthält ECHTE Leads"
-            else
-              echo "  ⚠️  DATA_SOURCE unbekannt – möglicherweise altes CSV-Format"
+            # Abbruch wenn doch DEMO oder ERROR
+            if [ "$DATA_SOURCE" != "REAL" ]; then
+              echo "  ❌ KRITISCHER FEHLER: DATA_SOURCE ist '$DATA_SOURCE', nicht 'REAL'!"
+              echo "     Diese CSV wird NICHT hochgeladen."
+              exit 1
             fi
+            if [ "$DEMO_MODE" = "true" ]; then
+              echo "  ❌ KRITISCHER FEHLER: DEMO_MODE=true in angeblicher REAL-CSV!"
+              exit 1
+            fi
+            echo "  ✅ Verifikation bestanden: echte Leads-CSV"
 
-            # ── Zeilenanzahl ───────────────────────────────────────────
-            TOTAL_ROWS=$(grep -c -v '^#' "$LATEST" 2>/dev/null || echo 0)
-            DATA_ROWS=$((TOTAL_ROWS - 1))  # minus Header
-            echo "  Datenzeilen:  $DATA_ROWS (ohne Header, ohne #-Kommentare)"
+            # ── Datenzeilen zählen ─────────────────────────────────────────
+            DATA_ROWS=$(grep -c -v '^#' "$REAL_CSV" 2>/dev/null || echo 0)
+            DATA_ROWS=$((DATA_ROWS - 1))   # minus Header-Zeile
+            echo "  Datenzeilen:  $DATA_ROWS (ohne Header, ohne Kommentare)"
 
-            # ── Erste 5 Datenzeilen ausgeben ───────────────────────────
+            # ── Erste 5 Datenzeilen direkt vom Server ──────────────────────
             echo ""
-            echo "  📄 Erste 5 Datenzeilen (inkl. Header):"
-            grep -v '^#' "$LATEST" | head -6 | while IFS= read -r line; do
-              echo "    ${line:0:130}$([ ${#line} -gt 130 ] && echo '…' || echo '')"
+            echo "  📄 Erste 5 Datenzeilen direkt vom Server (vor SCP-Download):"
+            grep -v '^#' "$REAL_CSV" | head -6 | nl -ba | while IFS= read -r line; do
+              echo "    ${line:0:140}$([ ${#line} -gt 140 ] && echo '…' || echo '')"
             done
 
-            # ── Source-Verteilung aus CSV ──────────────────────────────
+            # ── Source-Verteilung ───────────────────────────────────────────
             echo ""
             echo "  📊 Source-Verteilung:"
-            # Spalte 'Quelle' finden (Index der Spalte im Header)
-            HEADER_LINE=$(grep -v '^#' "$LATEST" | head -1)
-            SOURCE_COL=$(echo "$HEADER_LINE" | tr ';' '\n' | grep -n 'Quelle' | head -1 | cut -d: -f1)
+            HEADER_LINE=$(grep -v '^#' "$REAL_CSV" | head -1)
+            SOURCE_COL=$(echo "$HEADER_LINE" | tr ';' '\n' | grep -n '"Quelle"' | head -1 | cut -d: -f1)
             if [ -n "$SOURCE_COL" ]; then
-              grep -v '^#' "$LATEST" | tail -n +2 | cut -d';' -f"$SOURCE_COL" | tr -d '"' | sort | uniq -c | sort -rn | while read count src; do
-                echo "    $src: $count Händler"
-              done
+              grep -v '^#' "$REAL_CSV" | tail -n +2 | cut -d';' -f"$SOURCE_COL" | tr -d '"' | sort | uniq -c | sort -rn | \
+                while read count src; do echo "    $src: $count Händler"; done
             else
               echo "    (Quelle-Spalte nicht gefunden)"
             fi
 
-            # ── Tier-Verteilung aus CSV ────────────────────────────────
+            # ── Tier-Verteilung ────────────────────────────────────────────
             echo ""
             echo "  🏷️  Tier-Verteilung:"
-            TIER_COL=$(echo "$HEADER_LINE" | tr ';' '\n' | grep -n 'Tier-Label' | head -1 | cut -d: -f1)
+            TIER_COL=$(echo "$HEADER_LINE" | tr ';' '\n' | grep -n '"Tier-Label"' | head -1 | cut -d: -f1)
             if [ -n "$TIER_COL" ]; then
-              grep -v '^#' "$LATEST" | tail -n +2 | cut -d';' -f"$TIER_COL" | tr -d '"' | sort | uniq -c | sort -rn | while read count tier; do
-                echo "    $tier: $count Händler"
-              done
+              grep -v '^#' "$REAL_CSV" | tail -n +2 | cut -d';' -f"$TIER_COL" | tr -d '"' | sort | uniq -c | sort -rn | \
+                while read count tier; do echo "    $tier: $count Händler"; done
             else
-              echo "    (Tier-Spalte nicht gefunden – altes CSV-Format)"
+              echo "    (Tier-Spalte nicht gefunden)"
             fi
 
-            # ── HOT_LEAD Import-Status ─────────────────────────────────
-            IMPORT_COL=$(echo "$HEADER_LINE" | tr ';' '\n' | grep -n 'Import-bereit' | head -1 | cut -d: -f1)
+            # ── Import-Status ──────────────────────────────────────────────
+            IMPORT_COL=$(echo "$HEADER_LINE" | tr ';' '\n' | grep -n '"Import-bereit?"' | head -1 | cut -d: -f1)
             if [ -n "$IMPORT_COL" ]; then
-              IMPORT_READY=$(grep -v '^#' "$LATEST" | tail -n +2 | cut -d';' -f"$IMPORT_COL" | tr -d '"' | grep -c 'JA' || echo 0)
+              IMPORT_READY=$(grep -v '^#' "$REAL_CSV" | tail -n +2 | cut -d';' -f"$IMPORT_COL" | tr -d '"' | grep -c 'JA' || echo 0)
               echo ""
               echo "  🚀 Import-bereite HOT_LEADs: $IMPORT_READY"
             fi
@@ -373,8 +406,9 @@ jobs:
             echo "════════════════════════════════════════"
 
             # CSV für Download bereitstellen
-            cp "$LATEST" /tmp/latest-leads.csv
-            echo "✅ CSV nach /tmp/latest-leads.csv kopiert"
+            cp "$REAL_CSV" /tmp/latest-leads.csv
+            echo "✅ REAL-CSV nach /tmp/latest-leads.csv kopiert"
+            echo "   $(wc -l < /tmp/latest-leads.csv) Zeilen gesamt"
 
       - name: Download latest CSV from VPS
         run: |
