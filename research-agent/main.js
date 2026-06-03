@@ -131,7 +131,8 @@ async function run() {
 
   if (allLeads.length === 0) {
     console.log('\n⚠️  Keine Händler gefunden. Versuche --demo\n');
-    process.exit(0);
+    _writeErrorCsv(CONFIG.outputDir, 'Kein einziger Händler von Scraper zurückgegeben (Netzwerk/robots.txt?)');
+    process.exit(1);
   }
 
   // ── Tier-Klassifikation & Lead-Scoring ───────────────────────────────────
@@ -190,7 +191,8 @@ async function run() {
 
   if (filtered.length === 0) {
     console.log('\n⚠️  Keine Händler nach Filterung. Filter lockern oder --demo verwenden.\n');
-    process.exit(0);
+    _writeErrorCsv(CONFIG.outputDir, `Alle Händler herausgefiltert (minProducts=${CONFIG.minProducts}, minSaas=${CONFIG.minSaas}, tier=${CONFIG.hotOnly ? 'HOT_LEAD' : 'alle'})`);
+    process.exit(1);
   }
 
   // ── Score-Verteilung ──────────────────────────────────────────────────────
@@ -219,10 +221,37 @@ async function run() {
   exporter.printSummary(filtered, CONFIG.top);
 
   // ── CSV Export ────────────────────────────────────────────────────────────
-  console.log(`\n💾  Exportiere CSV nach: ${CONFIG.outputDir}`);
-  const csvPath = exporter.export(filtered, CONFIG.outputDir);
+  console.log(`💾  Exportiere CSV nach: ${CONFIG.outputDir}`);
+  const csvMeta = {
+    demoMode: CONFIG.demoMode,
+    source:   CONFIG.source,
+    params:   {
+      minProducts:   CONFIG.minProducts,
+      minSaas:       CONFIG.minSaas,
+      minConversion: CONFIG.minConversion,
+      minScore:      CONFIG.minScore,
+      sellerType:    CONFIG.sellerTypeFilter,
+      hotOnly:       CONFIG.hotOnly,
+      city:          CONFIG.city,
+      category:      CONFIG.category,
+      pages:         CONFIG.maxPages,
+    },
+  };
+  const csvPath = exporter.export(filtered, CONFIG.outputDir, csvMeta);
   console.log(`✅  CSV: ${csvPath}`);
-  console.log(`    ${filtered.length} Händler exportiert\n`);
+
+  // Erste 5 Datenzeilen zur Verifikation ausgeben (überspringt #-Metazeilen)
+  const fs = require('fs');
+  const csvContent = fs.readFileSync(csvPath, 'utf8').split('\n');
+  const dataLines  = csvContent.filter(l => !l.startsWith('#') && l.trim());
+  console.log('\n📋  CSV-Verifikation (erste 5 Datenzeilen):');
+  dataLines.slice(0, 6).forEach((line, i) => {
+    const label = i === 0 ? 'HEADER' : `Zeile ${i}`;
+    // Ersten 120 Zeichen anzeigen
+    console.log(`  [${label}] ${line.slice(0, 120)}${line.length > 120 ? '…' : ''}`);
+  });
+  console.log(`\n  Gesamt Datenzeilen (ohne Header): ${dataLines.length - 1}`);
+  console.log(`  Demo-Modus aktiv: ${CONFIG.demoMode ? '⚠️  JA – KEINE echten Leads!' : '✅ NEIN – echte Leads'}\n`);
 }
 
 // ── Tier-Statistik ─────────────────────────────────────────────────────────────
@@ -487,6 +516,32 @@ function buildScrapingTasks() {
 }
 
 // ── Start ──────────────────────────────────────────────────────────────────────
+
+/**
+ * Schreibt eine strukturierte Fehler-CSV (gleicher Aufbau wie echte Leads-CSV).
+ * Verhindert, dass der Workflow eine leere/invalide Datei als Leads-Export versteht.
+ */
+function _writeErrorCsv(outputDir, reason) {
+  const fs   = require('fs');
+  const path = require('path');
+  if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  const filepath  = path.join(outputDir, `markt-ma-haendler_ERROR_${timestamp}.csv`);
+  const content   = [
+    `# MARKT_MA_LEADS_CSV_V2`,
+    `# DATA_SOURCE=ERROR`,
+    `# GENERATED_AT=${new Date().toISOString()}`,
+    `# TOTAL_LEADS=0`,
+    `# DEMO_MODE=false`,
+    `# ERROR_REASON=${reason}`,
+    `"Status";"Nachricht";"Zeitpunkt"`,
+    `"ERROR";"${reason}";"${new Date().toISOString()}"`,
+  ].join('\r\n');
+  fs.writeFileSync(filepath, '\uFEFF' + content, 'utf8');
+  console.error(`❌  Fehler-CSV geschrieben: ${filepath}`);
+  console.error(`    Grund: ${reason}`);
+}
+
 run().catch(err => {
   console.error('\n💥  Kritischer Fehler:', err.message);
   process.exit(1);

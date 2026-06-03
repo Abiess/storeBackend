@@ -133,7 +133,9 @@ jobs:
             # ── Cron-Job: täglich 06:00 Marokko-Zeit ──────────────────
             # Standard-Lauf: alle Quellen, nur IGNORED herausfiltern,
             # HOT_LEADs bekommen automatisch Produktbilder (im Scraper)
-            CRON_CMD="cd $AGENT_DIR && /usr/bin/node main.js"
+            # WICHTIG: $LOG_DIR als Literalpfad – Shell-Variablen sind zur Cron-Laufzeit nicht verfügbar!
+            CRON_LOG="/opt/research-agent/logs/cron.log"
+            CRON_CMD="cd /opt/research-agent && /usr/bin/node main.js"
             CRON_CMD="$CRON_CMD --source all"
             CRON_CMD="$CRON_CMD --pages 3"
             CRON_CMD="$CRON_CMD --seller-type all"
@@ -142,8 +144,8 @@ jobs:
             CRON_CMD="$CRON_CMD --min-saas 0"
             CRON_CMD="$CRON_CMD --min-products 0"
             CRON_CMD="$CRON_CMD --top 20"
-            CRON_CMD="$CRON_CMD --output $AGENT_DIR/output"
-            CRON_CMD="$CRON_CMD >> $LOG_DIR/cron.log 2>&1"
+            CRON_CMD="$CRON_CMD --output /opt/research-agent/output"
+            CRON_CMD="$CRON_CMD >> $CRON_LOG 2>&1"
 
             CRON_JOB="0 5 * * * $CRON_CMD"
             CRON_MARKER="research-agent-daily"
@@ -253,19 +255,126 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
           script: |
-            LATEST=$(ls -t /opt/research-agent/output/*.csv 2>/dev/null | head -1)
-            if [ -n "$LATEST" ]; then
-              cp "$LATEST" /tmp/latest-leads.csv
-              echo "✅ Bereit zum Download: $LATEST"
-              echo "   Zeilen: $(wc -l < /tmp/latest-leads.csv)"
-              # Tier-Zusammenfassung im Log
-              echo "   HOT_LEAD-Händler: $(grep -c 'HOT_LEAD' /tmp/latest-leads.csv 2>/dev/null || echo 0)"
-              echo "   Import-bereit:    $(grep -c 'JA' /tmp/latest-leads.csv 2>/dev/null || echo 0)"
-            else
-              echo "Status;Nachricht" > /tmp/latest-leads.csv
-              echo "WARN;Keine Leads gefunden" >> /tmp/latest-leads.csv
-              echo "⚠️  Keine CSV gefunden – leere Datei erstellt"
+            OUTPUT_DIR="/opt/research-agent/output"
+
+            echo "════════════════════════════════════════"
+            echo "  📂 CSV-Verifikation"
+            echo "════════════════════════════════════════"
+
+            # ── Alle CSVs im Output-Verzeichnis anzeigen ───────────────
+            echo "  Output-Verzeichnis: $OUTPUT_DIR"
+            echo "  Dateien gesamt:"
+            ls -lht "$OUTPUT_DIR" 2>/dev/null || echo "  (leer oder nicht vorhanden)"
+
+            # ── Neueste CSV suchen ─────────────────────────────────────
+            LATEST=$(ls -t "$OUTPUT_DIR"/*.csv 2>/dev/null | head -1)
+
+            if [ -z "$LATEST" ]; then
+              echo ""
+              echo "❌ FEHLER: Keine CSV-Datei gefunden in $OUTPUT_DIR"
+              echo "   Mögliche Ursachen:"
+              echo "   - node main.js ist abgestürzt (Exit-Code prüfen)"
+              echo "   - Alle Leads herausgefiltert → ERROR-CSV wurde geschrieben?"
+              # Fallback-Fehler-CSV (EINHEITLICHES FORMAT wie echte Leads-CSV)
+              echo '# MARKT_MA_LEADS_CSV_V2'         > /tmp/latest-leads.csv
+              echo '# DATA_SOURCE=ERROR'             >> /tmp/latest-leads.csv
+              echo "# GENERATED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> /tmp/latest-leads.csv
+              echo '# TOTAL_LEADS=0'                 >> /tmp/latest-leads.csv
+              echo '# DEMO_MODE=false'               >> /tmp/latest-leads.csv
+              echo '# ERROR_REASON=Keine CSV-Datei im Output-Verzeichnis gefunden' >> /tmp/latest-leads.csv
+              echo '"Status";"Nachricht";"Zeitpunkt"' >> /tmp/latest-leads.csv
+              echo "\"ERROR\";\"Keine echten Leads gefunden\";\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"" >> /tmp/latest-leads.csv
+              exit 0
             fi
+
+            echo ""
+            echo "  ✅ Neueste CSV: $LATEST"
+
+            # ── Absolute Pfad + Dateigröße ─────────────────────────────
+            echo "  Absoluter Pfad: $(realpath $LATEST)"
+            echo "  Dateigröße:     $(du -h $LATEST | cut -f1) ($(wc -c < $LATEST) Bytes)"
+            echo "  Geändert:       $(stat -c '%y' $LATEST 2>/dev/null || stat -f '%Sm' $LATEST 2>/dev/null)"
+
+            # ── CSV-Metadaten auslesen (# Zeilen) ──────────────────────
+            echo ""
+            echo "  📋 CSV-Metadaten:"
+            grep '^#' "$LATEST" | while read line; do echo "    $line"; done
+
+            # ── Verifikation: echte Leads-CSV oder Fehler-/Demo-CSV? ───
+            DATA_SOURCE=$(grep '^# DATA_SOURCE=' "$LATEST" | cut -d'=' -f2 | tr -d '[:space:]')
+            DEMO_MODE=$(grep '^# DEMO_MODE=' "$LATEST" | cut -d'=' -f2 | tr -d '[:space:]')
+            TOTAL_LEADS=$(grep '^# TOTAL_LEADS=' "$LATEST" | cut -d'=' -f2 | tr -d '[:space:]')
+
+            echo ""
+            echo "  ── Verifikation ──────────────────────────────────────"
+            echo "  DATA_SOURCE:  ${DATA_SOURCE:-(nicht lesbar – altes CSV-Format?)}"
+            echo "  DEMO_MODE:    ${DEMO_MODE:-(unbekannt)}"
+            echo "  TOTAL_LEADS:  ${TOTAL_LEADS:-(unbekannt)}"
+
+            if [ "$DATA_SOURCE" = "DEMO" ]; then
+              echo ""
+              echo "  ⚠️  WARNUNG: CSV enthält DEMO-DATEN (nicht echte Leads)!"
+              echo "     Prüfen ob --demo Flag versehentlich gesetzt wurde."
+            elif [ "$DATA_SOURCE" = "ERROR" ]; then
+              echo ""
+              echo "  ❌ FEHLER: CSV ist eine Fehler-Datei (keine echten Leads)!"
+            elif [ "$DATA_SOURCE" = "REAL" ]; then
+              echo "  ✅ CSV enthält ECHTE Leads"
+            else
+              echo "  ⚠️  DATA_SOURCE unbekannt – möglicherweise altes CSV-Format"
+            fi
+
+            # ── Zeilenanzahl ───────────────────────────────────────────
+            TOTAL_ROWS=$(grep -c -v '^#' "$LATEST" 2>/dev/null || echo 0)
+            DATA_ROWS=$((TOTAL_ROWS - 1))  # minus Header
+            echo "  Datenzeilen:  $DATA_ROWS (ohne Header, ohne #-Kommentare)"
+
+            # ── Erste 5 Datenzeilen ausgeben ───────────────────────────
+            echo ""
+            echo "  📄 Erste 5 Datenzeilen (inkl. Header):"
+            grep -v '^#' "$LATEST" | head -6 | while IFS= read -r line; do
+              echo "    ${line:0:130}$([ ${#line} -gt 130 ] && echo '…' || echo '')"
+            done
+
+            # ── Source-Verteilung aus CSV ──────────────────────────────
+            echo ""
+            echo "  📊 Source-Verteilung:"
+            # Spalte 'Quelle' finden (Index der Spalte im Header)
+            HEADER_LINE=$(grep -v '^#' "$LATEST" | head -1)
+            SOURCE_COL=$(echo "$HEADER_LINE" | tr ';' '\n' | grep -n 'Quelle' | head -1 | cut -d: -f1)
+            if [ -n "$SOURCE_COL" ]; then
+              grep -v '^#' "$LATEST" | tail -n +2 | cut -d';' -f"$SOURCE_COL" | tr -d '"' | sort | uniq -c | sort -rn | while read count src; do
+                echo "    $src: $count Händler"
+              done
+            else
+              echo "    (Quelle-Spalte nicht gefunden)"
+            fi
+
+            # ── Tier-Verteilung aus CSV ────────────────────────────────
+            echo ""
+            echo "  🏷️  Tier-Verteilung:"
+            TIER_COL=$(echo "$HEADER_LINE" | tr ';' '\n' | grep -n 'Tier-Label' | head -1 | cut -d: -f1)
+            if [ -n "$TIER_COL" ]; then
+              grep -v '^#' "$LATEST" | tail -n +2 | cut -d';' -f"$TIER_COL" | tr -d '"' | sort | uniq -c | sort -rn | while read count tier; do
+                echo "    $tier: $count Händler"
+              done
+            else
+              echo "    (Tier-Spalte nicht gefunden – altes CSV-Format)"
+            fi
+
+            # ── HOT_LEAD Import-Status ─────────────────────────────────
+            IMPORT_COL=$(echo "$HEADER_LINE" | tr ';' '\n' | grep -n 'Import-bereit' | head -1 | cut -d: -f1)
+            if [ -n "$IMPORT_COL" ]; then
+              IMPORT_READY=$(grep -v '^#' "$LATEST" | tail -n +2 | cut -d';' -f"$IMPORT_COL" | tr -d '"' | grep -c 'JA' || echo 0)
+              echo ""
+              echo "  🚀 Import-bereite HOT_LEADs: $IMPORT_READY"
+            fi
+
+            echo "════════════════════════════════════════"
+
+            # CSV für Download bereitstellen
+            cp "$LATEST" /tmp/latest-leads.csv
+            echo "✅ CSV nach /tmp/latest-leads.csv kopiert"
 
       - name: Download latest CSV from VPS
         run: |
