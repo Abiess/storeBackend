@@ -38,18 +38,28 @@ jobs:
       - name: Build with Maven
         run: mvn clean package -DskipTests
 
-      - name: Deploy to VPS
+      # JAR lokal umbenennen → bekannter Name, kein Glob-Problem beim SCP
+      - name: Rename JAR to app.jar (lokal)
+        run: |
+          JAR=$(ls target/storeBackend-*.jar | grep -v original | head -1)
+          echo "Gefundene JAR: $JAR"
+          cp "$JAR" target/app.jar
+          ls -lh target/app.jar
+
+      # Nur app.jar hochladen – kein Glob, strip_components nicht nötig
+      - name: Deploy JAR to VPS
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          source: "target/*.jar"
-          target: "/tmp"
+          source: "target/app.jar"
+          target: "/tmp/"
           strip_components: 1
 
-      - name: Rename JAR to app.jar
+      # Verifikation: app.jar wirklich in /tmp vorhanden?
+      - name: Verify JAR in /tmp
         uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -57,16 +67,14 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
           script: |
-            cd /tmp
-            JAR_FILE=$(ls -1 *.jar 2>/dev/null | grep -E '^storeBackend.*\.jar$' | head -n1)
-            if [ -n "$JAR_FILE" ]; then
-              echo "Found JAR: $JAR_FILE"
-              mv "$JAR_FILE" app.jar
-              echo "Renamed to app.jar"
-              ls -lh app.jar
+            echo "📦 Prüfe /tmp/app.jar ..."
+            if [ -f /tmp/app.jar ]; then
+              echo "✅ /tmp/app.jar vorhanden: $(du -h /tmp/app.jar | cut -f1)"
+              ls -lh /tmp/app.jar
             else
-              echo "ERROR: No JAR file found matching pattern"
-              ls -lh /tmp/*.jar 2>/dev/null || echo "No JAR files in /tmp"
+              echo "❌ /tmp/app.jar NICHT gefunden!"
+              echo "Inhalt von /tmp:"
+              ls -lh /tmp/
               exit 1
             fi
 
@@ -127,14 +135,26 @@ jobs:
             npm install --production --silent
             echo "✅ Dependencies installiert"
 
-            # Täglicher Cron-Job (06:00 Marokko = 05:00 UTC)
-            CRON_JOB="0 5 * * * cd /opt/research-agent && /usr/bin/node main.js --source all --min-score 0 >> /opt/research-agent/logs/cron.log 2>&1"
+            # Täglicher Cron-Job (06:00 Marokko = 05:00 UTC) – mit allen neuen Parametern
+            # WICHTIG: Literalpfade verwenden (Shell-Variablen sind zur Cron-Laufzeit nicht verfügbar)
+            CRON_CMD="cd /opt/research-agent"
+            CRON_CMD="$CRON_CMD && /usr/bin/node main.js"
+            CRON_CMD="$CRON_CMD --source all"
+            CRON_CMD="$CRON_CMD --pages 3"
+            CRON_CMD="$CRON_CMD --seller-type all"
+            CRON_CMD="$CRON_CMD --min-score 0"
+            CRON_CMD="$CRON_CMD --min-conversion 0"
+            CRON_CMD="$CRON_CMD --min-saas 0"
+            CRON_CMD="$CRON_CMD --min-products 0"
+            CRON_CMD="$CRON_CMD --top 20"
+            CRON_CMD="$CRON_CMD --output /opt/research-agent/output"
+            CRON_CMD="$CRON_CMD >> /opt/research-agent/logs/cron.log 2>&1"
             MARKER="research-agent-daily"
             (crontab -l 2>/dev/null | grep -v "$MARKER" || true) > /tmp/_cron
             echo "# $MARKER" >> /tmp/_cron
-            echo "$CRON_JOB" >> /tmp/_cron
+            echo "0 5 * * * $CRON_CMD" >> /tmp/_cron
             crontab /tmp/_cron && rm /tmp/_cron
-            echo "✅ Cron-Job aktiv: täglich 06:00 Marokko-Zeit"
+            echo "✅ Cron-Job aktiv: täglich 06:00 Marokko-Zeit (mit Tier-System + SaaS-Fit)"
 
       - name: Check Port 8001 & Setup Telegram Scraper
         uses: appleboy/ssh-action@v1.2.2
@@ -246,14 +266,34 @@ jobs:
           command_timeout: 45m
           script: |
             SOURCE="${{ github.event.inputs.agent_source || 'avito' }}"
+            OUTPUT_DIR="/opt/research-agent/output"
+
+            echo "🧹 Bereinige alte DEMO/ERROR-CSVs..."
+            find "$OUTPUT_DIR" -name "*_DEMO_*.csv" -delete 2>/dev/null || true
+            find "$OUTPUT_DIR" -name "*_ERROR_*.csv" -delete 2>/dev/null || true
+            find "$OUTPUT_DIR" -maxdepth 1 -name "markt-ma-leads_*.csv" -exec mv {} "$OUTPUT_DIR/archive/" \; 2>/dev/null || true
+
             echo "🔍 Research Agent startet – Quelle: $SOURCE"
             cd /opt/research-agent
-            node main.js --source "$SOURCE" --min-score 0 --pages 3
-            # Neueste CSV für Download vorbereiten
-            LATEST=$(ls -t /opt/research-agent/output/*.csv 2>/dev/null | head -1)
-            if [ -n "$LATEST" ]; then
-              cp "$LATEST" /tmp/latest-leads.csv
-              echo "✅ CSV bereit: $LATEST"
+            node main.js \
+              --source "$SOURCE" \
+              --pages 3 \
+              --seller-type all \
+              --min-score 0 \
+              --min-conversion 0 \
+              --min-saas 0 \
+              --min-products 0 \
+              --top 20 \
+              --output "$OUTPUT_DIR"
+
+            # Nur REAL-CSV kopieren
+            REAL_CSV=$(ls -t "$OUTPUT_DIR"/*_REAL_*.csv 2>/dev/null | head -1)
+            if [ -n "$REAL_CSV" ]; then
+              cp "$REAL_CSV" /tmp/latest-leads.csv
+              echo "✅ REAL-CSV bereit: $REAL_CSV ($(wc -l < /tmp/latest-leads.csv) Zeilen)"
+            else
+              echo "❌ Keine REAL-CSV gefunden – kein Artifact-Upload"
+              exit 1
             fi
 
       - name: Download CSV (Research Agent Ergebnisse)
