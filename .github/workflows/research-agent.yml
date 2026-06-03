@@ -212,6 +212,12 @@ jobs:
             PAGES="${{ github.event.inputs.pages || '3' }}"
             TOP="${{ github.event.inputs.top || '20' }}"
 
+            # ── Diagnostic Probe vor dem echten Scraping ───────────────────
+            echo ""
+            echo "🔬 Starte Avito Diagnostic Probe (auf dem VPS, nicht GH-Actions-IP)..."
+            cd "$AGENT_DIR"
+            node scripts/diagnose-avito.js 2>&1 || echo "⚠️  Diagnostic fehlgeschlagen (ignoriert)"
+
             echo "════════════════════════════════════════"
             echo "  🔍 Research Agent – Scraping Start"
             echo "  Quelle:       $SOURCE"
@@ -226,7 +232,8 @@ jobs:
             echo "  Seiten:       $PAGES"
             echo "  Top-N:        $TOP"
             echo "  Zeitpunkt:    $(date '+%Y-%m-%d %H:%M:%S')"
-            echo "  Tier-System:  IGNORED<5 / BASIC 5-9 / PRIORITY 10-19 / HOT_LEAD≥20"
+            echo "  Tier-System:  IGNORED<5 / BASIC 5-9 / PRIORITY 10-19 / HOT_LEAD>=20"
+            echo "  Hinweis: VPS scrapt Avito (keine Azure-IP-Blockierung)"
             echo "════════════════════════════════════════"
 
             cd "$AGENT_DIR"
@@ -240,8 +247,6 @@ jobs:
             CMD="$CMD --min-conversion $MIN_CONVERSION"
             CMD="$CMD --min-saas $MIN_SAAS"
             CMD="$CMD --min-products $MIN_PRODUCTS"
-            CMD="$CMD --top $TOP"
-            CMD="$CMD --output $AGENT_DIR/output"
 
             # Optionale Flags nur anhängen wenn gesetzt
             [ "$HOT_ONLY" = "true" ]      && CMD="$CMD --hot-only"

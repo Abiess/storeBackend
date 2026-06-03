@@ -43,6 +43,28 @@ class AvitoScraper extends BaseScraper {
   async scrapeListings(options = {}) {
     const { category = '', city = '', maxPages = 3, keywords = '' } = options;
 
+    // ── Diagnostic Probe: Avito erreichbar? ──────────────────────────
+    const probeUrl  = this._buildSearchUrl('mode', '', '', 1);
+    const probeStatus = await this.diagnose(probeUrl);
+
+    if (probeStatus === 429 || probeStatus === 403) {
+      this.warn(`Diagnostic Probe ergab HTTP ${probeStatus}.`);
+      if (process.env.GITHUB_ACTIONS) {
+        this.warn('GitHub-Actions-IP ist von Avito/Cloudflare blockiert.');
+        this.warn('Avito-Scraping wird übersprungen.');
+        this.warn('→ Nutze den VPS-Cron (05:00 UTC täglich) statt GitHub Actions.');
+        return [];
+      }
+      this.warn(`Warte 120s vor erstem echten Request...`);
+      await this._sleep(120000);
+    } else if (probeStatus === null) {
+      this.warn('Probe fehlgeschlagen (Netzfehler) – versuche trotzdem...');
+    } else if (probeStatus === 200) {
+      this.log(`✅ Probe OK (HTTP 200) – starte Scraping`);
+      // Kurze Pause nach dem Probe (wirkt natürlicher)
+      await this._sleep(3000 + Math.random() * 4000);
+    }
+
     // Schritt 1: Eindeutige Händler-IDs aus Suchergebnissen sammeln
     const sellerMap = new Map(); // id → { rawSeller, ads[] }
 
@@ -65,6 +87,13 @@ class AvitoScraper extends BaseScraper {
         }
         sellerMap.get(sid).ads.push(ad);
       }
+
+      // Zufälliger Delay zwischen Seiten (5–12s)
+      if (page < maxPages) {
+        const pageDelay = 5000 + Math.random() * 7000;
+        this.log(`Pause ${(pageDelay/1000).toFixed(1)}s vor nächster Seite...`);
+        await this._sleep(pageDelay);
+      }
     }
 
     this.log(`Einzigartige Händler: ${sellerMap.size} → lade Profile...`);
@@ -84,9 +113,13 @@ class AvitoScraper extends BaseScraper {
         if (lead) leads.push(lead);
       } catch (err) {
         this.warn(`Händler ${sellerId}: ${err.message}`);
-        // Fallback: Lead aus Suchergebnis-Daten bauen
         const fallback = this._buildFallbackLead(sellerId, rawSeller, ads);
         if (fallback) leads.push(fallback);
+      }
+
+      // Zufälliger Delay zwischen Profilen (4–10s)
+      if (count < sellerMap.size && count < this.maxSellers) {
+        await this._sleep(4000 + Math.random() * 6000);
       }
     }
 
@@ -481,9 +514,24 @@ class AvitoScraper extends BaseScraper {
   async _fetchHtml(url) {
     try {
       const res = await this.get(url);
-      return res.data;
+      if (!res) return null;
+      // 429 und 403 werden von BaseScraper geworfen/gehandelt
+      // Hier prüfen wir auf leere/invalide Antworten
+      const body = String(res.data || '');
+      if (!body || body.length < 500) {
+        this.warn(`Leere/kurze Antwort (${body.length} Zeichen) für ${url}`);
+        return null;
+      }
+      return body;
     } catch (err) {
-      this.warn(`Fetch fehlgeschlagen: ${url} – ${err.message}`);
+      const status = err?.response?.status;
+      if (status === 429) {
+        this.warn(`429 nach allen Retries für ${url} – überspringe`);
+      } else if (status === 403) {
+        this.warn(`403 IP-Block für ${url} – überspringe`);
+      } else {
+        this.warn(`Fetch fehlgeschlagen: ${url} – ${err.message}`);
+      }
       return null;
     }
   }
