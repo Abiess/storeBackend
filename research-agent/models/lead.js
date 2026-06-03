@@ -1,5 +1,5 @@
 /**
- * Lead-Datenmodell – erweitert um Händler-Finder-Felder
+ * Lead-Datenmodell – erweitert um Händler-Finder-Felder + Tier-System + SaaS-Fit
  */
 
 class Lead {
@@ -9,6 +9,22 @@ class Lead {
     this.source        = '';         // avito | opensooq | jumia | instagram
     this.profileUrl    = '';         // Öffentliche Profil-URL
     this.scrapedAt     = new Date().toISOString();
+
+    // ── Tier-Klassifikation (nach Produktanzahl) ────────────────────────
+    // IGNORED (<5) | BASIC (5–9) | PRIORITY (10–19) | HOT_LEAD (≥20)
+    this.tier          = '';
+    this.tierEmoji     = '';
+
+    // ── SaaS-Fit-Score ──────────────────────────────────────────────────
+    this.saasScore     = 0;          // 0–100
+    this.saasLabel     = '';         // HIGH_FIT | MEDIUM_FIT | LOW_FIT | NO_FIT
+    this.saasEmoji     = '';
+    this.saasReason    = '';
+
+    // ── Hot-Lead Produktdaten (nur für tier === HOT_LEAD) ───────────────
+    // Jedes Objekt: { title, description, price, currency, category, imageUrls[], adUrl }
+    this.hotProducts   = [];
+    this.importReady   = false;      // true wenn imageUrls vorhanden → automatischer Import möglich
 
     // ── Geschäftsinformationen (öffentlich sichtbar) ────────────────────
     this.businessName  = '';
@@ -67,6 +83,18 @@ class Lead {
 
   toCSVRow() {
     return {
+      // Tier + SaaS-Fit zuerst (wichtigste Felder)
+      tierEmoji:         this.tierEmoji,
+      tier:              this.tier,
+      saasEmoji:         this.saasEmoji,
+      saasLabel:         this.saasLabel,
+      saasScore:         this.saasScore,
+      saasReason:        this.saasReason,
+      importReady:       this.importReady ? 'JA' : 'NEIN',
+      hotProductsCount:  this.hotProducts ? this.hotProducts.length : 0,
+      hotProductImages:  this.hotProducts
+        ? this.hotProducts.reduce((sum, p) => sum + (p.imageUrls ? p.imageUrls.length : 0), 0)
+        : 0,
       conversionEmoji:   this.conversionEmoji,
       conversionLabel:   this.conversionLabel,
       conversionScore:   this.conversionScore,

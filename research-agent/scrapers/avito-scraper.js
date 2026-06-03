@@ -21,6 +21,7 @@
 const cheerio     = require('cheerio');
 const BaseScraper = require('./base-scraper');
 const Lead        = require('../models/lead');
+const { classifyTier, TIER_HOT_LEAD } = require('../scoring/tier-classifier');
 
 const CATEGORY_MAP = {
   mode:         'vetements_et_accessoires',
@@ -118,13 +119,28 @@ class AvitoScraper extends BaseScraper {
     }
 
     // Gesamte Produktanzahl = Anzahl Anzeigen auf der Profilseite
-    // (Avito zeigt auf Profilseite alle aktuellen Anzeigen, paginiert)
     lead.productCount   = Math.max(lead.productCount, profileAds.length);
     lead.activeListings = lead.productCount;
 
     // ── HTML-Extraktion für Felder die nicht im JSON sind ──────────
     const $ = cheerio.load(html);
     this._enrichFromProfileHtml(lead, $);
+
+    // ── Tier-Klassifikation ────────────────────────────────────────
+    const tier = classifyTier(lead.productCount);
+    lead.tier      = tier.label;
+    lead.tierEmoji = tier.emoji;
+
+    // ── Hot Lead: Produkte + Bilder extrahieren ────────────────────
+    // Nur für Händler mit ≥ 20 Produkten (HOT_LEAD-Tier)
+    if (tier.label === TIER_HOT_LEAD.label) {
+      const allAds = profileAds.length > 0 ? profileAds : searchAds;
+      this.log(`🔴 HOT LEAD (${lead.productCount} Produkte) → scrappe Produktbilder...`);
+      lead.hotProducts = await this._scrapeHotLeadProducts(allAds, 10);
+      lead.importReady = lead.hotProducts.length > 0 &&
+        lead.hotProducts.some(p => p.imageUrls && p.imageUrls.length > 0);
+      this.log(`  → ${lead.hotProducts.length} Produkte, importReady=${lead.importReady}`);
+    }
 
     return lead;
   }
@@ -137,7 +153,166 @@ class AvitoScraper extends BaseScraper {
     lead.scrapedAt  = new Date().toISOString();
     lead.country    = 'MA';
     this._applySellerData(lead, rawSeller, searchAds);
+
+    const tier = classifyTier(lead.productCount);
+    lead.tier      = tier.label;
+    lead.tierEmoji = tier.emoji;
+
     return lead;
+  }
+
+  // ── Hot-Lead: Produkte + Bilder scrapen ──────────────────────────
+  // Wird nur für Händler mit ≥ 20 Produkten aufgerufen.
+  // Versucht zuerst Bilddaten direkt aus dem Anzeigen-JSON zu lesen.
+  // Falls nicht vorhanden: Detail-Seite der Anzeige aufrufen.
+
+  async _scrapeHotLeadProducts(ads, maxProducts = 10) {
+    const products = [];
+    const toScrape = (ads || []).slice(0, maxProducts);
+
+    for (const ad of toScrape) {
+      try {
+        // ── Schritt 1: Bilder direkt aus dem JSON-Ad-Objekt ──────────
+        const jsonImages = this._extractImagesFromAdObject(ad);
+        const adUrl      = this._resolveAdUrl(ad);
+
+        if (jsonImages.length > 0) {
+          // Bilder bereits im Listing-JSON vorhanden → kein Detail-Request
+          products.push({
+            title:       ad.title || ad.subject || ad.name || '',
+            description: ad.body  || ad.description || '',
+            price:       this._extractPrice(ad.price),
+            currency:    ad.price?.currency || 'MAD',
+            category:    ad.category?.name || ad.category?.formatted || '',
+            imageUrls:   jsonImages.slice(0, 10),
+            adUrl,
+          });
+        } else if (adUrl) {
+          // ── Schritt 2: Detail-Seite besuchen ─────────────────────
+          const detail = await this._scrapeAdDetailPage(adUrl);
+          if (detail) products.push(detail);
+        }
+      } catch (err) {
+        this.warn(`Produkt-Scraping fehlgeschlagen: ${err.message}`);
+      }
+    }
+
+    return products;
+  }
+
+  /** Bilder aus dem rohen Ad-JSON-Objekt extrahieren (ohne HTTP-Request) */
+  _extractImagesFromAdObject(ad) {
+    const raw = ad.images || ad.imgs || ad.photos || ad.pictures || [];
+    return raw
+      .map(img => {
+        if (typeof img === 'string') return img;
+        // Avito gibt unterschiedliche Auflösungen zurück – bevorzuge 'large'
+        return img.src || img.large || img.medium || img.small || img.url || null;
+      })
+      .filter(src => src && typeof src === 'string' && src.startsWith('http'));
+  }
+
+  /** Normalisiert die Anzeigen-URL (relativ → absolut) */
+  _resolveAdUrl(ad) {
+    const raw = ad.url || ad.link || ad.subject_url || ad.href || '';
+    if (!raw) return '';
+    if (raw.startsWith('http')) return raw;
+    return `${this.baseUrl}${raw.startsWith('/') ? '' : '/'}${raw}`;
+  }
+
+  /** Preis-Wert aus verschiedenen Avito-Formaten extrahieren */
+  _extractPrice(price) {
+    if (!price) return 0;
+    if (typeof price === 'number') return price;
+    if (typeof price === 'object') return price.value || price.amount || 0;
+    const n = parseInt(String(price).replace(/\D/g, ''), 10);
+    return isNaN(n) ? 0 : n;
+  }
+
+  /** Besucht eine Anzeigen-Detailseite und extrahiert Produktdaten + Bild-URLs */
+  async _scrapeAdDetailPage(adUrl) {
+    const html = await this._fetchHtml(adUrl);
+    if (!html) return null;
+
+    // ── Versuch 1: __NEXT_DATA__ JSON ────────────────────────────
+    try {
+      const m = html.match(/<script[^>]+id="__NEXT_DATA__"[^>]*>([\s\S]+?)<\/script>/i);
+      if (m) {
+        const data = JSON.parse(m[1]);
+
+        // Avito Ad-Detail hat unterschiedliche JSON-Pfade je nach Version
+        const ad =
+          data?.props?.pageProps?.componentProps?.ad ||
+          data?.props?.pageProps?.ad                 ||
+          data?.pageProps?.componentProps?.ad        ||
+          data?.pageProps?.ad                        ||
+          {};
+
+        const images = this._extractImagesFromAdObject(ad);
+
+        if (images.length > 0 || ad.title || ad.subject) {
+          return {
+            title:       ad.title || ad.subject || '',
+            description: (ad.body || ad.description || '').slice(0, 600),
+            price:       this._extractPrice(ad.price),
+            currency:    ad.price?.currency || 'MAD',
+            category:    ad.category?.name || ad.category?.formatted || '',
+            imageUrls:   images.slice(0, 10),
+            adUrl,
+          };
+        }
+      }
+    } catch { /* JSON kaputt → HTML-Fallback */ }
+
+    // ── Versuch 2: HTML-Parsing Fallback ─────────────────────────
+    const $ = cheerio.load(html);
+    const images = [];
+
+    // Avito-typische Bild-Selektoren
+    $([
+      '[class*="gallery"] img',
+      '[class*="Gallery"] img',
+      '[class*="AdImages"] img',
+      '[class*="carousel"] img',
+      '.owl-carousel img',
+      'picture source[srcset]',
+      'img[src*="avito.ma"]',
+      'img[data-src*="avito"]',
+    ].join(', ')).each((_, el) => {
+      const src = $(el).attr('src') || $(el).attr('data-src') || $(el).attr('srcset') || '';
+      // srcset: "url1 1x, url2 2x" → erste URL nehmen
+      const cleanSrc = src.split(' ')[0].trim();
+      if (
+        cleanSrc &&
+        cleanSrc.startsWith('http') &&
+        !cleanSrc.includes('avatar') &&
+        !cleanSrc.includes('placeholder') &&
+        !cleanSrc.includes('logo')
+      ) {
+        images.push(cleanSrc);
+      }
+    });
+
+    const uniqueImages = [...new Set(images)].slice(0, 10);
+
+    const title = $([
+      'h1[class*="title"]', '[class*="AdTitle"]', '[itemprop="name"]', 'h1',
+    ].join(', ')).first().text().trim();
+
+    const description = $([
+      '[class*="description"]', '[class*="Description"]', '[itemprop="description"]',
+      '[class*="AdBody"]', '[class*="adBody"]',
+    ].join(', ')).first().text().trim().slice(0, 600);
+
+    return {
+      title,
+      description,
+      price:     0,
+      currency:  'MAD',
+      category:  '',
+      imageUrls: uniqueImages,
+      adUrl,
+    };
   }
 
   // ── Seller-Daten aus JSON-Feldern korrekt extrahieren ────────────
