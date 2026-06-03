@@ -1,0 +1,9 @@
+# Alle generierten CSVs ignorieren (gehören nicht ins Repository)
+*.csv
+
+# Archive-Ordner ebenfalls ignorieren
+archive/
+
+# Nur diese .gitignore selbst tracken
+!.gitignore
+
