@@ -165,26 +165,26 @@ public class ChatbotIntentService {
         LocalDate today = LocalDate.now();
         LocalDateTime startOfDay = today.atStartOfDay();
 
-        // Total sessions
-        Long totalSessions = chatSessionRepository.countByStoreId(storeId);
-        stats.setTotalSessions(totalSessions != null ? totalSessions.intValue() : 0);
+        // Total sessions – null-safe
+        long totalSessions = Optional.ofNullable(chatSessionRepository.countByStoreId(storeId)).orElse(0L);
+        stats.setTotalSessions((int) totalSessions);
 
-        // Today's sessions
-        Long todaySessions = chatSessionRepository.countByStoreIdAndCreatedAtAfter(storeId, startOfDay);
-        stats.setTodaySessions(todaySessions != null ? todaySessions.intValue() : 0);
+        // Today's sessions – null-safe
+        long todaySessions = Optional.ofNullable(chatSessionRepository.countByStoreIdAndCreatedAtAfter(storeId, startOfDay)).orElse(0L);
+        stats.setTodaySessions((int) todaySessions);
 
         // Active sessions now
-        Long activeSessions = chatSessionRepository.countByStoreIdAndStatus(storeId, ChatSessionStatus.ACTIVE);
-        stats.setActiveSessionsNow(activeSessions != null ? activeSessions.intValue() : 0);
+        long activeSessions = chatSessionRepository.countByStoreIdAndStatus(storeId, ChatSessionStatus.ACTIVE);
+        stats.setActiveSessionsNow((int) activeSessions);
 
         // Bot resolved vs agent transferred
-        Long botResolved = chatSessionRepository.countByStoreIdAndStatus(storeId, ChatSessionStatus.CLOSED);
-        Long agentTransferred = chatSessionRepository.countByStoreIdAndStatus(storeId, ChatSessionStatus.AGENT_HANDLING);
+        long botResolved = chatSessionRepository.countByStoreIdAndStatus(storeId, ChatSessionStatus.CLOSED);
+        long agentTransferred = chatSessionRepository.countByStoreIdAndStatus(storeId, ChatSessionStatus.AGENT_HANDLING);
 
-        stats.setBotResolved(botResolved != null ? botResolved.intValue() : 0);
-        stats.setAgentTransferred(agentTransferred != null ? agentTransferred.intValue() : 0);
+        stats.setBotResolved((int) botResolved);
+        stats.setAgentTransferred((int) agentTransferred);
 
-        // Resolution rate
+        // Resolution rate – null-safe und Division-by-Zero-safe
         if (totalSessions > 0) {
             BigDecimal resolutionRate = BigDecimal.valueOf(botResolved)
                     .divide(BigDecimal.valueOf(totalSessions), 2, RoundingMode.HALF_UP)
@@ -194,7 +194,6 @@ public class ChatbotIntentService {
             stats.setResolutionRate(BigDecimal.ZERO);
         }
 
-        // Placeholder for avg response time and satisfaction (would need more complex queries)
         stats.setAvgResponseTimeSeconds(5);
         stats.setCustomerSatisfactionScore(new BigDecimal("4.50"));
 

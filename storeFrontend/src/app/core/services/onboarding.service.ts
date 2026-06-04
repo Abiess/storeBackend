@@ -74,17 +74,7 @@ export class OnboardingService {
       route: '/brand',
       priority: 8
     },
-    {
-      id: 'telegram',
-      title: 'Telegram Import einrichten',
-      titleKey: 'onboarding.steps.telegram.title',
-      description: 'Importiere Produkte direkt aus deinem Telegram-Kanal',
-      descKey: 'onboarding.steps.telegram.desc',
-      icon: 'Bot',
-      completed: false,
-      route: '/telegram',
-      priority: 7
-    }
+    // Telegram-Schritt entfernt – optionales Feature, kein Onboarding-Pflichtschritt
   ];
 
   constructor(private http: HttpClient) {}

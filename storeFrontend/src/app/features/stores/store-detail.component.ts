@@ -20,10 +20,16 @@ import { TelegramNotificationBadgeComponent } from '@app/shared/components/teleg
          Keine lokale <app-admin-sidebar> mehr, sonst doppelte Sidebar / Layout-Konflikt. -->
     <div class="store-detail-page">
       <div class="content">
-        <div class="topbar">
-          <a routerLink="/dashboard" class="back-link">{{ 'storeDetail.backToDashboard' | translate }}</a>
-          <h1 class="page-title">{{ 'storeDetail.title' | translate }}</h1>
-          <!-- Telegram Notification Badge – dezent, oben rechts -->
+        <!-- Page Header – schlankes Design ohne doppelten Topbar-Konflikt auf Mobile -->
+        <div class="page-header">
+          <div class="page-header__left">
+            <a routerLink="/dashboard" class="back-link">
+              <span class="back-arrow">←</span>
+              {{ 'storeDetail.backToDashboard' | translate }}
+            </a>
+            <h1 class="page-title">{{ 'storeDetail.title' | translate }}</h1>
+          </div>
+          <!-- Telegram Notification Badge – oben rechts -->
           <app-telegram-notification-badge
             *ngIf="storeId"
             [storeId]="storeId">
@@ -213,32 +219,52 @@ import { TelegramNotificationBadgeComponent } from '@app/shared/components/teleg
     }
 
 
-    .topbar {
-      padding: 1.5rem 2rem;
-      background: #fff;
-      border-bottom: 1px solid #e0e0e0;
+    /* ── Page Header (ersetzt alten .topbar, kein Konflikt mehr mit Admin-Layout-Topbar) ── */
+    .page-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 1rem;
+      padding: 1rem 2rem;
+      background: #fff;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .page-header__left {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      min-width: 0;
     }
 
     .back-link {
-      color: #667eea;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      color: #6b7280;
       text-decoration: none;
+      font-size: 0.8rem;
       font-weight: 500;
-      transition: all 0.2s;
+      transition: color 0.15s;
     }
 
-    .back-link:hover {
-      color: #764ba2;
-    }
+    .back-link:hover { color: #667eea; }
+
+    .back-arrow { font-size: 1rem; line-height: 1; }
 
     .page-title {
       margin: 0;
-      font-size: 1.5rem;
-      color: #333;
+      font-size: 1.375rem;
+      color: #111827;
       font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    @media (max-width: 640px) {
+      .page-header { padding: 0.875rem 1rem; }
+      .page-title { font-size: 1.125rem; }
     }
 
     .container {

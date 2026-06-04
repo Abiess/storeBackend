@@ -28,7 +28,9 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     @Query("SELECT COUNT(cm) FROM ChatMessage cm WHERE cm.session.store.id = :storeId AND cm.isRead = false")
     long countUnreadByStoreId(@Param("storeId") Long storeId);
 
-    long countUnreadBySessionId(Long sessionId);
+    /** Zählt ungelesene Nachrichten einer Session (isRead = false). */
+    @Query("SELECT COUNT(cm) FROM ChatMessage cm WHERE cm.session.id = :sessionId AND cm.isRead = false")
+    long countUnreadBySessionId(@Param("sessionId") Long sessionId);
 
     @Modifying
     @Query("UPDATE ChatMessage cm SET cm.isRead = true " +

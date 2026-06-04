@@ -23,16 +23,29 @@ import { FabService } from '@app/core/services/fab.service';
         <h1>{{ 'navigation.products' | translate }}</h1>
       </div>
 
-      <!-- Telegram-Filter-Leiste -->
-      <div class="filter-bar" *ngIf="hasTelegramProducts">
-        <button class="filter-btn" [class.active]="filterMode === 'all'" (click)="setFilter('all')">
+      <!-- Filter-Leiste: Status-Filter (immer sichtbar) + Telegram-Filter (wenn vorhanden) -->
+      <div class="filter-bar">
+        <!-- Status-Filter -->
+        <button class="filter-btn" [class.active]="statusFilter === 'ALL'" (click)="setStatusFilter('ALL')">
           📦 Alle ({{ products.length }})
         </button>
-        <button class="filter-btn filter-btn--telegram" [class.active]="filterMode === 'telegram'" (click)="setFilter('telegram')">
-          📡 Telegram-Importe ({{ telegramCount }})
+        <button class="filter-btn filter-btn--active" [class.active]="statusFilter === 'ACTIVE'" (click)="setStatusFilter('ACTIVE')">
+          🟢 Aktiv ({{ countByStatus('ACTIVE') }})
         </button>
-        <button class="filter-btn filter-btn--review" [class.active]="filterMode === 'review'" (click)="setFilter('review')"
-                *ngIf="priceReviewCount > 0">
+        <button class="filter-btn filter-btn--draft" [class.active]="statusFilter === 'DRAFT'" (click)="setStatusFilter('DRAFT')">
+          📝 Entwurf ({{ countByStatus('DRAFT') }})
+        </button>
+        <button class="filter-btn filter-btn--archived" [class.active]="statusFilter === 'ARCHIVED'" (click)="setStatusFilter('ARCHIVED')">
+          🗄️ Archiviert ({{ countByStatus('ARCHIVED') }})
+        </button>
+        <!-- Telegram-Filter (nur wenn vorhanden) -->
+        <button *ngIf="hasTelegramProducts" class="filter-btn filter-btn--telegram"
+                [class.active]="statusFilter === 'TELEGRAM'" (click)="setStatusFilter('TELEGRAM')">
+          📡 Telegram ({{ telegramCount }})
+        </button>
+        <!-- Preis-Review-Filter -->
+        <button *ngIf="priceReviewCount > 0" class="filter-btn filter-btn--review"
+                [class.active]="statusFilter === 'REVIEW'" (click)="setStatusFilter('REVIEW')">
           ⚠️ Preis prüfen ({{ priceReviewCount }})
         </button>
       </div>
@@ -48,8 +61,8 @@ import { FabService } from '@app/core/services/fab.service';
         [rowClickable]="true"
         [searchable]="true"
         searchPlaceholder="Produkt suchen..."
-        [emptyMessage]="filterMode === 'telegram' ? 'Keine Telegram-Importe vorhanden' : ('storeDetail.noProducts' | translate)"
-        emptyIcon="{{ filterMode === 'telegram' ? '📡' : '📦' }}"
+        [emptyMessage]="statusFilter === 'TELEGRAM' ? 'Keine Telegram-Importe vorhanden' : statusFilter === 'ALL' ? ('storeDetail.noProducts' | translate) : 'Keine Produkte in diesem Status'"
+        [emptyIcon]="statusFilter === 'TELEGRAM' ? '📡' : '📦'"
         (rowClick)="editProduct($event.id)"
         (selectionChange)="onSelectionChange($event)">
       </app-responsive-data-list>
@@ -123,7 +136,7 @@ import { FabService } from '@app/core/services/fab.service';
       to   { opacity: 1; transform: translateX(-50%) translateY(0); }
     }
 
-    /* Telegram Filter Bar */
+    /* Filter Bar – immer sichtbar */
     .filter-bar {
       display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem;
     }
@@ -134,10 +147,17 @@ import { FabService } from '@app/core/services/fab.service';
     }
     .filter-btn:hover { border-color: #667eea; color: #667eea; }
     .filter-btn.active { background: linear-gradient(135deg,#667eea,#764ba2); color: #fff; border-color: transparent; }
-    .filter-btn--telegram { border-color: #2481cc; color: #2481cc; }
-    .filter-btn--telegram.active { background: linear-gradient(135deg,#2481cc,#1a6db8); }
-    .filter-btn--review { border-color: #d97706; color: #d97706; }
-    .filter-btn--review.active { background: linear-gradient(135deg,#f59e0b,#d97706); }
+    /* Status-spezifische Farben im inaktiven Zustand */
+    .filter-btn--active  { border-color: #16a34a; color: #16a34a; }
+    .filter-btn--active.active  { background: linear-gradient(135deg,#22c55e,#16a34a); }
+    .filter-btn--draft   { border-color: #9ca3af; color: #6b7280; }
+    .filter-btn--draft.active   { background: linear-gradient(135deg,#9ca3af,#6b7280); }
+    .filter-btn--archived{ border-color: #d97706; color: #b45309; }
+    .filter-btn--archived.active{ background: linear-gradient(135deg,#f59e0b,#d97706); }
+    .filter-btn--telegram{ border-color: #2481cc; color: #2481cc; }
+    .filter-btn--telegram.active{ background: linear-gradient(135deg,#2481cc,#1a6db8); }
+    .filter-btn--review  { border-color: #d97706; color: #d97706; }
+    .filter-btn--review.active  { background: linear-gradient(135deg,#f59e0b,#d97706); }
   `]
 })
 export class ProductListComponent implements OnInit, OnDestroy {
@@ -145,7 +165,9 @@ export class ProductListComponent implements OnInit, OnDestroy {
   filteredProducts: Product[] = [];
   storeId!: number;
   loading = true;
-  filterMode: 'all' | 'telegram' | 'review' = 'all';
+  /** Aktiver Filter: Status oder spezielle Filter-Modi */
+  statusFilter: 'ALL' | 'ACTIVE' | 'DRAFT' | 'ARCHIVED' | 'INACTIVE' | 'TELEGRAM' | 'REVIEW' = 'ALL';
+
 
   get hasTelegramProducts(): boolean {
     return this.products.some(p => !!p.telegramSource);
@@ -157,18 +179,29 @@ export class ProductListComponent implements OnInit, OnDestroy {
     return this.products.filter(p => p.priceNeedsReview).length;
   }
 
-  setFilter(mode: 'all' | 'telegram' | 'review'): void {
-    this.filterMode = mode;
+  countByStatus(status: string): number {
+    return this.products.filter(p => p.status === status).length;
+  }
+
+  setStatusFilter(mode: typeof this.statusFilter): void {
+    this.statusFilter = mode;
     this.applyFilter();
   }
 
+
   private applyFilter(): void {
-    if (this.filterMode === 'telegram') {
-      this.filteredProducts = this.products.filter(p => !!p.telegramSource);
-    } else if (this.filterMode === 'review') {
-      this.filteredProducts = this.products.filter(p => p.priceNeedsReview);
-    } else {
-      this.filteredProducts = [...this.products];
+    switch (this.statusFilter) {
+      case 'TELEGRAM':
+        this.filteredProducts = this.products.filter(p => !!p.telegramSource);
+        break;
+      case 'REVIEW':
+        this.filteredProducts = this.products.filter(p => p.priceNeedsReview);
+        break;
+      case 'ALL':
+        this.filteredProducts = [...this.products];
+        break;
+      default:
+        this.filteredProducts = this.products.filter(p => p.status === this.statusFilter);
     }
   }
 

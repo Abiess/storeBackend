@@ -1,5 +1,7 @@
 package storebackend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -18,9 +20,17 @@ public class ChatbotIntent {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @JsonIgnore   // open-in-view=false in Production → verhindert LazyInitializationException
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "store_id")
     private Store store; // NULL = global intent
+
+    /** Gibt die Store-ID zurück, ohne die lazy Relation zu initialisieren. */
+    @JsonProperty("storeId")
+    public Long getStoreId() {
+        if (store == null) return null;
+        try { return store.getId(); } catch (Exception e) { return null; }
+    }
 
     @Column(name = "intent_name", nullable = false, length = 100)
     private String intentName;
