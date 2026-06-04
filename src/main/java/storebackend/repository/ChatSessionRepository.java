@@ -15,13 +15,17 @@ import java.util.Optional;
 public interface ChatSessionRepository extends JpaRepository<ChatSession, Long> {
     Optional<ChatSession> findBySessionToken(String sessionToken);
 
-    List<ChatSession> findByStoreIdAndStatus(Long storeId, ChatSessionStatus status);
+    @Query("SELECT cs FROM ChatSession cs WHERE cs.store.id = :storeId AND cs.status = :status")
+    List<ChatSession> findByStoreIdAndStatus(@Param("storeId") Long storeId, @Param("status") ChatSessionStatus status);
 
-    List<ChatSession> findByStoreIdOrderByUpdatedAtDesc(Long storeId);
+    @Query("SELECT cs FROM ChatSession cs WHERE cs.store.id = :storeId ORDER BY cs.updatedAt DESC")
+    List<ChatSession> findByStoreIdOrderByUpdatedAtDesc(@Param("storeId") Long storeId);
 
-    List<ChatSession> findByCustomerId(Long customerId);
+    @Query("SELECT cs FROM ChatSession cs WHERE cs.customer.id = :customerId")
+    List<ChatSession> findByCustomerId(@Param("customerId") Long customerId);
 
-    List<ChatSession> findByAssignedAgentId(Long agentId);
+    @Query("SELECT cs FROM ChatSession cs WHERE cs.assignedAgent.id = :agentId")
+    List<ChatSession> findByAssignedAgentId(@Param("agentId") Long agentId);
 
     @Query("SELECT cs FROM ChatSession cs WHERE cs.store.id = :storeId " +
            "AND cs.status = :status " +
@@ -33,10 +37,12 @@ public interface ChatSessionRepository extends JpaRepository<ChatSession, Long> 
         @Param("since") LocalDateTime since
     );
 
-    long countByStoreIdAndStatus(Long storeId, ChatSessionStatus status);
+    @Query("SELECT COUNT(cs) FROM ChatSession cs WHERE cs.store.id = :storeId AND cs.status = :status")
+    long countByStoreIdAndStatus(@Param("storeId") Long storeId, @Param("status") ChatSessionStatus status);
 
-    Long countByStoreId(Long storeId);
+    @Query("SELECT COUNT(cs) FROM ChatSession cs WHERE cs.store.id = :storeId")
+    Long countByStoreId(@Param("storeId") Long storeId);
 
-    Long countByStoreIdAndCreatedAtAfter(Long storeId, LocalDateTime after);
+    @Query("SELECT COUNT(cs) FROM ChatSession cs WHERE cs.store.id = :storeId AND cs.createdAt > :after")
+    Long countByStoreIdAndCreatedAtAfter(@Param("storeId") Long storeId, @Param("after") LocalDateTime after);
 }
-
