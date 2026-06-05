@@ -180,9 +180,10 @@ import { Subscription } from 'rxjs';
           <!-- NEU: AI Model Auswahl -->
           <div class="ai-model-selection">
             <label for="aiModelSelect">🤖 KI-Modell:</label>
-            <select 
-              id="aiModelSelect" 
+            <select
+              id="aiModelSelect"
               [(ngModel)]="selectedAiModel"
+              [ngModelOptions]="{standalone: true}"
               class="model-select"
             >
               <option 
@@ -378,35 +379,48 @@ import { Subscription } from 'rxjs';
     /* Tab Navigation */
     .tab-navigation {
       display: flex;
-      gap: 1rem;
+      gap: 0.75rem;
       margin-bottom: 2rem;
       padding-bottom: 0.5rem;
       border-bottom: 2px solid #f0f0f0;
+      flex-wrap: wrap;
     }
 
     .tab-item {
       flex: 1;
-      padding: 0.75rem;
+      min-width: 100px;
+      padding: 0.75rem 1rem;
       border-radius: 8px;
       cursor: pointer;
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      transition: all 0.3s;
-      background: #f8f9fa;
-      color: #333;
+      transition: all 0.2s ease;
+      background: #f0f2f5;
+      color: #555;
       font-weight: 500;
+      border: 2px solid transparent;
+      user-select: none;
+    }
+
+    .tab-item:hover {
+      background: #e8eaf6;
+      color: #667eea;
+      border-color: #c5cae9;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(102,126,234,0.15);
     }
 
     .tab-item.active {
       background: white;
       border: 2px solid #667eea;
       color: #667eea;
-      font-weight: 600;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(102,126,234,0.20);
     }
 
     .tab-icon {
-      font-size: 1.25rem;
+      font-size: 1.2rem;
     }
 
 
