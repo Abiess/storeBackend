@@ -162,8 +162,11 @@ MINIO_SECURE=true
 CJ_API_BASE_URL=${CJ_API_BASE_URL:-https://developers.cjdropshipping.com/api2.0/v1}
 CJ_API_TIMEOUT=${CJ_API_TIMEOUT:-30000}
 
-# Hugging Face API Key (AI Product Creation)
+# Hugging Face API Key (AI Product Creation – Legacy)
 HUGGINGFACE_API_KEY=${HUGGINGFACE_API_KEY:-}
+
+# OpenRouter API Key (AI Product Creation – bevorzugt, OpenAI-kompatibel)
+OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
 
 # Hibernate DDL-Strategie (Default 'update' = neue Spalten anlegen, Daten erhalten)
 # Override für Flyway-Migration: SPRING_JPA_HIBERNATE_DDL_AUTO=validate
@@ -285,9 +288,10 @@ Group=storebackend
 # Environment-Datei laden
 EnvironmentFile=/etc/storebackend.env
 
-# CRITICAL FIX: Hugging Face API Key direkt als Environment Variable
+# CRITICAL FIX: API Keys direkt als Environment Variables
 # (systemd liest manchmal EnvironmentFile nicht korrekt)
 Environment="HUGGINGFACE_API_KEY=\${HUGGINGFACE_API_KEY}"
+Environment="OPENROUTER_API_KEY=\${OPENROUTER_API_KEY}"
 
 # JAR ausführen
 ExecStart=/usr/bin/java \$JAVA_OPTS -jar /opt/storebackend/app.jar

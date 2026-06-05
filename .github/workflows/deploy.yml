@@ -200,6 +200,7 @@ jobs:
             export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
             export JWT_SECRET="${{ secrets.JWT_SECRET }}"
             export HUGGINGFACE_API_KEY="${{ secrets.HUGGINGFACE_API_KEY }}"
+            export OPENROUTER_API_KEY="${{ secrets.OPENROUTER_API_KEY }}"
             cd /opt/storebackend
             bash scripts/deploy.sh
 

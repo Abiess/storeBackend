@@ -210,5 +210,5 @@ huggingface:
 # Key-Format: sk-or-v1-...  →  https://openrouter.ai/keys
 openrouter:
   api:
-    key: ${OPENROUTER_API_KEY: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}
+    key: ${OPENROUTER_API_KEY:}
 
