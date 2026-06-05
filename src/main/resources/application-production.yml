@@ -205,3 +205,10 @@ huggingface:
   api:
     key: ${HUGGINGFACE_API_KEY:}
 
+# OpenRouter AI – OpenAI-kompatibler Unified-AI-Zugang
+# Kostenlose Vision-Modelle: google/gemini-2.0-flash-exp:free
+# Key-Format: sk-or-v1-...  →  https://openrouter.ai/keys
+openrouter:
+  api:
+    key: ${OPENROUTER_API_KEY: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}
+

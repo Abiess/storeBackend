@@ -30,6 +30,7 @@ public class ChatbotService {
     private final StoreRepository storeRepository;
     private final OrderRepository orderRepository;
     private final ObjectMapper objectMapper;
+    private final OpenRouterService openRouterService; // KI-Fallback
 
     @Transactional
     public ChatbotResponse processMessage(ChatbotRequest request) {
@@ -139,7 +140,23 @@ public class ChatbotService {
             return intentResponse;
         }
 
-        // 7. Default fallback - suggest FAQ or human agent
+        // 7. OpenRouter KI-Fallback (wenn konfiguriert) – beantwortet unbekannte Fragen
+        if (openRouterService.isConfigured()) {
+            try {
+                String storeName = session.getStore() != null ? session.getStore().getName() : "";
+                String aiAnswer  = openRouterService.answerCustomerQuestion(
+                    normalizedMessage,
+                    storeName.isBlank() ? null : "Online-Shop: " + storeName,
+                    language
+                );
+                log.info("✅ OpenRouter chatbot answered: {}", aiAnswer.substring(0, Math.min(80, aiAnswer.length())));
+                return new ChatbotResponse(null, aiAnswer);
+            } catch (Exception e) {
+                log.warn("⚠️ OpenRouter chatbot fallback failed: {}", e.getMessage());
+            }
+        }
+
+        // 8. Default-Fallback (wie bisher)
         return getFallbackResponse(session, language);
     }
 

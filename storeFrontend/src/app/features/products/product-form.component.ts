@@ -193,7 +193,7 @@ import { Subscription } from 'rxjs';
               </option>
             </select>
             <span class="model-info">
-              ℹ️ {{ selectedAiModel === 'zai-org/GLM-4.5V' ? 'Premium Modell (Standard)' : 'Kostenloses Modell' }}
+              ℹ️ {{ selectedAiModel === '' ? '🚀 Auto (OpenRouter/Gemini wenn konfiguriert)' : selectedAiModel === 'zai-org/GLM-4.5V' ? 'HuggingFace GLM-4.5V (Fallback)' : 'HuggingFace BLIP (kostenlos)' }}
             </span>
           </div>
 
@@ -1441,7 +1441,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
 
   tabs: Array<{ id: 'basic' | 'ai' | 'media' | 'variants', label: string, icon: string }> = [
     { id: 'basic', label: 'Basis Info', icon: '📝' },
-    //{ id: 'ai', label: 'KI-Assistent', icon: '🤖' },
+    { id: 'ai', label: 'KI-Assistent', icon: '🤖' },
     { id: 'media', label: 'Bilder', icon: '📷' },
     { id: 'variants', label: 'Varianten', icon: '🎨' }
   ];
@@ -2208,10 +2208,11 @@ export class ProductFormComponent implements OnInit, OnDestroy {
    */
   private getModelDisplayName(modelName: string): string {
     const displayNames: {[key: string]: string} = {
-      'zai-org/GLM-4.5V': 'GLM-4.5V (Premium)',
-      'Salesforce/blip-image-captioning-large': 'BLIP (Kostenlos)'
+      '':                                         '🚀 Auto (OpenRouter/Gemini – empfohlen)',
+      'zai-org/GLM-4.5V':                        'GLM-4.5V (HuggingFace Fallback)',
+      'Salesforce/blip-image-captioning-large':   'BLIP (HuggingFace – kostenlos)'
     };
-    return displayNames[modelName] || modelName;
+    return displayNames[modelName] ?? modelName;
   }
 }
 

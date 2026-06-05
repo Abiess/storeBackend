@@ -223,19 +223,21 @@ export class ProductService {
   }
 
   /**
-   * NEU: Hole verfügbare AI-Modelle
+   * Verfügbare AI-Modelle – OpenRouter-Modelle werden bevorzugt wenn Key gesetzt.
+   * Leerer String = Backend wählt automatisch (OpenRouter > HuggingFace).
    */
   getAvailableAiModels(): string[] {
     return [
-      'zai-org/GLM-4.5V',  // Bestehendes Modell (Default)
-      'Salesforce/blip-image-captioning-large'  // Neues kostenloses Modell
+      '',                                          // Auto (empfohlen: OpenRouter/Gemini wenn konfiguriert)
+      'zai-org/GLM-4.5V',                          // HuggingFace GLM (Fallback)
+      'Salesforce/blip-image-captioning-large'     // HuggingFace BLIP (kostenlos)
     ];
   }
 
   /**
-   * NEU: Hole Default AI-Modell
+   * Default: Auto-Modus → Backend entscheidet (OpenRouter wenn Key vorhanden)
    */
   getDefaultAiModel(): string {
-    return 'zai-org/GLM-4.5V';
+    return '';  // leer = Auto
   }
 }

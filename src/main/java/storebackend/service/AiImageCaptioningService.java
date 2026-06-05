@@ -43,16 +43,21 @@ public class AiImageCaptioningService {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
     private final MinioService minioService;
-    private final AiModelProvider aiModelProvider; // NEU: Model Provider für Switching
+    private final AiModelProvider aiModelProvider;
+    private final OpenRouterService openRouterService; // Bevorzugter Provider
 
-    public AiImageCaptioningService(RestTemplate restTemplate, ObjectMapper objectMapper, MinioService minioService, AiModelProvider aiModelProvider) {
+    public AiImageCaptioningService(RestTemplate restTemplate, ObjectMapper objectMapper,
+                                     MinioService minioService, AiModelProvider aiModelProvider,
+                                     OpenRouterService openRouterService) {
         this.restTemplate = restTemplate;
         this.objectMapper = objectMapper;
         this.minioService = minioService;
-        this.aiModelProvider = aiModelProvider; // NEU
+        this.aiModelProvider = aiModelProvider;
+        this.openRouterService = openRouterService;
         log.info("🤖 AiImageCaptioningService initialized");
-        log.info("🔑 API Key configured: {}", apiKey != null && !apiKey.isBlank() ? "YES" : "NO");
-        log.info("📋 Available AI models: {}", aiModelProvider.getAvailableModels());
+        log.info("🔑 HuggingFace API Key: {}", apiKey != null && !apiKey.isBlank() ? "YES" : "NO");
+        log.info("🚀 OpenRouter configured: {}", openRouterService.isConfigured() ? "YES (preferred)" : "NO");
+        log.info("📋 Available HF models: {}", aiModelProvider.getAvailableModels());
     }
 
     /**
@@ -72,38 +77,40 @@ public class AiImageCaptioningService {
         log.info("=== AI GENERATION START ===");
         log.info("Image: {} ({} bytes)", imageFile.getOriginalFilename(), imageFile.getSize());
         log.info("Language: {}", language);
-        log.info("Model: {}", modelName != null ? modelName : "DEFAULT (" + aiModelProvider.getDefaultModel() + ")");
-        log.info("API Key present: {}", apiKey != null && !apiKey.isBlank());
 
-        if (apiKey == null || apiKey.isBlank()) {
-            log.error("❌ Hugging Face API key is not configured!");
-            throw new AiServiceException("Hugging Face API key is not configured. Please set HUGGINGFACE_API_KEY environment variable.");
-        }
-
-        log.info("Generating AI product suggestion for image: {}", imageFile.getOriginalFilename());
-
-        // Convert and compress image to optimized JPEG
-        byte[] imageBytes = imageFile.getBytes();
+        byte[] imageBytes         = imageFile.getBytes();
         byte[] optimizedImageBytes = compressAndResizeImage(imageBytes);
-
         log.info("Image optimized: {} bytes → {} bytes", imageBytes.length, optimizedImageBytes.length);
 
-        // NEU: Verwende gewähltes Modell oder Default
+        // ── OpenRouter bevorzugen (besser + kein MinIO nötig) ──────────────────
+        if (openRouterService.isConfigured() && modelName == null) {
+            log.info("🚀 Using OpenRouter (preferred) for V1 generation");
+            String caption = openRouterService.describeProductImage(optimizedImageBytes, language);
+            log.info("✅ OpenRouter caption: {}", caption);
+            AiProductSuggestionDTO suggestion = new AiProductSuggestionDTO();
+            suggestion.setGeneratedCaption(caption);
+            suggestion.setTitle(generateTitle(caption));
+            suggestion.setDescription(generateDescription(caption));
+            return suggestion;
+        }
+
+        // ── HuggingFace Fallback ────────────────────────────────────────────────
+        log.info("Using HuggingFace (model: {})", modelName != null ? modelName : "DEFAULT (" + aiModelProvider.getDefaultModel() + ")");
+        if (apiKey == null || apiKey.isBlank()) {
+            throw new AiServiceException("No AI provider configured. Set OPENROUTER_API_KEY or HUGGINGFACE_API_KEY.");
+        }
+
         String selectedModel = modelName != null ? modelName : aiModelProvider.getDefaultModel();
         String caption;
-        
+
         if (AiModelProvider.MODEL_BLIP.equals(selectedModel)) {
-            // BLIP Modell braucht keine URL, arbeitet direkt mit Bytes
             caption = aiModelProvider.callModel(selectedModel, null, optimizedImageBytes, language, false);
         } else {
-            // GLM-4.5V (bestehend) braucht URL
             String tempImageUrl = minioService.uploadTemporaryFile(optimizedImageBytes, "image/jpeg", 60);
             caption = aiModelProvider.callModel(selectedModel, tempImageUrl, null, language, false);
         }
 
         log.info("AI generated caption: {}", caption);
-
-        // Generate product title and description from caption
         AiProductSuggestionDTO suggestion = new AiProductSuggestionDTO();
         suggestion.setGeneratedCaption(caption);
         suggestion.setTitle(generateTitle(caption));
@@ -130,34 +137,37 @@ public class AiImageCaptioningService {
         log.info("=== AI GENERATION V2 START ===");
         log.info("Image: {} ({} bytes)", imageFile.getOriginalFilename(), imageFile.getSize());
         log.info("Language: {}", language);
-        log.info("Model: {}", modelName != null ? modelName : "DEFAULT (" + aiModelProvider.getDefaultModel() + ")");
 
-        if (apiKey == null || apiKey.isBlank()) {
-            throw new AiServiceException("Hugging Face API key is not configured. Please set HUGGINGFACE_API_KEY environment variable.");
-        }
-
-        // Compress image
-        byte[] imageBytes = imageFile.getBytes();
+        byte[] imageBytes          = imageFile.getBytes();
         byte[] optimizedImageBytes = compressAndResizeImage(imageBytes);
         log.info("Image optimized: {} bytes → {} bytes", imageBytes.length, optimizedImageBytes.length);
 
-        // NEU: Verwende gewähltes Modell oder Default
+        // ── OpenRouter bevorzugen (besser + kein MinIO nötig) ──────────────────
+        if (openRouterService.isConfigured() && modelName == null) {
+            log.info("🚀 Using OpenRouter (preferred) for V2 generation");
+            String jsonResponse = openRouterService.analyzeProductImage(optimizedImageBytes, language);
+            log.info("✅ OpenRouter V2 response: {}", jsonResponse);
+            return parseJsonResponse(jsonResponse);
+        }
+
+        // ── HuggingFace Fallback ────────────────────────────────────────────────
+        log.info("Using HuggingFace (model: {})", modelName != null ? modelName : "DEFAULT (" + aiModelProvider.getDefaultModel() + ")");
+        if (apiKey == null || apiKey.isBlank()) {
+            throw new AiServiceException("No AI provider configured. Set OPENROUTER_API_KEY or HUGGINGFACE_API_KEY.");
+        }
+
         String selectedModel = modelName != null ? modelName : aiModelProvider.getDefaultModel();
         String jsonResponse;
-        
+
         if (AiModelProvider.MODEL_BLIP.equals(selectedModel)) {
-            // BLIP gibt nur Text zurück, kein JSON - konvertieren wir
             String caption = aiModelProvider.callModel(selectedModel, null, optimizedImageBytes, language, false);
             jsonResponse = convertCaptionToJson(caption, language);
         } else {
-            // GLM-4.5V (bestehend) gibt JSON zurück
             String tempImageUrl = minioService.uploadTemporaryFile(optimizedImageBytes, "image/jpeg", 60);
             jsonResponse = aiModelProvider.callModel(selectedModel, tempImageUrl, null, language, true);
         }
-        
-        log.info("AI generated JSON: {}", jsonResponse);
 
-        // Parse JSON into structured DTO
+        log.info("AI generated JSON: {}", jsonResponse);
         AiProductSuggestionV2DTO suggestion = parseJsonResponse(jsonResponse);
         log.info("✅ V2 parsed: title={}", suggestion.getTitle());
 

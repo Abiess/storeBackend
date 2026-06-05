@@ -120,5 +120,14 @@ cj:
     base-url: ${CJ_API_BASE_URL:https://developers.cjdropshipping.com/api2.0/v1}
     timeout: ${CJ_API_TIMEOUT:30000}
 
+# Hugging Face API (Legacy – wird durch OpenRouter ersetzt wenn Key gesetzt)
+huggingface:
+  api:
+    key: ${HUGGINGFACE_API_KEY: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}
 
-
+# OpenRouter AI – OpenAI-kompatibler Unified-AI-Zugang (bevorzugt)
+# Kostenlose Vision-Modelle: google/gemini-2.0-flash-exp:free
+# Key-Format: sk-or-v1-...  →  https://openrouter.ai/keys
+openrouter:
+  api:
+    key: ${OPENROUTER_API_KEY:}   # Hier direkt eintragen oder per Env-Var setzen
