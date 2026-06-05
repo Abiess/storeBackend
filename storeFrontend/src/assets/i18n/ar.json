@@ -948,7 +948,8 @@
                   "unitMb":  "ميغابايت"
               },
     "whatsapp":  {
-                     "contactUs":  "تواصل معنا عبر واتساب",
+                     "contactUs":     "تواصل مع markt.ma",
+                     "contactSeller": "تواصل مع البائع",
                      "orderOnWhatsapp":  "اطلب عبر واتساب"
                  },
     "theme":  {

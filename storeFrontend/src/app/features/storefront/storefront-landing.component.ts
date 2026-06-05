@@ -717,6 +717,7 @@ export class StorefrontLandingComponent implements OnInit {
     const host = window.location.hostname;
     this.publicApiService.resolveStore(host).subscribe({
       next: (store) => {
+        this.whatsappConfig.setContext('store');
         this.whatsappConfig.setNumber(store.whatsappNumber ?? null);
         this.whatsappConfig.setMessage(
           store.greetingMessage?.trim()

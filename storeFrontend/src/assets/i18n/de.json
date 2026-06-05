@@ -1326,7 +1326,8 @@
                   "unitMb":  "MB"
               },
     "whatsapp":  {
-                     "contactUs":  "Auf WhatsApp kontaktieren",
+                     "contactUs":     "markt.ma kontaktieren",
+                     "contactSeller": "Händler kontaktieren",
                      "orderOnWhatsapp":  "Auf WhatsApp bestellen"
                  },
     "theme":  {

@@ -142,6 +142,7 @@ export class StorefrontComponent implements OnInit, OnDestroy {
       this.cartUpdateSubscription.unsubscribe();
     }
     // WhatsApp-Config zurücksetzen wenn Storefront verlassen wird
+    this.whatsappConfig.setContext('platform');
     this.whatsappConfig.setNumber(null);
     this.whatsappConfig.setMessage(WhatsappConfigService.DEFAULT_MESSAGE);
   }
@@ -163,6 +164,7 @@ export class StorefrontComponent implements OnInit, OnDestroy {
         }
 
         // ✅ WhatsApp-Konfiguration aus Store-Settings übernehmen (Priorität vor environment)
+        this.whatsappConfig.setContext('store');
         this.whatsappConfig.setNumber(store.whatsappNumber ?? null);
         this.whatsappConfig.setMessage(
           store.greetingMessage?.trim()
@@ -174,6 +176,7 @@ export class StorefrontComponent implements OnInit, OnDestroy {
       error: (err) => {
         console.warn('⚠️ Store-Resolve fehlgeschlagen:', err);
         // Bei Fehler: auf sichere Defaults zurückfallen
+        this.whatsappConfig.setContext('platform');
         this.whatsappConfig.setNumber(null);
         this.whatsappConfig.setMessage(WhatsappConfigService.DEFAULT_MESSAGE);
       }

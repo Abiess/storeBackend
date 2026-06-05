@@ -1,19 +1,20 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
-import { WhatsappConfigService } from '@app/core/services/whatsapp-config.service';
+import { WhatsappConfigService, WhatsappContext } from '@app/core/services/whatsapp-config.service';
 import { WhatsappTrackingService } from '@app/core/services/whatsapp-tracking.service';
 import { Subscription } from 'rxjs';
+
 /**
- * Statisches WhatsApp-Kontakt-Widget.
- * Erscheint als fixer grüner Button rechts unten (links neben dem Chatbot-Button).
- * Öffnet beim Klick wa.me/<nummer> in einem neuen Tab.
+ * WhatsApp-Kontakt-Widget – fixer Button rechts unten.
  *
- * Die Telefonnummer kommt aus WhatsappConfigService:
- *  - Jetzt: environment.whatsappNumber (Plattform-Fallback)
- *  - Später: store.whatsappNumber aus Store-Settings per setNumber()
+ * Kontext:
+ *  - 'platform' → "markt.ma kontaktieren"  (Landing Page, allgemeine Seiten)
+ *  - 'store'    → "Händler kontaktieren"    (Subdomain-Storefront)
  *
- * Kein @Input mehr nötig – das Widget steuert seine eigene Sichtbarkeit.
+ * Die Nummer kommt aus WhatsappConfigService:
+ *  – Landing Page   : environment.whatsappNumber
+ *  – Storefront     : store.whatsappNumber aus Store-Settings
  */
 @Component({
   selector: 'app-whatsapp-widget',
@@ -22,10 +23,30 @@ import { Subscription } from 'rxjs';
   template: `
     @if (phoneNumber) {
       <div class="wa-widget">
-        <!-- Tooltip-Label (erscheint beim Hover) -->
-        <span class="wa-tooltip" role="tooltip">
-          {{ 'whatsapp.contactUs' | translate }}
-        </span>
+
+        <!-- Erweitertes Label (erscheint beim Hover) -->
+        <div class="wa-label-chip">
+          <svg class="wa-label-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15
+              -.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475
+              -.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52
+              .149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207
+              -.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372
+              -.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2
+              5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085
+              1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+            <path d="M11.985 0C5.373 0 0 5.373 0 11.985c0 2.11.553 4.09 1.518 5.808L.057 23.927
+              l6.305-1.654A11.935 11.935 0 0011.985 24C18.597 24 24 18.627 24 12.015
+              24 5.403 18.597 0 11.985 0zm0 21.818a9.832 9.832 0 01-5.012-1.37l-.36-.214
+              -3.733.979 1-3.633-.235-.374a9.818 9.818 0 01-1.506-5.221c0-5.42 4.41-9.83
+              9.846-9.83 5.435 0 9.845 4.41 9.845 9.83 0 5.421-4.41 9.833-9.845 9.833z"/>
+          </svg>
+          <span class="wa-label-text">
+            {{ context === 'store'
+               ? ('whatsapp.contactSeller' | translate)
+               : ('whatsapp.contactUs'     | translate) }}
+          </span>
+        </div>
 
         <!-- Haupt-Button -->
         <a
@@ -33,7 +54,10 @@ import { Subscription } from 'rxjs';
           target="_blank"
           rel="noopener noreferrer"
           class="wa-btn"
-          [attr.aria-label]="'whatsapp.contactUs' | translate"
+          [class.wa-btn--store]="context === 'store'"
+          [attr.aria-label]="context === 'store'
+            ? ('whatsapp.contactSeller' | translate)
+            : ('whatsapp.contactUs'     | translate)"
           (click)="trackClick()">
 
           <!-- WhatsApp SVG-Logo (offizielles Icon) -->
@@ -65,20 +89,20 @@ import { Subscription } from 'rxjs';
     }
   `,
   styles: [`
+    /* ── Host: fixer Button rechts unten (Standard-WhatsApp-Position) ── */
     :host {
       position: fixed;
-      bottom: 20px;
-      /* Chatbot-Button sitzt bei left:20px mit 60px Breite → 10px Abstand */
-      left: 90px;
-      right: auto;
+      bottom: 24px;
+      right: 24px;
+      left: auto;
       z-index: 9998; /* Knapp unter dem Chatbot (9999) */
       display: block;
     }
 
-    /* RTL-Support: auf rechte Seite spiegeln */
+    /* RTL: auf linke Seite spiegeln */
     :host-context([dir="rtl"]) {
-      left: auto;
-      right: 90px;
+      left: 24px;
+      right: auto;
     }
 
     .wa-widget {
@@ -97,7 +121,7 @@ import { Subscription } from 'rxjs';
       height: 60px;
       border-radius: 50%;
       background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
-      box-shadow: 0 4px 12px rgba(37, 211, 102, 0.45);
+      box-shadow: 0 4px 16px rgba(37, 211, 102, 0.50);
       cursor: pointer;
       text-decoration: none;
       transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
@@ -105,98 +129,135 @@ import { Subscription } from 'rxjs';
       position: relative;
     }
 
-    .wa-btn:hover {
-      transform: scale(1.12) translateY(-3px);
-      box-shadow: 0 8px 24px rgba(37, 211, 102, 0.6);
+    /* Store-Kontext: etwas dunklerer Grünton damit erkennbar */
+    .wa-btn--store {
+      background: linear-gradient(135deg, #20BA5A 0%, #0E7A52 100%);
+      box-shadow: 0 4px 16px rgba(14, 122, 82, 0.50);
     }
 
-    .wa-btn:active {
-      transform: scale(0.95);
+    .wa-btn:hover {
+      transform: scale(1.12) translateY(-3px);
+      box-shadow: 0 8px 28px rgba(37, 211, 102, 0.65);
     }
+
+    .wa-btn:active { transform: scale(0.95); }
 
     /* Pulsierender Ring-Effekt */
     .wa-btn::before {
       content: '';
       position: absolute;
-      inset: -4px;
+      inset: -5px;
       border-radius: 50%;
-      background: rgba(37, 211, 102, 0.3);
+      background: rgba(37, 211, 102, 0.25);
       animation: wa-pulse 2.5s ease-in-out infinite;
     }
 
     @keyframes wa-pulse {
-      0%, 100% { transform: scale(1);   opacity: 0.7; }
-      50%       { transform: scale(1.2); opacity: 0.0; }
+      0%, 100% { transform: scale(1);   opacity: 0.8; }
+      50%       { transform: scale(1.25); opacity: 0; }
     }
 
     /* ──────────────────────── Icon ──────────────────────── */
     .wa-icon {
-      width: 30px;
-      height: 30px;
+      width: 32px;
+      height: 32px;
       filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
     }
 
-    /* ──────────────────────── Tooltip ──────────────────────── */
-    .wa-tooltip {
+    /* ──────────────────────── Label-Chip (erscheint beim Hover) ──────────────────────── */
+    .wa-label-chip {
       position: absolute;
-      bottom: calc(100% + 10px);
-      left: 0;
+      right: calc(100% + 12px);
+      top: 50%;
+      transform: translateY(-50%) translateX(6px);
       background: #1f2937;
       color: #fff;
       font-size: 12px;
       font-weight: 600;
       white-space: nowrap;
-      padding: 6px 12px;
-      border-radius: 8px;
+      padding: 7px 12px 7px 10px;
+      border-radius: 10px;
       pointer-events: none;
       opacity: 0;
-      transform: translateY(4px);
       transition: opacity 0.2s ease, transform 0.2s ease;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.28);
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
-    /* Tooltip-Pfeil */
-    .wa-tooltip::after {
+    /* RTL: Chip links vom Button */
+    :host-context([dir="rtl"]) .wa-label-chip {
+      right: auto;
+      left: calc(100% + 12px);
+      transform: translateY(-50%) translateX(-6px);
+    }
+
+    /* Pfeil rechts am Chip (zeigt auf Button) */
+    .wa-label-chip::after {
       content: '';
       position: absolute;
-      top: 100%;
-      left: 18px;
+      right: -6px;
+      top: 50%;
+      transform: translateY(-50%);
       border: 6px solid transparent;
-      border-top-color: #1f2937;
+      border-right: none;
+      border-left-color: #1f2937;
     }
 
-    .wa-widget:hover .wa-tooltip {
+    /* RTL: Pfeil links */
+    :host-context([dir="rtl"]) .wa-label-chip::after {
+      right: auto;
+      left: -6px;
+      border-left: none;
+      border-right-color: #1f2937;
+    }
+
+    .wa-label-icon {
+      width: 14px;
+      height: 14px;
+      fill: #25D366;
+      flex-shrink: 0;
+    }
+
+    .wa-widget:hover .wa-label-chip {
       opacity: 1;
-      transform: translateY(0);
+      transform: translateY(-50%) translateX(0);
     }
 
-    /* Mobile: etwas kompakter */
+    :host-context([dir="rtl"]) .wa-widget:hover .wa-label-chip {
+      transform: translateY(-50%) translateX(0);
+    }
+
+    /* ──────────────────────── Mobile ──────────────────────── */
     @media (max-width: 480px) {
       :host {
-        bottom: 10px;
-        left: 80px;
-        right: auto;
+        bottom: 16px;
+        right: 16px;
+        left: auto;
       }
       :host-context([dir="rtl"]) {
-        left: auto;
-        right: 80px;
+        left: 16px;
+        right: auto;
       }
       .wa-btn {
-        width: 52px;
-        height: 52px;
+        width: 54px;
+        height: 54px;
       }
       .wa-icon {
-        width: 26px;
-        height: 26px;
+        width: 28px;
+        height: 28px;
       }
+      /* Chip auf Mobile verstecken (zu wenig Platz) */
+      .wa-label-chip { display: none; }
     }
 
-    /* ── Produktdetail-Seite: Globales FAB auf Mobile ausblenden ──
-       Der Product Sticky CTA (volle Breite, unten) übernimmt dort die Rolle.
+    /* ── Produktdetail-Seite Mobile: über den sticky CTA heben ──
+       Der Product Sticky CTA (volle Breite, ~80px) sitzt ganz unten.
        Desktop (> 767px) bleibt unverändert. */
     @media (max-width: 767px) {
       :host-context(body.is-product-detail) {
-        display: none !important;
+        bottom: calc(80px + env(safe-area-inset-bottom, 0px) + 12px);
       }
     }
   `]
@@ -206,8 +267,11 @@ export class WhatsappWidgetComponent implements OnInit, OnDestroy {
   /** Aktuelle Nummer aus WhatsappConfigService (null = Widget versteckt) */
   phoneNumber: string | null = null;
 
-  /** Vorbefüllte Nachricht (aus Service, überschreibbar per Store-Settings) */
+  /** Vorbefüllte Nachricht */
   message: string = WhatsappConfigService.DEFAULT_MESSAGE;
+
+  /** Aktueller Kontext: 'platform' oder 'store' */
+  context: WhatsappContext = 'platform';
 
   private sub?: Subscription;
 
@@ -225,36 +289,25 @@ export class WhatsappWidgetComponent implements OnInit, OnDestroy {
         this.message = msg;
       })
     );
+    this.sub.add(
+      this.whatsappConfig.context$.subscribe(ctx => {
+        this.context = ctx;
+      })
+    );
   }
 
   ngOnDestroy(): void {
     this.sub?.unsubscribe();
   }
 
-  /**
-   * Tracking-Call: synchron, lightweight – blockiert den WhatsApp-Klick NICHT.
-   * Der Browser öffnet target="_blank" sofort, trackClick() läuft daneben.
-   */
   trackClick(): void {
-    this.tracking.track({
-      source:  'widget',
-      url:     this.whatsappUrl
-    });
+    this.tracking.track({ source: 'widget', url: this.whatsappUrl });
   }
 
-  /**
-   * Baut die wa.me-URL auf:
-   *   https://wa.me/<nur Ziffern>?text=<encodeURIComponent(message)>
-   *
-   * - encodeURIComponent: kompatibel mit Arabisch, Französisch, allen Unicode-Zeichen
-   * - wa.me öffnet direkt die WhatsApp-App (mobil & desktop)
-   * - Kein + vor dem Leerzeichen – WhatsApp erwartet %20, nicht +
-   */
   get whatsappUrl(): string {
     if (!this.phoneNumber) return '#';
-    const phone   = this.phoneNumber.replace(/\D/g, ''); // nur Ziffern
+    const phone   = this.phoneNumber.replace(/\D/g, '');
     const encoded = this.message ? `?text=${encodeURIComponent(this.message)}` : '';
     return `https://wa.me/${phone}${encoded}`;
   }
 }
-

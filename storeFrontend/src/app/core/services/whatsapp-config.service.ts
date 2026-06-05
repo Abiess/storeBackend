@@ -2,6 +2,9 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { environment } from '@env/environment';
 
+/** Kontext bestimmt das Tooltip-Label und optional Icon-Farbe des Widgets */
+export type WhatsappContext = 'platform' | 'store';
+
 /**
  * Zentraler Service für die WhatsApp-Kontaktkonfiguration.
  *
@@ -27,8 +30,12 @@ export class WhatsappConfigService {
     this.readEnv('whatsappMessage') ?? WhatsappConfigService.DEFAULT_MESSAGE
   );
 
-  readonly number$: Observable<string | null> = this.numberSubject.asObservable();
-  readonly message$: Observable<string>       = this.messageSubject.asObservable();
+  /** 'platform' = markt.ma Support, 'store' = Shop-Inhaber */
+  private readonly contextSubject = new BehaviorSubject<WhatsappContext>('platform');
+
+  readonly number$:  Observable<string | null>    = this.numberSubject.asObservable();
+  readonly message$: Observable<string>           = this.messageSubject.asObservable();
+  readonly context$: Observable<WhatsappContext>  = this.contextSubject.asObservable();
 
   /** Nummer programmatisch setzen (null → Widget ausblenden) */
   setNumber(phone: string | null | undefined): void {
@@ -42,8 +49,14 @@ export class WhatsappConfigService {
     if (cleaned !== this.messageSubject.value) this.messageSubject.next(cleaned);
   }
 
-  get currentNumber():  string | null { return this.numberSubject.value; }
-  get currentMessage(): string        { return this.messageSubject.value; }
+  /** Kontext setzen: 'platform' = markt.ma Support | 'store' = Shop-Inhaber */
+  setContext(ctx: WhatsappContext): void {
+    if (ctx !== this.contextSubject.value) this.contextSubject.next(ctx);
+  }
+
+  get currentNumber():  string | null    { return this.numberSubject.value; }
+  get currentMessage(): string           { return this.messageSubject.value; }
+  get currentContext(): WhatsappContext  { return this.contextSubject.value; }
 
   private readEnv(key: string): any {
     const val = (environment as Record<string, any>)[key];

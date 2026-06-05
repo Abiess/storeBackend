@@ -218,8 +218,6 @@ export class AppComponent implements OnInit {
   showWhatsappWidget = false;
   /** Chatbot nur auf Storefront-Seiten (benötigt Store-ID) */
   showChatbotWidget = false;
-  /** @deprecated – wird schrittweise durch showWhatsappWidget / showChatbotWidget ersetzt */
-  get showWidgets() { return this.showChatbotWidget; }
 
   private readonly adminPathPrefixes = [
     '/settings',
@@ -284,16 +282,18 @@ export class AppComponent implements OnInit {
     if (this.showAdminShell) {
       // Admin-Bereich → Nummer löschen, Widget ausblenden
       this.whatsappConfig.setNumber(null);
+      this.whatsappConfig.setContext('platform');
     } else if (!isStorefront) {
       // Öffentliche Plattform-Seite (Landing, Produkte, Cart, Checkout …)
       // → Platform-Nummer + Landing-spezifische Nachricht setzen
+      this.whatsappConfig.setContext('platform');
       this.whatsappConfig.setNumber(environment.whatsappNumber);
       this.whatsappConfig.setMessage(
         'Hallo! Ich habe eine Frage zu markt.ma – können Sie mir helfen? 😊\n' +
         'مرحباً! لدي سؤال حول markt.ma – هل يمكنكم مساعدتي؟'
       );
     }
-    // Auf Storefront-Seiten setzt die Storefront-Komponente Nummer & Nachricht selbst.
+    // Auf Storefront-Seiten setzt die Storefront-Komponente Nummer, Nachricht & Kontext selbst.
 
     // body.is-product-detail setzen/entfernen → CSS in Widget-Styles reagiert darauf
     if (this.productDetailPattern.test(path)) {

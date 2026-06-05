@@ -1324,7 +1324,8 @@
                   "unitMb":  "MB"
               },
     "whatsapp":  {
-                     "contactUs":  "Contact us on WhatsApp",
+                     "contactUs":     "Contact markt.ma",
+                     "contactSeller": "Contact the seller",
                      "orderOnWhatsapp":  "Order on WhatsApp"
                  },
     "theme":  {
