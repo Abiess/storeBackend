@@ -78,6 +78,7 @@ interface OrderHistoryVM {
         </button>
       </nav>
 
+      <!-- Wrapper: Flex nur auf Desktop (>= 768px via CSS), Mobile = Block -->
       <div class="profile-content">
         <!-- Desktop Sidebar -->
         <nav class="profile-sidebar">
@@ -237,25 +238,32 @@ interface OrderHistoryVM {
          PROFIL – MOBILE-FIRST, dann Desktop-Erweiterung
          ═══════════════════════════════════════════════ */
 
+      *, *::before, *::after { box-sizing: border-box; }
+
       :host {
-        --profile-primary: #667eea;
+        display: block;
+        --profile-primary:     #667eea;
         --profile-primary-end: #764ba2;
-        --profile-radius: 12px;
-        --profile-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        --profile-radius:      12px;
+        --profile-shadow:      0 2px 12px rgba(0,0,0,0.08);
+        /* Bottom-Nav-Höhe (60px) + safe area + etwas Luft */
+        --profile-bottom-offset: calc(60px + env(safe-area-inset-bottom, 0px) + 12px);
       }
 
       .profile-container {
         min-height: 100vh;
         background: #f5f7fa;
-        padding-bottom: 80px; /* Platz für ggf. Bottom-Nav */
+        overflow-x: hidden;           /* ← kein horizontales Scrollen */
+        padding-bottom: var(--profile-bottom-offset);
       }
 
-      /* ── TOP BAR (sichtbar auf allen Screens) ── */
+      /* ── TOP BAR ── */
       .profile-topbar {
         display: flex;
         align-items: center;
         gap: 0.75rem;
         padding: 0.875rem 1rem;
+        padding-top: calc(0.875rem + env(safe-area-inset-top, 0px));
         background: #fff;
         border-bottom: 1px solid #e9ecef;
         position: sticky;
@@ -267,13 +275,12 @@ interface OrderHistoryVM {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 36px;
-        height: 36px;
+        width: 36px; height: 36px;
+        flex-shrink: 0;
         border: none;
         background: #f3f4f6;
         border-radius: 50%;
         cursor: pointer;
-        flex-shrink: 0;
         color: #374151;
         transition: background 0.2s;
       }
@@ -284,24 +291,26 @@ interface OrderHistoryVM {
         font-size: 1.05rem;
         font-weight: 700;
         color: #1f2937;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       .topbar-logout {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 36px;
-        height: 36px;
+        width: 36px; height: 36px;
+        flex-shrink: 0;
         border: none;
         background: #fef2f2;
         border-radius: 50%;
         cursor: pointer;
-        flex-shrink: 0;
         color: #dc2626;
         transition: background 0.2s;
       }
       .topbar-logout:hover { background: #fee2e2; }
 
-      /* ── TAB BAR (Mobile / Tablet: sichtbar) ── */
+      /* ── TAB BAR (Mobile / Tablet: sichtbar, Desktop: versteckt) ── */
       .profile-tabs {
         display: flex;
         overflow-x: auto;
@@ -309,7 +318,8 @@ interface OrderHistoryVM {
         border-bottom: 2px solid #f0f0f0;
         scrollbar-width: none;
         -webkit-overflow-scrolling: touch;
-        padding: 0 0.5rem;
+        scroll-snap-type: x mandatory;
+        padding: 0 4px;
       }
       .profile-tabs::-webkit-scrollbar { display: none; }
 
@@ -319,18 +329,20 @@ interface OrderHistoryVM {
         align-items: center;
         gap: 3px;
         flex-shrink: 0;
-        padding: 0.625rem 0.875rem;
+        scroll-snap-align: start;
+        padding: 0.625rem 0.75rem;
         border: none;
         background: transparent;
         color: #6b7280;
         cursor: pointer;
-        font-size: 0.7rem;
+        font-size: 0.68rem;
         font-weight: 500;
         border-bottom: 2.5px solid transparent;
         margin-bottom: -2px;
         transition: all 0.2s;
         position: relative;
-        min-width: 60px;
+        min-width: 58px;
+        max-width: 80px;
       }
       .tab-btn:hover { color: #374151; background: #f9fafb; }
       .tab-btn--active {
@@ -338,16 +350,20 @@ interface OrderHistoryVM {
         border-bottom-color: var(--profile-primary);
         font-weight: 700;
       }
-      .tab-icon { font-size: 1.15rem; line-height: 1; }
-      .tab-label { white-space: nowrap; }
+      .tab-icon  { font-size: 1.15rem; line-height: 1; }
+      .tab-label {
+        white-space: nowrap;
+        font-size: 0.65rem;
+        max-width: 76px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
       .tab-badge {
         position: absolute;
-        top: 4px;
-        right: 4px;
+        top: 4px; right: 4px;
         background: var(--profile-primary);
         color: #fff;
-        font-size: 0.6rem;
-        font-weight: 700;
+        font-size: 0.6rem; font-weight: 700;
         padding: 1px 5px;
         border-radius: 20px;
         min-width: 16px;
@@ -358,9 +374,7 @@ interface OrderHistoryVM {
       .profile-content {
         max-width: 1200px;
         margin: 0 auto;
-        padding: 1rem;
-        display: flex;
-        gap: 1.25rem;
+        padding: 0.75rem;
       }
 
       /* ── DESKTOP SIDEBAR (versteckt auf Mobile) ── */
@@ -375,6 +389,8 @@ interface OrderHistoryVM {
         padding: 0.75rem;
         height: fit-content;
         box-shadow: var(--profile-shadow);
+        position: sticky;
+        top: 70px;              /* unterhalb sticky topbar */
       }
       .sidebar-item {
         width: 100%;
@@ -387,8 +403,8 @@ interface OrderHistoryVM {
         color: #4b5563;
         cursor: pointer;
         border-radius: 8px;
-        font-size: 0.9rem;
-        font-weight: 500;
+        font-size: 0.9rem; font-weight: 500;
+        text-align: left;
         transition: all 0.2s;
       }
       .sidebar-item:hover { background: #f3f4f6; color: #1f2937; }
@@ -403,8 +419,7 @@ interface OrderHistoryVM {
         color: var(--profile-primary);
         padding: 1px 7px;
         border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 700;
+        font-size: 0.75rem; font-weight: 700;
       }
       .sidebar-item.active .badge { background: rgba(255,255,255,0.25); color: #fff; }
       .sidebar-item--logout { color: #dc2626; }
@@ -413,18 +428,19 @@ interface OrderHistoryVM {
 
       /* ── MAIN CONTENT ── */
       .profile-main {
-        flex: 1;
+        width: 100%;
         min-width: 0;
         background: #fff;
         border-radius: var(--profile-radius);
-        padding: 1.25rem 1rem;
+        padding: 1rem;
         box-shadow: var(--profile-shadow);
+        overflow: hidden;            /* ← verhindert overflow */
       }
 
       /* ── TAB CONTENT ── */
       .tab-content h2 {
-        margin: 0 0 1.25rem 0;
-        font-size: 1.1rem;
+        margin: 0 0 1rem 0;
+        font-size: 1.05rem;
         color: #1f2937;
         font-weight: 700;
       }
@@ -432,81 +448,82 @@ interface OrderHistoryVM {
       /* ── OVERVIEW CARDS ── */
       .overview-cards {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 0.75rem;
-        margin-bottom: 1.5rem;
+        grid-template-columns: repeat(3, 1fr);   /* Standard: 3 Spalten */
+        gap: 0.6rem;
+        margin-bottom: 1.25rem;
       }
       .overview-card {
         background: linear-gradient(135deg, var(--profile-primary) 0%, var(--profile-primary-end) 100%);
         color: #fff;
-        padding: 1rem 0.875rem;
+        padding: 0.875rem 0.625rem;
         border-radius: var(--profile-radius);
         display: flex;
         align-items: center;
-        gap: 0.75rem;
+        gap: 0.5rem;
+        min-width: 0;               /* ← Flex-Overflow-Fix */
       }
-      .card-icon { font-size: 1.75rem; flex-shrink: 0; }
-      .card-content h3 { margin: 0; font-size: 1.6rem; font-weight: 700; }
-      .card-content p { margin: 2px 0 0 0; opacity: 0.88; font-size: 0.75rem; }
+      .card-icon { font-size: 1.5rem; flex-shrink: 0; }
+      .card-content { min-width: 0; }
+      .card-content h3 { margin: 0; font-size: 1.4rem; font-weight: 700; line-height: 1; }
+      .card-content p  { margin: 3px 0 0 0; opacity: 0.88; font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
       /* ── RECENT ORDERS ── */
-      .recent-orders { margin-top: 1.5rem; }
-      .recent-orders h3 { margin: 0 0 0.875rem 0; font-size: 0.95rem; font-weight: 700; color: #374151; }
+      .recent-orders { margin-top: 1.25rem; }
+      .recent-orders h3 { margin: 0 0 0.75rem 0; font-size: 0.95rem; font-weight: 700; color: #374151; }
       .order-list-compact {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        margin-bottom: 1rem;
+        display: flex; flex-direction: column; gap: 0.5rem;
+        margin-bottom: 0.875rem;
       }
       .order-item-compact {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
+        gap: 0.5rem;
         padding: 0.75rem;
         background: #f8f9fa;
         border-radius: 10px;
         flex-wrap: wrap;
       }
       .order-info { flex: 1; min-width: 100px; }
-      .order-info strong { font-size: 0.875rem; color: #1f2937; }
-      .order-date { display: block; font-size: 0.75rem; color: #6b7280; margin-top: 1px; }
-      .order-total { color: var(--profile-primary); font-weight: 700; font-size: 0.95rem; flex-shrink: 0; }
+      .order-info strong { font-size: 0.85rem; color: #1f2937; }
+      .order-date { display: block; font-size: 0.73rem; color: #6b7280; margin-top: 1px; }
+      .order-total { color: var(--profile-primary); font-weight: 700; font-size: 0.9rem; flex-shrink: 0; }
 
       /* ── ORDERS LIST ── */
-      .orders-list { display: flex; flex-direction: column; gap: 0.875rem; }
+      .orders-list { display: flex; flex-direction: column; gap: 0.75rem; }
       .order-card {
         border: 1px solid #e5e7eb;
         border-radius: var(--profile-radius);
-        padding: 1rem;
+        padding: 0.875rem;
         transition: box-shadow 0.2s;
+        overflow: hidden;
       }
       .order-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
       .order-header {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        margin-bottom: 0.875rem;
-        padding-bottom: 0.875rem;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.75rem;
         border-bottom: 1px solid #f0f0f0;
         flex-wrap: wrap;
         gap: 0.5rem;
       }
-      .order-header h3 { margin: 0 0 2px 0; font-size: 0.95rem; color: #1f2937; }
+      .order-header h3 { margin: 0 0 2px 0; font-size: 0.9rem; color: #1f2937; word-break: break-all; }
       .order-body { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.75rem; }
       .order-detail { display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; }
       .order-detail .label { color: #6b7280; }
-      .order-detail .total { color: var(--profile-primary); font-size: 1.05rem; font-weight: 700; }
-      .order-actions { display: flex; gap: 8px; }
+      .order-detail .total { color: var(--profile-primary); font-size: 1rem; font-weight: 700; }
+      .order-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
       /* ── STATUS BADGES ── */
       .status-badge {
-        padding: 4px 10px;
+        padding: 3px 9px;
         border-radius: 20px;
-        font-size: 0.7rem;
-        font-weight: 700;
+        font-size: 0.68rem; font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.02em;
         white-space: nowrap;
+        flex-shrink: 0;
       }
       .status-pending    { background: #fff3cd; color: #856404; }
       .status-confirmed,
@@ -517,33 +534,31 @@ interface OrderHistoryVM {
 
       /* ── BUTTONS ── */
       .btn-primary {
-        padding: 0.75rem 1.5rem;
-        background: linear-gradient(135deg, var(--profile-primary) 0%, var(--profile-primary-end) 100%);
-        color: #fff;
-        border: none;
-        border-radius: 10px;
-        cursor: pointer;
-        font-size: 0.9rem;
-        font-weight: 600;
-        transition: opacity 0.2s;
+        display: block;
         width: 100%;
+        padding: 0.75rem 1.25rem;
+        background: linear-gradient(135deg, var(--profile-primary) 0%, var(--profile-primary-end) 100%);
+        color: #fff; border: none;
+        border-radius: 10px; cursor: pointer;
+        font-size: 0.9rem; font-weight: 600;
+        transition: opacity 0.2s;
+        text-align: center;
       }
       .btn-primary:hover { opacity: 0.9; }
       .btn-secondary {
-        padding: 0.625rem 1.25rem;
+        padding: 0.6rem 1.1rem;
         background: #fff;
         color: var(--profile-primary);
         border: 1.5px solid var(--profile-primary);
-        border-radius: 10px;
-        cursor: pointer;
-        font-size: 0.875rem;
-        font-weight: 600;
+        border-radius: 10px; cursor: pointer;
+        font-size: 0.85rem; font-weight: 600;
         transition: all 0.2s;
+        white-space: nowrap;
       }
       .btn-secondary:hover { background: var(--profile-primary); color: #fff; }
 
-      /* ── SPINNER ── */
-      .loading, .empty-state { text-align: center; padding: 3rem 1rem; }
+      /* ── SPINNER / EMPTY ── */
+      .loading, .empty-state { text-align: center; padding: 2.5rem 1rem; }
       .spinner {
         border: 3px solid #f3f3f3;
         border-top: 3px solid var(--profile-primary);
@@ -553,37 +568,54 @@ interface OrderHistoryVM {
         margin: 0 auto 1rem;
       }
       @keyframes spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
-      .empty-icon { font-size: 3.5rem; margin-bottom: 0.875rem; }
+      .empty-icon { font-size: 3rem; margin-bottom: 0.75rem; }
       .empty-state h3 { margin: 0 0 0.5rem 0; color: #1f2937; }
-      .empty-state p { color: #6b7280; margin-bottom: 1.5rem; font-size: 0.875rem; }
+      .empty-state p  { color: #6b7280; margin-bottom: 1.25rem; font-size: 0.875rem; }
 
-      /* ══════════════════════════════════════
+      /* ══════════════════════════════════════════════════
          RESPONSIVE BREAKPOINTS
-         ══════════════════════════════════════ */
+         ══════════════════════════════════════════════════ */
 
-      /* Kleine Smartphones (< 400px): kompaktere Overview-Cards */
-      @media (max-width: 399px) {
-        .overview-cards { grid-template-columns: 1fr; }
-        .overview-card { padding: 0.875rem; }
-        .card-icon { font-size: 1.4rem; }
-        .card-content h3 { font-size: 1.3rem; }
+      /* Sehr kleine Smartphones (< 360px) */
+      @media (max-width: 359px) {
+        .overview-cards { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+        .tab-btn { min-width: 50px; padding: 0.5rem 0.5rem; }
+        .profile-content { padding: 0.5rem; }
       }
 
-      /* Tablets & kleine Desktops (>= 768px): Sidebar zeigen, Tabs verstecken */
+      /* Kleine Smartphones (360–479px): 2-spaltiges Grid */
+      @media (min-width: 360px) and (max-width: 479px) {
+        .overview-cards { grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+        /* 3. Karte streckt sich über volle Breite */
+        .overview-card:last-child { grid-column: 1 / -1; flex-direction: row; justify-content: center; }
+      }
+
+      /* Mittlere Phones (480–599px): 3 Spalten sind ok */
+      @media (min-width: 480px) and (max-width: 599px) {
+        .overview-cards { grid-template-columns: repeat(3, 1fr); }
+      }
+
+      /* Tablets & Desktop (>= 768px): Sidebar zeigen, Tabs verstecken */
       @media (min-width: 768px) {
-        .profile-tabs { display: none; }
+        .profile-tabs    { display: none; }
         .profile-sidebar { display: flex; }
+        .profile-content {
+          display: flex;
+          gap: 1.25rem;
+          padding: 1.25rem;
+        }
         .profile-main { padding: 1.5rem; }
         .overview-cards { gap: 1rem; }
-        .card-icon { font-size: 2rem; }
-        .card-content h3 { font-size: 2rem; }
-        .card-content p { font-size: 0.825rem; }
+        .card-icon  { font-size: 2rem; }
+        .card-content h3 { font-size: 1.9rem; }
+        .card-content p  { font-size: 0.825rem; }
+        .tab-content h2  { font-size: 1.2rem; }
       }
 
       /* Große Desktops (>= 1024px) */
       @media (min-width: 1024px) {
         .profile-content { padding: 1.5rem; }
-        .profile-main { padding: 2rem; }
+        .profile-main    { padding: 2rem; }
       }
     `]
 
