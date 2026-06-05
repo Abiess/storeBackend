@@ -6,6 +6,7 @@ import { AuthService } from './core/services/auth.service';
 import { CartService } from './core/services/cart.service';
 import { MetaPixelService } from './core/services/meta-pixel.service';
 import { WhatsappConfigService } from './core/services/whatsapp-config.service';
+import { environment } from '@env/environment';
 import { ChatbotWidgetComponent } from './components/chatbot-widget/chatbot-widget.component';
 import { WhatsappWidgetComponent } from './components/whatsapp-widget/whatsapp-widget.component';
 import { AdminSidebarComponent } from './shared/components/admin-sidebar/admin-sidebar.component';
@@ -30,8 +31,8 @@ import { PreviewPanelComponent } from './shared/components/preview-panel.compone
       <router-outlet></router-outlet>
     </ng-template>
 
-    <app-chatbot-widget *ngIf="showWidgets"></app-chatbot-widget>
-    <app-whatsapp-widget *ngIf="showWidgets"></app-whatsapp-widget>
+    <app-chatbot-widget *ngIf="showChatbotWidget"></app-chatbot-widget>
+    <app-whatsapp-widget *ngIf="showWhatsappWidget"></app-whatsapp-widget>
     <app-fab-host></app-fab-host>
     <app-preview-panel></app-preview-panel>
   `,
@@ -213,8 +214,12 @@ import { PreviewPanelComponent } from './shared/components/preview-panel.compone
 export class AppComponent implements OnInit {
   title = 'markt.ma - Multi-Tenant E-Commerce Platform';
   showAdminShell = false;
-  /** Widgets (WhatsApp, Chatbot) nur auf Storefront-Seiten anzeigen */
-  showWidgets = false;
+  /** WhatsApp-Widget auf allen öffentlichen Seiten (Landing, Storefront, Produkte …) */
+  showWhatsappWidget = false;
+  /** Chatbot nur auf Storefront-Seiten (benötigt Store-ID) */
+  showChatbotWidget = false;
+  /** @deprecated – wird schrittweise durch showWhatsappWidget / showChatbotWidget ersetzt */
+  get showWidgets() { return this.showChatbotWidget; }
 
   private readonly adminPathPrefixes = [
     '/settings',
@@ -265,16 +270,30 @@ export class AppComponent implements OnInit {
       p => path === p || path.startsWith(p)
     );
 
-    // Widgets nur auf Storefront-Seiten zeigen (z. B. /storefront/ oder public StoreRoutes)
-    // Niemals auf Dashboard, Admin, Login, Settings usw.
-    this.showWidgets = path.includes('/storefront/') || path.startsWith('/s/');
+    // Storefront-Seiten: /storefront/*, /s/* → Store-Nummer wird von der
+    // Storefront-Komponente selbst per WhatsappConfigService.setNumber() gesetzt.
+    const isStorefront = path.includes('/storefront/') || path.startsWith('/s/');
 
-    // Wenn wir NICHT auf einer Storefront-Seite sind → WhatsApp-Nummer zurücksetzen
-    // damit das Widget beim Zurückkehren zur Admin-Seite verschwindet
-    if (!this.showWidgets) {
-      // WhatsApp-Nummer löschen → Widget wird ausgeblendet (zusätzlich zu *ngIf)
+    // ── WhatsApp: auf ALLEN öffentlichen Seiten sichtbar ─────────────────────
+    // Landing Page, Produkte, Warenkorb, Checkout, Subdomain-Storefront, …
+    this.showWhatsappWidget = !this.showAdminShell;
+
+    // ── Chatbot: nur auf Storefront-Seiten (braucht Store-ID) ────────────────
+    this.showChatbotWidget = isStorefront;
+
+    if (this.showAdminShell) {
+      // Admin-Bereich → Nummer löschen, Widget ausblenden
       this.whatsappConfig.setNumber(null);
+    } else if (!isStorefront) {
+      // Öffentliche Plattform-Seite (Landing, Produkte, Cart, Checkout …)
+      // → Platform-Nummer + Landing-spezifische Nachricht setzen
+      this.whatsappConfig.setNumber(environment.whatsappNumber);
+      this.whatsappConfig.setMessage(
+        'Hallo! Ich habe eine Frage zu markt.ma – können Sie mir helfen? 😊\n' +
+        'مرحباً! لدي سؤال حول markt.ma – هل يمكنكم مساعدتي؟'
+      );
     }
+    // Auf Storefront-Seiten setzt die Storefront-Komponente Nummer & Nachricht selbst.
 
     // body.is-product-detail setzen/entfernen → CSS in Widget-Styles reagiert darauf
     if (this.productDetailPattern.test(path)) {
