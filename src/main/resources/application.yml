@@ -123,11 +123,11 @@ cj:
 # Hugging Face API (Legacy – wird durch OpenRouter ersetzt wenn Key gesetzt)
 huggingface:
   api:
-    key: ${HUGGINGFACE_API_KEY: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}
+    key: ${HUGGINGFACE_API_KEY:}
 
 # OpenRouter AI – OpenAI-kompatibler Unified-AI-Zugang (bevorzugt)
 # Kostenlose Vision-Modelle: google/gemini-2.0-flash-exp:free
 # Key-Format: sk-or-v1-...  →  https://openrouter.ai/keys
 openrouter:
   api:
-    key: ${OPENROUTER_API_KEY:}   # Hier direkt eintragen oder per Env-Var setzen
+    key: ${OPENROUTER_API_KEY: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}
