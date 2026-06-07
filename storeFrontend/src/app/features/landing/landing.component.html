@@ -27,6 +27,17 @@
         <h1 class="hero-title" [innerHTML]="'landing.hero.title' | translate"></h1>
         <p class="hero-subtitle">{{ 'landing.hero.subtitle' | translate }}</p>
 
+        <!-- Schnellstart-Banner (prominent) -->
+        <div class="quick-start-banner">
+          <div class="quick-start-badge">🇲🇦 NEU</div>
+          <div class="quick-start-text">
+            <strong>Ohne E-Mail starten</strong> – nur WhatsApp oder Telegram-Nummer
+          </div>
+          <button class="btn btn-quick-start" (click)="navigateToQuickStart()">
+            📱 In 2 Minuten loslegen →
+          </button>
+        </div>
+
         <div class="hero-actions">
           <button class="btn btn-hero-primary" (click)="navigateToRegister()">
             {{ 'landing.hero.startNow' | translate }} →
@@ -200,7 +211,12 @@
       <div class="cta-content">
         <h2>{{ 'landing.cta.title' | translate }}</h2>
         <p>{{ 'landing.cta.subtitle' | translate }}</p>
-        <button class="btn btn-cta" (click)="navigateToRegister()">{{ 'landing.cta.button' | translate }}</button>
+        <div class="cta-buttons">
+          <button class="btn btn-cta" (click)="navigateToRegister()">{{ 'landing.cta.button' | translate }}</button>
+          <button class="btn btn-cta-whatsapp" (click)="navigateToQuickStart()">
+            📱 Ohne E-Mail – nur WhatsApp
+          </button>
+        </div>
         <p class="cta-note">{{ 'landing.cta.note' | translate }}</p>
       </div>
     </div>
@@ -243,10 +259,6 @@
       <span class="mobile-nav-icon">⊞</span>
       <span class="mobile-nav-label">{{ 'landing.nav.features' | translate }}</span>
     </a>
-    <a class="mobile-nav-item" (click)="scrollToSection('demo')">
-      <span class="mobile-nav-icon">▷</span>
-      <span class="mobile-nav-label">{{ 'landing.nav.demo' | translate }}</span>
-    </a>
     <a class="mobile-nav-item" (click)="scrollToSection('pricing')">
       <span class="mobile-nav-icon">◈</span>
       <span class="mobile-nav-label">{{ 'landing.nav.pricing' | translate }}</span>
@@ -254,6 +266,10 @@
     <a class="mobile-nav-item" (click)="navigateToLogin()">
       <span class="mobile-nav-icon">👤</span>
       <span class="mobile-nav-label">{{ 'landing.nav.login' | translate }}</span>
+    </a>
+    <a class="mobile-nav-item mobile-nav-whatsapp" (click)="navigateToQuickStart()">
+      <span class="mobile-nav-icon">📱</span>
+      <span class="mobile-nav-label">WhatsApp-Start</span>
     </a>
     <a class="mobile-nav-item mobile-nav-cta" (click)="navigateToRegister()">
       <span class="mobile-nav-icon">🚀</span>

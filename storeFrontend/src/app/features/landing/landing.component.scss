@@ -142,6 +142,27 @@ $bg:         #f9fafb;
     border-radius: 10px;
     &:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(0,0,0,0.18); }
   }
+
+  &.btn-cta-whatsapp {
+    background: #25D366;
+    color: #fff;
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    border-radius: 10px;
+    &:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(37,211,102,0.35); }
+  }
+
+  &.btn-quick-start {
+    background: linear-gradient(135deg, #25D366, #128C7E);
+    color: #fff;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    border-radius: 10px;
+    padding: 0.65rem 1.25rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+    &:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(37,211,102,0.4); }
+  }
 }
 
 // ── Hero ─────────────────────────────────────────────────────────
@@ -190,9 +211,46 @@ $bg:         #f9fafb;
     font-size: clamp(1rem, 3vw, 1.175rem);
     color: $text-light;
     line-height: 1.65;
-    margin: 0 0 2rem;
+    margin: 0 0 1.25rem;
     max-width: 480px;
     @media (max-width: 1023px) { margin-left: auto; margin-right: auto; }
+  }
+
+  // ── WhatsApp/Telegram Schnellstart-Banner ──────────────────────────
+  .quick-start-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: linear-gradient(135deg, rgba(37,211,102,0.08), rgba(18,140,126,0.06));
+    border: 1.5px solid rgba(37,211,102,0.35);
+    border-radius: 14px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+
+    @media (min-width: 1024px) { justify-content: flex-start; }
+
+    .quick-start-badge {
+      background: #25D366;
+      color: white;
+      font-size: 0.7rem;
+      font-weight: 800;
+      padding: 0.2rem 0.5rem;
+      border-radius: 5px;
+      letter-spacing: 0.05em;
+      flex-shrink: 0;
+    }
+
+    .quick-start-text {
+      color: $text-mid;
+      font-size: 0.875rem;
+      line-height: 1.4;
+      flex: 1;
+      min-width: 140px;
+
+      strong { color: $text-dark; }
+    }
   }
 
   // ─ CTA Buttons ─
@@ -693,6 +751,15 @@ section {
       font-size: 0.875rem;
       opacity: 0.75;
     }
+
+    .cta-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
   }
 }
 
@@ -769,6 +836,14 @@ section {
   &.mobile-nav-cta {
     color: #fff;
     background: linear-gradient(135deg, $primary, $secondary);
+    border-radius: 0;
+
+    .mobile-nav-icon { font-size: 1.25rem; }
+  }
+
+  &.mobile-nav-whatsapp {
+    color: #fff;
+    background: linear-gradient(135deg, #25D366, #128C7E);
     border-radius: 0;
 
     .mobile-nav-icon { font-size: 1.25rem; }

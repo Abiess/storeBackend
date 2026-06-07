@@ -24,6 +24,12 @@ export const routes: Routes = [
     path: 'reset-password',
     loadComponent: () => import('./features/auth/reset-password.component').then(m => m.ResetPasswordComponent)
   },
+  // ── Schnellstart: Store ohne E-Mail-Registrierung (WhatsApp/Telegram-Auth) ──
+  {
+    path: 'quick-start',
+    loadComponent: () => import('./features/auth/quick-start.component').then(m => m.QuickStartComponent)
+    // KEIN authGuard – dieser Flow ist der Einstieg für neue Nutzer
+  },
 
   // ==================== Store Creation Wizard ====================
   {

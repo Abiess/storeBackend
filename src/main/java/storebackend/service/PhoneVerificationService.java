@@ -196,6 +196,16 @@ public class PhoneVerificationService {
     }
 
     /**
+     * Gibt die Telefonnummer einer Verifizierung zurück (für Phone-Auth-Flow)
+     */
+    @Transactional(readOnly = true)
+    public String getPhoneNumberByVerificationId(Long verificationId) {
+        return verificationRepository.findById(verificationId)
+            .map(PhoneVerification::getPhoneNumber)
+            .orElse(null);
+    }
+
+    /**
      * Prüft ob eine Telefonnummer bereits verifiziert ist (innerhalb der letzten 24h)
      */
     @Transactional(readOnly = true)

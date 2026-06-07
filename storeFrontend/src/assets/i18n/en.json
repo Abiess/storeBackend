@@ -1426,5 +1426,12 @@
                    "updateAvailable":  "Update available",
                    "updateNow":  "Update now",
                    "skeleton":  "Loading..."
-               }
+               },
+    "quickStart":  {
+                       "title":  "Start your store in 2 minutes",
+                       "subtitle":  "No email needed – just your WhatsApp or Telegram number",
+                       "landingBadge":  "🇲🇦 NEW",
+                       "landingText":  "Start without email – just WhatsApp or Telegram",
+                       "landingBtn":  "📱 Get started in 2 minutes →"
+                   }
 }

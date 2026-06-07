@@ -1428,6 +1428,16 @@
                    "updateAvailable":  "Update verfügbar",
                    "updateNow":  "Jetzt aktualisieren",
                    "skeleton":  "Wird geladen..."
+               },
+    "quickStart":  {
+                       "title":  "Starte deinen Store in 2 Minuten",
+                       "subtitle":  "Keine E-Mail nötig – nur deine WhatsApp oder Telegram-Nummer",
+                       "landingBadge":  "🇲🇦 NEU",
+                       "landingText":  "Ohne E-Mail starten – nur WhatsApp oder Telegram",
+                       "landingBtn":  "📱 In 2 Minuten loslegen →"
+                   }
+}
+                   "skeleton":  "Wird geladen..."
                }
 }
 

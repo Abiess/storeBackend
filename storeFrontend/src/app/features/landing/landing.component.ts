@@ -157,4 +157,9 @@ export class LandingComponent {
   navigateToLogin(): void {
     this.router.navigate(['/login']);
   }
+
+  /** Schnellstart-Flow: Store ohne E-Mail via WhatsApp/Telegram */
+  navigateToQuickStart(): void {
+    this.router.navigate(['/quick-start']);
+  }
 }

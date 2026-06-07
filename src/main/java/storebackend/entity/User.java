@@ -53,6 +53,10 @@ public class User {
     @Column(name = "preferred_language", length = 5, nullable = false)
     private String preferredLanguage = "en";
 
+    /** Telefonnummer für WhatsApp/Telegram-Auth (nullable für bestehende E-Mail-User) */
+    @Column(name = "phone_number", length = 20, nullable = true, unique = true)
+    private String phoneNumber;
+
     /** Anzahl AI-Calls (Bildgenerierung etc.) im aktuellen Monat. */
     @Column(name = "ai_calls_this_month", nullable = false)
     private Integer aiCallsThisMonth = 0;
