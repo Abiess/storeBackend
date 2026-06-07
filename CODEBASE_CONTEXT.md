@@ -225,4 +225,82 @@ seo_settings     (id, store_id, meta_title, meta_description)
 - **StoreId-Extraktion im Frontend:** Immer 3-stufig: `route.params` → `route.parent.params` → URL-Regex `/\/stores\/(\d+)/`
 - **Flyway deaktiviert:** Schemaänderungen via `ddl-auto: update` – neue Spalten müssen in der `@Entity` ergänzt werden.
 - **Toast-Komponente:** `toast-success`-CSS in `store-theme.component.ts` – `slideInRight` Animation oben rechts.
+- **i18n JSON-Validierung:** Nach jeder Änderung an `de.json`, `en.json`, `ar.json` mit `ConvertFrom-Json` prüfen. Häufiger Fehler: doppelter Abschluss-Block durch Replace-Operationen.
+- **H2 AUTO_SERVER:** Lokaler Start mit `mvn clean compile`. Bei `Permission denied: getsockopt` ist Windows Firewall das Problem – ggf. `AUTO_SERVER=TRUE` aus der JDBC-URL entfernen.
 
+---
+
+## Phone-Auth Flow (WhatsApp/Telegram Schnellstart) – 2026-06-07
+
+### Ziel
+Marokkanische Nutzer können ohne E-Mail-Registrierung direkt einen Store starten.
+
+### Frontend-Route
+```
+/quick-start   → QuickStartComponent   (KEIN authGuard)
+```
+**Datei:** `src/app/features/auth/quick-start.component.ts`
+
+**3-Schritt-Wizard:**
+1. Telefonnummer + Kanal (WhatsApp / Telegram) eingeben
+2. 6-stelligen Code eingeben (60s Countdown, Resend)
+3. Store-Name + URL + Kategorie → Store wird direkt erstellt
+
+### Frontend-Service
+**Datei:** `src/app/core/services/phone-quick-auth.service.ts`
+```typescript
+phoneAuthService.requestCode(phone, 'whatsapp')   // Step 1
+phoneAuthService.verifyAndLogin(verificationId, code)  // Step 2 → JWT gespeichert
+```
+
+### Backend-Endpoints (öffentlich, kein JWT)
+```
+POST /api/auth/phone/request-code
+  Body: { phoneNumber: "+212600123456", channel: "whatsapp" }
+  Response: { success, verificationId, channel, message, expiresInMinutes }
+
+POST /api/auth/phone/verify-and-login
+  Body: { verificationId: 123, code: "456789" }
+  Response: AuthResponse { token, user }   ← gleich wie normaler Login
+```
+**Controller:** `storebackend/controller/PhoneAuthController.java`
+
+### User-Erstellung (Backend)
+- Neuer User: `email = phone-{sanitizedNumber}@markt.ma`, `phone_number` gesetzt
+- Passwort = zufälliger UUID-Hash (kein Passwort-Login möglich)
+- Plan: FREE, `emailVerified = true`, `preferredLanguage = "ar"`
+- Wiederkehrender User: wird via `UserRepository.findByPhoneNumber()` gefunden
+
+### DB-Schema-Änderung
+```sql
+-- users-Tabelle (neue Spalte, nullable):
+ALTER TABLE users ADD COLUMN phone_number VARCHAR(20) UNIQUE;
+-- wird automatisch via ddl-auto: update angelegt
+```
+
+### DEV-Modus (WhatsApp deaktiviert)
+In `application.properties`: `whatsapp.enabled=false`  
+→ Code erscheint im **Backend-Log**: suche nach `[DEV] Verification code for +212...`
+
+### Security (SecurityConfig.java)
+```java
+.requestMatchers("/api/auth/phone/**").permitAll()  // öffentlich, kein JWT
+```
+
+### Landing Page CTAs (neu)
+- Hero: Grüner Banner „Ohne E-Mail starten – nur WhatsApp oder Telegram"
+- CTA-Sektion: Zusätzlicher Button „📱 Ohne E-Mail – nur WhatsApp"
+- Mobile Nav: Neuer Tab „📱 WhatsApp-Start" → `/quick-start`
+- Methode in `LandingComponent`: `navigateToQuickStart()`
+
+---
+
+## Build-Befehle (lokal)
+
+```bash
+# Backend kompilieren
+cd storeBackend && mvn clean compile
+
+# Frontend starten
+cd storeFrontend && npm start   # → http://localhost:4200
+```

@@ -12,6 +12,17 @@
 
 ---
 
+### Build-Befehle (IMMER merken)
+```bash
+# Backend
+cd storeBackend && mvn clean compile
+
+# Frontend
+cd storeFrontend && npm start   # → http://localhost:4200
+```
+
+---
+
 ### WICHTIGSTE REGEL – Immer `app-responsive-data-list` verwenden
 **Niemals** eigene Tabellen, `mat-table` oder Card-Grids bauen.  
 Stattdessen IMMER die zentrale Komponente nutzen:
@@ -63,6 +74,7 @@ if (!id) { const m = router.url.match(/\/stores\/(\d+)/); if (m) id = m[1]; }
 ### DB-Besonderheiten
 - Flyway **deaktiviert** → `ddl-auto: update` → neue Felder immer in `@Entity` ergänzen
 - `media`-Tabelle: Spalte heißt `filename` in DB, `file_name` in JPA-Entity
+- Neue User-Felder: `phone_number VARCHAR(20) UNIQUE NULLABLE` (Phone-Auth)
 
 ---
 
@@ -74,5 +86,30 @@ if (!id) { const m = router.url.match(/\/stores\/(\d+)/); if (m) id = m[1]; }
 
 ---
 
-> Vollständige Doku mit allen Interfaces, API-Endpunkten und DB-Schema: siehe `CODEBASE_CONTEXT.md`
+### i18n JSON – PFLICHT nach jeder Änderung validieren
+```powershell
+Get-Content src/assets/i18n/de.json -Raw | ConvertFrom-Json | Out-Null
+# Kein Fehler = gültiges JSON ✅
+```
+**Häufiger Bug:** Replace-Operationen hinterlassen doppelte Abschluss-Blöcke → `SyntaxError` im Browser.
 
+---
+
+### Phone-Auth (WhatsApp/Telegram – kein E-Mail-Login nötig)
+Route `/quick-start` → `QuickStartComponent` (KEIN authGuard)  
+Service: `PhoneQuickAuthService` (`core/services/phone-quick-auth.service.ts`)  
+Backend: `POST /api/auth/phone/request-code` + `POST /api/auth/phone/verify-and-login` (public)  
+**DEV:** `whatsapp.enabled=false` → Code erscheint im Backend-Log (`[DEV] Verification code for ...`)
+
+---
+
+### Security – neue public Endpoints registrieren
+```java
+// SecurityConfig.java – neue public Routes IMMER hier eintragen:
+.requestMatchers("/api/auth/phone/**").permitAll()
+.requestMatchers("/api/auth/login", "/api/auth/register", ...).permitAll()
+```
+
+---
+
+> Vollständige Doku mit allen Interfaces, API-Endpunkten und DB-Schema: siehe `CODEBASE_CONTEXT.md`

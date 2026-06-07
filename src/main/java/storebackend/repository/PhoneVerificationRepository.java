@@ -12,8 +12,9 @@ import java.util.Optional;
 @Repository
 public interface PhoneVerificationRepository extends JpaRepository<PhoneVerification, Long> {
 
-    @Query("SELECT v FROM PhoneVerification v WHERE v.phoneNumber = :phoneNumber ORDER BY v.createdAt DESC")
-    Optional<PhoneVerification> findMostRecentByPhoneNumber(@Param("phoneNumber") String phoneNumber);
+    // FIXED: findFirst statt findOne/Optional – mehrere Einträge pro Nummer möglich!
+    // Spring Data JPA würde IncorrectResultSizeDataAccessException werfen wenn mehrere Rows existieren.
+    Optional<PhoneVerification> findFirstByPhoneNumberOrderByCreatedAtDesc(String phoneNumber);
 
     @Query("SELECT v FROM PhoneVerification v WHERE v.phoneNumber = :phoneNumber AND v.verified = true AND v.createdAt > :since ORDER BY v.createdAt DESC")
     Optional<PhoneVerification> findRecentVerifiedByPhoneNumber(

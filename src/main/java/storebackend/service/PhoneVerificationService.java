@@ -54,12 +54,12 @@ public class PhoneVerificationService {
         // Validiere Telefonnummer
         if (!isValidPhoneNumber(phoneNumber)) {
             log.warn("❌ Invalid phone number format: {}", phoneNumber);
-            return PhoneVerificationResult.error("Ungültige Telefonnummer. Bitte verwenden Sie das Format +491234567890");
+            return PhoneVerificationResult.error("Ungültige Telefonnummer. Bitte verwenden Sie das Format +212600123456");
         }
 
-        // Rate Limiting prüfen
+        // Rate Limiting prüfen – FIXED: findFirst statt findMostRecent (vermeidet IncorrectResultSizeDataAccessException)
         Optional<PhoneVerification> recent = verificationRepository
-            .findMostRecentByPhoneNumber(phoneNumber);
+            .findFirstByPhoneNumberOrderByCreatedAtDesc(phoneNumber);
 
         if (recent.isPresent() &&
             recent.get().getCreatedAt().plusMinutes(rateLimitMinutes).isAfter(LocalDateTime.now())) {

@@ -79,9 +79,9 @@ public class PhoneAuthController {
         log.info("📱 [PhoneAuth] Code angefordert für: {}", request.phoneNumber());
 
         try {
-            // storeId = 0 als Sentinel-Wert für Auth-Flow (kein echter Store)
+            // storeId = null für Auth-Flow (kein echter Store nötig)
             PhoneVerificationService.PhoneVerificationResult result =
-                phoneVerificationService.sendVerificationCode(request.phoneNumber(), 0L);
+                phoneVerificationService.sendVerificationCode(request.phoneNumber(), null);
 
             if (result.isSuccess()) {
                 log.info("✅ [PhoneAuth] Code gesendet via {}", result.getChannel());
@@ -98,9 +98,9 @@ public class PhoneAuthController {
                     .body(new ErrorResponse(result.getMessage()));
             }
         } catch (Exception e) {
-            log.error("❌ [PhoneAuth] Fehler beim Code-Versand", e);
+            log.error("❌ [PhoneAuth] Fehler: {} – {}", e.getClass().getSimpleName(), e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponse("Fehler beim Senden des Codes. Bitte versuchen Sie es später erneut."));
+                .body(new ErrorResponse("Fehler beim Senden des Codes: " + e.getMessage()));
         }
     }
 
