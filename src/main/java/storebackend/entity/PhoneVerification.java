@@ -29,8 +29,8 @@ public class PhoneVerification {
     @Column(nullable = false)
     private String code;
 
-    // storeId: nullable=true für Auth-Flow (storeId=0 = kein Store), nullable=false für COD-Verifikation
-    @Column(nullable = true)
+    // storeId=0 = Auth-Flow (kein Store), >0 = COD-Verifikation. NOT NULL bleibt (DB-Constraint).
+    @Column(nullable = false)
     private Long storeId;
 
     @Column(nullable = false)

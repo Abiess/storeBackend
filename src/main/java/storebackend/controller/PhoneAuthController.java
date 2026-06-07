@@ -79,9 +79,10 @@ public class PhoneAuthController {
         log.info("📱 [PhoneAuth] Code angefordert für: {}", request.phoneNumber());
 
         try {
-            // storeId = null für Auth-Flow (kein echter Store nötig)
+            // storeId = 0L als Sentinel für Auth-Flow (kein echter Store).
+            // DB-Constraint erfordert NOT NULL → 0 ist valid (kein FK auf stores-Tabelle).
             PhoneVerificationService.PhoneVerificationResult result =
-                phoneVerificationService.sendVerificationCode(request.phoneNumber(), null);
+                phoneVerificationService.sendVerificationCode(request.phoneNumber(), 0L);
 
             if (result.isSuccess()) {
                 log.info("✅ [PhoneAuth] Code gesendet via {}", result.getChannel());
