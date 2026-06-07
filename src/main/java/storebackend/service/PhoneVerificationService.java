@@ -42,12 +42,9 @@ public class PhoneVerificationService {
     private static final SecureRandom random = new SecureRandom();
 
     /**
-     * Generiert und sendet einen Verifizierungscode
-     * Versucht zuerst WhatsApp, dann SMS als Fallback
-     *
-     * @param phoneNumber Telefonnummer im E.164 Format (z.B. +491234567890)
-     * @param storeId Store ID für Tracking
-     * @return true wenn erfolgreich gesendet
+     * Generiert und sendet einen Verifizierungscode.
+     * REIHENFOLGE: Erst WhatsApp senden → nur bei Erfolg in DB speichern.
+     * So entstehen keine orphaned Einträge mit channel=null, die den Rate-Limiter blockieren.
      */
     @Transactional
     public PhoneVerificationResult sendVerificationCode(String phoneNumber, Long storeId) {
@@ -57,7 +54,7 @@ public class PhoneVerificationService {
             return PhoneVerificationResult.error("Ungültige Telefonnummer. Bitte verwenden Sie das Format +212600123456");
         }
 
-        // Rate Limiting prüfen – nur erfolgreich gesendete Codes zählen (channel != null)
+        // Rate Limiting: nur erfolgreich gesendete Codes zählen (channel != null)
         Optional<PhoneVerification> recent = verificationRepository
             .findFirstByPhoneNumberAndChannelIsNotNullOrderByCreatedAtDesc(phoneNumber);
 
@@ -67,66 +64,54 @@ public class PhoneVerificationService {
                 LocalDateTime.now(),
                 recent.get().getCreatedAt().plusMinutes(rateLimitMinutes)
             ).getSeconds();
-
             log.warn("⏱️ Rate limit exceeded for {}", phoneNumber);
             return PhoneVerificationResult.error(
                 String.format("Bitte warten Sie noch %d Sekunden, bevor Sie einen neuen Code anfordern.", secondsLeft)
             );
         }
 
-        // Generiere 6-stelligen Code
+        // Code generieren
         String code = generateVerificationCode();
+        log.info("🔐 Sending verification code to {}", phoneNumber);
 
-        // Speichere in Datenbank
+        // ── SCHRITT 1: Erst senden ────────────────────────────────────────────
+        boolean sent = false;
+        String channel = "unknown";
+
+        try {
+            if (whatsAppService.sendVerificationCode(phoneNumber, code)) {
+                sent = true;
+                channel = whatsAppService.isEnabled() ? "whatsapp" : "dev-log";
+                log.info("✅ Code gesendet via {} an {}", channel, phoneNumber);
+            }
+        } catch (Exception e) {
+            log.warn("❌ Senden fehlgeschlagen: {}", e.getMessage());
+        }
+
+        if (!sent) {
+            return PhoneVerificationResult.error("Nachricht konnte nicht gesendet werden. Bitte versuchen Sie es später erneut.");
+        }
+
+        // ── SCHRITT 2: Nur bei Erfolg in DB speichern ────────────────────────
         PhoneVerification verification = new PhoneVerification();
         verification.setPhoneNumber(phoneNumber);
         verification.setCode(code);
         verification.setStoreId(storeId);
+        verification.setChannel(channel);          // sofort gesetzt – kein null-Zustand
         verification.setVerified(false);
         verification.setAttempts(0);
         verification.setCreatedAt(LocalDateTime.now());
         verification.setExpiresAt(LocalDateTime.now().plusMinutes(codeExpiryMinutes));
         verification = verificationRepository.save(verification);
 
-        log.info("🔐 Generated verification code for {} (ID: {})", phoneNumber, verification.getId());
+        log.info("💾 Verification gespeichert (ID: {})", verification.getId());
 
-        // Versuche WhatsApp zuerst, dann SMS als Fallback
-        boolean sent = false;
-        String channel = "unknown";
+        String message = channel.equals("dev-log")
+            ? String.format("[DEV] Code in Backend-Logs. Gültig %d Minuten.", codeExpiryMinutes)
+            : String.format("Code per %s gesendet. Gültig %d Minuten.",
+                channel.equals("whatsapp") ? "WhatsApp" : "SMS", codeExpiryMinutes);
 
-        try {
-            // WhatsApp via Meta Cloud API (oder DEV-Simulation wenn disabled)
-            if (whatsAppService.sendVerificationCode(phoneNumber, code)) {
-                sent = true;
-                // Wenn WhatsApp disabled → DEV-Simulation (Code steht im Log)
-                channel = whatsAppService.isEnabled() ? "whatsapp" : "dev-log";
-                verification.setChannel(channel);
-                if (whatsAppService.isEnabled()) {
-                    log.info("✅ WhatsApp message sent to {}", phoneNumber);
-                } else {
-                    log.info("✅ [DEV] Verification code for {} is: {} (see log above)", phoneNumber, code);
-                }
-            }
-        } catch (Exception e) {
-            log.warn("WhatsApp send failed: {}", e.getMessage());
-        }
-
-        if (!sent) {
-            // Kein SMS-Fallback mehr noetig – WhatsAppService handhabt intern Fallback
-            return PhoneVerificationResult.error("Nachricht konnte nicht gesendet werden. Bitte versuchen Sie es spaeter erneut.");
-        }
-
-        verificationRepository.save(verification);
-
-        return PhoneVerificationResult.success(
-            verification.getId(),
-            channel,
-            channel.equals("dev-log")
-                ? String.format("DEV-Modus: Code wurde in die Backend-Logs geschrieben (kein echtes WhatsApp). Gültig für %d Minuten.", codeExpiryMinutes)
-                : String.format("Code per %s gesendet. Gültig für %d Minuten.",
-                    channel.equals("whatsapp") ? "WhatsApp" : "SMS",
-                    codeExpiryMinutes)
-        );
+        return PhoneVerificationResult.success(verification.getId(), channel, message);
     }
 
     /**
