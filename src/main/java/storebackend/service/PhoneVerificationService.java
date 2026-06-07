@@ -57,9 +57,9 @@ public class PhoneVerificationService {
             return PhoneVerificationResult.error("Ungültige Telefonnummer. Bitte verwenden Sie das Format +212600123456");
         }
 
-        // Rate Limiting prüfen – FIXED: findFirst statt findMostRecent (vermeidet IncorrectResultSizeDataAccessException)
+        // Rate Limiting prüfen – nur erfolgreich gesendete Codes zählen (channel != null)
         Optional<PhoneVerification> recent = verificationRepository
-            .findFirstByPhoneNumberOrderByCreatedAtDesc(phoneNumber);
+            .findFirstByPhoneNumberAndChannelIsNotNullOrderByCreatedAtDesc(phoneNumber);
 
         if (recent.isPresent() &&
             recent.get().getCreatedAt().plusMinutes(rateLimitMinutes).isAfter(LocalDateTime.now())) {

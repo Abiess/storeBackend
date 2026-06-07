@@ -13,8 +13,9 @@ import java.util.Optional;
 public interface PhoneVerificationRepository extends JpaRepository<PhoneVerification, Long> {
 
     // FIXED: findFirst statt findOne/Optional – mehrere Einträge pro Nummer möglich!
-    // Spring Data JPA würde IncorrectResultSizeDataAccessException werfen wenn mehrere Rows existieren.
-    Optional<PhoneVerification> findFirstByPhoneNumberOrderByCreatedAtDesc(String phoneNumber);
+    // Nur Einträge mit gesetztem Channel zählen (= erfolgreich gesendet).
+    // Fehlgeschlagene Versuche (channel=null) blockieren keine neuen Anfragen.
+    Optional<PhoneVerification> findFirstByPhoneNumberAndChannelIsNotNullOrderByCreatedAtDesc(String phoneNumber);
 
     @Query("SELECT v FROM PhoneVerification v WHERE v.phoneNumber = :phoneNumber AND v.verified = true AND v.createdAt > :since ORDER BY v.createdAt DESC")
     Optional<PhoneVerification> findRecentVerifiedByPhoneNumber(
