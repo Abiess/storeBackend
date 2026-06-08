@@ -36,9 +36,15 @@ jobs:
       - name: Inject CLARITY_ID into environment.prod.ts
         run: |
           CLARITY_VAL="${{ secrets.CLARITY_ID }}"
+          # environment.prod.ts – für ClarityService (event/identify/setTag)
           sed -i "s/__CLARITY_ID__/${CLARITY_VAL}/g" storeFrontend/src/environments/environment.prod.ts
-          echo "✅ Clarity ID injected"
+          # index.html – statisches Script-Tag (lädt Clarity vor Angular)
+          sed -i "s/__CLARITY_ID__/${CLARITY_VAL}/g" storeFrontend/src/index.html
+          echo "✅ Clarity ID injected: ${CLARITY_VAL}"
+          echo "--- environment.prod.ts ---"
           grep clarityId storeFrontend/src/environments/environment.prod.ts
+          echo "--- index.html ---"
+          grep "clarity.ms" storeFrontend/src/index.html
 
       # ── Angular Frontend bauen (Production) ────────────────────────
       - name: Build Angular Frontend (Production)
@@ -47,6 +53,16 @@ jobs:
           npm ci --prefer-offline
           npm run build:prod
           echo "✅ Frontend Build fertig"
+          echo ""
+          echo "🔍 Verifikation: Clarity Tag in dist/index.html?"
+          if grep -q "clarity.ms/tag/" dist/markt-ma-frontend/index.html; then
+            echo "✅ Clarity Tag gefunden:"
+            grep "clarity.ms" dist/markt-ma-frontend/index.html
+          else
+            echo "❌ Clarity Tag NICHT in index.html – prüfe CLARITY_ID Secret und sed-Schritt!"
+            cat dist/markt-ma-frontend/index.html | head -40
+            exit 1
+          fi
           ls -lh dist/markt-ma-frontend/ | head -20
 
       - name: Set up JDK 17
@@ -133,6 +149,16 @@ jobs:
           script: |
             echo "🌐 Inhalt von /var/www/markt.ma:"
             ls -lh /var/www/markt.ma/ | head -10
+            echo ""
+            echo "🔍 Verifikation: Clarity Tag in deployed index.html?"
+            if grep -q "clarity.ms/tag/" /var/www/markt.ma/index.html; then
+              echo "✅ Clarity Tag live in /var/www/markt.ma/index.html:"
+              grep "clarity.ms" /var/www/markt.ma/index.html
+            else
+              echo "❌ Clarity Tag fehlt in /var/www/markt.ma/index.html!"
+              head -40 /var/www/markt.ma/index.html
+            fi
+            echo ""
             echo "🔄 Lade Nginx neu..."
             sudo systemctl reload nginx
             echo "✅ Nginx neu geladen – Frontend live"
