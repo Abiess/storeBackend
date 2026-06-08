@@ -1,4 +1,4 @@
-import { Component, signal, OnDestroy } from '@angular/core';
+import { Component, signal, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -442,11 +442,18 @@ const COUNTRIES: Country[] = [
       align-items: center;
       border: 2px solid #e5e7eb;
       border-radius: 10px;
-      overflow: hidden;
+      overflow: visible;        /* WICHTIG: kein hidden – sonst wird Dropdown abgeschnitten */
       transition: border-color 0.2s;
+      position: relative;
 
       &:focus-within {
         border-color: #667eea;
+      }
+
+      /* Erstes Kind (Country-Selector) links abrunden */
+      > *:first-child {
+        border-radius: 8px 0 0 8px;
+        overflow: hidden;
       }
     }
 
@@ -464,6 +471,7 @@ const COUNTRIES: Country[] = [
     .country-selector-wrap {
       position: relative;
       flex-shrink: 0;
+      overflow: visible;  /* Dropdown darf außerhalb des Containers sichtbar sein */
     }
 
     .country-selector-btn {
@@ -926,6 +934,15 @@ export class QuickStartComponent implements OnDestroy {
 
   toggleCountryDropdown(): void { this.showCountryDropdown.set(!this.showCountryDropdown()); }
   selectCountry(c: Country): void { this.selectedCountry.set(c); this.showCountryDropdown.set(false); }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    // Dropdown schließen wenn außerhalb geklickt wird
+    const target = event.target as HTMLElement;
+    if (!target.closest('.country-selector-wrap')) {
+      this.showCountryDropdown.set(false);
+    }
+  }
 
   onCodeInput(event: Event): void {
     const input = event.target as HTMLInputElement;
