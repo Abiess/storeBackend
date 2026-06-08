@@ -51,7 +51,7 @@ public class PhoneAuthController {
 
     public record PhoneCodeRequest(
         @NotBlank(message = "Telefonnummer darf nicht leer sein")
-        @Pattern(regexp = "\\+[0-9]{7,15}", message = "Bitte E.164 Format verwenden (z.B. +212600123456)")
+        @Pattern(regexp = "\\+[0-9]{7,15}", message = "Bitte E.164 Format verwenden (z.B. +49151234567890, +212600123456, +33612345678)")
         String phoneNumber,
 
         /** "whatsapp" oder "telegram" – Standard: whatsapp */
@@ -180,7 +180,9 @@ public class PhoneAuthController {
         // Passwort ist ein zufälliger Hash – Phone-User können sich nicht per Passwort einloggen
         user.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
         user.setEmailVerified(true); // Phone-Auth gilt als verifiziert
-        user.setPreferredLanguage("ar"); // Marokko-Standard
+
+        // Sprache anhand des internationalen Ländercodes erkennen
+        user.setPreferredLanguage(detectLanguageFromPhone(phoneNumber));
 
         Set<Role> roles = new HashSet<>();
         roles.add(Role.USER);
@@ -192,6 +194,35 @@ public class PhoneAuthController {
         user.setPlan(freePlan);
 
         return userRepository.save(user);
+    }
+
+    /**
+     * Leitet die bevorzugte Sprache aus dem internationalen Ländercode der Telefonnummer ab.
+     * Fallback: "en"
+     */
+    private String detectLanguageFromPhone(String phoneNumber) {
+        if (phoneNumber == null) return "en";
+        // Marokko, Algerien, Tunesien, Ägypten, Saudi-Arabien, etc.
+        if (phoneNumber.startsWith("+212") || phoneNumber.startsWith("+213")
+                || phoneNumber.startsWith("+216") || phoneNumber.startsWith("+20")
+                || phoneNumber.startsWith("+966") || phoneNumber.startsWith("+971")
+                || phoneNumber.startsWith("+974") || phoneNumber.startsWith("+965")
+                || phoneNumber.startsWith("+962") || phoneNumber.startsWith("+961")
+                || phoneNumber.startsWith("+963") || phoneNumber.startsWith("+964")
+                || phoneNumber.startsWith("+967") || phoneNumber.startsWith("+218")) {
+            return "ar";
+        }
+        // Deutschsprachige Länder: Deutschland, Österreich, Schweiz
+        if (phoneNumber.startsWith("+49") || phoneNumber.startsWith("+43")
+                || phoneNumber.startsWith("+41")) {
+            return "de";
+        }
+        // Französischsprachige Länder (Frankreich, Belgien, ...)
+        if (phoneNumber.startsWith("+33") || phoneNumber.startsWith("+32")) {
+            return "fr";
+        }
+        // Standard: Englisch
+        return "en";
     }
 
     // ─── Response Records ──────────────────────────────────────────────────────

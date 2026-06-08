@@ -63,7 +63,7 @@ public class PhoneVerificationService {
         // Validiere Telefonnummer
         if (!isValidPhoneNumber(phoneNumber)) {
             log.warn("❌ Invalid phone number format: {}", phoneNumber);
-            return PhoneVerificationResult.error("Ungültige Telefonnummer. Bitte verwenden Sie das Format +212600123456");
+            return PhoneVerificationResult.error("Ungültige Telefonnummer. Bitte verwenden Sie das internationale Format mit Ländervorwahl (z.B. +49151234567890, +212600123456)");
         }
 
         // Rate Limiting: nur erfolgreich gesendete Codes zählen (channel != null)
@@ -281,10 +281,10 @@ public class PhoneVerificationService {
         String digits = phoneNumber.substring(1);
         if (!digits.matches("\\d+")) return false;
 
-        // Mindestens 9 Ziffern nach +, maximal 15 (E.164 Standard)
-        // Marokko: +212 + 9 Ziffern = 12 Zeichen gesamt
+        // Mindestens 7 Ziffern nach +, maximal 15 (E.164 Standard – international)
+        // Beispiele: DE +49 (11-12 Stellen), MA +212 (12 Stellen), US +1 (11 Stellen)
         int len = digits.length();
-        if (len < 9 || len > 15) return false;
+        if (len < 7 || len > 15) return false;
 
         return true;
     }
