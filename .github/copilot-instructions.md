@@ -108,8 +108,6 @@ Backend: `POST /api/auth/phone/request-code` + `POST /api/auth/phone/verify-and-
 // SecurityConfig.java – neue public Routes IMMER hier eintragen:
 .requestMatchers("/api/auth/phone/**").permitAll()
 .requestMatchers("/api/auth/login", "/api/auth/register", ...).permitAll()
-```
-
----
+```---
 
 > Vollständige Doku mit allen Interfaces, API-Endpunkten und DB-Schema: siehe `CODEBASE_CONTEXT.md`
