@@ -57,10 +57,6 @@ public class User {
     @Column(name = "phone_number", length = 20, nullable = true, unique = true)
     private String phoneNumber;
 
-    /** True für anonym erstellte User (via /create-store ohne Registrierung).
-     *  Wird false sobald User E-Mail/Telefon bestätigt. ddl-auto:update fügt Spalte automatisch hinzu. */
-    @Column(name = "is_anonymous", nullable = false)
-    private Boolean isAnonymous = false;
 
     /** Anzahl AI-Calls (Bildgenerierung etc.) im aktuellen Monat. */
     @Column(name = "ai_calls_this_month", nullable = false)
