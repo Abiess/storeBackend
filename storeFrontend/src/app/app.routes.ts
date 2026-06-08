@@ -30,16 +30,22 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/quick-start.component').then(m => m.QuickStartComponent)
     // KEIN authGuard – dieser Flow ist der Einstieg für neue Nutzer
   },
+  // /create-store = öffentlicher Alias für quick-start (kein Login erforderlich!)
+  {
+    path: 'create-store',
+    loadComponent: () => import('./features/auth/quick-start.component').then(m => m.QuickStartComponent)
+    // KEIN authGuard – Marokkanische Nutzer können direkt loslegen
+  },
 
-  // ==================== Store Creation Wizard ====================
+  // ==================== Store Creation Wizard (für eingeloggte User) ====================
   {
     path: 'store-wizard',
     loadComponent: () => import('./features/stores/store-wizard.component').then(m => m.StoreWizardComponent),
     canActivate: [authGuard]
   },
   {
-    path: 'create-store',
-    loadComponent: () => import('./features/stores/store-create-simple.component').then(m => m.StoreCreateSimpleComponent),
+    path: 'store-success',
+    loadComponent: () => import('./features/stores/store-success.component').then(m => m.StoreSuccessComponent),
     canActivate: [authGuard]
   },
   {

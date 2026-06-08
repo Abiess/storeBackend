@@ -110,16 +110,48 @@ $bg:         #f9fafb;
     &:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba($primary, 0.38); }
   }
 
+  // Primärer Hero-CTA: Ohne Anmeldung starten
+  &.btn-no-signup {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    font-weight: 800;
+    background: #fff;
+    color: $primary;
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    letter-spacing: -0.01em;
+    width: 100%;
+    @media (min-width: 480px) { width: auto; }
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.2);
+      background: #f0f4ff;
+    }
+  }
+
   &.btn-hero-secondary {
     padding: 0.9rem 1.75rem;
     font-size: 1rem;
-    background: #fff;
-    color: $primary;
-    border: 1.5px solid $primary;
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    border: 1.5px solid rgba(255,255,255,0.5);
     border-radius: 10px;
     width: 100%;
     @media (min-width: 480px) { width: auto; }
-    &:hover { background: $primary; color: #fff; }
+    &:hover { background: rgba(255,255,255,0.25); }
+  }
+
+  &.btn-hero-ghost {
+    padding: 0.9rem 1.75rem;
+    font-size: 1rem;
+    background: transparent;
+    color: rgba(255,255,255,0.8);
+    border: none;
+    border-radius: 10px;
+    width: 100%;
+    @media (min-width: 480px) { width: auto; }
+    &:hover { color: #fff; background: rgba(255,255,255,0.1); }
   }
 
   &.btn-plan {
@@ -216,40 +248,44 @@ $bg:         #f9fafb;
     @media (max-width: 1023px) { margin-left: auto; margin-right: auto; }
   }
 
-  // ── WhatsApp/Telegram Schnellstart-Banner ──────────────────────────
+  // ── Alter Schnellstart-Banner (bleibt für Kompatibilität) ────────────
   .quick-start-banner {
+    display: none; // durch no-signup-cta ersetzt
+  }
+
+  // ── PRIMÄRE CTA: Ohne Anmeldung ───────────────────────────────────
+  .no-signup-cta {
     display: flex;
+    flex-direction: column;
     align-items: center;
     gap: 0.75rem;
-    background: linear-gradient(135deg, rgba(37,211,102,0.08), rgba(18,140,126,0.06));
-    border: 1.5px solid rgba(37,211,102,0.35);
-    border-radius: 14px;
-    padding: 0.75rem 1rem;
-    margin-bottom: 1.5rem;
-    flex-wrap: wrap;
-    justify-content: center;
+    margin-bottom: 1.25rem;
 
-    @media (min-width: 1024px) { justify-content: flex-start; }
+    @media (min-width: 1024px) { align-items: flex-start; }
 
-    .quick-start-badge {
-      background: #25D366;
-      color: white;
-      font-size: 0.7rem;
-      font-weight: 800;
-      padding: 0.2rem 0.5rem;
-      border-radius: 5px;
-      letter-spacing: 0.05em;
-      flex-shrink: 0;
+    .no-signup-hint {
+      font-size: 0.82rem;
+      color: rgba(255,255,255,0.85);
+      margin: 0;
+      letter-spacing: 0.01em;
     }
+  }
 
-    .quick-start-text {
-      color: $text-mid;
-      font-size: 0.875rem;
-      line-height: 1.4;
+  // ─ Trennlinie "oder" ─
+  .hero-divider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    color: rgba(255,255,255,0.5);
+    font-size: 0.85rem;
+
+    &::before, &::after {
+      content: '';
       flex: 1;
-      min-width: 140px;
-
-      strong { color: $text-dark; }
+      height: 1px;
+      background: rgba(255,255,255,0.2);
+      max-width: 80px;
     }
   }
 

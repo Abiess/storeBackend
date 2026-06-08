@@ -13,8 +13,8 @@
         <button class="btn btn-secondary" (click)="navigateToLogin()">
           {{ 'landing.nav.login' | translate }}
         </button>
-        <button class="btn btn-primary" (click)="navigateToRegister()">
-          {{ 'landing.nav.startFree' | translate }}
+        <button class="btn btn-primary" (click)="navigateToCreateStore()">
+          🚀 Kostenlos starten
         </button>
       </div>
     </div>
@@ -27,22 +27,25 @@
         <h1 class="hero-title" [innerHTML]="'landing.hero.title' | translate"></h1>
         <p class="hero-subtitle">{{ 'landing.hero.subtitle' | translate }}</p>
 
-        <!-- Schnellstart-Banner (prominent) -->
-        <div class="quick-start-banner">
-          <div class="quick-start-badge">🇲🇦 NEU</div>
-          <div class="quick-start-text">
-            <strong>Ohne E-Mail starten</strong> – nur WhatsApp oder Telegram-Nummer
-          </div>
-          <button class="btn btn-quick-start" (click)="navigateToQuickStart()">
-            📱 In 2 Minuten loslegen →
+        <!-- PRIMÄRE CTA – Ohne Anmeldung -->
+        <div class="no-signup-cta">
+          <button class="btn btn-no-signup" (click)="navigateToCreateStore()">
+            🚀 Store erstellen – ohne Anmeldung
           </button>
+          <p class="no-signup-hint">
+            ✅ Kostenlos &nbsp;·&nbsp; ✅ Ohne E-Mail &nbsp;·&nbsp; ✅ In 2 Minuten fertig
+          </p>
+        </div>
+
+        <div class="hero-divider">
+          <span>oder</span>
         </div>
 
         <div class="hero-actions">
-          <button class="btn btn-hero-primary" (click)="navigateToRegister()">
-            {{ 'landing.hero.startNow' | translate }} →
+          <button class="btn btn-hero-secondary" (click)="navigateToRegister()">
+            Mit E-Mail registrieren
           </button>
-          <button class="btn btn-hero-secondary" (click)="scrollToSection('demo')">
+          <button class="btn btn-hero-ghost" (click)="scrollToSection('demo')">
             ▷ {{ 'landing.hero.watchDemo' | translate }}
           </button>
         </div>

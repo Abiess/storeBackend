@@ -162,4 +162,9 @@ export class LandingComponent {
   navigateToQuickStart(): void {
     this.router.navigate(['/quick-start']);
   }
+
+  /** Alias: /create-store → Quick-Start ohne Login */
+  navigateToCreateStore(): void {
+    this.router.navigate(['/create-store']);
+  }
 }
