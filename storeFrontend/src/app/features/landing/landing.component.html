@@ -30,20 +30,20 @@
         <!-- PRIMÄRE CTA – Ohne Anmeldung -->
         <div class="no-signup-cta">
           <button class="btn btn-no-signup" (click)="navigateToCreateStore()">
-            🚀 Store erstellen – ohne Anmeldung
+            {{ 'landing.hero.createStoreBtn' | translate }}
           </button>
           <p class="no-signup-hint">
-            ✅ Kostenlos &nbsp;·&nbsp; ✅ Ohne E-Mail &nbsp;·&nbsp; ✅ In 2 Minuten fertig
+            {{ 'landing.hero.createStoreHint' | translate }}
           </p>
         </div>
 
         <div class="hero-divider">
-          <span>oder</span>
+          <span>{{ 'landing.hero.orDivider' | translate }}</span>
         </div>
 
         <div class="hero-actions">
           <button class="btn btn-hero-secondary" (click)="navigateToRegister()">
-            Mit E-Mail registrieren
+            {{ 'landing.hero.registerLink' | translate }}
           </button>
           <button class="btn btn-hero-ghost" (click)="scrollToSection('demo')">
             ▷ {{ 'landing.hero.watchDemo' | translate }}
@@ -172,8 +172,8 @@
 
       <div class="video-cta">
         <p>{{ 'landing.demo.ctaText' | translate }}</p>
-        <button class="btn btn-hero-primary" (click)="navigateToRegister()">
-          {{ 'landing.demo.ctaButton' | translate }}
+        <button class="btn btn-hero-primary" (click)="navigateToCreateStore()">
+          🚀 Jetzt Store erstellen – ohne Anmeldung
         </button>
       </div>
     </div>
@@ -200,7 +200,7 @@
               <span class="check-icon">✓</span> {{ feature | translate }}
             </li>
           </ul>
-          <button class="btn btn-plan" [class.btn-plan-highlighted]="plan.highlighted" (click)="navigateToRegister()">
+          <button class="btn btn-plan" [class.btn-plan-highlighted]="plan.highlighted" (click)="navigateToCreateStore()">
             {{ plan.cta | translate }}
           </button>
         </div>
@@ -215,9 +215,9 @@
         <h2>{{ 'landing.cta.title' | translate }}</h2>
         <p>{{ 'landing.cta.subtitle' | translate }}</p>
         <div class="cta-buttons">
-          <button class="btn btn-cta" (click)="navigateToRegister()">{{ 'landing.cta.button' | translate }}</button>
-          <button class="btn btn-cta-whatsapp" (click)="navigateToQuickStart()">
-            📱 Ohne E-Mail – nur WhatsApp
+          <button class="btn btn-cta" (click)="navigateToCreateStore()">🚀 Store erstellen – ohne Anmeldung</button>
+          <button class="btn btn-cta-secondary" (click)="navigateToLogin()">
+            Einloggen
           </button>
         </div>
         <p class="cta-note">{{ 'landing.cta.note' | translate }}</p>
@@ -270,13 +270,9 @@
       <span class="mobile-nav-icon">👤</span>
       <span class="mobile-nav-label">{{ 'landing.nav.login' | translate }}</span>
     </a>
-    <a class="mobile-nav-item mobile-nav-whatsapp" (click)="navigateToQuickStart()">
-      <span class="mobile-nav-icon">📱</span>
-      <span class="mobile-nav-label">WhatsApp-Start</span>
-    </a>
-    <a class="mobile-nav-item mobile-nav-cta" (click)="navigateToRegister()">
+    <a class="mobile-nav-item mobile-nav-cta" (click)="navigateToCreateStore()">
       <span class="mobile-nav-icon">🚀</span>
-      <span class="mobile-nav-label">{{ 'landing.nav.startFree' | translate }}</span>
+      <span class="mobile-nav-label">Store erstellen</span>
     </a>
   </nav>
 

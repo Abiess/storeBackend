@@ -834,12 +834,16 @@
                             },
                     "hero":  {
                                  "title":  "Launch your online store \u003cspan class=\"gradient-text\"\u003ein minutes\u003c/span\u003e",
-                                 "subtitle":  "Choose your path: sell your own products or get started as a reseller. No coding skills required.",
+                                 "subtitle":  "Create your store in 2 minutes – free, no registration, no email required.",
+                                 "createStoreBtn":  "🚀 Create store – no sign-up",
+                                 "createStoreHint":  "✅ Free · ✅ No email · ✅ Ready in 2 minutes",
+                                 "orDivider":  "or",
+                                 "registerLink":  "Register with email",
                                  "startNow":  "Start for free now",
                                  "watchDemo":  "Watch demo",
-                                 "trustFreeTrial":  "14 days free trial",
-                                 "trustNoCard":  "No credit card required",
-                                 "trustCancel":  "Cancel anytime"
+                                 "trustFreeTrial":  "Start for free",
+                                 "trustNoCard":  "No email required",
+                                 "trustCancel":  "Upgrade anytime"
                              },
                     "paths":  {
                                   "own":  {

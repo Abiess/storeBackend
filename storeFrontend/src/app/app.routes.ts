@@ -33,8 +33,8 @@ export const routes: Routes = [
   // /create-store = öffentlicher Alias für quick-start (kein Login erforderlich!)
   {
     path: 'create-store',
-    loadComponent: () => import('./features/auth/quick-start.component').then(m => m.QuickStartComponent)
-    // KEIN authGuard – Marokkanische Nutzer können direkt loslegen
+    loadComponent: () => import('./features/stores/create-store-public.component').then(m => m.CreateStorePublicComponent)
+    // KEIN authGuard – direkt Store erstellen ohne Anmeldung
   },
 
   // ==================== Store Creation Wizard (für eingeloggte User) ====================

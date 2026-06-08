@@ -988,12 +988,16 @@
                             },
                     "hero":  {
                                  "title":  "Starten Sie Ihren Online-Shop \u003cspan class=\"gradient-text\"\u003ein Minuten\u003c/span\u003e",
-                                 "subtitle":  "Wählen Sie Ihren Weg: Eigene Produkte verkaufen oder als Reseller durchstarten. Keine Programmierkenntnisse erforderlich.",
+                                 "subtitle":  "Erstelle deinen Store in 2 Minuten – kostenlos, ohne Anmeldung, ohne E-Mail.",
+                                 "createStoreBtn":  "🚀 Store erstellen – ohne Anmeldung",
+                                 "createStoreHint":  "✅ Kostenlos · ✅ Ohne E-Mail · ✅ In 2 Minuten fertig",
+                                 "orDivider":  "oder",
+                                 "registerLink":  "Mit E-Mail registrieren",
                                  "startNow":  "Jetzt kostenlos starten",
                                  "watchDemo":  "Demo ansehen",
-                                 "trustFreeTrial":  "14 Tage kostenlos testen",
-                                 "trustNoCard":  "Keine Kreditkarte nötig",
-                                 "trustCancel":  "Jederzeit kündbar"
+                                 "trustFreeTrial":  "Kostenlos starten",
+                                 "trustNoCard":  "Keine E-Mail nötig",
+                                 "trustCancel":  "Jederzeit erweiterbar"
                              },
                     "paths":  {
                                   "own":  {
