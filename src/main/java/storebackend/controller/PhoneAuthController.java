@@ -91,7 +91,8 @@ public class PhoneAuthController {
                     result.getVerificationId(),
                     result.getChannel(),
                     result.getMessage(),
-                    10
+                    10,
+                    result.getDevCode() // null in Produktion, Code-Wert im DEV-Modus
                 ));
             } else {
                 log.warn("❌ [PhoneAuth] Code-Versand fehlgeschlagen: {}", result.getMessage());
@@ -199,7 +200,8 @@ public class PhoneAuthController {
         Long verificationId,
         String channel,
         String message,
-        int expiresInMinutes
+        int expiresInMinutes,
+        String devCode  // nur im DEV-Modus gesetzt (channel="dev-log"), sonst null
     ) {}
 }
 

@@ -123,6 +123,13 @@ type Channel = 'whatsapp' | 'telegram';
               (input)="onCodeInput($event)"
             />
 
+            @if (devCode) {
+              <div class="dev-code-box">
+                🧪 <strong>DEV-Modus:</strong> Dein Code ist <strong class="dev-code-value">{{ devCode }}</strong>
+                <button type="button" class="dev-copy-btn" (click)="codeForm.get('code')?.setValue(devCode)">Einfügen ↓</button>
+              </div>
+            }
+
             @if (errorMsg()) {
               <div class="qs-error">⚠️ {{ errorMsg() }}</div>
             }
@@ -639,6 +646,38 @@ type Channel = 'whatsapp' | 'telegram';
       margin-bottom: 1rem;
     }
 
+    /* DEV-Modus Code-Anzeige */
+    .dev-code-box {
+      background: #fffbeb;
+      border: 2px dashed #f59e0b;
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      font-size: 0.875rem;
+      color: #92400e;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .dev-code-value {
+      font-size: 1.5rem;
+      letter-spacing: 0.15em;
+      color: #b45309;
+      font-family: monospace;
+      font-weight: 800;
+    }
+    .dev-copy-btn {
+      margin-left: auto;
+      background: #f59e0b;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 0.3rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
     @media (max-width: 480px) {
       .qs-card { padding: 1.5rem 1.25rem; border-radius: 16px; }
       .qs-title { font-size: 1.3rem; }
@@ -657,6 +696,7 @@ export class QuickStartComponent implements OnDestroy {
   selectedCategory = signal('');
 
   rawPhone = '';
+  devCode = '';  // DEV-Modus: Code direkt vom Server
   private verificationId = 0;
   private countdownInterval?: ReturnType<typeof setInterval>;
   private createdStoreId = 0;
@@ -720,8 +760,14 @@ export class QuickStartComponent implements OnDestroy {
     this.phoneAuthService.requestCode(phone, this.channel()).subscribe({
       next: (res) => {
         this.loading.set(false);
-        if (res.success) { this.verificationId = res.verificationId; this.step.set('code'); this.startCountdown(60); }
-        else { this.errorMsg.set(res.message || 'Fehler beim Senden.'); }
+        if (res.success) {
+          this.verificationId = res.verificationId;
+          this.devCode = res.devCode || '';  // DEV-Modus: Code direkt anzeigen
+          this.step.set('code');
+          this.startCountdown(60);
+        } else {
+          this.errorMsg.set(res.message || 'Fehler beim Senden.');
+        }
       },
       error: (err) => { this.loading.set(false); this.errorMsg.set(err?.error?.message || 'Netzwerkfehler.'); }
     });

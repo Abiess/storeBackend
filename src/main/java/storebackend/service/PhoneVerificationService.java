@@ -111,6 +111,10 @@ public class PhoneVerificationService {
             : String.format("Code per %s gesendet. Gültig %d Minuten.",
                 channel.equals("whatsapp") ? "WhatsApp" : "SMS", codeExpiryMinutes);
 
+        // Im DEV-Modus: Code direkt in Result mitgeben (wird im Frontend angezeigt)
+        if (channel.equals("dev-log")) {
+            return PhoneVerificationResult.successDev(verification.getId(), channel, message, code);
+        }
         return PhoneVerificationResult.success(verification.getId(), channel, message);
     }
 
@@ -248,26 +252,33 @@ public class PhoneVerificationService {
         private final Long verificationId;
         private final String channel;
         private final String message;
+        private final String devCode; // nur gesetzt wenn channel="dev-log"
 
-        private PhoneVerificationResult(boolean success, Long verificationId, String channel, String message) {
+        private PhoneVerificationResult(boolean success, Long verificationId, String channel, String message, String devCode) {
             this.success = success;
             this.verificationId = verificationId;
             this.channel = channel;
             this.message = message;
+            this.devCode = devCode;
         }
 
         public static PhoneVerificationResult success(Long verificationId, String channel, String message) {
-            return new PhoneVerificationResult(true, verificationId, channel, message);
+            return new PhoneVerificationResult(true, verificationId, channel, message, null);
+        }
+
+        public static PhoneVerificationResult successDev(Long verificationId, String channel, String message, String code) {
+            return new PhoneVerificationResult(true, verificationId, channel, message, code);
         }
 
         public static PhoneVerificationResult error(String message) {
-            return new PhoneVerificationResult(false, null, null, message);
+            return new PhoneVerificationResult(false, null, null, message, null);
         }
 
         public boolean isSuccess() { return success; }
         public Long getVerificationId() { return verificationId; }
         public String getChannel() { return channel; }
         public String getMessage() { return message; }
+        public String getDevCode() { return devCode; }
     }
 }
 

@@ -15,6 +15,7 @@ export interface PhoneCodeResponse {
   channel: string;
   message: string;
   expiresInMinutes: number;
+  devCode?: string; // nur im DEV-Modus (whatsapp.enabled=false), sonst undefined
 }
 
 export interface PhoneVerifyRequest {
