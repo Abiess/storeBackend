@@ -30,11 +30,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/quick-start.component').then(m => m.QuickStartComponent)
     // KEIN authGuard – dieser Flow ist der Einstieg für neue Nutzer
   },
-  // /create-store = öffentlicher Alias für quick-start (kein Login erforderlich!)
+  // /create-store = öffentlich, kein Login erforderlich – nutzt originales UI
   {
     path: 'create-store',
-    loadComponent: () => import('./features/stores/create-store-public.component').then(m => m.CreateStorePublicComponent)
-    // KEIN authGuard – direkt Store erstellen ohne Anmeldung
+    loadComponent: () => import('./features/stores/store-create-simple.component').then(m => m.StoreCreateSimpleComponent)
+    // KEIN authGuard – funktioniert mit public Endpoint für nicht-eingeloggte User
   },
 
   // ==================== Store Creation Wizard (für eingeloggte User) ====================

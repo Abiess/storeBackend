@@ -2,9 +2,11 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { StoreService } from '@app/core/services/store.service';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
+import { environment } from '@env/environment';
 
 interface SlugStatus {
   checking: boolean;
@@ -466,7 +468,8 @@ export class StoreCreateSimpleComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private storeService: StoreService,
-    private router: Router
+    private router: Router,
+    private http: HttpClient
   ) {
     this.storeForm = this.fb.group({
       storeName: ['', [Validators.required, Validators.minLength(2)]],
@@ -540,31 +543,55 @@ export class StoreCreateSimpleComponent implements OnInit {
     this.loading.set(true);
     this.error.set(null);
 
-    try {
-      const { storeName, storeSlug } = this.storeForm.value;
-      const result = await this.storeService.createStore({
-        name: storeName,
-        slug: storeSlug,
-        description: `Welcome to ${storeName}`,
-        ...(this.selectedCategories().length > 0 ? { categories: this.selectedCategories() } as any : {})
-      }).toPromise();
+    const { storeName, storeSlug } = this.storeForm.value;
+    const isLoggedIn = !!localStorage.getItem('auth_token');
 
-      if (!result?.id) {
-        this.error.set('Store creation failed. Please try again.');
+    if (isLoggedIn) {
+      // Eingeloggter User → normaler API-Call
+      try {
+        const result = await this.storeService.createStore({
+          name: storeName,
+          slug: storeSlug,
+          description: `Welcome to ${storeName}`,
+          ...(this.selectedCategories().length > 0 ? { categories: this.selectedCategories() } as any : {})
+        }).toPromise();
+
+        if (!result?.id) {
+          this.error.set('Store creation failed. Please try again.');
+          this.loading.set(false);
+          return;
+        }
+        this.router.navigate(['/stores', result.id]);
+      } catch (err: any) {
         this.loading.set(false);
-        return;
+        this.error.set(err.error?.message || 'Something went wrong. Please try again.');
       }
 
-      this.router.navigate(['/store-success'], {
-        queryParams: {
-          storeId: result.id,
-          storeName,
-          storeUrl: `${storeSlug}.markt.ma`
+    } else {
+      // Nicht eingeloggt → Public Endpoint (erstellt anonymen User + Store)
+      this.http.post<any>(`${environment.apiUrl}/public/create-store`, {
+        storeName,
+        storeSlug,
+        category: this.selectedCategories()[0] || 'other'
+      }).subscribe({
+        next: (res) => {
+          this.loading.set(false);
+          // JWT speichern → User ist jetzt eingeloggt
+          localStorage.setItem('auth_token', res.token);
+          localStorage.setItem('currentUser', JSON.stringify({
+            id: res.userId,
+            email: `anon-${res.userId}@markt.ma`,
+            name: storeName,
+            role: 'USER',
+            roles: ['USER']
+          }));
+          this.router.navigate(['/stores', res.storeId]);
+        },
+        error: (err) => {
+          this.loading.set(false);
+          this.error.set(err.error?.message || 'Fehler beim Erstellen des Stores. Bitte versuche es erneut.');
         }
       });
-    } catch (err: any) {
-      this.loading.set(false);
-      this.error.set(err.error?.message || 'Something went wrong. Please try again.');
     }
   }
 }
