@@ -151,7 +151,7 @@ const COUNTRIES: Country[] = [
       }
 
       <!-- ── STEP 2: Code eingeben ── -->
-      @if (step() === 'code') {
+      @if (step() === 'code' && codeForm) {
         <div class="qs-card animate-in">
           <div class="qs-icon-big">🔐</div>
           <h1 class="qs-title">Code eingeben</h1>
@@ -906,15 +906,15 @@ export class QuickStartComponent implements OnDestroy {
     this.phoneForm = this.fb.group({
       phone: ['', [
         Validators.required,
-        Validators.pattern(/^\+?[0-9]{7,15}$/)
+        Validators.pattern(/^\+?[0-9]{6,15}$/),
+        this.phoneValidator
       ]]
     });
 
-    this.phoneForm = this.fb.group({
-      phone: ['', [
+    this.codeForm = this.fb.group({
+      code: ['', [
         Validators.required,
-        Validators.pattern(/^\+?[0-9]{6,15}$/),  // lokale oder internationale Nummer
-        this.phoneValidator
+        Validators.pattern(/^[0-9]{6}$/)
       ]]
     });
 
