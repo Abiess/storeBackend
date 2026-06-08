@@ -8,6 +8,34 @@ import { StoreService } from '@app/core/services/store.service';
 type FlowStep = 'phone' | 'code' | 'store' | 'done';
 type Channel = 'whatsapp' | 'telegram';
 
+interface Country {
+  code: string;
+  flag: string;
+  name: string;
+  dialCode: string;
+  placeholder: string;
+}
+
+const COUNTRIES: Country[] = [
+  { code: 'MA', flag: '🇲🇦', name: 'Marokko',       dialCode: '+212', placeholder: '6 12 345 678' },
+  { code: 'DE', flag: '🇩🇪', name: 'Deutschland',    dialCode: '+49',  placeholder: '151 234 56789' },
+  { code: 'AT', flag: '🇦🇹', name: 'Österreich',     dialCode: '+43',  placeholder: '664 123456' },
+  { code: 'CH', flag: '🇨🇭', name: 'Schweiz',        dialCode: '+41',  placeholder: '78 123 4567' },
+  { code: 'FR', flag: '🇫🇷', name: 'Frankreich',     dialCode: '+33',  placeholder: '6 12 34 56 78' },
+  { code: 'BE', flag: '🇧🇪', name: 'Belgien',        dialCode: '+32',  placeholder: '470 12 34 56' },
+  { code: 'NL', flag: '🇳🇱', name: 'Niederlande',    dialCode: '+31',  placeholder: '6 12345678' },
+  { code: 'ES', flag: '🇪🇸', name: 'Spanien',        dialCode: '+34',  placeholder: '612 345 678' },
+  { code: 'IT', flag: '🇮🇹', name: 'Italien',        dialCode: '+39',  placeholder: '312 345 6789' },
+  { code: 'GB', flag: '🇬🇧', name: 'Großbritannien', dialCode: '+44',  placeholder: '7911 123456' },
+  { code: 'TR', flag: '🇹🇷', name: 'Türkei',         dialCode: '+90',  placeholder: '532 123 4567' },
+  { code: 'DZ', flag: '🇩🇿', name: 'Algerien',       dialCode: '+213', placeholder: '551 23 45 67' },
+  { code: 'TN', flag: '🇹🇳', name: 'Tunesien',       dialCode: '+216', placeholder: '20 123 456' },
+  { code: 'EG', flag: '🇪🇬', name: 'Ägypten',        dialCode: '+20',  placeholder: '100 123 4567' },
+  { code: 'SA', flag: '🇸🇦', name: 'Saudi-Arabien',  dialCode: '+966', placeholder: '50 123 4567' },
+  { code: 'AE', flag: '🇦🇪', name: 'VAE',            dialCode: '+971', placeholder: '50 123 4567' },
+  { code: 'US', flag: '🇺🇸', name: 'USA',            dialCode: '+1',   placeholder: '202 555 0123' },
+];
+
 @Component({
   selector: 'app-quick-start',
   standalone: true,
@@ -55,21 +83,37 @@ type Channel = 'whatsapp' | 'telegram';
 
           <!-- Telefonnummer-Eingabe -->
           <form [formGroup]="phoneForm" (ngSubmit)="sendCode()" class="qs-form">
-            <div class="input-group">
-              <span class="input-prefix">🇲🇦 +212</span>
+            <div class="input-group" [class.has-error]="phoneForm.get('phone')?.invalid && phoneForm.get('phone')?.touched">
+              <!-- Ländercode-Selector -->
+              <div class="country-selector-wrap">
+                <button type="button" class="country-selector-btn" (click)="toggleCountryDropdown()">
+                  {{ selectedCountry().flag }} {{ selectedCountry().dialCode }} <span class="caret">▾</span>
+                </button>
+                @if (showCountryDropdown()) {
+                  <div class="country-dropdown">
+                    @for (c of countries; track c.code) {
+                      <button type="button" class="country-option" (click)="selectCountry(c)">
+                        <span class="co-flag">{{ c.flag }}</span>
+                        <span class="co-name">{{ c.name }}</span>
+                        <span class="co-dial">{{ c.dialCode }}</span>
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
               <input
                 type="tel"
                 formControlName="phone"
-                placeholder="6 00 123 456"
+                [placeholder]="selectedCountry().placeholder"
                 class="qs-input phone-input"
                 inputmode="numeric"
-                maxlength="12"
+                maxlength="16"
                 [class.has-error]="phoneForm.get('phone')?.invalid && phoneForm.get('phone')?.touched"
               />
             </div>
-            <p class="qs-hint">Format: +212 6XX XXX XXX (Marokko) oder internationale Vorwahl eingeben</p>
+            <p class="qs-hint">Lokale Nummer ohne Vorwahl eingeben – Ländervorwahl wird automatisch ergänzt</p>
             @if (phoneForm.get('phone')?.invalid && phoneForm.get('phone')?.touched) {
-              <div class="qs-error">⚠️ Ungültige Nummer – z.B. 0612345678 oder +33612345678</div>
+              <div class="qs-error">⚠️ Ungültige Nummer – nur Ziffern, ohne Ländervorwahl</div>
             }
 
             @if (errorMsg()) {
@@ -416,6 +460,74 @@ type Channel = 'whatsapp' | 'telegram';
       white-space: nowrap;
     }
 
+    /* ── Country Selector ── */
+    .country-selector-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .country-selector-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.75rem 0.7rem;
+      background: #f9fafb;
+      border: none;
+      border-right: 1px solid #e5e7eb;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #374151;
+      cursor: pointer;
+      white-space: nowrap;
+      height: 100%;
+      border-radius: 0;
+
+      &:hover { background: #f3f4f6; }
+
+      .caret { font-size: 0.65rem; color: #9ca3af; }
+    }
+
+    .country-dropdown {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      z-index: 200;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      max-height: 260px;
+      overflow-y: auto;
+      min-width: 220px;
+    }
+
+    .country-option {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: 100%;
+      padding: 0.55rem 0.9rem;
+      border: none;
+      background: white;
+      text-align: left;
+      cursor: pointer;
+      font-size: 0.875rem;
+      color: #374151;
+
+      &:hover { background: #f9fafb; }
+
+      .co-flag { font-size: 1.1rem; }
+      .co-name { flex: 1; }
+      .co-dial { font-weight: 700; color: #667eea; font-size: 0.8rem; }
+    }
+
+    @media (max-width: 480px) {
+      .qs-card { padding: 1.5rem 1.25rem; border-radius: 16px; }
+      .qs-title { font-size: 1.3rem; }
+      .code-input { font-size: 1.75rem; letter-spacing: 0.3em; }
+      .category-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
     .qs-input {
       width: 100%;
       padding: 0.75rem 1rem;
@@ -737,6 +849,10 @@ export class QuickStartComponent implements OnDestroy {
   errorMsg = signal('');
   countdown = signal(0);
   selectedCategory = signal('');
+  selectedCountry = signal<Country>(COUNTRIES[0]); // Standard: Marokko
+  showCountryDropdown = signal(false);
+
+  countries = COUNTRIES;
 
   rawPhone = '';
   devCode = '';
@@ -775,7 +891,7 @@ export class QuickStartComponent implements OnDestroy {
     this.phoneForm = this.fb.group({
       phone: ['', [
         Validators.required,
-        Validators.pattern(/^\+?[0-9]{8,15}$/),  // min 8 Ziffern nach optionalem +
+        Validators.pattern(/^\+?[0-9]{6,15}$/),  // lokale oder internationale Nummer
         this.phoneValidator
       ]]
     });
@@ -786,19 +902,19 @@ export class QuickStartComponent implements OnDestroy {
     });
   }
 
-  /** Validiert Telefonnummern: Marokko (06/07) oder internationale Nummern mit Ländervorwahl */
+  /** Validiert Telefonnummern: Lokale Nummern (ohne Vorwahl) oder internationale mit + */
   private phoneValidator(control: AbstractControl): ValidationErrors | null {
     const val: string = (control.value || '').replace(/\s/g, '');
     if (!val) return null;
 
-    // Wenn Nutzer internationales Format eingibt (mit +): min 10 Zeichen gesamt
+    // Wenn Nutzer vollständiges internationales Format eingibt (mit +): min 10 Zeichen gesamt
     if (val.startsWith('+')) {
-      return val.length >= 10 && /^\+[0-9]{9,14}$/.test(val) ? null : { invalidPhone: true };
+      return val.length >= 10 && /^\+[0-9]{7,14}$/.test(val) ? null : { invalidPhone: true };
     }
-    // Marokko ohne Vorwahl: 06XXXXXXXX, 07XXXXXXXX (10 Stellen) oder 6XXXXXXXX, 7XXXXXXXX (9 Stellen)
-    if (/^(06|07)[0-9]{8}$/.test(val) || /^(6|7)[0-9]{8}$/.test(val)) return null;
-    // Andere lokale Nummern: min 8 Ziffern
-    if (/^[0-9]{8,15}$/.test(val)) return null;
+    // Lokale Nummern mit führender 0 (z.B. 0151... DE, 0612... MA): nach Länderwahl ergänzt
+    if (/^0[0-9]{7,13}$/.test(val)) return null;
+    // Lokale Nummern ohne führende 0: min 6 Ziffern
+    if (/^[1-9][0-9]{5,13}$/.test(val)) return null;
 
     return { invalidPhone: true };
   }
@@ -807,6 +923,9 @@ export class QuickStartComponent implements OnDestroy {
   progressPercent(): number { return { phone:33, code:66, store:90, done:100 }[this.step()]; }
   setChannel(c: Channel): void { this.channel.set(c); }
   selectCategory(id: string): void { this.selectedCategory.set(id === this.selectedCategory() ? '' : id); }
+
+  toggleCountryDropdown(): void { this.showCountryDropdown.set(!this.showCountryDropdown()); }
+  selectCountry(c: Country): void { this.selectedCountry.set(c); this.showCountryDropdown.set(false); }
 
   onCodeInput(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -818,9 +937,11 @@ export class QuickStartComponent implements OnDestroy {
     if (this.phoneForm.invalid) { this.phoneForm.markAllAsTouched(); return; }
     this.loading.set(true);
     this.errorMsg.set('');
-    let phone: string = this.phoneForm.value.phone;
+    let phone: string = this.phoneForm.value.phone.replace(/\s/g, '');
     if (!phone.startsWith('+')) {
-      phone = phone.startsWith('0') ? '+212' + phone.substring(1) : '+212' + phone;
+      const dialCode = this.selectedCountry().dialCode;
+      // Führende 0 entfernen (z.B. 0151... → +49151...)
+      phone = phone.startsWith('0') ? dialCode + phone.substring(1) : dialCode + phone;
     }
     this.rawPhone = phone;
     this.phoneAuthService.requestCode(phone, this.channel()).subscribe({
