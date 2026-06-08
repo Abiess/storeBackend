@@ -86,7 +86,7 @@ const COUNTRIES: Country[] = [
             <div class="input-group" [class.has-error]="phoneForm.get('phone')?.invalid && phoneForm.get('phone')?.touched">
               <!-- Ländercode-Selector -->
               <div class="country-selector-wrap">
-                <button type="button" class="country-selector-btn" (click)="toggleCountryDropdown()">
+                <button type="button" class="country-selector-btn" (click)="toggleCountryDropdown($event)">
                   {{ selectedCountry().flag }} {{ selectedCountry().dialCode }} <span class="caret">▾</span>
                 </button>
                 @if (showCountryDropdown()) {
@@ -499,11 +499,11 @@ const COUNTRIES: Country[] = [
       position: absolute;
       top: calc(100% + 4px);
       left: 0;
-      z-index: 200;
+      z-index: 9999;
       background: white;
       border: 1px solid #e5e7eb;
       border-radius: 10px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
       max-height: 260px;
       overflow-y: auto;
       min-width: 220px;
@@ -932,7 +932,10 @@ export class QuickStartComponent implements OnDestroy {
   setChannel(c: Channel): void { this.channel.set(c); }
   selectCategory(id: string): void { this.selectedCategory.set(id === this.selectedCategory() ? '' : id); }
 
-  toggleCountryDropdown(): void { this.showCountryDropdown.set(!this.showCountryDropdown()); }
+  toggleCountryDropdown(event?: MouseEvent): void {
+    event?.stopPropagation(); // Verhindert sofortiges Schließen durch document:click
+    this.showCountryDropdown.set(!this.showCountryDropdown());
+  }
   selectCountry(c: Country): void { this.selectedCountry.set(c); this.showCountryDropdown.set(false); }
 
   @HostListener('document:click', ['$event'])
