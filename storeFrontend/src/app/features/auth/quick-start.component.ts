@@ -1010,9 +1010,12 @@ export class QuickStartComponent implements OnDestroy {
     this.loading.set(true);
     this.errorMsg.set('');
     this.phoneAuthService.verifyAndLogin(this.verificationId, this.codeForm.value.code).subscribe({
-      next: () => {
+      next: (response) => {
         this.loading.set(false);
         this.clarity.event('phone_auth_verified');
+        // Clarity-Session mit interner User-ID verknüpfen → im Dashboard nach User filterbar
+        this.clarity.identify(String(response.user.id));
+        this.clarity.setTag('userId', String(response.user.id));
         this.step.set('store');
       },
       error: (err) => { this.loading.set(false); this.errorMsg.set(err?.error?.message || 'Falscher Code.'); }
@@ -1028,13 +1031,25 @@ export class QuickStartComponent implements OnDestroy {
       .toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').substring(0, 30);
     const payload: any = { name: storeName, slug: slugBase, description: '', category: this.selectedCategory() || 'other', whatsappNumber: this.rawPhone };
     this.storeService.createStore(payload).subscribe({
-      next: (store: any) => { this.loading.set(false); this.createdStoreId = store.id; this.step.set('done'); },
+      next: (store: any) => {
+        this.loading.set(false);
+        this.createdStoreId = store.id;
+        this.clarity.event('store_created');
+        this.clarity.setTag('storeId', String(store.id));
+        this.step.set('done');
+      },
       error: (err) => {
         const msg = err?.error?.message || err?.error?.error || '';
         if (msg.toLowerCase().includes('slug') || msg.toLowerCase().includes('already')) {
           payload.slug = slugBase + '-' + Math.floor(Math.random() * 9000 + 1000);
           this.storeService.createStore(payload).subscribe({
-            next: (s: any) => { this.loading.set(false); this.createdStoreId = s.id; this.step.set('done'); },
+            next: (s: any) => {
+              this.loading.set(false);
+              this.createdStoreId = s.id;
+              this.clarity.event('store_created');
+              this.clarity.setTag('storeId', String(s.id));
+              this.step.set('done');
+            },
             error: () => { this.loading.set(false); this.errorMsg.set('Store konnte nicht erstellt werden.'); }
           });
         } else { this.loading.set(false); this.errorMsg.set(msg || 'Store konnte nicht erstellt werden.'); }

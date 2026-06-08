@@ -1,7 +1,7 @@
 import { Component, OnInit, Renderer2 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
-import { filter } from 'rxjs/operators';
+import { filter, take } from 'rxjs/operators';
 import { AuthService } from './core/services/auth.service';
 import { CartService } from './core/services/cart.service';
 import { MetaPixelService } from './core/services/meta-pixel.service';
@@ -251,11 +251,20 @@ export class AppComponent implements OnInit {
     this.authService.setCartService(this.cartService);
 
     // Meta Pixel initialisieren (no-op wenn metaPixelId leer)
-    // TODO(consent): Erst nach User-Consent aufrufen (DSGVO/RGPD)
+    // Meta Pixel initialisieren (no-op wenn metaPixelId leer)
     this.metaPixel.init();
 
     // Microsoft Clarity initialisieren (no-op in DEV oder wenn clarityId leer)
     this.clarity.init();
+
+    // Bereits eingeloggte User sofort in Clarity identifizieren
+    this.authService.currentUser$.pipe(
+      filter(user => !!user),
+      take(1)
+    ).subscribe(user => {
+      this.clarity.identify(String(user!.id));
+      this.clarity.setTag('userId', String(user!.id));
+    });
 
     this.evaluateShell(this.router.url);
     this.router.events
