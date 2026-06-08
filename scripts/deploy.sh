@@ -168,6 +168,9 @@ HUGGINGFACE_API_KEY=${HUGGINGFACE_API_KEY:-}
 # OpenRouter API Key (AI Product Creation – bevorzugt, OpenAI-kompatibel)
 OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
 
+# telegram bot token for notifications
+TELEGRAM_AUTH_BOT_TOKEN=${TELEGRAM_AUTH_BOT_TOKEN:-}
+
 # Hibernate DDL-Strategie (Default 'update' = neue Spalten anlegen, Daten erhalten)
 # Override für Flyway-Migration: SPRING_JPA_HIBERNATE_DDL_AUTO=validate
 SPRING_JPA_HIBERNATE_DDL_AUTO=${SPRING_JPA_HIBERNATE_DDL_AUTO:-update}

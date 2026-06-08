@@ -2,13 +2,11 @@ package storebackend.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import storebackend.service.PhoneVerificationService;
 import storebackend.service.TelegramAuthBotService;
 
 import java.util.Map;
@@ -32,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class TelegramAuthWebhookController {
 
     private final TelegramAuthBotService telegramAuthBotService;
-    private final PhoneVerificationService phoneVerificationService;
+    // PhoneVerificationService nicht injiziert – wir nutzen nur die statische pendingByToken Map
 
     @Value("${app.base-url:https://markt.ma}")
     private String appBaseUrl;

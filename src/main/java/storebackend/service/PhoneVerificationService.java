@@ -22,6 +22,7 @@ import java.util.Optional;
  * - Max 3 Versuche pro Code
  * - Automatische Cleanup alter Codes
  */
+import org.springframework.beans.factory.annotation.Autowired;
 import storebackend.controller.TelegramAuthWebhookController;
 
 @Service
@@ -31,7 +32,10 @@ public class PhoneVerificationService {
 
     private final PhoneVerificationRepository verificationRepository;
     private final WhatsAppService whatsAppService;
-    private final TelegramAuthBotService telegramAuthBotService;
+
+    // Optional – startet auch ohne Telegram-Konfiguration
+    @Autowired(required = false)
+    private TelegramAuthBotService telegramAuthBotService;
 
     @Value("${verification.code.expiry-minutes:10}")
     private int codeExpiryMinutes;
@@ -87,7 +91,9 @@ public class PhoneVerificationService {
         String channel = "unknown";
 
         // Telegram-Kanal: Code wird per Bot gesendet (kostenlos, kein API-Token nötig)
-        if ("telegram".equalsIgnoreCase(requestedChannel) && telegramAuthBotService.isConfigured()) {
+        if ("telegram".equalsIgnoreCase(requestedChannel)
+                && telegramAuthBotService != null
+                && telegramAuthBotService.isConfigured()) {
             // Token erstellen: phone_timestamp (wird als /start Parameter genutzt)
             String token = phoneNumber.replace("+", "") + "_" + System.currentTimeMillis();
 
