@@ -442,7 +442,7 @@ const COUNTRIES: Country[] = [
       align-items: center;
       border: 2px solid #e5e7eb;
       border-radius: 10px;
-      overflow: visible;        /* WICHTIG: kein hidden – sonst wird Dropdown abgeschnitten */
+      overflow: visible;
       transition: border-color 0.2s;
       position: relative;
 
@@ -450,28 +450,17 @@ const COUNTRIES: Country[] = [
         border-color: #667eea;
       }
 
-      /* Erstes Kind (Country-Selector) links abrunden */
+      /* Kein overflow:hidden hier – sonst wird das Country-Dropdown abgeschnitten */
       > *:first-child {
         border-radius: 8px 0 0 8px;
-        overflow: hidden;
       }
     }
 
-    .input-prefix {
-      padding: 0.75rem 0.75rem;
-      background: #f9fafb;
-      color: #374151;
-      font-size: 0.9rem;
-      font-weight: 600;
-      border-right: 1px solid #e5e7eb;
-      white-space: nowrap;
-    }
-
-    /* ── Country Selector ── */
     .country-selector-wrap {
       position: relative;
       flex-shrink: 0;
-      overflow: visible;  /* Dropdown darf außerhalb des Containers sichtbar sein */
+      overflow: visible;
+      z-index: 50;
     }
 
     .country-selector-btn {
@@ -488,7 +477,8 @@ const COUNTRIES: Country[] = [
       cursor: pointer;
       white-space: nowrap;
       height: 100%;
-      border-radius: 0;
+      border-radius: 8px 0 0 8px;
+      overflow: hidden;
 
       &:hover { background: #f3f4f6; }
 
