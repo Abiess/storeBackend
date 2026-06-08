@@ -36,15 +36,11 @@ jobs:
       - name: Inject CLARITY_ID into environment.prod.ts
         run: |
           CLARITY_VAL="${{ secrets.CLARITY_ID }}"
-          # environment.prod.ts – für ClarityService (event/identify/setTag)
+          # Nur environment.prod.ts – ClarityService lädt das Script dynamisch,
+          # kein statisches Script-Tag in index.html (vermeidet 400er mit Platzhalter).
           sed -i "s/__CLARITY_ID__/${CLARITY_VAL}/g" storeFrontend/src/environments/environment.prod.ts
-          # index.html – statisches Script-Tag (lädt Clarity vor Angular)
-          sed -i "s/__CLARITY_ID__/${CLARITY_VAL}/g" storeFrontend/src/index.html
           echo "✅ Clarity ID injected: ${CLARITY_VAL}"
-          echo "--- environment.prod.ts ---"
           grep clarityId storeFrontend/src/environments/environment.prod.ts
-          echo "--- index.html ---"
-          grep "clarity.ms" storeFrontend/src/index.html
 
       # ── Angular Frontend bauen (Production) ────────────────────────
       - name: Build Angular Frontend (Production)
@@ -54,14 +50,12 @@ jobs:
           npm run build:prod
           echo "✅ Frontend Build fertig"
           echo ""
-          echo "🔍 Verifikation: Clarity Tag in dist/index.html?"
-          if grep -q "clarity.ms/tag/" dist/markt-ma-frontend/index.html; then
-            echo "✅ Clarity Tag gefunden:"
-            grep "clarity.ms" dist/markt-ma-frontend/index.html
-          else
-            echo "❌ Clarity Tag NICHT in index.html – prüfe CLARITY_ID Secret und sed-Schritt!"
-            cat dist/markt-ma-frontend/index.html | head -40
+          echo "🔍 Verifikation: Kein __CLARITY_ID__ Platzhalter im dist?"
+          if grep -r "__CLARITY_ID__" dist/markt-ma-frontend/ --include="*.js" --include="*.html" -l 2>/dev/null; then
+            echo "❌ __CLARITY_ID__ Platzhalter noch im dist – sed-Schritt fehlgeschlagen!"
             exit 1
+          else
+            echo "✅ Kein Platzhalter im dist – Clarity-ID korrekt eingebettet"
           fi
           ls -lh dist/markt-ma-frontend/ | head -20
 
