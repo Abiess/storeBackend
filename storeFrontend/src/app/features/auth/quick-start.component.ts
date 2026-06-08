@@ -112,6 +112,9 @@ const COUNTRIES: Country[] = [
               />
             </div>
             <p class="qs-hint">Lokale Nummer ohne Vorwahl eingeben – Ländervorwahl wird automatisch ergänzt</p>
+            @if (fullPhone) {
+              <p class="phone-preview">📲 Wird gesendet als: <strong>{{ fullPhone }}</strong></p>
+            }
             @if (phoneForm.get('phone')?.invalid && phoneForm.get('phone')?.touched) {
               <div class="qs-error">⚠️ Ungültige Nummer – nur Ziffern, ohne Ländervorwahl</div>
             }
@@ -563,6 +566,18 @@ const COUNTRIES: Country[] = [
       margin: 0;
     }
 
+    .phone-preview {
+      font-size: 0.82rem;
+      color: #4b5563;
+      margin: 0;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 6px;
+      padding: 0.35rem 0.7rem;
+
+      strong { color: #16a34a; }
+    }
+
     .qs-error {
       background: #fef2f2;
       border: 1px solid #fecaca;
@@ -852,6 +867,15 @@ export class QuickStartComponent implements OnDestroy {
 
   countries = COUNTRIES;
 
+  /** Gibt die fertige E.164-Nummer zurück, die ans Backend gesendet wird (live preview) */
+  get fullPhone(): string {
+    const raw = (this.phoneForm?.value?.phone || '').replace(/\s/g, '');
+    if (!raw) return '';
+    if (raw.startsWith('+')) return raw;
+    const dial = this.selectedCountry().dialCode;
+    return raw.startsWith('0') ? dial + raw.substring(1) : dial + raw;
+  }
+
   rawPhone = '';
   devCode = '';
   telegramLink = '';
@@ -901,7 +925,7 @@ export class QuickStartComponent implements OnDestroy {
   }
 
   /** Validiert Telefonnummern: Lokale Nummern (ohne Vorwahl) oder internationale mit + */
-  private phoneValidator(control: AbstractControl): ValidationErrors | null {
+  private readonly phoneValidator = (control: AbstractControl): ValidationErrors | null => {
     const val: string = (control.value || '').replace(/\s/g, '');
     if (!val) return null;
 
@@ -910,12 +934,12 @@ export class QuickStartComponent implements OnDestroy {
       return val.length >= 10 && /^\+[0-9]{7,14}$/.test(val) ? null : { invalidPhone: true };
     }
     // Lokale Nummern mit führender 0 (z.B. 0151... DE, 0612... MA): nach Länderwahl ergänzt
-    if (/^0[0-9]{7,13}$/.test(val)) return null;
-    // Lokale Nummern ohne führende 0: min 6 Ziffern
-    if (/^[1-9][0-9]{5,13}$/.test(val)) return null;
+    if (/^0[0-9]{6,13}$/.test(val)) return null;
+    // Lokale Nummern ohne führende 0: min 5 Ziffern
+    if (/^[1-9][0-9]{4,13}$/.test(val)) return null;
 
     return { invalidPhone: true };
-  }
+  };
 
   stepIndex(): number { return { phone:1, code:2, store:3, done:3 }[this.step()]; }
   progressPercent(): number { return { phone:33, code:66, store:90, done:100 }[this.step()]; }
@@ -947,12 +971,16 @@ export class QuickStartComponent implements OnDestroy {
     if (this.phoneForm.invalid) { this.phoneForm.markAllAsTouched(); return; }
     this.loading.set(true);
     this.errorMsg.set('');
-    let phone: string = this.phoneForm.value.phone.replace(/\s/g, '');
-    if (!phone.startsWith('+')) {
-      const dialCode = this.selectedCountry().dialCode;
-      // Führende 0 entfernen (z.B. 0151... → +49151...)
-      phone = phone.startsWith('0') ? dialCode + phone.substring(1) : dialCode + phone;
+
+    const phone = this.fullPhone; // nutzt den getter für konsistente Logik
+
+    // Frontend-Sicherheitsprüfung: finale Nummer muss E.164 sein (7-15 Stellen nach +)
+    if (!/^\+[0-9]{7,15}$/.test(phone)) {
+      this.loading.set(false);
+      this.errorMsg.set(`Ungültiges Format: "${phone}" – bitte prüfe die Nummer und den gewählten Ländercode.`);
+      return;
     }
+
     this.rawPhone = phone;
     this.phoneAuthService.requestCode(phone, this.channel()).subscribe({
       next: (res) => {
