@@ -1,6 +1,6 @@
 import { Component, signal, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { PhoneQuickAuthService } from '@app/core/services/phone-quick-auth.service';
 import { StoreService } from '@app/core/services/store.service';
@@ -67,7 +67,10 @@ type Channel = 'whatsapp' | 'telegram';
                 [class.has-error]="phoneForm.get('phone')?.invalid && phoneForm.get('phone')?.touched"
               />
             </div>
-            <p class="qs-hint">Format: +212 6XX XXX XXX (Marokko) oder andere Ländervorwahl</p>
+            <p class="qs-hint">Format: +212 6XX XXX XXX (Marokko) oder internationale Vorwahl eingeben</p>
+            @if (phoneForm.get('phone')?.invalid && phoneForm.get('phone')?.touched) {
+              <div class="qs-error">⚠️ Ungültige Nummer – z.B. 0612345678 oder +33612345678</div>
+            }
 
             @if (errorMsg()) {
               <div class="qs-error">⚠️ {{ errorMsg() }}</div>
@@ -127,6 +130,16 @@ type Channel = 'whatsapp' | 'telegram';
               <div class="dev-code-box">
                 🧪 <strong>DEV-Modus:</strong> Dein Code ist <strong class="dev-code-value">{{ devCode }}</strong>
                 <button type="button" class="dev-copy-btn" (click)="codeForm.get('code')?.setValue(devCode)">Einfügen ↓</button>
+              </div>
+            }
+
+            @if (telegramLink) {
+              <div class="telegram-link-box">
+                <p>📲 <strong>Schritt 1:</strong> Öffne den Bot und tippe auf Start:</p>
+                <a [href]="telegramLink" target="_blank" class="telegram-open-btn">
+                  ✈️ &#64;{{ botUsername }} öffnen →
+                </a>
+                <p class="telegram-hint">Der Bot sendet dir deinen Code. Dann hier eingeben ↓</p>
               </div>
             }
 
@@ -646,6 +659,36 @@ type Channel = 'whatsapp' | 'telegram';
       margin-bottom: 1rem;
     }
 
+    /* Telegram Link Box */
+    .telegram-link-box {
+      background: #f0f9ff;
+      border: 2px solid #0ea5e9;
+      border-radius: 10px;
+      padding: 1rem;
+      font-size: 0.875rem;
+      color: #0c4a6e;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      text-align: center;
+      p { margin: 0; }
+    }
+    .telegram-open-btn {
+      display: block;
+      background: linear-gradient(135deg, #2CA5E0, #1a82b5);
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      font-weight: 700;
+      font-size: 1rem;
+      &:hover { opacity: 0.9; transform: translateY(-1px); }
+    }
+    .telegram-hint {
+      font-size: 0.78rem;
+      color: #0369a1;
+    }
+
     /* DEV-Modus Code-Anzeige */
     .dev-code-box {
       background: #fffbeb;
@@ -696,7 +739,9 @@ export class QuickStartComponent implements OnDestroy {
   selectedCategory = signal('');
 
   rawPhone = '';
-  devCode = '';  // DEV-Modus: Code direkt vom Server
+  devCode = '';
+  telegramLink = '';
+  botUsername = '';
   private verificationId = 0;
   private countdownInterval?: ReturnType<typeof setInterval>;
   private createdStoreId = 0;
@@ -710,9 +755,9 @@ export class QuickStartComponent implements OnDestroy {
     { id: 'other',       icon: '📦', name: 'Sonstiges' }
   ];
 
-  phoneForm: FormGroup;
-  codeForm: FormGroup;
-  storeForm: FormGroup;
+  phoneForm!: FormGroup;
+  codeForm!: FormGroup;
+  storeForm!: FormGroup;
 
   constructor(
     private fb: FormBuilder,
@@ -727,14 +772,35 @@ export class QuickStartComponent implements OnDestroy {
       ]]
     });
 
-    this.codeForm = this.fb.group({
-      code: ['', [Validators.required, Validators.pattern(/^[0-9]{6}$/)]]
+    this.phoneForm = this.fb.group({
+      phone: ['', [
+        Validators.required,
+        Validators.pattern(/^\+?[0-9]{8,15}$/),  // min 8 Ziffern nach optionalem +
+        this.phoneValidator
+      ]]
     });
 
     this.storeForm = this.fb.group({
       storeName: ['', [Validators.required, Validators.minLength(3)]],
       storeSlug: ['']
     });
+  }
+
+  /** Validiert Telefonnummern: Marokko (06/07) oder internationale Nummern mit Ländervorwahl */
+  private phoneValidator(control: AbstractControl): ValidationErrors | null {
+    const val: string = (control.value || '').replace(/\s/g, '');
+    if (!val) return null;
+
+    // Wenn Nutzer internationales Format eingibt (mit +): min 10 Zeichen gesamt
+    if (val.startsWith('+')) {
+      return val.length >= 10 && /^\+[0-9]{9,14}$/.test(val) ? null : { invalidPhone: true };
+    }
+    // Marokko ohne Vorwahl: 06XXXXXXXX, 07XXXXXXXX (10 Stellen) oder 6XXXXXXXX, 7XXXXXXXX (9 Stellen)
+    if (/^(06|07)[0-9]{8}$/.test(val) || /^(6|7)[0-9]{8}$/.test(val)) return null;
+    // Andere lokale Nummern: min 8 Ziffern
+    if (/^[0-9]{8,15}$/.test(val)) return null;
+
+    return { invalidPhone: true };
   }
 
   stepIndex(): number { return { phone:1, code:2, store:3, done:3 }[this.step()]; }
@@ -762,7 +828,9 @@ export class QuickStartComponent implements OnDestroy {
         this.loading.set(false);
         if (res.success) {
           this.verificationId = res.verificationId;
-          this.devCode = res.devCode || '';  // DEV-Modus: Code direkt anzeigen
+          this.devCode = res.devCode || '';
+          this.telegramLink = res.telegramLink || '';
+          this.botUsername = res.botUsername || '';
           this.step.set('code');
           this.startCountdown(60);
         } else {

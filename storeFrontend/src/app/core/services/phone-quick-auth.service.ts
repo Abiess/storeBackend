@@ -15,7 +15,9 @@ export interface PhoneCodeResponse {
   channel: string;
   message: string;
   expiresInMinutes: number;
-  devCode?: string; // nur im DEV-Modus (whatsapp.enabled=false), sonst undefined
+  devCode?: string;       // DEV-Modus: Code direkt auf dem Bildschirm
+  telegramLink?: string;  // Telegram: Deep-Link zum Bot
+  botUsername?: string;   // Telegram: Bot-Username
 }
 
 export interface PhoneVerifyRequest {

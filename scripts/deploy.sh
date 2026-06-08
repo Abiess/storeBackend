@@ -292,6 +292,7 @@ EnvironmentFile=/etc/storebackend.env
 # (systemd liest manchmal EnvironmentFile nicht korrekt)
 Environment="HUGGINGFACE_API_KEY=\${HUGGINGFACE_API_KEY}"
 Environment="OPENROUTER_API_KEY=\${OPENROUTER_API_KEY}"
+Environment="TELEGRAM_AUTH_BOT_TOKEN=\${TELEGRAM_AUTH_BOT_TOKEN}"
 
 # JAR ausführen
 ExecStart=/usr/bin/java \$JAVA_OPTS -jar /opt/storebackend/app.jar

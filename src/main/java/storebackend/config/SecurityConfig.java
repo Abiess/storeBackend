@@ -49,6 +49,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/forgot-password", "/api/auth/reset-password", "/api/auth/reset-password/validate").permitAll()
                 // Phone Auth (WhatsApp/Telegram Schnellstart – kein Login erforderlich)
                 .requestMatchers("/api/auth/phone/**").permitAll()
+                // Telegram Bot Webhook (empfängt Updates von Telegram)
+                .requestMatchers("/api/auth/telegram-webhook/**").permitAll()
                 // Config endpoints - Language detection muss öffentlich sein
                 .requestMatchers("/api/config", "/api/config/**").permitAll()
                 // Error endpoint - muss öffentlich sein für Spring Boot Error Handling

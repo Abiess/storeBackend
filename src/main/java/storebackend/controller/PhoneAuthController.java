@@ -79,10 +79,9 @@ public class PhoneAuthController {
         log.info("📱 [PhoneAuth] Code angefordert für: {}", request.phoneNumber());
 
         try {
-            // storeId = 0L als Sentinel für Auth-Flow (kein echter Store).
-            // DB-Constraint erfordert NOT NULL → 0 ist valid (kein FK auf stores-Tabelle).
+            String requestedChannel = request.channel() != null ? request.channel() : "whatsapp";
             PhoneVerificationService.PhoneVerificationResult result =
-                phoneVerificationService.sendVerificationCode(request.phoneNumber(), 0L);
+                phoneVerificationService.sendVerificationCode(request.phoneNumber(), 0L, requestedChannel);
 
             if (result.isSuccess()) {
                 log.info("✅ [PhoneAuth] Code gesendet via {}", result.getChannel());
@@ -92,7 +91,9 @@ public class PhoneAuthController {
                     result.getChannel(),
                     result.getMessage(),
                     10,
-                    result.getDevCode() // null in Produktion, Code-Wert im DEV-Modus
+                    result.getDevCode(),
+                    result.getTelegramLink(),
+                    result.getBotUsername()
                 ));
             } else {
                 log.warn("❌ [PhoneAuth] Code-Versand fehlgeschlagen: {}", result.getMessage());
@@ -201,7 +202,9 @@ public class PhoneAuthController {
         String channel,
         String message,
         int expiresInMinutes,
-        String devCode  // nur im DEV-Modus gesetzt (channel="dev-log"), sonst null
+        String devCode,        // DEV-Modus: Code direkt im Browser anzeigen
+        String telegramLink,   // Telegram: Deep-Link zum Bot
+        String botUsername     // Telegram: Bot-Username für Anzeige
     ) {}
 }
 

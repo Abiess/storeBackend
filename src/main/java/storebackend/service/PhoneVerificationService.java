@@ -22,6 +22,8 @@ import java.util.Optional;
  * - Max 3 Versuche pro Code
  * - Automatische Cleanup alter Codes
  */
+import storebackend.controller.TelegramAuthWebhookController;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -29,6 +31,7 @@ public class PhoneVerificationService {
 
     private final PhoneVerificationRepository verificationRepository;
     private final WhatsAppService whatsAppService;
+    private final TelegramAuthBotService telegramAuthBotService;
 
     @Value("${verification.code.expiry-minutes:10}")
     private int codeExpiryMinutes;
@@ -48,6 +51,11 @@ public class PhoneVerificationService {
      */
     @Transactional
     public PhoneVerificationResult sendVerificationCode(String phoneNumber, Long storeId) {
+        return sendVerificationCode(phoneNumber, storeId, "whatsapp");
+    }
+
+    @Transactional
+    public PhoneVerificationResult sendVerificationCode(String phoneNumber, Long storeId, String requestedChannel) {
         // Validiere Telefonnummer
         if (!isValidPhoneNumber(phoneNumber)) {
             log.warn("❌ Invalid phone number format: {}", phoneNumber);
@@ -77,6 +85,39 @@ public class PhoneVerificationService {
         // ── SCHRITT 1: Erst senden ────────────────────────────────────────────
         boolean sent = false;
         String channel = "unknown";
+
+        // Telegram-Kanal: Code wird per Bot gesendet (kostenlos, kein API-Token nötig)
+        if ("telegram".equalsIgnoreCase(requestedChannel) && telegramAuthBotService.isConfigured()) {
+            // Token erstellen: phone_timestamp (wird als /start Parameter genutzt)
+            String token = phoneNumber.replace("+", "") + "_" + System.currentTimeMillis();
+
+            // Pending-Entry registrieren (in-memory, Controller hält es)
+            TelegramAuthWebhookController.pendingByToken.put(token,
+                new TelegramAuthWebhookController.PendingTelegramAuth(phoneNumber, code, System.currentTimeMillis()));
+
+            // Verification vorab speichern (mit Code, wartet auf Bot-Bestätigung)
+            PhoneVerification verification = new PhoneVerification();
+            verification.setPhoneNumber(phoneNumber);
+            verification.setCode(code);
+            verification.setStoreId(storeId);
+            verification.setChannel("telegram-pending");
+            verification.setVerified(false);
+            verification.setAttempts(0);
+            verification.setCreatedAt(java.time.LocalDateTime.now());
+            verification.setExpiresAt(java.time.LocalDateTime.now().plusMinutes(codeExpiryMinutes));
+            verification = verificationRepository.save(verification);
+
+            String telegramLink = "https://t.me/" + telegramAuthBotService.getBotUsername() + "?start=" + token;
+            log.info("✅ [TelegramAuth] Deep-Link erstellt: {}", telegramLink);
+
+            return PhoneVerificationResult.successTelegram(
+                verification.getId(),
+                "telegram",
+                "Öffne Telegram und starte den Bot um deinen Code zu erhalten.",
+                telegramLink,
+                telegramAuthBotService.getBotUsername()
+            );
+        }
 
         try {
             if (whatsAppService.sendVerificationCode(phoneNumber, code)) {
@@ -225,25 +266,21 @@ public class PhoneVerificationService {
     }
 
     private boolean isValidPhoneNumber(String phoneNumber) {
-        // Einfache Validierung für E.164 Format
-        // Format: +[country code][number]
-        if (phoneNumber == null || phoneNumber.isEmpty()) {
-            return false;
-        }
+        if (phoneNumber == null || phoneNumber.isBlank()) return false;
 
-        // Muss mit + beginnen
-        if (!phoneNumber.startsWith("+")) {
-            return false;
-        }
-
-        // Muss zwischen 8 und 15 Zeichen lang sein (inkl. +)
-        if (phoneNumber.length() < 8 || phoneNumber.length() > 16) {
-            return false;
-        }
+        // Muss mit + beginnen (E.164 Format)
+        if (!phoneNumber.startsWith("+")) return false;
 
         // Nur Ziffern nach dem +
         String digits = phoneNumber.substring(1);
-        return digits.matches("\\d+");
+        if (!digits.matches("\\d+")) return false;
+
+        // Mindestens 9 Ziffern nach +, maximal 15 (E.164 Standard)
+        // Marokko: +212 + 9 Ziffern = 12 Zeichen gesamt
+        int len = digits.length();
+        if (len < 9 || len > 15) return false;
+
+        return true;
     }
 
     // Result Class
@@ -252,26 +289,36 @@ public class PhoneVerificationService {
         private final Long verificationId;
         private final String channel;
         private final String message;
-        private final String devCode; // nur gesetzt wenn channel="dev-log"
+        private final String devCode;
+        private final String telegramLink;   // nur für telegram-Kanal
+        private final String botUsername;    // nur für telegram-Kanal
 
-        private PhoneVerificationResult(boolean success, Long verificationId, String channel, String message, String devCode) {
+        private PhoneVerificationResult(boolean success, Long verificationId, String channel,
+                                         String message, String devCode, String telegramLink, String botUsername) {
             this.success = success;
             this.verificationId = verificationId;
             this.channel = channel;
             this.message = message;
             this.devCode = devCode;
+            this.telegramLink = telegramLink;
+            this.botUsername = botUsername;
         }
 
         public static PhoneVerificationResult success(Long verificationId, String channel, String message) {
-            return new PhoneVerificationResult(true, verificationId, channel, message, null);
+            return new PhoneVerificationResult(true, verificationId, channel, message, null, null, null);
         }
 
         public static PhoneVerificationResult successDev(Long verificationId, String channel, String message, String code) {
-            return new PhoneVerificationResult(true, verificationId, channel, message, code);
+            return new PhoneVerificationResult(true, verificationId, channel, message, code, null, null);
+        }
+
+        public static PhoneVerificationResult successTelegram(Long verificationId, String channel,
+                                                               String message, String telegramLink, String botUsername) {
+            return new PhoneVerificationResult(true, verificationId, channel, message, null, telegramLink, botUsername);
         }
 
         public static PhoneVerificationResult error(String message) {
-            return new PhoneVerificationResult(false, null, null, message, null);
+            return new PhoneVerificationResult(false, null, null, message, null, null, null);
         }
 
         public boolean isSuccess() { return success; }
@@ -279,6 +326,8 @@ public class PhoneVerificationService {
         public String getChannel() { return channel; }
         public String getMessage() { return message; }
         public String getDevCode() { return devCode; }
+        public String getTelegramLink() { return telegramLink; }
+        public String getBotUsername() { return botUsername; }
     }
 }
 
