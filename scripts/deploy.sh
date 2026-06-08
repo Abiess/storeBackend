@@ -168,8 +168,9 @@ HUGGINGFACE_API_KEY=${HUGGINGFACE_API_KEY:-}
 # OpenRouter API Key (AI Product Creation – bevorzugt, OpenAI-kompatibel)
 OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
 
-# telegram bot token for notifications
+# Telegram Bot Auth
 TELEGRAM_AUTH_BOT_TOKEN=${TELEGRAM_AUTH_BOT_TOKEN:-}
+TELEGRAM_AUTH_BOT_USERNAME=${TELEGRAM_AUTH_BOT_USERNAME:-marktma_verify_bot}
 
 # Hibernate DDL-Strategie (Default 'update' = neue Spalten anlegen, Daten erhalten)
 # Override für Flyway-Migration: SPRING_JPA_HIBERNATE_DDL_AUTO=validate
@@ -296,6 +297,7 @@ EnvironmentFile=/etc/storebackend.env
 Environment="HUGGINGFACE_API_KEY=\${HUGGINGFACE_API_KEY}"
 Environment="OPENROUTER_API_KEY=\${OPENROUTER_API_KEY}"
 Environment="TELEGRAM_AUTH_BOT_TOKEN=\${TELEGRAM_AUTH_BOT_TOKEN}"
+Environment="TELEGRAM_AUTH_BOT_USERNAME=\${TELEGRAM_AUTH_BOT_USERNAME}"
 
 # JAR ausführen
 ExecStart=/usr/bin/java \$JAVA_OPTS -jar /opt/storebackend/app.jar

@@ -212,3 +212,8 @@ openrouter:
   api:
     key: ${OPENROUTER_API_KEY:}
 
+# Telegram Bot Auth (Phone-Verification via Telegram)
+telegram:
+  auth:
+    bot-token: ${TELEGRAM_AUTH_BOT_TOKEN:}
+    bot-username: ${TELEGRAM_AUTH_BOT_USERNAME:marktma_verify_bot}

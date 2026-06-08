@@ -32,14 +32,16 @@ public class TelegramAuthBotService {
     @Value("${telegram.auth.bot-username:marktma_verify_bot}")
     private String botUsername;
 
-    @Value("${telegram.enabled:false}")
-    private boolean enabled;
+    // Nutzt NICHT telegram.enabled (der ist für Store-Bots), sondern eigene Property
+    @Value("${telegram.auth.enabled:true}")
+    private boolean authEnabled;
 
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    /** Auth-Bot ist aktiv wenn Token gesetzt ist (unabhängig von telegram.enabled) */
     public boolean isConfigured() {
-        return enabled && botToken != null && !botToken.isBlank();
+        return botToken != null && !botToken.isBlank();
     }
 
     public String getBotUsername() {
@@ -54,11 +56,7 @@ public class TelegramAuthBotService {
      */
     public boolean sendVerificationCode(String chatId, String code, String phone) {
         if (!isConfigured()) {
-            log.info("========================================");
-            log.info("[TelegramAuth/DEV] SIMULATED SEND");
-            log.info("[TelegramAuth/DEV] To ChatID: {}", chatId);
-            log.info("[TelegramAuth/DEV] Verification code: {}", code);
-            log.info("========================================");
+            log.info("[TelegramAuth/DEV] SIMULATED → ChatID: {} | Code: {}", chatId, code);
             return true;
         }
 
