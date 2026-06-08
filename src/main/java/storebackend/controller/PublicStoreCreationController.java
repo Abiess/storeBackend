@@ -82,6 +82,7 @@ public class PublicStoreCreationController {
             user.setName(req.storeName()); // Store-Name als Display-Name
             user.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
             user.setEmailVerified(false);
+            user.setIsAnonymous(true);
             user.setPreferredLanguage("de");
 
             Set<Role> roles = new HashSet<>();
