@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { StoreService } from '@app/core/services/store.service';
+import { ClarityService } from '@app/core/services/clarity.service';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { environment } from '@env/environment';
@@ -469,7 +470,8 @@ export class StoreCreateSimpleComponent implements OnInit {
     private fb: FormBuilder,
     private storeService: StoreService,
     private router: Router,
-    private http: HttpClient
+    private http: HttpClient,
+    private clarity: ClarityService
   ) {
     this.storeForm = this.fb.group({
       storeName: ['', [Validators.required, Validators.minLength(2)]],
@@ -561,6 +563,8 @@ export class StoreCreateSimpleComponent implements OnInit {
           this.loading.set(false);
           return;
         }
+        this.clarity.event('store_created');
+        this.clarity.setTag('storeCreationMethod', 'logged-in');
         this.router.navigate(['/stores', result.id]);
       } catch (err: any) {
         this.loading.set(false);
@@ -585,6 +589,9 @@ export class StoreCreateSimpleComponent implements OnInit {
             role: 'USER',
             roles: ['USER']
           }));
+          this.clarity.event('store_created');
+          this.clarity.setTag('storeCreationMethod', 'anonymous');
+          this.clarity.identify(String(res.userId));
           this.router.navigate(['/stores', res.storeId]);
         },
         error: (err) => {

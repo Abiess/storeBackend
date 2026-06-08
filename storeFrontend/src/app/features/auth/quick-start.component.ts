@@ -4,6 +4,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractContro
 import { Router, RouterLink } from '@angular/router';
 import { PhoneQuickAuthService } from '@app/core/services/phone-quick-auth.service';
 import { StoreService } from '@app/core/services/store.service';
+import { ClarityService } from '@app/core/services/clarity.service';
 
 type FlowStep = 'phone' | 'code' | 'store' | 'done';
 type Channel = 'whatsapp' | 'telegram';
@@ -901,7 +902,8 @@ export class QuickStartComponent implements OnDestroy {
     private fb: FormBuilder,
     private phoneAuthService: PhoneQuickAuthService,
     private storeService: StoreService,
-    private router: Router
+    private router: Router,
+    private clarity: ClarityService
   ) {
     this.phoneForm = this.fb.group({
       phone: ['', [
@@ -972,7 +974,7 @@ export class QuickStartComponent implements OnDestroy {
     this.loading.set(true);
     this.errorMsg.set('');
 
-    const phone = this.fullPhone; // nutzt den getter für konsistente Logik
+    const phone = this.fullPhone;
 
     // Frontend-Sicherheitsprüfung: finale Nummer muss E.164 sein (7-15 Stellen nach +)
     if (!/^\+[0-9]{7,15}$/.test(phone)) {
@@ -981,6 +983,8 @@ export class QuickStartComponent implements OnDestroy {
       return;
     }
 
+    this.clarity.event('phone_auth_started');
+    this.clarity.setTag('authChannel', this.channel());
     this.rawPhone = phone;
     this.phoneAuthService.requestCode(phone, this.channel()).subscribe({
       next: (res) => {
@@ -990,6 +994,7 @@ export class QuickStartComponent implements OnDestroy {
           this.devCode = res.devCode || '';
           this.telegramLink = res.telegramLink || '';
           this.botUsername = res.botUsername || '';
+          this.clarity.event('phone_auth_code_requested');
           this.step.set('code');
           this.startCountdown(60);
         } else {
@@ -1005,7 +1010,11 @@ export class QuickStartComponent implements OnDestroy {
     this.loading.set(true);
     this.errorMsg.set('');
     this.phoneAuthService.verifyAndLogin(this.verificationId, this.codeForm.value.code).subscribe({
-      next: () => { this.loading.set(false); this.step.set('store'); },
+      next: () => {
+        this.loading.set(false);
+        this.clarity.event('phone_auth_verified');
+        this.step.set('store');
+      },
       error: (err) => { this.loading.set(false); this.errorMsg.set(err?.error?.message || 'Falscher Code.'); }
     });
   }

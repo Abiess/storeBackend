@@ -5,6 +5,7 @@ import { filter } from 'rxjs/operators';
 import { AuthService } from './core/services/auth.service';
 import { CartService } from './core/services/cart.service';
 import { MetaPixelService } from './core/services/meta-pixel.service';
+import { ClarityService } from './core/services/clarity.service';
 import { WhatsappConfigService } from './core/services/whatsapp-config.service';
 import { environment } from '@env/environment';
 import { ChatbotWidgetComponent } from './components/chatbot-widget/chatbot-widget.component';
@@ -241,6 +242,7 @@ export class AppComponent implements OnInit {
     private cartService: CartService,
     private router: Router,
     private metaPixel: MetaPixelService,
+    private clarity: ClarityService,
     private renderer: Renderer2,
     private whatsappConfig: WhatsappConfigService
   ) {}
@@ -252,6 +254,9 @@ export class AppComponent implements OnInit {
     // TODO(consent): Erst nach User-Consent aufrufen (DSGVO/RGPD)
     this.metaPixel.init();
 
+    // Microsoft Clarity initialisieren (no-op in DEV oder wenn clarityId leer)
+    this.clarity.init();
+
     this.evaluateShell(this.router.url);
     this.router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
@@ -259,6 +264,9 @@ export class AppComponent implements OnInit {
         this.evaluateShell(e.urlAfterRedirects);
         // PageView pro Navigation tracken (no-op wenn Pixel nicht aktiv)
         this.metaPixel.trackPageView();
+        // Clarity: aktuellen Pfad als Tag setzen (hilft bei Segment-Analyse)
+        const path = e.urlAfterRedirects.split('?')[0];
+        this.clarity.setTag('page', path);
       });
   }
 

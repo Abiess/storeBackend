@@ -3,10 +3,8 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { TranslatePipe } from "@app/core/pipes/translate.pipe";
 import { VideoPlayerComponent } from "@app/features/landing/video-player.component";
-import {
-  LucideAngularModule
-} from 'lucide-angular';
-// Icons global registriert via LUCIDE_ICONS in app.config.ts
+import { LucideAngularModule } from 'lucide-angular';
+import { ClarityService } from '@app/core/services/clarity.service';
 
 @Component({
   selector: 'app-landing',
@@ -135,7 +133,7 @@ export class LandingComponent {
       highlighted: false
     }
   ];
-  constructor(private router: Router) {}
+  constructor(private router: Router, private clarity: ClarityService) {}
 
   scrollToSection(sectionId: string): void {
     const element = document.getElementById(sectionId);
@@ -147,24 +145,18 @@ export class LandingComponent {
   toggleComparison(): void { /* nicht mehr verwendet */ }
 
   navigateToRegister(storeType?: 'own-store' | 'reseller'): void {
-    if (storeType) {
-      // Store the choice in localStorage for later use
-      localStorage.setItem('preferredStoreType', storeType);
-    }
+    if (storeType) { localStorage.setItem('preferredStoreType', storeType); }
     this.router.navigate(['/register']);
   }
 
-  navigateToLogin(): void {
-    this.router.navigate(['/login']);
-  }
+  navigateToLogin(): void { this.router.navigate(['/login']); }
 
-  /** Schnellstart-Flow: Store ohne E-Mail via WhatsApp/Telegram */
-  navigateToQuickStart(): void {
-    this.router.navigate(['/quick-start']);
-  }
+  navigateToQuickStart(): void { this.router.navigate(['/quick-start']); }
 
-  /** Alias: /create-store → Quick-Start ohne Login */
+  /** Alias: /create-store → Store ohne Login */
   navigateToCreateStore(): void {
+    this.clarity.event('user_clicked_create_store');
+    this.clarity.setTag('flow', 'create-store');
     this.router.navigate(['/create-store']);
   }
 }

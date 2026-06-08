@@ -28,6 +28,27 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # ── Microsoft Clarity ID injizieren ────────────────────────────
+      # Ersetzt den Platzhalter __CLARITY_ID__ in environment.prod.ts
+      # mit dem echten Wert aus dem GitHub Secret CLARITY_ID.
+      # Leer gelassenes Secret → clarityId bleibt '__CLARITY_ID__' →
+      # ClarityService erkennt dies als ungültige ID und startet nicht.
+      - name: Inject CLARITY_ID into environment.prod.ts
+        run: |
+          CLARITY_VAL="${{ secrets.CLARITY_ID }}"
+          sed -i "s/__CLARITY_ID__/${CLARITY_VAL}/g" storeFrontend/src/environments/environment.prod.ts
+          echo "✅ Clarity ID injected"
+          grep clarityId storeFrontend/src/environments/environment.prod.ts
+
+      # ── Angular Frontend bauen (Production) ────────────────────────
+      - name: Build Angular Frontend (Production)
+        run: |
+          cd storeFrontend
+          npm ci --prefer-offline
+          npm run build:prod
+          echo "✅ Frontend Build fertig"
+          ls -lh dist/markt-ma-frontend/ | head -20
+
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
@@ -89,72 +110,99 @@ jobs:
           target: "/opt/storebackend/"
           strip_components: 0
 
-      - name: Upload Telegram Scraper
+      # ── Angular Frontend deployen ───────────────────────────────────
+      # dist/markt-ma-frontend/ → /var/www/markt.ma (nginx Root)
+      - name: Deploy Frontend to VPS (/var/www/markt.ma)
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          source: "telegram-scraper/"
-          target: "/opt/storebackend/"
-          strip_components: 0
+          source: "storeFrontend/dist/markt-ma-frontend/"
+          target: "/var/www/markt.ma"
+          strip_components: 3
 
-      # ── Research Agent deployen ─────────────────────────────────────
-      - name: Upload Research Agent
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          source: "research-agent/"
-          target: "/opt/"
-          strip_components: 0
-
-      - name: Setup Research Agent (Node.js + npm + Cron)
+      - name: Activate Frontend & Reload Nginx
         uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          command_timeout: 10m
           script: |
-            # Node.js installieren falls nicht vorhanden
-            if ! command -v node &>/dev/null; then
-              echo "📦 Installiere Node.js 20 LTS..."
-              curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - 2>/dev/null
-              sudo apt-get install -y nodejs 2>/dev/null
-            fi
-            echo "✅ Node.js $(node --version) | npm $(npm --version)"
+            echo "🌐 Inhalt von /var/www/markt.ma:"
+            ls -lh /var/www/markt.ma/ | head -10
+            echo "🔄 Lade Nginx neu..."
+            sudo systemctl reload nginx
+            echo "✅ Nginx neu geladen – Frontend live"
 
-            # Verzeichnisse anlegen + npm install
-            mkdir -p /opt/research-agent/output /opt/research-agent/logs
-            cd /opt/research-agent
-            npm install --production --silent
-            echo "✅ Dependencies installiert"
+#      - name: Upload Telegram Scraper
+#        uses: appleboy/scp-action@v0.1.7
+#        with:
+#          host: ${{ secrets.VPS_HOST }}
+#          username: ${{ secrets.VPS_USER }}
+#          key: ${{ secrets.VPS_SSH_KEY }}
+#          port: ${{ secrets.VPS_PORT }}
+#          source: "telegram-scraper/"
+#          target: "/opt/storebackend/"
+#          strip_components: 0
 
-            # Täglicher Cron-Job (06:00 Marokko = 05:00 UTC) – mit allen neuen Parametern
-            # WICHTIG: Literalpfade verwenden (Shell-Variablen sind zur Cron-Laufzeit nicht verfügbar)
-            CRON_CMD="cd /opt/research-agent"
-            CRON_CMD="$CRON_CMD && /usr/bin/node main.js"
-            CRON_CMD="$CRON_CMD --source all"
-            CRON_CMD="$CRON_CMD --pages 3"
-            CRON_CMD="$CRON_CMD --seller-type all"
-            CRON_CMD="$CRON_CMD --min-score 0"
-            CRON_CMD="$CRON_CMD --min-conversion 0"
-            CRON_CMD="$CRON_CMD --min-saas 0"
-            CRON_CMD="$CRON_CMD --min-products 0"
-            CRON_CMD="$CRON_CMD --top 20"
-            CRON_CMD="$CRON_CMD --output /opt/research-agent/output"
-            CRON_CMD="$CRON_CMD >> /opt/research-agent/logs/cron.log 2>&1"
-            MARKER="research-agent-daily"
-            (crontab -l 2>/dev/null | grep -v "$MARKER" || true) > /tmp/_cron
-            echo "# $MARKER" >> /tmp/_cron
-            echo "0 5 * * * $CRON_CMD" >> /tmp/_cron
-            crontab /tmp/_cron && rm /tmp/_cron
-            echo "✅ Cron-Job aktiv: täglich 06:00 Marokko-Zeit (mit Tier-System + SaaS-Fit)"
+      # ── Research Agent deployen ─────────────────────────────────────
+#      - name: Upload Research Agent
+#        uses: appleboy/scp-action@v0.1.7
+#        with:
+#          host: ${{ secrets.VPS_HOST }}
+#          username: ${{ secrets.VPS_USER }}
+#          key: ${{ secrets.VPS_SSH_KEY }}
+#          port: ${{ secrets.VPS_PORT }}
+#          source: "research-agent/"
+#          target: "/opt/"
+#          strip_components: 0
+
+#      - name: Setup Research Agent (Node.js + npm + Cron)
+#        uses: appleboy/ssh-action@v1.2.2
+#        with:
+#          host: ${{ secrets.VPS_HOST }}
+#          username: ${{ secrets.VPS_USER }}
+#          key: ${{ secrets.VPS_SSH_KEY }}
+#          port: ${{ secrets.VPS_PORT }}
+#          command_timeout: 10m
+#          script: |
+#            # Node.js installieren falls nicht vorhanden
+#            if ! command -v node &>/dev/null; then
+#              echo "📦 Installiere Node.js 20 LTS..."
+#              curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - 2>/dev/null
+#              sudo apt-get install -y nodejs 2>/dev/null
+#            fi
+#            echo "✅ Node.js $(node --version) | npm $(npm --version)"
+#
+#            # Verzeichnisse anlegen + npm install
+#            mkdir -p /opt/research-agent/output /opt/research-agent/logs
+#            cd /opt/research-agent
+#            npm install --production --silent
+#            echo "✅ Dependencies installiert"
+#
+#            # Täglicher Cron-Job (06:00 Marokko = 05:00 UTC) – mit allen neuen Parametern
+#            # WICHTIG: Literalpfade verwenden (Shell-Variablen sind zur Cron-Laufzeit nicht verfügbar)
+#            CRON_CMD="cd /opt/research-agent"
+#            CRON_CMD="$CRON_CMD && /usr/bin/node main.js"
+#            CRON_CMD="$CRON_CMD --source all"
+#            CRON_CMD="$CRON_CMD --pages 3"
+#            CRON_CMD="$CRON_CMD --seller-type all"
+#            CRON_CMD="$CRON_CMD --min-score 0"
+#            CRON_CMD="$CRON_CMD --min-conversion 0"
+#            CRON_CMD="$CRON_CMD --min-saas 0"
+#            CRON_CMD="$CRON_CMD --min-products 0"
+#            CRON_CMD="$CRON_CMD --top 20"
+#            CRON_CMD="$CRON_CMD --output /opt/research-agent/output"
+#            CRON_CMD="$CRON_CMD >> /opt/research-agent/logs/cron.log 2>&1"
+#            MARKER="research-agent-daily"
+#            (crontab -l 2>/dev/null | grep -v "$MARKER" || true) > /tmp/_cron
+#            echo "# $MARKER" >> /tmp/_cron
+#            echo "0 5 * * * $CRON_CMD" >> /tmp/_cron
+#            crontab /tmp/_cron && rm /tmp/_cron
+#            echo "✅ Cron-Job aktiv: täglich 06:00 Marokko-Zeit (mit Tier-System + SaaS-Fit)"
 
       - name: Check Port 8001 & Setup Telegram Scraper
         uses: appleboy/ssh-action@v1.2.2
@@ -202,6 +250,7 @@ jobs:
             export HUGGINGFACE_API_KEY="${{ secrets.HUGGINGFACE_API_KEY }}"
             export OPENROUTER_API_KEY="${{ secrets.OPENROUTER_API_KEY }}"
             export TELEGRAM_AUTH_BOT_TOKEN="${{ secrets.TELEGRAM_AUTH_BOT_TOKEN }}"
+            export CLARITY_ID="${{ secrets.CLARITY_ID }}"
             cd /opt/storebackend
             bash scripts/deploy.sh
 

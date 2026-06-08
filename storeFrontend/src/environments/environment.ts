@@ -10,5 +10,14 @@ export const environment = {
    * Leer ('') = Pixel komplett deaktiviert (no-op), kein Script wird geladen.
    * TODO: Consent-Gate davor schalten bevor in Prod aktiviert wird (DSGVO/RGPD).
    */
-  metaPixelId: ''
+  metaPixelId: '',
+
+  /**
+   * Microsoft Clarity Projekt-ID.
+   * Leer ('') = Clarity komplett deaktiviert – kein Script, kein Tracking.
+   * DEV: Bewusst leer gelassen – Tracking NUR in Production aktiv.
+   * PROD: ID aus https://clarity.microsoft.com → Einstellungen → Projekt-ID eintragen.
+   * Beispiel: clarityId: 'abc123xyz'
+   */
+  clarityId: ''
 };
