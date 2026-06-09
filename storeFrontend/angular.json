@@ -50,7 +50,8 @@
                 }
               ],
               "outputHashing": "all",
-              "serviceWorker": "src/ngsw-config.json",
+              "serviceWorker": true,
+              "ngswConfigPath": "ngsw-config.json",
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",
