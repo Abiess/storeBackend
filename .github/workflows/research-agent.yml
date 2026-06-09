@@ -1,441 +1,441 @@
-name: Research Agent – Deploy & Cron
-
-on:
-  workflow_dispatch:
-    inputs:
-      run_now:
-        description: 'Jetzt direkt einen Scraping-Lauf starten?'
-        required: false
-        default: 'false'
-        type: choice
-        options: ['false', 'true']
-      source:
-        description: 'Quelle (all / avito / opensooq / jumia / instagram)'
-        required: false
-        default: 'avito'
-        type: choice
-        options: ['avito', 'all', 'opensooq', 'jumia', 'instagram']
-      hot_only:
-        description: 'Nur HOT_LEAD-Händler (≥ 20 Produkte) scrapen + Produktbilder?'
-        required: false
-        default: 'false'
-        type: choice
-        options: ['false', 'true']
-      min_saas:
-        description: 'Mindest-SaaS-Fit-Score (0–100) – 0 = kein Filter'
-        required: false
-        default: '0'
-      min_score:
-        description: 'Mindest-Lead-Score (0–100) – 0 = alle anzeigen'
-        required: false
-        default: '0'
-      min_conversion:
-        description: 'Mindest-Conversion-Score (0–100) – 0 = kein Filter'
-        required: false
-        default: '0'
-      min_products:
-        description: 'Mindest-Produktanzahl pro Händler – 0 = kein Filter'
-        required: false
-        default: '0'
-      seller_type:
-        description: 'Händlertyp filtern (all / business / individual)'
-        required: false
-        default: 'all'
-        type: choice
-        options: ['all', 'business', 'individual']
-      city:
-        description: 'Stadt filtern (leer = alle Städte)'
-        required: false
-        default: ''
-      category:
-        description: 'Kategorie filtern (leer = alle Kategorien)'
-        required: false
-        default: ''
-      pages:
-        description: 'Anzahl Suchergebnis-Seiten pro Kategorie (1–10)'
-        required: false
-        default: '3'
-      top:
-        description: 'Top-N Händler in der Ausgabe anzeigen'
-        required: false
-        default: '20'
-
-  # Täglich um 05:00 UTC (= 06:00 Marokko-Zeit) automatisch
-  schedule:
-    - cron: '0 5 * * *'
-
-jobs:
-  # ══════════════════════════════════════════════════════════════
-  # JOB 1: Research-Agent auf VPS deployen (Dateien + npm install)
-  # ══════════════════════════════════════════════════════════════
-  deploy-agent:
-    name: Deploy Research Agent
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-
-      - name: Upload research-agent to VPS
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          # rsync: synchronisiert research-agent/ nach /opt/research-agent/ auf dem VPS
-          rsync -az --delete \
-            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.VPS_PORT }} -o StrictHostKeyChecking=no" \
-            research-agent/ \
-            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/research-agent/"
-          rm -f ~/.ssh/deploy_key
-          echo "✅ research-agent/ erfolgreich auf VPS übertragen"
-
-      - name: Setup on VPS (Node.js + npm install + Cron)
-        uses: appleboy/ssh-action@v1.2.2
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          command_timeout: 10m
-          script: |
-            set -e
-            echo "════════════════════════════════════════"
-            echo "  🏪 Research Agent – VPS Setup"
-            echo "  Tier-System: IGNORED/BASIC/PRIORITY/HOT_LEAD"
-            echo "════════════════════════════════════════"
-
-            AGENT_DIR="/opt/research-agent"
-            LOG_DIR="$AGENT_DIR/logs"
-
-            # ── Node.js installieren falls nicht vorhanden ──────────────
-            if ! command -v node &>/dev/null; then
-              echo "📦 Node.js nicht gefunden – installiere v20 LTS..."
-              curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - 2>/dev/null
-              sudo apt-get install -y nodejs 2>/dev/null
-              echo "✅ Node.js $(node --version) installiert"
-            else
-              echo "✅ Node.js $(node --version) bereits vorhanden"
-            fi
-
-            if ! command -v npm &>/dev/null; then
-              sudo apt-get install -y npm 2>/dev/null || true
-            fi
-            echo "✅ npm $(npm --version)"
-
-            mkdir -p "$AGENT_DIR/output"
-            mkdir -p "$LOG_DIR"
-
-            echo "📦 npm install..."
-            cd "$AGENT_DIR"
-            npm install --production --silent
-            echo "✅ Dependencies installiert"
-
-            chmod +x "$AGENT_DIR/main.js" 2>/dev/null || true
-
-            # ── Cron-Job: täglich 06:00 Marokko-Zeit ──────────────────
-            # Standard-Lauf: alle Quellen, nur IGNORED herausfiltern,
-            # HOT_LEADs bekommen automatisch Produktbilder (im Scraper)
-            # WICHTIG: $LOG_DIR als Literalpfad – Shell-Variablen sind zur Cron-Laufzeit nicht verfügbar!
-            CRON_LOG="/opt/research-agent/logs/cron.log"
-            CRON_CMD="cd /opt/research-agent && /usr/bin/node main.js"
-            CRON_CMD="$CRON_CMD --source all"
-            CRON_CMD="$CRON_CMD --pages 3"
-            CRON_CMD="$CRON_CMD --seller-type all"
-            CRON_CMD="$CRON_CMD --min-score 0"
-            CRON_CMD="$CRON_CMD --min-conversion 0"
-            CRON_CMD="$CRON_CMD --min-saas 0"
-            CRON_CMD="$CRON_CMD --min-products 0"
-            CRON_CMD="$CRON_CMD --top 20"
-            CRON_CMD="$CRON_CMD --output /opt/research-agent/output"
-            CRON_CMD="$CRON_CMD >> $CRON_LOG 2>&1"
-
-            CRON_JOB="0 5 * * * $CRON_CMD"
-            CRON_MARKER="research-agent-daily"
-
-            (crontab -l 2>/dev/null | grep -v "$CRON_MARKER" || true) > /tmp/crontab_new
-            echo "# $CRON_MARKER" >> /tmp/crontab_new
-            echo "$CRON_JOB" >> /tmp/crontab_new
-            crontab /tmp/crontab_new
-            rm /tmp/crontab_new
-
-            echo "✅ Cron-Job eingerichtet: täglich 06:00 Marokko-Zeit"
-            echo "   Tier-System aktiv: IGNORED <5 / BASIC 5-9 / PRIORITY 10-19 / HOT_LEAD ≥20"
-            echo ""
-            echo "📋 Aktuelle Crontab:"
-            crontab -l
-
-  # ══════════════════════════════════════════════════════════════
-  # JOB 2: Sofort-Lauf (manuell mit run_now=true oder täglich via schedule)
-  # ══════════════════════════════════════════════════════════════
-  run-agent:
-    name: Run Scraping Now
-    runs-on: ubuntu-latest
-    needs: deploy-agent
-    if: github.event_name == 'schedule' || github.event.inputs.run_now == 'true'
-
-    steps:
-      - name: Run Research Agent on VPS
-        uses: appleboy/ssh-action@v1.2.2
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          command_timeout: 45m
-          script: |
-            AGENT_DIR="/opt/research-agent"
-            OUTPUT_DIR="$AGENT_DIR/output"
-
-            # ── SICHERHEITSPRÜFUNG: Demo-/Error-CSVs aus Output entfernen ─
-            # Verhindert dass ls -t die falsche (DEMO/ERROR) CSV zurückgibt
-            echo "🧹 Bereinige alte DEMO/ERROR-CSVs aus $OUTPUT_DIR ..."
-            find "$OUTPUT_DIR" -name "*_DEMO_*.csv" -delete 2>/dev/null && echo "   DEMO-CSVs entfernt" || true
-            find "$OUTPUT_DIR" -name "*_ERROR_*.csv" -delete 2>/dev/null && echo "   ERROR-CSVs entfernt" || true
-            # Alte CSVs ohne REAL/DEMO-Markierung (vor dem Refactoring) archivieren
-            OLD_CSV_COUNT=$(find "$OUTPUT_DIR" -name "markt-ma-leads_*.csv" | wc -l)
-            if [ "$OLD_CSV_COUNT" -gt 0 ]; then
-              mkdir -p "$OUTPUT_DIR/archive"
-              find "$OUTPUT_DIR" -maxdepth 1 -name "markt-ma-leads_*.csv" -exec mv {} "$OUTPUT_DIR/archive/" \;
-              echo "   $OLD_CSV_COUNT alte CSVs (ohne REAL-Markierung) nach archive/ verschoben"
-            fi
-            echo "   Output-Verzeichnis nach Bereinigung:"
-            ls -lht "$OUTPUT_DIR"/*.csv 2>/dev/null || echo "   (keine CSVs mehr vorhanden)"
-
-            # ── Parameter aus Workflow-Input (mit Defaults für schedule) ──
-            SOURCE="${{ github.event.inputs.source || 'all' }}"
-            HOT_ONLY="${{ github.event.inputs.hot_only || 'false' }}"
-            MIN_SAAS="${{ github.event.inputs.min_saas || '0' }}"
-            MIN_SCORE="${{ github.event.inputs.min_score || '0' }}"
-            MIN_CONVERSION="${{ github.event.inputs.min_conversion || '0' }}"
-            MIN_PRODUCTS="${{ github.event.inputs.min_products || '0' }}"
-            SELLER_TYPE="${{ github.event.inputs.seller_type || 'all' }}"
-            CITY="${{ github.event.inputs.city || '' }}"
-            CATEGORY="${{ github.event.inputs.category || '' }}"
-            PAGES="${{ github.event.inputs.pages || '3' }}"
-            TOP="${{ github.event.inputs.top || '20' }}"
-
-            # ── Diagnostic Probe vor dem echten Scraping ───────────────────
-            echo ""
-            echo "🔬 Starte Avito Diagnostic Probe (auf dem VPS, nicht GH-Actions-IP)..."
-            cd "$AGENT_DIR"
-            node scripts/diagnose-avito.js 2>&1 || echo "⚠️  Diagnostic fehlgeschlagen (ignoriert)"
-
-            echo "════════════════════════════════════════"
-            echo "  🔍 Research Agent – Scraping Start"
-            echo "  Quelle:       $SOURCE"
-            echo "  Nur Hot Leads: $HOT_ONLY"
-            echo "  Min SaaS-Fit: $MIN_SAAS"
-            echo "  Min Score:    $MIN_SCORE"
-            echo "  Min Conv.:    $MIN_CONVERSION"
-            echo "  Min Produkte: $MIN_PRODUCTS"
-            echo "  Händlertyp:   $SELLER_TYPE"
-            echo "  Stadt:        ${CITY:-(alle)}"
-            echo "  Kategorie:    ${CATEGORY:-(alle)}"
-            echo "  Seiten:       $PAGES"
-            echo "  Top-N:        $TOP"
-            echo "  Zeitpunkt:    $(date '+%Y-%m-%d %H:%M:%S')"
-            echo "  Tier-System:  IGNORED<5 / BASIC 5-9 / PRIORITY 10-19 / HOT_LEAD>=20"
-            echo "  Hinweis: VPS scrapt Avito (keine Azure-IP-Blockierung)"
-            echo "════════════════════════════════════════"
-
-            cd "$AGENT_DIR"
-
-            # ── Befehl zusammenbauen ──────────────────────────────────
-            CMD="node main.js"
-            CMD="$CMD --source $SOURCE"
-            CMD="$CMD --pages $PAGES"
-            CMD="$CMD --seller-type $SELLER_TYPE"
-            CMD="$CMD --min-score $MIN_SCORE"
-            CMD="$CMD --min-conversion $MIN_CONVERSION"
-            CMD="$CMD --min-saas $MIN_SAAS"
-            CMD="$CMD --min-products $MIN_PRODUCTS"
-
-            # Optionale Flags nur anhängen wenn gesetzt
-            [ "$HOT_ONLY" = "true" ]      && CMD="$CMD --hot-only"
-            [ -n "$CITY" ]                && CMD="$CMD --city \"$CITY\""
-            [ -n "$CATEGORY" ]            && CMD="$CMD --category \"$CATEGORY\""
-
-            echo "▶️  Ausführen: $CMD"
-            eval $CMD
-
-            echo ""
-            echo "📂 Letzte Output-Dateien:"
-            ls -lht "$AGENT_DIR/output/" | head -10
-
-            echo ""
-            echo "📊 Tier-Statistik aus letztem Lauf:"
-            ls -t "$AGENT_DIR/output/"*.csv 2>/dev/null | head -1 | xargs -I{} awk -F';' '
-              NR==1 { for(i=1;i<=NF;i++) if($i=="tier") col=i }
-              NR>1  { count[$col]++ }
-              END   { for(t in count) print "  " t ": " count[t] " Händler" }
-            ' {} 2>/dev/null || echo "  (CSV-Auswertung nicht verfügbar)"
-
-      - name: Prepare CSV for download
-        uses: appleboy/ssh-action@v1.2.2
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          script: |
-            OUTPUT_DIR="/opt/research-agent/output"
-
-            echo "════════════════════════════════════════"
-            echo "  📂 CSV-Verifikation"
-            echo "════════════════════════════════════════"
-            echo "  Output-Verzeichnis: $OUTPUT_DIR"
-            echo "  Alle Dateien:"
-            ls -lht "$OUTPUT_DIR" 2>/dev/null || echo "  (leer oder nicht vorhanden)"
-
-            # ── NUR REAL-CSVs akzeptieren (explizit nach *_REAL_*.csv suchen) ──
-            REAL_CSV=$(ls -t "$OUTPUT_DIR"/*_REAL_*.csv 2>/dev/null | head -1)
-            ANY_CSV=$(ls -t  "$OUTPUT_DIR"/*.csv 2>/dev/null | head -1)
-
-            echo ""
-            echo "  Neueste REAL-CSV:  ${REAL_CSV:-(keine gefunden)}"
-            echo "  Neueste ANY-CSV:   ${ANY_CSV:-(keine)}"
-
-            # ── Sicherheitscheck: neueste CSV ist DEMO oder ERROR? ─────────
-            if [ -z "$REAL_CSV" ]; then
-              # Kein REAL-File vorhanden – prüfen was da ist
-              if [ -n "$ANY_CSV" ]; then
-                DATA_SOURCE=$(grep '^# DATA_SOURCE=' "$ANY_CSV" 2>/dev/null | cut -d'=' -f2 | tr -d '[:space:]')
-                echo ""
-                echo "  ⚠️  Keine *_REAL_*.csv gefunden!"
-                echo "  Neueste verfügbare CSV: $ANY_CSV"
-                echo "  DATA_SOURCE dieser Datei: ${DATA_SOURCE:-(kein Metaheader – altes Format)}"
-                if [ "$DATA_SOURCE" = "DEMO" ]; then
-                  echo "  ❌ FEHLER: Neueste CSV ist eine DEMO-Datei!"
-                  echo "     Mögliche Ursache: jemand hat manuell --demo auf dem Server ausgeführt."
-                  echo "     Diese DEMO-CSV wird NICHT als Artifact hochgeladen."
-                elif [ "$DATA_SOURCE" = "ERROR" ]; then
-                  echo "  ❌ FEHLER: Neueste CSV ist eine ERROR-Datei (Scraper fand keine Leads)."
-                else
-                  echo "  ⚠️  CSV ohne REAL-Markierung (altes Format vor Refactoring)."
-                fi
-              else
-                echo ""
-                echo "  ❌ FEHLER: Keine CSV-Datei im Output-Verzeichnis gefunden."
-                echo "     Prüfe ob node main.js erfolgreich war (Exit-Code, Logs)."
-              fi
-              # Fehler-CSV schreiben (einheitliches Format)
-              {
-                echo '# MARKT_MA_LEADS_CSV_V2'
-                echo '# DATA_SOURCE=ERROR'
-                echo "# GENERATED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-                echo '# TOTAL_LEADS=0'
-                echo '# DEMO_MODE=false'
-                echo "# ERROR_REASON=Keine REAL-CSV gefunden (DEMO/ERROR/altes Format vorhanden)"
-                echo '"Status";"Nachricht";"Zeitpunkt"'
-                echo "\"ERROR\";\"Keine echten Leads gefunden\";\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\""
-              } > /tmp/latest-leads.csv
-              echo "  ❌ Fehler-CSV nach /tmp/latest-leads.csv geschrieben"
-              exit 1
-            fi
-
-            # ── REAL-CSV gefunden – vollständige Verifikation ──────────────
-            echo ""
-            echo "  ✅ REAL-CSV gefunden: $REAL_CSV"
-            echo "  Absoluter Pfad:  $(realpath $REAL_CSV)"
-            echo "  Dateigröße:      $(du -h $REAL_CSV | cut -f1) ($(wc -c < $REAL_CSV) Bytes)"
-            echo "  Geändert:        $(stat -c '%y' $REAL_CSV 2>/dev/null || stat -f '%Sm' $REAL_CSV 2>/dev/null)"
-
-            # ── Metadaten aus CSV lesen ─────────────────────────────────────
-            echo ""
-            echo "  📋 CSV-Metadaten:"
-            grep '^#' "$REAL_CSV" | while IFS= read -r line; do echo "    $line"; done
-
-            DATA_SOURCE=$(grep '^# DATA_SOURCE=' "$REAL_CSV" | cut -d'=' -f2 | tr -d '[:space:]')
-            DEMO_MODE=$(grep '^# DEMO_MODE='   "$REAL_CSV" | cut -d'=' -f2 | tr -d '[:space:]')
-            TOTAL_LEADS=$(grep '^# TOTAL_LEADS=' "$REAL_CSV" | cut -d'=' -f2 | tr -d '[:space:]')
-
-            echo ""
-            echo "  ── Verifikationsergebnis ─────────────────────────────────"
-            echo "  DATA_SOURCE:  $DATA_SOURCE"
-            echo "  DEMO_MODE:    $DEMO_MODE"
-            echo "  TOTAL_LEADS:  $TOTAL_LEADS"
-
-            # Abbruch wenn doch DEMO oder ERROR
-            if [ "$DATA_SOURCE" != "REAL" ]; then
-              echo "  ❌ KRITISCHER FEHLER: DATA_SOURCE ist '$DATA_SOURCE', nicht 'REAL'!"
-              echo "     Diese CSV wird NICHT hochgeladen."
-              exit 1
-            fi
-            if [ "$DEMO_MODE" = "true" ]; then
-              echo "  ❌ KRITISCHER FEHLER: DEMO_MODE=true in angeblicher REAL-CSV!"
-              exit 1
-            fi
-            echo "  ✅ Verifikation bestanden: echte Leads-CSV"
-
-            # ── Datenzeilen zählen ─────────────────────────────────────────
-            DATA_ROWS=$(grep -c -v '^#' "$REAL_CSV" 2>/dev/null || echo 0)
-            DATA_ROWS=$((DATA_ROWS - 1))   # minus Header-Zeile
-            echo "  Datenzeilen:  $DATA_ROWS (ohne Header, ohne Kommentare)"
-
-            # ── Erste 5 Datenzeilen direkt vom Server ──────────────────────
-            echo ""
-            echo "  📄 Erste 5 Datenzeilen direkt vom Server (vor SCP-Download):"
-            grep -v '^#' "$REAL_CSV" | head -6 | nl -ba | while IFS= read -r line; do
-              echo "    ${line:0:140}$([ ${#line} -gt 140 ] && echo '…' || echo '')"
-            done
-
-            # ── Source-Verteilung ───────────────────────────────────────────
-            echo ""
-            echo "  📊 Source-Verteilung:"
-            HEADER_LINE=$(grep -v '^#' "$REAL_CSV" | head -1)
-            SOURCE_COL=$(echo "$HEADER_LINE" | tr ';' '\n' | grep -n '"Quelle"' | head -1 | cut -d: -f1)
-            if [ -n "$SOURCE_COL" ]; then
-              grep -v '^#' "$REAL_CSV" | tail -n +2 | cut -d';' -f"$SOURCE_COL" | tr -d '"' | sort | uniq -c | sort -rn | \
-                while read count src; do echo "    $src: $count Händler"; done
-            else
-              echo "    (Quelle-Spalte nicht gefunden)"
-            fi
-
-            # ── Tier-Verteilung ────────────────────────────────────────────
-            echo ""
-            echo "  🏷️  Tier-Verteilung:"
-            TIER_COL=$(echo "$HEADER_LINE" | tr ';' '\n' | grep -n '"Tier-Label"' | head -1 | cut -d: -f1)
-            if [ -n "$TIER_COL" ]; then
-              grep -v '^#' "$REAL_CSV" | tail -n +2 | cut -d';' -f"$TIER_COL" | tr -d '"' | sort | uniq -c | sort -rn | \
-                while read count tier; do echo "    $tier: $count Händler"; done
-            else
-              echo "    (Tier-Spalte nicht gefunden)"
-            fi
-
-            # ── Import-Status ──────────────────────────────────────────────
-            IMPORT_COL=$(echo "$HEADER_LINE" | tr ';' '\n' | grep -n '"Import-bereit?"' | head -1 | cut -d: -f1)
-            if [ -n "$IMPORT_COL" ]; then
-              IMPORT_READY=$(grep -v '^#' "$REAL_CSV" | tail -n +2 | cut -d';' -f"$IMPORT_COL" | tr -d '"' | grep -c 'JA' || echo 0)
-              echo ""
-              echo "  🚀 Import-bereite HOT_LEADs: $IMPORT_READY"
-            fi
-
-            echo "════════════════════════════════════════"
-
-            # CSV für Download bereitstellen
-            cp "$REAL_CSV" /tmp/latest-leads.csv
-            echo "✅ REAL-CSV nach /tmp/latest-leads.csv kopiert"
-            echo "   $(wc -l < /tmp/latest-leads.csv) Zeilen gesamt"
-
-      - name: Download latest CSV from VPS
-        run: |
-          mkdir -p ~/.ssh leads-output
-          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/vps_dl_key
-          chmod 600 ~/.ssh/vps_dl_key
-          scp -i ~/.ssh/vps_dl_key \
-              -P "${{ secrets.VPS_PORT }}" \
-              -o StrictHostKeyChecking=no \
-              -o ConnectTimeout=30 \
-              "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/tmp/latest-leads.csv" \
-              "./leads-output/latest-leads.csv"
-          rm ~/.ssh/vps_dl_key
-          echo "✅ CSV erfolgreich heruntergeladen:"
-          ls -lh leads-output/latest-leads.csv
-
-      - name: Upload CSV als GitHub Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: markt-ma-leads-${{ github.run_number }}-${{ github.run_attempt }}
-          path: ./leads-output/latest-leads.csv
-          retention-days: 30
-          if-no-files-found: warn
+#name: Research Agent – Deploy & Cron
+#
+#on:
+#  workflow_dispatch:
+#    inputs:
+#      run_now:
+#        description: 'Jetzt direkt einen Scraping-Lauf starten?'
+#        required: false
+#        default: 'false'
+#        type: choice
+#        options: ['false', 'true']
+#      source:
+#        description: 'Quelle (all / avito / opensooq / jumia / instagram)'
+#        required: false
+#        default: 'avito'
+#        type: choice
+#        options: ['avito', 'all', 'opensooq', 'jumia', 'instagram']
+#      hot_only:
+#        description: 'Nur HOT_LEAD-Händler (≥ 20 Produkte) scrapen + Produktbilder?'
+#        required: false
+#        default: 'false'
+#        type: choice
+#        options: ['false', 'true']
+#      min_saas:
+#        description: 'Mindest-SaaS-Fit-Score (0–100) – 0 = kein Filter'
+#        required: false
+#        default: '0'
+#      min_score:
+#        description: 'Mindest-Lead-Score (0–100) – 0 = alle anzeigen'
+#        required: false
+#        default: '0'
+#      min_conversion:
+#        description: 'Mindest-Conversion-Score (0–100) – 0 = kein Filter'
+#        required: false
+#        default: '0'
+#      min_products:
+#        description: 'Mindest-Produktanzahl pro Händler – 0 = kein Filter'
+#        required: false
+#        default: '0'
+#      seller_type:
+#        description: 'Händlertyp filtern (all / business / individual)'
+#        required: false
+#        default: 'all'
+#        type: choice
+#        options: ['all', 'business', 'individual']
+#      city:
+#        description: 'Stadt filtern (leer = alle Städte)'
+#        required: false
+#        default: ''
+#      category:
+#        description: 'Kategorie filtern (leer = alle Kategorien)'
+#        required: false
+#        default: ''
+#      pages:
+#        description: 'Anzahl Suchergebnis-Seiten pro Kategorie (1–10)'
+#        required: false
+#        default: '3'
+#      top:
+#        description: 'Top-N Händler in der Ausgabe anzeigen'
+#        required: false
+#        default: '20'
+#
+#  # Täglich um 05:00 UTC (= 06:00 Marokko-Zeit) automatisch
+#  schedule:
+#    - cron: '0 5 * * *'
+#
+#jobs:
+#  # ══════════════════════════════════════════════════════════════
+#  # JOB 1: Research-Agent auf VPS deployen (Dateien + npm install)
+#  # ══════════════════════════════════════════════════════════════
+#  deploy-agent:
+#    name: Deploy Research Agent
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - name: Checkout Code
+#        uses: actions/checkout@v3
+#
+#      - name: Upload research-agent to VPS
+#        run: |
+#          mkdir -p ~/.ssh
+#          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+#          chmod 600 ~/.ssh/deploy_key
+#          # rsync: synchronisiert research-agent/ nach /opt/research-agent/ auf dem VPS
+#          rsync -az --delete \
+#            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.VPS_PORT }} -o StrictHostKeyChecking=no" \
+#            research-agent/ \
+#            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/research-agent/"
+#          rm -f ~/.ssh/deploy_key
+#          echo "✅ research-agent/ erfolgreich auf VPS übertragen"
+#
+#      - name: Setup on VPS (Node.js + npm install + Cron)
+#        uses: appleboy/ssh-action@v1.2.2
+#        with:
+#          host: ${{ secrets.VPS_HOST }}
+#          username: ${{ secrets.VPS_USER }}
+#          key: ${{ secrets.VPS_SSH_KEY }}
+#          port: ${{ secrets.VPS_PORT }}
+#          command_timeout: 10m
+#          script: |
+#            set -e
+#            echo "════════════════════════════════════════"
+#            echo "  🏪 Research Agent – VPS Setup"
+#            echo "  Tier-System: IGNORED/BASIC/PRIORITY/HOT_LEAD"
+#            echo "════════════════════════════════════════"
+#
+#            AGENT_DIR="/opt/research-agent"
+#            LOG_DIR="$AGENT_DIR/logs"
+#
+#            # ── Node.js installieren falls nicht vorhanden ──────────────
+#            if ! command -v node &>/dev/null; then
+#              echo "📦 Node.js nicht gefunden – installiere v20 LTS..."
+#              curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - 2>/dev/null
+#              sudo apt-get install -y nodejs 2>/dev/null
+#              echo "✅ Node.js $(node --version) installiert"
+#            else
+#              echo "✅ Node.js $(node --version) bereits vorhanden"
+#            fi
+#
+#            if ! command -v npm &>/dev/null; then
+#              sudo apt-get install -y npm 2>/dev/null || true
+#            fi
+#            echo "✅ npm $(npm --version)"
+#
+#            mkdir -p "$AGENT_DIR/output"
+#            mkdir -p "$LOG_DIR"
+#
+#            echo "📦 npm install..."
+#            cd "$AGENT_DIR"
+#            npm install --production --silent
+#            echo "✅ Dependencies installiert"
+#
+#            chmod +x "$AGENT_DIR/main.js" 2>/dev/null || true
+#
+#            # ── Cron-Job: täglich 06:00 Marokko-Zeit ──────────────────
+#            # Standard-Lauf: alle Quellen, nur IGNORED herausfiltern,
+#            # HOT_LEADs bekommen automatisch Produktbilder (im Scraper)
+#            # WICHTIG: $LOG_DIR als Literalpfad – Shell-Variablen sind zur Cron-Laufzeit nicht verfügbar!
+#            CRON_LOG="/opt/research-agent/logs/cron.log"
+#            CRON_CMD="cd /opt/research-agent && /usr/bin/node main.js"
+#            CRON_CMD="$CRON_CMD --source all"
+#            CRON_CMD="$CRON_CMD --pages 3"
+#            CRON_CMD="$CRON_CMD --seller-type all"
+#            CRON_CMD="$CRON_CMD --min-score 0"
+#            CRON_CMD="$CRON_CMD --min-conversion 0"
+#            CRON_CMD="$CRON_CMD --min-saas 0"
+#            CRON_CMD="$CRON_CMD --min-products 0"
+#            CRON_CMD="$CRON_CMD --top 20"
+#            CRON_CMD="$CRON_CMD --output /opt/research-agent/output"
+#            CRON_CMD="$CRON_CMD >> $CRON_LOG 2>&1"
+#
+#            CRON_JOB="0 5 * * * $CRON_CMD"
+#            CRON_MARKER="research-agent-daily"
+#
+#            (crontab -l 2>/dev/null | grep -v "$CRON_MARKER" || true) > /tmp/crontab_new
+#            echo "# $CRON_MARKER" >> /tmp/crontab_new
+#            echo "$CRON_JOB" >> /tmp/crontab_new
+#            crontab /tmp/crontab_new
+#            rm /tmp/crontab_new
+#
+#            echo "✅ Cron-Job eingerichtet: täglich 06:00 Marokko-Zeit"
+#            echo "   Tier-System aktiv: IGNORED <5 / BASIC 5-9 / PRIORITY 10-19 / HOT_LEAD ≥20"
+#            echo ""
+#            echo "📋 Aktuelle Crontab:"
+#            crontab -l
+#
+#  # ══════════════════════════════════════════════════════════════
+#  # JOB 2: Sofort-Lauf (manuell mit run_now=true oder täglich via schedule)
+#  # ══════════════════════════════════════════════════════════════
+#  run-agent:
+#    name: Run Scraping Now
+#    runs-on: ubuntu-latest
+#    needs: deploy-agent
+#    if: github.event_name == 'schedule' || github.event.inputs.run_now == 'true'
+#
+#    steps:
+#      - name: Run Research Agent on VPS
+#        uses: appleboy/ssh-action@v1.2.2
+#        with:
+#          host: ${{ secrets.VPS_HOST }}
+#          username: ${{ secrets.VPS_USER }}
+#          key: ${{ secrets.VPS_SSH_KEY }}
+#          port: ${{ secrets.VPS_PORT }}
+#          command_timeout: 45m
+#          script: |
+#            AGENT_DIR="/opt/research-agent"
+#            OUTPUT_DIR="$AGENT_DIR/output"
+#
+#            # ── SICHERHEITSPRÜFUNG: Demo-/Error-CSVs aus Output entfernen ─
+#            # Verhindert dass ls -t die falsche (DEMO/ERROR) CSV zurückgibt
+#            echo "🧹 Bereinige alte DEMO/ERROR-CSVs aus $OUTPUT_DIR ..."
+#            find "$OUTPUT_DIR" -name "*_DEMO_*.csv" -delete 2>/dev/null && echo "   DEMO-CSVs entfernt" || true
+#            find "$OUTPUT_DIR" -name "*_ERROR_*.csv" -delete 2>/dev/null && echo "   ERROR-CSVs entfernt" || true
+#            # Alte CSVs ohne REAL/DEMO-Markierung (vor dem Refactoring) archivieren
+#            OLD_CSV_COUNT=$(find "$OUTPUT_DIR" -name "markt-ma-leads_*.csv" | wc -l)
+#            if [ "$OLD_CSV_COUNT" -gt 0 ]; then
+#              mkdir -p "$OUTPUT_DIR/archive"
+#              find "$OUTPUT_DIR" -maxdepth 1 -name "markt-ma-leads_*.csv" -exec mv {} "$OUTPUT_DIR/archive/" \;
+#              echo "   $OLD_CSV_COUNT alte CSVs (ohne REAL-Markierung) nach archive/ verschoben"
+#            fi
+#            echo "   Output-Verzeichnis nach Bereinigung:"
+#            ls -lht "$OUTPUT_DIR"/*.csv 2>/dev/null || echo "   (keine CSVs mehr vorhanden)"
+#
+#            # ── Parameter aus Workflow-Input (mit Defaults für schedule) ──
+#            SOURCE="${{ github.event.inputs.source || 'all' }}"
+#            HOT_ONLY="${{ github.event.inputs.hot_only || 'false' }}"
+#            MIN_SAAS="${{ github.event.inputs.min_saas || '0' }}"
+#            MIN_SCORE="${{ github.event.inputs.min_score || '0' }}"
+#            MIN_CONVERSION="${{ github.event.inputs.min_conversion || '0' }}"
+#            MIN_PRODUCTS="${{ github.event.inputs.min_products || '0' }}"
+#            SELLER_TYPE="${{ github.event.inputs.seller_type || 'all' }}"
+#            CITY="${{ github.event.inputs.city || '' }}"
+#            CATEGORY="${{ github.event.inputs.category || '' }}"
+#            PAGES="${{ github.event.inputs.pages || '3' }}"
+#            TOP="${{ github.event.inputs.top || '20' }}"
+#
+#            # ── Diagnostic Probe vor dem echten Scraping ───────────────────
+#            echo ""
+#            echo "🔬 Starte Avito Diagnostic Probe (auf dem VPS, nicht GH-Actions-IP)..."
+#            cd "$AGENT_DIR"
+#            node scripts/diagnose-avito.js 2>&1 || echo "⚠️  Diagnostic fehlgeschlagen (ignoriert)"
+#
+#            echo "════════════════════════════════════════"
+#            echo "  🔍 Research Agent – Scraping Start"
+#            echo "  Quelle:       $SOURCE"
+#            echo "  Nur Hot Leads: $HOT_ONLY"
+#            echo "  Min SaaS-Fit: $MIN_SAAS"
+#            echo "  Min Score:    $MIN_SCORE"
+#            echo "  Min Conv.:    $MIN_CONVERSION"
+#            echo "  Min Produkte: $MIN_PRODUCTS"
+#            echo "  Händlertyp:   $SELLER_TYPE"
+#            echo "  Stadt:        ${CITY:-(alle)}"
+#            echo "  Kategorie:    ${CATEGORY:-(alle)}"
+#            echo "  Seiten:       $PAGES"
+#            echo "  Top-N:        $TOP"
+#            echo "  Zeitpunkt:    $(date '+%Y-%m-%d %H:%M:%S')"
+#            echo "  Tier-System:  IGNORED<5 / BASIC 5-9 / PRIORITY 10-19 / HOT_LEAD>=20"
+#            echo "  Hinweis: VPS scrapt Avito (keine Azure-IP-Blockierung)"
+#            echo "════════════════════════════════════════"
+#
+#            cd "$AGENT_DIR"
+#
+#            # ── Befehl zusammenbauen ──────────────────────────────────
+#            CMD="node main.js"
+#            CMD="$CMD --source $SOURCE"
+#            CMD="$CMD --pages $PAGES"
+#            CMD="$CMD --seller-type $SELLER_TYPE"
+#            CMD="$CMD --min-score $MIN_SCORE"
+#            CMD="$CMD --min-conversion $MIN_CONVERSION"
+#            CMD="$CMD --min-saas $MIN_SAAS"
+#            CMD="$CMD --min-products $MIN_PRODUCTS"
+#
+#            # Optionale Flags nur anhängen wenn gesetzt
+#            [ "$HOT_ONLY" = "true" ]      && CMD="$CMD --hot-only"
+#            [ -n "$CITY" ]                && CMD="$CMD --city \"$CITY\""
+#            [ -n "$CATEGORY" ]            && CMD="$CMD --category \"$CATEGORY\""
+#
+#            echo "▶️  Ausführen: $CMD"
+#            eval $CMD
+#
+#            echo ""
+#            echo "📂 Letzte Output-Dateien:"
+#            ls -lht "$AGENT_DIR/output/" | head -10
+#
+#            echo ""
+#            echo "📊 Tier-Statistik aus letztem Lauf:"
+#            ls -t "$AGENT_DIR/output/"*.csv 2>/dev/null | head -1 | xargs -I{} awk -F';' '
+#              NR==1 { for(i=1;i<=NF;i++) if($i=="tier") col=i }
+#              NR>1  { count[$col]++ }
+#              END   { for(t in count) print "  " t ": " count[t] " Händler" }
+#            ' {} 2>/dev/null || echo "  (CSV-Auswertung nicht verfügbar)"
+#
+#      - name: Prepare CSV for download
+#        uses: appleboy/ssh-action@v1.2.2
+#        with:
+#          host: ${{ secrets.VPS_HOST }}
+#          username: ${{ secrets.VPS_USER }}
+#          key: ${{ secrets.VPS_SSH_KEY }}
+#          port: ${{ secrets.VPS_PORT }}
+#          script: |
+#            OUTPUT_DIR="/opt/research-agent/output"
+#
+#            echo "════════════════════════════════════════"
+#            echo "  📂 CSV-Verifikation"
+#            echo "════════════════════════════════════════"
+#            echo "  Output-Verzeichnis: $OUTPUT_DIR"
+#            echo "  Alle Dateien:"
+#            ls -lht "$OUTPUT_DIR" 2>/dev/null || echo "  (leer oder nicht vorhanden)"
+#
+#            # ── NUR REAL-CSVs akzeptieren (explizit nach *_REAL_*.csv suchen) ──
+#            REAL_CSV=$(ls -t "$OUTPUT_DIR"/*_REAL_*.csv 2>/dev/null | head -1)
+#            ANY_CSV=$(ls -t  "$OUTPUT_DIR"/*.csv 2>/dev/null | head -1)
+#
+#            echo ""
+#            echo "  Neueste REAL-CSV:  ${REAL_CSV:-(keine gefunden)}"
+#            echo "  Neueste ANY-CSV:   ${ANY_CSV:-(keine)}"
+#
+#            # ── Sicherheitscheck: neueste CSV ist DEMO oder ERROR? ─────────
+#            if [ -z "$REAL_CSV" ]; then
+#              # Kein REAL-File vorhanden – prüfen was da ist
+#              if [ -n "$ANY_CSV" ]; then
+#                DATA_SOURCE=$(grep '^# DATA_SOURCE=' "$ANY_CSV" 2>/dev/null | cut -d'=' -f2 | tr -d '[:space:]')
+#                echo ""
+#                echo "  ⚠️  Keine *_REAL_*.csv gefunden!"
+#                echo "  Neueste verfügbare CSV: $ANY_CSV"
+#                echo "  DATA_SOURCE dieser Datei: ${DATA_SOURCE:-(kein Metaheader – altes Format)}"
+#                if [ "$DATA_SOURCE" = "DEMO" ]; then
+#                  echo "  ❌ FEHLER: Neueste CSV ist eine DEMO-Datei!"
+#                  echo "     Mögliche Ursache: jemand hat manuell --demo auf dem Server ausgeführt."
+#                  echo "     Diese DEMO-CSV wird NICHT als Artifact hochgeladen."
+#                elif [ "$DATA_SOURCE" = "ERROR" ]; then
+#                  echo "  ❌ FEHLER: Neueste CSV ist eine ERROR-Datei (Scraper fand keine Leads)."
+#                else
+#                  echo "  ⚠️  CSV ohne REAL-Markierung (altes Format vor Refactoring)."
+#                fi
+#              else
+#                echo ""
+#                echo "  ❌ FEHLER: Keine CSV-Datei im Output-Verzeichnis gefunden."
+#                echo "     Prüfe ob node main.js erfolgreich war (Exit-Code, Logs)."
+#              fi
+#              # Fehler-CSV schreiben (einheitliches Format)
+#              {
+#                echo '# MARKT_MA_LEADS_CSV_V2'
+#                echo '# DATA_SOURCE=ERROR'
+#                echo "# GENERATED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+#                echo '# TOTAL_LEADS=0'
+#                echo '# DEMO_MODE=false'
+#                echo "# ERROR_REASON=Keine REAL-CSV gefunden (DEMO/ERROR/altes Format vorhanden)"
+#                echo '"Status";"Nachricht";"Zeitpunkt"'
+#                echo "\"ERROR\";\"Keine echten Leads gefunden\";\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\""
+#              } > /tmp/latest-leads.csv
+#              echo "  ❌ Fehler-CSV nach /tmp/latest-leads.csv geschrieben"
+#              exit 1
+#            fi
+#
+#            # ── REAL-CSV gefunden – vollständige Verifikation ──────────────
+#            echo ""
+#            echo "  ✅ REAL-CSV gefunden: $REAL_CSV"
+#            echo "  Absoluter Pfad:  $(realpath $REAL_CSV)"
+#            echo "  Dateigröße:      $(du -h $REAL_CSV | cut -f1) ($(wc -c < $REAL_CSV) Bytes)"
+#            echo "  Geändert:        $(stat -c '%y' $REAL_CSV 2>/dev/null || stat -f '%Sm' $REAL_CSV 2>/dev/null)"
+#
+#            # ── Metadaten aus CSV lesen ─────────────────────────────────────
+#            echo ""
+#            echo "  📋 CSV-Metadaten:"
+#            grep '^#' "$REAL_CSV" | while IFS= read -r line; do echo "    $line"; done
+#
+#            DATA_SOURCE=$(grep '^# DATA_SOURCE=' "$REAL_CSV" | cut -d'=' -f2 | tr -d '[:space:]')
+#            DEMO_MODE=$(grep '^# DEMO_MODE='   "$REAL_CSV" | cut -d'=' -f2 | tr -d '[:space:]')
+#            TOTAL_LEADS=$(grep '^# TOTAL_LEADS=' "$REAL_CSV" | cut -d'=' -f2 | tr -d '[:space:]')
+#
+#            echo ""
+#            echo "  ── Verifikationsergebnis ─────────────────────────────────"
+#            echo "  DATA_SOURCE:  $DATA_SOURCE"
+#            echo "  DEMO_MODE:    $DEMO_MODE"
+#            echo "  TOTAL_LEADS:  $TOTAL_LEADS"
+#
+#            # Abbruch wenn doch DEMO oder ERROR
+#            if [ "$DATA_SOURCE" != "REAL" ]; then
+#              echo "  ❌ KRITISCHER FEHLER: DATA_SOURCE ist '$DATA_SOURCE', nicht 'REAL'!"
+#              echo "     Diese CSV wird NICHT hochgeladen."
+#              exit 1
+#            fi
+#            if [ "$DEMO_MODE" = "true" ]; then
+#              echo "  ❌ KRITISCHER FEHLER: DEMO_MODE=true in angeblicher REAL-CSV!"
+#              exit 1
+#            fi
+#            echo "  ✅ Verifikation bestanden: echte Leads-CSV"
+#
+#            # ── Datenzeilen zählen ─────────────────────────────────────────
+#            DATA_ROWS=$(grep -c -v '^#' "$REAL_CSV" 2>/dev/null || echo 0)
+#            DATA_ROWS=$((DATA_ROWS - 1))   # minus Header-Zeile
+#            echo "  Datenzeilen:  $DATA_ROWS (ohne Header, ohne Kommentare)"
+#
+#            # ── Erste 5 Datenzeilen direkt vom Server ──────────────────────
+#            echo ""
+#            echo "  📄 Erste 5 Datenzeilen direkt vom Server (vor SCP-Download):"
+#            grep -v '^#' "$REAL_CSV" | head -6 | nl -ba | while IFS= read -r line; do
+#              echo "    ${line:0:140}$([ ${#line} -gt 140 ] && echo '…' || echo '')"
+#            done
+#
+#            # ── Source-Verteilung ───────────────────────────────────────────
+#            echo ""
+#            echo "  📊 Source-Verteilung:"
+#            HEADER_LINE=$(grep -v '^#' "$REAL_CSV" | head -1)
+#            SOURCE_COL=$(echo "$HEADER_LINE" | tr ';' '\n' | grep -n '"Quelle"' | head -1 | cut -d: -f1)
+#            if [ -n "$SOURCE_COL" ]; then
+#              grep -v '^#' "$REAL_CSV" | tail -n +2 | cut -d';' -f"$SOURCE_COL" | tr -d '"' | sort | uniq -c | sort -rn | \
+#                while read count src; do echo "    $src: $count Händler"; done
+#            else
+#              echo "    (Quelle-Spalte nicht gefunden)"
+#            fi
+#
+#            # ── Tier-Verteilung ────────────────────────────────────────────
+#            echo ""
+#            echo "  🏷️  Tier-Verteilung:"
+#            TIER_COL=$(echo "$HEADER_LINE" | tr ';' '\n' | grep -n '"Tier-Label"' | head -1 | cut -d: -f1)
+#            if [ -n "$TIER_COL" ]; then
+#              grep -v '^#' "$REAL_CSV" | tail -n +2 | cut -d';' -f"$TIER_COL" | tr -d '"' | sort | uniq -c | sort -rn | \
+#                while read count tier; do echo "    $tier: $count Händler"; done
+#            else
+#              echo "    (Tier-Spalte nicht gefunden)"
+#            fi
+#
+#            # ── Import-Status ──────────────────────────────────────────────
+#            IMPORT_COL=$(echo "$HEADER_LINE" | tr ';' '\n' | grep -n '"Import-bereit?"' | head -1 | cut -d: -f1)
+#            if [ -n "$IMPORT_COL" ]; then
+#              IMPORT_READY=$(grep -v '^#' "$REAL_CSV" | tail -n +2 | cut -d';' -f"$IMPORT_COL" | tr -d '"' | grep -c 'JA' || echo 0)
+#              echo ""
+#              echo "  🚀 Import-bereite HOT_LEADs: $IMPORT_READY"
+#            fi
+#
+#            echo "════════════════════════════════════════"
+#
+#            # CSV für Download bereitstellen
+#            cp "$REAL_CSV" /tmp/latest-leads.csv
+#            echo "✅ REAL-CSV nach /tmp/latest-leads.csv kopiert"
+#            echo "   $(wc -l < /tmp/latest-leads.csv) Zeilen gesamt"
+#
+#      - name: Download latest CSV from VPS
+#        run: |
+#          mkdir -p ~/.ssh leads-output
+#          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/vps_dl_key
+#          chmod 600 ~/.ssh/vps_dl_key
+#          scp -i ~/.ssh/vps_dl_key \
+#              -P "${{ secrets.VPS_PORT }}" \
+#              -o StrictHostKeyChecking=no \
+#              -o ConnectTimeout=30 \
+#              "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/tmp/latest-leads.csv" \
+#              "./leads-output/latest-leads.csv"
+#          rm ~/.ssh/vps_dl_key
+#          echo "✅ CSV erfolgreich heruntergeladen:"
+#          ls -lh leads-output/latest-leads.csv
+#
+#      - name: Upload CSV als GitHub Artifact
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: markt-ma-leads-${{ github.run_number }}-${{ github.run_attempt }}
+#          path: ./leads-output/latest-leads.csv
+#          retention-days: 30
+#          if-no-files-found: warn
