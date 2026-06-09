@@ -309,6 +309,13 @@ export const routes: Routes = [
     path: 'storefront-landing',
     loadComponent: () => import('./features/storefront/storefront-landing.component').then(m => m.StorefrontLandingComponent)
   },
+  // ── Native App: Store via Slug öffnen (/s/:slug) ─────────────────────────
+  // Für Capacitor (Android/iOS): Da es keine Subdomains gibt, wird der Store
+  // über diesen Route-Parameter geöffnet (z.B. via Deep Link oder QR-Code).
+  {
+    path: 's/:slug',
+    loadComponent: () => import('./features/storefront/storefront-landing.component').then(m => m.StorefrontLandingComponent)
+  },
   // ── Öffentliche Produkt-Detailseite (Subdomain-Storefront) ──────────
   // Muss VOR dem Wildcard-Handler stehen, damit /products/:productId
   // nicht von ** abgefangen und als StorefrontLanding gerendert wird.

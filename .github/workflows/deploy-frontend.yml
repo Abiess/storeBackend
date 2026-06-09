@@ -52,9 +52,29 @@ jobs:
         env:
           npm_config_registry: https://registry.npmjs.org/
 
+      # ── Microsoft Clarity ID injizieren ────────────────────────────
+      # Ersetzt den Platzhalter in environment.prod.ts VOR dem Build.
+      # Leeres/fehlendes Secret → Platzhalter wird entfernt → Clarity deaktiviert.
+      - name: Inject CLARITY_ID into environment.prod.ts
+        run: |
+          CLARITY_VAL="${{ secrets.CLARITY_ID }}"
+          sed -i "s/__CLARITY_ID__/${CLARITY_VAL}/g" storeFrontend/src/environments/environment.prod.ts
+          echo "✅ Clarity ID injected: ${CLARITY_VAL:-<empty – Clarity disabled>}"
+          grep clarityId storeFrontend/src/environments/environment.prod.ts
+
       - name: Build Angular app
         working-directory: storeFrontend
         run: npm run build:prod
+
+      - name: Verify no unreplaced placeholders in dist
+        working-directory: storeFrontend
+        run: |
+          if grep -r "__CLARITY_ID__" dist/markt-ma-frontend/ --include="*.js" --include="*.html" -l 2>/dev/null; then
+            echo "❌ __CLARITY_ID__ Platzhalter noch im dist – sed-Schritt fehlgeschlagen!"
+            exit 1
+          else
+            echo "✅ Kein Platzhalter im dist – Build sauber"
+          fi
 
       - name: Create deployment package
         working-directory: storeFrontend

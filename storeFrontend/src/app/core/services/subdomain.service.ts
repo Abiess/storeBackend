@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, of, throwError } from 'rxjs';
 import { catchError, map, retry, delay, retryWhen, take, concat } from 'rxjs/operators';
 import { environment } from '@env/environment';
+import { PlatformService } from './platform.service';
 
 export interface SubdomainInfo {
   isSubdomain: boolean;
@@ -73,13 +74,28 @@ export class SubdomainService {
     'alpha'
   ];
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private platform: PlatformService) {}
 
   /**
    * Analysiert die aktuelle Domain und prüft ob es eine Subdomain ist
    */
   detectSubdomain(): SubdomainInfo {
     if (this.subdomainInfo) {
+      return this.subdomainInfo;
+    }
+
+    // ── NATIVE (Capacitor) ───────────────────────────────────────────────────
+    // Im App-Kontext ist hostname immer "localhost" → kein Subdomain-Check möglich.
+    // Store-Auswahl läuft über Route-Parameter (/s/:slug).
+    if (this.platform.isNative) {
+      console.log('📱 Native-Kontext erkannt – Subdomain-Check übersprungen');
+      this.subdomainInfo = {
+        isSubdomain: false,
+        subdomain: null,
+        storeId: null,
+        storeName: null,
+        slug: null
+      };
       return this.subdomainInfo;
     }
 

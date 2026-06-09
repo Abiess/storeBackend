@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { SubdomainService } from '@app/core/services/subdomain.service';
 import { ProductService } from '@app/core/services/product.service';
@@ -130,12 +130,27 @@ export class StorefrontLandingComponent implements OnInit {
     private whatsappConfig: WhatsappConfigService,
     private seoApi: SeoApiService,
     private seoMeta: SeoMetaService,
-    public router: Router  // public statt private für Template-Zugriff
+    public router: Router,
+    private route: ActivatedRoute   // ← für Native: /s/:slug Route-Param
   ) {}
 
   ngOnInit(): void {
     console.log('🏪 Storefront Landing: Initializing...');
     console.log('🌐 Current hostname:', window.location.hostname);
+
+    // ── Native App: Route-Param /s/:slug hat Vorrang vor Subdomain ──────────
+    const routeSlug = this.route.snapshot.paramMap.get('slug');
+    if (routeSlug) {
+      console.log('📱 Native Route-Slug erkannt:', routeSlug);
+      // Subdomain-Cache mit dem Route-Slug überschreiben, damit resolveStore() korrekt läuft
+      this.subdomainService['subdomainInfo'] = {
+        isSubdomain: true,
+        subdomain: routeSlug,
+        storeId: null,
+        storeName: null,
+        slug: routeSlug
+      };
+    }
 
     // NEUE: Prüfe zuerst, ob der Slug reserviert ist
     const info = this.subdomainService.detectSubdomain();

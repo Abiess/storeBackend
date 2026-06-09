@@ -44,8 +44,10 @@ export class ClarityService {
   constructor() {
     const env = environment as Record<string, any>;
     const raw: string = typeof env['clarityId'] === 'string' ? env['clarityId'].trim() : '';
-    // Platzhalter (nicht ersetztes Secret im Build) → als deaktiviert behandeln
-    this.clarityId = raw === '__CLARITY_ID__' ? '' : raw;
+    // Platzhalter-Erkennung ohne Literal-String im Bundle:
+    // Ein nicht ersetzter CI-Platzhalter hat immer das Muster __XYZ__ (Doppel-Underscore am Anfang und Ende).
+    const isUnreplacedPlaceholder = raw.startsWith('__') && raw.endsWith('__') && raw.length > 4;
+    this.clarityId = isUnreplacedPlaceholder ? '' : raw;
   }
 
   /**

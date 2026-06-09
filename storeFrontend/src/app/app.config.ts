@@ -26,6 +26,8 @@ import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
 import { TranslateHttpLoader, provideTranslateHttpLoader } from '@ngx-translate/http-loader';
 import { importProvidersFrom } from '@angular/core';
 import { LanguageService } from './core/services/language.service';
+import { provideServiceWorker } from '@angular/service-worker';
+import { isDevMode } from '@angular/core';
 
 // Registriere Locales für DatePipe, CurrencyPipe etc.
 registerLocaleData(localeDe, 'de-DE', localeDeExtra);
@@ -90,6 +92,12 @@ export const appConfig: ApplicationConfig = {
       provide: HTTP_INTERCEPTORS,
       useClass: ErrorInterceptor,
       multi: true
-    }
+    },
+    // Service Worker (PWA) – nur aktiv im Production Build
+    // Im Dev-Modus (ng serve) ist SW deaktiviert → kein Cache-Problem
+    provideServiceWorker('ngsw-worker.js', {
+      enabled: !isDevMode(),
+      registrationStrategy: 'registerWhenStable:30000'
+    })
   ]
 };
