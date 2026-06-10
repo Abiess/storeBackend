@@ -220,7 +220,30 @@
                                      "addValue":  "Wert hinzufügen"
                                  },
                     "aiAssistant":  "KI-Assistent",
-                    "aiIntro":  "Lassen Sie künstliche Intelligenz Produktinformationen aus Ihrem Bild generieren."
+                    "aiIntro":  "Lassen Sie künstliche Intelligenz Produktinformationen aus Ihrem Bild generieren.",
+                    "stock":  "Lagerbestand",
+                    "required":  {
+                                     "name":  "Bitte geben Sie einen Produktnamen ein",
+                                     "sku":  "Bitte geben Sie eine gültige SKU ein",
+                                     "description":  "Bitte geben Sie eine Beschreibung ein",
+                                     "price":  "Bitte geben Sie einen gültigen Preis ein",
+                                     "stock":  "Bitte geben Sie eine gültige Menge ein"
+                                 },
+                    "created":  "Produkt erfolgreich erstellt!",
+                    "updated":  "Produkt erfolgreich aktualisiert!",
+                    "error":  {
+                                  "load":  "Fehler beim Laden des Produkts",
+                                  "create":  "Fehler beim Erstellen des Produkts",
+                                  "update":  "Fehler beim Aktualisieren des Produkts"
+                              },
+                    "tab":  {
+                                "basic":  "Basis Info",
+                                "ai":  "KI-Assistent",
+                                "media":  "Bilder",
+                                "variants":  "Varianten",
+                                "saveFirst":  "Hinweis",
+                                "saveFirstHint":  "Bitte speichern Sie zuerst das Produkt. Danach können Sie Varianten hinzufügen."
+                            }
                 },
     "Basis Info":  "Basis Informationen",
     "KI-Assistent":  "KI-Assistent",
@@ -269,7 +292,8 @@
                  },
     "media":  {
                   "uploadImages":  "Bilder hochladen",
-                  "noMedia":  "Keine Medien vorhanden"
+                  "noMedia":  "Keine Medien vorhanden",
+                  "uploadError":  "Fehler beim Laden der Produktbilder"
               },
     "messages":  {
                      "maxFileSize":  "Maximale Dateigröße: {{size}}",
@@ -570,6 +594,9 @@
                    "delivered":  "Zugestellt",
                    "cancelled":  "Storniert"
                },
+    "validation":  {
+                       "required":  "Dieses Feld ist erforderlich"
+                   },
     "shipping":  {
                      "standard":  "Standard-Versand",
                      "standardHint":  "Lieferung in 3-5 Werktagen",

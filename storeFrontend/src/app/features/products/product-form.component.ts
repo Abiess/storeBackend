@@ -309,7 +309,7 @@ import { Subscription } from 'rxjs';
           <h2>🎨 Produktvarianten</h2>
           
           <p class="variants-hint">
-            💡 Verwalten Sie hier Ihre Produktvarianten. Passen Sie Preise, SKUs und LagerbestÃ¤nde individuell an.
+            💡 {{ 'product.variants.optionsHint' | translate }}
           </p>
 
           <!-- Verwende die funktionierende ProductVariantsManagerComponent -->
@@ -320,8 +320,8 @@ import { Subscription } from 'rxjs';
 
           <!-- Hinweis im Create-Modus -->
           <div *ngIf="!productId" class="info-banner">
-            ℹ️ <strong>Hinweis</strong>
-            <p>Bitte speichern Sie zuerst das Produkt. Danach kÃ¶nnen Sie Varianten hinzufÃ¼gen.</p>
+            ℹ️ <strong>{{ 'product.variants.saveFirst' | translate }}</strong>
+            <p>{{ 'product.variants.saveFirstHint' | translate }}</p>
           </div>
         </div>
 
@@ -1454,10 +1454,10 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   activeTab: 'basic' | 'ai' | 'media' | 'variants' = 'basic';
 
   tabs: Array<{ id: 'basic' | 'ai' | 'media' | 'variants', label: string, icon: string }> = [
-    { id: 'basic', label: 'Basis Info', icon: '📝' },
-    { id: 'ai', label: 'KI-Assistent', icon: '🤖' },
-    { id: 'media', label: 'Bilder', icon: '📷' },
-    { id: 'variants', label: 'Varianten', icon: '🎨' }
+    { id: 'basic', label: 'product.tab.basic', icon: '📝' },
+    { id: 'ai', label: 'product.tab.ai', icon: '🤖' },
+    { id: 'media', label: 'product.tab.media', icon: '📷' },
+    { id: 'variants', label: 'product.tab.variants', icon: '🎨' }
   ];
 
   private storeIdSubscription?: Subscription;

@@ -102,8 +102,32 @@
                                      "outOfStock":  "Out of Stock",
                                      "saveAll":  "Save All Variants",
                                      "addValue":  "Add Value"
-                                 }
+                                 },
+                    "stock":  "Stock",
+                    "required":  {
+                                     "name":  "Please enter a product name",
+                                     "sku":  "Please enter a valid SKU",
+                                     "description":  "Please enter a description",
+                                     "price":  "Please enter a valid price",
+                                     "stock":  "Please enter a valid quantity"
+                                 },
+                    "created":  "Product successfully created!",
+                    "updated":  "Product successfully updated!",
+                    "error":  {
+                                  "load":  "Error loading product",
+                                  "create":  "Error creating product",
+                                  "update":  "Error updating product"
+                              },
+                    "tab":  {
+                                "basic":  "Basic Info",
+                                "ai":  "AI Assistant",
+                                "media":  "Images",
+                                "variants":  "Variants",
+                                "saveFirst":  "Note",
+                                "saveFirstHint":  "Please save the product first. Then you can add variants."
+                            }
                 },
+    "KI-Assistent":  "AI Assistant",
     "Basis Info":  "Basic Information",
     "Preis \u0026 Lager":  "Price \u0026 Stock",
     "Varianten":  "Variants",
@@ -150,7 +174,8 @@
                  },
     "media":  {
                   "uploadImages":  "Upload images",
-                  "noMedia":  "No media available"
+                  "noMedia":  "No media available",
+                  "uploadError":  "Error loading product images"
               },
     "messages":  {
                      "maxFileSize":  "Maximum file size: {{size}}",
@@ -451,6 +476,9 @@
                    "delivered":  "Delivered",
                    "cancelled":  "Cancelled"
                },
+    "validation":  {
+                       "required":  "This field is required"
+                   },
     "shipping":  {
                      "standard":  "Standard shipping",
                      "standardHint":  "Delivery in 3-5 business days",
