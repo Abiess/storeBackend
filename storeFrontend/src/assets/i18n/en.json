@@ -136,10 +136,11 @@
                                   "sortorder":  "Lower values are displayed first"
                               },
                      "error":  {
-                                   "load":  "Error loading categories",
-                                   "create":  "Error creating category",
-                                   "update":  "Error updating category"
-                               },
+                                    "load":  "Error loading categories",
+                                    "create":  "Error creating category",
+                                    "update":  "Error updating category",
+                                    "storeContext":  "Error: Store context not available"
+                                },
                      "success":  {
                                      "created":  "Category created successfully!",
                                      "updated":  "Category updated successfully!"

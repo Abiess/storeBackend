@@ -436,7 +436,7 @@ export class CategoryFormComponent implements OnInit, OnDestroy {
     }
 
     if (this.storeId === null) {
-      this.errorMessage = 'Fehler: Store-Kontext nicht verfügbar';
+      this.errorMessage = this.translationService.translate('category.error.storeContext');
       return;
     }
 
@@ -453,7 +453,7 @@ export class CategoryFormComponent implements OnInit, OnDestroy {
       this.categoryService.updateCategory(this.storeId, this.categoryId, formData).subscribe({
         next: () => {
           this.saving = false;
-          this.successMessage = this.translationService.translate('category.updated');
+          this.successMessage = this.translationService.translate('category.success.updated');
           setTimeout(() => this.goBack(), 1500);
         },
         error: (error) => {
@@ -466,7 +466,7 @@ export class CategoryFormComponent implements OnInit, OnDestroy {
       this.categoryService.createCategory(this.storeId, formData).subscribe({
         next: () => {
           this.saving = false;
-          this.successMessage = this.translationService.translate('category.created');
+          this.successMessage = this.translationService.translate('category.success.created');
           setTimeout(() => this.goBack(), 1500);
         },
         error: (error) => {

@@ -255,10 +255,11 @@
                                   "sortorder":  "Niedrigere Werte werden zuerst angezeigt"
                               },
                      "error":  {
-                                   "load":  "Fehler beim Laden der Kategorien",
-                                   "create":  "Fehler beim Erstellen der Kategorie",
-                                   "update":  "Fehler beim Aktualisieren der Kategorie"
-                               },
+                                    "load":  "Fehler beim Laden der Kategorien",
+                                    "create":  "Fehler beim Erstellen der Kategorie",
+                                    "update":  "Fehler beim Aktualisieren der Kategorie",
+                                    "storeContext":  "Fehler: Store-Kontext nicht verfügbar"
+                                },
                      "success":  {
                                      "created":  "Kategorie erfolgreich erstellt!",
                                      "updated":  "Kategorie erfolgreich aktualisiert!"
