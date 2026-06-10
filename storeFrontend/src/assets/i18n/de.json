@@ -1546,8 +1546,7 @@
                                            "badgeSale":  "Sale",
                                             "badgeTopSeller":  "Top Seller"
                                         }
-                        }
-},
+                        },
     "productList":  {
                         "searchPlaceholder":   "Produkt suchen...",
                         "filterAll":           "Alle",
