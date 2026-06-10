@@ -1439,6 +1439,113 @@
                        "landingBadge":  "🇲🇦 NEU",
                        "landingText":  "Ohne E-Mail starten – nur WhatsApp oder Telegram",
                        "landingBtn":  "📱 In 2 Minuten loslegen →"
-                   }
+                   },
+    "storeCreateSimple":  {
+                              "step1":  {
+                                            "title":  "Deinen Store erstellen",
+                                            "subtitle":  "Starte in Minuten. Keine Kreditkarte erforderlich.",
+                                            "storeName":  "Store-Name",
+                                            "storeNamePlaceholder":  "z.B. Mein Mode Shop",
+                                            "storeNameRequired":  "Bitte gib einen Store-Namen ein",
+                                            "storeUrl":  "Store-URL",
+                                            "storeUrlOptional":  "Optional – wir generieren eine für dich",
+                                            "checking":  "Wird geprüft...",
+                                            "slugAvailable":  "✓ Verfügbar – {{slug}}.markt.ma",
+                                            "slugTaken":  "✗ Bereits vergeben. Bitte anderen wählen.",
+                                            "slugError":  "Nur Kleinbuchstaben, Zahlen und Bindestriche",
+                                            "continueBtn":  "Weiter: Bereich wählen"
+                                        },
+                              "step2":  {
+                                            "title":  "Was verkaufst du?",
+                                            "subtitle":  "Wähle dein Segment – wir passen deinen Store an. Du kannst das später ändern.",
+                                            "back":  "← Zurück",
+                                            "skip":  "Schritt überspringen",
+                                            "creating":  "Store wird erstellt...",
+                                            "create":  "Meinen Store erstellen →"
+                                        },
+                              "trust":  {
+                                            "freeToStart":  "⭐ Kostenlos starten",
+                                            "noCard":  "⭐ Keine Kreditkarte",
+                                            "setupMinutes":  "⭐ In Minuten fertig"
+                                        },
+                              "footer":  {
+                                             "alreadyHave":  "Bereits einen Store?",
+                                             "signIn":  "Anmelden"
+                                         },
+                              "errors":  {
+                                             "creationFailed":  "Store-Erstellung fehlgeschlagen. Bitte versuche es erneut.",
+                                             "general":  "Etwas ist schiefgelaufen. Bitte versuche es erneut."
+                                         },
+                              "categories":  {
+                                                 "fashion":     { "name":  "Mode & Bekleidung",        "description":  "Kleidung, Schuhe, Accessoires" },
+                                                 "electronics": { "name":  "Elektronik",               "description":  "Handys, Computer, Gadgets" },
+                                                 "food":        { "name":  "Lebensmittel & Getränke",  "description":  "Essen, Getränke, Snacks" },
+                                                 "beauty":      { "name":  "Beauty & Kosmetik",        "description":  "Makeup, Pflege, Düfte" },
+                                                 "home":        { "name":  "Haus & Garten",            "description":  "Möbel, Deko, Werkzeug" },
+                                                 "sports":      { "name":  "Sport & Freizeit",         "description":  "Ausrüstung, Outdoor, Fitness" },
+                                                 "books":       { "name":  "Bücher & Medien",          "description":  "Bücher, Filme, Musik" },
+                                                 "toys":        { "name":  "Spielzeug",                "description":  "Spielwaren für alle Altersgruppen" }
+                                             }
+                          },
+    "brandingEditor":  {
+                           "title":  "🎨 Branding \u0026 Design",
+                           "subtitle":  "Passen Sie das Erscheinungsbild Ihres Stores an",
+                           "logo":  {
+                                        "section":  "📷 Logo",
+                                        "label":  "Store Logo",
+                                        "retry":  "Erneut versuchen",
+                                        "uploading":  "Uploading... {{progress}}%",
+                                        "clickToUpload":  "Zum Hochladen klicken",
+                                        "hint":  "PNG, JPG, SVG (max 2MB)",
+                                        "errorImageOnly":  "Bitte nur Bild-Dateien hochladen (PNG, JPG, SVG)",
+                                        "errorTooLarge":  "Datei zu groß ({{size}}MB). Maximum: 2MB",
+                                        "errorNoStore":  "Fehler: Store-Kontext nicht verfügbar",
+                                        "errorUpload":  "Upload fehlgeschlagen. Bitte versuchen Sie es erneut."
+                                    },
+                           "colors":  {
+                                          "section":  "🎨 Farben",
+                                          "primary":  "Primärfarbe",
+                                          "primaryHint":  "Buttons, Links, Highlights",
+                                          "secondary":  "Sekundärfarbe",
+                                          "secondaryHint":  "Sekundäre Elemente",
+                                          "accent":  "Akzentfarbe",
+                                          "accentHint":  "Preise, Badges, Call-to-Action"
+                                      },
+                           "typography":  {
+                                              "section":  "📝 Typografie",
+                                              "font":  "Schriftart"
+                                          },
+                           "presets":  {
+                                           "section":  "⚡ Schnellvorlagen"
+                                       },
+                           "actions":  {
+                                           "reset":  "Zurücksetzen",
+                                           "saving":  "Speichern...",
+                                           "save":  "Änderungen speichern",
+                                           "waitUpload":  "Bitte warten Sie, bis der Upload abgeschlossen ist.",
+                                           "noStore":  "Fehler: Store-Kontext nicht verfügbar",
+                                           "saveSuccess":  "Branding erfolgreich gespeichert!",
+                                           "saveError":  "Fehler beim Speichern. Bitte versuchen Sie es erneut."
+                                       },
+                           "preview":  {
+                                           "title":  "👁️ Live Vorschau",
+                                           "hint":  "💡 Änderungen werden sofort in der Vorschau angezeigt",
+                                           "products":  "Produkte",
+                                           "categories":  "Kategorien",
+                                           "contact":  "Kontakt",
+                                           "cart":  "🛒 Warenkorb",
+                                           "welcome":  "Willkommen in Ihrem Store",
+                                           "welcomeDesc":  "Dies ist eine Vorschau wie Ihr Store aussehen wird.",
+                                           "primaryBtn":  "Primär Button",
+                                           "secondaryBtn":  "Sekundär Button",
+                                           "sampleProduct1":  "Beispiel Produkt",
+                                           "sampleProduct2":  "Beispiel Produkt 2",
+                                           "sampleProductDesc":  "Produktbeschreibung",
+                                           "addToCart":  "+ Warenkorb",
+                                           "badgeNew":  "Neu",
+                                           "badgeSale":  "Sale",
+                                           "badgeTopSeller":  "Top Seller"
+                                       }
+                       }
 }
 

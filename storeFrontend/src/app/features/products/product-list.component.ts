@@ -5,6 +5,7 @@ import { ProductService } from '@app/core/services/product.service';
 import { Product } from '@app/core/models';
 import { StoreNavigationComponent } from '@app/shared/components/store-navigation.component';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { TranslationService } from '@app/core/services/translation.service';
 import { ResponsiveDataListComponent, ColumnConfig, ActionConfig, BulkActionConfig } from '@app/shared/components/responsive-data-list/responsive-data-list.component';
 import { FabService } from '@app/core/services/fab.service';
 
@@ -27,26 +28,26 @@ import { FabService } from '@app/core/services/fab.service';
       <div class="filter-bar">
         <!-- Status-Filter -->
         <button class="filter-btn" [class.active]="statusFilter === 'ALL'" (click)="setStatusFilter('ALL')">
-          📦 Alle ({{ products.length }})
+          📦 {{ 'productList.filterAll' | translate }} ({{ products.length }})
         </button>
         <button class="filter-btn filter-btn--active" [class.active]="statusFilter === 'ACTIVE'" (click)="setStatusFilter('ACTIVE')">
-          🟢 Aktiv ({{ countByStatus('ACTIVE') }})
+          🟢 {{ 'productList.filterActive' | translate }} ({{ countByStatus('ACTIVE') }})
         </button>
         <button class="filter-btn filter-btn--draft" [class.active]="statusFilter === 'DRAFT'" (click)="setStatusFilter('DRAFT')">
-          📝 Entwurf ({{ countByStatus('DRAFT') }})
+          📝 {{ 'productList.filterDraft' | translate }} ({{ countByStatus('DRAFT') }})
         </button>
         <button class="filter-btn filter-btn--archived" [class.active]="statusFilter === 'ARCHIVED'" (click)="setStatusFilter('ARCHIVED')">
-          🗄️ Archiviert ({{ countByStatus('ARCHIVED') }})
+          🗄️ {{ 'productList.filterArchived' | translate }} ({{ countByStatus('ARCHIVED') }})
         </button>
         <!-- Telegram-Filter (nur wenn vorhanden) -->
         <button *ngIf="hasTelegramProducts" class="filter-btn filter-btn--telegram"
                 [class.active]="statusFilter === 'TELEGRAM'" (click)="setStatusFilter('TELEGRAM')">
-          📡 Telegram ({{ telegramCount }})
+          📡 {{ 'productList.filterTelegram' | translate }} ({{ telegramCount }})
         </button>
         <!-- Preis-Review-Filter -->
         <button *ngIf="priceReviewCount > 0" class="filter-btn filter-btn--review"
                 [class.active]="statusFilter === 'REVIEW'" (click)="setStatusFilter('REVIEW')">
-          ⚠️ Preis prüfen ({{ priceReviewCount }})
+          ⚠️ {{ 'productList.filterPriceReview' | translate }} ({{ priceReviewCount }})
         </button>
       </div>
 
@@ -60,8 +61,8 @@ import { FabService } from '@app/core/services/fab.service';
         [selectable]="true"
         [rowClickable]="true"
         [searchable]="true"
-        searchPlaceholder="Produkt suchen..."
-        [emptyMessage]="statusFilter === 'TELEGRAM' ? 'Keine Telegram-Importe vorhanden' : statusFilter === 'ALL' ? ('storeDetail.noProducts' | translate) : 'Keine Produkte in diesem Status'"
+        [searchPlaceholder]="'productList.searchPlaceholder' | translate"
+        [emptyMessage]="statusFilter === 'TELEGRAM' ? ('productList.noTelegramProducts' | translate) : statusFilter === 'ALL' ? ('storeDetail.noProducts' | translate) : ('productList.noProductsInStatus' | translate)"
         [emptyIcon]="statusFilter === 'TELEGRAM' ? '📡' : '📦'"
         (rowClick)="editProduct($event.id)"
         (selectionChange)="onSelectionChange($event)">
@@ -211,61 +212,60 @@ export class ProductListComponent implements OnInit, OnDestroy {
   bulkError = false;
   private _bulkToastTimer: any;
 
-  // Spalten-Konfiguration für responsive-data-list
-  columns: ColumnConfig[] = [
-    { key: 'primaryImageUrl', label: 'Bild', type: 'image', width: '80px', hideOnMobile: true },
-    {
-      key: 'title', label: 'Name', type: 'text', mobileLabel: 'Produkt', sortable: true,
-      formatFn: (value, item) => {
-        let label = value + (item.isFeatured ? ' ⭐' : '');
-        if (item.telegramSource) label = '📡 ' + label;
-        if (item.priceNeedsReview) label = label + ' ⚠️';
-        return label;
+  private t(key: string): string {
+    return this.translationService.translate(key);
+  }
+
+  // Spalten-Konfiguration – als Getter für reaktive Übersetzungen
+  get columns(): ColumnConfig[] {
+    return [
+      { key: 'primaryImageUrl', label: this.t('productList.colImage'), type: 'image', width: '80px', hideOnMobile: true },
+      {
+        key: 'title', label: this.t('productList.colName'), type: 'text', mobileLabel: this.t('productList.colName'), sortable: true,
+        formatFn: (value, item) => {
+          let label = value + (item.isFeatured ? ' ⭐' : '');
+          if (item.telegramSource) label = '📡 ' + label;
+          if (item.priceNeedsReview) label = label + ' ⚠️';
+          return label;
+        }
+      },
+      {
+        key: 'categoryName', label: this.t('productList.colCategory'), type: 'text', mobileLabel: this.t('productList.colCategory'), sortable: true,
+        formatFn: (value, item) => value || item.category?.name || '-'
+      },
+      { key: 'basePrice', label: this.t('productList.colPrice'), type: 'currency', mobileLabel: this.t('productList.colPrice'), sortable: true },
+      {
+        key: 'status', label: this.t('productList.colStatus'), type: 'badge', mobileLabel: this.t('productList.colStatus'),
+        formatFn: (value) => this.getStatusLabel(value),
+        badgeClass: (value) => `status-${value?.toLowerCase()}`
       }
-    },
-    {
-      key: 'categoryName', label: 'Kategorie', type: 'text', mobileLabel: 'Kategorie', sortable: true,
-      formatFn: (value, item) => value || item.category?.name || '-'
-    },
-    { key: 'basePrice', label: 'Preis', type: 'currency', mobileLabel: 'Preis', sortable: true },
-    {
-      key: 'status', label: 'Status', type: 'badge', mobileLabel: 'Status',
-      formatFn: (value) => this.getStatusLabel(value),
-      badgeClass: (value) => `status-${value?.toLowerCase()}`
-    }
-  ];
+    ];
+  }
 
-  // Einzel-Aktionen
-  actions: ActionConfig[] = [
-    { icon: '✏️', label: 'Bearbeiten', handler: (p) => this.editProduct(p.id) },
-    { icon: '🗑️', label: 'Löschen', class: 'danger', handler: (p) => this.deleteProduct(p) }
-  ];
+  // Einzel-Aktionen – als Getter für reaktive Übersetzungen
+  get actions(): ActionConfig[] {
+    return [
+      { icon: '✏️', label: this.t('productList.actionEdit'), handler: (p) => this.editProduct(p.id) },
+      { icon: '🗑️', label: this.t('productList.actionDelete'), class: 'danger', handler: (p) => this.deleteProduct(p) }
+    ];
+  }
 
-  // Bulk-Aktionen (erscheinen in der lila Bulk-Bar)
-  bulkActions: BulkActionConfig[] = [
-    {
-      icon: '🟢', label: 'Aktivieren',
-      handler: (items) => this.bulkSetStatus(items, 'ACTIVE')
-    },
-    {
-      icon: '📝', label: 'Als Entwurf',
-      handler: (items) => this.bulkSetStatus(items, 'DRAFT')
-    },
-    {
-      icon: '🗄️', label: 'Archivieren',
-      handler: (items) => this.bulkSetStatus(items, 'ARCHIVED')
-    },
-    {
-      icon: '🗑️', label: 'Löschen', class: 'danger',
-      handler: (items) => this.bulkDeleteProducts(items)
-    }
-  ];
+  // Bulk-Aktionen – als Getter für reaktive Übersetzungen
+  get bulkActions(): BulkActionConfig[] {
+    return [
+      { icon: '🟢', label: this.t('productList.bulkActivate'), handler: (items) => this.bulkSetStatus(items, 'ACTIVE') },
+      { icon: '📝', label: this.t('productList.bulkSetDraft'), handler: (items) => this.bulkSetStatus(items, 'DRAFT') },
+      { icon: '🗄️', label: this.t('productList.bulkArchive'), handler: (items) => this.bulkSetStatus(items, 'ARCHIVED') },
+      { icon: '🗑️', label: this.t('productList.bulkDelete'), class: 'danger', handler: (items) => this.bulkDeleteProducts(items) }
+    ];
+  }
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private productService: ProductService,
-    private fabService: FabService
+    private fabService: FabService,
+    private translationService: TranslationService
   ) {}
 
   ngOnDestroy(): void {
@@ -303,13 +303,13 @@ export class ProductListComponent implements OnInit, OnDestroy {
     // FAB: Produkt hinzufügen
     this.fabService.register({
       icon: '＋',
-      label: 'Produkt hinzufügen',
+      label: this.t('productList.fabLabel'),
       color: 'green',
       action: () => this.createProduct(),
       speedDial: [
-        { icon: '📦', label: 'Neues Produkt', action: () => this.createProduct(), color: '#48bb78' },
+        { icon: '📦', label: this.t('productList.fabNewProduct'), action: () => this.createProduct(), color: '#48bb78' },
         //{ icon: '🤖', label: 'KI-Vorschlag', action: () => this.router.navigate([this.getStoreBasePath(), 'products', 'ai-suggest']), color: '#764ba2' },
-        { icon: '📂', label: 'Kategorie anlegen', action: () => this.router.navigate([this.getStoreBasePath(), 'categories', 'new']), color: '#4299e1' },
+        { icon: '📂', label: this.t('productList.fabCreateCategory'), action: () => this.router.navigate([this.getStoreBasePath(), 'categories', 'new']), color: '#4299e1' },
       ]
     });
   }
@@ -399,13 +399,14 @@ export class ProductListComponent implements OnInit, OnDestroy {
 
 
   getStatusLabel(status: string): string {
-    const labels: { [key: string]: string } = {
-      'DRAFT': 'Entwurf',
-      'ACTIVE': 'Aktiv',
-      'ARCHIVED': 'Archiviert',
-      'INACTIVE': 'Inaktiv'
+    const keyMap: { [key: string]: string } = {
+      'DRAFT':     'status.draft',
+      'ACTIVE':    'status.active',
+      'ARCHIVED':  'status.archived',
+      'INACTIVE':  'status.inactive'
     };
-    return labels[status] || status;
+    const key = keyMap[status];
+    return key ? this.t(key) : status;
   }
 
   getProductImage(product: Product): string | undefined {

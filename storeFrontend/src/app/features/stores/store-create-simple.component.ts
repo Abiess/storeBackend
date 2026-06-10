@@ -5,6 +5,8 @@ import { Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { StoreService } from '@app/core/services/store.service';
 import { ClarityService } from '@app/core/services/clarity.service';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { TranslationService } from '@app/core/services/translation.service';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { environment } from '@env/environment';
@@ -25,7 +27,7 @@ interface StoreCategory {
 @Component({
   selector: 'app-store-create-simple',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, TranslatePipe],
   template: `
     <div class="create-store-container">
       <!-- Clean, minimal header -->
@@ -47,8 +49,8 @@ interface StoreCategory {
       <div class="content" *ngIf="currentStep() === 1">
         <div class="form-wrapper">
           <div class="headline-section">
-            <h1>Create your store</h1>
-            <p class="subtitle">Start selling in minutes. No credit card required.</p>
+            <h1>{{ 'storeCreateSimple.step1.title' | translate }}</h1>
+            <p class="subtitle">{{ 'storeCreateSimple.step1.subtitle' | translate }}</p>
           </div>
 
           <form [formGroup]="storeForm" (ngSubmit)="goToStep2()" class="store-form">
@@ -56,26 +58,27 @@ interface StoreCategory {
             <!-- Store Name -->
             <div class="form-group">
               <label for="storeName" class="label">
-                Store name <span class="required">*</span>
+                {{ 'storeCreateSimple.step1.storeName' | translate }} <span class="required">*</span>
               </label>
               <input
                 id="storeName"
                 type="text"
                 formControlName="storeName"
-                placeholder="e.g. My Fashion Store"
+                [placeholder]="'storeCreateSimple.step1.storeNamePlaceholder' | translate"
                 class="input"
                 [class.error]="showError('storeName')"
                 (input)="onStoreNameChange()"
               />
               @if (showError('storeName')) {
-                <span class="error-text">Please enter a store name</span>
+                <span class="error-text">{{ 'storeCreateSimple.step1.storeNameRequired' | translate }}</span>
               }
             </div>
 
             <!-- Store URL -->
             <div class="form-group">
               <label for="storeSlug" class="label">
-                Store URL <span class="optional">Optional – we'll generate one</span>
+                {{ 'storeCreateSimple.step1.storeUrl' | translate }}
+                <span class="optional">{{ 'storeCreateSimple.step1.storeUrlOptional' | translate }}</span>
               </label>
               <div class="url-input-wrapper">
                 <input
@@ -93,17 +96,17 @@ interface StoreCategory {
               </div>
               <div class="slug-feedback">
                 @if (slugStatus().checking) {
-                  <span class="checking"><span class="spinner-mini"></span>Checking...</span>
+                  <span class="checking"><span class="spinner-mini"></span>{{ 'storeCreateSimple.step1.checking' | translate }}</span>
                 }
                 @if (slugStatus().available === true) {
-                  <span class="available">✓ Available – <strong>{{storeForm.get('storeSlug')?.value}}.markt.ma</strong></span>
+                  <span class="available">{{ 'storeCreateSimple.step1.slugAvailable' | translate:{slug: storeForm.get('storeSlug')?.value} }}</span>
                 }
                 @if (slugStatus().available === false) {
-                  <span class="taken">✗ Already taken. Try another.</span>
+                  <span class="taken">{{ 'storeCreateSimple.step1.slugTaken' | translate }}</span>
                 }
               </div>
               @if (showError('storeSlug')) {
-                <span class="error-text">Only lowercase letters, numbers, and hyphens</span>
+                <span class="error-text">{{ 'storeCreateSimple.step1.slugError' | translate }}</span>
               }
             </div>
 
@@ -112,7 +115,7 @@ interface StoreCategory {
               class="btn-primary"
               [disabled]="storeForm.invalid || slugStatus().available === false"
             >
-              Continue: Choose your niche
+              {{ 'storeCreateSimple.step1.continueBtn' | translate }}
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                 <path d="M4.16669 10H15.8334M15.8334 10L10 4.16669M15.8334 10L10 15.8334" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
@@ -120,9 +123,9 @@ interface StoreCategory {
           </form>
 
           <div class="trust-signals">
-            <div class="trust-item">⭐ Free to start</div>
-            <div class="trust-item">⭐ No credit card</div>
-            <div class="trust-item">⭐ Setup in minutes</div>
+            <div class="trust-item">{{ 'storeCreateSimple.trust.freeToStart' | translate }}</div>
+            <div class="trust-item">{{ 'storeCreateSimple.trust.noCard' | translate }}</div>
+            <div class="trust-item">{{ 'storeCreateSimple.trust.setupMinutes' | translate }}</div>
           </div>
         </div>
       </div>
@@ -131,8 +134,8 @@ interface StoreCategory {
       <div class="content" *ngIf="currentStep() === 2">
         <div class="form-wrapper form-wrapper--wide">
           <div class="headline-section">
-            <h1>What do you sell?</h1>
-            <p class="subtitle">Pick your niche – we'll tailor your store. You can change this later.</p>
+            <h1>{{ 'storeCreateSimple.step2.title' | translate }}</h1>
+            <p class="subtitle">{{ 'storeCreateSimple.step2.subtitle' | translate }}</p>
           </div>
 
           <div class="categories-grid">
@@ -152,10 +155,10 @@ interface StoreCategory {
           </div>
 
           <div class="step2-actions">
-            <button class="btn-back" (click)="currentStep.set(1)">← Back</button>
+            <button class="btn-back" (click)="currentStep.set(1)">{{ 'storeCreateSimple.step2.back' | translate }}</button>
             <div class="step2-right">
               <button class="btn-skip" (click)="createStore()" [disabled]="loading()">
-                Skip this step
+                {{ 'storeCreateSimple.step2.skip' | translate }}
               </button>
               <button
                 class="btn-primary"
@@ -165,9 +168,9 @@ interface StoreCategory {
               >
                 @if (loading()) {
                   <span class="btn-spinner"></span>
-                  Creating your store...
+                  {{ 'storeCreateSimple.step2.creating' | translate }}
                 } @else {
-                  {{ selectedCategories().length > 0 ? 'Create my store →' : 'Create my store →' }}
+                  {{ 'storeCreateSimple.step2.create' | translate }}
                 }
               </button>
             </div>
@@ -180,7 +183,7 @@ interface StoreCategory {
       </div>
 
       <div class="footer">
-        <p>Already have a store? <a routerLink="/login">Sign in</a></p>
+        <p>{{ 'storeCreateSimple.footer.alreadyHave' | translate }} <a routerLink="/login">{{ 'storeCreateSimple.footer.signIn' | translate }}</a></p>
       </div>
     </div>
   `,
@@ -455,23 +458,33 @@ export class StoreCreateSimpleComponent implements OnInit {
   slugStatus = signal<SlugStatus>({ checking: false, available: null, message: '' });
   selectedCategories = signal<string[]>([]);
 
-  readonly categories: StoreCategory[] = [
-    { id: 'fashion',     icon: '👗', name: 'Fashion & Apparel',    description: 'Clothing, shoes, accessories' },
-    { id: 'electronics', icon: '📱', name: 'Electronics',           description: 'Phones, computers, gadgets' },
-    { id: 'food',        icon: '🍔', name: 'Food & Beverages',      description: 'Food, drinks, snacks' },
-    { id: 'beauty',      icon: '💄', name: 'Beauty & Cosmetics',    description: 'Makeup, skincare, fragrances' },
-    { id: 'home',        icon: '🏠', name: 'Home & Garden',         description: 'Furniture, decor, tools' },
-    { id: 'sports',      icon: '⚽', name: 'Sports & Leisure',      description: 'Equipment, outdoor, fitness' },
-    { id: 'books',       icon: '📚', name: 'Books & Media',         description: 'Books, movies, music' },
-    { id: 'toys',        icon: '🧸', name: 'Toys',                  description: 'Toys for all ages' },
+  private readonly _categoryIds = [
+    { id: 'fashion',     icon: '👗' },
+    { id: 'electronics', icon: '📱' },
+    { id: 'food',        icon: '🍔' },
+    { id: 'beauty',      icon: '💄' },
+    { id: 'home',        icon: '🏠' },
+    { id: 'sports',      icon: '⚽' },
+    { id: 'books',       icon: '📚' },
+    { id: 'toys',        icon: '🧸' },
   ];
+
+  /** Reaktiver Getter – Kategorie-Namen werden bei Sprachwechsel automatisch übersetzt */
+  get categories(): StoreCategory[] {
+    return this._categoryIds.map(c => ({
+      ...c,
+      name:        this.translationService.translate(`storeCreateSimple.categories.${c.id}.name`),
+      description: this.translationService.translate(`storeCreateSimple.categories.${c.id}.description`)
+    }));
+  }
 
   constructor(
     private fb: FormBuilder,
     private storeService: StoreService,
     private router: Router,
     private http: HttpClient,
-    private clarity: ClarityService
+    private clarity: ClarityService,
+    private translationService: TranslationService
   ) {
     this.storeForm = this.fb.group({
       storeName: ['', [Validators.required, Validators.minLength(2)]],

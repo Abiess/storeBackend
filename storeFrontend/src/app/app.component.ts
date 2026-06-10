@@ -234,6 +234,9 @@ export class AppComponent implements OnInit {
     '/store-success'
   ];
 
+  /** Öffentliche Seiten, auf denen das WhatsApp-Widget ausgeblendet wird */
+  private readonly whatsappHiddenPaths = ['/create-store', '/quick-start'];
+
   /** Erkennt Produktdetail-URLs (z.B. /stores/5/products/12 oder /products/12) */
   private readonly productDetailPattern = /\/products\/\d+/;
 
@@ -289,9 +292,9 @@ export class AppComponent implements OnInit {
     // Storefront-Komponente selbst per WhatsappConfigService.setNumber() gesetzt.
     const isStorefront = path.includes('/storefront/') || path.startsWith('/s/');
 
-    // ── WhatsApp: auf ALLEN öffentlichen Seiten sichtbar ─────────────────────
-    // Landing Page, Produkte, Warenkorb, Checkout, Subdomain-Storefront, …
-    this.showWhatsappWidget = !this.showAdminShell;
+    // ── WhatsApp: auf öffentlichen Seiten sichtbar (außer explizit ausgeschlossenen) ─────
+    this.showWhatsappWidget = !this.showAdminShell &&
+      !this.whatsappHiddenPaths.some(p => path.startsWith(p));
 
     // ── Chatbot: nur auf Storefront-Seiten (braucht Store-ID) ────────────────
     this.showChatbotWidget = isStorefront;

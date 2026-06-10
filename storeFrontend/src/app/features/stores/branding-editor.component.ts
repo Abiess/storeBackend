@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ThemeService } from '../../core/services/theme.service';
 import { MediaService } from '../../core/services/media.service';
 import { StoreContextService } from '../../core/services/store-context.service';
@@ -10,53 +11,53 @@ import { Subscription } from 'rxjs';
 @Component({
   selector: 'app-branding-editor',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, TranslateModule],
   template: `
     <div class="branding-editor">
       <div class="editor-layout">
         <!-- Left: Settings -->
         <div class="settings-panel">
-          <h2>🎨 Branding & Design</h2>
-          <p class="subtitle">Passen Sie das Erscheinungsbild Ihres Stores an</p>
+          <h2>{{ 'brandingEditor.title' | translate }}</h2>
+          <p class="subtitle">{{ 'brandingEditor.subtitle' | translate }}</p>
 
           <form [formGroup]="brandingForm">
             <!-- Logo Upload -->
             <div class="form-section">
-              <h3>📷 Logo</h3>
+              <h3>{{ 'brandingEditor.logo.section' | translate }}</h3>
               <div class="form-group">
-                <label>Store Logo</label>
-                
+                <label>{{ 'brandingEditor.logo.label' | translate }}</label>
+
                 <!-- Upload Error -->
                 <div class="upload-error" *ngIf="uploadError">
                   <span class="error-icon">⚠️</span>
                   <span>{{ uploadError }}</span>
                   <button type="button" class="btn-retry" (click)="retryUpload()">
-                    Erneut versuchen
+                    {{ 'brandingEditor.logo.retry' | translate }}
                   </button>
                 </div>
 
                 <!-- Upload Area -->
                 <div class="upload-area" (click)="fileInput.click()" [class.uploading]="uploading">
-                  <input 
-                    #fileInput 
-                    type="file" 
-                    accept="image/*" 
+                  <input
+                    #fileInput
+                    type="file"
+                    accept="image/*"
                     (change)="onFileSelected($event, 'logo')"
                     style="display: none">
-                  
+
                   <!-- Uploading State -->
                   <div class="upload-progress" *ngIf="uploading">
                     <div class="progress-bar">
                       <div class="progress-fill" [style.width.%]="uploadProgress"></div>
                     </div>
-                    <p>Uploading... {{ uploadProgress }}%</p>
+                    <p>{{ 'brandingEditor.logo.uploading' | translate: { progress: uploadProgress } }}</p>
                   </div>
 
                   <!-- No Logo State -->
                   <div class="upload-content" *ngIf="!logoPreview && !uploading">
                     <span class="upload-icon">📁</span>
-                    <p>Click to upload logo</p>
-                    <small>PNG, JPG, SVG (max 2MB)</small>
+                    <p>{{ 'brandingEditor.logo.clickToUpload' | translate }}</p>
+                    <small>{{ 'brandingEditor.logo.hint' | translate }}</small>
                   </div>
 
                   <!-- Logo Preview -->
@@ -70,71 +71,71 @@ import { Subscription } from 'rxjs';
 
             <!-- Colors -->
             <div class="form-section">
-              <h3>🎨 Farben</h3>
-              
+              <h3>{{ 'brandingEditor.colors.section' | translate }}</h3>
+
               <div class="color-grid">
                 <div class="color-input">
-                  <label>Primärfarbe</label>
+                  <label>{{ 'brandingEditor.colors.primary' | translate }}</label>
                   <div class="color-picker-wrapper">
-                    <input 
-                      type="color" 
+                    <input
+                      type="color"
                       formControlName="primaryColor"
                       class="color-picker">
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       [value]="brandingForm.get('primaryColor')?.value"
                       (input)="updateColor('primaryColor', $event)"
                       class="color-hex"
                       placeholder="#667eea">
                   </div>
-                  <small>Buttons, Links, Highlights</small>
+                  <small>{{ 'brandingEditor.colors.primaryHint' | translate }}</small>
                 </div>
 
                 <div class="color-input">
-                  <label>Sekundärfarbe</label>
+                  <label>{{ 'brandingEditor.colors.secondary' | translate }}</label>
                   <div class="color-picker-wrapper">
-                    <input 
-                      type="color" 
+                    <input
+                      type="color"
                       formControlName="secondaryColor"
                       class="color-picker">
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       [value]="brandingForm.get('secondaryColor')?.value"
                       (input)="updateColor('secondaryColor', $event)"
                       class="color-hex"
                       placeholder="#764ba2">
                   </div>
-                  <small>Sekundäre Elemente</small>
+                  <small>{{ 'brandingEditor.colors.secondaryHint' | translate }}</small>
                 </div>
 
                 <div class="color-input">
-                  <label>Akzentfarbe</label>
+                  <label>{{ 'brandingEditor.colors.accent' | translate }}</label>
                   <div class="color-picker-wrapper">
-                    <input 
-                      type="color" 
+                    <input
+                      type="color"
                       formControlName="accentColor"
                       class="color-picker">
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       [value]="brandingForm.get('accentColor')?.value"
                       (input)="updateColor('accentColor', $event)"
                       class="color-hex"
                       placeholder="#f093fb">
                   </div>
-                  <small>Preise, Badges, Call-to-Action</small>
+                  <small>{{ 'brandingEditor.colors.accentHint' | translate }}</small>
                 </div>
               </div>
             </div>
 
             <!-- Typography -->
             <div class="form-section">
-              <h3>📝 Typografie</h3>
+              <h3>{{ 'brandingEditor.typography.section' | translate }}</h3>
               <div class="form-group">
-                <label>Schriftart</label>
+                <label>{{ 'brandingEditor.typography.font' | translate }}</label>
                 <select formControlName="fontFamily" class="form-control">
-                  <option value="'Inter', sans-serif">Inter (Modern & Clean)</option>
+                  <option value="'Inter', sans-serif">Inter (Modern &amp; Clean)</option>
                   <option value="'Roboto', sans-serif">Roboto (Google Standard)</option>
-                  <option value="'Poppins', sans-serif">Poppins (Friendly & Round)</option>
+                  <option value="'Poppins', sans-serif">Poppins (Friendly &amp; Round)</option>
                   <option value="'Playfair Display', serif">Playfair Display (Elegant)</option>
                   <option value="'Georgia', serif">Georgia (Classic)</option>
                   <option value="'Helvetica Neue', sans-serif">Helvetica (Minimal)</option>
@@ -144,9 +145,9 @@ import { Subscription } from 'rxjs';
 
             <!-- Quick Presets -->
             <div class="form-section">
-              <h3>⚡ Schnellvorlagen</h3>
+              <h3>{{ 'brandingEditor.presets.section' | translate }}</h3>
               <div class="preset-buttons">
-                <button 
+                <button
                   type="button"
                   *ngFor="let preset of quickPresets"
                   class="preset-button"
@@ -159,10 +160,10 @@ import { Subscription } from 'rxjs';
 
             <div class="form-actions">
               <button type="button" class="btn btn-secondary" (click)="reset()">
-                Zurücksetzen
+                {{ 'brandingEditor.actions.reset' | translate }}
               </button>
               <button type="button" class="btn btn-primary" (click)="save()" [disabled]="saving">
-                {{ saving ? 'Speichern...' : 'Änderungen speichern' }}
+                {{ saving ? ('brandingEditor.actions.saving' | translate) : ('brandingEditor.actions.save' | translate) }}
               </button>
             </div>
           </form>
@@ -171,14 +172,14 @@ import { Subscription } from 'rxjs';
         <!-- Right: Live Preview -->
         <div class="preview-panel">
           <div class="preview-header">
-            <h3>👁️ Live Vorschau</h3>
+            <h3>{{ 'brandingEditor.preview.title' | translate }}</h3>
             <div class="preview-device-toggle">
-              <button 
+              <button
                 [class.active]="previewDevice === 'desktop'"
                 (click)="previewDevice = 'desktop'">
                 🖥️
               </button>
-              <button 
+              <button
                 [class.active]="previewDevice === 'mobile'"
                 (click)="previewDevice = 'mobile'">
                 📱
@@ -195,27 +196,27 @@ import { Subscription } from 'rxjs';
                   <span *ngIf="!logoPreview" class="logo-placeholder">LOGO</span>
                 </div>
                 <div class="preview-nav">
-                  <a href="javascript:void(0)">Produkte</a>
-                  <a href="javascript:void(0)">Kategorien</a>
-                  <a href="javascript:void(0)">Kontakt</a>
+                  <a href="javascript:void(0)">{{ 'brandingEditor.preview.products' | translate }}</a>
+                  <a href="javascript:void(0)">{{ 'brandingEditor.preview.categories' | translate }}</a>
+                  <a href="javascript:void(0)">{{ 'brandingEditor.preview.contact' | translate }}</a>
                 </div>
                 <button class="preview-cart-button">
-                  🛒 Warenkorb
+                  {{ 'brandingEditor.preview.cart' | translate }}
                 </button>
               </div>
 
               <!-- Content Preview -->
               <div class="preview-content">
-                <h1>Willkommen in Ihrem Store</h1>
-                <p>Dies ist eine Vorschau wie Ihr Store aussehen wird.</p>
+                <h1>{{ 'brandingEditor.preview.welcome' | translate }}</h1>
+                <p>{{ 'brandingEditor.preview.welcomeDesc' | translate }}</p>
 
                 <!-- Buttons Preview -->
                 <div class="preview-buttons">
                   <button class="preview-btn preview-btn-primary">
-                    Primär Button
+                    {{ 'brandingEditor.preview.primaryBtn' | translate }}
                   </button>
                   <button class="preview-btn preview-btn-secondary">
-                    Sekundär Button
+                    {{ 'brandingEditor.preview.secondaryBtn' | translate }}
                   </button>
                 </div>
 
@@ -225,38 +226,38 @@ import { Subscription } from 'rxjs';
                     <div class="preview-product-image">
                       <span>🖼️</span>
                     </div>
-                    <h4>Beispiel Produkt</h4>
-                    <p class="preview-product-desc">Produktbeschreibung</p>
+                    <h4>{{ 'brandingEditor.preview.sampleProduct1' | translate }}</h4>
+                    <p class="preview-product-desc">{{ 'brandingEditor.preview.sampleProductDesc' | translate }}</p>
                     <div class="preview-product-footer">
                       <span class="preview-price">€99.99</span>
-                      <button class="preview-add-to-cart">+ Warenkorb</button>
+                      <button class="preview-add-to-cart">{{ 'brandingEditor.preview.addToCart' | translate }}</button>
                     </div>
                   </div>
                   <div class="preview-product-card">
                     <div class="preview-product-image">
                       <span>🖼️</span>
                     </div>
-                    <h4>Beispiel Produkt 2</h4>
-                    <p class="preview-product-desc">Produktbeschreibung</p>
+                    <h4>{{ 'brandingEditor.preview.sampleProduct2' | translate }}</h4>
+                    <p class="preview-product-desc">{{ 'brandingEditor.preview.sampleProductDesc' | translate }}</p>
                     <div class="preview-product-footer">
                       <span class="preview-price">€149.99</span>
-                      <button class="preview-add-to-cart">+ Warenkorb</button>
+                      <button class="preview-add-to-cart">{{ 'brandingEditor.preview.addToCart' | translate }}</button>
                     </div>
                   </div>
                 </div>
 
                 <!-- Badge Preview -->
                 <div class="preview-badges">
-                  <span class="preview-badge">Neu</span>
-                  <span class="preview-badge preview-badge-accent">Sale</span>
-                  <span class="preview-badge">Top Seller</span>
+                  <span class="preview-badge">{{ 'brandingEditor.preview.badgeNew' | translate }}</span>
+                  <span class="preview-badge preview-badge-accent">{{ 'brandingEditor.preview.badgeSale' | translate }}</span>
+                  <span class="preview-badge">{{ 'brandingEditor.preview.badgeTopSeller' | translate }}</span>
                 </div>
               </div>
             </div>
           </div>
 
           <div class="preview-info">
-            <small>💡 Änderungen werden sofort in der Vorschau angezeigt</small>
+            <small>{{ 'brandingEditor.preview.hint' | translate }}</small>
           </div>
         </div>
       </div>
@@ -897,7 +898,8 @@ export class BrandingEditorComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private themeService: ThemeService,
     private mediaService: MediaService,
-    private storeContext: StoreContextService
+    private storeContext: StoreContextService,
+    private translate: TranslateService
   ) {
     this.brandingForm = this.fb.group({
       primaryColor: ['#667eea', Validators.required],
@@ -969,14 +971,16 @@ export class BrandingEditorComponent implements OnInit, OnDestroy {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      this.uploadError = 'Bitte nur Bild-Dateien hochladen (PNG, JPG, SVG)';
+      this.uploadError = this.translate.instant('brandingEditor.logo.errorImageOnly');
       return;
     }
 
     // Validate file size (2MB)
     const maxSize = 2 * 1024 * 1024;
     if (file.size > maxSize) {
-      this.uploadError = `Datei zu groß (${(file.size / 1024 / 1024).toFixed(2)}MB). Maximum: 2MB`;
+      this.uploadError = this.translate.instant('brandingEditor.logo.errorTooLarge', {
+        size: (file.size / 1024 / 1024).toFixed(2)
+      });
       return;
     }
 
@@ -993,7 +997,7 @@ export class BrandingEditorComponent implements OnInit, OnDestroy {
 
   uploadLogo(file: File): void {
     if (this.storeId === null) {
-      this.uploadError = 'Fehler: Store-Kontext nicht verfügbar';
+      this.uploadError = this.translate.instant('brandingEditor.logo.errorNoStore');
       return;
     }
 
@@ -1018,7 +1022,7 @@ export class BrandingEditorComponent implements OnInit, OnDestroy {
         console.error('❌ Upload error:', err);
         this.uploading = false;
         this.uploadProgress = 0;
-        this.uploadError = err.error?.message || 'Upload fehlgeschlagen. Bitte versuchen Sie es erneut.';
+        this.uploadError = err.error?.message || this.translate.instant('brandingEditor.logo.errorUpload');
         this.logoPreview = null;
         this.uploadedLogoUrl = null;
       }
@@ -1070,13 +1074,13 @@ export class BrandingEditorComponent implements OnInit, OnDestroy {
     if (this.brandingForm.invalid) return;
 
     if (this.storeId === null) {
-      alert('Fehler: Store-Kontext nicht verfügbar');
+      alert(this.translate.instant('brandingEditor.actions.noStore'));
       return;
     }
 
     // Check if upload is still in progress
     if (this.uploading) {
-      alert('Bitte warten Sie, bis der Upload abgeschlossen ist.');
+      alert(this.translate.instant('brandingEditor.actions.waitUpload'));
       return;
     }
 
@@ -1125,12 +1129,12 @@ export class BrandingEditorComponent implements OnInit, OnDestroy {
       next: (theme) => {
         console.log('✅ Theme saved:', theme);
         this.saving = false;
-        alert('Branding erfolgreich gespeichert!');
+        alert(this.translate.instant('brandingEditor.actions.saveSuccess'));
       },
       error: (err) => {
         console.error('❌ Error saving theme:', err);
         this.saving = false;
-        alert('Fehler beim Speichern. Bitte versuchen Sie es erneut.');
+        alert(this.translate.instant('brandingEditor.actions.saveError'));
       }
     });
   }

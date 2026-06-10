@@ -1258,5 +1258,112 @@
                        "landingBadge":  "🇲🇦 جديد",
                        "landingText":  "ابدأ بدون بريد إلكتروني – واتساب أو تيليغرام فقط",
                        "landingBtn":  "📱 ابدأ في دقيقتين →"
-                   }
+                   },
+    "storeCreateSimple":  {
+                              "step1":  {
+                                            "title":  "أنشئ متجرك",
+                                            "subtitle":  "ابدأ البيع في دقائق. لا بطاقة ائتمانية مطلوبة.",
+                                            "storeName":  "اسم المتجر",
+                                            "storeNamePlaceholder":  "مثال: متجر الأزياء",
+                                            "storeNameRequired":  "يرجى إدخال اسم المتجر",
+                                            "storeUrl":  "رابط المتجر",
+                                            "storeUrlOptional":  "اختياري – سنقوم بإنشائه تلقائياً",
+                                            "checking":  "جاري التحقق...",
+                                            "slugAvailable":  "✓ متاح – {{slug}}.markt.ma",
+                                            "slugTaken":  "✗ محجوز بالفعل. جرّب اسماً آخر.",
+                                            "slugError":  "أحرف صغيرة وأرقام وشرطات فقط",
+                                            "continueBtn":  "متابعة: اختيار المجال"
+                                        },
+                              "step2":  {
+                                            "title":  "ماذا تبيع؟",
+                                            "subtitle":  "اختر مجالك – سنخصّص متجرك وفقاً لذلك. يمكنك تغيير هذا لاحقاً.",
+                                            "back":  "→ رجوع",
+                                            "skip":  "تخطي هذه الخطوة",
+                                            "creating":  "جاري إنشاء متجرك...",
+                                            "create":  "إنشاء متجري ←"
+                                        },
+                              "trust":  {
+                                            "freeToStart":  "⭐ ابدأ مجاناً",
+                                            "noCard":  "⭐ لا بطاقة ائتمانية",
+                                            "setupMinutes":  "⭐ جاهز في دقائق"
+                                        },
+                              "footer":  {
+                                             "alreadyHave":  "لديك متجر بالفعل؟",
+                                             "signIn":  "تسجيل الدخول"
+                                         },
+                              "errors":  {
+                                             "creationFailed":  "فشل إنشاء المتجر. يرجى المحاولة مرة أخرى.",
+                                             "general":  "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+                                         },
+                              "categories":  {
+                                                 "fashion":     { "name":  "الموضة والملابس",        "description":  "ملابس وأحذية وإكسسوارات" },
+                                                 "electronics": { "name":  "الإلكترونيات",           "description":  "هواتف وحواسيب وأجهزة" },
+                                                 "food":        { "name":  "الأغذية والمشروبات",     "description":  "طعام ومشروبات وسناكات" },
+                                                 "beauty":      { "name":  "الجمال والتجميل",        "description":  "مكياج وعناية وعطور" },
+                                                 "home":        { "name":  "المنزل والحديقة",        "description":  "أثاث وديكور وأدوات" },
+                                                 "sports":      { "name":  "الرياضة والترفيه",       "description":  "معدات ورياضة خارجية ولياقة" },
+                                                 "books":       { "name":  "الكتب والإعلام",         "description":  "كتب وأفلام وموسيقى" },
+                                                 "toys":        { "name":  "الألعاب",               "description":  "ألعاب لجميع الأعمار" }
+                                             }
+                          },
+    "brandingEditor":  {
+                           "title":  "🎨 العلامة التجارية والتصميم",
+                           "subtitle":  "خصّص مظهر متجرك",
+                           "logo":  {
+                                        "section":  "📷 الشعار",
+                                        "label":  "شعار المتجر",
+                                        "retry":  "إعادة المحاولة",
+                                        "uploading":  "جاري الرفع... {{progress}}%",
+                                        "clickToUpload":  "انقر للرفع",
+                                        "hint":  "PNG، JPG، SVG (بحد أقصى 2MB)",
+                                        "errorImageOnly":  "يرجى رفع ملفات صور فقط (PNG، JPG، SVG)",
+                                        "errorTooLarge":  "الملف كبير جداً ({{size}}MB). الحد الأقصى: 2MB",
+                                        "errorNoStore":  "خطأ: سياق المتجر غير متاح",
+                                        "errorUpload":  "فشل الرفع. يرجى المحاولة مرة أخرى."
+                                    },
+                           "colors":  {
+                                          "section":  "🎨 الألوان",
+                                          "primary":  "اللون الأساسي",
+                                          "primaryHint":  "الأزرار، الروابط، العناصر المميزة",
+                                          "secondary":  "اللون الثانوي",
+                                          "secondaryHint":  "العناصر الثانوية",
+                                          "accent":  "لون التمييز",
+                                          "accentHint":  "الأسعار، الشارات، الدعوة للتصرف"
+                                      },
+                           "typography":  {
+                                              "section":  "📝 الطباعة",
+                                              "font":  "الخط"
+                                          },
+                           "presets":  {
+                                           "section":  "⚡ قوالب سريعة"
+                                       },
+                           "actions":  {
+                                           "reset":  "إعادة تعيين",
+                                           "saving":  "جاري الحفظ...",
+                                           "save":  "حفظ التغييرات",
+                                           "waitUpload":  "يرجى الانتظار حتى يكتمل الرفع.",
+                                           "noStore":  "خطأ: سياق المتجر غير متاح",
+                                           "saveSuccess":  "تم حفظ العلامة التجارية بنجاح!",
+                                           "saveError":  "خطأ أثناء الحفظ. يرجى المحاولة مرة أخرى."
+                                       },
+                           "preview":  {
+                                           "title":  "👁️ معاينة مباشرة",
+                                           "hint":  "💡 التغييرات تظهر فوراً في المعاينة",
+                                           "products":  "المنتجات",
+                                           "categories":  "الفئات",
+                                           "contact":  "اتصل بنا",
+                                           "cart":  "🛒 السلة",
+                                           "welcome":  "مرحباً في متجرك",
+                                           "welcomeDesc":  "هذه معاينة لكيفية ظهور متجرك.",
+                                           "primaryBtn":  "زر رئيسي",
+                                           "secondaryBtn":  "زر ثانوي",
+                                           "sampleProduct1":  "منتج نموذجي",
+                                           "sampleProduct2":  "منتج نموذجي 2",
+                                           "sampleProductDesc":  "وصف المنتج",
+                                           "addToCart":  "+ السلة",
+                                           "badgeNew":  "جديد",
+                                           "badgeSale":  "تخفيض",
+                                           "badgeTopSeller":  "الأكثر مبيعاً"
+                                       }
+                       }
 }

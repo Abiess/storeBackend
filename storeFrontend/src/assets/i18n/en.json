@@ -1437,5 +1437,112 @@
                        "landingBadge":  "🇲🇦 NEW",
                        "landingText":  "Start without email – just WhatsApp or Telegram",
                        "landingBtn":  "📱 Get started in 2 minutes →"
-                   }
+                   },
+    "storeCreateSimple":  {
+                              "step1":  {
+                                            "title":  "Create your store",
+                                            "subtitle":  "Start selling in minutes. No credit card required.",
+                                            "storeName":  "Store name",
+                                            "storeNamePlaceholder":  "e.g. My Fashion Store",
+                                            "storeNameRequired":  "Please enter a store name",
+                                            "storeUrl":  "Store URL",
+                                            "storeUrlOptional":  "Optional \u2013 we\u2019ll generate one",
+                                            "checking":  "Checking...",
+                                            "slugAvailable":  "\u2713 Available \u2013 {{slug}}.markt.ma",
+                                            "slugTaken":  "\u2717 Already taken. Try another.",
+                                            "slugError":  "Only lowercase letters, numbers, and hyphens",
+                                            "continueBtn":  "Continue: Choose your niche"
+                                        },
+                              "step2":  {
+                                            "title":  "What do you sell?",
+                                            "subtitle":  "Pick your niche \u2013 we\u2019ll tailor your store. You can change this later.",
+                                            "back":  "\u2190 Back",
+                                            "skip":  "Skip this step",
+                                            "creating":  "Creating your store...",
+                                            "create":  "Create my store \u2192"
+                                        },
+                              "trust":  {
+                                            "freeToStart":  "\u2b50 Free to start",
+                                            "noCard":  "\u2b50 No credit card",
+                                            "setupMinutes":  "\u2b50 Setup in minutes"
+                                        },
+                              "footer":  {
+                                             "alreadyHave":  "Already have a store?",
+                                             "signIn":  "Sign in"
+                                         },
+                              "errors":  {
+                                             "creationFailed":  "Store creation failed. Please try again.",
+                                             "general":  "Something went wrong. Please try again."
+                                         },
+                              "categories":  {
+                                                 "fashion":     { "name":  "Fashion & Apparel",   "description":  "Clothing, shoes, accessories" },
+                                                 "electronics": { "name":  "Electronics",          "description":  "Phones, computers, gadgets" },
+                                                 "food":        { "name":  "Food & Beverages",     "description":  "Food, drinks, snacks" },
+                                                 "beauty":      { "name":  "Beauty & Cosmetics",   "description":  "Makeup, skincare, fragrances" },
+                                                 "home":        { "name":  "Home & Garden",        "description":  "Furniture, decor, tools" },
+                                                 "sports":      { "name":  "Sports & Leisure",     "description":  "Equipment, outdoor, fitness" },
+                                                 "books":       { "name":  "Books & Media",        "description":  "Books, movies, music" },
+                                                 "toys":        { "name":  "Toys",                 "description":  "Toys for all ages" }
+                                             }
+                          },
+    "brandingEditor":  {
+                           "title":  "🎨 Branding \u0026 Design",
+                           "subtitle":  "Customize the appearance of your store",
+                           "logo":  {
+                                        "section":  "📷 Logo",
+                                        "label":  "Store Logo",
+                                        "retry":  "Retry",
+                                        "uploading":  "Uploading... {{progress}}%",
+                                        "clickToUpload":  "Click to upload logo",
+                                        "hint":  "PNG, JPG, SVG (max 2MB)",
+                                        "errorImageOnly":  "Please upload image files only (PNG, JPG, SVG)",
+                                        "errorTooLarge":  "File too large ({{size}}MB). Maximum: 2MB",
+                                        "errorNoStore":  "Error: Store context not available",
+                                        "errorUpload":  "Upload failed. Please try again."
+                                    },
+                           "colors":  {
+                                          "section":  "🎨 Colors",
+                                          "primary":  "Primary Color",
+                                          "primaryHint":  "Buttons, Links, Highlights",
+                                          "secondary":  "Secondary Color",
+                                          "secondaryHint":  "Secondary Elements",
+                                          "accent":  "Accent Color",
+                                          "accentHint":  "Prices, Badges, Call-to-Action"
+                                      },
+                           "typography":  {
+                                              "section":  "📝 Typography",
+                                              "font":  "Font"
+                                          },
+                           "presets":  {
+                                           "section":  "⚡ Quick Presets"
+                                       },
+                           "actions":  {
+                                           "reset":  "Reset",
+                                           "saving":  "Saving...",
+                                           "save":  "Save Changes",
+                                           "waitUpload":  "Please wait until the upload is complete.",
+                                           "noStore":  "Error: Store context not available",
+                                           "saveSuccess":  "Branding saved successfully!",
+                                           "saveError":  "Error saving. Please try again."
+                                       },
+                           "preview":  {
+                                           "title":  "👁️ Live Preview",
+                                           "hint":  "💡 Changes are immediately reflected in the preview",
+                                           "products":  "Products",
+                                           "categories":  "Categories",
+                                           "contact":  "Contact",
+                                           "cart":  "🛒 Cart",
+                                           "welcome":  "Welcome to Your Store",
+                                           "welcomeDesc":  "This is a preview of how your store will look.",
+                                           "primaryBtn":  "Primary Button",
+                                           "secondaryBtn":  "Secondary Button",
+                                           "sampleProduct1":  "Sample Product",
+                                           "sampleProduct2":  "Sample Product 2",
+                                           "sampleProductDesc":  "Product description",
+                                           "addToCart":  "+ Cart",
+                                           "badgeNew":  "New",
+                                           "badgeSale":  "Sale",
+                                           "badgeTopSeller":  "Top Seller"
+                                       }
+                       }
 }

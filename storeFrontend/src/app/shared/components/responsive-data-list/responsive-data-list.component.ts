@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter, TemplateRef, ContentChild, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 export interface ColumnConfig {
   key: string;
@@ -32,7 +33,7 @@ export interface BulkActionConfig {
 @Component({
   selector: 'app-responsive-data-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   template: `
     <!-- ─── Bulk-Action Bar (erscheint wenn Einträge ausgewählt) ─── -->
     <div class="rdl-bulk-bar" *ngIf="selectable && selectedIds.size > 0">
@@ -41,8 +42,8 @@ export interface BulkActionConfig {
                [checked]="isAllSelected()"
                [indeterminate]="isPartialSelected()"
                (change)="toggleAll($event)">
-        <strong>{{ selectedIds.size }}</strong>&nbsp;ausgewählt
-        <button class="rdl-bulk-bar__clear" (click)="clearSelection()">✕ Abwählen</button>
+        <strong>{{ selectedIds.size }}</strong>&nbsp;{{ 'dataList.selected' | translate }}
+        <button class="rdl-bulk-bar__clear" (click)="clearSelection()">✕ {{ 'dataList.deselect' | translate }}</button>
       </div>
       <div class="rdl-bulk-bar__actions">
         <button *ngFor="let ba of bulkActions"
@@ -64,7 +65,7 @@ export interface BulkActionConfig {
                  [indeterminate]="isPartialSelected()"
                  (change)="toggleAll($event)"
                  class="rdl-cb">
-          Alle
+          {{ 'dataList.all' | translate }}
         </label>
         <div class="rdl-search" *ngIf="searchable">
           <span class="rdl-search__icon">🔍</span>
@@ -77,10 +78,10 @@ export interface BulkActionConfig {
           <button *ngIf="searchQuery" class="rdl-search__clear" (click)="clearSearch()">✕</button>
         </div>
         <span class="rdl-count" *ngIf="filteredItems.length !== items.length">
-          {{ filteredItems.length }} / {{ items.length }} Einträge
+          {{ filteredItems.length }} / {{ items.length }} {{ 'dataList.entries' | translate }}
         </span>
         <span class="rdl-count" *ngIf="filteredItems.length === items.length && !loading">
-          {{ items.length }} {{ items.length === 1 ? 'Eintrag' : 'Einträge' }}
+          {{ items.length }} {{ 'dataList.entries' | translate }}
         </span>
       </div>
       <div class="rdl-toolbar__right">
@@ -120,9 +121,12 @@ export interface BulkActionConfig {
     <!-- ─── Empty State ──────────────────────────────────────── -->
     <div *ngIf="!loading && filteredItems.length === 0" class="rdl-empty">
       <div class="rdl-empty__icon">{{ searchQuery ? '🔍' : emptyIcon }}</div>
-      <h3 class="rdl-empty__title">{{ searchQuery ? 'Keine Ergebnisse' : 'Noch nichts hier' }}</h3>
-      <p class="rdl-empty__text">{{ searchQuery ? ('Keine Einträge für "' + searchQuery + '"') : emptyMessage }}</p>
-      <button *ngIf="searchQuery" class="rdl-empty__btn" (click)="clearSearch()">Suche zurücksetzen</button>
+      <h3 class="rdl-empty__title">{{ (searchQuery ? 'dataList.noResults' : 'dataList.emptyTitle') | translate }}</h3>
+      <p class="rdl-empty__text">
+        <ng-container *ngIf="searchQuery">{{ 'dataList.noResultsFor' | translate }} "{{ searchQuery }}"</ng-container>
+        <ng-container *ngIf="!searchQuery">{{ emptyMessage }}</ng-container>
+      </p>
+      <button *ngIf="searchQuery" class="rdl-empty__btn" (click)="clearSearch()">{{ 'dataList.resetSearch' | translate }}</button>
     </div>
 
     <!-- ─── TABLE VIEW ────────────────────────────────────────── -->

@@ -118,11 +118,32 @@ import { FabService, SpeedDialItem } from '../../core/services/fab.service';
     @keyframes fadeIn  { from{opacity:0} to{opacity:1} }
     @keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
 
+    /* RTL – Button links statt rechts (weg von der RTL-Sidebar) */
+    :host-context([dir="rtl"]) .fab,
+    [dir="rtl"] .fab {
+      right: auto;
+      left: 2rem;
+    }
+    :host-context([dir="rtl"]) .fab-speed-dial,
+    [dir="rtl"] .fab-speed-dial {
+      right: auto;
+      left: 2rem;
+      align-items: flex-start;
+    }
+    :host-context([dir="rtl"]) .fab-speed-item:hover,
+    [dir="rtl"] .fab-speed-item:hover {
+      transform: translateX(4px) scale(1.04);
+    }
+
     /* Mobile */
     @media (max-width: 480px) {
       .fab { padding:.8rem; border-radius:50%; }
       .fab__label { display:none; }
       .fab-speed-dial { right:1rem; bottom:5rem; }
+    }
+    @media (max-width: 480px) {
+      :host-context([dir="rtl"]) .fab-speed-dial,
+      [dir="rtl"] .fab-speed-dial { left:1rem; right: auto; }
     }
   `]
 })
