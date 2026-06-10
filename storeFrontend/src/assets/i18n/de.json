@@ -413,6 +413,51 @@
                        "reviews":  "Bewertungen"
                    },
     "settings":  {
+                     "title":  "Einstellungen",
+                     "subtitle":  "Konto, Sicherheit und Shop-Einstellungen",
+                     "usage":  "Meine Nutzung",
+                     "myStores":  "Meine Shops",
+                     "account":  "Konto",
+                     "teamAccess":  "Team & Zugriff",
+                     "subscription":  "Abonnement",
+                     "profile":  {
+                                     "title":  "Mein Profil",
+                                     "description":  "Account-Daten, Plan-Nutzung und verknüpfte Shops"
+                                 },
+                     "security":  {
+                                      "title":  "Sicherheit",
+                                      "description":  "Anmeldestatus, Token-Info und Sitzungsverwaltung"
+                                  },
+                     "notifications":  {
+                                           "title":  "Benachrichtigungen",
+                                           "description":  "E-Mail-Benachrichtigungen für Bestellungen, Bewertungen etc."
+                                       },
+                     "language":  {
+                                      "title":  "Sprache & Region",
+                                      "description":  "Sprache umschalten (DE / EN / AR) – sofort wirksam"
+                                  },
+                     "roles":  {
+                                   "title":  "Benutzerrollen",
+                                   "description":  "Ihre Rollen und Berechtigungen in allen Shops"
+                               },
+                     "permissions":  {
+                                         "title":  "Rollenverwaltung",
+                                         "description":  "Shop- und Domain-Rollen für Teammitglieder verwalten"
+                                     },
+                     "audit":  {
+                                   "title":  "Änderungsprotokoll",
+                                   "description":  "Alle Aktionen und Änderungen chronologisch nachverfolgen"
+                               },
+                     "subscriptionCard":  {
+                                             "title":  "Abo & Tarif",
+                                             "description":  "Aktuellen Plan verwalten, upgraden oder kündigen"
+                                         },
+                     "usage_stores":  "Stores",
+                     "usage_products":  "Produkte",
+                     "usage_storage":  "Speicher (MB)",
+                     "usage_aiCalls":  "AI-Calls / Monat",
+                     "usage_domains":  "Domains",
+                     "usage_customers":  "Kunden",
                      "general":  "Allgemein",
                      "slider":  "Slider",
                      "whatsapp":  {

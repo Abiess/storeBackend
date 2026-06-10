@@ -402,6 +402,51 @@
                           "step4":  "متجرك فوراً على الإنترنت تحت اسمك.markt.ma"
                       },
     "settings":  {
+                     "title":  "الإعدادات",
+                     "subtitle":  "إعدادات الحساب والأمان والمتجر",
+                     "usage":  "استخدامي",
+                     "myStores":  "متاجري",
+                     "account":  "الحساب",
+                     "teamAccess":  "الفريق والصلاحيات",
+                     "subscription":  "الاشتراك",
+                     "profile":  {
+                                     "title":  "ملفي الشخصي",
+                                     "description":  "بيانات الحساب واستخدام الخطة والمتاجر المرتبطة"
+                                 },
+                     "security":  {
+                                      "title":  "الأمان",
+                                      "description":  "حالة تسجيل الدخول ومعلومات الرمز وإدارة الجلسات"
+                                  },
+                     "notifications":  {
+                                           "title":  "الإشعارات",
+                                           "description":  "إشعارات البريد الإلكتروني للطلبات والتقييمات وغيرها"
+                                       },
+                     "language":  {
+                                      "title":  "اللغة والمنطقة",
+                                      "description":  "تبديل اللغة (DE / EN / AR) – يسري فوراً"
+                                  },
+                     "roles":  {
+                                   "title":  "أدوار المستخدم",
+                                   "description":  "أدوارك وصلاحياتك في جميع المتاجر"
+                               },
+                     "permissions":  {
+                                         "title":  "إدارة الأدوار",
+                                         "description":  "إدارة أدوار المتجر والنطاق لأعضاء الفريق"
+                                     },
+                     "audit":  {
+                                   "title":  "سجل التغييرات",
+                                   "description":  "تتبع جميع الإجراءات والتغييرات بشكل زمني"
+                               },
+                     "subscriptionCard":  {
+                                             "title":  "الخطة والاشتراك",
+                                             "description":  "إدارة خطتك الحالية أو الترقية أو الإلغاء"
+                                         },
+                     "usage_stores":  "المتاجر",
+                     "usage_products":  "المنتجات",
+                     "usage_storage":  "التخزين (ميغابايت)",
+                     "usage_aiCalls":  "طلبات الذكاء الاصطناعي / شهر",
+                     "usage_domains":  "النطاقات",
+                     "usage_customers":  "العملاء",
                      "general":  "عام",
                      "slider":  "شريط تمرير",
                      "whatsapp":  {

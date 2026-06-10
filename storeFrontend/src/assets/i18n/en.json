@@ -295,6 +295,51 @@
                        "reviews":  "Reviews"
                    },
     "settings":  {
+                     "title":  "Settings",
+                     "subtitle":  "Account, security and shop settings",
+                     "usage":  "My Usage",
+                     "myStores":  "My Shops",
+                     "account":  "Account",
+                     "teamAccess":  "Team & Access",
+                     "subscription":  "Subscription",
+                     "profile":  {
+                                     "title":  "My Profile",
+                                     "description":  "Account data, plan usage and linked shops"
+                                 },
+                     "security":  {
+                                      "title":  "Security",
+                                      "description":  "Login status, token info and session management"
+                                  },
+                     "notifications":  {
+                                           "title":  "Notifications",
+                                           "description":  "Email notifications for orders, reviews etc."
+                                       },
+                     "language":  {
+                                      "title":  "Language & Region",
+                                      "description":  "Switch language (DE / EN / AR) – takes effect immediately"
+                                  },
+                     "roles":  {
+                                   "title":  "User Roles",
+                                   "description":  "Your roles and permissions in all shops"
+                               },
+                     "permissions":  {
+                                         "title":  "Role Management",
+                                         "description":  "Manage shop and domain roles for team members"
+                                     },
+                     "audit":  {
+                                   "title":  "Audit Log",
+                                   "description":  "Track all actions and changes chronologically"
+                               },
+                     "subscriptionCard":  {
+                                             "title":  "Plan & Subscription",
+                                             "description":  "Manage, upgrade or cancel your current plan"
+                                         },
+                     "usage_stores":  "Stores",
+                     "usage_products":  "Products",
+                     "usage_storage":  "Storage (MB)",
+                     "usage_aiCalls":  "AI Calls / Month",
+                     "usage_domains":  "Domains",
+                     "usage_customers":  "Customers",
                      "general":  "General",
                      "slider":  "Slider",
                      "whatsapp":  {

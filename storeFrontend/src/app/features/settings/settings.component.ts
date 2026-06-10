@@ -108,7 +108,7 @@ interface SettingsSection {
                 <span class="store-slug">{{ store.slug }}.markt.ma</span>
               </div>
               <span class="store-status" [ngClass]="'status-' + store.status.toLowerCase()">
-                {{ store.status === 'ACTIVE' ? 'Aktiv' : store.status === 'INACTIVE' ? 'Inaktiv' : store.status }}
+                {{ ('status.' + store.status.toLowerCase()) | translate }}
               </span>
               <span class="card-chevron">›</span>
             </div>
@@ -119,7 +119,7 @@ interface SettingsSection {
         <div class="sections-grid" *ngFor="let section of settingsSections">
           <h2 class="section-title">
             <span class="section-icon">{{ section.icon }}</span>
-            {{ section.title }}
+            {{ section.title | translate }}
           </h2>
           <div class="cards-grid">
             <div *ngFor="let card of section.cards"
@@ -131,8 +131,8 @@ interface SettingsSection {
                 <span class="card-icon">{{ card.icon }}</span>
               </div>
               <div class="card-content">
-                <h3>{{ card.title }}</h3>
-                <p>{{ card.description }}</p>
+                <h3>{{ card.title | translate }}</h3>
+                <p>{{ card.description | translate }}</p>
               </div>
               <span *ngIf="card.badge" class="card-badge" [ngClass]="card.badgeClass || ''">{{ card.badge }}</span>
               <span class="card-chevron">›</span>
@@ -655,41 +655,41 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
   settingsSections: SettingsSection[] = [
     {
-      title: 'Konto',
+      title: 'settings.account',
       icon: '👤',
       cards: [
-        { id: 'profile', icon: '👤', title: 'Mein Profil', description: 'Account-Daten, Plan-Nutzung und verknüpfte Shops', tab: 'profile' },
-        { id: 'security', icon: '🔒', title: 'Sicherheit', description: 'Anmeldestatus, Token-Info und Sitzungsverwaltung', tab: 'security' },
-        { id: 'notifications', icon: '🔔', title: 'Benachrichtigungen', description: 'E-Mail-Benachrichtigungen für Bestellungen, Bewertungen etc.', tab: 'notifications' },
-        { id: 'language', icon: '🌍', title: 'Sprache & Region', description: 'Sprache umschalten (DE / EN / AR) – sofort wirksam', tab: 'language' }
+        { id: 'profile', icon: '👤', title: 'settings.profile.title', description: 'settings.profile.description', tab: 'profile' },
+        { id: 'security', icon: '🔒', title: 'settings.security.title', description: 'settings.security.description', tab: 'security' },
+        { id: 'notifications', icon: '🔔', title: 'settings.notifications.title', description: 'settings.notifications.description', tab: 'notifications' },
+        { id: 'language', icon: '🌍', title: 'settings.language.title', description: 'settings.language.description', tab: 'language' }
       ]
     },
     {
-      title: 'Team & Zugriff',
+      title: 'settings.teamAccess',
       icon: '👥',
       cards: [
-        { id: 'roles', icon: '👥', title: 'Benutzerrollen', description: 'Ihre Rollen und Berechtigungen in allen Shops', tab: 'roles' },
-        { id: 'permissions', icon: '🔐', title: 'Rollenverwaltung', description: 'Shop- und Domain-Rollen für Teammitglieder verwalten', tab: 'permissions' },
-        { id: 'audit', icon: '📋', title: 'Änderungsprotokoll', description: 'Alle Aktionen und Änderungen chronologisch nachverfolgen', tab: 'audit' }
+        { id: 'roles', icon: '👥', title: 'settings.roles.title', description: 'settings.roles.description', tab: 'roles' },
+        { id: 'permissions', icon: '🔐', title: 'settings.permissions.title', description: 'settings.permissions.description', tab: 'permissions' },
+        { id: 'audit', icon: '📋', title: 'settings.audit.title', description: 'settings.audit.description', tab: 'audit' }
       ]
     },
     {
-      title: 'Abonnement',
+      title: 'settings.subscription',
       icon: '💳',
       cards: [
-        { id: 'subscription', icon: '💎', title: 'Abo & Tarif', description: 'Aktuellen Plan verwalten, upgraden oder kündigen', route: '/subscription', badge: 'PRO', badgeClass: 'badge-pro' }
+        { id: 'subscription', icon: '💎', title: 'settings.subscriptionCard.title', description: 'settings.subscriptionCard.description', route: '/subscription', badge: 'PRO', badgeClass: 'badge-pro' }
       ]
     }
   ];
 
-  private tabMeta: Record<string, { icon: string; title: string }> = {
-    profile: { icon: '👤', title: 'Mein Profil' },
-    security: { icon: '🔒', title: 'Sicherheit' },
-    notifications: { icon: '🔔', title: 'Benachrichtigungen' },
-    language: { icon: '🌍', title: 'Sprache & Region' },
-    roles: { icon: '👥', title: 'Benutzerrollen' },
-    permissions: { icon: '🔐', title: 'Rollenverwaltung' },
-    audit: { icon: '📋', title: 'Änderungsprotokoll' }
+  private tabMeta: Record<string, { icon: string; titleKey: string }> = {
+    profile: { icon: '👤', titleKey: 'settings.profile.title' },
+    security: { icon: '🔒', titleKey: 'settings.security.title' },
+    notifications: { icon: '🔔', titleKey: 'settings.notifications.title' },
+    language: { icon: '🌍', titleKey: 'settings.language.title' },
+    roles: { icon: '👥', titleKey: 'settings.roles.title' },
+    permissions: { icon: '🔐', titleKey: 'settings.permissions.title' },
+    audit: { icon: '📋', titleKey: 'settings.audit.title' }
   };
 
   private subs: Subscription[] = [];
@@ -769,13 +769,14 @@ export class SettingsComponent implements OnInit, OnDestroy {
   }
 
   private mapUsageToItems(s: UsageStats) {
+    const t = (key: string) => this.translationService.translate(key);
     return [
-      { icon: '🏪', label: 'Stores', ...this.extractUsage(s.stores) },
-      { icon: '📦', label: 'Produkte', ...this.extractUsage(s.products) },
-      { icon: '💾', label: 'Speicher (MB)', ...this.extractUsage(s.storageMb) },
-      { icon: '🤖', label: 'AI-Calls / Monat', ...this.extractUsage(s.aiCallsThisMonth) },
-      { icon: '🌐', label: 'Domains', ...this.extractUsage(s.customDomains) },
-      { icon: '👥', label: 'Kunden', ...this.extractUsage(s.customers) }
+      { icon: '🏪', label: t('settings.usage_stores'), ...this.extractUsage(s.stores) },
+      { icon: '📦', label: t('settings.usage_products'), ...this.extractUsage(s.products) },
+      { icon: '💾', label: t('settings.usage_storage'), ...this.extractUsage(s.storageMb) },
+      { icon: '🤖', label: t('settings.usage_aiCalls'), ...this.extractUsage(s.aiCallsThisMonth) },
+      { icon: '🌐', label: t('settings.usage_domains'), ...this.extractUsage(s.customDomains) },
+      { icon: '👥', label: t('settings.usage_customers'), ...this.extractUsage(s.customers) }
     ];
   }
 
@@ -847,7 +848,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
   }
 
   getActiveTitle(): string {
-    return this.tabMeta[this.activeTab || '']?.title || 'Einstellungen';
+    const key = this.tabMeta[this.activeTab || '']?.titleKey;
+    return key ? this.translationService.translate(key) : this.translationService.translate('settings.title');
   }
 
   // ═══ HELPERS ═══
