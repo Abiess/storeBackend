@@ -948,8 +948,8 @@
                   "unitMb":  "ميغابايت"
               },
     "whatsapp":  {
-                     "contactUs":     "تواصل مع markt.ma",
-                     "contactSeller": "تواصل مع البائع",
+                     "contactUs":  "تواصل مع markt.ma",
+                     "contactSeller":  "تواصل مع البائع",
                      "orderOnWhatsapp":  "اطلب عبر واتساب"
                  },
     "theme":  {
@@ -1296,14 +1296,38 @@
                                              "general":  "حدث خطأ ما. يرجى المحاولة مرة أخرى."
                                          },
                               "categories":  {
-                                                 "fashion":     { "name":  "الموضة والملابس",        "description":  "ملابس وأحذية وإكسسوارات" },
-                                                 "electronics": { "name":  "الإلكترونيات",           "description":  "هواتف وحواسيب وأجهزة" },
-                                                 "food":        { "name":  "الأغذية والمشروبات",     "description":  "طعام ومشروبات وسناكات" },
-                                                 "beauty":      { "name":  "الجمال والتجميل",        "description":  "مكياج وعناية وعطور" },
-                                                 "home":        { "name":  "المنزل والحديقة",        "description":  "أثاث وديكور وأدوات" },
-                                                 "sports":      { "name":  "الرياضة والترفيه",       "description":  "معدات ورياضة خارجية ولياقة" },
-                                                 "books":       { "name":  "الكتب والإعلام",         "description":  "كتب وأفلام وموسيقى" },
-                                                 "toys":        { "name":  "الألعاب",               "description":  "ألعاب لجميع الأعمار" }
+                                                 "fashion":  {
+                                                                 "name":  "الموضة والملابس",
+                                                                 "description":  "ملابس وأحذية وإكسسوارات"
+                                                             },
+                                                 "electronics":  {
+                                                                     "name":  "الإلكترونيات",
+                                                                     "description":  "هواتف وحواسيب وأجهزة"
+                                                                 },
+                                                 "food":  {
+                                                              "name":  "الأغذية والمشروبات",
+                                                              "description":  "طعام ومشروبات وسناكات"
+                                                          },
+                                                 "beauty":  {
+                                                                "name":  "الجمال والتجميل",
+                                                                "description":  "مكياج وعناية وعطور"
+                                                            },
+                                                 "home":  {
+                                                              "name":  "المنزل والحديقة",
+                                                              "description":  "أثاث وديكور وأدوات"
+                                                          },
+                                                 "sports":  {
+                                                                "name":  "الرياضة والترفيه",
+                                                                "description":  "معدات ورياضة خارجية ولياقة"
+                                                            },
+                                                 "books":  {
+                                                               "name":  "الكتب والإعلام",
+                                                               "description":  "كتب وأفلام وموسيقى"
+                                                           },
+                                                 "toys":  {
+                                                              "name":  "الألعاب",
+                                                              "description":  "ألعاب لجميع الأعمار"
+                                                          }
                                              }
                           },
     "brandingEditor":  {
@@ -1365,5 +1389,40 @@
                                            "badgeSale":  "تخفيض",
                                            "badgeTopSeller":  "الأكثر مبيعاً"
                                        }
-                       }
+                       },
+    "productList":  {
+                        "fabNewProduct":  "منتج جديد",
+                        "bulkSetDraft":  "كمسودة",
+                        "filterDraft":  "مسودة",
+                        "filterArchived":  "مؤرشف",
+                        "colCategory":  "الفئة",
+                        "colStatus":  "الحالة",
+                        "colImage":  "الصورة",
+                        "filterActive":  "نشط",
+                        "actionDelete":  "حذف",
+                        "filterPriceReview":  "مراجعة السعر",
+                        "fabCreateCategory":  "إنشاء فئة",
+                        "colName":  "الاسم",
+                        "bulkArchive":  "أرشفة",
+                        "searchPlaceholder":  "البحث عن المنتج...",
+                        "fabLabel":  "إضافة منتج",
+                        "bulkDelete":  "حذف",
+                        "noProductsInStatus":  "لا توجد منتجات بهذه الحالة",
+                        "actionEdit":  "تعديل",
+                        "bulkActivate":  "تفعيل",
+                        "noTelegramProducts":  "لا توجد منتجات مستوردة من تيليغرام",
+                        "filterTelegram":  "تيليغرام",
+                        "filterAll":  "الكل",
+                        "colPrice":  "السعر"
+                    },
+    "dataList":  {
+                     "emptyTitle":  "لا يوجد شيء هنا بعد",
+                     "all":  "الكل",
+                     "entries":  "إدخالات",
+                     "noResults":  "لا توجد نتائج",
+                     "deselect":  "إلغاء التحديد",
+                     "selected":  "محدد",
+                     "noResultsFor":  "لا توجد إدخالات لـ",
+                     "resetSearch":  "إعادة ضبط البحث"
+                 }
 }

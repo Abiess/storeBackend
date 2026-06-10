@@ -1328,8 +1328,8 @@
                   "unitMb":  "MB"
               },
     "whatsapp":  {
-                     "contactUs":     "Contact markt.ma",
-                     "contactSeller": "Contact the seller",
+                     "contactUs":  "Contact markt.ma",
+                     "contactSeller":  "Contact the seller",
                      "orderOnWhatsapp":  "Order on WhatsApp"
                  },
     "theme":  {
@@ -1446,25 +1446,25 @@
                                             "storeNamePlaceholder":  "e.g. My Fashion Store",
                                             "storeNameRequired":  "Please enter a store name",
                                             "storeUrl":  "Store URL",
-                                            "storeUrlOptional":  "Optional \u2013 we\u2019ll generate one",
+                                            "storeUrlOptional":  "Optional – we’ll generate one",
                                             "checking":  "Checking...",
-                                            "slugAvailable":  "\u2713 Available \u2013 {{slug}}.markt.ma",
-                                            "slugTaken":  "\u2717 Already taken. Try another.",
+                                            "slugAvailable":  "✓ Available – {{slug}}.markt.ma",
+                                            "slugTaken":  "✗ Already taken. Try another.",
                                             "slugError":  "Only lowercase letters, numbers, and hyphens",
                                             "continueBtn":  "Continue: Choose your niche"
                                         },
                               "step2":  {
                                             "title":  "What do you sell?",
-                                            "subtitle":  "Pick your niche \u2013 we\u2019ll tailor your store. You can change this later.",
-                                            "back":  "\u2190 Back",
+                                            "subtitle":  "Pick your niche – we’ll tailor your store. You can change this later.",
+                                            "back":  "← Back",
                                             "skip":  "Skip this step",
                                             "creating":  "Creating your store...",
-                                            "create":  "Create my store \u2192"
+                                            "create":  "Create my store →"
                                         },
                               "trust":  {
-                                            "freeToStart":  "\u2b50 Free to start",
-                                            "noCard":  "\u2b50 No credit card",
-                                            "setupMinutes":  "\u2b50 Setup in minutes"
+                                            "freeToStart":  "⭐ Free to start",
+                                            "noCard":  "⭐ No credit card",
+                                            "setupMinutes":  "⭐ Setup in minutes"
                                         },
                               "footer":  {
                                              "alreadyHave":  "Already have a store?",
@@ -1475,14 +1475,38 @@
                                              "general":  "Something went wrong. Please try again."
                                          },
                               "categories":  {
-                                                 "fashion":     { "name":  "Fashion & Apparel",   "description":  "Clothing, shoes, accessories" },
-                                                 "electronics": { "name":  "Electronics",          "description":  "Phones, computers, gadgets" },
-                                                 "food":        { "name":  "Food & Beverages",     "description":  "Food, drinks, snacks" },
-                                                 "beauty":      { "name":  "Beauty & Cosmetics",   "description":  "Makeup, skincare, fragrances" },
-                                                 "home":        { "name":  "Home & Garden",        "description":  "Furniture, decor, tools" },
-                                                 "sports":      { "name":  "Sports & Leisure",     "description":  "Equipment, outdoor, fitness" },
-                                                 "books":       { "name":  "Books & Media",        "description":  "Books, movies, music" },
-                                                 "toys":        { "name":  "Toys",                 "description":  "Toys for all ages" }
+                                                 "fashion":  {
+                                                                 "name":  "Fashion \u0026 Apparel",
+                                                                 "description":  "Clothing, shoes, accessories"
+                                                             },
+                                                 "electronics":  {
+                                                                     "name":  "Electronics",
+                                                                     "description":  "Phones, computers, gadgets"
+                                                                 },
+                                                 "food":  {
+                                                              "name":  "Food \u0026 Beverages",
+                                                              "description":  "Food, drinks, snacks"
+                                                          },
+                                                 "beauty":  {
+                                                                "name":  "Beauty \u0026 Cosmetics",
+                                                                "description":  "Makeup, skincare, fragrances"
+                                                            },
+                                                 "home":  {
+                                                              "name":  "Home \u0026 Garden",
+                                                              "description":  "Furniture, decor, tools"
+                                                          },
+                                                 "sports":  {
+                                                                "name":  "Sports \u0026 Leisure",
+                                                                "description":  "Equipment, outdoor, fitness"
+                                                            },
+                                                 "books":  {
+                                                               "name":  "Books \u0026 Media",
+                                                               "description":  "Books, movies, music"
+                                                           },
+                                                 "toys":  {
+                                                              "name":  "Toys",
+                                                              "description":  "Toys for all ages"
+                                                          }
                                              }
                           },
     "brandingEditor":  {
@@ -1544,5 +1568,40 @@
                                            "badgeSale":  "Sale",
                                            "badgeTopSeller":  "Top Seller"
                                        }
-                       }
+                       },
+    "productList":  {
+                        "fabNewProduct":  "New Product",
+                        "bulkSetDraft":  "Set as Draft",
+                        "filterDraft":  "Draft",
+                        "filterArchived":  "Archived",
+                        "colCategory":  "Category",
+                        "colStatus":  "Status",
+                        "colImage":  "Image",
+                        "filterActive":  "Active",
+                        "actionDelete":  "Delete",
+                        "filterPriceReview":  "Check price",
+                        "fabCreateCategory":  "Create Category",
+                        "colName":  "Name",
+                        "bulkArchive":  "Archive",
+                        "searchPlaceholder":  "Search product...",
+                        "fabLabel":  "Add Product",
+                        "bulkDelete":  "Delete",
+                        "noProductsInStatus":  "No products with this status",
+                        "actionEdit":  "Edit",
+                        "bulkActivate":  "Activate",
+                        "noTelegramProducts":  "No Telegram imports available",
+                        "filterTelegram":  "Telegram",
+                        "filterAll":  "All",
+                        "colPrice":  "Price"
+                    },
+    "dataList":  {
+                     "emptyTitle":  "Nothing here yet",
+                     "all":  "All",
+                     "entries":  "entries",
+                     "noResults":  "No results",
+                     "deselect":  "Deselect",
+                     "selected":  "selected",
+                     "noResultsFor":  "No entries for",
+                     "resetSearch":  "Reset search"
+                 }
 }

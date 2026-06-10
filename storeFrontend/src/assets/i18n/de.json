@@ -1544,8 +1544,44 @@
                                            "addToCart":  "+ Warenkorb",
                                            "badgeNew":  "Neu",
                                            "badgeSale":  "Sale",
-                                           "badgeTopSeller":  "Top Seller"
-                                       }
-                       }
+                                            "badgeTopSeller":  "Top Seller"
+                                        }
+                        }
+},
+    "productList":  {
+                        "searchPlaceholder":   "Produkt suchen...",
+                        "filterAll":           "Alle",
+                        "filterActive":        "Aktiv",
+                        "filterDraft":         "Entwurf",
+                        "filterArchived":      "Archiviert",
+                        "filterTelegram":      "Telegram",
+                        "filterPriceReview":   "Preis prüfen",
+                        "colImage":            "Bild",
+                        "colName":             "Name",
+                        "colCategory":         "Kategorie",
+                        "colPrice":            "Preis",
+                        "colStatus":           "Status",
+                        "actionEdit":          "Bearbeiten",
+                        "actionDelete":        "Löschen",
+                        "bulkActivate":        "Aktivieren",
+                        "bulkSetDraft":        "Als Entwurf",
+                        "bulkArchive":         "Archivieren",
+                        "bulkDelete":          "Löschen",
+                        "fabLabel":            "Produkt hinzufügen",
+                        "fabNewProduct":       "Neues Produkt",
+                        "fabCreateCategory":   "Kategorie anlegen",
+                        "noTelegramProducts":  "Keine Telegram-Importe vorhanden",
+                        "noProductsInStatus":  "Keine Produkte in diesem Status"
+                    },
+    "dataList":  {
+                     "selected":      "ausgewählt",
+                     "deselect":      "Abwählen",
+                     "all":           "Alle",
+                     "entries":       "Einträge",
+                     "noResults":     "Keine Ergebnisse",
+                     "noResultsFor":  "Keine Einträge für",
+                     "resetSearch":   "Suche zurücksetzen",
+                     "emptyTitle":    "Noch nichts hier"
+                 }
 }
 
