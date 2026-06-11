@@ -181,7 +181,45 @@ export class AuthService {
       }
       return false;
     }
-    return this.currentUserSubject.value !== null;
+
+    // FIX: Race Condition – currentUserSubject kann nach anonymer Store-Erstellung
+    // noch null sein, obwohl Token + User bereits in localStorage liegen.
+    // Deshalb: User aus localStorage nachladen wenn currentUserSubject leer.
+    if (!this.currentUserSubject.value) {
+      const storedUser = localStorage.getItem('currentUser');
+      if (storedUser && storedUser !== 'undefined') {
+        try {
+          const user = JSON.parse(storedUser);
+          this.currentUserSubject.next(user);
+          console.log('🔄 isAuthenticated: User aus localStorage nachgeladen');
+        } catch (e) {
+          console.error('Fehler beim Parsen des gespeicherten Users:', e);
+        }
+      }
+    }
+
+    // Gültiger Token = eingeloggt (auch wenn User-Objekt noch async lädt)
+    return true;
+  }
+
+  /**
+   * Öffentliche Methode: User + Token manuell setzen (z.B. nach anonymer Store-Erstellung)
+   */
+  setAuthFromStorage(): void {
+    const token = this.getToken();
+    if (!token || this.isTokenExpired(token)) return;
+
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser && storedUser !== 'undefined') {
+      try {
+        const user = JSON.parse(storedUser);
+        this.currentUserSubject.next(user);
+        console.log('✅ Auth aus localStorage geladen:', user.email);
+      } catch (e) {
+        console.error('Fehler beim Parsen des Users:', e);
+        this.validateTokenWithBackend();
+      }
+    }
   }
 
   getToken(): string | null {

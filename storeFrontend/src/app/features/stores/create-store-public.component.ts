@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { AuthService } from '@app/core/services/auth.service';
 import { environment } from '@env/environment';
 
 interface CreateStoreResponse {
@@ -402,7 +403,8 @@ export class CreateStorePublicComponent {
   constructor(
     private fb: FormBuilder,
     private http: HttpClient,
-    private router: Router
+    private router: Router,
+    private authService: AuthService
   ) {
     this.form = this.fb.group({
       storeName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(80)]]
@@ -444,6 +446,8 @@ export class CreateStorePublicComponent {
           role: 'USER',
           roles: ['USER']
         }));
+        // FIX: AuthService currentUserSubject aktualisieren
+        this.authService.setAuthFromStorage();
         this.createdStoreId = res.storeId;
         this.storeName.set(name);
         this.storeSlug.set(res.storeSlug);

@@ -76,8 +76,8 @@ export class PhoneQuickAuthService {
         // Wie normaler Login – Token und User speichern
         localStorage.setItem('auth_token', response.token);
         localStorage.setItem('currentUser', JSON.stringify(response.user));
-        // AuthService BehaviorSubject aktualisieren
-        (this.authService as any).currentUserSubject?.next(response.user);
+        // FIX: AuthService BehaviorSubject über öffentliche Methode aktualisieren
+        this.authService.setAuthFromStorage();
         console.log('✅ [PhoneAuth] Login erfolgreich – User:', response.user.id);
       })
     );

@@ -7,6 +7,7 @@ import { StoreService } from '@app/core/services/store.service';
 import { ClarityService } from '@app/core/services/clarity.service';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { TranslationService } from '@app/core/services/translation.service';
+import { AuthService } from '@app/core/services/auth.service';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { environment } from '@env/environment';
@@ -484,7 +485,8 @@ export class StoreCreateSimpleComponent implements OnInit {
     private router: Router,
     private http: HttpClient,
     private clarity: ClarityService,
-    private translationService: TranslationService
+    private translationService: TranslationService,
+    private authService: AuthService
   ) {
     this.storeForm = this.fb.group({
       storeName: ['', [Validators.required, Validators.minLength(2)]],
@@ -602,6 +604,9 @@ export class StoreCreateSimpleComponent implements OnInit {
             role: 'USER',
             roles: ['USER']
           }));
+          // FIX: AuthService currentUserSubject aktualisieren, damit AuthGuard
+          // beim Navigieren zu /stores/:id keinen Redirect zu /login macht
+          this.authService.setAuthFromStorage();
           this.clarity.event('store_created');
           this.clarity.setTag('storeCreationMethod', 'anonymous');
           this.clarity.identify(String(res.userId));
