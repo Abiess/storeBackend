@@ -187,6 +187,19 @@
                      "step1":  "Cart",
                      "step2":  "Checkout",
                      "step3":  "Confirmation",
+                     "shippingMethod":  "Shipping method",
+                     "notes":  "Notes (optional)",
+                     "notesPlaceholder":  "Special requests or notes about your order...",
+                     "pickupTitle":  "Store pickup",
+                     "pickupDesc":  "Your order will be prepared for pickup. We will notify you by email once it is ready.",
+                     "pickupComingSoon":  "🚧 Shipping options coming soon",
+                     "pickupFree":  "✅ Free",
+                     "pickupLabel":  "🏪 Pickup",
+                     "saveAddress":  "💾 Save this address for future orders",
+                     "saveAddressHint":  "Your address will be filled automatically at the next checkout",
+                     "discount":  "🎉 Discount",
+                     "free":  "Free",
+                     "tax":  "VAT (19%)",
                      "shippingAddress":  "Shipping address",
                      "billingAddress":  "Billing address",
                      "sameBilling":  "Billing address is the same as shipping address",
@@ -1456,6 +1469,15 @@
                                     "texts":  "Texts per Language",
                                     "textsHint":  "Enter the banner text for each language. If a text is missing, the German version will be used as fallback."
                                 }
+               },
+    "coupon":  {
+                   "label":  "Coupon code",
+                   "placeholder":  "e.g. SAVE20",
+                   "hint":  "Enter your coupon code",
+                   "apply":  "Apply",
+                   "applied":  "✅ Applied coupons",
+                   "totalDiscount":  "Total discount:",
+                   "alreadyApplied":  "Already applied"
                },
     "filter":  {
                    "priceRange":  "Price Range"

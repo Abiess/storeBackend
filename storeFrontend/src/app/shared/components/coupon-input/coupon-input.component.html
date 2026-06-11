@@ -1,14 +1,14 @@
 <div class="coupon-input-container">
   <div class="coupon-input-section">
     <mat-form-field appearance="outline" class="coupon-field">
-      <mat-label>Gutscheincode</mat-label>
+      <mat-label>{{ 'coupon.label' | translate }}</mat-label>
       <input matInput
              [(ngModel)]="couponCode"
              (keyup.enter)="onApplyCoupon()"
-             placeholder="z.B. SAVE20"
+             [placeholder]="'coupon.placeholder' | translate"
              [disabled]="validating">
       <mat-icon matPrefix>local_offer</mat-icon>
-      <mat-hint>Geben Sie Ihren Gutscheincode ein</mat-hint>
+      <mat-hint>{{ 'coupon.hint' | translate }}</mat-hint>
     </mat-form-field>
 
     <button mat-raised-button
@@ -16,13 +16,13 @@
             (click)="onApplyCoupon()"
             [disabled]="!couponCode.trim() || validating">
       <mat-spinner diameter="20" *ngIf="validating"></mat-spinner>
-      <span *ngIf="!validating">Anwenden</span>
+      <span *ngIf="!validating">{{ 'coupon.apply' | translate }}</span>
     </button>
   </div>
 
   <!-- Applied Coupons -->
   <div class="applied-coupons" *ngIf="appliedCoupons.length > 0">
-    <h4>✅ Angewendete Gutscheine</h4>
+    <h4>{{ 'coupon.applied' | translate }}</h4>
     <div class="coupon-list">
       <div *ngFor="let coupon of appliedCoupons" class="coupon-chip">
         <div class="chip-content">
@@ -37,7 +37,7 @@
     </div>
 
     <div class="total-discount">
-      <strong>Gesamtrabatt:</strong>
+      <strong>{{ 'coupon.totalDiscount' | translate }}</strong>
       <span class="amount">-{{ formatCents(getTotalDiscount()) }} €</span>
     </div>
   </div>

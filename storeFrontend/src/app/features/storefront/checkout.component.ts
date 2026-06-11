@@ -241,12 +241,12 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
             </section>
 
             <section class="form-section">
-              <h2>Anmerkungen (optional)</h2>
+              <h2>{{ 'checkout.notes' | translate }}</h2>
               <div class="form-group">
                 <textarea
                   formControlName="notes"
                   rows="4"
-                  placeholder="Besondere Wünsche oder Anmerkungen zur Bestellung..."
+                  [placeholder]="'checkout.notesPlaceholder' | translate"
                 ></textarea>
               </div>
             </section>
@@ -258,11 +258,11 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
               <div class="pickup-only-banner">
                 <div class="pickup-icon">🏪</div>
                 <div class="pickup-info">
-                  <strong>Abholung im Geschäft</strong>
-                  <p>Ihre Bestellung wird zur Abholung bereitgestellt. Wir informieren Sie per E-Mail, sobald sie fertig ist.</p>
-                  <small class="coming-soon">🚧 Versand-Optionen werden demnächst verfügbar sein</small>
+                  <strong>{{ 'checkout.pickupTitle' | translate }}</strong>
+                  <p>{{ 'checkout.pickupDesc' | translate }}</p>
+                  <small class="coming-soon">{{ 'checkout.pickupComingSoon' | translate }}</small>
                 </div>
-                <div class="pickup-badge">✅ Kostenlos</div>
+                <div class="pickup-badge">{{ 'checkout.pickupFree' | translate }}</div>
               </div>
             </section>
 
@@ -383,9 +383,9 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
               <div class="checkbox-wrapper">
                 <label>
                   <input type="checkbox" [(ngModel)]="saveAddressForFuture" [ngModelOptions]="{ standalone: true }" />
-                  💾 Diese Adresse für zukünftige Bestellungen speichern
+                  {{ 'checkout.saveAddress' | translate }}
                 </label>
-                <p class="help-text">Ihre Adresse wird beim nächsten Checkout automatisch ausgefüllt</p>
+                <p class="help-text">{{ 'checkout.saveAddressHint' | translate }}</p>
               </div>
             </section>
 
@@ -440,17 +440,17 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
             </div>
 
             <div class="summary-row discount" *ngIf="discountAmount > 0">
-              <span>🎉 Rabatt</span>
+              <span>{{ 'checkout.discount' | translate }}</span>
               <span class="discount-value">-{{ discountAmount | number:'1.2-2' }} €</span>
             </div>
 
             <div class="summary-row">
-              <span>🏪 Abholung</span>
-              <span class="free-shipping">Kostenlos</span>
+              <span>{{ 'checkout.pickupLabel' | translate }}</span>
+              <span class="free-shipping">{{ 'checkout.free' | translate }}</span>
             </div>
 
             <div class="summary-row tax">
-              <span>MwSt. (19%)</span>
+              <span>{{ 'checkout.tax' | translate }}</span>
               <span>{{ getTax() | number:'1.2-2' }} €</span>
             </div>
 

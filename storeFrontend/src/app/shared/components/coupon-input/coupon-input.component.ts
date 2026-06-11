@@ -8,6 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CouponService, ValidateCouponsRequest, ValidateCouponsResponse, ValidCouponDTO, InvalidCouponDTO } from '../../../core/services/coupon.service';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 @Component({
   selector: 'app-coupon-input',
@@ -20,7 +21,8 @@ import { CouponService, ValidateCouponsRequest, ValidateCouponsResponse, ValidCo
     MatButtonModule,
     MatIconModule,
     MatChipsModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    TranslatePipe
   ],
   templateUrl: './coupon-input.component.html',
   styleUrls: ['./coupon-input.component.scss']
@@ -48,7 +50,7 @@ export class CouponInputComponent implements OnInit {
     const code = this.couponCode.trim().toUpperCase();
 
     if (this.appliedCoupons.some(c => c.code === code)) {
-      this.invalidCoupons = [{ code, reason: 'Bereits angewendet' }];
+      this.invalidCoupons = [{ code, reason: 'coupon.alreadyApplied' }];
       return;
     }
 

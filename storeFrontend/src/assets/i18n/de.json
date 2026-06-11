@@ -305,6 +305,19 @@
                      "step1":  "Warenkorb",
                      "step2":  "Kasse",
                      "step3":  "Bestätigung",
+                     "shippingMethod":  "Versandmethode",
+                     "notes":  "Anmerkungen (optional)",
+                     "notesPlaceholder":  "Besondere Wünsche oder Anmerkungen zur Bestellung...",
+                     "pickupTitle":  "Abholung im Geschäft",
+                     "pickupDesc":  "Ihre Bestellung wird zur Abholung bereitgestellt. Wir informieren Sie per E-Mail, sobald sie fertig ist.",
+                     "pickupComingSoon":  "🚧 Versand-Optionen werden demnächst verfügbar sein",
+                     "pickupFree":  "✅ Kostenlos",
+                     "pickupLabel":  "🏪 Abholung",
+                     "saveAddress":  "💾 Diese Adresse für zukünftige Bestellungen speichern",
+                     "saveAddressHint":  "Ihre Adresse wird beim nächsten Checkout automatisch ausgefüllt",
+                     "discount":  "🎉 Rabatt",
+                     "free":  "Kostenlos",
+                     "tax":  "MwSt. (19%)",
                      "shippingAddress":  "Lieferadresse",
                      "billingAddress":  "Rechnungsadresse",
                      "sameBilling":  "Rechnungsadresse ist identisch mit Lieferadresse",
@@ -1457,6 +1470,15 @@
                                     "texts":  "Texte pro Sprache",
                                     "textsHint":  "Gib den Bannertext für jede Sprache ein. Fehlt ein Text, wird auf Deutsch (Fallback) zurückgegriffen."
                                 }
+               },
+    "coupon":  {
+                   "label":  "Gutscheincode",
+                   "placeholder":  "z.B. SAVE20",
+                   "hint":  "Geben Sie Ihren Gutscheincode ein",
+                   "apply":  "Anwenden",
+                   "applied":  "✅ Angewendete Gutscheine",
+                   "totalDiscount":  "Gesamtrabatt:",
+                   "alreadyApplied":  "Bereits angewendet"
                },
     "filter":  {
                    "priceRange":  "Preisbereich"
