@@ -115,13 +115,11 @@ public class CartService {
     /**
      * Holt oder erstellt eine Default-Variante für ein Produkt ohne Varianten.
      * Stellt sicher, dass variant_id NOT NULL niemals verletzt wird.
+     * FIXED: Ersetzt findAll()-Tabellenscan durch gezielten DB-Lookup (product_id + sku).
      */
     private ProductVariant getOrCreateDefaultVariant(Product product) {
         String defaultSku = "DEFAULT-" + product.getId();
-        return productVariantRepository.findAll().stream()
-                .filter(v -> v.getProduct() != null && v.getProduct().getId().equals(product.getId()))
-                .filter(v -> defaultSku.equals(v.getSku()))
-                .findFirst()
+        return productVariantRepository.findByProduct_IdAndSku(product.getId(), defaultSku)
                 .orElseGet(() -> {
                     ProductVariant variant = new ProductVariant();
                     variant.setProduct(product);

@@ -72,10 +72,9 @@ public class CouponService {
         if (status != null && !status.isEmpty()) {
             coupons = couponRepository.findByStoreIdAndStatus(storeId, Coupon.CouponStatus.valueOf(status.toUpperCase()));
         } else {
-            coupons = couponRepository.findAll().stream()
-                .filter(c -> c.getStoreId().equals(storeId))
-                .collect(Collectors.toList());
-        }
+                // MEMORY-FIX: Gezielter Lookup nach storeId statt findAll()
+                coupons = couponRepository.findByStoreId(storeId);
+            }
         return coupons.stream().map(couponMapper::toDto).collect(Collectors.toList());
     }
 

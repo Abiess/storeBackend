@@ -122,10 +122,12 @@ logging:
   level:
     root: INFO
     storebackend: INFO
-    org.springframework.security: INFO
+    # Security/JWT: WARN verhindert Log-Spam pro Request (alle INFO sind jetzt DEBUG)
+    storebackend.security: WARN
+    org.springframework.security: WARN  # war: INFO
     org.hibernate: INFO
-    # Health Check Logging
-    org.springframework.boot.actuate.health: DEBUG
+    # Actuator Health: WARN statt DEBUG – kein Health-Spam alle 15s
+    org.springframework.boot.actuate.health: WARN  # war: DEBUG
 
 # Swagger/OpenAPI Configuration
 springdoc:

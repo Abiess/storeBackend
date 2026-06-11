@@ -54,9 +54,13 @@ sudo chown "$APP_USER:$APP_USER" "$JAR_PATH"
 
 echo "✅ JAR installed successfully (verified)"
 
-echo "🧾 Ensuring log directory exists..."
+echo "🧾 Ensuring log directories exist and have correct permissions..."
 sudo mkdir -p "$LOG_DIR"
 sudo chown -R "$APP_USER:$APP_USER" "$LOG_DIR"
+sudo chmod 755 "$LOG_DIR"
+# Memory-Watch log directory (world-readable so root-cron can write)
+sudo mkdir -p /var/log/memory-watch
+sudo chmod 755 /var/log/memory-watch
 
 echo "🔧 Configuring environment..."
 if [ -z "${DB_PASSWORD:-}" ] || [ -z "${JWT_SECRET:-}" ]; then
@@ -66,7 +70,9 @@ fi
 
 echo "🔐 Writing environment file for systemd: $ENV_FILE"
 sudo bash -c "cat > '$ENV_FILE' <<EOF
-JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC
+JAVA_OPTS=-Xms128m -Xmx1024m -XX:+UseG1GC -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/storebackend/heapdump.hprof -XX:+ExitOnOutOfMemoryError
+# Fuer NMT-Diagnose (nur bei Bedarf aktivieren, ~5-10% Overhead):
+# JAVA_OPTS=\${JAVA_OPTS} -XX:NativeMemoryTracking=summary
 
 SPRING_PROFILES_ACTIVE=production
 SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/storedb

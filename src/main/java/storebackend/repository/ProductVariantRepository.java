@@ -28,6 +28,9 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
     // Find variant by SKU
     Optional<ProductVariant> findBySku(String sku);
 
+    // Gezielter Lookup statt findAll() – product ist @ManyToOne, Unterstrich = Navigation
+    Optional<ProductVariant> findByProduct_IdAndSku(Long productId, String sku);
+
     // Check if SKU exists
     boolean existsBySku(String sku);
 

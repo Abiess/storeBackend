@@ -26,13 +26,12 @@ public class SupplierProductService {
 
     /**
      * Get all active supplier catalog products (marketplace catalog).
+     * MEMORY-FIX: Ersetzt findAll()-Tabellenscan durch gezielten DB-Lookup.
      */
     public List<SupplierProductDTO> getSupplierCatalog() {
-        List<Product> products = productRepository.findAll().stream()
-                .filter(p -> Boolean.TRUE.equals(p.getIsSupplierCatalog()))
-                .filter(p -> p.getStatus() == ProductStatus.ACTIVE)
-                .collect(Collectors.toList());
-        
+        List<Product> products = productRepository
+                .findByIsSupplierCatalogAndStatus(Boolean.TRUE, ProductStatus.ACTIVE);
+
         return products.stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
@@ -40,10 +39,11 @@ public class SupplierProductService {
 
     /**
      * Get supplier's own products.
+     * MEMORY-FIX: Ersetzt findAll()-Tabellenscan durch gezielten DB-Lookup nach supplier.id.
      */
     public List<SupplierProductDTO> getProductsBySupplier(User supplier) {
-        List<Product> products = productRepository.findAll().stream()
-                .filter(p -> p.getSupplier() != null && p.getSupplier().getId().equals(supplier.getId()))
+        List<Product> products = productRepository.findBySupplier_Id(supplier.getId())
+                .stream()
                 .filter(p -> Boolean.TRUE.equals(p.getIsSupplierCatalog()))
                 .collect(Collectors.toList());
         

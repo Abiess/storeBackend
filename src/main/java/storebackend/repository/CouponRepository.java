@@ -17,5 +17,7 @@ public interface CouponRepository extends JpaRepository<Coupon, Long> {
     List<Coupon> findByStoreIdAndStatus(Long storeId, Coupon.CouponStatus status);
 
     List<Coupon> findByStoreIdAndAutoApplyTrue(Long storeId);
-}
 
+    // Gezielter Lookup nach Store statt findAll() – storeId ist direkte Spalte (kein nested)
+    List<Coupon> findByStoreId(Long storeId);
+}

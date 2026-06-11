@@ -31,6 +31,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         this.userRepository = userRepository;
     }
 
+    /**
+     * Prometheus-Scraping (/actuator/**) läuft alle 15 Sekunden – JWT-Filter überspringen.
+     * Swagger und API-Docs brauchen ebenfalls keinen JWT-Check.
+     */
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        return uri.startsWith("/actuator/")
+            || uri.startsWith("/actuator")
+            || uri.startsWith("/swagger-ui/")
+            || uri.startsWith("/swagger-ui.html")
+            || uri.startsWith("/v3/api-docs/")
+            || uri.startsWith("/v3/api-docs");
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
@@ -39,7 +54,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String requestURI = request.getRequestURI();
         String method = request.getMethod();
 
-        logger.info("=== JWT Filter - {} {} ===", method, requestURI);
+        // DEBUG statt INFO – verhindert Log-Spam bei jedem Request
+        logger.debug("JWT Filter - {} {}", method, requestURI);
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
@@ -47,7 +63,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             try {
                 String email = jwtUtil.extractEmail(token);
-                logger.info("Extracted email from token: {}", email);
+                logger.debug("Extracted email from token: {}", email);
 
                 if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                     User user = userRepository.findByEmail(email).orElse(null);
@@ -56,33 +72,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         logger.error("❌ User not found in database: {}", email);
                         logger.error("❌ This will result in 401 Unauthorized");
                     } else {
-                        logger.info("✅ Found user in database: {} (ID: {})", user.getEmail(), user.getId());
-                        logger.debug("User roles from database: {}", user.getRoles());
+                        // Nur userId + email loggen – KEIN passwordHash, KEIN toString()
+                        logger.debug("✅ Found user: id={}, email={}", user.getId(), user.getEmail());
 
                         try {
                             boolean isValid = jwtUtil.validateToken(token, email);
-                            logger.info("Token validation result: {}", isValid ? "VALID ✅" : "INVALID ❌");
+                            logger.debug("Token validation: {}", isValid ? "VALID" : "INVALID");
 
                             if (isValid) {
                                 var authorities = user.getRoles().stream()
                                         .map(role -> {
                                             String roleName = role.name();
-                                            // Nur ROLE_ hinzufügen, wenn es noch nicht vorhanden ist
                                             return roleName.startsWith("ROLE_") ? roleName : "ROLE_" + roleName;
                                         })
                                         .map(SimpleGrantedAuthority::new)
                                         .collect(Collectors.toList());
 
-                                logger.info("Setting authorities: {}", authorities);
+                                logger.debug("Setting authorities for {}: {}", email, authorities);
 
                                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                                         user, null, authorities);
                                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                                 SecurityContextHolder.getContext().setAuthentication(authToken);
 
-                                logger.info("✅ Successfully authenticated user: {} with roles: {}", email, authorities);
-                                logger.info("✅ SecurityContext now contains: {}",
-                                    SecurityContextHolder.getContext().getAuthentication().getName());
+                                logger.debug("✅ Authenticated: email={}, roles={}", email, authorities);
                             } else {
                                 logger.error("❌ Token validation failed for user: {}", email);
                                 logger.error("❌ This will result in 401 Unauthorized");
@@ -94,30 +107,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     }
                 } else if (email == null) {
                     logger.error("❌ Could not extract email from token");
-                    logger.error("❌ This will result in 401 Unauthorized");
                 } else {
                     logger.debug("Authentication already exists in SecurityContext: {}",
                         SecurityContextHolder.getContext().getAuthentication().getName());
                 }
             } catch (Exception e) {
                 logger.error("❌ Error processing JWT token: {} - {}", e.getClass().getSimpleName(), e.getMessage());
-                logger.error("❌ This will result in 401 Unauthorized");
                 if (logger.isDebugEnabled()) {
                     logger.debug("Full stack trace: ", e);
                 }
             }
         } else {
-            logger.debug("No Bearer token in Authorization header for {} {}", method, requestURI);
-            logger.debug("This endpoint will require authentication if not public");
+            logger.debug("No Bearer token for {} {}", method, requestURI);
         }
 
-        // Überprüfe vor dem Weiterleiten den SecurityContext-Status
+        // Nur bei tatsächlichem Problem warnen
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             var auth = SecurityContextHolder.getContext().getAuthentication();
-            if (auth != null && auth.isAuthenticated()) {
-                logger.info("✅ Proceeding with authenticated user: {}", auth.getName());
-            } else {
-                logger.warn("⚠️ Proceeding without authentication - may result in 401");
+            if (auth == null || !auth.isAuthenticated()) {
+                logger.warn("⚠️ Proceeding without valid authentication for {} {}", method, requestURI);
             }
         }
 

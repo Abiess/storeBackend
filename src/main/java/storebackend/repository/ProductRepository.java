@@ -6,6 +6,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import storebackend.entity.Product;
 import storebackend.entity.Store;
+import storebackend.enums.ProductStatus;
 
 import java.util.List;
 import java.util.Optional;
@@ -61,4 +62,20 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     /** Anzahl aller Produkte über alle Stores eines Owners. */
     @Query("SELECT COUNT(p) FROM Product p WHERE p.store.owner.id = :ownerId")
     long countByOwnerId(@Param("ownerId") Long ownerId);
+
+    // ── Supplier Catalog Methoden (ersetzen findAll() in SupplierProductService) ──
+
+    /**
+     * Alle aktiven Supplier-Katalog-Produkte.
+     * Ersetzt: productRepository.findAll().stream().filter(isSupplierCatalog && ACTIVE)
+     * Boolean-Parameter explizit, weil isSupplierCatalog nullable ist.
+     */
+    List<Product> findByIsSupplierCatalogAndStatus(Boolean isSupplierCatalog, ProductStatus status);
+
+    /**
+     * Alle Produkte eines Suppliers (Katalog-Produkte eines Benutzers).
+     * Ersetzt: productRepository.findAll().stream().filter(supplier.id == x)
+     * supplier ist @ManyToOne → Spring Data navigiert via Unterstrich: supplier.id
+     */
+    List<Product> findBySupplier_Id(Long supplierId);
 }

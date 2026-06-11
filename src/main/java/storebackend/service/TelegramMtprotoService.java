@@ -405,7 +405,10 @@ public class TelegramMtprotoService {
         body.put("api_hash", resolveApiHash(cfg));
         body.put("session_string", cfg.getSessionString());
         body.put("channel", channel);
-        body.put("limit", cfg.getImportLimit());
+        // MEMORY-FIX: Server-seitiger Hard-Cap auf 20 – egal was in der DB steht.
+        // Verhindert, dass ein einzelner Import hunderte Base64-Bilder gleichzeitig in den Heap lädt.
+        int effectiveLimit = Math.min(20, cfg.getImportLimit());
+        body.put("limit", effectiveLimit);
         body.put("min_id", lastMsgId);
 
         JsonNode response;
@@ -661,6 +664,8 @@ public class TelegramMtprotoService {
             productRepository.save(product);
 
             // Bilder speichern (Base64 → MinIO)
+            // MEMORY-FIX: b64-String nach Upload sofort auf null setzen damit GC ihn einsammeln kann.
+            // Große Base64-Strings (je ~1-3 MB pro Bild) sonst unnötig lange im Heap.
             JsonNode photoBytesArr = post.path("photo_bytes_list");
             if (photoBytesArr.isArray() && photoBytesArr.size() > 0) {
                 int sortOrder = 0;
@@ -669,6 +674,7 @@ public class TelegramMtprotoService {
                     if (b64 != null && !b64.isBlank()) {
                         try {
                             Media media = mediaService.uploadFromBase64(store, b64, title + " (Telegram)");
+                            b64 = null; // Referenz sofort freigeben – GC kann Base64-String einsammeln
                             ProductMedia productMedia = new ProductMedia();
                             productMedia.setProduct(product);
                             productMedia.setMedia(media);
@@ -678,6 +684,7 @@ public class TelegramMtprotoService {
                             sortOrder++;
                             log.info("[MTProto] ✅ Bild {} verknüpft mit Produkt {}", media.getId(), product.getId());
                         } catch (Exception imgErr) {
+                            b64 = null; // auch im Fehlerfall freigeben
                             log.warn("[MTProto] Bild-Upload fehlgeschlagen: {}", imgErr.getMessage());
                         }
                     }

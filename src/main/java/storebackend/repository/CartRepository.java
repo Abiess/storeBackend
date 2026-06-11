@@ -30,6 +30,9 @@ public interface CartRepository extends JpaRepository<Cart, Long> {
 
     void deleteByStoreId(Long storeId);
 
+    // Gezielter Lookup nach Store-ID statt findAll() – store ist @ManyToOne, Unterstrich = Navigation
+    List<Cart> findByStore_Id(Long storeId);
+
     /**
      * Findet "verwaiste" Warenkörbe (Abandoned Carts) für eingeloggte Kunden:
      *  - User vorhanden (sonst keine E-Mail möglich)

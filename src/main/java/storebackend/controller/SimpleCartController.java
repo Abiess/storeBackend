@@ -470,20 +470,15 @@ public class SimpleCartController {
     }
 
     /**
-     * FIXED: Erstellt oder lädt die Default-Variante für ein Produkt
-     * Erstellt eine echte Variante in der Datenbank wenn keine existiert
+     * FIXED: Erstellt oder lädt die Default-Variante für ein Produkt.
+     * MEMORY-FIX: Ersetzt findAll()-Tabellenscan durch gezielten DB-Lookup (product_id + sku).
      */
     private ProductVariant getOrCreateDefaultVariant(Product product) {
-        // Prüfe ob bereits eine Default-Variante existiert
-        // Wir nutzen die Produkt-ID als Basis für die SKU
         String defaultSku = "DEFAULT-" + product.getId();
 
-        // Suche nach existierender Default-Variante für dieses Produkt
-        List<ProductVariant> existingVariants = productVariantRepository.findAll();
-        Optional<ProductVariant> existing = existingVariants.stream()
-            .filter(v -> v.getProduct().getId().equals(product.getId()))
-            .filter(v -> v.getSku().equals(defaultSku))
-            .findFirst();
+        // Gezielter Lookup – kein findAll() mehr
+        Optional<ProductVariant> existing = productVariantRepository.findByProduct_IdAndSku(
+            product.getId(), defaultSku);
 
         if (existing.isPresent()) {
             log.debug("Found existing default variant for product {}", product.getId());
@@ -498,7 +493,6 @@ public class SimpleCartController {
         variant.setPrice(product.getBasePrice());
         variant.setStockQuantity(999); // Hoher Lagerbestand für Default-Varianten
 
-        // Speichere in Datenbank und gib zurück
         return productVariantRepository.save(variant);
     }
 
@@ -541,9 +535,8 @@ public class SimpleCartController {
     @DeleteMapping("/clear")
     public ResponseEntity<Void> clearCart(@RequestParam Long storeId) {
         try {
-            List<Cart> storeCarts = cartRepository.findAll().stream()
-                .filter(c -> c.getStore() != null && c.getStore().getId().equals(storeId))
-                .collect(java.util.stream.Collectors.toList());
+            // MEMORY-FIX: Gezielter Lookup nach storeId statt findAll()
+            List<Cart> storeCarts = cartRepository.findByStore_Id(storeId);
 
             if (!storeCarts.isEmpty()) {
                 Cart cart = storeCarts.get(0);

@@ -74,9 +74,9 @@ public class TelegramMtprotoConfig {
     @Column(name = "last_message_ids", columnDefinition = "TEXT")
     private String lastMessageIds = "{}";
 
-    /** Max. Posts pro Import-Durchlauf pro Channel */
+    /** Max. Posts pro Import-Durchlauf pro Channel (Default 20, Server-Hard-Cap ebenfalls 20) */
     @Column(name = "import_limit", nullable = false)
-    private int importLimit = 50;
+    private int importLimit = 20;
 
     /** Import aktiv (Polling läuft) */
     @Column(name = "is_active", nullable = false)

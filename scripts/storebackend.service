@@ -1,6 +1,8 @@
 [Unit]
 Description=Store Backend Spring Boot Application
-After=network.target postgresql.service
+# Warten auf Netzwerk (online, nicht nur "up"), PostgreSQL und MinIO
+After=network-online.target postgresql.service minio.service
+Wants=network-online.target
 Requires=postgresql.service
 
 [Service]
@@ -9,22 +11,30 @@ User=storebackend
 Group=storebackend
 WorkingDirectory=/opt/storebackend
 
-# Load all app config + secrets from this file (written by deploy.sh)
+# Alle App-Konfigurationen + Secrets aus dieser Datei (von deploy.sh/setup-vps.sh geschrieben)
 EnvironmentFile=/etc/storebackend.env
 
-# Start the Spring Boot JAR
+# $JAVA_OPTS kommt aus EnvironmentFile (inkl. Xms/Xmx/HeapDump-Flags)
 ExecStart=/usr/bin/java $JAVA_OPTS -jar /opt/storebackend/app.jar
 
-# Restart on failure
+# Neustart bei Fehler; 20s Wartezeit damit DB/MinIO nach Reboot stabil sind
 Restart=on-failure
-RestartSec=10
+RestartSec=20
 
-# Logging
+# Logging via systemd journal
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=storebackend
 
-# Limits
+# systemd Memory-Limits
+# MemoryHigh: Ab hier beginnt Kernel aggressiv zu GC-drücken (sanft)
+# MemoryMax:  Hartes Limit inkl. Java Native Memory, Metaspace, Threads, DirectBuffers.
+#              3G für Heapdump-Diagnose (Java Xmx=1024m + ~1G Native + Puffer).
+#              Nach OOM-Analyse auf 2G reduzieren.
+MemoryHigh=1600M
+MemoryMax=3G
+
+# Datei-/Prozess-Limits
 LimitNOFILE=65536
 LimitNPROC=4096
 
