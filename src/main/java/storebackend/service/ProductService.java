@@ -212,6 +212,8 @@ public class ProductService {
         dto.setStatus(product.getStatus());
         dto.setCreatedAt(product.getCreatedAt());
         dto.setUpdatedAt(product.getUpdatedAt());
+        // Direkte Bild-URL (z.B. Starter-Pack-Asset) – dient als Fallback
+        dto.setImageUrl(product.getImageUrl());
 
         // Featured/Top Product Informationen
         dto.setIsFeatured(product.getIsFeatured());
@@ -286,6 +288,12 @@ public class ProductService {
                     .map(this::variantToDTO)
                     .collect(Collectors.toList());
             dto.setVariants(variantDTOs);
+        }
+
+        // Fallback: kein Media-Bild → direkte imageUrl als Primary verwenden
+        if ((dto.getPrimaryImageUrl() == null || dto.getPrimaryImageUrl().isEmpty())
+                && product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
+            dto.setPrimaryImageUrl(product.getImageUrl());
         }
 
         return dto;

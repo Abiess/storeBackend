@@ -23,4 +23,10 @@ public class CreateStoreRequest {
 
     /** Geschäftstyp: SHOP | RESTAURANT | RIAD. Default SHOP wenn null/leer. */
     private String businessType;
+
+    /**
+     * Wenn true und businessType = RESTAURANT/RIAD: Store wird mit dem passenden
+     * Starter-Pack (Kategorien/Produkte/Carousel) vorbefüllt.
+     */
+    private boolean seedSampleData = false;
 }

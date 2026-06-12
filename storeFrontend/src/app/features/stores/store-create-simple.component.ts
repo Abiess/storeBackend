@@ -111,6 +111,37 @@ interface StoreCategory {
               }
             </div>
 
+            <!-- Business-Typ-Auswahl (einheitlich mit Dashboard-Dialog) -->
+            <div class="form-group">
+              <label class="label">{{ 'settings.business.type' | translate }}</label>
+              <div class="biz-type-grid">
+                <button type="button" class="biz-type" [class.selected]="businessType() === 'SHOP'"
+                        (click)="setBusinessType('SHOP')">
+                  🛍️ {{ 'settings.business.typeShop' | translate }}
+                </button>
+                <button type="button" class="biz-type" [class.selected]="businessType() === 'RESTAURANT'"
+                        (click)="setBusinessType('RESTAURANT')">
+                  🍽️ {{ 'settings.business.typeRestaurant' | translate }}
+                </button>
+                <button type="button" class="biz-type" [class.selected]="businessType() === 'RIAD'"
+                        (click)="setBusinessType('RIAD')">
+                  🏛️ {{ 'settings.business.typeRiad' | translate }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Mit Beispieldaten starten – nur für RESTAURANT/RIAD -->
+            @if (businessType() === 'RESTAURANT' || businessType() === 'RIAD') {
+              <div class="form-group sample-data-toggle">
+                <label class="checkbox-label">
+                  <input type="checkbox" [checked]="seedSampleData()"
+                         (change)="seedSampleData.set($any($event.target).checked)" />
+                  <span>{{ 'dashboard.createStoreModal.seedSampleData' | translate }}</span>
+                </label>
+                <span class="hint-text">{{ 'dashboard.createStoreModal.seedSampleDataHint' | translate }}</span>
+              </div>
+            }
+
             <button
               type="submit"
               class="btn-primary"
@@ -301,6 +332,22 @@ interface StoreCategory {
     .slug-feedback { min-height: 20px; font-size: 0.875rem; display: flex; align-items: center; gap: 0.5rem; }
     .checking { color: #f59e0b; display: flex; gap: 0.4rem; align-items: center; }
     .available { color: #10b981; }
+
+    /* Business-Typ-Auswahl */
+    .biz-type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+    .biz-type {
+      padding: 0.7rem 0.5rem; border: 1.5px solid #d1d5db; border-radius: 8px;
+      background: white; font-size: 0.85rem; font-weight: 600; color: #374151;
+      cursor: pointer; transition: all 0.15s ease;
+    }
+    .biz-type:hover { border-color: #667eea; background: #f8f7ff; }
+    .biz-type.selected { border-color: #667eea; background: linear-gradient(135deg, #f0f0ff, #f5f0ff); color: #4f46e5; }
+
+    /* Beispieldaten-Checkbox */
+    .sample-data-toggle { background: #f8f7ff; border: 1px solid #e5e0ff; border-radius: 8px; padding: 0.75rem 1rem; }
+    .checkbox-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600; color: #374151; font-size: 0.9rem; }
+    .checkbox-label input { width: 18px; height: 18px; accent-color: #667eea; }
+    .hint-text { display: block; margin-top: 0.35rem; font-size: 0.8rem; color: #6b7280; }
     .taken { color: #dc2626; }
     .error-text { color: #dc2626; font-size: 0.875rem; }
 
@@ -458,6 +505,10 @@ export class StoreCreateSimpleComponent implements OnInit {
   error = signal<string | null>(null);
   slugStatus = signal<SlugStatus>({ checking: false, available: null, message: '' });
   selectedCategories = signal<string[]>([]);
+  /** Geschäftstyp – einheitlich mit dem Dashboard-Dialog */
+  businessType = signal<'SHOP' | 'RESTAURANT' | 'RIAD'>('SHOP');
+  /** Mit Starter-Pack-Beispieldaten starten (nur RESTAURANT/RIAD) */
+  seedSampleData = signal(false);
 
   private readonly _categoryIds = [
     { id: 'fashion',     icon: '👗' },
@@ -549,6 +600,12 @@ export class StoreCreateSimpleComponent implements OnInit {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  /** Setzt den Geschäftstyp und aktiviert Beispieldaten für RESTAURANT/RIAD. */
+  setBusinessType(type: 'SHOP' | 'RESTAURANT' | 'RIAD'): void {
+    this.businessType.set(type);
+    this.seedSampleData.set(type === 'RESTAURANT' || type === 'RIAD');
+  }
+
   toggleCategory(id: string): void {
     const current = this.selectedCategories();
     this.selectedCategories.set(
@@ -570,6 +627,8 @@ export class StoreCreateSimpleComponent implements OnInit {
           name: storeName,
           slug: storeSlug,
           description: `Welcome to ${storeName}`,
+          businessType: this.businessType(),
+          seedSampleData: this.seedSampleData(),
           ...(this.selectedCategories().length > 0 ? { categories: this.selectedCategories() } as any : {})
         }).toPromise();
 

@@ -643,6 +643,8 @@
                                                "storeDescription":  "الوصف (اختياري)",
                                                "storeDescriptionPlaceholder":  "صف متجرك...",
                                                "storeDescriptionHint":  "وصف مختصر لمتجرك للعملاء ومحركات البحث",
+                                               "seedSampleData":  "ابدأ ببيانات تجريبية",
+                                               "seedSampleDataHint":  "يملأ متجرك تلقائيًا بفئات وأطباق/عروض وصور نموذجية. يمكنك تعديل كل شيء لاحقًا.",
                                                "submit":  "✓ إنشاء المتجر",
                                                "creating":  "جاري الإنشاء...",
                                                "errors":  {

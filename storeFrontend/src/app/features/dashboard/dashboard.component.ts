@@ -224,12 +224,22 @@ import {TranslateService} from "@ngx-translate/core";
                   id="storeBusinessType"
                   name="storeBusinessType"
                   [(ngModel)]="newStore.businessType"
+                  (ngModelChange)="onBusinessTypeChange($event)"
                   class="form-control">
                   <option value="SHOP">{{ 'settings.business.typeShop' | translate }}</option>
                   <option value="RESTAURANT">{{ 'settings.business.typeRestaurant' | translate }}</option>
                   <option value="RIAD">{{ 'settings.business.typeRiad' | translate }}</option>
                 </select>
                 <small class="form-hint">{{ 'settings.business.typeHint' | translate }}</small>
+              </div>
+
+              <!-- Mit Beispieldaten starten – nur für RESTAURANT/RIAD sichtbar -->
+              <div class="form-group sample-data-toggle" *ngIf="newStore.businessType === 'RESTAURANT' || newStore.businessType === 'RIAD'">
+                <label class="checkbox-label">
+                  <input type="checkbox" name="seedSampleData" [(ngModel)]="newStore.seedSampleData" />
+                  <span>{{ 'dashboard.createStoreModal.seedSampleData' | translate }}</span>
+                </label>
+                <small class="form-hint">{{ 'dashboard.createStoreModal.seedSampleDataHint' | translate }}</small>
               </div>
 
               <div class="form-actions">
@@ -1089,7 +1099,8 @@ export class DashboardComponent implements OnInit {
     name: '',
     slug: '',
     description: '',
-    businessType: 'SHOP'
+    businessType: 'SHOP',
+    seedSampleData: false
   };
   creating = false;
   slugError: string | null = null;
@@ -1283,6 +1294,14 @@ export class DashboardComponent implements OnInit {
         this.slugError = null;
       }
     });
+  }
+
+  /**
+   * Bei Wechsel des Geschäftstyps: Beispieldaten-Checkbox für RESTAURANT/RIAD
+   * standardmäßig aktivieren, für SHOP deaktivieren.
+   */
+  onBusinessTypeChange(type: string): void {
+    this.newStore.seedSampleData = (type === 'RESTAURANT' || type === 'RIAD');
   }
 
   createStore(): void {

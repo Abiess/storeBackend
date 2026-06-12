@@ -50,6 +50,14 @@ public class Product {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal basePrice;
 
+    /**
+     * Optionale direkte Bild-URL (z.B. Starter-Pack-Default-Asset).
+     * Fallback, wenn keine product_media-Einträge vorhanden sind.
+     * Bricht bestehende Bild-Logik (media/primaryImageUrl) nicht.
+     */
+    @Column(name = "image_url", columnDefinition = "TEXT")
+    private String imageUrl;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ProductStatus status = ProductStatus.DRAFT;

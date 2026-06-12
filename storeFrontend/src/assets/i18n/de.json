@@ -780,6 +780,8 @@
                                                "storeDescription":  "Beschreibung (optional)",
                                                "storeDescriptionPlaceholder":  "Beschreiben Sie Ihren Store...",
                                                "storeDescriptionHint":  "Eine kurze Beschreibung Ihres Stores für Kunden und Suchmaschinen",
+                                               "seedSampleData":  "Mit Beispieldaten starten",
+                                               "seedSampleDataHint":  "Befüllt deinen Store automatisch mit Beispiel-Kategorien, -Gerichten/-Angeboten und Bildern. Du kannst alles später anpassen.",
                                                "submit":  "✓ Store erstellen",
                                                "creating":  "Wird erstellt...",
                                                "errors":  {

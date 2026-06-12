@@ -701,6 +701,8 @@ export interface CreateStoreRequest {
   storeType?: string; // NEW: "OWN" or "RESELLER"
   /** Geschäftstyp: SHOP | RESTAURANT | RIAD (Default SHOP) */
   businessType?: BusinessType | string;
+  /** Mit Starter-Pack-Beispieldaten vorbefüllen (nur RESTAURANT/RIAD) */
+  seedSampleData?: boolean;
 }
 
 // ============================================

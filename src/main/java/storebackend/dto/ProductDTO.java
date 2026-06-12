@@ -30,6 +30,8 @@ public class ProductDTO {
     // Bilder-Informationen (nutzt standalone ProductMediaDTO)
     private List<ProductMediaDTO> media;
     private String primaryImageUrl;
+    /** Direkte Bild-URL (Fallback, z.B. Starter-Pack-Default-Asset). */
+    private String imageUrl;
 
     // Varianten
     private List<ProductVariantDTO> variants;

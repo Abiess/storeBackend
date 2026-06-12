@@ -896,6 +896,8 @@
                                                "storeDescription":  "Description (optional)",
                                                "storeDescriptionPlaceholder":  "Describe your store...",
                                                "storeDescriptionHint":  "A short description of your store for customers and search engines",
+                                               "seedSampleData":  "Start with sample data",
+                                               "seedSampleDataHint":  "Automatically fills your store with sample categories, dishes/offers and images. You can edit everything later.",
                                                "submit":  "✓ Create store",
                                                "creating":  "Creating...",
                                                "errors":  {

@@ -35,6 +35,7 @@ public class StoreService {
     private final MediaService mediaService;
     private final SaasProperties saasProperties;
     private final StorePostCreateService postCreateService;
+    private final StarterPackService starterPackService;
 
     // NEUE: Liste der reservierten Slugs, die NICHT als Stores verwendet werden dürfen
     private static final Set<String> RESERVED_SLUGS = Set.of(
@@ -164,6 +165,16 @@ public class StoreService {
         }
 
         Long storeId = store.getId();
+
+        // Optional: Starter-Pack-Content für RESTAURANT/RIAD vorbefüllen
+        if (request.isSeedSampleData()) {
+            try {
+                starterPackService.cloneForBusinessType(store, store.getBusinessType());
+            } catch (Exception e) {
+                // Nicht kritisch – Store-Erstellung darf nicht scheitern
+                log.warn("Starter-Pack-Klonen für Store {} fehlgeschlagen: {}", storeId, e.getMessage());
+            }
+        }
 
         // Bestimme Kategorie für Slider
         String category = determineStoreCategory(store.getName(), request.getDescription());
