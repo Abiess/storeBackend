@@ -126,6 +126,73 @@ export interface SettingsTab {
               </div>
             </div>
 
+            <!-- ─── Business-Typ & Restaurant/Riad ─── -->
+            <div class="business-section">
+              <h3 class="section-title">
+                <span class="section-icon">🏷️</span>
+                {{ 'settings.business.title' | translate }}
+              </h3>
+
+              <div class="form-group">
+                <label for="businessType">{{ 'settings.business.type' | translate }}</label>
+                <select id="businessType" formControlName="businessType" class="form-control">
+                  <option value="SHOP">{{ 'settings.business.typeShop' | translate }}</option>
+                  <option value="RESTAURANT">{{ 'settings.business.typeRestaurant' | translate }}</option>
+                  <option value="RIAD">{{ 'settings.business.typeRiad' | translate }}</option>
+                </select>
+                <small class="form-text">{{ 'settings.business.typeHint' | translate }}</small>
+              </div>
+
+              <!-- Restaurant/Riad-spezifische Felder -->
+              <ng-container *ngIf="settingsForm.get('businessType')?.value !== 'SHOP'">
+                <div class="form-group">
+                  <label for="openingHours">{{ 'settings.business.openingHours' | translate }}</label>
+                  <textarea
+                    id="openingHours"
+                    formControlName="openingHours"
+                    class="form-control"
+                    rows="3"
+                    [placeholder]="'settings.business.openingHoursPlaceholder' | translate"
+                    maxlength="500"></textarea>
+                  <small class="form-text">{{ 'settings.business.openingHoursHint' | translate }}</small>
+                </div>
+
+                <div class="form-group">
+                  <label for="address">{{ 'settings.business.address' | translate }}</label>
+                  <textarea
+                    id="address"
+                    formControlName="address"
+                    class="form-control"
+                    rows="2"
+                    [placeholder]="'settings.business.addressPlaceholder' | translate"
+                    maxlength="300"></textarea>
+                </div>
+
+                <div class="form-group">
+                  <label for="googleMapsUrl">{{ 'settings.business.googleMapsUrl' | translate }}</label>
+                  <input
+                    id="googleMapsUrl"
+                    type="url"
+                    formControlName="googleMapsUrl"
+                    class="form-control"
+                    placeholder="https://maps.google.com/?q=...">
+                  <small class="form-text">{{ 'settings.business.googleMapsHint' | translate }}</small>
+                </div>
+
+                <div class="form-group">
+                  <label for="reservationWhatsappText">{{ 'settings.business.reservationText' | translate }}</label>
+                  <input
+                    id="reservationWhatsappText"
+                    type="text"
+                    formControlName="reservationWhatsappText"
+                    class="form-control"
+                    [placeholder]="'settings.business.reservationTextPlaceholder' | translate"
+                    maxlength="300">
+                  <small class="form-text">{{ 'settings.business.reservationTextHint' | translate }}</small>
+                </div>
+              </ng-container>
+            </div>
+
             <div class="form-group">
               <label for="status">Status</label>
               <select id="status" formControlName="status" class="form-control">
@@ -880,6 +947,15 @@ export interface SettingsTab {
       border-radius: 12px;
     }
 
+    /* ─── Business / Restaurant Section ─── */
+    .business-section {
+      margin-top: 2rem;
+      padding: 1.5rem;
+      background: linear-gradient(135deg, rgba(180, 83, 9, 0.06), rgba(120, 53, 15, 0.04));
+      border: 1px solid rgba(180, 83, 9, 0.25);
+      border-radius: 12px;
+    }
+
     .wa-notifications-toggle {
       margin-top: 1rem;
       background: #f0fdf4;
@@ -987,7 +1063,13 @@ export class StoreSettingsComponent implements OnInit {
       facebookUrl: [''],
       instagramUrl: [''],
       tiktokUrl: [''],
-      footerText: ['', [Validators.maxLength(200)]]
+      footerText: ['', [Validators.maxLength(200)]],
+      // ─── Business-Typ & Restaurant/Riad-Felder ──────────────────
+      businessType: ['SHOP'],
+      openingHours: ['', [Validators.maxLength(500)]],
+      address: ['', [Validators.maxLength(300)]],
+      googleMapsUrl: [''],
+      reservationWhatsappText: ['', [Validators.maxLength(300)]]
     });
 
     this.brandingForm = this.fb.group({
@@ -1055,7 +1137,12 @@ export class StoreSettingsComponent implements OnInit {
           facebookUrl:   store.facebookUrl   ?? '',
           instagramUrl:  store.instagramUrl  ?? '',
           tiktokUrl:     store.tiktokUrl     ?? '',
-          footerText:    store.footerText    ?? ''
+          footerText:    store.footerText    ?? '',
+          businessType:            store.businessType            ?? 'SHOP',
+          openingHours:            store.openingHours            ?? '',
+          address:                 store.address                 ?? '',
+          googleMapsUrl:           store.googleMapsUrl           ?? '',
+          reservationWhatsappText: store.reservationWhatsappText ?? ''
         });
         this.loading = false;
       },

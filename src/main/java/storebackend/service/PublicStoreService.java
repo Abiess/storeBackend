@@ -43,7 +43,12 @@ public class PublicStoreService {
             store.getFacebookUrl(),
             store.getInstagramUrl(),
             store.getTiktokUrl(),
-            store.getFooterText()
+            store.getFooterText(),
+            store.getBusinessType() != null ? store.getBusinessType().name() : null,
+            store.getOpeningHours(),
+            store.getAddress(),
+            store.getGoogleMapsUrl(),
+            store.getReservationWhatsappText()
         );
     }
 }

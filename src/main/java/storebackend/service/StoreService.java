@@ -14,6 +14,7 @@ import storebackend.entity.Store;
 import storebackend.entity.User;
 import storebackend.enums.Role;
 import storebackend.enums.StoreStatus;
+import storebackend.enums.BusinessType;
 import storebackend.repository.*;
 
 import java.util.HashSet;
@@ -138,6 +139,15 @@ public class StoreService {
         }
         store.setWhatsappNotificationsEnabled(request.isWhatsappNotificationsEnabled());
 
+        // Business-Typ (Default SHOP wenn nicht/ungültig gesetzt)
+        if (request.getBusinessType() != null && !request.getBusinessType().isBlank()) {
+            try {
+                store.setBusinessType(BusinessType.valueOf(request.getBusinessType().trim().toUpperCase()));
+            } catch (IllegalArgumentException ex) {
+                log.warn("Ungültiger businessType '{}' beim Erstellen – Default SHOP", request.getBusinessType());
+            }
+        }
+
         store = storeRepository.save(store);
 
         // IMPORTANT: Flush to DB immediately to catch constraint violations NOW
@@ -253,6 +263,27 @@ public class StoreService {
         }
         if (request.getFooterText() != null) {
             store.setFooterText(request.getFooterText().isBlank() ? null : request.getFooterText().trim());
+        }
+
+        // ─── Business-Typ & Restaurant/Riad-Felder ──────────────────────
+        if (request.getBusinessType() != null && !request.getBusinessType().isBlank()) {
+            try {
+                store.setBusinessType(BusinessType.valueOf(request.getBusinessType().trim().toUpperCase()));
+            } catch (IllegalArgumentException ex) {
+                log.warn("Ungültiger businessType '{}' – ignoriert", request.getBusinessType());
+            }
+        }
+        if (request.getOpeningHours() != null) {
+            store.setOpeningHours(request.getOpeningHours().isBlank() ? null : request.getOpeningHours().trim());
+        }
+        if (request.getAddress() != null) {
+            store.setAddress(request.getAddress().isBlank() ? null : request.getAddress().trim());
+        }
+        if (request.getGoogleMapsUrl() != null) {
+            store.setGoogleMapsUrl(request.getGoogleMapsUrl().isBlank() ? null : request.getGoogleMapsUrl().trim());
+        }
+        if (request.getReservationWhatsappText() != null) {
+            store.setReservationWhatsappText(request.getReservationWhatsappText().isBlank() ? null : request.getReservationWhatsappText().trim());
         }
 
         store = storeRepository.save(store);
@@ -469,6 +500,12 @@ public class StoreService {
         dto.setInstagramUrl(store.getInstagramUrl());
         dto.setTiktokUrl(store.getTiktokUrl());
         dto.setFooterText(store.getFooterText());
+        // ─── Business-Typ & Restaurant/Riad-Felder ─────────────────────
+        dto.setBusinessType(store.getBusinessType());
+        dto.setOpeningHours(store.getOpeningHours());
+        dto.setAddress(store.getAddress());
+        dto.setGoogleMapsUrl(store.getGoogleMapsUrl());
+        dto.setReservationWhatsappText(store.getReservationWhatsappText());
         return dto;
     }
 

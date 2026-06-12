@@ -27,6 +27,7 @@ import { ProductGridClassicComponent } from './components/product-grid-classic.c
 import { ProductGridFashionComponent } from './components/product-grid-fashion.component';
 import { ProductGridCompactComponent } from './components/product-grid-compact.component';
 import { ProductGridMarketplaceComponent } from './components/product-grid-marketplace.component';
+import { RestaurantWarmLayoutComponent } from './components/restaurant-warm-layout.component';
 
 /**
  * Dedizierte Storefront-Landing-Page für Subdomains (abc.markt.ma)
@@ -51,7 +52,8 @@ import { ProductGridMarketplaceComponent } from './components/product-grid-marke
     ProductGridClassicComponent,
     ProductGridFashionComponent,
     ProductGridCompactComponent,
-    ProductGridMarketplaceComponent
+    ProductGridMarketplaceComponent,
+    RestaurantWarmLayoutComponent
   ],
   templateUrl: './storefront-landing.component.html',
   styleUrls: ['./storefront-landing.component.scss']
@@ -102,8 +104,31 @@ export class StorefrontLandingComponent implements OnInit {
   storeDescription: string | null = null;
   readonly currentYear = new Date().getFullYear();
 
+  // ─── Restaurant/Riad-Modus (MVP) ────────────────────────────────
+  storeBusinessType: string | null = null;
+  storeOpeningHours: string | null = null;
+  storeAddress: string | null = null;
+  storeGoogleMapsUrl: string | null = null;
+  storeReservationWhatsappText: string | null = null;
+  storeWhatsappNumber: string | null = null;
+
   /** Aktiver Template-Code für dynamisches Layout-Switching */
   activeTemplateCode: string = 'MODERN_GRID';
+
+  /**
+   * Restaurant-Modus aktiv, wenn Theme RESTAURANT_WARM ODER
+   * der Store-Geschäftstyp RESTAURANT/RIAD ist.
+   */
+  get isRestaurantMode(): boolean {
+    const bt = (this.storeBusinessType || '').toUpperCase();
+    return this.activeTemplateCode === 'RESTAURANT_WARM'
+      || bt === 'RESTAURANT' || bt === 'RIAD';
+  }
+
+  /** Erstes Slider-Bild als Hero-Hintergrund (oder null → Gradient-Fallback). */
+  get restaurantHeroImage(): string | null {
+    return this.sliderImages?.[0]?.imageUrl ?? null;
+  }
 
   /**
    * Gruppiert den activeTemplateCode in 4 Grid-Template-Gruppen.
@@ -748,6 +773,13 @@ export class StorefrontLandingComponent implements OnInit {
         this.storeTiktokUrl     = store.tiktokUrl     ?? null;
         this.storeFooterText    = store.footerText    ?? null;
         this.storeDescription   = store.description   ?? null;
+        // ─── Restaurant/Riad-Felder ───────────────────────────────
+        this.storeBusinessType            = (store as any).businessType            ?? null;
+        this.storeOpeningHours            = (store as any).openingHours            ?? null;
+        this.storeAddress                 = (store as any).address                 ?? null;
+        this.storeGoogleMapsUrl           = (store as any).googleMapsUrl           ?? null;
+        this.storeReservationWhatsappText = (store as any).reservationWhatsappText ?? null;
+        this.storeWhatsappNumber          = store.whatsappNumber ?? null;
         console.log('📱 WhatsApp-Config aus Store gesetzt:', store.whatsappNumber ?? 'kein Wert');
       },
       error: () => { /* env-Fallback bleibt aktiv */ }

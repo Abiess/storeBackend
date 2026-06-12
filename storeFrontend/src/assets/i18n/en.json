@@ -367,6 +367,24 @@
                                       "notificationsEnabled":  "Notify customers via WhatsApp",
                                       "notificationsHint":  "Customers automatically receive WhatsApp messages for orders \u0026 status updates (phone from shipping address is used)"
                                   },
+                     "business":  {
+                                      "title":  "Business type",
+                                      "type":  "Type of business",
+                                      "typeShop":  "🛍️ Shop",
+                                      "typeRestaurant":  "🍽️ Restaurant",
+                                      "typeRiad":  "🏛️ Riad",
+                                      "typeHint":  "For restaurant or riad, your products are shown as a menu.",
+                                      "openingHours":  "Opening hours",
+                                      "openingHoursPlaceholder":  "Mon–Sun: 09:00–23:00",
+                                      "openingHoursHint":  "Plain text – displayed on the storefront.",
+                                      "address":  "Address",
+                                      "addressPlaceholder":  "Rue ..., Marrakech",
+                                      "googleMapsUrl":  "Google Maps link",
+                                      "googleMapsHint":  "Optional link for the \"Directions\" button.",
+                                      "reservationText":  "WhatsApp reservation text",
+                                      "reservationTextPlaceholder":  "Salam, bghit nreserver / commander",
+                                      "reservationTextHint":  "Used as prefix for reservation/order messages."
+                                  },
                      "branding":  {
                                       "title":  "Branding",
                                       "description":  "Customize the appearance and identity of your store",
@@ -605,6 +623,16 @@
                  "goToLogin":  "Go to login",
                  "emailAlreadyExists":  "This email is already registered."
              },
+    "restaurant":  {
+                       "reserve":  "Reserve",
+                       "reserveWhatsapp":  "Reserve via WhatsApp",
+                       "directions":  "Directions",
+                       "openingHours":  "Opening hours",
+                       "address":  "Address",
+                       "menu":  "Menu",
+                       "emptyMenu":  "No dishes available right now.",
+                       "order":  "Order"
+                   },
     "storefront":  {
                        "searchResults":  "Search results",
                        "allProducts":  "All products",

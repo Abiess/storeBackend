@@ -610,6 +610,12 @@ export interface InventoryLog {
 // ============================================
 // STORE
 // ============================================
+export enum BusinessType {
+  SHOP = 'SHOP',
+  RESTAURANT = 'RESTAURANT',
+  RIAD = 'RIAD'
+}
+
 export interface Store {
   id: number;
   name: string;
@@ -637,6 +643,12 @@ export interface Store {
   instagramUrl?: string;
   tiktokUrl?: string;
   footerText?: string;
+  // ─── Business-Typ & Restaurant/Riad-Felder ────────────────────
+  businessType?: BusinessType | string;
+  openingHours?: string;
+  address?: string;
+  googleMapsUrl?: string;
+  reservationWhatsappText?: string;
 }
 
 export interface PublicStore {
@@ -658,6 +670,12 @@ export interface PublicStore {
   instagramUrl?: string;
   tiktokUrl?: string;
   footerText?: string;
+  // ─── Business-Typ & Restaurant/Riad-Felder ────────────────────
+  businessType?: BusinessType | string;
+  openingHours?: string;
+  address?: string;
+  googleMapsUrl?: string;
+  reservationWhatsappText?: string;
 }
 
 export enum StoreStatus {
@@ -681,6 +699,8 @@ export interface CreateStoreRequest {
   slug?: string;
   description?: string;
   storeType?: string; // NEW: "OWN" or "RESELLER"
+  /** Geschäftstyp: SHOP | RESTAURANT | RIAD (Default SHOP) */
+  businessType?: BusinessType | string;
 }
 
 // ============================================

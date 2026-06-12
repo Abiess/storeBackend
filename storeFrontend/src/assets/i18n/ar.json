@@ -244,6 +244,16 @@
                  "goToLogin":  "الذهاب إلى تسجيل الدخول",
                  "emailAlreadyExists":  "هذا البريد الإلكتروني مسجّل بالفعل."
              },
+    "restaurant":  {
+                       "reserve":  "احجز",
+                       "reserveWhatsapp":  "احجز عبر واتساب",
+                       "directions":  "الاتجاهات",
+                       "openingHours":  "ساعات العمل",
+                       "address":  "العنوان",
+                       "menu":  "قائمة الطعام",
+                       "emptyMenu":  "لا توجد أطباق متاحة حاليًا.",
+                       "order":  "اطلب"
+                   },
     "storefront":  {
                        "searchResults":  "نتائج البحث",
                        "allProducts":  "جميع المنتجات",
@@ -476,6 +486,24 @@
                                       "saveSuccess":  "تم حفظ إعدادات واتساب!",
                                       "notificationsEnabled":  "إشعار العملاء عبر واتساب",
                                       "notificationsHint":  "سيتلقى العملاء رسائل واتساب تلقائيًا عند الطلبات وتحديثات الحالة"
+                                  },
+                     "business":  {
+                                      "title":  "نوع النشاط",
+                                      "type":  "نوع النشاط التجاري",
+                                      "typeShop":  "🛍️ متجر",
+                                      "typeRestaurant":  "🍽️ مطعم",
+                                      "typeRiad":  "🏛️ رياض",
+                                      "typeHint":  "في حالة المطعم أو الرياض، تُعرض منتجاتك كقائمة طعام.",
+                                      "openingHours":  "ساعات العمل",
+                                      "openingHoursPlaceholder":  "الإثنين–الأحد: 09:00–23:00",
+                                      "openingHoursHint":  "نص بسيط – يظهر في واجهة المتجر.",
+                                      "address":  "العنوان",
+                                      "addressPlaceholder":  "شارع ...، مراكش",
+                                      "googleMapsUrl":  "رابط خرائط جوجل",
+                                      "googleMapsHint":  "رابط اختياري لزر \"الاتجاهات\".",
+                                      "reservationText":  "نص الحجز عبر واتساب",
+                                      "reservationTextPlaceholder":  "سلام، بغيت نريزيرفي / نكوموندي",
+                                      "reservationTextHint":  "يُستخدم كبادئة لرسائل الحجز/الطلب."
                                   },
                      "branding":  {
                                       "title":  "العلامة التجارية",

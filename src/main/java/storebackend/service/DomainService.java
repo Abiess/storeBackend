@@ -167,6 +167,11 @@ public class DomainService {
                     dto.setInstagramUrl(store.getInstagramUrl());
                     dto.setTiktokUrl(store.getTiktokUrl());
                     dto.setFooterText(store.getFooterText());
+                    dto.setBusinessType(store.getBusinessType() != null ? store.getBusinessType().name() : null);
+                    dto.setOpeningHours(store.getOpeningHours());
+                    dto.setAddress(store.getAddress());
+                    dto.setGoogleMapsUrl(store.getGoogleMapsUrl());
+                    dto.setReservationWhatsappText(store.getReservationWhatsappText());
                     return dto;
                 });
 
@@ -219,6 +224,11 @@ public class DomainService {
                             dto.setInstagramUrl(store.getInstagramUrl());
                             dto.setTiktokUrl(store.getTiktokUrl());
                             dto.setFooterText(store.getFooterText());
+                            dto.setBusinessType(store.getBusinessType() != null ? store.getBusinessType().name() : null);
+                            dto.setOpeningHours(store.getOpeningHours());
+                            dto.setAddress(store.getAddress());
+                            dto.setGoogleMapsUrl(store.getGoogleMapsUrl());
+                            dto.setReservationWhatsappText(store.getReservationWhatsappText());
                             return dto;
                         });
 

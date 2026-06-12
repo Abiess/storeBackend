@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import storebackend.enums.StoreStatus;
+import storebackend.enums.BusinessType;
 
 import java.time.LocalDateTime;
 
@@ -77,6 +78,32 @@ public class Store {
 
     @Column(name = "footer_text", columnDefinition = "TEXT")
     private String footerText;
+
+    // ─── Business-Typ & Restaurant/Riad-Felder (MVP) ─────────────
+    /**
+     * Geschäftstyp des Stores. Default SHOP (= bestehendes Shop-Verhalten).
+     * RESTAURANT / RIAD aktivieren das Menü-/Restaurant-Template.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "business_type", nullable = false,
+            columnDefinition = "varchar(20) default 'SHOP'")
+    private BusinessType businessType = BusinessType.SHOP;
+
+    /** Öffnungszeiten als einfacher Freitext (MVP, kein JSON). */
+    @Column(name = "opening_hours", columnDefinition = "TEXT")
+    private String openingHours;
+
+    /** Adresse als Freitext. */
+    @Column(name = "address", columnDefinition = "TEXT")
+    private String address;
+
+    /** Optionaler Google-Maps-Link für den "Route"-Button. */
+    @Column(name = "google_maps_url", columnDefinition = "TEXT")
+    private String googleMapsUrl;
+
+    /** Prefix für die WhatsApp-Reservierungs-/Bestellnachricht (Restaurant/Riad). */
+    @Column(name = "reservation_whatsapp_text", columnDefinition = "TEXT")
+    private String reservationWhatsappText;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

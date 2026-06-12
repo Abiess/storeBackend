@@ -20,4 +20,7 @@ public class CreateStoreRequest {
 
     /** Wenn true: Kunden erhalten WA-Nachrichten bei Bestellungen & Status-Updates. */
     private boolean whatsappNotificationsEnabled = false;
+
+    /** Geschäftstyp: SHOP | RESTAURANT | RIAD. Default SHOP wenn null/leer. */
+    private String businessType;
 }

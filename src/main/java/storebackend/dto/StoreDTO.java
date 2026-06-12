@@ -2,6 +2,7 @@ package storebackend.dto;
 
 import lombok.Data;
 import storebackend.enums.StoreStatus;
+import storebackend.enums.BusinessType;
 
 import java.time.LocalDateTime;
 
@@ -26,4 +27,10 @@ public class StoreDTO {
     private String instagramUrl;
     private String tiktokUrl;
     private String footerText;
+    // ─── Business-Typ & Restaurant/Riad-Felder ─────────────
+    private BusinessType businessType;
+    private String openingHours;
+    private String address;
+    private String googleMapsUrl;
+    private String reservationWhatsappText;
 }

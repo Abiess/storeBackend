@@ -26,4 +26,10 @@ public class PublicStoreDTO {
     private String instagramUrl;
     private String tiktokUrl;
     private String footerText;
+    // ─── Business-Typ & Restaurant/Riad-Felder ─────────────
+    private String businessType;
+    private String openingHours;
+    private String address;
+    private String googleMapsUrl;
+    private String reservationWhatsappText;
 }

@@ -218,6 +218,20 @@ import {TranslateService} from "@ngx-translate/core";
                 <small class="form-hint">{{ 'dashboard.createStoreModal.storeDescriptionHint' | translate }}</small>
               </div>
 
+              <div class="form-group">
+                <label for="storeBusinessType">{{ 'settings.business.type' | translate }}</label>
+                <select
+                  id="storeBusinessType"
+                  name="storeBusinessType"
+                  [(ngModel)]="newStore.businessType"
+                  class="form-control">
+                  <option value="SHOP">{{ 'settings.business.typeShop' | translate }}</option>
+                  <option value="RESTAURANT">{{ 'settings.business.typeRestaurant' | translate }}</option>
+                  <option value="RIAD">{{ 'settings.business.typeRiad' | translate }}</option>
+                </select>
+                <small class="form-hint">{{ 'settings.business.typeHint' | translate }}</small>
+              </div>
+
               <div class="form-actions">
                 <button type="button" class="btn btn-secondary" (click)="closeCreateStoreModal()" [disabled]="creating">
                   {{ 'common.cancel' | translate }}
@@ -1074,7 +1088,8 @@ export class DashboardComponent implements OnInit {
   newStore: CreateStoreRequest = {
     name: '',
     slug: '',
-    description: ''
+    description: '',
+    businessType: 'SHOP'
   };
   creating = false;
   slugError: string | null = null;

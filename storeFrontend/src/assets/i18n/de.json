@@ -485,6 +485,24 @@
                                       "notificationsEnabled":  "Kunden per WhatsApp benachrichtigen",
                                       "notificationsHint":  "Bei neuen Bestellungen \u0026 Status-�nderungen erhalten Kunden automatisch eine WhatsApp-Nachricht (Kundennummer aus Lieferadresse wird verwendet)"
                                   },
+                     "business":  {
+                                      "title":  "Geschäftstyp",
+                                      "type":  "Art des Geschäfts",
+                                      "typeShop":  "🛍️ Shop",
+                                      "typeRestaurant":  "🍽️ Restaurant",
+                                      "typeRiad":  "🏛️ Riad",
+                                      "typeHint":  "Bei Restaurant oder Riad werden deine Produkte als Menü angezeigt.",
+                                      "openingHours":  "Öffnungszeiten",
+                                      "openingHoursPlaceholder":  "Mo–So: 09:00–23:00",
+                                      "openingHoursHint":  "Einfacher Text – wird auf der Storefront angezeigt.",
+                                      "address":  "Adresse",
+                                      "addressPlaceholder":  "Rue ..., Marrakech",
+                                      "googleMapsUrl":  "Google-Maps-Link",
+                                      "googleMapsHint":  "Optionaler Link für den \"Route\"-Button.",
+                                      "reservationText":  "WhatsApp-Reservierungstext",
+                                      "reservationTextPlaceholder":  "Salam, bghit nreserver / commander",
+                                      "reservationTextHint":  "Wird als Prefix für Reservierungs-/Bestellnachrichten genutzt."
+                                  },
                      "branding":  {
                                       "title":  "Branding",
                                       "description":  "Passen Sie das Erscheinungsbild und die Identität Ihres Shops an",
@@ -810,6 +828,16 @@
                  "goToLogin":  "Zum Login",
                  "emailAlreadyExists":  "Diese E-Mail ist bereits registriert."
              },
+    "restaurant":  {
+                       "reserve":  "Reservieren",
+                       "reserveWhatsapp":  "Reservieren per WhatsApp",
+                       "directions":  "Route",
+                       "openingHours":  "Öffnungszeiten",
+                       "address":  "Adresse",
+                       "menu":  "Speisekarte",
+                       "emptyMenu":  "Aktuell sind keine Gerichte verfügbar.",
+                       "order":  "Bestellen"
+                   },
     "storefront":  {
                        "searchResults":  "Suchergebnisse",
                        "allProducts":  "Alle Produkte",
