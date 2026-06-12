@@ -14,7 +14,7 @@
           {{ 'landing.nav.login' | translate }}
         </button>
         <button class="btn btn-primary" (click)="navigateToCreateStore()">
-          🚀 Kostenlos starten
+          {{ 'landing.nav.startFree' | translate }}
         </button>
       </div>
     </div>
@@ -84,33 +84,33 @@
           <div class="browser-content">
             <div class="shop-preview">
               <div class="preview-topbar">
-                <span class="preview-tab">Shop</span>
-                <span class="preview-tab">Kategorien</span>
-                <span class="preview-tab active">Neuheiten</span>
-                <span class="preview-tab sale">Sale</span>
+                <span class="preview-tab">{{ 'landing.preview.shop' | translate }}</span>
+                <span class="preview-tab">{{ 'landing.preview.categories' | translate }}</span>
+                <span class="preview-tab active">{{ 'landing.preview.newArrivals' | translate }}</span>
+                <span class="preview-tab sale">{{ 'landing.preview.sale' | translate }}</span>
               </div>
               <div class="preview-products">
                 <div class="preview-card">
                   <div class="preview-card-img pci-1"></div>
                   <div class="preview-card-price">129,00€</div>
-                  <button class="preview-cart-btn">In den Warenkorb</button>
+                  <button class="preview-cart-btn">{{ 'landing.preview.addToCart' | translate }}</button>
                 </div>
                 <div class="preview-card">
                   <div class="preview-card-img pci-2"></div>
                   <div class="preview-card-price">39,00€</div>
-                  <button class="preview-cart-btn">In den Warenkorb</button>
+                  <button class="preview-cart-btn">{{ 'landing.preview.addToCart' | translate }}</button>
                 </div>
                 <div class="preview-card">
                   <div class="preview-card-img pci-3"></div>
                   <div class="preview-card-price">19,00€</div>
-                  <button class="preview-cart-btn">In den Warenkorb</button>
+                  <button class="preview-cart-btn">{{ 'landing.preview.addToCart' | translate }}</button>
                 </div>
               </div>
               <div class="preview-stats-badge">
                 <div class="preview-stats-text">
-                  <span class="preview-stats-label">Umsatz</span>
+                  <span class="preview-stats-label">{{ 'landing.preview.revenue' | translate }}</span>
                   <span class="preview-stats-value">+24%</span>
-                  <span class="preview-stats-sub">vs. letzter Monat</span>
+                  <span class="preview-stats-sub">{{ 'landing.preview.vsLastMonth' | translate }}</span>
                 </div>
                 <svg class="preview-chart" viewBox="0 0 80 32" fill="none" preserveAspectRatio="none">
                   <polyline points="0,28 16,22 32,16 52,8 70,11 80,5"
@@ -159,7 +159,7 @@
               [videoUrl]="'assets/videos/platform-demo.webm'"
               [showControls]="true"
               [poster]="''"
-              errorMessage="Video nicht verfügbar">
+              [errorMessage]="'landing.videoUnavailable' | translate">
             </app-video-player>
             <div class="tutorial-duration">{{ tutorial.duration | translate }}</div>
           </div>
@@ -173,7 +173,7 @@
       <div class="video-cta">
         <p>{{ 'landing.demo.ctaText' | translate }}</p>
         <button class="btn btn-hero-primary" (click)="navigateToCreateStore()">
-          🚀 Jetzt Store erstellen – ohne Anmeldung
+          {{ 'landing.cta.button' | translate }}
         </button>
       </div>
     </div>
@@ -215,9 +215,9 @@
         <h2>{{ 'landing.cta.title' | translate }}</h2>
         <p>{{ 'landing.cta.subtitle' | translate }}</p>
         <div class="cta-buttons">
-          <button class="btn btn-cta" (click)="navigateToCreateStore()">🚀 Store erstellen – ohne Anmeldung</button>
+          <button class="btn btn-cta" (click)="navigateToCreateStore()">{{ 'landing.hero.createStoreBtn' | translate }}</button>
           <button class="btn btn-cta-secondary" (click)="navigateToLogin()">
-            Einloggen
+            {{ 'landing.nav.login' | translate }}
           </button>
         </div>
         <p class="cta-note">{{ 'landing.cta.note' | translate }}</p>
@@ -272,7 +272,7 @@
     </a>
     <a class="mobile-nav-item mobile-nav-cta" (click)="navigateToCreateStore()">
       <span class="mobile-nav-icon">🚀</span>
-      <span class="mobile-nav-label">Store erstellen</span>
+      <span class="mobile-nav-label">{{ 'landing.nav.startFree' | translate }}</span>
     </a>
   </nav>
 

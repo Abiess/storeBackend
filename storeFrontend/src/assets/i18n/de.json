@@ -1249,13 +1249,23 @@
                                                                       ]
                                                      }
                                   },
-                    "cta":  {
-                                "title":  "Bereit, Ihren Online-Shop zu starten?",
-                                "subtitle":  "Schließen Sie sich tausenden erfolgreichen Händlern an",
-                                "button":  "🚀 Jetzt kostenlos loslegen",
-                                "note":  "Keine Kreditkarte erforderlich • Jederzeit kündbar"
-                            },
-                    "footer":  {
+                     "cta":  {
+                                 "title":  "Bereit, Ihren Online-Shop zu starten?",
+                                 "subtitle":  "Schließen Sie sich tausenden erfolgreichen Händlern an",
+                                 "button":  "🚀 Store erstellen – ohne Anmeldung",
+                                 "note":  "Keine Kreditkarte erforderlich • Jederzeit kündbar"
+                             },
+                     "videoUnavailable":  "Video nicht verfügbar",
+                     "preview":  {
+                                     "shop":  "Shop",
+                                     "categories":  "Kategorien",
+                                     "newArrivals":  "Neuheiten",
+                                     "sale":  "Sale",
+                                     "addToCart":  "In den Warenkorb",
+                                     "revenue":  "Umsatz",
+                                     "vsLastMonth":  "vs. letzter Monat"
+                                 },
+                     "footer":  {
                                    "tagline":  "Die moderne E-Commerce-Plattform",
                                    "product":  "Produkt",
                                    "legal":  "Legal",

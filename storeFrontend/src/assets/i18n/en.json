@@ -1096,13 +1096,23 @@
                                                                       ]
                                                      }
                                   },
-                    "cta":  {
-                                "title":  "Ready to launch your online store?",
-                                "subtitle":  "Join thousands of successful merchants",
-                                "button":  "🚀 Get started for free",
-                                "note":  "No credit card required • Cancel anytime"
-                            },
-                    "footer":  {
+                     "cta":  {
+                                 "title":  "Ready to launch your online store?",
+                                 "subtitle":  "Join thousands of successful merchants",
+                                 "button":  "🚀 Create store – no sign-up required",
+                                 "note":  "No credit card required • Cancel anytime"
+                             },
+                     "videoUnavailable":  "Video not available",
+                     "preview":  {
+                                     "shop":  "Shop",
+                                     "categories":  "Categories",
+                                     "newArrivals":  "New",
+                                     "sale":  "Sale",
+                                     "addToCart":  "Add to cart",
+                                     "revenue":  "Revenue",
+                                     "vsLastMonth":  "vs last month"
+                                 },
+                     "footer":  {
                                    "tagline":  "The modern e-commerce platform",
                                    "product":  "Product",
                                    "legal":  "Legal",
