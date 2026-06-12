@@ -104,6 +104,12 @@ app:
 mail:
   enabled: ${MAIL_ENABLED:true}
 
+# Plattform-Default-Assets (z.B. Starter-Pack-Bilder für Restaurant/Riad).
+# Öffentliche MinIO-Basis – Default-Bilder sind so zentral austauschbar.
+markt:
+  assets:
+    default-base-url: ${MARKT_ASSETS_BASE_URL:https://markt.minio.ma/store-assets/default-assets}
+
 # MinIO disabled locally by default
 minio:
   enabled: false

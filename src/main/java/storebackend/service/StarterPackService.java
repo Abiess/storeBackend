@@ -63,6 +63,29 @@ public class StarterPackService {
             );
     }
 
+    /**
+     * Befüllt einen BESTEHENDEN Store nachträglich mit dem passenden Starter-Pack –
+     * aber nur, wenn der Store noch keine Produkte hat (Duplikat-Schutz).
+     *
+     * @return true, wenn geklont wurde; false wenn übersprungen (SHOP, kein Pack, oder bereits Produkte).
+     */
+    @Transactional
+    public boolean applyForBusinessTypeIfEmpty(Store store) {
+        BusinessType bt = store.getBusinessType();
+        if (bt == null || bt == BusinessType.SHOP) {
+            log.info("Store {} ist SHOP/ohne Typ – kein Starter-Pack", store.getId());
+            return false;
+        }
+        long existing = productRepository.countByStoreId(store.getId());
+        if (existing > 0) {
+            log.info("Store {} hat bereits {} Produkte – Starter-Pack wird nicht erneut geklont",
+                store.getId(), existing);
+            return false;
+        }
+        cloneForBusinessType(store, bt);
+        return true;
+    }
+
     private void cloneInto(Store store, StarterPack pack) {
         log.info("📦 Klone Starter-Pack '{}' in Store {} ({})",
             pack.getCode(), store.getId(), store.getName());

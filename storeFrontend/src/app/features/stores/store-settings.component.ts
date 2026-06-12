@@ -190,6 +190,20 @@ export interface SettingsTab {
                     maxlength="300">
                   <small class="form-text">{{ 'settings.business.reservationTextHint' | translate }}</small>
                 </div>
+
+                <!-- Beispieldaten nachträglich laden -->
+                <div class="form-group starter-pack-box">
+                  <label class="starter-pack-label">{{ 'settings.business.starterPackTitle' | translate }}</label>
+                  <small class="form-text">{{ 'settings.business.starterPackHint' | translate }}</small>
+                  <button type="button" class="btn btn-secondary btn-starter"
+                          [disabled]="applyingStarterPack"
+                          (click)="applyStarterPack()">
+                    {{ applyingStarterPack
+                        ? ('settings.business.starterPackLoading' | translate)
+                        : ('settings.business.starterPackButton' | translate) }}
+                  </button>
+                  <span class="starter-pack-msg" *ngIf="starterPackMessage">{{ starterPackMessage }}</span>
+                </div>
               </ng-container>
             </div>
 
@@ -956,6 +970,18 @@ export interface SettingsTab {
       border-radius: 12px;
     }
 
+    /* ─── Starter-Pack Box ─── */
+    .starter-pack-box {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #fffaf0;
+      border: 1px dashed rgba(180, 83, 9, 0.4);
+      border-radius: 10px;
+    }
+    .starter-pack-label { font-weight: 700; color: #78350f; display: block; margin-bottom: 0.25rem; }
+    .btn-starter { margin-top: 0.75rem; }
+    .starter-pack-msg { display: block; margin-top: 0.5rem; font-size: 0.875rem; color: #78350f; }
+
     .wa-notifications-toggle {
       margin-top: 1rem;
       background: #f0fdf4;
@@ -1003,6 +1029,10 @@ export class StoreSettingsComponent implements OnInit {
   deleting = false;
   error: string | null = null;
   activeTab = 'general';
+
+  /** Starter-Pack (Beispieldaten) Status */
+  applyingStarterPack = false;
+  starterPackMessage: string | null = null;
 
   showDeleteModal = false;
   deleteConfirmation = '';
@@ -1172,6 +1202,38 @@ export class StoreSettingsComponent implements OnInit {
         }
       });
     }
+  }
+
+  /**
+   * Lädt Starter-Pack-Beispieldaten in den bestehenden Store
+   * (nur RESTAURANT/RIAD, nur wenn noch keine Produkte vorhanden).
+   * Wichtig: Vorher Business-Typ speichern, damit das Backend den richtigen Pack wählt.
+   */
+  applyStarterPack(): void {
+    this.applyingStarterPack = true;
+    this.starterPackMessage = null;
+
+    // Erst aktuellen Business-Typ speichern, dann Pack anwenden
+    this.storeService.updateStore(this.storeId, this.settingsForm.value).subscribe({
+      next: () => {
+        this.storeService.applyStarterPack(this.storeId).subscribe({
+          next: () => {
+            this.applyingStarterPack = false;
+            this.starterPackMessage = '✅ Beispieldaten geladen. Öffne deinen Shop, um sie zu sehen.';
+          },
+          error: (err) => {
+            this.applyingStarterPack = false;
+            this.starterPackMessage = '❌ Fehler beim Laden der Beispieldaten.';
+            console.error('applyStarterPack error:', err);
+          }
+        });
+      },
+      error: (err) => {
+        this.applyingStarterPack = false;
+        this.starterPackMessage = '❌ Bitte zuerst Einstellungen speichern.';
+        console.error('save before starter pack error:', err);
+      }
+    });
   }
 
   saveBranding(): void {

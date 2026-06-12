@@ -1159,12 +1159,12 @@ INSERT INTO starter_product (pack_id, category_slug, title, description, base_pr
 SELECT p.id, x.category_slug, x.title, x.description, x.base_price, x.image_url, x.sort_order, x.is_featured
 FROM (SELECT id FROM starter_pack WHERE code='RESTAURANT_MOROCCAN') p
 CROSS JOIN (
-    SELECT 'petit-dejeuner' category_slug, 'Petit déjeuner Marocain' title, 'Msemen, Beghrir, Olivenöl, Amlou, frisches Brot und Minztee.' description, 55.00 base_price, 'https://cdn.markt.ma/default-assets/restaurant/petit-dejeuner-marocain.jpg' image_url, 1 sort_order, TRUE is_featured
-    UNION ALL SELECT 'tajines','Tajine Poulet Citron','Hähnchen mit eingelegten Zitronen, Oliven und Gewürzen.',75.00,'https://cdn.markt.ma/default-assets/restaurant/tajine-poulet-citron.jpg',2,TRUE
-    UNION ALL SELECT 'tajines','Tajine Kefta','Hackbällchen in würziger Tomatensauce mit pochiertem Ei.',70.00,'https://cdn.markt.ma/default-assets/restaurant/tajine-kefta.jpg',3,FALSE
-    UNION ALL SELECT 'couscous','Couscous Royal','Couscous mit Lamm, Hähnchen, Merguez und Gemüse.',95.00,'https://cdn.markt.ma/default-assets/restaurant/couscous-royal.jpg',4,TRUE
-    UNION ALL SELECT 'boissons','Thé à la menthe','Traditioneller marokkanischer Minztee.',15.00,'https://cdn.markt.ma/default-assets/restaurant/the-a-la-menthe.jpg',5,FALSE
-    UNION ALL SELECT 'desserts','Pastilla Poulet','Knusprige Pastilla mit Hähnchen, Mandeln und Zimt.',65.00,'https://cdn.markt.ma/default-assets/restaurant/pastilla-poulet.jpg',6,FALSE
+    SELECT 'petit-dejeuner' category_slug, 'Petit déjeuner Marocain' title, 'Msemen, Beghrir, Olivenöl, Amlou, frisches Brot und Minztee.' description, 55.00 base_price, 'https://minio.markt.ma/store-assets/default-assets/restaurant/petit-dejeuner-marocain.jpg' image_url, 1 sort_order, TRUE is_featured
+    UNION ALL SELECT 'tajines','Tajine Poulet Citron','Hähnchen mit eingelegten Zitronen, Oliven und Gewürzen.',75.00,'https://minio.markt.ma/store-assets/default-assets/restaurant/tajine-poulet-citron.jpg',2,TRUE
+    UNION ALL SELECT 'tajines','Tajine Kefta','Hackbällchen in würziger Tomatensauce mit pochiertem Ei.',70.00,'https://minio.markt.ma/store-assets/default-assets/restaurant/tajine-kefta.jpg',3,FALSE
+    UNION ALL SELECT 'couscous','Couscous Royal','Couscous mit Lamm, Hähnchen, Merguez und Gemüse.',95.00,'https://minio.markt.ma/store-assets/default-assets/restaurant/couscous-royal.jpg',4,TRUE
+    UNION ALL SELECT 'boissons','Thé à la menthe','Traditioneller marokkanischer Minztee.',15.00,'https://minio.markt.ma/store-assets/default-assets/restaurant/the-a-la-menthe.jpg',5,FALSE
+    UNION ALL SELECT 'desserts','Pastilla Poulet','Knusprige Pastilla mit Hähnchen, Mandeln und Zimt.',65.00,'https://minio.markt.ma/store-assets/default-assets/restaurant/pastilla-poulet.jpg',6,FALSE
 ) x
 WHERE NOT EXISTS (SELECT 1 FROM starter_product sp WHERE sp.pack_id = p.id);
 
@@ -1173,9 +1173,9 @@ INSERT INTO starter_carousel_item (pack_id, image_url, alt_text, sort_order)
 SELECT p.id, x.image_url, x.alt_text, x.sort_order
 FROM (SELECT id FROM starter_pack WHERE code='RESTAURANT_MOROCCAN') p
 CROSS JOIN (
-    SELECT 'https://cdn.markt.ma/default-assets/restaurant/hero-1.jpg' image_url, 'Cuisine marocaine authentique' alt_text, 1 sort_order
-    UNION ALL SELECT 'https://cdn.markt.ma/default-assets/restaurant/hero-2.jpg','Tajines & Couscous faits maison',2
-    UNION ALL SELECT 'https://cdn.markt.ma/default-assets/restaurant/hero-3.jpg','Ambiance chaleureuse',3
+    SELECT 'https://minio.markt.ma/store-assets/default-assets/restaurant/hero-1.jpg' image_url, 'Cuisine marocaine authentique' alt_text, 1 sort_order
+    UNION ALL SELECT 'https://minio.markt.ma/store-assets/default-assets/restaurant/hero-2.jpg','Tajines & Couscous faits maison',2
+    UNION ALL SELECT 'https://minio.markt.ma/store-assets/default-assets/restaurant/hero-3.jpg','Ambiance chaleureuse',3
 ) x
 WHERE NOT EXISTS (SELECT 1 FROM starter_carousel_item sci WHERE sci.pack_id = p.id);
 
@@ -1198,12 +1198,12 @@ INSERT INTO starter_product (pack_id, category_slug, title, description, base_pr
 SELECT p.id, x.category_slug, x.title, x.description, x.base_price, x.image_url, x.sort_order, x.is_featured
 FROM (SELECT id FROM starter_pack WHERE code='RIAD_MOROCCAN') p
 CROSS JOIN (
-    SELECT 'chambres' category_slug, 'Chambre Standard' title, 'Gemütliches Zimmer mit Blick auf den Innenhof.' description, 650.00 base_price, 'https://cdn.markt.ma/default-assets/riad/chambre-standard.jpg' image_url, 1 sort_order, TRUE is_featured
-    UNION ALL SELECT 'suites','Suite Familiale','Geräumige Suite für Familien.',1200.00,'https://cdn.markt.ma/default-assets/riad/suite-familiale.jpg',2,TRUE
-    UNION ALL SELECT 'petit-dejeuner','Petit déjeuner traditionnel','Marokkanisches Frühstück mit Msemen, Honig, Oliven und Minztee.',85.00,'https://cdn.markt.ma/default-assets/riad/petit-dejeuner-traditionnel.jpg',3,FALSE
-    UNION ALL SELECT 'spa-hammam','Hammam Relax','Traditionelles Hammam mit schwarzer Seife und Gommage.',250.00,'https://cdn.markt.ma/default-assets/riad/hammam-relax.jpg',4,TRUE
-    UNION ALL SELECT 'spa-hammam','Massage Argan','Entspannende Ganzkörpermassage mit Arganöl.',350.00,'https://cdn.markt.ma/default-assets/riad/massage-argan.jpg',5,FALSE
-    UNION ALL SELECT 'excursions','Excursion Ourika','Tagesausflug ins Ourika-Tal inkl. Transport und Guide.',450.00,'https://cdn.markt.ma/default-assets/riad/excursion-ourika.jpg',6,FALSE
+    SELECT 'chambres' category_slug, 'Chambre Standard' title, 'Gemütliches Zimmer mit Blick auf den Innenhof.' description, 650.00 base_price, 'https://minio.markt.ma/store-assets/default-assets/riad/chambre-standard.jpg' image_url, 1 sort_order, TRUE is_featured
+    UNION ALL SELECT 'suites','Suite Familiale','Geräumige Suite für Familien.',1200.00,'https://minio.markt.ma/store-assets/default-assets/riad/suite-familiale.jpg',2,TRUE
+    UNION ALL SELECT 'petit-dejeuner','Petit déjeuner traditionnel','Marokkanisches Frühstück mit Msemen, Honig, Oliven und Minztee.',85.00,'https://minio.markt.ma/store-assets/default-assets/riad/petit-dejeuner-traditionnel.jpg',3,FALSE
+    UNION ALL SELECT 'spa-hammam','Hammam Relax','Traditionelles Hammam mit schwarzer Seife und Gommage.',250.00,'https://minio.markt.ma/store-assets/default-assets/riad/hammam-relax.jpg',4,TRUE
+    UNION ALL SELECT 'spa-hammam','Massage Argan','Entspannende Ganzkörpermassage mit Arganöl.',350.00,'https://minio.markt.ma/store-assets/default-assets/riad/massage-argan.jpg',5,FALSE
+    UNION ALL SELECT 'excursions','Excursion Ourika','Tagesausflug ins Ourika-Tal inkl. Transport und Guide.',450.00,'https://minio.markt.ma/store-assets/default-assets/riad/excursion-ourika.jpg',6,FALSE
 ) x
 WHERE NOT EXISTS (SELECT 1 FROM starter_product sp WHERE sp.pack_id = p.id);
 
@@ -1212,9 +1212,9 @@ INSERT INTO starter_carousel_item (pack_id, image_url, alt_text, sort_order)
 SELECT p.id, x.image_url, x.alt_text, x.sort_order
 FROM (SELECT id FROM starter_pack WHERE code='RIAD_MOROCCAN') p
 CROSS JOIN (
-    SELECT 'https://cdn.markt.ma/default-assets/riad/hero-1.jpg' image_url, 'Riad authentique au cœur de la médina' alt_text, 1 sort_order
-    UNION ALL SELECT 'https://cdn.markt.ma/default-assets/riad/hero-2.jpg','Patio & piscine',2
-    UNION ALL SELECT 'https://cdn.markt.ma/default-assets/riad/hero-3.jpg','Détente & bien-être',3
+    SELECT 'https://minio.markt.ma/store-assets/default-assets/riad/hero-1.jpg' image_url, 'Riad authentique au cœur de la médina' alt_text, 1 sort_order
+    UNION ALL SELECT 'https://minio.markt.ma/store-assets/default-assets/riad/hero-2.jpg','Patio & piscine',2
+    UNION ALL SELECT 'https://minio.markt.ma/store-assets/default-assets/riad/hero-3.jpg','Détente & bien-être',3
 ) x
 WHERE NOT EXISTS (SELECT 1 FROM starter_carousel_item sci WHERE sci.pack_id = p.id);
 

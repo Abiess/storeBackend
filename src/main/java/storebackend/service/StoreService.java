@@ -492,6 +492,26 @@ public class StoreService {
         return toDTO(getStoreById(storeId));
     }
 
+    /**
+     * Befüllt einen bestehenden Store nachträglich mit dem zum businessType passenden
+     * Starter-Pack (nur wenn noch keine Produkte vorhanden sind).
+     * Nützlich, wenn der businessType erst nach der Erstellung auf RESTAURANT/RIAD
+     * geändert wurde.
+     */
+    @Transactional
+    public StoreDTO applyStarterPackToStore(Long storeId, User user) {
+        Store store = storeRepository.findByIdWithOwner(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+
+        if (!store.getOwner().getId().equals(user.getId())) {
+            throw new RuntimeException("You are not authorized to modify this store");
+        }
+
+        boolean cloned = starterPackService.applyForBusinessTypeIfEmpty(store);
+        log.info("Starter-Pack für Store {} angewendet: {}", storeId, cloned);
+        return toDTO(store);
+    }
+
     private StoreDTO toDTO(Store store) {
         StoreDTO dto = new StoreDTO();
         dto.setId(store.getId());

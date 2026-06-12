@@ -383,7 +383,11 @@
                                       "googleMapsHint":  "Optional link for the \"Directions\" button.",
                                       "reservationText":  "WhatsApp reservation text",
                                       "reservationTextPlaceholder":  "Salam, bghit nreserver / commander",
-                                      "reservationTextHint":  "Used as prefix for reservation/order messages."
+                                      "reservationTextHint":  "Used as prefix for reservation/order messages.",
+                                      "starterPackTitle":  "Sample data",
+                                      "starterPackHint":  "Loads predefined categories, dishes/offers and images into this store (only if it has no products yet).",
+                                      "starterPackButton":  "Load sample data",
+                                      "starterPackLoading":  "Loading..."
                                   },
                      "branding":  {
                                       "title":  "Branding",
@@ -624,7 +628,7 @@
                  "emailAlreadyExists":  "This email is already registered."
              },
     "restaurant":  {
-                       "reserve":  "Reserve",
+                       "reserve":  "Reserve / Order",
                        "reserveWhatsapp":  "Reserve via WhatsApp",
                        "directions":  "Directions",
                        "openingHours":  "Opening hours",
@@ -632,6 +636,13 @@
                        "menu":  "Menu",
                        "emptyMenu":  "No dishes available right now.",
                        "order":  "Order"
+                   },
+    "riad":  {
+                       "reserve":  "Reserve",
+                       "reserveWhatsapp":  "Reserve via WhatsApp",
+                       "menu":  "Rooms & Services",
+                       "emptyMenu":  "No offers available right now.",
+                       "order":  "Request"
                    },
     "storefront":  {
                        "searchResults":  "Search results",

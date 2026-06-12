@@ -650,7 +650,9 @@ export class StoreCreateSimpleComponent implements OnInit {
       this.http.post<any>(`${environment.apiUrl}/public/create-store`, {
         storeName,
         storeSlug,
-        category: this.selectedCategories()[0] || 'other'
+        category: this.selectedCategories()[0] || 'other',
+        businessType: this.businessType(),
+        seedSampleData: this.seedSampleData()
       }).subscribe({
         next: (res) => {
           this.loading.set(false);

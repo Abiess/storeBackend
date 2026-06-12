@@ -501,7 +501,11 @@
                                       "googleMapsHint":  "Optionaler Link für den \"Route\"-Button.",
                                       "reservationText":  "WhatsApp-Reservierungstext",
                                       "reservationTextPlaceholder":  "Salam, bghit nreserver / commander",
-                                      "reservationTextHint":  "Wird als Prefix für Reservierungs-/Bestellnachrichten genutzt."
+                                      "reservationTextHint":  "Wird als Prefix für Reservierungs-/Bestellnachrichten genutzt.",
+                                      "starterPackTitle":  "Beispieldaten",
+                                      "starterPackHint":  "Lädt vordefinierte Kategorien, Gerichte/Angebote und Bilder in diesen Store (nur wenn noch keine Produkte vorhanden sind).",
+                                      "starterPackButton":  "Beispieldaten laden",
+                                      "starterPackLoading":  "Wird geladen..."
                                   },
                      "branding":  {
                                       "title":  "Branding",
@@ -831,7 +835,7 @@
                  "emailAlreadyExists":  "Diese E-Mail ist bereits registriert."
              },
     "restaurant":  {
-                       "reserve":  "Reservieren",
+                       "reserve":  "Reservieren / Bestellen",
                        "reserveWhatsapp":  "Reservieren per WhatsApp",
                        "directions":  "Route",
                        "openingHours":  "Öffnungszeiten",
@@ -839,6 +843,13 @@
                        "menu":  "Speisekarte",
                        "emptyMenu":  "Aktuell sind keine Gerichte verfügbar.",
                        "order":  "Bestellen"
+                   },
+    "riad":  {
+                       "reserve":  "Reservieren",
+                       "reserveWhatsapp":  "Reservieren per WhatsApp",
+                       "menu":  "Zimmer & Services",
+                       "emptyMenu":  "Aktuell sind keine Angebote verfügbar.",
+                       "order":  "Anfragen"
                    },
     "storefront":  {
                        "searchResults":  "Suchergebnisse",

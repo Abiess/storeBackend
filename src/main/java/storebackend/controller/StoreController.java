@@ -75,4 +75,15 @@ class StoreManagementController {
         storeService.deleteStore(storeId, user);
         return ResponseEntity.ok().build();
     }
+
+    /**
+     * Befüllt einen bestehenden Store mit Starter-Pack-Beispieldaten
+     * (passend zum businessType RESTAURANT/RIAD, nur wenn noch leer).
+     */
+    @PostMapping("/{storeId}/apply-starter-pack")
+    public ResponseEntity<StoreDTO> applyStarterPack(
+            @PathVariable Long storeId,
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(storeService.applyStarterPackToStore(storeId, user));
+    }
 }

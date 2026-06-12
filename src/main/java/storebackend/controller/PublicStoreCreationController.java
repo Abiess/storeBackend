@@ -9,12 +9,14 @@ import org.springframework.web.bind.annotation.*;
 import storebackend.entity.Plan;
 import storebackend.entity.Store;
 import storebackend.entity.User;
+import storebackend.enums.BusinessType;
 import storebackend.enums.Role;
 import storebackend.enums.StoreStatus;
 import storebackend.repository.PlanRepository;
 import storebackend.repository.StoreRepository;
 import storebackend.repository.UserRepository;
 import storebackend.security.JwtUtil;
+import storebackend.service.StarterPackService;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -45,6 +47,7 @@ public class PublicStoreCreationController {
     private final PlanRepository planRepository;
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
+    private final StarterPackService starterPackService;
 
     public record CreateStorePublicRequest(
         @NotBlank(message = "Store-Name darf nicht leer sein")
@@ -52,7 +55,9 @@ public class PublicStoreCreationController {
         String storeName,
 
         String storeSlug,   // optional – wird automatisch generiert
-        String category     // optional
+        String category,    // optional
+        String businessType,     // optional: SHOP | RESTAURANT | RIAD
+        Boolean seedSampleData   // optional: mit Starter-Pack vorbefüllen
     ) {}
 
     public record CreateStorePublicResponse(
@@ -107,8 +112,26 @@ public class PublicStoreCreationController {
             if (req.category() != null && !req.category().isBlank()) {
                 store.setDescription("Kategorie: " + req.category());
             }
+            // Business-Typ (Default SHOP)
+            if (req.businessType() != null && !req.businessType().isBlank()) {
+                try {
+                    store.setBusinessType(BusinessType.valueOf(req.businessType().trim().toUpperCase()));
+                } catch (IllegalArgumentException ex) {
+                    log.warn("[PublicCreate] Ungültiger businessType '{}' – Default SHOP", req.businessType());
+                }
+            }
             store = storeRepository.save(store);
-            log.info("✅ [PublicCreate] Store erstellt: ID={}, Slug={}", store.getId(), slug);
+            log.info("✅ [PublicCreate] Store erstellt: ID={}, Slug={}, businessType={}",
+                store.getId(), slug, store.getBusinessType());
+
+            // Optional: Starter-Pack-Content für RESTAURANT/RIAD vorbefüllen
+            if (Boolean.TRUE.equals(req.seedSampleData())) {
+                try {
+                    starterPackService.cloneForBusinessType(store, store.getBusinessType());
+                } catch (Exception e) {
+                    log.warn("[PublicCreate] Starter-Pack-Klonen fehlgeschlagen: {}", e.getMessage());
+                }
+            }
 
             // ── 4. JWT generieren ─────────────────────────────────────────────
             String token = jwtUtil.generateToken(user.getEmail(), user.getId(), user.getRoles());

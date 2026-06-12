@@ -196,6 +196,12 @@ minio:
   endpoint: ${MINIO_ENDPOINT:https://minio.markt.ma}
   secure: ${MINIO_SECURE:true}
 
+# Plattform-Default-Assets (Starter-Pack-Bilder Restaurant/Riad).
+# Öffentliche MinIO-Basis (Bucket store-assets, Prefix default-assets).
+markt:
+  assets:
+    default-base-url: ${MARKT_ASSETS_BASE_URL:https://minio.markt.ma/store-assets/default-assets}
+
 # CJ Dropshipping API Configuration (Production)
 cj:
   api:

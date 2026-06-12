@@ -48,6 +48,14 @@ export class StoreService {
     return this.http.delete<void>(`${environment.apiUrl}/stores/${storeId}`);
   }
 
+  /**
+   * Befüllt einen bestehenden Store nachträglich mit Starter-Pack-Beispieldaten
+   * (passend zum businessType RESTAURANT/RIAD, nur wenn der Store noch leer ist).
+   */
+  applyStarterPack(storeId: number): Observable<Store> {
+    return this.http.post<Store>(`${environment.apiUrl}/stores/${storeId}/apply-starter-pack`, {});
+  }
+
   checkSlugAvailability(slug: string): Observable<boolean> {
     if (environment.useMockData) {
       // Mock: Slugs mit 'test' sind bereits vergeben

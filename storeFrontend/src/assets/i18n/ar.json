@@ -245,7 +245,7 @@
                  "emailAlreadyExists":  "هذا البريد الإلكتروني مسجّل بالفعل."
              },
     "restaurant":  {
-                       "reserve":  "احجز",
+                       "reserve":  "احجز / اطلب",
                        "reserveWhatsapp":  "احجز عبر واتساب",
                        "directions":  "الاتجاهات",
                        "openingHours":  "ساعات العمل",
@@ -253,6 +253,13 @@
                        "menu":  "قائمة الطعام",
                        "emptyMenu":  "لا توجد أطباق متاحة حاليًا.",
                        "order":  "اطلب"
+                   },
+    "riad":  {
+                       "reserve":  "احجز",
+                       "reserveWhatsapp":  "احجز عبر واتساب",
+                       "menu":  "الغرف والخدمات",
+                       "emptyMenu":  "لا توجد عروض متاحة حاليًا.",
+                       "order":  "استفسر"
                    },
     "storefront":  {
                        "searchResults":  "نتائج البحث",
@@ -503,7 +510,11 @@
                                       "googleMapsHint":  "رابط اختياري لزر \"الاتجاهات\".",
                                       "reservationText":  "نص الحجز عبر واتساب",
                                       "reservationTextPlaceholder":  "سلام، بغيت نريزيرفي / نكوموندي",
-                                      "reservationTextHint":  "يُستخدم كبادئة لرسائل الحجز/الطلب."
+                                      "reservationTextHint":  "يُستخدم كبادئة لرسائل الحجز/الطلب.",
+                                      "starterPackTitle":  "بيانات تجريبية",
+                                      "starterPackHint":  "يحمّل فئات وأطباق/عروض وصور معدة مسبقًا في هذا المتجر (فقط إذا لم يكن به منتجات بعد).",
+                                      "starterPackButton":  "تحميل البيانات التجريبية",
+                                      "starterPackLoading":  "جاري التحميل..."
                                   },
                      "branding":  {
                                       "title":  "العلامة التجارية",

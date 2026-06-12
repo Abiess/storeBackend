@@ -34,10 +34,8 @@ import java.util.List;
 @Order(25) // nach ThemeTemplateSeeder (@Order 20)
 public class StarterPackSeeder {
 
-    /** Basis-URL der festen Default-Assets (MinIO-hosted). */
-    private static final String CDN = "https://cdn.markt.ma/default-assets";
-
     private final StarterPackRepository repository;
+    private final AssetProperties assets;
 
     @EventListener(ContextRefreshedEvent.class)
     @Transactional
@@ -85,27 +83,27 @@ public class StarterPackSeeder {
         // Produkte (Menü-Items)
         addProduct(pack, "petit-dejeuner", "Petit déjeuner Marocain",
             "Msemen, Beghrir, Olivenöl, Amlou, frisches Brot und Minztee.",
-            "55.00", CDN + "/restaurant/petit-dejeuner-marocain.jpg", 1, true);
+            "55.00", assets.url("/restaurant/petit-dejeuner-marocain.jpg"), 1, true);
         addProduct(pack, "tajines", "Tajine Poulet Citron",
             "Hähnchen mit eingelegten Zitronen, Oliven und marokkanischen Gewürzen.",
-            "75.00", CDN + "/restaurant/tajine-poulet-citron.jpg", 2, true);
+            "75.00", assets.url("/restaurant/tajine-poulet-citron.jpg"), 2, true);
         addProduct(pack, "tajines", "Tajine Kefta",
             "Hackbällchen in würziger Tomatensauce mit pochiertem Ei.",
-            "70.00", CDN + "/restaurant/tajine-kefta.jpg", 3, false);
+            "70.00", assets.url("/restaurant/tajine-kefta.jpg"), 3, false);
         addProduct(pack, "couscous", "Couscous Royal",
             "Couscous mit Lamm, Hähnchen, Merguez und saisonalem Gemüse.",
-            "95.00", CDN + "/restaurant/couscous-royal.jpg", 4, true);
+            "95.00", assets.url("/restaurant/couscous-royal.jpg"), 4, true);
         addProduct(pack, "boissons", "Thé à la menthe",
             "Traditioneller marokkanischer Minztee, frisch aufgegossen.",
-            "15.00", CDN + "/restaurant/the-a-la-menthe.jpg", 5, false);
+            "15.00", assets.url("/restaurant/the-a-la-menthe.jpg"), 5, false);
         addProduct(pack, "desserts", "Pastilla Poulet",
             "Knusprige Blätterteig-Pastilla mit Hähnchen, Mandeln und Zimt.",
-            "65.00", CDN + "/restaurant/pastilla-poulet.jpg", 6, false);
+            "65.00", assets.url("/restaurant/pastilla-poulet.jpg"), 6, false);
 
         // Carousel / Hero
-        addCarousel(pack, CDN + "/restaurant/hero-1.jpg", "Cuisine marocaine authentique", 1);
-        addCarousel(pack, CDN + "/restaurant/hero-2.jpg", "Tajines & Couscous faits maison", 2);
-        addCarousel(pack, CDN + "/restaurant/hero-3.jpg", "Ambiance chaleureuse", 3);
+        addCarousel(pack, assets.url("/restaurant/hero-1.jpg"), "Cuisine marocaine authentique", 1);
+        addCarousel(pack, assets.url("/restaurant/hero-2.jpg"), "Tajines & Couscous faits maison", 2);
+        addCarousel(pack, assets.url("/restaurant/hero-3.jpg"), "Ambiance chaleureuse", 3);
 
         return pack;
     }
@@ -134,27 +132,27 @@ public class StarterPackSeeder {
         // Produkte (Angebote)
         addProduct(pack, "chambres", "Chambre Standard",
             "Gemütliches Zimmer im traditionellen Stil mit Blick auf den Innenhof.",
-            "650.00", CDN + "/riad/chambre-standard.jpg", 1, true);
+            "650.00", assets.url("/riad/chambre-standard.jpg"), 1, true);
         addProduct(pack, "suites", "Suite Familiale",
             "Geräumige Suite für Familien mit separatem Wohnbereich.",
-            "1200.00", CDN + "/riad/suite-familiale.jpg", 2, true);
+            "1200.00", assets.url("/riad/suite-familiale.jpg"), 2, true);
         addProduct(pack, "petit-dejeuner", "Petit déjeuner traditionnel",
             "Marokkanisches Frühstück mit Msemen, Honig, Oliven und Minztee.",
-            "85.00", CDN + "/riad/petit-dejeuner-traditionnel.jpg", 3, false);
+            "85.00", assets.url("/riad/petit-dejeuner-traditionnel.jpg"), 3, false);
         addProduct(pack, "spa-hammam", "Hammam Relax",
             "Traditionelles Hammam-Erlebnis mit schwarzer Seife und Gommage.",
-            "250.00", CDN + "/riad/hammam-relax.jpg", 4, true);
+            "250.00", assets.url("/riad/hammam-relax.jpg"), 4, true);
         addProduct(pack, "spa-hammam", "Massage Argan",
             "Entspannende Ganzkörpermassage mit reinem Arganöl.",
-            "350.00", CDN + "/riad/massage-argan.jpg", 5, false);
+            "350.00", assets.url("/riad/massage-argan.jpg"), 5, false);
         addProduct(pack, "excursions", "Excursion Ourika",
             "Tagesausflug ins Ourika-Tal inkl. Transport und Guide.",
-            "450.00", CDN + "/riad/excursion-ourika.jpg", 6, false);
+            "450.00", assets.url("/riad/excursion-ourika.jpg"), 6, false);
 
         // Carousel / Hero
-        addCarousel(pack, CDN + "/riad/hero-1.jpg", "Riad authentique au cœur de la médina", 1);
-        addCarousel(pack, CDN + "/riad/hero-2.jpg", "Patio & piscine", 2);
-        addCarousel(pack, CDN + "/riad/hero-3.jpg", "Détente & bien-être", 3);
+        addCarousel(pack, assets.url("/riad/hero-1.jpg"), "Riad authentique au cœur de la médina", 1);
+        addCarousel(pack, assets.url("/riad/hero-2.jpg"), "Patio & piscine", 2);
+        addCarousel(pack, assets.url("/riad/hero-3.jpg"), "Détente & bien-être", 3);
 
         return pack;
     }
