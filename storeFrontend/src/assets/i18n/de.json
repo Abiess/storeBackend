@@ -1729,6 +1729,47 @@
                      "noResultsFor":  "Keine Einträge für",
                      "resetSearch":   "Suche zurücksetzen",
                      "emptyTitle":    "Noch nichts hier"
-                 }
+                 },
+    "platformDelivery":  {
+        "title":      "Lieferoptionen",
+        "subtitle":   "Plattformweit – automatisch in allen Storefronts angezeigt",
+        "addBtn":     "Neue Lieferoption",
+        "infoTitle":  "Wie es funktioniert:",
+        "infoText":   "Hier verwaltest du alle Lieferoptionen. Sie erscheinen automatisch im Checkout aller Stores. Store-Manager sehen diesen Bereich nicht.",
+        "emptyTitle": "Noch keine Lieferoptionen",
+        "emptyText":  "Füge jetzt die erste Lieferoption hinzu – sie wird sofort im Storefront sichtbar.",
+        "addFirst":   "Erste Lieferoption hinzufügen",
+        "createTitle":"Neue Lieferoption erstellen",
+        "editTitle":  "Lieferoption bearbeiten",
+        "create":     "Erstellen",
+        "price":      "Preis",
+        "free":       "Kostenlos",
+        "eta":        "Lieferzeit",
+        "days":       "Tage",
+        "order":      "Reihenfolge",
+        "activate":   "Aktivieren",
+        "deactivate": "Deaktivieren",
+        "activeYes":  "Aktiv",
+        "activeNo":   "Inaktiv",
+        "types":  {
+            "PICKUP":   "Abholung",
+            "STANDARD": "Standard",
+            "EXPRESS":  "Express",
+            "SAME_DAY": "Same-Day"
+        },
+        "form":  {
+            "name":                  "Name",
+            "namePlaceholder":       "z.B. Standard Lieferung",
+            "type":                  "Lieferart",
+            "description":           "Beschreibung",
+            "descriptionPlaceholder":"Kurze Info für den Kunden (optional)",
+            "price":                 "Preis",
+            "icon":                  "Icon",
+            "etaMin":                "Lieferzeit (min. Tage)",
+            "etaMax":                "Lieferzeit (max. Tage)",
+            "sortOrder":             "Anzeigereihenfolge",
+            "active":                "Im Storefront anzeigen"
+        }
+    }
 }
 

@@ -1752,5 +1752,46 @@
                      "selected":  "selected",
                      "noResultsFor":  "No entries for",
                      "resetSearch":  "Reset search"
-                 }
+                 },
+    "platformDelivery":  {
+        "title":      "Delivery Options",
+        "subtitle":   "Platform-wide – shown automatically in all storefronts",
+        "addBtn":     "New Delivery Option",
+        "infoTitle":  "How it works:",
+        "infoText":   "Manage all delivery options here. They appear automatically in the checkout of every store. Store managers cannot see or modify this section.",
+        "emptyTitle": "No delivery options yet",
+        "emptyText":  "Add your first delivery option – it will be visible in the storefront immediately.",
+        "addFirst":   "Add First Option",
+        "createTitle":"Create Delivery Option",
+        "editTitle":  "Edit Delivery Option",
+        "create":     "Create",
+        "price":      "Price",
+        "free":       "Free",
+        "eta":        "Delivery Time",
+        "days":       "days",
+        "order":      "Order",
+        "activate":   "Activate",
+        "deactivate": "Deactivate",
+        "activeYes":  "Active",
+        "activeNo":   "Inactive",
+        "types":  {
+            "PICKUP":   "Pickup",
+            "STANDARD": "Standard",
+            "EXPRESS":  "Express",
+            "SAME_DAY": "Same-Day"
+        },
+        "form":  {
+            "name":                  "Name",
+            "namePlaceholder":       "e.g. Standard Delivery",
+            "type":                  "Delivery Type",
+            "description":           "Description",
+            "descriptionPlaceholder":"Short info for the customer (optional)",
+            "price":                 "Price",
+            "icon":                  "Icon",
+            "etaMin":                "Delivery Time (min. days)",
+            "etaMax":                "Delivery Time (max. days)",
+            "sortOrder":             "Display Order",
+            "active":                "Show in storefront"
+        }
+    }
 }
