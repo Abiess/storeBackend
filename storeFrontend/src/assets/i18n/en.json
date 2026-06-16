@@ -1202,7 +1202,9 @@
                                          "hint":  "No store selected",
                                          "cta":  "Create a store",
                                          "tooltip":  "Please create or select a store first"
-                                     }
+                                     },
+                         "collapse":  "Collapse sidebar",
+                         "expand":  "Expand sidebar"
                      },
     "wizard":  {
                    "skip":  "Skip",

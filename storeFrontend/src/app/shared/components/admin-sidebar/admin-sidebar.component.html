@@ -94,11 +94,11 @@
         <!-- Footer -->
         <div class="sidebar-footer">
             <button class="btn-collapse" (click)="toggleCollapse()"
-                    [title]="isCollapsed ? 'Sidebar aufklappen' : 'Sidebar einklappen'">
+                    [title]="isCollapsed ? ('sidebarAdmin.expand' | translate) : ('sidebarAdmin.collapse' | translate)">
                 <span class="btn-collapse__icon" [class.rotated]="isCollapsed">
                     <lucide-angular name="chevron-left" [size]="16" strokeWidth="2"></lucide-angular>
                 </span>
-                <span class="btn-collapse__label" *ngIf="!isCollapsed">Sidebar einklappen</span>
+                <span class="btn-collapse__label" *ngIf="!isCollapsed">{{ 'sidebarAdmin.collapse' | translate }}</span>
             </button>
             <div class="footer-info" *ngIf="!isCollapsed">
                 <small>© 2026 markt.ma</small>

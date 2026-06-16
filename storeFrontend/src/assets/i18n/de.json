@@ -739,7 +739,9 @@
                                          "hint":  "Kein Store ausgewählt",
                                          "cta":  "Store erstellen",
                                          "tooltip":  "Bitte zuerst einen Store erstellen oder auswählen"
-                                     }
+                                     },
+                         "collapse":  "Sidebar einklappen",
+                         "expand":  "Sidebar aufklappen"
                      },
     "trust":  {
                   "freeShipping":  "Kostenloser Versand",
