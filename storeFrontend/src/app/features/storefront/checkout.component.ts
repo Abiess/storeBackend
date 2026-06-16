@@ -1469,6 +1469,24 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
       flex: 1;
       display: flex;
       flex-direction: column;
+    .delivery-icon-wrap {
+      width: 44px;
+      height: 44px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .delivery-logo {
+      width: 44px;
+      height: 44px;
+      object-fit: contain;
+      border-radius: 8px;
+      border: 1px solid #eee;
+      background: white;
+    }
+
       gap: 2px;
     }
     .delivery-details strong {
@@ -1476,6 +1494,22 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
       color: #222;
     }
     .delivery-desc {
+    .summary-delivery-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .summary-delivery-logo {
+      width: 24px;
+      height: 24px;
+      object-fit: contain;
+      border-radius: 4px;
+      border: 1px solid #eee;
+      background: white;
+      flex-shrink: 0;
+    }
+
       font-size: 13px;
       color: #666;
     }
