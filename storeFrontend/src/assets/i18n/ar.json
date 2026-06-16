@@ -18,12 +18,12 @@
     "cart":  {
                  "title":  "سلة التسوق",
                  "empty":  "سلتك فارغة",
-                 "emptyAdd":  "أضف منتجات للمتابعة",
+                 "emptyAdd":  "اكتشف منتجاتنا وأضفها إلى سلتك!",
                  "items":  "{{count}} عناصر",
                  "subtotal":  "المجموع الفرعي",
                  "total":  "الإجمالي",
                  "checkout":  "إتمام الشراء",
-                 "continueShopping":  "متابعة التسوق",
+                 "continueShopping":  "→ متابعة التسوق",
                  "remove":  "إزالة",
                  "quantity":  "الكمية",
                  "summary":  "ملخص الطلب",
@@ -33,7 +33,16 @@
                  "backToShop":  "→ العودة إلى المتجر",
                  "noStoreId":  "لم يتم العثور على معرّف المتجر. الرجاء فتح السلة عبر نطاق فرعي للمتجر.",
                  "confirmRemove":  "إزالة {{name}} من السلة؟",
-                 "confirmClear":  "هل تريد إفراغ السلة بالكامل؟"
+                 "confirmClear":  "هل تريد إفراغ السلة بالكامل؟",
+                 "product":  "المنتج",
+                 "unit":  "القطعة",
+                 "freeShipping":  "مجاني",
+                 "freeShippingHint":  "{{amount}} € أخرى للشحن المجاني!",
+                 "inclTax":  "شامل الضريبة",
+                 "securePayment":  "دفع آمن",
+                 "easyReturns":  "إرجاع خلال 30 يوم",
+                 "updateError":  "خطأ في تحديث السلة",
+                 "itemRemoved":  "تمت إزالة \"{{name}}\""
              },
     "product":  {
                     "name":  "اسم المنتج",

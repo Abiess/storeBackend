@@ -5,23 +5,24 @@ import { Router } from '@angular/router';
 import { CartService, Cart, CartItem } from '../../core/services/cart.service';
 import { SubdomainService } from '../../core/services/subdomain.service';
 import { PlaceholderImageUtil } from '../../shared/utils/placeholder-image.util';
+import { TranslateModule } from '@ngx-translate/core';
 
 import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-cart',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslateModule],
   template: `
     <div class="cart-page">
 
       <!-- Header -->
       <div class="cart-header">
         <button class="back-btn" (click)="goBack()">
-          ← Weiter einkaufen
+          {{ 'cart.continueShopping' | translate }}
         </button>
         <h1 class="cart-title">
-          🛒 Warenkorb
+          🛒 {{ 'cart.title' | translate }}
           <span class="item-badge" *ngIf="cartItemCount > 0">{{ cartItemCount }}</span>
         </h1>
       </div>
@@ -29,15 +30,15 @@ import { Subscription } from 'rxjs';
       <!-- Loading -->
       <div *ngIf="loading" class="loading-state">
         <div class="spinner-ring"></div>
-        <p>Warenkorb wird geladen…</p>
+        <p>{{ 'cart.loading' | translate }}</p>
       </div>
 
       <!-- Empty State -->
       <div *ngIf="!loading && (!cart || cart.items.length === 0)" class="empty-state">
         <div class="empty-icon">🛍️</div>
-        <h2>Dein Warenkorb ist leer</h2>
-        <p>Entdecke unsere Produkte und füge sie hinzu!</p>
-        <button class="btn-primary" (click)="goBack()">Jetzt einkaufen</button>
+        <h2>{{ 'cart.empty' | translate }}</h2>
+        <p>{{ 'cart.emptyAdd' | translate }}</p>
+        <button class="btn-primary" (click)="goBack()">{{ 'cart.continueShopping' | translate }}</button>
       </div>
 
       <!-- Cart Content -->
@@ -47,9 +48,9 @@ import { Subscription } from 'rxjs';
         <div class="items-column">
           <div class="items-wrapper">
             <div class="items-header">
-              <span>Produkt</span>
-              <span>Menge</span>
-              <span>Preis</span>
+              <span>{{ 'cart.product' | translate }}</span>
+              <span>{{ 'cart.quantity' | translate }}</span>
+              <span>{{ 'product.price' | translate }}</span>
             </div>
 
             <div
@@ -71,7 +72,7 @@ import { Subscription } from 'rxjs';
                 <p class="variant-label" *ngIf="item.variantSku">
                   <span class="variant-dot"></span>{{ item.variantSku }}
                 </p>
-                <p class="unit-price">€ {{ getItemPrice(item) | number:'1.2-2' }} / Stück</p>
+                <p class="unit-price">{{ getItemPrice(item) | number:'1.2-2' }} € / {{ 'cart.unit' | translate }}</p>
               </div>
 
               <!-- Quantity Controls -->
@@ -95,7 +96,7 @@ import { Subscription } from 'rxjs';
                   class="remove-btn"
                   (click)="removeItem(item)"
                   [disabled]="updatingItem === item.id"
-                  title="Entfernen">
+                  [title]="'cart.remove' | translate">
                   🗑
                 </button>
               </div>
@@ -103,7 +104,7 @@ import { Subscription } from 'rxjs';
               <!-- Line Total -->
               <div class="card-total">
                 <span class="line-total">
-                  € {{ (getItemPrice(item) * item.quantity) | number:'1.2-2' }}
+                  {{ (getItemPrice(item) * item.quantity) | number:'1.2-2' }} €
                 </span>
               </div>
 
@@ -119,7 +120,7 @@ import { Subscription } from 'rxjs';
           <!-- Clear Cart -->
           <div class="clear-row">
             <button class="btn-ghost" (click)="clearCart()">
-              🗑 Warenkorb leeren
+              🗑 {{ 'cart.clearCart' | translate }}
             </button>
           </div>
         </div>
@@ -127,7 +128,7 @@ import { Subscription } from 'rxjs';
         <!-- Summary Column -->
         <div class="summary-column">
           <div class="summary-card">
-            <h2 class="summary-title">Bestellübersicht</h2>
+            <h2 class="summary-title">{{ 'cart.summary' | translate }}</h2>
 
             <!-- Item Lines -->
             <div class="summary-lines">
@@ -137,7 +138,7 @@ import { Subscription } from 'rxjs';
                   <em>× {{ item.quantity }}</em>
                 </span>
                 <span class="line-price">
-                  € {{ (getItemPrice(item) * item.quantity) | number:'1.2-2' }}
+                  {{ (getItemPrice(item) * item.quantity) | number:'1.2-2' }} €
                 </span>
               </div>
             </div>
@@ -146,44 +147,44 @@ import { Subscription } from 'rxjs';
 
             <!-- Subtotal -->
             <div class="summary-row">
-              <span>Zwischensumme</span>
-              <span>€ {{ computedSubtotal | number:'1.2-2' }}</span>
+              <span>{{ 'cart.subtotal' | translate }}</span>
+              <span>{{ computedSubtotal | number:'1.2-2' }} €</span>
             </div>
 
             <!-- Shipping -->
             <div class="summary-row">
-              <span>Versand</span>
-              <span class="shipping-free" *ngIf="computedSubtotal >= 50">Kostenlos 🎉</span>
-              <span *ngIf="computedSubtotal < 50">€ {{ shipping | number:'1.2-2' }}</span>
+              <span>{{ 'cart.shipping' | translate }}</span>
+              <span class="shipping-free" *ngIf="computedSubtotal >= 50">{{ 'cart.freeShipping' | translate }} 🎉</span>
+              <span *ngIf="computedSubtotal < 50">{{ shipping | number:'1.2-2' }} €</span>
             </div>
 
             <div *ngIf="computedSubtotal < 50" class="free-shipping-hint">
               <div class="free-bar-track">
                 <div class="free-bar-fill" [style.width.%]="(computedSubtotal / 50) * 100"></div>
               </div>
-              <p>Noch <strong>€ {{ (50 - computedSubtotal) | number:'1.2-2' }}</strong> bis kostenloser Versand!</p>
+              <p>{{ 'cart.freeShippingHint' | translate:{ amount: ((50 - computedSubtotal) | number:'1.2-2') } }}</p>
             </div>
 
             <div class="summary-divider"></div>
 
             <!-- Total -->
             <div class="summary-total">
-              <span>Gesamtbetrag</span>
+              <span>{{ 'cart.total' | translate }}</span>
               <span class="total-amount">
-                € {{ (computedSubtotal + shippingCost) | number:'1.2-2' }}
+                {{ (computedSubtotal + shippingCost) | number:'1.2-2' }} €
               </span>
             </div>
-            <p class="tax-note">inkl. MwSt.</p>
+            <p class="tax-note">{{ 'cart.inclTax' | translate }}</p>
 
             <!-- Checkout Button -->
             <button class="btn-checkout" (click)="proceedToCheckout()">
-              🔒 Zur Kasse
+              🔒 {{ 'cart.checkout' | translate }}
             </button>
 
             <!-- Trust Badges -->
             <div class="trust-row">
-              <span>🔒 Sichere Zahlung</span>
-              <span>↩ 30 Tage Rückgabe</span>
+              <span>🔒 {{ 'cart.securePayment' | translate }}</span>
+              <span>↩ {{ 'cart.easyReturns' | translate }}</span>
             </div>
           </div>
         </div>
