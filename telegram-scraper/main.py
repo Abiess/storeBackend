@@ -16,7 +16,7 @@ Endpoints:
   DELETE /auth/session      -> Logout / Session löschen
 
 Alle Endpoints brauchen: api_id, api_hash, session_string (außer request-code/verify-code)
-Session wird STATELESS als StringSession übergeben (gespeichert im Java-Backend DB).
+Session wird STATELESS als StringSession übergeben (gespeichert im Java-Backend DB).fdgdfgfdgdfs
 """
 
 import asyncio
