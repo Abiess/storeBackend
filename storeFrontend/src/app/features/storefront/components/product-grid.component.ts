@@ -194,9 +194,18 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
     }
 
     .empty-grid h3 {
-      font-size: 20px;
-      font-weight: 600;
-      color: #111827;
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+      border-radius: 24px;
+      color: #7c3aed;
+      opacity: 0.8;
+
+      svg { width: 40px; height: 40px; }
       margin: 0 0 8px 0;
     }
 

@@ -1,9 +1,10 @@
-<!-- Modern Storefront Layout (idealo.de inspired) -->
+﻿<!-- ═══════════════════════════════════════════════════════
+     Modern Storefront Layout – Clean & Complete
+     ═══════════════════════════════════════════════════════ -->
 <div class="modern-storefront">
-  <!-- Top Bar (Language Selection, etc.) -->
+  <!-- TOP BAR -->
   <app-top-bar></app-top-bar>
-
-  <!-- Modern Store Header -->
+  <!-- STORE HEADER (Sticky) -->
   <app-modern-store-header
     [storeName]="store?.name || 'Online Shop'"
     [storeLogo]="storeLogo"
@@ -13,90 +14,124 @@
     (cartClick)="goToCart()"
     (searchChange)="onSearchChange($event)">
   </app-modern-store-header>
-
-  <!-- Dynamic Homepage Sections -->
+  <!-- DYNAMIC HOMEPAGE SECTIONS -->
   <app-homepage-section-renderer
     *ngIf="homepageSections.length > 0 && !selectedCategory && !loading"
     [storeId]="storeId"
     [sections]="homepageSections">
   </app-homepage-section-renderer>
-
-  <!-- Fallback: Show default sections if no homepage sections configured -->
+  <!-- FALLBACK: DEFAULT SECTIONS -->
   <div class="default-sections" *ngIf="homepageSections.length === 0 && !selectedCategory && !loading">
-    <!-- Hero Section (Store Slider) -->
+    <!-- Hero Slider -->
     <div class="hero-section">
-      <app-store-slider-viewer
-        *ngIf="storeId"
-        [storeId]="storeId">
-      </app-store-slider-viewer>
+      <app-store-slider-viewer *ngIf="storeId" [storeId]="storeId"></app-store-slider-viewer>
     </div>
-
-    <!-- Category Highlights (NEW) -->
+    <!-- Category Highlights -->
     <div class="category-highlights" *ngIf="categories && categories.length > 0">
       <div class="section-header">
+        <div class="section-eyebrow">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+          </svg>
+          Sortiment
+        </div>
         <h2>{{ 'storefront.shopByCategory' | translate }}</h2>
         <p>{{ 'storefront.shopByCategoryDesc' | translate }}</p>
       </div>
       <div class="category-grid">
         <div
           class="category-card"
-          *ngFor="let category of categories.slice(0, 6)"
-          (click)="selectCategory(category)">
-          <div class="category-icon">📦</div>
+          *ngFor="let category of categories.slice(0, 6); let i = index"
+          [class]="'cat-accent-' + (i % 4)"
+          (click)="selectCategory(category)"
+          role="button"
+          tabindex="0"
+          (keydown.enter)="selectCategory(category)">
+          <div class="cat-orb"></div>
+          <div class="category-icon">
+            <svg *ngIf="i % 6 === 0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+            </svg>
+            <svg *ngIf="i % 6 === 1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+            <svg *ngIf="i % 6 === 2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8m-4-4v4"/>
+            </svg>
+            <svg *ngIf="i % 6 === 3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+            <svg *ngIf="i % 6 === 4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
+            </svg>
+            <svg *ngIf="i % 6 === 5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+              <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+            </svg>
+          </div>
           <h3>{{ category.name }}</h3>
-          <span class="category-arrow">→</span>
+          <span class="category-arrow">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </span>
         </div>
       </div>
     </div>
-
     <!-- Featured Products -->
     <div class="featured-sections">
-      <app-featured-products
-        [storeId]="storeId"
-        type="featured"
-        [limit]="8">
-      </app-featured-products>
-
-      <app-featured-products
-        [storeId]="storeId"
-        type="top"
-        [limit]="8">
-      </app-featured-products>
-
-      <app-featured-products
-        [storeId]="storeId"
-        type="new"
-        [limit]="8">
-      </app-featured-products>
+      <app-featured-products [storeId]="storeId" type="featured" [limit]="8"></app-featured-products>
+      <app-featured-products [storeId]="storeId" type="top" [limit]="8"></app-featured-products>
+      <app-featured-products [storeId]="storeId" type="new" [limit]="8"></app-featured-products>
     </div>
   </div>
-
-  <!-- Trust Badges Section (new, minimal) -->
+  <!-- TRUST BADGES -->
   <div class="trust-section" *ngIf="!selectedCategory && !loading">
     <div class="trust-container">
       <div class="trust-badge">
-        <span class="trust-icon">🚚</span>
+        <div class="trust-icon-wrap">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v3h-7V8z"/>
+            <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+          </svg>
+        </div>
         <div class="trust-text">
           <strong>{{ 'trust.freeShipping' | translate }}</strong>
           <span>{{ 'trust.freeShippingDesc' | translate }}</span>
         </div>
       </div>
       <div class="trust-badge">
-        <span class="trust-icon">↩️</span>
+        <div class="trust-icon-wrap">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 2v6h6"/><path d="M21 12A9 9 0 0 0 6 5.3L3 8"/>
+            <path d="M21 22v-6h-6"/><path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"/>
+          </svg>
+        </div>
         <div class="trust-text">
           <strong>{{ 'trust.easyReturns' | translate }}</strong>
           <span>{{ 'trust.easyReturnsDesc' | translate }}</span>
         </div>
       </div>
       <div class="trust-badge">
-        <span class="trust-icon">🔒</span>
+        <div class="trust-icon-wrap">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <polyline points="9 12 11 14 15 10"/>
+          </svg>
+        </div>
         <div class="trust-text">
           <strong>{{ 'trust.securePayment' | translate }}</strong>
           <span>{{ 'trust.securePaymentDesc' | translate }}</span>
         </div>
       </div>
       <div class="trust-badge">
-        <span class="trust-icon">💬</span>
+        <div class="trust-icon-wrap">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            <line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/>
+          </svg>
+        </div>
         <div class="trust-text">
           <strong>{{ 'trust.support' | translate }}</strong>
           <span>{{ 'trust.supportDesc' | translate }}</span>
@@ -104,26 +139,13 @@
       </div>
     </div>
   </div>
-
-  <!-- Main Store Layout with Sidebar (dynamisch je nach Theme.template) -->
+  <!-- MAIN PRODUCT LAYOUT -->
   @switch (activeLayout) {
     @case ('CLASSIC_BOOTSTRAP') {
       <app-classic-shop-layout [showHero]="false">
         <div sidebar><ng-container *ngTemplateOutlet="storeSidebar"></ng-container></div>
         <div main><ng-container *ngTemplateOutlet="storeGrid"></ng-container></div>
       </app-classic-shop-layout>
-    }
-    @case ('ELECTRONICS_PRO') {
-      <app-electronics-pro-layout [showHero]="false">
-        <div sidebar><ng-container *ngTemplateOutlet="storeSidebar"></ng-container></div>
-        <div main><ng-container *ngTemplateOutlet="storeGrid"></ng-container></div>
-      </app-electronics-pro-layout>
-    }
-    @case ('FASHION_EDITORIAL') {
-      <app-fashion-editorial-layout [showHero]="false">
-        <div sidebar><ng-container *ngTemplateOutlet="storeSidebar"></ng-container></div>
-        <div main><ng-container *ngTemplateOutlet="storeGrid"></ng-container></div>
-      </app-fashion-editorial-layout>
     }
     @default {
       <app-store-layout>
@@ -132,8 +154,21 @@
       </app-store-layout>
     }
   }
-
-  <!-- Reusable Sidebar + Grid (verhindert Duplizierung über alle Layouts) -->
+  <!-- TEMPLATES -->
+  <ng-template #storeGrid>
+    <app-product-grid
+      [products]="displayedProducts"
+      [loading]="loading"
+      [emptyMessage]="searchQuery ? ('storefront.noSearchResultsHint' | translate) : ('storefront.noProductsHint' | translate)">
+      <app-modern-product-card
+        *ngFor="let product of displayedProducts; trackBy: trackByProduct"
+        [product]="product"
+        [showDescription]="false"
+        (addToCart)="addToCart(product)"
+        (quickView)="openQuickView(product)">
+      </app-modern-product-card>
+    </app-product-grid>
+  </ng-template>
   <ng-template #storeSidebar>
     <app-store-sidebar
       [categories]="categories"
@@ -141,52 +176,31 @@
       (categorySelect)="selectCategory($event)">
     </app-store-sidebar>
   </ng-template>
-
-  <ng-template #storeGrid>
-    <app-product-grid
-      [products]="displayedProducts || filteredProducts"
-      [loading]="loading"
-      [title]="selectedCategory ? selectedCategory.name : (searchQuery ? ('storefront.searchResults' | translate) : ('storefront.allProducts' | translate))"
-      [emptyTitle]="searchQuery ? ('storefront.noSearchResults' | translate) : ('storefront.noProducts' | translate)"
-      [emptyMessage]="searchQuery ? ('storefront.noSearchResultsHint' | translate) : ('storefront.noProductsHint' | translate)">
-      <app-modern-product-card
-        *ngFor="let product of displayedProducts || filteredProducts"
-        [product]="product"
-        [isAddingToCart]="addingToCart"
-        [showDescription]="true"
-        (addToCart)="addToCart($event)"
-        (quickView)="openQuickView($event)">
-      </app-modern-product-card>
-    </app-product-grid>
-  </ng-template>
-
-  <!-- QuickView Modal (unchanged) -->
+  <!-- QUICKVIEW MODAL -->
   <app-product-quick-view
-    [product]="quickViewProduct"
+    *ngIf="quickViewOpen && quickViewProduct"
+    [product]="quickViewProduct!"
     [isOpen]="quickViewOpen"
     (close)="closeQuickView()"
     (addToCartEvent)="onQuickViewAddToCart($event)"
     (viewDetailsEvent)="onQuickViewDetails($event)">
   </app-product-quick-view>
-
-  <!-- Footer -->
-  <footer class="modern-footer">
+  <!-- FOOTER -->
+  <footer class="modern-footer" *ngIf="!loading">
     <div class="footer-container">
       <div class="footer-grid">
         <div class="footer-col">
           <h4>{{ store?.name || 'Online Shop' }}</h4>
           <p class="footer-tagline">{{ 'common.poweredBy' | translate }}</p>
         </div>
-
         <div class="footer-col">
           <h4>{{ 'navigation.categories' | translate }}</h4>
           <ul class="footer-links">
             <li *ngFor="let category of categories">
-              <a (click)="selectCategory(category)">{{ category.name }}</a>
+              <a (click)="selectCategory(category)" role="button" tabindex="0">{{ category.name }}</a>
             </li>
           </ul>
         </div>
-
         <div class="footer-col">
           <h4>{{ 'footer.info' | translate }}</h4>
           <ul class="footer-links">
@@ -196,7 +210,6 @@
             <li><a>{{ 'footer.shipping' | translate }}</a></li>
           </ul>
         </div>
-
         <div class="footer-col">
           <h4>{{ 'footer.contact' | translate }}</h4>
           <ul class="footer-links">
@@ -206,11 +219,9 @@
           </ul>
         </div>
       </div>
-
       <div class="footer-bottom">
         <p>{{ 'footer.copyright' | translate: { year: currentYear } }}</p>
       </div>
     </div>
   </footer>
 </div>
-

@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+﻿import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
@@ -260,15 +260,20 @@ import { TranslationService } from '@app/core/services/translation.service';
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #ef4444;
-      color: white;
+      background: linear-gradient(135deg, #f5576c, #f093fb);
       border-radius: 10px;
       font-size: 11px;
       font-weight: 700;
       padding: 0 6px;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 2px 8px rgba(245, 87, 108, 0.4);
+      animation: badgePop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
+    @keyframes badgePop {
+      0% { transform: scale(0); }
+      100% { transform: scale(1); }
+    }
     /* ============================================
        Mobile Search (Hidden on Desktop)
        ============================================ */
@@ -408,3 +413,4 @@ export class ModernStoreHeaderComponent {
     this.searchChange.emit('');
   }
 }
+

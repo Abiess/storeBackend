@@ -388,4 +388,8 @@ export class StorefrontComponent implements OnInit, OnDestroy {
   goToCart(): void {
     this.router.navigate(['/cart']);
   }
+
+  trackByProduct(index: number, product: Product): number {
+    return product.id;
+  }
 }

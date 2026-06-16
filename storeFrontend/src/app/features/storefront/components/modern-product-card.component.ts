@@ -5,8 +5,8 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { TranslationService } from '@app/core/services/translation.service';
 
 /**
- * Modern Product Card Component (idealo.de style)
- * Clean, modern product display with hover effects
+ * Modern Product Card Component – Vibrant Redesign 2.0
+ * Glassmorphism Quick View, Gradient Buttons, Spring Animations
  */
 @Component({
   selector: 'app-modern-product-card',
@@ -14,6 +14,7 @@ import { TranslationService } from '@app/core/services/translation.service';
   imports: [CommonModule, TranslatePipe],
   template: `
     <div class="product-card" [class.out-of-stock]="product.status !== ProductStatus.ACTIVE">
+
       <!-- Product Image -->
       <div class="product-image-wrapper" (click)="onQuickView()">
         <img
@@ -21,12 +22,15 @@ import { TranslationService } from '@app/core/services/translation.service';
           [alt]="product.name"
           class="product-image"
           loading="lazy">
-        
+
         <!-- Badges -->
         <div class="product-badges">
-          <span class="badge badge-new" *ngIf="isNew">{{ 'product.new' | translate }}</span>
+          <span class="badge badge-new" *ngIf="isNew">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            {{ 'product.new' | translate }}
+          </span>
           <span class="badge badge-sale" *ngIf="product.discountPercentage">
-            -{{ product.discountPercentage }}%
+            −{{ product.discountPercentage }}%
           </span>
           <span class="badge badge-out" *ngIf="product.status !== ProductStatus.ACTIVE">
             {{ 'product.outOfStock' | translate }}
@@ -35,11 +39,10 @@ import { TranslationService } from '@app/core/services/translation.service';
 
         <!-- Quick View Overlay -->
         <div class="quick-view-overlay">
-          <button class="quick-view-btn" (click)="onQuickView(); $event.stopPropagation()">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path d="M10 3C5 3 1.73 6.11 1 10c.73 3.89 4 7 9 7s8.27-3.11 9-7c-.73-3.89-4-7-9-7z" 
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="2"/>
+          <button class="quick-view-btn" (click)="onQuickView(); $event.stopPropagation()" type="button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
             </svg>
             {{ 'product.quickView' | translate }}
           </button>
@@ -48,17 +51,13 @@ import { TranslationService } from '@app/core/services/translation.service';
 
       <!-- Product Info -->
       <div class="product-info">
-        <!-- Product Name -->
-        <h3 class="product-name" [title]="product.name">
-          {{ product.name }}
-        </h3>
+        <h3 class="product-name" [title]="product.name">{{ product.name }}</h3>
 
-        <!-- Product Description (optional) -->
         <p class="product-description" *ngIf="showDescription && product.description">
           {{ truncateText(product.description, 60) }}
         </p>
 
-        <!-- Price Section -->
+        <!-- Price -->
         <div class="product-price-section">
           <div class="price-wrapper">
             <span class="product-price">{{ product.price | number:'1.2-2' }} €</span>
@@ -82,10 +81,11 @@ import { TranslationService } from '@app/core/services/translation.service';
         <button
           class="add-to-cart-btn"
           [disabled]="isAddingToCart || product.status !== ProductStatus.ACTIVE"
-          (click)="onAddToCart()">
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" *ngIf="!isAddingToCart">
-            <path d="M6 16a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM14 16a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM1 1h3l2.68 10.39a1.5 1.5 0 0 0 1.44 1.11h7.76a1.5 1.5 0 0 0 1.44-1.11L18 5H5" 
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          (click)="onAddToCart()"
+          type="button">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" *ngIf="!isAddingToCart" aria-hidden="true">
+            <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
           </svg>
           <span class="spinner" *ngIf="isAddingToCart"></span>
           <span>{{ buttonText }}</span>
@@ -94,63 +94,54 @@ import { TranslationService } from '@app/core/services/translation.service';
     </div>
   `,
   styles: [`
-    /* ============================================
-       Product Card Container
-       ============================================ */
+    /* ════════════════════════════════════════
+       PRODUCT CARD – VIBRANT REDESIGN
+       ════════════════════════════════════════ */
     .product-card {
       background: white;
-      border-radius: 12px;
+      border-radius: 20px;
       overflow: hidden;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 2px 12px rgba(102, 126, 234, 0.08);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       display: flex;
       flex-direction: column;
       height: 100%;
       position: relative;
+      border: 1px solid rgba(102, 126, 234, 0.08);
     }
 
     .product-card:hover {
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-      transform: translateY(-4px);
+      box-shadow: 0 20px 48px rgba(102, 126, 234, 0.18);
+      transform: translateY(-8px);
+      border-color: rgba(102, 126, 234, 0.2);
     }
 
-    .product-card.out-of-stock {
-      opacity: 0.7;
-    }
+    .product-card.out-of-stock { opacity: 0.7; }
 
-    /* ============================================
-       Product Image
-       ============================================ */
+    /* ── IMAGE ── */
     .product-image-wrapper {
       position: relative;
       width: 100%;
-      padding-top: 100%; /* 1:1 Aspect Ratio */
-      background: #f9fafb;
+      padding-top: 100%;
+      background: linear-gradient(135deg, #f8f8fc, #f0f0f8);
       overflow: hidden;
       cursor: pointer;
     }
 
     .product-image {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       object-fit: cover;
-      transition: transform 0.3s ease;
+      transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .product-card:hover .product-image {
-      transform: scale(1.05);
-    }
+    .product-card:hover .product-image { transform: scale(1.07); }
 
-    /* ============================================
-       Badges
-       ============================================ */
+    /* ── BADGES ── */
     .product-badges {
       position: absolute;
-      top: 12px;
-      left: 12px;
+      top: 12px; left: 12px;
       display: flex;
       flex-direction: column;
       gap: 6px;
@@ -158,82 +149,77 @@ import { TranslationService } from '@app/core/services/translation.service';
     }
 
     .badge {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
       padding: 4px 10px;
-      border-radius: 6px;
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      border-radius: 50px;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
     }
 
     .badge-new {
-      background: #10b981;
+      background: linear-gradient(135deg, #667eea, #764ba2);
       color: white;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
     }
 
     .badge-sale {
-      background: #ef4444;
+      background: linear-gradient(135deg, #f5576c, #f093fb);
       color: white;
+      box-shadow: 0 2px 8px rgba(245, 87, 108, 0.4);
     }
 
     .badge-out {
-      background: #6b7280;
+      background: #64748b;
       color: white;
     }
 
-    /* ============================================
-       Quick View Overlay
-       ============================================ */
+    /* ── QUICK VIEW OVERLAY ── */
     .quick-view-overlay {
       position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 17, 23, 0.4);
+      backdrop-filter: blur(4px);
       display: flex;
       align-items: center;
       justify-content: center;
       opacity: 0;
       transition: opacity 0.3s ease;
-      z-index: 1;
+      z-index: 3;
     }
 
-    .product-card:hover .quick-view-overlay {
-      opacity: 1;
-    }
+    .product-card:hover .quick-view-overlay { opacity: 1; }
 
     .quick-view-btn {
-      background: white;
-      color: #111827;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(8px);
+      color: #1e293b;
       border: none;
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-size: 14px;
+      padding: 11px 22px;
+      border-radius: 50px;
+      font-size: 0.875rem;
       font-weight: 600;
       cursor: pointer;
       display: flex;
       align-items: center;
       gap: 8px;
-      transform: translateY(10px);
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      transform: translateY(12px) scale(0.95);
+      transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+      letter-spacing: -0.01em;
     }
 
-    .product-card:hover .quick-view-btn {
-      transform: translateY(0);
-    }
+    .product-card:hover .quick-view-btn { transform: translateY(0) scale(1); }
 
     .quick-view-btn:hover {
-      background: #f9fafb;
-      transform: scale(1.05);
+      background: #1e293b;
+      color: white;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
     }
 
-    /* ============================================
-       Product Info
-       ============================================ */
+    /* ── PRODUCT INFO ── */
     .product-info {
       padding: 16px;
       display: flex;
@@ -243,21 +229,22 @@ import { TranslationService } from '@app/core/services/translation.service';
     }
 
     .product-name {
-      font-size: 15px;
+      font-size: 0.9375rem;
       font-weight: 600;
-      color: #111827;
+      color: #1e293b;
       margin: 0;
-      line-height: 1.4;
+      line-height: 1.35;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
-      min-height: 42px;
+      min-height: 2.7em;
+      letter-spacing: -0.01em;
     }
 
     .product-description {
-      font-size: 13px;
-      color: #6b7280;
+      font-size: 0.8125rem;
+      color: #64748b;
       margin: 0;
       line-height: 1.4;
       display: -webkit-box;
@@ -266,12 +253,8 @@ import { TranslationService } from '@app/core/services/translation.service';
       overflow: hidden;
     }
 
-    /* ============================================
-       Price Section
-       ============================================ */
-    .product-price-section {
-      margin-top: auto;
-    }
+    /* ── PRICE ── */
+    .product-price-section { margin-top: auto; }
 
     .price-wrapper {
       display: flex;
@@ -281,150 +264,99 @@ import { TranslationService } from '@app/core/services/translation.service';
     }
 
     .product-price {
-      font-size: 22px;
+      font-size: 1.375rem;
       font-weight: 700;
-      color: #111827;
+      color: #1e293b;
+      letter-spacing: -0.02em;
+      line-height: 1;
     }
 
     .product-price-old {
-      font-size: 16px;
-      color: #9ca3af;
+      font-size: 1rem;
+      color: #94a3b8;
       text-decoration: line-through;
+      line-height: 1;
     }
 
-    /* ============================================
-       Stock Info
-       ============================================ */
-    .stock-info {
-      font-size: 12px;
-    }
+    /* ── STOCK INFO ── */
+    .stock-info { font-size: 0.75rem; }
 
     .stock-indicator {
       display: flex;
       align-items: center;
       gap: 6px;
-      color: #10b981;
+      color: #22c55e;
       font-weight: 500;
     }
 
-    .stock-indicator.low {
-      color: #f59e0b;
-    }
+    .stock-indicator.low { color: #f59e0b; }
 
     .stock-dot {
-      width: 6px;
-      height: 6px;
+      width: 6px; height: 6px;
       border-radius: 50%;
       background: currentColor;
     }
 
-    /* ============================================
-       Add to Cart Button
-       ============================================ */
+    /* ── ADD TO CART – VIBRANT GRADIENT ── */
     .add-to-cart-btn {
       width: 100%;
       padding: 12px;
-      background: #2563eb;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
       border: none;
-      border-radius: 8px;
-      font-size: 14px;
+      border-radius: 12px;
+      font-size: 0.875rem;
       font-weight: 600;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      transition: all 0.2s ease;
-      margin-top: 4px;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 4px 14px rgba(102, 126, 234, 0.4);
+      letter-spacing: -0.01em;
     }
 
     .add-to-cart-btn:hover:not(:disabled) {
-      background: #1d4ed8;
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.5);
+      background: linear-gradient(135deg, #7c94f0 0%, #8a5fb8 100%);
     }
 
-    .add-to-cart-btn:active:not(:disabled) {
-      transform: translateY(0);
-    }
+    .add-to-cart-btn:active:not(:disabled) { transform: scale(0.97); }
 
     .add-to-cart-btn:disabled {
-      background: #d1d5db;
+      background: #e2e8f0;
+      color: #94a3b8;
       cursor: not-allowed;
+      box-shadow: none;
     }
 
-    /* ============================================
-       Loading Spinner
-       ============================================ */
+    /* ── SPINNER ── */
     .spinner {
-      width: 16px;
-      height: 16px;
-      border: 2px solid rgba(255, 255, 255, 0.3);
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.35);
       border-top-color: white;
       border-radius: 50%;
-      animation: spin 0.6s linear infinite;
+      animation: spin 0.7s linear infinite;
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ============================================
-       Mobile Styles
-       ============================================ */
+    /* ── MOBILE ── */
     @media (max-width: 768px) {
-      .product-info {
-        padding: 12px;
-        gap: 8px;
-      }
-
-      .product-name {
-        font-size: 14px;
-        min-height: 38px;
-      }
-
-      .product-description {
-        font-size: 12px;
-      }
-
-      .product-price {
-        font-size: 18px;
-      }
-
-      .product-price-old {
-        font-size: 14px;
-      }
-
-      .add-to-cart-btn {
-        padding: 10px;
-        font-size: 13px;
-      }
-
-      .quick-view-btn {
-        padding: 10px 16px;
-        font-size: 12px;
-      }
-
-      .product-badges {
-        top: 8px;
-        left: 8px;
-      }
-
-      .badge {
-        font-size: 10px;
-        padding: 3px 8px;
-      }
+      .product-card { border-radius: 14px; }
+      .product-info { padding: 12px; gap: 8px; }
+      .product-name { font-size: 0.875rem; }
+      .product-description { font-size: 0.75rem; }
+      .product-price { font-size: 1.125rem; }
+      .add-to-cart-btn { padding: 10px; font-size: 0.8125rem; border-radius: 10px; }
+      .quick-view-btn { padding: 9px 16px; font-size: 0.75rem; }
     }
 
     @media (max-width: 480px) {
-      .product-card:hover {
-        transform: none;
-      }
-
-      .quick-view-overlay {
-        display: none; /* Hide quick view on very small screens */
-      }
+      .product-card:hover { transform: none; }
+      .quick-view-overlay { display: none; }
     }
   `]
 })
@@ -458,24 +390,13 @@ export class ModernProductCardComponent {
   }
 
   getProductImage(): string | null {
-    // Priorität: primaryImageUrl > imageUrl > media[0].url
-    if (this.product.primaryImageUrl) {
-      return this.product.primaryImageUrl;
-    }
-    if (this.product.imageUrl) {
-      return this.product.imageUrl;
-    }
-    if (this.product.media && this.product.media.length > 0) {
-      // Suche nach dem primary Image oder nimm das erste
+    if (this.product.primaryImageUrl) return this.product.primaryImageUrl;
+    if (this.product.imageUrl) return this.product.imageUrl;
+    if (this.product.media?.length) {
       const primaryMedia = this.product.media.find((m: any) => m.isPrimary);
-      if (primaryMedia?.url) {
-        return primaryMedia.url;
-      }
-      // Fallback: erstes Bild mit URL
+      if (primaryMedia?.url) return primaryMedia.url;
       const firstMedia = this.product.media.find((m: any) => m.url);
-      if (firstMedia?.url) {
-        return firstMedia.url;
-      }
+      if (firstMedia?.url) return firstMedia.url;
     }
     return null;
   }
@@ -485,4 +406,3 @@ export class ModernProductCardComponent {
     return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
   }
 }
-
