@@ -260,18 +260,43 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
                 <div class="spinner-sm"></div> {{ 'checkout.deliveryLoading' | translate }}
               </div>
 
-              <div *ngIf="!loadingGlobalDelivery && globalDeliveryOptions.length > 0" class="delivery-options-list">
+              <div *ngIf="!loadingGlobalDelivery" class="delivery-options-list">
+                <!-- Abholung - IMMER verfügbar -->
+                <label
+                  class="delivery-option-card"
+                  [class.selected]="selectedDeliveryType === 'PICKUP'"
+                  (click)="selectPickupOption()"
+                >
+                  <input
+                    type="radio"
+                    name="globalDelivery"
+                    value="PICKUP"
+                    [checked]="selectedDeliveryType === 'PICKUP'"
+                    style="display:none"
+                  />
+                  <span class="delivery-icon">🏪</span>
+                  <div class="delivery-details">
+                    <strong>{{ 'checkout.pickupTitle' | translate }}</strong>
+                    <span class="delivery-desc">{{ 'checkout.pickupDesc' | translate }}</span>
+                  </div>
+                  <div class="delivery-price">
+                    <span class="free-badge">{{ 'checkout.free' | translate }}</span>
+                  </div>
+                  <div class="delivery-check" *ngIf="selectedDeliveryType === 'PICKUP'">✓</div>
+                </label>
+
+                <!-- Andere Lieferoptionen -->
                 <label
                   *ngFor="let opt of globalDeliveryOptions"
                   class="delivery-option-card"
-                  [class.selected]="selectedGlobalDeliveryOption?.id === opt.id"
+                  [class.selected]="selectedGlobalDeliveryOption?.id === opt.id && selectedDeliveryType !== 'PICKUP'"
                   (click)="selectGlobalDeliveryOption(opt)"
                 >
                   <input
                     type="radio"
                     name="globalDelivery"
                     [value]="opt.id"
-                    [checked]="selectedGlobalDeliveryOption?.id === opt.id"
+                    [checked]="selectedGlobalDeliveryOption?.id === opt.id && selectedDeliveryType !== 'PICKUP'"
                     style="display:none"
                   />
                   <span class="delivery-icon">{{ opt.icon || '🚚' }}</span>
@@ -286,19 +311,8 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
                     <span *ngIf="opt.price === 0" class="free-badge">{{ 'checkout.free' | translate }}</span>
                     <span *ngIf="opt.price > 0">{{ opt.price | number:'1.2-2' }} MAD</span>
                   </div>
-                  <div class="delivery-check" *ngIf="selectedGlobalDeliveryOption?.id === opt.id">✓</div>
+                  <div class="delivery-check" *ngIf="selectedGlobalDeliveryOption?.id === opt.id && selectedDeliveryType !== 'PICKUP'">✓</div>
                 </label>
-              </div>
-
-              <!-- Fallback: NUR ABHOLUNG – wenn keine globalen Optionen konfiguriert -->
-              <div *ngIf="!loadingGlobalDelivery && globalDeliveryOptions.length === 0" class="pickup-only-banner">
-                <div class="pickup-icon">🏪</div>
-                <div class="pickup-info">
-                  <strong>{{ 'checkout.pickupTitle' | translate }}</strong>
-                  <p>{{ 'checkout.pickupDesc' | translate }}</p>
-                  <small class="coming-soon">{{ 'checkout.pickupComingSoon' | translate }}</small>
-                </div>
-                <div class="pickup-badge">{{ 'checkout.pickupFree' | translate }}</div>
               </div>
             </section>
 
@@ -480,12 +494,12 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
               <span class="discount-value">-{{ discountAmount | number:'1.2-2' }} €</span>
             </div>
 
-            <div class="summary-row" *ngIf="selectedGlobalDeliveryOption">
+            <div class="summary-row" *ngIf="selectedDeliveryType === 'DELIVERY' && selectedGlobalDeliveryOption">
               <span>🚚 {{ selectedGlobalDeliveryOption.name }}</span>
-              <span *ngIf="selectedGlobalDeliveryOption.price === 0" class="free-shipping">Kostenlos</span>
+              <span *ngIf="selectedGlobalDeliveryOption.price === 0" class="free-shipping">{{ 'checkout.free' | translate }}</span>
               <span *ngIf="selectedGlobalDeliveryOption.price > 0">{{ selectedGlobalDeliveryOption.price | number:'1.2-2' }} MAD</span>
             </div>
-            <div class="summary-row" *ngIf="!selectedGlobalDeliveryOption">
+            <div class="summary-row" *ngIf="selectedDeliveryType === 'PICKUP'">
               <span>{{ 'checkout.pickupLabel' | translate }}</span>
               <span class="free-shipping">{{ 'checkout.free' | translate }}</span>
             </div>
@@ -1600,6 +1614,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     globalDeliveryOptions: GlobalDeliveryOption[] = [];
     selectedGlobalDeliveryOption: GlobalDeliveryOption | null = null;
     loadingGlobalDelivery = false;
+    selectedDeliveryType: 'PICKUP' | 'DELIVERY' = 'PICKUP'; // PICKUP ist Standard
 
     constructor(
         private fb: FormBuilder,
@@ -1752,32 +1767,38 @@ export class CheckoutComponent implements OnInit, OnDestroy {
                         return (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
                     });
 
-                    // Bevorzuge PICKUP/COD als Standard (Nachnahme/Abholung)
-                    if (this.globalDeliveryOptions.length > 0) {
-                        const pickupOption = this.globalDeliveryOptions.find(o => o.deliveryType === 'PICKUP');
-                        if (pickupOption) {
-                            this.selectGlobalDeliveryOption(pickupOption);
-                        } else {
-                            // Fallback: erste Option
-                            this.selectGlobalDeliveryOption(this.globalDeliveryOptions[0]);
-                        }
-                    }
+                    // PICKUP ist Standard - keine globale Option auswählen
+                    // Filtere PICKUP-Optionen aus den globalen Optionen (wird lokal gehandhabt)
+                    this.globalDeliveryOptions = this.globalDeliveryOptions.filter(o => o.deliveryType !== 'PICKUP');
+
+                    // PICKUP als Standard setzen
+                    this.selectedDeliveryType = 'PICKUP';
+                    this.selectedShippingMethod = 'PICKUP';
+                    this.selectedGlobalDeliveryOption = null;
+
                     this.loadingGlobalDelivery = false;
                 },
                 error: (err) => {
                     console.warn('⚠️ Globale Lieferoptionen konnten nicht geladen werden:', err);
                     this.globalDeliveryOptions = [];
+                    this.selectedDeliveryType = 'PICKUP';
                     this.loadingGlobalDelivery = false;
                 }
             });
     }
 
+    /** Wählt Abholung (PICKUP) als Liefermethode */
+    selectPickupOption(): void {
+        this.selectedDeliveryType = 'PICKUP';
+        this.selectedGlobalDeliveryOption = null;
+        this.selectedShippingMethod = 'PICKUP';
+    }
+
     selectGlobalDeliveryOption(option: GlobalDeliveryOption): void {
+        this.selectedDeliveryType = 'DELIVERY';
         this.selectedGlobalDeliveryOption = option;
         // Versandmethode für Bestellformular ableiten
-        if (option.deliveryType === 'PICKUP') {
-            this.selectedShippingMethod = 'PICKUP';
-        } else if (option.deliveryType === 'EXPRESS' || option.deliveryType === 'SAME_DAY') {
+        if (option.deliveryType === 'EXPRESS' || option.deliveryType === 'SAME_DAY') {
             this.selectedShippingMethod = 'EXPRESS';
         } else {
             this.selectedShippingMethod = 'STANDARD';
@@ -1867,9 +1888,9 @@ export class CheckoutComponent implements OnInit, OnDestroy {
             shippingAddress: formValue.shippingAddress,
             billingAddress: this.sameAsShipping ? formValue.shippingAddress : formValue.billingAddress,
             paymentMethod: this.selectedPaymentMethod,
-            // Verwende ausgewählte globale Lieferoption, Fallback: PICKUP
-            deliveryType: this.selectedGlobalDeliveryOption?.deliveryType || 'PICKUP',
-            deliveryOptionId: this.selectedGlobalDeliveryOption?.id || null,
+            // PICKUP oder globale Lieferoption
+            deliveryType: this.selectedDeliveryType === 'PICKUP' ? 'PICKUP' : (this.selectedGlobalDeliveryOption?.deliveryType || 'STANDARD'),
+            deliveryOptionId: this.selectedDeliveryType === 'PICKUP' ? null : (this.selectedGlobalDeliveryOption?.id || null),
             deliveryMode: null
         };
 
@@ -1887,7 +1908,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
             email: customerEmail,
             deliveryType: request.deliveryType,
             deliveryOptionId: request.deliveryOptionId,
-            deliveryOptionName: this.selectedGlobalDeliveryOption?.name,
+            deliveryOptionName: this.selectedDeliveryType === 'PICKUP' ? 'Abholung' : this.selectedGlobalDeliveryOption?.name,
             paymentMethod: this.selectedPaymentMethod
         });
 
@@ -1986,8 +2007,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     getFinalTotal(): number {
         if (!this.cart) return 0;
         const subtotal = this.cart.subtotal;
-        // Liefergebühr aus gewählter globaler Lieferoption
-        const deliveryFee = this.selectedGlobalDeliveryOption?.price ?? 0;
+        // Liefergebühr: 0 bei PICKUP, sonst aus globaler Lieferoption
+        const deliveryFee = this.selectedDeliveryType === 'PICKUP' ? 0 : (this.selectedGlobalDeliveryOption?.price ?? 0);
         const discounted = Math.max(0, subtotal - this.discountAmount);
         const tax = discounted * 0.19;
         return discounted + tax + deliveryFee;
