@@ -5,14 +5,14 @@ import { Router } from '@angular/router';
 import { CartService, Cart, CartItem } from '../../core/services/cart.service';
 import { SubdomainService } from '../../core/services/subdomain.service';
 import { PlaceholderImageUtil } from '../../shared/utils/placeholder-image.util';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '../../core/pipes/translate.pipe';
 
 import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-cart',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   template: `
     <div class="cart-page">
 
