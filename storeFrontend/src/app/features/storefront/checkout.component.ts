@@ -1743,10 +1743,24 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         this.platformDeliveryService.getActiveOptions().pipe(takeUntil(this.destroy$))
             .subscribe({
                 next: (options) => {
-                    this.globalDeliveryOptions = options;
-                    // Erste Option automatisch vorauswählen
-                    if (options.length > 0) {
-                        this.selectGlobalDeliveryOption(options[0]);
+                    // Sortiere: PICKUP zuerst, dann nach sortOrder
+                    this.globalDeliveryOptions = options.sort((a, b) => {
+                        // PICKUP immer ganz oben
+                        if (a.deliveryType === 'PICKUP' && b.deliveryType !== 'PICKUP') return -1;
+                        if (b.deliveryType === 'PICKUP' && a.deliveryType !== 'PICKUP') return 1;
+                        // Dann nach sortOrder
+                        return (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
+                    });
+
+                    // Bevorzuge PICKUP/COD als Standard (Nachnahme/Abholung)
+                    if (this.globalDeliveryOptions.length > 0) {
+                        const pickupOption = this.globalDeliveryOptions.find(o => o.deliveryType === 'PICKUP');
+                        if (pickupOption) {
+                            this.selectGlobalDeliveryOption(pickupOption);
+                        } else {
+                            // Fallback: erste Option
+                            this.selectGlobalDeliveryOption(this.globalDeliveryOptions[0]);
+                        }
                     }
                     this.loadingGlobalDelivery = false;
                 },
@@ -1853,8 +1867,9 @@ export class CheckoutComponent implements OnInit, OnDestroy {
             shippingAddress: formValue.shippingAddress,
             billingAddress: this.sameAsShipping ? formValue.shippingAddress : formValue.billingAddress,
             paymentMethod: this.selectedPaymentMethod,
-            // NUR ABHOLUNG – Versand deaktiviert
-            deliveryType: 'PICKUP',
+            // Verwende ausgewählte globale Lieferoption, Fallback: PICKUP
+            deliveryType: this.selectedGlobalDeliveryOption?.deliveryType || 'PICKUP',
+            deliveryOptionId: this.selectedGlobalDeliveryOption?.id || null,
             deliveryMode: null
         };
 
@@ -1868,9 +1883,11 @@ export class CheckoutComponent implements OnInit, OnDestroy {
             request.sessionId = sessionId;
         }
 
-        console.log('📦 Sende Checkout-Request (Abholung):', {
+        console.log('📦 Sende Checkout-Request:', {
             email: customerEmail,
-            deliveryType: 'PICKUP',
+            deliveryType: request.deliveryType,
+            deliveryOptionId: request.deliveryOptionId,
+            deliveryOptionName: this.selectedGlobalDeliveryOption?.name,
             paymentMethod: this.selectedPaymentMethod
         });
 
