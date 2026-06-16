@@ -1170,13 +1170,14 @@
                                       "closeNavigation":  "Close navigation"
                                   },
                          "groups":  {
-                                        "overview":  "Overview",
-                                        "commerce":  "Commerce",
-                                        "customerService":  "Customer Service",
-                                        "storeSetup":  "Store Setup",
-                                        "account":  "Account",
-                                        "team":  "Team \u0026 Roles"
-                                    },
+                                         "overview":  "Overview",
+                                         "commerce":  "Commerce",
+                                         "customerService":  "Customer Service",
+                                         "storeSetup":  "Store Setup",
+                                         "account":  "Account",
+                                         "team":  "Team \u0026 Roles",
+                                         "platform":  "Platform Admin"
+                                     },
                          "items":  {
                                        "dashboard":  "Dashboard",
                                        "products":  "Products",
@@ -1191,7 +1192,8 @@
                                        "myAccount":  "My Account",
                                        "subscription":  "Subscription",
                                        "roles":  "Roles",
-                                       "teamRoles":  "Team \u0026 Roles"
+                                       "teamRoles":  "Team \u0026 Roles",
+                                       "platformDelivery":  "🚚 Delivery Options"
                                    },
                          "noStore":  {
                                          "hint":  "No store selected",

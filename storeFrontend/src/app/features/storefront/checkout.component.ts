@@ -12,6 +12,7 @@ import { ValidateCouponsResponse } from '../../core/services/coupon.service';
 import { PlaceholderImageUtil } from '../../shared/utils/placeholder-image.util';
 import { PhoneVerificationService } from '../../core/services/phone-verification.service';
 import { DeliveryService } from '../../core/services/delivery.service';
+import { PlatformDeliveryService, GlobalDeliveryOption } from '../../core/services/platform-delivery.service';
 import { DeliveryOption, DeliveryOptionsResponse } from '../../core/models';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
@@ -254,8 +255,43 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
             <section class="form-section">
               <h2>🚚 {{ 'checkout.shippingMethod' | translate }}</h2>
 
-              <!-- NUR ABHOLUNG – Versand deaktiviert -->
-              <div class="pickup-only-banner">
+              <!-- Globale Lieferoptionen (plattformweit verwaltet) -->
+              <div *ngIf="loadingGlobalDelivery" class="delivery-loading">
+                <div class="spinner-sm"></div> Lieferoptionen werden geladen…
+              </div>
+
+              <div *ngIf="!loadingGlobalDelivery && globalDeliveryOptions.length > 0" class="delivery-options-list">
+                <label
+                  *ngFor="let opt of globalDeliveryOptions"
+                  class="delivery-option-card"
+                  [class.selected]="selectedGlobalDeliveryOption?.id === opt.id"
+                  (click)="selectGlobalDeliveryOption(opt)"
+                >
+                  <input
+                    type="radio"
+                    name="globalDelivery"
+                    [value]="opt.id"
+                    [checked]="selectedGlobalDeliveryOption?.id === opt.id"
+                    style="display:none"
+                  />
+                  <span class="delivery-icon">{{ opt.icon || '🚚' }}</span>
+                  <div class="delivery-details">
+                    <strong>{{ opt.name }}</strong>
+                    <span *ngIf="opt.description" class="delivery-desc">{{ opt.description }}</span>
+                    <span *ngIf="opt.etaMinDays != null" class="delivery-eta">
+                      ca. {{ opt.etaMinDays }}–{{ opt.etaMaxDays ?? opt.etaMinDays }} Tage
+                    </span>
+                  </div>
+                  <div class="delivery-price">
+                    <span *ngIf="opt.price === 0" class="free-badge">Kostenlos</span>
+                    <span *ngIf="opt.price > 0">{{ opt.price | number:'1.2-2' }} MAD</span>
+                  </div>
+                  <div class="delivery-check" *ngIf="selectedGlobalDeliveryOption?.id === opt.id">✓</div>
+                </label>
+              </div>
+
+              <!-- Fallback: NUR ABHOLUNG – wenn keine globalen Optionen konfiguriert -->
+              <div *ngIf="!loadingGlobalDelivery && globalDeliveryOptions.length === 0" class="pickup-only-banner">
                 <div class="pickup-icon">🏪</div>
                 <div class="pickup-info">
                   <strong>{{ 'checkout.pickupTitle' | translate }}</strong>
@@ -444,7 +480,12 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
               <span class="discount-value">-{{ discountAmount | number:'1.2-2' }} €</span>
             </div>
 
-            <div class="summary-row">
+            <div class="summary-row" *ngIf="selectedGlobalDeliveryOption">
+              <span>🚚 {{ selectedGlobalDeliveryOption.name }}</span>
+              <span *ngIf="selectedGlobalDeliveryOption.price === 0" class="free-shipping">Kostenlos</span>
+              <span *ngIf="selectedGlobalDeliveryOption.price > 0">{{ selectedGlobalDeliveryOption.price | number:'1.2-2' }} MAD</span>
+            </div>
+            <div class="summary-row" *ngIf="!selectedGlobalDeliveryOption">
               <span>{{ 'checkout.pickupLabel' | translate }}</span>
               <span class="free-shipping">{{ 'checkout.free' | translate }}</span>
             </div>
@@ -1374,6 +1415,99 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
     .country-select option {
       padding: 10px;
     }
+
+    /* ── Globale Lieferoptionen (plattformweit) ───────────────────── */
+    .delivery-loading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #666;
+      font-size: 14px;
+      padding: 12px 0;
+    }
+    .spinner-sm {
+      width: 18px; height: 18px;
+      border: 2px solid #ddd;
+      border-top-color: #667eea;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .delivery-options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .delivery-option-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      background: white;
+    }
+    .delivery-option-card:hover {
+      border-color: #667eea;
+      background: #f7f5ff;
+    }
+    .delivery-option-card.selected {
+      border-color: #667eea;
+      background: linear-gradient(135deg, #667eea08, #764ba208);
+    }
+
+    .delivery-icon {
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .delivery-details {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .delivery-details strong {
+      font-size: 15px;
+      color: #222;
+    }
+    .delivery-desc {
+      font-size: 13px;
+      color: #666;
+    }
+    .delivery-eta {
+      font-size: 12px;
+      color: #888;
+    }
+
+    .delivery-price {
+      font-size: 15px;
+      font-weight: 600;
+      color: #333;
+      flex-shrink: 0;
+    }
+    .free-badge {
+      background: #d4edda;
+      color: #155724;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .delivery-check {
+      width: 24px; height: 24px;
+      background: #667eea;
+      color: white;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
   `]
 })
 export class CheckoutComponent implements OnInit, OnDestroy {
@@ -1428,6 +1562,11 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     selectedDeliveryOption: DeliveryOption | null = null;
     deliveryOptionsError = '';
 
+    // Globale Lieferoptionen (plattformweit, kein Store-spezifisch)
+    globalDeliveryOptions: GlobalDeliveryOption[] = [];
+    selectedGlobalDeliveryOption: GlobalDeliveryOption | null = null;
+    loadingGlobalDelivery = false;
+
     constructor(
         private fb: FormBuilder,
         private cartService: CartService,
@@ -1437,7 +1576,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         private customerProfileService: CustomerProfileService,
         private subdomainService: SubdomainService,
         private phoneVerificationService: PhoneVerificationService,
-        private deliveryService: DeliveryService
+        private deliveryService: DeliveryService,
+        private platformDeliveryService: PlatformDeliveryService
     ) {
         this.checkoutForm = this.fb.group({
             customerEmail: ['', [Validators.required, Validators.email]],
@@ -1474,6 +1614,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
         this.restoreFormData();
         this.loadSavedAddresses();
+        this.loadGlobalDeliveryOptions();
 
         // Bug-Fix: debounce verhindert API-Calls bei jedem Tastendruck
         // distinctUntilChanged verhindert Reload wenn PLZ/Stadt/Land gleich bleibt
@@ -1560,6 +1701,39 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         this.destroy$.next();
         this.destroy$.complete();
+    }
+
+    /** Lädt plattformweite Lieferoptionen (vom Admin in DB gepflegt) */
+    loadGlobalDeliveryOptions(): void {
+        this.loadingGlobalDelivery = true;
+        this.platformDeliveryService.getActiveOptions().pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (options) => {
+                    this.globalDeliveryOptions = options;
+                    // Erste Option automatisch vorauswählen
+                    if (options.length > 0) {
+                        this.selectGlobalDeliveryOption(options[0]);
+                    }
+                    this.loadingGlobalDelivery = false;
+                },
+                error: (err) => {
+                    console.warn('⚠️ Globale Lieferoptionen konnten nicht geladen werden:', err);
+                    this.globalDeliveryOptions = [];
+                    this.loadingGlobalDelivery = false;
+                }
+            });
+    }
+
+    selectGlobalDeliveryOption(option: GlobalDeliveryOption): void {
+        this.selectedGlobalDeliveryOption = option;
+        // Versandmethode für Bestellformular ableiten
+        if (option.deliveryType === 'PICKUP') {
+            this.selectedShippingMethod = 'PICKUP';
+        } else if (option.deliveryType === 'EXPRESS' || option.deliveryType === 'SAME_DAY') {
+            this.selectedShippingMethod = 'EXPRESS';
+        } else {
+            this.selectedShippingMethod = 'STANDARD';
+        }
     }
 
     loadSavedPhone(phoneNumber: string): void {
@@ -1761,8 +1935,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     getFinalTotal(): number {
         if (!this.cart) return 0;
         const subtotal = this.cart.subtotal;
-        // NUR ABHOLUNG – kein Versandkostenzuschlag
-        const deliveryFee = 0;
+        // Liefergebühr aus gewählter globaler Lieferoption
+        const deliveryFee = this.selectedGlobalDeliveryOption?.price ?? 0;
         const discounted = Math.max(0, subtotal - this.discountAmount);
         const tax = discounted * 0.19;
         return discounted + tax + deliveryFee;

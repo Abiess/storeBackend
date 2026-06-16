@@ -225,6 +225,15 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
 
+  // ==================== Platform Admin – Delivery Options ====================
+  // Verwaltung globaler Lieferoptionen durch den Plattform-Admin.
+  // Store-Manager sehen diese Seite NICHT (kein Sidebar-Eintrag).
+  {
+    path: 'platform/delivery',
+    loadComponent: () => import('./features/delivery/platform-delivery.component').then(m => m.PlatformDeliveryComponent),
+    canActivate: [authGuard]
+  },
+
 
   // ==================== Coupon Management ====================
   {

@@ -185,7 +185,8 @@ export class AdminSidebarComponent implements OnInit {
                         labelKey: 'sidebarAdmin.items.delivery',
                         icon: 'truck',
                         route: `${baseRoute}/delivery`,
-                        requiresStore: true
+                        requiresStore: true,
+                        visible: false   // Lieferung wird zentral vom Platform-Admin verwaltet
                     },
                     {
                         labelKey: 'sidebarAdmin.items.seo',
@@ -219,6 +220,16 @@ export class AdminSidebarComponent implements OnInit {
                         labelKey: 'sidebarAdmin.items.myAccount',
                         icon: 'user',
                         route: '/settings'
+                    }
+                ]
+            },
+            {
+                titleKey: 'sidebarAdmin.groups.platform',
+                items: [
+                    {
+                        labelKey: 'sidebarAdmin.items.platformDelivery',
+                        icon: 'truck',
+                        route: '/platform/delivery'
                     }
                 ]
             }

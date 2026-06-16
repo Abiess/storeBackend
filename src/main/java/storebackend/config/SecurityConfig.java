@@ -91,6 +91,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/delivery-partners").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/delivery-partners/featured").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/delivery-partners/*/reviews").permitAll()
+                // Global Delivery Options - öffentlich für Storefront-Checkout
+                .requestMatchers(HttpMethod.GET, "/api/public/delivery-options").permitAll()
                 // Product Options - GET ist öffentlich (für Storefront Produktansicht)
                 .requestMatchers(HttpMethod.GET, "/api/stores/*/products/*/options").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/stores/*/products/*/options/**").permitAll()

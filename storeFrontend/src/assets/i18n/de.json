@@ -709,12 +709,13 @@
                                       "closeNavigation":  "Navigation schließen"
                                   },
                          "groups":  {
-                                        "overview":  "Übersicht",
-                                        "commerce":  "Commerce",
-                                        "customerService":  "Kundenservice",
-                                        "storeSetup":  "Store Setup",
-                                        "account":  "Account"
-                                    },
+                                         "overview":  "Übersicht",
+                                         "commerce":  "Commerce",
+                                         "customerService":  "Kundenservice",
+                                         "storeSetup":  "Store Setup",
+                                         "account":  "Account",
+                                         "platform":  "Plattform-Admin"
+                                     },
                          "items":  {
                                        "dashboard":  "Dashboard",
                                        "products":  "Produkte",
@@ -728,7 +729,8 @@
                                        "brand":  "Marke",
                                        "myAccount":  "Mein Account",
                                        "subscription":  "Abonnement",
-                                       "roles":  "Rollen"
+                                       "roles":  "Rollen",
+                                       "platformDelivery":  "🚚 Lieferoptionen"
                                    },
                          "noStore":  {
                                          "hint":  "Kein Store ausgewählt",
