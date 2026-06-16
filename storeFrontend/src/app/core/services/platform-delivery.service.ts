@@ -14,6 +14,15 @@ export interface GlobalDeliveryOption {
   icon?: string;
   isActive?: boolean;
   sortOrder?: number;
+
+  // Kontakt & Social Media
+  websiteUrl?: string;
+  logoUrl?: string;
+  whatsappNumber?: string;
+  instagramUrl?: string;
+  facebookUrl?: string;
+  tiktokUrl?: string;
+
   createdAt?: string;
   updatedAt?: string;
 }
@@ -53,6 +62,13 @@ export class PlatformDeliveryService {
 
   deleteOption(id: number): Observable<void> {
     return this.http.delete<void>(`${this.adminUrl}/${id}`);
+  }
+
+  /** Logo dauerhaft in MinIO hochladen. POST /api/admin/delivery-options/{id}/logo */
+  uploadLogo(id: number, file: File): Observable<{ logoUrl: string; message: string }> {
+    const fd = new FormData();
+    fd.append('file', file);
+    return this.http.post<{ logoUrl: string; message: string }>(`${this.adminUrl}/${id}/logo`, fd);
   }
 }
 

@@ -37,6 +37,15 @@ public class GlobalDeliveryOptionDTO {
     private String icon;
     private Boolean isActive;
     private Integer sortOrder;
+
+    // Kontakt & Social Media
+    private String websiteUrl;
+    private String logoUrl;
+    private String whatsappNumber;
+    private String instagramUrl;
+    private String facebookUrl;
+    private String tiktokUrl;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

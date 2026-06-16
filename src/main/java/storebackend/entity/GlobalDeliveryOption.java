@@ -60,6 +60,32 @@ public class GlobalDeliveryOption {
     @Column(name = "sort_order", nullable = false)
     private Integer sortOrder = 100;
 
+    /** Website-URL des Lieferunternehmens */
+    @Column(name = "website_url", columnDefinition = "TEXT")
+    private String websiteUrl;
+
+    /** Logo: MinIO-Objektpfad (dauerhaft) */
+    @Column(name = "logo_object_name", columnDefinition = "TEXT")
+    private String logoObjectName;
+
+    /** Logo: generierte presigned URL (wird on-the-fly gesetzt) */
+    @Column(name = "logo_url", columnDefinition = "TEXT")
+    private String logoUrl;
+
+    /** WhatsApp-Nummer des Supports */
+    @Column(name = "whatsapp_number", length = 30)
+    private String whatsappNumber;
+
+    /** Social Media Links */
+    @Column(name = "instagram_url", columnDefinition = "TEXT")
+    private String instagramUrl;
+
+    @Column(name = "facebook_url", columnDefinition = "TEXT")
+    private String facebookUrl;
+
+    @Column(name = "tiktok_url", columnDefinition = "TEXT")
+    private String tiktokUrl;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

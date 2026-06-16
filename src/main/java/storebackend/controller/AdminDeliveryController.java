@@ -5,14 +5,17 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import storebackend.dto.GlobalDeliveryOptionDTO;
 import storebackend.entity.User;
 import storebackend.service.GlobalDeliveryOptionService;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Admin-only controller for managing platform-wide global delivery options.
@@ -78,5 +81,22 @@ public class AdminDeliveryController {
         service.deleteOption(id);
         return ResponseEntity.noContent().build();
     }
-}
 
+    @PostMapping(value = "/{id}/logo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Logo hochladen", description = "Logo für Lieferoption dauerhaft in MinIO speichern (max. 5 MB)")
+    public ResponseEntity<?> uploadLogo(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal User user) {
+        if (user == null) return ResponseEntity.status(401).build();
+        try {
+            String logoUrl = service.uploadLogo(id, file);
+            return ResponseEntity.ok(Map.of("logoUrl", logoUrl, "message", "Logo erfolgreich hochgeladen"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Logo-Upload Fehler für Option {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of("message", "Logo-Upload fehlgeschlagen"));
+        }
+    }
+}

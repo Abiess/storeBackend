@@ -64,7 +64,10 @@ import {
       <div *ngIf="!loading && options.length > 0" class="pd-grid">
         <div *ngFor="let opt of options" class="pd-card" [class.pd-card--inactive]="!opt.isActive">
           <div class="pd-card__header">
-            <span class="pd-card__icon">{{ opt.icon || '🚚' }}</span>
+            <div class="pd-card__logo-wrap">
+              <img *ngIf="opt.logoUrl" [src]="opt.logoUrl" alt="Logo" class="pd-card__logo" />
+              <span *ngIf="!opt.logoUrl" class="pd-card__icon">{{ opt.icon || '🚚' }}</span>
+            </div>
             <div class="pd-card__title-group">
               <h3 class="pd-card__name">{{ opt.name }}</h3>
               <span class="pd-card__type pd-badge pd-badge--{{ opt.deliveryType | lowercase }}">
@@ -78,6 +81,16 @@ import {
           </div>
 
           <p *ngIf="opt.description" class="pd-card__desc">{{ opt.description }}</p>
+
+          <!-- Website & Social Links -->
+          <div *ngIf="opt.websiteUrl || opt.whatsappNumber || opt.instagramUrl || opt.facebookUrl || opt.tiktokUrl"
+               class="pd-card__links">
+            <a *ngIf="opt.websiteUrl" [href]="opt.websiteUrl" target="_blank" class="pd-link pd-link--web" title="Website">🌐</a>
+            <a *ngIf="opt.whatsappNumber" [href]="'https://wa.me/' + opt.whatsappNumber.replace('+','')" target="_blank" class="pd-link pd-link--wa" title="WhatsApp">💬</a>
+            <a *ngIf="opt.instagramUrl" [href]="opt.instagramUrl" target="_blank" class="pd-link pd-link--ig" title="Instagram">📸</a>
+            <a *ngIf="opt.facebookUrl" [href]="opt.facebookUrl" target="_blank" class="pd-link pd-link--fb" title="Facebook">👥</a>
+            <a *ngIf="opt.tiktokUrl" [href]="opt.tiktokUrl" target="_blank" class="pd-link pd-link--tt" title="TikTok">🎵</a>
+          </div>
 
           <div class="pd-card__meta">
             <div class="pd-meta-item">
@@ -191,6 +204,60 @@ import {
                   <span class="pd-toggle__label">{{ form.isActive ? ('platformDelivery.activeYes' | translate) : ('platformDelivery.activeNo' | translate) }}</span>
                 </label>
               </div>
+            </div>
+
+            <!-- ── Trennlinie ── -->
+            <div class="pd-section-divider">🌐 Kontakt & Social Media</div>
+
+            <!-- Logo Upload -->
+            <div class="pd-field">
+              <label>Logo</label>
+              <div class="pd-logo-area">
+                <img *ngIf="form.logoUrl" [src]="form.logoUrl" alt="Logo" class="pd-logo-preview" />
+                <div *ngIf="!form.logoUrl" class="pd-logo-empty">🚚</div>
+                <div class="pd-logo-actions">
+                  <label class="pd-btn pd-btn-ghost pd-logo-upload-btn">
+                    📷 Logo hochladen
+                    <input type="file" accept="image/*" style="display:none"
+                      (change)="onLogoFileSelected($event)" [disabled]="!editingOption?.id || uploadingLogo" />
+                  </label>
+                  <span *ngIf="uploadingLogo" class="pd-upload-spinner">⏳ Wird hochgeladen…</span>
+                  <small *ngIf="!editingOption?.id" class="pd-logo-hint">Erst speichern, dann Logo hochladen</small>
+                </div>
+              </div>
+            </div>
+
+            <!-- Website URL -->
+            <div class="pd-field">
+              <label>🌐 Website URL</label>
+              <input type="url" [(ngModel)]="form.websiteUrl"
+                placeholder="https://firstexpress.ma" />
+            </div>
+
+            <!-- WhatsApp -->
+            <div class="pd-field">
+              <label>💬 WhatsApp Nummer</label>
+              <input type="text" [(ngModel)]="form.whatsappNumber"
+                placeholder="+212 6XX XXX XXX" />
+            </div>
+
+            <!-- Social Media -->
+            <div class="pd-form-row">
+              <div class="pd-field">
+                <label>📸 Instagram URL</label>
+                <input type="url" [(ngModel)]="form.instagramUrl"
+                  placeholder="https://instagram.com/..." />
+              </div>
+              <div class="pd-field">
+                <label>👥 Facebook URL</label>
+                <input type="url" [(ngModel)]="form.facebookUrl"
+                  placeholder="https://facebook.com/..." />
+              </div>
+            </div>
+            <div class="pd-field">
+              <label>🎵 TikTok URL</label>
+              <input type="url" [(ngModel)]="form.tiktokUrl"
+                placeholder="https://tiktok.com/@..." />
             </div>
 
           </div>
@@ -308,6 +375,35 @@ import {
 
     .pd-card__actions { display: flex; gap: 8px; }
 
+    /* ── Logo in der Karte ─────────────────────────────────────── */
+    .pd-card__logo-wrap { width: 40px; height: 40px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .pd-card__logo { width: 40px; height: 40px; object-fit: contain; border-radius: 8px; border: 1px solid #eee; }
+    .pd-card__icon { font-size: 28px; }
+
+    /* ── Social Links in der Karte ────────────────────────────── */
+    .pd-card__links { display: flex; gap: 8px; flex-wrap: wrap; }
+    .pd-link {
+      font-size: 18px; text-decoration: none; width: 32px; height: 32px;
+      border-radius: 8px; display: flex; align-items: center; justify-content: center;
+      background: #f5f6fa; transition: background .15s;
+    }
+    .pd-link:hover { background: #e8eaff; }
+
+    /* ── Divider im Formular ──────────────────────────────────── */
+    .pd-section-divider {
+      font-size: 13px; font-weight: 600; color: #667eea;
+      padding: 8px 0 4px; border-top: 2px solid #f0f0f0; margin-top: 4px;
+    }
+
+    /* ── Logo Upload ──────────────────────────────────────────── */
+    .pd-logo-area { display: flex; align-items: center; gap: 16px; padding: 12px; background: #f9fafb; border-radius: 10px; border: 1.5px dashed #d0d5e8; }
+    .pd-logo-preview { width: 64px; height: 64px; object-fit: contain; border-radius: 8px; border: 1px solid #eee; background: white; }
+    .pd-logo-empty { width: 64px; height: 64px; font-size: 36px; display: flex; align-items: center; justify-content: center; background: white; border-radius: 8px; border: 1px solid #eee; }
+    .pd-logo-actions { display: flex; flex-direction: column; gap: 6px; }
+    .pd-logo-upload-btn { cursor: pointer; }
+    .pd-logo-hint { color: #999; font-size: 12px; }
+    .pd-upload-spinner { font-size: 13px; color: #667eea; }
+
     /* ── Toggle Switch ────────────────────────────────────────── */
     .pd-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; flex-shrink: 0; }
     .pd-toggle input { display: none; }
@@ -418,6 +514,7 @@ export class PlatformDeliveryComponent implements OnInit, OnDestroy {
   options: GlobalDeliveryOption[] = [];
   loading = false;
   saving = false;
+  uploadingLogo = false;
   showForm = false;
   editingOption: GlobalDeliveryOption | null = null;
   form: GlobalDeliveryOption = this.emptyForm();
@@ -511,9 +608,32 @@ export class PlatformDeliveryComponent implements OnInit, OnDestroy {
       });
   }
 
+  onLogoFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file || !this.editingOption?.id) return;
+
+    this.uploadingLogo = true;
+    this.deliveryService.uploadLogo(this.editingOption.id, file).pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          this.form.logoUrl = res.logoUrl;
+          // auch in der Liste aktualisieren
+          const opt = this.options.find(o => o.id === this.editingOption?.id);
+          if (opt) opt.logoUrl = res.logoUrl;
+          this.toast.success('✅ Logo hochgeladen');
+          this.uploadingLogo = false;
+        },
+        error: () => { this.toast.error('Fehler beim Logo-Upload'); this.uploadingLogo = false; }
+      });
+  }
+
   private emptyForm(): GlobalDeliveryOption {
-    return { name: '', description: '', deliveryType: 'STANDARD', price: 0,
-      etaMinDays: 1, etaMaxDays: 3, icon: '🚚', isActive: true, sortOrder: 100 };
+    return {
+      name: '', description: '', deliveryType: 'STANDARD', price: 0,
+      etaMinDays: 1, etaMaxDays: 3, icon: '🚚', isActive: true, sortOrder: 100,
+      websiteUrl: '', whatsappNumber: '', instagramUrl: '', facebookUrl: '', tiktokUrl: ''
+    };
   }
 }
 

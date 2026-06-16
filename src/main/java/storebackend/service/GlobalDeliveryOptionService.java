@@ -4,11 +4,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import storebackend.dto.GlobalDeliveryOptionDTO;
 import storebackend.entity.GlobalDeliveryOption;
 import storebackend.repository.GlobalDeliveryOptionRepository;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
 public class GlobalDeliveryOptionService {
 
     private final GlobalDeliveryOptionRepository repository;
+    private final MinioService minioService;
 
     // ── PUBLIC (Storefront) ──────────────────────────────────────────────────
 
@@ -84,9 +87,28 @@ public class GlobalDeliveryOptionService {
         entity.setIcon(dto.getIcon() != null ? dto.getIcon() : "🚚");
         entity.setIsActive(dto.getIsActive() != null ? dto.getIsActive() : true);
         entity.setSortOrder(dto.getSortOrder() != null ? dto.getSortOrder() : 100);
+        // Kontakt & Social Media
+        entity.setWebsiteUrl(dto.getWebsiteUrl());
+        entity.setWhatsappNumber(dto.getWhatsappNumber());
+        entity.setInstagramUrl(dto.getInstagramUrl());
+        entity.setFacebookUrl(dto.getFacebookUrl());
+        entity.setTiktokUrl(dto.getTiktokUrl());
     }
 
     private GlobalDeliveryOptionDTO toDTO(GlobalDeliveryOption e) {
+        // Logo: frische presigned URL generieren
+        String logoUrl = null;
+        if (e.getLogoObjectName() != null && !e.getLogoObjectName().isBlank()) {
+            try {
+                logoUrl = minioService.getPresignedUrl(e.getLogoObjectName(), 10080);
+            } catch (Exception ex) {
+                log.warn("Logo-URL konnte nicht generiert werden für Option {}: {}", e.getId(), ex.getMessage());
+                logoUrl = e.getLogoUrl();
+            }
+        } else {
+            logoUrl = e.getLogoUrl();
+        }
+
         return GlobalDeliveryOptionDTO.builder()
                 .id(e.getId())
                 .name(e.getName())
@@ -98,9 +120,54 @@ public class GlobalDeliveryOptionService {
                 .icon(e.getIcon())
                 .isActive(e.getIsActive())
                 .sortOrder(e.getSortOrder())
+                .websiteUrl(e.getWebsiteUrl())
+                .logoUrl(logoUrl)
+                .whatsappNumber(e.getWhatsappNumber())
+                .instagramUrl(e.getInstagramUrl())
+                .facebookUrl(e.getFacebookUrl())
+                .tiktokUrl(e.getTiktokUrl())
                 .createdAt(e.getCreatedAt())
                 .updatedAt(e.getUpdatedAt())
                 .build();
+    }
+
+    /**
+     * Logo dauerhaft in MinIO hochladen.
+     * Gibt die frische presigned URL zurück.
+     */
+    public String uploadLogo(Long optionId, MultipartFile file) throws java.io.IOException {
+        GlobalDeliveryOption option = findOrThrow(optionId);
+
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new RuntimeException("Nur Bilddateien erlaubt (JPEG, PNG, WebP)");
+        }
+        if (file.getSize() > 5 * 1024 * 1024) {
+            throw new RuntimeException("Logo darf maximal 5 MB groß sein");
+        }
+
+        // Altes Logo löschen
+        if (option.getLogoObjectName() != null && !option.getLogoObjectName().isBlank()) {
+            try { minioService.deleteFile(option.getLogoObjectName()); }
+            catch (Exception ex) { log.warn("Altes Logo konnte nicht gelöscht werden: {}", ex.getMessage()); }
+        }
+
+        // Neues Logo hochladen
+        String ext = "";
+        String orig = file.getOriginalFilename();
+        if (orig != null && orig.contains(".")) ext = orig.substring(orig.lastIndexOf("."));
+        String objectName = String.format("delivery-options/%d/logo/%s%s", optionId, UUID.randomUUID(), ext);
+
+        try (java.io.InputStream is = file.getInputStream()) {
+            minioService.uploadInputStream(is, file.getSize(), contentType, objectName);
+        }
+
+        option.setLogoObjectName(objectName);
+        repository.save(option);
+
+        String presignedUrl = minioService.getPresignedUrl(objectName, 10080);
+        log.info("✅ Logo hochgeladen für Delivery Option {}: {}", optionId, objectName);
+        return presignedUrl;
     }
 }
 
