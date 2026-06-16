@@ -521,7 +521,7 @@ export class PlatformDeliveryComponent implements OnInit, OnDestroy {
 
   headerActions: HeaderAction[] = [
     {
-      label: '+ Neue Lieferoption',
+      label: 'platformDelivery.addBtn',
       icon: 'plus',
       class: 'btn-primary',
       onClick: () => this.openCreate()

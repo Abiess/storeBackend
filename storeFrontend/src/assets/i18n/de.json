@@ -1738,7 +1738,7 @@
     "platformDelivery":  {
         "title":      "Lieferoptionen",
         "subtitle":   "Plattformweit – automatisch in allen Storefronts angezeigt",
-        "addBtn":     "Neue Lieferoption",
+        "addBtn":     "+ Neue Lieferoption",
         "infoTitle":  "Wie es funktioniert:",
         "infoText":   "Hier verwaltest du alle Lieferoptionen. Sie erscheinen automatisch im Checkout aller Stores. Store-Manager sehen diesen Bereich nicht.",
         "emptyTitle": "Noch keine Lieferoptionen",

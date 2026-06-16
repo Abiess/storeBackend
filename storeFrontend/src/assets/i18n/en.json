@@ -1761,7 +1761,7 @@
     "platformDelivery":  {
         "title":      "Delivery Options",
         "subtitle":   "Platform-wide – shown automatically in all storefronts",
-        "addBtn":     "New Delivery Option",
+        "addBtn":     "+ New Delivery Option",
         "infoTitle":  "How it works:",
         "infoText":   "Manage all delivery options here. They appear automatically in the checkout of every store. Store managers cannot see or modify this section.",
         "emptyTitle": "No delivery options yet",
