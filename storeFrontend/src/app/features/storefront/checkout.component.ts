@@ -257,7 +257,7 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 
               <!-- Globale Lieferoptionen (plattformweit verwaltet) -->
               <div *ngIf="loadingGlobalDelivery" class="delivery-loading">
-                <div class="spinner-sm"></div> Lieferoptionen werden geladen…
+                <div class="spinner-sm"></div> {{ 'checkout.deliveryLoading' | translate }}
               </div>
 
               <div *ngIf="!loadingGlobalDelivery && globalDeliveryOptions.length > 0" class="delivery-options-list">
@@ -279,11 +279,11 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
                     <strong>{{ opt.name }}</strong>
                     <span *ngIf="opt.description" class="delivery-desc">{{ opt.description }}</span>
                     <span *ngIf="opt.etaMinDays != null" class="delivery-eta">
-                      ca. {{ opt.etaMinDays }}–{{ opt.etaMaxDays ?? opt.etaMinDays }} Tage
+                      {{ 'checkout.deliveryEtaApprox' | translate }} {{ opt.etaMinDays }}–{{ opt.etaMaxDays ?? opt.etaMinDays }} {{ 'checkout.deliveryEtaDays' | translate }}
                     </span>
                   </div>
                   <div class="delivery-price">
-                    <span *ngIf="opt.price === 0" class="free-badge">Kostenlos</span>
+                    <span *ngIf="opt.price === 0" class="free-badge">{{ 'checkout.free' | translate }}</span>
                     <span *ngIf="opt.price > 0">{{ opt.price | number:'1.2-2' }} MAD</span>
                   </div>
                   <div class="delivery-check" *ngIf="selectedGlobalDeliveryOption?.id === opt.id">✓</div>
