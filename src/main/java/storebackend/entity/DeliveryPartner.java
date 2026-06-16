@@ -55,8 +55,31 @@ public class DeliveryPartner {
 
     private String website;
 
-    @Column(name = "logo_url")
+    @Column(name = "logo_url", columnDefinition = "TEXT")
     private String logoUrl;
+
+    /** MinIO-Objektpfad des Logos – permanent gespeichert, URL wird on-the-fly generiert */
+    @Column(name = "logo_object_name", columnDefinition = "TEXT")
+    private String logoObjectName;
+
+    // Social Media Links
+    @Column(name = "instagram_url", columnDefinition = "TEXT")
+    private String instagramUrl;
+
+    @Column(name = "facebook_url", columnDefinition = "TEXT")
+    private String facebookUrl;
+
+    @Column(name = "tiktok_url", columnDefinition = "TEXT")
+    private String tiktokUrl;
+
+    @Column(name = "linkedin_url", columnDefinition = "TEXT")
+    private String linkedinUrl;
+
+    @Column(name = "youtube_url", columnDefinition = "TEXT")
+    private String youtubeUrl;
+
+    @Column(name = "twitter_url", columnDefinition = "TEXT")
+    private String twitterUrl;
 
     // Geschäftsdaten (Marokko)
     @Column(length = 20)

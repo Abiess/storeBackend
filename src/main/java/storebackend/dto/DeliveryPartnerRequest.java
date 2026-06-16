@@ -29,6 +29,14 @@ public class DeliveryPartnerRequest {
     private String whatsapp;
     private String website;
 
+    // Social Media Links (optional)
+    private String instagramUrl;
+    private String facebookUrl;
+    private String tiktokUrl;
+    private String linkedinUrl;
+    private String youtubeUrl;
+    private String twitterUrl;
+
     private String ice;
     private String rc;
     private String taxId;

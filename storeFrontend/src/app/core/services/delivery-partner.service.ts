@@ -83,6 +83,17 @@ export class DeliveryPartnerService {
   toggleActive(active: boolean): Observable<DeliveryPartnerProfile> {
     return this.http.patch<DeliveryPartnerProfile>(`${this.API}/me/status`, { active });
   }
+  /**
+   * Logo dauerhaft in MinIO hochladen.
+   * Backend: POST /api/delivery-partners/me/logo
+   * @returns Observable mit { logoUrl: string, message: string }
+   */
+  uploadLogo(file: File): Observable<{ logoUrl: string; message: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<{ logoUrl: string; message: string }>(`${this.API}/me/logo`, formData);
+  }
+
 
   // ═══════════════════════════════════════════════════
   //  BEWERTUNGEN

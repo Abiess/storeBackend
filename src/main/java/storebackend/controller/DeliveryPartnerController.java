@@ -5,9 +5,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import storebackend.dto.DeliveryPartnerDTO;
 import storebackend.dto.DeliveryPartnerRequest;
 import storebackend.dto.DeliveryPartnerReviewDTO;
@@ -137,6 +139,23 @@ public class DeliveryPartnerController {
             return ResponseEntity.ok(service.toggleActive(user, active));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PostMapping(value = "/me/logo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Logo hochladen", description = "Logo dauerhaft in MinIO hochladen (max. 5 MB, JPEG/PNG/WebP)")
+    public ResponseEntity<?> uploadLogo(
+            @AuthenticationPrincipal User user,
+            @RequestParam("file") MultipartFile file) {
+        if (user == null) return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
+        try {
+            String logoUrl = service.uploadLogo(user, file);
+            return ResponseEntity.ok(Map.of("logoUrl", logoUrl, "message", "Logo erfolgreich hochgeladen"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Fehler beim Logo-Upload für user {}: {}", user.getEmail(), e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of("message", "Logo-Upload fehlgeschlagen"));
         }
     }
 

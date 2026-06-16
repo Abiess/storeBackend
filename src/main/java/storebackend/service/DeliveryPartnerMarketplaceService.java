@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import storebackend.dto.DeliveryPartnerDTO;
 import storebackend.dto.DeliveryPartnerRequest;
 import storebackend.dto.DeliveryPartnerReviewDTO;
@@ -28,6 +29,7 @@ public class DeliveryPartnerMarketplaceService {
     private final DeliveryPartnerRepository partnerRepo;
     private final DeliveryPartnerReviewRepository reviewRepo;
     private final StoreRepository storeRepo;
+    private final MinioService minioService;
 
     // ═══════════════════════════════════════════════
     //  MARKETPLACE – Suche
@@ -100,6 +102,56 @@ public class DeliveryPartnerMarketplaceService {
         p.setActive(active);
         partnerRepo.save(p);
         return toDTO(p);
+    }
+
+    /**
+     * Logo dauerhaft in MinIO hochladen und objektName im Profil speichern.
+     * Gibt die frische presigned URL zurück.
+     */
+    @Transactional
+    public String uploadLogo(User user, MultipartFile file) throws java.io.IOException {
+        DeliveryPartner p = partnerRepo.findByUserId(user.getId())
+            .orElseThrow(() -> new RuntimeException("No delivery partner profile found"));
+
+        // Validierung
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new RuntimeException("Nur Bilddateien erlaubt (JPEG, PNG, WebP)");
+        }
+        if (file.getSize() > 5 * 1024 * 1024) {
+            throw new RuntimeException("Logo darf maximal 5 MB groß sein");
+        }
+
+        // Altes Logo aus MinIO löschen (falls vorhanden)
+        if (p.getLogoObjectName() != null && !p.getLogoObjectName().isBlank()) {
+            try {
+                minioService.deleteFile(p.getLogoObjectName());
+            } catch (Exception ex) {
+                log.warn("Altes Logo konnte nicht gelöscht werden: {}", ex.getMessage());
+            }
+        }
+
+        // Neues Logo hochladen – Pfad: delivery-partners/{userId}/logo/{uuid}.ext
+        String ext = "";
+        String orig = file.getOriginalFilename();
+        if (orig != null && orig.contains(".")) {
+            ext = orig.substring(orig.lastIndexOf("."));
+        }
+        String objectName = String.format("delivery-partners/%d/logo/%s%s",
+                user.getId(), java.util.UUID.randomUUID(), ext);
+
+        try (java.io.InputStream is = file.getInputStream()) {
+            minioService.uploadInputStream(is, file.getSize(), contentType, objectName);
+        }
+
+        // Dauerhaften Objektpfad speichern
+        p.setLogoObjectName(objectName);
+        partnerRepo.save(p);
+
+        // Frische presigned URL (7 Tage) zurückgeben
+        String presignedUrl = minioService.getPresignedUrl(objectName, 10080);
+        log.info("✅ Delivery partner logo uploaded: partner={}, object={}", p.getId(), objectName);
+        return presignedUrl;
     }
 
     // ═══════════════════════════════════════════════

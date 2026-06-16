@@ -120,6 +120,14 @@ export interface DeliveryPartnerProfile {
   website?: string;
   logoUrl?: string;
 
+  // Social Media Links
+  instagramUrl?: string;
+  facebookUrl?: string;
+  tiktokUrl?: string;
+  linkedinUrl?: string;
+  youtubeUrl?: string;
+  twitterUrl?: string;
+
   // Geschäftsdaten
   ice?: string;                 // Identifiant Commun de l'Entreprise (Marokko)
   rc?: string;                  // Registre de Commerce
@@ -169,6 +177,15 @@ export interface CreateDeliveryPartnerRequest {
   phone: string;
   whatsapp?: string;
   website?: string;
+
+  // Social Media Links (optional)
+  instagramUrl?: string;
+  facebookUrl?: string;
+  tiktokUrl?: string;
+  linkedinUrl?: string;
+  youtubeUrl?: string;
+  twitterUrl?: string;
+
   ice?: string;
   rc?: string;
   taxId?: string;
