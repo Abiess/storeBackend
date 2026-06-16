@@ -148,8 +148,11 @@ public class DeliveryPartnerMarketplaceService {
         p.setLogoObjectName(objectName);
         partnerRepo.save(p);
 
-        // Frische presigned URL (7 Tage) zurückgeben
+        // Frische presigned URL (7 Tage) – auch im logoUrl-Feld cachen
         String presignedUrl = minioService.getPresignedUrl(objectName, 10080);
+        p.setLogoUrl(presignedUrl);
+        partnerRepo.save(p);
+
         log.info("✅ Delivery partner logo uploaded: partner={}, object={}", p.getId(), objectName);
         return presignedUrl;
     }

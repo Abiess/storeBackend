@@ -166,6 +166,10 @@ public class GlobalDeliveryOptionService {
         repository.save(option);
 
         String presignedUrl = minioService.getPresignedUrl(objectName, 10080);
+        // URL auch im Feld speichern → Fallback wenn MinIO beim GET nicht erreichbar
+        option.setLogoUrl(presignedUrl);
+        repository.save(option);
+
         log.info("✅ Logo hochgeladen für Delivery Option {}: {}", optionId, objectName);
         return presignedUrl;
     }
