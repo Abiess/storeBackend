@@ -10,8 +10,6 @@ import { WhatsappConfigService } from '@app/core/services/whatsapp-config.servic
 import { WhatsappTrackingService } from '@app/core/services/whatsapp-tracking.service';
 import { SubdomainService } from '@app/core/services/subdomain.service';
 import { PublicApiService } from '@app/core/services/public-api.service';
-import { WishlistService } from '@app/core/services/wishlist.service';
-import { AuthService } from '@app/core/services/auth.service';
 import { Subscription } from 'rxjs';
 
 interface Product {
