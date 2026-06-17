@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 import { TranslatePipe } from 'src/app/core/pipes/translate.pipe';
 import { OrderVerificationCounterService } from 'src/app/core/services/order-verification-counter.service';
 import { StoreContextService } from 'src/app/core/services/store-context.service';
+import { LucideAngularModule } from 'lucide-angular';
 
 /**
  * NavTab-Interface – wiederverwendbar für jede Tab-Navigation.
@@ -29,7 +30,8 @@ export interface NavTab {
     imports: [
         CommonModule,
         RouterModule,
-        TranslatePipe
+        TranslatePipe,
+        LucideAngularModule
     ],
     templateUrl: './productnavigation-bar.component.html',
     styleUrl: './productnavigation-bar.component.scss'
@@ -65,45 +67,45 @@ export class ProductnavigationBarComponent implements OnInit {
 
     navTabs: NavTab[] = [
         {
-            icon: '📊',
+            icon: 'layout-dashboard',
             label: 'navigation.overview',
             route: (id) => ['/dashboard/stores', id],
             exact: true
         },
         {
-            icon: '🏷️',
+            icon: 'tag',
             label: 'navigation.categories',
             route: (id) => ['/dashboard/stores', id, 'categories']
         },
         {
-            icon: '📦',
+            icon: 'package',
             label: 'navigation.products',
             route: (id) => ['/dashboard/stores', id, 'products']
         },
         {
-            icon: '🛒',
+            icon: 'shopping-cart',
             label: 'navigation.orders',
             route: (id) => ['/dashboard/stores', id, 'orders'],
             exact: true,
             showBadge: true
         },
         {
-            icon: '⭐',
+            icon: 'star',
             label: 'navigation.reviews',
             route: (id) => ['/stores', id, 'reviews']
         },
         {
-            icon: '🚚',
+            icon: 'truck',
             label: 'navigation.delivery',
             route: (id) => ['/stores', id, 'delivery']
         },
         {
-            icon: '🏠',
+            icon: 'house',
             label: 'navigation.homepage',
             route: (id) => ['/dashboard/stores', id, 'homepage-builder']
         },
         {
-            icon: '⚙️',
+            icon: 'settings',
             label: 'navigation.settings',
             route: (id) => ['/dashboard/stores', id, 'settings']
         }

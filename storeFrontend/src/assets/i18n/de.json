@@ -1784,6 +1784,45 @@
             "sortOrder":             "Anzeigereihenfolge",
             "active":                "Im Storefront anzeigen"
         }
+    },
+    "brandOnboarding": {
+        "title": "Branding & Design",
+        "section1Badge": "✅ Storefront-aktiv",
+        "section1Title": "Logo, Farben & Theme",
+        "section1Desc": "Änderungen hier werden sofort im Storefront angezeigt.",
+        "section2Badge": "KI-gestützt",
+        "section2Title": "KI Brand Kit Generator",
+        "section2Desc": "Die KI generiert automatisch Farbpalette, Logo-SVG, Hero-Banner, Favicons und OG-Bild. Nach dem Speichern werden die Farben im Storefront aktiv.",
+        "form": {
+            "title": "Marken-Informationen",
+            "shopName": "Shop-Name",
+            "shopNameLoading": "Wird geladen…",
+            "shopNameHint": "Wird automatisch aus deinen Store-Einstellungen übernommen.",
+            "slogan": "Slogan (optional)",
+            "sloganPlaceholder": "Dein Marken-Slogan",
+            "industry": "Branche (optional)",
+            "industryPlaceholder": "z.B. Mode, Elektronik",
+            "style": "Brand-Stil",
+            "preferredColors": "Bevorzugte Farben",
+            "forbiddenColors": "Ausgeschlossene Farben",
+            "addColorLabel": "Farbe hinzufügen (z.B. #FF5733)",
+            "addColor": "Hinzufügen"
+        },
+        "actions": {
+            "generate": "Brand Kit generieren",
+            "regenerate": "Neu generieren",
+            "savePalette": "Palette speichern & im Storefront aktivieren",
+            "downloadZip": "ZIP herunterladen"
+        },
+        "preview": {
+            "title": "Vorschau",
+            "generating": "Brand-Assets werden generiert…",
+            "empty": "Formular ausfüllen und auf 'Brand Kit generieren' klicken, um die Vorschau zu sehen.",
+            "colorPalette": "Farbpalette",
+            "brandInitials": "Marken-Initialen",
+            "generatedAssets": "Generierte Assets",
+            "view": "Öffnen"
+        }
     }
 }
 

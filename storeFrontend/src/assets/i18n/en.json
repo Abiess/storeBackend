@@ -1807,5 +1807,44 @@
             "sortOrder":             "Display Order",
             "active":                "Show in storefront"
         }
+    },
+    "brandOnboarding": {
+        "title": "Branding & Design",
+        "section1Badge": "✅ Storefront-active",
+        "section1Title": "Logo, Colors & Theme",
+        "section1Desc": "Changes here are immediately visible in your storefront.",
+        "section2Badge": "AI-powered",
+        "section2Title": "AI Brand Kit Generator",
+        "section2Desc": "The AI automatically generates a color palette, logo SVG, hero banner, favicons and OG image. After saving, colors will be applied to the storefront.",
+        "form": {
+            "title": "Brand Information",
+            "shopName": "Shop Name",
+            "shopNameLoading": "Loading…",
+            "shopNameHint": "Automatically taken from your store settings.",
+            "slogan": "Slogan (optional)",
+            "sloganPlaceholder": "Your brand slogan",
+            "industry": "Industry (optional)",
+            "industryPlaceholder": "e.g. Fashion, Electronics",
+            "style": "Brand Style",
+            "preferredColors": "Preferred Colors",
+            "forbiddenColors": "Forbidden Colors",
+            "addColorLabel": "Add color (e.g. #FF5733)",
+            "addColor": "Add"
+        },
+        "actions": {
+            "generate": "Generate Brand Kit",
+            "regenerate": "Regenerate",
+            "savePalette": "Save palette & activate in storefront",
+            "downloadZip": "Download ZIP"
+        },
+        "preview": {
+            "title": "Brand Preview",
+            "generating": "Generating your brand assets…",
+            "empty": "Fill out the form and click \"Generate Brand Kit\" to see your brand preview.",
+            "colorPalette": "Color Palette",
+            "brandInitials": "Brand Initials",
+            "generatedAssets": "Generated Assets",
+            "view": "View"
+        }
     }
 }

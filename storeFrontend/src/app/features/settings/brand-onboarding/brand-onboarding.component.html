@@ -1,68 +1,69 @@
 <div class="brand-onboarding-container">
-    <h1>🎨 Branding & Design</h1>
+    <h1>{{ 'brandOnboarding.title' | translate }}</h1>
 
     <app-productnavigation-bar *ngIf="storeId != null"></app-productnavigation-bar>
 
     <!-- ═══ SECTION 1: Logo, Farben & Theme (direkt im Storefront sichtbar) ═══ -->
     <div class="section-header">
-        <span class="section-badge primary-badge">✅ Storefront-aktiv</span>
-        <h2>Logo, Farben & Theme</h2>
-        <p class="section-desc">Änderungen hier werden sofort im Storefront angezeigt.</p>
+        <span class="section-badge primary-badge">{{ 'brandOnboarding.section1Badge' | translate }}</span>
+        <h2>{{ 'brandOnboarding.section1Title' | translate }}</h2>
+        <p class="section-desc">{{ 'brandOnboarding.section1Desc' | translate }}</p>
     </div>
     <app-branding-editor></app-branding-editor>
 
     <!-- ═══ SECTION 2: KI-Brand-Kit-Generator (optional) ═══ -->
     <div class="section-header section-header--ai">
-        <span class="section-badge ai-badge">🤖 KI-gestützt</span>
-        <h2>KI Brand Kit Generator</h2>
-        <p class="section-desc">KI generiert automatisch Farbpalette, Logo-SVG, Hero-Banner, Favicons und OG-Bild.
-            Nach dem Speichern werden die Farben ebenfalls im Storefront aktiv.</p>
+        <span class="section-badge ai-badge">{{ 'brandOnboarding.section2Badge' | translate }}</span>
+        <h2>{{ 'brandOnboarding.section2Title' | translate }}</h2>
+        <p class="section-desc">{{ 'brandOnboarding.section2Desc' | translate }}</p>
     </div>
 
     <div class="content-grid">
         <mat-card class="form-section">
             <mat-card-header>
-                <mat-card-title>Brand Information</mat-card-title>
+                <mat-card-title>{{ 'brandOnboarding.form.title' | translate }}</mat-card-title>
             </mat-card-header>
 
             <mat-card-content>
                 <!-- Shop-Name: read-only aus Store-Daten -->
                 <div class="shop-name-readonly">
-                    <label class="shop-name-label">🏪 Shop Name</label>
+                    <label class="shop-name-label">{{ 'brandOnboarding.form.shopName' | translate }}</label>
                     <div class="shop-name-value">
                         <span *ngIf="storeName">{{ storeName }}</span>
-                        <span *ngIf="!storeName" class="shop-name-loading">Wird geladen…</span>
+                        <span *ngIf="!storeName" class="shop-name-loading">{{ 'brandOnboarding.form.shopNameLoading' | translate }}</span>
                     </div>
-                    <small class="shop-name-hint">Wird automatisch aus deinen Store-Einstellungen übernommen.</small>
+                    <small class="shop-name-hint">{{ 'brandOnboarding.form.shopNameHint' | translate }}</small>
                 </div>
                 <input type="hidden" formControlName="shopName" [formGroup]="brandForm">
 
                 <form [formGroup]="brandForm">
                     <mat-form-field appearance="outline" class="full-width">
-                        <mat-label>Slogan (Optional)</mat-label>
-                        <input matInput formControlName="slogan" placeholder="Your brand slogan" data-testid="slogan-input">
+                        <mat-label>{{ 'brandOnboarding.form.slogan' | translate }}</mat-label>
+                        <input matInput formControlName="slogan" [placeholder]="'brandOnboarding.form.sloganPlaceholder' | translate" data-testid="slogan-input">
                     </mat-form-field>
 
                     <mat-form-field appearance="outline" class="full-width">
-                        <mat-label>Industry (Optional)</mat-label>
-                        <input matInput formControlName="industry" placeholder="e.g., Fashion, Electronics" data-testid="industry-input">
+                        <mat-label>{{ 'brandOnboarding.form.industry' | translate }}</mat-label>
+                        <input matInput formControlName="industry" [placeholder]="'brandOnboarding.form.industryPlaceholder' | translate" data-testid="industry-input">
                     </mat-form-field>
 
                     <mat-form-field appearance="outline" class="full-width">
-                        <mat-label>Brand Style</mat-label>
+                        <mat-label>{{ 'brandOnboarding.form.style' | translate }}</mat-label>
                         <mat-select formControlName="style" data-testid="style-select">
                             <mat-option *ngFor="let style of styles" [value]="style.value">{{ style.label }}</mat-option>
                         </mat-select>
                     </mat-form-field>
 
                     <div class="color-section">
-                        <h3>Preferred Colors</h3>
+                        <h3>{{ 'brandOnboarding.form.preferredColors' | translate }}</h3>
                         <div class="color-input-group">
                             <mat-form-field appearance="outline" class="color-input">
-                                <mat-label>Add Color (e.g., #FF5733)</mat-label>
+                                <mat-label>{{ 'brandOnboarding.form.addColorLabel' | translate }}</mat-label>
                                 <input matInput formControlName="preferredColorInput" placeholder="#FF5733" data-testid="preferred-color-input">
                             </mat-form-field>
-                            <button mat-raised-button type="button" (click)="addPreferredColor()" data-testid="add-preferred-color-btn">Add</button>
+                            <button mat-raised-button type="button" (click)="addPreferredColor()" data-testid="add-preferred-color-btn">
+                                {{ 'brandOnboarding.form.addColor' | translate }}
+                            </button>
                         </div>
                         <mat-chip-set>
                             <mat-chip *ngFor="let color of preferredColors" [removable]="true" (removed)="removePreferredColor(color)">
@@ -76,13 +77,15 @@
                     </div>
 
                     <div class="color-section">
-                        <h3>Forbidden Colors</h3>
+                        <h3>{{ 'brandOnboarding.form.forbiddenColors' | translate }}</h3>
                         <div class="color-input-group">
                             <mat-form-field appearance="outline" class="color-input">
-                                <mat-label>Add Color (e.g., #000000)</mat-label>
+                                <mat-label>{{ 'brandOnboarding.form.addColorLabel' | translate }}</mat-label>
                                 <input matInput formControlName="forbiddenColorInput" placeholder="#000000" data-testid="forbidden-color-input">
                             </mat-form-field>
-                            <button mat-raised-button type="button" (click)="addForbiddenColor()" data-testid="add-forbidden-color-btn">Add</button>
+                            <button mat-raised-button type="button" (click)="addForbiddenColor()" data-testid="add-forbidden-color-btn">
+                                {{ 'brandOnboarding.form.addColor' | translate }}
+                            </button>
                         </div>
                         <mat-chip-set>
                             <mat-chip *ngFor="let color of forbiddenColors" [removable]="true" (removed)="removeForbiddenColor(color)">
@@ -100,29 +103,29 @@
             <mat-card-actions>
                 <button mat-raised-button color="primary" (click)="generateBrand()"
                         [disabled]="!brandForm.valid || loading || storeId == null" data-testid="generate-btn">
-                    <mat-icon>auto_awesome</mat-icon> Generate Brand Kit
+                    <mat-icon>auto_awesome</mat-icon> {{ 'brandOnboarding.actions.generate' | translate }}
                 </button>
                 <button mat-raised-button color="accent" (click)="regenerateBrand()"
                         [disabled]="!brandForm.valid || loading || !generatedBrand || storeId == null" data-testid="regenerate-btn">
-                    <mat-icon>refresh</mat-icon> Regenerate
+                    <mat-icon>refresh</mat-icon> {{ 'brandOnboarding.actions.regenerate' | translate }}
                 </button>
             </mat-card-actions>
         </mat-card>
 
         <mat-card class="preview-section">
             <mat-card-header>
-                <mat-card-title>Brand Preview</mat-card-title>
+                <mat-card-title>{{ 'brandOnboarding.preview.title' | translate }}</mat-card-title>
             </mat-card-header>
 
             <mat-card-content>
                 <div *ngIf="loading" class="loading-container">
                     <mat-spinner></mat-spinner>
-                    <p>Generating your brand assets...</p>
+                    <p>{{ 'brandOnboarding.preview.generating' | translate }}</p>
                 </div>
 
                 <div *ngIf="!loading && !generatedBrand" class="empty-state">
                     <mat-icon>palette</mat-icon>
-                    <p>Fill out the form and click "Generate Brand Kit" to see your brand preview</p>
+                    <p>{{ 'brandOnboarding.preview.empty' | translate }}</p>
                 </div>
 
                 <div *ngIf="!loading && generatedBrand" class="brand-preview">
@@ -130,7 +133,7 @@
 
                     <div class="brand-content">
                         <div class="palette-display">
-                            <h3>Color Palette</h3>
+                            <h3>{{ 'brandOnboarding.preview.colorPalette' | translate }}</h3>
                             <div class="color-grid">
                                 <div *ngFor="let token of previewPalette | keyvalue" class="color-item">
                                     <div class="color-box" [style.background-color]="token.value"></div>
@@ -143,14 +146,14 @@
                         </div>
 
                         <div class="initials-display">
-                            <h3>Brand Initials</h3>
+                            <h3>{{ 'brandOnboarding.preview.brandInitials' | translate }}</h3>
                             <div class="initials-box" [style.background-color]="previewPalette['--color-primary']">
                                 <span [style.color]="'white'">{{ generatedBrand.initials }}</span>
                             </div>
                         </div>
 
                         <div class="assets-display">
-                            <h3>Generated Assets</h3>
+                            <h3>{{ 'brandOnboarding.preview.generatedAssets' | translate }}</h3>
                             <div class="assets-grid">
                                 <div *ngFor="let key of getAssetKeys()" class="asset-item">
                                     <strong>{{ key }}</strong>
@@ -158,7 +161,7 @@
                                          [src]="generatedBrand.assets[key]" [alt]="key" class="asset-preview">
                                     <a *ngIf="!key.includes('png') && !key.includes('jpg')"
                                        [href]="generatedBrand.assets[key]" target="_blank" rel="noopener noreferrer" class="asset-link">
-                                        View {{ key }}
+                                        {{ 'brandOnboarding.preview.view' | translate }} {{ key }}
                                     </a>
                                 </div>
                             </div>
@@ -166,10 +169,10 @@
 
                         <div class="preview-actions">
                             <button mat-raised-button color="primary" (click)="savePalette()" [disabled]="storeId == null" data-testid="save-palette-btn">
-                                <mat-icon>save</mat-icon> Palette speichern & in Storefront aktivieren
+                                <mat-icon>save</mat-icon> {{ 'brandOnboarding.actions.savePalette' | translate }}
                             </button>
                             <button mat-raised-button (click)="downloadZip()" [disabled]="storeId == null" data-testid="download-zip-btn">
-                                <mat-icon>download</mat-icon> Download ZIP
+                                <mat-icon>download</mat-icon> {{ 'brandOnboarding.actions.downloadZip' | translate }}
                             </button>
                         </div>
                     </div>

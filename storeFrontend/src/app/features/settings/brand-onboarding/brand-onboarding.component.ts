@@ -10,6 +10,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute, Router } from '@angular/router';
+import { TranslatePipe } from '../../../core/pipes/translate.pipe';
 import { BrandService, BrandGenerateRequest, BrandGenerateResponse } from '../../../core/services/brand.service';
 import { StoreService } from '../../../core/services/store.service';
 import { ThemeService } from '../../../core/services/theme.service';
@@ -30,6 +31,7 @@ import { ProductnavigationBarComponent } from '@app/features/productnavigation-b
         MatChipsModule,
         MatProgressSpinnerModule,
         MatIconModule,
+        TranslatePipe,
         BrandingEditorComponent,
         ProductnavigationBarComponent
     ],
