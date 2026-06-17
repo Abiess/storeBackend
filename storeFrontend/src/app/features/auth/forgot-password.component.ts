@@ -5,45 +5,46 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { catchError, of } from 'rxjs';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 @Component({
   selector: 'app-forgot-password',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, TranslatePipe],
   template: `
     <div class="auth-container">
       <div class="auth-card">
 
-        <!-- Icon + Titel -->
+        <!-- Logo + Titel -->
         <div class="card-header">
-          <div class="icon-wrap">
-            <span class="icon">🔑</span>
-          </div>
-          <h1>Passwort vergessen?</h1>
-          <p class="subtitle">Gib deine E-Mail-Adresse ein – wir schicken dir einen Reset-Link.</p>
+          <a routerLink="/login" class="logo-link">
+            <img src="assets/images/logo.svg" alt="markt.ma" class="auth-logo" />
+          </a>
+          <h1>{{ 'auth.forgotPasswordTitle' | translate }}</h1>
+          <p class="subtitle">{{ 'auth.forgotPasswordSubtitle' | translate }}</p>
         </div>
 
         <!-- Success-State -->
         <div *ngIf="successMessage" class="success-state">
           <div class="success-icon">✅</div>
-          <h2>E-Mail gesendet!</h2>
+          <h2>{{ 'auth.forgotPasswordSuccessTitle' | translate }}</h2>
           <p>{{ successMessage }}</p>
-          <a [routerLink]="['/login']" class="btn btn-primary back-btn">Zurück zum Login</a>
+          <a [routerLink]="['/login']" class="btn btn-primary back-btn">{{ 'auth.backToLogin' | translate }}</a>
         </div>
 
         <!-- Formular -->
         <form *ngIf="!successMessage" [formGroup]="forgotPasswordForm" (ngSubmit)="onSubmit()">
           <div class="form-group">
-            <label for="email">E-Mail-Adresse</label>
+            <label for="email">{{ 'auth.forgotPasswordEmailLabel' | translate }}</label>
             <input
               id="email"
               type="email"
               formControlName="email"
-              placeholder="deine@email.de"
+              [placeholder]="'auth.forgotPasswordEmailPlaceholder' | translate"
               [class.input-error]="forgotPasswordForm.get('email')?.invalid && forgotPasswordForm.get('email')?.touched"
             />
             <div *ngIf="forgotPasswordForm.get('email')?.invalid && forgotPasswordForm.get('email')?.touched" class="error">
-              Bitte gib eine gültige E-Mail-Adresse ein.
+              {{ 'auth.forgotPasswordEmailInvalid' | translate }}
             </div>
           </div>
 
@@ -54,11 +55,11 @@ import { catchError, of } from 'rxjs';
 
           <button type="submit" class="btn btn-primary" [disabled]="forgotPasswordForm.invalid || loading">
             <span *ngIf="loading" class="spinner"></span>
-            {{ loading ? 'Wird gesendet…' : 'Reset-Link senden' }}
+            {{ loading ? ('auth.forgotPasswordSending' | translate) : ('auth.forgotPasswordSend' | translate) }}
           </button>
 
           <div class="back-link">
-            <a [routerLink]="['/login']">← Zurück zum Login</a>
+            <a [routerLink]="['/login']">{{ 'auth.backToLogin' | translate }}</a>
           </div>
         </form>
       </div>

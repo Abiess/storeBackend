@@ -173,6 +173,9 @@
                     "addToCart":  "In den Warenkorb",
                     "adding":  "Wird hinzugefügt...",
                     "addToWishlist":  "Zur Wunschliste",
+                     "removeFromWishlist":  "Aus Wunschliste entfernen",
+                     "wishlistAdded":  "❤️ Zur Wunschliste hinzugefügt",
+                     "wishlistRemoved":  "💔 Aus der Wunschliste entfernt",
                     "outOfStock":  "Nicht verfügbar",
                     "inStock":  "Auf Lager",
                     "lowStock":  "Nur noch {{count}} verfügbar",
@@ -725,6 +728,7 @@
                                          "commerce":  "Commerce",
                                          "customerService":  "Kundenservice",
                                          "storeSetup":  "Store Setup",
+                                         "team":  "Team & Rollen",
                                          "account":  "Account",
                                          "platform":  "Plattform-Admin"
                                      },
@@ -742,6 +746,7 @@
                                        "myAccount":  "Mein Account",
                                        "subscription":  "Abonnement",
                                        "roles":  "Rollen",
+                                       "teamRoles":  "Team & Rollen",
                                        "platformDelivery":  "🚚 Lieferoptionen"
                                    },
                          "noStore":  {
@@ -848,7 +853,43 @@
                  "resendSuccess":  "✓ Verifikations-E-Mail erneut gesendet.",
                  "resendFailed":  "Senden fehlgeschlagen. Bitte später erneut versuchen.",
                  "goToLogin":  "Zum Login",
-                 "emailAlreadyExists":  "Diese E-Mail ist bereits registriert."
+                                  "emailAlreadyExists":  "Diese E-Mail ist bereits registriert.",
+                 "backToLogin":  "← Zurück zum Login",
+                 "forgotPasswordTitle":  "Passwort vergessen?",
+                 "forgotPasswordSubtitle":  "Gib deine E-Mail-Adresse ein – wir schicken dir einen Reset-Link.",
+                 "forgotPasswordEmailLabel":  "E-Mail-Adresse",
+                 "forgotPasswordEmailPlaceholder":  "deine@email.de",
+                 "forgotPasswordEmailInvalid":  "Bitte gib eine gültige E-Mail-Adresse ein.",
+                 "forgotPasswordSend":  "Reset-Link senden",
+                 "forgotPasswordSending":  "Wird gesendet…",
+                 "forgotPasswordSuccessTitle":  "E-Mail gesendet!",
+                 "resetPasswordValidating":  "Link wird geprüft…",
+                 "resetPasswordValidatingHint":  "Bitte warte einen Moment.",
+                 "resetPasswordInvalidTitle":  "Link ungültig oder abgelaufen",
+                 "resetPasswordInvalidText":  "Dieser Reset-Link funktioniert nicht mehr. Bitte fordere einen neuen an.",
+                 "resetPasswordRequestNew":  "Neuen Link anfordern",
+                 "resetPasswordSuccessTitle":  "Passwort geändert!",
+                 "resetPasswordLoginNow":  "Jetzt anmelden",
+                 "resetPasswordTitle":  "Neues Passwort",
+                 "resetPasswordSubtitle":  "Wähle ein starkes Passwort für deinen Account.",
+                 "resetPasswordNewLabel":  "Neues Passwort",
+                 "resetPasswordNewPlaceholder":  "Mindestens 6 Zeichen",
+                 "resetPasswordMinLength":  "Mindestens 6 Zeichen erforderlich.",
+                 "resetPasswordConfirmLabel":  "Passwort bestätigen",
+                 "resetPasswordConfirmPlaceholder":  "Passwort wiederholen",
+                 "resetPasswordMismatch":  "Die Passwörter stimmen nicht überein.",
+                 "resetPasswordMatch":  "✅ Passwörter stimmen überein",
+                 "resetPasswordSave":  "Passwort ändern",
+                 "resetPasswordSaving":  "Wird gespeichert…",
+                 "strengthLabel":  "Passwortstärke:",
+                 "strengthWeak":  "Schwach",
+                 "strengthFair":  "Mäßig",
+                 "strengthGood":  "Gut",
+                 "strengthStrong":  "Stark",
+                 "reqMinChars":  "Mindestens 6 Zeichen",
+                 "reqMoreChars":  "10+ Zeichen (empfohlen)",
+                 "reqUpperLower":  "Groß- & Kleinbuchstaben",
+                 "reqNumberSpecial":  "Zahl oder Sonderzeichen"
              },
     "restaurant":  {
                        "reserve":  "Reservieren / Bestellen",
@@ -1825,4 +1866,5 @@
         }
     }
 }
+
 

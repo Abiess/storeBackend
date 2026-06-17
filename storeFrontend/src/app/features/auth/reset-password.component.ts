@@ -5,11 +5,12 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { catchError, of } from 'rxjs';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 @Component({
   selector: 'app-reset-password',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, TranslatePipe],
   template: `
     <div class="page">
 
@@ -41,31 +42,29 @@ import { catchError, of } from 'rxjs';
 
           <!-- ── Loading State ── -->
           <div *ngIf="validatingToken" class="state-box">
-            <div class="pulse-ring">
-              <div class="pulse-dot"></div>
-            </div>
-            <h2>Link wird geprüft…</h2>
-            <p>Bitte warte einen Moment.</p>
+            <div class="pulse-ring"><div class="pulse-dot"></div></div>
+            <h2>{{ 'auth.resetPasswordValidating' | translate }}</h2>
+            <p>{{ 'auth.resetPasswordValidatingHint' | translate }}</p>
           </div>
 
           <!-- ── Invalid Token ── -->
           <div *ngIf="!validatingToken && !tokenValid && !successMessage" class="state-box">
-            <div class="state-emoji">⛔</div>
-            <h2>Link ungültig oder abgelaufen</h2>
-            <p>Dieser Reset-Link funktioniert nicht mehr.<br>Bitte fordere einen neuen an.</p>
+            <div class="state-emoji error-icon">⛔</div>
+            <h2>{{ 'auth.resetPasswordInvalidTitle' | translate }}</h2>
+            <p class="state-text">{{ 'auth.resetPasswordInvalidText' | translate }}</p>
             <a [routerLink]="['/forgot-password']" class="btn btn-primary">
-              🔄 Neuen Link anfordern
+              🔄 {{ 'auth.resetPasswordRequestNew' | translate }}
             </a>
-            <a [routerLink]="['/login']" class="link-plain">← Zurück zum Login</a>
+            <a [routerLink]="['/login']" class="link-plain">{{ 'auth.backToLogin' | translate }}</a>
           </div>
 
           <!-- ── Success State ── -->
           <div *ngIf="successMessage" class="state-box success-box">
             <div class="state-emoji success-bounce">🎉</div>
-            <h2>Passwort geändert!</h2>
-            <p>{{ successMessage }}</p>
+            <h2>{{ 'auth.resetPasswordSuccessTitle' | translate }}</h2>
+            <p class="state-text">{{ successMessage }}</p>
             <a [routerLink]="['/login']" class="btn btn-primary">
-              🚀 Jetzt anmelden
+              🚀 {{ 'auth.resetPasswordLoginNow' | translate }}
             </a>
           </div>
 
@@ -73,29 +72,29 @@ import { catchError, of } from 'rxjs';
           <ng-container *ngIf="!validatingToken && tokenValid && !successMessage">
 
             <div class="form-head">
-              <h1>Neues Passwort</h1>
-              <p>Wähle ein starkes Passwort für deinen Account.</p>
+              <h1>{{ 'auth.resetPasswordTitle' | translate }}</h1>
+              <p>{{ 'auth.resetPasswordSubtitle' | translate }}</p>
             </div>
 
             <form [formGroup]="resetPasswordForm" (ngSubmit)="onSubmit()" novalidate>
 
               <!-- Passwort-Feld -->
               <div class="field" [class.field--error]="pw?.invalid && pw?.touched" [class.field--ok]="pw?.valid && pw?.value">
-                <label for="password">Neues Passwort</label>
+                <label for="password">{{ 'auth.resetPasswordNewLabel' | translate }}</label>
                 <div class="input-row">
                   <input
                     id="password"
                     [type]="showPassword ? 'text' : 'password'"
                     formControlName="password"
-                    placeholder="Mindestens 6 Zeichen"
+                    [placeholder]="'auth.resetPasswordNewPlaceholder' | translate"
                     autocomplete="new-password"
                   />
-                  <button type="button" class="eye" (click)="showPassword=!showPassword" [attr.aria-label]="showPassword ? 'Passwort verstecken' : 'Passwort anzeigen'">
+                  <button type="button" class="eye" (click)="showPassword=!showPassword">
                     <span>{{ showPassword ? '🙈' : '👁' }}</span>
                   </button>
                 </div>
                 <div class="field-err" *ngIf="pw?.invalid && pw?.touched">
-                  Mindestens 6 Zeichen erforderlich.
+                  {{ 'auth.resetPasswordMinLength' | translate }}
                 </div>
 
                 <!-- Stärke-Anzeige -->
@@ -106,46 +105,52 @@ import { catchError, of } from 'rxjs';
                     <div class="sb" [class.sb--active]="strengthScore >= 3" [style.background]="strengthScore >= 3 ? strengthColor : ''"></div>
                     <div class="sb" [class.sb--active]="strengthScore >= 4" [style.background]="strengthScore >= 4 ? strengthColor : ''"></div>
                   </div>
-                  <span class="strength-txt" [style.color]="strengthColor">{{ strengthLabel }}</span>
+                  <span class="strength-txt" [style.color]="strengthColor">
+                    {{ 'auth.strengthLabel' | translate }} {{ strengthLabel | translate }}
+                  </span>
                 </div>
 
                 <!-- Anforderungs-Checkliste -->
                 <ul class="reqs" *ngIf="pw?.value">
                   <li [class.req--ok]="pw!.value?.length >= 6">
-                    <span class="req-icon">{{ pw!.value?.length >= 6 ? '✅' : '⬜' }}</span> Mindestens 6 Zeichen
+                    <span class="req-icon">{{ pw!.value?.length >= 6 ? '✅' : '⬜' }}</span>
+                    {{ 'auth.reqMinChars' | translate }}
                   </li>
                   <li [class.req--ok]="pw!.value?.length >= 10">
-                    <span class="req-icon">{{ pw!.value?.length >= 10 ? '✅' : '⬜' }}</span> 10+ Zeichen (empfohlen)
+                    <span class="req-icon">{{ pw!.value?.length >= 10 ? '✅' : '⬜' }}</span>
+                    {{ 'auth.reqMoreChars' | translate }}
                   </li>
                   <li [class.req--ok]="hasUpperAndLower">
-                    <span class="req-icon">{{ hasUpperAndLower ? '✅' : '⬜' }}</span> Groß- &amp; Kleinbuchstaben
+                    <span class="req-icon">{{ hasUpperAndLower ? '✅' : '⬜' }}</span>
+                    {{ 'auth.reqUpperLower' | translate }}
                   </li>
                   <li [class.req--ok]="hasNumber">
-                    <span class="req-icon">{{ hasNumber ? '✅' : '⬜' }}</span> Zahl oder Sonderzeichen
+                    <span class="req-icon">{{ hasNumber ? '✅' : '⬜' }}</span>
+                    {{ 'auth.reqNumberSpecial' | translate }}
                   </li>
                 </ul>
               </div>
 
               <!-- Bestätigung-Feld -->
               <div class="field" [class.field--error]="resetPasswordForm.hasError('passwordMismatch') && cpw?.touched" [class.field--ok]="!resetPasswordForm.hasError('passwordMismatch') && cpw?.value">
-                <label for="confirmPassword">Passwort bestätigen</label>
+                <label for="confirmPassword">{{ 'auth.resetPasswordConfirmLabel' | translate }}</label>
                 <div class="input-row">
                   <input
                     id="confirmPassword"
                     [type]="showConfirm ? 'text' : 'password'"
                     formControlName="confirmPassword"
-                    placeholder="Passwort wiederholen"
+                    [placeholder]="'auth.resetPasswordConfirmPlaceholder' | translate"
                     autocomplete="new-password"
                   />
-                  <button type="button" class="eye" (click)="showConfirm=!showConfirm" [attr.aria-label]="showConfirm ? 'Passwort verstecken' : 'Passwort anzeigen'">
+                  <button type="button" class="eye" (click)="showConfirm=!showConfirm">
                     <span>{{ showConfirm ? '🙈' : '👁' }}</span>
                   </button>
                 </div>
                 <div class="field-err" *ngIf="resetPasswordForm.hasError('passwordMismatch') && cpw?.touched">
-                  Passwörter stimmen nicht überein.
+                  {{ 'auth.resetPasswordMismatch' | translate }}
                 </div>
                 <div class="field-ok" *ngIf="!resetPasswordForm.hasError('passwordMismatch') && cpw?.value">
-                  ✅ Passwörter stimmen überein
+                  {{ 'auth.resetPasswordMatch' | translate }}
                 </div>
               </div>
 
@@ -158,12 +163,12 @@ import { catchError, of } from 'rxjs';
               <!-- Submit -->
               <button type="submit" class="btn btn-primary btn-submit" [disabled]="resetPasswordForm.invalid || loading">
                 <span *ngIf="loading" class="btn-spinner"></span>
-                <span>{{ loading ? 'Wird gespeichert…' : 'Passwort ändern' }}</span>
+                <span>{{ loading ? ('auth.resetPasswordSaving' | translate) : ('auth.resetPasswordSave' | translate) }}</span>
               </button>
 
             </form>
 
-            <a [routerLink]="['/login']" class="link-plain">← Zurück zum Login</a>
+            <a [routerLink]="['/login']" class="link-plain">{{ 'auth.backToLogin' | translate }}</a>
           </ng-container>
 
         </div>

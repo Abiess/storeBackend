@@ -146,6 +146,20 @@ public class MinioService {
     }
 
     /**
+     * Permanente, nicht ablaufende öffentliche URL.
+     * Nur für Logo/Brand-Assets verwenden – der Bucket muss public-read sein.
+     * Format: {publicEndpoint}/{bucket}/{objectName}
+     */
+    public String getPublicUrl(String objectName) {
+        if (objectName == null || objectName.isBlank()) return "";
+        String base = (minioProperties.getPublicEndpoint() != null && !minioProperties.getPublicEndpoint().isBlank())
+            ? minioProperties.getPublicEndpoint()
+            : minioProperties.getEndpoint();
+        if (base.endsWith("/")) base = base.substring(0, base.length() - 1);
+        return base + "/" + minioProperties.getBucket() + "/" + objectName;
+    }
+
+    /**
      * Get file as InputStream
      */
     public InputStream getFile(String objectName) {

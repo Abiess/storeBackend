@@ -81,11 +81,11 @@ public class MediaService {
 
         // ✅ WICHTIG: Wenn LOGO oder STORE_LOGO hochgeladen wird, aktualisiere store.logoUrl
         if (mediaType == MediaType.LOGO || mediaType == MediaType.STORE_LOGO) {
-            // Generate presigned URL (Max 7 Tage = 10080 Minuten)
-            String logoUrl = minioService.getPresignedUrl(minioObjectName, 10080); // 7 Tage gültig
+            // Permanente öffentliche URL – kein Ablaufdatum (Bucket ist public-read)
+            String logoUrl = minioService.getPublicUrl(minioObjectName);
             store.setLogoUrl(logoUrl);
             storeRepository.save(store);
-            log.info("✅ Store logo updated for store {}: {}", store.getId(), logoUrl);
+            log.info("✅ Store logo updated (permanent URL) for store {}: {}", store.getId(), logoUrl);
         }
 
         // Update usage

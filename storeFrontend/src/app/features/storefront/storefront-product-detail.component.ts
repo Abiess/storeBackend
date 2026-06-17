@@ -8,6 +8,8 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { ProductVariantPickerComponent } from './product-variant-picker.component';
 import { WhatsappConfigService } from '@app/core/services/whatsapp-config.service';
 import { WhatsappTrackingService } from '@app/core/services/whatsapp-tracking.service';
+import { WishlistService } from '@app/core/services/wishlist.service';
+import { AuthService } from '@app/core/services/auth.service';
 import { SubdomainService } from '@app/core/services/subdomain.service';
 import { PublicApiService } from '@app/core/services/public-api.service';
 import { Subscription } from 'rxjs';
@@ -151,9 +153,19 @@ interface Product {
               <span *ngIf="adding">{{ 'product.adding' | translate }}</span>
             </button>
             
-            <button class="btn-wishlist" [title]="'product.addToWishlist' | translate">
-              ❤️
+            <button class="btn-wishlist"
+              [class.active]="isInWishlist"
+              [disabled]="wishlistLoading"
+              [title]="(isInWishlist ? 'product.removeFromWishlist' : 'product.addToWishlist') | translate"
+              (click)="toggleWishlist()">
+              <span *ngIf="!wishlistLoading" class="wl-icon">{{ isInWishlist ? '❤️' : '🤍' }}</span>
+              <span *ngIf="wishlistLoading" class="wl-spinner"></span>
             </button>
+          </div>
+
+          <!-- Wishlist Feedback Toast -->
+          <div class="wl-toast" *ngIf="wishlistToast" [class.wl-toast--remove]="wishlistToastRemove">
+            {{ wishlistToast | translate }}
           </div>
 
           <!-- ✅ STEP 5: Warn-Message wenn Button disabled -->
@@ -643,16 +655,54 @@ interface Product {
       width: 56px;
       height: 56px;
       background: white;
-      border: 2px solid #dee2e6;
+      border: 2px solid #e0daf5;
       border-radius: 12px;
       font-size: 1.5rem;
       cursor: pointer;
-      transition: all 0.3s;
+      transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
     }
-
-    .btn-wishlist:hover {
+    .btn-wishlist:hover:not(:disabled) {
       border-color: #e83e8c;
+      background: #fff0f7;
       transform: scale(1.1);
+    }
+    .btn-wishlist.active {
+      border-color: #e83e8c;
+      background: #fff0f7;
+      box-shadow: 0 0 0 3px rgba(232,62,140,0.15);
+    }
+    .btn-wishlist:disabled { opacity: 0.7; cursor: wait; }
+    .wl-icon { line-height: 1; display: block; }
+    .wl-spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(232,62,140,0.3);
+      border-top-color: #e83e8c;
+      border-radius: 50%;
+      animation: wlSpin 0.7s linear infinite;
+    }
+    @keyframes wlSpin { to { transform: rotate(360deg); } }
+    .wl-toast {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: #e83e8c;
+      background: #fff0f7;
+      border: 1px solid #f9c6df;
+      border-radius: 8px;
+      padding: 6px 12px;
+      margin-top: 8px;
+      animation: toastIn 0.3s ease;
+    }
+    .wl-toast--remove { color: #666; background: #f8f9fa; border-color: #dee2e6; }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
     /* ✅ STEP 5: Warning Message */
@@ -872,11 +922,20 @@ export class StorefrontProductDetailComponent implements OnInit, OnDestroy {
   showSuccess = false;
   hoveredImageVariant: any = null;
 
+  // ── Wishlist ──
+  isInWishlist = false;
+  wishlistLoading = false;
+  wishlistId: number | null = null;
+  wishlistItemId: number | null = null;
+  wishlistToast = '';
+  wishlistToastRemove = false;
+  private wishlistToastTimer: any;
+
   /** WhatsApp-Nummer aus Service (null = CTA versteckt) */
   whatsappNumber: string | null = null;
   private waSub?: Subscription;
 
-  /** Gecachtes Galerie-Array – wird nur neu gebaut wenn nötig (nicht bei jedem Change-Detection-Zyklus) */
+  /** Gecachtes Galerie-Array */
   galleryImages: { url: string; alt: string }[] = [];
 
   storeId!: number;
@@ -890,7 +949,9 @@ export class StorefrontProductDetailComponent implements OnInit, OnDestroy {
     private whatsappConfig: WhatsappConfigService,
     private whatsappTracking: WhatsappTrackingService,
     private subdomainService: SubdomainService,
-    private publicApiService: PublicApiService
+    private publicApiService: PublicApiService,
+    private wishlistService: WishlistService,
+    private authService: AuthService
   ) {}
 
   ngOnInit() {
@@ -926,6 +987,11 @@ export class StorefrontProductDetailComponent implements OnInit, OnDestroy {
     });
   }
 
+  ngOnDestroy(): void {
+    this.waSub?.unsubscribe();
+    clearTimeout(this.wishlistToastTimer);
+  }
+
   /** Setzt das Produktlade-Verhalten sobald die storeId bekannt ist. */
   private _initAfterStoreId(): void {
     if (!this.storeId || !this.productId) {
@@ -956,9 +1022,6 @@ export class StorefrontProductDetailComponent implements OnInit, OnDestroy {
     });
   }
 
-  ngOnDestroy(): void {
-    this.waSub?.unsubscribe();
-  }
 
   /**
    * Tracking-Call für den Sticky CTA.
@@ -1047,6 +1110,11 @@ export class StorefrontProductDetailComponent implements OnInit, OnDestroy {
 
         // Lade Varianten für das Produkt
         this.loadProductVariants();
+
+        // Wishlist-Status prüfen (nur wenn eingeloggt)
+        if (this.authService.isLoggedIn()) {
+          this.loadWishlistStatus();
+        }
 
         // Track view
         this.productService.trackProductView(this.storeId, this.productId).subscribe();
@@ -1419,6 +1487,75 @@ export class StorefrontProductDetailComponent implements OnInit, OnDestroy {
       }
     }
   }
+
+  // ═══════════════════════════════════════
+  // WISHLIST
+  // ═══════════════════════════════════════
+
+  loadWishlistStatus(): void {
+    if (!this.storeId) return;
+    this.wishlistService.getDefaultWishlist(this.storeId).subscribe({
+      next: (wishlist) => {
+        this.wishlistId = wishlist.id;
+        const existing = wishlist.items?.find((item: any) => item.productId === this.productId);
+        this.isInWishlist = !!existing;
+        this.wishlistItemId = existing?.id ?? null;
+      },
+      error: () => {}
+    });
+  }
+
+  toggleWishlist(): void {
+    if (!this.authService.isLoggedIn()) {
+      this.router.navigate(['/login'], { queryParams: { returnUrl: this.router.url } });
+      return;
+    }
+    if (this.wishlistLoading) return;
+    this.wishlistLoading = true;
+
+    if (this.isInWishlist && this.wishlistId && this.wishlistItemId) {
+      this.wishlistService.removeFromWishlist(this.wishlistId, this.wishlistItemId).subscribe({
+        next: () => {
+          this.isInWishlist = false;
+          this.wishlistItemId = null;
+          this.wishlistLoading = false;
+          this.wishlistToast = 'product.wishlistRemoved';
+          this.wishlistToastRemove = true;
+          this._scheduleToastClear();
+        },
+        error: () => { this.wishlistLoading = false; }
+      });
+    } else {
+      const doAdd = (wlId: number) => {
+        this.wishlistService.addToWishlist(wlId, this.productId, this.selectedVariant?.id).subscribe({
+          next: (item: any) => {
+            this.isInWishlist = true;
+            this.wishlistId = wlId;
+            this.wishlistItemId = item.id;
+            this.wishlistLoading = false;
+            this.wishlistToast = 'product.wishlistAdded';
+            this.wishlistToastRemove = false;
+            this._scheduleToastClear();
+          },
+          error: () => { this.wishlistLoading = false; }
+        });
+      };
+      if (this.wishlistId) {
+        doAdd(this.wishlistId);
+      } else {
+        this.wishlistService.getDefaultWishlist(this.storeId).subscribe({
+          next: (wl) => { this.wishlistId = wl.id; doAdd(wl.id); },
+          error: () => { this.wishlistLoading = false; }
+        });
+      }
+    }
+  }
+
+  private _scheduleToastClear(): void {
+    clearTimeout(this.wishlistToastTimer);
+    this.wishlistToastTimer = setTimeout(() => { this.wishlistToast = ''; }, 3000);
+  }
 }
+
 
 
