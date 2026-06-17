@@ -11,127 +11,547 @@ import { catchError, of } from 'rxjs';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterModule],
   template: `
-    <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div class="max-w-md w-full space-y-8">
-        <!-- Loading State -->
-        <div *ngIf="validatingToken" class="text-center">
-          <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-indigo-600 mx-auto"></div>
-          <h2 class="mt-6 text-2xl font-bold text-gray-900">
-            Validiere Token...
-          </h2>
-        </div>
+    <div class="page">
 
-        <!-- Invalid Token State -->
-        <div *ngIf="!validatingToken && !tokenValid && !successMessage" class="text-center">
-          <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100">
-            <svg class="h-10 w-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-            </svg>
+      <!-- ═══ LINKE BRAND-SEITE (nur Desktop) ═══ -->
+      <div class="brand-panel" aria-hidden="true">
+        <div class="brand-inner">
+          <div class="brand-logo">🛍️ markt.ma</div>
+          <div class="brand-illustration">🔐</div>
+          <h2 class="brand-title">Sicher &amp; einfach</h2>
+          <p class="brand-sub">Dein neues Passwort wird verschlüsselt gespeichert.</p>
+          <div class="brand-features">
+            <div class="brand-feature">✅ Ende-zu-Ende verschlüsselt</div>
+            <div class="brand-feature">✅ Token gilt nur 1 Stunde</div>
+            <div class="brand-feature">✅ Automatisch ungültig nach Nutzung</div>
           </div>
-          <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
-            Ungültiger oder abgelaufener Link
-          </h2>
-          <p class="mt-2 text-sm text-gray-600">
-            Der Link zum Zurücksetzen des Passworts ist ungültig oder abgelaufen.
-          </p>
-          <div class="mt-6">
-            <a [routerLink]="['/forgot-password']" 
-               class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-              Neuen Link anfordern
+        </div>
+      </div>
+
+      <!-- ═══ RECHTE FORM-SEITE ═══ -->
+      <div class="form-panel">
+        <div class="form-inner">
+
+          <!-- Mobile Logo -->
+          <div class="mobile-logo">🛍️ markt.ma</div>
+
+          <!-- ── Loading State ── -->
+          <div *ngIf="validatingToken" class="state-box">
+            <div class="pulse-ring">
+              <div class="pulse-dot"></div>
+            </div>
+            <h2>Link wird geprüft…</h2>
+            <p>Bitte warte einen Moment.</p>
+          </div>
+
+          <!-- ── Invalid Token ── -->
+          <div *ngIf="!validatingToken && !tokenValid && !successMessage" class="state-box">
+            <div class="state-emoji">⛔</div>
+            <h2>Link ungültig oder abgelaufen</h2>
+            <p>Dieser Reset-Link funktioniert nicht mehr.<br>Bitte fordere einen neuen an.</p>
+            <a [routerLink]="['/forgot-password']" class="btn btn-primary">
+              🔄 Neuen Link anfordern
+            </a>
+            <a [routerLink]="['/login']" class="link-plain">← Zurück zum Login</a>
+          </div>
+
+          <!-- ── Success State ── -->
+          <div *ngIf="successMessage" class="state-box success-box">
+            <div class="state-emoji success-bounce">🎉</div>
+            <h2>Passwort geändert!</h2>
+            <p>{{ successMessage }}</p>
+            <a [routerLink]="['/login']" class="btn btn-primary">
+              🚀 Jetzt anmelden
             </a>
           </div>
-        </div>
 
-        <!-- Success State -->
-        <div *ngIf="successMessage" class="text-center">
-          <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100">
-            <svg class="h-10 w-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-            </svg>
-          </div>
-          <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
-            Passwort erfolgreich geändert!
-          </h2>
-          <p class="mt-2 text-sm text-gray-600">
-            {{ successMessage }}
-          </p>
-          <div class="mt-6">
-            <a [routerLink]="['/login']" 
-               class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-              Zum Login
-            </a>
-          </div>
-        </div>
+          <!-- ── Form ── -->
+          <ng-container *ngIf="!validatingToken && tokenValid && !successMessage">
 
-        <!-- Reset Password Form -->
-        <div *ngIf="!validatingToken && tokenValid && !successMessage">
-          <div>
-            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-              Neues Passwort festlegen
-            </h2>
-            <p class="mt-2 text-center text-sm text-gray-600">
-              Geben Sie Ihr neues Passwort ein.
-            </p>
-          </div>
-
-          <form [formGroup]="resetPasswordForm" (ngSubmit)="onSubmit()" class="mt-8 space-y-6">
-            <div class="rounded-md shadow-sm space-y-4">
-              <div>
-                <label for="password" class="block text-sm font-medium text-gray-700">Neues Passwort</label>
-                <input
-                  id="password"
-                  type="password"
-                  formControlName="password"
-                  required
-                  class="mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  placeholder="Mindestens 6 Zeichen"
-                />
-                <div *ngIf="resetPasswordForm.get('password')?.invalid && resetPasswordForm.get('password')?.touched" class="text-red-600 text-sm mt-1">
-                  Passwort muss mindestens 6 Zeichen lang sein
-                </div>
-              </div>
-
-              <div>
-                <label for="confirmPassword" class="block text-sm font-medium text-gray-700">Passwort bestätigen</label>
-                <input
-                  id="confirmPassword"
-                  type="password"
-                  formControlName="confirmPassword"
-                  required
-                  class="mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  placeholder="Passwort wiederholen"
-                />
-                <div *ngIf="resetPasswordForm.hasError('passwordMismatch') && resetPasswordForm.get('confirmPassword')?.touched" class="text-red-600 text-sm mt-1">
-                  Passwörter stimmen nicht überein
-                </div>
-              </div>
+            <div class="form-head">
+              <h1>Neues Passwort</h1>
+              <p>Wähle ein starkes Passwort für deinen Account.</p>
             </div>
 
-            <div *ngIf="errorMessage" class="rounded-md bg-red-50 p-4">
-              <div class="flex">
-                <div class="ml-3">
-                  <h3 class="text-sm font-medium text-red-800">
-                    {{ errorMessage }}
-                  </h3>
+            <form [formGroup]="resetPasswordForm" (ngSubmit)="onSubmit()" novalidate>
+
+              <!-- Passwort-Feld -->
+              <div class="field" [class.field--error]="pw?.invalid && pw?.touched" [class.field--ok]="pw?.valid && pw?.value">
+                <label for="password">Neues Passwort</label>
+                <div class="input-row">
+                  <input
+                    id="password"
+                    [type]="showPassword ? 'text' : 'password'"
+                    formControlName="password"
+                    placeholder="Mindestens 6 Zeichen"
+                    autocomplete="new-password"
+                  />
+                  <button type="button" class="eye" (click)="showPassword=!showPassword" [attr.aria-label]="showPassword ? 'Passwort verstecken' : 'Passwort anzeigen'">
+                    <span>{{ showPassword ? '🙈' : '👁' }}</span>
+                  </button>
+                </div>
+                <div class="field-err" *ngIf="pw?.invalid && pw?.touched">
+                  Mindestens 6 Zeichen erforderlich.
+                </div>
+
+                <!-- Stärke-Anzeige -->
+                <div class="strength-wrap" *ngIf="pw?.value">
+                  <div class="strength-bars">
+                    <div class="sb" [class.sb--active]="strengthScore >= 1" [style.background]="strengthScore >= 1 ? strengthColor : ''"></div>
+                    <div class="sb" [class.sb--active]="strengthScore >= 2" [style.background]="strengthScore >= 2 ? strengthColor : ''"></div>
+                    <div class="sb" [class.sb--active]="strengthScore >= 3" [style.background]="strengthScore >= 3 ? strengthColor : ''"></div>
+                    <div class="sb" [class.sb--active]="strengthScore >= 4" [style.background]="strengthScore >= 4 ? strengthColor : ''"></div>
+                  </div>
+                  <span class="strength-txt" [style.color]="strengthColor">{{ strengthLabel }}</span>
+                </div>
+
+                <!-- Anforderungs-Checkliste -->
+                <ul class="reqs" *ngIf="pw?.value">
+                  <li [class.req--ok]="pw!.value?.length >= 6">
+                    <span class="req-icon">{{ pw!.value?.length >= 6 ? '✅' : '⬜' }}</span> Mindestens 6 Zeichen
+                  </li>
+                  <li [class.req--ok]="pw!.value?.length >= 10">
+                    <span class="req-icon">{{ pw!.value?.length >= 10 ? '✅' : '⬜' }}</span> 10+ Zeichen (empfohlen)
+                  </li>
+                  <li [class.req--ok]="hasUpperAndLower">
+                    <span class="req-icon">{{ hasUpperAndLower ? '✅' : '⬜' }}</span> Groß- &amp; Kleinbuchstaben
+                  </li>
+                  <li [class.req--ok]="hasNumber">
+                    <span class="req-icon">{{ hasNumber ? '✅' : '⬜' }}</span> Zahl oder Sonderzeichen
+                  </li>
+                </ul>
+              </div>
+
+              <!-- Bestätigung-Feld -->
+              <div class="field" [class.field--error]="resetPasswordForm.hasError('passwordMismatch') && cpw?.touched" [class.field--ok]="!resetPasswordForm.hasError('passwordMismatch') && cpw?.value">
+                <label for="confirmPassword">Passwort bestätigen</label>
+                <div class="input-row">
+                  <input
+                    id="confirmPassword"
+                    [type]="showConfirm ? 'text' : 'password'"
+                    formControlName="confirmPassword"
+                    placeholder="Passwort wiederholen"
+                    autocomplete="new-password"
+                  />
+                  <button type="button" class="eye" (click)="showConfirm=!showConfirm" [attr.aria-label]="showConfirm ? 'Passwort verstecken' : 'Passwort anzeigen'">
+                    <span>{{ showConfirm ? '🙈' : '👁' }}</span>
+                  </button>
+                </div>
+                <div class="field-err" *ngIf="resetPasswordForm.hasError('passwordMismatch') && cpw?.touched">
+                  Passwörter stimmen nicht überein.
+                </div>
+                <div class="field-ok" *ngIf="!resetPasswordForm.hasError('passwordMismatch') && cpw?.value">
+                  ✅ Passwörter stimmen überein
                 </div>
               </div>
-            </div>
 
-            <div>
-              <button
-                type="submit"
-                [disabled]="resetPasswordForm.invalid || loading"
-                class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {{ loading ? 'Wird gespeichert...' : 'Passwort ändern' }}
+              <!-- API-Fehler -->
+              <div *ngIf="errorMessage" class="alert-error" role="alert">
+                <span class="alert-icon">⚠️</span>
+                <span>{{ errorMessage }}</span>
+              </div>
+
+              <!-- Submit -->
+              <button type="submit" class="btn btn-primary btn-submit" [disabled]="resetPasswordForm.invalid || loading">
+                <span *ngIf="loading" class="btn-spinner"></span>
+                <span>{{ loading ? 'Wird gespeichert…' : 'Passwort ändern' }}</span>
               </button>
-            </div>
-          </form>
+
+            </form>
+
+            <a [routerLink]="['/login']" class="link-plain">← Zurück zum Login</a>
+          </ng-container>
+
         </div>
       </div>
     </div>
   `,
-  styles: []
+  styles: [`
+    /* ══════════════════════════════════════
+       PAGE LAYOUT – Split Panel
+    ══════════════════════════════════════ */
+    .page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: row;
+    }
+
+    /* ── Brand Panel (links, Desktop only) ── */
+    .brand-panel {
+      display: none; /* hidden on mobile */
+      width: 420px;
+      flex-shrink: 0;
+      background: linear-gradient(160deg, #667eea 0%, #764ba2 100%);
+      position: relative;
+      overflow: hidden;
+    }
+    .brand-panel::before {
+      content: '';
+      position: absolute;
+      top: -80px; right: -80px;
+      width: 300px; height: 300px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 50%;
+    }
+    .brand-panel::after {
+      content: '';
+      position: absolute;
+      bottom: -60px; left: -60px;
+      width: 250px; height: 250px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 50%;
+    }
+    .brand-inner {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      padding: 48px 36px;
+      text-align: center;
+    }
+    .brand-logo {
+      font-size: 20px;
+      font-weight: 800;
+      color: rgba(255,255,255,0.95);
+      letter-spacing: -0.5px;
+      margin-bottom: 48px;
+    }
+    .brand-illustration {
+      font-size: 80px;
+      margin-bottom: 28px;
+      filter: drop-shadow(0 8px 24px rgba(0,0,0,0.2));
+    }
+    .brand-title {
+      font-size: 26px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 12px;
+    }
+    .brand-sub {
+      font-size: 14px;
+      color: rgba(255,255,255,0.75);
+      line-height: 1.6;
+      margin-bottom: 36px;
+    }
+    .brand-features { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+    .brand-feature {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.9);
+      text-align: left;
+      backdrop-filter: blur(8px);
+    }
+
+    /* ── Form Panel (rechts / alles auf Mobile) ── */
+    .form-panel {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f5f4ff;
+      padding: 24px 16px;
+      min-height: 100vh;
+    }
+    .form-inner {
+      width: 100%;
+      max-width: 460px;
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 36px 32px;
+      box-shadow: 0 8px 40px rgba(102,126,234,0.12);
+    }
+
+    /* Mobile Logo */
+    .mobile-logo {
+      display: block;
+      font-size: 18px;
+      font-weight: 800;
+      color: #764ba2;
+      text-align: center;
+      margin-bottom: 28px;
+      letter-spacing: -0.3px;
+    }
+
+    /* ══════════════════════════════════════
+       STATE BOXES
+    ══════════════════════════════════════ */
+    .state-box {
+      text-align: center;
+      padding: 8px 0 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+    .state-emoji {
+      font-size: 56px;
+      margin-bottom: 16px;
+      line-height: 1;
+    }
+    .success-bounce { animation: bounce 0.6s cubic-bezier(0.34,1.56,0.64,1); }
+    @keyframes bounce {
+      0%   { transform: scale(0.3); opacity: 0; }
+      60%  { transform: scale(1.15); opacity: 1; }
+      100% { transform: scale(1); }
+    }
+    .state-box h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 10px;
+    }
+    .state-box p {
+      font-size: 14px;
+      color: #666;
+      line-height: 1.65;
+      margin-bottom: 28px;
+    }
+    .success-box { padding-top: 16px; }
+
+    /* Pulse loader */
+    .pulse-ring {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: rgba(102,126,234,0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      animation: pulseRing 1.4s ease-in-out infinite;
+    }
+    .pulse-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      animation: pulseDot 1.4s ease-in-out infinite;
+    }
+    @keyframes pulseRing {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.15); opacity: 0.7; }
+    }
+    @keyframes pulseDot {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(0.85); }
+    }
+
+    /* ══════════════════════════════════════
+       FORM HEAD
+    ══════════════════════════════════════ */
+    .form-head {
+      text-align: center;
+      margin-bottom: 28px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid #f0ecff;
+    }
+    .form-head h1 {
+      font-size: 24px;
+      font-weight: 800;
+      color: #1a1a2e;
+      margin-bottom: 6px;
+      letter-spacing: -0.3px;
+    }
+    .form-head p { font-size: 14px; color: #777; }
+
+    /* ══════════════════════════════════════
+       FIELDS
+    ══════════════════════════════════════ */
+    .field { margin-bottom: 22px; }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 7px;
+    }
+
+    .input-row {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    input {
+      width: 100%;
+      padding: 13px 46px 13px 15px;
+      border: 1.5px solid #e0daf5;
+      border-radius: 10px;
+      font-size: 15px;
+      color: #1a1a2e;
+      background: #faf9ff;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+      outline: none;
+      box-sizing: border-box;
+      -webkit-appearance: none;
+    }
+    input:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 4px rgba(102,126,234,0.12);
+      background: #fff;
+    }
+    .field--error input { border-color: #fc8181; box-shadow: 0 0 0 4px rgba(252,129,129,0.1); }
+    .field--ok   input { border-color: #68d391; box-shadow: 0 0 0 4px rgba(104,211,145,0.1); }
+
+    .eye {
+      position: absolute;
+      right: 12px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      transition: background 0.15s;
+      font-size: 17px;
+      line-height: 1;
+      color: #9ca3af;
+    }
+    .eye:hover { background: rgba(102,126,234,0.08); }
+
+    .field-err { font-size: 12px; color: #e53e3e; margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+    .field-ok  { font-size: 12px; color: #38a169; margin-top: 6px; font-weight: 500; }
+
+    /* ── Stärke ── */
+    .strength-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .strength-bars { display: flex; gap: 5px; flex: 1; }
+    .sb {
+      flex: 1;
+      height: 5px;
+      border-radius: 3px;
+      background: #e5e7eb;
+      transition: background 0.3s;
+    }
+    .sb--active { /* background set via [style] */ }
+    .strength-txt { font-size: 12px; font-weight: 600; white-space: nowrap; }
+
+    /* ── Anforderungs-Liste ── */
+    .reqs {
+      list-style: none;
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 12px;
+    }
+    .reqs li {
+      font-size: 12px;
+      color: #9ca3af;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: color 0.2s;
+    }
+    .reqs li.req--ok { color: #38a169; }
+    .req-icon { font-size: 13px; line-height: 1; }
+
+    /* ══════════════════════════════════════
+       ALERT
+    ══════════════════════════════════════ */
+    .alert-error {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 13px 16px;
+      background: #fff5f5;
+      border: 1px solid #fed7d7;
+      border-radius: 10px;
+      color: #c53030;
+      font-size: 13px;
+      margin-bottom: 18px;
+      line-height: 1.5;
+    }
+    .alert-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ══════════════════════════════════════
+       BUTTONS
+    ══════════════════════════════════════ */
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 14px 20px;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+      letter-spacing: 0.1px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(102,126,234,0.35);
+    }
+    .btn-submit { margin-top: 6px; }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; box-shadow: none; }
+    .btn:not(:disabled):hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102,126,234,0.4); }
+    .btn:not(:disabled):active { transform: translateY(0); }
+
+    .btn-spinner {
+      width: 17px;
+      height: 17px;
+      border: 2.5px solid rgba(255,255,255,0.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .link-plain {
+      display: block;
+      text-align: center;
+      margin-top: 18px;
+      font-size: 13px;
+      color: #7c6fcd;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .link-plain:hover { text-decoration: underline; color: #5a4fcf; }
+
+    /* ══════════════════════════════════════
+       RESPONSIVE – Desktop: Brand Panel zeigen
+    ══════════════════════════════════════ */
+    @media (min-width: 860px) {
+      .brand-panel { display: flex; }
+      .form-panel {
+        background: #f5f4ff;
+        padding: 32px 48px;
+      }
+      .form-inner {
+        padding: 44px 40px;
+        border-radius: 24px;
+      }
+      .mobile-logo { display: none; }
+    }
+
+    /* ── Small Mobile ── */
+    @media (max-width: 480px) {
+      .form-panel { padding: 16px 12px; align-items: flex-start; padding-top: 24px; }
+      .form-inner { padding: 28px 20px; border-radius: 16px; }
+      .form-head h1 { font-size: 20px; }
+      .reqs { grid-template-columns: 1fr; }
+      input { font-size: 16px; /* verhindert iOS-Zoom */ }
+    }
+  `]
 })
 export class ResetPasswordComponent implements OnInit {
   resetPasswordForm: FormGroup;
@@ -141,6 +561,8 @@ export class ResetPasswordComponent implements OnInit {
   errorMessage = '';
   successMessage = '';
   token: string | null = null;
+  showPassword = false;
+  showConfirm = false;
 
   constructor(
     private fb: FormBuilder,
@@ -156,41 +578,58 @@ export class ResetPasswordComponent implements OnInit {
 
   ngOnInit() {
     this.token = this.route.snapshot.queryParamMap.get('token');
-
     if (!this.token) {
       this.validatingToken = false;
       this.tokenValid = false;
-      this.errorMessage = 'Kein Token vorhanden';
       return;
     }
-
     this.validateToken(this.token);
   }
 
+  // Shortcuts für Template
+  get pw()  { return this.resetPasswordForm.get('password'); }
+  get cpw() { return this.resetPasswordForm.get('confirmPassword'); }
+
+  get hasUpperAndLower(): boolean {
+    const v = this.pw?.value || '';
+    return /[A-Z]/.test(v) && /[a-z]/.test(v);
+  }
+  get hasNumber(): boolean {
+    return /[0-9!@#$%^&*_\-+=]/.test(this.pw?.value || '');
+  }
+
+  get strengthScore(): number {
+    const v: string = this.pw?.value || '';
+    let s = 0;
+    if (v.length >= 6)  s++;
+    if (v.length >= 10) s++;
+    if (this.hasUpperAndLower) s++;
+    if (this.hasNumber) s++;
+    return s;
+  }
+  get strengthColor(): string {
+    const c = ['#fc8181','#f6ad55','#f6e05e','#68d391'];
+    return c[Math.max(0, this.strengthScore - 1)] ?? '#e5e7eb';
+  }
+  get strengthLabel(): string {
+    return ['Schwach','Mäßig','Gut','Stark'][Math.max(0, this.strengthScore - 1)] ?? '';
+  }
+
   passwordMatchValidator(group: FormGroup) {
-    const password = group.get('password')?.value;
-    const confirmPassword = group.get('confirmPassword')?.value;
-    return password === confirmPassword ? null : { passwordMismatch: true };
+    const pw = group.get('password')?.value;
+    const cpw = group.get('confirmPassword')?.value;
+    return pw === cpw ? null : { passwordMismatch: true };
   }
 
   private validateToken(token: string) {
     this.validatingToken = true;
-
-    this.http.get<{ valid: boolean, message: string }>(`${environment.apiUrl}/auth/reset-password/validate`, {
-      params: { token }
-    }).pipe(
-      catchError(error => {
-        return of({
-          valid: false,
-          message: error.error?.message || 'Token ist ungültig oder abgelaufen'
-        });
-      })
-    ).subscribe(response => {
+    this.http.get<{ valid: boolean; message: string }>(
+      `${environment.apiUrl}/auth/reset-password/validate`, { params: { token } }
+    ).pipe(
+      catchError(err => of({ valid: false, message: err.error?.message || 'Token ungültig oder abgelaufen' }))
+    ).subscribe(r => {
       this.validatingToken = false;
-      this.tokenValid = response.valid;
-      if (!response.valid) {
-        this.errorMessage = response.message;
-      }
+      this.tokenValid = r.valid;
     });
   }
 
@@ -198,31 +637,20 @@ export class ResetPasswordComponent implements OnInit {
     if (this.resetPasswordForm.valid && this.token) {
       this.loading = true;
       this.errorMessage = '';
-
-      const payload = {
+      this.http.post<{ message: string }>(`${environment.apiUrl}/auth/reset-password`, {
         token: this.token,
         newPassword: this.resetPasswordForm.value.password
-      };
-
-      this.http.post<{ message: string }>(`${environment.apiUrl}/auth/reset-password`, payload)
-        .pipe(
-          catchError(error => {
-            return of({
-              error: true,
-              message: error.error?.message || 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.'
-            });
-          })
-        )
-        .subscribe((response: any) => {
-          this.loading = false;
-          if (response.error) {
-            this.errorMessage = response.message;
-          } else {
-            this.successMessage = response.message || 'Ihr Passwort wurde erfolgreich geändert. Sie können sich jetzt anmelden.';
-            this.resetPasswordForm.reset();
-          }
-        });
+      }).pipe(
+        catchError(err => of({ error: true, message: err.error?.message || 'Fehler beim Speichern. Bitte erneut versuchen.' }))
+      ).subscribe((r: any) => {
+        this.loading = false;
+        if (r.error) {
+          this.errorMessage = r.message;
+        } else {
+          this.successMessage = r.message || 'Dein Passwort wurde erfolgreich geändert.';
+          this.resetPasswordForm.reset();
+        }
+      });
     }
   }
 }
-
