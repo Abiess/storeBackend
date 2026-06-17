@@ -39,6 +39,11 @@ import { TranslationService } from '../../core/services/translation.service';
 
     <div class="auth-container">
       <div class="auth-card">
+        <div class="logo-wrap">
+          <a routerLink="/login">
+            <img src="assets/images/logo.svg" alt="markt.ma Logo" class="auth-logo" />
+          </a>
+        </div>
         <h1>{{ 'auth.registerTitle' | translate }}</h1>
         <p class="subtitle">{{ 'auth.registerSubtitle' | translate }}</p>
         
@@ -121,11 +126,27 @@ import { TranslationService } from '../../core/services/translation.service';
 
     .auth-card {
       background: white;
-      padding: 40px;
+      padding: 32px 40px 40px;
       border-radius: 12px;
       box-shadow: 0 10px 40px rgba(0,0,0,0.1);
       width: 100%;
       max-width: 460px;
+    }
+
+    .logo-wrap {
+      text-align: center;
+      margin-bottom: 4px;
+    }
+    .logo-wrap a { display: inline-block; }
+    .auth-logo {
+      width: 100px;
+      height: 100px;
+      object-fit: contain;
+    }
+
+    @media (max-width: 480px) {
+      .auth-card { padding: 24px 18px 32px; }
+      .auth-logo { width: 84px; height: 84px; }
     }
 
     h1 {

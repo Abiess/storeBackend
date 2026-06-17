@@ -16,7 +16,7 @@ import { catchError, of } from 'rxjs';
       <!-- ═══ LINKE BRAND-SEITE (nur Desktop) ═══ -->
       <div class="brand-panel" aria-hidden="true">
         <div class="brand-inner">
-          <div class="brand-logo">🛍️ markt.ma</div>
+          <img src="assets/images/logo.svg" alt="markt.ma" class="brand-logo-img" />
           <div class="brand-illustration">🔐</div>
           <h2 class="brand-title">Sicher &amp; einfach</h2>
           <p class="brand-sub">Dein neues Passwort wird verschlüsselt gespeichert.</p>
@@ -33,7 +33,11 @@ import { catchError, of } from 'rxjs';
         <div class="form-inner">
 
           <!-- Mobile Logo -->
-          <div class="mobile-logo">🛍️ markt.ma</div>
+          <div class="mobile-logo">
+            <a routerLink="/login">
+              <img src="assets/images/logo.svg" alt="markt.ma" class="mobile-logo-img" />
+            </a>
+          </div>
 
           <!-- ── Loading State ── -->
           <div *ngIf="validatingToken" class="state-box">
@@ -212,12 +216,15 @@ import { catchError, of } from 'rxjs';
       padding: 48px 36px;
       text-align: center;
     }
-    .brand-logo {
-      font-size: 20px;
-      font-weight: 800;
-      color: rgba(255,255,255,0.95);
-      letter-spacing: -0.5px;
-      margin-bottom: 48px;
+    .brand-logo-img {
+      width: 150px;
+      height: 150px;
+      object-fit: contain;
+      margin-bottom: 24px;
+      background: #fff;
+      border-radius: 20px;
+      padding: 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
     }
     .brand-illustration {
       font-size: 80px;
@@ -269,13 +276,14 @@ import { catchError, of } from 'rxjs';
 
     /* Mobile Logo */
     .mobile-logo {
-      display: block;
-      font-size: 18px;
-      font-weight: 800;
-      color: #764ba2;
       text-align: center;
-      margin-bottom: 28px;
-      letter-spacing: -0.3px;
+      margin-bottom: 24px;
+    }
+    .mobile-logo a { display: inline-block; }
+    .mobile-logo-img {
+      width: 100px;
+      height: 100px;
+      object-fit: contain;
     }
 
     /* ══════════════════════════════════════

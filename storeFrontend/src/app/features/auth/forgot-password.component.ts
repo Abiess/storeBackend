@@ -94,18 +94,22 @@ import { catchError, of } from 'rxjs';
       margin-bottom: 32px;
     }
 
-    .icon-wrap {
-      width: 72px;
-      height: 72px;
-      background: linear-gradient(135deg, rgba(102,126,234,0.12), rgba(118,75,162,0.10));
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 16px;
+    .logo-link { display: inline-block; }
+
+    .auth-logo {
+      width: 110px;
+      height: 110px;
+      object-fit: contain;
+      margin-bottom: 8px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
     }
 
-    .icon { font-size: 36px; }
+    @media (max-width: 480px) {
+      .auth-card { padding: 28px 20px; }
+      .auth-logo { width: 90px; height: 90px; }
+    }
 
     h1 {
       font-size: 22px;
