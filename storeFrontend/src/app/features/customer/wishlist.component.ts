@@ -117,7 +117,10 @@ export class WishlistComponent implements OnInit {
 
   viewProduct(item: WishlistItem): void {
     if (item.productId) {
-      this.router.navigate(['/storefront/product', item.productId]);
+      // Korrekte Route: /products/:productId (nicht /storefront/product)
+      // Mit Variant als Query-Parameter falls vorhanden
+      const queryParams = item.variantId ? { variant: item.variantId } : {};
+      this.router.navigate(['/products', item.productId], { queryParams });
     }
   }
 

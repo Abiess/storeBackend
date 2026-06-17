@@ -253,9 +253,11 @@ export class LoginComponent implements OnInit {
           this.storeService.getMyStores().subscribe({
             next: (stores: any[]) => {
               if (stores && stores.length > 0) {
-                // User hat bereits Stores → zum Dashboard
+                // User hat bereits Stores → returnUrl oder Dashboard
                 console.log('🔄 User hat Stores. Weiterleitung zu:', this.returnUrl);
-                this.router.navigate([this.returnUrl]);
+                // navigateByUrl statt navigate([url]) – verhindert doppelte URL-Enkodierung
+                // z.B. /products/177?variant=35 würde sonst zu /products/177%3Fvariant%3D35
+                this.router.navigateByUrl(this.returnUrl);
               } else {
                 // Neuer User ohne Stores → zur einfachen Store-Erstellung
                 console.log('✨ Neuer User ohne Store. Zeige simple Store-Erstellung...');
@@ -265,7 +267,7 @@ export class LoginComponent implements OnInit {
             error: () => {
               // Falls Store-Abfrage fehlschlägt, trotzdem zum Dashboard
               console.log('⚠️ Store-Abfrage fehlgeschlagen. Weiterleitung zu:', this.returnUrl);
-              this.router.navigate([this.returnUrl]);
+              this.router.navigateByUrl(this.returnUrl);
             }
           });
         },

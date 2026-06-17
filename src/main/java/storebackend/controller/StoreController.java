@@ -1,6 +1,8 @@
 package storebackend.controller;
 
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +18,8 @@ import java.util.List;
 @RequestMapping("/api/me/stores")
 public class StoreController {
 
+    private static final Logger log = LoggerFactory.getLogger(StoreController.class);
+
     private final StoreService storeService;
 
     public StoreController(StoreService storeService) {
@@ -24,7 +28,16 @@ public class StoreController {
 
     @GetMapping
     public ResponseEntity<List<StoreDTO>> getMyStores(@AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(storeService.getStoresByOwner(user));
+        if (user == null) {
+            log.warn("getMyStores: kein authentifizierter User");
+            return ResponseEntity.status(401).build();
+        }
+        try {
+            return ResponseEntity.ok(storeService.getStoresByOwner(user));
+        } catch (Exception e) {
+            log.error("Fehler beim Laden der Stores für User {}: {}", user.getEmail(), e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     @PostMapping

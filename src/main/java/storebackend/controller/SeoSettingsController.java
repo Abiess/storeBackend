@@ -39,9 +39,12 @@ public class SeoSettingsController {
 
         Store store = storeRepository.findById(storeId).orElse(null);
         if (store == null) return ResponseEntity.notFound().build();
-        // Kein Token → 401; falscher Owner → 403
-        if (user == null) return ResponseEntity.status(401).build();
-        if (!StoreAccessChecker.isOwner(store, user)) return ResponseEntity.status(403).build();
+
+        // Öffentlicher GET: Erlaubt für Storefront (kein Auth nötig) UND für Store-Owner
+        // Wenn User authentifiziert ist und NICHT Owner → 403
+        if (user != null && !StoreAccessChecker.isOwner(store, user)) {
+            return ResponseEntity.status(403).build();
+        }
 
         SeoSettings settings = seoSettingsService.getOrCreateSettings(storeId);
         return ResponseEntity.ok(toDTO(settings));

@@ -526,6 +526,8 @@ public class StoreService {
         // ─── Social Media & Kontakt-Links ─────────────────────────────
         dto.setContactEmail(store.getContactEmail());
         dto.setContactPhone(store.getContactPhone());
+        dto.setLogoUrl(store.getLogoUrl());
+        dto.setBannerImageUrl(store.getBannerImageUrl());
         dto.setTelegramUrl(store.getTelegramUrl());
         dto.setFacebookUrl(store.getFacebookUrl());
         dto.setInstagramUrl(store.getInstagramUrl());

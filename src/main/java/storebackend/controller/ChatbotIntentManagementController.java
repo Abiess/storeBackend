@@ -19,7 +19,7 @@ import java.util.Map;
 @RequestMapping("/api/stores/{storeId}/chatbot/intents")
 @RequiredArgsConstructor
 @Slf4j
-@PreAuthorize("hasAnyRole('STORE_MANAGER', 'STORE_OWNER')")
+@PreAuthorize("hasAnyRole('RESELLER', 'PLATFORM_ADMIN')")
 public class ChatbotIntentManagementController {
 
     private final ChatbotIntentService intentService;

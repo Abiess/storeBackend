@@ -2,6 +2,8 @@ package storebackend.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -11,20 +13,53 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Globaler Exception Handler für die Anwendung
+ * Globaler Exception Handler für die Anwendung.
  *
- * Behandelt NoResourceFoundException und gibt HTTP 404 statt 500 zurück
+ * WICHTIG: Reihenfolge der @ExceptionHandler-Methoden ist relevant –
+ * spezifischere Handler müssen VOR dem generischen Exception.class-Handler kommen.
  */
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
     /**
-     * Behandelt NoResourceFoundException (wenn kein Handler gefunden wird)
+     * Behandelt AccessDeniedException (403 Forbidden) – z.B. durch @PreAuthorize.
+     * MUSS vor handleGeneralException stehen!
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccessDeniedException(AccessDeniedException ex) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now().toString());
+        errorResponse.put("status", HttpStatus.FORBIDDEN.value());
+        errorResponse.put("error", "Forbidden");
+        errorResponse.put("message", "Zugriff verweigert: " + ex.getMessage());
+
+        return ResponseEntity
+            .status(HttpStatus.FORBIDDEN)
+            .body(errorResponse);
+    }
+
+    /**
+     * Behandelt AuthenticationException (401 Unauthorized).
+     * MUSS vor handleGeneralException stehen!
+     */
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<Map<String, Object>> handleAuthenticationException(AuthenticationException ex) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now().toString());
+        errorResponse.put("status", HttpStatus.UNAUTHORIZED.value());
+        errorResponse.put("error", "Unauthorized");
+        errorResponse.put("message", "Authentifizierung erforderlich: " + ex.getMessage());
+
+        return ResponseEntity
+            .status(HttpStatus.UNAUTHORIZED)
+            .body(errorResponse);
+    }
+
+    /**
+     * Behandelt NoResourceFoundException (wenn kein Handler gefunden wird) → HTTP 404.
      *
      * Grund: Spring behandelt fehlende Controller-Mappings als "statische Ressource nicht gefunden"
      * und wirft NoResourceFoundException, was standardmäßig zu HTTP 500 führt.
-     *
-     * Diese Methode fängt die Exception ab und gibt stattdessen HTTP 404 zurück.
      */
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<Map<String, Object>> handleNoResourceFound(NoResourceFoundException ex) {
@@ -39,10 +74,9 @@ public class GlobalExceptionHandler {
             .status(HttpStatus.NOT_FOUND)
             .body(errorResponse);
     }
-    
+
     /**
-     * Behandelt AiServiceException (AI-bezogene Fehler)
-     * Gibt HTTP 400 BAD_REQUEST zurück für Probleme mit AI-Verarbeitung
+     * Behandelt AiServiceException (AI-bezogene Fehler) → HTTP 400.
      */
     @ExceptionHandler(AiServiceException.class)
     public ResponseEntity<Map<String, Object>> handleAiServiceException(AiServiceException ex) {
@@ -58,7 +92,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Allgemeiner Exception Handler als Fallback
+     * Allgemeiner Exception Handler als Fallback → HTTP 500.
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneralException(Exception ex) {
@@ -73,4 +107,3 @@ public class GlobalExceptionHandler {
             .body(errorResponse);
     }
 }
-
