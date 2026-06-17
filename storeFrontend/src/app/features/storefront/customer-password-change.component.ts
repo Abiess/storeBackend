@@ -1,132 +1,121 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { CustomerProfileService, PasswordChangeRequest } from '../../core/services/customer-profile.service';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { CustomerProfileService } from '../../core/services/customer-profile.service';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
-import { TranslationService } from '@app/core/services/translation.service';
+import { PasswordStrengthIndicatorComponent } from '@app/shared/components/password-strength-indicator/password-strength-indicator.component';
 
 @Component({
   selector: 'app-customer-password-change',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe],
+  imports: [CommonModule, ReactiveFormsModule, TranslatePipe, PasswordStrengthIndicatorComponent],
   template: `
-    <div class="password-change">
-      <h2>{{ 'profile.changePassword' | translate }}</h2>
-      <p class="description">{{ 'profile.changePasswordHint' | translate }}</p>
+    <div class="pw-change-wrap">
 
-      <form (ngSubmit)="changePassword()" #passwordForm="ngForm">
-        <div class="form-group">
-          <label for="currentPassword">{{ 'profile.currentPassword' | translate }} {{ 'checkout.required' | translate }}</label>
-          <div class="password-input">
+      <div class="form-head">
+        <h1>🔒 {{ 'profile.changePassword' | translate }}</h1>
+        <p>{{ 'profile.changePasswordHint' | translate }}</p>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+
+        <!-- ── Aktuelles Passwort ── -->
+        <div class="field"
+             [class.field--error]="cur?.invalid && cur?.touched"
+             [class.field--ok]="cur?.valid && cur?.value">
+          <label for="cur">{{ 'profile.currentPassword' | translate }}</label>
+          <div class="input-row">
             <input
-              [type]="showCurrentPassword ? 'text' : 'password'"
-              id="currentPassword"
-              name="currentPassword"
-              [(ngModel)]="passwordRequest.currentPassword"
-              required
-              minlength="6"
-              class="form-control"
+              id="cur"
+              [type]="showCurrent ? 'text' : 'password'"
+              formControlName="currentPassword"
               [placeholder]="'profile.currentPasswordPlaceholder' | translate"
+              autocomplete="current-password"
             />
-            <button 
-              type="button" 
-              class="toggle-password"
-              (click)="showCurrentPassword = !showCurrentPassword">
-              {{ showCurrentPassword ? '👁️' : '👁️‍🗨️' }}
+            <button type="button" class="eye" (click)="showCurrent = !showCurrent">
+              <span>{{ showCurrent ? '🙈' : '👁' }}</span>
             </button>
+          </div>
+          <div class="field-err" *ngIf="cur?.invalid && cur?.touched">
+            {{ 'auth.resetPasswordMinLength' | translate }}
           </div>
         </div>
 
-        <div class="form-group">
-          <label for="newPassword">{{ 'profile.newPassword' | translate }} {{ 'checkout.required' | translate }}</label>
-          <div class="password-input">
+        <!-- ── Neues Passwort ── -->
+        <div class="field"
+             [class.field--error]="pw?.invalid && pw?.touched"
+             [class.field--ok]="pw?.valid && pw?.value">
+          <label for="pw">{{ 'profile.newPassword' | translate }}</label>
+          <div class="input-row">
             <input
-              [type]="showNewPassword ? 'text' : 'password'"
-              id="newPassword"
-              name="newPassword"
-              [(ngModel)]="passwordRequest.newPassword"
-              required
-              minlength="6"
-              class="form-control"
+              id="pw"
+              [type]="showNew ? 'text' : 'password'"
+              formControlName="password"
               [placeholder]="'profile.newPasswordPlaceholder' | translate"
-              (ngModelChange)="validatePasswordMatch()"
+              autocomplete="new-password"
             />
-            <button 
-              type="button" 
-              class="toggle-password"
-              (click)="showNewPassword = !showNewPassword">
-              {{ showNewPassword ? '👁️' : '👁️‍🗨️' }}
+            <button type="button" class="eye" (click)="showNew = !showNew">
+              <span>{{ showNew ? '🙈' : '👁' }}</span>
             </button>
           </div>
-          <small class="form-hint">{{ 'profile.passwordMinLength' | translate }}</small>
+          <div class="field-err" *ngIf="pw?.invalid && pw?.touched">
+            {{ 'auth.resetPasswordMinLength' | translate }}
+          </div>
+
+          <!-- Stärke-Anzeige (shared) -->
+          <app-password-strength-indicator [password]="pw?.value ?? ''">
+          </app-password-strength-indicator>
         </div>
 
-        <div class="form-group">
-          <label for="confirmPassword">{{ 'profile.confirmPassword' | translate }} {{ 'checkout.required' | translate }}</label>
-          <div class="password-input">
+        <!-- ── Passwort bestätigen ── -->
+        <div class="field"
+             [class.field--error]="form.hasError('passwordMismatch') && cpw?.touched"
+             [class.field--ok]="!form.hasError('passwordMismatch') && cpw?.value">
+          <label for="cpw">{{ 'profile.confirmPassword' | translate }}</label>
+          <div class="input-row">
             <input
-              [type]="showConfirmPassword ? 'text' : 'password'"
-              id="confirmPassword"
-              name="confirmPassword"
-              [(ngModel)]="confirmPassword"
-              required
-              minlength="6"
-              class="form-control"
-              [class.invalid]="confirmPassword && !passwordsMatch"
+              id="cpw"
+              [type]="showConfirm ? 'text' : 'password'"
+              formControlName="confirmPassword"
               [placeholder]="'profile.confirmPasswordPlaceholder' | translate"
-              (ngModelChange)="validatePasswordMatch()"
+              autocomplete="new-password"
             />
-            <button 
-              type="button" 
-              class="toggle-password"
-              (click)="showConfirmPassword = !showConfirmPassword">
-              {{ showConfirmPassword ? '👁️' : '👁️‍🗨️' }}
+            <button type="button" class="eye" (click)="showConfirm = !showConfirm">
+              <span>{{ showConfirm ? '🙈' : '👁' }}</span>
             </button>
           </div>
-          <small class="form-hint error" *ngIf="confirmPassword && !passwordsMatch">
-            ⚠️ {{ 'profile.passwordMismatch' | translate }}
-          </small>
-          <small class="form-hint success" *ngIf="confirmPassword && passwordsMatch">
-            ✅ {{ 'profile.passwordMatch' | translate }}
-          </small>
-        </div>
-
-        <div class="password-strength" *ngIf="passwordRequest.newPassword">
-          <label>{{ 'profile.passwordStrength' | translate }}:</label>
-          <div class="strength-bar">
-            <div 
-              class="strength-indicator" 
-              [class]="getPasswordStrengthClass()"
-              [style.width.%]="getPasswordStrength()">
-            </div>
+          <div class="field-err" *ngIf="form.hasError('passwordMismatch') && cpw?.touched">
+            {{ 'auth.resetPasswordMismatch' | translate }}
           </div>
-          <small class="strength-label">{{ getPasswordStrengthLabel() }}</small>
+          <div class="field-ok" *ngIf="!form.hasError('passwordMismatch') && cpw?.value">
+            {{ 'auth.resetPasswordMatch' | translate }}
+          </div>
         </div>
 
-        <div *ngIf="successMessage" class="alert alert-success">
-          ✅ {{ successMessage }}
+        <!-- ── API-Fehler ── -->
+        <div *ngIf="errorMessage" class="alert-error" role="alert">
+          <span class="alert-icon">⚠️</span>
+          <span>{{ errorMessage }}</span>
         </div>
 
-        <div *ngIf="errorMessage" class="alert alert-error">
-          ❌ {{ errorMessage }}
+        <!-- ── Erfolg ── -->
+        <div *ngIf="successMessage" class="alert-success" role="status">
+          <span class="alert-icon">🎉</span>
+          <span>{{ successMessage }}</span>
         </div>
 
-        <div class="form-actions">
-          <button 
-            type="submit" 
-            class="btn-primary" 
-            [disabled]="!passwordForm.valid || !passwordsMatch || saving">
-            <span *ngIf="!saving">🔒 {{ 'profile.changePassword' | translate }}</span>
-            <span *ngIf="saving">⏳ {{ 'common.loading' | translate }}</span>
-          </button>
-          <button type="button" class="btn-secondary" (click)="resetForm()">
-            🔄 {{ 'common.reset' | translate }}
-          </button>
-        </div>
+        <!-- ── Submit ── -->
+        <button type="submit" class="btn btn-primary btn-submit"
+                [disabled]="form.invalid || loading">
+          <span *ngIf="loading" class="btn-spinner"></span>
+          <span>{{ loading ? ('common.loading' | translate) : ('profile.changePassword' | translate) }}</span>
+        </button>
+
       </form>
 
+      <!-- ── Sicherheits-Tipps ── -->
       <div class="security-tips">
-        <h3>💡 {{ 'profile.securityTips' | translate }}:</h3>
+        <h3>💡 {{ 'profile.securityTips' | translate }}</h3>
         <ul>
           <li>{{ 'profile.tip1' | translate }}</li>
           <li>{{ 'profile.tip2' | translate }}</li>
@@ -135,286 +124,222 @@ import { TranslationService } from '@app/core/services/translation.service';
           <li>{{ 'profile.tip5' | translate }}</li>
         </ul>
       </div>
+
     </div>
   `,
   styles: [`
-    .password-change {
-      max-width: 600px;
-    }
+    .pw-change-wrap { max-width: 520px; }
 
-    .description {
-      color: #666;
-      margin-bottom: 30px;
+    /* ── Form Head ── */
+    .form-head {
+      margin-bottom: 28px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid #f0ecff;
     }
-
-    .form-group {
-      margin-bottom: 24px;
+    .form-head h1 {
+      font-size: 20px;
+      font-weight: 800;
+      color: #1a1a2e;
+      margin: 0 0 6px 0;
+      letter-spacing: -0.3px;
     }
+    .form-head p { font-size: 14px; color: #777; margin: 0; }
 
-    .form-group label {
+    /* ── Fields ── */
+    .field { margin-bottom: 22px; }
+
+    label {
       display: block;
-      margin-bottom: 8px;
+      font-size: 13px;
       font-weight: 600;
-      color: #333;
+      color: #374151;
+      margin-bottom: 7px;
     }
 
-    .password-input {
+    .input-row {
       position: relative;
       display: flex;
       align-items: center;
     }
 
-    .form-control {
+    input {
       width: 100%;
-      padding: 12px;
-      padding-right: 45px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
+      padding: 13px 46px 13px 15px;
+      border: 1.5px solid #e0daf5;
+      border-radius: 10px;
       font-size: 15px;
-      transition: border-color 0.3s;
-    }
-
-    .form-control:focus {
+      color: #1a1a2e;
+      background: #faf9ff;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
       outline: none;
+      box-sizing: border-box;
+      -webkit-appearance: none;
+    }
+    input:focus {
       border-color: #667eea;
+      box-shadow: 0 0 0 4px rgba(102,126,234,0.12);
+      background: #fff;
     }
+    .field--error input { border-color: #fc8181; box-shadow: 0 0 0 4px rgba(252,129,129,0.1); }
+    .field--ok   input { border-color: #68d391; box-shadow: 0 0 0 4px rgba(104,211,145,0.1); }
 
-    .form-control.invalid {
-      border-color: #dc3545;
-    }
-
-    .toggle-password {
+    .eye {
       position: absolute;
-      right: 10px;
+      right: 12px;
       background: none;
       border: none;
       cursor: pointer;
-      font-size: 20px;
-      padding: 5px;
-      opacity: 0.6;
-      transition: opacity 0.3s;
-    }
-
-    .toggle-password:hover {
-      opacity: 1;
-    }
-
-    .form-hint {
-      display: block;
-      margin-top: 6px;
-      font-size: 13px;
-      color: #999;
-    }
-
-    .form-hint.error {
-      color: #dc3545;
-    }
-
-    .form-hint.success {
-      color: #28a745;
-    }
-
-    .password-strength {
-      margin-bottom: 24px;
-      padding: 16px;
-      background: #f8f9fa;
-      border-radius: 8px;
-    }
-
-    .password-strength label {
-      display: block;
-      margin-bottom: 8px;
-      font-size: 14px;
-      font-weight: 600;
-      color: #333;
-    }
-
-    .strength-bar {
-      height: 8px;
-      background: #e0e0e0;
-      border-radius: 4px;
-      overflow: hidden;
-      margin-bottom: 8px;
-    }
-
-    .strength-indicator {
-      height: 100%;
-      transition: width 0.3s, background-color 0.3s;
-    }
-
-    .strength-indicator.weak {
-      background: #dc3545;
-    }
-
-    .strength-indicator.medium {
-      background: #ffc107;
-    }
-
-    .strength-indicator.strong {
-      background: #28a745;
-    }
-
-    .strength-label {
-      font-size: 13px;
-      color: #666;
-    }
-
-    .alert {
-      padding: 12px 16px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-    }
-
-    .alert-success {
-      background: #d4edda;
-      color: #155724;
-    }
-
-    .alert-error {
-      background: #f8d7da;
-      color: #721c24;
-    }
-
-    .form-actions {
+      padding: 4px;
       display: flex;
-      gap: 12px;
-      margin-top: 30px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      transition: background 0.15s;
+      font-size: 17px;
+      line-height: 1;
+      color: #9ca3af;
     }
+    .eye:hover { background: rgba(102,126,234,0.08); }
 
+    .field-err { font-size: 12px; color: #e53e3e; margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+    .field-ok  { font-size: 12px; color: #38a169; margin-top: 6px; font-weight: 500; }
+
+    /* ── Alerts ── */
+    .alert-error, .alert-success {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 13px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      margin-bottom: 18px;
+      line-height: 1.5;
+    }
+    .alert-error  { background: #fff5f5; border: 1px solid #fed7d7; color: #c53030; }
+    .alert-success { background: #f0fff4; border: 1px solid #c6f6d5; color: #276749; }
+    .alert-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ── Button ── */
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 14px 20px;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+      letter-spacing: 0.1px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(102,126,234,0.35);
+    }
+    .btn-submit { margin-top: 6px; }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; box-shadow: none; }
+    .btn:not(:disabled):hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102,126,234,0.4); }
+    .btn:not(:disabled):active { transform: translateY(0); }
+
+    .btn-spinner {
+      width: 17px;
+      height: 17px;
+      border: 2.5px solid rgba(255,255,255,0.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Security Tips ── */
     .security-tips {
-      margin-top: 40px;
-      padding: 24px;
+      margin-top: 32px;
+      padding: 20px 24px;
       background: #f0f4ff;
       border-radius: 12px;
       border-left: 4px solid #667eea;
     }
-
     .security-tips h3 {
-      margin-top: 0;
-      margin-bottom: 16px;
-      color: #333;
-      font-size: 16px;
+      margin: 0 0 12px 0;
+      font-size: 14px;
+      font-weight: 700;
+      color: #374151;
     }
-
     .security-tips ul {
       margin: 0;
-      padding-left: 24px;
-      color: #666;
+      padding-left: 20px;
+      color: #6b7280;
       line-height: 1.8;
+      font-size: 13px;
     }
+    .security-tips li { margin-bottom: 4px; }
 
-    .security-tips li {
-      margin-bottom: 8px;
-    }
-
-    @media (max-width: 576px) {
-      .form-actions {
-        flex-direction: column;
-      }
-
-      .form-actions button {
-        width: 100%;
-      }
+    @media (max-width: 480px) {
+      input { font-size: 16px; }
     }
   `]
 })
 export class CustomerPasswordChangeComponent {
-  passwordRequest: PasswordChangeRequest = {
-    currentPassword: '',
-    newPassword: ''
-  };
-  confirmPassword = '';
 
-  showCurrentPassword = false;
-  showNewPassword = false;
-  showConfirmPassword = false;
-
-  passwordsMatch = true;
-  saving = false;
+  form: FormGroup;
+  loading = false;
   successMessage = '';
   errorMessage = '';
 
+  showCurrent = false;
+  showNew     = false;
+  showConfirm = false;
+
+  get cur() { return this.form.get('currentPassword'); }
+  get pw()  { return this.form.get('password'); }
+  get cpw() { return this.form.get('confirmPassword'); }
+
   constructor(
-    private customerService: CustomerProfileService,
-    private translationService: TranslationService
-  ) {}
-
-  validatePasswordMatch(): void {
-    this.passwordsMatch = !this.confirmPassword ||
-                          this.passwordRequest.newPassword === this.confirmPassword;
+    private fb: FormBuilder,
+    private customerService: CustomerProfileService
+  ) {
+    this.form = this.fb.group({
+      currentPassword: ['', [Validators.required, Validators.minLength(6)]],
+      password:        ['', [Validators.required, Validators.minLength(6)]],
+      confirmPassword: ['', [Validators.required]]
+    }, { validators: this.passwordMatchValidator });
   }
 
-  getPasswordStrength(): number {
-    const password = this.passwordRequest.newPassword;
-    if (!password) return 0;
-
-    let strength = 0;
-
-    if (password.length >= 6) strength += 25;
-    if (password.length >= 8) strength += 25;
-    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength += 25;
-    if (/\d/.test(password)) strength += 15;
-    if (/[^A-Za-z0-9]/.test(password)) strength += 10;
-
-    return Math.min(strength, 100);
+  passwordMatchValidator(group: FormGroup) {
+    const pw  = group.get('password')?.value;
+    const cpw = group.get('confirmPassword')?.value;
+    return pw === cpw ? null : { passwordMismatch: true };
   }
 
-  getPasswordStrengthClass(): string {
-    const strength = this.getPasswordStrength();
-    if (strength < 40) return 'weak';
-    if (strength < 70) return 'medium';
-    return 'strong';
-  }
+  onSubmit(): void {
+    if (this.form.invalid) return;
 
-  getPasswordStrengthLabel(): string {
-    const strength = this.getPasswordStrength();
-    if (strength < 40) return this.translationService.translate('profile.strengthWeak');
-    if (strength < 70) return this.translationService.translate('profile.strengthMedium');
-    return this.translationService.translate('profile.strengthStrong');
-  }
-
-  changePassword(): void {
-    if (!this.passwordsMatch) {
-      this.errorMessage = this.translationService.translate('profile.passwordMismatch');
-      return;
-    }
-
-    this.saving = true;
+    this.loading = true;
     this.successMessage = '';
     this.errorMessage = '';
 
-    this.customerService.changePassword(this.passwordRequest).subscribe({
-      next: (response) => {
-        this.saving = false;
-        this.successMessage = this.translationService.translate('profile.passwordChangedSuccess');
-        this.resetForm();
+    const { currentPassword, password } = this.form.value;
 
-        setTimeout(() => {
-          this.successMessage = '';
-        }, 5000);
+    this.customerService.changePassword({ currentPassword, newPassword: password }).subscribe({
+      next: () => {
+        this.loading = false;
+        this.successMessage = 'Passwort erfolgreich geändert! 🎉';
+        this.form.reset();
+        setTimeout(() => { this.successMessage = ''; }, 6000);
       },
-      error: (error) => {
-        this.saving = false;
-        if (error.status === 401) {
-          this.errorMessage = this.translationService.translate('profile.errorWrongCurrentPassword');
+      error: (err) => {
+        this.loading = false;
+        if (err.status === 401) {
+          this.errorMessage = 'Das aktuelle Passwort ist falsch.';
         } else {
-          this.errorMessage = error.error?.message || this.translationService.translate('profile.errorChangePassword');
+          this.errorMessage = err.error?.message || 'Fehler beim Ändern des Passworts.';
         }
-        console.error('❌ Fehler beim Ändern des Passworts:', error);
       }
     });
-  }
-
-  resetForm(): void {
-    this.passwordRequest = {
-      currentPassword: '',
-      newPassword: ''
-    };
-    this.confirmPassword = '';
-    this.showCurrentPassword = false;
-    this.showNewPassword = false;
-    this.showConfirmPassword = false;
-    this.passwordsMatch = true;
-    this.errorMessage = '';
   }
 }

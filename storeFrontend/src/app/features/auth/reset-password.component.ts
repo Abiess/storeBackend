@@ -6,11 +6,12 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { catchError, of } from 'rxjs';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { PasswordStrengthIndicatorComponent } from '@app/shared/components/password-strength-indicator/password-strength-indicator.component';
 
 @Component({
   selector: 'app-reset-password',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, TranslatePipe],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, TranslatePipe, PasswordStrengthIndicatorComponent],
   template: `
     <div class="page">
 
@@ -97,38 +98,9 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
                   {{ 'auth.resetPasswordMinLength' | translate }}
                 </div>
 
-                <!-- Stärke-Anzeige -->
-                <div class="strength-wrap" *ngIf="pw?.value">
-                  <div class="strength-bars">
-                    <div class="sb" [class.sb--active]="strengthScore >= 1" [style.background]="strengthScore >= 1 ? strengthColor : ''"></div>
-                    <div class="sb" [class.sb--active]="strengthScore >= 2" [style.background]="strengthScore >= 2 ? strengthColor : ''"></div>
-                    <div class="sb" [class.sb--active]="strengthScore >= 3" [style.background]="strengthScore >= 3 ? strengthColor : ''"></div>
-                    <div class="sb" [class.sb--active]="strengthScore >= 4" [style.background]="strengthScore >= 4 ? strengthColor : ''"></div>
-                  </div>
-                  <span class="strength-txt" [style.color]="strengthColor">
-                    {{ 'auth.strengthLabel' | translate }} {{ strengthLabel | translate }}
-                  </span>
-                </div>
-
-                <!-- Anforderungs-Checkliste -->
-                <ul class="reqs" *ngIf="pw?.value">
-                  <li [class.req--ok]="pw!.value?.length >= 6">
-                    <span class="req-icon">{{ pw!.value?.length >= 6 ? '✅' : '⬜' }}</span>
-                    {{ 'auth.reqMinChars' | translate }}
-                  </li>
-                  <li [class.req--ok]="pw!.value?.length >= 10">
-                    <span class="req-icon">{{ pw!.value?.length >= 10 ? '✅' : '⬜' }}</span>
-                    {{ 'auth.reqMoreChars' | translate }}
-                  </li>
-                  <li [class.req--ok]="hasUpperAndLower">
-                    <span class="req-icon">{{ hasUpperAndLower ? '✅' : '⬜' }}</span>
-                    {{ 'auth.reqUpperLower' | translate }}
-                  </li>
-                  <li [class.req--ok]="hasNumber">
-                    <span class="req-icon">{{ hasNumber ? '✅' : '⬜' }}</span>
-                    {{ 'auth.reqNumberSpecial' | translate }}
-                  </li>
-                </ul>
+                <!-- Stärke-Anzeige + Checkliste (shared) -->
+                <app-password-strength-indicator [password]="pw?.value ?? ''">
+                </app-password-strength-indicator>
               </div>
 
               <!-- Bestätigung-Feld -->
@@ -176,18 +148,10 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
     </div>
   `,
   styles: [`
-    /* ══════════════════════════════════════
-       PAGE LAYOUT – Split Panel
-    ══════════════════════════════════════ */
-    .page {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: row;
-    }
+    .page { min-height: 100vh; display: flex; flex-direction: row; }
 
-    /* ── Brand Panel (links, Desktop only) ── */
     .brand-panel {
-      display: none; /* hidden on mobile */
+      display: none;
       width: 420px;
       flex-shrink: 0;
       background: linear-gradient(160deg, #667eea 0%, #764ba2 100%);
@@ -211,307 +175,121 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       border-radius: 50%;
     }
     .brand-inner {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      padding: 48px 36px;
-      text-align: center;
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      height: 100%; padding: 48px 36px; text-align: center;
     }
     .brand-logo-img {
-      width: 150px;
-      height: 150px;
-      object-fit: contain;
-      margin-bottom: 24px;
-      background: #fff;
-      border-radius: 20px;
-      padding: 10px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+      width: 150px; height: 150px; object-fit: contain;
+      margin-bottom: 24px; background: #fff; border-radius: 20px;
+      padding: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.12);
     }
-    .brand-illustration {
-      font-size: 80px;
-      margin-bottom: 28px;
-      filter: drop-shadow(0 8px 24px rgba(0,0,0,0.2));
-    }
-    .brand-title {
-      font-size: 26px;
-      font-weight: 700;
-      color: #fff;
-      margin-bottom: 12px;
-    }
-    .brand-sub {
-      font-size: 14px;
-      color: rgba(255,255,255,0.75);
-      line-height: 1.6;
-      margin-bottom: 36px;
-    }
+    .brand-illustration { font-size: 80px; margin-bottom: 28px; filter: drop-shadow(0 8px 24px rgba(0,0,0,0.2)); }
+    .brand-title { font-size: 26px; font-weight: 700; color: #fff; margin-bottom: 12px; }
+    .brand-sub { font-size: 14px; color: rgba(255,255,255,0.75); line-height: 1.6; margin-bottom: 36px; }
     .brand-features { display: flex; flex-direction: column; gap: 10px; width: 100%; }
     .brand-feature {
-      background: rgba(255,255,255,0.12);
-      border: 1px solid rgba(255,255,255,0.18);
-      border-radius: 8px;
-      padding: 10px 16px;
-      font-size: 13px;
-      color: rgba(255,255,255,0.9);
-      text-align: left;
-      backdrop-filter: blur(8px);
+      background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 8px; padding: 10px 16px; font-size: 13px;
+      color: rgba(255,255,255,0.9); text-align: left; backdrop-filter: blur(8px);
     }
 
-    /* ── Form Panel (rechts / alles auf Mobile) ── */
     .form-panel {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #f5f4ff;
-      padding: 24px 16px;
-      min-height: 100vh;
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      background: #f5f4ff; padding: 24px 16px; min-height: 100vh;
     }
     .form-inner {
-      width: 100%;
-      max-width: 460px;
-      background: #ffffff;
-      border-radius: 20px;
-      padding: 36px 32px;
+      width: 100%; max-width: 460px; background: #ffffff;
+      border-radius: 20px; padding: 36px 32px;
       box-shadow: 0 8px 40px rgba(102,126,234,0.12);
     }
 
-    /* Mobile Logo */
-    .mobile-logo {
-      text-align: center;
-      margin-bottom: 24px;
-    }
+    .mobile-logo { text-align: center; margin-bottom: 24px; }
     .mobile-logo a { display: inline-block; }
-    .mobile-logo-img {
-      width: 100px;
-      height: 100px;
-      object-fit: contain;
-    }
+    .mobile-logo-img { width: 100px; height: 100px; object-fit: contain; }
 
-    /* ══════════════════════════════════════
-       STATE BOXES
-    ══════════════════════════════════════ */
     .state-box {
-      text-align: center;
-      padding: 8px 0 4px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0;
+      text-align: center; padding: 8px 0 4px;
+      display: flex; flex-direction: column; align-items: center; gap: 0;
     }
-    .state-emoji {
-      font-size: 56px;
-      margin-bottom: 16px;
-      line-height: 1;
-    }
+    .state-emoji { font-size: 56px; margin-bottom: 16px; line-height: 1; }
     .success-bounce { animation: bounce 0.6s cubic-bezier(0.34,1.56,0.64,1); }
     @keyframes bounce {
       0%   { transform: scale(0.3); opacity: 0; }
       60%  { transform: scale(1.15); opacity: 1; }
       100% { transform: scale(1); }
     }
-    .state-box h2 {
-      font-size: 22px;
-      font-weight: 700;
-      color: #1a1a2e;
-      margin-bottom: 10px;
-    }
-    .state-box p {
-      font-size: 14px;
-      color: #666;
-      line-height: 1.65;
-      margin-bottom: 28px;
-    }
-    .success-box { padding-top: 16px; }
+    .state-box h2 { font-size: 22px; font-weight: 700; color: #1a1a2e; margin-bottom: 10px; }
+    .state-box p  { font-size: 14px; color: #666; line-height: 1.65; margin-bottom: 28px; }
+    .success-box  { padding-top: 16px; }
 
-    /* Pulse loader */
     .pulse-ring {
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
+      width: 60px; height: 60px; border-radius: 50%;
       background: rgba(102,126,234,0.08);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 20px;
-      animation: pulseRing 1.4s ease-in-out infinite;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 20px; animation: pulseRing 1.4s ease-in-out infinite;
     }
     .pulse-dot {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
+      width: 28px; height: 28px; border-radius: 50%;
       background: linear-gradient(135deg, #667eea, #764ba2);
       animation: pulseDot 1.4s ease-in-out infinite;
     }
-    @keyframes pulseRing {
-      0%, 100% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.15); opacity: 0.7; }
-    }
-    @keyframes pulseDot {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(0.85); }
-    }
+    @keyframes pulseRing { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.15); opacity: 0.7; } }
+    @keyframes pulseDot  { 0%, 100% { transform: scale(1); } 50% { transform: scale(0.85); } }
 
-    /* ══════════════════════════════════════
-       FORM HEAD
-    ══════════════════════════════════════ */
     .form-head {
-      text-align: center;
-      margin-bottom: 28px;
-      padding-bottom: 24px;
-      border-bottom: 1px solid #f0ecff;
+      text-align: center; margin-bottom: 28px;
+      padding-bottom: 24px; border-bottom: 1px solid #f0ecff;
     }
-    .form-head h1 {
-      font-size: 24px;
-      font-weight: 800;
-      color: #1a1a2e;
-      margin-bottom: 6px;
-      letter-spacing: -0.3px;
-    }
-    .form-head p { font-size: 14px; color: #777; }
+    .form-head h1 { font-size: 24px; font-weight: 800; color: #1a1a2e; margin-bottom: 6px; letter-spacing: -0.3px; }
+    .form-head p  { font-size: 14px; color: #777; }
 
-    /* ══════════════════════════════════════
-       FIELDS
-    ══════════════════════════════════════ */
     .field { margin-bottom: 22px; }
+    label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 7px; }
 
-    label {
-      display: block;
-      font-size: 13px;
-      font-weight: 600;
-      color: #374151;
-      margin-bottom: 7px;
-    }
-
-    .input-row {
-      position: relative;
-      display: flex;
-      align-items: center;
-    }
+    .input-row { position: relative; display: flex; align-items: center; }
 
     input {
-      width: 100%;
-      padding: 13px 46px 13px 15px;
-      border: 1.5px solid #e0daf5;
-      border-radius: 10px;
-      font-size: 15px;
-      color: #1a1a2e;
-      background: #faf9ff;
+      width: 100%; padding: 13px 46px 13px 15px;
+      border: 1.5px solid #e0daf5; border-radius: 10px;
+      font-size: 15px; color: #1a1a2e; background: #faf9ff;
       transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-      outline: none;
-      box-sizing: border-box;
-      -webkit-appearance: none;
+      outline: none; box-sizing: border-box; -webkit-appearance: none;
     }
-    input:focus {
-      border-color: #667eea;
-      box-shadow: 0 0 0 4px rgba(102,126,234,0.12);
-      background: #fff;
-    }
+    input:focus { border-color: #667eea; box-shadow: 0 0 0 4px rgba(102,126,234,0.12); background: #fff; }
     .field--error input { border-color: #fc8181; box-shadow: 0 0 0 4px rgba(252,129,129,0.1); }
-    .field--ok   input { border-color: #68d391; box-shadow: 0 0 0 4px rgba(104,211,145,0.1); }
+    .field--ok    input { border-color: #68d391; box-shadow: 0 0 0 4px rgba(104,211,145,0.1); }
 
     .eye {
-      position: absolute;
-      right: 12px;
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 4px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 6px;
-      transition: background 0.15s;
-      font-size: 17px;
-      line-height: 1;
-      color: #9ca3af;
+      position: absolute; right: 12px; background: none; border: none;
+      cursor: pointer; padding: 4px; display: flex;
+      align-items: center; justify-content: center;
+      border-radius: 6px; transition: background 0.15s;
+      font-size: 17px; line-height: 1; color: #9ca3af;
     }
     .eye:hover { background: rgba(102,126,234,0.08); }
 
     .field-err { font-size: 12px; color: #e53e3e; margin-top: 6px; display: flex; align-items: center; gap: 4px; }
     .field-ok  { font-size: 12px; color: #38a169; margin-top: 6px; font-weight: 500; }
 
-    /* ── Stärke ── */
-    .strength-wrap {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-top: 10px;
-    }
-    .strength-bars { display: flex; gap: 5px; flex: 1; }
-    .sb {
-      flex: 1;
-      height: 5px;
-      border-radius: 3px;
-      background: #e5e7eb;
-      transition: background 0.3s;
-    }
-    .sb--active { /* background set via [style] */ }
-    .strength-txt { font-size: 12px; font-weight: 600; white-space: nowrap; }
-
-    /* ── Anforderungs-Liste ── */
-    .reqs {
-      list-style: none;
-      margin-top: 12px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px 12px;
-    }
-    .reqs li {
-      font-size: 12px;
-      color: #9ca3af;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      transition: color 0.2s;
-    }
-    .reqs li.req--ok { color: #38a169; }
-    .req-icon { font-size: 13px; line-height: 1; }
-
-    /* ══════════════════════════════════════
-       ALERT
-    ══════════════════════════════════════ */
     .alert-error {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      padding: 13px 16px;
-      background: #fff5f5;
-      border: 1px solid #fed7d7;
-      border-radius: 10px;
-      color: #c53030;
-      font-size: 13px;
-      margin-bottom: 18px;
-      line-height: 1.5;
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 13px 16px; background: #fff5f5;
+      border: 1px solid #fed7d7; border-radius: 10px;
+      color: #c53030; font-size: 13px; margin-bottom: 18px; line-height: 1.5;
     }
     .alert-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
 
-    /* ══════════════════════════════════════
-       BUTTONS
-    ══════════════════════════════════════ */
     .btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      width: 100%;
-      padding: 14px 20px;
-      border: none;
-      border-radius: 10px;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      text-decoration: none;
-      transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
-      letter-spacing: 0.1px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 14px 20px; border: none; border-radius: 10px;
+      font-size: 15px; font-weight: 700; cursor: pointer; text-decoration: none;
+      transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s; letter-spacing: 0.1px;
     }
     .btn-primary {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: #fff;
-      box-shadow: 0 4px 15px rgba(102,126,234,0.35);
+      color: #fff; box-shadow: 0 4px 15px rgba(102,126,234,0.35);
     }
     .btn-submit { margin-top: 6px; }
     .btn:disabled { opacity: 0.55; cursor: not-allowed; box-shadow: none; }
@@ -519,50 +297,30 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
     .btn:not(:disabled):active { transform: translateY(0); }
 
     .btn-spinner {
-      width: 17px;
-      height: 17px;
+      width: 17px; height: 17px;
       border: 2.5px solid rgba(255,255,255,0.35);
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-      flex-shrink: 0;
+      border-top-color: #fff; border-radius: 50%;
+      animation: spin 0.7s linear infinite; flex-shrink: 0;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
     .link-plain {
-      display: block;
-      text-align: center;
-      margin-top: 18px;
-      font-size: 13px;
-      color: #7c6fcd;
-      text-decoration: none;
-      font-weight: 500;
+      display: block; text-align: center; margin-top: 18px;
+      font-size: 13px; color: #7c6fcd; text-decoration: none; font-weight: 500;
     }
     .link-plain:hover { text-decoration: underline; color: #5a4fcf; }
 
-    /* ══════════════════════════════════════
-       RESPONSIVE – Desktop: Brand Panel zeigen
-    ══════════════════════════════════════ */
     @media (min-width: 860px) {
       .brand-panel { display: flex; }
-      .form-panel {
-        background: #f5f4ff;
-        padding: 32px 48px;
-      }
-      .form-inner {
-        padding: 44px 40px;
-        border-radius: 24px;
-      }
+      .form-panel  { background: #f5f4ff; padding: 32px 48px; }
+      .form-inner  { padding: 44px 40px; border-radius: 24px; }
       .mobile-logo { display: none; }
     }
-
-    /* ── Small Mobile ── */
     @media (max-width: 480px) {
       .form-panel { padding: 16px 12px; align-items: flex-start; padding-top: 24px; }
       .form-inner { padding: 28px 20px; border-radius: 16px; }
       .form-head h1 { font-size: 20px; }
-      .reqs { grid-template-columns: 1fr; }
-      input { font-size: 16px; /* verhindert iOS-Zoom */ }
+      input { font-size: 16px; }
     }
   `]
 })
@@ -599,39 +357,11 @@ export class ResetPasswordComponent implements OnInit {
     this.validateToken(this.token);
   }
 
-  // Shortcuts für Template
   get pw()  { return this.resetPasswordForm.get('password'); }
   get cpw() { return this.resetPasswordForm.get('confirmPassword'); }
 
-  get hasUpperAndLower(): boolean {
-    const v = this.pw?.value || '';
-    return /[A-Z]/.test(v) && /[a-z]/.test(v);
-  }
-  get hasNumber(): boolean {
-    return /[0-9!@#$%^&*_\-+=]/.test(this.pw?.value || '');
-  }
-
-  get strengthScore(): number {
-    const v: string = this.pw?.value || '';
-    let s = 0;
-    if (v.length >= 6)  s++;
-    if (v.length >= 10) s++;
-    if (this.hasUpperAndLower) s++;
-    if (this.hasNumber) s++;
-    return s;
-  }
-  get strengthColor(): string {
-    const c = ['#fc8181','#f6ad55','#f6e05e','#68d391'];
-    return c[Math.max(0, this.strengthScore - 1)] ?? '#e5e7eb';
-  }
-  /** Gibt den i18n-Key zurück, der dann im Template per | translate übersetzt wird */
-  get strengthLabel(): string {
-    const keys = ['auth.strengthWeak','auth.strengthFair','auth.strengthGood','auth.strengthStrong'];
-    return keys[Math.max(0, this.strengthScore - 1)] ?? 'auth.strengthWeak';
-  }
-
   passwordMatchValidator(group: FormGroup) {
-    const pw = group.get('password')?.value;
+    const pw  = group.get('password')?.value;
     const cpw = group.get('confirmPassword')?.value;
     return pw === cpw ? null : { passwordMismatch: true };
   }
