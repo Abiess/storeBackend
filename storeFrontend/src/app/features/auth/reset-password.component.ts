@@ -624,8 +624,10 @@ export class ResetPasswordComponent implements OnInit {
     const c = ['#fc8181','#f6ad55','#f6e05e','#68d391'];
     return c[Math.max(0, this.strengthScore - 1)] ?? '#e5e7eb';
   }
+  /** Gibt den i18n-Key zurück, der dann im Template per | translate übersetzt wird */
   get strengthLabel(): string {
-    return ['Schwach','Mäßig','Gut','Stark'][Math.max(0, this.strengthScore - 1)] ?? '';
+    const keys = ['auth.strengthWeak','auth.strengthFair','auth.strengthGood','auth.strengthStrong'];
+    return keys[Math.max(0, this.strengthScore - 1)] ?? 'auth.strengthWeak';
   }
 
   passwordMatchValidator(group: FormGroup) {
