@@ -1214,6 +1214,9 @@
                                    "copyright":  "© 2026 markt.ma. All rights reserved."
                                }
                 },
+    "items":  {
+                  "chatbot":  "Chatbot"
+              },
     "sidebarAdmin":  {
                          "aria":  {
                                       "mainNavigation":  "Main navigation",

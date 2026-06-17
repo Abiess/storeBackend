@@ -717,6 +717,9 @@
                    "poweredBy":  "Powered by markt.ma",
                    "contactUs":  "Kontakt"
                },
+    "items":  {
+                  "chatbot":  "Chatbot"
+              },
     "sidebarAdmin":  {
                          "aria":  {
                                       "mainNavigation":  "Hauptnavigation",

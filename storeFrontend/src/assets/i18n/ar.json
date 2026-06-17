@@ -774,6 +774,9 @@
                         "noProducts":  "لا توجد منتجات بعد",
                         "createFirstProduct":  "إنشاء أول منتج"
                     },
+    "items":  {
+                  "chatbot":  "الشات بوت"
+              },
     "sidebarAdmin":  {
                          "aria":  {
                                       "mainNavigation":  "التنقل الرئيسي",
