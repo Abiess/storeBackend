@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{lang}}" dir="{{dir}}">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -10,7 +10,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
 .header { background:linear-gradient(135deg,#10b981 0%,#059669 100%);padding:36px 40px;text-align:center; }
 .header img.logo { max-height:48px;margin-bottom:12px; }
 .header h1 { color:#fff;font-size:22px;font-weight:700; }
-.header .icon { font-size:44px;margin-bottom:10px;display:block; }
+.header-logo { width:78px;height:78px;border-radius:14px;margin:0 auto 14px;display:block;background:#fff; }
 .badge { display:inline-block;background:rgba(255,255,255,0.25);color:#fff;font-size:12px;font-weight:700;padding:4px 12px;border-radius:999px;text-transform:uppercase;letter-spacing:0.5px;margin-top:8px; }
 .body { padding:36px 40px; }
 .greeting { font-size:16px;color:#555;margin-bottom:18px; }
@@ -46,7 +46,7 @@ table.items tr:last-child td { border-bottom:none; }
 <div class="wrapper">
   <div class="header">
     {{#storeLogo}}<img class="logo" src="{{storeLogo}}" alt="{{storeName}}">{{/storeLogo}}
-    <span class="icon">🛒</span>
+    <img src="{{logoUrl}}" alt="markt.ma" class="header-logo" style="width:78px;height:78px;border-radius:14px;margin:0 auto 14px;display:block;background:#fff;">
     <h1>{{title}}</h1>
     <span class="badge">{{storeName}}</span>
   </div>
@@ -121,4 +121,5 @@ table.items tr:last-child td { border-bottom:none; }
 </div>
 </body>
 </html>
+
 

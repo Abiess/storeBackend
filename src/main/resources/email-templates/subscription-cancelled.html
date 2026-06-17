@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{lang}}" dir="{{dir}}">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -9,7 +9,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
 .wrapper { max-width:620px;margin:30px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08); }
 .header { background:linear-gradient(135deg,#64748b 0%,#475569 100%);padding:36px 40px;text-align:center; }
 .header h1 { color:#fff;font-size:22px;font-weight:700; }
-.header .icon { font-size:44px;margin-bottom:10px;display:block; }
+.header-logo { width:78px;height:78px;border-radius:14px;margin:0 auto 14px;display:block;background:#fff; }
 .body { padding:36px 40px; }
 .greeting { font-size:16px;color:#555;margin-bottom:18px; }
 .intro { font-size:15px;color:#444;line-height:1.7;margin-bottom:24px; }
@@ -27,7 +27,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
 <body>
 <div class="wrapper">
   <div class="header">
-    <span class="icon">📭</span>
+    <img src="{{logoUrl}}" alt="markt.ma" class="header-logo" style="width:78px;height:78px;border-radius:14px;margin:0 auto 14px;display:block;background:#fff;">
     <h1>{{title}}</h1>
   </div>
   <div class="body">
@@ -47,4 +47,5 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
 </div>
 </body>
 </html>
+
 

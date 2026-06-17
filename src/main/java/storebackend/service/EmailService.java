@@ -621,6 +621,7 @@ public class EmailService {
         vars.put("footerTeam",        t(lang, "footerTeam",        "Your Markt.ma Team"));
         vars.put("footerSupport",     t(lang, "footerSupport",     "support@markt.ma"));
         vars.put("footerUnsubscribe", t(lang, "footerUnsubscribe", ""));
+        vars.put("logoUrl",           baseUrl + "/assets/images/logo.svg");
     }
 
     /**
