@@ -437,7 +437,8 @@
                        "homepage":  "Homepage",
                        "settings":  "Einstellungen",
                        "myAccount":  "Mein Konto",
-                       "filters":  "Filter",
+                                       "myOrders":  "Meine Bestellungen",
+                                       "filters":  "Filter",
                        "reviews":  "Bewertungen"
                    },
     "settings":  {
@@ -749,8 +750,9 @@
                                        "myAccount":  "Mein Account",
                                        "subscription":  "Abonnement",
                                        "roles":  "Rollen",
-                                       "teamRoles":  "Team & Rollen",
-                                       "platformDelivery":  "🚚 Lieferoptionen"
+                                        "teamRoles":  "Team & Rollen",
+                                        "telegram":  "Telegram",
+                                        "platformDelivery":  "🚚 Lieferoptionen"
                                    },
                          "noStore":  {
                                          "hint":  "Kein Store ausgewählt",

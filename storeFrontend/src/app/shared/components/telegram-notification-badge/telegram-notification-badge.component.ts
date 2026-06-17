@@ -206,7 +206,8 @@ export class TelegramNotificationBadgeComponent implements OnInit, OnDestroy {
   }
 
   goToImport(): void {
-    this.router.navigate(['/stores', this.storeId, 'settings', 'telegram']);
+    // Korrekte Route: stores/:id/telegram (NICHT stores/:id/settings/telegram)
+    this.router.navigate(['/stores', this.storeId, 'telegram']);
     this.panelOpen = false;
   }
 

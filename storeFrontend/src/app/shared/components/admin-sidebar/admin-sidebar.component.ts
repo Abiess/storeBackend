@@ -199,6 +199,12 @@ export class AdminSidebarComponent implements OnInit {
                         icon: 'tag',
                         route: `${baseRoute}/brand`,
                         requiresStore: true
+                    },
+                    {
+                        labelKey: 'sidebarAdmin.items.telegram',
+                        icon: 'send',
+                        route: `${baseRoute}/telegram`,
+                        requiresStore: true
                     }
                 ]
             },

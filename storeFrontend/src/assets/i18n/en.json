@@ -319,6 +319,7 @@
                        "homepage":  "Homepage",
                        "settings":  "Settings",
                        "myAccount":  "My account",
+                       "myOrders":  "My orders",
                        "filters":  "Filters",
                        "reviews":  "Reviews"
                    },
@@ -1247,6 +1248,7 @@
                                        "subscription":  "Subscription",
                                        "roles":  "Roles",
                                        "teamRoles":  "Team \u0026 Roles",
+                                       "telegram":  "Telegram",
                                        "platformDelivery":  "🚚 Delivery Options"
                                    },
                          "noStore":  {

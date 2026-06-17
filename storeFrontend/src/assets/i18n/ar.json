@@ -807,6 +807,7 @@
                                        "subscription":  "الاشتراك",
                                        "roles":  "الأدوار",
                                        "teamRoles":  "الفريق والأدوار",
+                                       "telegram":  "تيليغرام",
                                        "platformDelivery":  "🚚 خيارات التوصيل"
                                    },
                          "noStore":  {
@@ -977,6 +978,7 @@
                        "homepage":  "الصفحة الرئيسية",
                        "settings":  "الإعدادات",
                        "myAccount":  "حسابي",
+                       "myOrders":  "طلباتي",
                        "filters":  "الفلاتر",
                        "reviews":  "التقييمات"
                    },
