@@ -172,6 +172,9 @@ OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
 TELEGRAM_AUTH_BOT_TOKEN=${TELEGRAM_AUTH_BOT_TOKEN:-}
 TELEGRAM_AUTH_BOT_USERNAME=${TELEGRAM_AUTH_BOT_USERNAME:-marktma_verify_bot}
 
+# Unsplash API Key (Bildvorschläge im Wizard – NIEMALS ins Frontend/Git!)
+UNSPLASH_ACCESS_KEY=${UNSPLASH_ACCESS_KEY:-}
+
 # ── Frontend Analytics (nur Dokumentation – wird beim Angular-Build gebacken) ──
 # Microsoft Clarity: ID in storeFrontend/src/environments/environment.prod.ts
 # setzen, dann Frontend neu bauen: cd storeFrontend && npm run build -- --configuration=production

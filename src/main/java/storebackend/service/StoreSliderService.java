@@ -323,6 +323,46 @@ public class StoreSliderService {
     }
 
     /**
+     * Fügt ein bereits in MinIO gespeichertes Bild (Media-Objekt) als Slider-Bild hinzu.
+     * Wird vom Unsplash-Apply-Flow genutzt: MediaService.uploadFromUrl → addMediaToSlider.
+     *
+     * @param store   Ziel-Store
+     * @param media   bereits hochgeladenes Media-Objekt
+     * @param altText Alt-Text (z.B. Unsplash-Beschreibung)
+     * @return gespeichertes StoreSliderImage
+     */
+    @Transactional
+    public StoreSliderImage addMediaToSlider(Store store, Media media, String altText) {
+        StoreSliderSettings settings = settingsRepository.findByStoreId(store.getId())
+            .orElseGet(() -> createDefaultSettings(store));
+
+        long ownerImageCount = imageRepository.countByStoreIdAndImageType(
+            store.getId(), SliderImageType.OWNER_UPLOAD);
+
+        String imageUrl = minioService.getPublicUrl(media.getMinioObjectName());
+
+        StoreSliderImage sliderImage = new StoreSliderImage();
+        sliderImage.setStore(store);
+        sliderImage.setMedia(media);
+        sliderImage.setImageUrl(imageUrl);
+        sliderImage.setImageType(SliderImageType.OWNER_UPLOAD);
+        sliderImage.setAltText(altText != null ? altText : "");
+        sliderImage.setIsActive(true);
+        sliderImage.setDisplayOrder((int) ownerImageCount);
+
+        sliderImage = imageRepository.save(sliderImage);
+
+        // Ersten Unsplash-Bilder → Slider auf OWNER_ONLY umschalten
+        if (ownerImageCount == 0) {
+            settings.setOverrideMode(SliderOverrideMode.OWNER_ONLY);
+            settingsRepository.save(settings);
+            log.info("Slider mode → OWNER_ONLY für Store {} (erstes Unsplash-Bild)", store.getId());
+        }
+
+        return sliderImage;
+    }
+
+    /**
      * Creates default slider settings for a store
      */
     private StoreSliderSettings createDefaultSettings(Store store) {

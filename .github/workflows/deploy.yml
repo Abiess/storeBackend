@@ -271,6 +271,7 @@ jobs:
             export OPENROUTER_API_KEY="${{ secrets.OPENROUTER_API_KEY }}"
             export TELEGRAM_AUTH_BOT_TOKEN="${{ secrets.TELEGRAM_AUTH_BOT_TOKEN }}"
             export CLARITY_ID="${{ secrets.CLARITY_ID }}"
+            export UNSPLASH_ACCESS_KEY="${{ secrets.UNSPLASH_ACCESS_KEY }}"
             cd /opt/storebackend
             bash scripts/deploy.sh
 

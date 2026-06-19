@@ -6,6 +6,8 @@ import { StoreService } from '@app/core/services/store.service';
 import { WizardProgressService, WizardProgress } from '@app/core/services/wizard-progress.service';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { AiProductImageGeneratorComponent, AiImageData } from '@app/shared/components/ai-product-image-generator.component';
+import { UnsplashImagePickerComponent } from '@app/shared/components/unsplash-image-picker.component';
+import { UnsplashService, UnsplashImage } from '@app/core/services/unsplash.service';
 
 interface WizardStep {
   id: number;
@@ -18,7 +20,7 @@ interface WizardStep {
 @Component({
   selector: 'app-store-wizard',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TranslatePipe, AiProductImageGeneratorComponent],
+  imports: [CommonModule, ReactiveFormsModule, TranslatePipe, AiProductImageGeneratorComponent, UnsplashImagePickerComponent],
   template: `
     <div class="wizard-container">
       <!-- Skip Button -->
@@ -145,7 +147,7 @@ interface WizardStep {
             </div>
           </div>
 
-          <!-- Step 2: Kategorien & Bereiche -->
+          <!-- Step 2: Geschäftstyp & Bildvorschläge -->
           <div class="wizard-step" *ngIf="currentStep() === 2">
             <div class="step-header">
               <span class="step-icon">{{ steps[1].icon }}</span>
@@ -153,21 +155,34 @@ interface WizardStep {
               <p>{{ steps[1].subtitle | translate }}</p>
             </div>
 
-            <div class="categories-grid">
-              <div 
-                *ngFor="let category of categories"
-                class="category-card"
-                [class.selected]="selectedCategories().includes(category.id)"
-                (click)="toggleCategory(category.id)">
-                <span class="category-icon">{{ category.icon }}</span>
-                <h3>{{ category.name | translate }}</h3>
-                <p>{{ category.description | translate }}</p>
-                <div class="category-check" *ngIf="selectedCategories().includes(category.id)">
+            <!-- BusinessType Auswahl -->
+            <div class="business-type-grid">
+              <div
+                *ngFor="let bt of businessTypes"
+                class="business-type-card"
+                [class.selected]="selectedBusinessType() === bt.id"
+                (click)="selectBusinessType(bt.id)">
+                <span class="business-type-icon">{{ bt.icon }}</span>
+                <h3>{{ bt.name }}</h3>
+                <p>{{ bt.description }}</p>
+                <div class="business-type-check" *ngIf="selectedBusinessType() === bt.id">
                   <svg width="24" height="24" viewBox="0 0 24 24">
                     <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" fill="white"/>
                   </svg>
                 </div>
               </div>
+            </div>
+
+            <!-- Unsplash Bildvorschläge -->
+            <div class="unsplash-section" *ngIf="selectedBusinessType()">
+              <div class="unsplash-section__header">
+                <h4>🖼️ Wähle passende Bilder für deinen Store</h4>
+                <p class="hint">Die Bilder werden als Startseiten-Slider übernommen. Optional – du kannst sie später ändern.</p>
+              </div>
+              <app-unsplash-image-picker
+                [businessType]="selectedBusinessType()"
+                (selectionChanged)="onUnsplashSelectionChanged($event)">
+              </app-unsplash-image-picker>
             </div>
           </div>
 
@@ -381,6 +396,19 @@ interface WizardStep {
               <div class="summary-item" *ngIf="wizardForm.get('phone')?.value">
                 <span class="summary-label">{{ 'wizard.phone' | translate }}:</span>
                 <span class="summary-value">{{ wizardForm.get('phone')?.value }}</span>
+              </div>
+            </div>
+
+            <div class="summary-card" *ngIf="selectedUnsplashImages().length > 0">
+              <h3>🖼️ Ausgewählte Bilder ({{ selectedUnsplashImages().length }})</h3>
+              <div class="unsplash-preview-row">
+                <img *ngFor="let img of selectedUnsplashImages().slice(0, 4)"
+                     [src]="img.thumbUrl"
+                     [alt]="img.description || 'Unsplash photo'"
+                     class="unsplash-preview-thumb">
+                <span *ngIf="selectedUnsplashImages().length > 4" class="more-images">
+                  +{{ selectedUnsplashImages().length - 4 }}
+                </span>
               </div>
             </div>
 
@@ -1150,6 +1178,85 @@ interface WizardStep {
       text-transform: uppercase;
     }
 
+    /* ─── BusinessType Grid ───────────────────────────── */
+    .business-type-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    @media (max-width: 640px) {
+      .business-type-grid { grid-template-columns: 1fr; }
+    }
+
+    .business-type-card {
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 1.5rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      position: relative;
+      text-align: center;
+    }
+    .business-type-card:hover {
+      border-color: #667eea;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
+    }
+    .business-type-card.selected {
+      border-color: #667eea;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    }
+    .business-type-icon {
+      font-size: 2.5rem;
+      display: block;
+      margin-bottom: 0.75rem;
+    }
+    .business-type-card h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #1f2937;
+      margin: 0 0 0.5rem;
+    }
+    .business-type-card p {
+      font-size: 0.875rem;
+      color: #6b7280;
+      margin: 0;
+    }
+    .business-type-check {
+      position: absolute;
+      top: 0.75rem; right: 0.75rem;
+      width: 32px; height: 32px;
+      background: #667eea;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ─── Unsplash Section ──────────────────────────── */
+    .unsplash-section {
+      margin-top: 1.75rem;
+    }
+    .unsplash-section__header h4 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #1f2937;
+      margin: 0 0 0.25rem;
+    }
+
+    /* Unsplash Summary Preview */
+    .unsplash-preview-row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.75rem;
+    }
+    .unsplash-preview-thumb {
+      width: 64px; height: 64px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 2px solid #e5e7eb;
+    }
+
     @media (max-width: 768px) {
       .wizard-container { padding: 1rem 1rem 3rem; }
 
@@ -1173,6 +1280,8 @@ interface WizardStep {
 export class StoreWizardComponent implements OnInit {
   currentStep = signal(1);
   selectedCategories = signal<string[]>([]);
+  selectedBusinessType = signal<string>('SHOP');
+  selectedUnsplashImages = signal<UnsplashImage[]>([]);
   loading = signal(false);
   error = signal<string | null>(null);
 
@@ -1186,15 +1295,11 @@ export class StoreWizardComponent implements OnInit {
     { id: 5, title: 'wizard.step5Title', subtitle: 'wizard.step5Subtitle', icon: '✅', completed: false }
   ];
 
-  categories = [
-    { id: 'fashion', name: 'wizard.categoryFashion', description: 'wizard.categoryFashionDesc', icon: '👗' },
-    { id: 'electronics', name: 'wizard.categoryElectronics', description: 'wizard.categoryElectronicsDesc', icon: '📱' },
-    { id: 'food', name: 'wizard.categoryFood', description: 'wizard.categoryFoodDesc', icon: '🍔' },
-    { id: 'beauty', name: 'wizard.categoryBeauty', description: 'wizard.categoryBeautyDesc', icon: '💄' },
-    { id: 'home', name: 'wizard.categoryHome', description: 'wizard.categoryHomeDesc', icon: '🏠' },
-    { id: 'sports', name: 'wizard.categorySports', description: 'wizard.categorySportsDesc', icon: '⚽' },
-    { id: 'books', name: 'wizard.categoryBooks', description: 'wizard.categoryBooksDesc', icon: '📚' },
-    { id: 'toys', name: 'wizard.categoryToys', description: 'wizard.categoryToysDesc', icon: '🧸' }
+  /** BusinessType-Auswahl für Schritt 2 */
+  businessTypes = [
+    { id: 'SHOP',       icon: '🛍️', name: 'Online-Shop',    description: 'Produkte, Dropshipping, E-Commerce' },
+    { id: 'RESTAURANT', icon: '🍽️', name: 'Restaurant',     description: 'Menü, Bestellungen, Tischreservierung' },
+    { id: 'RIAD',       icon: '🕌', name: 'Riad / Hotel',   description: 'Unterkünfte, Zimmer, Touren' },
   ];
 
   createdStoreId: number | null = null;
@@ -1204,6 +1309,7 @@ export class StoreWizardComponent implements OnInit {
     private fb: FormBuilder,
     private storeService: StoreService,
     private wizardProgressService: WizardProgressService,
+    private unsplashService: UnsplashService,
     private router: Router
   ) {
     // Initialize form immediately in constructor
@@ -1216,6 +1322,7 @@ export class StoreWizardComponent implements OnInit {
       storeName: this.fb.control('', [Validators.required]),
       storeSlug: this.fb.control('', [Validators.required, Validators.pattern(/^[a-z0-9-]+$/)]),
       description: this.fb.control('', []),
+      businessType: this.fb.control('SHOP', []),
       email: this.fb.control('', []),
       phone: this.fb.control('', []),
       whatsappNumber: this.fb.control('', []),
@@ -1398,6 +1505,8 @@ export class StoreWizardComponent implements OnInit {
         slug: formValue.storeSlug,
         description: formValue.description || null,
         categories: this.selectedCategories(),
+        businessType: this.selectedBusinessType() || 'SHOP',
+        seedSampleData: this.selectedBusinessType() !== 'SHOP',
         whatsappNumber: formValue.whatsappNumber || null,
           whatsappNotificationsEnabled: formValue.whatsappNotificationsEnabled || false,
           contactInfo: {
@@ -1421,6 +1530,9 @@ export class StoreWizardComponent implements OnInit {
 
       this.createdStoreId = result.id;
       console.log('✅ Store erstellt für KI-Step:', result.id);
+
+      // Unsplash-Bilder anwenden (falls ausgewählt)
+      await this.applyUnsplashImages(result.id);
 
       // Markiere Schritt 3 als abgeschlossen und gehe zu Schritt 4
       this.steps[2].completed = true;
@@ -1458,6 +1570,31 @@ export class StoreWizardComponent implements OnInit {
     }
   }
 
+  selectBusinessType(type: string): void {
+    this.selectedBusinessType.set(type);
+    this.wizardForm.patchValue({ businessType: type });
+  }
+
+  onUnsplashSelectionChanged(images: UnsplashImage[]): void {
+    this.selectedUnsplashImages.set(images);
+  }
+
+  /**
+   * Wendet ausgewählte Unsplash-Bilder nach der Store-Erstellung an.
+   * Fehler sind nicht blockierend – der Store wurde bereits angelegt.
+   */
+  private async applyUnsplashImages(storeId: number): Promise<void> {
+    const images = this.selectedUnsplashImages();
+    if (!images.length) return;
+
+    try {
+      await this.unsplashService.applyImages(storeId, images, 'SLIDER').toPromise();
+      console.log(`✅ ${images.length} Unsplash-Bild(er) dem Store ${storeId} hinzugefügt`);
+    } catch (err) {
+      console.warn('⚠️ Unsplash-Bilder konnten nicht angewendet werden (nicht kritisch):', err);
+    }
+  }
+
   toggleCategory(categoryId: string): void {
     const current = this.selectedCategories();
     if (current.includes(categoryId)) {
@@ -1468,7 +1605,7 @@ export class StoreWizardComponent implements OnInit {
   }
 
   getCategoryName(categoryId: string): string {
-    return this.categories.find(c => c.id === categoryId)?.name || categoryId;
+    return this.businessTypes.find(bt => bt.id === categoryId)?.name || categoryId;
   }
 
   skip(): void {
@@ -1515,6 +1652,8 @@ export class StoreWizardComponent implements OnInit {
         slug: formValue.storeSlug,
         description: formValue.description || null,
         categories: this.selectedCategories(),
+        businessType: this.selectedBusinessType() || 'SHOP',
+        seedSampleData: this.selectedBusinessType() !== 'SHOP',
         whatsappNumber: formValue.whatsappNumber || null,
           whatsappNotificationsEnabled: formValue.whatsappNotificationsEnabled || false,
           contactInfo: {
@@ -1533,6 +1672,9 @@ export class StoreWizardComponent implements OnInit {
       }
       
       this.createdStoreId = result.id;
+
+      // Unsplash-Bilder anwenden (falls ausgewählt)
+      await this.applyUnsplashImages(result.id);
 
       // Markiere Wizard als completed in DB
       this.wizardProgressService.completeWizard(result.id).subscribe({
