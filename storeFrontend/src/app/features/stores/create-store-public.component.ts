@@ -5,6 +5,8 @@ import { Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '@app/core/services/auth.service';
 import { environment } from '@env/environment';
+import { UnsplashImagePickerComponent } from '@app/shared/components/unsplash-image-picker.component';
+import { UnsplashService, UnsplashImage } from '@app/core/services/unsplash.service';
 
 interface CreateStoreResponse {
   token: string;
@@ -18,7 +20,7 @@ interface CreateStoreResponse {
 @Component({
   selector: 'app-create-store-public',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, UnsplashImagePickerComponent],
   template: `
     <div class="cs-wrapper">
 
@@ -70,6 +72,20 @@ interface CreateStoreResponse {
                 }
               </div>
             </div>
+
+              <!-- Unsplash Bildvorschläge -->
+              @if (selectedCategory()) {
+                <div class="unsplash-section">
+                  <div class="unsplash-section__header">
+                    <h4>🖼️ Wähle passende Bilder für deinen Store</h4>
+                    <p class="unsplash-hint">Optional – werden als Startseiten-Slider verwendet. Kannst du später ändern.</p>
+                  </div>
+                  <app-unsplash-image-picker
+                    [businessType]="selectedCategory()"
+                    (selectionChanged)="onUnsplashSelectionChanged($event)">
+                  </app-unsplash-image-picker>
+                </div>
+              }
 
             @if (errorMsg()) {
               <div class="cs-error">⚠️ {{ errorMsg() }}</div>
@@ -377,6 +393,24 @@ interface CreateStoreResponse {
       .cs-title { font-size: 1.3rem; }
       .category-grid { grid-template-columns: repeat(2, 1fr); }
     }
+
+    /* Unsplash section */
+    .unsplash-section {
+      margin-top: 0.5rem;
+    }
+
+    .unsplash-section__header h4 {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #374151;
+      margin: 0 0 0.2rem;
+    }
+
+    .unsplash-hint {
+      font-size: 0.78rem;
+      color: #9ca3af;
+      margin: 0 0 0.75rem;
+    }
   `]
 })
 export class CreateStorePublicComponent {
@@ -387,6 +421,7 @@ export class CreateStorePublicComponent {
   selectedCategory = signal('');
   storeName = signal('');
   storeSlug = signal('');
+  selectedUnsplashImages = signal<UnsplashImage[]>([]);
   private createdStoreId = 0;
 
   categories = [
@@ -404,7 +439,8 @@ export class CreateStorePublicComponent {
     private fb: FormBuilder,
     private http: HttpClient,
     private router: Router,
-    private authService: AuthService
+    private authService: AuthService,
+    private unsplashService: UnsplashService
   ) {
     this.form = this.fb.group({
       storeName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(80)]]
@@ -451,13 +487,27 @@ export class CreateStorePublicComponent {
         this.createdStoreId = res.storeId;
         this.storeName.set(name);
         this.storeSlug.set(res.storeSlug);
-        this.step.set('done');
+        this.applyUnsplashImages(res.storeId).then(() => this.step.set('done'));
       },
       error: (err) => {
         this.loading.set(false);
         this.errorMsg.set(err?.error?.message || 'Fehler beim Erstellen des Stores. Bitte versuche es erneut.');
       }
     });
+  }
+
+  onUnsplashSelectionChanged(images: UnsplashImage[]): void {
+    this.selectedUnsplashImages.set(images);
+  }
+
+  private async applyUnsplashImages(storeId: number): Promise<void> {
+    const images = this.selectedUnsplashImages();
+    if (!images.length) return;
+    try {
+      await this.unsplashService.applyImages(storeId, images, 'SLIDER').toPromise();
+    } catch (err) {
+      console.warn('⚠️ Unsplash-Bilder konnten nicht angewendet werden (nicht kritisch):', err);
+    }
   }
 
   goToDashboard(): void {
