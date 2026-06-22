@@ -89,6 +89,39 @@ public class EmailService {
         }
     }
 
+    // ==================================================================================
+    // STORE ACCESS E-MAIL (anonymer User gibt E-Mail nach Store-Erstellung ein)
+    // ==================================================================================
+
+    public void sendStoreAccessEmail(String toEmail, String storeName,
+                                      String storeUrl, String dashboardUrl, String lang) {
+        if (!mailEnabled) {
+            log.info("Mail disabled – store access email to: {} storeUrl: {}", toEmail, storeUrl);
+            return;
+        }
+        try {
+            Map<String, Object> vars = new HashMap<>();
+            vars.put("storeName",    storeName);
+            vars.put("storeUrl",     storeUrl);
+            vars.put("dashboardUrl", dashboardUrl);
+            vars.put("loginUrl",     dashboardUrl);
+            vars.put("greeting",     buildGreeting(lang, storeName));
+            vars.put("title",        t(lang, "storeAccess.title",    "Your store is ready!"));
+            vars.put("intro",        t(lang, "storeAccess.intro",    "Your store is now live. Save this email for direct access."));
+            vars.put("btnLabel",     t(lang, "storeAccess.btnLabel", "Go to Dashboard →"));
+            vars.put("tip",          t(lang, "storeAccess.tip",      "Save this email – it contains your direct access link."));
+            addFooter(lang, vars);
+
+            String subject = t(lang, "storeAccess.subject",
+                    "Your store \"" + storeName + "\" is live \uD83D\uDE80 – markt.ma")
+                .replace("{{storeName}}", storeName);
+            sendHtml(toEmail, subject, templateService.render("store-access.html", lang, vars));
+            log.info("Store access email sent to: {} for store: {}", toEmail, storeName);
+        } catch (Exception e) {
+            log.error("Failed to send store access email to: {}", toEmail, e);
+        }
+    }
+
     public void sendPasswordResetEmail(String toEmail, String token) {
         sendPasswordResetEmail(toEmail, token, "en");
     }

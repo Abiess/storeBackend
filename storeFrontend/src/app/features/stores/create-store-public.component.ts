@@ -7,12 +7,15 @@ import { AuthService } from '@app/core/services/auth.service';
 import { environment } from '@env/environment';
 import { UnsplashImagePickerComponent } from '@app/shared/components/unsplash-image-picker.component';
 import { UnsplashService, UnsplashImage } from '@app/core/services/unsplash.service';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 interface CreateStoreResponse {
   token: string;
   storeId: number;
   storeSlug: string;
+  storeUrl: string;
   userId: number;
+  userEmail: string;
   isAnonymous: boolean;
   message: string;
 }
@@ -20,7 +23,7 @@ interface CreateStoreResponse {
 @Component({
   selector: 'app-create-store-public',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, UnsplashImagePickerComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, UnsplashImagePickerComponent, TranslatePipe],
   template: `
     <div class="cs-wrapper">
 
@@ -111,24 +114,45 @@ interface CreateStoreResponse {
       @if (step() === 'done') {
         <div class="cs-card animate-in cs-done">
           <div class="cs-icon">🎉</div>
-          <h1 class="cs-title">Dein Store ist bereit!</h1>
+          <h1 class="cs-title">{{ 'createStorePublic.doneTitle' | translate }}</h1>
           <p class="cs-subtitle">{{ storeName() }}</p>
 
           <div class="done-actions">
             <button class="cs-btn-primary" (click)="goToDashboard()">
-              📦 Produkte hinzufügen →
+              {{ 'createStorePublic.addProducts' | translate }}
             </button>
-            <a class="done-link" [href]="'https://' + storeSlug() + '.markt.ma'" target="_blank">
-              🌐 Store ansehen ↗
+            <a class="done-link" [href]="storeUrl()" target="_blank">
+              {{ 'createStorePublic.viewStore' | translate }}
             </a>
           </div>
 
           <div class="save-account-box">
-            <h3>💾 Account sichern (optional)</h3>
-            <p>Speichere deine Telefonnummer um später wieder einloggen zu können.</p>
-            <button class="cs-btn-secondary" (click)="goToSecure()">
-              📱 Account jetzt sichern
-            </button>
+            <h3>{{ 'createStorePublic.saveEmailTitle' | translate }}</h3>
+            <p>{{ 'createStorePublic.saveEmailSubtitle' | translate }}</p>
+
+            @if (!emailSent()) {
+              <div class="email-row">
+                <input
+                  type="email"
+                  [value]="emailToSave()"
+                  (input)="emailToSave.set($any($event.target).value)"
+                  [placeholder]="'createStorePublic.emailPlaceholder' | translate"
+                  class="cs-input email-input"
+                />
+                <button
+                  class="cs-btn-send"
+                  [disabled]="emailSaving() || !emailToSave().includes('@')"
+                  (click)="sendAccessEmail()">
+                  @if (emailSaving()) { <span class="spinner"></span> } @else { {{ 'createStorePublic.sendBtn' | translate }} }
+                </button>
+              </div>
+              @if (emailError()) {
+                <p class="field-error">{{ emailError() }}</p>
+              }
+              <p class="email-skip" (click)="goToDashboard()">{{ 'createStorePublic.skip' | translate }}</p>
+            } @else {
+              <p class="email-success">✅ {{ ('createStorePublic.emailSent' | translate).replace('{{email}}', emailToSave()) }}</p>
+            }
           </div>
         </div>
       }
@@ -388,6 +412,51 @@ interface CreateStoreResponse {
       p  { font-size: 0.82rem; color: #6b7280; margin: 0 0 0.75rem; }
     }
 
+    .email-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .email-input {
+      flex: 1;
+      padding: 0.65rem 0.875rem;
+      font-size: 0.9rem;
+    }
+
+    .cs-btn-send {
+      padding: 0.65rem 1rem;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.875rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      transition: opacity 0.2s;
+      &:disabled { opacity: 0.55; cursor: not-allowed; }
+    }
+
+    .email-skip {
+      font-size: 0.78rem;
+      color: #9ca3af;
+      cursor: pointer;
+      text-align: right;
+      margin: 0.25rem 0 0;
+      &:hover { color: #667eea; }
+    }
+
+    .email-success {
+      font-size: 0.875rem;
+      color: #16a34a;
+      text-align: center;
+      padding: 0.5rem 0;
+    }
+
     @media (max-width: 480px) {
       .cs-card { padding: 1.5rem 1.25rem; }
       .cs-title { font-size: 1.3rem; }
@@ -421,7 +490,12 @@ export class CreateStorePublicComponent {
   selectedCategory = signal('');
   storeName = signal('');
   storeSlug = signal('');
+  storeUrl = signal('');
   selectedUnsplashImages = signal<UnsplashImage[]>([]);
+  emailToSave = signal('');
+  emailSaving = signal(false);
+  emailSent = signal(false);
+  emailError = signal('');
   private createdStoreId = 0;
 
   categories = [
@@ -477,7 +551,7 @@ export class CreateStorePublicComponent {
         localStorage.setItem('auth_token', res.token);
         localStorage.setItem('currentUser', JSON.stringify({
           id: res.userId,
-          email: `anon-${res.userId}@markt.ma`,
+          email: res.userEmail,
           name: name,
           role: 'USER',
           roles: ['USER']
@@ -487,6 +561,7 @@ export class CreateStorePublicComponent {
         this.createdStoreId = res.storeId;
         this.storeName.set(name);
         this.storeSlug.set(res.storeSlug);
+        this.storeUrl.set(res.storeUrl ?? ('https://' + res.storeSlug + '.markt.ma'));
         this.applyUnsplashImages(res.storeId).then(() => this.step.set('done'));
       },
       error: (err) => {
@@ -514,8 +589,33 @@ export class CreateStorePublicComponent {
     this.router.navigate(['/stores', this.createdStoreId]);
   }
 
-  goToSecure(): void {
-    this.router.navigate(['/settings']);
+  sendAccessEmail(): void {
+    const email = this.emailToSave().trim();
+    if (!email || !email.includes('@')) return;
+    this.emailSaving.set(true);
+    this.emailError.set('');
+
+    this.http.post<{ token: string; message: string }>(
+      `${environment.apiUrl}/public/create-store/save-email`,
+      { email, storeId: this.createdStoreId },
+      { headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` } }
+    ).subscribe({
+      next: (res) => {
+        if (res.token) {
+          localStorage.setItem('auth_token', res.token);
+          const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+          user.email = email;
+          localStorage.setItem('currentUser', JSON.stringify(user));
+          this.authService.setAuthFromStorage();
+        }
+        this.emailSaving.set(false);
+        this.emailSent.set(true);
+      },
+      error: (err) => {
+        this.emailSaving.set(false);
+        this.emailError.set(err?.error?.message || 'Fehler beim Senden. Bitte versuche es erneut.');
+      }
+    });
   }
 }
 

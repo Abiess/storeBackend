@@ -16,9 +16,13 @@ import storebackend.repository.PlanRepository;
 import storebackend.repository.StoreRepository;
 import storebackend.repository.UserRepository;
 import storebackend.security.JwtUtil;
+import storebackend.service.EmailService;
 import storebackend.service.StarterPackService;
+import storebackend.service.StorePostCreateService;
+import storebackend.config.SaasProperties;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.util.HashSet;
@@ -48,6 +52,9 @@ public class PublicStoreCreationController {
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
     private final StarterPackService starterPackService;
+    private final StorePostCreateService storePostCreateService;
+    private final SaasProperties saasProperties;
+    private final EmailService emailService;
 
     public record CreateStorePublicRequest(
         @NotBlank(message = "Store-Name darf nicht leer sein")
@@ -64,7 +71,9 @@ public class PublicStoreCreationController {
         String token,
         long storeId,
         String storeSlug,
+        String storeUrl,
         long userId,
+        String userEmail,
         boolean isAnonymous,
         String message
     ) {}
@@ -133,15 +142,20 @@ public class PublicStoreCreationController {
                 }
             }
 
-            // ── 4. JWT generieren ─────────────────────────────────────────────
-            String token = jwtUtil.generateToken(user.getEmail(), user.getId(), user.getRoles());
+            // ── 4. Subdomain + Slider + Homepage initialisieren ───────────────
+            storePostCreateService.executePostCreateOperations(store.getId(), req.category());
 
+            // ── 5. JWT generieren ─────────────────────────────────────────────
+            String token = jwtUtil.generateToken(user.getEmail(), user.getId(), user.getRoles());
+            String storeUrl = "https://" + saasProperties.generateSubdomain(slug);
 
             return ResponseEntity.ok(new CreateStorePublicResponse(
                 token,
                 store.getId(),
                 slug,
+                storeUrl,
                 user.getId(),
+                user.getEmail(),
                 true,
                 "Store erfolgreich erstellt! Du kannst jetzt loslegen."
             ));
@@ -154,6 +168,73 @@ public class PublicStoreCreationController {
     }
 
     // ── Helper ────────────────────────────────────────────────────────────────
+
+    /**
+     * POST /api/public/create-store/save-email
+     * Nachdem ein anonymer User seinen Store erstellt hat, kann er hier seine
+     * echte E-Mail hinterlegen. Das System aktualisiert die Fake-Adresse,
+     * schickt eine Store-Zugangs-Mail und stellt einen neuen JWT aus.
+     */
+    @PostMapping("/save-email")
+    public ResponseEntity<?> saveEmail(
+            @RequestHeader("Authorization") String authHeader,
+            @Valid @RequestBody SaveEmailRequest req) {
+        try {
+            String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
+            Long userId = jwtUtil.extractUserId(token);
+            if (userId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Ungültiger Token"));
+            }
+
+            User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User nicht gefunden"));
+
+            // Nur anonyme User dürfen ihre E-Mail setzen
+            if (!user.getEmail().startsWith("anon-")) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("message", "User hat bereits eine echte E-Mail"));
+            }
+
+            // E-Mail-Kollision prüfen
+            if (userRepository.existsByEmail(req.email())) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Diese E-Mail-Adresse ist bereits vergeben"));
+            }
+
+            user.setEmail(req.email());
+            userRepository.save(user);
+            log.info("✅ [SaveEmail] E-Mail für User {} gesetzt: {}", userId, req.email());
+
+            // Store-URL und Dashboard-URL ermitteln
+            Store store = storeRepository.findById(req.storeId())
+                .orElseThrow(() -> new RuntimeException("Store nicht gefunden"));
+            String storeUrl = "https://" + saasProperties.generateSubdomain(store.getSlug());
+            String dashboardUrl = "https://markt.ma/stores/" + store.getId();
+
+            // Store-Zugangs-Mail schicken
+            emailService.sendStoreAccessEmail(req.email(), store.getName(), storeUrl, dashboardUrl, "de");
+
+            // Neuen JWT mit der echten E-Mail ausstellen
+            String newToken = jwtUtil.generateToken(req.email(), userId, user.getRoles());
+
+            return ResponseEntity.ok(Map.of(
+                "token", newToken,
+                "message", "E-Mail gespeichert! Wir haben dir deinen Store-Link zugeschickt."
+            ));
+
+        } catch (Exception e) {
+            log.error("❌ [SaveEmail] Fehler: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("message", "Fehler beim Speichern der E-Mail: " + e.getMessage()));
+        }
+    }
+
+    public record SaveEmailRequest(
+        @NotBlank @Email(message = "Ungültige E-Mail-Adresse")
+        String email,
+        long storeId
+    ) {}
 
     private String buildUniqueSlug(String requestedSlug, String storeName) {
         String base;
