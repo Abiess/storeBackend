@@ -60,7 +60,7 @@ import {TranslateService} from "@ngx-translate/core";
 
             <div class="user-chip">
               <span class="user-avatar">{{ getUserInitials() }}</span>
-              <span class="user-email" *ngIf="currentUser">{{ currentUser.email }}</span>
+              <span class="user-email" *ngIf="currentUser && !isAnonymous">{{ currentUser.email }}</span>
             </div>
 
             <button class="nav-icon-btn nav-icon-btn--logout"
@@ -1146,6 +1146,10 @@ export class DashboardComponent implements OnInit {
       next: (stores) => {
         this.stores = stores;
         this.loading = false;
+        // Auto-redirect: wenn genau 1 Store → direkt in Store-Kontext
+        if (stores.length === 1) {
+          this.router.navigate(['/stores', stores[0].id]);
+        }
       },
       error: (error) => {
         console.error('Fehler beim Laden der Stores:', error);
@@ -1159,8 +1163,12 @@ export class DashboardComponent implements OnInit {
     window.location.href = '/login';
   }
 
+  get isAnonymous(): boolean {
+    return this.currentUser?.email?.startsWith('anon-') ?? false;
+  }
+
   getUserInitials(): string {
-    if (!this.currentUser?.email) return 'U';
+    if (!this.currentUser?.email || this.isAnonymous) return '?';
     return this.currentUser.email.charAt(0).toUpperCase();
   }
 

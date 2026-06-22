@@ -60,13 +60,18 @@ export class AdminLayoutComponent implements OnInit {
     this.currentUser = this.authService.getCurrentUser();
   }
 
+  get isAnonymous(): boolean {
+    return this.currentUser?.email?.startsWith('anon-') ?? false;
+  }
+
   getUserInitials(): string {
-    if (!this.currentUser) return '?';
+    if (!this.currentUser || this.isAnonymous) return '?';
     const name = this.currentUser.name || this.currentUser.email;
     return name.charAt(0).toUpperCase();
   }
 
   getUserDisplayName(): string {
+    if (this.isAnonymous) return 'Gast';
     return this.currentUser?.name || this.currentUser?.email || '';
   }
 
