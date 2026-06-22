@@ -133,25 +133,25 @@ $bg:         #f9fafb;
   &.btn-hero-secondary {
     padding: 0.9rem 1.75rem;
     font-size: 1rem;
-    background: rgba(255,255,255,0.15);
-    color: #fff;
-    border: 1.5px solid rgba(255,255,255,0.5);
+    background: rgba(102, 126, 234, 0.08);
+    color: $primary;
+    border: 1.5px solid rgba(102, 126, 234, 0.35);
     border-radius: 10px;
     width: 100%;
     @media (min-width: 480px) { width: auto; }
-    &:hover { background: rgba(255,255,255,0.25); }
+    &:hover { background: rgba(102, 126, 234, 0.15); border-color: $primary; }
   }
 
   &.btn-hero-ghost {
     padding: 0.9rem 1.75rem;
     font-size: 1rem;
     background: transparent;
-    color: rgba(255,255,255,0.8);
+    color: $text-mid;
     border: none;
     border-radius: 10px;
     width: 100%;
     @media (min-width: 480px) { width: auto; }
-    &:hover { color: #fff; background: rgba(255,255,255,0.1); }
+    &:hover { color: $primary; background: rgba(102, 126, 234, 0.08); }
   }
 
   &.btn-plan {
@@ -265,7 +265,7 @@ $bg:         #f9fafb;
 
     .no-signup-hint {
       font-size: 0.82rem;
-      color: rgba(255,255,255,0.85);
+      color: $text-light;
       margin: 0;
       letter-spacing: 0.01em;
     }
@@ -277,14 +277,14 @@ $bg:         #f9fafb;
     align-items: center;
     gap: 1rem;
     margin-bottom: 1rem;
-    color: rgba(255,255,255,0.5);
+    color: $text-light;
     font-size: 0.85rem;
 
     &::before, &::after {
       content: '';
       flex: 1;
       height: 1px;
-      background: rgba(255,255,255,0.2);
+      background: $border;
       max-width: 80px;
     }
   }
