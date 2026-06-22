@@ -57,7 +57,7 @@ interface SettingsSection {
           <div class="account-info">
             <h3>{{ userName }}</h3>
             <p *ngIf="userEmail">{{ userEmail }}</p>
-            <p *ngIf="!userEmail" class="anon-hint" (click)="openCard({id:'profile',tab:'profile'})">
+            <p *ngIf="!userEmail" class="anon-hint" (click)="openCard({id:'profile', icon:'👤', title:'settings.profile.title', description:'', tab:'profile'})">
               ⚠️ {{ 'settings.noEmailHint' | translate }}
             </p>
           </div>
