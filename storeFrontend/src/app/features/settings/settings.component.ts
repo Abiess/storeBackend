@@ -56,7 +56,10 @@ interface SettingsSection {
           <div class="account-avatar">{{ userInitials }}</div>
           <div class="account-info">
             <h3>{{ userName }}</h3>
-            <p>{{ userEmail }}</p>
+            <p *ngIf="userEmail">{{ userEmail }}</p>
+            <p *ngIf="!userEmail" class="anon-hint" (click)="openCard({id:'profile',tab:'profile'})">
+              ⚠️ {{ 'settings.noEmailHint' | translate }}
+            </p>
           </div>
           <div class="account-meta">
             <span class="role-pill" *ngIf="userRole">{{ userRole }}</span>
@@ -169,7 +172,8 @@ interface SettingsSection {
               <div class="profile-avatar-big">{{ userInitials }}</div>
               <div>
                 <h3>{{ userName || 'Unbekannt' }}</h3>
-                <p class="text-muted">{{ userEmail }}</p>
+                <p class="text-muted" *ngIf="userEmail">{{ userEmail }}</p>
+                <p class="text-muted anon-hint" *ngIf="!userEmail">⚠️ {{ 'settings.noEmailHint' | translate }}</p>
                 <p class="text-muted small" *ngIf="userCreatedAt">Mitglied seit {{ userCreatedAt | date:'MMMM yyyy' }}</p>
               </div>
             </div>
@@ -183,7 +187,8 @@ interface SettingsSection {
                 </div>
                 <div class="form-group">
                   <label>E-Mail</label>
-                  <input type="email" class="form-control" [value]="userEmail" readonly />
+                  <input *ngIf="userEmail" type="email" class="form-control" [value]="userEmail" readonly />
+                  <span *ngIf="!userEmail" class="anon-no-email">{{ 'settings.noEmailSet' | translate }}</span>
                 </div>
                 <div class="form-group">
                   <label>Rollen</label>
@@ -476,6 +481,21 @@ interface SettingsSection {
     .profile-header-card h3 { margin: 0 0 0.15rem; font-size: 1.2rem; }
     .text-muted { color: #6b7280; margin: 0; font-size: 0.88rem; }
     .text-muted.small { font-size: 0.78rem; margin-top: 0.2rem; }
+    .anon-hint {
+      color: #d97706 !important;
+      cursor: pointer;
+      font-size: 0.82rem !important;
+      &:hover { text-decoration: underline; }
+    }
+    .anon-no-email {
+      display: inline-block;
+      padding: 0.5rem 0.75rem;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 8px;
+      color: #92400e;
+      font-size: 0.82rem;
+    }
     .form-section { margin-bottom: 1.75rem; }
     .form-section h4 { margin: 0 0 1rem; font-size: 1rem; font-weight: 600; color: #374151; }
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
@@ -620,6 +640,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
   // User
   userName = '';
   userEmail = '';
+  isAnonymous = false;
   userInitials = '';
   userRole = '';
   userRoles: string[] = [];
@@ -720,8 +741,11 @@ export class SettingsComponent implements OnInit, OnDestroy {
       this.authService.currentUser$.subscribe(user => {
         if (user) {
           this.userName = user.name || '';
-          this.userEmail = user.email || '';
-          this.userInitials = this.getInitials(user.name || user.email || '?');
+          const email = user.email || '';
+          // Anonyme Fake-Emails nicht anzeigen
+          this.userEmail = email.startsWith('anon-') ? '' : email;
+          this.isAnonymous = email.startsWith('anon-');
+          this.userInitials = this.getInitials(user.name || (this.userEmail || '?'));
           this.userRoles = user.roles || [];
           this.userRole = this.userRoles.length > 0 ? this.formatRole(this.userRoles[0]) : '';
           this.userCreatedAt = user.createdAt || null;
@@ -788,7 +812,13 @@ export class SettingsComponent implements OnInit, OnDestroy {
   private loadMyStores(): void {
     this.subs.push(
       this.storeService.getMyStores().subscribe({
-        next: (stores) => { this.myStores = stores; },
+        next: (stores) => {
+          this.myStores = stores;
+          // Wenn kein Store in der URL und genau 1 Store existiert → auto-redirect
+          if (!this.currentStoreId && stores.length === 1) {
+            this.router.navigate(['/stores', stores[0].id, 'settings'], { replaceUrl: true });
+          }
+        },
         error: (err) => { console.warn('⚠️ Stores konnten nicht geladen werden:', err); }
       })
     );

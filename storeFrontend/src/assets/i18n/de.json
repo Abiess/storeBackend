@@ -671,7 +671,9 @@
       "footerTextTitle": "Footer-Text",
       "footerTextHint": "Kurzer Slogan unter dem Logo im Footer (max. 200 Zeichen).",
       "footerTextPlaceholder": "Dein Shop für alles – schnell, günstig, zuverlässig."
-    }
+    },
+    "noEmailHint": "Keine E-Mail hinterlegt – jetzt hinzufügen →",
+    "noEmailSet": "⚠️ Noch keine E-Mail – Store-Link sichern!"
   },
   "table": {
     "image": "Bild",

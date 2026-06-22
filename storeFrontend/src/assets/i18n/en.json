@@ -553,7 +553,9 @@
       "footerTextTitle": "Footer Text",
       "footerTextHint": "A short tagline below your logo in the footer (max. 200 characters).",
       "footerTextPlaceholder": "Your one-stop shop – fast, affordable, reliable."
-    }
+    },
+    "noEmailHint": "No email set – add one now →",
+    "noEmailSet": "⚠️ No email yet – save your store link!"
   },
   "table": {
     "image": "Image",
