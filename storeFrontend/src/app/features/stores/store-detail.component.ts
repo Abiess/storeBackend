@@ -1,25 +1,75 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, ActivatedRoute } from '@angular/router';
+import { RouterModule, ActivatedRoute, Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { ProductService } from '@app/core/services/product.service';
 import { OrderService } from '@app/core/services/order.service';
 import { CategoryService } from '@app/core/services/category.service';
 import { StoreService } from '@app/core/services/store.service';
+import { AuthService } from '@app/core/services/auth.service';
 import { Product, Order, Category } from '@app/core/models';
 import { toDate } from '@app/core/utils/date.utils';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { OnboardingChecklistComponent } from '@app/shared/components/onboarding-checklist/onboarding-checklist.component';
 import { TelegramNotificationBadgeComponent } from '@app/shared/components/telegram-notification-badge/telegram-notification-badge.component';
+import { environment } from '@env/environment';
 
 @Component({
   selector: 'app-store-detail',
   standalone: true,
-  imports: [CommonModule,     RouterModule, TranslatePipe, OnboardingChecklistComponent, TelegramNotificationBadgeComponent],
+  imports: [CommonModule, RouterModule, FormsModule, TranslatePipe, OnboardingChecklistComponent, TelegramNotificationBadgeComponent],
   template: `
-    <!--   Sidebar wird global durch AppComponent (app-admin-shell) gerendert.
-         Keine lokale <app-admin-sidebar> mehr, sonst doppelte Sidebar / Layout-Konflikt. -->
     <div class="store-detail-page">
       <div class="content">
+
+        <!-- ── Anonymous-User Banner ── -->
+        <div class="anon-banner" *ngIf="isAnonymous && !anonBannerDismissed">
+          <div class="anon-banner__blob1"></div>
+          <div class="anon-banner__blob2"></div>
+          <div class="anon-banner__inner">
+            <div class="anon-banner__left">
+              <span class="anon-banner__icon">🔗</span>
+              <div>
+                <strong>Dein Store-Link – jetzt sichern!</strong>
+                <p>Ohne E-Mail verlierst du den Zugang. Hinterlege deine E-Mail oder melde dich an.</p>
+              </div>
+            </div>
+
+            <!-- Store-Link kopieren -->
+            <div class="anon-link-row" *ngIf="storePublicUrl">
+              <span class="anon-link-url">{{ storePublicUrl }}</span>
+              <button class="btn-copy" (click)="copyStoreLink()" [class.copied]="linkCopied">
+                {{ linkCopied ? '✅ Kopiert!' : '📋 Link kopieren' }}
+              </button>
+            </div>
+
+            <!-- E-Mail hinterlegen -->
+            <div class="anon-email-row" *ngIf="!anonEmailSaved">
+              <input
+                type="email"
+                [(ngModel)]="anonEmail"
+                placeholder="deine@email.de"
+                class="anon-email-input"
+                [disabled]="anonEmailSaving"
+              />
+              <button
+                class="btn-save-email"
+                (click)="saveAnonEmail()"
+                [disabled]="anonEmailSaving || !anonEmail.includes('@')">
+                <span *ngIf="anonEmailSaving" class="spinner-xs"></span>
+                <span *ngIf="!anonEmailSaving">📧 E-Mail sichern</span>
+              </button>
+            </div>
+            <p class="anon-email-ok" *ngIf="anonEmailSaved">✅ E-Mail gespeichert! Wir haben dir den Link zugeschickt.</p>
+            <p class="anon-email-err" *ngIf="anonEmailError">⚠️ {{ anonEmailError }}</p>
+
+            <div class="anon-banner__actions">
+              <a routerLink="/login" class="btn-login">🔐 Anmelden / Registrieren</a>
+              <button class="btn-dismiss" (click)="anonBannerDismissed = true">Später</button>
+            </div>
+          </div>
+        </div>
         <!-- Page Header – schlankes Design ohne doppelten Topbar-Konflikt auf Mobile -->
         <div class="page-header">
           <div class="page-header__left">
@@ -209,7 +259,87 @@ import { TelegramNotificationBadgeComponent } from '@app/shared/components/teleg
     </div>
   `,
   styles: [`
-    .store-detail-page {
+    /* ── Anonymous Banner ─────────────────────────────────────── */
+    .anon-banner {
+      position: relative; overflow: hidden;
+      background: linear-gradient(135deg, #ec4899 0%, #a855f7 50%, #667eea 100%);
+      padding: 1.25rem 2rem; color: #fff;
+    }
+    .anon-banner__blob1 {
+      position: absolute; width: 200px; height: 200px; border-radius: 50%;
+      background: rgba(255,255,255,.1); top: -80px; right: 5%; pointer-events: none;
+    }
+    .anon-banner__blob2 {
+      position: absolute; width: 120px; height: 120px; border-radius: 50%;
+      background: rgba(255,255,255,.08); bottom: -40px; left: 10%; pointer-events: none;
+    }
+    .anon-banner__inner {
+      position: relative; display: flex; flex-direction: column; gap: 0.85rem;
+      max-width: 860px;
+    }
+    .anon-banner__left {
+      display: flex; align-items: flex-start; gap: 0.75rem;
+    }
+    .anon-banner__icon { font-size: 1.6rem; flex-shrink: 0; }
+    .anon-banner__left strong { font-size: 1rem; font-weight: 700; display: block; margin-bottom: 0.15rem; }
+    .anon-banner__left p { margin: 0; font-size: 0.82rem; opacity: .88; }
+
+    .anon-link-row {
+      display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+      background: rgba(255,255,255,.15); padding: 0.5rem 0.85rem;
+      border-radius: 10px; backdrop-filter: blur(4px);
+    }
+    .anon-link-url {
+      font-size: 0.82rem; font-weight: 600; flex: 1;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .btn-copy {
+      padding: 5px 14px; background: rgba(255,255,255,.25); border: 1px solid rgba(255,255,255,.5);
+      border-radius: 8px; color: #fff; font-size: 0.78rem; font-weight: 600; cursor: pointer;
+      white-space: nowrap; transition: background .15s;
+      &:hover { background: rgba(255,255,255,.4); }
+      &.copied { background: rgba(255,255,255,.35); }
+    }
+
+    .anon-email-row {
+      display: flex; gap: 0.5rem; flex-wrap: wrap;
+    }
+    .anon-email-input {
+      flex: 1; min-width: 200px; padding: 0.5rem 0.85rem; border-radius: 10px;
+      border: 1.5px solid rgba(255,255,255,.5); background: rgba(255,255,255,.15);
+      color: #fff; font-size: 0.875rem; outline: none;
+      &::placeholder { color: rgba(255,255,255,.65); }
+      &:focus { border-color: rgba(255,255,255,.9); background: rgba(255,255,255,.22); }
+    }
+    .btn-save-email {
+      padding: 0.5rem 1.25rem; background: #fff; color: #a855f7; border: none;
+      border-radius: 10px; font-size: 0.875rem; font-weight: 700; cursor: pointer;
+      transition: opacity .15s; white-space: nowrap;
+      &:disabled { opacity: .5; cursor: not-allowed; }
+      &:hover:not(:disabled) { opacity: .9; }
+    }
+    .anon-email-ok { margin: 0; font-size: 0.82rem; font-weight: 600; color: #d1fae5; }
+    .anon-email-err { margin: 0; font-size: 0.82rem; color: #fee2e2; }
+    .spinner-xs {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid rgba(168,85,247,.3); border-top-color: #a855f7;
+      border-radius: 50%; animation: spin 0.6s linear infinite;
+    }
+
+    .anon-banner__actions {
+      display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+    }
+    .btn-login {
+      padding: 7px 18px; background: rgba(255,255,255,.2); border: 1.5px solid rgba(255,255,255,.55);
+      border-radius: 10px; color: #fff; font-size: 0.82rem; font-weight: 700;
+      text-decoration: none; backdrop-filter: blur(4px); transition: background .15s;
+      &:hover { background: rgba(255,255,255,.35); }
+    }
+    .btn-dismiss {
+      background: none; border: none; color: rgba(255,255,255,.7); font-size: 0.78rem;
+      cursor: pointer; padding: 4px 8px; border-radius: 6px;
+      &:hover { color: #fff; background: rgba(255,255,255,.1); }
+    }
       min-height: 100vh;
       background: #f8f9fa;
     }
@@ -711,11 +841,20 @@ import { TelegramNotificationBadgeComponent } from '@app/shared/components/teleg
 export class StoreDetailComponent implements OnInit {
   storeId!: number;
   storeSlug: string = '';
+  storePublicUrl: string = '';
   products: Product[] = [];
   orders: Order[] = [];
   categories: Category[] = [];
 
-  // Make toDate available in template
+  // Anon-Banner
+  isAnonymous = false;
+  anonBannerDismissed = false;
+  anonEmail = '';
+  anonEmailSaving = false;
+  anonEmailSaved = false;
+  anonEmailError = '';
+  linkCopied = false;
+
   toDate = toDate;
   productsLoading = false;
   ordersLoading = false;
@@ -723,13 +862,19 @@ export class StoreDetailComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private productService: ProductService,
     private orderService: OrderService,
     private categoryService: CategoryService,
-    private storeService: StoreService
+    private storeService: StoreService,
+    private authService: AuthService,
+    private http: HttpClient
   ) {}
 
   ngOnInit(): void {
+    const user = this.authService.getCurrentUser();
+    this.isAnonymous = !!user?.email?.startsWith('anon-');
+
     this.route.params.subscribe(params => {
       this.storeId = +params['id'] || +params['storeId'];
       if (this.storeId) {
@@ -745,9 +890,52 @@ export class StoreDetailComponent implements OnInit {
     this.storeService.getMyStores().subscribe({
       next: (stores) => {
         const store = stores.find(s => s.id === this.storeId);
-        if (store) this.storeSlug = store.slug;
+        if (store) {
+          this.storeSlug = store.slug;
+          this.storePublicUrl = `https://${store.slug}.markt.ma`;
+        }
       },
       error: () => {}
+    });
+  }
+
+  copyStoreLink(): void {
+    navigator.clipboard.writeText(this.storePublicUrl).then(() => {
+      this.linkCopied = true;
+      setTimeout(() => this.linkCopied = false, 2500);
+    });
+  }
+
+  saveAnonEmail(): void {
+    const email = this.anonEmail.trim();
+    if (!email.includes('@')) return;
+    this.anonEmailSaving = true;
+    this.anonEmailError = '';
+    const token = this.authService.getToken();
+    this.http.post<{ token: string }>(
+      `${environment.publicApiUrl}/create-store/save-email`,
+      { email, storeId: this.storeId },
+      { headers: { Authorization: `Bearer ${token}` } }
+    ).subscribe({
+      next: (res) => {
+        this.anonEmailSaving = false;
+        this.anonEmailSaved = true;
+        const stored = localStorage.getItem('currentUser');
+        if (stored) {
+          try {
+            const u = JSON.parse(stored);
+            u.email = email;
+            localStorage.setItem('currentUser', JSON.stringify(u));
+            if (res.token) localStorage.setItem('auth_token', res.token);
+          } catch {}
+        }
+        this.authService.setAuthFromStorage();
+        this.isAnonymous = false;
+      },
+      error: (err) => {
+        this.anonEmailSaving = false;
+        this.anonEmailError = err?.error?.message || 'Fehler – bitte versuche es erneut.';
+      }
     });
   }
 
