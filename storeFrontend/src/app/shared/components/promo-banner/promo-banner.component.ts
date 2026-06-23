@@ -248,7 +248,7 @@ export class PromoBannerComponent implements OnInit, OnDestroy {
   private updateDisplayText(): void {
     const texts = this.settings?.texts;
     if (!texts) {
-      this.displayText = '🎉 Heute Rabatt auf ausgewählte Produkte!';
+      this.displayText = 'Kostenloser Versand ab 49 € | Sicher bezahlen | 30 Tage Rückgabe';
       return;
     }
 
@@ -260,7 +260,7 @@ export class PromoBannerComponent implements OnInit, OnDestroy {
       texts['de'] ||
       texts['en'] ||
       Object.values(texts).find(v => !!v) ||
-      '🎉 Heute Rabatt auf ausgewählte Produkte!';
+      'Kostenloser Versand ab 49 € | Sicher bezahlen | 30 Tage Rückgabe';
 
     // Animationsdauer aus Textlänge und Geschwindigkeit berechnen
     const speed = this.settings.animationSpeed ?? 60;
@@ -281,10 +281,12 @@ export class PromoBannerComponent implements OnInit, OnDestroy {
       bgColor: '#667eea',
       textColor: '#ffffff',
       animationSpeed: 60,
+      icon: '⚡',
       texts: {
-        de: '🎉 Heute Rabatt auf ausgewählte Produkte!',
-        en: '🎉 Special discounts available today!',
-        ar: '🎉 خصومات مميزة متوفرة اليوم!'
+        de: 'Kostenloser Versand ab 49 € | Sicher bezahlen | 30 Tage Rückgabe',
+        en: 'Free shipping over €49 | Secure payment | 30-day returns',
+        ar: 'شحن مجاني فوق 49 يورو | دفع آمن | إرجاع لمدة 30 يومًا',
+        fr: 'Livraison gratuite dès 49 € | Paiement sécurisé | Retour sous 30 jours'
       }
     };
   }

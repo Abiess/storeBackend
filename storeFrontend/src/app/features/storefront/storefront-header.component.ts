@@ -8,19 +8,15 @@ import { StorefrontAuthDialogComponent } from './storefront-auth-dialog.componen
 import { TranslationService } from '../../core/services/translation.service';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { LanguageSelectorComponent } from '../../shared/components/language-selector/language-selector.component';
+import { PromoBannerComponent } from '../../shared/components/promo-banner/promo-banner.component';
 
 @Component({
   selector: 'app-storefront-header',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, StorefrontAuthDialogComponent, TranslatePipe, LanguageSelectorComponent],
+  imports: [CommonModule, RouterModule, FormsModule, StorefrontAuthDialogComponent, TranslatePipe, LanguageSelectorComponent, PromoBannerComponent],
   template: `
-    <!-- Promo Strip -->
-    <div class="promo-strip">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-      </svg>
-      <span>Kostenloser Versand ab 49 € &nbsp;|&nbsp; Sicher bezahlen &nbsp;|&nbsp; 30 Tage Rückgabe</span>
-    </div>
+    <!-- Promo Banner mit besserer Logik -->
+    <app-promo-banner [storeId]="storeId"></app-promo-banner>
 
     <header class="store-header" [class.scrolled]="isScrolled" [class.search-open]="searchOpen">
       <div class="header-inner">
@@ -163,29 +159,6 @@ import { LanguageSelectorComponent } from '../../shared/components/language-sele
     /* ════════════════════════════════════════
        PROMO STRIP
        ════════════════════════════════════════ */
-    .promo-strip {
-      background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-      color: white;
-      text-align: center;
-      padding: 0.5rem 1rem;
-      font-size: 0.75rem;
-      font-weight: 500;
-      letter-spacing: 0.02em;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      animation: shimmerBg 4s linear infinite;
-      background-size: 200% 100%;
-
-      svg { flex-shrink: 0; opacity: 0.9; }
-    }
-
-    @keyframes shimmerBg {
-      0%   { background-position: 0% 0%; }
-      100% { background-position: 200% 0%; }
-    }
-
     /* ════════════════════════════════════════
        HEADER CORE
        ════════════════════════════════════════ */
@@ -613,7 +586,7 @@ import { LanguageSelectorComponent } from '../../shared/components/language-sele
     }
 
     @media (max-width: 400px) {
-      .promo-strip { font-size: 0.6875rem; }
+      .brand-icon { width: 30px; height: 30px; }
     }
 
     /* RTL Support */
@@ -630,6 +603,7 @@ export class StorefrontHeaderComponent {
   @Input() storeName!: string;
   @Input() storeSlug!: string;
   @Input() storeLogo: string | null = null;
+  @Input() storeId!: number; // Neu: für promo-banner
   @Input() cartItemCount = 0;
   @Output() cartClick = new EventEmitter<void>();
   @Output() searchChange = new EventEmitter<string>();
