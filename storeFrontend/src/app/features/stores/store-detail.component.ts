@@ -340,9 +340,6 @@ import { environment } from '@env/environment';
       cursor: pointer; padding: 4px 8px; border-radius: 6px;
       &:hover { color: #fff; background: rgba(255,255,255,.1); }
     }
-      min-height: 100vh;
-      background: #f8f9fa;
-    }
 
     .content {
       background: #f8f9fa;
