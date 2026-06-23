@@ -30,10 +30,10 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/quick-start.component').then(m => m.QuickStartComponent)
     // KEIN authGuard – dieser Flow ist der Einstieg für neue Nutzer
   },
-  // /create-store = öffentlich, kein Login erforderlich – nutzt originales UI
+  // /create-store = öffentlich, kein Login erforderlich – nutzt das gemeinsame Store-Creation-UI
   {
     path: 'create-store',
-    loadComponent: () => import('./features/stores/store-create-simple.component').then(m => m.StoreCreateSimpleComponent)
+    loadComponent: () => import('./features/stores/create-store-public.component').then(m => m.CreateStorePublicComponent)
     // KEIN authGuard – funktioniert mit public Endpoint für nicht-eingeloggte User
   },
 

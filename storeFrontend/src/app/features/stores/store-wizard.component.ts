@@ -1,13 +1,15 @@
-import { Component, OnInit, signal, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Subject, Subscription } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { StoreService } from '@app/core/services/store.service';
 import { WizardProgressService, WizardProgress } from '@app/core/services/wizard-progress.service';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { AiProductImageGeneratorComponent, AiImageData } from '@app/shared/components/ai-product-image-generator.component';
-import { UnsplashImagePickerComponent } from '@app/shared/components/unsplash-image-picker.component';
 import { UnsplashService, UnsplashImage } from '@app/core/services/unsplash.service';
+import { StoreCreationShellComponent } from '@app/shared/components/store-creation-shell.component';
 
 interface WizardStep {
   id: number;
@@ -20,1089 +22,862 @@ interface WizardStep {
 @Component({
   selector: 'app-store-wizard',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TranslatePipe, AiProductImageGeneratorComponent, UnsplashImagePickerComponent],
+  imports: [CommonModule, ReactiveFormsModule, TranslatePipe, AiProductImageGeneratorComponent, StoreCreationShellComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="wizard-container">
-      <!-- Skip Button -->
-      <button class="skip-btn" (click)="skip()" *ngIf="!hasStore()">
-        {{ 'wizard.skip' | translate }}
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-      </button>
+    <app-store-creation-shell>
+      @if (!hasStore()) {
+        <button type="button" slot="header-right" class="sc-header-btn" (click)="skip()">
+          {{ 'wizard.skip' | translate }}
+        </button>
+      }
 
-      <!-- Progress Header -->
-      <div class="wizard-header">
-        <p class="wizard-eyebrow">markt.ma</p>
-        <h1 class="wizard-title">{{ 'wizard.createStore' | translate }}</h1>
-        <p class="wizard-subtitle">{{ 'wizard.createStoreSubtitle' | translate }}</p>
-
-        <!-- Modern Stepper -->
-        <div class="stepper">
-          <ng-container *ngFor="let step of steps; let i = index; let last = last">
-
-            <!-- Step Item -->
-            <div class="stepper__item"
-                 [class.is-active]="currentStep() === step.id"
-                 [class.is-done]="step.completed"
-                 [class.is-future]="!step.completed && currentStep() !== step.id"
-                 (click)="goToStep(step.id)"
-                 [attr.title]="step.title | translate">
-
-              <div class="stepper__bubble">
-                <!-- Completed: checkmark -->
-                <svg *ngIf="step.completed" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-                <!-- Active or Future: step number -->
-                <span *ngIf="!step.completed" class="stepper__num">{{ step.id }}</span>
-              </div>
-
-              <div class="stepper__meta">
-                <span class="stepper__step-of">Schritt {{ step.id }} / {{ steps.length }}</span>
-                <span class="stepper__label">{{ step.title | translate }}</span>
-              </div>
+      <div class="sc-stepper">
+        @for (step of steps; track step.id; let last = $last) {
+          <div class="sc-stepper__step" [class.active]="currentStep() === step.id" [class.done]="step.completed" (click)="goToStep(step.id)">
+            <div class="sc-stepper__dot">
+              @if (step.completed) {
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+              } @else {
+                {{ step.id }}
+              }
             </div>
-
-            <!-- Connector Line (not after last item) -->
-            <div *ngIf="!last" class="stepper__line"
-                 [class.is-done]="step.completed"></div>
-
-          </ng-container>
-        </div>
-
-        <!-- Mobile: compact progress bar -->
-        <div class="stepper-mobile">
-          <div class="stepper-mobile__bar">
-            <div class="stepper-mobile__fill" [style.width.%]="((currentStep() - 1) / (steps.length - 1)) * 100"></div>
+            <span class="sc-stepper__label">{{ step.title | translate }}</span>
           </div>
-          <span class="stepper-mobile__label">
-            Schritt {{ currentStep() }} von {{ steps.length }}: {{ steps[currentStep()-1].title | translate }}
-          </span>
-        </div>
+          @if (!last) {
+            <div class="sc-stepper__line" [class.done]="step.completed"></div>
+          }
+        }
       </div>
 
-      <!-- Wizard Content -->
-      <div class="wizard-content">
-        <form [formGroup]="wizardForm" class="wizard-form" *ngIf="wizardForm">
-          
-          <!-- Step 1: Basis-Informationen -->
-          <div class="wizard-step" *ngIf="currentStep() === 1">
-            <div class="step-header">
-              <span class="step-icon">{{ steps[0].icon }}</span>
-              <h2>{{ steps[0].title | translate }}</h2>
-              <p>{{ steps[0].subtitle | translate }}</p>
-            </div>
+      <div class="sc-card animate-in">
+        <div class="sc-card__eyebrow">Experten-Setup · Schritt {{ currentStep() }}/{{ steps.length }}</div>
+        <h1 class="sc-card__title">{{ 'wizard.createStore' | translate }}</h1>
+        <p class="sc-card__sub">{{ steps[currentStep() - 1].subtitle | translate }}</p>
 
-            <div class="form-group">
-              <label for="storeName">
-                {{ 'wizard.storeName' | translate }} *
-              </label>
-              <input
-                id="storeName"
-                type="text"
-                formControlName="storeName"
-                [placeholder]="'wizard.storeNamePlaceholder' | translate"
-                class="form-control"
-                [class.error]="wizardForm.get('storeName')?.invalid && wizardForm.get('storeName')?.touched"
-              />
-              <div class="hint">{{ 'wizard.storeNameHint' | translate }}</div>
-              <div class="error-message" *ngIf="wizardForm.get('storeName')?.invalid && wizardForm.get('storeName')?.touched">
-                {{ 'wizard.storeNameRequired' | translate }}
+        <form [formGroup]="wizardForm" class="wizard-form">
+          @if (currentStep() === 1) {
+            <div class="wizard-step animate-fade-in">
+              <div class="step-header">
+                <span class="step-icon">{{ steps[0].icon }}</span>
+                <h2>{{ steps[0].title | translate }}</h2>
+                <p>{{ steps[0].subtitle | translate }}</p>
               </div>
-            </div>
 
-            <div class="form-group">
-              <label for="storeSlug">
-                {{ 'wizard.storeSlug' | translate }} *
-              </label>
-              <div class="input-with-prefix">
+              <div class="sc-field">
+                <label for="storeName" class="sc-label">{{ 'wizard.storeName' | translate }} *</label>
                 <input
-                  id="storeSlug"
+                  id="storeName"
                   type="text"
-                  formControlName="storeSlug"
-                  [placeholder]="'wizard.storeSlugPlaceholder' | translate"
-                  class="form-control"
-                  [class.error]="wizardForm.get('storeSlug')?.invalid && wizardForm.get('storeSlug')?.touched"
+                  formControlName="storeName"
+                  [placeholder]="'wizard.storeNamePlaceholder' | translate"
+                  class="sc-input"
+                  [class.error]="wizardForm.get('storeName')?.invalid && wizardForm.get('storeName')?.touched"
+                  (input)="onStoreNameInput($any($event.target).value)"
                 />
-                <span class="input-suffix">.markt.ma</span>
+                <div class="sc-hint">{{ 'wizard.storeNameHint' | translate }}</div>
+                @if (wizardForm.get('storeName')?.invalid && wizardForm.get('storeName')?.touched) {
+                  <div class="sc-field-error">{{ 'wizard.storeNameRequired' | translate }}</div>
+                }
               </div>
-              <div class="hint">{{ 'wizard.storeSlugHint' | translate }}</div>
-              <div class="error-message" *ngIf="wizardForm.get('storeSlug')?.invalid && wizardForm.get('storeSlug')?.touched">
-                {{ 'wizard.storeSlugRequired' | translate }}
+
+              @if (carouselImages().length > 0 || carouselLoading()) {
+                <div class="sc-carousel-wrap animate-fade-in">
+                  <div class="sc-carousel-header">
+                    <span class="sc-carousel-label">📸 Titelbild wählen</span>
+                    @if (carouselLoading()) {
+                      <span class="sc-carousel-spinner"></span>
+                    }
+                  </div>
+                  <div class="sc-carousel">
+                    @for (img of carouselImages(); track img.id) {
+                      <button
+                        type="button"
+                        class="sc-carousel__item"
+                        [class.selected]="selectedBannerImage()?.id === img.id"
+                        (click)="selectBannerImage(img)">
+                        <img [src]="img.thumbUrl" [alt]="img.description || 'Store Titelbild'" loading="lazy" />
+                        @if (selectedBannerImage()?.id === img.id) {
+                          <div class="sc-carousel__check">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                          </div>
+                        }
+                      </button>
+                    }
+                  </div>
+                  @if (selectedBannerImage()) {
+                    <p class="sc-attribution">
+                      Foto:
+                      <a [href]="selectedBannerImage()?.authorUrl" target="_blank" rel="noreferrer">{{ selectedBannerImage()?.authorName }}</a>
+                      · Unsplash
+                    </p>
+                  }
+                </div>
+              }
+
+              <div class="sc-field">
+                <label for="storeSlug" class="sc-label">{{ 'wizard.storeSlug' | translate }} *</label>
+                <div class="input-with-prefix">
+                  <input
+                    id="storeSlug"
+                    type="text"
+                    formControlName="storeSlug"
+                    [placeholder]="'wizard.storeSlugPlaceholder' | translate"
+                    class="sc-input"
+                    [class.error]="wizardForm.get('storeSlug')?.invalid && wizardForm.get('storeSlug')?.touched"
+                  />
+                  <span class="input-suffix">.markt.ma</span>
+                </div>
+                <div class="sc-hint">{{ 'wizard.storeSlugHint' | translate }}</div>
+                @if (wizardForm.get('storeSlug')?.invalid && wizardForm.get('storeSlug')?.touched) {
+                  <div class="sc-field-error">{{ 'wizard.storeSlugRequired' | translate }}</div>
+                }
+              </div>
+
+              <div class="sc-field">
+                <label for="description" class="sc-label">{{ 'wizard.description' | translate }}</label>
+                <textarea
+                  id="description"
+                  formControlName="description"
+                  rows="4"
+                  [placeholder]="'wizard.descriptionPlaceholder' | translate"
+                  class="sc-input sc-textarea"></textarea>
+                <div class="sc-hint">{{ 'wizard.descriptionHint' | translate }}</div>
               </div>
             </div>
+          }
 
-            <div class="form-group">
-              <label for="description">
-                {{ 'wizard.description' | translate }}
-              </label>
-              <textarea
-                id="description"
-                formControlName="description"
-                rows="4"
-                [placeholder]="'wizard.descriptionPlaceholder' | translate"
-                class="form-control"
-              ></textarea>
-              <div class="hint">{{ 'wizard.descriptionHint' | translate }}</div>
-            </div>
-          </div>
+          @if (currentStep() === 2) {
+            <div class="wizard-step animate-fade-in">
+              <div class="step-header">
+                <span class="step-icon">{{ steps[1].icon }}</span>
+                <h2>{{ steps[1].title | translate }}</h2>
+                <p>{{ steps[1].subtitle | translate }}</p>
+              </div>
 
-          <!-- Step 2: Geschäftstyp & Bildvorschläge -->
-          <div class="wizard-step" *ngIf="currentStep() === 2">
-            <div class="step-header">
-              <span class="step-icon">{{ steps[1].icon }}</span>
-              <h2>{{ steps[1].title | translate }}</h2>
-              <p>{{ steps[1].subtitle | translate }}</p>
-            </div>
-
-            <!-- BusinessType Auswahl -->
-            <div class="business-type-grid">
-              <div
-                *ngFor="let bt of businessTypes"
-                class="business-type-card"
-                [class.selected]="selectedBusinessType() === bt.id"
-                (click)="selectBusinessType(bt.id)">
-                <span class="business-type-icon">{{ bt.icon }}</span>
-                <h3>{{ bt.name }}</h3>
-                <p>{{ bt.description }}</p>
-                <div class="business-type-check" *ngIf="selectedBusinessType() === bt.id">
-                  <svg width="24" height="24" viewBox="0 0 24 24">
-                    <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" fill="white"/>
-                  </svg>
+              <div class="sc-field">
+                <label class="sc-label">{{ 'settings.business.type' | translate }}</label>
+                <div class="sc-cat-grid">
+                  @for (bt of businessTypes; track bt.id) {
+                    <button
+                      type="button"
+                      class="sc-cat-btn"
+                      [class.active]="selectedBusinessType() === bt.id"
+                      (click)="selectBusinessType(bt.id)">
+                      {{ bt.icon }} {{ bt.name }}
+                    </button>
+                  }
                 </div>
               </div>
-            </div>
 
-            <!-- Unsplash Bildvorschläge -->
-            <div class="unsplash-section" *ngIf="selectedBusinessType()">
-              <div class="unsplash-section__header">
-                <h4>🖼️ Wähle passende Bilder für deinen Store</h4>
-                <p class="hint">Die Bilder werden als Startseiten-Slider übernommen. Optional – du kannst sie später ändern.</p>
-              </div>
-              <app-unsplash-image-picker
-                [businessType]="selectedBusinessType()"
-                (selectionChanged)="onUnsplashSelectionChanged($event)">
-              </app-unsplash-image-picker>
-            </div>
-          </div>
-
-          <!-- Step 3: Kontakt & Adresse -->
-          <div class="wizard-step" *ngIf="currentStep() === 3">
-            <div class="step-header">
-              <span class="step-icon">{{ steps[2].icon }}</span>
-              <h2>{{ steps[2].title | translate }}</h2>
-              <p>{{ steps[2].subtitle | translate }}</p>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label for="email">
-                  {{ 'wizard.email' | translate }}
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  formControlName="email"
-                  [placeholder]="'wizard.emailPlaceholder' | translate"
-                  class="form-control"
-                />
-              </div>
-
-              <div class="form-group">
-                <label for="phone">
-                  {{ 'wizard.phone' | translate }}
-                </label>
-                <input
-                  id="phone"
-                  type="tel"
-                  formControlName="phone"
-                  [placeholder]="'wizard.phonePlaceholder' | translate"
-                  class="form-control"
-                />
+              <div class="business-type-copy">
+                @for (bt of businessTypes; track bt.id) {
+                  @if (selectedBusinessType() === bt.id) {
+                    <div class="business-type-copy__card">
+                      <h3>{{ bt.name }}</h3>
+                      <p>{{ bt.description }}</p>
+                    </div>
+                  }
+                }
               </div>
             </div>
+          }
 
-            <!-- WhatsApp-Konfiguration -->
-            <div class="whatsapp-section">
-              <div class="whatsapp-header">
-                <span class="whatsapp-icon">💬</span>
-                <div>
-                  <h4>{{ 'wizard.whatsappNumber' | translate }}</h4>
-                  <p class="whatsapp-desc">{{ 'wizard.whatsappNumberHint' | translate }}</p>
-                </div>
-              </div>
-              <div class="form-group">
-                <input
-                  id="whatsappNumber"
-                  type="tel"
-                  formControlName="whatsappNumber"
-                  [placeholder]="'wizard.whatsappNumberPlaceholder' | translate"
-                  class="form-control"
-                />
-              </div>
-              <label class="wa-toggle">
-                <input type="checkbox" formControlName="whatsappNotificationsEnabled" />
-                <span class="wa-toggle-label">{{ 'wizard.whatsappNotifications' | translate }}</span>
-              </label>
-              <p class="hint wa-hint">{{ 'wizard.whatsappNotificationsHint' | translate }}</p>
-            </div>
-
-            <div class="form-group">
-              <label for="address">
-                {{ 'wizard.address' | translate }}
-              </label>
-              <input
-                id="address"
-                type="text"
-                formControlName="address"
-                [placeholder]="'wizard.addressPlaceholder' | translate"
-                class="form-control"
-              />
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label for="city">
-                  {{ 'wizard.city' | translate }}
-                </label>
-                <input
-                  id="city"
-                  type="text"
-                  formControlName="city"
-                  [placeholder]="'wizard.cityPlaceholder' | translate"
-                  class="form-control"
-                />
+          @if (currentStep() === 3) {
+            <div class="wizard-step animate-fade-in">
+              <div class="step-header">
+                <span class="step-icon">{{ steps[2].icon }}</span>
+                <h2>{{ steps[2].title | translate }}</h2>
+                <p>{{ steps[2].subtitle | translate }}</p>
               </div>
 
-              <div class="form-group">
-                <label for="postalCode">
-                  {{ 'wizard.postalCode' | translate }}
-                </label>
-                <input
-                  id="postalCode"
-                  type="text"
-                  formControlName="postalCode"
-                  [placeholder]="'wizard.postalCodePlaceholder' | translate"
-                  class="form-control"
-                />
-              </div>
-            </div>
-
-            <!-- Social Media Links -->
-            <div class="social-section">
-              <div class="social-section-header">
-                <span>📱</span>
-                <div>
-                  <h4>
-                    {{ 'wizard.socialSectionTitle' | translate }}
-                    <span class="optional-tag">{{ 'wizard.socialOptional' | translate }}</span>
-                  </h4>
-                  <p class="hint">{{ 'wizard.socialSectionHint' | translate }}</p>
-                </div>
-              </div>
               <div class="form-row">
-                <div class="form-group">
-                  <label for="telegramUrl">✈ {{ 'wizard.socialTelegram' | translate }}</label>
-                  <input id="telegramUrl" type="url" formControlName="telegramUrl"
-                         class="form-control"
-                         [placeholder]="'wizard.socialTelegramPlaceholder' | translate" />
+                <div class="sc-field">
+                  <label for="email" class="sc-label">{{ 'wizard.email' | translate }}</label>
+                  <input id="email" type="email" formControlName="email" [placeholder]="'wizard.emailPlaceholder' | translate" class="sc-input" />
                 </div>
-                <div class="form-group">
-                  <label for="facebookUrl">f {{ 'wizard.socialFacebook' | translate }}</label>
-                  <input id="facebookUrl" type="url" formControlName="facebookUrl"
-                         class="form-control"
-                         [placeholder]="'wizard.socialFacebookPlaceholder' | translate" />
+
+                <div class="sc-field">
+                  <label for="phone" class="sc-label">{{ 'wizard.phone' | translate }}</label>
+                  <input id="phone" type="tel" formControlName="phone" [placeholder]="'wizard.phonePlaceholder' | translate" class="sc-input" />
                 </div>
               </div>
+
+              <div class="sc-panel">
+                <div class="sc-panel__header">
+                  <span class="step-icon step-icon--small">💬</span>
+                  <div>
+                    <h4>{{ 'wizard.whatsappNumber' | translate }}</h4>
+                    <p>{{ 'wizard.whatsappNumberHint' | translate }}</p>
+                  </div>
+                </div>
+                <div class="sc-field">
+                  <input
+                    id="whatsappNumber"
+                    type="tel"
+                    formControlName="whatsappNumber"
+                    [placeholder]="'wizard.whatsappNumberPlaceholder' | translate"
+                    class="sc-input"
+                  />
+                </div>
+                <label class="wa-toggle">
+                  <input type="checkbox" formControlName="whatsappNotificationsEnabled" />
+                  <span class="wa-toggle-label">{{ 'wizard.whatsappNotifications' | translate }}</span>
+                </label>
+                <p class="sc-hint">{{ 'wizard.whatsappNotificationsHint' | translate }}</p>
+              </div>
+
+              <div class="sc-field">
+                <label for="address" class="sc-label">{{ 'wizard.address' | translate }}</label>
+                <input id="address" type="text" formControlName="address" [placeholder]="'wizard.addressPlaceholder' | translate" class="sc-input" />
+              </div>
+
               <div class="form-row">
-                <div class="form-group">
-                  <label for="instagramUrl">◉ {{ 'wizard.socialInstagram' | translate }}</label>
-                  <input id="instagramUrl" type="url" formControlName="instagramUrl"
-                         class="form-control"
-                         [placeholder]="'wizard.socialInstagramPlaceholder' | translate" />
+                <div class="sc-field">
+                  <label for="city" class="sc-label">{{ 'wizard.city' | translate }}</label>
+                  <input id="city" type="text" formControlName="city" [placeholder]="'wizard.cityPlaceholder' | translate" class="sc-input" />
                 </div>
-                <div class="form-group">
-                  <label for="tiktokUrl">♪ {{ 'wizard.socialTiktok' | translate }}</label>
-                  <input id="tiktokUrl" type="url" formControlName="tiktokUrl"
-                         class="form-control"
-                         [placeholder]="'wizard.socialTiktokPlaceholder' | translate" />
+
+                <div class="sc-field">
+                  <label for="postalCode" class="sc-label">{{ 'wizard.postalCode' | translate }}</label>
+                  <input id="postalCode" type="text" formControlName="postalCode" [placeholder]="'wizard.postalCodePlaceholder' | translate" class="sc-input" />
                 </div>
               </div>
-            </div>
 
-          </div>
-
-          <!-- Step 4: KI-Produktbilder (Optional) -->
-          <div class="wizard-step" *ngIf="currentStep() === 4">
-            <div class="step-header">
-              <span class="step-icon">{{ steps[3].icon }}</span>
-              <h2>{{ steps[3].title | translate }}</h2>
-              <p>{{ steps[3].subtitle | translate }}</p>
-            </div>
-
-            <app-ai-product-image-generator
-              #aiGenerator
-              [storeId]="createdStoreId || 0"
-              [autoSelectFirst]="true"
-              (imagesGenerated)="onAiImagesGenerated($event)"
-              (selectionChanged)="onAiSelectionChanged($event)">
-            </app-ai-product-image-generator>
-
-            <div class="optional-note">
-              <span class="note-icon">ℹ️</span>
-              <span>{{ 'wizard.aiImagesOptional' | translate }}</span>
-            </div>
-          </div>
-
-          <!-- Step 5: Zusammenfassung -->
-          <div class="wizard-step" *ngIf="currentStep() === 5">
-            <div class="step-header">
-              <span class="step-icon">{{ steps[4].icon }}</span>
-              <h2>{{ steps[4].title | translate }}</h2>
-              <p>{{ steps[4].subtitle | translate }}</p>
-            </div>
-
-            <div class="summary-card">
-              <h3>{{ 'wizard.summaryBasic' | translate }}</h3>
-              <div class="summary-item">
-                <span class="summary-label">{{ 'wizard.storeName' | translate }}:</span>
-                <span class="summary-value">{{ wizardForm.get('storeName')?.value }}</span>
-              </div>
-              <div class="summary-item">
-                <span class="summary-label">{{ 'wizard.storeUrl' | translate }}:</span>
-                <span class="summary-value">{{ wizardForm.get('storeSlug')?.value }}.markt.ma</span>
-              </div>
-              <div class="summary-item" *ngIf="wizardForm.get('description')?.value">
-                <span class="summary-label">{{ 'wizard.description' | translate }}:</span>
-                <span class="summary-value">{{ wizardForm.get('description')?.value }}</span>
+              <div class="sc-panel">
+                <div class="sc-panel__header">
+                  <span class="step-icon step-icon--small">📱</span>
+                  <div>
+                    <h4>
+                      {{ 'wizard.socialSectionTitle' | translate }}
+                      <span class="optional-tag">{{ 'wizard.socialOptional' | translate }}</span>
+                    </h4>
+                    <p>{{ 'wizard.socialSectionHint' | translate }}</p>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="sc-field">
+                    <label for="telegramUrl" class="sc-label">✈ {{ 'wizard.socialTelegram' | translate }}</label>
+                    <input id="telegramUrl" type="url" formControlName="telegramUrl" class="sc-input" [placeholder]="'wizard.socialTelegramPlaceholder' | translate" />
+                  </div>
+                  <div class="sc-field">
+                    <label for="facebookUrl" class="sc-label">f {{ 'wizard.socialFacebook' | translate }}</label>
+                    <input id="facebookUrl" type="url" formControlName="facebookUrl" class="sc-input" [placeholder]="'wizard.socialFacebookPlaceholder' | translate" />
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="sc-field">
+                    <label for="instagramUrl" class="sc-label">◉ {{ 'wizard.socialInstagram' | translate }}</label>
+                    <input id="instagramUrl" type="url" formControlName="instagramUrl" class="sc-input" [placeholder]="'wizard.socialInstagramPlaceholder' | translate" />
+                  </div>
+                  <div class="sc-field">
+                    <label for="tiktokUrl" class="sc-label">♪ {{ 'wizard.socialTiktok' | translate }}</label>
+                    <input id="tiktokUrl" type="url" formControlName="tiktokUrl" class="sc-input" [placeholder]="'wizard.socialTiktokPlaceholder' | translate" />
+                  </div>
+                </div>
               </div>
             </div>
+          }
 
-            <div class="summary-card" *ngIf="selectedCategories().length > 0">
-              <h3>{{ 'wizard.summaryCategories' | translate }}</h3>
-              <div class="category-chips">
-                <span *ngFor="let catId of selectedCategories()" class="category-chip">
-                  {{ getCategoryName(catId) | translate }}
-                </span>
+          @if (currentStep() === 4) {
+            <div class="wizard-step animate-fade-in">
+              <div class="step-header">
+                <span class="step-icon">{{ steps[3].icon }}</span>
+                <h2>{{ steps[3].title | translate }}</h2>
+                <p>{{ steps[3].subtitle | translate }}</p>
+              </div>
+
+              <app-ai-product-image-generator
+                [storeId]="createdStoreId || 0"
+                [autoSelectFirst]="true"
+                (imagesGenerated)="onAiImagesGenerated($event)"
+                (selectionChanged)="onAiSelectionChanged($event)">
+              </app-ai-product-image-generator>
+
+              <div class="optional-note">
+                <span class="note-icon">ℹ️</span>
+                <span>{{ 'wizard.aiImagesOptional' | translate }}</span>
               </div>
             </div>
+          }
 
-            <div class="summary-card" *ngIf="wizardForm.get('email')?.value || wizardForm.get('phone')?.value">
-              <h3>{{ 'wizard.summaryContact' | translate }}</h3>
-              <div class="summary-item" *ngIf="wizardForm.get('email')?.value">
-                <span class="summary-label">{{ 'wizard.email' | translate }}:</span>
-                <span class="summary-value">{{ wizardForm.get('email')?.value }}</span>
+          @if (currentStep() === 5) {
+            <div class="wizard-step animate-fade-in">
+              <div class="step-header">
+                <span class="step-icon">{{ steps[4].icon }}</span>
+                <h2>{{ steps[4].title | translate }}</h2>
+                <p>{{ steps[4].subtitle | translate }}</p>
               </div>
-              <div class="summary-item" *ngIf="wizardForm.get('phone')?.value">
-                <span class="summary-label">{{ 'wizard.phone' | translate }}:</span>
-                <span class="summary-value">{{ wizardForm.get('phone')?.value }}</span>
+
+              <div class="summary-card">
+                <h3>{{ 'wizard.summaryBasic' | translate }}</h3>
+                <div class="summary-item">
+                  <span class="summary-label">{{ 'wizard.storeName' | translate }}:</span>
+                  <span class="summary-value">{{ wizardForm.get('storeName')?.value }}</span>
+                </div>
+                <div class="summary-item">
+                  <span class="summary-label">{{ 'wizard.storeUrl' | translate }}:</span>
+                  <span class="summary-value">{{ wizardForm.get('storeSlug')?.value }}.markt.ma</span>
+                </div>
+                @if (wizardForm.get('description')?.value) {
+                  <div class="summary-item">
+                    <span class="summary-label">{{ 'wizard.description' | translate }}:</span>
+                    <span class="summary-value">{{ wizardForm.get('description')?.value }}</span>
+                  </div>
+                }
               </div>
+
+              @if (selectedBusinessType()) {
+                <div class="summary-card">
+                  <h3>{{ 'wizard.summaryCategories' | translate }}</h3>
+                  <div class="category-chips">
+                    <span class="category-chip">{{ getCategoryName(selectedBusinessType()) }}</span>
+                  </div>
+                </div>
+              }
+
+              @if (wizardForm.get('email')?.value || wizardForm.get('phone')?.value) {
+                <div class="summary-card">
+                  <h3>{{ 'wizard.summaryContact' | translate }}</h3>
+                  @if (wizardForm.get('email')?.value) {
+                    <div class="summary-item">
+                      <span class="summary-label">{{ 'wizard.email' | translate }}:</span>
+                      <span class="summary-value">{{ wizardForm.get('email')?.value }}</span>
+                    </div>
+                  }
+                  @if (wizardForm.get('phone')?.value) {
+                    <div class="summary-item">
+                      <span class="summary-label">{{ 'wizard.phone' | translate }}:</span>
+                      <span class="summary-value">{{ wizardForm.get('phone')?.value }}</span>
+                    </div>
+                  }
+                </div>
+              }
+
+              @if (selectedUnsplashImages().length > 0) {
+                <div class="summary-card">
+                  <h3>🖼️ Ausgewähltes Titelbild</h3>
+                  <div class="unsplash-preview-row">
+                    @for (img of selectedUnsplashImages(); track img.id) {
+                      <img [src]="img.thumbUrl" [alt]="img.description || 'Unsplash photo'" class="unsplash-preview-thumb" />
+                    }
+                  </div>
+                </div>
+              }
+
+              @if (aiProductImages.length > 0) {
+                <div class="summary-card">
+                  <h3>{{ 'wizard.summaryAiImages' | translate }}</h3>
+                  <div class="summary-item">
+                    <span class="summary-label">{{ 'wizard.aiImagesCount' | translate }}:</span>
+                    <span class="summary-value">{{ aiProductImages.length }} {{ 'wizard.images' | translate }}</span>
+                  </div>
+                  <div class="ai-images-preview">
+                    @for (img of aiProductImages.slice(0, 5); track img.preview) {
+                      <img [src]="img.preview" [alt]="img.file.name" class="preview-thumbnail" />
+                    }
+                    @if (aiProductImages.length > 5) {
+                      <span class="more-images">+{{ aiProductImages.length - 5 }} {{ 'wizard.moreImages' | translate }}</span>
+                    }
+                  </div>
+                </div>
+              }
+
+              <div class="telegram-spotlight">
+                <div class="telegram-spotlight__icon">💬</div>
+                <div class="telegram-spotlight__body">
+                  <h4 class="telegram-spotlight__title">{{ 'wizard.telegramFeatureTitle' | translate }}</h4>
+                  <p class="telegram-spotlight__desc">{{ 'wizard.telegramFeatureDesc' | translate }}</p>
+                  <ul class="telegram-spotlight__points">
+                    <li>{{ 'wizard.telegramFeaturePoint1' | translate }}</li>
+                    <li>{{ 'wizard.telegramFeaturePoint2' | translate }}</li>
+                    <li>{{ 'wizard.telegramFeaturePoint3' | translate }}</li>
+                  </ul>
+                </div>
+                <div class="telegram-spotlight__badge">{{ 'wizard.telegramFeatureBadge' | translate }}</div>
+              </div>
+
+              @if (error()) {
+                <div class="sc-error">{{ error() }}</div>
+              }
             </div>
-
-            <div class="summary-card" *ngIf="selectedUnsplashImages().length > 0">
-              <h3>🖼️ Ausgewählte Bilder ({{ selectedUnsplashImages().length }})</h3>
-              <div class="unsplash-preview-row">
-                <img *ngFor="let img of selectedUnsplashImages().slice(0, 4)"
-                     [src]="img.thumbUrl"
-                     [alt]="img.description || 'Unsplash photo'"
-                     class="unsplash-preview-thumb">
-                <span *ngIf="selectedUnsplashImages().length > 4" class="more-images">
-                  +{{ selectedUnsplashImages().length - 4 }}
-                </span>
-              </div>
-            </div>
-
-            <div class="summary-card" *ngIf="aiProductImages.length > 0">
-              <h3>{{ 'wizard.summaryAiImages' | translate }}</h3>
-              <div class="summary-item">
-                <span class="summary-label">{{ 'wizard.aiImagesCount' | translate }}:</span>
-                <span class="summary-value">{{ aiProductImages.length }} {{ 'wizard.images' | translate }}</span>
-              </div>
-              <div class="ai-images-preview">
-                <img *ngFor="let img of aiProductImages.slice(0, 5)" 
-                     [src]="img.preview" 
-                     [alt]="img.file.name"
-                     class="preview-thumbnail">
-                <span *ngIf="aiProductImages.length > 5" class="more-images">
-                  +{{ aiProductImages.length - 5 }} {{ 'wizard.moreImages' | translate }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Telegram Import Feature Spotlight -->
-            <div class="telegram-spotlight">
-              <div class="telegram-spotlight__icon">??</div>
-              <div class="telegram-spotlight__body">
-                <h4 class="telegram-spotlight__title">{{ 'wizard.telegramFeatureTitle' | translate }}</h4>
-                <p class="telegram-spotlight__desc">{{ 'wizard.telegramFeatureDesc' | translate }}</p>
-                <ul class="telegram-spotlight__points">
-                  <li>{{ 'wizard.telegramFeaturePoint1' | translate }}</li>
-                  <li>{{ 'wizard.telegramFeaturePoint2' | translate }}</li>
-                  <li>{{ 'wizard.telegramFeaturePoint3' | translate }}</li>
-                </ul>
-              </div>
-              <div class="telegram-spotlight__badge">{{ 'wizard.telegramFeatureBadge' | translate }}</div>
-            </div>
-
-            @if (error()) {
-              <div class="error-banner">
-                {{ error() }}
-              </div>
-            }
-          </div>
-
+          }
         </form>
       </div>
 
-      <!-- Wizard Footer -->
       <div class="wizard-footer">
-        <button 
-          type="button"
-          class="btn-secondary"
-          (click)="previousStep()"
-          *ngIf="currentStep() > 1"
-          [disabled]="loading()">
-          ← {{ 'wizard.back' | translate }}
-        </button>
+        @if (currentStep() > 1) {
+          <button type="button" class="sc-btn-outline wizard-footer__btn" (click)="previousStep()" [disabled]="loading()">
+            ← {{ 'wizard.back' | translate }}
+          </button>
+        }
 
-        <button 
-          type="button"
-          class="btn-primary"
-          (click)="nextStep()"
-          *ngIf="currentStep() < 5"
-          [disabled]="!canProceed() || loading()">
-          {{ 'wizard.next' | translate }} →
-        </button>
+        @if (currentStep() < 5) {
+          <button type="button" class="sc-btn-primary wizard-footer__btn" (click)="nextStep()" [disabled]="!canProceed() || loading()">
+            {{ 'wizard.next' | translate }} →
+          </button>
+        }
 
-        <button 
-          type="button"
-          class="btn-primary btn-create"
-          (click)="createStore()"
-          *ngIf="currentStep() === 5"
-          [disabled]="loading()">
-          @if (loading()) {
-            <svg class="spinner" width="20" height="20" viewBox="0 0 20 20">
-              <circle cx="10" cy="10" r="8" stroke="white" stroke-width="2" fill="none" opacity="0.3"/>
-              <path d="M10 2a8 8 0 018 8" stroke="white" stroke-width="2" fill="none"/>
-            </svg>
-            {{ 'wizard.creating' | translate }}
-          } @else {
-            🚀 {{ 'wizard.createStore' | translate }}
-          }
-        </button>
+        @if (currentStep() === 5) {
+          <button type="button" class="sc-btn-primary wizard-footer__btn" (click)="createStore()" [disabled]="loading()">
+            @if (loading()) {
+              <span class="sc-spinner"></span>
+              {{ 'wizard.creating' | translate }}
+            } @else {
+              🚀 {{ 'wizard.createStore' | translate }}
+            }
+          </button>
+        }
       </div>
-    </div>
+    </app-store-creation-shell>
   `,
   styles: [`
-    .wizard-container {
-      min-height: 100vh;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      padding: 2rem 1.5rem 4rem;
-      position: relative;
-    }
-
-    .skip-btn {
-      position: absolute;
-      top: 1.5rem;
-      right: 1.5rem;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.375rem;
-      background: rgba(255,255,255,0.15);
-      border: 1px solid rgba(255,255,255,0.25);
-      color: rgba(255,255,255,0.9);
-      padding: 0.5rem 1rem;
+    .sc-header-btn {
+      background: rgba(255,255,255,.16);
+      border: 1px solid rgba(255,255,255,.28);
+      color: rgba(255,255,255,.92);
       border-radius: 999px;
-      font-size: 0.8125rem;
-      font-weight: 500;
+      padding: .55rem .95rem;
+      font-size: .82rem;
+      font-weight: 600;
       cursor: pointer;
-      transition: background 0.2s, transform 0.2s;
-      z-index: 100;
-      backdrop-filter: blur(4px);
-    }
-    .skip-btn:hover {
-      background: rgba(255,255,255,0.25);
-      transform: translateX(2px);
+      transition: background .15s ease, transform .15s ease;
     }
 
-    /* ─── Header ─────────────────────────────────── */
-    .wizard-header {
-      max-width: 860px;
-      margin: 0 auto 2.5rem;
-      text-align: center;
-      color: white;
+    .sc-header-btn:hover {
+      background: rgba(255,255,255,.24);
+      transform: translateX(1px);
     }
 
-    .wizard-eyebrow {
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      opacity: 0.6;
-      margin: 0 0 0.75rem;
-    }
-
-    .wizard-title {
-      font-size: clamp(1.75rem, 4vw, 2.5rem);
-      font-weight: 800;
-      margin: 0 0 0.5rem;
-      text-shadow: 0 2px 12px rgba(0,0,0,0.18);
-      letter-spacing: -0.02em;
-    }
-
-    .wizard-subtitle {
-      font-size: 1rem;
-      opacity: 0.8;
-      margin: 0 0 2.5rem;
-    }
-
-    /* ─── Desktop Stepper ─────────────────────────── */
-    .stepper {
+    .sc-stepper {
       display: flex;
       align-items: center;
       justify-content: center;
-      max-width: 760px;
-      margin: 0 auto;
+      gap: 0;
+      margin: .75rem 0 1.5rem;
+      flex-wrap: wrap;
     }
 
-    /* Connector line between steps */
-    .stepper__line {
-      flex: 1;
-      height: 2px;
-      background: rgba(255,255,255,0.25);
-      position: relative;
-      min-width: 24px;
-      transition: background 0.4s;
-    }
-    .stepper__line.is-done {
-      background: rgba(255,255,255,0.85);
-    }
-
-    /* Step item */
-    .stepper__item {
+    .sc-stepper__step {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.5rem;
+      gap: .3rem;
       cursor: pointer;
-      flex-shrink: 0;
-      min-width: 64px;
-      transition: opacity 0.2s;
+      min-width: 70px;
     }
-    .stepper__item.is-future { opacity: 0.5; }
-    .stepper__item:hover { opacity: 1; }
 
-    /* Bubble (circle) */
-    .stepper__bubble {
-      width: 44px;
-      height: 44px;
+    .sc-stepper__dot {
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
+      font-size: .8rem;
       font-weight: 700;
-      transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
-      /* Default: future */
-      background: rgba(255,255,255,0.15);
-      border: 2px solid rgba(255,255,255,0.35);
-      color: rgba(255,255,255,0.8);
-    }
-    .stepper__item.is-active .stepper__bubble {
-      background: white;
-      border-color: white;
-      color: #7c3aed;
-      box-shadow: 0 0 0 6px rgba(255,255,255,0.2), 0 4px 16px rgba(0,0,0,0.2);
-      transform: scale(1.12);
-    }
-    .stepper__item.is-done .stepper__bubble {
-      background: #10b981;
-      border-color: #10b981;
-      color: white;
-      box-shadow: 0 2px 8px rgba(16,185,129,0.4);
+      transition: all .2s;
+      background: rgba(255,255,255,.2);
+      color: #fff;
+      border: 2px solid rgba(255,255,255,.4);
     }
 
-    .stepper__num {
-      font-size: 0.9375rem;
-      font-weight: 700;
-      line-height: 1;
+    .sc-stepper__step.active .sc-stepper__dot { background: #fff; color: #7c3aed; border-color: #fff; }
+    .sc-stepper__step.done .sc-stepper__dot { background: #10b981; border-color: #10b981; }
+
+    .sc-stepper__label {
+      font-size: .65rem;
+      color: rgba(255,255,255,.75);
+      text-align: center;
+      max-width: 60px;
+      line-height: 1.2;
     }
 
-    /* Label below bubble */
-    .stepper__meta {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 1px;
+    .sc-stepper__step.active .sc-stepper__label { color: #fff; font-weight: 700; }
+
+    .sc-stepper__line {
+      flex: 1;
+      height: 2px;
+      background: rgba(255,255,255,.25);
+      min-width: 20px;
+      margin: 0 4px 22px;
     }
-    .stepper__step-of {
-      font-size: 0.625rem;
+
+    .sc-stepper__line.done { background: #10b981; }
+
+    .sc-card {
+      background: #fff;
+      border-radius: 24px;
+      padding: 2rem 1.75rem;
+      box-shadow: 0 24px 64px rgba(0,0,0,.22);
+      margin-top: .5rem;
+    }
+
+    .animate-in { animation: scSlideUp .35s cubic-bezier(.34,1.56,.64,1); }
+    .animate-fade-in { animation: scFadeIn .3s ease; }
+
+    @keyframes scSlideUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes scFadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .sc-card__eyebrow {
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: .06em;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
-      opacity: 0.55;
-      display: none; /* shown only on active */
-    }
-    .stepper__item.is-active .stepper__step-of {
-      display: block;
-    }
-    .stepper__label {
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: rgba(255,255,255,0.9);
-      white-space: nowrap;
-    }
-    .stepper__item.is-active .stepper__label {
-      color: white;
-      font-weight: 700;
+      color: #a855f7;
+      margin-bottom: .5rem;
     }
 
-    /* ─── Mobile Progress Bar (hidden on desktop) ─── */
-    .stepper-mobile {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.75rem;
-      margin-top: 0;
-    }
-    .stepper-mobile__bar {
-      width: 100%;
-      max-width: 320px;
-      height: 6px;
-      background: rgba(255,255,255,0.2);
-      border-radius: 999px;
-      overflow: hidden;
-    }
-    .stepper-mobile__fill {
-      height: 100%;
-      background: white;
-      border-radius: 999px;
-      transition: width 0.4s ease;
-    }
-    .stepper-mobile__label {
-      font-size: 0.8125rem;
-      color: rgba(255,255,255,0.85);
-      font-weight: 500;
+    .sc-card__title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #1a1a2e;
+      margin: 0 0 .25rem;
     }
 
-    .wizard-content {
-      max-width: 700px;
-      margin: 0 auto;
-      background: white;
-      border-radius: 16px;
-      padding: 3rem;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-      min-height: 500px;
-    }
-
-    .wizard-step {
-      animation: fadeIn 0.4s ease;
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+    .sc-card__sub {
+      color: #6b7280;
+      font-size: .9rem;
+      margin: 0 0 1.25rem;
     }
 
     .step-header {
       text-align: center;
-      margin-bottom: 2rem;
+      margin-bottom: 1.5rem;
     }
 
     .step-icon {
-      font-size: 3rem;
+      font-size: 2.6rem;
       display: block;
-      margin-bottom: 1rem;
+      margin-bottom: .75rem;
+    }
+
+    .step-icon--small {
+      font-size: 1.4rem;
+      margin-bottom: 0;
     }
 
     .step-header h2 {
-      font-size: 1.75rem;
-      font-weight: 700;
-      color: #1f2937;
-      margin: 0 0 0.5rem;
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #1a1a2e;
+      margin: 0 0 .35rem;
     }
 
     .step-header p {
       color: #6b7280;
-      font-size: 1rem;
+      font-size: .92rem;
       margin: 0;
     }
 
-    .form-group {
-      margin-bottom: 1.5rem;
-    }
+    .sc-field { margin-bottom: 1.1rem; }
 
-    .form-group label {
+    .sc-label {
       display: block;
+      font-size: .82rem;
       font-weight: 600;
       color: #374151;
-      margin-bottom: 0.5rem;
-      font-size: 0.9375rem;
+      margin-bottom: .35rem;
     }
 
-    /* ─── Social Section (Schritt 3) ─── */
-    .social-section {
-      margin-top: 2rem;
-      padding: 1.25rem 1.5rem;
-      background: linear-gradient(135deg,rgba(102,126,234,0.05),rgba(118,75,162,0.04));
-      border: 1px solid rgba(102,126,234,0.2);
-      border-radius: 12px;
-    }
-    .social-section-header {
-      display: flex;
-      align-items: flex-start;
-      gap: 0.75rem;
-      margin-bottom: 1.25rem;
-      font-size: 1.5rem;
-    }
-    .social-section-header h4 {
-      font-size: 0.9375rem;
-      font-weight: 700;
-      color: #374151;
-      margin: 0 0 0.2rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    .optional-tag {
-      font-size: 0.6875rem;
-      font-weight: 600;
-      background: #f3f4f6;
-      color: #6b7280;
-      padding: 0.125rem 0.5rem;
-      border-radius: 999px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .form-control {
+    .sc-input {
       width: 100%;
-      padding: 0.875rem 1rem;
-      border: 2px solid #e5e7eb;
-      border-radius: 10px;
-      font-size: 1rem;
-      transition: all 0.3s;
-    }
-
-    .form-control:focus {
-      outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    }
-
-    .form-control.error {
-      border-color: #ef4444;
-    }
-
-    .input-with-prefix {
-      position: relative;
-      display: flex;
-      align-items: center;
-    }
-
-    .input-with-prefix input {
-      flex: 1;
-      padding-right: 120px;
-    }
-
-    .input-suffix {
-      position: absolute;
-      right: 1rem;
-      color: #6b7280;
-      font-weight: 500;
-      pointer-events: none;
-    }
-
-    .hint {
-      font-size: 0.875rem;
-      color: #6b7280;
-      margin-top: 0.5rem;
-    }
-
-    .error-message {
-      font-size: 0.875rem;
-      color: #ef4444;
-      margin-top: 0.5rem;
-    }
-
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.5rem;
-    }
-
-    /* Categories Grid */
-    .categories-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin-top: 2rem;
-    }
-
-    .category-card {
-      border: 2px solid #e5e7eb;
+      padding: .65rem .875rem;
+      font-size: .9rem;
       border-radius: 12px;
-      padding: 1.5rem;
+      border: 1.5px solid #e5e7eb;
+      background: #f9fafb;
+      color: #111827;
+      outline: none;
+      box-sizing: border-box;
+      transition: border-color .15s, box-shadow .15s, background .15s;
+    }
+
+    .sc-input:focus {
+      border-color: #a855f7;
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(168,85,247,.12);
+    }
+
+    .sc-input.error { border-color: #ef4444; }
+    .sc-textarea { min-height: 110px; resize: vertical; }
+    .sc-hint { font-size: .78rem; color: #9ca3af; margin-top: .35rem; }
+    .sc-field-error { color: #dc2626; font-size: .78rem; margin: .25rem 0 0; }
+
+    .input-with-prefix { position: relative; display: flex; align-items: center; }
+    .input-with-prefix .sc-input { padding-right: 120px; }
+    .input-suffix { position: absolute; right: 1rem; color: #6b7280; font-weight: 500; pointer-events: none; }
+
+    .sc-carousel-wrap {
+      background: #f8f7ff;
+      border-radius: 14px;
+      padding: .75rem;
+      margin-bottom: 1.1rem;
+      border: 1.5px solid #e9d5ff;
+    }
+
+    .sc-carousel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: .6rem; }
+    .sc-carousel-label { font-size: .78rem; font-weight: 700; color: #7c3aed; }
+
+    .sc-carousel-spinner,
+    .sc-spinner {
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+      display: inline-block;
+    }
+
+    .sc-carousel-spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid #d8b4fe;
+      border-top-color: #a855f7;
+    }
+
+    .sc-spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .sc-carousel {
+      display: flex;
+      gap: .5rem;
+      overflow-x: auto;
+      padding-bottom: .25rem;
+      scrollbar-width: thin;
+      scrollbar-color: #d8b4fe transparent;
+    }
+
+    .sc-carousel::-webkit-scrollbar { height: 4px; }
+    .sc-carousel::-webkit-scrollbar-thumb { background: #d8b4fe; border-radius: 4px; }
+
+    .sc-carousel__item {
+      flex-shrink: 0;
+      width: 110px;
+      height: 72px;
+      border-radius: 10px;
+      overflow: hidden;
       cursor: pointer;
-      transition: all 0.3s;
       position: relative;
-      text-align: center;
+      border: 2.5px solid transparent;
+      transition: border-color .15s, transform .15s;
+      padding: 0;
+      background: transparent;
     }
 
-    .category-card:hover {
-      border-color: #667eea;
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
+    .sc-carousel__item:hover { transform: scale(1.04); }
+
+    .sc-carousel__item.selected {
+      border-color: #a855f7;
+      box-shadow: 0 0 0 3px rgba(168,85,247,.25);
     }
 
-    .category-card.selected {
-      border-color: #667eea;
-      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-    }
-
-    .category-icon {
-      font-size: 2.5rem;
+    .sc-carousel__item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
       display: block;
-      margin-bottom: 0.75rem;
     }
 
-    .category-card h3 {
-      font-size: 1rem;
-      font-weight: 600;
-      color: #1f2937;
-      margin: 0 0 0.5rem;
-    }
-
-    .category-card p {
-      font-size: 0.875rem;
-      color: #6b7280;
-      margin: 0;
-    }
-
-    .category-check {
+    .sc-carousel__check {
       position: absolute;
-      top: 0.75rem;
-      right: 0.75rem;
-      width: 32px;
-      height: 32px;
-      background: #667eea;
+      top: 5px;
+      right: 5px;
+      width: 22px;
+      height: 22px;
+      background: #a855f7;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      animation: scaleIn 0.3s ease;
     }
 
-    @keyframes scaleIn {
-      from {
-        transform: scale(0);
-      }
-      to {
-        transform: scale(1);
-      }
+    .sc-attribution {
+      font-size: .68rem;
+      color: #9ca3af;
+      margin: .35rem 0 0;
+      text-align: right;
     }
 
-    /* Summary */
+    .sc-attribution a { color: #a855f7; text-decoration: none; }
+    .sc-attribution a:hover { text-decoration: underline; }
+
+    .sc-cat-grid { display: flex; flex-wrap: wrap; gap: .5rem; }
+
+    .sc-cat-btn {
+      padding: .45rem .9rem;
+      border-radius: 20px;
+      border: 1.5px solid #e5e7eb;
+      background: #f9fafb;
+      font-size: .83rem;
+      cursor: pointer;
+      transition: all .15s;
+      color: #374151;
+      font-weight: 500;
+    }
+
+    .sc-cat-btn:hover {
+      border-color: #a855f7;
+      color: #7c3aed;
+      background: #faf5ff;
+    }
+
+    .sc-cat-btn.active {
+      border-color: #a855f7;
+      background: linear-gradient(135deg, #a855f7, #7c3aed);
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .business-type-copy__card,
+    .sc-panel {
+      background: #faf5ff;
+      border: 1.5px solid #e9d5ff;
+      border-radius: 14px;
+      padding: 1rem;
+    }
+
+    .business-type-copy__card h3,
+    .sc-panel__header h4 {
+      font-size: .95rem;
+      color: #6b21a8;
+      margin: 0 0 .3rem;
+    }
+
+    .business-type-copy__card p,
+    .sc-panel__header p {
+      font-size: .82rem;
+      color: #6b7280;
+      margin: 0;
+    }
+
+    .sc-panel { margin-bottom: 1.1rem; }
+    .sc-panel__header { display: flex; align-items: flex-start; gap: .75rem; margin-bottom: .85rem; }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    .wa-toggle {
+      display: flex;
+      align-items: center;
+      gap: .55rem;
+      font-size: .85rem;
+      color: #374151;
+      cursor: pointer;
+    }
+
+    .wa-toggle-label { font-weight: 600; }
+
+    .optional-tag {
+      font-size: .68rem;
+      font-weight: 700;
+      background: #ede9fe;
+      color: #7c3aed;
+      padding: .1rem .45rem;
+      border-radius: 999px;
+      margin-left: .35rem;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
     .summary-card {
       background: #f9fafb;
-      border-radius: 12px;
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
+      border-radius: 14px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border: 1px solid #e5e7eb;
     }
 
     .summary-card h3 {
-      font-size: 1.125rem;
-      font-weight: 600;
+      font-size: 1rem;
+      font-weight: 700;
       color: #1f2937;
-      margin: 0 0 1rem;
+      margin: 0 0 .85rem;
     }
 
     .summary-item {
       display: flex;
       justify-content: space-between;
-      padding: 0.75rem 0;
+      gap: 1rem;
+      padding: .75rem 0;
       border-bottom: 1px solid #e5e7eb;
     }
 
-    .summary-item:last-child {
-      border-bottom: none;
-    }
+    .summary-item:last-child { border-bottom: none; }
+    .summary-label { font-weight: 600; color: #6b7280; }
+    .summary-value { color: #1f2937; text-align: right; }
 
-    .summary-label {
-      font-weight: 600;
-      color: #6b7280;
-    }
+    .category-chips { display: flex; flex-wrap: wrap; gap: .75rem; }
+    .category-chip { background: #667eea; color: #fff; padding: .5rem 1rem; border-radius: 20px; font-size: .875rem; font-weight: 500; }
 
-    .summary-value {
-      color: #1f2937;
-      text-align: right;
-    }
-
-    .category-chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-    }
-
-    .category-chip {
-      background: #667eea;
-      color: white;
-      padding: 0.5rem 1rem;
-      border-radius: 20px;
-      font-size: 0.875rem;
-      font-weight: 500;
-    }
-
-    /* Footer */
-    .wizard-footer {
-      max-width: 700px;
-      margin: 2rem auto 0;
-      display: flex;
-      justify-content: space-between;
-      gap: 1rem;
-    }
-
-    .btn-secondary,
-    .btn-primary {
-      padding: 1rem 2rem;
-      border-radius: 10px;
-      font-weight: 600;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: all 0.3s;
-      border: none;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .btn-secondary {
-      background: white;
-      color: #667eea;
-      border: 2px solid white;
-    }
-
-    .btn-secondary:hover:not(:disabled) {
-      transform: translateX(-4px);
-      box-shadow: 0 4px 12px rgba(255, 255, 255, 0.3);
-    }
-
-    .btn-primary {
-      background: white;
-      color: #667eea;
-      border: 2px solid white;
-      margin-left: auto;
-    }
-
-    .btn-primary:hover:not(:disabled) {
-      transform: translateX(4px);
-      box-shadow: 0 4px 12px rgba(255, 255, 255, 0.3);
-    }
-
-    .btn-create {
-      background: linear-gradient(135deg, #10b981, #059669);
-      color: white;
-      border-color: transparent;
-    }
-
-    .btn-create:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
-    }
-
-    .btn-secondary:disabled,
-    .btn-primary:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .spinner {
-      animation: spin 0.8s linear infinite;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    .error-banner {
-      background: #fee2e2;
-      border: 1px solid #fecaca;
-      color: #991b1b;
-      padding: 1rem;
-      border-radius: 8px;
-      margin-top: 1rem;
-    }
-
-    /* Optional Note */
-    .optional-note {
-      background: #e0f2fe;
-      border-left: 4px solid #0284c7;
-      padding: 1rem 1.5rem;
-      border-radius: 8px;
-      margin-top: 2rem;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      color: #075985;
-      font-size: 0.95rem;
-    }
-
-    .note-icon {
-      font-size: 1.25rem;
-    }
-
-    /* AI Images Preview in Summary */
+    .unsplash-preview-row,
     .ai-images-preview {
       display: flex;
-      gap: 0.5rem;
-      margin-top: 1rem;
+      gap: .5rem;
       flex-wrap: wrap;
+      margin-top: .75rem;
       align-items: center;
     }
 
+    .unsplash-preview-thumb,
     .preview-thumbnail {
-      width: 60px;
-      height: 60px;
+      width: 64px;
+      height: 64px;
       object-fit: cover;
       border-radius: 8px;
       border: 2px solid #e5e7eb;
-      transition: all 0.3s;
-    }
-
-    .preview-thumbnail:hover {
-      transform: scale(1.1);
-      border-color: #667eea;
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
     }
 
     .more-images {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 60px;
-      height: 60px;
+      min-width: 64px;
+      height: 64px;
       background: #f3f4f6;
       border-radius: 8px;
-      font-size: 0.8rem;
+      font-size: .8rem;
       font-weight: 600;
       color: #6b7280;
       border: 2px dashed #d1d5db;
+      padding: 0 .5rem;
     }
 
-    /* Telegram Import Spotlight */
+    .optional-note {
+      background: #e0f2fe;
+      border-left: 4px solid #0284c7;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      margin-top: 1rem;
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      color: #075985;
+      font-size: .95rem;
+    }
+
     .telegram-spotlight {
       display: flex;
       align-items: flex-start;
-      gap: 1.25rem;
-      padding: 1.5rem 1.75rem;
+      gap: 1rem;
+      padding: 1.25rem 1.5rem;
       border-radius: 16px;
       background: linear-gradient(135deg, #0f2027 0%, #1a3a4a 50%, #1a1a2e 100%);
-      border: 1px solid rgba(255,255,255,0.1);
-      margin-top: 1.25rem;
+      border: 1px solid rgba(255,255,255,.1);
+      margin-top: 1rem;
       position: relative;
       overflow: hidden;
     }
@@ -1110,182 +885,120 @@ interface WizardStep {
     .telegram-spotlight::before {
       content: '';
       position: absolute;
-      top: -30px; right: -30px;
-      width: 120px; height: 120px;
-      background: radial-gradient(circle, rgba(41, 182, 246, 0.25) 0%, transparent 70%);
+      top: -30px;
+      right: -30px;
+      width: 120px;
+      height: 120px;
+      background: radial-gradient(circle, rgba(41,182,246,.25) 0%, transparent 70%);
       border-radius: 50%;
     }
 
-    .telegram-spotlight__icon {
-      font-size: 2.5rem;
-      flex-shrink: 0;
-      line-height: 1;
-      filter: drop-shadow(0 0 8px rgba(41,182,246,0.5));
-    }
-
-    .telegram-spotlight__body {
-      flex: 1;
-    }
-
-    .telegram-spotlight__title {
-      font-size: 1.05rem;
-      font-weight: 700;
-      color: #ffffff;
-      margin: 0 0 0.4rem;
-    }
-
-    .telegram-spotlight__desc {
-      font-size: 0.875rem;
-      color: rgba(255,255,255,0.75);
-      margin: 0 0 0.75rem;
-      line-height: 1.5;
-    }
-
-    .telegram-spotlight__points {
-      list-style: none;
-      padding: 0; margin: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 0.3rem;
-    }
-
-    .telegram-spotlight__points li {
-      font-size: 0.8rem;
-      color: rgba(255,255,255,0.85);
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-    }
-
-    .telegram-spotlight__points li::before {
-      content: '?';
-      color: #29b6f6;
-      font-weight: 700;
-      font-size: 0.85rem;
-    }
-
+    .telegram-spotlight__icon { font-size: 2.5rem; flex-shrink: 0; line-height: 1; }
+    .telegram-spotlight__body { flex: 1; position: relative; z-index: 1; }
+    .telegram-spotlight__title { font-size: 1.05rem; font-weight: 700; color: #fff; margin: 0 0 .4rem; }
+    .telegram-spotlight__desc { font-size: .875rem; color: rgba(255,255,255,.75); margin: 0 0 .75rem; line-height: 1.5; }
+    .telegram-spotlight__points { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .3rem; }
+    .telegram-spotlight__points li { font-size: .8rem; color: rgba(255,255,255,.85); display: flex; align-items: center; gap: .4rem; }
+    .telegram-spotlight__points li::before { content: '•'; color: #29b6f6; font-weight: 700; font-size: .85rem; }
     .telegram-spotlight__badge {
       flex-shrink: 0;
       background: linear-gradient(135deg, #29b6f6, #0288d1);
       color: #fff;
-      font-size: 0.7rem;
+      font-size: .7rem;
       font-weight: 700;
-      padding: 0.35rem 0.75rem;
+      padding: .35rem .75rem;
       border-radius: 20px;
       align-self: flex-start;
       white-space: nowrap;
-      letter-spacing: 0.04em;
+      letter-spacing: .04em;
       text-transform: uppercase;
-    }
-
-    /* ─── BusinessType Grid ───────────────────────────── */
-    .business-type-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1rem;
-      margin-top: 2rem;
-    }
-    @media (max-width: 640px) {
-      .business-type-grid { grid-template-columns: 1fr; }
-    }
-
-    .business-type-card {
-      border: 2px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 1.5rem;
-      cursor: pointer;
-      transition: all 0.3s;
       position: relative;
-      text-align: center;
-    }
-    .business-type-card:hover {
-      border-color: #667eea;
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
-    }
-    .business-type-card.selected {
-      border-color: #667eea;
-      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-    }
-    .business-type-icon {
-      font-size: 2.5rem;
-      display: block;
-      margin-bottom: 0.75rem;
-    }
-    .business-type-card h3 {
-      font-size: 1rem;
-      font-weight: 600;
-      color: #1f2937;
-      margin: 0 0 0.5rem;
-    }
-    .business-type-card p {
-      font-size: 0.875rem;
-      color: #6b7280;
-      margin: 0;
-    }
-    .business-type-check {
-      position: absolute;
-      top: 0.75rem; right: 0.75rem;
-      width: 32px; height: 32px;
-      background: #667eea;
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
+      z-index: 1;
     }
 
-    /* ─── Unsplash Section ──────────────────────────── */
-    .unsplash-section {
-      margin-top: 1.75rem;
-    }
-    .unsplash-section__header h4 {
+    .sc-btn-primary {
+      width: 100%;
+      padding: .85rem 1.5rem;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      border: none;
+      border-radius: 14px;
       font-size: 1rem;
-      font-weight: 600;
-      color: #1f2937;
-      margin: 0 0 0.25rem;
-    }
-
-    /* Unsplash Summary Preview */
-    .unsplash-preview-row {
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity .15s, transform .15s;
       display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-      margin-top: 0.75rem;
-    }
-    .unsplash-preview-thumb {
-      width: 64px; height: 64px;
-      object-fit: cover;
-      border-radius: 8px;
-      border: 2px solid #e5e7eb;
+      align-items: center;
+      justify-content: center;
+      gap: .4rem;
     }
 
-    @media (max-width: 768px) {
-      .wizard-container { padding: 1rem 1rem 3rem; }
+    .sc-btn-primary:hover { opacity: .92; transform: translateY(-1px); }
+    .sc-btn-primary:disabled { opacity: .55; cursor: not-allowed; transform: none; }
 
-      /* Hide desktop stepper, show mobile progress bar */
-      .stepper { display: none; }
-      .stepper-mobile { display: flex; }
-      .wizard-subtitle { margin-bottom: 1.25rem; }
+    .sc-btn-outline {
+      width: 100%;
+      padding: .7rem 1.5rem;
+      background: transparent;
+      color: #7c3aed;
+      border: 1.5px solid #a855f7;
+      border-radius: 14px;
+      font-size: .875rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .3rem;
+      transition: background .15s;
+    }
 
-      .wizard-content { padding: 1.75rem 1.25rem; }
+    .sc-btn-outline:hover { background: #f5f3ff; }
+    .sc-btn-outline:disabled { opacity: .5; cursor: not-allowed; }
+
+    .wizard-footer {
+      display: flex;
+      justify-content: space-between;
+      gap: .75rem;
+      margin-top: 1rem;
+    }
+
+    .wizard-footer__btn { flex: 1; }
+
+    .sc-error {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      border-radius: 10px;
+      padding: .65rem .875rem;
+      font-size: .875rem;
+      margin-top: 1rem;
+    }
+
+    @media (max-width: 640px) {
+      .sc-card { padding: 1.5rem 1.25rem; }
       .form-row { grid-template-columns: 1fr; }
-      .categories-grid { grid-template-columns: 1fr 1fr; gap: 0.75rem; }
       .wizard-footer { flex-direction: column; }
-      .btn-primary { margin-left: 0; }
-    }
-
-    @media (max-width: 480px) {
-      .categories-grid { grid-template-columns: 1fr; }
+      .telegram-spotlight { flex-direction: column; }
+      .sc-stepper { gap: .4rem .2rem; }
+      .sc-stepper__line { display: none; }
     }
   `]
 })
-export class StoreWizardComponent implements OnInit {
+export class StoreWizardComponent implements OnInit, OnDestroy {
   currentStep = signal(1);
   selectedCategories = signal<string[]>([]);
   selectedBusinessType = signal<string>('SHOP');
   selectedUnsplashImages = signal<UnsplashImage[]>([]);
+  carouselImages = signal<UnsplashImage[]>([]);
+  carouselLoading = signal(false);
+  selectedBannerImage = signal<UnsplashImage | null>(null);
   loading = signal(false);
   error = signal<string | null>(null);
 
   wizardForm!: FormGroup;
+  private nameInput$ = new Subject<string>();
+  private nameInputSub?: Subscription;
 
   steps: WizardStep[] = [
     { id: 1, title: 'wizard.step1Title', subtitle: 'wizard.step1Subtitle', icon: '🏪', completed: false },
@@ -1295,11 +1008,10 @@ export class StoreWizardComponent implements OnInit {
     { id: 5, title: 'wizard.step5Title', subtitle: 'wizard.step5Subtitle', icon: '✅', completed: false }
   ];
 
-  /** BusinessType-Auswahl für Schritt 2 */
   businessTypes = [
-    { id: 'SHOP',       icon: '🛍️', name: 'Online-Shop',    description: 'Produkte, Dropshipping, E-Commerce' },
-    { id: 'RESTAURANT', icon: '🍽️', name: 'Restaurant',     description: 'Menü, Bestellungen, Tischreservierung' },
-    { id: 'RIAD',       icon: '🕌', name: 'Riad / Hotel',   description: 'Unterkünfte, Zimmer, Touren' },
+    { id: 'SHOP', icon: '🛍️', name: 'Online-Shop', description: 'Produkte, Dropshipping, E-Commerce' },
+    { id: 'RESTAURANT', icon: '🍽️', name: 'Restaurant', description: 'Menü, Bestellungen, Tischreservierung' },
+    { id: 'RIAD', icon: '🕌', name: 'Riad / Hotel', description: 'Unterkünfte, Zimmer, Touren' }
   ];
 
   createdStoreId: number | null = null;
@@ -1312,12 +1024,10 @@ export class StoreWizardComponent implements OnInit {
     private unsplashService: UnsplashService,
     private router: Router
   ) {
-    // Initialize form immediately in constructor
     this.initializeForm();
   }
 
   private initializeForm(): void {
-    // Initialize form with explicit null values and proper validators
     this.wizardForm = this.fb.group({
       storeName: this.fb.control('', [Validators.required]),
       storeSlug: this.fb.control('', [Validators.required, Validators.pattern(/^[a-z0-9-]+$/)]),
@@ -1330,19 +1040,17 @@ export class StoreWizardComponent implements OnInit {
       address: this.fb.control('', []),
       city: this.fb.control('', []),
       postalCode: this.fb.control('', []),
-      // ─── Social Links ─────────────────────────────────────────
       telegramUrl: this.fb.control('', []),
       facebookUrl: this.fb.control('', []),
       instagramUrl: this.fb.control('', []),
       tiktokUrl: this.fb.control('', [])
     });
 
-    // Auto-generate slug from store name
     const storeNameControl = this.wizardForm.get('storeName');
     const storeSlugControl = this.wizardForm.get('storeSlug');
 
     if (storeNameControl && storeSlugControl) {
-      storeNameControl.valueChanges.subscribe(name => {
+      storeNameControl.valueChanges.subscribe((name) => {
         if (name && !storeSlugControl.dirty) {
           const slug = name
             .toLowerCase()
@@ -1357,43 +1065,84 @@ export class StoreWizardComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Check if user already has a store
     if (this.hasStore()) {
       this.router.navigate(['/dashboard']);
       return;
     }
 
-    // Lade gespeicherten Fortschritt
+    this.nameInputSub = this.nameInput$.pipe(
+      debounceTime(600),
+      distinctUntilChanged()
+    ).subscribe((name) => {
+      if (name.length >= 3) {
+        this.loadCarousel(name);
+      } else {
+        this.carouselImages.set([]);
+        this.selectedBannerImage.set(null);
+        this.selectedUnsplashImages.set([]);
+      }
+    });
+
     this.loadSavedProgress();
   }
 
+  ngOnDestroy(): void {
+    this.nameInputSub?.unsubscribe();
+  }
+
+  onStoreNameInput(value: string): void {
+    this.nameInput$.next(value.trim());
+  }
+
+  loadCarousel(query: string): void {
+    this.carouselLoading.set(true);
+    const category = this.selectedBusinessType() || 'store';
+    this.unsplashService.getSuggestions(category, query, 1).subscribe({
+      next: (res) => {
+        this.carouselLoading.set(false);
+        const images = res.images?.slice(0, 6) || [];
+        this.carouselImages.set(images);
+        if (images.length > 0) {
+          const currentSelection = this.selectedBannerImage();
+          const nextSelection = currentSelection && images.some((img) => img.id === currentSelection.id)
+            ? currentSelection
+            : images[0];
+          this.selectedBannerImage.set(nextSelection);
+          this.selectedUnsplashImages.set(nextSelection ? [nextSelection] : []);
+        } else {
+          this.selectedBannerImage.set(null);
+          this.selectedUnsplashImages.set([]);
+        }
+      },
+      error: () => {
+        this.carouselLoading.set(false);
+      }
+    });
+  }
+
+  selectBannerImage(img: UnsplashImage): void {
+    this.selectedBannerImage.set(img);
+    this.selectedUnsplashImages.set([img]);
+  }
+
   hasStore(): boolean {
-    // TODO: Check from AuthService or StoreService
     return false;
   }
 
-  /**
-   * Lade gespeicherten Wizard-Fortschritt aus DB
-   */
   private loadSavedProgress(): void {
     this.wizardProgressService.loadProgress().subscribe({
       next: (progress) => {
         if (progress && progress.status === 'IN_PROGRESS') {
-          console.log('📂 Fortschritt geladen - Setze Wizard fort ab Schritt', progress.currentStep);
-
-          // Setze aktuellen Schritt
           this.currentStep.set(progress.currentStep);
-          
-          // Markiere abgeschlossene Schritte
+
           if (progress.completedSteps) {
-            progress.completedSteps.forEach(stepNum => {
+            progress.completedSteps.forEach((stepNum) => {
               if (stepNum > 0 && stepNum <= this.steps.length) {
                 this.steps[stepNum - 1].completed = true;
               }
             });
           }
-          
-          // Fülle Formular mit gespeicherten Daten
+
           if (progress.data) {
             this.wizardForm.patchValue({
               storeName: progress.data.storeName || '',
@@ -1406,23 +1155,23 @@ export class StoreWizardComponent implements OnInit {
               postalCode: progress.data.contactInfo?.postalCode || ''
             });
 
-            // Setze ausgewählte Kategorien
             if (progress.data.selectedCategories) {
               this.selectedCategories.set(progress.data.selectedCategories);
+            }
+
+            const savedName = progress.data.storeName || '';
+            if (savedName.length >= 3) {
+              this.nameInput$.next(savedName);
             }
           }
         }
       },
-      error: (err) => {
-        // Kein gespeicherter Fortschritt = Start bei Schritt 1
+      error: () => {
         console.log('ℹ️ Kein gespeicherter Fortschritt gefunden. Starte neu.');
       }
     });
   }
 
-  /**
-   * Speichere aktuellen Wizard-Fortschritt in DB
-   */
   private saveCurrentProgress(): void {
     const progress: WizardProgress = {
       currentStep: this.currentStep(),
@@ -1440,9 +1189,7 @@ export class StoreWizardComponent implements OnInit {
           postalCode: this.wizardForm.get('postalCode')?.value
         }
       },
-      completedSteps: this.steps
-        .filter(s => s.completed)
-        .map(s => s.id)
+      completedSteps: this.steps.filter((step) => step.completed).map((step) => step.id)
     };
 
     this.wizardProgressService.saveProgress(progress).subscribe({
@@ -1456,39 +1203,30 @@ export class StoreWizardComponent implements OnInit {
       case 1:
         return !!(this.wizardForm.get('storeName')?.valid && this.wizardForm.get('storeSlug')?.valid);
       case 2:
-        return true; // Categories are optional
       case 3:
-        return true; // Contact info is optional
       case 4:
-        return true; // AI images step is optional
       default:
         return true;
     }
   }
 
   nextStep(): void {
-    if (!this.canProceed()) return;
+    if (!this.canProceed()) {
+      return;
+    }
 
     const current = this.currentStep();
-
-    // Bei Schritt 3 -> 4: Store erstellen, damit storeId für KI-Feature verfügbar ist
     if (current === 3 && !this.createdStoreId) {
       this.createStoreForAiStep();
-      return; // nextStep wird nach erfolgreicher Erstellung aufgerufen
+      return;
     }
 
     this.steps[current - 1].completed = true;
     this.currentStep.set(current + 1);
-    
-    // Speichere Fortschritt in DB
     this.saveCurrentProgress();
-    
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  /**
-   * Erstelle Store für KI-Step (wird vor Step 4 aufgerufen)
-   */
   private async createStoreForAiStep(): Promise<void> {
     if (this.wizardForm.invalid) {
       this.error.set('Bitte füllen Sie alle Pflichtfelder aus.');
@@ -1508,8 +1246,8 @@ export class StoreWizardComponent implements OnInit {
         businessType: this.selectedBusinessType() || 'SHOP',
         seedSampleData: this.selectedBusinessType() !== 'SHOP',
         whatsappNumber: formValue.whatsappNumber || null,
-          whatsappNotificationsEnabled: formValue.whatsappNotificationsEnabled || false,
-          contactInfo: {
+        whatsappNotificationsEnabled: formValue.whatsappNotificationsEnabled || false,
+        contactInfo: {
           email: formValue.email || null,
           phone: formValue.phone || null,
           address: formValue.address || null,
@@ -1523,27 +1261,17 @@ export class StoreWizardComponent implements OnInit {
       };
 
       const result = await this.storeService.createStore(storeData).toPromise();
-
       if (!result || !result.id) {
         throw new Error('Store konnte nicht erstellt werden');
       }
 
       this.createdStoreId = result.id;
-      console.log('✅ Store erstellt für KI-Step:', result.id);
-
-      // Unsplash-Bilder anwenden (falls ausgewählt)
       await this.applyUnsplashImages(result.id);
-
-      // Markiere Schritt 3 als abgeschlossen und gehe zu Schritt 4
       this.steps[2].completed = true;
       this.currentStep.set(4);
       this.loading.set(false);
-
-      // Speichere Fortschritt
       this.saveCurrentProgress();
-
       window.scrollTo({ top: 0, behavior: 'smooth' });
-
     } catch (err: any) {
       this.error.set(err.error?.message || 'Fehler beim Erstellen des Stores. Bitte versuchen Sie es erneut.');
       this.loading.set(false);
@@ -1554,16 +1282,12 @@ export class StoreWizardComponent implements OnInit {
     const current = this.currentStep();
     if (current > 1) {
       this.currentStep.set(current - 1);
-      
-      // Speichere Fortschritt in DB
       this.saveCurrentProgress();
-      
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 
   goToStep(stepId: number): void {
-    // Only allow going back or to completed steps
     if (stepId < this.currentStep() || this.steps[stepId - 1].completed) {
       this.currentStep.set(stepId);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1573,23 +1297,21 @@ export class StoreWizardComponent implements OnInit {
   selectBusinessType(type: string): void {
     this.selectedBusinessType.set(type);
     this.wizardForm.patchValue({ businessType: type });
+    const storeName = (this.wizardForm.get('storeName')?.value ?? '').trim();
+    if (storeName.length >= 3) {
+      this.loadCarousel(storeName);
+    }
   }
 
-  onUnsplashSelectionChanged(images: UnsplashImage[]): void {
-    this.selectedUnsplashImages.set(images);
-  }
-
-  /**
-   * Wendet ausgewählte Unsplash-Bilder nach der Store-Erstellung an.
-   * Fehler sind nicht blockierend – der Store wurde bereits angelegt.
-   */
   private async applyUnsplashImages(storeId: number): Promise<void> {
-    const images = this.selectedUnsplashImages();
-    if (!images.length) return;
+    const selectedBanner = this.selectedBannerImage();
+    const images = selectedBanner ? [selectedBanner] : this.selectedUnsplashImages();
+    if (!images.length) {
+      return;
+    }
 
     try {
       await this.unsplashService.applyImages(storeId, images, 'SLIDER').toPromise();
-      console.log(`✅ ${images.length} Unsplash-Bild(er) dem Store ${storeId} hinzugefügt`);
     } catch (err) {
       console.warn('⚠️ Unsplash-Bilder konnten nicht angewendet werden (nicht kritisch):', err);
     }
@@ -1598,18 +1320,17 @@ export class StoreWizardComponent implements OnInit {
   toggleCategory(categoryId: string): void {
     const current = this.selectedCategories();
     if (current.includes(categoryId)) {
-      this.selectedCategories.set(current.filter(id => id !== categoryId));
+      this.selectedCategories.set(current.filter((id) => id !== categoryId));
     } else {
       this.selectedCategories.set([...current, categoryId]);
     }
   }
 
   getCategoryName(categoryId: string): string {
-    return this.businessTypes.find(bt => bt.id === categoryId)?.name || categoryId;
+    return this.businessTypes.find((bt) => bt.id === categoryId)?.name || categoryId;
   }
 
   skip(): void {
-    // Markiere als übersprungen in DB
     this.wizardProgressService.skipWizard().subscribe({
       next: () => {
         console.log('⏭️ Wizard übersprungen');
@@ -1617,30 +1338,27 @@ export class StoreWizardComponent implements OnInit {
       },
       error: (err) => {
         console.error('❌ Fehler beim Überspringen:', err);
-        // Navigiere trotzdem zum Dashboard
         this.router.navigate(['/dashboard']);
       }
     });
   }
 
   async createStore(): Promise<void> {
-    // Store wurde bereits bei Step 3->4 erstellt
     if (this.createdStoreId) {
-      // Markiere Wizard als completed in DB
       this.wizardProgressService.completeWizard(this.createdStoreId).subscribe({
         next: () => console.log('✅ Wizard als abgeschlossen markiert'),
         error: (err) => console.warn('⚠️ Fehler beim Markieren:', err)
       });
 
-      // Navigate to onboarding (template selection + demo data) after store creation
       this.router.navigate(['/stores', this.createdStoreId, 'onboarding'], {
         queryParams: { newStore: 'true' }
       });
       return;
     }
 
-    // Fallback: Erstelle Store wenn noch nicht geschehen (sollte nicht auftreten)
-    if (this.wizardForm.invalid) return;
+    if (this.wizardForm.invalid) {
+      return;
+    }
 
     this.loading.set(true);
     this.error.set(null);
@@ -1655,8 +1373,8 @@ export class StoreWizardComponent implements OnInit {
         businessType: this.selectedBusinessType() || 'SHOP',
         seedSampleData: this.selectedBusinessType() !== 'SHOP',
         whatsappNumber: formValue.whatsappNumber || null,
-          whatsappNotificationsEnabled: formValue.whatsappNotificationsEnabled || false,
-          contactInfo: {
+        whatsappNotificationsEnabled: formValue.whatsappNotificationsEnabled || false,
+        contactInfo: {
           email: formValue.email || null,
           phone: formValue.phone || null,
           address: formValue.address || null,
@@ -1666,29 +1384,22 @@ export class StoreWizardComponent implements OnInit {
       };
 
       const result = await this.storeService.createStore(storeData).toPromise();
-      
       if (!result || !result.id) {
         throw new Error('Store konnte nicht erstellt werden');
       }
-      
+
       this.createdStoreId = result.id;
-
-      // Unsplash-Bilder anwenden (falls ausgewählt)
       await this.applyUnsplashImages(result.id);
-
-      // Markiere Wizard als completed in DB
       this.wizardProgressService.completeWizard(result.id).subscribe({
         next: () => console.log('✅ Wizard als abgeschlossen markiert'),
         error: (err) => console.warn('⚠️ Fehler beim Markieren:', err)
       });
-      
-      // Success! Navigate to onboarding (template selection)
+
       setTimeout(() => {
         this.router.navigate(['/stores', result.id, 'onboarding'], {
           queryParams: { newStore: 'true' }
         });
       }, 1000);
-
     } catch (err: any) {
       this.error.set(err.error?.message || 'Fehler beim Erstellen des Stores. Bitte versuchen Sie es erneut.');
       this.loading.set(false);
@@ -1700,6 +1411,6 @@ export class StoreWizardComponent implements OnInit {
   }
 
   onAiSelectionChanged(selected: AiImageData[]): void {
-    // Handle AI image selection change if needed
+    void selected;
   }
 }
