@@ -7,6 +7,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { TranslationService } from '@app/core/services/translation.service';
 import { StoreNavigationComponent } from '@app/shared/components/store-navigation.component';
 import { ResponsiveDataListComponent, ColumnConfig, ActionConfig } from '@app/shared/components/responsive-data-list/responsive-data-list.component';
+import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
 import {FabService} from "@app/core/services/fab.service";
 
 interface Category {
@@ -24,15 +25,16 @@ interface Category {
 @Component({
   selector: 'app-category-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, TranslatePipe, StoreNavigationComponent, ResponsiveDataListComponent],
+  imports: [CommonModule, RouterModule, TranslatePipe, StoreNavigationComponent, ResponsiveDataListComponent, PageHeaderComponent],
   template: `
     <div class="category-list-container">
       <app-store-navigation [currentPage]="'navigation.categories' | translate"></app-store-navigation>
 
-      <div class="header">
-        <h1>{{ 'navigation.categories' | translate }}</h1>
-       
-      </div>
+      <app-page-header
+        [title]="'Kategorien'"
+        [showBackButton]="false"
+        [actions]="headerActions">
+      </app-page-header>
 
       <app-responsive-data-list
         [items]="flatCategories"
@@ -74,6 +76,7 @@ export class CategoryListComponent implements OnInit {
   flatCategories: any[] = [];
   loading = false;
   error: string | null = null;
+  headerActions: HeaderAction[] = [];
 
   columns: ColumnConfig[] = [
     {

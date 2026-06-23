@@ -7,29 +7,24 @@ import { Order, OrderStatus } from '../../core/models';
 import { StoreNavigationComponent } from '../../shared/components/store-navigation.component';
 import { ToastService } from '../../core/services/toast.service';
 import { OrderVerificationCounterService } from '../../core/services/order-verification-counter.service';
+import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
 import { toDate } from '../../core/utils/date.utils';
 
 @Component({
   selector: 'app-order-verification-center',
   standalone: true,
-  imports: [CommonModule, FormsModule, StoreNavigationComponent],
+  imports: [CommonModule, FormsModule, StoreNavigationComponent, PageHeaderComponent],
   template: `
 
       <div class="verification-center">
           <app-store-navigation currentPage="COD Verifizierung">
           </app-store-navigation>
 
-          <div class="header">
-              <h1>📞 COD Bestellungen Verifizierung</h1>
-
-              <button
-                      class="btn-refresh"
-                      (click)="loadOrders()"
-                      [disabled]="loading">
-
-                  🔄 Aktualisieren
-              </button>
-          </div>
+          <app-page-header
+            [title]="'Bestellungsverifizierung'"
+            [showBackButton]="false"
+            [actions]="headerActions">
+          </app-page-header>
       <!-- Stats Cards -->
       <div class="stats-grid" *ngIf="!loading">
         <div class="stat-card warning">
@@ -948,6 +943,17 @@ export class OrderVerificationCenterComponent implements OnInit, OnDestroy {
 
   // Make toDate available in template
   toDate = toDate;
+
+  get headerActions(): HeaderAction[] {
+    return [
+      {
+        label: '🔄 Aktualisieren',
+        class: 'btn-refresh',
+        onClick: () => this.loadOrders(),
+        disabled: this.loading
+      }
+    ];
+  }
 
   constructor(
     private route: ActivatedRoute,

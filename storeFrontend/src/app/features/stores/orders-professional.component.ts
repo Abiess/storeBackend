@@ -6,12 +6,13 @@ import { OrderService } from '../../core/services/order.service';
 import { Order, OrderStatus } from '../../core/models';
 import { StoreNavigationComponent } from '../../shared/components/store-navigation.component';
 import { ResponsiveDataListComponent, ColumnConfig, ActionConfig } from '@app/shared/components/responsive-data-list/responsive-data-list.component';
+import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
 import { toDate } from '@app/core/utils/date.utils';
 
 @Component({
   selector: 'app-orders-professional',
   standalone: true,
-  imports: [CommonModule, FormsModule, StoreNavigationComponent, ResponsiveDataListComponent],
+  imports: [CommonModule, FormsModule, StoreNavigationComponent, ResponsiveDataListComponent, PageHeaderComponent],
   templateUrl: './orders-professional.component.html',
   styleUrls: ['./orders-professional.component.scss']
 })
@@ -86,6 +87,17 @@ export class OrdersProfessionalComponent implements OnInit {
       badgeClass: (value) => this.getStatusClass(value)
     }
   ];
+
+  get headerActions(): HeaderAction[] {
+    return [
+      {
+        label: '🔄 Aktualisieren',
+        class: 'btn-refresh',
+        onClick: () => this.loadOrders(),
+        disabled: this.loading
+      }
+    ];
+  }
 
   // Action-Buttons
   actions: ActionConfig[] = [

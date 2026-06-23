@@ -7,12 +7,13 @@ import { StoreNavigationComponent } from '@app/shared/components/store-navigatio
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { TranslationService } from '@app/core/services/translation.service';
 import { ResponsiveDataListComponent, ColumnConfig, ActionConfig, BulkActionConfig } from '@app/shared/components/responsive-data-list/responsive-data-list.component';
+import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
 import { FabService } from '@app/core/services/fab.service';
 
 @Component({
   selector: 'app-product-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, StoreNavigationComponent, TranslatePipe, ResponsiveDataListComponent],
+  imports: [CommonModule, RouterModule, StoreNavigationComponent, TranslatePipe, ResponsiveDataListComponent, PageHeaderComponent],
   template: `
     <div class="product-list-container">
       <!-- Einheitliche Navigation -->
@@ -20,9 +21,11 @@ import { FabService } from '@app/core/services/fab.service';
         [currentPage]="'navigation.products' | translate">
       </app-store-navigation>
 
-      <div class="header">
-        <h1>{{ 'navigation.products' | translate }}</h1>
-      </div>
+      <app-page-header
+        [title]="'Produkte'"
+        [showBackButton]="false"
+        [actions]="headerActions">
+      </app-page-header>
 
       <!-- Filter-Leiste: Status-Filter (immer sichtbar) + Telegram-Filter (wenn vorhanden) -->
       <div class="filter-bar">
@@ -168,6 +171,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
   loading = true;
   /** Aktiver Filter: Status oder spezielle Filter-Modi */
   statusFilter: 'ALL' | 'ACTIVE' | 'DRAFT' | 'ARCHIVED' | 'INACTIVE' | 'TELEGRAM' | 'REVIEW' = 'ALL';
+  headerActions: HeaderAction[] = [];
 
 
   get hasTelegramProducts(): boolean {

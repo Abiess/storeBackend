@@ -18,15 +18,19 @@ import { FabService } from '@app/core/services/fab.service';
      
         <app-store-navigation currentPage="HomBuilder
 " ></app-store-navigation>
+
+        <app-page-header
+          [title]="'Homepage Builder'"
+          [showBackButton]="false"
+          [actions]="headerActions">
+        </app-page-header>
+
       <div class="builder-content">
         
         <!-- Section List -->
         <div class="sections-list">
           <div class="list-header">
             <h2>Sections</h2>
-            <button class="btn-primary" (click)="openAddSectionModal()">
-              + Section hinzufügen
-            </button>
           </div>
 
           <div class="section-items" *ngIf="sections.length > 0">

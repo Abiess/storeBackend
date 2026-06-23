@@ -1,12 +1,11 @@
 <div class="orders-professional">
   <app-store-navigation currentPage="Bestellungen"></app-store-navigation>
 
-  <div class="orders-header">
-    <h1>📦 Bestellungen</h1>
-    <button class="btn-refresh" (click)="loadOrders()" [disabled]="loading">
-      🔄 Aktualisieren
-    </button>
-  </div>
+  <app-page-header
+    [title]="'Bestellungen'"
+    [showBackButton]="false"
+    [actions]="headerActions">
+  </app-page-header>
 
   <!-- Stats Cards -->
   <div class="stats-grid" *ngIf="!loading">

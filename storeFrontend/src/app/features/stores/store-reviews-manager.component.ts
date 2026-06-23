@@ -26,10 +26,11 @@ import { toDate } from '@app/core/utils/date.utils';
             [currentPage]="'reviews.reviews' | translate">
         </app-store-navigation>
 
-        <div class="header">
-          <h1>{{ 'reviews.reviews' | translate }}</h1>
-
-        </div>
+        <app-page-header
+          [title]="'Bewertungen'"
+          [showBackButton]="false"
+          [actions]="headerActions">
+        </app-page-header>
 
       <!-- ─── Statistik-Karten ─── -->
       <div class="stats-row">

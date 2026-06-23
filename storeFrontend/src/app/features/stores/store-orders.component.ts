@@ -8,25 +8,23 @@ import { StoreNavigationComponent } from '../../shared/components/store-navigati
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { toDate } from '../../core/utils/date.utils';
 import { ResponsiveDataListComponent, ColumnConfig, ActionConfig } from '@app/shared/components/responsive-data-list/responsive-data-list.component';
+import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
 
 @Component({
   selector: 'app-store-orders',
   standalone: true,
-  imports: [CommonModule, FormsModule, StoreNavigationComponent, TranslatePipe, ResponsiveDataListComponent],
+  imports: [CommonModule, FormsModule, StoreNavigationComponent, TranslatePipe, ResponsiveDataListComponent, PageHeaderComponent],
   template: `
     <div class="store-orders-container">
       <app-store-navigation
         [currentPage]="'navigation.orders' | translate">
       </app-store-navigation>
 
-      <div class="header-content">
-        <h1>{{ 'navigation.orders' | translate }}</h1>
-        <div class="header-actions">
-          <button class="btn btn-secondary" (click)="loadOrders()">
-            🔄 {{ 'common.refresh' | translate }}
-          </button>
-        </div>
-      </div>
+      <app-page-header
+        [title]="'Bestellungen'"
+        [showBackButton]="false"
+        [actions]="headerActions">
+      </app-page-header>
 
       <!-- Stats -->
       <div class="orders-stats" *ngIf="!loading">
@@ -283,6 +281,17 @@ export class StoreOrdersComponent implements OnInit {
       badgeClass: (value) => `status-${(value as string).toLowerCase()}`
     }
   ];
+
+  get headerActions(): HeaderAction[] {
+    return [
+      {
+        label: 'common.refresh',
+        class: 'btn-secondary',
+        onClick: () => this.loadOrders(),
+        disabled: this.loading
+      }
+    ];
+  }
 
   actions: ActionConfig[] = [
     {
