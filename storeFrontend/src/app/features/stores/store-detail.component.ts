@@ -270,6 +270,8 @@ import { environment } from '@env/environment';
       position: relative; overflow: hidden;
       background: linear-gradient(135deg, #ec4899 0%, #a855f7 50%, #667eea 100%);
       padding: 1.25rem 2rem; color: #fff;
+      z-index: 1;
+      margin-bottom: 0;
     }
     .anon-banner__blob1 {
       position: absolute; width: 200px; height: 200px; border-radius: 50%;
@@ -359,6 +361,8 @@ import { environment } from '@env/environment';
 
     .content {
       background: #f8f9fa;
+      min-height: 100vh;
+      position: relative;
     }
 
 
@@ -414,6 +418,9 @@ import { environment } from '@env/environment';
       padding: 2rem;
       max-width: 1400px;
       margin: 0 auto;
+      position: relative;
+      z-index: 2;
+      background: #f8f9fa;
     }
 
     /* Stats Grid */

@@ -103,6 +103,8 @@ import { LucideAngularModule } from 'lucide-angular';
       box-shadow: 0 4px 24px rgba(102,126,234,.10);
       overflow: hidden;
       margin-bottom: 2rem;
+      position: relative;
+      z-index: 10;
     }
     .oc-header {
       display: flex;
