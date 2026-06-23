@@ -92,7 +92,7 @@ import { TranslationService, SupportedLanguage } from '../../../core/services/tr
   `]
 })
 export class LanguageSelectorComponent {
-  languages: SupportedLanguage[] = ['de', 'en', 'ar'];
+  languages: SupportedLanguage[] = ['de', 'en', 'ar', 'fr'];
 
   constructor(public translationService: TranslationService) {}
 
@@ -104,7 +104,8 @@ export class LanguageSelectorComponent {
     const flags: Record<SupportedLanguage, string> = {
       de: '🇩🇪',
       en: '🇬🇧',
-      ar: '🇸🇦'
+      ar: '🇸🇦',
+      fr: '🇫🇷'
     };
     return flags[lang];
   }
@@ -113,7 +114,8 @@ export class LanguageSelectorComponent {
     const labels: Record<SupportedLanguage, string> = {
       de: 'Deutsch',
       en: 'English',
-      ar: 'العربية'
+      ar: 'العربية',
+      fr: 'Français'
     };
     return labels[lang];
   }

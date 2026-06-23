@@ -41,14 +41,13 @@ $bg:         #f9fafb;
     justify-content: space-between;
   }
 
-  .nav-brand h1 {
-    margin: 0;
-    font-size: 1.375rem;
-    font-weight: 800;
-    background: linear-gradient(135deg, $primary, $secondary);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  .nav-brand {
+    .nav-logo-img {
+      height: 40px;
+      width: auto;
+      object-fit: contain;
+      display: block;
+    }
   }
 
   .nav-links {
@@ -814,6 +813,15 @@ section {
 
     h3, h4 { margin: 0 0 0.875rem; }
     p { color: rgba(255,255,255,0.65); margin: 0; }
+
+    .footer-logo-img {
+      height: 48px;
+      width: auto;
+      object-fit: contain;
+      margin-bottom: 0.75rem;
+      filter: brightness(0) invert(1);
+      display: block;
+    }
 
     ul {
       list-style: none; padding: 0; margin: 0;

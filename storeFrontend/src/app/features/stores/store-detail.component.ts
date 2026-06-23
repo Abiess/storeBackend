@@ -31,8 +31,8 @@ import { environment } from '@env/environment';
             <div class="anon-banner__left">
               <span class="anon-banner__icon">🔗</span>
               <div>
-                <strong>Dein Store-Link – jetzt sichern!</strong>
-                <p>Ohne E-Mail verlierst du den Zugang. Hinterlege deine E-Mail oder melde dich an.</p>
+                <strong>{{ 'anonBanner.title' | translate }}</strong>
+                <p>{{ 'anonBanner.subtitle' | translate }}</p>
               </div>
             </div>
 
@@ -40,7 +40,7 @@ import { environment } from '@env/environment';
             <div class="anon-link-row" *ngIf="storePublicUrl">
               <span class="anon-link-url">{{ storePublicUrl }}</span>
               <button class="btn-copy" (click)="copyStoreLink()" [class.copied]="linkCopied">
-                {{ linkCopied ? '✅ Kopiert!' : '📋 Link kopieren' }}
+                {{ linkCopied ? ('anonBanner.copied' | translate) : ('anonBanner.copyBtn' | translate) }}
               </button>
             </div>
 
@@ -49,7 +49,7 @@ import { environment } from '@env/environment';
               <input
                 type="email"
                 [(ngModel)]="anonEmail"
-                placeholder="deine@email.de"
+                [placeholder]="'anonBanner.emailPlaceholder' | translate"
                 class="anon-email-input"
                 [disabled]="anonEmailSaving"
               />
@@ -58,15 +58,21 @@ import { environment } from '@env/environment';
                 (click)="saveAnonEmail()"
                 [disabled]="anonEmailSaving || !anonEmail.includes('@')">
                 <span *ngIf="anonEmailSaving" class="spinner-xs"></span>
-                <span *ngIf="!anonEmailSaving">📧 E-Mail sichern</span>
+                <span *ngIf="!anonEmailSaving">{{ 'anonBanner.saveEmailBtn' | translate }}</span>
               </button>
             </div>
-            <p class="anon-email-ok" *ngIf="anonEmailSaved">✅ E-Mail gespeichert! Wir haben dir den Link zugeschickt.</p>
+            <p class="anon-email-ok" *ngIf="anonEmailSaved">{{ 'anonBanner.emailSaved' | translate }}</p>
+            <button class="btn-set-password" (click)="requestPasswordLink()" *ngIf="anonEmailSaved && !anonPwLinkSent && !anonPwLinkSending">
+              {{ 'anonBanner.setPasswordBtn' | translate }}
+            </button>
+            <p class="anon-email-ok" *ngIf="anonPwLinkSending">🔑 {{ 'anonBanner.setPasswordSending' | translate }}</p>
+            <p class="anon-email-ok" *ngIf="anonPwLinkSent">{{ 'anonBanner.setPasswordSent' | translate }}</p>
+            <p class="anon-email-err" *ngIf="anonPwLinkError">⚠️ {{ anonPwLinkError }}</p>
             <p class="anon-email-err" *ngIf="anonEmailError">⚠️ {{ anonEmailError }}</p>
 
             <div class="anon-banner__actions">
-              <a routerLink="/login" class="btn-login">🔐 Anmelden / Registrieren</a>
-              <button class="btn-dismiss" (click)="anonBannerDismissed = true">Später</button>
+              <a routerLink="/login" class="btn-login">{{ 'anonBanner.loginBtn' | translate }}</a>
+              <button class="btn-dismiss" (click)="anonBannerDismissed = true">{{ 'anonBanner.dismiss' | translate }}</button>
             </div>
           </div>
         </div>
@@ -286,11 +292,12 @@ import { environment } from '@env/environment';
 
     .anon-link-row {
       display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
-      background: rgba(255,255,255,.15); padding: 0.5rem 0.85rem;
+      background: rgba(0,0,0,.2); padding: 0.5rem 0.85rem;
       border-radius: 10px; backdrop-filter: blur(4px);
     }
     .anon-link-url {
-      font-size: 0.82rem; font-weight: 600; flex: 1;
+      font-size: 0.82rem; font-weight: 700; flex: 1;
+      color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.3);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .btn-copy {
@@ -306,10 +313,13 @@ import { environment } from '@env/environment';
     }
     .anon-email-input {
       flex: 1; min-width: 200px; padding: 0.5rem 0.85rem; border-radius: 10px;
-      border: 1.5px solid rgba(255,255,255,.5); background: rgba(255,255,255,.15);
-      color: #fff; font-size: 0.875rem; outline: none;
-      &::placeholder { color: rgba(255,255,255,.65); }
-      &:focus { border-color: rgba(255,255,255,.9); background: rgba(255,255,255,.22); }
+      border: 1.5px solid rgba(255,255,255,0.6); background: rgba(255,255,255,0.95);
+      color: #1f2937; font-size: 0.875rem; outline: none;
+      &::placeholder { color: #6b7280; }
+      &:focus {
+        border-color: #a855f7; background: #fff;
+        box-shadow: 0 0 0 3px rgba(168,85,247,.15);
+      }
     }
     .btn-save-email {
       padding: 0.5rem 1.25rem; background: #fff; color: #a855f7; border: none;
@@ -317,6 +327,12 @@ import { environment } from '@env/environment';
       transition: opacity .15s; white-space: nowrap;
       &:disabled { opacity: .5; cursor: not-allowed; }
       &:hover:not(:disabled) { opacity: .9; }
+    }
+    .btn-set-password {
+      padding: 7px 18px; background: rgba(255,255,255,.15); border: 1.5px solid rgba(255,255,255,.55);
+      border-radius: 10px; color: #fff; font-size: 0.82rem; font-weight: 700;
+      cursor: pointer; backdrop-filter: blur(4px); transition: background .15s; margin-top: 0.5rem;
+      &:hover { background: rgba(255,255,255,.3); }
     }
     .anon-email-ok { margin: 0; font-size: 0.82rem; font-weight: 600; color: #d1fae5; }
     .anon-email-err { margin: 0; font-size: 0.82rem; color: #fee2e2; }
@@ -851,6 +867,9 @@ export class StoreDetailComponent implements OnInit {
   anonEmailSaved = false;
   anonEmailError = '';
   linkCopied = false;
+  anonPwLinkSending = false;
+  anonPwLinkSent = false;
+  anonPwLinkError = '';
 
   toDate = toDate;
   productsLoading = false;
@@ -932,6 +951,27 @@ export class StoreDetailComponent implements OnInit {
       error: (err) => {
         this.anonEmailSaving = false;
         this.anonEmailError = err?.error?.message || 'Fehler – bitte versuche es erneut.';
+      }
+    });
+  }
+
+  requestPasswordLink(): void {
+    const email = this.anonEmail.trim();
+    if (!email.includes('@')) return;
+    this.anonPwLinkSending = true;
+    this.anonPwLinkSent = false;
+    this.anonPwLinkError = '';
+    this.http.post(
+      `${environment.apiUrl}/auth/forgot-password`,
+      { email }
+    ).subscribe({
+      next: () => {
+        this.anonPwLinkSending = false;
+        this.anonPwLinkSent = true;
+      },
+      error: (err) => {
+        this.anonPwLinkSending = false;
+        this.anonPwLinkError = err?.error?.message || 'Fehler';
       }
     });
   }

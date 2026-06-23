@@ -26,7 +26,7 @@ export class LanguageService {
 
   async setLanguage(lang: string): Promise<void> {
     const safeLang: SupportedLanguage =
-        lang === 'de' || lang === 'en' || lang === 'ar' ? lang : 'en';
+        lang === 'de' || lang === 'en' || lang === 'ar' || lang === 'fr' ? lang : 'en';
 
     this.translationService.setLanguage(safeLang);
 

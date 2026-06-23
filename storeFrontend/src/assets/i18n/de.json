@@ -1913,6 +1913,22 @@
     "emailError": "Fehler beim Senden. Bitte versuche es erneut.",
     "emailTaken": "Diese E-Mail-Adresse ist bereits vergeben",
     "viewStore": "🌐 Store ansehen ↗",
-    "addProducts": "📦 Produkte hinzufügen →"
+    "addProducts": "📦 Produkte hinzufügen →",
+    "setPasswordBtn": "🔑 Passwort festlegen",
+    "setPasswordSent": "📬 Passwort-Link wurde gesendet! Bitte prüfe deine E-Mails."
+  },
+  "anonBanner": {
+    "title": "Dein Store-Link – jetzt sichern!",
+    "subtitle": "Ohne E-Mail verlierst du den Zugang. Hinterlege deine E-Mail oder melde dich an.",
+    "emailPlaceholder": "deine@email.de",
+    "saveEmailBtn": "📧 E-Mail sichern",
+    "emailSaved": "✅ E-Mail gespeichert! Wir haben dir den Link zugeschickt.",
+    "loginBtn": "🔐 Anmelden / Registrieren",
+    "dismiss": "Später",
+    "copied": "✅ Kopiert!",
+    "copyBtn": "📋 Link kopieren",
+    "setPasswordBtn": "🔑 Passwort festlegen",
+    "setPasswordSent": "📬 Passwort-Link gesendet! Bitte prüfe deine E-Mails.",
+    "setPasswordSending": "Wird gesendet…"
   }
 }

@@ -190,7 +190,8 @@ export class LanguageSwitcherComponent {
     const flags: { [key: string]: string } = {
       'de': '🇩🇪',
       'en': '🇬🇧',
-      'ar': '🇸🇦'
+      'ar': '🇸🇦',
+      'fr': '🇫🇷'
     };
     return flags[lang] || '🌐';
   }

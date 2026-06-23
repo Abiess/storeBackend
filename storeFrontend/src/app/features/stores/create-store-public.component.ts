@@ -29,7 +29,9 @@ interface CreateStoreResponse {
 
       <!-- Header -->
       <header class="cs-header">
-        <a routerLink="/" class="cs-logo">🛍️ markt.ma</a>
+        <a routerLink="/" class="cs-logo">
+          <img src="assets/images/logo.svg" alt="markt.ma" class="cs-logo-img">
+        </a>
         <a routerLink="/login" class="cs-login-link">Bereits registriert? Einloggen →</a>
       </header>
 
@@ -152,6 +154,13 @@ interface CreateStoreResponse {
               <p class="email-skip" (click)="goToDashboard()">{{ 'createStorePublic.skip' | translate }}</p>
             } @else {
               <p class="email-success">✅ {{ ('createStorePublic.emailSent' | translate).replace('{{email}}', emailToSave()) }}</p>
+              @if (!pwLinkSent()) {
+                <button class="cs-btn-setpw" [disabled]="pwLinkSending()" (click)="requestPasswordLink()">
+                  @if (pwLinkSending()) { <span class="spinner"></span> } @else { 🔑 {{ 'createStorePublic.setPasswordBtn' | translate }} }
+                </button>
+              } @else {
+                <p class="pw-link-success">📬 {{ 'createStorePublic.setPasswordSent' | translate }}</p>
+              }
             }
           </div>
         </div>
@@ -184,6 +193,15 @@ interface CreateStoreResponse {
       font-weight: 800;
       font-size: 1.25rem;
       text-decoration: none;
+      display: flex;
+      align-items: center;
+    }
+
+    .cs-logo-img {
+      height: 36px;
+      width: auto;
+      object-fit: contain;
+      filter: brightness(0) invert(1);
     }
 
     .cs-login-link {
@@ -457,6 +475,20 @@ interface CreateStoreResponse {
       padding: 0.5rem 0;
     }
 
+    .cs-btn-setpw {
+      width: 100%; margin-top: 0.75rem; padding: 0.65rem 1rem;
+      background: transparent; border: 1.5px solid #a855f7;
+      border-radius: 10px; color: #7c3aed; font-size: 0.875rem; font-weight: 600;
+      cursor: pointer; transition: all .15s;
+      display: flex; align-items: center; justify-content: center; gap: 0.3rem;
+      &:hover { background: #f5f3ff; }
+      &:disabled { opacity: .5; cursor: not-allowed; }
+    }
+
+    .pw-link-success {
+      font-size: 0.82rem; color: #16a34a; text-align: center; margin-top: 0.5rem;
+    }
+
     @media (max-width: 480px) {
       .cs-card { padding: 1.5rem 1.25rem; }
       .cs-title { font-size: 1.3rem; }
@@ -496,6 +528,9 @@ export class CreateStorePublicComponent {
   emailSaving = signal(false);
   emailSent = signal(false);
   emailError = signal('');
+  pwLinkSending = signal(false);
+  pwLinkSent = signal(false);
+  pwLinkError = signal('');
   private createdStoreId = 0;
 
   categories = [
@@ -615,6 +650,20 @@ export class CreateStorePublicComponent {
         this.emailSaving.set(false);
         this.emailError.set(err?.error?.message || 'Fehler beim Senden. Bitte versuche es erneut.');
       }
+    });
+  }
+
+  requestPasswordLink(): void {
+    const email = this.emailToSave().trim();
+    if (!email.includes('@')) return;
+    this.pwLinkSending.set(true);
+    this.pwLinkError.set('');
+    this.http.post(
+      `${environment.apiUrl}/auth/forgot-password`,
+      { email }
+    ).subscribe({
+      next: () => { this.pwLinkSending.set(false); this.pwLinkSent.set(true); },
+      error: () => { this.pwLinkSending.set(false); this.pwLinkError.set('Fehler'); }
     });
   }
 }

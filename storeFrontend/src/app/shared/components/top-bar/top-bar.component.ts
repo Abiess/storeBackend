@@ -296,7 +296,7 @@ import { TranslationService, SupportedLanguage } from '../../../core/services/tr
   `]
 })
 export class TopBarComponent {
-  languages: SupportedLanguage[] = ['de', 'en', 'ar'];
+  languages: SupportedLanguage[] = ['de', 'en', 'ar', 'fr'];
   isDropdownOpen = false;
 
   constructor(public translationService: TranslationService) {
@@ -329,7 +329,8 @@ export class TopBarComponent {
     const shortNames: Record<SupportedLanguage, string> = {
       de: 'Deutsch',
       en: 'English',
-      ar: 'العربية'
+      ar: 'العربية',
+      fr: 'Français'
     };
     return shortNames[lang];
   }
@@ -338,7 +339,8 @@ export class TopBarComponent {
     const flags: Record<SupportedLanguage, string> = {
       de: '🇩🇪',
       en: '🇬🇧',
-      ar: '🇸🇦'
+      ar: '🇸🇦',
+      fr: '🇫🇷'
     };
     return flags[lang];
   }
@@ -347,7 +349,8 @@ export class TopBarComponent {
     const labels: Record<SupportedLanguage, string> = {
       de: 'Deutsch (Deutschland)',
       en: 'English (United Kingdom)',
-      ar: 'العربية (السعودية)'
+      ar: 'العربية (السعودية)',
+      fr: 'Français (France)'
     };
     return labels[lang];
   }

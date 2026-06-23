@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, of } from 'rxjs';
 import { map, catchError, tap } from 'rxjs/operators';
 
-export type SupportedLanguage = 'de' | 'en' | 'ar';
+export type SupportedLanguage = 'de' | 'en' | 'ar' | 'fr';
 
 interface TranslationData {
   [key: string]: any;
@@ -46,7 +46,9 @@ export class TranslationService {
    */
   private getBrowserLanguage(): SupportedLanguage {
     const browserLang = navigator.language.split('-')[0];
-    return (browserLang === 'de' || browserLang === 'en' || browserLang === 'ar') ? browserLang as SupportedLanguage : this.DEFAULT_LANG;
+    return (browserLang === 'de' || browserLang === 'en' || browserLang === 'ar' || browserLang === 'fr')
+      ? browserLang as SupportedLanguage
+      : this.DEFAULT_LANG;
   }
 
   /**
@@ -69,7 +71,7 @@ export class TranslationService {
    * Set the current language and load translations
    */
   setLanguage(lang: SupportedLanguage): void {
-    if (!['de', 'en', 'ar'].includes(lang)) {
+    if (!['de', 'en', 'ar', 'fr'].includes(lang)) {
       lang = this.DEFAULT_LANG;
     }
 
@@ -88,11 +90,11 @@ export class TranslationService {
   }
 
   /**
-   * Toggle between available languages (DE -> EN -> AR -> DE)
+   * Toggle between available languages (DE -> EN -> AR -> FR -> DE)
    */
   toggleLanguage(): void {
     const currentLang = this.currentLangSignal();
-    const languages: SupportedLanguage[] = ['de', 'en', 'ar'];
+    const languages: SupportedLanguage[] = ['de', 'en', 'ar', 'fr'];
     const currentIndex = languages.indexOf(currentLang);
     const nextIndex = (currentIndex + 1) % languages.length;
     this.setLanguage(languages[nextIndex]);
@@ -211,7 +213,7 @@ export class TranslationService {
    * Get all supported languages
    */
   getSupportedLanguages(): SupportedLanguage[] {
-    return ['de', 'en', 'ar'];
+    return ['de', 'en', 'ar', 'fr'];
   }
 
   /**
@@ -221,7 +223,8 @@ export class TranslationService {
     const names: Record<SupportedLanguage, string> = {
       'de': 'Deutsch',
       'en': 'English',
-      'ar': 'العربية'
+      'ar': 'العربية',
+      'fr': 'Français'
     };
     return names[lang];
   }
@@ -233,7 +236,8 @@ export class TranslationService {
     const flags: Record<SupportedLanguage, string> = {
       'de': '🇩🇪',
       'en': '🇬🇧',
-      'ar': '🇸🇦'
+      'ar': '🇸🇦',
+      'fr': '🇫🇷'
     };
     return flags[lang];
   }

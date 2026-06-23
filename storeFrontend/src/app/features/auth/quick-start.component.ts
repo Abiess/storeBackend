@@ -46,7 +46,9 @@ const COUNTRIES: Country[] = [
 
       <!-- Top-Bar -->
       <header class="qs-header">
-        <a routerLink="/" class="qs-logo">🛍️ markt.ma</a>
+        <a routerLink="/" class="qs-logo">
+          <img src="assets/images/logo.svg" alt="markt.ma" class="qs-logo-img">
+        </a>
         <span class="qs-step-label">
           Schritt {{ stepIndex() }} von 3
         </span>
@@ -227,7 +229,7 @@ const COUNTRIES: Country[] = [
       <!-- ── STEP 3: Store erstellen ── -->
       @if (step() === 'store') {
         <div class="qs-card animate-in">
-          <div class="qs-icon-big">🛍️</div>
+          <div class="qs-icon-big"><img src="assets/images/logo.svg" alt="markt.ma" class="qs-logo-big-img"></div>
           <h1 class="qs-title">Dein Store-Name</h1>
           <p class="qs-subtitle">Fast fertig! Wie soll dein Store heißen?</p>
 
@@ -334,6 +336,15 @@ const COUNTRIES: Country[] = [
       font-weight: 800;
       font-size: 1.25rem;
       text-decoration: none;
+      display: flex;
+      align-items: center;
+    }
+
+    .qs-logo-img {
+      height: 36px;
+      width: auto;
+      object-fit: contain;
+      filter: brightness(0) invert(1);
     }
 
     .qs-step-label {
@@ -382,6 +393,14 @@ const COUNTRIES: Country[] = [
       font-size: 3rem;
       text-align: center;
       margin-bottom: 0.75rem;
+      display: flex;
+      justify-content: center;
+    }
+
+    .qs-logo-big-img {
+      height: 80px;
+      width: auto;
+      object-fit: contain;
     }
 
     .qs-title {

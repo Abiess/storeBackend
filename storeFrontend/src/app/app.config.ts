@@ -18,6 +18,8 @@ import localeDe from '@angular/common/locales/de';
 import localeDeExtra from '@angular/common/locales/extra/de';
 import localeAr from '@angular/common/locales/ar';
 import localeArExtra from '@angular/common/locales/extra/ar';
+import localeFr from '@angular/common/locales/fr';
+import localeFrExtra from '@angular/common/locales/extra/fr';
 import { routes } from './app.routes';
 import { AuthInterceptor } from './core/interceptors/auth.interceptor';
 import { ErrorInterceptor } from './core/interceptors/error.interceptor';
@@ -32,6 +34,7 @@ import { isDevMode } from '@angular/core';
 // Registriere Locales für DatePipe, CurrencyPipe etc.
 registerLocaleData(localeDe, 'de-DE', localeDeExtra);
 registerLocaleData(localeAr, 'ar-MA', localeArExtra);
+registerLocaleData(localeFr, 'fr-FR', localeFrExtra);
 
 // Language Initializer Factory
 export function initializeLanguage(languageService: LanguageService) {

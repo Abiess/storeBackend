@@ -1910,6 +1910,22 @@
     "emailError": "Error sending. Please try again.",
     "emailTaken": "This email address is already taken",
     "viewStore": "🌐 View store ↗",
-    "addProducts": "📦 Add products →"
+    "addProducts": "📦 Add products →",
+    "setPasswordBtn": "🔑 Set password",
+    "setPasswordSent": "📬 Password link sent! Please check your email."
+  },
+  "anonBanner": {
+    "title": "Secure your store link now!",
+    "subtitle": "Without an email you will lose access. Save your email or sign in.",
+    "emailPlaceholder": "your@email.com",
+    "saveEmailBtn": "📧 Save email",
+    "emailSaved": "✅ Email saved! We've sent you the link.",
+    "loginBtn": "🔐 Sign in / Register",
+    "dismiss": "Later",
+    "copied": "✅ Copied!",
+    "copyBtn": "📋 Copy link",
+    "setPasswordBtn": "🔑 Set password",
+    "setPasswordSent": "📬 Password link sent! Please check your email.",
+    "setPasswordSending": "Sending…"
   }
 }
