@@ -51,6 +51,7 @@ import { Subscription } from 'rxjs';
           [class.active]="activeTab === tab.id"
           (click)="setActiveTab(tab.id)"
           [title]="tab.label"
+          [style.display]="tab.visible === false ? 'none' : 'flex'"
         >
           <span class="tab-icon">{{ tab.icon }}</span>
           <span class="tab-label">{{ tab.label | translate }}</span>
@@ -1453,9 +1454,9 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   selectedSuggestionIndex = 0;
   activeTab: 'basic' | 'ai' | 'media' | 'variants' = 'basic';
 
-  tabs: Array<{ id: 'basic' | 'ai' | 'media' | 'variants', label: string, icon: string }> = [
+  tabs: Array<{ id: 'basic' | 'ai' | 'media' | 'variants', label: string, icon: string, visible?: boolean }> = [
     { id: 'basic', label: 'product.tab.basic', icon: '📝' },
-    { id: 'ai', label: 'product.tab.ai', icon: '🤖' },
+    { id: 'ai', label: 'product.tab.ai', icon: '🤖', visible: false },
     { id: 'media', label: 'product.tab.media', icon: '📷' },
     { id: 'variants', label: 'product.tab.variants', icon: '🎨' }
   ];
