@@ -27,9 +27,9 @@ import {
   standalone: true,
   imports: [CommonModule, FormsModule, StoreNavigationComponent, TranslatePipe, PageHeaderComponent],
   template: `
-    <app-store-navigation currentPage="Lieferung"></app-store-navigation>
-
     <div class="delivery-page">
+      <app-store-navigation currentPage="Lieferung"></app-store-navigation>
+
       <app-page-header
         [title]="'Lieferung & Logistik'"
         [subtitle]="'Versandeinstellungen, Partner-Marktplatz und eigenes Lieferprofil'"
