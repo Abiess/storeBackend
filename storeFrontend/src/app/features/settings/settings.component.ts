@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { Subscription } from 'rxjs';
 import { UserRolesComponent } from './user-roles.component';
 import { RoleManagementComponent } from './role-management.component';
@@ -14,6 +15,7 @@ import { Store } from '@app/core/models';
 import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
 import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { environment } from '@env/environment';
 
 interface SettingsCard {
   id: string;
@@ -173,7 +175,7 @@ interface SettingsSection {
               <div>
                 <h3>{{ userName || 'Unbekannt' }}</h3>
                 <p class="text-muted" *ngIf="userEmail">{{ userEmail }}</p>
-                <p class="text-muted anon-hint" *ngIf="!userEmail">⚠️ {{ 'settings.noEmailHint' | translate }}</p>
+                <p class="text-muted anon-hint" *ngIf="!userEmail" (click)="showAddEmailForm = !showAddEmailForm">⚠️ {{ 'settings.noEmailHint' | translate }}</p>
                 <p class="text-muted small" *ngIf="userCreatedAt">Mitglied seit {{ userCreatedAt | date:'MMMM yyyy' }}</p>
               </div>
             </div>
@@ -188,7 +190,21 @@ interface SettingsSection {
                 <div class="form-group">
                   <label>E-Mail</label>
                   <input *ngIf="userEmail" type="email" class="form-control" [value]="userEmail" readonly />
-                  <span *ngIf="!userEmail" class="anon-no-email">{{ 'settings.noEmailSet' | translate }}</span>
+                  <span *ngIf="!userEmail && !showAddEmailForm" class="anon-no-email" (click)="showAddEmailForm = true">
+                    {{ 'settings.noEmailSet' | translate }}
+                  </span>
+                  <div *ngIf="!userEmail && showAddEmailForm" class="add-email-form">
+                    <input type="email" class="form-control" [(ngModel)]="newEmail" placeholder="deine@email.de" [disabled]="emailSaving" />
+                    <div class="add-email-actions">
+                      <button class="btn btn-primary-sm" (click)="saveEmailLink()" [disabled]="emailSaving || !newEmail.includes('@')">
+                        <span *ngIf="emailSaving" class="spinner-sm"></span>
+                        <span *ngIf="!emailSaving">Speichern →</span>
+                      </button>
+                      <button class="btn btn-ghost-sm" (click)="showAddEmailForm = false" [disabled]="emailSaving">Abbrechen</button>
+                    </div>
+                    <p *ngIf="emailSaveError" class="field-error">{{ emailSaveError }}</p>
+                  </div>
+                  <p *ngIf="emailSaved" class="email-saved-ok">✅ E-Mail gespeichert!</p>
                 </div>
                 <div class="form-group">
                   <label>Rollen</label>
@@ -482,20 +498,46 @@ interface SettingsSection {
     .text-muted { color: #6b7280; margin: 0; font-size: 0.88rem; }
     .text-muted.small { font-size: 0.78rem; margin-top: 0.2rem; }
     .anon-hint {
-      color: #d97706 !important;
+      color: #92400e !important;
       cursor: pointer;
       font-size: 0.82rem !important;
+      font-weight: 500;
       &:hover { text-decoration: underline; }
     }
     .anon-no-email {
       display: inline-block;
       padding: 0.5rem 0.75rem;
-      background: #fffbeb;
-      border: 1px solid #fde68a;
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
       border-radius: 8px;
       color: #92400e;
       font-size: 0.82rem;
+      cursor: pointer;
+      &:hover { background: #ffedd5; }
     }
+    .add-email-form {
+      display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.25rem;
+    }
+    .add-email-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .btn-primary-sm {
+      padding: 0.4rem 0.85rem; background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white; border: none; border-radius: 6px; font-size: 0.82rem;
+      cursor: pointer; font-weight: 600;
+      &:disabled { opacity: 0.55; cursor: not-allowed; }
+    }
+    .btn-ghost-sm {
+      padding: 0.4rem 0.75rem; background: transparent; border: 1px solid #d1d5db;
+      color: #4b5563; border-radius: 6px; font-size: 0.82rem; cursor: pointer;
+      &:hover { background: #f3f4f6; }
+    }
+    .spinner-sm {
+      display: inline-block; width: 12px; height: 12px;
+      border: 2px solid rgba(255,255,255,0.4); border-top-color: white;
+      border-radius: 50%; animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .field-error { color: #dc2626; font-size: 0.8rem; margin: 0.25rem 0 0; }
+    .email-saved-ok { color: #059669; font-size: 0.82rem; font-weight: 600; margin: 0.25rem 0 0; }
     .form-section { margin-bottom: 1.75rem; }
     .form-section h4 { margin: 0 0 1rem; font-size: 1rem; font-weight: 600; color: #374151; }
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
@@ -647,6 +689,13 @@ export class SettingsComponent implements OnInit, OnDestroy {
   userCreatedAt: string | null = null;
   tokenInfo: string | null = null;
 
+  // E-Mail hinzufügen (anonyme User)
+  showAddEmailForm = false;
+  newEmail = '';
+  emailSaving = false;
+  emailSaved = false;
+  emailSaveError = '';
+
   // Usage (live vom Backend)
   usageStats: UsageStats | null = null;
   usageLoading = false;
@@ -721,7 +770,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
     public authService: AuthService,
     public translationService: TranslationService,
     private usageService: UsageService,
-    private storeService: StoreService
+    private storeService: StoreService,
+    private http: HttpClient
   ) {}
 
   ngOnInit(): void {
@@ -862,6 +912,45 @@ export class SettingsComponent implements OnInit, OnDestroy {
   onLogout(): void {
     this.authService.logout();
     this.router.navigate(['/login']);
+  }
+
+  // ═══ E-MAIL HINTERLEGEN ═══
+  saveEmailLink(): void {
+    const email = this.newEmail.trim();
+    if (!email || !email.includes('@')) return;
+    const storeId = this.myStores[0]?.id;
+    if (!storeId) {
+      this.emailSaveError = 'Kein Store gefunden – bitte erst einen Store erstellen.';
+      return;
+    }
+    this.emailSaving = true;
+    this.emailSaveError = '';
+    const token = this.authService.getToken();
+    this.http.post<{ token: string; message: string }>(
+      `${environment.publicApiUrl}/create-store/save-email`,
+      { email, storeId },
+      { headers: { Authorization: `Bearer ${token}` } }
+    ).subscribe({
+      next: (res) => {
+        this.emailSaving = false;
+        this.emailSaved = true;
+        this.showAddEmailForm = false;
+        const stored = localStorage.getItem('auth_user');
+        if (stored) {
+          try {
+            const user = JSON.parse(stored);
+            user.email = email;
+            localStorage.setItem('auth_user', JSON.stringify(user));
+            if (res.token) localStorage.setItem('auth_token', res.token);
+          } catch {}
+        }
+        this.authService.setAuthFromStorage();
+      },
+      error: (err) => {
+        this.emailSaving = false;
+        this.emailSaveError = err?.error?.message || 'Fehler beim Speichern. Bitte versuche es erneut.';
+      }
+    });
   }
 
   // ═══ NAVIGATION ═══
