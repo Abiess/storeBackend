@@ -48,7 +48,7 @@
     "name": "Nom du produit",
     "category": "Catégorie",
     "status": "Statut",
-    "new": "Nouveau",
+    "new": "Créer un nouveau produit",
     "newProduct": "Nouveau produit",
     "edit": "Modifier le produit",
     "create": "Créer le produit",

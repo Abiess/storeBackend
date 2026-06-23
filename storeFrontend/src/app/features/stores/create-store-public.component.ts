@@ -29,7 +29,7 @@ interface CreateStoreResponse {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-store-creation-shell>
-      <a routerLink="/login" slot="header-right" class="sc-login-link">{{ 'createStorePublic.alreadyRegistered' | translate }}</a>
+      <a routerLink="/login" slot="header-right" class="sc-login-link">{{ 'auth.alreadyRegistered' | translate }}</a>
 
       @if (step() === 'form') {
         <div class="sc-card animate-in">
