@@ -107,7 +107,8 @@ export class ProductnavigationBarComponent implements OnInit {
         {
             icon: 'settings',
             label: 'navigation.settings',
-            route: (id) => ['/dashboard/stores', id, 'settings']
+            route: (id) => ['/dashboard/stores', id, 'settings'],
+            visible: false
         }
     ];
 }
