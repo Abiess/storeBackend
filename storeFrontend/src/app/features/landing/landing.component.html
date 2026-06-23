@@ -4,7 +4,9 @@
   <nav class="navbar">
     <div class="container">
       <div class="nav-brand">
-        <img src="assets/images/logo.svg" alt="markt.ma" class="nav-logo-img">
+        <a routerLink="/" class="nav-brand-link">
+          <img src="assets/images/logo.svg" alt="markt.ma" class="nav-logo-img">
+        </a>
       </div>
       <div class="nav-links">
         <a (click)="scrollToSection('features')">{{ 'landing.nav.features' | translate }}</a>
@@ -230,7 +232,9 @@
     <div class="container">
       <div class="footer-content">
         <div class="footer-section">
-          <img src="assets/images/logo.svg" alt="markt.ma" class="footer-logo-img">
+          <div class="footer-logo-pill">
+            <img src="assets/images/logo.svg" alt="markt.ma" class="footer-logo-img">
+          </div>
           <p>{{ 'landing.footer.tagline' | translate }}</p>
         </div>
         <div class="footer-section">
