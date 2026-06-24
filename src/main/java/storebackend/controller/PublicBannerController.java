@@ -29,8 +29,15 @@ public class PublicBannerController {
             // Optional.empty() → 204 No Content = "nicht konfiguriert" → Frontend nutzt Client-Default
             // Optional.of(dto) → 200 OK mit enabled-Flag → Frontend respektiert enabled=false
             return bannerService.getBanner(storeId)
-                    .map(ResponseEntity::ok)
-                    .orElse(ResponseEntity.noContent().build());
+                    .map(dto -> ResponseEntity.ok()
+                            .cacheControl(org.springframework.http.CacheControl.noCache())
+                            .header("Cache-Control", "no-cache, no-store, must-revalidate")
+                            .header("Pragma", "no-cache")
+                            .header("Expires", "0")
+                            .body(dto))
+                    .orElse(ResponseEntity.noContent()
+                            .cacheControl(org.springframework.http.CacheControl.noCache())
+                            .build());
         } catch (Exception e) {
             log.warn("[PublicBanner] Fehler beim Laden des Banners für Store {}: {}", storeId, e.getMessage());
             return ResponseEntity.noContent().build();

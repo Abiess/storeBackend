@@ -66,8 +66,10 @@ export class BannerService {
    * • Fehler                   → Client-Default (Storefront crasht nie wegen Banner)
    */
   getPublicBanner(storeId: number): Observable<BannerSettings> {
+    // Füge Timestamp hinzu um Browser-Cache zu umgehen
+    const timestamp = new Date().getTime();
     return this.http.get<BannerSettings>(
-      `${this.base}/public/stores/${storeId}/banner`,
+      `${this.base}/public/stores/${storeId}/banner?t=${timestamp}`,
       { observe: 'response' }
     ).pipe(
       map(response => {
