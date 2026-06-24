@@ -678,7 +678,13 @@ export class CreateStorePublicComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.emailSaving.set(false);
-        this.emailError.set(err?.error?.message || this.translationService.translate('createStorePublic.emailError'));
+        // Prüfe ob Backend einen Error-Code gesendet hat
+        const errorCode = err?.error?.error;
+        if (errorCode === 'EMAIL_ALREADY_EXISTS') {
+          this.emailError.set(this.translationService.translate('createStorePublic.emailTaken'));
+        } else {
+          this.emailError.set(err?.error?.message || this.translationService.translate('createStorePublic.emailError'));
+        }
       }
     });
   }

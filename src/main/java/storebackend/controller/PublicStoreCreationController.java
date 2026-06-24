@@ -199,7 +199,7 @@ public class PublicStoreCreationController {
             // E-Mail-Kollision prüfen
             if (userRepository.existsByEmail(req.email())) {
                 return ResponseEntity.badRequest()
-                    .body(Map.of("message", "Diese E-Mail-Adresse ist bereits vergeben"));
+                    .body(Map.of("error", "EMAIL_ALREADY_EXISTS"));
             }
 
             user.setEmail(req.email());
