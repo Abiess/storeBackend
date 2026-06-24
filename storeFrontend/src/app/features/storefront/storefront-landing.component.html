@@ -11,7 +11,7 @@
       [storeName]="storeName || 'Loading...'"
       [storeSlug]="storeName || ''"
       [storeLogo]="storeLogo"
-      [storeId]="storeId"
+      [storeId]="storeId || 0"
       [cartItemCount]="cartItemCount"
       (cartClick)="router.navigate(['/cart'])">
     </app-storefront-header>
