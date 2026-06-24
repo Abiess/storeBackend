@@ -3,14 +3,16 @@ package storebackend.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import storebackend.dto.ChatbotIntentDTO;
 import storebackend.dto.ChatbotStatisticsDTO;
 import storebackend.entity.ChatbotIntent;
+import storebackend.entity.Store;
 import storebackend.entity.User;
+import storebackend.repository.StoreRepository;
 import storebackend.service.ChatbotIntentService;
+import storebackend.util.StoreAccessChecker;
 
 import java.util.List;
 import java.util.Map;
@@ -19,15 +21,26 @@ import java.util.Map;
 @RequestMapping("/api/stores/{storeId}/chatbot/intents")
 @RequiredArgsConstructor
 @Slf4j
-@PreAuthorize("hasAnyRole('RESELLER', 'PLATFORM_ADMIN')")
 public class ChatbotIntentManagementController {
 
     private final ChatbotIntentService intentService;
+    private final StoreRepository storeRepository;
 
     @GetMapping
-    public ResponseEntity<List<ChatbotIntent>> getIntents(
+    public ResponseEntity<?> getIntents(
             @PathVariable Long storeId,
             @AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(401).body("Unauthorized");
+        }
+
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+        
+        if (!StoreAccessChecker.isOwner(store, user)) {
+            return ResponseEntity.status(403).body("Access Denied");
+        }
+
         log.info("Getting chatbot intents for store {}", storeId);
 
         try {
@@ -40,9 +53,20 @@ public class ChatbotIntentManagementController {
     }
 
     @GetMapping("/active")
-    public ResponseEntity<List<ChatbotIntent>> getActiveIntents(
+    public ResponseEntity<?> getActiveIntents(
             @PathVariable Long storeId,
             @AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(401).body("Unauthorized");
+        }
+
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+        
+        if (!StoreAccessChecker.isOwner(store, user)) {
+            return ResponseEntity.status(403).body("Access Denied");
+        }
+
         log.info("Getting active chatbot intents for store {}", storeId);
 
         try {
@@ -55,10 +79,21 @@ public class ChatbotIntentManagementController {
     }
 
     @PostMapping
-    public ResponseEntity<ChatbotIntent> createIntent(
+    public ResponseEntity<?> createIntent(
             @PathVariable Long storeId,
             @RequestBody Map<String, Object> request,
             @AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(401).body("Unauthorized");
+        }
+
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+        
+        if (!StoreAccessChecker.isOwner(store, user)) {
+            return ResponseEntity.status(403).body("Access Denied");
+        }
+
         log.info("Creating chatbot intent for store {}", storeId);
 
         try {
@@ -71,11 +106,22 @@ public class ChatbotIntentManagementController {
     }
 
     @PutMapping("/{intentId}")
-    public ResponseEntity<ChatbotIntent> updateIntent(
+    public ResponseEntity<?> updateIntent(
             @PathVariable Long storeId,
             @PathVariable Long intentId,
             @RequestBody Map<String, Object> request,
             @AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(401).body("Unauthorized");
+        }
+
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+        
+        if (!StoreAccessChecker.isOwner(store, user)) {
+            return ResponseEntity.status(403).body("Access Denied");
+        }
+
         log.info("Updating chatbot intent {} for store {}", intentId, storeId);
 
         try {
@@ -91,10 +137,21 @@ public class ChatbotIntentManagementController {
     }
 
     @DeleteMapping("/{intentId}")
-    public ResponseEntity<Map<String, String>> deleteIntent(
+    public ResponseEntity<?> deleteIntent(
             @PathVariable Long storeId,
             @PathVariable Long intentId,
             @AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(401).body("Unauthorized");
+        }
+
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+        
+        if (!StoreAccessChecker.isOwner(store, user)) {
+            return ResponseEntity.status(403).body(Map.of("error", "Access Denied"));
+        }
+
         log.info("Deleting chatbot intent {} for store {}", intentId, storeId);
 
         try {
@@ -110,10 +167,21 @@ public class ChatbotIntentManagementController {
     }
 
     @PostMapping("/{intentId}/toggle")
-    public ResponseEntity<Map<String, String>> toggleIntent(
+    public ResponseEntity<?> toggleIntent(
             @PathVariable Long storeId,
             @PathVariable Long intentId,
             @AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(401).body("Unauthorized");
+        }
+
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+        
+        if (!StoreAccessChecker.isOwner(store, user)) {
+            return ResponseEntity.status(403).body(Map.of("error", "Access Denied"));
+        }
+
         log.info("Toggling chatbot intent {} for store {}", intentId, storeId);
 
         try {
@@ -129,9 +197,20 @@ public class ChatbotIntentManagementController {
     }
 
     @GetMapping("/statistics")
-    public ResponseEntity<ChatbotStatisticsDTO> getStatistics(
+    public ResponseEntity<?> getStatistics(
             @PathVariable Long storeId,
             @AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(401).body("Unauthorized");
+        }
+
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+        
+        if (!StoreAccessChecker.isOwner(store, user)) {
+            return ResponseEntity.status(403).body("Access Denied");
+        }
+
         log.info("Getting chatbot statistics for store {}", storeId);
 
         try {
@@ -144,11 +223,22 @@ public class ChatbotIntentManagementController {
     }
 
     @PostMapping("/{intentId}/test")
-    public ResponseEntity<Map<String, Object>> testIntent(
+    public ResponseEntity<?> testIntent(
             @PathVariable Long storeId,
             @PathVariable Long intentId,
             @RequestBody Map<String, String> request,
             @AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(401).body("Unauthorized");
+        }
+
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+        
+        if (!StoreAccessChecker.isOwner(store, user)) {
+            return ResponseEntity.status(403).body(Map.of("error", "Access Denied"));
+        }
+
         log.info("Testing chatbot intent {} for store {}", intentId, storeId);
 
         String testMessage = request.get("message");
@@ -169,10 +259,21 @@ public class ChatbotIntentManagementController {
     }
 
     @PostMapping("/bulk-import")
-    public ResponseEntity<Map<String, Object>> bulkImportIntents(
+    public ResponseEntity<?> bulkImportIntents(
             @PathVariable Long storeId,
             @RequestBody List<ChatbotIntentDTO> intents,
             @AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(401).body("Unauthorized");
+        }
+
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+        
+        if (!StoreAccessChecker.isOwner(store, user)) {
+            return ResponseEntity.status(403).body(Map.of("error", "Access Denied"));
+        }
+
         log.info("Bulk importing {} intents for store {}", intents.size(), storeId);
 
         try {
