@@ -92,6 +92,7 @@ export class StorefrontLandingComponent implements OnInit {
   storeLogo: string | null = null;
   /** true nachdem Theme-Antwort empfangen – verhindert dass loadStoreLogo() das Logo überschreibt */
   private themeLoaded = false;
+  footerLogoError = false;
 
   /** Social & Kontakt-Daten des Stores (für Footer) */
   storeContactEmail: string | null = null;
@@ -784,5 +785,10 @@ export class StorefrontLandingComponent implements OnInit {
       },
       error: () => { /* env-Fallback bleibt aktiv */ }
     });
+  }
+
+  onFooterLogoError(): void {
+    this.footerLogoError = true;
+    console.warn('⚠️ Footer-Logo konnte nicht geladen werden, verwende Store-Namen als Fallback');
   }
 }

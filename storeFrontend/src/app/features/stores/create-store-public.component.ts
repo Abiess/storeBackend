@@ -6,6 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { AuthService } from '@app/core/services/auth.service';
+import { TranslationService } from '@app/core/services/translation.service';
 import { environment } from '@env/environment';
 import { UnsplashService, UnsplashImage } from '@app/core/services/unsplash.service';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
@@ -33,29 +34,29 @@ interface CreateStoreResponse {
 
       @if (step() === 'form') {
         <div class="sc-card animate-in">
-          <div class="sc-card__eyebrow">Kostenlos · Sofort online · Kein Passwort</div>
-          <h1 class="sc-card__title">Deinen Store erstellen</h1>
+          <div class="sc-card__eyebrow">{{ 'createStorePublic.eyebrow' | translate }}</div>
+          <h1 class="sc-card__title">{{ 'createStorePublic.title' | translate }}</h1>
 
           <form [formGroup]="form" (ngSubmit)="submit()">
             <div class="sc-field">
-              <label class="sc-label">{{ 'wizard.storeName' | translate }} *</label>
+              <label class="sc-label">{{ 'createStorePublic.storeNameLabel' | translate }} *</label>
               <input
                 type="text"
                 formControlName="storeName"
                 class="sc-input"
-                placeholder="z.B. Fatimas Mode Boutique"
+                [placeholder]="'createStorePublic.storeNamePlaceholder' | translate"
                 (input)="onStoreNameInput($any($event.target).value)"
                 [class.error]="form.get('storeName')?.invalid && form.get('storeName')?.touched"
               />
               @if (form.get('storeName')?.invalid && form.get('storeName')?.touched) {
-                <p class="sc-field-error">Bitte gib einen Store-Namen ein (min. 2 Zeichen)</p>
+                <p class="sc-field-error">{{ 'createStorePublic.storeNameError' | translate }}</p>
               }
             </div>
 
             @if (carouselImages().length > 0 || carouselLoading()) {
               <div class="sc-carousel-wrap animate-fade-in">
                 <div class="sc-carousel-header">
-                  <span class="sc-carousel-label">📸 Titelbild wählen</span>
+                  <span class="sc-carousel-label">{{ 'createStorePublic.bannerLabel' | translate }}</span>
                   @if (carouselLoading()) {
                     <span class="sc-carousel-spinner"></span>
                   }
@@ -67,7 +68,7 @@ interface CreateStoreResponse {
                       class="sc-carousel__item"
                       [class.selected]="selectedBannerImage()?.id === img.id"
                       (click)="selectBannerImage(img)">
-                      <img [src]="img.thumbUrl" [alt]="img.description || 'Store Titelbild'" loading="lazy" />
+                      <img [src]="img.thumbUrl" [alt]="img.description || 'Store banner'" loading="lazy" />
                       @if (selectedBannerImage()?.id === img.id) {
                         <div class="sc-carousel__check">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
@@ -78,16 +79,16 @@ interface CreateStoreResponse {
                 </div>
                 @if (selectedBannerImage()) {
                   <p class="sc-attribution">
-                    Foto:
+                    {{ 'createStorePublic.photoBy' | translate }}
                     <a [href]="selectedBannerImage()?.authorUrl" target="_blank" rel="noreferrer">{{ selectedBannerImage()?.authorName }}</a>
-                    · Unsplash
+                    · {{ 'createStorePublic.unsplash' | translate }}
                   </p>
                 }
               </div>
             }
 
             <div class="sc-field">
-              <label class="sc-label">Kategorie</label>
+              <label class="sc-label">{{ 'createStorePublic.categoryLabel' | translate }}</label>
               <div class="sc-cat-grid">
                 @for (cat of categories; track cat.id) {
                   <button
@@ -107,13 +108,13 @@ interface CreateStoreResponse {
 
             <button type="submit" class="sc-btn-primary" [disabled]="loading() || form.invalid">
               @if (loading()) {
-                <span class="sc-spinner"></span> Erstelle Store…
+                <span class="sc-spinner"></span> {{ 'createStorePublic.submitCreating' | translate }}
               } @else {
-                🚀 Jetzt Store erstellen →
+                {{ 'createStorePublic.submitBtn' | translate }}
               }
             </button>
 
-            <p class="sc-privacy">🔒 Kein Spam. Kein Passwort nötig.</p>
+            <p class="sc-privacy">{{ 'createStorePublic.privacy' | translate }}</p>
           </form>
         </div>
       }
@@ -518,7 +519,8 @@ export class CreateStorePublicComponent implements OnInit, OnDestroy {
     private http: HttpClient,
     private router: Router,
     private authService: AuthService,
-    private unsplashService: UnsplashService
+    private unsplashService: UnsplashService,
+    private translationService: TranslationService
   ) {
     this.form = this.fb.group({
       storeName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(80)]]
@@ -627,7 +629,7 @@ export class CreateStorePublicComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.loading.set(false);
-        this.errorMsg.set(err?.error?.message || 'Fehler beim Erstellen des Stores. Bitte versuche es erneut.');
+        this.errorMsg.set(err?.error?.message || this.translationService.translate('createStorePublic.errorCreatingStore'));
       }
     });
   }
@@ -676,7 +678,7 @@ export class CreateStorePublicComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.emailSaving.set(false);
-        this.emailError.set(err?.error?.message || 'Fehler beim Senden. Bitte versuche es erneut.');
+        this.emailError.set(err?.error?.message || this.translationService.translate('createStorePublic.emailError'));
       }
     });
   }

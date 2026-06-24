@@ -1911,7 +1911,20 @@
     "viewStore": "🌐 View store ↗",
     "addProducts": "📦 Add products →",
     "setPasswordBtn": "🔑 Set password",
-    "setPasswordSent": "📬 Password link sent! Please check your email."
+    "setPasswordSent": "📬 Password link sent! Please check your email.",
+    "errorCreatingStore": "Error creating store. Please try again.",
+    "eyebrow": "Free · Instant online · No password required",
+    "title": "Create your store",
+    "storeNameLabel": "Store name",
+    "storeNamePlaceholder": "e.g. Fatima's Fashion Boutique",
+    "storeNameError": "Please enter a store name (min. 2 characters)",
+    "categoryLabel": "Category",
+    "bannerLabel": "📸 Choose banner image",
+    "photoBy": "Photo by:",
+    "unsplash": "Unsplash",
+    "submitBtn": "🚀 Create store now →",
+    "submitCreating": "Creating store…",
+    "privacy": "🔒 No spam. No password required."
   },
   "anonBanner": {
     "title": "Secure your store link now!",

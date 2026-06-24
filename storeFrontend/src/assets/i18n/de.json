@@ -1915,7 +1915,20 @@
     "viewStore": "🌐 Store ansehen ↗",
     "addProducts": "📦 Produkte hinzufügen →",
     "setPasswordBtn": "🔑 Passwort festlegen",
-    "setPasswordSent": "📬 Passwort-Link wurde gesendet! Bitte prüfe deine E-Mails."
+    "setPasswordSent": "📬 Passwort-Link wurde gesendet! Bitte prüfe deine E-Mails.",
+    "errorCreatingStore": "Fehler beim Erstellen des Stores. Bitte versuche es erneut.",
+    "eyebrow": "Kostenlos · Sofort online · Kein Passwort",
+    "title": "Deinen Store erstellen",
+    "storeNameLabel": "Store-Name",
+    "storeNamePlaceholder": "z.B. Fatimas Mode Boutique",
+    "storeNameError": "Bitte gib einen Store-Namen ein (min. 2 Zeichen)",
+    "categoryLabel": "Kategorie",
+    "bannerLabel": "📸 Titelbild wählen",
+    "photoBy": "Foto:",
+    "unsplash": "Unsplash",
+    "submitBtn": "🚀 Jetzt Store erstellen →",
+    "submitCreating": "Erstelle Store…",
+    "privacy": "🔒 Kein Spam. Kein Passwort nötig."
   },
   "anonBanner": {
     "title": "Dein Store-Link – jetzt sichern!",

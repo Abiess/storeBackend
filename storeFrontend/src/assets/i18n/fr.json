@@ -1912,7 +1912,20 @@
     "viewStore": "🌐 Voir la boutique ↗",
     "addProducts": "📦 Ajouter des produits →",
     "setPasswordBtn": "🔑 Définir un mot de passe",
-    "setPasswordSent": "📬 Lien de mot de passe envoyé ! Vérifiez vos e-mails."
+    "setPasswordSent": "📬 Lien de mot de passe envoyé ! Vérifiez vos e-mails.",
+    "errorCreatingStore": "Erreur lors de la création de la boutique. Veuillez réessayer.",
+    "eyebrow": "Gratuit · En ligne instantanément · Aucun mot de passe requis",
+    "title": "Créez votre boutique",
+    "storeNameLabel": "Nom de la boutique",
+    "storeNamePlaceholder": "par ex. Boutique Mode Fatima",
+    "storeNameError": "Veuillez entrer un nom de boutique (min. 2 caractères)",
+    "categoryLabel": "Catégorie",
+    "bannerLabel": "📸 Choisir une image de bannière",
+    "photoBy": "Photo par :",
+    "unsplash": "Unsplash",
+    "submitBtn": "🚀 Créer la boutique maintenant →",
+    "submitCreating": "Création de la boutique…",
+    "privacy": "🔒 Pas de spam. Aucun mot de passe requis."
   },
   "anonBanner": {
     "title": "Sécurisez votre lien de boutique maintenant !",

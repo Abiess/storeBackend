@@ -187,8 +187,8 @@
     <!-- Brand + Beschreibung -->
     <div class="footer-brand"
          [class.has-links]="storeContactEmail || storeContactPhone || storeTelegramUrl || storeFacebookUrl || storeInstagramUrl || storeTiktokUrl">
-      <img *ngIf="storeLogo" [src]="storeLogo" [alt]="storeName || 'Store'" class="footer-logo" />
-      <span *ngIf="!storeLogo" class="footer-store-name">{{ storeName }}</span>
+      <img *ngIf="storeLogo && !footerLogoError" [src]="storeLogo" [alt]="storeName || 'Store'" class="footer-logo" (error)="onFooterLogoError()" />
+      <span *ngIf="!storeLogo || footerLogoError" class="footer-store-name">{{ storeName }}</span>
       <p *ngIf="storeFooterText" class="footer-tagline">{{ storeFooterText }}</p>
       <p *ngIf="!storeFooterText && storeDescription" class="footer-tagline">{{ storeDescription }}</p>
     </div>

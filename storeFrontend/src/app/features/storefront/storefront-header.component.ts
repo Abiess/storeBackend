@@ -23,8 +23,8 @@ import { PromoBannerComponent } from '../../shared/components/promo-banner/promo
 
         <!-- Brand -->
         <a class="store-brand" routerLink="/" aria-label="Zur Startseite">
-          <div class="brand-logo-wrap" *ngIf="storeLogo; else textLogo">
-            <img [src]="storeLogo" [alt]="storeName" class="brand-logo">
+          <div class="brand-logo-wrap" *ngIf="storeLogo && !logoError; else textLogo">
+            <img [src]="storeLogo" [alt]="storeName" class="brand-logo" (error)="onLogoError()">
           </div>
           <ng-template #textLogo>
             <div class="brand-icon" aria-hidden="true">
@@ -614,6 +614,7 @@ export class StorefrontHeaderComponent {
   searchFocused = false;
   isScrolled = false;
   searchQuery = '';
+  logoError = false;
 
   isLoggedIn$ = this.authService.currentUser$.pipe(
     map(user => user !== null && user !== undefined)
@@ -660,5 +661,10 @@ export class StorefrontHeaderComponent {
     this.searchOpen = false;
     this.searchQuery = '';
     this.searchChange.emit('');
+  }
+
+  onLogoError(): void {
+    this.logoError = true;
+    console.warn('⚠️ Logo konnte nicht geladen werden, verwende Text-Logo als Fallback');
   }
 }
