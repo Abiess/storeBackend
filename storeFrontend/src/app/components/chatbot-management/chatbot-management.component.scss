@@ -9,6 +9,31 @@
   margin: 0 auto;
 }
 
+// Header mit Actions
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  gap: 16px;
+
+  h1 {
+    margin: 0;
+    font-size: 32px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+}
+
 .page-header {
   display: flex;
   justify-content: space-between;
@@ -228,10 +253,10 @@
 
 // Buttons
 .btn {
-  padding: 10px 16px;
+  padding: 12px 20px;
   border-radius: 8px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   border: none;
   cursor: pointer;
   display: inline-flex;
@@ -239,6 +264,10 @@
   gap: 8px;
   transition: all 0.2s;
   white-space: nowrap;
+
+  svg {
+    flex-shrink: 0;
+  }
 
   &:disabled {
     opacity: 0.5;
@@ -249,17 +278,22 @@
 .btn-primary {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
 
   &:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
   }
 }
 
 .btn-secondary {
   background: white;
   color: #2d3748;
-  border: 1px solid #e2e8f0;
+  border: 2px solid #e2e8f0;
 
   &:hover:not(:disabled) {
     background: #f7fafc;
@@ -366,13 +400,14 @@
 .modal {
   background: white;
   border-radius: 16px;
-  max-width: 600px;
+  max-width: 700px;
   width: 100%;
   max-height: 90vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   animation: slideUp 0.3s ease;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
 @keyframes fadeIn {
@@ -435,11 +470,13 @@
 }
 
 .modal-footer {
-  padding: 16px 24px;
+  padding: 20px 24px;
   border-top: 1px solid #e2e8f0;
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+  background: #f7fafc;
+  flex-shrink: 0;
 }
 
 // Forms
@@ -524,6 +561,53 @@ textarea.form-control {
   }
 }
 
+// Form Sections
+.form-section {
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e2e8f0;
+
+  &:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .section-title {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #2d3748;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-hint {
+    margin: 0 0 16px 0;
+    font-size: 13px;
+    color: #718096;
+  }
+}
+
+.phrase-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: #667eea;
+  color: white;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.add-phrase-btn {
+  margin-top: 8px;
+}
+
 // Test Result
 .test-result {
   margin-top: 24px;
@@ -576,8 +660,18 @@ textarea.form-control {
 
 // Responsive
 @media (max-width: 768px) {
-  .page-header {
+  .header {
     flex-direction: column;
+    align-items: flex-start;
+
+    .header-actions {
+      width: 100%;
+
+      .btn {
+        flex: 1;
+        justify-content: center;
+      }
+    }
   }
 
   .intents-grid {
@@ -591,6 +685,13 @@ textarea.form-control {
   .modal {
     max-height: 100vh;
     border-radius: 0;
+    max-width: 100%;
+  }
+
+  .modal-footer {
+    .btn {
+      flex: 1;
+    }
   }
 }
 
