@@ -40,7 +40,12 @@ public class StoreSliderController {
     @GetMapping("/active")
     @Operation(summary = "Get only active slider images for frontend display")
     public ResponseEntity<List<StoreSliderImageDTO>> getActiveSliderImages(@PathVariable Long storeId) {
-        return ResponseEntity.ok(sliderService.getActiveSliderImages(storeId));
+        return ResponseEntity.ok()
+                .cacheControl(org.springframework.http.CacheControl.noCache())
+                .header("Cache-Control", "no-cache, no-store, must-revalidate")
+                .header("Pragma", "no-cache")
+                .header("Expires", "0")
+                .body(sliderService.getActiveSliderImages(storeId));
     }
 
     @PutMapping("/settings")

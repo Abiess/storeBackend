@@ -79,9 +79,11 @@ export class StoreSliderEditorComponent implements OnInit, OnDestroy {
     this.isSaving = true;
     this.saveSuccess = false;
     this.sliderService.updateSettings(this.storeId, this.settings).subscribe({
-      next: () => {
+      next: (updatedSettings) => {
         this.isSaving = false;
         this.saveSuccess = true;
+        // Update local settings with response from backend
+        this.settings = updatedSettings;
         setTimeout(() => this.saveSuccess = false, 2000);
       },
       error: (err: any) => {
