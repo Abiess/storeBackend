@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { TranslatePipe } from "@app/core/pipes/translate.pipe";
 import { VideoPlayerComponent } from "@app/features/landing/video-player.component";
 import { LucideAngularModule } from 'lucide-angular';
@@ -9,7 +9,7 @@ import { ClarityService } from '@app/core/services/clarity.service';
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [CommonModule, TranslatePipe, VideoPlayerComponent, LucideAngularModule],
+  imports: [CommonModule, TranslatePipe, VideoPlayerComponent, LucideAngularModule, RouterModule],
   templateUrl: './landing.component.html',
   styleUrls: ['./landing.component.scss']
 })

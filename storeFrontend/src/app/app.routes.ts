@@ -3,6 +3,24 @@ import { authGuard } from './core/guards/auth.guard';
 import { dashboardStoresRedirectGuard } from './core/guards/dashboard-stores-redirect.guard';
 
 export const routes: Routes = [
+  // ==================== Legal Pages (Public) ====================
+  {
+    path: 'impressum',
+    loadComponent: () => import('./features/legal/impressum.component').then(m => m.ImpressumComponent)
+  },
+  {
+    path: 'datenschutz',
+    loadComponent: () => import('./features/legal/datenschutz.component').then(m => m.DatenschutzComponent)
+  },
+  {
+    path: 'agb',
+    loadComponent: () => import('./features/legal/agb.component').then(m => m.AgbComponent)
+  },
+  {
+    path: 'kontakt',
+    loadComponent: () => import('./features/legal/kontakt.component').then(m => m.KontaktComponent)
+  },
+
   // ==================== Auth Routes ====================
   {
     path: 'login',
