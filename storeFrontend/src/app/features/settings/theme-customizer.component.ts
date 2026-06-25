@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { TranslateModule } from '@ngx-translate/core';
+import { LucideAngularModule, Palette, Layout, Code, Eye, RotateCcw, Save, ArrowLeft, ExternalLink, Info } from 'lucide-angular';
 import { ThemeService } from '@app/core/services/theme.service';
 import {
   ThemePreset,
@@ -14,7 +16,7 @@ import {
 @Component({
   selector: 'app-theme-customizer',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslateModule, LucideAngularModule],
   templateUrl: './theme-customizer.component.html',
   styleUrls: ['./theme-customizer.component.scss']
 })
@@ -46,6 +48,17 @@ export class ThemeCustomizerComponent implements OnInit {
   // Expose enums to template
   ThemeType = ThemeType;
   ShopTemplate = ShopTemplate;
+
+  // Lucide icons
+  readonly Palette = Palette;
+  readonly Layout = Layout;
+  readonly Code = Code;
+  readonly Eye = Eye;
+  readonly RotateCcw = RotateCcw;
+  readonly Save = Save;
+  readonly ArrowLeft = ArrowLeft;
+  readonly ExternalLink = ExternalLink;
+  readonly Info = Info;
 
   constructor(
     private themeService: ThemeService,
@@ -118,7 +131,7 @@ export class ThemeCustomizerComponent implements OnInit {
 
   saveTheme(): void {
     if (!this.selectedPreset) {
-      alert('Bitte wählen Sie zuerst ein Theme-Preset aus.');
+      alert('{{ "theme.alertSelectFirst" | translate }}');
       return;
     }
 
@@ -140,11 +153,11 @@ export class ThemeCustomizerComponent implements OnInit {
         this.saving = false;
         this.currentTheme = theme;
         this.themeService.applyTheme(theme);
-        alert('✅ Theme erfolgreich gespeichert!');
+        alert('{{ "theme.alertSuccess" | translate }}');
       },
       error: (error) => {
         console.error('Fehler beim Speichern des Themes:', error);
-        alert('❌ Fehler beim Speichern des Themes.');
+        alert('{{ "theme.alertError" | translate }}');
         this.saving = false;
       }
     });

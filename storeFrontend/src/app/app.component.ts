@@ -1,4 +1,4 @@
-import { Component, OnInit, Renderer2 } from '@angular/core';
+import { Component, OnInit, Renderer2, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import { filter, take } from 'rxjs/operators';
@@ -7,6 +7,7 @@ import { CartService } from './core/services/cart.service';
 import { MetaPixelService } from './core/services/meta-pixel.service';
 import { ClarityService } from './core/services/clarity.service';
 import { WhatsappConfigService } from './core/services/whatsapp-config.service';
+import { TranslationService } from './core/services/translation.service';
 import { environment } from '@env/environment';
 import { ChatbotWidgetComponent } from './components/chatbot-widget/chatbot-widget.component';
 import { WhatsappWidgetComponent } from './components/whatsapp-widget/whatsapp-widget.component';
@@ -247,8 +248,17 @@ export class AppComponent implements OnInit {
     private metaPixel: MetaPixelService,
     private clarity: ClarityService,
     private renderer: Renderer2,
-    private whatsappConfig: WhatsappConfigService
-  ) {}
+    private whatsappConfig: WhatsappConfigService,
+    private translationService: TranslationService
+  ) {
+    // ✅ Effect: Bei Sprachwechsel WhatsApp-Nachricht aktualisieren
+    effect(() => {
+      // Signal wird getrackt
+      const currentLang = this.translationService.currentLang();
+      // WhatsApp-Nachricht aktualisieren
+      this.updateWhatsAppMessage();
+    });
+  }
 
   ngOnInit(): void {
     this.authService.setCartService(this.cartService);
@@ -308,10 +318,9 @@ export class AppComponent implements OnInit {
       // → Platform-Nummer + Landing-spezifische Nachricht setzen
       this.whatsappConfig.setContext('platform');
       this.whatsappConfig.setNumber(environment.whatsappNumber);
-      this.whatsappConfig.setMessage(
-        'Hallo! Ich habe eine Frage zu markt.ma – können Sie mir helfen? 😊\n' +
-        'مرحباً! لدي سؤال حول markt.ma – هل يمكنكم مساعدتي؟'
-      );
+      // ✅ Übersetzte Nachricht je nach aktueller Sprache
+      const message = this.translationService.translate('whatsapp.platformMessage');
+      this.whatsappConfig.setMessage(message);
     }
     // Auf Storefront-Seiten setzt die Storefront-Komponente Nummer, Nachricht & Kontext selbst.
 
@@ -320,6 +329,20 @@ export class AppComponent implements OnInit {
       this.renderer.addClass(document.body, 'is-product-detail');
     } else {
       this.renderer.removeClass(document.body, 'is-product-detail');
+    }
+  }
+
+  /**
+   * ✅ Aktualisiert die WhatsApp-Nachricht basierend auf der aktuellen Sprache
+   */
+  private updateWhatsAppMessage(): void {
+    const path = this.router.url.split('?')[0].split('#')[0];
+    const isStorefront = path.includes('/storefront/') || path.startsWith('/s/');
+
+    // Nur auf Platform-Seiten (nicht Admin, nicht Storefront)
+    if (!this.showAdminShell && !isStorefront) {
+      const message = this.translationService.translate('whatsapp.platformMessage');
+      this.whatsappConfig.setMessage(message);
     }
   }
 }

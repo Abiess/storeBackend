@@ -1,19 +1,21 @@
 <div class="theme-customizer">
   <div class="customizer-header">
     <button class="btn-back" (click)="goBack()">
-      <span class="icon">←</span> Zurück
+      <lucide-icon [img]="ArrowLeft" [size]="20"></lucide-icon>
+      {{ 'theme.btnBack' | translate }}
     </button>
-    <h1>Theme & Design anpassen</h1>
-    <p>Wählen Sie ein vordefiniertes Theme und passen Sie es an Ihre Marke an</p>
-    <button class="btn btn-info btn-preview-store" (click)="openStorefrontPreview()">
-      <span class="icon">🔍</span> Im Frontstore ansehen
+    <h1>{{ 'theme.headerTitle' | translate }}</h1>
+    <p>{{ 'theme.headerSubtitle' | translate }}</p>
+    <button class="btn btn-info btn-preview-store" (click)="openStorefrontPreview()" [title]="'theme.btnPreviewStoreTip' | translate">
+      <lucide-icon [img]="ExternalLink" [size]="18"></lucide-icon>
+      {{ 'theme.btnPreviewStore' | translate }}
     </button>
   </div>
 
   <div class="customizer-content">
     <!-- Theme Presets Sidebar -->
     <div class="presets-sidebar">
-      <h2>Vordefinierte Themes</h2>
+      <h2>{{ 'theme.presetsTitle' | translate }}</h2>
       <div class="presets-list">
         <div *ngFor="let preset of themePresets"
              class="preset-card"
@@ -21,7 +23,7 @@
              (click)="selectPreset(preset)">
           <div class="preset-preview">
             <div class="preview-image" [style.background]="'linear-gradient(135deg, ' + preset.colors.primary + ', ' + preset.colors.secondary + ')'">
-              <span class="preview-icon">🎨</span>
+              <lucide-icon [img]="Palette" [size]="24" style="color: white; opacity: 0.9;"></lucide-icon>
             </div>
           </div>
           <div class="preset-info">
@@ -29,7 +31,7 @@
             <p>{{ preset.description }}</p>
           </div>
           <div class="preset-badge" *ngIf="currentTheme?.type === preset.type">
-            <span class="badge-active">Aktiv</span>
+            <span class="badge-active">{{ 'theme.badgeActive' | translate }}</span>
           </div>
         </div>
       </div>
@@ -38,16 +40,19 @@
     <!-- Customization Panel -->
     <div class="customization-panel" *ngIf="selectedPreset">
       <div class="panel-header">
-        <h2>{{ selectedPreset.name }} anpassen</h2>
+        <h2>{{ 'theme.customizeTitle' | translate : {name: selectedPreset.name} }}</h2>
         <div class="header-actions">
-          <button class="btn btn-info" (click)="openStorefrontPreview()" title="Öffnet Ihren Shop in einem neuen Tab">
-            <span class="icon">👁️</span> Live ansehen
+          <button class="btn btn-info" (click)="openStorefrontPreview()" [title]="'theme.tooltip.livePreview' | translate">
+            <lucide-icon [img]="Eye" [size]="18"></lucide-icon>
+            {{ 'theme.btnLivePreview' | translate }}
           </button>
-          <button class="btn btn-secondary" (click)="resetToDefault()">
-            <span class="icon">↺</span> Zurücksetzen
+          <button class="btn btn-secondary" (click)="resetToDefault()" [title]="'theme.tooltip.reset' | translate">
+            <lucide-icon [img]="RotateCcw" [size]="18"></lucide-icon>
+            {{ 'theme.btnReset' | translate }}
           </button>
-          <button class="btn btn-primary" (click)="saveTheme()" [disabled]="saving">
-            <span class="icon">💾</span> {{ saving ? 'Wird gespeichert...' : 'Theme speichern' }}
+          <button class="btn btn-primary" (click)="saveTheme()" [disabled]="saving" [title]="'theme.tooltip.save' | translate">
+            <lucide-icon [img]="Save" [size]="18"></lucide-icon>
+            {{ saving ? ('theme.btnSaving' | translate) : ('theme.btnSave' | translate) }}
           </button>
         </div>
       </div>
@@ -55,10 +60,14 @@
       <div class="customization-sections">
         <!-- Farben -->
         <div class="section">
-          <h3>🎨 Farben</h3>
+          <h3>
+            <lucide-icon [img]="Palette" [size]="20" style="vertical-align: middle; margin-right: 8px;"></lucide-icon>
+            {{ 'theme.sectionColors' | translate }}
+          </h3>
+          <p class="section-hint">{{ 'theme.tooltip.colors' | translate }}</p>
           <div class="color-grid">
             <div class="color-input">
-              <label>Primärfarbe</label>
+              <label>{{ 'theme.colorPrimary' | translate }}</label>
               <input type="color"
                      [(ngModel)]="customColors.primary"
                      (change)="applyPreview()">
@@ -69,7 +78,7 @@
             </div>
 
             <div class="color-input">
-              <label>Sekundärfarbe</label>
+              <label>{{ 'theme.colorSecondary' | translate }}</label>
               <input type="color"
                      [(ngModel)]="customColors.secondary"
                      (change)="applyPreview()">
@@ -80,7 +89,7 @@
             </div>
 
             <div class="color-input">
-              <label>Akzentfarbe</label>
+              <label>{{ 'theme.colorAccent' | translate }}</label>
               <input type="color"
                      [(ngModel)]="customColors.accent"
                      (change)="applyPreview()">
@@ -91,7 +100,7 @@
             </div>
 
             <div class="color-input">
-              <label>Hintergrund</label>
+              <label>{{ 'theme.colorBackground' | translate }}</label>
               <input type="color"
                      [(ngModel)]="customColors.background"
                      (change)="applyPreview()">
@@ -102,7 +111,7 @@
             </div>
 
             <div class="color-input">
-              <label>Textfarbe</label>
+              <label>{{ 'theme.colorText' | translate }}</label>
               <input type="color"
                      [(ngModel)]="customColors.text"
                      (change)="applyPreview()">
@@ -116,19 +125,23 @@
 
         <!-- Layout -->
         <div class="section">
-          <h3>📐 Layout</h3>
+          <h3>
+            <lucide-icon [img]="Layout" [size]="20" style="vertical-align: middle; margin-right: 8px;"></lucide-icon>
+            {{ 'theme.sectionLayout' | translate }}
+          </h3>
+          <p class="section-hint">{{ 'theme.tooltip.layout' | translate }}</p>
 
           <div class="layout-option">
-            <label>Header-Stil</label>
+            <label>{{ 'theme.layoutHeaderStyle' | translate }}</label>
             <select [(ngModel)]="customLayout.headerStyle" (change)="applyPreview()">
-              <option value="fixed">Fixiert (bleibt beim Scrollen oben)</option>
-              <option value="static">Statisch</option>
-              <option value="transparent">Transparent</option>
+              <option value="fixed">{{ 'theme.layoutHeaderFixed' | translate }}</option>
+              <option value="static">{{ 'theme.layoutHeaderStatic' | translate }}</option>
+              <option value="transparent">{{ 'theme.layoutHeaderTransparent' | translate }}</option>
             </select>
           </div>
 
           <div class="layout-option">
-            <label>Produkt-Grid Spalten</label>
+            <label>{{ 'theme.layoutGridColumns' | translate }}</label>
             <div class="radio-group">
               <label class="radio-option">
                 <input type="radio"
@@ -136,7 +149,7 @@
                        [value]="2"
                        [(ngModel)]="customLayout.productGridColumns"
                        (change)="applyPreview()">
-                <span>2 Spalten</span>
+                <span>{{ 'theme.layoutColumns2' | translate }}</span>
               </label>
               <label class="radio-option">
                 <input type="radio"
@@ -144,7 +157,7 @@
                        [value]="3"
                        [(ngModel)]="customLayout.productGridColumns"
                        (change)="applyPreview()">
-                <span>3 Spalten</span>
+                <span>{{ 'theme.layoutColumns3' | translate }}</span>
               </label>
               <label class="radio-option">
                 <input type="radio"
@@ -152,34 +165,38 @@
                        [value]="4"
                        [(ngModel)]="customLayout.productGridColumns"
                        (change)="applyPreview()">
-                <span>4 Spalten</span>
+                <span>{{ 'theme.layoutColumns4' | translate }}</span>
               </label>
             </div>
           </div>
 
           <div class="layout-option">
-            <label>Ecken-Radius</label>
+            <label>{{ 'theme.layoutBorderRadius' | translate }}</label>
             <select [(ngModel)]="customLayout.borderRadius" (change)="applyPreview()">
-              <option value="none">Keine (Eckig)</option>
-              <option value="small">Klein</option>
-              <option value="medium">Mittel</option>
-              <option value="large">Groß</option>
+              <option value="none">{{ 'theme.layoutBorderNone' | translate }}</option>
+              <option value="small">{{ 'theme.layoutBorderSmall' | translate }}</option>
+              <option value="medium">{{ 'theme.layoutBorderMedium' | translate }}</option>
+              <option value="large">{{ 'theme.layoutBorderLarge' | translate }}</option>
             </select>
           </div>
         </div>
 
         <!-- Custom CSS -->
         <div class="section">
-          <h3>💻 Eigenes CSS (Erweitert)</h3>
-          <p class="section-description">Fügen Sie eigenes CSS hinzu, um das Theme weiter anzupassen</p>
+          <h3>
+            <lucide-icon [img]="Code" [size]="20" style="vertical-align: middle; margin-right: 8px;"></lucide-icon>
+            {{ 'theme.sectionCustomCss' | translate }}
+          </h3>
+          <p class="section-description">{{ 'theme.customCssDescription' | translate }}</p>
+          <p class="section-hint">{{ 'theme.tooltip.css' | translate }}</p>
           <textarea
             [(ngModel)]="customCss"
             (change)="applyPreview()"
-            placeholder="/* Ihr eigenes CSS hier */"
+            [placeholder]="'theme.customCssPlaceholder' | translate"
             rows="10"></textarea>
           <p class="help-text">
-            <span class="icon">ℹ️</span>
-            Sie können CSS-Variablen wie --theme-primary verwenden
+            <lucide-icon [img]="Info" [size]="16" style="vertical-align: middle; margin-right: 4px;"></lucide-icon>
+            {{ 'theme.customCssHint' | translate }}
           </p>
         </div>
       </div>
@@ -188,19 +205,19 @@
     <!-- Live Preview -->
     <div class="preview-panel" *ngIf="selectedPreset">
       <div class="preview-header">
-        <h3>Live-Vorschau</h3>
-        <span class="preview-badge">{{ selectedPreset.name }}</span>
+        <h3>{{ 'theme.previewTitle' | translate }}</h3>
+        <span class="preview-badge">{{ 'theme.previewBadge' | translate : {name: selectedPreset.name} }}</span>
       </div>
 
       <div class="preview-container">
         <div class="preview-mockup">
           <!-- Simulated Store Preview -->
           <div class="mock-header" [style.background]="customColors.primary">
-            <div class="mock-logo">Ihr Shop</div>
+            <div class="mock-logo">{{ 'theme.mockHeader' | translate }}</div>
             <div class="mock-nav">
-              <span>Produkte</span>
-              <span>Kategorien</span>
-              <span>Kontakt</span>
+              <span>{{ 'theme.mockNavProducts' | translate }}</span>
+              <span>{{ 'theme.mockNavCategories' | translate }}</span>
+              <span>{{ 'theme.mockNavContact' | translate }}</span>
             </div>
           </div>
 
@@ -214,9 +231,9 @@
                                          customLayout.borderRadius === 'medium' ? '8px' : '16px'">
                 <div class="mock-product-image" [style.background]="customColors.secondary"></div>
                 <div class="mock-product-info">
-                  <div class="mock-product-title" [style.color]="customColors.text">Produkt 1</div>
+                  <div class="mock-product-title" [style.color]="customColors.text">{{ 'theme.mockProductTitle' | translate }} 1</div>
                   <div class="mock-product-price" [style.color]="customColors.primary">29.99 €</div>
-                  <button class="mock-btn" [style.background]="customColors.accent">In den Warenkorb</button>
+                  <button class="mock-btn" [style.background]="customColors.accent">{{ 'theme.mockProductBtn' | translate }}</button>
                 </div>
               </div>
 
@@ -226,9 +243,9 @@
                                          customLayout.borderRadius === 'medium' ? '8px' : '16px'">
                 <div class="mock-product-image" [style.background]="customColors.secondary"></div>
                 <div class="mock-product-info">
-                  <div class="mock-product-title" [style.color]="customColors.text">Produkt 2</div>
+                  <div class="mock-product-title" [style.color]="customColors.text">{{ 'theme.mockProductTitle' | translate }} 2</div>
                   <div class="mock-product-price" [style.color]="customColors.primary">49.99 €</div>
-                  <button class="mock-btn" [style.background]="customColors.accent">In den Warenkorb</button>
+                  <button class="mock-btn" [style.background]="customColors.accent">{{ 'theme.mockProductBtn' | translate }}</button>
                 </div>
               </div>
 
@@ -238,9 +255,9 @@
                                          customLayout.borderRadius === 'medium' ? '8px' : '16px'">
                 <div class="mock-product-image" [style.background]="customColors.secondary"></div>
                 <div class="mock-product-info">
-                  <div class="mock-product-title" [style.color]="customColors.text">Produkt 3</div>
+                  <div class="mock-product-title" [style.color]="customColors.text">{{ 'theme.mockProductTitle' | translate }} 3</div>
                   <div class="mock-product-price" [style.color]="customColors.primary">39.99 €</div>
-                  <button class="mock-btn" [style.background]="customColors.accent">In den Warenkorb</button>
+                  <button class="mock-btn" [style.background]="customColors.accent">{{ 'theme.mockProductBtn' | translate }}</button>
                 </div>
               </div>
             </div>
@@ -250,8 +267,8 @@
 
       <div class="preview-info">
         <p>
-          <span class="icon">ℹ️</span>
-          Dies ist eine Live-Vorschau Ihrer Anpassungen. Speichern Sie das Theme, um es auf Ihren Shop anzuwenden.
+          <lucide-icon [img]="Info" [size]="16" style="vertical-align: middle; margin-right: 4px;"></lucide-icon>
+          {{ 'theme.previewInfo' | translate }}
         </p>
       </div>
     </div>
@@ -259,8 +276,8 @@
 
   <!-- Empty State -->
   <div class="empty-state" *ngIf="!selectedPreset">
-    <div class="empty-icon">🎨</div>
-    <h2>Wählen Sie ein Theme aus</h2>
-    <p>Klicken Sie auf eines der vordefinierten Themes links, um mit der Anpassung zu beginnen</p>
+    <lucide-icon [img]="Palette" [size]="64" style="color: #cbd5e0; margin-bottom: 1rem;"></lucide-icon>
+    <h2>{{ 'theme.emptyStateTitle' | translate }}</h2>
+    <p>{{ 'theme.emptyStateText' | translate }}</p>
   </div>
 </div>
