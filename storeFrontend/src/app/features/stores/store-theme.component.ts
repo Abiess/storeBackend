@@ -4,9 +4,9 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer } from '@angular/platform-browser';
 import { TranslateModule } from '@ngx-translate/core';
-import { ThemeService } from '../../core/services/theme.service';
-import { StoreService } from '../../core/services/store.service';
-import { PreviewPanelService } from '../../core/services/preview-panel.service';
+import { ThemeService } from '@app/core/services/theme.service';
+import { StoreService } from '@app/core/services/store.service';
+import { PreviewPanelService } from '@app/core/services/preview-panel.service';
 import { TranslationService } from '@app/core/services/translation.service';
 import {
   StoreTheme,
