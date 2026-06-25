@@ -709,7 +709,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
   availableLanguages = [
     { code: 'de' as SupportedLanguage, name: 'Deutsch', nativeName: 'Deutsch', flag: '🇩🇪', rtl: false },
     { code: 'en' as SupportedLanguage, name: 'Englisch', nativeName: 'English', flag: '🇬🇧', rtl: false },
-    { code: 'ar' as SupportedLanguage, name: 'Arabisch', nativeName: 'العربية', flag: '🇸🇦', rtl: true }
+    { code: 'ar' as SupportedLanguage, name: 'Arabisch', nativeName: 'العربية', flag: '🇸🇦', rtl: true },
+    { code: 'fr' as SupportedLanguage, name: 'Französisch', nativeName: 'Français', flag: '🇫🇷', rtl: false }
   ];
   userTimezone: string = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
