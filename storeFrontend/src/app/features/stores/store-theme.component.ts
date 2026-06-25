@@ -3,9 +3,11 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer } from '@angular/platform-browser';
+import { TranslateModule } from '@ngx-translate/core';
 import { ThemeService } from '../../core/services/theme.service';
 import { StoreService } from '../../core/services/store.service';
 import { PreviewPanelService } from '../../core/services/preview-panel.service';
+import { TranslationService } from '@app/core/services/translation.service';
 import {
   StoreTheme,
   ThemePreset,
@@ -16,16 +18,17 @@ import {
 import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
 import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
 import { toDate } from '@app/core/utils/date.utils';
+import { LucideAngularModule, Palette, Layout, Grid3x3, Eye, Save, ArrowLeft, RotateCcw, Sparkles } from 'lucide-angular';
 
 @Component({
   selector: 'app-store-theme',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageHeaderComponent],
+  imports: [CommonModule, FormsModule, PageHeaderComponent, TranslateModule, LucideAngularModule],
   template: `
     <div class="theme-container">
       <app-page-header
-        [title]="'theme.management'"
-        [subtitle]="'theme.subtitle'"
+        [title]="'storeTheme.management' | translate"
+        [subtitle]="'storeTheme.subtitle' | translate"
         [breadcrumbs]="breadcrumbItems"
         [showBackButton]="true"
         [actions]="headerActions"
@@ -34,7 +37,7 @@ import { toDate } from '@app/core/utils/date.utils';
       <div class="theme-content" *ngIf="!loading">
         <!-- Aktives Theme -->
         <div class="active-theme-section" *ngIf="activeTheme">
-          <h2>Aktives Theme</h2>
+          <h2>{{ 'storeTheme.activeTheme' | translate }}</h2>
           <div class="theme-card active">
             <div class="theme-preview" [style.background]="activeTheme.colors.primary || '#667eea'">
               <div class="preview-content">
@@ -43,10 +46,10 @@ import { toDate } from '@app/core/utils/date.utils';
               </div>
             </div>
             <div class="theme-info">
-              <p><strong>Template:</strong> {{ getTemplateName(activeTheme.template) }}</p>
-              <p><strong>Erstellt:</strong> {{ toDate(activeTheme.createdAt) | date:'dd.MM.yyyy':'':'de-DE' }}</p>
+              <p><strong>{{ 'storeTheme.template' | translate }}:</strong> {{ getTemplateName(activeTheme.template) }}</p>
+              <p><strong>{{ 'storeTheme.created' | translate }}:</strong> {{ toDate(activeTheme.createdAt) | date:'dd.MM.yyyy':'':'de-DE' }}</p>
               <button class="btn btn-primary" (click)="editTheme(activeTheme)">
-                Bearbeiten
+                {{ 'storeTheme.edit' | translate }}
               </button>
             </div>
           </div>
@@ -56,14 +59,13 @@ import { toDate } from '@app/core/utils/date.utils';
              PRODUKTGRID-LAYOUT AUSWAHL (strukturell unterschiedlich)
              ══════════════════════════════════════════════════════════ -->
         <div class="grid-layout-section">
-          <h2>📐 Produktgrid-Layout wählen</h2>
+          <h2><lucide-icon [img]="Grid3x3" [size]="24"></lucide-icon> {{ 'storeTheme.gridLayoutSection' | translate }}</h2>
           <p class="section-description">
-            Wähle die <strong>Grundstruktur</strong> deines Shops – Filter + Produktgrid.
-            Jedes Layout hat eine eigene UX-Struktur. Farben & Fonts kommen vom Theme-Preset.
+            {{ 'storeTheme.gridLayoutDescription' | translate }}
           </p>
 
           <div class="no-theme-hint" *ngIf="!activeTheme">
-            ⚠️ Bitte zuerst ein Theme-Preset aktivieren, dann kannst du das Grid-Layout wechseln.
+            {{ 'storeTheme.noThemeHint' | translate }}
           </div>
 
           <div class="grid-templates" *ngIf="activeTheme">
@@ -183,7 +185,7 @@ import { toDate } from '@app/core/utils/date.utils';
                 <div class="gt-header-row">
                   <span class="gt-icon">{{ gt.icon }}</span>
                   <h4 class="gt-name">{{ gt.name }}</h4>
-                  <span class="gt-active-badge" *ngIf="isActiveGridTemplate(gt.code)">✓ Aktiv</span>
+                  <span class="gt-active-badge" *ngIf="isActiveGridTemplate(gt.code)">{{ 'storeTheme.gridActive' | translate }}</span>
                 </div>
                 <p class="gt-desc">{{ gt.description }}</p>
 
@@ -194,7 +196,7 @@ import { toDate } from '@app/core/utils/date.utils';
 
                 <!-- Empfohlen für -->
                 <div class="gt-recommended">
-                  <span class="gt-rec-label">Empfohlen für:</span>
+                  <span class="gt-rec-label">{{ 'storeTheme.gridRecommendedFor' | translate }}</span>
                   <div class="gt-rec-tags">
                     <span class="gt-rec-tag" *ngFor="let r of gt.recommendedFor">{{ r }}</span>
                   </div>
@@ -208,8 +210,8 @@ import { toDate } from '@app/core/utils/date.utils';
                         [disabled]="isActiveGridTemplate(gt.code) || applyingTemplate === gt.code"
                         (click)="$event.stopPropagation(); applyGridTemplate(gt.code)">
                   {{ isActiveGridTemplate(gt.code)
-                      ? '✓ Bereits aktiv'
-                      : (applyingTemplate === gt.code ? '⏳ Wende an...' : '⚡ Aktivieren') }}
+                      ? ('storeTheme.gridAlreadyActive' | translate)
+                      : (applyingTemplate === gt.code ? ('storeTheme.gridApplying' | translate) : ('storeTheme.gridActivate' | translate)) }}
                 </button>
               </div>
             </div>
@@ -218,10 +220,9 @@ import { toDate } from '@app/core/utils/date.utils';
 
         <!-- Theme Presets aus Backend (Free-Template-Katalog) -->
         <div class="presets-section">
-          <h2>Kostenlose Theme-Vorlagen 🎁</h2>
+          <h2><lucide-icon [img]="Sparkles" [size]="24"></lucide-icon> {{ 'storeTheme.freeTemplatesSection' | translate }}</h2>
           <p class="section-description">
-            Wähle eine Vorlage und wende sie mit einem Klick auf deinen Shop an –
-            wird automatisch gespeichert und beim nächsten Mal geladen.
+            {{ 'storeTheme.freeTemplatesDescription' | translate }}
           </p>
 
           <div class="presets-grid">
@@ -239,15 +240,15 @@ import { toDate } from '@app/core/utils/date.utils';
                 <div class="preview-overlay">
                   <h3>{{ preset.name }}</h3>
                 </div>
-                <span class="badge-free" *ngIf="isFreeTemplate(preset)">FREE</span>
-                <span class="badge-active" *ngIf="isActiveTemplate(preset)">✓ AKTIV</span>
+                <span class="badge-free" *ngIf="isFreeTemplate(preset)">{{ 'storeTheme.badgeFree' | translate }}</span>
+                <span class="badge-active" *ngIf="isActiveTemplate(preset)">{{ 'storeTheme.badgeActive' | translate }}</span>
               </div>
               <div class="preset-info">
                 <p>{{ preset.description }}</p>
                 <div class="color-palette">
-                  <span class="color-dot" [style.background]="preset.colors.primary" [title]="'Primär: ' + preset.colors.primary"></span>
-                  <span class="color-dot" [style.background]="preset.colors.secondary" [title]="'Sekundär: ' + preset.colors.secondary"></span>
-                  <span class="color-dot" [style.background]="preset.colors.accent" [title]="'Akzent: ' + preset.colors.accent"></span>
+                  <span class="color-dot" [style.background]="preset.colors.primary" [title]="('storeTheme.colorPrimary' | translate) + ': ' + preset.colors.primary"></span>
+                  <span class="color-dot" [style.background]="preset.colors.secondary" [title]="('storeTheme.colorSecondary' | translate) + ': ' + preset.colors.secondary"></span>
+                  <span class="color-dot" [style.background]="preset.colors.accent" [title]="('storeTheme.colorAccent' | translate) + ': ' + preset.colors.accent"></span>
                 </div>
                 <div class="preset-actions">
                   <button class="btn btn-success"
@@ -255,11 +256,11 @@ import { toDate } from '@app/core/utils/date.utils';
                           [disabled]="applyingTemplate === preset.name || isActiveTemplate(preset)"
                           *ngIf="getTemplateId(preset)">
                     {{ isActiveTemplate(preset)
-                        ? '✓ Aktiv'
-                        : (applyingTemplate === preset.name ? '⏳ Wende an...' : '⚡ 1-Klick anwenden') }}
+                        ? ('storeTheme.applyActive' | translate)
+                        : (applyingTemplate === preset.name ? ('storeTheme.applyApplying' | translate) : ('storeTheme.applyOneClick' | translate)) }}
                   </button>
                   <button class="btn btn-secondary" (click)="selectPreset(preset)">
-                    ✏️ Anpassen
+                    {{ 'storeTheme.customize' | translate }}
                   </button>
                 </div>
               </div>
@@ -1134,6 +1135,16 @@ import { toDate } from '@app/core/utils/date.utils';
   `]
 })
 export class StoreThemeComponent implements OnInit, OnDestroy {
+  // Lucide Icon components
+  readonly Palette = Palette;
+  readonly Layout = Layout;
+  readonly Grid3x3 = Grid3x3;
+  readonly Eye = Eye;
+  readonly Save = Save;
+  readonly ArrowLeft = ArrowLeft;
+  readonly RotateCcw = RotateCcw;
+  readonly Sparkles = Sparkles;
+
   storeId!: number;
   activeTheme: StoreTheme | null = null;
   presets: ThemePreset[] = [];
@@ -1157,7 +1168,8 @@ export class StoreThemeComponent implements OnInit, OnDestroy {
     private themeService: ThemeService,
     private storeService: StoreService,
     private sanitizer: DomSanitizer,
-    private previewPanel: PreviewPanelService
+    private previewPanel: PreviewPanelService,
+    private translationService: TranslationService
   ) {}
 
   ngOnInit(): void {
@@ -1259,7 +1271,7 @@ export class StoreThemeComponent implements OnInit, OnDestroy {
         this.loading = false;
       },
       error: (error) => {
-        this.error = 'Fehler beim Laden der Themes';
+        this.error = this.translationService.translate('storeTheme.errorLoading');
         console.error('Error loading themes:', error);
         this.loading = false;
       }
@@ -1352,13 +1364,13 @@ export class StoreThemeComponent implements OnInit, OnDestroy {
       next: (theme) => {
         this.activeTheme = theme;
         this.applyingTemplate = null;
-        this.successMessage = `Theme "${preset.name}" wurde aktiviert und gespeichert.`;
+        this.successMessage = this.translationService.translate('storeTheme.successApplied', { name: preset.name });
         this.reloadLivePreview();
         setTimeout(() => this.successMessage = null, 4000);
       },
       error: (err) => {
         console.error('Fehler beim Anwenden des Templates:', err);
-        this.error = 'Template konnte nicht angewendet werden';
+        this.error = this.translationService.translate('storeTheme.errorApplying');
         this.applyingTemplate = null;
       }
     });
@@ -1416,13 +1428,13 @@ export class StoreThemeComponent implements OnInit, OnDestroy {
         this.selectedPreset = null;
         this.saving = false;
         this.themeService.applyTheme(theme);
-        this.successMessage = `Theme "${theme.name}" wurde gespeichert und angewendet.`;
+        this.successMessage = this.translationService.translate('storeTheme.successSaved', { name: theme.name });
         this.reloadLivePreview();
         this.updatePreviewPanel();
         setTimeout(() => this.successMessage = null, 4000);
       },
       error: (error) => {
-        this.error = 'Fehler beim Speichern des Themes';
+        this.error = this.translationService.translate('storeTheme.errorSaving');
         console.error('Error saving theme:', error);
         this.saving = false;
       }
@@ -1498,30 +1510,30 @@ export class StoreThemeComponent implements OnInit, OnDestroy {
 
   getThemeTypeName(type: string): string {
     const names: { [key: string]: string } = {
-      'MODERN': 'Modern',
-      'CLASSIC': 'Klassisch',
-      'MINIMAL': 'Minimalistisch',
-      'ELEGANT': 'Elegant',
-      'DARK': 'Dunkel'
+      'MODERN': this.translationService.translate('storeTheme.themeTypeModern'),
+      'CLASSIC': this.translationService.translate('storeTheme.themeTypeClassic'),
+      'MINIMAL': this.translationService.translate('storeTheme.themeTypeMinimal'),
+      'ELEGANT': this.translationService.translate('storeTheme.themeTypeElegant'),
+      'DARK': this.translationService.translate('storeTheme.themeTypeDark')
     };
     return names[type] || type;
   }
 
   getTemplateName(template: string): string {
-    const names: { [key: string]: string } = {
-      'MODERN_GRID':        '📱 Mobile Marketplace',
-      'CLASSIC_BOOTSTRAP':  '🏛️ Classic Sidebar Grid',
-      'FASHION_EDITORIAL':  '👗 Fashion Editorial',
-      'ELECTRONICS_PRO':    '📦 Compact Market',
-      'RESTAURANT_WARM':    '🍽️ Classic Sidebar (Restaurant)',
-      'BEAUTY_SOFT':        '💄 Fashion Editorial (Beauty)',
-      'MINIMAL_DARK':       '🌑 Compact Market (Dark)',
+    const names: { [key: string]: string} = {
+      'MODERN_GRID':        this.translationService.translate('storeTheme.templateModernGrid'),
+      'CLASSIC_BOOTSTRAP':  this.translationService.translate('storeTheme.templateClassicBootstrap'),
+      'FASHION_EDITORIAL':  this.translationService.translate('storeTheme.templateFashionEditorial'),
+      'ELECTRONICS_PRO':    this.translationService.translate('storeTheme.templateElectronicsPro'),
+      'RESTAURANT_WARM':    this.translationService.translate('storeTheme.templateRestaurantWarm'),
+      'BEAUTY_SOFT':        this.translationService.translate('storeTheme.templateBeautySoft'),
+      'MINIMAL_DARK':       this.translationService.translate('storeTheme.templateMinimalDark'),
       // Legacy
-      'ELECTRONICS': 'Elektronik (alt)',
-      'FASHION': 'Mode (alt)',
-      'FOOD': 'Lebensmittel (alt)',
-      'BEAUTY': 'Beauty (alt)',
-      'GENERAL': 'Allgemein (alt)'
+      'ELECTRONICS': this.translationService.translate('storeTheme.templateElectronics'),
+      'FASHION': this.translationService.translate('storeTheme.templateFashion'),
+      'FOOD': this.translationService.translate('storeTheme.templateFood'),
+      'BEAUTY': this.translationService.translate('storeTheme.templateBeauty'),
+      'GENERAL': this.translationService.translate('storeTheme.templateGeneral')
     };
     return names[template] || template;
   }
@@ -1536,38 +1548,62 @@ export class StoreThemeComponent implements OnInit, OnDestroy {
     {
       code: 'MODERN_GRID',
       icon: '📱',
-      name: 'Mobile Marketplace',
-      description: 'OLX/Avito-Stil: 2–4 Spalten, Preis fett oben, Herz-Button, Bottom-Sheet Filter auf Mobil.',
+      name: this.translationService.translate('storeTheme.gridMobileMarketplace'),
+      description: this.translationService.translate('storeTheme.gridMobileDescription'),
       previewClass: 'marketplace',
-      features: ['Filter als Bottom-Sheet Drawer', '2-Spalten Mobile / 4-Spalten Desktop', 'Preis + Standort-Meta', 'Herz-Merken Button', 'Sticky Aktionsleiste unten'],
-      recommendedFor: ['🛒 Allgemein', '📦 Marktplatz', '🏠 Immobilien', '🚗 Fahrzeuge']
+      features: [
+        this.translationService.translate('storeTheme.gridMobileFeature1'),
+        this.translationService.translate('storeTheme.gridMobileFeature2'),
+        this.translationService.translate('storeTheme.gridMobileFeature3'),
+        this.translationService.translate('storeTheme.gridMobileFeature4'),
+        this.translationService.translate('storeTheme.gridMobileFeature5')
+      ],
+      recommendedFor: [this.translationService.translate('storeTheme.gridMobileRecommended')]
     },
     {
       code: 'CLASSIC_BOOTSTRAP',
       icon: '🏛️',
-      name: 'Classic Sidebar',
-      description: 'Sticky Sidebar links mit Kategorienfilter & Preisbereich, 3-Spalten Grid rechts.',
+      name: this.translationService.translate('storeTheme.gridClassicSidebar'),
+      description: this.translationService.translate('storeTheme.gridClassicDescription'),
       previewClass: 'classic',
-      features: ['Sticky Sidebar mit Kategorienliste', 'Preisbereich-Anzeige', '3-Spalten Desktop / 2-Spalten Tablet', 'Sort + Trefferanzahl', 'Aktiver Filter-Badge'],
-      recommendedFor: ['🖥️ Elektronik', '🏪 Allgemein', '🎮 Gaming', '📚 Bücher']
+      features: [
+        this.translationService.translate('storeTheme.gridClassicFeature1'),
+        this.translationService.translate('storeTheme.gridClassicFeature2'),
+        this.translationService.translate('storeTheme.gridClassicFeature3'),
+        this.translationService.translate('storeTheme.gridClassicFeature4'),
+        this.translationService.translate('storeTheme.gridClassicFeature5')
+      ],
+      recommendedFor: [this.translationService.translate('storeTheme.gridClassicRecommended')]
     },
     {
       code: 'FASHION_EDITORIAL',
       icon: '👗',
-      name: 'Fashion Editorial',
-      description: 'Magazin-Ästhetik: Chip-Filter, Hero-Karte groß, Hover-Overlay mit Cart + Quick View.',
+      name: this.translationService.translate('storeTheme.gridFashionEditorial'),
+      description: this.translationService.translate('storeTheme.gridFashionDescription'),
       previewClass: 'fashion',
-      features: ['Horizontale scrollbare Chip-Filter', 'Hero-Karte (2×2) + kleine Karten', '3:4 Portrait-Bild-Ratio', 'Hover-Overlay mit zwei Buttons', 'Featured-Badge'],
-      recommendedFor: ['👗 Mode', '💄 Beauty', '💍 Schmuck', '🏠 Wohnen']
+      features: [
+        this.translationService.translate('storeTheme.gridFashionFeature1'),
+        this.translationService.translate('storeTheme.gridFashionFeature2'),
+        this.translationService.translate('storeTheme.gridFashionFeature3'),
+        this.translationService.translate('storeTheme.gridFashionFeature4'),
+        this.translationService.translate('storeTheme.gridFashionFeature5')
+      ],
+      recommendedFor: [this.translationService.translate('storeTheme.gridFashionRecommended')]
     },
     {
       code: 'ELECTRONICS_PRO',
       icon: '📦',
-      name: 'Compact Market',
-      description: 'Maximum Katalogdichte: 5 Spalten, kleine 4:3-Karten, Dropdown-Filter in einer Zeile.',
+      name: this.translationService.translate('storeTheme.gridCompactMarket'),
+      description: this.translationService.translate('storeTheme.gridCompactDescription'),
       previewClass: 'compact',
-      features: ['5-Spalten Desktop / 3-Spalten Tablet', 'Kompakte 4:3-Karten', 'Inline Filterleiste (Dropdown)', 'Ansichtsumschalter', 'Quick-View bei Hover'],
-      recommendedFor: ['⚡ Elektronik', '🔧 Werkzeuge', '💊 Apotheke', '📦 Großhandel']
+      features: [
+        this.translationService.translate('storeTheme.gridCompactFeature1'),
+        this.translationService.translate('storeTheme.gridCompactFeature2'),
+        this.translationService.translate('storeTheme.gridCompactFeature3'),
+        this.translationService.translate('storeTheme.gridCompactFeature4'),
+        this.translationService.translate('storeTheme.gridCompactFeature5')
+      ],
+      recommendedFor: [this.translationService.translate('storeTheme.gridCompactRecommended')]
     }
   ];
 
@@ -1602,12 +1638,12 @@ export class StoreThemeComponent implements OnInit, OnDestroy {
         // Grid-Layout ändert keine CSS-Variablen, nur die Struktur der Storefront.
         this.activeTheme = { ...this.activeTheme!, template: code as any };
         this.applyingTemplate = null;
-        this.successMessage = `Grid-Layout auf "${this.getGridTemplateName(code)}" gesetzt ✓`;
+        this.successMessage = this.translationService.translate('storeTheme.gridLayoutApplied', { name: this.getGridTemplateName(code) });
         this.reloadLivePreview();
         setTimeout(() => this.successMessage = null, 4000);
       },
       error: () => {
-        this.error = 'Grid-Layout konnte nicht gespeichert werden.';
+        this.error = this.translationService.translate('storeTheme.errorSavingGrid');
         this.applyingTemplate = null;
       }
     });
