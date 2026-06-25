@@ -553,7 +553,7 @@
       "footerTextHint": "A short tagline below your logo in the footer (max. 200 characters).",
       "footerTextPlaceholder": "Your one-stop shop – fast, affordable, reliable."
     },
-    "noEmailHint": "No email set – add one now →",
+    "noEmailHint": "No email set – add one now",
     "noEmailSet": "⚠️ No email yet – save your store link!"
   },
   "table": {
@@ -1514,7 +1514,7 @@
       "subject": "Your store \"{{storeName}}\" is live 🚀 – markt.ma",
       "title": "Your store is ready!",
       "intro": "Your store is now live. Save this email – it contains your direct link to the dashboard and your store URL.",
-      "btnLabel": "Go to Dashboard →",
+      "btnLabel": "Go to Dashboard",
       "tip": "Tip: Save this email. It contains your direct access link to your store dashboard."
     }
   },
@@ -1665,7 +1665,7 @@
     "titleDone": "🎉 Store fully set up!",
     "subtitle": "{{completed}} of {{total}} steps completed",
     "subtitleDone": "You're ready to go – open your store!",
-    "cta": "Set up →",
+    "cta": "Set up",
     "doneBadge": "Done ✓",
     "openPreview": "🌐 Open store in new tab",
     "dismiss": "Dismiss",
@@ -1964,12 +1964,12 @@
     "saveEmailSubtitle": "So you can always find your store – we'll send you the link directly.",
     "emailPlaceholder": "your@email.com",
     "sendBtn": "Send",
-    "skip": "Skip →",
+    "skip": "Skip",
     "emailSent": "✅ Link sent to {{email}}",
     "emailError": "Error sending. Please try again.",
     "emailTaken": "This email address is already taken",
     "viewStore": "🌐 View store ↗",
-    "addProducts": "📦 Add products →",
+    "addProducts": "📦 Add products",
     "setPasswordBtn": "🔑 Set password",
     "setPasswordSent": "📬 Password link sent! Please check your email.",
     "errorCreatingStore": "Error creating store. Please try again.",
@@ -1982,7 +1982,7 @@
     "bannerLabel": "📸 Choose banner image",
     "photoBy": "Photo by:",
     "unsplash": "Unsplash",
-    "submitBtn": "🚀 Create store now →",
+    "submitBtn": "🚀 Create store now",
     "submitCreating": "Creating store…",
     "privacy": "🔒 No spam. No password required."
   },

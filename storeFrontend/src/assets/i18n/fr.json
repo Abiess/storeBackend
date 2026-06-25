@@ -554,7 +554,7 @@
       "footerTextHint": "Une courte accroche sous votre logo dans le pied de page (max. 200 caractères).",
       "footerTextPlaceholder": "Votre boutique tout-en-un – rapide, abordable, fiable."
     },
-    "noEmailHint": "Aucun e-mail défini – ajoutez-en un maintenant →",
+    "noEmailHint": "Aucun e-mail défini – ajoutez-en un maintenant",
     "noEmailSet": "⚠️ Pas encore d'e-mail – enregistrez le lien de votre boutique !"
   },
   "table": {
@@ -1515,7 +1515,7 @@
       "subject": "Votre boutique \"{{storeName}}\" est en ligne 🚀 – markt.ma",
       "title": "Votre boutique est prête !",
       "intro": "Votre boutique est maintenant en ligne. Conservez cet e-mail – il contient votre lien direct vers le tableau de bord et l'URL de votre boutique.",
-      "btnLabel": "Aller au tableau de bord →",
+      "btnLabel": "Aller au tableau de bord",
       "tip": "Conseil : conservez cet e-mail. Il contient votre lien d'accès direct au tableau de bord de votre boutique."
     }
   },
@@ -1666,7 +1666,7 @@
     "titleDone": "🎉 Boutique entièrement configurée !",
     "subtitle": "{{completed}} étapes sur {{total}} terminées",
     "subtitleDone": "Vous êtes prêt(e) – ouvrez votre boutique !",
-    "cta": "Configurer →",
+    "cta": "Configurer",
     "doneBadge": "Terminé ✓",
     "openPreview": "🌐 Ouvrir la boutique dans un nouvel onglet",
     "dismiss": "Ignorer",
@@ -1965,12 +1965,12 @@
     "saveEmailSubtitle": "Ainsi, vous pourrez toujours retrouver votre boutique – nous vous enverrons le lien directement.",
     "emailPlaceholder": "votre@email.com",
     "sendBtn": "Envoyer",
-    "skip": "Ignorer →",
+    "skip": "Ignorer",
     "emailSent": "✅ Lien envoyé à {{email}}",
     "emailError": "Erreur lors de l'envoi. Veuillez réessayer.",
     "emailTaken": "Cette adresse e-mail est déjà prise",
     "viewStore": "🌐 Voir la boutique ↗",
-    "addProducts": "📦 Ajouter des produits →",
+    "addProducts": "📦 Ajouter des produits",
     "setPasswordBtn": "🔑 Définir un mot de passe",
     "setPasswordSent": "📬 Lien de mot de passe envoyé ! Vérifiez vos e-mails.",
     "errorCreatingStore": "Erreur lors de la création de la boutique. Veuillez réessayer.",
@@ -1983,7 +1983,7 @@
     "bannerLabel": "📸 Choisir une image de bannière",
     "photoBy": "Photo par :",
     "unsplash": "Unsplash",
-    "submitBtn": "🚀 Créer la boutique maintenant →",
+    "submitBtn": "🚀 Créer la boutique maintenant",
     "submitCreating": "Création de la boutique…",
     "privacy": "🔒 Pas de spam. Aucun mot de passe requis."
   },

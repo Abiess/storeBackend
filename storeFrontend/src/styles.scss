@@ -709,3 +709,79 @@ h1, h2, h3, h4, h5, h6 {
 .mat-icon {
   font-family: 'Material Icons' !important;
 }
+
+/* ==================== REUSABLE BUTTON ICON CLASSES ==================== */
+/* Usage: <button class="btn-with-icon-left">...</button> */
+/* Icons (←, →) werden via CSS hinzugefügt, NICHT in JSON! */
+
+/* Button mit Icon links (z.B. "← Back") */
+.btn-with-icon-left,
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  &::before {
+    content: '←';
+    font-size: 1.1em;
+    line-height: 1;
+    display: inline-block;
+  }
+
+  /* RTL: Pfeil rechts statt links */
+  [dir="rtl"] & {
+    flex-direction: row-reverse;
+    &::before {
+      content: '→';
+    }
+  }
+}
+
+/* Button mit Icon rechts (z.B. "Next →") */
+.btn-with-icon-right,
+.btn-next,
+.btn-forward {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  &::after {
+    content: '→';
+    font-size: 1.1em;
+    line-height: 1;
+    display: inline-block;
+  }
+
+  /* RTL: Pfeil links statt rechts */
+  [dir="rtl"] & {
+    flex-direction: row-reverse;
+    &::after {
+      content: '←';
+    }
+  }
+}
+
+/* Link mit externem Icon */
+.link-external::after {
+  content: '↗';
+  margin-left: 4px;
+  font-size: 0.9em;
+  opacity: 0.7;
+}
+
+/* RTL-Optimierung für alle Icons */
+[dir="rtl"] {
+  .btn-with-icon-left::before,
+  .btn-back::before {
+    margin-right: 0;
+    margin-left: 6px;
+  }
+
+  .btn-with-icon-right::after,
+  .btn-next::after,
+  .btn-forward::after {
+    margin-left: 0;
+    margin-right: 6px;
+  }
+}
+

@@ -672,7 +672,7 @@
       "footerTextHint": "Kurzer Slogan unter dem Logo im Footer (max. 200 Zeichen).",
       "footerTextPlaceholder": "Dein Shop für alles – schnell, günstig, zuverlässig."
     },
-    "noEmailHint": "Keine E-Mail hinterlegt – jetzt hinzufügen →",
+    "noEmailHint": "Keine E-Mail hinterlegt – jetzt hinzufügen",
     "noEmailSet": "⚠️ Noch keine E-Mail – Store-Link sichern!"
   },
   "table": {
@@ -1518,7 +1518,7 @@
       "subject": "Dein Store \"{{storeName}}\" ist live 🚀 – markt.ma",
       "title": "Dein Store ist bereit!",
       "intro": "Dein Store ist jetzt live. Speichere diese E-Mail – sie enthält deinen direkten Zugang zum Dashboard und zur Store-URL.",
-      "btnLabel": "Zum Dashboard →",
+      "btnLabel": "Zum Dashboard",
       "tip": "Tipp: Speichere diese E-Mail. Sie enthält deinen direkten Zugang zum Store-Dashboard und zur Store-URL."
     }
   },
@@ -1698,7 +1698,7 @@
     "titleDone": "🎉 Shop vollständig eingerichtet!",
     "subtitle": "{{completed}} von {{total}} Schritten abgeschlossen",
     "subtitleDone": "Du bist startklar – öffne deinen Shop!",
-    "cta": "Einrichten →",
+    "cta": "Einrichten",
     "doneBadge": "Erledigt ✓",
     "openPreview": "🌐 Shop in neuem Tab öffnen",
     "dismiss": "Ausblenden",
@@ -1997,12 +1997,12 @@
     "saveEmailSubtitle": "Damit du deinen Store immer wiederfindest – wir schicken dir den Link direkt zu.",
     "emailPlaceholder": "deine@email.de",
     "sendBtn": "Senden",
-    "skip": "Überspringen →",
+    "skip": "Überspringen",
     "emailSent": "✅ Link wurde an {{email}} gesendet!",
     "emailError": "Fehler beim Senden. Bitte versuche es erneut.",
     "emailTaken": "Diese E-Mail-Adresse ist bereits vergeben",
     "viewStore": "🌐 Store ansehen ↗",
-    "addProducts": "📦 Produkte hinzufügen →",
+    "addProducts": "📦 Produkte hinzufügen",
     "setPasswordBtn": "🔑 Passwort festlegen",
     "setPasswordSent": "📬 Passwort-Link wurde gesendet! Bitte prüfe deine E-Mails.",
     "errorCreatingStore": "Fehler beim Erstellen des Stores. Bitte versuche es erneut.",
@@ -2015,7 +2015,7 @@
     "bannerLabel": "📸 Titelbild wählen",
     "photoBy": "Foto:",
     "unsplash": "Unsplash",
-    "submitBtn": "🚀 Jetzt Store erstellen →",
+    "submitBtn": "🚀 Jetzt Store erstellen",
     "submitCreating": "Erstelle Store…",
     "privacy": "🔒 Kein Spam. Kein Passwort nötig."
   },
