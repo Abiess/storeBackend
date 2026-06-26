@@ -1013,6 +1013,11 @@
       "startFree": "Start for free"
     },
     "hero": {
+      "titleOptimized": "Your online store for Morocco ready in 60 seconds",
+      "subtitleOptimized": "Display products · WhatsApp orders · No experience needed",
+      "ctaPrimary": "🚀 Create free store now",
+      "ctaHint": "No credit card · No installation · 2 minute setup",
+      "loginLink": "Already a customer? Login",
       "title": "Launch your online store <span class=\"gradient-text\">in minutes</span>",
       "subtitle": "Create your store in 2 minutes – free, no registration, no email required.",
       "createStoreBtn": "🚀 Create store – no sign-up",
@@ -1020,10 +1025,20 @@
       "orDivider": "or",
       "registerLink": "Register with email",
       "startNow": "Start for free now",
-      "watchDemo": "Watch demo",
+      "watchDemo": "Watch demo (2 min)",
       "trustFreeTrial": "Start for free",
       "trustNoCard": "No email required",
       "trustCancel": "Upgrade anytime"
+    },
+    "trust": {
+      "freeStart": "Start 100% free",
+      "twoMinutes": "Online in 2 minutes",
+      "cancelAnytime": "Cancel anytime"
+    },
+    "businessTypes": {
+      "shop": "Shops",
+      "restaurant": "Restaurants",
+      "riad": "Riads & Hotels"
     },
     "paths": {
       "own": {
@@ -1197,6 +1212,7 @@
     },
     "videoUnavailable": "Video not available",
     "preview": {
+      "url": "https://your-shop.markt.ma",
       "shop": "Shop",
       "categories": "Categories",
       "newArrivals": "New",
@@ -1204,6 +1220,20 @@
       "addToCart": "Add to cart",
       "revenue": "Revenue",
       "vsLastMonth": "vs last month"
+    },
+    "demo": {
+      "loading": "Loading video...",
+      "title": "How to get started easily",
+      "step1Title": "1. Enter store information",
+      "step1Text": "Name, category & contact details – ready in 60 seconds.",
+      "step2Title": "2. Add products",
+      "step2Text": "Manually or AI-assisted – you decide.",
+      "step3Title": "3. Receive orders",
+      "step3Text": "Customers buy directly via WhatsApp or in the shop.",
+      "watchVideo": "📹 Watch demo (2 min)"
+    },
+    "mobile": {
+      "stickyCta": "🚀 Create free store"
     },
     "footer": {
       "tagline": "The modern e-commerce platform",

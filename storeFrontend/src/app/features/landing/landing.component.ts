@@ -1,10 +1,12 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { TranslatePipe } from "@app/core/pipes/translate.pipe";
 import { VideoPlayerComponent } from "@app/features/landing/video-player.component";
 import { LucideAngularModule } from 'lucide-angular';
 import { ClarityService } from '@app/core/services/clarity.service';
+
+type BusinessType = 'SHOP' | 'RESTAURANT' | 'RIAD';
 
 @Component({
   selector: 'app-landing',
@@ -13,14 +15,27 @@ import { ClarityService } from '@app/core/services/clarity.service';
   templateUrl: './landing.component.html',
   styleUrls: ['./landing.component.scss']
 })
-export class LandingComponent {
-  showComparison = false;
+export class LandingComponent implements OnInit, OnDestroy {
+  // State
+  showVideo = false;
+  hasInteracted = false;
+  private visibilityListener?: () => void;
+  private intersectionObserver?: IntersectionObserver;
+  private timeoutId?: number;
+  private errorTrackingAttempted = false;
 
-  stats = [
-    { value: '10K+', label: 'landing.stats.activeShops' },
-    { value: '50M+', label: 'landing.stats.transactions' },
-    { value: '99.9%', label: 'landing.stats.uptime' },
-    { value: '24/7', label: 'landing.stats.support' }
+  // Trust Signals (keine Fake-Stats!)
+  trustSignals = [
+    { icon: 'circle-check', label: 'landing.trust.freeStart' },
+    { icon: 'circle-check', label: 'landing.trust.twoMinutes' },
+    { icon: 'circle-check', label: 'landing.trust.cancelAnytime' }
+  ];
+
+  // BusinessType Cards
+  businessTypes = [
+    { id: 'SHOP' as BusinessType, icon: '🏪', label: 'landing.businessTypes.shop' },
+    { id: 'RESTAURANT' as BusinessType, icon: '🍽️', label: 'landing.businessTypes.restaurant' },
+    { id: 'RIAD' as BusinessType, icon: '🏨', label: 'landing.businessTypes.riad' }
   ];
 
   features = [
@@ -61,21 +76,18 @@ export class LandingComponent {
       icon: 'user',
       title: 'landing.tutorialItems.createAccount.title',
       description: 'landing.tutorialItems.createAccount.description',
-      videoUrl: 'assets/videos/platform-demo.webm',
       duration: 'landing.tutorialItems.createAccount.duration'
     },
     {
       icon: 'package',
       title: 'landing.tutorialItems.createFirstProduct.title',
       description: 'landing.tutorialItems.createFirstProduct.description',
-      videoUrl: 'assets/videos/platform-demo.webm',
       duration: 'landing.tutorialItems.createFirstProduct.duration'
     },
     {
       icon: 'palette',
       title: 'landing.tutorialItems.customizeStore.title',
       description: 'landing.tutorialItems.customizeStore.description',
-      videoUrl: 'assets/videos/platform-demo.webm',
       duration: 'landing.tutorialItems.customizeStore.duration'
     }
   ];
@@ -133,30 +145,135 @@ export class LandingComponent {
       highlighted: false
     }
   ];
+  
   constructor(private router: Router, private clarity: ClarityService) {}
 
+  ngOnInit(): void {
+    this.trackEvent('landing_page_loaded');
+    this.setupVisibilityTracking();
+    this.setupVideoLazyLoading();
+  }
+
+  ngOnDestroy(): void {
+    // Cleanup all listeners
+    if (this.visibilityListener) {
+      document.removeEventListener('visibilitychange', this.visibilityListener);
+    }
+    if (this.intersectionObserver) {
+      this.intersectionObserver.disconnect();
+    }
+    if (this.timeoutId) {
+      clearTimeout(this.timeoutId);
+    }
+  }
+
+  private setupVisibilityTracking(): void {
+    this.visibilityListener = () => {
+      if (document.hidden && !this.hasInteracted) {
+        this.trackEvent('landing_page_hidden_before_interaction');
+      }
+    };
+    document.addEventListener('visibilitychange', this.visibilityListener);
+  }
+
+  private setupVideoLazyLoading(): void {
+    this.intersectionObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting && !this.showVideo) {
+            this.showVideo = true;
+            this.trackEvent('landing_demo_section_viewed');
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    // Observer mit cleanup-fähigem timeout
+    this.timeoutId = window.setTimeout(() => {
+      const demoElement = document.getElementById('demo');
+      if (demoElement && this.intersectionObserver) {
+        this.intersectionObserver.observe(demoElement);
+      }
+      this.timeoutId = undefined;
+    }, 500);
+  }
+
   scrollToSection(sectionId: string): void {
+    this.trackFirstInteraction();
+    this.trackEvent(`landing_scroll_to_${sectionId}`);
+    
     const element = document.getElementById(sectionId);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }
 
-  toggleComparison(): void { /* nicht mehr verwendet */ }
-
-  navigateToRegister(storeType?: 'own-store' | 'reseller'): void {
-    if (storeType) { localStorage.setItem('preferredStoreType', storeType); }
+  navigateToRegister(): void {
+    this.trackFirstInteraction();
+    this.trackEvent('landing_register_click');
     this.router.navigate(['/register']);
   }
 
-  navigateToLogin(): void { this.router.navigate(['/login']); }
+  navigateToLogin(): void {
+    this.trackFirstInteraction();
+    this.trackEvent('landing_login_click');
+    this.router.navigate(['/login']);
+  }
 
-  navigateToQuickStart(): void { this.router.navigate(['/quick-start']); }
-
-  /** Alias: /create-store → Store ohne Login */
-  navigateToCreateStore(): void {
-    this.clarity.event('user_clicked_create_store');
+  navigateToCreateStore(source: string = 'hero'): void {
+    this.trackFirstInteraction();
+    this.trackEvent(`landing_${source}_cta_click`);
     this.clarity.setTag('flow', 'create-store');
+    this.clarity.setTag('source', source);
     this.router.navigate(['/create-store']);
+  }
+
+  onBusinessTypeClick(businessType: BusinessType): void {
+    this.trackFirstInteraction();
+    this.trackEvent(`landing_segment_${businessType.toLowerCase()}_click`);
+    this.clarity.setTag('businessType', businessType);
+    
+    // Store in localStorage für create-store-public
+    localStorage.setItem('preferredBusinessType', businessType);
+    
+    this.router.navigate(['/create-store']);
+  }
+
+  onDemoClick(): void {
+    this.trackFirstInteraction();
+    this.trackEvent('landing_demo_click');
+    this.scrollToSection('demo');
+  }
+
+  onMobileStickyCtaClick(): void {
+    this.trackFirstInteraction();
+    this.trackEvent('landing_mobile_sticky_cta_click');
+    this.navigateToCreateStore('mobile_sticky');
+  }
+
+  private trackFirstInteraction(): void {
+    if (!this.hasInteracted) {
+      this.hasInteracted = true;
+      this.trackEvent('landing_first_interaction');
+    }
+  }
+
+  private trackEvent(eventName: string): void {
+    try {
+      this.clarity.event(eventName);
+    } catch (error) {
+      console.warn('[Landing] Clarity event failed:', eventName, error);
+      
+      // Error-Event nur EINMAL tracken, aber normale Events weiter erlauben
+      if (eventName !== 'landing_js_error' && !this.errorTrackingAttempted) {
+        this.errorTrackingAttempted = true;
+        try {
+          this.clarity.event('landing_js_error');
+        } catch (e) {
+          // Silent fail - Clarity ist komplett kaputt
+        }
+      }
+    }
   }
 }

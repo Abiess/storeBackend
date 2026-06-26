@@ -492,6 +492,7 @@ export class CreateStorePublicComponent implements OnInit, OnDestroy {
   carouselImages = signal<UnsplashImage[]>([]);
   carouselLoading = signal(false);
   selectedBannerImage = signal<UnsplashImage | null>(null);
+  selectedBusinessType = signal<'SHOP' | 'RESTAURANT' | 'RIAD'>('SHOP');
   emailToSave = signal('');
   emailSaving = signal(false);
   emailSent = signal(false);
@@ -528,6 +529,14 @@ export class CreateStorePublicComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // BusinessType aus Landing-Page übernehmen (falls vorhanden)
+    const preferredBusinessType = localStorage.getItem('preferredBusinessType');
+    if (preferredBusinessType) {
+      this.selectedBusinessType.set(preferredBusinessType as 'SHOP' | 'RESTAURANT' | 'RIAD');
+      console.log('✅ [CreateStore] preferredBusinessType geladen:', preferredBusinessType);
+      localStorage.removeItem('preferredBusinessType'); // Cleanup nach Verwendung
+    }
+
     this.nameInputSub = this.nameInput$.pipe(
       debounceTime(600),
       distinctUntilChanged()
@@ -606,7 +615,8 @@ export class CreateStorePublicComponent implements OnInit, OnDestroy {
     const payload = {
       storeName: name,
       storeSlug: slugBase,
-      category: this.selectedCategory() || 'other'
+      category: this.selectedCategory() || 'other',
+      businessType: this.selectedBusinessType()
     };
 
     this.http.post<CreateStoreResponse>(`${environment.apiUrl}/public/create-store`, payload).subscribe({

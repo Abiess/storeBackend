@@ -1,4 +1,4 @@
-import { Component, Input, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, Input, ViewChild, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -179,7 +179,7 @@ import { CommonModule } from '@angular/common';
     }
   `]
 })
-export class VideoPlayerComponent implements AfterViewInit {
+export class VideoPlayerComponent implements AfterViewInit, OnDestroy {
     @ViewChild('videoElement') videoElement!: ElementRef<HTMLVideoElement>;
 
     @Input() videoUrl: string = '';
@@ -198,12 +198,25 @@ export class VideoPlayerComponent implements AfterViewInit {
     hasError: boolean = false;
 
     ngAfterViewInit() {
-        // Check if video exists
         if (!this.videoUrl) {
-            console.warn('No video URL provided');
+            console.warn('[VideoPlayer] No video URL provided');
             this.isLoading = false;
             this.hasError = true;
             this.errorMessage = 'Keine Video-URL angegeben';
+        }
+    }
+
+    ngOnDestroy(): void {
+        // WICHTIG: Cleanup um Memory Leaks zu verhindern
+        const video = this.videoElement?.nativeElement;
+        if (video) {
+            try {
+                video.pause();
+                video.removeAttribute('src'); // Besser als src = ''
+                video.load();
+            } catch (e) {
+                console.warn('[VideoPlayer] Cleanup failed:', e);
+            }
         }
     }
 
@@ -212,7 +225,7 @@ export class VideoPlayerComponent implements AfterViewInit {
         if (video) {
             if (video.paused) {
                 video.play().catch(err => {
-                    console.error('Error playing video:', err);
+                    console.error('[VideoPlayer] Play error:', err);
                     this.hasError = true;
                 });
             } else {
@@ -232,12 +245,12 @@ export class VideoPlayerComponent implements AfterViewInit {
     onVideoLoaded(): void {
         this.isLoading = false;
         this.hasError = false;
-        console.log('✅ Video loaded:', this.videoUrl);
+        console.log('✅ [VideoPlayer] Loaded:', this.videoUrl);
     }
 
     onVideoError(): void {
         this.isLoading = false;
         this.hasError = true;
-        console.error('❌ Video loading error:', this.videoUrl);
+        console.error('❌ [VideoPlayer] Error:', this.videoUrl);
     }
 }

@@ -22,66 +22,59 @@
     </div>
   </nav>
 
-  <!-- Hero -->
+  <!-- Hero - OPTIMIERT -->
   <section class="hero">
     <div class="container">
       <div class="hero-content">
-        <h1 class="hero-title" [innerHTML]="'landing.hero.title' | translate"></h1>
-        <p class="hero-subtitle">{{ 'landing.hero.subtitle' | translate }}</p>
-
-        <!-- PRIMÄRE CTA – Ohne Anmeldung -->
-        <div class="no-signup-cta">
-          <button class="btn btn-no-signup" (click)="navigateToCreateStore()">
-            {{ 'landing.hero.createStoreBtn' | translate }}
-          </button>
-          <p class="no-signup-hint">
-            {{ 'landing.hero.createStoreHint' | translate }}
-          </p>
-        </div>
-
-        <div class="hero-divider">
-          <span>{{ 'landing.hero.orDivider' | translate }}</span>
-        </div>
-
-        <div class="hero-actions">
-          <button class="btn btn-hero-secondary" (click)="navigateToRegister()">
-            {{ 'landing.hero.registerLink' | translate }}
-          </button>
-          <button class="btn btn-hero-ghost" (click)="scrollToSection('demo')">
-            ▷ {{ 'landing.hero.watchDemo' | translate }}
+        <!-- BusinessType Cards - SOFORT SICHTBAR -->
+        <div class="business-type-cards">
+          <button 
+            *ngFor="let bt of businessTypes" 
+            class="business-type-card"
+            (click)="onBusinessTypeClick(bt.id)">
+            <span class="bt-icon">{{ bt.icon }}</span>
+            <span class="bt-label">{{ bt.label | translate }}</span>
           </button>
         </div>
 
-        <div class="trust-badges">
-          <span class="trust-item">
-            <lucide-angular name="circle-check" [size]="16" class="trust-check" strokeWidth="2"></lucide-angular>
-            {{ 'landing.hero.trustFreeTrial' | translate }}
-          </span>
-          <span class="trust-item">
-            <lucide-angular name="circle-check" [size]="16" class="trust-check" strokeWidth="2"></lucide-angular>
-            {{ 'landing.hero.trustNoCard' | translate }}
-          </span>
-          <span class="trust-item">
-            <lucide-angular name="circle-check" [size]="16" class="trust-check" strokeWidth="2"></lucide-angular>
-            {{ 'landing.hero.trustCancel' | translate }}
+        <h1 class="hero-title-opt">{{ 'landing.hero.titleOptimized' | translate }}</h1>
+        <p class="hero-subtitle-opt">{{ 'landing.hero.subtitleOptimized' | translate }}</p>
+
+        <!-- PRIMÄRE CTA - VEREINFACHT -->
+        <div class="hero-cta-primary">
+          <button class="btn btn-hero-primary-large" (click)="navigateToCreateStore('hero')">
+            {{ 'landing.hero.ctaPrimary' | translate }}
+          </button>
+          <p class="hero-cta-hint">{{ 'landing.hero.ctaHint' | translate }}</p>
+        </div>
+
+        <!-- Trust Signals (keine Fake-Stats!) -->
+        <div class="trust-badges-opt">
+          <span class="trust-item" *ngFor="let signal of trustSignals">
+            <lucide-angular [name]="signal.icon" [size]="18" class="trust-check" strokeWidth="2.5"></lucide-angular>
+            {{ signal.label | translate }}
           </span>
         </div>
 
-        <div class="hero-stats">
-          <div class="stat" *ngFor="let stat of stats">
-            <div class="stat-value">{{ stat.value }}</div>
-            <div class="stat-label">{{ stat.label | translate }}</div>
-          </div>
+        <!-- Secondary Actions - DEUTLICH KLEINER -->
+        <div class="hero-secondary-actions">
+          <a (click)="onDemoClick()" class="secondary-link">
+            <lucide-angular name="play-circle" [size]="16" strokeWidth="2"></lucide-angular>
+            {{ 'landing.hero.watchDemo' | translate }}
+          </a>
+          <a (click)="navigateToLogin()" class="secondary-link">
+            <lucide-angular name="log-in" [size]="16" strokeWidth="2"></lucide-angular>
+            {{ 'landing.hero.loginLink' | translate }}
+          </a>
         </div>
       </div>
-
       <div class="hero-image">
         <div class="mockup-browser">
           <div class="browser-header">
             <div class="browser-dots">
               <span></span><span></span><span></span>
             </div>
-            <div class="browser-url">{{ 'landing.stats.shopUrl' | translate }}</div>
+            <div class="browser-url">{{ 'landing.preview.url' | translate }}</div>
           </div>
           <div class="browser-content">
             <div class="shop-preview">
@@ -145,7 +138,7 @@
     </div>
   </section>
 
-  <!-- Video Demo -->
+  <!-- Video Demo - LAZY LOADED (nur 1 Video!) -->
   <section id="demo" class="video-demo-section">
     <div class="container">
       <div class="section-header">
@@ -153,28 +146,42 @@
         <p>{{ 'landing.demo.subtitle' | translate }}</p>
       </div>
 
+      <!-- EIN Video - erst bei Scroll geladen -->
+      <div class="demo-video-container">
+        <app-video-player
+          *ngIf="showVideo"
+          size="large"
+          [videoUrl]="'assets/videos/platform-demo.webm'"
+          [showControls]="true"
+          [poster]="''"
+          [errorMessage]="'landing.videoUnavailable' | translate">
+        </app-video-player>
+        
+        <!-- Placeholder bis Video geladen wird -->
+        <div *ngIf="!showVideo" class="video-placeholder">
+          <lucide-angular name="play-circle" [size]="64" strokeWidth="1.5" class="play-icon"></lucide-angular>
+          <p>{{ 'landing.demo.loading' | translate }}</p>
+        </div>
+      </div>
+
+      <!-- Tutorial Steps - nur als Text-Cards -->
       <div class="tutorials-list">
-        <div class="tutorial-row" *ngFor="let tutorial of tutorials; let i = index">
-          <div class="tutorial-thumb">
-            <app-video-player
-              size="large"
-              [videoUrl]="'assets/videos/platform-demo.webm'"
-              [showControls]="true"
-              [poster]="''"
-              [errorMessage]="'landing.videoUnavailable' | translate">
-            </app-video-player>
-            <div class="tutorial-duration">{{ tutorial.duration | translate }}</div>
+        <div class="tutorial-card" *ngFor="let tutorial of tutorials; let i = index">
+          <div class="tutorial-icon">
+            <lucide-angular [name]="tutorial.icon" [size]="32" strokeWidth="1.75"></lucide-angular>
           </div>
-          <div class="tutorial-info">
-            <div class="tutorial-step">{{ i + 1 }}.</div>
+          <div class="tutorial-content">
+            <div class="tutorial-step-number">{{ i + 1 }}.</div>
             <h4>{{ tutorial.title | translate }}</h4>
             <p>{{ tutorial.description | translate }}</p>
-          </div>        </div>
+            <span class="tutorial-duration">⏱️ {{ tutorial.duration | translate }}</span>
+          </div>
+        </div>
       </div>
 
       <div class="video-cta">
         <p>{{ 'landing.demo.ctaText' | translate }}</p>
-        <button class="btn btn-hero-primary" (click)="navigateToCreateStore()">
+        <button class="btn btn-hero-primary" (click)="navigateToCreateStore('demo')">
           {{ 'landing.cta.button' | translate }}
         </button>
       </div>
@@ -202,7 +209,7 @@
               <span class="check-icon">✓</span> {{ feature | translate }}
             </li>
           </ul>
-          <button class="btn btn-plan" [class.btn-plan-highlighted]="plan.highlighted" (click)="navigateToCreateStore()">
+          <button class="btn btn-plan" [class.btn-plan-highlighted]="plan.highlighted" (click)="navigateToCreateStore('pricing')">
             {{ plan.cta | translate }}
           </button>
         </div>
@@ -217,7 +224,7 @@
         <h2>{{ 'landing.cta.title' | translate }}</h2>
         <p>{{ 'landing.cta.subtitle' | translate }}</p>
         <div class="cta-buttons">
-          <button class="btn btn-cta" (click)="navigateToCreateStore()">{{ 'landing.hero.createStoreBtn' | translate }}</button>
+          <button class="btn btn-cta" (click)="navigateToCreateStore('cta_section')">{{ 'landing.cta.button' | translate }}</button>
           <button class="btn btn-cta-secondary" (click)="navigateToLogin()">
             {{ 'landing.nav.login' | translate }}
           </button>
@@ -261,24 +268,12 @@
     </div>
   </footer>
 
-  <!-- Mobile Bottom Tab Bar (nur sichtbar auf Mobile) -->
-  <nav class="mobile-bottom-nav">
-    <a class="mobile-nav-item" (click)="scrollToSection('features')">
-      <span class="mobile-nav-icon">⊞</span>
-      <span class="mobile-nav-label">{{ 'landing.nav.features' | translate }}</span>
-    </a>
-    <a class="mobile-nav-item" (click)="scrollToSection('pricing')">
-      <span class="mobile-nav-icon">◈</span>
-      <span class="mobile-nav-label">{{ 'landing.nav.pricing' | translate }}</span>
-    </a>
-    <a class="mobile-nav-item" (click)="navigateToLogin()">
-      <span class="mobile-nav-icon">👤</span>
-      <span class="mobile-nav-label">{{ 'landing.nav.login' | translate }}</span>
-    </a>
-    <a class="mobile-nav-item mobile-nav-cta" (click)="navigateToCreateStore()">
-      <span class="mobile-nav-icon">🚀</span>
-      <span class="mobile-nav-label">{{ 'landing.nav.startFree' | translate }}</span>
-    </a>
-  </nav>
+  <!-- Mobile Sticky CTA - VEREINFACHT (nur für Facebook Traffic) -->
+  <div class="mobile-sticky-cta">
+    <button class="btn btn-mobile-sticky" (click)="onMobileStickyCtaClick()">
+      <lucide-angular name="rocket" [size]="20" strokeWidth="2.5"></lucide-angular>
+      {{ 'landing.mobile.stickyCta' | translate }}
+    </button>
+  </div>
 
 </div>

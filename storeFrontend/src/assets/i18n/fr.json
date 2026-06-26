@@ -1014,6 +1014,11 @@
       "startFree": "Commencer gratuitement"
     },
     "hero": {
+      "titleOptimized": "Votre boutique en ligne pour le Maroc prête en 60 secondes",
+      "subtitleOptimized": "Afficher des produits · Commandes WhatsApp · Aucune connaissance requise",
+      "ctaPrimary": "🚀 Créer une boutique gratuite maintenant",
+      "ctaHint": "Pas de carte de crédit · Pas d'installation · Configuration en 2 minutes",
+      "loginLink": "Déjà client ? Se connecter",
       "title": "Lancez votre boutique en ligne <span class=\"gradient-text\">en quelques minutes</span>",
       "subtitle": "Créez votre boutique en 2 minutes – gratuit, sans inscription, sans e-mail requis.",
       "createStoreBtn": "🚀 Créer une boutique – sans inscription",
@@ -1021,10 +1026,20 @@
       "orDivider": "ou",
       "registerLink": "S'inscrire avec e-mail",
       "startNow": "Commencer gratuitement maintenant",
-      "watchDemo": "Voir la démo",
+      "watchDemo": "Voir la démo (2 min)",
       "trustFreeTrial": "Commencez gratuitement",
       "trustNoCard": "Aucun e-mail requis",
       "trustCancel": "Mettez à niveau à tout moment"
+    },
+    "trust": {
+      "freeStart": "Commencer 100% gratuitement",
+      "twoMinutes": "En ligne en 2 minutes",
+      "cancelAnytime": "Annulation à tout moment"
+    },
+    "businessTypes": {
+      "shop": "Magasins",
+      "restaurant": "Restaurants",
+      "riad": "Riads & Hôtels"
     },
     "paths": {
       "own": {
@@ -1198,6 +1213,7 @@
     },
     "videoUnavailable": "Vidéo indisponible",
     "preview": {
+      "url": "https://votre-boutique.markt.ma",
       "shop": "Boutique",
       "categories": "Catégories",
       "newArrivals": "Nouveau",
@@ -1205,6 +1221,20 @@
       "addToCart": "Ajouter au panier",
       "revenue": "Revenus",
       "vsLastMonth": "vs mois dernier"
+    },
+    "demo": {
+      "loading": "Chargement de la vidéo...",
+      "title": "C'est si simple de commencer",
+      "step1Title": "1. Entrez les infos de votre boutique",
+      "step1Text": "Nom, catégorie et coordonnées – prêt en 60 secondes.",
+      "step2Title": "2. Ajoutez des produits",
+      "step2Text": "Manuellement ou avec l'aide de l'IA – vous décidez.",
+      "step3Title": "3. Recevez des commandes",
+      "step3Text": "Les clients achètent directement via WhatsApp ou dans la boutique.",
+      "watchVideo": "📹 Voir la démo (2 min)"
+    },
+    "mobile": {
+      "stickyCta": "🚀 Créer une boutique gratuite"
     },
     "footer": {
       "tagline": "La plateforme e-commerce moderne",

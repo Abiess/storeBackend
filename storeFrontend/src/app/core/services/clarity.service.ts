@@ -98,7 +98,11 @@ export class ClarityService {
    */
   setTag(key: string, value: string): void {
     if (!this.isReady()) return;
-    window.clarity!('set', key, value);
+    try {
+      window.clarity!('set', key, value);
+    } catch (e) {
+      console.warn('[Clarity] setTag failed:', e);
+    }
   }
 
   /**
@@ -109,7 +113,11 @@ export class ClarityService {
    */
   event(eventName: string): void {
     if (!this.isReady()) return;
-    window.clarity!('event', eventName);
+    try {
+      window.clarity!('event', eventName);
+    } catch (e) {
+      console.warn('[Clarity] event failed:', e);
+    }
   }
 
   /**
@@ -120,7 +128,11 @@ export class ClarityService {
    */
   identify(userId: string): void {
     if (!this.isReady()) return;
-    window.clarity!('identify', userId);
+    try {
+      window.clarity!('identify', userId);
+    } catch (e) {
+      console.warn('[Clarity] identify failed:', e);
+    }
   }
 
   /** Gibt true zurück wenn Clarity aktiv und bereit ist. */
