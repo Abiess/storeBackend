@@ -34,6 +34,7 @@ public class StorePostCreateService {
     private final StoreDomainCreator domainCreator;
     private final StoreSliderInitializer sliderInitializer;
     private final StoreHomepageInitializer homepageInitializer;
+    private final StoreProductInitializer productInitializer;
 
     /**
      * Executes all post-create operations safely.
@@ -41,7 +42,7 @@ public class StorePostCreateService {
      * Failures are logged but do not affect the store creation.
      *
      * @param storeId The ID of the newly created store
-     * @param category The category for slider initialization
+     * @param category The category for slider and product initialization
      */
     public void executePostCreateOperations(Long storeId, String category) {
         log.debug("Starting post-create operations for store {}", storeId);
@@ -64,7 +65,13 @@ public class StorePostCreateService {
             log.warn("Homepage initialization failed for store {}, but store was created successfully", storeId);
         }
 
-        log.debug("Post-create operations completed for store {} (subdomain: {}, slider: {}, homepage: {})",
-                storeId, subdomainCreated, sliderInitialized, homepageInitialized);
+        // Initialize sample products with Unsplash images in separate transaction
+        boolean productsInitialized = productInitializer.initializeProducts(storeId, category);
+        if (!productsInitialized) {
+            log.warn("Product initialization failed for store {}, but store was created successfully", storeId);
+        }
+
+        log.debug("Post-create operations completed for store {} (subdomain: {}, slider: {}, homepage: {}, products: {})",
+                storeId, subdomainCreated, sliderInitialized, homepageInitialized, productsInitialized);
     }
 }
