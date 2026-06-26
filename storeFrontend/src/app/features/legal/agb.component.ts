@@ -49,7 +49,7 @@ import { TranslatePipe } from '@ngx-translate/core';
         <section class="legal-section">
           <h2>{{ 'legal.terms.section4Title' | translate }}</h2>
           <div class="legal-content">
-            <p class="legal-todo">{{ 'legal.terms.section4Todo' | translate }}</p>
+            <p>{{ 'legal.terms.section4Content' | translate }}</p>
           </div>
         </section>
 
@@ -90,12 +90,12 @@ import { TranslatePipe } from '@ngx-translate/core';
         <section class="legal-section">
           <h2>{{ 'legal.terms.section9Title' | translate }}</h2>
           <div class="legal-content">
-            <p class="legal-todo">{{ 'legal.terms.section9Todo' | translate }}</p>
+            <p>{{ 'legal.terms.section9Content' | translate }}</p>
           </div>
         </section>
 
         <div class="legal-footer">
-          <p class="legal-updated">{{ 'legal.common.lastUpdated' | translate }}: {{ 'legal.common.date' | translate }}</p>
+          <p class="legal-updated">{{ 'legal.common.lastUpdated' | translate }}: 26. Juni 2026</p>
           <p class="legal-status">{{ 'legal.terms.draftStatus' | translate }}</p>
         </div>
       </div>

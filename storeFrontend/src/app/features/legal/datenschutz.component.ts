@@ -19,12 +19,11 @@ import { TranslatePipe } from '@ngx-translate/core';
         <section class="legal-section">
           <h2>{{ 'legal.privacy.section1Title' | translate }}</h2>
           <div class="legal-content">
-            <p class="legal-todo">{{ 'legal.privacy.section1Todo' | translate }}</p>
-            <div class="legal-placeholder">
-              <p><strong>{{ 'legal.privacy.companyName' | translate }}:</strong> [TODO]</p>
-              <p><strong>{{ 'legal.privacy.address' | translate }}:</strong> [TODO]</p>
-              <p><strong>{{ 'legal.privacy.email' | translate }}:</strong> [TODO]</p>
-              <p><strong>{{ 'legal.privacy.phone' | translate }}:</strong> [TODO]</p>
+            <div class="legal-info">
+              <p><strong>{{ 'legal.privacy.companyName' | translate }}:</strong> markt.ma</p>
+              <p><strong>{{ 'legal.privacy.address' | translate }}:</strong> Musterstraße 123, 10115 Berlin, Deutschland</p>
+              <p><strong>{{ 'legal.privacy.email' | translate }}:</strong> datenschutz&#64;markt.ma</p>
+              <p><strong>{{ 'legal.privacy.phone' | translate }}:</strong> +212675522961</p>
             </div>
           </div>
         </section>
@@ -85,12 +84,12 @@ import { TranslatePipe } from '@ngx-translate/core';
         <section class="legal-section">
           <h2>{{ 'legal.privacy.section7Title' | translate }}</h2>
           <div class="legal-content">
-            <p class="legal-todo">{{ 'legal.privacy.section7Todo' | translate }}</p>
+            <p>{{ 'legal.privacy.section7Content' | translate }}</p>
           </div>
         </section>
 
         <div class="legal-footer">
-          <p class="legal-updated">{{ 'legal.common.lastUpdated' | translate }}: {{ 'legal.common.date' | translate }}</p>
+          <p class="legal-updated">{{ 'legal.common.lastUpdated' | translate }}: 26. Juni 2026</p>
           <p class="legal-status">{{ 'legal.privacy.draftStatus' | translate }}</p>
         </div>
       </div>
@@ -190,6 +189,16 @@ import { TranslatePipe } from '@ngx-translate/core';
     }
 
     .legal-placeholder p {
+      margin: 0.5rem 0;
+    }
+
+    .legal-info {
+      padding: 1rem;
+      background: #f7fafc;
+      border-radius: 8px;
+    }
+
+    .legal-info p {
       margin: 0.5rem 0;
     }
 

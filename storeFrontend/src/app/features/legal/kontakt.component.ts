@@ -22,19 +22,18 @@ import { FormsModule } from '@angular/forms';
         <section class="legal-section">
           <h2>{{ 'legal.contact.contactInfoTitle' | translate }}</h2>
           <div class="legal-content">
-            <p class="legal-todo">{{ 'legal.contact.contactInfoTodo' | translate }}</p>
             <div class="contact-cards">
               <div class="contact-card">
                 <div class="contact-icon">📧</div>
                 <h3>{{ 'legal.contact.emailTitle' | translate }}</h3>
-                <p class="contact-value">[TODO: email&#64;markt.ma]</p>
+                <p class="contact-value">info&#64;markt.ma</p>
                 <p class="contact-desc">{{ 'legal.contact.emailDesc' | translate }}</p>
               </div>
 
               <div class="contact-card">
                 <div class="contact-icon">📞</div>
                 <h3>{{ 'legal.contact.phoneTitle' | translate }}</h3>
-                <p class="contact-value">[TODO: +49 xxx xxx]</p>
+                <p class="contact-value">+212675522961</p>
                 <p class="contact-desc">{{ 'legal.contact.phoneDesc' | translate }}</p>
               </div>
 
@@ -51,7 +50,10 @@ import { FormsModule } from '@angular/forms';
         <section class="legal-section">
           <h2>{{ 'legal.contact.formTitle' | translate }}</h2>
           <div class="legal-content">
-            <p class="legal-todo">{{ 'legal.contact.formTodo' | translate }}</p>
+            <div class="legal-alert">
+              <span class="alert-icon">⚠️</span>
+              <p>{{ 'legal.contact.formTodo' | translate }}</p>
+            </div>
             
             <form class="contact-form" (ngSubmit)="onSubmit()">
               <div class="form-group">
@@ -84,17 +86,16 @@ import { FormsModule } from '@angular/forms';
         <section class="legal-section">
           <h2>{{ 'legal.contact.businessHoursTitle' | translate }}</h2>
           <div class="legal-content">
-            <p class="legal-todo">{{ 'legal.contact.businessHoursTodo' | translate }}</p>
             <div class="business-hours">
-              <p><strong>{{ 'legal.contact.mondayFriday' | translate }}:</strong> [TODO: 9:00 - 18:00 Uhr]</p>
-              <p><strong>{{ 'legal.contact.saturday' | translate }}:</strong> [TODO: Geschlossen]</p>
-              <p><strong>{{ 'legal.contact.sunday' | translate }}:</strong> [TODO: Geschlossen]</p>
+              <p><strong>{{ 'legal.contact.mondayFriday' | translate }}:</strong> 09:00 - 18:00 Uhr</p>
+              <p><strong>{{ 'legal.contact.saturday' | translate }}:</strong> 10:00 - 14:00 Uhr</p>
+              <p><strong>{{ 'legal.contact.sunday' | translate }}:</strong> Geschlossen</p>
             </div>
           </div>
         </section>
 
         <div class="legal-footer">
-          <p class="legal-updated">{{ 'legal.common.lastUpdated' | translate }}: {{ 'legal.common.date' | translate }}</p>
+          <p class="legal-updated">{{ 'legal.common.lastUpdated' | translate }}: 26. Juni 2026</p>
         </div>
       </div>
     </div>
@@ -149,6 +150,28 @@ import { FormsModule } from '@angular/forms';
       padding: 1rem;
       margin-bottom: 1.5rem;
       border-radius: 4px;
+      font-weight: 500;
+    }
+
+    .legal-alert {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      background: #fff3cd;
+      border: 2px solid #ffc107;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .alert-icon {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+
+    .legal-alert p {
+      margin: 0;
+      color: #856404;
       font-weight: 500;
     }
 
@@ -278,7 +301,8 @@ import { FormsModule } from '@angular/forms';
     }
 
     /* RTL Support */
-    [dir="rtl"] .legal-todo {
+    [dir="rtl"] .legal-todo,
+    [dir="rtl"] .legal-alert {
       border-left: none;
       border-right: 4px solid #ffc107;
     }
