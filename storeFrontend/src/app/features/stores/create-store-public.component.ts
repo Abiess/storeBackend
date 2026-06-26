@@ -504,14 +504,44 @@ export class CreateStorePublicComponent implements OnInit, OnDestroy {
   private nameInput$ = new Subject<string>();
   private nameInputSub?: Subscription;
 
-  categories = [
-    { id: 'fashion', icon: '👗', name: 'Mode' },
-    { id: 'electronics', icon: '📱', name: 'Elektronik' },
-    { id: 'food', icon: '🍕', name: 'Lebensmittel' },
-    { id: 'beauty', icon: '💄', name: 'Beauty' },
-    { id: 'home', icon: '🏠', name: 'Heim' },
-    { id: 'other', icon: '📦', name: 'Sonstiges' }
-  ];
+  // Dynamische Kategorien je nach BusinessType
+  get categories() {
+    const type = this.selectedBusinessType();
+    
+    if (type === 'RESTAURANT') {
+      return [
+        { id: 'moroccan', icon: '🍲', name: 'Marokkanisch' },
+        { id: 'fastfood', icon: '🍔', name: 'Fast Food' },
+        { id: 'pizza', icon: '🍕', name: 'Pizza' },
+        { id: 'cafe', icon: '☕', name: 'Café' },
+        { id: 'grill', icon: '🥩', name: 'Grill' },
+        { id: 'seafood', icon: '🦞', name: 'Meeresfrüchte' },
+        { id: 'vegetarian', icon: '🥗', name: 'Vegetarisch' },
+        { id: 'desserts', icon: '🍰', name: 'Desserts' }
+      ];
+    }
+    
+    if (type === 'RIAD') {
+      return [
+        { id: 'traditional', icon: '🏛️', name: 'Traditionell' },
+        { id: 'boutique', icon: '✨', name: 'Boutique' },
+        { id: 'luxury', icon: '👑', name: 'Luxus' },
+        { id: 'budget', icon: '💰', name: 'Budget' },
+        { id: 'family', icon: '👨‍👩‍👧‍👦', name: 'Familie' },
+        { id: 'romantic', icon: '💕', name: 'Romantisch' }
+      ];
+    }
+    
+    // Default: SHOP
+    return [
+      { id: 'fashion', icon: '👗', name: 'Mode' },
+      { id: 'electronics', icon: '📱', name: 'Elektronik' },
+      { id: 'food', icon: '🍕', name: 'Lebensmittel' },
+      { id: 'beauty', icon: '💄', name: 'Beauty' },
+      { id: 'home', icon: '🏠', name: 'Heim' },
+      { id: 'other', icon: '📦', name: 'Sonstiges' }
+    ];
+  }
 
   form: FormGroup;
 

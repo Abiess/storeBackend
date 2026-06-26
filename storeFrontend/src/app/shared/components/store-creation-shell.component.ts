@@ -51,7 +51,8 @@ import { RouterLink } from '@angular/router';
       height: 36px;
       width: auto;
       object-fit: contain;
-      filter: brightness(0) invert(1);
+      /* Logo sichtbar machen: Kein Filter mehr */
+      display: block;
     }
 
     .sc-body {
