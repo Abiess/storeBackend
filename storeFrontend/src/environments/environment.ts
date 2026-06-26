@@ -19,5 +19,13 @@ export const environment = {
    * PROD: ID aus https://clarity.microsoft.com → Einstellungen → Projekt-ID eintragen.
    * Beispiel: clarityId: 'abc123xyz'
    */
-  clarityId: ''
+  clarityId: '',
+
+  /**
+   * Clarity Cookie Masking / IP-Anonymisierung.
+   * true  = IP-Adressen und sensible Daten werden maskiert (DSGVO-konform)
+   * false = Volle Daten ohne Maskierung (für Debugging/Entwicklung)
+   * DEFAULT: false (volle Daten anzeigen)
+   */
+  clarityMaskData: false
 };

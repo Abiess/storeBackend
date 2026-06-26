@@ -18,5 +18,16 @@ export const environment = {
    * Wird über ClarityService dynamisch geladen (nur in production, nur wenn ID gesetzt).
    * CI: GitHub Secret CLARITY_ID → deploy.yml ersetzt __CLARITY_ID__ via sed vor dem Build.
    */
-  clarityId: '__CLARITY_ID__'
+  clarityId: '__CLARITY_ID__',
+
+  /**
+   * Clarity Cookie Masking / IP-Anonymisierung (Production).
+   * true  = IP-Adressen und sensible Daten werden maskiert (DSGVO-konform)
+   * false = Volle Daten ohne Maskierung (für Debugging)
+   * DEFAULT: false (volle Daten anzeigen)
+   * 
+   * HINWEIS: Diese Einstellung steuert den "cookieMask" Parameter beim Clarity-Init.
+   * Siehe: https://learn.microsoft.com/en-us/clarity/setup-and-installation/cookie-masking
+   */
+  clarityMaskData: false
 };

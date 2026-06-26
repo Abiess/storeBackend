@@ -39,6 +39,7 @@ declare global {
 export class ClarityService {
 
   private readonly clarityId: string;
+  private readonly maskData: boolean;
   private initialized = false;
 
   constructor() {
@@ -48,6 +49,9 @@ export class ClarityService {
     // Ein nicht ersetzter CI-Platzhalter hat immer das Muster __XYZ__ (Doppel-Underscore am Anfang und Ende).
     const isUnreplacedPlaceholder = raw.startsWith('__') && raw.endsWith('__') && raw.length > 4;
     this.clarityId = isUnreplacedPlaceholder ? '' : raw;
+    
+    // Anonymisierung / Cookie Masking aus environment lesen (default: false = keine Maskierung)
+    this.maskData = typeof env['clarityMaskData'] === 'boolean' ? env['clarityMaskData'] : false;
   }
 
   /**
@@ -70,11 +74,19 @@ export class ClarityService {
     // Clarity-Stub einrichten (Aufrufe werden intern gequeued bis Script geladen ist)
     this.setupClarityStub();
 
+    // Cookie Masking / IP-Anonymisierung konfigurieren
+    // false = Volle Daten (DEFAULT)
+    // true  = IP-Adressen und sensible Daten werden maskiert
+    if (window.clarity) {
+      window.clarity('consent', this.maskData ? 'mask' : 'unmask');
+    }
+
     // clarity.js async laden (non-blocking, lädt nach allem anderen)
     const src = `https://www.clarity.ms/tag/${this.clarityId}`;
     this.loadScript(src);
 
-    console.info('%c[Clarity] Initialized', 'color:#0078d4;font-weight:700');
+    const status = this.maskData ? 'MIT Maskierung' : 'OHNE Maskierung (volle Daten)';
+    console.info(`%c[Clarity] Initialized - ${status}`, 'color:#0078d4;font-weight:700');
   }
 
   /**

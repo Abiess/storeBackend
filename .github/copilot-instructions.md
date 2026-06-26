@@ -103,6 +103,24 @@ Backend: `POST /api/auth/phone/request-code` + `POST /api/auth/phone/verify-and-
 
 ---
 
+### Microsoft Clarity Analytics
+**Integration:** `ClarityService` (`core/services/clarity.service.ts`)  
+**Aktivierung:** `environment.prod.ts` → `clarityId: 'abc123xyz'` (leer = deaktiviert)  
+**Events:** Login, Store-Erstellung, Phone-Auth-Flow (siehe Custom Events im Clarity Dashboard)
+
+**Anonymisierung / Cookie Masking:**
+- `environment.prod.ts` → `clarityMaskData: false` (DEFAULT = **OHNE Maskierung**, volle Daten)
+- `clarityMaskData: true` → IP-Adressen und sensible Daten werden maskiert (DSGVO-konform)
+- Änderung erfordert **Frontend-Rebuild + Deploy**
+
+**Hinweis:** Clarity ist NUR in Production aktiv (nie auf localhost)
+
+---
+Backend: `POST /api/auth/phone/request-code` + `POST /api/auth/phone/verify-and-login` (public)  
+**DEV:** `whatsapp.enabled=false` → Code erscheint im Backend-Log (`[DEV] Verification code for ...`)
+
+---
+
 ### Security – neue public Endpoints registrieren
 ```java
 // SecurityConfig.java – neue public Routes IMMER hier eintragen:
