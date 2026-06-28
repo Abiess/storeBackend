@@ -1238,6 +1238,7 @@
     "demo": {
       "loading": "Chargement de la vidéo...",
       "title": "C'est si simple de commencer",
+      "subtitle": "Votre boutique en ligne en seulement 3 étapes",
       "step1Title": "1. Entrez les infos de votre boutique",
       "step1Text": "Nom, catégorie et coordonnées – prêt en 60 secondes.",
       "step2Title": "2. Ajoutez des produits",

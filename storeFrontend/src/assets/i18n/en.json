@@ -1237,6 +1237,7 @@
     "demo": {
       "loading": "Loading video...",
       "title": "How to get started easily",
+      "subtitle": "Your online shop in just 3 simple steps",
       "step1Title": "1. Enter store information",
       "step1Text": "Name, category & contact details – ready in 60 seconds.",
       "step2Title": "2. Add products",
