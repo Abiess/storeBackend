@@ -36,6 +36,9 @@ export class ErrorInterceptor implements HttpInterceptor {
         // Auf Subdomains (andalous.markt.ma) ist die App öffentlich – nie zu Login weiterleiten!
         const isStorefrontSubdomain = this.isOnStorefrontSubdomain();
 
+        // NEU: Prüfe ob wir uns auf einer öffentlichen Seite befinden (z.B. /create-store, /quick-start)
+        const isPublicPage = this.isPublicPage();
+
         // Prüfe ob User eingeloggt ist
         const currentUser = this.authService.getCurrentUser();
         const token = this.authService.getToken();
@@ -43,11 +46,12 @@ export class ErrorInterceptor implements HttpInterceptor {
         console.log('Token exists:', !!token);
         console.log('Is public storefront request:', isPublicStorefrontRequest);
         console.log('Is storefront subdomain:', isStorefrontSubdomain);
+        console.log('Is public page:', isPublicPage);
 
         if (error.status === 401) {
           // Unauthorized - nur umleiten wenn es KEIN öffentlicher Storefront-Request ist
-          // UND wir uns NICHT auf einer Store-Subdomain befinden
-          if (!isPublicStorefrontRequest && !isStorefrontSubdomain && !this.isLoggingOut) {
+          // UND wir uns NICHT auf einer Store-Subdomain befinden UND NICHT auf einer öffentlichen Seite
+          if (!isPublicStorefrontRequest && !isStorefrontSubdomain && !isPublicPage && !this.isLoggingOut) {
             // FIXED: Token client-seitig prüfen bevor wir logout auslösen
             const tokenExpired = this.authService.isTokenExpired();
             const hadToken = !!token;
@@ -66,8 +70,8 @@ export class ErrorInterceptor implements HttpInterceptor {
                 setTimeout(() => { this.isLoggingOut = false; }, 2000);
               });
             }
-          } else if (isPublicStorefrontRequest || isStorefrontSubdomain) {
-            console.warn('401 auf öffentlichem/Storefront-Endpoint - ignoriere für Storefront:', req.url);
+          } else if (isPublicStorefrontRequest || isStorefrontSubdomain || isPublicPage) {
+            console.warn('401 auf öffentlichem/Storefront-Endpoint oder öffentlicher Seite - ignoriere:', req.url);
           }
         } else if (error.status === 403) {
           // Forbidden - Keine Berechtigung
@@ -75,9 +79,9 @@ export class ErrorInterceptor implements HttpInterceptor {
           console.error('User beim 403-Fehler:', currentUser);
           console.error('Token beim 403-Fehler:', token ? 'vorhanden' : 'fehlt');
 
-          // Wenn öffentlicher Storefront-Request oder Subdomain: NICHT umleiten!
-          if (isPublicStorefrontRequest || isStorefrontSubdomain) {
-            console.warn('403 auf öffentlichem/Storefront-Endpoint - keine Umleitung zum Login');
+          // Wenn öffentlicher Storefront-Request oder Subdomain oder öffentliche Seite: NICHT umleiten!
+          if (isPublicStorefrontRequest || isStorefrontSubdomain || isPublicPage) {
+            console.warn('403 auf öffentlichem/Storefront-Endpoint oder öffentlicher Seite - keine Umleitung zum Login');
             return throwError(() => error);
           }
 
@@ -123,6 +127,32 @@ export class ErrorInterceptor implements HttpInterceptor {
     if (!hostname.endsWith('.markt.ma')) return false;
     const subdomain = hostname.replace('.markt.ma', '');
     return !reservedSubdomains.includes(subdomain);
+  }
+
+  /**
+   * Prüft ob wir uns auf einer öffentlichen Seite befinden (z.B. /create-store, /quick-start).
+   * Diese Seiten sollten NICHT zum Login umleiten bei 401/403.
+   */
+  private isPublicPage(): boolean {
+    const path = this.router.url.split('?')[0].split('#')[0];
+    const publicPages = [
+      '/create-store',
+      '/quick-start',
+      '/login',
+      '/register',
+      '/verify',
+      '/forgot-password',
+      '/reset-password',
+      '/impressum',
+      '/datenschutz',
+      '/agb',
+      '/kontakt',
+      '/storefront-landing',
+      '/cart',
+      '/checkout',
+      '/order-confirmation'
+    ];
+    return publicPages.some(p => path.startsWith(p) || path === p);
   }
 
   /**
