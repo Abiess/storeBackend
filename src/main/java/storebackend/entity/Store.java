@@ -105,6 +105,25 @@ public class Store {
     @Column(name = "reservation_whatsapp_text", columnDefinition = "TEXT")
     private String reservationWhatsappText;
 
+    // ─── Bot-Schutz-Konfiguration (MVP) ────────────────────────
+    /**
+     * Bot-Schutz für öffentliche Bestellungen aktiviert.
+     * Default: true (Schutz aktiv)
+     */
+    @Column(name = "bot_protection_enabled", nullable = false,
+            columnDefinition = "boolean default true")
+    private boolean botProtectionEnabled = true;
+
+    /**
+     * Modus für Bot-Schutz: OFF | SUSPICIOUS_ONLY | ALWAYS_ON
+     * Default: SUSPICIOUS_ONLY
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "bot_protection_mode", nullable = false,
+            columnDefinition = "varchar(20) default 'SUSPICIOUS_ONLY'")
+    private storebackend.enums.BotProtectionMode botProtectionMode = 
+        storebackend.enums.BotProtectionMode.SUSPICIOUS_ONLY;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private StoreStatus status = StoreStatus.ACTIVE;

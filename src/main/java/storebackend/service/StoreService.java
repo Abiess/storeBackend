@@ -297,6 +297,20 @@ public class StoreService {
             store.setReservationWhatsappText(request.getReservationWhatsappText().isBlank() ? null : request.getReservationWhatsappText().trim());
         }
 
+        // ─── Bot-Schutz-Konfiguration ────────────────────────────────
+        if (request.getBotProtectionEnabled() != null) {
+            store.setBotProtectionEnabled(request.getBotProtectionEnabled());
+        }
+        if (request.getBotProtectionMode() != null && !request.getBotProtectionMode().isBlank()) {
+            try {
+                store.setBotProtectionMode(storebackend.enums.BotProtectionMode.valueOf(
+                    request.getBotProtectionMode().trim().toUpperCase()
+                ));
+            } catch (IllegalArgumentException ex) {
+                log.warn("Ungültiger botProtectionMode '{}' – ignoriert", request.getBotProtectionMode());
+            }
+        }
+
         store = storeRepository.save(store);
         log.info("Store {} updated by user {}", storeId, user.getEmail());
 
@@ -539,6 +553,9 @@ public class StoreService {
         dto.setAddress(store.getAddress());
         dto.setGoogleMapsUrl(store.getGoogleMapsUrl());
         dto.setReservationWhatsappText(store.getReservationWhatsappText());
+        // ─── Bot-Schutz (nur für Admin-Bereich) ─────────────────────────
+        dto.setBotProtectionEnabled(store.isBotProtectionEnabled());
+        dto.setBotProtectionMode(store.getBotProtectionMode());
         return dto;
     }
 

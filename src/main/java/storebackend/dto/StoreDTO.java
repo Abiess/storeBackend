@@ -33,4 +33,8 @@ public class StoreDTO {
     private String address;
     private String googleMapsUrl;
     private String reservationWhatsappText;
+
+    // ─── Bot-Schutz (nur für Admin-Bereich, NICHT öffentlich) ─
+    private boolean botProtectionEnabled;
+    private storebackend.enums.BotProtectionMode botProtectionMode;
 }

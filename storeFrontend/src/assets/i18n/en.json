@@ -403,6 +403,17 @@
       "starterPackButton": "Load sample data",
       "starterPackLoading": "Loading..."
     },
+    "botProtection": {
+      "title": "Bot Protection",
+      "hint": "Protect your store from automated spam orders and bots",
+      "enabled": "Enable bot protection",
+      "enabledHint": "Activates protection measures against automated orders",
+      "mode": "Protection mode",
+      "modeHint": "Choose how strict bot protection should be",
+      "modeOff": "❌ Off (test stores only)",
+      "modeSuspicious": "⚠️ Suspicious requests only (recommended)",
+      "modeAlways": "🛡️ Always active (very strict)"
+    },
     "branding": {
       "title": "Branding",
       "description": "Customize the appearance and identity of your store",

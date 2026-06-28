@@ -43,4 +43,10 @@ public class UpdateStoreRequest {
     private String address;
     private String googleMapsUrl;
     private String reservationWhatsappText;
+
+    // ─── Bot-Schutz – optional, null = nicht ändern ─
+    /** Bot-Schutz aktiviert (true) oder deaktiviert (false) */
+    private Boolean botProtectionEnabled;
+    /** OFF | SUSPICIOUS_ONLY | ALWAYS_ON */
+    private String botProtectionMode;
 }

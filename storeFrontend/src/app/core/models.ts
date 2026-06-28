@@ -649,6 +649,9 @@ export interface Store {
   address?: string;
   googleMapsUrl?: string;
   reservationWhatsappText?: string;
+  // ─── Bot-Schutz (nur für Admin-Bereich, NICHT öffentlich) ──────
+  botProtectionEnabled?: boolean;
+  botProtectionMode?: 'OFF' | 'SUSPICIOUS_ONLY' | 'ALWAYS_ON';
 }
 
 export interface PublicStore {

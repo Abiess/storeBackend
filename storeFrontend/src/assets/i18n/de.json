@@ -522,6 +522,17 @@
       "starterPackButton": "Beispieldaten laden",
       "starterPackLoading": "Wird geladen..."
     },
+    "botProtection": {
+      "title": "Bot-Schutz",
+      "hint": "Schütze deinen Store vor automatisierten Spam-Bestellungen und Bots",
+      "enabled": "Bot-Schutz aktivieren",
+      "enabledHint": "Aktiviert Schutzmaßnahmen gegen automatisierte Bestellungen",
+      "mode": "Schutzmodus",
+      "modeHint": "Wähle, wie streng der Bot-Schutz sein soll",
+      "modeOff": "❌ Aus (nur für Test-Stores)",
+      "modeSuspicious": "⚠️ Nur verdächtige Anfragen (empfohlen)",
+      "modeAlways": "🛡️ Immer aktiv (sehr streng)"
+    },
     "branding": {
       "title": "Branding",
       "description": "Passen Sie das Erscheinungsbild und die Identität Ihres Shops an",

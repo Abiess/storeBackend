@@ -207,6 +207,33 @@ export interface SettingsTab {
               </ng-container>
             </div>
 
+            <!-- ─── Bot-Schutz-Konfiguration ─── -->
+            <div class="bot-protection-section">
+              <h3 class="section-title">
+                <span class="section-icon">🛡️</span>
+                {{ 'settings.botProtection.title' | translate }}
+              </h3>
+              <p class="section-hint">{{ 'settings.botProtection.hint' | translate }}</p>
+
+              <div class="form-group bot-protection-toggle">
+                <label class="toggle-label">
+                  <input type="checkbox" formControlName="botProtectionEnabled" />
+                  <span class="toggle-text">{{ 'settings.botProtection.enabled' | translate }}</span>
+                </label>
+                <small class="form-text">{{ 'settings.botProtection.enabledHint' | translate }}</small>
+              </div>
+
+              <div class="form-group" *ngIf="settingsForm.get('botProtectionEnabled')?.value">
+                <label for="botProtectionMode">{{ 'settings.botProtection.mode' | translate }}</label>
+                <select id="botProtectionMode" formControlName="botProtectionMode" class="form-control">
+                  <option value="OFF">{{ 'settings.botProtection.modeOff' | translate }}</option>
+                  <option value="SUSPICIOUS_ONLY">{{ 'settings.botProtection.modeSuspicious' | translate }}</option>
+                  <option value="ALWAYS_ON">{{ 'settings.botProtection.modeAlways' | translate }}</option>
+                </select>
+                <small class="form-text">{{ 'settings.botProtection.modeHint' | translate }}</small>
+              </div>
+            </div>
+
             <div class="form-group">
               <label for="status">Status</label>
               <select id="status" formControlName="status" class="form-control">
@@ -1099,7 +1126,10 @@ export class StoreSettingsComponent implements OnInit {
       openingHours: ['', [Validators.maxLength(500)]],
       address: ['', [Validators.maxLength(300)]],
       googleMapsUrl: [''],
-      reservationWhatsappText: ['', [Validators.maxLength(300)]]
+      reservationWhatsappText: ['', [Validators.maxLength(300)]],
+      // ─── Bot-Schutz ──────────────────────────────────────────────
+      botProtectionEnabled: [true],
+      botProtectionMode: ['SUSPICIOUS_ONLY']
     });
 
     this.brandingForm = this.fb.group({
@@ -1172,7 +1202,9 @@ export class StoreSettingsComponent implements OnInit {
           openingHours:            store.openingHours            ?? '',
           address:                 store.address                 ?? '',
           googleMapsUrl:           store.googleMapsUrl           ?? '',
-          reservationWhatsappText: store.reservationWhatsappText ?? ''
+          reservationWhatsappText: store.reservationWhatsappText ?? '',
+          botProtectionEnabled:    store.botProtectionEnabled    ?? true,
+          botProtectionMode:       store.botProtectionMode       ?? 'SUSPICIOUS_ONLY'
         });
         this.loading = false;
       },

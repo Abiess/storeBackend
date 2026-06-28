@@ -404,6 +404,17 @@
       "starterPackButton": "Charger les données d'exemple",
       "starterPackLoading": "Chargement..."
     },
+    "botProtection": {
+      "title": "Protection anti-bot",
+      "hint": "Protégez votre boutique contre les commandes automatisées de spam et les bots",
+      "enabled": "Activer la protection anti-bot",
+      "enabledHint": "Active les mesures de protection contre les commandes automatisées",
+      "mode": "Mode de protection",
+      "modeHint": "Choisissez le niveau de strictesse de la protection anti-bot",
+      "modeOff": "❌ Désactivé (boutiques de test uniquement)",
+      "modeSuspicious": "⚠️ Requêtes suspectes uniquement (recommandé)",
+      "modeAlways": "🛡️ Toujours actif (très strict)"
+    },
     "branding": {
       "title": "Identité visuelle",
       "description": "Personnalisez l'apparence et l'identité de votre boutique",
