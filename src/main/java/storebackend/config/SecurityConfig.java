@@ -96,6 +96,8 @@ public class SecurityConfig {
                 // Product Options - GET ist öffentlich (für Storefront Produktansicht)
                 .requestMatchers(HttpMethod.GET, "/api/stores/*/products/*/options").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/stores/*/products/*/options/**").permitAll()
+                // Asset suggestions (Unsplash API Proxy) - benötigt Auth (User muss eingeloggt sein)
+                .requestMatchers("/api/assets/**").authenticated()
                 // Product Variants - Authenticated users can manage their own store's variants (checked in controller)
                 .requestMatchers("/api/stores/*/products/*/variants/**").authenticated()
                 // Cart and Checkout - können öffentlich sein (verwenden Session)

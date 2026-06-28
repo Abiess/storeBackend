@@ -22,7 +22,7 @@ import { FabService } from '@app/core/services/fab.service';
       </app-store-navigation>
 
       <app-page-header
-        [title]="'Produkte'"
+        [title]="'navigation.products' | translate"
         [showBackButton]="false"
         [actions]="headerActions">
       </app-page-header>

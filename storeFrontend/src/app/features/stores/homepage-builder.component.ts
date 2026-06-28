@@ -8,11 +8,12 @@ import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-h
 import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
 import {StoreNavigationComponent} from "@app/shared/components/store-navigation.component";
 import { FabService } from '@app/core/services/fab.service';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 @Component({
   selector: 'app-homepage-builder',
   standalone: true,
-    imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent, StoreNavigationComponent],
+    imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent, StoreNavigationComponent, TranslatePipe],
   template: `
     <div class="homepage-builder">
      
@@ -20,7 +21,7 @@ import { FabService } from '@app/core/services/fab.service';
 " ></app-store-navigation>
 
         <app-page-header
-          [title]="'Homepage Builder'"
+          [title]="'navigation.homepageBuilder' | translate"
           [showBackButton]="false"
           [actions]="headerActions">
         </app-page-header>

@@ -92,8 +92,16 @@ public class MediaService {
         storeUsageService.incrementStorage(store, file.getSize());
         storeUsageService.incrementImageCount(store);
 
-        // Generate presigned URL for response (7 days)
-        String url = minioService.getPresignedUrl(minioObjectName, 10080); // 7 Tage
+        // Generate URL for response
+        // ✅ FÜR LOGOS: Permanente öffentliche URL (kein Ablaufdatum)
+        // ✅ FÜR ANDERE MEDIEN: Presigned URL (7 Tage)
+        String url;
+        if (mediaType == MediaType.LOGO || mediaType == MediaType.STORE_LOGO) {
+            url = minioService.getPublicUrl(minioObjectName); // Permanent, kein Expiry
+            log.info("✅ Logo returned with permanent URL (no expiry): {}", url);
+        } else {
+            url = minioService.getPresignedUrl(minioObjectName, 10080); // 7 Tage für andere Medien
+        }
 
         log.info("Media uploaded successfully: {} for store {}", media.getId(), store.getId());
 

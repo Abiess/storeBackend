@@ -96,11 +96,11 @@ public class GlobalDeliveryOptionService {
     }
 
     private GlobalDeliveryOptionDTO toDTO(GlobalDeliveryOption e) {
-        // Logo: frische presigned URL generieren
+        // Logo: Permanente öffentliche URL (kein Ablaufdatum)
         String logoUrl = null;
         if (e.getLogoObjectName() != null && !e.getLogoObjectName().isBlank()) {
             try {
-                logoUrl = minioService.getPresignedUrl(e.getLogoObjectName(), 10080);
+                logoUrl = minioService.getPublicUrl(e.getLogoObjectName()); // Permanent URL
             } catch (Exception ex) {
                 log.warn("Logo-URL konnte nicht generiert werden für Option {}: {}", e.getId(), ex.getMessage());
                 logoUrl = e.getLogoUrl();
@@ -165,13 +165,14 @@ public class GlobalDeliveryOptionService {
         option.setLogoObjectName(objectName);
         repository.save(option);
 
-        String presignedUrl = minioService.getPresignedUrl(objectName, 10080);
+        // ✅ Permanente öffentliche URL für Logo (kein Ablaufdatum)
+        String publicUrl = minioService.getPublicUrl(objectName);
         // URL auch im Feld speichern → Fallback wenn MinIO beim GET nicht erreichbar
-        option.setLogoUrl(presignedUrl);
+        option.setLogoUrl(publicUrl);
         repository.save(option);
 
-        log.info("✅ Logo hochgeladen für Delivery Option {}: {}", optionId, objectName);
-        return presignedUrl;
+        log.info("✅ Logo hochgeladen für Delivery Option {} (permanent URL): {}", optionId, objectName);
+        return publicUrl;
     }
 }
 
