@@ -1407,7 +1407,9 @@
       "step2Text": "Per Hand oder KI-unterstützt – du entscheidest.",
       "step3Title": "3. Bestellungen empfangen",
       "step3Text": "Kunden kaufen direkt per WhatsApp oder im Shop.",
-      "watchVideo": "📹 Demo ansehen (2 Min)"
+      "watchVideo": "📹 Demo ansehen (2 Min)",
+      "ctaText": "Bereit anzufangen?",
+      "ctaButton": "Jetzt kostenlos starten"
     },
     "mobile": {
       "stickyCta": "🚀 Kostenlosen Store erstellen"

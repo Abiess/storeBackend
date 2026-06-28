@@ -1244,7 +1244,9 @@
       "step2Text": "Manuellement ou avec l'aide de l'IA – vous décidez.",
       "step3Title": "3. Recevez des commandes",
       "step3Text": "Les clients achètent directement via WhatsApp ou dans la boutique.",
-      "watchVideo": "📹 Voir la démo (2 min)"
+      "watchVideo": "📹 Voir la démo (2 min)",
+      "ctaText": "Prêt à commencer ?",
+      "ctaButton": "Commencer gratuitement maintenant"
     },
     "mobile": {
       "stickyCta": "🚀 Créer une boutique gratuite"

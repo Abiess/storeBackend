@@ -1243,7 +1243,9 @@
       "step2Text": "Manually or AI-assisted – you decide.",
       "step3Title": "3. Receive orders",
       "step3Text": "Customers buy directly via WhatsApp or in the shop.",
-      "watchVideo": "📹 Watch demo (2 min)"
+      "watchVideo": "📹 Watch demo (2 min)",
+      "ctaText": "Ready to get started?",
+      "ctaButton": "Start for free now"
     },
     "mobile": {
       "stickyCta": "🚀 Create free store"
