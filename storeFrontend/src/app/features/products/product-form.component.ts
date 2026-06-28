@@ -703,7 +703,6 @@ import { Subscription } from 'rxjs';
         font-size: 1.125rem;
       }
     }
-    }
 
     .error-banner {
       background: #f8d7da;

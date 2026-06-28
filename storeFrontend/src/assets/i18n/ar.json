@@ -1895,6 +1895,32 @@
     "storeNamePlaceholder": "على سبيل المثال، بوتيك فاطمة للأزياء",
     "storeNameError": "يرجى إدخال اسم المتجر (الحد الأدنى حرفان)",
     "categoryLabel": "الفئة",
+    "categories": {
+      "fashion": "الموضة",
+      "electronics": "الإلكترونيات",
+      "food": "الطعام",
+      "beauty": "التجميل",
+      "home": "المنزل",
+      "other": "أخرى"
+    },
+    "restaurantCategories": {
+      "moroccan": "مغربي",
+      "fastfood": "وجبات سريعة",
+      "pizza": "بيتزا",
+      "cafe": "مقهى",
+      "grill": "مشويات",
+      "seafood": "مأكولات بحرية",
+      "vegetarian": "نباتي",
+      "desserts": "حلويات"
+    },
+    "riadCategories": {
+      "traditional": "تقليدي",
+      "boutique": "بوتيك",
+      "luxury": "فاخر",
+      "budget": "اقتصادي",
+      "family": "عائلي",
+      "romantic": "رومانسي"
+    },
     "bannerLabel": "📸 اختر صورة العنوان",
     "photoBy": "الصورة من:",
     "unsplash": "Unsplash",

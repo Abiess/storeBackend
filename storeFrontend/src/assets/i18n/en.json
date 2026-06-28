@@ -2023,6 +2023,32 @@
     "storeNamePlaceholder": "e.g. Fatima's Fashion Boutique",
     "storeNameError": "Please enter a store name (min. 2 characters)",
     "categoryLabel": "Category",
+    "categories": {
+      "fashion": "Fashion",
+      "electronics": "Electronics",
+      "food": "Food",
+      "beauty": "Beauty",
+      "home": "Home",
+      "other": "Other"
+    },
+    "restaurantCategories": {
+      "moroccan": "Moroccan",
+      "fastfood": "Fast Food",
+      "pizza": "Pizza",
+      "cafe": "Café",
+      "grill": "Grill",
+      "seafood": "Seafood",
+      "vegetarian": "Vegetarian",
+      "desserts": "Desserts"
+    },
+    "riadCategories": {
+      "traditional": "Traditional",
+      "boutique": "Boutique",
+      "luxury": "Luxury",
+      "budget": "Budget",
+      "family": "Family",
+      "romantic": "Romantic"
+    },
     "bannerLabel": "📸 Choose banner image",
     "photoBy": "Photo by:",
     "unsplash": "Unsplash",

@@ -2024,6 +2024,32 @@
     "storeNamePlaceholder": "par ex. Boutique Mode Fatima",
     "storeNameError": "Veuillez entrer un nom de boutique (min. 2 caractères)",
     "categoryLabel": "Catégorie",
+    "categories": {
+      "fashion": "Mode",
+      "electronics": "Électronique",
+      "food": "Alimentation",
+      "beauty": "Beauté",
+      "home": "Maison",
+      "other": "Autre"
+    },
+    "restaurantCategories": {
+      "moroccan": "Marocain",
+      "fastfood": "Fast Food",
+      "pizza": "Pizza",
+      "cafe": "Café",
+      "grill": "Grill",
+      "seafood": "Fruits de mer",
+      "vegetarian": "Végétarien",
+      "desserts": "Desserts"
+    },
+    "riadCategories": {
+      "traditional": "Traditionnel",
+      "boutique": "Boutique",
+      "luxury": "Luxe",
+      "budget": "Budget",
+      "family": "Famille",
+      "romantic": "Romantique"
+    },
     "bannerLabel": "📸 Choisir une image de bannière",
     "photoBy": "Photo par :",
     "unsplash": "Unsplash",

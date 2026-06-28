@@ -21,6 +21,12 @@
     "test:add-product": "playwright test tests/flows/add-product.spec.js --headed",
     "test:add-product-variants": "playwright test tests/flows/add-product-variants.spec.js --headed",
     "test:create-store": "playwright test tests/flows/create-store.spec.js --headed",
+    "demo:platform": "playwright test tests/demo/marktma-platform-demo.spec.js --headed --project=chromium",
+    "demo:mobile": "playwright test tests/demo/marktma-mobile-demo.spec.js --headed --project=\"Mobile Chrome\"",
+    "demo:quick-start": "playwright test tests/demo/quick-start-demo.spec.js --headed --project=chromium",
+    "demo:boutique": "playwright test tests/demo/boutique-sans-inscription.spec.js --headed --project=chromium",
+    "demo:all": "npm run demo:platform && npm run demo:mobile && npm run demo:quick-start && npm run demo:boutique",
+    "demo:debug": "playwright test tests/demo/marktma-platform-demo.spec.js --headed --debug",
     "setup": "npm install && npm run install:browsers",
     "pipeline:full": "npm run record:all && npm run process:all"
   },

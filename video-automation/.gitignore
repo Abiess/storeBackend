@@ -2,8 +2,13 @@
 node_modules/
 package-lock.json
 
-# Environment
+# Environment (CRITICAL: Never commit credentials!)
 .env
+.env.local
+.env.production
+.env.*.local
+.env.development
+.env.staging
 
 # Test results
 test-results/

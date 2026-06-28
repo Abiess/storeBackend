@@ -2056,6 +2056,32 @@
     "storeNamePlaceholder": "z.B. Fatimas Mode Boutique",
     "storeNameError": "Bitte gib einen Store-Namen ein (min. 2 Zeichen)",
     "categoryLabel": "Kategorie",
+    "categories": {
+      "fashion": "Mode",
+      "electronics": "Elektronik",
+      "food": "Lebensmittel",
+      "beauty": "Beauty",
+      "home": "Heim",
+      "other": "Sonstiges"
+    },
+    "restaurantCategories": {
+      "moroccan": "Marokkanisch",
+      "fastfood": "Fast Food",
+      "pizza": "Pizza",
+      "cafe": "Café",
+      "grill": "Grill",
+      "seafood": "Meeresfrüchte",
+      "vegetarian": "Vegetarisch",
+      "desserts": "Desserts"
+    },
+    "riadCategories": {
+      "traditional": "Traditionell",
+      "boutique": "Boutique",
+      "luxury": "Luxus",
+      "budget": "Budget",
+      "family": "Familie",
+      "romantic": "Romantisch"
+    },
     "bannerLabel": "📸 Titelbild wählen",
     "photoBy": "Foto:",
     "unsplash": "Unsplash",

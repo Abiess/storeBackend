@@ -11,6 +11,9 @@ import { environment } from '@env/environment';
 import { UnsplashService, UnsplashImage } from '@app/core/services/unsplash.service';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { StoreCreationShellComponent } from '@app/shared/components/store-creation-shell.component';
+import { LucideAngularModule, Shirt, Smartphone, Pizza, Sparkles, Home, Package, 
+  UtensilsCrossed, Beef, Coffee, Flame, Fish, Salad, Cake,
+  Building, Crown, Wallet, Users, Heart } from 'lucide-angular';
 
 interface CreateStoreResponse {
   token: string;
@@ -26,7 +29,7 @@ interface CreateStoreResponse {
 @Component({
   selector: 'app-create-store-public',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, TranslatePipe, StoreCreationShellComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, TranslatePipe, StoreCreationShellComponent, LucideAngularModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-store-creation-shell>
@@ -96,7 +99,8 @@ interface CreateStoreResponse {
                     class="sc-cat-btn"
                     [class.active]="selectedCategory() === cat.id"
                     (click)="selectCategory(cat.id)">
-                    {{ cat.icon }} {{ cat.name }}
+                    <lucide-icon [name]="cat.icon" [size]="18"></lucide-icon>
+                    <span>{{ cat.name | translate }}</span>
                   </button>
                 }
               </div>
@@ -359,6 +363,14 @@ interface CreateStoreResponse {
       transition: all .15s;
       color: #374151;
       font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+    }
+    
+    .sc-cat-btn lucide-icon {
+      display: flex;
+      flex-shrink: 0;
     }
 
     .sc-cat-btn:hover {
@@ -372,6 +384,10 @@ interface CreateStoreResponse {
       background: linear-gradient(135deg, #a855f7, #7c3aed);
       color: #fff;
       font-weight: 700;
+    }
+    
+    .sc-cat-btn.active lucide-icon {
+      color: #fff;
     }
 
     .sc-btn-primary {
@@ -510,40 +526,53 @@ export class CreateStorePublicComponent implements OnInit, OnDestroy {
     
     if (type === 'RESTAURANT') {
       return [
-        { id: 'moroccan', icon: '🍲', name: 'Marokkanisch' },
-        { id: 'fastfood', icon: '🍔', name: 'Fast Food' },
-        { id: 'pizza', icon: '🍕', name: 'Pizza' },
-        { id: 'cafe', icon: '☕', name: 'Café' },
-        { id: 'grill', icon: '🥩', name: 'Grill' },
-        { id: 'seafood', icon: '🦞', name: 'Meeresfrüchte' },
-        { id: 'vegetarian', icon: '🥗', name: 'Vegetarisch' },
-        { id: 'desserts', icon: '🍰', name: 'Desserts' }
+        { id: 'moroccan', icon: 'UtensilsCrossed', name: 'createStorePublic.restaurantCategories.moroccan' },
+        { id: 'fastfood', icon: 'Beef', name: 'createStorePublic.restaurantCategories.fastfood' },
+        { id: 'pizza', icon: 'Pizza', name: 'createStorePublic.restaurantCategories.pizza' },
+        { id: 'cafe', icon: 'Coffee', name: 'createStorePublic.restaurantCategories.cafe' },
+        { id: 'grill', icon: 'Flame', name: 'createStorePublic.restaurantCategories.grill' },
+        { id: 'seafood', icon: 'Fish', name: 'createStorePublic.restaurantCategories.seafood' },
+        { id: 'vegetarian', icon: 'Salad', name: 'createStorePublic.restaurantCategories.vegetarian' },
+        { id: 'desserts', icon: 'Cake', name: 'createStorePublic.restaurantCategories.desserts' }
       ];
     }
     
     if (type === 'RIAD') {
       return [
-        { id: 'traditional', icon: '🏛️', name: 'Traditionell' },
-        { id: 'boutique', icon: '✨', name: 'Boutique' },
-        { id: 'luxury', icon: '👑', name: 'Luxus' },
-        { id: 'budget', icon: '💰', name: 'Budget' },
-        { id: 'family', icon: '👨‍👩‍👧‍👦', name: 'Familie' },
-        { id: 'romantic', icon: '💕', name: 'Romantisch' }
+        { id: 'traditional', icon: 'Building', name: 'createStorePublic.riadCategories.traditional' },
+        { id: 'boutique', icon: 'Sparkles', name: 'createStorePublic.riadCategories.boutique' },
+        { id: 'luxury', icon: 'Crown', name: 'createStorePublic.riadCategories.luxury' },
+        { id: 'budget', icon: 'Wallet', name: 'createStorePublic.riadCategories.budget' },
+        { id: 'family', icon: 'Users', name: 'createStorePublic.riadCategories.family' },
+        { id: 'romantic', icon: 'Heart', name: 'createStorePublic.riadCategories.romantic' }
       ];
     }
     
-    // Default: SHOP
+    // Default: SHOP - NOW WITH LUCIDE ICONS!
     return [
-      { id: 'fashion', icon: '👗', name: 'Mode' },
-      { id: 'electronics', icon: '📱', name: 'Elektronik' },
-      { id: 'food', icon: '🍕', name: 'Lebensmittel' },
-      { id: 'beauty', icon: '💄', name: 'Beauty' },
-      { id: 'home', icon: '🏠', name: 'Heim' },
-      { id: 'other', icon: '📦', name: 'Sonstiges' }
+      { id: 'fashion', icon: 'Shirt', name: 'createStorePublic.categories.fashion' },
+      { id: 'electronics', icon: 'Smartphone', name: 'createStorePublic.categories.electronics' },
+      { id: 'food', icon: 'Pizza', name: 'createStorePublic.categories.food' },
+      { id: 'beauty', icon: 'Sparkles', name: 'createStorePublic.categories.beauty' },
+      { id: 'home', icon: 'Home', name: 'createStorePublic.categories.home' },
+      { id: 'other', icon: 'Package', name: 'createStorePublic.categories.other' }
     ];
   }
 
   form: FormGroup;
+  
+  // Helper getter for translations
+  get translate() {
+    return this.translationService;
+  }
+  
+  // Lucide icons for categories
+  readonly Shirt = Shirt;
+  readonly Smartphone = Smartphone;
+  readonly Pizza = Pizza;
+  readonly Sparkles = Sparkles;
+  readonly Home = Home;
+  readonly Package = Package;
 
   constructor(
     private fb: FormBuilder,

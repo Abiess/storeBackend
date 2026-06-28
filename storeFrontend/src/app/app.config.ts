@@ -8,7 +8,13 @@ import {
   PlayCircle, Zap, Globe, Link2, Brain, Users, HardDrive, Lock,
   Bell, Crown, LogOut, Menu, Send,
   // Bottom-Nav Icons
-  House, ShoppingCart, LayoutGrid
+  House, ShoppingCart, LayoutGrid,
+  // Category Icons for create-store-public (SHOP)
+  Shirt, Pizza, Sparkles, Home,
+  // Restaurant Icons
+  UtensilsCrossed, Beef, Coffee, Flame, Fish, Salad, Cake,
+  // Riad Icons
+  Building, Wallet, Heart
 } from 'lucide-angular';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS, HttpClient } from '@angular/common/http';
@@ -59,7 +65,13 @@ export const appConfig: ApplicationConfig = {
         PlayCircle, Zap, Globe, Link2, Brain, Users, HardDrive, Lock,
         Bell, Crown, LogOut, Menu, Send,
         // Bottom-Nav
-        House, ShoppingCart, LayoutGrid
+        House, ShoppingCart, LayoutGrid,
+        // Category Icons (SHOP)
+        Shirt, Pizza, Sparkles, Home,
+        // Restaurant Icons
+        UtensilsCrossed, Beef, Coffee, Flame, Fish, Salad, Cake,
+        // Riad Icons
+        Building, Wallet, Heart
       })
     },
     // Standard Locale (kann dynamisch überschrieben werden)

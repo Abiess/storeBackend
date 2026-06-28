@@ -30,9 +30,9 @@ module.exports = defineConfig({
     },
     actionTimeout: 15000,
     navigationTimeout: 30000,
-    // Slow down actions for better visibility
+    // Slow down actions for better visibility (optimized for demo videos)
     launchOptions: {
-      slowMo: 500
+      slowMo: 300  // Reduced from 500 to 300 for faster demos
     }
   },
 
@@ -44,7 +44,26 @@ module.exports = defineConfig({
         viewport: {
           width: parseInt(process.env.VIDEO_WIDTH) || 1920,
           height: parseInt(process.env.VIDEO_HEIGHT) || 1080
-        }
+        },
+        // Set German locale for demos
+        locale: 'de-DE',
+        timezoneId: 'Europe/Berlin'
+      }
+    },
+    {
+      name: 'Mobile Chrome',
+      use: {
+        ...devices['Pixel 5'],
+        viewport: {
+          width: 393,
+          height: 851
+        },
+        launchOptions: {
+          slowMo: 500
+        },
+        // Set German locale for mobile demos
+        locale: 'de-DE',
+        timezoneId: 'Europe/Berlin'
       }
     }
   ]
