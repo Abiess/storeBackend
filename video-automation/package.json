@@ -24,7 +24,7 @@
     "demo:platform": "playwright test tests/demo/marktma-platform-demo.spec.js --headed --project=chromium",
     "demo:mobile": "playwright test tests/demo/marktma-mobile-demo.spec.js --headed --project=\"Mobile Chrome\"",
     "demo:quick-start": "playwright test tests/demo/quick-start-demo.spec.js --headed --project=chromium",
-    "demo:boutique": "playwright test tests/demo/boutique-sans-inscription.spec.js --headed --project=chromium",
+    "demo:boutique": "playwright test tests/demo/boutique-sans-inscription.spec.js --headed --project=chromium-fr",
     "demo:all": "npm run demo:platform && npm run demo:mobile && npm run demo:quick-start && npm run demo:boutique",
     "demo:debug": "playwright test tests/demo/marktma-platform-demo.spec.js --headed --debug",
     "setup": "npm install && npm run install:browsers",

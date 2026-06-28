@@ -51,6 +51,19 @@ module.exports = defineConfig({
       }
     },
     {
+      name: 'chromium-fr',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: {
+          width: parseInt(process.env.VIDEO_WIDTH) || 1920,
+          height: parseInt(process.env.VIDEO_HEIGHT) || 1080
+        },
+        // Set French locale for French demos
+        locale: 'fr-FR',
+        timezoneId: 'Europe/Paris'
+      }
+    },
+    {
       name: 'Mobile Chrome',
       use: {
         ...devices['Pixel 5'],

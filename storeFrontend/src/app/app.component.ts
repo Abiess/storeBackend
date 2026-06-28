@@ -228,7 +228,7 @@ export class AppComponent implements OnInit {
     '/stores/',
     '/dashboard',
     '/store-wizard',
-    '/choose-path',
+    // '/choose-path', // DEACTIVATED: now using /create-store directly
     '/login',
     '/register',
     '/store-onboarding',

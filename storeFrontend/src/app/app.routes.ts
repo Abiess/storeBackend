@@ -79,12 +79,12 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
 
-  // NEW: Choose Store Path (für neue User)
-  {
-    path: 'choose-path',
-    loadComponent: () => import('./features/stores/choose-path.component').then(m => m.ChoosePathComponent),
-    canActivate: [authGuard]
-  },
+  // DEACTIVATED: Choose Store Path - now directly to /create-store
+  // {
+  //   path: 'choose-path',
+  //   loadComponent: () => import('./features/stores/choose-path.component').then(m => m.ChoosePathComponent),
+  //   canActivate: [authGuard]
+  // },
 
 
   // ==================== User Settings ====================

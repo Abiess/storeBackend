@@ -1232,22 +1232,8 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
-    const preferredType = localStorage.getItem('preferredStoreType');
-    if (this.stores.length === 0 && !preferredType) {
-      this.router.navigate(['/choose-path']);
-      return;
-    }
-
-    // FIX: Wenn User vorher "own-store" gewählt hat -> direkt in den Wizard
-    if (preferredType === 'own-store') {
-      this.router.navigate(['/store-wizard']);
-      return;
-    }
-
-    this.showCreateModal = true;
-    this.newStore = { name: '', slug: '', description: '' };
-    this.slugError = '';
-    this.createError = '';
+    // FIX: Direkt zu /create-store navigieren (kein choose-path mehr)
+    this.router.navigate(['/create-store']);
   }
 
   closeCreateStoreModal(): void {
