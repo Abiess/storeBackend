@@ -30,9 +30,11 @@ public class DhlAdminController {
     /**
      * Health Check: DHL Config + Auth + Shipping API
      * GET /api/admin/dhl/health
+     * 
+     * Zugriff: Alle authentifizierten User (Store Owner können DHL Status prüfen)
      */
     @GetMapping("/health")
-    @PreAuthorize("hasRole('ADMIN')")  // Nur Admin
+    @PreAuthorize("isAuthenticated()")  // Jeder eingeloggte User
     public ResponseEntity<?> healthCheck() {
         Map<String, Object> response = new LinkedHashMap<>();
         
@@ -102,9 +104,11 @@ public class DhlAdminController {
     /**
      * Get DHL Config (ohne Secrets)
      * GET /api/admin/dhl/config
+     * 
+     * Zugriff: Alle authentifizierten User
      */
     @GetMapping("/config")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> getConfig() {
         Map<String, Object> config = new LinkedHashMap<>();
         config.put("enabled", dhlProperties.isEnabled());
