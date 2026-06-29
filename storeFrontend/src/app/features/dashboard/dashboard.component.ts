@@ -1146,10 +1146,8 @@ export class DashboardComponent implements OnInit {
       next: (stores) => {
         this.stores = stores;
         this.loading = false;
-        // Auto-redirect: wenn genau 1 Store → direkt in Store-Kontext
-        if (stores.length === 1) {
-          this.router.navigate(['/stores', stores[0].id]);
-        }
+        // KEIN Auto-redirect mehr – User bleibt im Dashboard
+        // Sidebar-Navigation führt dann zum jeweiligen Store-Kontext
       },
       error: (error) => {
         console.error('Fehler beim Laden der Stores:', error);
