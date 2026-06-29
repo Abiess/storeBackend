@@ -17,6 +17,7 @@ interface WizardStep {
   subtitle: string;
   icon: string;
   completed: boolean;
+  visible?: boolean;
 }
 
 @Component({
@@ -1004,7 +1005,7 @@ export class StoreWizardComponent implements OnInit, OnDestroy {
     { id: 1, title: 'wizard.step1Title', subtitle: 'wizard.step1Subtitle', icon: '🏪', completed: false },
     { id: 2, title: 'wizard.step2Title', subtitle: 'wizard.step2Subtitle', icon: '🎯', completed: false },
     { id: 3, title: 'wizard.step3Title', subtitle: 'wizard.step3Subtitle', icon: '📞', completed: false },
-    { id: 4, title: 'wizard.step4Title', subtitle: 'wizard.step4Subtitle', icon: '🤖', completed: false },
+    { id: 4, title: 'wizard.step4Title', subtitle: 'wizard.step4Subtitle', icon: '🤖', completed: false, visible: false },
     { id: 5, title: 'wizard.step5Title', subtitle: 'wizard.step5Subtitle', icon: '✅', completed: false }
   ];
 

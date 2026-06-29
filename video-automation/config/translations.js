@@ -37,6 +37,15 @@ const translations = {
     store_submit: 'Store erstellen abschließen',
     store_success: 'Store erfolgreich erstellt',
 
+    // Quick Start Flow (No Registration)
+    quick_landing: 'Homepage besuchen',
+    quick_cta_click: 'Auf "Shop erstellen" klicken',
+    quick_enter_name: 'Shop-Namen eingeben',
+    quick_select_type: 'Geschäftstyp auswählen',
+    quick_create_store: 'Shop erstellen',
+    quick_view_store: 'Shop ansehen (Storefront)',
+    quick_success: 'Erfolg! Shop erstellt',
+
     // Generic
     intro_title: 'Willkommen zu diesem Tutorial',
     outro_title: 'Jetzt kostenlos testen!',
@@ -76,6 +85,15 @@ const translations = {
     store_fill_details: 'Enter store information',
     store_submit: 'Complete store creation',
     store_success: 'Store created successfully',
+
+    // Quick Start Flow (No Registration)
+    quick_landing: 'Visit homepage',
+    quick_cta_click: 'Click "Create Shop"',
+    quick_enter_name: 'Enter shop name',
+    quick_select_type: 'Select business type',
+    quick_create_store: 'Create shop',
+    quick_view_store: 'View shop (Storefront)',
+    quick_success: 'Success! Shop created',
 
     // Generic
     intro_title: 'Welcome to this tutorial',
@@ -117,10 +135,68 @@ const translations = {
     store_submit: 'إتمام إنشاء المتجر',
     store_success: 'تم إنشاء المتجر بنجاح',
 
+    // Quick Start Flow (No Registration)
+    quick_landing: 'زيارة الصفحة الرئيسية',
+    quick_cta_click: 'انقر على "إنشاء متجر"',
+    quick_enter_name: 'أدخل اسم المتجر',
+    quick_select_type: 'اختر نوع العمل',
+    quick_create_store: 'إنشاء متجر',
+    quick_view_store: 'عرض المتجر (واجهة المتجر)',
+    quick_success: 'نجاح! تم إنشاء المتجر',
+
     // Generic
     intro_title: 'مرحبًا بك في هذا البرنامج التعليمي',
     outro_title: 'جربه مجانًا الآن!',
     outro_cta: 'قم بزيارتنا على'
+  },
+
+  fr: {
+    // Login Flow
+    login_visit_homepage: 'Visiter la page d\'accueil',
+    login_click_button: 'Cliquer sur connexion',
+    login_enter_credentials: 'Entrer les identifiants',
+    login_submit: 'Soumettre la connexion',
+    login_success: 'Connexion réussie',
+
+    // Checkout Flow
+    checkout_goto_products: 'Aller aux produits',
+    checkout_select_product: 'Sélectionner un produit',
+    checkout_add_to_cart: 'Ajouter au panier',
+    checkout_goto_cart: 'Aller au panier',
+    checkout_proceed: 'Passer à la caisse',
+    checkout_shipping_info: 'Entrer les informations de livraison',
+    checkout_payment: 'Sélectionner le mode de paiement',
+    checkout_complete: 'Finaliser la commande',
+    checkout_success: 'Commande réussie',
+
+    // Products Flow
+    products_browse: 'Parcourir les produits',
+    products_category: 'Sélectionner la catégorie',
+    products_details: 'Voir les détails du produit',
+    products_images: 'Parcourir les images du produit',
+    products_description: 'Lire la description du produit',
+    products_related: 'Voir les produits similaires',
+
+    // Create Store Flow
+    store_login: 'Se connecter',
+    store_navigate: 'Aller à la création de boutique',
+    store_fill_details: 'Entrer les informations de la boutique',
+    store_submit: 'Finaliser la création',
+    store_success: 'Boutique créée avec succès',
+
+    // Quick Start Flow (No Registration)
+    quick_landing: 'Visiter la page d\'accueil',
+    quick_cta_click: 'Cliquer sur "Créer boutique"',
+    quick_enter_name: 'Entrer le nom de la boutique',
+    quick_select_type: 'Sélectionner le type d\'activité',
+    quick_create_store: 'Créer la boutique',
+    quick_view_store: 'Voir la boutique (Storefront)',
+    quick_success: 'Succès ! Boutique créée',
+
+    // Generic
+    intro_title: 'Bienvenue dans ce tutoriel',
+    outro_title: 'Essayez gratuitement !',
+    outro_cta: 'Visitez-nous sur'
   }
 };
 
