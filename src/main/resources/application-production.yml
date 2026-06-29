@@ -231,15 +231,25 @@ telegram:
 # WICHTIG: Client Secret NIEMALS committen!
 dhl:
   enabled: ${DHL_ENABLED:false}
-  env: ${DHL_ENV:sandbox}
+  env: ${DHL_ENV:production}
   client-id: ${DHL_CLIENT_ID:}
   client-secret: ${DHL_CLIENT_SECRET:}
-  auth-url: ${DHL_AUTH_URL:https://api-sandbox.dhl.com/parcel/de/account/auth/ropc/v1/token}
-  shipping-base-url: ${DHL_SHIPPING_BASE_URL:https://api-sandbox.dhl.com/parcel/de/shipping/v2}
-  sandbox-username: ${DHL_SANDBOX_USERNAME:user-valid}
-  sandbox-password: ${DHL_SANDBOX_PASSWORD:SandboxPasswort2023!}
+  auth-url: ${DHL_AUTH_URL:https://api-eu.dhl.com/parcel/de/account/auth/ropc/v1/token}
+  shipping-base-url: ${DHL_SHIPPING_BASE_URL:https://api-eu.dhl.com/parcel/de/shipping/v2}
+  sandbox-username: ${DHL_SANDBOX_USERNAME:}
+  sandbox-password: ${DHL_SANDBOX_PASSWORD:}
   default-profile: ${DHL_DEFAULT_PROFILE:STANDARD_GRUPPENPROFIL}
   default-product: ${DHL_DEFAULT_PRODUCT:V01PAK}
-  default-billing-number: ${DHL_DEFAULT_BILLING_NUMBER:33333333330102}
+  default-billing-number: ${DHL_DEFAULT_BILLING_NUMBER:}
   timeout: ${DHL_TIMEOUT:30000}
   token-cache-duration: ${DHL_TOKEN_CACHE_DURATION:82800}
+  default-weight-grams: ${DHL_DEFAULT_WEIGHT_GRAMS:1000}
+  default-length-mm: ${DHL_DEFAULT_LENGTH_MM:300}
+  default-width-mm: ${DHL_DEFAULT_WIDTH_MM:200}
+  default-height-mm: ${DHL_DEFAULT_HEIGHT_MM:150}
+  sandbox-shipper-name: ${DHL_SANDBOX_SHIPPER_NAME:Test Store}
+  sandbox-shipper-street: ${DHL_SANDBOX_SHIPPER_STREET:Musterstraße}
+  sandbox-shipper-house-number: ${DHL_SANDBOX_SHIPPER_HOUSE_NUMBER:1}
+  sandbox-shipper-postal-code: ${DHL_SANDBOX_SHIPPER_POSTAL_CODE:53113}
+  sandbox-shipper-city: ${DHL_SANDBOX_SHIPPER_CITY:Bonn}
+  sandbox-shipper-country: ${DHL_SANDBOX_SHIPPER_COUNTRY:DE}

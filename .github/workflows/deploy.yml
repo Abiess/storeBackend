@@ -278,7 +278,23 @@ jobs:
             export DHL_CLIENT_SECRET="${{ secrets.DHL_CLIENT_SECRET }}"
             export DHL_AUTH_URL="${{ secrets.DHL_AUTH_URL }}"
             export DHL_SHIPPING_BASE_URL="${{ secrets.DHL_SHIPPING_BASE_URL }}"
+            export DHL_SANDBOX_USERNAME="${{ secrets.DHL_SANDBOX_USERNAME }}"
+            export DHL_SANDBOX_PASSWORD="${{ secrets.DHL_SANDBOX_PASSWORD }}"
+            export DHL_DEFAULT_PROFILE="${{ secrets.DHL_DEFAULT_PROFILE }}"
+            export DHL_DEFAULT_PRODUCT="${{ secrets.DHL_DEFAULT_PRODUCT }}"
             export DHL_DEFAULT_BILLING_NUMBER="${{ secrets.DHL_DEFAULT_BILLING_NUMBER }}"
+            export DHL_TIMEOUT="${{ secrets.DHL_TIMEOUT }}"
+            export DHL_TOKEN_CACHE_DURATION="${{ secrets.DHL_TOKEN_CACHE_DURATION }}"
+            export DHL_DEFAULT_WEIGHT_GRAMS="${{ secrets.DHL_DEFAULT_WEIGHT_GRAMS }}"
+            export DHL_DEFAULT_LENGTH_MM="${{ secrets.DHL_DEFAULT_LENGTH_MM }}"
+            export DHL_DEFAULT_WIDTH_MM="${{ secrets.DHL_DEFAULT_WIDTH_MM }}"
+            export DHL_DEFAULT_HEIGHT_MM="${{ secrets.DHL_DEFAULT_HEIGHT_MM }}"
+            export DHL_SANDBOX_SHIPPER_NAME="${{ secrets.DHL_SANDBOX_SHIPPER_NAME }}"
+            export DHL_SANDBOX_SHIPPER_STREET="${{ secrets.DHL_SANDBOX_SHIPPER_STREET }}"
+            export DHL_SANDBOX_SHIPPER_HOUSE_NUMBER="${{ secrets.DHL_SANDBOX_SHIPPER_HOUSE_NUMBER }}"
+            export DHL_SANDBOX_SHIPPER_POSTAL_CODE="${{ secrets.DHL_SANDBOX_SHIPPER_POSTAL_CODE }}"
+            export DHL_SANDBOX_SHIPPER_CITY="${{ secrets.DHL_SANDBOX_SHIPPER_CITY }}"
+            export DHL_SANDBOX_SHIPPER_COUNTRY="${{ secrets.DHL_SANDBOX_SHIPPER_COUNTRY }}"
             cd /opt/storebackend
             bash scripts/deploy.sh
 

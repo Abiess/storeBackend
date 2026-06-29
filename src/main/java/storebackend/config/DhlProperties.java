@@ -84,6 +84,28 @@ public class DhlProperties {
     private int tokenCacheDuration = 82800;
     
     /**
+     * Default Gewicht in Gramm (falls nicht in Order angegeben)
+     */
+    private int defaultWeightGrams = 1000;
+    
+    /**
+     * Default Dimensionen in mm (falls nicht in Order angegeben)
+     */
+    private int defaultLengthMm = 300;
+    private int defaultWidthMm = 200;
+    private int defaultHeightMm = 150;
+    
+    /**
+     * Sandbox Fallback Shipper Address (für Tests ohne Store-Adresse)
+     */
+    private String sandboxShipperName = "Test Store";
+    private String sandboxShipperStreet = "Musterstraße";
+    private String sandboxShipperHouseNumber = "1";
+    private String sandboxShipperPostalCode = "53113";
+    private String sandboxShipperCity = "Bonn";
+    private String sandboxShipperCountry = "DE";
+    
+    /**
      * Ist Sandbox Mode aktiv?
      */
     public boolean isSandbox() {

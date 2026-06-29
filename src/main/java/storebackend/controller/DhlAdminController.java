@@ -4,10 +4,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import storebackend.config.DhlProperties;
+import storebackend.dto.dhl.DhlShipmentResponse;
+import storebackend.entity.User;
 import storebackend.service.dhl.DhlAuthClient;
+import storebackend.service.dhl.DhlLabelService;
 import storebackend.service.dhl.DhlShippingClient;
 
 import java.util.LinkedHashMap;
@@ -26,6 +31,7 @@ public class DhlAdminController {
     private final DhlProperties dhlProperties;
     private final DhlAuthClient dhlAuthClient;
     private final DhlShippingClient dhlShippingClient;
+    private final DhlLabelService dhlLabelService;
     
     /**
      * Health Check: DHL Config + Auth + Shipping API
@@ -127,5 +133,73 @@ public class DhlAdminController {
         }
         
         return ResponseEntity.ok(config);
+    }
+    
+    /**
+     * Validate DHL Shipment (ohne Label zu erstellen)
+     * POST /api/admin/orders/{orderId}/dhl/validate
+     * 
+     * Zugriff: Authentifizierte User (Store Owner Check im Service)
+     */
+    @PostMapping("/orders/{orderId}/validate")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> validateShipment(
+        @PathVariable Long orderId,
+        @AuthenticationPrincipal User currentUser
+    ) {
+        try {
+            if (!dhlProperties.isEnabled()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "error", "DHL integration is disabled",
+                    "message", "Set DHL_ENABLED=true to activate"
+                ));
+            }
+            
+            log.info("🔍 Validating DHL shipment for order {} by user {}", 
+                orderId, currentUser.getEmail());
+            
+            DhlShipmentResponse response = dhlLabelService.validateShipment(orderId, currentUser);
+            
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("orderId", orderId);
+            result.put("validation", "SUCCESS");
+            result.put("shipmentNo", response.getShipmentNo());
+            result.put("routingCode", response.getRoutingCode());
+            result.put("refNo", response.getShipmentRefNo());
+            
+            // Validation Messages (Warnings/Errors)
+            if (response.getValidationMessages() != null && !response.getValidationMessages().isEmpty()) {
+                result.put("validationMessages", response.getValidationMessages());
+            }
+            
+            // Status
+            if (response.getStatus() != null) {
+                result.put("status", response.getStatus());
+            }
+            
+            log.info("✅ DHL validation successful for order {}", orderId);
+            return ResponseEntity.ok(result);
+            
+        } catch (AccessDeniedException e) {
+            log.warn("❌ Access denied: {}", e.getMessage());
+            return ResponseEntity.status(403).body(Map.of(
+                "error", "ACCESS_DENIED",
+                "message", e.getMessage()
+            ));
+            
+        } catch (IllegalStateException e) {
+            log.error("❌ Validation failed: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of(
+                "error", "VALIDATION_ERROR",
+                "message", e.getMessage()
+            ));
+            
+        } catch (Exception e) {
+            log.error("❌ DHL validation error for order {}", orderId, e);
+            return ResponseEntity.status(500).body(Map.of(
+                "error", "DHL_API_ERROR",
+                "message", e.getMessage()
+            ));
+        }
     }
 }
