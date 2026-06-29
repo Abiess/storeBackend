@@ -1,0 +1,192 @@
+/**
+ * markt.ma Mobile Demo - Mobile Chrome Version
+ * Duration: ~60-90 seconds
+ * Purpose: Mobile experience showcase for social media, ads
+ * 
+ * DO NOT use in production with real customer data!
+ * Only use with demo credentials from ENV variables.
+ */
+
+const { test, expect } = require('@playwright/test');
+const { FlowRecorder } = require('../utils/flow-recorder');
+
+test.describe('markt.ma Mobile Demo', () => {
+  let recorder;
+
+  test.beforeEach(async ({ page }) => {
+    recorder = new FlowRecorder(page, 'marktma-mobile-demo');
+    await recorder.start();
+  });
+
+  test('Mobile experience demonstration - 60-90 seconds', async ({ page }) => {
+    // Load credentials from ENV (NEVER hardcode real credentials!)
+    const baseUrl = process.env.BASE_URL || 'https://www.markt.ma';
+    const email = process.env.DEMO_EMAIL || 'demo@markt.ma';
+    const password = process.env.DEMO_PASSWORD || 'demoatmarkt.ma';
+    const demoStoreSlug = process.env.DEMO_STORE_SLUG || 'demoshop';
+
+    console.log(`📱 Starting Mobile Demo with baseUrl: ${baseUrl}`);
+    console.log(`👤 Using demo user: ${email}`);
+
+    // ==================== 1. MOBILE LANDING PAGE (10s) ====================
+    await recorder.step('Mobile Landing Page', async () => {
+      await page.goto(baseUrl);
+      await page.waitForLoadState('networkidle');
+      await recorder.pause(2500);
+
+      // Scroll down to show mobile layout
+      await page.evaluate(() => window.scrollBy({ top: 400, behavior: 'smooth' }));
+      await recorder.pause(2000);
+      await page.evaluate(() => window.scrollBy({ top: -400, behavior: 'smooth' }));
+      await recorder.pause(1000);
+    });
+
+    // ==================== 2. MOBILE LOGIN (8s) ====================
+    await recorder.step('Mobile Login', async () => {
+      try {
+        // Open mobile menu if needed
+        const menuButton = page.locator('[class*="menu-button"], [class*="hamburger"], button[aria-label*="menu"]').first();
+        if (await menuButton.isVisible({ timeout: 2000 })) {
+          await menuButton.click();
+          await recorder.pause(500);
+        }
+
+        const loginButton = page.getByRole('button', { name: /login/i }).first();
+        await loginButton.click();
+        await page.waitForLoadState('networkidle');
+        await recorder.pause(1000);
+
+        // Fill credentials (mobile keyboard simulation)
+        const emailInput = page.getByRole('textbox', { name: /email/i }).first();
+        await emailInput.click();
+        await recorder.pause(300);
+        await emailInput.fill(email);
+        await recorder.pause(500);
+
+        const passwordInput = page.locator('input[type="password"]').first();
+        await passwordInput.click();
+        await recorder.pause(300);
+        await passwordInput.fill(password);
+        await recorder.pause(500);
+
+        const submitButton = page.getByRole('button', { name: /login/i }).first();
+        await submitButton.click();
+        await page.waitForLoadState('networkidle');
+        await recorder.pause(1500);
+      } catch (e) {
+        console.log('Mobile login skipped (already logged in?)');
+      }
+    });
+
+    // ==================== 3. MOBILE DASHBOARD (5s) ====================
+    await recorder.step('Mobile Dashboard', async () => {
+      await recorder.pause(2000);
+      
+      // Try to scroll if possible
+      try {
+        await page.evaluate(() => window.scrollBy({ top: 200, behavior: 'smooth' }));
+        await recorder.pause(1000);
+        await page.evaluate(() => window.scrollBy({ top: -200, behavior: 'smooth' }));
+        await recorder.pause(1000);
+      } catch (e) {
+        console.log('Scrolling skipped');
+      }
+    });
+
+    // ==================== 4. MOBILE PUBLIC STOREFRONT (20s) ====================
+    await recorder.step('Mobile Storefront', async () => {
+      try {
+        // Navigate to public storefront
+        await page.goto(`${baseUrl}/${demoStoreSlug}`);
+        await page.waitForLoadState('networkidle');
+        await recorder.pause(2000);
+
+        // Scroll through product grid (mobile)
+        await page.evaluate(() => window.scrollBy({ top: 400, behavior: 'smooth' }));
+        await recorder.pause(1500);
+        await page.evaluate(() => window.scrollBy({ top: 400, behavior: 'smooth' }));
+        await recorder.pause(1500);
+        await page.evaluate(() => window.scrollBy({ top: -800, behavior: 'smooth' }));
+        await recorder.pause(1000);
+      } catch (e) {
+        console.log('Storefront navigation skipped');
+      }
+    });
+
+    // ==================== 5. MOBILE PRODUKTDETAIL (15s) ====================
+    await recorder.step('Mobile Produktdetail', async () => {
+      try {
+        // Find and click first product
+        const productCard = page.locator('[class*="product"]').first();
+        if (await productCard.isVisible({ timeout: 3000 })) {
+          await productCard.click();
+          await page.waitForLoadState('networkidle');
+          await recorder.pause(2000);
+
+          // Scroll product detail (mobile)
+          await page.evaluate(() => window.scrollBy({ top: 300, behavior: 'smooth' }));
+          await recorder.pause(1500);
+          await page.evaluate(() => window.scrollBy({ top: 300, behavior: 'smooth' }));
+          await recorder.pause(1500);
+          await page.evaluate(() => window.scrollBy({ top: -600, behavior: 'smooth' }));
+          await recorder.pause(1000);
+        }
+      } catch (e) {
+        console.log('Product detail skipped');
+      }
+    });
+
+    // ==================== 6. MOBILE WHATSAPP BUTTON (10s) ====================
+    await recorder.step('Mobile WhatsApp Order', async () => {
+      try {
+        // Find WhatsApp button (but don't click!)
+        const whatsappButton = page.locator('text=/whatsapp|bestellen|order/i').first();
+        if (await whatsappButton.isVisible({ timeout: 3000 })) {
+          await whatsappButton.scrollIntoViewIfNeeded();
+          await recorder.pause(2500);
+          console.log('✅ Mobile WhatsApp button demonstrated (not clicked)');
+        } else {
+          console.log('⚠️ WhatsApp button not found');
+        }
+      } catch (e) {
+        console.log('WhatsApp demo skipped');
+      }
+    });
+
+    // ==================== 7. MOBILE RESTAURANT MENÜ (optional, 10s) ====================
+    await recorder.step('Mobile Restaurant Features (if available)', async () => {
+      try {
+        // Try to show restaurant-specific features
+        const restaurantFeatures = page.locator('text=/menü|menu|speisekarte/i').first();
+        if (await restaurantFeatures.isVisible({ timeout: 2000 })) {
+          await restaurantFeatures.scrollIntoViewIfNeeded();
+          await recorder.pause(2000);
+          console.log('✅ Mobile restaurant features demonstrated');
+        } else {
+          console.log('⚠️ Restaurant features not visible, skipping');
+        }
+      } catch (e) {
+        console.log('Restaurant demo skipped');
+      }
+    });
+
+    // ==================== 8. ZURÜCK ZUR LANDING PAGE (5s) ====================
+    await recorder.step('Mobile CTA', async () => {
+      await page.goto(baseUrl);
+      await page.waitForLoadState('networkidle');
+      await recorder.pause(1500);
+
+      // Scroll to CTA
+      try {
+        await page.evaluate(() => window.scrollBy({ top: 200, behavior: 'smooth' }));
+        await recorder.pause(1000);
+      } catch (e) {
+        console.log('CTA scroll skipped');
+      }
+
+      await recorder.pause(1000);
+    });
+
+    console.log('✅ Mobile Demo completed!');
+  });
+});

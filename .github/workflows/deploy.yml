@@ -272,6 +272,13 @@ jobs:
             export TELEGRAM_AUTH_BOT_TOKEN="${{ secrets.TELEGRAM_AUTH_BOT_TOKEN }}"
             export CLARITY_ID="${{ secrets.CLARITY_ID }}"
             export UNSPLASH_ACCESS_KEY="${{ secrets.UNSPLASH_ACCESS_KEY }}"
+            export DHL_ENABLED="${{ secrets.DHL_ENABLED }}"
+            export DHL_ENV="${{ secrets.DHL_ENV }}"
+            export DHL_CLIENT_ID="${{ secrets.DHL_CLIENT_ID }}"
+            export DHL_CLIENT_SECRET="${{ secrets.DHL_CLIENT_SECRET }}"
+            export DHL_AUTH_URL="${{ secrets.DHL_AUTH_URL }}"
+            export DHL_SHIPPING_BASE_URL="${{ secrets.DHL_SHIPPING_BASE_URL }}"
+            export DHL_DEFAULT_BILLING_NUMBER="${{ secrets.DHL_DEFAULT_BILLING_NUMBER }}"
             cd /opt/storebackend
             bash scripts/deploy.sh
 

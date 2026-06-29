@@ -37,6 +37,21 @@ const translations = {
     store_submit: 'Store erstellen abschließen',
     store_success: 'Store erfolgreich erstellt',
 
+    // Create Store with Login Flow (Full Journey)
+    store_auth_homepage: 'Zur Homepage navigieren',
+    store_auth_click_login: 'Login-Button klicken',
+    store_auth_enter_email: 'E-Mail eingeben',
+    store_auth_enter_password: 'Passwort eingeben',
+    store_auth_submit: 'Anmelden',
+    store_auth_enter_name: 'Store-Namen eingeben',
+    store_auth_select_city: 'Stadt auswählen',
+    store_auth_select_category: 'Kategorie auswählen',
+    store_auth_create: 'Store jetzt erstellen',
+    store_auth_skip_products: 'Produkte später hinzufügen',
+    store_auth_goto_dashboard: 'Zum Dashboard navigieren',
+    store_auth_manage_store: 'Store verwalten',
+    store_auth_success: 'Store erfolgreich erstellt und verwaltet',
+
     // Quick Start Flow (No Registration)
     quick_landing: 'Homepage besuchen',
     quick_cta_click: 'Auf "Shop erstellen" klicken',
@@ -86,6 +101,21 @@ const translations = {
     store_submit: 'Complete store creation',
     store_success: 'Store created successfully',
 
+    // Create Store with Login Flow (Full Journey)
+    store_auth_homepage: 'Navigate to homepage',
+    store_auth_click_login: 'Click login button',
+    store_auth_enter_email: 'Enter email',
+    store_auth_enter_password: 'Enter password',
+    store_auth_submit: 'Sign in',
+    store_auth_enter_name: 'Enter store name',
+    store_auth_select_city: 'Select city',
+    store_auth_select_category: 'Select category',
+    store_auth_create: 'Create store now',
+    store_auth_skip_products: 'Add products later',
+    store_auth_goto_dashboard: 'Navigate to dashboard',
+    store_auth_manage_store: 'Manage store',
+    store_auth_success: 'Store created and managed successfully',
+
     // Quick Start Flow (No Registration)
     quick_landing: 'Visit homepage',
     quick_cta_click: 'Click "Create Shop"',
@@ -134,6 +164,21 @@ const translations = {
     store_fill_details: 'أدخل معلومات المتجر',
     store_submit: 'إتمام إنشاء المتجر',
     store_success: 'تم إنشاء المتجر بنجاح',
+
+    // Create Store with Login Flow (Full Journey)
+    store_auth_homepage: 'الانتقال إلى الصفحة الرئيسية',
+    store_auth_click_login: 'انقر على زر تسجيل الدخول',
+    store_auth_enter_email: 'أدخل البريد الإلكتروني',
+    store_auth_enter_password: 'أدخل كلمة المرور',
+    store_auth_submit: 'تسجيل الدخول',
+    store_auth_enter_name: 'أدخل اسم المتجر',
+    store_auth_select_city: 'اختر المدينة',
+    store_auth_select_category: 'اختر الفئة',
+    store_auth_create: 'إنشاء المتجر الآن',
+    store_auth_skip_products: 'إضافة المنتجات لاحقًا',
+    store_auth_goto_dashboard: 'الانتقال إلى لوحة التحكم',
+    store_auth_manage_store: 'إدارة المتجر',
+    store_auth_success: 'تم إنشاء المتجر وإدارته بنجاح',
 
     // Quick Start Flow (No Registration)
     quick_landing: 'زيارة الصفحة الرئيسية',

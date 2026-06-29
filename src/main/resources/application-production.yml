@@ -225,3 +225,21 @@ telegram:
   auth:
     bot-token: ${TELEGRAM_AUTH_BOT_TOKEN:}
     bot-username: ${TELEGRAM_AUTH_BOT_USERNAME:marktma_verify_bot}
+
+# DHL Parcel DE Shipping API (Production)
+# Developer Portal: https://developer.dhl.com/
+# WICHTIG: Client Secret NIEMALS committen!
+dhl:
+  enabled: ${DHL_ENABLED:false}
+  env: ${DHL_ENV:sandbox}
+  client-id: ${DHL_CLIENT_ID:}
+  client-secret: ${DHL_CLIENT_SECRET:}
+  auth-url: ${DHL_AUTH_URL:https://api-sandbox.dhl.com/parcel/de/account/auth/ropc/v1/token}
+  shipping-base-url: ${DHL_SHIPPING_BASE_URL:https://api-sandbox.dhl.com/parcel/de/shipping/v2}
+  sandbox-username: ${DHL_SANDBOX_USERNAME:user-valid}
+  sandbox-password: ${DHL_SANDBOX_PASSWORD:SandboxPasswort2023!}
+  default-profile: ${DHL_DEFAULT_PROFILE:STANDARD_GRUPPENPROFIL}
+  default-product: ${DHL_DEFAULT_PRODUCT:V01PAK}
+  default-billing-number: ${DHL_DEFAULT_BILLING_NUMBER:33333333330102}
+  timeout: ${DHL_TIMEOUT:30000}
+  token-cache-duration: ${DHL_TOKEN_CACHE_DURATION:82800}

@@ -175,6 +175,20 @@ TELEGRAM_AUTH_BOT_USERNAME=${TELEGRAM_AUTH_BOT_USERNAME:-marktma_verify_bot}
 # Unsplash API Key (Bildvorschläge im Wizard – NIEMALS ins Frontend/Git!)
 UNSPLASH_ACCESS_KEY=${UNSPLASH_ACCESS_KEY:-}
 
+# DHL Parcel DE Shipping API
+# Sandbox Keys for testing, Production Keys from DHL Business Customer Portal
+DHL_ENABLED=${DHL_ENABLED:-false}
+DHL_ENV=${DHL_ENV:-sandbox}
+DHL_CLIENT_ID=${DHL_CLIENT_ID:-}
+DHL_CLIENT_SECRET=${DHL_CLIENT_SECRET:-}
+DHL_AUTH_URL=${DHL_AUTH_URL:-https://api-sandbox.dhl.com/parcel/de/account/auth/ropc/v1/token}
+DHL_SHIPPING_BASE_URL=${DHL_SHIPPING_BASE_URL:-https://api-sandbox.dhl.com/parcel/de/shipping/v2}
+DHL_SANDBOX_USERNAME=${DHL_SANDBOX_USERNAME:-user-valid}
+DHL_SANDBOX_PASSWORD=${DHL_SANDBOX_PASSWORD:-SandboxPasswort2023!}
+DHL_DEFAULT_PROFILE=${DHL_DEFAULT_PROFILE:-STANDARD_GRUPPENPROFIL}
+DHL_DEFAULT_PRODUCT=${DHL_DEFAULT_PRODUCT:-V01PAK}
+DHL_DEFAULT_BILLING_NUMBER=${DHL_DEFAULT_BILLING_NUMBER:-33333333330102}
+
 # ── Frontend Analytics (nur Dokumentation – wird beim Angular-Build gebacken) ──
 # Microsoft Clarity: ID in storeFrontend/src/environments/environment.prod.ts
 # setzen, dann Frontend neu bauen: cd storeFrontend && npm run build -- --configuration=production

@@ -30,6 +30,8 @@ module.exports = defineConfig({
     },
     actionTimeout: 15000,
     navigationTimeout: 30000,
+    // Use headed mode by default (set to false or remove to run headless)
+    headless: false,
     // Slow down actions for better visibility (optimized for demo videos)
     launchOptions: {
       slowMo: 300  // Reduced from 500 to 300 for faster demos

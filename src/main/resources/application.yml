@@ -146,3 +146,21 @@ unsplash:
     key: ${UNSPLASH_ACCESS_KEY:}
     base-url: https://api.unsplash.com
     results-per-page: 12
+
+# DHL Parcel DE Shipping API (Sandbox)
+# Key anlegen: https://developer.dhl.com/
+# SICHERHEIT: Client Secret NIEMALS ins Git committen!
+dhl:
+  enabled: ${DHL_ENABLED:false}
+  env: ${DHL_ENV:sandbox}
+  client-id: ${DHL_CLIENT_ID:}
+  client-secret: ${DHL_CLIENT_SECRET:}
+  auth-url: ${DHL_AUTH_URL:https://api-sandbox.dhl.com/parcel/de/account/auth/ropc/v1/token}
+  shipping-base-url: ${DHL_SHIPPING_BASE_URL:https://api-sandbox.dhl.com/parcel/de/shipping/v2}
+  sandbox-username: ${DHL_SANDBOX_USERNAME:user-valid}
+  sandbox-password: ${DHL_SANDBOX_PASSWORD:SandboxPasswort2023!}
+  default-profile: ${DHL_DEFAULT_PROFILE:STANDARD_GRUPPENPROFIL}
+  default-product: ${DHL_DEFAULT_PRODUCT:V01PAK}
+  default-billing-number: ${DHL_DEFAULT_BILLING_NUMBER:33333333330102}
+  timeout: ${DHL_TIMEOUT:30000}
+  token-cache-duration: ${DHL_TOKEN_CACHE_DURATION:82800}
