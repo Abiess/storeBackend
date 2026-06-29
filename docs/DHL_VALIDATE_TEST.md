@@ -13,6 +13,8 @@
 
 2. **DhlAdminController.java**
    - `POST /api/admin/orders/{orderId}/dhl/validate`
+   - `GET /api/admin/dhl/health`
+   - `GET /api/admin/dhl/config`
    - `@PreAuthorize("isAuthenticated()")` - Alle eingeloggten User
    - Store-Owner-Check im Service
    - Error Handling (403, 400, 500)
@@ -24,19 +26,63 @@
 
 ---
 
-## 🧪 Test 1: Validate mit eigenem Store (sollte funktionieren)
+## 🔗 API Endpoints
 
-### Schritt 1: Backend starten
+### Health Check
 ```bash
-cd C:\Users\t13016a\Downloads\Team2\storeBackend
-mvn spring-boot:run
+GET https://api.markt.ma/api/admin/dhl/health
+Authorization: Bearer YOUR_JWT_TOKEN
 ```
 
-### Schritt 2: Als Store Owner einloggen
+### Config (ohne Secrets)
 ```bash
-curl -X POST http://localhost:8080/api/auth/login \
+GET https://api.markt.ma/api/admin/dhl/config
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+### Validate Shipment
+```bash
+POST https://api.markt.ma/api/admin/orders/{orderId}/dhl/validate
+Authorization: Bearer YOUR_JWT_TOKEN
+Content-Type: application/json
+```
+
+---
+
+## 🧪 Test 1: Health Check
+
+```bash
+curl -i https://api.markt.ma/api/admin/dhl/health \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+**Erwartetes Ergebnis (200 OK):**
+```json
+{
+  "enabled": true,
+  "env": "sandbox",
+  "status": "healthy",
+  "checks": {
+    "config": "OK",
+    "auth": "OK",
+    "shipping_api": "OK"
+  },
+  "token": {
+    "cached": true,
+    "expiresIn": 82800
+  }
+}
+```
+
+---
+
+## 🧪 Test 2: Validate mit eigenem Store (sollte funktionieren)
+
+### Schritt 1: Als Store Owner einloggen
+```bash
+curl -X POST https://api.markt.ma/api/auth/login \
   -H "Content-Type: application/json" \
-  -d "{\"email\":\"demo@hotmail.com\",\"password\":\"maroc2010\"}"
+  -d '{"email":"demo@hotmail.com","password":"maroc2010"}'
 ```
 
 **Response:**
@@ -52,29 +98,29 @@ curl -X POST http://localhost:8080/api/auth/login \
 
 → **JWT Token kopieren!**
 
-### Schritt 3: Order ID finden
+### Schritt 2: Order ID finden
 ```bash
-curl -X GET http://localhost:8080/api/me/stores \
+curl https://api.markt.ma/api/me/stores \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 → Store ID notieren (z.B. `1`)
 
 ```bash
-curl -X GET http://localhost:8080/api/stores/1/orders \
+curl https://api.markt.ma/api/stores/1/orders \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 → Order ID notieren (z.B. `5`)
 
-### Schritt 4: DHL Shipment validieren
+### Schritt 3: DHL Shipment validieren
 ```bash
-curl -X POST http://localhost:8080/api/admin/orders/5/dhl/validate \
+curl -i -X POST https://api.markt.ma/api/admin/orders/5/dhl/validate \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -H "Content-Type: application/json"
 ```
 
-**Erwartetes Ergebnis (SUCCESS):**
+**Erwartetes Ergebnis (200 OK):**
 ```json
 {
   "orderId": 5,
@@ -93,23 +139,23 @@ curl -X POST http://localhost:8080/api/admin/orders/5/dhl/validate \
 
 ---
 
-## 🧪 Test 2: Validate mit fremdem Store (sollte 403 geben)
+## 🧪 Test 3: Validate mit fremdem Store (sollte 403 geben)
 
 ### Schritt 1: Als anderer User einloggen
 ```bash
-curl -X POST http://localhost:8080/api/auth/login \
+curl -X POST https://api.markt.ma/api/auth/login \
   -H "Content-Type: application/json" \
-  -d "{\"email\":\"other@hotmail.com\",\"password\":\"password123\"}"
+  -d '{"email":"other@hotmail.com","password":"password123"}'
 ```
 
 ### Schritt 2: Fremde Order validieren (Order gehört user 1)
 ```bash
-curl -X POST http://localhost:8080/api/admin/orders/5/dhl/validate \
+curl -i -X POST https://api.markt.ma/api/admin/orders/5/dhl/validate \
   -H "Authorization: Bearer OTHER_USER_JWT_TOKEN" \
   -H "Content-Type: application/json"
 ```
 
-**Erwartetes Ergebnis (ACCESS_DENIED):**
+**Erwartetes Ergebnis (403 Forbidden):**
 ```json
 {
   "error": "ACCESS_DENIED",
@@ -117,20 +163,18 @@ curl -X POST http://localhost:8080/api/admin/orders/5/dhl/validate \
 }
 ```
 
-**HTTP Status:** `403 Forbidden`
-
 ---
 
-## 🧪 Test 3: Validate ohne DHL_ENABLED
+## 🧪 Test 4: Validate ohne DHL_ENABLED
 
-Falls `DHL_ENABLED=false` in `.env`:
+Falls `DHL_ENABLED=false` in ENV:
 
 ```bash
-curl -X POST http://localhost:8080/api/admin/orders/5/dhl/validate \
+curl -i https://api.markt.ma/api/admin/orders/5/dhl/validate \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
-**Erwartetes Ergebnis:**
+**Erwartetes Ergebnis (400 Bad Request):**
 ```json
 {
   "error": "DHL integration is disabled",
@@ -138,23 +182,19 @@ curl -X POST http://localhost:8080/api/admin/orders/5/dhl/validate \
 }
 ```
 
-**HTTP Status:** `400 Bad Request`
-
 ---
 
-## 🧪 Test 4: Validate ohne Shipping Address
+## 🧪 Test 5: Validate ohne Shipping Address
 
 Falls Order keine Shipping Address hat:
 
-**Erwartetes Ergebnis:**
+**Erwartetes Ergebnis (400 Bad Request):**
 ```json
 {
   "error": "VALIDATION_ERROR",
   "message": "Order has no shipping address: 5"
 }
 ```
-
-**HTTP Status:** `400 Bad Request`
 
 ---
 
@@ -180,6 +220,10 @@ WARN  DhlAdminController - ❌ Access denied: You are not authorized to create D
 ---
 
 ## 📝 Wichtige Hinweise
+
+### URL-Struktur:
+- **Health/Config:** `/api/admin/dhl/health`, `/api/admin/dhl/config`
+- **Order-specific:** `/api/admin/orders/{orderId}/dhl/validate`
 
 ### Shipping Address Parsing:
 - DHL erwartet **getrennte Felder** für Straße und Hausnummer
@@ -237,4 +281,6 @@ WARN  DhlAdminController - ❌ Access denied: You are not authorized to create D
 
 **Stand:** Phase 3 abgeschlossen ✅  
 **Kompiliert:** Ja ✅  
-**Getestet:** Bereit zum Testen
+**Deployed:** Bereit zum Deployment  
+**Getestet:** Bereit zum Testen mit Production API
+

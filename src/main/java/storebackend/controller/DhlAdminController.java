@@ -21,9 +21,11 @@ import java.util.Map;
 /**
  * DHL Admin Controller
  * Endpoints für DHL Label-Erstellung und Health Checks
+ * 
+ * Health/Config: /api/admin/dhl/*
+ * Order-specific: /api/admin/orders/{orderId}/dhl/*
  */
 @RestController
-@RequestMapping("/api/admin/dhl")
 @RequiredArgsConstructor
 @Slf4j
 public class DhlAdminController {
@@ -39,7 +41,7 @@ public class DhlAdminController {
      * 
      * Zugriff: Alle authentifizierten User (Store Owner können DHL Status prüfen)
      */
-    @GetMapping("/health")
+    @GetMapping("/api/admin/dhl/health")
     @PreAuthorize("isAuthenticated()")  // Jeder eingeloggte User
     public ResponseEntity<?> healthCheck() {
         Map<String, Object> response = new LinkedHashMap<>();
@@ -113,7 +115,7 @@ public class DhlAdminController {
      * 
      * Zugriff: Alle authentifizierten User
      */
-    @GetMapping("/config")
+    @GetMapping("/api/admin/dhl/config")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> getConfig() {
         Map<String, Object> config = new LinkedHashMap<>();
@@ -141,7 +143,7 @@ public class DhlAdminController {
      * 
      * Zugriff: Authentifizierte User (Store Owner Check im Service)
      */
-    @PostMapping("/orders/{orderId}/validate")
+    @PostMapping("/api/admin/orders/{orderId}/dhl/validate")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> validateShipment(
         @PathVariable Long orderId,
