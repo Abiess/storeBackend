@@ -17,8 +17,8 @@ public class DhlShipmentRequest {
     @JsonProperty("profile")
     private String profile;  // "STANDARD_GRUPPENPROFIL"
     
-    @JsonProperty("shipment")
-    private Shipment shipment;
+    @JsonProperty("shipments")  // ← PLURAL! DHL API erwartet Array
+    private List<Shipment> shipments;
     
     @Data
     @Builder

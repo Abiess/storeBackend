@@ -79,7 +79,7 @@ public class DhlShippingClient {
             HttpEntity<DhlShipmentRequest> httpRequest = new HttpEntity<>(request, headers);
             
             log.info("🔍 Validating DHL shipment for refNo: {}", 
-                request.getShipment().getRefNo());
+                request.getShipments().get(0).getRefNo());
             
             ResponseEntity<DhlShipmentResponse> response = restTemplate.exchange(
                 url,
@@ -92,7 +92,7 @@ public class DhlShippingClient {
             
             if (response.getStatusCode() == HttpStatus.OK && body != null) {
                 log.info("✅ DHL Shipment validation successful for refNo: {}", 
-                    request.getShipment().getRefNo());
+                    request.getShipments().get(0).getRefNo());
                 
                 // Log validation warnings/errors
                 if (body.getValidationMessages() != null && !body.getValidationMessages().isEmpty()) {
@@ -145,7 +145,7 @@ public class DhlShippingClient {
             HttpEntity<DhlShipmentRequest> httpRequest = new HttpEntity<>(request, headers);
             
             log.info("📦 Creating DHL shipment for refNo: {}", 
-                request.getShipment().getRefNo());
+                request.getShipments().get(0).getRefNo());
             
             ResponseEntity<DhlShipmentResponse> response = restTemplate.exchange(
                 url,

@@ -13,6 +13,7 @@ import storebackend.entity.User;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 /**
  * DHL Label Service
@@ -108,10 +109,10 @@ public class DhlLabelService {
             .details(details)
             .build();
         
-        // Build Request
+        // Build Request (shipments als List/Array!)
         return DhlShipmentRequest.builder()
             .profile(dhlProperties.getDefaultProfile())
-            .shipment(shipment)
+            .shipments(List.of(shipment))  // ← Als Array!
             .build();
     }
     
