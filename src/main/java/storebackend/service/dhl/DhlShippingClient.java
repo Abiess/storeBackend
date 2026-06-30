@@ -147,6 +147,15 @@ public class DhlShippingClient {
             log.info("📦 Creating DHL shipment for refNo: {}", 
                 request.getShipments().get(0).getRefNo());
             
+            // DEBUG: Log Request Body
+            try {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                String requestJson = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(request);
+                log.info("🔍 DHL Request Body:\n{}", requestJson);
+            } catch (Exception e) {
+                log.warn("Could not serialize request for logging: {}", e.getMessage());
+            }
+            
             ResponseEntity<DhlShipmentResponse> response = restTemplate.exchange(
                 url,
                 HttpMethod.POST,
