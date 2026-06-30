@@ -452,7 +452,7 @@ export class StoreOrdersComponent implements OnInit {
     }
 
     this.loading = true;
-    const url = `${environment.apiUrl}/api/admin/orders/${order.id}/dhl/create-label`;
+    const url = `${environment.apiUrl}/admin/orders/${order.id}/dhl/create-label`;
 
     this.http.post<any>(url, {}).subscribe({
       next: (response) => {
