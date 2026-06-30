@@ -110,6 +110,197 @@ import {
             </div>
             <div *ngIf="zones.length === 0" class="empty-hint">Keine Zonen konfiguriert</div>
           </div>
+
+          <!-- ════════════════════════════════════════════════ -->
+          <!--  DHL VERSAND                                    -->
+          <!-- ════════════════════════════════════════════════ -->
+          <div class="card dhl-card">
+            <div class="card-head">
+              <h3>📦 {{ 'shipping.dhl.title' | translate }}</h3>
+              <button class="btn btn-sm" [class.btn-primary]="dhlExpanded" [class.btn-outline]="!dhlExpanded" 
+                      (click)="dhlExpanded = !dhlExpanded">
+                {{ dhlExpanded ? '▲' : '▼' }} {{ dhlExpanded ? ('common.collapse' | translate) : ('common.expand' | translate) }}
+              </button>
+            </div>
+            
+            <!-- Collapsed View -->
+            <div *ngIf="!dhlExpanded && dhlForm" class="kv-list">
+              <div class="kv">
+                <span>{{ 'shipping.dhl.enabled' | translate }}</span>
+                <span class="badge" [class.badge-on]="dhlForm.dhlEnabled">
+                  {{ dhlForm.dhlEnabled ? ('common.active' | translate) : ('common.inactive' | translate) }}
+                </span>
+              </div>
+              <div class="kv" *ngIf="dhlForm.dhlEnabled && dhlForm.dhlEnvironment">
+                <span>{{ 'shipping.dhl.environment' | translate }}</span>
+                <span>{{ dhlForm.dhlEnvironment }}</span>
+              </div>
+              <div class="kv" *ngIf="dhlForm.dhlEnabled && dhlForm.dhlBillingNumber">
+                <span>{{ 'shipping.dhl.billingNumber' | translate }}</span>
+                <span>{{ dhlForm.dhlBillingNumber }}</span>
+              </div>
+            </div>
+            <div *ngIf="!dhlExpanded && !dhlForm" class="empty-hint">
+              {{ 'shipping.dhl.notConfigured' | translate }}
+            </div>
+
+            <!-- Expanded Form -->
+            <div *ngIf="dhlExpanded" class="dhl-form">
+              <!-- DHL Aktivieren -->
+              <div class="form-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" [(ngModel)]="dhlForm.dhlEnabled" />
+                  <strong>{{ 'shipping.dhl.enabled' | translate }}</strong>
+                </label>
+              </div>
+
+              <div *ngIf="dhlForm.dhlEnabled">
+                <!-- Umgebung -->
+                <div class="form-section">
+                  <h4>⚙️ {{ 'shipping.dhl.credentials' | translate }}</h4>
+                  <div class="form-group">
+                    <label>{{ 'shipping.dhl.environment' | translate }} *</label>
+                    <select class="form-control" [(ngModel)]="dhlForm.dhlEnvironment">
+                      <option value="SANDBOX">{{ 'shipping.dhl.sandbox' | translate }}</option>
+                      <option value="PRODUCTION">{{ 'shipping.dhl.production' | translate }}</option>
+                    </select>
+                  </div>
+
+                  <div class="form-grid">
+                    <div class="form-group">
+                      <label>{{ 'shipping.dhl.clientId' | translate }}</label>
+                      <input type="text" class="form-control" [(ngModel)]="dhlForm.dhlClientId" 
+                             placeholder="abc123xyz" />
+                    </div>
+                    <div class="form-group">
+                      <label>{{ 'shipping.dhl.clientSecret' | translate }}</label>
+                      <input [type]="showDhlClientSecret ? 'text' : 'password'" class="form-control" 
+                             [(ngModel)]="dhlForm.dhlClientSecret" 
+                             [placeholder]="dhlForm.dhlClientSecret === '********' ? ('shipping.dhl.secretPlaceholder' | translate) : ''" />
+                      <button type="button" class="btn-show-secret" (click)="showDhlClientSecret = !showDhlClientSecret" 
+                              *ngIf="dhlForm.dhlClientSecret && dhlForm.dhlClientSecret !== '********'">
+                        {{ showDhlClientSecret ? '🙈' : '👁️' }}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="form-grid">
+                    <div class="form-group">
+                      <label>{{ 'shipping.dhl.username' | translate }}</label>
+                      <input type="text" class="form-control" [(ngModel)]="dhlForm.dhlUsername" />
+                    </div>
+                    <div class="form-group">
+                      <label>{{ 'shipping.dhl.password' | translate }}</label>
+                      <input [type]="showDhlPassword ? 'text' : 'password'" class="form-control" 
+                             [(ngModel)]="dhlForm.dhlPassword" 
+                             [placeholder]="dhlForm.dhlPassword === '********' ? ('shipping.dhl.secretPlaceholder' | translate) : ''" />
+                      <button type="button" class="btn-show-secret" (click)="showDhlPassword = !showDhlPassword"
+                              *ngIf="dhlForm.dhlPassword && dhlForm.dhlPassword !== '********'">
+                        {{ showDhlPassword ? '🙈' : '👁️' }}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label>{{ 'shipping.dhl.billingNumber' | translate }} *</label>
+                    <input type="text" class="form-control" [(ngModel)]="dhlForm.dhlBillingNumber" 
+                           placeholder="33333333330101" />
+                  </div>
+                </div>
+
+                <!-- Absenderadresse -->
+                <div class="form-section">
+                  <h4>🏢 {{ 'shipping.dhl.shipperAddress' | translate }}</h4>
+                  <div class="form-grid">
+                    <div class="form-group">
+                      <label>{{ 'shipping.dhl.shipperName' | translate }} *</label>
+                      <input type="text" class="form-control" [(ngModel)]="dhlForm.dhlShipperName" 
+                             placeholder="Mein Shop GmbH" />
+                    </div>
+                    <div class="form-group">
+                      <label>{{ 'shipping.dhl.email' | translate }}</label>
+                      <input type="email" class="form-control" [(ngModel)]="dhlForm.dhlShipperEmail" 
+                             placeholder="info@example.com" />
+                    </div>
+                  </div>
+
+                  <div class="form-grid cols-3">
+                    <div class="form-group col-span-2">
+                      <label>{{ 'shipping.dhl.street' | translate }} *</label>
+                      <input type="text" class="form-control" [(ngModel)]="dhlForm.dhlShipperStreet" 
+                             placeholder="Hauptstraße" />
+                    </div>
+                    <div class="form-group">
+                      <label>{{ 'shipping.dhl.houseNumber' | translate }} *</label>
+                      <input type="text" class="form-control" [(ngModel)]="dhlForm.dhlShipperHouseNumber" 
+                             placeholder="123" />
+                    </div>
+                  </div>
+
+                  <div class="form-grid cols-3">
+                    <div class="form-group">
+                      <label>{{ 'shipping.dhl.postalCode' | translate }} *</label>
+                      <input type="text" class="form-control" [(ngModel)]="dhlForm.dhlShipperPostalCode" 
+                             placeholder="12345" />
+                    </div>
+                    <div class="form-group">
+                      <label>{{ 'shipping.dhl.city' | translate }} *</label>
+                      <input type="text" class="form-control" [(ngModel)]="dhlForm.dhlShipperCity" 
+                             placeholder="Berlin" />
+                    </div>
+                    <div class="form-group">
+                      <label>{{ 'shipping.dhl.country' | translate }} *</label>
+                      <input type="text" class="form-control" [(ngModel)]="dhlForm.dhlShipperCountry" 
+                             placeholder="DE" maxlength="2" />
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label>{{ 'shipping.dhl.phone' | translate }}</label>
+                    <input type="tel" class="form-control" [(ngModel)]="dhlForm.dhlShipperPhone" 
+                           placeholder="+49 123 456789" />
+                  </div>
+                </div>
+
+                <!-- Standardpaket -->
+                <div class="form-section">
+                  <h4>📏 {{ 'shipping.dhl.defaultPackage' | translate }}</h4>
+                  <div class="form-grid cols-4">
+                    <div class="form-group">
+                      <label>{{ 'shipping.dhl.weightGrams' | translate }} *</label>
+                      <input type="number" class="form-control" [(ngModel)]="dhlForm.dhlDefaultWeightGrams" 
+                             placeholder="500" min="1" />
+                    </div>
+                    <div class="form-group">
+                      <label>{{ 'shipping.dhl.lengthMm' | translate }} *</label>
+                      <input type="number" class="form-control" [(ngModel)]="dhlForm.dhlDefaultLengthMm" 
+                             placeholder="300" min="1" />
+                    </div>
+                    <div class="form-group">
+                      <label>{{ 'shipping.dhl.widthMm' | translate }} *</label>
+                      <input type="number" class="form-control" [(ngModel)]="dhlForm.dhlDefaultWidthMm" 
+                             placeholder="200" min="1" />
+                    </div>
+                    <div class="form-group">
+                      <label>{{ 'shipping.dhl.heightMm' | translate }} *</label>
+                      <input type="number" class="form-control" [(ngModel)]="dhlForm.dhlDefaultHeightMm" 
+                             placeholder="150" min="1" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Aktionen -->
+                <div class="form-actions">
+                  <button class="btn btn-primary" (click)="saveDhlSettings()" [disabled]="dhlSaving">
+                    {{ dhlSaving ? ('common.saving' | translate) : ('common.save' | translate) }}
+                  </button>
+                  <button class="btn btn-outline" (click)="cancelDhlEdit()">
+                    {{ 'common.cancel' | translate }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -665,6 +856,41 @@ import {
     .price-value { font-weight: 700; font-size: 1rem; color: #667eea; }
     .delivery-count { font-size: 0.75rem; color: #6b7280; }
 
+    /* ─── DHL Form ─── */
+    .dhl-card { grid-column: span 2; max-width: none; }
+    @media (max-width: 768px) { .dhl-card { grid-column: span 1; } }
+    .dhl-form { display: flex; flex-direction: column; gap: 1.5rem; }
+    .dhl-form .form-section { padding-top: 1rem; border-top: 1px solid #f3f4f6; }
+    .dhl-form .form-section:first-of-type { border-top: none; padding-top: 0; }
+    .dhl-form .form-section h4 { margin: 0 0 1rem; font-size: 0.95rem; font-weight: 600; color: #374151; }
+    .dhl-form .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; }
+    .dhl-form .form-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .dhl-form .form-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+    .dhl-form .form-grid .col-span-2 { grid-column: span 2; }
+    .dhl-form .form-group { display: flex; flex-direction: column; gap: 0.3rem; position: relative; }
+    .dhl-form .form-group label { font-size: 0.78rem; font-weight: 600; color: #6b7280; }
+    .dhl-form .form-control {
+      width: 100%; padding: 0.55rem 0.8rem; border: 1px solid #d1d5db; border-radius: 8px;
+      font-size: 0.88rem; box-sizing: border-box; transition: border-color 0.2s;
+    }
+    .dhl-form .form-control:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); }
+    .dhl-form .btn-show-secret {
+      position: absolute; right: 0.5rem; top: 2rem;
+      background: none; border: none; font-size: 1.1rem; cursor: pointer; padding: 0.25rem 0.5rem;
+    }
+    .dhl-form .checkbox-label {
+      display: flex; align-items: center; gap: 0.5rem; font-weight: 600; font-size: 0.9rem; cursor: pointer;
+    }
+    .dhl-form .form-actions { 
+      display: flex; gap: 0.75rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; margin-top: 1rem;
+    }
+    @media (max-width: 768px) {
+      .dhl-form .form-grid { grid-template-columns: 1fr; }
+      .dhl-form .form-grid.cols-3,
+      .dhl-form .form-grid.cols-4 { grid-template-columns: 1fr; }
+      .dhl-form .form-grid .col-span-2 { grid-column: span 1; }
+    }
+
     /* ─── Modal ─── */
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 2rem; }
     .modal-box {
@@ -780,6 +1006,34 @@ export class DeliveryManagementComponent implements OnInit, OnDestroy {
   loading = true;
   error: string | null = null;
 
+  // DHL Form
+  dhlExpanded = false;
+  dhlSaving = false;
+  showDhlClientSecret = false;
+  showDhlPassword = false;
+  dhlForm: any = {
+    dhlEnabled: false,
+    dhlEnvironment: 'SANDBOX',
+    dhlClientId: '',
+    dhlClientSecret: '',
+    dhlUsername: '',
+    dhlPassword: '',
+    dhlBillingNumber: '',
+    dhlShipperName: '',
+    dhlShipperStreet: '',
+    dhlShipperHouseNumber: '',
+    dhlShipperPostalCode: '',
+    dhlShipperCity: '',
+    dhlShipperCountry: 'DE',
+    dhlShipperEmail: '',
+    dhlShipperPhone: '',
+    dhlDefaultWeightGrams: 500,
+    dhlDefaultLengthMm: 300,
+    dhlDefaultWidthMm: 200,
+    dhlDefaultHeightMm: 150
+  };
+  private originalDhlSecrets = { clientSecret: '', password: '' };
+
   // ─── Tab 2: Marktplatz ───
   marketplacePartners: DeliveryPartnerProfile[] = [];
   mpLoading = false;
@@ -853,6 +1107,7 @@ export class DeliveryManagementComponent implements OnInit, OnDestroy {
         this.settings = data.settings;
         this.providers = data.providers;
         this.zones = data.zones;
+        this.loadDhlFormFromSettings(data.settings);
         this.loading = false;
       },
       error: () => {
@@ -860,6 +1115,111 @@ export class DeliveryManagementComponent implements OnInit, OnDestroy {
         this.loading = false;
       }
     });
+  }
+
+  // ══════════════════════════════════════════════════
+  //  DHL METHODS
+  // ══════════════════════════════════════════════════
+
+  loadDhlFormFromSettings(settings: any): void {
+    if (!settings) return;
+    
+    // Load all DHL fields from settings
+    this.dhlForm = {
+      dhlEnabled: settings.dhlEnabled || false,
+      dhlEnvironment: settings.dhlEnvironment || 'SANDBOX',
+      dhlClientId: settings.dhlClientId || '',
+      dhlClientSecret: settings.dhlClientSecret || '', // Will be '********' if secret exists
+      dhlUsername: settings.dhlUsername || '',
+      dhlPassword: settings.dhlPassword || '', // Will be '********' if secret exists
+      dhlBillingNumber: settings.dhlBillingNumber || '',
+      dhlShipperName: settings.dhlShipperName || '',
+      dhlShipperStreet: settings.dhlShipperStreet || '',
+      dhlShipperHouseNumber: settings.dhlShipperHouseNumber || '',
+      dhlShipperPostalCode: settings.dhlShipperPostalCode || '',
+      dhlShipperCity: settings.dhlShipperCity || '',
+      dhlShipperCountry: settings.dhlShipperCountry || 'DE',
+      dhlShipperEmail: settings.dhlShipperEmail || '',
+      dhlShipperPhone: settings.dhlShipperPhone || '',
+      dhlDefaultWeightGrams: settings.dhlDefaultWeightGrams || 500,
+      dhlDefaultLengthMm: settings.dhlDefaultLengthMm || 300,
+      dhlDefaultWidthMm: settings.dhlDefaultWidthMm || 200,
+      dhlDefaultHeightMm: settings.dhlDefaultHeightMm || 150
+    };
+
+    // Remember if secrets were masked (so we don't send them back unchanged)
+    this.originalDhlSecrets = {
+      clientSecret: settings.dhlClientSecret || '',
+      password: settings.dhlPassword || ''
+    };
+  }
+
+  saveDhlSettings(): void {
+    // Validation
+    if (this.dhlForm.dhlEnabled) {
+      if (!this.dhlForm.dhlBillingNumber) {
+        this.toastService.error('Abrechnungsnummer ist erforderlich');
+        return;
+      }
+      if (!this.dhlForm.dhlShipperName || !this.dhlForm.dhlShipperStreet || 
+          !this.dhlForm.dhlShipperHouseNumber || !this.dhlForm.dhlShipperPostalCode || 
+          !this.dhlForm.dhlShipperCity || !this.dhlForm.dhlShipperCountry) {
+        this.toastService.error('Absenderadresse ist unvollständig');
+        return;
+      }
+      if (!this.dhlForm.dhlDefaultWeightGrams || !this.dhlForm.dhlDefaultLengthMm || 
+          !this.dhlForm.dhlDefaultWidthMm || !this.dhlForm.dhlDefaultHeightMm) {
+        this.toastService.error('Standardpaket-Maße sind erforderlich');
+        return;
+      }
+    }
+
+    this.dhlSaving = true;
+
+    // Build payload with secret handling
+    const payload: any = { ...this.settings };
+    Object.keys(this.dhlForm).forEach(key => {
+      // Special handling for secrets: don't send if unchanged (still masked '********')
+      if (key === 'dhlClientSecret') {
+        if (this.dhlForm[key] !== this.originalDhlSecrets.clientSecret) {
+          payload[key] = this.dhlForm[key]; // New value entered
+        }
+        // else: leave undefined or don't include (backend keeps existing)
+      } else if (key === 'dhlPassword') {
+        if (this.dhlForm[key] !== this.originalDhlSecrets.password) {
+          payload[key] = this.dhlForm[key]; // New value entered
+        }
+        // else: leave undefined or don't include (backend keeps existing)
+      } else {
+        payload[key] = this.dhlForm[key];
+      }
+    });
+
+    this.settingsService.updateDeliverySettings(this.storeId, payload).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (updated) => {
+        this.settings = updated;
+        this.loadDhlFormFromSettings(updated);
+        this.toastService.success('DHL-Einstellungen gespeichert');
+        this.dhlSaving = false;
+        this.dhlExpanded = false;
+        this.showDhlClientSecret = false;
+        this.showDhlPassword = false;
+      },
+      error: (err) => {
+        console.error('DHL save error:', err);
+        this.toastService.error('Fehler beim Speichern der DHL-Einstellungen');
+        this.dhlSaving = false;
+      }
+    });
+  }
+
+  cancelDhlEdit(): void {
+    this.loadDhlFormFromSettings(this.settings);
+    this.dhlExpanded = false;
+    this.showDhlClientSecret = false;
+    this.showDhlPassword = false;
   }
 
   editSettingsInline(): void { this.toastService.info('Settings-Dialog öffnen (bestehende Dialog-Komponente)'); }

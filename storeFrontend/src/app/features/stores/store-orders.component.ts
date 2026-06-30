@@ -9,6 +9,8 @@ import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { toDate } from '../../core/utils/date.utils';
 import { ResponsiveDataListComponent, ColumnConfig, ActionConfig } from '@app/shared/components/responsive-data-list/responsive-data-list.component';
 import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '@env/environment';
 
 @Component({
   selector: 'app-store-orders',
@@ -298,13 +300,32 @@ export class StoreOrdersComponent implements OnInit {
       icon: '👁️',
       label: 'Details',
       handler: (order) => this.navigateToOrder(order.id)
+    },
+    {
+      icon: '📦',
+      label: 'DHL Label',
+      handler: (order) => this.createDhlLabel(order),
+      visible: (order: Order) => !order.dhlShipmentNo && (order.status === 'PENDING' || order.status === 'CONFIRMED')
+    },
+    {
+      icon: '📄',
+      label: 'Label PDF',
+      handler: (order) => this.downloadDhlLabel(order),
+      visible: (order: Order) => !!order.dhlLabelUrl
+    },
+    {
+      icon: '🔍',
+      label: 'Tracking',
+      handler: (order) => this.openTracking(order),
+      visible: (order: Order) => !!order.trackingUrl
     }
   ];
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private orderService: OrderService
+    private orderService: OrderService,
+    private http: HttpClient
   ) {}
 
   ngOnInit(): void {
@@ -423,6 +444,49 @@ export class StoreOrdersComponent implements OnInit {
 
   getItemName(item: any): string {
     return item.productTitle || item.productName || item.name || 'Unbekanntes Produkt';
+  }
+
+  createDhlLabel(order: Order): void {
+    if (!confirm(`DHL-Label für Bestellung ${order.orderNumber} erstellen?`)) {
+      return;
+    }
+
+    this.loading = true;
+    const url = `${environment.apiUrl}/api/admin/orders/${order.id}/dhl/create-label`;
+
+    this.http.post<any>(url, {}).subscribe({
+      next: (response) => {
+        console.log('✅ DHL Label created:', response);
+        
+        // Idempotenz-Handling
+        if (response.status === 'ALREADY_EXISTS') {
+          alert(`DHL Label existiert bereits!\n\nSendungsnummer: ${response.shipmentNo}\n\nTracking: ${response.trackingUrl}`);
+        } else {
+          alert(`DHL Label erfolgreich erstellt!\n\nSendungsnummer: ${response.shipmentNo}\n\nTracking: ${response.trackingUrl}`);
+        }
+        
+        // Order neu laden
+        this.loadOrders();
+      },
+      error: (error) => {
+        console.error('❌ DHL Label creation failed:', error);
+        const message = error.error?.message || error.message || 'Unbekannter Fehler';
+        alert(`DHL Label-Erstellung fehlgeschlagen:\n\n${message}`);
+        this.loading = false;
+      }
+    });
+  }
+
+  downloadDhlLabel(order: Order): void {
+    if (order.dhlLabelUrl) {
+      window.open(order.dhlLabelUrl, '_blank');
+    }
+  }
+
+  openTracking(order: Order): void {
+    if (order.trackingUrl) {
+      window.open(order.trackingUrl, '_blank');
+    }
   }
 }
 

@@ -132,7 +132,7 @@ public class DhlShippingClient {
      * Create Shipment Label
      * POST /orders
      */
-    public DhlShipmentResponse createShipment(DhlShipmentRequest request) {
+    public DhlShipmentResponse createLabel(DhlShipmentRequest request) {
         if (!dhlProperties.isEnabled()) {
             throw new IllegalStateException("DHL Integration is disabled");
         }
@@ -180,7 +180,7 @@ public class DhlShippingClient {
         } catch (HttpClientErrorException.Unauthorized e) {
             log.warn("⚠️ DHL Token expired, retrying with fresh token...");
             dhlAuthClient.invalidateToken();
-            return createShipment(request); // Retry
+            return createLabel(request); // Retry
             
         } catch (HttpClientErrorException e) {
             log.error("❌ DHL Shipment creation failed with status {}: {}", 

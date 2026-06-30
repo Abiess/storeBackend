@@ -30,15 +30,15 @@ public class DhlLabelService {
     /**
      * Validate Shipment (ohne Label zu erstellen)
      * 
-     * @param orderId Order ID
+     * @param order Order Entity (mit eager-loaded Store)
      * @param currentUser Aktuell eingeloggter User
      * @return DHL Validation Response
      */
-    public DhlShipmentResponse validateShipment(Long orderId, User currentUser) {
+    public DhlShipmentResponse validateShipment(Order order, User currentUser) {
         // 1. Security: Store Owner Check
-        Order order = dhlSecurityHelper.checkOrderOwnership(orderId, currentUser);
+        dhlSecurityHelper.checkOrderOwnership(order, currentUser);
         
-        log.info("🔍 Validating DHL shipment for order {}", orderId);
+        log.info("🔍 Validating DHL shipment for order {}", order.getId());
         
         // 2. Build DHL Request
         DhlShipmentRequest request = buildShipmentRequest(order, false);
@@ -46,7 +46,33 @@ public class DhlLabelService {
         // 3. Call DHL Validate API
         DhlShipmentResponse response = dhlShippingClient.validateShipment(request);
         
-        log.info("✅ DHL validation completed for order {}", orderId);
+        log.info("✅ DHL validation completed for order {}", order.getId());
+        return response;
+    }
+    
+    /**
+     * Create Shipping Label
+     * Erstellt DHL Label und gibt Base64 PDF + Tracking zurück
+     * 
+     * @param order Order Entity (mit eager-loaded Store)
+     * @param currentUser Aktuell eingeloggter User
+     * @return DHL Label Response mit PDF
+     */
+    public DhlShipmentResponse createLabel(Order order, User currentUser) {
+        // 1. Security: Store Owner Check
+        dhlSecurityHelper.checkOrderOwnership(order, currentUser);
+        
+        log.info("📦 Creating DHL label for order {}", order.getId());
+        
+        // 2. Build DHL Request (mit Label-Erstellung)
+        DhlShipmentRequest request = buildShipmentRequest(order, true);
+        
+        // 3. Call DHL Create Label API
+        DhlShipmentResponse response = dhlShippingClient.createLabel(request);
+        
+        log.info("✅ DHL label created for order {} → Shipment No: {}", 
+            order.getId(), response.getShipmentNo());
+        
         return response;
     }
     

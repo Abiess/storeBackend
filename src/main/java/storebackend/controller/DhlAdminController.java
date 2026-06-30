@@ -7,12 +7,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import storebackend.config.DhlProperties;
 import storebackend.dto.dhl.DhlShipmentResponse;
+import storebackend.entity.Order;
 import storebackend.entity.User;
+import storebackend.repository.OrderRepository;
 import storebackend.service.dhl.DhlAuthClient;
 import storebackend.service.dhl.DhlLabelService;
+import storebackend.service.dhl.DhlOrderUpdateService;
 import storebackend.service.dhl.DhlShippingClient;
 
 import java.util.LinkedHashMap;
@@ -34,6 +38,8 @@ public class DhlAdminController {
     private final DhlAuthClient dhlAuthClient;
     private final DhlShippingClient dhlShippingClient;
     private final DhlLabelService dhlLabelService;
+    private final OrderRepository orderRepository;
+    private final DhlOrderUpdateService dhlOrderUpdateService;
     
     /**
      * Health Check: DHL Config + Auth + Shipping API
@@ -145,6 +151,7 @@ public class DhlAdminController {
      */
     @PostMapping("/api/admin/orders/{orderId}/dhl/validate")
     @PreAuthorize("isAuthenticated()")
+    @Transactional(readOnly = true)
     public ResponseEntity<?> validateShipment(
         @PathVariable Long orderId,
         @AuthenticationPrincipal User currentUser
@@ -157,10 +164,18 @@ public class DhlAdminController {
                 ));
             }
             
+            // Load Order with Store (innerhalb der Transaction)
+            Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalStateException("Order not found: " + orderId));
+            
+            // Initialisiere lazy-loaded Store
+            order.getStore().getId();
+            order.getStore().getOwner().getId();
+            
             log.info("🔍 Validating DHL shipment for order {} by user {}", 
                 orderId, currentUser.getEmail());
             
-            DhlShipmentResponse response = dhlLabelService.validateShipment(orderId, currentUser);
+            DhlShipmentResponse response = dhlLabelService.validateShipment(order, currentUser);
             
             Map<String, Object> result = new LinkedHashMap<>();
             result.put("orderId", orderId);
@@ -198,6 +213,101 @@ public class DhlAdminController {
             
         } catch (Exception e) {
             log.error("❌ DHL validation error for order {}", orderId, e);
+            return ResponseEntity.status(500).body(Map.of(
+                "error", "DHL_API_ERROR",
+                "message", e.getMessage()
+            ));
+        }
+    }
+    
+    /**
+     * Create DHL Shipping Label
+     * POST /api/admin/orders/{orderId}/dhl/create-label
+     * 
+     * Erstellt DHL Label, speichert PDF in MinIO und aktualisiert Order
+     * IDEMPOTENT: Wenn Label bereits existiert, wird vorhandenes zurückgegeben
+     */
+    @PostMapping("/api/admin/orders/{orderId}/dhl/create-label")
+    @PreAuthorize("isAuthenticated()")
+    @Transactional
+    public ResponseEntity<?> createLabel(
+        @PathVariable Long orderId,
+        @AuthenticationPrincipal User currentUser
+    ) {
+        try {
+            if (!dhlProperties.isEnabled()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "error", "DHL integration is disabled",
+                    "message", "Set DHL_ENABLED=true to activate"
+                ));
+            }
+            
+            // Load Order with Store
+            Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalStateException("Order not found: " + orderId));
+            
+            // Initialisiere lazy-loaded Store
+            order.getStore().getId();
+            order.getStore().getOwner().getId();
+            
+            // IDEMPOTENCY CHECK: Label bereits erstellt?
+            if (order.getDhlShipmentNo() != null && !order.getDhlShipmentNo().isBlank()) {
+                log.info("⚡ DHL label already exists for order {} (shipmentNo: {})", 
+                    orderId, order.getDhlShipmentNo());
+                
+                Map<String, Object> result = new LinkedHashMap<>();
+                result.put("orderId", orderId);
+                result.put("status", "ALREADY_EXISTS");
+                result.put("shipmentNo", order.getDhlShipmentNo());
+                result.put("trackingUrl", order.getTrackingUrl());
+                result.put("labelUrl", order.getDhlLabelUrl());
+                result.put("message", "DHL label already created for this order");
+                
+                return ResponseEntity.ok(result);
+            }
+            
+            log.info("📦 Creating DHL label for order {} by user {}", 
+                orderId, currentUser.getEmail());
+            
+            // 1. DHL Label erstellen
+            DhlShipmentResponse response = dhlLabelService.createLabel(order, currentUser);
+            
+            // 2. PDF zu MinIO + Order aktualisieren
+            dhlOrderUpdateService.saveLabelAndUpdateOrder(order, response);
+            
+            // 3. Response vorbereiten (OHNE Base64!)
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("orderId", orderId);
+            result.put("status", "SUCCESS");
+            result.put("shipmentNo", response.getShipmentNo());
+            result.put("trackingUrl", order.getTrackingUrl());
+            result.put("labelUrl", order.getDhlLabelUrl());
+            result.put("routingCode", response.getRoutingCode());
+            
+            // Validation Messages (Warnings)
+            if (response.getValidationMessages() != null && !response.getValidationMessages().isEmpty()) {
+                result.put("validationMessages", response.getValidationMessages());
+            }
+            
+            log.info("✅ DHL label created successfully for order {}", orderId);
+            return ResponseEntity.ok(result);
+            
+        } catch (AccessDeniedException e) {
+            log.warn("❌ Access denied: {}", e.getMessage());
+            return ResponseEntity.status(403).body(Map.of(
+                "error", "ACCESS_DENIED",
+                "message", e.getMessage()
+            ));
+            
+        } catch (IllegalStateException e) {
+            log.error("❌ Label creation failed: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of(
+                "error", "VALIDATION_ERROR",
+                "message", e.getMessage()
+            ));
+            
+        } catch (Exception e) {
+            log.error("❌ DHL label creation error for order {}", orderId, e);
             return ResponseEntity.status(500).body(Map.of(
                 "error", "DHL_API_ERROR",
                 "message", e.getMessage()

@@ -301,7 +301,11 @@
     "poweredBy": "Propulsé par markt.ma",
     "saveChanges": "Enregistrer les modifications",
     "reset": "Réinitialiser",
-    "addAddress": "Ajouter une adresse"
+    "addAddress": "Ajouter une adresse",
+    "active": "Actif",
+    "inactive": "Inactif",
+    "expand": "Développer",
+    "collapse": "Réduire"
   },
   "loading": {
     "orders": "Chargement des commandes..."
@@ -811,7 +815,46 @@
     "quantity": "Quantité",
     "price": "Prix",
     "grandTotal": "Total général",
-    "searchPlaceholder": "Rechercher par numéro de commande ou e-mail..."
+    "searchPlaceholder": "Rechercher par numéro de commande ou e-mail...",
+    "dhlCreateLabel": "Créer une étiquette DHL",
+    "dhlLabelCreated": "Étiquette DHL créée avec succès !",
+    "dhlShipmentNumber": "Numéro d'expédition",
+    "dhlTracking": "Suivi",
+    "dhlLabelCreationFailed": "Impossible de créer l'étiquette DHL",
+    "dhlConfirmCreate": "Créer une étiquette DHL pour cette commande ?"
+  },
+  "shipping": {
+    "dhl": {
+      "title": "Expédition DHL",
+      "enabled": "Activer DHL",
+      "environment": "Environnement",
+      "sandbox": "Sandbox (Test)",
+      "production": "Production (Live)",
+      "credentials": "Identifiants",
+      "clientId": "Client ID",
+      "clientSecret": "Client Secret",
+      "username": "Nom d'utilisateur DHL",
+      "password": "Mot de passe DHL",
+      "billingNumber": "Numéro de facturation",
+      "shipperAddress": "Adresse de l'expéditeur",
+      "shipperName": "Nom de l'entreprise",
+      "street": "Rue",
+      "houseNumber": "Numéro de maison",
+      "postalCode": "Code postal",
+      "city": "Ville",
+      "country": "Pays (code ISO)",
+      "email": "E-mail",
+      "phone": "Téléphone",
+      "defaultPackage": "Colis standard",
+      "weightGrams": "Poids (g)",
+      "lengthMm": "Longueur (mm)",
+      "widthMm": "Largeur (mm)",
+      "heightMm": "Hauteur (mm)",
+      "secretPlaceholder": "Déjà enregistré – laisser vide pour conserver",
+      "saved": "Paramètres DHL enregistrés",
+      "saveError": "Erreur lors de l'enregistrement",
+      "notConfigured": "DHL pas encore configuré"
+    }
   },
   "sidebar": {
     "categories": "Catégories",

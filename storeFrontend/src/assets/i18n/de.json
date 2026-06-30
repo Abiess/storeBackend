@@ -419,7 +419,11 @@
     "poweredBy": "Powered by markt.ma",
     "saveChanges": "Änderungen speichern",
     "reset": "Zurücksetzen",
-    "addAddress": "Adresse hinzufügen"
+    "addAddress": "Adresse hinzufügen",
+    "active": "Aktiv",
+    "inactive": "Inaktiv",
+    "expand": "Erweitern",
+    "collapse": "Einklappen"
   },
   "loading": {
     "orders": "Bestellungen werden geladen..."
@@ -1029,7 +1033,46 @@
     "quantity": "Menge",
     "price": "Preis",
     "grandTotal": "Gesamtsumme",
-    "searchPlaceholder": "Nach Bestellnummer oder E-Mail suchen..."
+    "searchPlaceholder": "Nach Bestellnummer oder E-Mail suchen...",
+    "dhlCreateLabel": "DHL-Label erstellen",
+    "dhlLabelCreated": "DHL-Label erfolgreich erstellt!",
+    "dhlShipmentNumber": "Sendungsnummer",
+    "dhlTracking": "Tracking",
+    "dhlLabelCreationFailed": "DHL-Label konnte nicht erstellt werden",
+    "dhlConfirmCreate": "DHL-Label für diese Bestellung erstellen?"
+  },
+  "shipping": {
+    "dhl": {
+      "title": "DHL Versand",
+      "enabled": "DHL aktivieren",
+      "environment": "Umgebung",
+      "sandbox": "Sandbox (Test)",
+      "production": "Production (Live)",
+      "credentials": "Zugangsdaten",
+      "clientId": "Client ID",
+      "clientSecret": "Client Secret",
+      "username": "DHL Benutzername",
+      "password": "DHL Passwort",
+      "billingNumber": "Abrechnungsnummer",
+      "shipperAddress": "Absenderadresse",
+      "shipperName": "Firmenname",
+      "street": "Straße",
+      "houseNumber": "Hausnummer",
+      "postalCode": "PLZ",
+      "city": "Stadt",
+      "country": "Land (ISO-Code)",
+      "email": "E-Mail",
+      "phone": "Telefon",
+      "defaultPackage": "Standardpaket",
+      "weightGrams": "Gewicht (g)",
+      "lengthMm": "Länge (mm)",
+      "widthMm": "Breite (mm)",
+      "heightMm": "Höhe (mm)",
+      "secretPlaceholder": "Bereits gespeichert – leer lassen, um beizubehalten",
+      "saved": "DHL-Einstellungen gespeichert",
+      "saveError": "Fehler beim Speichern",
+      "notConfigured": "DHL noch nicht konfiguriert"
+    }
   },
   "sidebar": {
     "categories": "Kategorien",

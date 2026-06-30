@@ -50,6 +50,13 @@ public class Order {
 
     @Column(name = "tracking_url", length = 500)
     private String trackingUrl;
+    
+    // DHL Integration Fields
+    @Column(name = "dhl_shipment_no", length = 100)
+    private String dhlShipmentNo;
+    
+    @Column(name = "dhl_label_url", length = 500)
+    private String dhlLabelUrl;
 
     @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount;

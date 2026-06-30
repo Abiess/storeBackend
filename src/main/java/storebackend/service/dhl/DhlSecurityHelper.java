@@ -28,28 +28,29 @@ public class DhlSecurityHelper {
     /**
      * Prüft ob der aktuelle User der Owner der Bestellung ist
      * 
-     * @param orderId Order ID
+     * @param order Order Entity
      * @param currentUser Aktuell eingeloggter User
      * @throws AccessDeniedException wenn User nicht der Store Owner ist
-     * @return Order Entity wenn authorized
      */
-    public Order checkOrderOwnership(Long orderId, User currentUser) {
-        Order order = orderRepository.findById(orderId)
-            .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+    public void checkOrderOwnership(Order order, User currentUser) {
+        // Platform Admin darf alles
+        if (isPlatformAdmin(currentUser)) {
+            log.debug("✅ Platform Admin access granted for order {}", order.getId());
+            return;
+        }
         
         Long storeOwnerId = order.getStore().getOwner().getId();
         Long currentUserId = currentUser.getId();
         
         if (!storeOwnerId.equals(currentUserId)) {
             log.warn("❌ Access denied: User {} tried to access order {} (belongs to user {})",
-                currentUserId, orderId, storeOwnerId);
+                currentUserId, order.getId(), storeOwnerId);
             throw new AccessDeniedException(
                 "You are not authorized to create DHL labels for this order"
             );
         }
         
-        log.debug("✅ Access granted: User {} owns store of order {}", currentUserId, orderId);
-        return order;
+        log.debug("✅ Access granted: User {} owns store of order {}", currentUserId, order.getId());
     }
     
     /**

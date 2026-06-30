@@ -376,6 +376,11 @@ export interface Order {
   trackingNumber?: string;
   trackingCarrier?: string;
   trackingUrl?: string;
+  
+  // DHL Integration Fields
+  dhlShipmentNo?: string;
+  dhlLabelUrl?: string;
+  
   paymentMethod?: string; // CASH_ON_DELIVERY, BANK_TRANSFER, CREDIT_CARD, PAYPAL
   phoneVerificationId?: number;
   phoneVerified?: boolean;

@@ -300,7 +300,11 @@
     "poweredBy": "Powered by markt.ma",
     "saveChanges": "Save changes",
     "reset": "Reset",
-    "addAddress": "Add address"
+    "addAddress": "Add address",
+    "active": "Active",
+    "inactive": "Inactive",
+    "expand": "Expand",
+    "collapse": "Collapse"
   },
   "loading": {
     "orders": "Loading orders..."
@@ -810,7 +814,46 @@
     "quantity": "Quantity",
     "price": "Price",
     "grandTotal": "Grand total",
-    "searchPlaceholder": "Search by order number or email..."
+    "searchPlaceholder": "Search by order number or email...",
+    "dhlCreateLabel": "Create DHL label",
+    "dhlLabelCreated": "DHL label created successfully!",
+    "dhlShipmentNumber": "Shipment number",
+    "dhlTracking": "Tracking",
+    "dhlLabelCreationFailed": "Could not create DHL label",
+    "dhlConfirmCreate": "Create DHL label for this order?"
+  },
+  "shipping": {
+    "dhl": {
+      "title": "DHL Shipping",
+      "enabled": "Enable DHL",
+      "environment": "Environment",
+      "sandbox": "Sandbox (Test)",
+      "production": "Production (Live)",
+      "credentials": "Credentials",
+      "clientId": "Client ID",
+      "clientSecret": "Client Secret",
+      "username": "DHL Username",
+      "password": "DHL Password",
+      "billingNumber": "Billing Number",
+      "shipperAddress": "Shipper Address",
+      "shipperName": "Company Name",
+      "street": "Street",
+      "houseNumber": "House Number",
+      "postalCode": "Postal Code",
+      "city": "City",
+      "country": "Country (ISO code)",
+      "email": "Email",
+      "phone": "Phone",
+      "defaultPackage": "Default Package",
+      "weightGrams": "Weight (g)",
+      "lengthMm": "Length (mm)",
+      "widthMm": "Width (mm)",
+      "heightMm": "Height (mm)",
+      "secretPlaceholder": "Already saved – leave blank to keep",
+      "saved": "DHL settings saved",
+      "saveError": "Error saving settings",
+      "notConfigured": "DHL not configured yet"
+    }
   },
   "sidebar": {
     "categories": "Categories",
