@@ -186,7 +186,7 @@ export class AdminSidebarComponent implements OnInit {
                         icon: 'truck',
                         route: `${baseRoute}/delivery`,
                         requiresStore: true,
-                        visible: false   // Lieferung wird zentral vom Platform-Admin verwaltet
+                        visible: true   // DHL-Integration: Store-spezifische Liefereinstellungen wieder aktiviert
                     },
                     {
                         labelKey: 'sidebarAdmin.items.seo',
