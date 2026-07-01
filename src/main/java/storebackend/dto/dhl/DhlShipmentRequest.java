@@ -76,7 +76,7 @@ public class DhlShipmentRequest {
         private String city;
         
         @JsonProperty("country")
-        private Country country;
+        private String country;  // ISO 3166-1 alpha-3: "DEU", "AUT", etc.
         
         @JsonProperty("contactName")
         private String contactName;  // Optional
@@ -86,14 +86,6 @@ public class DhlShipmentRequest {
         
         @JsonProperty("phone")
         private String phone;  // Optional
-    }
-    
-    @Data
-    @Builder
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class Country {
-        @JsonProperty("countryISOCode")
-        private String countryISOCode;  // "DE", "AT", etc.
     }
     
     @Data

@@ -92,18 +92,15 @@ public class DhlLabelService {
         // Shipment Details (Gewicht, Dimensionen)
         DhlShipmentRequest.Details details = buildShipmentDetails(order);
         
-        // Ship Date (heute oder morgen)
-        String shipDate = LocalDate.now().plusDays(1).format(DateTimeFormatter.ISO_LOCAL_DATE);
-        
         // Reference Number (für Tracking)
         String refNo = "MARKTMA-" + order.getId();
         
+        // MINIMAL-MODE: Kein shipDate! (funktionierender cURL hatte das nicht)
         // Build Shipment
         DhlShipmentRequest.Shipment shipment = DhlShipmentRequest.Shipment.builder()
             .product(dhlProperties.getDefaultProduct())
             .billingNumber(dhlProperties.getDefaultBillingNumber())
             .refNo(refNo)
-            .shipDate(shipDate)
             .shipper(shipper)
             .consignee(consignee)
             .details(details)
@@ -119,6 +116,7 @@ public class DhlLabelService {
     /**
      * Build Shipper Address (Store als Absender)
      * Falls Store keine Adresse hat → Sandbox Fallback
+     * MINIMAL-MODE: Nur notwendige Felder!
      */
     private DhlShipmentRequest.Address buildShipperAddress(Store store) {
         // TODO: Store Entity hat noch keine Address-Felder!
@@ -128,27 +126,18 @@ public class DhlLabelService {
             log.warn("⚠️ Using sandbox shipper address for store {} (no real address configured)", 
                 store.getId());
             
-            DhlShipmentRequest.Address.AddressBuilder builder = DhlShipmentRequest.Address.builder()
+            // MINIMAL: Nur die Felder aus dem funktionierenden cURL-Test
+            return DhlShipmentRequest.Address.builder()
                 .name1(dhlProperties.getSandboxShipperName())
                 .addressStreet(dhlProperties.getSandboxShipperStreet())
                 .addressHouse(dhlProperties.getSandboxShipperHouseNumber())
                 .postalCode(dhlProperties.getSandboxShipperPostalCode())
                 .city(dhlProperties.getSandboxShipperCity())
-                .country(DhlShipmentRequest.Country.builder()
-                    .countryISOCode(mapCountryCode(dhlProperties.getSandboxShipperCountry()))
-                    .build());
-            
-            // Optional: contactName nur wenn vorhanden
-            if (store.getOwner() != null && store.getOwner().getName() != null) {
-                builder.contactName(store.getOwner().getName());
-            }
-            
-            // Optional: email nur wenn vorhanden
-            if (store.getOwner() != null && store.getOwner().getEmail() != null) {
-                builder.email(store.getOwner().getEmail());
-            }
-            
-            return builder.build();
+                .country(mapCountryCode(dhlProperties.getSandboxShipperCountry()))
+                .email(store.getOwner() != null && store.getOwner().getEmail() != null 
+                    ? store.getOwner().getEmail() 
+                    : "test@example.com")
+                .build();
         }
         
         // Production: Echte Store-Adresse erforderlich
@@ -197,34 +186,19 @@ public class DhlLabelService {
         
         String fullName = (shippingAddress.getFirstName() + " " + shippingAddress.getLastName()).trim();
         
-        // DHL Builder - NUR nicht-null Werte setzen!
+        // MINIMAL-MODE: Nur die Felder aus dem funktionierenden cURL-Test
+        // Keine optionalen Felder wie name2, contactName, phone!
         DhlShipmentRequest.Address.AddressBuilder builder = DhlShipmentRequest.Address.builder()
             .name1(fullName)
             .addressStreet(street)
             .addressHouse(houseNumber)
             .postalCode(shippingAddress.getPostalCode())
             .city(shippingAddress.getCity())
-            .country(DhlShipmentRequest.Country.builder()
-                .countryISOCode(mapCountryCode(shippingAddress.getCountry()))
-                .build())
-            .contactName(fullName);
+            .country(mapCountryCode(shippingAddress.getCountry()));
         
-        // Optional: name2 (nur wenn vorhanden)
-        if (shippingAddress.getAddress2() != null && !shippingAddress.getAddress2().isBlank()) {
-            builder.name2(shippingAddress.getAddress2());
-        }
-        
-        // Optional: Email (nur wenn vorhanden)
+        // Email: Nur wenn vorhanden
         if (order.getCustomerEmail() != null && !order.getCustomerEmail().isBlank()) {
             builder.email(order.getCustomerEmail());
-        }
-        
-        // Optional: Phone (nur wenn vorhanden UND gültiges Format)
-        if (shippingAddress.getPhone() != null && !shippingAddress.getPhone().isBlank()) {
-            String phone = normalizePhoneNumber(shippingAddress.getPhone());
-            if (phone != null) {
-                builder.phone(phone);
-            }
         }
         
         return builder.build();

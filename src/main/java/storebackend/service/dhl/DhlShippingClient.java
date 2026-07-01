@@ -157,10 +157,10 @@ public class DhlShippingClient {
                 maskBillingNumber(shipment.getBillingNumber()),
                 shipper.getPostalCode(),
                 shipper.getCity(),
-                shipper.getCountry().getCountryISOCode(),
+                shipper.getCountry(),
                 consignee.getPostalCode(),
                 consignee.getCity(),
-                consignee.getCountry().getCountryISOCode(),
+                consignee.getCountry(),
                 details.getWeight().getValue(),
                 details.getWeight().getUom(),
                 details.getDim().getLength(),
@@ -169,6 +169,39 @@ public class DhlShippingClient {
                 details.getDim().getUom(),
                 dhlProperties.getEnv()
             );
+            
+            // DEBUG: Structural dump (Feldtypen, keine Werte!)
+            log.debug("🔍 DHL Request Structure:");
+            log.debug("  profile={} (String)", request.getProfile());
+            log.debug("  shipments[0].product={} (String)", shipment.getProduct());
+            log.debug("  shipments[0].billingNumber=***0102 (String, length={})", 
+                shipment.getBillingNumber().length());
+            log.debug("  shipments[0].refNo={} (String)", shipment.getRefNo());
+            log.debug("  shipments[0].shipDate={} ({})", 
+                shipment.getShipDate() != null ? "set" : "null",
+                shipment.getShipDate() != null ? "String" : "omitted");
+            log.debug("  shipments[0].shipper.name1={} (String, length={})", 
+                shipper.getName1() != null ? "set" : "null",
+                shipper.getName1() != null ? shipper.getName1().length() : 0);
+            log.debug("  shipments[0].shipper.country={} ({})", 
+                shipper.getCountry(),
+                shipper.getCountry() != null ? "String" : "null");
+            log.debug("  shipments[0].shipper.email={} ({})", 
+                shipper.getEmail() != null ? "set" : "null",
+                shipper.getEmail() != null ? "String" : "omitted");
+            log.debug("  shipments[0].consignee.country={} ({})", 
+                consignee.getCountry(),
+                consignee.getCountry() != null ? "String" : "null");
+            log.debug("  shipments[0].details.weight.value={} ({})", 
+                details.getWeight().getValue(),
+                details.getWeight().getValue().getClass().getSimpleName());
+            log.debug("  shipments[0].details.weight.uom={} (String)", 
+                details.getWeight().getUom());
+            log.debug("  shipments[0].details.dim.height={} ({})", 
+                details.getDim().getHeight(),
+                details.getDim().getHeight().getClass().getSimpleName());
+            log.debug("  shipments[0].details.dim.uom={} (String)", 
+                details.getDim().getUom());
             
             ResponseEntity<DhlShipmentResponse> response = restTemplate.exchange(
                 url,
