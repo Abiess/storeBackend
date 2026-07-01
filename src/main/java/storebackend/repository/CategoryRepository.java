@@ -14,5 +14,8 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
     List<Category> findByParentIdOrderBySortOrderAsc(Long parentId);
     Optional<Category> findBySlug(String slug);
     boolean existsByStoreIdAndSlug(Long storeId, String slug);
+    
+    // WooCommerce Import: Duplikat-Check
+    Optional<Category> findByStoreIdAndExternalSourceAndExternalId(Long storeId, String externalSource, String externalId);
 }
 

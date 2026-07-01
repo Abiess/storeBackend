@@ -48,6 +48,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     // Trending Products (meistgesehen) - WITH JOIN FETCH
     @Query("SELECT p FROM Product p LEFT JOIN FETCH p.category WHERE p.store = :store ORDER BY p.viewCount DESC")
     List<Product> findTop10ByStoreOrderByViewCountDesc(@Param("store") Store store);
+    
+    // WooCommerce Import: Duplikat-Check
+    Optional<Product> findByStoreIdAndExternalSourceAndExternalId(Long storeId, String externalSource, String externalId);
+    Optional<Product> findByStoreIdAndSku(Long storeId, String sku);
 
     @Query("SELECT p FROM Product p LEFT JOIN FETCH p.category WHERE p.store.id = :storeId ORDER BY p.viewCount DESC")
     List<Product> findTop10ByStoreIdOrderByViewCountDesc(@Param("storeId") Long storeId);

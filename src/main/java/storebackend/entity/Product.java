@@ -112,6 +112,40 @@ public class Product {
     @Column(name = "telegram_msg_id")
     private Long telegramMsgId;
 
+    // ── Generic External Import Fields ──────────────────────────────────────
+
+    /**
+     * Import-Quelle: WOOCOMMERCE | SHOPIFY | TELEGRAM | MANUAL | etc.
+     * Null = manuell angelegt
+     */
+    @Column(name = "external_source", length = 50)
+    private String externalSource;
+
+    /**
+     * Externe Produkt-ID aus Quellsystem (z.B. WooCommerce Product ID)
+     * Für Re-Import & Deduplizierung
+     */
+    @Column(name = "external_id", length = 100)
+    private String externalId;
+
+    /**
+     * Externe SKU aus Quellsystem (für Duplikat-Check)
+     */
+    @Column(name = "external_sku", length = 255)
+    private String externalSku;
+
+    /**
+     * Shop-URL des externen Systems (z.B. https://shop.example.com)
+     */
+    @Column(name = "external_store_url", length = 500)
+    private String externalStoreUrl;
+
+    /**
+     * Letzter Import-Zeitpunkt (für Update-Tracking)
+     */
+    @Column(name = "last_imported_at")
+    private LocalDateTime lastImportedAt;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

@@ -66,6 +66,32 @@ public class ProductVariant {
     @Column(columnDefinition = "TEXT")
     private String attributesJson;
 
+    // ── Generic External Import Fields ──────────────────────────────────────
+
+    /**
+     * Import-Quelle: WOOCOMMERCE | SHOPIFY | TELEGRAM | MANUAL | etc.
+     */
+    @Column(name = "external_source", length = 50)
+    private String externalSource;
+
+    /**
+     * Externe Varianten-ID aus Quellsystem (z.B. WooCommerce Variation ID)
+     */
+    @Column(name = "external_id", length = 100)
+    private String externalId;
+
+    /**
+     * Externe SKU aus Quellsystem
+     */
+    @Column(name = "external_sku", length = 255)
+    private String externalSku;
+
+    /**
+     * Letzter Import-Zeitpunkt
+     */
+    @Column(name = "last_imported_at")
+    private java.time.LocalDateTime lastImportedAt;
+
 
     // Explizite Getter/Setter für Lombok-Kompatibilität
     public Long getId() {
