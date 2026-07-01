@@ -237,24 +237,23 @@ public class PublicStoreCreationController {
     ) {}
 
     private String buildUniqueSlug(String requestedSlug, String storeName) {
-        String base;
+        String slug;
         if (requestedSlug != null && !requestedSlug.isBlank()) {
-            base = requestedSlug.toLowerCase().replaceAll("[^a-z0-9-]", "-").replaceAll("-+", "-");
+            slug = requestedSlug.toLowerCase().replaceAll("[^a-z0-9-]", "-").replaceAll("-+", "-");
         } else {
-            base = storeName.toLowerCase()
+            slug = storeName.toLowerCase()
                 .replaceAll("[^a-z0-9\\s-]", "")
                 .trim()
                 .replaceAll("[\\s-]+", "-")
                 .substring(0, Math.min(30, storeName.length()));
-            if (base.isBlank()) base = "store";
+            if (slug.isBlank()) slug = "store";
         }
 
-        String slug = base;
-        int attempt = 0;
-        while (storeRepository.existsBySlug(slug)) {
-            attempt++;
-            slug = base + "-" + attempt;
+        // Prüfen ob Slug bereits existiert
+        if (storeRepository.existsBySlug(slug)) {
+            throw new RuntimeException("Slug '" + slug + "' already exists. Please choose a different name.");
         }
+        
         return slug;
     }
 }
