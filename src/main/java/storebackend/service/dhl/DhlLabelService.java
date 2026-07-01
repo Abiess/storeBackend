@@ -135,7 +135,7 @@ public class DhlLabelService {
                 .postalCode(dhlProperties.getSandboxShipperPostalCode())
                 .city(dhlProperties.getSandboxShipperCity())
                 .country(DhlShipmentRequest.Country.builder()
-                    .countryISOCode(dhlProperties.getSandboxShipperCountry())
+                    .countryISOCode(mapCountryCode(dhlProperties.getSandboxShipperCountry()))
                     .build());
             
             // Optional: contactName nur wenn vorhanden
@@ -205,7 +205,7 @@ public class DhlLabelService {
             .postalCode(shippingAddress.getPostalCode())
             .city(shippingAddress.getCity())
             .country(DhlShipmentRequest.Country.builder()
-                .countryISOCode(shippingAddress.getCountry()) // "DE", "AT", etc.
+                .countryISOCode(mapCountryCode(shippingAddress.getCountry()))
                 .build())
             .contactName(fullName);
         
@@ -265,9 +265,13 @@ public class DhlLabelService {
         // TODO: Order/Product Entity hat noch keine weight/dimensions Felder!
         // Für jetzt: Default-Werte aus Properties verwenden
         
+        // Gewicht: Properties speichert in Gramm, DHL erwartet kg als Integer
+        int weightGrams = dhlProperties.getDefaultWeightGrams();
+        int weightKg = Math.max(1, weightGrams / 1000); // Gramm → kg, mindestens 1
+        
         DhlShipmentRequest.Weight weight = DhlShipmentRequest.Weight.builder()
-            .uom("g") // Gramm
-            .value(dhlProperties.getDefaultWeightGrams())
+            .uom("kg") // ← WICHTIG: DHL Sandbox erwartet "kg", nicht "g"!
+            .value(weightKg) // DHL erwartet Integer für kg
             .build();
         
         DhlShipmentRequest.Dimensions dimensions = DhlShipmentRequest.Dimensions.builder()
@@ -281,5 +285,38 @@ public class DhlLabelService {
             .weight(weight)
             .dim(dimensions)
             .build();
+    }
+    
+    /**
+     * Map country codes to DHL format
+     * DHL erwartet ISO 3166-1 alpha-3 Codes (DEU, AUT, CHE)
+     * UI speichert ISO 3166-1 alpha-2 (DE, AT, CH)
+     */
+    private String mapCountryCode(String countryCode) {
+        if (countryCode == null || countryCode.isBlank()) {
+            return "DEU"; // Default Deutschland
+        }
+        
+        // Map alpha-2 → alpha-3
+        return switch (countryCode.toUpperCase()) {
+            case "DE" -> "DEU";
+            case "AT" -> "AUT";
+            case "CH" -> "CHE";
+            case "FR" -> "FRA";
+            case "NL" -> "NLD";
+            case "BE" -> "BEL";
+            case "LU" -> "LUX";
+            case "IT" -> "ITA";
+            case "ES" -> "ESP";
+            case "PL" -> "POL";
+            case "CZ" -> "CZE";
+            case "DK" -> "DNK";
+            case "SE" -> "SWE";
+            case "NO" -> "NOR";
+            default -> {
+                log.warn("⚠️ Unknown country code '{}', using DEU as fallback", countryCode);
+                yield "DEU";
+            }
+        };
     }
 }

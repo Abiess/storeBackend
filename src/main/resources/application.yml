@@ -168,7 +168,7 @@ dhl:
   default-weight-grams: ${DHL_DEFAULT_WEIGHT_GRAMS:1000}
   default-length-mm: ${DHL_DEFAULT_LENGTH_MM:300}
   default-width-mm: ${DHL_DEFAULT_WIDTH_MM:200}
-  default-height-mm: ${DHL_DEFAULT_HEIGHT_MM:150}
+  default-height-mm: ${DHL_DEFAULT_HEIGHT_MM:100}
   # Sandbox Fallback Shipper Address (für Tests ohne Store-Adresse)
   sandbox-shipper-name: ${DHL_SANDBOX_SHIPPER_NAME:Test Store}
   sandbox-shipper-street: ${DHL_SANDBOX_SHIPPER_STREET:Musterstraße}

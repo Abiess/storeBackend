@@ -144,17 +144,31 @@ public class DhlShippingClient {
             HttpHeaders headers = createHeaders(token);
             HttpEntity<DhlShipmentRequest> httpRequest = new HttpEntity<>(request, headers);
             
-            log.info("📦 Creating DHL shipment for refNo: {}", 
-                request.getShipments().get(0).getRefNo());
+            // Sanitized logging (NO personal data!)
+            DhlShipmentRequest.Shipment shipment = request.getShipments().get(0);
+            DhlShipmentRequest.Address shipper = shipment.getShipper();
+            DhlShipmentRequest.Address consignee = shipment.getConsignee();
+            DhlShipmentRequest.Details details = shipment.getDetails();
             
-            // DEBUG: Log Request Body
-            try {
-                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-                String requestJson = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(request);
-                log.info("🔍 DHL Request Body:\n{}", requestJson);
-            } catch (Exception e) {
-                log.warn("Could not serialize request for logging: {}", e.getMessage());
-            }
+            log.info("📦 Creating DHL shipment: refNo={}, product={}, billingNumber={}, " +
+                    "shipper={}/{}/{}, consignee={}/{}/{}, weight={}{}, dim={}x{}x{}{}, env={}",
+                shipment.getRefNo(),
+                shipment.getProduct(),
+                maskBillingNumber(shipment.getBillingNumber()),
+                shipper.getPostalCode(),
+                shipper.getCity(),
+                shipper.getCountry().getCountryISOCode(),
+                consignee.getPostalCode(),
+                consignee.getCity(),
+                consignee.getCountry().getCountryISOCode(),
+                details.getWeight().getValue(),
+                details.getWeight().getUom(),
+                details.getDim().getLength(),
+                details.getDim().getWidth(),
+                details.getDim().getHeight(),
+                details.getDim().getUom(),
+                dhlProperties.getEnv()
+            );
             
             ResponseEntity<DhlShipmentResponse> response = restTemplate.exchange(
                 url,
@@ -194,12 +208,39 @@ public class DhlShippingClient {
         } catch (HttpClientErrorException e) {
             log.error("❌ DHL Shipment creation failed with status {}: {}", 
                 e.getStatusCode(), e.getResponseBodyAsString());
-            throw new RuntimeException("DHL Shipment creation failed: " + e.getMessage(), e);
+            
+            // Parse DHL error response if possible
+            String dhlError = "DHL Shipment creation failed";
+            String dhlDetail = e.getResponseBodyAsString();
+            
+            try {
+                // DHL errors have format: {"title":"...", "detail":"...", "status":400}
+                if (dhlDetail != null && dhlDetail.contains("\"detail\"")) {
+                    dhlError = "DHL API validation failed";
+                }
+            } catch (Exception ignored) {
+                // Falls Parsing fehlschlägt, Original-Message verwenden
+            }
+            
+            throw new RuntimeException(dhlError + ": " + e.getStatusCode() + " " + 
+                e.getStatusText() + " on " + e.getClass().getSimpleName().replace("HttpClientErrorException$", "") + 
+                " request for \"" + dhlProperties.getShippingBaseUrl() + "/orders\": \"" + 
+                dhlDetail + "\"", e);
             
         } catch (RestClientException e) {
             log.error("❌ DHL Shipping API Error: {}", e.getMessage());
             throw new RuntimeException("DHL Shipping API Error", e);
         }
+    }
+    
+    /**
+     * Mask billing number for logging (show only last 4 digits)
+     */
+    private String maskBillingNumber(String billingNumber) {
+        if (billingNumber == null || billingNumber.length() <= 4) {
+            return "****";
+        }
+        return "**********" + billingNumber.substring(billingNumber.length() - 4);
     }
     
     /**
