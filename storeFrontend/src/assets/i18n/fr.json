@@ -1821,6 +1821,8 @@
     "step2": {
       "title": "Que vendez-vous ?",
       "subtitle": "Choisissez votre niche – nous adapterons votre boutique. Vous pourrez changer cela plus tard.",
+      "selectImages": "Sélectionnez des images pour votre boutique",
+      "selectImagesHint": "Choisissez des images adaptées pour le slider de votre boutique (optionnel)",
       "back": "Retour",
       "skip": "Ignorer cette étape",
       "creating": "Création de votre boutique...",

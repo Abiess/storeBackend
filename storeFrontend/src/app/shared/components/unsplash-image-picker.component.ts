@@ -15,11 +15,15 @@ import { UnsplashService, UnsplashImage } from '@app/core/services/unsplash.serv
  * - Attribution "Photo by {name} on Unsplash" ist PFLICHT und wird im Template angezeigt.
  * - Der API-Key fließt NIEMALS ins Frontend – alle Calls gehen über /api/assets/suggestions.
  *
- * Verwendung im Wizard:
+ * Verwendung:
  * <app-unsplash-image-picker
  *   [businessType]="selectedBusinessType"
+ *   [category]="selectedCategory"
  *   (selectionChanged)="onImagesSelected($event)">
  * </app-unsplash-image-picker>
+ *
+ * @Input businessType - SHOP | RESTAURANT | RIAD (bestimmt Default-Query)
+ * @Input category - Optional: z.B. 'fashion', 'electronics', 'food' (verfeinert die Suche)
  */
 @Component({
   selector: 'app-unsplash-image-picker',
@@ -295,6 +299,7 @@ import { UnsplashService, UnsplashImage } from '@app/core/services/unsplash.serv
 export class UnsplashImagePickerComponent implements OnInit, OnChanges {
 
   @Input() businessType = 'SHOP';
+  @Input() category?: string; // z.B. 'fashion', 'electronics', 'food', etc.
   @Output() selectionChanged = new EventEmitter<UnsplashImage[]>();
 
   images = signal<UnsplashImage[]>([]);
@@ -324,7 +329,8 @@ export class UnsplashImagePickerComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['businessType'] && !changes['businessType'].firstChange) {
+    if ((changes['businessType'] && !changes['businessType'].firstChange) ||
+        (changes['category'] && !changes['category'].firstChange)) {
       this.currentPage = 1;
       this.images.set([]);
       this.selectedImages.set([]);
@@ -367,7 +373,9 @@ export class UnsplashImagePickerComponent implements OnInit, OnChanges {
 
   private loadImages(query?: string, append = false): void {
     this.loading.set(true);
-    this.unsplashService.getSuggestions(this.businessType, query, this.currentPage)
+    // Kategorie als Suchbegriff verwenden, falls vorhanden und kein custom query
+    const searchQuery = query || this.category;
+    this.unsplashService.getSuggestions(this.businessType, searchQuery, this.currentPage)
       .subscribe({
         next: (res) => {
           this.configured.set(res.configured);

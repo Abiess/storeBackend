@@ -1820,6 +1820,8 @@
     "step2": {
       "title": "What do you sell?",
       "subtitle": "Pick your niche – we’ll tailor your store. You can change this later.",
+      "selectImages": "Select images for your store",
+      "selectImagesHint": "Choose suitable images for your store slider (optional)",
       "back": "Back",
       "skip": "Skip this step",
       "creating": "Creating your store...",

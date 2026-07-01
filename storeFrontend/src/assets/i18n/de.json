@@ -1853,6 +1853,8 @@
     "step2": {
       "title": "Was verkaufst du?",
       "subtitle": "Wähle dein Segment – wir passen deinen Store an. Du kannst das später ändern.",
+      "selectImages": "Bilder für deinen Store auswählen",
+      "selectImagesHint": "Wähle passende Bilder für deinen Store-Slider (optional)",
       "back": "Zurück",
       "skip": "Schritt überspringen",
       "creating": "Store wird erstellt...",

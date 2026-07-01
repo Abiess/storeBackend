@@ -8,6 +8,8 @@ import { ClarityService } from '@app/core/services/clarity.service';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { TranslationService } from '@app/core/services/translation.service';
 import { AuthService } from '@app/core/services/auth.service';
+import { UnsplashImagePickerComponent } from '@app/shared/components/unsplash-image-picker.component';
+import { UnsplashImage, UnsplashService } from '@app/core/services/unsplash.service';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { environment } from '@env/environment';
@@ -28,7 +30,7 @@ interface StoreCategory {
 @Component({
   selector: 'app-store-create-simple',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, TranslatePipe],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, TranslatePipe, UnsplashImagePickerComponent],
   template: `
     <div class="create-store-container">
       <!-- Clean, minimal header -->
@@ -185,6 +187,20 @@ interface StoreCategory {
               <div class="cat-check" *ngIf="selectedCategories().includes(cat.id)">✓</div>
             </div>
           </div>
+
+          <!-- Unsplash Bildauswahl -->
+          @if (selectedCategories().length > 0) {
+            <div class="unsplash-section animate-fade-in">
+              <h3 class="unsplash-title">📸 {{ 'storeCreateSimple.step2.selectImages' | translate }}</h3>
+              <p class="unsplash-subtitle">{{ 'storeCreateSimple.step2.selectImagesHint' | translate }}</p>
+              
+              <app-unsplash-image-picker
+                [businessType]="businessType()"
+                [category]="selectedCategories()[0]"
+                (selectionChanged)="onUnsplashImagesSelected($event)">
+              </app-unsplash-image-picker>
+            </div>
+          }
 
           <div class="step2-actions">
             <button class="btn-back" (click)="currentStep.set(1)">{{ 'storeCreateSimple.step2.back' | translate }}</button>
@@ -431,6 +447,25 @@ interface StoreCategory {
       font-weight: 700;
     }
 
+    /* ==================== Unsplash Section ==================== */
+    .unsplash-section {
+      margin-top: 2rem;
+      margin-bottom: 1.5rem;
+      padding-top: 2rem;
+      border-top: 1px solid #e5e7eb;
+    }
+    .unsplash-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #111827;
+      margin: 0 0 0.35rem 0;
+    }
+    .unsplash-subtitle {
+      font-size: 0.875rem;
+      color: #6b7280;
+      margin: 0 0 1rem 0;
+    }
+
     /* ==================== Step 2 Actions ==================== */
     .step2-actions {
       display: flex;
@@ -509,6 +544,8 @@ export class StoreCreateSimpleComponent implements OnInit {
   businessType = signal<'SHOP' | 'RESTAURANT' | 'RIAD'>('SHOP');
   /** Mit Starter-Pack-Beispieldaten starten (nur RESTAURANT/RIAD) */
   seedSampleData = signal(false);
+  /** Ausgewählte Unsplash-Bilder */
+  selectedUnsplashImages = signal<UnsplashImage[]>([]);
 
   private readonly _categoryIds = [
     { id: 'fashion',     icon: '👗' },
@@ -537,7 +574,8 @@ export class StoreCreateSimpleComponent implements OnInit {
     private http: HttpClient,
     private clarity: ClarityService,
     private translationService: TranslationService,
-    private authService: AuthService
+    private authService: AuthService,
+    private unsplashService: UnsplashService
   ) {
     this.storeForm = this.fb.group({
       storeName: ['', [Validators.required, Validators.minLength(2)]],
@@ -613,6 +651,10 @@ export class StoreCreateSimpleComponent implements OnInit {
     );
   }
 
+  onUnsplashImagesSelected(images: UnsplashImage[]): void {
+    this.selectedUnsplashImages.set(images);
+  }
+
   async createStore(): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
@@ -637,6 +679,12 @@ export class StoreCreateSimpleComponent implements OnInit {
           this.loading.set(false);
           return;
         }
+
+        // Unsplash-Bilder anwenden (falls ausgewählt)
+        if (this.selectedUnsplashImages().length > 0) {
+          await this.applyUnsplashImages(result.id);
+        }
+
         this.clarity.event('store_created');
         this.clarity.setTag('storeCreationMethod', 'logged-in');
         this.router.navigate(['/stores', result.id]);
@@ -654,7 +702,7 @@ export class StoreCreateSimpleComponent implements OnInit {
         businessType: this.businessType(),
         seedSampleData: this.seedSampleData()
       }).subscribe({
-        next: (res) => {
+        next: async (res) => {
           this.loading.set(false);
           // JWT speichern → User ist jetzt eingeloggt
           localStorage.setItem('auth_token', res.token);
@@ -668,6 +716,12 @@ export class StoreCreateSimpleComponent implements OnInit {
           // FIX: AuthService currentUserSubject aktualisieren, damit AuthGuard
           // beim Navigieren zu /stores/:id keinen Redirect zu /login macht
           this.authService.setAuthFromStorage();
+
+          // Unsplash-Bilder anwenden (falls ausgewählt)
+          if (this.selectedUnsplashImages().length > 0) {
+            await this.applyUnsplashImages(res.storeId);
+          }
+
           this.clarity.event('store_created');
           this.clarity.setTag('storeCreationMethod', 'anonymous');
           this.clarity.identify(String(res.userId));
@@ -678,6 +732,22 @@ export class StoreCreateSimpleComponent implements OnInit {
           this.error.set(err.error?.message || 'Fehler beim Erstellen des Stores. Bitte versuche es erneut.');
         }
       });
+    }
+  }
+
+  private async applyUnsplashImages(storeId: number): Promise<void> {
+    try {
+      const imagesToApply = this.selectedUnsplashImages().map(img => ({
+        downloadLocation: img.downloadLocation,
+        regularUrl: img.regularUrl,
+        description: img.description
+      }));
+
+      await this.unsplashService.applyImages(storeId, imagesToApply, 'SLIDER').toPromise();
+      console.log('✅ Unsplash-Bilder erfolgreich angewendet');
+    } catch (error) {
+      console.error('⚠️ Fehler beim Anwenden der Unsplash-Bilder:', error);
+      // Fehler nicht blockieren - Store wurde erfolgreich erstellt
     }
   }
 }

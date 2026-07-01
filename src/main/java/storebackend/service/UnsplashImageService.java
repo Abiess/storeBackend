@@ -41,11 +41,60 @@ public class UnsplashImageService {
         BusinessType.SHOP,       "boutique shop retail interior"
     );
 
+    /** Kategorie-Mappings für präzisere Bildsuche (alle Open Source erlaubt) */
+    private static final Map<String, String> CATEGORY_QUERIES = Map.ofEntries(
+        // Fashion & Beauty
+        Map.entry("fashion", "fashion clothing boutique store"),
+        Map.entry("beauty", "beauty cosmetics makeup products"),
+        Map.entry("jewelry", "jewelry accessories elegant display"),
+        
+        // Electronics & Tech
+        Map.entry("electronics", "electronics technology gadgets modern"),
+        Map.entry("computers", "computer technology workspace"),
+        Map.entry("phones", "smartphone mobile technology"),
+        
+        // Food & Beverages
+        Map.entry("food", "food ingredients market fresh"),
+        Map.entry("grocery", "grocery fresh vegetables market"),
+        Map.entry("bakery", "bakery bread pastry fresh"),
+        Map.entry("coffee", "coffee cafe beans atmosphere"),
+        
+        // Home & Living
+        Map.entry("furniture", "furniture interior design modern"),
+        Map.entry("home", "home decor interior cozy"),
+        Map.entry("garden", "garden plants nature green"),
+        
+        // Sports & Outdoors
+        Map.entry("sports", "sports equipment fitness active"),
+        Map.entry("outdoor", "outdoor nature adventure hiking"),
+        
+        // Books & Media
+        Map.entry("books", "books library reading cozy"),
+        Map.entry("music", "music instruments studio art"),
+        
+        // Art & Crafts
+        Map.entry("art", "art gallery creative colors"),
+        Map.entry("crafts", "crafts handmade creative workshop"),
+        
+        // Automotive
+        Map.entry("automotive", "car automotive modern vehicle"),
+        
+        // Pets
+        Map.entry("pets", "pet animals happy cute"),
+        
+        // Other
+        Map.entry("toys", "toys children colorful playful"),
+        Map.entry("gifts", "gift present celebration festive"),
+        Map.entry("health", "health wellness natural organic"),
+        Map.entry("other", "store shop retail modern")
+    );
+
     /**
      * Sucht passende Bilder auf Unsplash.
      *
      * @param businessType Geschäftstyp – bestimmt den Default-Suchbegriff
      * @param customQuery  optionaler benutzerdefinierter Suchbegriff (überschreibt Default)
+     *                     Kann auch eine Kategorie-ID sein (z.B. 'fashion', 'electronics')
      * @param page         Seite (1-basiert) für Paginierung
      * @return Liste von Bildvorschlägen; leere Liste wenn Unsplash nicht konfiguriert
      */
@@ -55,9 +104,13 @@ public class UnsplashImageService {
             return List.of();
         }
 
-        String query = (customQuery != null && !customQuery.isBlank())
-            ? customQuery
-            : DEFAULT_QUERIES.getOrDefault(businessType, "store retail shop");
+        String query;
+        if (customQuery != null && !customQuery.isBlank()) {
+            // Prüfe ob es eine Kategorie-ID ist
+            query = CATEGORY_QUERIES.getOrDefault(customQuery.toLowerCase(), customQuery);
+        } else {
+            query = DEFAULT_QUERIES.getOrDefault(businessType, "store retail shop");
+        }
 
         String url = UriComponentsBuilder.fromHttpUrl(unsplashProperties.getBaseUrl() + "/search/photos")
             .queryParam("query", query)
