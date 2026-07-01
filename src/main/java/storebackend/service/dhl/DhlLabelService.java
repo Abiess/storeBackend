@@ -128,7 +128,7 @@ public class DhlLabelService {
             log.warn("⚠️ Using sandbox shipper address for store {} (no real address configured)", 
                 store.getId());
             
-            return DhlShipmentRequest.Address.builder()
+            DhlShipmentRequest.Address.AddressBuilder builder = DhlShipmentRequest.Address.builder()
                 .name1(dhlProperties.getSandboxShipperName())
                 .addressStreet(dhlProperties.getSandboxShipperStreet())
                 .addressHouse(dhlProperties.getSandboxShipperHouseNumber())
@@ -136,10 +136,19 @@ public class DhlLabelService {
                 .city(dhlProperties.getSandboxShipperCity())
                 .country(DhlShipmentRequest.Country.builder()
                     .countryISOCode(dhlProperties.getSandboxShipperCountry())
-                    .build())
-                .contactName(store.getOwner().getName())
-                .email(store.getOwner().getEmail())
-                .build();
+                    .build());
+            
+            // Optional: contactName nur wenn vorhanden
+            if (store.getOwner() != null && store.getOwner().getName() != null) {
+                builder.contactName(store.getOwner().getName());
+            }
+            
+            // Optional: email nur wenn vorhanden
+            if (store.getOwner() != null && store.getOwner().getEmail() != null) {
+                builder.email(store.getOwner().getEmail());
+            }
+            
+            return builder.build();
         }
         
         // Production: Echte Store-Adresse erforderlich
@@ -188,21 +197,64 @@ public class DhlLabelService {
         
         String fullName = (shippingAddress.getFirstName() + " " + shippingAddress.getLastName()).trim();
         
-        return DhlShipmentRequest.Address.builder()
+        // DHL Builder - NUR nicht-null Werte setzen!
+        DhlShipmentRequest.Address.AddressBuilder builder = DhlShipmentRequest.Address.builder()
             .name1(fullName)
-            .name2(shippingAddress.getAddress2()) // Optional: Firma/Zusatz
             .addressStreet(street)
             .addressHouse(houseNumber)
-            .additionalAddressInformation1(shippingAddress.getAddress2())
             .postalCode(shippingAddress.getPostalCode())
             .city(shippingAddress.getCity())
             .country(DhlShipmentRequest.Country.builder()
                 .countryISOCode(shippingAddress.getCountry()) // "DE", "AT", etc.
                 .build())
-            .contactName(fullName)
-            .email(order.getCustomerEmail())
-            .phone(shippingAddress.getPhone())
-            .build();
+            .contactName(fullName);
+        
+        // Optional: name2 (nur wenn vorhanden)
+        if (shippingAddress.getAddress2() != null && !shippingAddress.getAddress2().isBlank()) {
+            builder.name2(shippingAddress.getAddress2());
+        }
+        
+        // Optional: Email (nur wenn vorhanden)
+        if (order.getCustomerEmail() != null && !order.getCustomerEmail().isBlank()) {
+            builder.email(order.getCustomerEmail());
+        }
+        
+        // Optional: Phone (nur wenn vorhanden UND gültiges Format)
+        if (shippingAddress.getPhone() != null && !shippingAddress.getPhone().isBlank()) {
+            String phone = normalizePhoneNumber(shippingAddress.getPhone());
+            if (phone != null) {
+                builder.phone(phone);
+            }
+        }
+        
+        return builder.build();
+    }
+    
+    /**
+     * Normalisiert Telefonnummer für DHL (Format: +49... oder +43...)
+     * DHL mag keine ungültigen Telefonnummern - lieber weglassen als falsch!
+     */
+    private String normalizePhoneNumber(String phone) {
+        if (phone == null || phone.isBlank()) {
+            return null;
+        }
+        
+        // Entferne alle Leerzeichen, Klammern, Bindestriche
+        String cleaned = phone.replaceAll("[\\s\\-\\(\\)]", "");
+        
+        // Wenn es mit 0 startet → +49 (Deutschland) voranstellen
+        if (cleaned.startsWith("0")) {
+            cleaned = "+49" + cleaned.substring(1);
+        }
+        
+        // Prüfe ob es mit + startet und mindestens 10 Ziffern hat
+        if (cleaned.startsWith("+") && cleaned.matches("\\+\\d{10,15}")) {
+            return cleaned;
+        }
+        
+        // Ungültiges Format → nicht senden (besser als Fehler)
+        log.warn("⚠️ Invalid phone number format, omitting from DHL request: {}", phone);
+        return null;
     }
     
     /**

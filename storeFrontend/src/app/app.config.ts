@@ -6,7 +6,7 @@ import {
   ShieldCheck, Gem, ChevronLeft, ChevronRight, ChevronDown, ArrowUpRight,
   ExternalLink, Check, CircleCheck, Store, X, ShoppingBag, MessageCircle,
   PlayCircle, Zap, Globe, Link2, Brain, Users, HardDrive, Lock,
-  Bell, Crown, LogOut, Menu, Send,
+  Bell, Crown, LogOut, Menu, Send, Rocket,
   // Bottom-Nav Icons
   House, ShoppingCart, LayoutGrid,
   // Category Icons for create-store-public (SHOP)
@@ -63,7 +63,7 @@ export const appConfig: ApplicationConfig = {
         ShieldCheck, Gem, ChevronLeft, ChevronRight, ChevronDown, ArrowUpRight,
         ExternalLink, Check, CircleCheck, Store, X, ShoppingBag, MessageCircle,
         PlayCircle, Zap, Globe, Link2, Brain, Users, HardDrive, Lock,
-        Bell, Crown, LogOut, Menu, Send,
+        Bell, Crown, LogOut, Menu, Send, Rocket,
         // Bottom-Nav
         House, ShoppingCart, LayoutGrid,
         // Category Icons (SHOP)

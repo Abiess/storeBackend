@@ -1,5 +1,6 @@
 package storebackend.dto.dhl;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Data;
@@ -9,9 +10,12 @@ import java.util.List;
 /**
  * DHL Shipment Request
  * API: POST /orders (+ ?validate=true für Validierung)
+ * 
+ * WICHTIG: @JsonInclude(NON_NULL) - DHL API mag keine null-Werte!
  */
 @Data
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class DhlShipmentRequest {
     
     @JsonProperty("profile")
@@ -22,6 +26,7 @@ public class DhlShipmentRequest {
     
     @Data
     @Builder
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class Shipment {
         @JsonProperty("product")
         private String product;  // "V01PAK"
@@ -47,6 +52,7 @@ public class DhlShipmentRequest {
     
     @Data
     @Builder
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class Address {
         @JsonProperty("name1")
         private String name1;  // Vorname + Nachname oder Firmenname
@@ -84,6 +90,7 @@ public class DhlShipmentRequest {
     
     @Data
     @Builder
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class Country {
         @JsonProperty("countryISOCode")
         private String countryISOCode;  // "DE", "AT", etc.
@@ -91,6 +98,7 @@ public class DhlShipmentRequest {
     
     @Data
     @Builder
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class Details {
         @JsonProperty("dim")
         private Dimensions dim;  // Optional: Maße
@@ -101,6 +109,7 @@ public class DhlShipmentRequest {
     
     @Data
     @Builder
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class Dimensions {
         @JsonProperty("uom")
         private String uom;  // "mm" | "cm"
@@ -117,6 +126,7 @@ public class DhlShipmentRequest {
     
     @Data
     @Builder
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class Weight {
         @JsonProperty("uom")
         private String uom;  // "g" | "kg"
