@@ -123,15 +123,42 @@ public class DhlLabelService {
     
     /**
      * Build Shipper Address (Store als Absender)
-     * Falls Store keine Adresse hat → Sandbox Fallback
-     * MINIMAL-MODE: Nur notwendige Felder!
+     * 1. Wenn Store shipping_address_* Felder gesetzt → diese nutzen
+     * 2. Sonst Sandbox Fallback (nur für Dev/Testing)
+     * 3. Production: Error wenn Store keine Adresse hat
      */
     private DhlShipmentRequest.Address buildShipperAddress(Store store) {
-        // TODO: Store Entity hat noch keine Address-Felder!
-        // Für jetzt: Sandbox Fallback verwenden
+        // Check: Hat Store vollständige Shipping Address?
+        boolean hasShippingAddress = 
+            store.getShippingAddressStreet() != null && !store.getShippingAddressStreet().isBlank() &&
+            store.getShippingAddressHouseNumber() != null && !store.getShippingAddressHouseNumber().isBlank() &&
+            store.getShippingAddressPostalCode() != null && !store.getShippingAddressPostalCode().isBlank() &&
+            store.getShippingAddressCity() != null && !store.getShippingAddressCity().isBlank() &&
+            store.getShippingAddressCountry() != null && !store.getShippingAddressCountry().isBlank();
         
+        if (hasShippingAddress) {
+            // ✅ Store hat vollständige Shipping Address → nutzen
+            log.info("📦 Using Store shipping address for store {} ({})", 
+                store.getId(), store.getName());
+            
+            return DhlShipmentRequest.Address.builder()
+                .name1(store.getName())
+                .addressStreet(store.getShippingAddressStreet())
+                .addressHouse(store.getShippingAddressHouseNumber())
+                .postalCode(store.getShippingAddressPostalCode())
+                .city(store.getShippingAddressCity())
+                .country(mapCountryCode(store.getShippingAddressCountry()))
+                .email(store.getShippingAddressEmail() != null && !store.getShippingAddressEmail().isBlank()
+                    ? store.getShippingAddressEmail()
+                    : store.getContactEmail())
+                .build();
+        }
+        
+        // Sandbox Fallback (nur für Dev/Testing)
         if (dhlProperties.isSandbox()) {
-            log.warn("⚠️ Using sandbox shipper address for store {} (no real address configured)", 
+            log.warn("⚠️ Store {} has no shipping address configured! Using sandbox fallback. " +
+                    "This is only allowed in sandbox mode. " +
+                    "Production requires store.shippingAddress* fields to be set.", 
                 store.getId());
             
             // MINIMAL: Nur die Felder aus dem funktionierenden cURL-Test
@@ -148,10 +175,11 @@ public class DhlLabelService {
                 .build();
         }
         
-        // Production: Echte Store-Adresse erforderlich
+        // Production: Shipping Address ist Pflicht!
         throw new IllegalStateException(
-            "Store address not configured. Please add address fields to Store entity " +
-            "or enable sandbox mode for testing."
+            "Store shipping address not configured. " +
+            "Please configure shipping address in Store Settings (Store ID: " + store.getId() + "). " +
+            "Required fields: street, houseNumber, postalCode, city, country, email."
         );
     }
     

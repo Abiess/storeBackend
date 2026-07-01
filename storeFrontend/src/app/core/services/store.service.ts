@@ -68,4 +68,21 @@ export class StoreService {
     }
     return this.http.get<boolean>(`${environment.apiUrl}/me/stores/check-slug/${slug}`);
   }
+
+  /**
+   * Update Store Shipping Address (DHL Absender-Adresse)
+   */
+  updateShippingAddress(storeId: number, shippingAddress: {
+    street: string;
+    houseNumber: string;
+    postalCode: string;
+    city: string;
+    country: string;
+    email?: string;
+  }): Observable<Store> {
+    return this.http.put<Store>(
+      `${environment.apiUrl}/me/stores/${storeId}/shipping-address`,
+      shippingAddress
+    );
+  }
 }

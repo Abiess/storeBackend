@@ -105,6 +105,29 @@ public class Store {
     @Column(name = "reservation_whatsapp_text", columnDefinition = "TEXT")
     private String reservationWhatsappText;
 
+    // ─── DHL Shipping Address (strukturiert) ────────────────────
+    /**
+     * DHL Versand-Adresse (Absender bei Label-Erstellung).
+     * Separate Felder für DHL API (benötigt street + house_number getrennt).
+     */
+    @Column(name = "shipping_address_street")
+    private String shippingAddressStreet;
+    
+    @Column(name = "shipping_address_house_number", length = 10)
+    private String shippingAddressHouseNumber;
+    
+    @Column(name = "shipping_address_postal_code", length = 20)
+    private String shippingAddressPostalCode;
+    
+    @Column(name = "shipping_address_city", length = 100)
+    private String shippingAddressCity;
+    
+    @Column(name = "shipping_address_country", length = 2)
+    private String shippingAddressCountry;  // ISO 3166-1 alpha-2: "DE", "AT", etc.
+    
+    @Column(name = "shipping_address_email", length = 100)
+    private String shippingAddressEmail;
+
     // ─── Bot-Schutz-Konfiguration (MVP) ────────────────────────
     /**
      * Bot-Schutz für öffentliche Bestellungen aktiviert.

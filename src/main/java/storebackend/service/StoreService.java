@@ -588,4 +588,57 @@ public class StoreService {
         // Default fallback
         return "general";
     }
+    
+    /**
+     * Update Store Shipping Address (DHL Absender-Adresse)
+     */
+    @Transactional
+    public StoreDTO updateShippingAddress(Long storeId, storebackend.dto.StoreShippingAddressUpdateDTO dto, User user) {
+        Store store = storeRepository.findById(storeId)
+            .orElseThrow(() -> new IllegalArgumentException("Store not found: " + storeId));
+        
+        // Security: Only owner can update
+        if (!store.getOwner().getId().equals(user.getId())) {
+            throw new IllegalStateException("You are not the owner of this store");
+        }
+        
+        // Validation
+        if (dto.getStreet() == null || dto.getStreet().isBlank()) {
+            throw new IllegalArgumentException("Street is required");
+        }
+        if (dto.getHouseNumber() == null || dto.getHouseNumber().isBlank()) {
+            throw new IllegalArgumentException("House number is required");
+        }
+        if (dto.getPostalCode() == null || dto.getPostalCode().isBlank()) {
+            throw new IllegalArgumentException("Postal code is required");
+        }
+        if (dto.getCity() == null || dto.getCity().isBlank()) {
+            throw new IllegalArgumentException("City is required");
+        }
+        if (dto.getCountry() == null || dto.getCountry().isBlank()) {
+            throw new IllegalArgumentException("Country is required");
+        }
+        
+        // Country validation (ISO 3166-1 alpha-2)
+        String country = dto.getCountry().toUpperCase();
+        if (!country.matches("^[A-Z]{2}$")) {
+            throw new IllegalArgumentException("Country must be ISO 3166-1 alpha-2 code (e.g. DE, AT, CH)");
+        }
+        
+        // Update
+        store.setShippingAddressStreet(dto.getStreet().trim());
+        store.setShippingAddressHouseNumber(dto.getHouseNumber().trim());
+        store.setShippingAddressPostalCode(dto.getPostalCode().trim());
+        store.setShippingAddressCity(dto.getCity().trim());
+        store.setShippingAddressCountry(country);
+        store.setShippingAddressEmail(dto.getEmail() != null && !dto.getEmail().isBlank() 
+            ? dto.getEmail().trim() 
+            : null);
+        
+        Store saved = storeRepository.save(store);
+        
+        log.info("✅ Shipping address updated for store {} ({})", storeId, store.getName());
+        
+        return toDTO(saved);
+    }
 }

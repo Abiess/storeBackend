@@ -255,6 +255,119 @@ export interface SettingsTab {
           <app-store-slider-editor></app-store-slider-editor>
         </div>
 
+        <!-- ─── Shipping Address (DHL Versand-Adresse) ─── -->
+        <div class="tab-content" *ngIf="activeTab === 'shipping'">
+          <form [formGroup]="shippingAddressForm" (ngSubmit)="saveShippingAddress()">
+            <div class="settings-section-header">
+              <h3>📦 {{ 'settings.shipping.title' | translate }}</h3>
+              <p class="section-hint">{{ 'settings.shipping.hint' | translate }}</p>
+            </div>
+
+            <div class="form-grid">
+              <div class="form-group full-width">
+                <label for="shipping-street">{{ 'settings.shipping.street' | translate }} *</label>
+                <input
+                  id="shipping-street"
+                  type="text"
+                  formControlName="street"
+                  [placeholder]="'settings.shipping.streetPlaceholder' | translate"
+                />
+                <span class="error" *ngIf="shippingAddressForm.get('street')?.invalid && shippingAddressForm.get('street')?.touched">
+                  {{ 'settings.shipping.streetRequired' | translate }}
+                </span>
+              </div>
+
+              <div class="form-group">
+                <label for="shipping-houseNumber">{{ 'settings.shipping.houseNumber' | translate }} *</label>
+                <input
+                  id="shipping-houseNumber"
+                  type="text"
+                  formControlName="houseNumber"
+                  placeholder="1"
+                />
+                <span class="error" *ngIf="shippingAddressForm.get('houseNumber')?.invalid && shippingAddressForm.get('houseNumber')?.touched">
+                  {{ 'settings.shipping.houseNumberRequired' | translate }}
+                </span>
+              </div>
+
+              <div class="form-group">
+                <label for="shipping-postalCode">{{ 'settings.shipping.postalCode' | translate }} *</label>
+                <input
+                  id="shipping-postalCode"
+                  type="text"
+                  formControlName="postalCode"
+                  placeholder="90402"
+                />
+                <span class="error" *ngIf="shippingAddressForm.get('postalCode')?.invalid && shippingAddressForm.get('postalCode')?.touched">
+                  {{ 'settings.shipping.postalCodeRequired' | translate }}
+                </span>
+              </div>
+
+              <div class="form-group">
+                <label for="shipping-city">{{ 'settings.shipping.city' | translate }} *</label>
+                <input
+                  id="shipping-city"
+                  type="text"
+                  formControlName="city"
+                  [placeholder]="'settings.shipping.cityPlaceholder' | translate"
+                />
+                <span class="error" *ngIf="shippingAddressForm.get('city')?.invalid && shippingAddressForm.get('city')?.touched">
+                  {{ 'settings.shipping.cityRequired' | translate }}
+                </span>
+              </div>
+
+              <div class="form-group">
+                <label for="shipping-country">{{ 'settings.shipping.country' | translate }} *</label>
+                <select id="shipping-country" formControlName="country">
+                  <option value="">{{ 'settings.shipping.selectCountry' | translate }}</option>
+                  <option value="DE">🇩🇪 Deutschland</option>
+                  <option value="AT">🇦🇹 Österreich</option>
+                  <option value="CH">🇨🇭 Schweiz</option>
+                  <option value="FR">🇫🇷 Frankreich</option>
+                  <option value="NL">🇳🇱 Niederlande</option>
+                  <option value="BE">🇧🇪 Belgien</option>
+                  <option value="LU">🇱🇺 Luxemburg</option>
+                  <option value="IT">🇮🇹 Italien</option>
+                  <option value="ES">🇪🇸 Spanien</option>
+                  <option value="PL">🇵🇱 Polen</option>
+                </select>
+                <span class="error" *ngIf="shippingAddressForm.get('country')?.invalid && shippingAddressForm.get('country')?.touched">
+                  {{ 'settings.shipping.countryRequired' | translate }}
+                </span>
+              </div>
+
+              <div class="form-group">
+                <label for="shipping-email">{{ 'settings.shipping.email' | translate }}</label>
+                <input
+                  id="shipping-email"
+                  type="email"
+                  formControlName="email"
+                  [placeholder]="'settings.shipping.emailPlaceholder' | translate"
+                />
+                <span class="form-hint">{{ 'settings.shipping.emailHint' | translate }}</span>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button
+                type="submit"
+                class="btn-primary"
+                [disabled]="shippingAddressForm.invalid || savingShippingAddress">
+                <span *ngIf="!savingShippingAddress">{{ 'settings.saveButton' | translate }}</span>
+                <span *ngIf="savingShippingAddress">{{ 'settings.saving' | translate }}</span>
+              </button>
+            </div>
+
+            <div class="success-message" *ngIf="shippingAddressSaved">
+              ✅ {{ 'settings.shipping.savedSuccess' | translate }}
+            </div>
+
+            <div class="error-message" *ngIf="shippingAddressError">
+              ❌ {{ shippingAddressError }}
+            </div>
+          </form>
+        </div>
+
         <!-- ─── Social & Kontakt ─── -->
         <div class="tab-content" *ngIf="activeTab === 'social'">
           <form [formGroup]="settingsForm" (ngSubmit)="saveSettings()">
@@ -1072,6 +1185,7 @@ export class StoreSettingsComponent implements OnInit {
     { id: 'general',  icon: '⚙️', labelKey: 'settings.general' },
     { id: 'social',   icon: '🔗', labelKey: 'Social & Kontakt' },
     { id: 'slider',   icon: '🎬', labelKey: 'settings.slider' },
+    { id: 'shipping', icon: '📦', labelKey: 'settings.shipping.title' },
     { id: 'branding', icon: '🎨', labelKey: 'settings.branding.title', visible : false },
     { id: 'domain',   icon: '🌐', labelKey: 'settings.domain.title' },
     { id: 'telegram', icon: '✈️', labelKey: 'Telegram' },
@@ -1098,6 +1212,10 @@ export class StoreSettingsComponent implements OnInit {
 
   settingsForm: FormGroup;
   brandingForm: FormGroup;
+  shippingAddressForm: FormGroup;
+  savingShippingAddress = false;
+  shippingAddressSaved = false;
+  shippingAddressError: string | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -1135,6 +1253,15 @@ export class StoreSettingsComponent implements OnInit {
     this.brandingForm = this.fb.group({
       logoUrl: [''],
       bannerUrl: ['']
+    });
+
+    this.shippingAddressForm = this.fb.group({
+      street: ['', Validators.required],
+      houseNumber: ['', Validators.required],
+      postalCode: ['', Validators.required],
+      city: ['', Validators.required],
+      country: ['', Validators.required],
+      email: ['', Validators.email]
     });
   }
 
@@ -1206,6 +1333,17 @@ export class StoreSettingsComponent implements OnInit {
           botProtectionEnabled:    store.botProtectionEnabled    ?? true,
           botProtectionMode:       store.botProtectionMode       ?? 'SUSPICIOUS_ONLY'
         });
+        
+        // Shipping Address Form patchen
+        this.shippingAddressForm.patchValue({
+          street: (store as any).shippingAddressStreet ?? '',
+          houseNumber: (store as any).shippingAddressHouseNumber ?? '',
+          postalCode: (store as any).shippingAddressPostalCode ?? '',
+          city: (store as any).shippingAddressCity ?? '',
+          country: (store as any).shippingAddressCountry ?? '',
+          email: (store as any).shippingAddressEmail ?? ''
+        });
+        
         this.loading = false;
       },
       error: (error) => {
@@ -1279,6 +1417,41 @@ export class StoreSettingsComponent implements OnInit {
         alert('Branding erfolgreich gespeichert!');
       }, 1000);
     }
+  }
+
+  saveShippingAddress(): void {
+    if (this.shippingAddressForm.invalid) {
+      Object.keys(this.shippingAddressForm.controls).forEach(key => {
+        this.shippingAddressForm.get(key)?.markAsTouched();
+      });
+      return;
+    }
+
+    this.savingShippingAddress = true;
+    this.shippingAddressSaved = false;
+    this.shippingAddressError = null;
+
+    const payload = this.shippingAddressForm.value;
+
+    this.storeService.updateShippingAddress(this.storeId, payload).subscribe({
+      next: () => {
+        this.savingShippingAddress = false;
+        this.shippingAddressSaved = true;
+        
+        // Success-Message nach 3 Sekunden ausblenden
+        setTimeout(() => {
+          this.shippingAddressSaved = false;
+        }, 3000);
+        
+        // Store neu laden (damit neue Felder im Store-Objekt sind)
+        this.loadStore();
+      },
+      error: (error) => {
+        this.savingShippingAddress = false;
+        this.shippingAddressError = error.error?.message || 'Fehler beim Speichern der Versandadresse';
+        console.error('❌ Shipping address update failed:', error);
+      }
+    });
   }
 
   manageDomains(): void {
