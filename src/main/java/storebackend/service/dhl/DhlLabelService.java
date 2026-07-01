@@ -63,12 +63,20 @@ public class DhlLabelService {
         // 1. Security: Store Owner Check
         dhlSecurityHelper.checkOrderOwnership(order, currentUser);
         
+        // 2. Validation: PICKUP Orders dürfen kein DHL Label bekommen
+        if ("PICKUP".equals(order.getDeliveryType())) {
+            throw new IllegalStateException(
+                "DHL shipping labels are not available for pickup orders. " +
+                "This order is configured for customer pickup (deliveryType=PICKUP)."
+            );
+        }
+        
         log.info("📦 Creating DHL label for order {}", order.getId());
         
-        // 2. Build DHL Request (mit Label-Erstellung)
+        // 3. Build DHL Request (mit Label-Erstellung)
         DhlShipmentRequest request = buildShipmentRequest(order, true);
         
-        // 3. Call DHL Create Label API
+        // 4. Call DHL Create Label API
         DhlShipmentResponse response = dhlShippingClient.createLabel(request);
         
         log.info("✅ DHL label created for order {} → Shipment No: {}", 

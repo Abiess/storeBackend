@@ -55,6 +55,18 @@ public class Order {
     @Column(name = "dhl_shipment_no", length = 100)
     private String dhlShipmentNo;
     
+    @Column(name = "dhl_routing_code", length = 50)
+    private String dhlRoutingCode;
+    
+    @Column(name = "dhl_uuid", length = 100)
+    private String dhlUuid;
+    
+    @Column(name = "dhl_status", length = 50)
+    private String dhlStatus;
+    
+    @Column(name = "dhl_created_at")
+    private LocalDateTime dhlCreatedAt;
+    
     @Column(name = "dhl_label_url", length = 500)
     private String dhlLabelUrl;
 

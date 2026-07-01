@@ -257,13 +257,26 @@ public class DhlAdminController {
                 
                 Map<String, Object> result = new LinkedHashMap<>();
                 result.put("orderId", orderId);
+                result.put("success", true);
                 result.put("status", "ALREADY_EXISTS");
                 result.put("shipmentNo", order.getDhlShipmentNo());
+                result.put("trackingNumber", order.getTrackingNumber());
                 result.put("trackingUrl", order.getTrackingUrl());
                 result.put("labelUrl", order.getDhlLabelUrl());
+                result.put("messageKey", "orders.dhl.labelAlreadyExists");
                 result.put("message", "DHL label already created for this order");
                 
                 return ResponseEntity.ok(result);
+            }
+            
+            // PICKUP Orders blockieren
+            if ("PICKUP".equals(order.getDeliveryType())) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "error", "NOT_AVAILABLE_FOR_PICKUP",
+                    "messageKey", "orders.dhl.notAvailableForPickup",
+                    "message", "DHL shipping labels are not available for pickup orders"
+                ));
             }
             
             log.info("📦 Creating DHL label for order {} by user {}", 
@@ -278,11 +291,14 @@ public class DhlAdminController {
             // 3. Response vorbereiten (OHNE Base64!)
             Map<String, Object> result = new LinkedHashMap<>();
             result.put("orderId", orderId);
+            result.put("success", true);
             result.put("status", "SUCCESS");
             result.put("shipmentNo", response.getShipmentNo());
+            result.put("trackingNumber", order.getTrackingNumber());
             result.put("trackingUrl", order.getTrackingUrl());
             result.put("labelUrl", order.getDhlLabelUrl());
             result.put("routingCode", response.getRoutingCode());
+            result.put("messageKey", "orders.dhl.labelCreated");
             
             // Validation Messages (Warnings)
             if (response.getValidationMessages() != null && !response.getValidationMessages().isEmpty()) {
