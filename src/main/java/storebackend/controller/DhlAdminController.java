@@ -42,6 +42,91 @@ public class DhlAdminController {
     private final DhlOrderUpdateService dhlOrderUpdateService;
     
     /**
+     * Connection Test: Nur DHL Auth + API-Erreichbarkeit prüfen
+     * POST /api/admin/dhl/test-connection
+     * 
+     * Erzeugt KEIN Label, verursacht KEINE Kosten.
+     * Prüft nur: Config valid, Token abrufbar, Shipping API erreichbar.
+     * 
+     * Zugriff: Authentifizierte User
+     */
+    @PostMapping("/api/admin/dhl/test-connection")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> testConnection() {
+        Map<String, Object> response = new LinkedHashMap<>();
+        
+        try {
+            if (!dhlProperties.isEnabled()) {
+                response.put("success", false);
+                response.put("error", "DHL_DISABLED");
+                response.put("messageKey", "shipping.dhl.disabled");
+                response.put("message", "DHL integration is disabled. Set DHL_ENABLED=true to activate.");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // 1. Validate Config
+            try {
+                dhlProperties.validate();
+                response.put("configValid", true);
+            } catch (IllegalStateException e) {
+                response.put("success", false);
+                response.put("configValid", false);
+                response.put("error", "CONFIG_ERROR");
+                response.put("messageKey", "shipping.dhl.configError");
+                response.put("message", e.getMessage());
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // 2. Test Auth (Token abrufen)
+            try {
+                String token = dhlAuthClient.getAccessToken();
+                response.put("authSuccess", true);
+                response.put("tokenReceived", token != null && !token.isEmpty());
+                log.info("✅ DHL Auth successful (token length: {})", token != null ? token.length() : 0);
+            } catch (Exception e) {
+                response.put("success", false);
+                response.put("authSuccess", false);
+                response.put("error", "AUTH_FAILED");
+                response.put("messageKey", "shipping.dhl.authFailed");
+                response.put("message", "DHL authentication failed: " + e.getMessage());
+                return ResponseEntity.status(500).body(response);
+            }
+            
+            // 3. Test Shipping API (Health Check)
+            try {
+                JsonNode apiInfo = dhlShippingClient.healthCheck();
+                response.put("apiReachable", true);
+                response.put("apiVersion", apiInfo != null && apiInfo.has("version") ? apiInfo.get("version").asText() : "unknown");
+                log.info("✅ DHL Shipping API reachable");
+            } catch (Exception e) {
+                response.put("success", false);
+                response.put("apiReachable", false);
+                response.put("error", "API_UNREACHABLE");
+                response.put("messageKey", "shipping.dhl.apiUnreachable");
+                response.put("message", "DHL Shipping API unreachable: " + e.getMessage());
+                return ResponseEntity.status(500).body(response);
+            }
+            
+            // All OK!
+            response.put("success", true);
+            response.put("messageKey", "shipping.dhl.connectionSuccess");
+            response.put("message", "DHL connection test successful ✅ (no label created, no costs)");
+            response.put("environment", dhlProperties.getEnv());
+            
+            log.info("✅ DHL Connection Test successful (env: {})", dhlProperties.getEnv());
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("❌ DHL Connection Test failed", e);
+            response.put("success", false);
+            response.put("error", "TEST_FAILED");
+            response.put("messageKey", "shipping.dhl.testFailed");
+            response.put("message", "Connection test failed: " + e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+    
+    /**
      * Health Check: DHL Config + Auth + Shipping API
      * GET /api/admin/dhl/health
      * 

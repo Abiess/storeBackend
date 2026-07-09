@@ -27,6 +27,7 @@ public class DhlLabelService {
     private final DhlProperties dhlProperties;
     private final DhlSecurityHelper dhlSecurityHelper;
     private final DhlShippingClient dhlShippingClient;
+    private final DhlSettingsResolver dhlSettingsResolver;
     
     /**
      * Validate Shipment (ohne Label zu erstellen)
@@ -39,12 +40,24 @@ public class DhlLabelService {
         // 1. Security: Store Owner Check
         dhlSecurityHelper.checkOrderOwnership(order, currentUser);
         
-        log.info("🔍 Validating DHL shipment for order {}", order.getId());
+        // 2. Resolve DHL Config (Production Credentials Check)
+        DhlSettingsResolver.ResolvedDhlConfig config = dhlSettingsResolver.resolve(order.getStore().getId());
+        if (config == null) {
+            throw new IllegalStateException(
+                "DHL is not configured for this store. " +
+                "Please configure DHL settings in Store Shipping Settings. " +
+                "Production mode requires store-specific credentials. " +
+                "messageKey: shipping.dhl.storeCredentialsRequired"
+            );
+        }
         
-        // 2. Build DHL Request
-        DhlShipmentRequest request = buildShipmentRequest(order, false);
+        log.info("🔍 Validating DHL shipment for order {} (env: {})", 
+            order.getId(), config.getEnvironment());
         
-        // 3. Call DHL Validate API
+        // 3. Build DHL Request
+        DhlShipmentRequest request = buildShipmentRequest(order, config, false);
+        
+        // 4. Call DHL Validate API
         DhlShipmentResponse response = dhlShippingClient.validateShipment(request);
         
         log.info("✅ DHL validation completed for order {}", order.getId());
@@ -67,16 +80,29 @@ public class DhlLabelService {
         if ("PICKUP".equals(order.getDeliveryType())) {
             throw new IllegalStateException(
                 "DHL shipping labels are not available for pickup orders. " +
-                "This order is configured for customer pickup (deliveryType=PICKUP)."
+                "This order is configured for customer pickup (deliveryType=PICKUP). " +
+                "messageKey: orders.dhl.notAvailableForPickup"
             );
         }
         
-        log.info("📦 Creating DHL label for order {}", order.getId());
+        // 3. Resolve DHL Config (Production Credentials Check)
+        DhlSettingsResolver.ResolvedDhlConfig config = dhlSettingsResolver.resolve(order.getStore().getId());
+        if (config == null) {
+            throw new IllegalStateException(
+                "DHL is not configured for this store. " +
+                "Please configure DHL settings in Store Shipping Settings. " +
+                "Production mode requires store-specific credentials. " +
+                "messageKey: shipping.dhl.storeCredentialsRequired"
+            );
+        }
         
-        // 3. Build DHL Request (mit Label-Erstellung)
-        DhlShipmentRequest request = buildShipmentRequest(order, true);
+        log.info("📦 Creating DHL label for order {} (env: {})", 
+            order.getId(), config.getEnvironment());
         
-        // 4. Call DHL Create Label API
+        // 4. Build DHL Request (mit Label-Erstellung)
+        DhlShipmentRequest request = buildShipmentRequest(order, config, true);
+        
+        // 5. Call DHL Create Label API
         DhlShipmentResponse response = dhlShippingClient.createLabel(request);
         
         log.info("✅ DHL label created for order {} → Shipment No: {}", 
@@ -87,27 +113,31 @@ public class DhlLabelService {
     
     /**
      * Build DHL Shipment Request from Order
+     * Nutzt resolved config (store-specific oder sandbox fallback)
      */
-    private DhlShipmentRequest buildShipmentRequest(Order order, boolean createLabel) {
+    private DhlShipmentRequest buildShipmentRequest(
+        Order order, 
+        DhlSettingsResolver.ResolvedDhlConfig config, 
+        boolean createLabel
+    ) {
         Store store = order.getStore();
         
-        // Shipper = Store (Absender)
-        DhlShipmentRequest.Address shipper = buildShipperAddress(store);
+        // Shipper = Store (Absender) - nutzt config statt direkt properties
+        DhlShipmentRequest.Address shipper = buildShipperAddress(store, config);
         
         // Consignee = Customer (Empfänger)
         DhlShipmentRequest.Address consignee = buildConsigneeAddress(order);
         
         // Shipment Details (Gewicht, Dimensionen)
-        DhlShipmentRequest.Details details = buildShipmentDetails(order);
+        DhlShipmentRequest.Details details = buildShipmentDetails(config);
         
         // Reference Number (für Tracking)
         String refNo = "MARKTMA-" + order.getId();
         
-        // MINIMAL-MODE: Kein shipDate! (funktionierender cURL hatte das nicht)
-        // Build Shipment
+        // Build Shipment mit resolved config
         DhlShipmentRequest.Shipment shipment = DhlShipmentRequest.Shipment.builder()
-            .product(dhlProperties.getDefaultProduct())
-            .billingNumber(dhlProperties.getDefaultBillingNumber())
+            .product(dhlProperties.getDefaultProduct()) // V01PAK = DHL Paket National
+            .billingNumber(config.getBillingNumber())
             .refNo(refNo)
             .shipper(shipper)
             .consignee(consignee)
@@ -117,70 +147,30 @@ public class DhlLabelService {
         // Build Request (shipments als List/Array!)
         return DhlShipmentRequest.builder()
             .profile(dhlProperties.getDefaultProfile())
-            .shipments(List.of(shipment))  // ← Als Array!
+            .shipments(List.of(shipment))
             .build();
     }
     
     /**
      * Build Shipper Address (Store als Absender)
-     * 1. Wenn Store shipping_address_* Felder gesetzt → diese nutzen
-     * 2. Sonst Sandbox Fallback (nur für Dev/Testing)
-     * 3. Production: Error wenn Store keine Adresse hat
+     * Nutzt resolved config (store-specific oder sandbox fallback)
      */
-    private DhlShipmentRequest.Address buildShipperAddress(Store store) {
-        // Check: Hat Store vollständige Shipping Address?
-        boolean hasShippingAddress = 
-            store.getShippingAddressStreet() != null && !store.getShippingAddressStreet().isBlank() &&
-            store.getShippingAddressHouseNumber() != null && !store.getShippingAddressHouseNumber().isBlank() &&
-            store.getShippingAddressPostalCode() != null && !store.getShippingAddressPostalCode().isBlank() &&
-            store.getShippingAddressCity() != null && !store.getShippingAddressCity().isBlank() &&
-            store.getShippingAddressCountry() != null && !store.getShippingAddressCountry().isBlank();
-        
-        if (hasShippingAddress) {
-            // ✅ Store hat vollständige Shipping Address → nutzen
-            log.info("📦 Using Store shipping address for store {} ({})", 
-                store.getId(), store.getName());
-            
-            return DhlShipmentRequest.Address.builder()
-                .name1(store.getName())
-                .addressStreet(store.getShippingAddressStreet())
-                .addressHouse(store.getShippingAddressHouseNumber())
-                .postalCode(store.getShippingAddressPostalCode())
-                .city(store.getShippingAddressCity())
-                .country(mapCountryCode(store.getShippingAddressCountry()))
-                .email(store.getShippingAddressEmail() != null && !store.getShippingAddressEmail().isBlank()
-                    ? store.getShippingAddressEmail()
-                    : store.getContactEmail())
-                .build();
-        }
-        
-        // Sandbox Fallback (nur für Dev/Testing)
-        if (dhlProperties.isSandbox()) {
-            log.warn("⚠️ Store {} has no shipping address configured! Using sandbox fallback. " +
-                    "This is only allowed in sandbox mode. " +
-                    "Production requires store.shippingAddress* fields to be set.", 
-                store.getId());
-            
-            // MINIMAL: Nur die Felder aus dem funktionierenden cURL-Test
-            return DhlShipmentRequest.Address.builder()
-                .name1(dhlProperties.getSandboxShipperName())
-                .addressStreet(dhlProperties.getSandboxShipperStreet())
-                .addressHouse(dhlProperties.getSandboxShipperHouseNumber())
-                .postalCode(dhlProperties.getSandboxShipperPostalCode())
-                .city(dhlProperties.getSandboxShipperCity())
-                .country(mapCountryCode(dhlProperties.getSandboxShipperCountry()))
-                .email(store.getOwner() != null && store.getOwner().getEmail() != null 
-                    ? store.getOwner().getEmail() 
-                    : "test@example.com")
-                .build();
-        }
-        
-        // Production: Shipping Address ist Pflicht!
-        throw new IllegalStateException(
-            "Store shipping address not configured. " +
-            "Please configure shipping address in Store Settings (Store ID: " + store.getId() + "). " +
-            "Required fields: street, houseNumber, postalCode, city, country, email."
-        );
+    private DhlShipmentRequest.Address buildShipperAddress(
+        Store store,
+        DhlSettingsResolver.ResolvedDhlConfig config
+    ) {
+        // Nutze resolved shipper address aus config
+        return DhlShipmentRequest.Address.builder()
+            .name1(config.getShipperName() != null ? config.getShipperName() : store.getName())
+            .addressStreet(config.getShipperStreet())
+            .addressHouse(config.getShipperHouseNumber())
+            .postalCode(config.getShipperPostalCode())
+            .city(config.getShipperCity())
+            .country(mapCountryCode(config.getShipperCountry()))
+            .email(config.getShipperEmail() != null && !config.getShipperEmail().isBlank()
+                ? config.getShipperEmail()
+                : (store.getContactEmail() != null ? store.getContactEmail() : ""))
+            .build();
     }
     
     /**
@@ -269,26 +259,26 @@ public class DhlLabelService {
     
     /**
      * Build Shipment Details (Gewicht, Dimensionen)
-     * Verwendet Default-Werte aus Properties
+     * Nutzt config defaults
      */
-    private DhlShipmentRequest.Details buildShipmentDetails(Order order) {
+    private DhlShipmentRequest.Details buildShipmentDetails(DhlSettingsResolver.ResolvedDhlConfig config) {
         // TODO: Order/Product Entity hat noch keine weight/dimensions Felder!
-        // Für jetzt: Default-Werte aus Properties verwenden
+        // Für jetzt: Default-Werte aus config verwenden
         
-        // Gewicht: Properties speichert in Gramm, DHL erwartet kg als Integer
-        int weightGrams = dhlProperties.getDefaultWeightGrams();
+        // Gewicht: Config speichert in Gramm, DHL erwartet kg als Integer
+        int weightGrams = config.getDefaultWeightGrams();
         int weightKg = Math.max(1, weightGrams / 1000); // Gramm → kg, mindestens 1
         
         DhlShipmentRequest.Weight weight = DhlShipmentRequest.Weight.builder()
-            .uom("kg") // ← WICHTIG: DHL Sandbox erwartet "kg", nicht "g"!
+            .uom("kg") // ← WICHTIG: DHL erwartet "kg", nicht "g"!
             .value(weightKg) // DHL erwartet Integer für kg
             .build();
         
         DhlShipmentRequest.Dimensions dimensions = DhlShipmentRequest.Dimensions.builder()
             .uom("mm") // Millimeter
-            .length(dhlProperties.getDefaultLengthMm())
-            .width(dhlProperties.getDefaultWidthMm())
-            .height(dhlProperties.getDefaultHeightMm())
+            .length(config.getDefaultLengthMm())
+            .width(config.getDefaultWidthMm())
+            .height(config.getDefaultHeightMm())
             .build();
         
         return DhlShipmentRequest.Details.builder()

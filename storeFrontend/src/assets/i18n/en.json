@@ -315,7 +315,6 @@
     "overview": "Overview",
     "categories": "Categories",
     "allProducts": "All products",
-    "products": "Products",
     "orders": "Orders",
     "delivery": "Delivery",
     "homepage": "Homepage",
@@ -571,7 +570,12 @@
       "footerTextPlaceholder": "Your one-stop shop – fast, affordable, reliable."
     },
     "noEmailHint": "No email set – add one now",
-    "noEmailSet": "⚠️ No email yet – save your store link!"
+    "noEmailSet": "⚠️ No email yet – save your store link!",
+    "integrations": "Integrations",
+    "telegram": {
+      "title": "Telegram Integration",
+      "description": "Connect Telegram channel for product import"
+    }
   },
   "table": {
     "image": "Image",
@@ -591,12 +595,6 @@
   },
   "validation": {
     "required": "This field is required"
-  },
-  "shipping": {
-    "standard": "Standard shipping",
-    "standardHint": "Delivery in 3-5 business days",
-    "express": "Express shipping",
-    "expressHint": "Delivery in 1-2 business days"
   },
   "actions": {
     "edit": "Edit",
@@ -820,7 +818,9 @@
     "dhlShipmentNumber": "Shipment number",
     "dhlTracking": "Tracking",
     "dhlLabelCreationFailed": "Could not create DHL label",
-    "dhlConfirmCreate": "Create DHL label for this order?"
+    "dhlConfirmCreate": "Create DHL label for this order?",
+    "dhlNotAvailableForPickup": "DHL shipping labels are not available for pickup orders",
+    "dhlLabelAlreadyExists": "DHL label has already been created for this order"
   },
   "shipping": {
     "dhl": {
@@ -852,7 +852,26 @@
       "secretPlaceholder": "Already saved – leave blank to keep",
       "saved": "DHL settings saved",
       "saveError": "Error saving settings",
-      "notConfigured": "DHL not configured yet"
+      "notConfigured": "DHL not configured yet",
+      "storeCredentialsRequired": "DHL is not configured. Production mode requires your own DHL credentials. Please configure DHL in shipping settings.",
+      "productionNotice": "🔴 Production Mode: Real DHL shipments via your DHL business account",
+      "sandboxNotice": "🟡 Sandbox Mode: Test environment, no real shipments",
+      "responsibilityNotice": "DHL shipping is processed through your own DHL business account. Shipping costs and billing run directly through your DHL account.",
+      "requirementsNotice": "You need a DHL business account, API credentials, and a matching billing number.",
+      "billingNumberHelp": "You can find the billing number in the DHL business portal under your booked products. It must match the selected DHL product (e.g., DHL Paket National).",
+      "productNational": "DHL Paket National (V01PAK)",
+      "liveCostWarning": "You are about to create a real DHL label via your DHL business account. This may incur shipping costs at DHL. Continue?",
+      "connectionTest": "Test connection",
+      "validateShipment": "Validate shipment",
+      "createLiveLabel": "Create live label",
+      "sandboxMode": "Test mode",
+      "productionMode": "Live / cost-relevant",
+      "connectionSuccess": "DHL connection successful! (no label created, no costs)",
+      "authFailed": "DHL authentication failed",
+      "apiUnreachable": "DHL Shipping API unreachable",
+      "testFailed": "Connection test failed",
+      "disabled": "DHL integration is disabled",
+      "configError": "DHL configuration invalid"
     }
   },
   "sidebar": {
@@ -1182,17 +1201,6 @@
         "title": "📡 Telegram Channel Import",
         "description": "Import products directly from Telegram channels in seconds – instantly saved as product drafts in your store."
       }
-    },
-    "demo": {
-      "title": "See markt.ma in action",
-      "subtitle": "Discover how easy it is to create your own online store",
-      "platformDemoTitle": "PLATFORM DEMO",
-      "platformDemoHeading": "🎥 Full platform demo",
-      "platformDemoText": "See all features of markt.ma in less than 2 minutes",
-      "platformDemoHint": "💡 Click ▶ to go directly to the live demo",
-      "tutorialsTitle": "📚 Step-by-step tutorials",
-      "ctaText": "Ready to get started?",
-      "ctaButton": "Start for free now"
     },
     "tutorialItems": {
       "createAccount": {
@@ -2404,5 +2412,68 @@
       "saturday": "Saturday",
       "sunday": "Sunday"
     }
+  },
+  "woocommerce": {
+    "categoryCount": "Category Count",
+    "variantLimitWarning": "⚠️ >3 attributes (variant limit)",
+    "variantWarnings": "Variant warnings",
+    "previewTitle": "Product Preview",
+    "loading": "Loading...",
+    "consumerSecret": "Consumer Secret",
+    "previewProducts": "Products",
+    "testHint": "Check if the connection to your WooCommerce shop works",
+    "noProducts": "No products found",
+    "config": {
+      "saved": "Configuration saved"
+    },
+    "importComingSoon": "Import coming in next step",
+    "connectionFailed": "❌ Connection failed",
+    "title": "WooCommerce Import",
+    "connectionSuccess": "✅ Connection successful!",
+    "connectionSettings": "Connection Settings",
+    "comingSoon": "Coming soon",
+    "enabledHint": "Enable import functionality for this shop",
+    "shopUrl": "Shop URL",
+    "testConnection": "Test Connection",
+    "test": "Test",
+    "consumerKey": "Consumer Key",
+    "previewLoaded": "Preview loaded",
+    "runTest": "Run Test",
+    "wcVersion": "WooCommerce Version",
+    "secretStored": "Secret is stored",
+    "saveConfig": "Save Configuration",
+    "connection": "Connection",
+    "secretKeepPlaceholder": "Leave empty to keep existing secret",
+    "secretHint": "WooCommerce REST API credentials from WooCommerce → Settings → Advanced → REST API",
+    "testing": "Testing connection...",
+    "productCount": "Product Count",
+    "alreadyImported": "Already imported",
+    "error": {
+      "apiNotFound": "WooCommerce REST API not found (404). Check shop URL.",
+      "invalidCredentials": "Invalid API credentials (401/403)",
+      "shopError": "WooCommerce shop error (5xx). Server may be offline.",
+      "rateLimitExceeded": "Rate limit exceeded (429). Please try again later.",
+      "connectionTimeout": "Connection timeout. Check shop URL and network.",
+      "unknown": "Unknown error",
+      "secretRequired": "Consumer secret is required",
+      "missingFields": "Please fill in all required fields"
+    },
+    "enabled": "Enabled",
+    "alreadyImportedShort": "Already imported",
+    "categories": "Categories",
+    "shopUrlHint": "The full URL of your WooCommerce shop (e.g. https://example.com)",
+    "importDoesNotModifyWooCommerce": "ℹ️ The import only copies products to markt.ma. Your WooCommerce shop will not be modified.",
+    "importTitle": "Start Import",
+    "loadPreview": "Load Preview",
+    "previewHint": "Shows the first 20 products that would be imported",
+    "duplicateSku": "SKU duplicate",
+    "variants": "Variants",
+    "importComingSoonHint": "The actual import will be implemented in Phase 2B. Currently you can test the configuration and load a preview of products.",
+    "productsFound": "Products found",
+    "subtitle": "Import products from your WooCommerce shop",
+    "import": "Import",
+    "preview": "Preview",
+    "startImport": "Start Import",
+    "wpVersion": "WordPress Version"
   }
 }

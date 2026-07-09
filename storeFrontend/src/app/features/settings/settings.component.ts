@@ -745,6 +745,14 @@ export class SettingsComponent implements OnInit, OnDestroy {
       ]
     },
     {
+      title: 'settings.integrations',
+      icon: '🔌',
+      cards: [
+        { id: 'woocommerce', icon: '🛍️', title: 'woocommerce.title', description: 'woocommerce.subtitle', route: this.getStoreRoute('woocommerce') },
+        { id: 'telegram', icon: '📱', title: 'settings.telegram.title', description: 'settings.telegram.description', route: this.getStoreRoute('telegram') }
+      ]
+    },
+    {
       title: 'settings.subscription',
       icon: '💳',
       cards: [
@@ -990,5 +998,12 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
   private getInitials(name: string): string {
     return name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('');
+  }
+
+  /**
+   * Helper: Erstellt Store-relative Route (z.B. /stores/1/woocommerce)
+   */
+  private getStoreRoute(path: string): string {
+    return this.currentStoreId ? `/stores/${this.currentStoreId}/${path}` : `/${path}`;
   }
 }

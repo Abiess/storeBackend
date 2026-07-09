@@ -1,0 +1,303 @@
+<div class="woocommerce-import">
+  <!-- Header -->
+  <div class="page-header">
+    <h1>🛍️ {{ 'woocommerce.title' | translate }}</h1>
+    <p>{{ 'woocommerce.subtitle' | translate }}</p>
+  </div>
+
+  <!-- Step Indicator -->
+  <div class="step-indicator">
+    <div class="step" 
+         [class.active]="isStepActive('config')" 
+         [class.completed]="isStepCompleted('config')"
+         (click)="goToStep('config')">
+      <div class="step-number">1</div>
+      <div class="step-label">{{ 'woocommerce.connection' | translate }}</div>
+    </div>
+
+    <div class="step" 
+         [class.active]="isStepActive('test')" 
+         [class.completed]="isStepCompleted('test')"
+         (click)="goToStep('test')">
+      <div class="step-number">2</div>
+      <div class="step-label">{{ 'woocommerce.test' | translate }}</div>
+    </div>
+
+    <div class="step" 
+         [class.active]="isStepActive('preview')" 
+         [class.completed]="isStepCompleted('preview')"
+         (click)="goToStep('preview')">
+      <div class="step-number">3</div>
+      <div class="step-label">{{ 'woocommerce.preview' | translate }}</div>
+    </div>
+
+    <div class="step" 
+         [class.active]="isStepActive('import')" 
+         [class.completed]="false">
+      <div class="step-number">4</div>
+      <div class="step-label">{{ 'woocommerce.import' | translate }}</div>
+    </div>
+  </div>
+
+  <!-- Error Message (global) -->
+  <div class="alert alert-error" *ngIf="errorMessage">
+    <span>❌ {{ errorMessage | translate }}</span>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- STEP 1: Config -->
+  <!-- ================================================================ -->
+  <div class="step-content" *ngIf="currentStep === 'config'">
+    <div class="form-card">
+      <h2>🔌 {{ 'woocommerce.connectionSettings' | translate }}</h2>
+      
+      <div class="form-group">
+        <label for="shopUrl">{{ 'woocommerce.shopUrl' | translate }} <span class="required">*</span></label>
+        <input 
+          type="url" 
+          id="shopUrl" 
+          [(ngModel)]="shopUrl" 
+          placeholder="https://example.com"
+          [disabled]="savingConfig">
+        <small>{{ 'woocommerce.shopUrlHint' | translate }}</small>
+      </div>
+
+      <div class="form-group">
+        <label for="consumerKey">{{ 'woocommerce.consumerKey' | translate }} <span class="required">*</span></label>
+        <input 
+          type="text" 
+          id="consumerKey" 
+          [(ngModel)]="consumerKey" 
+          placeholder="ck_..."
+          [disabled]="savingConfig">
+      </div>
+
+      <div class="form-group">
+        <label for="consumerSecret">
+          {{ 'woocommerce.consumerSecret' | translate }}
+          <span class="required" *ngIf="!consumerSecretConfigured">*</span>
+        </label>
+        <input 
+          type="password" 
+          id="consumerSecret" 
+          [(ngModel)]="consumerSecret" 
+          [placeholder]="consumerSecretConfigured ? ('woocommerce.secretKeepPlaceholder' | translate) : 'cs_...'"
+          [disabled]="savingConfig">
+        <small *ngIf="consumerSecretConfigured" class="text-success">
+          ✅ {{ 'woocommerce.secretStored' | translate }}
+        </small>
+        <small *ngIf="!consumerSecretConfigured">
+          {{ 'woocommerce.secretHint' | translate }}
+        </small>
+      </div>
+
+      <div class="form-group checkbox-group">
+        <label>
+          <input type="checkbox" [(ngModel)]="enabled" [disabled]="savingConfig">
+          {{ 'woocommerce.enabled' | translate }}
+        </label>
+        <small>{{ 'woocommerce.enabledHint' | translate }}</small>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn-primary" 
+                (click)="saveConfig()" 
+                [disabled]="savingConfig">
+          <span *ngIf="!savingConfig">💾 {{ 'woocommerce.saveConfig' | translate }}</span>
+          <span *ngIf="savingConfig">
+            <span class="spinner-inline"></span> {{ 'common.saving' | translate }}
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- STEP 2: Test Connection -->
+  <!-- ================================================================ -->
+  <div class="step-content" *ngIf="currentStep === 'test'">
+    <div class="test-card">
+      <h2>🔍 {{ 'woocommerce.testConnection' | translate }}</h2>
+      <p>{{ 'woocommerce.testHint' | translate }}</p>
+
+      <!-- Test Button -->
+      <button class="btn-test" 
+              (click)="testConnection()" 
+              [disabled]="testingConnection">
+        <span *ngIf="!testingConnection">🚀 {{ 'woocommerce.runTest' | translate }}</span>
+        <span *ngIf="testingConnection">
+          <span class="spinner-inline"></span> {{ 'woocommerce.testing' | translate }}
+        </span>
+      </button>
+
+      <!-- Test Result -->
+      <div class="test-result" *ngIf="testResult">
+        <div class="result-header" [class.success]="testResult.success" [class.error]="!testResult.success">
+          <span *ngIf="testResult.success">✅ {{ 'woocommerce.connectionSuccess' | translate }}</span>
+          <span *ngIf="!testResult.success">❌ {{ 'woocommerce.connectionFailed' | translate }}</span>
+        </div>
+
+        <div class="result-details" *ngIf="testResult.success">
+          <div class="detail-row">
+            <strong>{{ 'woocommerce.wcVersion' | translate }}:</strong>
+            <span>{{ testResult.wcVersion || '-' }}</span>
+          </div>
+          <div class="detail-row">
+            <strong>{{ 'woocommerce.wpVersion' | translate }}:</strong>
+            <span>{{ testResult.wpVersion || '-' }}</span>
+          </div>
+          <div class="detail-row">
+            <strong>{{ 'woocommerce.productCount' | translate }}:</strong>
+            <span>{{ testResult.productCount || 0 }}</span>
+          </div>
+          <div class="detail-row">
+            <strong>{{ 'woocommerce.categoryCount' | translate }}:</strong>
+            <span>{{ testResult.categoryCount || 0 }}</span>
+          </div>
+        </div>
+
+        <div class="result-error" *ngIf="!testResult.success">
+          <p>{{ testResult.messageKey | translate }}</p>
+          <small *ngIf="testResult.detail">{{ testResult.detail }}</small>
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <div class="step-navigation">
+        <button class="btn-secondary" (click)="goToStep('config')">
+          ← {{ 'common.back' | translate }}
+        </button>
+        <button class="btn-primary" 
+                (click)="goToStep('preview')" 
+                [disabled]="!testResult?.success">
+          {{ 'common.next' | translate }} →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- STEP 3: Preview -->
+  <!-- ================================================================ -->
+  <div class="step-content" *ngIf="currentStep === 'preview'">
+    <div class="preview-card">
+      <h2>👀 {{ 'woocommerce.previewTitle' | translate }}</h2>
+      <p>{{ 'woocommerce.previewHint' | translate }}</p>
+
+      <!-- Load Preview Button -->
+      <button class="btn-preview" 
+              (click)="loadPreview()" 
+              [disabled]="loadingPreview"
+              *ngIf="!previewResult">
+        <span *ngIf="!loadingPreview">🔄 {{ 'woocommerce.loadPreview' | translate }}</span>
+        <span *ngIf="loadingPreview">
+          <span class="spinner-inline"></span> {{ 'woocommerce.loading' | translate }}
+        </span>
+      </button>
+
+      <!-- Preview Result -->
+      <div class="preview-result" *ngIf="previewResult">
+        <!-- Stats -->
+        <div class="preview-stats">
+          <div class="stat">
+            <strong>{{ previewResult.totalProducts }}</strong>
+            <span>{{ 'woocommerce.productsFound' | translate }}</span>
+          </div>
+          <div class="stat">
+            <strong>{{ previewResult.categoriesCount }}</strong>
+            <span>{{ 'woocommerce.categories' | translate }}</span>
+          </div>
+          <div class="stat warn" *ngIf="previewResult.alreadyImportedCount > 0">
+            <strong>{{ previewResult.alreadyImportedCount }}</strong>
+            <span>{{ 'woocommerce.alreadyImportedShort' | translate }}</span>
+          </div>
+          <div class="stat warn" *ngIf="previewResult.productsWithVariantWarning > 0">
+            <strong>{{ previewResult.productsWithVariantWarning }}</strong>
+            <span>{{ 'woocommerce.variantWarnings' | translate }}</span>
+          </div>
+        </div>
+
+        <!-- Products List -->
+        <div class="products-list" *ngIf="previewResult.products.length > 0">
+          <h3>{{ 'woocommerce.previewProducts' | translate }}</h3>
+          
+          <div class="product-card" *ngFor="let product of previewResult.products">
+            <div class="product-image">
+              <img *ngIf="product.imageUrl" [src]="product.imageUrl" [alt]="product.name" />
+              <div *ngIf="!product.imageUrl" class="no-image">📦</div>
+            </div>
+
+            <div class="product-info">
+              <h4>{{ product.name }}</h4>
+              <div class="product-meta">
+                <span *ngIf="product.sku" class="sku">SKU: {{ product.sku }}</span>
+                <span *ngIf="product.price" class="price">{{ product.price }} €</span>
+                <span *ngIf="product.variationCount > 0" class="variants">
+                  {{ product.variationCount }} {{ 'woocommerce.variants' | translate }}
+                </span>
+              </div>
+
+              <div class="product-categories" *ngIf="product.categoryNames.length > 0">
+                <span *ngFor="let cat of product.categoryNames" class="category-tag">
+                  {{ cat }}
+                </span>
+              </div>
+
+              <div class="product-badges">
+                <span class="badge" [ngClass]="getProductBadgeClass(product)">
+                  {{ getProductBadgeText(product) | translate }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="no-products" *ngIf="previewResult.products.length === 0">
+          📭 {{ 'woocommerce.noProducts' | translate }}
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <div class="step-navigation">
+        <button class="btn-secondary" (click)="goToStep('test')">
+          ← {{ 'common.back' | translate }}
+        </button>
+        <button class="btn-primary" 
+                (click)="goToStep('import')" 
+                [disabled]="!previewResult">
+          {{ 'common.next' | translate }} →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- STEP 4: Import (DISABLED) -->
+  <!-- ================================================================ -->
+  <div class="step-content" *ngIf="currentStep === 'import'">
+    <div class="import-card">
+      <h2>🚀 {{ 'woocommerce.importTitle' | translate }}</h2>
+      
+      <div class="coming-soon-notice">
+        <div class="icon">⏳</div>
+        <h3>{{ 'woocommerce.importComingSoon' | translate }}</h3>
+        <p>{{ 'woocommerce.importComingSoonHint' | translate }}</p>
+      </div>
+
+      <div class="info-box">
+        <p>{{ 'woocommerce.importDoesNotModifyWooCommerce' | translate }}</p>
+      </div>
+
+      <button class="btn-import" disabled>
+        🚀 {{ 'woocommerce.startImport' | translate }} ({{ 'woocommerce.comingSoon' | translate }})
+      </button>
+
+      <!-- Navigation -->
+      <div class="step-navigation">
+        <button class="btn-secondary" (click)="goToStep('preview')">
+          ← {{ 'common.back' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

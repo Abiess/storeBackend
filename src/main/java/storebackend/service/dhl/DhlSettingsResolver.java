@@ -30,6 +30,10 @@ public class DhlSettingsResolver {
     /**
      * Resolved DHL Config für einen Store
      * 
+     * SICHERHEIT Production vs Sandbox:
+     * - Sandbox: Darf globale ENV Credentials nutzen (für Testing)
+     * - Production: MUSS store-spezifische Credentials haben (keine globale Fallback)
+     * 
      * @param storeId Store ID
      * @return ResolvedDhlConfig oder null wenn DHL nicht verfügbar
      */
@@ -44,14 +48,31 @@ public class DhlSettingsResolver {
                 log.debug("✅ Using store-specific DHL config for store {}", storeId);
                 return buildStoreConfig(storeSettings);
             } else {
+                // Store hat DHL aktiviert aber config unvollständig
+                String environment = storeSettings.getDhlEnvironment();
+                
+                // PRODUCTION: Kein Fallback erlaubt!
+                if ("PRODUCTION".equalsIgnoreCase(environment)) {
+                    log.error("❌ Store {} has DHL PRODUCTION enabled but config incomplete. " +
+                        "Production requires store-specific credentials. No fallback allowed!", storeId);
+                    return null; // → Wird in Services zu "storeCredentialsRequired" Error
+                }
+                
                 log.warn("⚠️ Store {} has DHL enabled but config incomplete. Falling back to global ENV.", 
                     storeId);
             }
         }
         
-        // 2. Fallback: Globale ENV Settings (nur wenn enabled)
+        // 2. Fallback: Globale ENV Settings (NUR für Sandbox!)
         if (globalDhlProperties.isEnabled()) {
-            log.debug("⚡ Using global ENV DHL config for store {} (env: {})", 
+            // SICHERHEIT: Production ENV Settings dürfen nicht als Fallback genutzt werden
+            if (!"SANDBOX".equalsIgnoreCase(globalDhlProperties.getEnv())) {
+                log.error("❌ Global ENV is PRODUCTION but store {} has no store-specific config. " +
+                    "Production DHL requires store-specific credentials!", storeId);
+                return null;
+            }
+            
+            log.debug("⚡ Using global SANDBOX ENV DHL config for store {} (env: {})", 
                 storeId, globalDhlProperties.getEnv());
             return buildGlobalConfig();
         }

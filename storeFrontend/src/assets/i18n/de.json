@@ -434,7 +434,6 @@
     "overview": "Übersicht",
     "categories": "Kategorien",
     "allProducts": "Alle Produkte",
-    "products": "Produkte",
     "orders": "Bestellungen",
     "delivery": "Lieferung",
     "homepage": "Homepage",
@@ -717,7 +716,12 @@
       "footerTextPlaceholder": "Dein Shop für alles – schnell, günstig, zuverlässig."
     },
     "noEmailHint": "Keine E-Mail hinterlegt – jetzt hinzufügen",
-    "noEmailSet": "⚠️ Noch keine E-Mail – Store-Link sichern!"
+    "noEmailSet": "⚠️ Noch keine E-Mail – Store-Link sichern!",
+    "integrations": "Integrationen",
+    "telegram": {
+      "title": "Telegram Integration",
+      "description": "Telegram Channel für Produkt-Import verbinden"
+    }
   },
   "table": {
     "image": "Bild",
@@ -737,12 +741,6 @@
   },
   "validation": {
     "required": "Dieses Feld ist erforderlich"
-  },
-  "shipping": {
-    "standard": "Standard-Versand",
-    "standardHint": "Lieferung in 3-5 Werktagen",
-    "express": "Express-Versand",
-    "expressHint": "Lieferung in 1-2 Werktagen"
   },
   "actions": {
     "edit": "Bearbeiten",
@@ -1066,7 +1064,9 @@
     "dhlShipmentNumber": "Sendungsnummer",
     "dhlTracking": "Tracking",
     "dhlLabelCreationFailed": "DHL-Label konnte nicht erstellt werden",
-    "dhlConfirmCreate": "DHL-Label für diese Bestellung erstellen?"
+    "dhlConfirmCreate": "DHL-Label für diese Bestellung erstellen?",
+    "dhlNotAvailableForPickup": "DHL Versandlabels sind für Abholbestellungen nicht verfügbar",
+    "dhlLabelAlreadyExists": "DHL-Label wurde bereits für diese Bestellung erstellt"
   },
   "shipping": {
     "dhl": {
@@ -1098,7 +1098,26 @@
       "secretPlaceholder": "Bereits gespeichert – leer lassen, um beizubehalten",
       "saved": "DHL-Einstellungen gespeichert",
       "saveError": "Fehler beim Speichern",
-      "notConfigured": "DHL noch nicht konfiguriert"
+      "notConfigured": "DHL noch nicht konfiguriert",
+      "storeCredentialsRequired": "DHL ist nicht konfiguriert. Im Production-Modus benötigst du eigene DHL Zugangsdaten. Bitte konfiguriere DHL in den Versandeinstellungen.",
+      "productionNotice": "🔴 Production-Modus: Echte DHL-Sendungen über deinen DHL Geschäftskundenvertrag",
+      "sandboxNotice": "🟡 Sandbox-Modus: Testumgebung, keine echten Sendungen",
+      "responsibilityNotice": "DHL Versand wird über deinen eigenen DHL Geschäftskundenvertrag abgewickelt. Versandkosten und Abrechnung laufen direkt über dein DHL Konto.",
+      "requirementsNotice": "Du benötigst einen DHL Geschäftskundenvertrag, API-Zugangsdaten und eine passende Abrechnungsnummer.",
+      "billingNumberHelp": "Du findest die Abrechnungsnummer im DHL Geschäftskundenportal bei deinen gebuchten Produkten. Sie muss zum ausgewählten DHL Produkt passen (z.B. DHL Paket National).",
+      "productNational": "DHL Paket National (V01PAK)",
+      "liveCostWarning": "Du erstellst jetzt ein echtes DHL Label über deinen DHL Geschäftskundenvertrag. Dadurch können Versandkosten bei DHL entstehen. Fortfahren?",
+      "connectionTest": "Verbindung testen",
+      "validateShipment": "Sendung validieren",
+      "createLiveLabel": "Live-Label erstellen",
+      "sandboxMode": "Testmodus",
+      "productionMode": "Live / kostenrelevant",
+      "connectionSuccess": "DHL-Verbindung erfolgreich! (kein Label erstellt, keine Kosten)",
+      "authFailed": "DHL-Authentifizierung fehlgeschlagen",
+      "apiUnreachable": "DHL Shipping API nicht erreichbar",
+      "testFailed": "Verbindungstest fehlgeschlagen",
+      "disabled": "DHL-Integration ist deaktiviert",
+      "configError": "DHL-Konfiguration ungültig"
     }
   },
   "sidebar": {
@@ -1373,17 +1392,6 @@
         "title": "📡 Telegram Channel Import",
         "description": "Importiere Produkte direkt aus Telegram-Channels in Sekunden – mit nur einem Klick als Produkt-Entwürfe im Shop."
       }
-    },
-    "demo": {
-      "title": "Sehen Sie markt.ma in Aktion",
-      "subtitle": "Entdecken Sie, wie einfach es ist, Ihren eigenen Online-Shop zu erstellen",
-      "platformDemoTitle": "PLATTFORM DEMO",
-      "platformDemoHeading": "🎥 Vollständige Plattform-Demo",
-      "platformDemoText": "Sehen Sie alle Features von markt.ma in weniger als 2 Minuten",
-      "platformDemoHint": "💡 Klicken Sie auf ▶ um direkt zur Live-Demo zu gelangen",
-      "tutorialsTitle": "📚 Schritt-für-Schritt Anleitungen",
-      "ctaText": "Bereit anzufangen?",
-      "ctaButton": "Jetzt kostenlos starten"
     },
     "tutorialItems": {
       "createAccount": {
@@ -2464,5 +2472,68 @@
       "saturday": "Samstag",
       "sunday": "Sonntag"
     }
+  },
+  "woocommerce": {
+    "config": {
+      "saved": "Konfiguration gespeichert"
+    },
+    "productsFound": "Produkte gefunden",
+    "loading": "Lädt...",
+    "importComingSoonHint": "Der echte Import wird in Phase 2B implementiert. Derzeit können Sie die Konfiguration testen und eine Vorschau der Produkte laden.",
+    "variants": "Varianten",
+    "importComingSoon": "Import kommt im nächsten Schritt",
+    "connectionFailed": "❌ Verbindung fehlgeschlagen",
+    "previewHint": "Zeigt die ersten 20 Produkte an, die importiert werden würden",
+    "secretStored": "Secret ist gespeichert",
+    "testing": "Teste Verbindung...",
+    "enabledHint": "Import-Funktionalität für diesen Shop aktivieren",
+    "error": {
+      "connectionTimeout": "Verbindungs-Timeout. Prüfen Sie Shop URL und Netzwerk.",
+      "missingFields": "Bitte füllen Sie alle Pflichtfelder aus",
+      "apiNotFound": "WooCommerce REST API nicht gefunden (404). Prüfen Sie die Shop URL.",
+      "unknown": "Unbekannter Fehler",
+      "invalidCredentials": "Ungültige API-Zugangsdaten (401/403)",
+      "rateLimitExceeded": "Rate Limit überschritten (429). Bitte später erneut versuchen.",
+      "secretRequired": "Consumer Secret ist erforderlich",
+      "shopError": "WooCommerce Shop Fehler (5xx). Server möglicherweise offline."
+    },
+    "categories": "Kategorien",
+    "preview": "Vorschau",
+    "runTest": "Test starten",
+    "import": "Import",
+    "loadPreview": "Vorschau laden",
+    "noProducts": "Keine Produkte gefunden",
+    "testHint": "Prüft ob die Verbindung zu Ihrem WooCommerce Shop funktioniert",
+    "importTitle": "Import starten",
+    "title": "WooCommerce Import",
+    "alreadyImported": "Bereits importiert",
+    "shopUrlHint": "Die vollständige URL Ihres WooCommerce Shops (z.B. https://example.com)",
+    "consumerSecret": "Consumer Secret",
+    "secretHint": "WooCommerce REST API Credentials aus WooCommerce → Einstellungen → Erweitert → REST API",
+    "importDoesNotModifyWooCommerce": "ℹ️ Der Import kopiert Produkte nur nach markt.ma. Ihr WooCommerce Shop wird nicht verändert.",
+    "subtitle": "Importieren Sie Produkte aus Ihrem WooCommerce Shop",
+    "comingSoon": "Demnächst",
+    "enabled": "Aktiviert",
+    "duplicateSku": "SKU Duplikat",
+    "categoryCount": "Anzahl Kategorien",
+    "connection": "Verbindung",
+    "productCount": "Anzahl Produkte",
+    "saveConfig": "Konfiguration speichern",
+    "shopUrl": "Shop URL",
+    "startImport": "Import starten",
+    "alreadyImportedShort": "Bereits importiert",
+    "connectionSuccess": "✅ Verbindung erfolgreich!",
+    "previewProducts": "Produkte",
+    "variantLimitWarning": "⚠️ >3 Attribute (Varianten-Limit)",
+    "test": "Test",
+    "connectionSettings": "Verbindungseinstellungen",
+    "testConnection": "Verbindung testen",
+    "secretKeepPlaceholder": "Leer lassen um bestehendes Secret zu behalten",
+    "variantWarnings": "Varianten-Warnungen",
+    "previewTitle": "Produkt-Vorschau",
+    "previewLoaded": "Vorschau geladen",
+    "wpVersion": "WordPress Version",
+    "consumerKey": "Consumer Key",
+    "wcVersion": "WooCommerce Version"
   }
 }

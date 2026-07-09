@@ -316,7 +316,6 @@
     "overview": "Vue d'ensemble",
     "categories": "Catégories",
     "allProducts": "Tous les produits",
-    "products": "Produits",
     "orders": "Commandes",
     "delivery": "Livraison",
     "homepage": "Page d'accueil",
@@ -572,7 +571,12 @@
       "footerTextPlaceholder": "Votre boutique tout-en-un – rapide, abordable, fiable."
     },
     "noEmailHint": "Aucun e-mail défini – ajoutez-en un maintenant",
-    "noEmailSet": "⚠️ Pas encore d'e-mail – enregistrez le lien de votre boutique !"
+    "noEmailSet": "⚠️ Pas encore d'e-mail – enregistrez le lien de votre boutique !",
+    "integrations": "Intégrations",
+    "telegram": {
+      "title": "Intégration Telegram",
+      "description": "Connecter le canal Telegram pour l'import de produits"
+    }
   },
   "table": {
     "image": "Image",
@@ -592,12 +596,6 @@
   },
   "validation": {
     "required": "Ce champ est obligatoire"
-  },
-  "shipping": {
-    "standard": "Livraison standard",
-    "standardHint": "Livraison en 3 à 5 jours ouvrables",
-    "express": "Livraison express",
-    "expressHint": "Livraison en 1 à 2 jours ouvrables"
   },
   "actions": {
     "edit": "Modifier",
@@ -821,7 +819,9 @@
     "dhlShipmentNumber": "Numéro d'expédition",
     "dhlTracking": "Suivi",
     "dhlLabelCreationFailed": "Impossible de créer l'étiquette DHL",
-    "dhlConfirmCreate": "Créer une étiquette DHL pour cette commande ?"
+    "dhlConfirmCreate": "Créer une étiquette DHL pour cette commande ?",
+    "dhlNotAvailableForPickup": "Les étiquettes d'expédition DHL ne sont pas disponibles pour les commandes à retirer",
+    "dhlLabelAlreadyExists": "Une étiquette DHL a déjà été créée pour cette commande"
   },
   "shipping": {
     "dhl": {
@@ -853,7 +853,26 @@
       "secretPlaceholder": "Déjà enregistré – laisser vide pour conserver",
       "saved": "Paramètres DHL enregistrés",
       "saveError": "Erreur lors de l'enregistrement",
-      "notConfigured": "DHL pas encore configuré"
+      "notConfigured": "DHL pas encore configuré",
+      "storeCredentialsRequired": "DHL n'est pas configuré. Le mode Production nécessite vos propres identifiants DHL. Veuillez configurer DHL dans les paramètres d'expédition.",
+      "productionNotice": "🔴 Mode Production : Expéditions DHL réelles via votre compte professionnel DHL",
+      "sandboxNotice": "🟡 Mode Sandbox : Environnement de test, pas d'expéditions réelles",
+      "responsibilityNotice": "L'expédition DHL est traitée via votre propre compte professionnel DHL. Les frais d'expédition et la facturation passent directement par votre compte DHL.",
+      "requirementsNotice": "Vous avez besoin d'un compte professionnel DHL, d'identifiants API et d'un numéro de facturation correspondant.",
+      "billingNumberHelp": "Vous pouvez trouver le numéro de facturation dans le portail professionnel DHL sous vos produits réservés. Il doit correspondre au produit DHL sélectionné (par ex. DHL Paket National).",
+      "productNational": "DHL Paket National (V01PAK)",
+      "liveCostWarning": "Vous êtes sur le point de créer une étiquette DHL réelle via votre compte professionnel DHL. Cela peut entraîner des frais d'expédition chez DHL. Continuer ?",
+      "connectionTest": "Tester la connexion",
+      "validateShipment": "Valider l'expédition",
+      "createLiveLabel": "Créer une étiquette en direct",
+      "sandboxMode": "Mode test",
+      "productionMode": "En direct / frais applicables",
+      "connectionSuccess": "Connexion DHL réussie ! (aucune étiquette créée, aucun frais)",
+      "authFailed": "Échec de l'authentification DHL",
+      "apiUnreachable": "API d'expédition DHL inaccessible",
+      "testFailed": "Échec du test de connexion",
+      "disabled": "L'intégration DHL est désactivée",
+      "configError": "Configuration DHL invalide"
     }
   },
   "sidebar": {
@@ -1183,17 +1202,6 @@
         "title": "📡 Import de chaîne Telegram",
         "description": "Importez des produits directement depuis des chaînes Telegram en quelques secondes – enregistrés instantanément comme brouillons de produits dans votre boutique."
       }
-    },
-    "demo": {
-      "title": "Découvrez markt.ma en action",
-      "subtitle": "Découvrez à quel point il est facile de créer votre propre boutique en ligne",
-      "platformDemoTitle": "DÉMO DE LA PLATEFORME",
-      "platformDemoHeading": "🎥 Démo complète de la plateforme",
-      "platformDemoText": "Découvrez toutes les fonctionnalités de markt.ma en moins de 2 minutes",
-      "platformDemoHint": "💡 Cliquez sur ▶ pour accéder directement à la démo en direct",
-      "tutorialsTitle": "📚 Tutoriels étape par étape",
-      "ctaText": "Prêt à commencer ?",
-      "ctaButton": "Commencer gratuitement maintenant"
     },
     "tutorialItems": {
       "createAccount": {
@@ -2405,5 +2413,68 @@
       "saturday": "Samedi",
       "sunday": "Dimanche"
     }
+  },
+  "woocommerce": {
+    "error": {
+      "invalidCredentials": "Identifiants API invalides (401/403)",
+      "apiNotFound": "REST API WooCommerce introuvable (404). Vérifiez l'URL de la boutique.",
+      "secretRequired": "Consumer Secret requis",
+      "missingFields": "Veuillez remplir tous les champs obligatoires",
+      "connectionTimeout": "Délai de connexion dépassé. Vérifiez l'URL de la boutique et le réseau.",
+      "shopError": "Erreur de boutique WooCommerce (5xx). Le serveur est peut-être hors ligne.",
+      "rateLimitExceeded": "Limite de taux dépassée (429). Veuillez réessayer plus tard.",
+      "unknown": "Erreur inconnue"
+    },
+    "loadPreview": "Charger l'aperçu",
+    "shopUrlHint": "L'URL complète de votre boutique WooCommerce (par ex. https://example.com)",
+    "alreadyImported": "Déjà importé",
+    "import": "Import",
+    "config": {
+      "saved": "Configuration enregistrée"
+    },
+    "importComingSoonHint": "L'import réel sera implémenté dans la Phase 2B. Actuellement, vous pouvez tester la configuration et charger un aperçu des produits.",
+    "subtitle": "Importez des produits depuis votre boutique WooCommerce",
+    "connectionFailed": "❌ Connexion échouée",
+    "testConnection": "Tester la connexion",
+    "title": "Import WooCommerce",
+    "shopUrl": "URL de la boutique",
+    "previewLoaded": "Aperçu chargé",
+    "importComingSoon": "Import à venir dans la prochaine étape",
+    "variantLimitWarning": "⚠️ >3 attributs (limite variantes)",
+    "categoryCount": "Nombre de catégories",
+    "importDoesNotModifyWooCommerce": "ℹ️ L'import copie uniquement les produits vers markt.ma. Votre boutique WooCommerce ne sera pas modifiée.",
+    "saveConfig": "Enregistrer la configuration",
+    "test": "Test",
+    "preview": "Aperçu",
+    "secretKeepPlaceholder": "Laisser vide pour conserver le secret existant",
+    "alreadyImportedShort": "Déjà importé",
+    "testing": "Test de connexion en cours...",
+    "wcVersion": "Version WooCommerce",
+    "consumerKey": "Consumer Key",
+    "variantWarnings": "Avertissements variantes",
+    "enabled": "Activé",
+    "previewHint": "Affiche les 20 premiers produits qui seraient importés",
+    "secretStored": "Secret enregistré",
+    "connection": "Connexion",
+    "startImport": "Démarrer l'import",
+    "duplicateSku": "SKU en double",
+    "previewProducts": "Produits",
+    "productCount": "Nombre de produits",
+    "connectionSuccess": "✅ Connexion réussie !",
+    "connectionSettings": "Paramètres de connexion",
+    "testHint": "Vérifiez que la connexion à votre boutique WooCommerce fonctionne",
+    "comingSoon": "Bientôt disponible",
+    "loading": "Chargement...",
+    "importTitle": "Démarrer l'import",
+    "previewTitle": "Aperçu des produits",
+    "categories": "Catégories",
+    "runTest": "Lancer le test",
+    "variants": "Variantes",
+    "enabledHint": "Activer la fonctionnalité d'import pour cette boutique",
+    "consumerSecret": "Consumer Secret",
+    "wpVersion": "Version WordPress",
+    "noProducts": "Aucun produit trouvé",
+    "productsFound": "Produits trouvés",
+    "secretHint": "Identifiants REST API de WooCommerce → Réglages → Avancé → REST API"
   }
 }

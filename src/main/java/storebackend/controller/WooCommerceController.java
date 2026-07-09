@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import storebackend.dto.woocommerce.*;
 import storebackend.dto.woocommerce.api.WooCategoryDto;
 import storebackend.dto.woocommerce.api.WooProductDto;
@@ -324,10 +325,10 @@ public class WooCommerceController {
      */
     private void verifyOwnership(Long storeId, User user) {
         Store store = storeRepository.findById(storeId)
-                .orElseThrow(() -> new RuntimeException("Store not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Store not found"));
         
         if (!store.getOwner().getId().equals(user.getId())) {
-            throw new RuntimeException("Access denied: You are not the owner of this store");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied: You are not the owner of this store");
         }
     }
 

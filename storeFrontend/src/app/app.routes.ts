@@ -315,6 +315,13 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
 
+  // ==================== WooCommerce Import ====================
+  {
+    path: 'stores/:id/woocommerce',
+    loadComponent: () => import('./features/settings/woocommerce/woocommerce-import.component').then(m => m.WooCommerceImportComponent),
+    canActivate: [authGuard]
+  },
+
   // ==================== Team & Rollen Management ====================
   {
     path: 'stores/:id/roles',
