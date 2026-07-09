@@ -291,10 +291,13 @@ import {
 
                 <!-- Aktionen -->
                 <div class="form-actions">
-                  <button class="btn btn-primary" (click)="saveDhlSettings()" [disabled]="dhlSaving">
+                  <button class="btn btn-primary" (click)="saveDhlSettings()" [disabled]="dhlSaving || dhlTesting">
                     {{ dhlSaving ? ('common.saving' | translate) : ('common.save' | translate) }}
                   </button>
-                  <button class="btn btn-outline" (click)="cancelDhlEdit()">
+                  <button class="btn btn-outline" (click)="testDhlConnection()" [disabled]="dhlSaving || dhlTesting">
+                    {{ dhlTesting ? ('shipping.dhl.testing' | translate) : ('shipping.dhl.testConnection' | translate) }}
+                  </button>
+                  <button class="btn btn-outline" (click)="cancelDhlEdit()" [disabled]="dhlSaving || dhlTesting">
                     {{ 'common.cancel' | translate }}
                   </button>
                 </div>
@@ -1009,6 +1012,7 @@ export class DeliveryManagementComponent implements OnInit, OnDestroy {
   // DHL Form
   dhlExpanded = false;
   dhlSaving = false;
+  dhlTesting = false; // NEW: For connection test
   showDhlClientSecret = false;
   showDhlPassword = false;
   dhlForm: any = {
@@ -1220,6 +1224,104 @@ export class DeliveryManagementComponent implements OnInit, OnDestroy {
     this.dhlExpanded = false;
     this.showDhlClientSecret = false;
     this.showDhlPassword = false;
+  }
+
+  /**
+   * Test DHL Connection
+   * Speichert zuerst Settings und testet dann die Verbindung
+   */
+  testDhlConnection(): void {
+    // Validation (gleiche wie saveDhlSettings)
+    if (this.dhlForm.dhlEnabled) {
+      if (!this.dhlForm.dhlBillingNumber) {
+        this.toastService.error('Abrechnungsnummer ist erforderlich');
+        return;
+      }
+      if (!this.dhlForm.dhlShipperName || !this.dhlForm.dhlShipperStreet || 
+          !this.dhlForm.dhlShipperHouseNumber || !this.dhlForm.dhlShipperPostalCode || 
+          !this.dhlForm.dhlShipperCity || !this.dhlForm.dhlShipperCountry) {
+        this.toastService.error('Absenderadresse ist unvollständig');
+        return;
+      }
+      if (!this.dhlForm.dhlDefaultWeightGrams || !this.dhlForm.dhlDefaultLengthMm || 
+          !this.dhlForm.dhlDefaultWidthMm || !this.dhlForm.dhlDefaultHeightMm) {
+        this.toastService.error('Standardpaket-Maße sind erforderlich');
+        return;
+      }
+    }
+
+    this.dhlTesting = true;
+
+    // 1. Erst Settings speichern
+    const payload: any = { ...this.settings };
+    Object.keys(this.dhlForm).forEach(key => {
+      if (key === 'dhlClientSecret') {
+        if (this.dhlForm[key] !== this.originalDhlSecrets.clientSecret) {
+          payload[key] = this.dhlForm[key];
+        }
+      } else if (key === 'dhlPassword') {
+        if (this.dhlForm[key] !== this.originalDhlSecrets.password) {
+          payload[key] = this.dhlForm[key];
+        }
+      } else {
+        payload[key] = this.dhlForm[key];
+      }
+    });
+
+    this.settingsService.updateDeliverySettings(this.storeId, payload).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (updated) => {
+        this.settings = updated;
+        this.loadDhlFormFromSettings(updated);
+        
+        // 2. Dann Connection Test
+        this.settingsService.testDhlConnection(this.storeId).pipe(
+          takeUntil(this.destroy$)
+        ).subscribe({
+          next: (testResult) => {
+            this.dhlTesting = false;
+            
+            if (testResult.success) {
+              this.toastService.success('DHL Verbindung erfolgreich ✅');
+            } else {
+              // Error mit messageKey
+              const messageKey = testResult.messageKey || 'shipping.dhl.connectionFailed';
+              this.toastService.error(this.translateKey(messageKey));
+            }
+          },
+          error: (err) => {
+            console.error('DHL connection test error:', err);
+            this.dhlTesting = false;
+            
+            // Try to extract messageKey from error response
+            const messageKey = err?.error?.messageKey || 'shipping.dhl.connectionFailed';
+            this.toastService.error(this.translateKey(messageKey));
+          }
+        });
+      },
+      error: (err) => {
+        console.error('DHL save error before test:', err);
+        this.toastService.error('Fehler beim Speichern der DHL-Einstellungen');
+        this.dhlTesting = false;
+      }
+    });
+  }
+
+  /**
+   * Helper: Translate key (fallback to raw key if not found)
+   */
+  private translateKey(key: string): string {
+    // Simple translation - in real app use TranslateService
+    const translations: any = {
+      'shipping.dhl.connectionSuccess': 'DHL Verbindung erfolgreich',
+      'shipping.dhl.connectionFailed': 'DHL Verbindung fehlgeschlagen',
+      'shipping.dhl.notConfigured': 'DHL ist nicht konfiguriert',
+      'shipping.dhl.authFailed': 'DHL Authentifizierung fehlgeschlagen',
+      'shipping.dhl.apiUnreachable': 'DHL API nicht erreichbar',
+      'shipping.dhl.productionCredentialsMissing': 'Production-Modus erfordert Store-spezifische Zugangsdaten'
+    };
+    return translations[key] || key;
   }
 
   editSettingsInline(): void { this.toastService.info('Settings-Dialog öffnen (bestehende Dialog-Komponente)'); }

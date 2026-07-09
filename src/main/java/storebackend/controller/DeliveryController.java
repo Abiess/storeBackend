@@ -12,9 +12,11 @@ import storebackend.entity.Store;
 import storebackend.entity.User;
 import storebackend.repository.StoreRepository;
 import storebackend.service.*;
+import storebackend.service.dhl.DhlConnectionTestService;
 import storebackend.util.StoreAccessChecker;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Controller for delivery management (Merchant APIs)
@@ -29,6 +31,7 @@ public class DeliveryController {
     private final DeliveryProviderService providerService;
     private final DeliveryZoneService zoneService;
     private final StoreRepository storeRepository;
+    private final DhlConnectionTestService dhlConnectionTestService;
 
     // ==================== SETTINGS ====================
 
@@ -263,5 +266,30 @@ public class DeliveryController {
 
         zoneService.deleteZone(zoneId);
         return ResponseEntity.noContent().build();
+    }
+
+    // ==================== DHL ====================
+
+    @PostMapping("/dhl/test-connection")
+    @Operation(summary = "Test DHL connection", description = "Test DHL API connection with store-specific settings")
+    public ResponseEntity<?> testDhlConnection(
+            @PathVariable Long storeId,
+            @AuthenticationPrincipal User user) {
+
+        if (user == null) {
+            return ResponseEntity.status(401).body("Unauthorized");
+        }
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+        if (!StoreAccessChecker.isOwner(store, user)) {
+            return ResponseEntity.status(403).body("Not authorized");
+        }
+
+        Map<String, Object> result = dhlConnectionTestService.testConnection(storeId);
+        boolean success = (Boolean) result.getOrDefault("success", false);
+        
+        return success 
+            ? ResponseEntity.ok(result)
+            : ResponseEntity.badRequest().body(result);
     }
 }

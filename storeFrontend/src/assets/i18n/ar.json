@@ -752,7 +752,11 @@
       "apiUnreachable": "DHL Shipping API غير قابل للوصول",
       "testFailed": "فشل اختبار الاتصال",
       "disabled": "تكامل DHL معطّل",
-      "configError": "تكوين DHL غير صالح"
+      "configError": "تكوين DHL غير صالح",
+      "testing": "اختبار الاتصال...",
+      "testConnection": "اختبار الاتصال",
+      "connectionFailed": "فشل اتصال DHL",
+      "productionCredentialsMissing": "يتطلب وضع Production بيانات اعتماد خاصة بالمتجر"
     }
   },
   "trust": {

@@ -74,6 +74,16 @@ export class DeliverySettingsService {
   }
 
   /**
+   * Teste DHL Verbindung
+   */
+  testDhlConnection(storeId: number): Observable<any> {
+    return this.http.post<any>(
+      `${environment.apiUrl}/stores/${storeId}/delivery/dhl/test-connection`,
+      {}
+    );
+  }
+
+  /**
    * Räumt den State auf
    */
   clearState(): void {

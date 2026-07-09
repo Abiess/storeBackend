@@ -871,7 +871,11 @@
       "apiUnreachable": "DHL Shipping API unreachable",
       "testFailed": "Connection test failed",
       "disabled": "DHL integration is disabled",
-      "configError": "DHL configuration invalid"
+      "configError": "DHL configuration invalid",
+      "testing": "Testing connection...",
+      "testConnection": "Test connection",
+      "connectionFailed": "DHL connection failed",
+      "productionCredentialsMissing": "Production mode requires store-specific credentials"
     }
   },
   "sidebar": {

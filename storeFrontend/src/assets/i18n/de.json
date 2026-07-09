@@ -1117,7 +1117,11 @@
       "apiUnreachable": "DHL Shipping API nicht erreichbar",
       "testFailed": "Verbindungstest fehlgeschlagen",
       "disabled": "DHL-Integration ist deaktiviert",
-      "configError": "DHL-Konfiguration ungültig"
+      "configError": "DHL-Konfiguration ungültig",
+      "testing": "Teste Verbindung...",
+      "testConnection": "Verbindung testen",
+      "connectionFailed": "DHL Verbindung fehlgeschlagen",
+      "productionCredentialsMissing": "Production-Modus erfordert Store-spezifische Zugangsdaten"
     }
   },
   "sidebar": {
