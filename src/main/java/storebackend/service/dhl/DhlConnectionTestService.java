@@ -62,6 +62,23 @@ public class DhlConnectionTestService {
             response.put("configSource", config.getSource());
             response.put("environment", config.getEnvironment());
             
+            // WICHTIG: Validiere dass Credentials nicht leer sind
+            if (config.getClientId() == null || config.getClientId().trim().isEmpty()) {
+                response.put("success", false);
+                response.put("error", "CLIENT_ID_MISSING");
+                response.put("messageKey", "shipping.dhl.clientIdMissing");
+                response.put("message", "DHL Client ID is missing. Please enter your Client ID from DHL Developer Portal.");
+                return response;
+            }
+            
+            if (config.getClientSecret() == null || config.getClientSecret().trim().isEmpty()) {
+                response.put("success", false);
+                response.put("error", "CLIENT_SECRET_MISSING");
+                response.put("messageKey", "shipping.dhl.clientSecretMissing");
+                response.put("message", "DHL Client Secret is missing. Please enter your Client Secret from DHL Developer Portal.");
+                return response;
+            }
+            
             // 2. Test Auth (Token abrufen)
             String token;
             try {
@@ -70,6 +87,15 @@ public class DhlConnectionTestService {
                 response.put("tokenReceived", token != null && !token.isEmpty());
                 log.info("✅ DHL Auth successful for store {} (env: {}, source: {})", 
                     storeId, config.getEnvironment(), config.getSource());
+            } catch (IllegalStateException e) {
+                // Validation error (missing credentials)
+                log.error("❌ DHL Config validation failed for store {}: {}", storeId, e.getMessage());
+                response.put("success", false);
+                response.put("authSuccess", false);
+                response.put("error", "CONFIG_INCOMPLETE");
+                response.put("messageKey", "shipping.dhl.configIncomplete");
+                response.put("message", e.getMessage());
+                return response;
             } catch (Exception e) {
                 log.error("❌ DHL Auth failed for store {}: {}", storeId, e.getMessage());
                 response.put("success", false);
@@ -122,31 +148,54 @@ public class DhlConnectionTestService {
     private String fetchTestToken(DhlSettingsResolver.ResolvedDhlConfig config) {
         String authUrl = getAuthUrl(config.getEnvironment());
         
+        // Validate Client Credentials BEFORE sending request
+        if (config.getClientId() == null || config.getClientId().trim().isEmpty()) {
+            throw new IllegalStateException("DHL Client ID is missing or empty");
+        }
+        if (config.getClientSecret() == null || config.getClientSecret().trim().isEmpty()) {
+            throw new IllegalStateException("DHL Client Secret is missing or empty");
+        }
+        
         // Request Body: x-www-form-urlencoded
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
         body.add("grant_type", "password");
-        body.add("client_id", config.getClientId());
-        body.add("client_secret", config.getClientSecret());
+        body.add("client_id", config.getClientId().trim());
+        body.add("client_secret", config.getClientSecret().trim());
         
         // Username/Password
+        String username;
+        String password;
+        
         if (config.isSandbox()) {
             // Sandbox: Nutze config username/password oder fallback zu global
-            String username = config.getUsername() != null 
-                ? config.getUsername() 
+            username = (config.getUsername() != null && !config.getUsername().trim().isEmpty())
+                ? config.getUsername().trim()
                 : globalDhlProperties.getSandboxUsername();
-            String password = config.getPassword() != null 
-                ? config.getPassword() 
+            password = (config.getPassword() != null && !config.getPassword().trim().isEmpty())
+                ? config.getPassword().trim()
                 : globalDhlProperties.getSandboxPassword();
+            
+            if (username == null || username.isEmpty()) {
+                throw new IllegalStateException("DHL Sandbox username is missing (set DHL_SANDBOX_USERNAME in env or store settings)");
+            }
+            if (password == null || password.isEmpty()) {
+                throw new IllegalStateException("DHL Sandbox password is missing (set DHL_SANDBOX_PASSWORD in env or store settings)");
+            }
             
             body.add("username", username);
             body.add("password", password);
         } else {
             // Production: MUSS Store-Credentials haben
-            if (config.getUsername() == null || config.getPassword() == null) {
-                throw new IllegalStateException("Production DHL requires username and password");
+            if (config.getUsername() == null || config.getUsername().trim().isEmpty()) {
+                throw new IllegalStateException("Production DHL requires store-specific username");
             }
-            body.add("username", config.getUsername());
-            body.add("password", config.getPassword());
+            if (config.getPassword() == null || config.getPassword().trim().isEmpty()) {
+                throw new IllegalStateException("Production DHL requires store-specific password");
+            }
+            username = config.getUsername().trim();
+            password = config.getPassword().trim();
+            body.add("username", username);
+            body.add("password", password);
         }
         
         // Headers
@@ -154,6 +203,16 @@ public class DhlConnectionTestService {
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
+        
+        // Log request details (ohne Secrets!)
+        String usernameForLog = config.isSandbox() 
+            ? (username != null ? username.substring(0, Math.min(3, username.length())) + "***" : "null")
+            : (config.getUsername() != null ? config.getUsername().substring(0, Math.min(3, config.getUsername().length())) + "***" : "null");
+        
+        log.debug("DHL Auth Request: URL={}, grant_type=password, client_id={}, username={}", 
+            authUrl, 
+            config.getClientId().substring(0, Math.min(5, config.getClientId().length())) + "***",
+            usernameForLog);
         
         // POST Request
         ResponseEntity<DhlTokenResponse> response = restTemplate.exchange(

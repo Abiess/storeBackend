@@ -756,7 +756,10 @@
       "testing": "اختبار الاتصال...",
       "testConnection": "اختبار الاتصال",
       "connectionFailed": "فشل اتصال DHL",
-      "productionCredentialsMissing": "يتطلب وضع Production بيانات اعتماد خاصة بالمتجر"
+      "productionCredentialsMissing": "يتطلب وضع Production بيانات اعتماد خاصة بالمتجر",
+      "clientIdMissing": "معرف العميل مفقود. يرجى إدخال معرف العميل من بوابة مطوري DHL.",
+      "clientSecretMissing": "سر العميل مفقود. يرجى إدخال سر العميل من بوابة مطوري DHL.",
+      "configIncomplete": "تكوين DHL غير مكتمل"
     }
   },
   "trust": {

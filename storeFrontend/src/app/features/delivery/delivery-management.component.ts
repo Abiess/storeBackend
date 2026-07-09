@@ -1319,7 +1319,10 @@ export class DeliveryManagementComponent implements OnInit, OnDestroy {
       'shipping.dhl.notConfigured': 'DHL ist nicht konfiguriert',
       'shipping.dhl.authFailed': 'DHL Authentifizierung fehlgeschlagen',
       'shipping.dhl.apiUnreachable': 'DHL API nicht erreichbar',
-      'shipping.dhl.productionCredentialsMissing': 'Production-Modus erfordert Store-spezifische Zugangsdaten'
+      'shipping.dhl.productionCredentialsMissing': 'Production-Modus erfordert Store-spezifische Zugangsdaten',
+      'shipping.dhl.clientIdMissing': 'Client ID fehlt. Bitte Client ID vom DHL Developer Portal eingeben.',
+      'shipping.dhl.clientSecretMissing': 'Client Secret fehlt. Bitte Client Secret vom DHL Developer Portal eingeben.',
+      'shipping.dhl.configIncomplete': 'DHL-Konfiguration unvollständig'
     };
     return translations[key] || key;
   }

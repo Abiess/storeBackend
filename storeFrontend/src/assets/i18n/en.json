@@ -875,7 +875,10 @@
       "testing": "Testing connection...",
       "testConnection": "Test connection",
       "connectionFailed": "DHL connection failed",
-      "productionCredentialsMissing": "Production mode requires store-specific credentials"
+      "productionCredentialsMissing": "Production mode requires store-specific credentials",
+      "clientIdMissing": "Client ID is missing. Please enter your Client ID from DHL Developer Portal.",
+      "clientSecretMissing": "Client Secret is missing. Please enter your Client Secret from DHL Developer Portal.",
+      "configIncomplete": "DHL configuration incomplete"
     }
   },
   "sidebar": {
