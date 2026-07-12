@@ -71,9 +71,11 @@ export class CaptchaComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (!this.siteKey) {
-      console.error('CAPTCHA Site Key nicht konfiguriert!');
-      this.error.emit('CAPTCHA nicht konfiguriert');
+    // Prüfe ob Site Key ein Platzhalter ist (noch nicht ersetzt durch CI/CD)
+    if (!this.siteKey || this.siteKey.includes('__') || this.siteKey === '') {
+      console.warn('CAPTCHA Site Key ist Platzhalter oder leer - CAPTCHA wird übersprungen');
+      console.warn('Für Production: GitHub Secret HCAPTCHA_SITE_KEY setzen');
+      this.emitDummyToken();
       return;
     }
 

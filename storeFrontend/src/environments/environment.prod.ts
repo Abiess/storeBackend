@@ -41,11 +41,14 @@ export const environment = {
    * 3. Kopiere SITE KEY (hier eintragen)
    * 4. Kopiere SECRET KEY (Backend: CAPTCHA_SECRET Environment Variable)
    * 
-   * GitHub Deploy: SECRET "HCAPTCHA_SITE_KEY" → wird via sed ersetzt vor Build
+   * WICHTIG für lokale Tests (localhost):
+   * - Verwende hCaptcha Test Site Key: 10000000-ffff-ffff-ffff-000000000001
+   * - Dieser Key zeigt CAPTCHA an, aber lässt alle Verifikationen durch
+   * - Für echte Tests auf markt.ma: GitHub Secret HCAPTCHA_SITE_KEY → wird via sed ersetzt
    */
   captcha: {
     enabled: true,
     provider: 'hcaptcha' as 'hcaptcha' | 'recaptcha',
-    siteKey: '__HCAPTCHA_SITE_KEY__' // CI: wird durch deploy.yml ersetzt
+    siteKey: '__HCAPTCHA_SITE_KEY__' // CI: wird durch deploy.yml ersetzt, lokal: Test-Key verwenden
   }
 };
