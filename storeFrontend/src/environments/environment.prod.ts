@@ -49,6 +49,6 @@ export const environment = {
   captcha: {
     enabled: true,
     provider: 'hcaptcha' as 'hcaptcha' | 'recaptcha',
-    siteKey: 'd978e6ec-bbdc-4cc6-ba62-668efb8ca398' // CI: wird durch deploy.yml ersetzt, lokal: Test-Key verwenden
+    siteKey: '__HCAPTCHA_SITE_KEY__' // CI: wird durch deploy.yml ersetzt, lokal: Test-Key verwenden
   }
 };

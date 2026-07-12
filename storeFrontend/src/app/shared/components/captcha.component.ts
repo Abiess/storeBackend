@@ -1,199 +1,180 @@
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, PLATFORM_ID, Inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, PLATFORM_ID, Inject, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
 import { isPlatformBrowser, CommonModule } from '@angular/common';
 import { environment } from '../../../environments/environment';
 
 /**
  * CAPTCHA Component (hCaptcha oder reCAPTCHA v3)
- * 
+ *
  * Verwendung:
  * ```html
- * <app-captcha 
+ * <app-captcha
  *   (tokenReceived)="onCaptchaToken($event)"
  *   (error)="onCaptchaError($event)">
  * </app-captcha>
  * ```
- * 
- * Token wird automatisch generiert und via EventEmitter zurückgegeben.
  */
 @Component({
   selector: 'app-captcha',
   standalone: true,
-  imports: [CommonModule],  // ✅ FIX: NgIf und andere Common Directives
+  imports: [CommonModule],
   template: `
-    <div *ngIf="captchaEnabled && !captchaToken">
-      <!-- hCaptcha Container -->
-      <div *ngIf="provider === 'hcaptcha'" 
-           id="hcaptcha-container" 
-           class="h-captcha"></div>
-      
-      <!-- reCAPTCHA v3 läuft unsichtbar im Hintergrund -->
-      <div *ngIf="provider === 'recaptcha'" 
-           id="recaptcha-container"></div>
-    </div>
-    
-    <!-- Success Indicator (optional) -->
-    <div *ngIf="captchaToken" class="captcha-success">
-      ✅ Verification successful
-    </div>
+    @if (captchaEnabled && !captchaToken) {
+      <div #captchaContainer class="captcha-wrapper"></div>
+    }
+    @if (captchaToken) {
+      <div class="captcha-success">✅ Verification successful</div>
+    }
   `,
   styles: [`
-    .h-captcha {
-      margin: 16px 0;
-    }
+    .captcha-wrapper { margin: 16px 0; min-height: 78px; }
     .captcha-success {
-      color: #10b981;
-      font-size: 14px;
-      margin: 8px 0;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      color: #10b981; font-size: 14px; margin: 8px 0;
+      display: flex; align-items: center; gap: 8px;
     }
   `]
 })
-export class CaptchaComponent implements OnInit, OnDestroy {
+export class CaptchaComponent implements OnInit, AfterViewInit, OnDestroy {
   @Output() tokenReceived = new EventEmitter<string>();
   @Output() error = new EventEmitter<string>();
-  @Input() action: string = 'submit'; // reCAPTCHA v3: action name
+  @Input() action = 'submit';
 
-  captchaEnabled = environment.captcha.enabled;
-  provider = environment.captcha.provider;
-  siteKey = environment.captcha.siteKey;
+  @ViewChild('captchaContainer') containerRef!: ElementRef<HTMLDivElement>;
+
+  captchaEnabled = environment.captcha?.enabled ?? false;
+  provider = environment.captcha?.provider ?? 'hcaptcha';
+  siteKey = environment.captcha?.siteKey ?? '';
   captchaToken: string | null = null;
 
-  private scriptLoaded = false;
-  private widgetId: any = null;
+  private widgetId: string | null = null;
+  private readonly isBrowser: boolean;
 
-  constructor(@Inject(PLATFORM_ID) private platformId: Object) {}
+  constructor(@Inject(PLATFORM_ID) private platformId: Object) {
+    this.isBrowser = isPlatformBrowser(this.platformId);
+  }
 
   ngOnInit() {
-    if (!this.captchaEnabled || !isPlatformBrowser(this.platformId)) {
-      // CAPTCHA deaktiviert oder Server-Side Rendering → Skip
+    if (!this.isBrowser || !this.captchaEnabled) {
       this.emitDummyToken();
       return;
     }
 
-    // Prüfe ob Site Key ein Platzhalter ist (noch nicht ersetzt durch CI/CD)
-    if (!this.siteKey || this.siteKey.includes('__') || this.siteKey === '') {
-      console.warn('CAPTCHA Site Key ist Platzhalter oder leer - CAPTCHA wird übersprungen');
-      console.warn('Für Production: GitHub Secret HCAPTCHA_SITE_KEY setzen');
+    if (!this.siteKey || this.siteKey.includes('__') || this.siteKey.trim() === '') {
+      console.warn('[CAPTCHA] Site Key ist Platzhalter oder leer – CAPTCHA übersprungen');
       this.emitDummyToken();
       return;
     }
 
-    this.loadCaptchaScript();
+    console.log('[CAPTCHA] Initialisierung mit Provider:', this.provider);
+  }
+
+  ngAfterViewInit() {
+    if (!this.isBrowser || !this.captchaEnabled || !this.siteKey || this.siteKey.includes('__')) {
+      return;
+    }
+    this.loadScript().then(() => this.renderWidget()).catch(err => {
+      console.error('[CAPTCHA] Script-Load fehlgeschlagen:', err);
+      this.error.emit('CAPTCHA Script Load Failed');
+    });
   }
 
   ngOnDestroy() {
-    // Cleanup: hCaptcha Widget entfernen
-    if (this.widgetId !== null && (window as any).hcaptcha) {
+    if (this.widgetId !== null) {
       try {
-        (window as any).hcaptcha.remove(this.widgetId);
-      } catch (e) {
-        // Ignore cleanup errors
+        const hc = (window as any).hcaptcha;
+        if (hc) { hc.remove(this.widgetId); }
+      } catch { /* ignore */ }
+      this.widgetId = null;
+    }
+  }
+
+  /** Lädt hCaptcha-Script genau EINMAL (render=explicit!) */
+  private loadScript(): Promise<void> {
+    const scriptId = 'hcaptcha-script';
+
+    // Script bereits im DOM?
+    if (document.getElementById(scriptId)) {
+      // Warte bis window.hcaptcha bereit ist
+      if ((window as any).hcaptcha) {
+        return Promise.resolve();
       }
-    }
-  }
-
-  private loadCaptchaScript() {
-    if (this.scriptLoaded) {
-      this.renderCaptcha();
-      return;
+      return new Promise((resolve) => {
+        const existing = document.getElementById(scriptId) as HTMLScriptElement;
+        existing.addEventListener('load', () => resolve(), { once: true });
+      });
     }
 
-    const scriptSrc = this.provider === 'hcaptcha'
-      ? 'https://js.hcaptcha.com/1/api.js'
-      : 'https://www.google.com/recaptcha/api.js?render=' + this.siteKey;
-
-    const script = document.createElement('script');
-    script.src = scriptSrc;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => {
-      this.scriptLoaded = true;
-      this.renderCaptcha();
-    };
-    script.onerror = () => {
-      console.error('CAPTCHA Script konnte nicht geladen werden');
-      this.error.emit('CAPTCHA Script Load Failed');
-    };
-
-    document.head.appendChild(script);
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.id = scriptId;
+      // WICHTIG: render=explicit verhindert Auto-Rendering (das den "Missing sitekey" Fehler verursacht)
+      script.src = 'https://js.hcaptcha.com/1/api.js?render=explicit&recaptchacompat=off';
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        console.log('[CAPTCHA] hCaptcha Script geladen (explicit mode)');
+        resolve();
+      };
+      script.onerror = () => reject(new Error('hCaptcha script failed to load'));
+      document.head.appendChild(script);
+    });
   }
 
-  private renderCaptcha() {
-    if (this.provider === 'hcaptcha') {
-      this.renderHCaptcha();
-    } else if (this.provider === 'recaptcha') {
-      this.renderReCaptcha();
-    }
-  }
-
-  private renderHCaptcha() {
+  /** Rendert das hCaptcha-Widget in den Container */
+  private renderWidget() {
     const hcaptcha = (window as any).hcaptcha;
     if (!hcaptcha) {
-      console.error('hCaptcha Library nicht geladen');
+      console.error('[CAPTCHA] window.hcaptcha nicht verfügbar nach Script-Load');
+      this.error.emit('hCaptcha not available');
       return;
     }
 
-    setTimeout(() => {
-      const container = document.getElementById('hcaptcha-container');
-      if (!container) return;
+    const container = this.containerRef?.nativeElement;
+    if (!container) {
+      console.error('[CAPTCHA] Container-Element nicht im DOM');
+      this.error.emit('CAPTCHA container missing');
+      return;
+    }
 
-      this.widgetId = hcaptcha.render('hcaptcha-container', {
+    // Container leeren (falls re-render nach Route-Wechsel)
+    container.innerHTML = '';
+
+    try {
+      this.widgetId = hcaptcha.render(container, {
         sitekey: this.siteKey,
         callback: (token: string) => {
+          console.log('[CAPTCHA] ✅ Token erhalten');
           this.captchaToken = token;
           this.tokenReceived.emit(token);
         },
-        'error-callback': () => {
-          this.error.emit('hCaptcha Validation Failed');
+        'error-callback': (err: any) => {
+          console.error('[CAPTCHA] Fehler:', err);
+          this.error.emit('hCaptcha Error');
         },
         'expired-callback': () => {
+          console.warn('[CAPTCHA] Token abgelaufen');
           this.captchaToken = null;
           this.error.emit('hCaptcha Expired');
         }
       });
-    }, 100);
-  }
-
-  private renderReCaptcha() {
-    const grecaptcha = (window as any).grecaptcha;
-    if (!grecaptcha) {
-      console.error('reCAPTCHA Library nicht geladen');
-      return;
+      console.log('[CAPTCHA] ✅ Widget gerendert, ID:', this.widgetId);
+    } catch (err) {
+      console.error('[CAPTCHA] Render fehlgeschlagen:', err);
+      this.error.emit('hCaptcha render failed');
     }
-
-    grecaptcha.ready(() => {
-      grecaptcha.execute(this.siteKey, { action: this.action })
-        .then((token: string) => {
-          this.captchaToken = token;
-          this.tokenReceived.emit(token);
-        })
-        .catch((err: any) => {
-          console.error('reCAPTCHA Execution Failed', err);
-          this.error.emit('reCAPTCHA Execution Failed');
-        });
-    });
   }
 
-  /**
-   * Dummy Token für Development (CAPTCHA deaktiviert)
-   */
   private emitDummyToken() {
-    const dummyToken = 'CAPTCHA_DISABLED_DEV_MODE';
-    this.captchaToken = dummyToken;
-    this.tokenReceived.emit(dummyToken);
+    this.captchaToken = 'CAPTCHA_DISABLED_DEV_MODE';
+    this.tokenReceived.emit(this.captchaToken);
   }
 
-  /**
-   * CAPTCHA manuell neu laden (z.B. nach Fehler)
-   */
+  /** CAPTCHA manuell neu laden (z.B. nach Fehler oder Ablauf) */
   reset() {
     this.captchaToken = null;
-    if (this.provider === 'hcaptcha' && this.widgetId !== null) {
-      (window as any).hcaptcha?.reset(this.widgetId);
-    } else if (this.provider === 'recaptcha') {
-      this.renderReCaptcha();
+    if (this.widgetId !== null) {
+      try {
+        (window as any).hcaptcha?.reset(this.widgetId);
+      } catch { /* ignore */ }
     }
   }
 }
