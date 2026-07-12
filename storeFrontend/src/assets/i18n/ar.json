@@ -291,7 +291,12 @@
     "reqMinChars": "6 أحرف على الأقل",
     "reqMoreChars": "10+ أحرف (موصى به)",
     "reqUpperLower": "أحرف كبيرة وصغيرة",
-    "reqNumberSpecial": "رقم أو حرف خاص"
+    "reqNumberSpecial": "رقم أو حرف خاص",
+    "captchaRequired": "يرجى إكمال التحقق من CAPTCHA",
+    "captchaFailed": "فشل التحقق من CAPTCHA. يرجى المحاولة مرة أخرى.",
+    "rateLimitExceeded": "الكثير من الطلبات. يرجى المحاولة لاحقاً.",
+    "accountLocked": "تم قفل حسابك مؤقتاً. يرجى المحاولة لاحقاً.",
+    "emailRateLimitExceeded": "الكثير من الطلبات لهذا البريد الإلكتروني. يرجى الانتظار."
   },
   "restaurant": {
     "reserve": "احجز / اطلب",

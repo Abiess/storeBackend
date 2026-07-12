@@ -175,6 +175,16 @@ TELEGRAM_AUTH_BOT_USERNAME=${TELEGRAM_AUTH_BOT_USERNAME:-marktma_verify_bot}
 # Unsplash API Key (Bildvorschläge im Wizard – NIEMALS ins Frontend/Git!)
 UNSPLASH_ACCESS_KEY=${UNSPLASH_ACCESS_KEY:-}
 
+# CAPTCHA Configuration (Bot-Schutz für Registrierung, Login, Password-Reset)
+# Provider: hcaptcha (empfohlen, DSGVO-konform) oder recaptcha
+# hCaptcha: https://www.hcaptcha.com/ → Sites → New Site → Secret Key
+# reCAPTCHA: https://www.google.com/recaptcha/admin → v3 → Secret Key
+CAPTCHA_ENABLED=${CAPTCHA_ENABLED:-true}
+CAPTCHA_PROVIDER=${CAPTCHA_PROVIDER:-hcaptcha}
+CAPTCHA_SECRET=${CAPTCHA_SECRET:-}
+CAPTCHA_MIN_SCORE=${CAPTCHA_MIN_SCORE:-0.5}
+EMAIL_VERIFICATION_SKIP=${EMAIL_VERIFICATION_SKIP:-false}
+
 # DHL Parcel DE Shipping API
 # Sandbox Keys for testing, Production Keys from DHL Business Customer Portal
 DHL_ENABLED=${DHL_ENABLED:-false}

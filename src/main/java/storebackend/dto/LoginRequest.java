@@ -16,6 +16,9 @@ public class LoginRequest {
     // Optional: Für Warenkorb-Migration von Gast zu User
     private String sessionId;
 
+    // Optional: CAPTCHA Token (hCaptcha oder reCAPTCHA)
+    private String captchaToken;
+
     // Explizite Getter für Lombok-Kompatibilität
     public String getEmail() {
         return email;
@@ -27,5 +30,9 @@ public class LoginRequest {
 
     public String getSessionId() {
         return sessionId;
+    }
+
+    public String getCaptchaToken() {
+        return captchaToken;
     }
 }

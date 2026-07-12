@@ -692,7 +692,12 @@
     "reqMinChars": "At least 6 characters",
     "reqMoreChars": "10+ characters (recommended)",
     "reqUpperLower": "Upper & lowercase letters",
-    "reqNumberSpecial": "Number or special character"
+    "reqNumberSpecial": "Number or special character",
+    "captchaRequired": "Please complete the CAPTCHA verification",
+    "captchaFailed": "CAPTCHA verification failed. Please try again.",
+    "rateLimitExceeded": "Too many requests. Please try again later.",
+    "accountLocked": "Your account has been temporarily locked. Please try again later.",
+    "emailRateLimitExceeded": "Too many requests for this email address. Please wait."
   },
   "restaurant": {
     "reserve": "Reserve / Order",

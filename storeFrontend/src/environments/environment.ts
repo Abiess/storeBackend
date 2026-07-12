@@ -27,5 +27,22 @@ export const environment = {
    * false = Volle Daten ohne Maskierung (für Debugging/Entwicklung)
    * DEFAULT: false (volle Daten anzeigen)
    */
-  clarityMaskData: false
+  clarityMaskData: false,
+
+  /**
+   * CAPTCHA Configuration (Bot-Schutz für Registrierung, Login, Password-Reset)
+   * Provider: 'hcaptcha' (empfohlen, DSGVO-konform) oder 'recaptcha'
+   * 
+   * hCaptcha Setup:
+   * 1. https://www.hcaptcha.com/ → Register → Sites → New Site
+   * 2. Kopiere SITE KEY (sichtbar, für Frontend)
+   * 3. Kopiere SECRET KEY (geheim, für Backend Environment Variable)
+   * 
+   * Development: enabled = false (Skip CAPTCHA)
+   */
+  captcha: {
+    enabled: false,
+    provider: 'hcaptcha' as 'hcaptcha' | 'recaptcha',
+    siteKey: '' // Development: leer = kein CAPTCHA
+  }
 };

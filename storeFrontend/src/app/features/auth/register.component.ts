@@ -6,11 +6,13 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { TranslationService } from '../../core/services/translation.service';
+import { CaptchaComponent } from '../../shared/components/captcha.component';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, TranslatePipe],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, TranslatePipe, CaptchaComponent],
   template: `
     <!-- ── Redirect-Toast (oben rechts, prominente Animation) ── -->
     <div class="redirect-toast" *ngIf="redirectCountdown > 0" role="alert" aria-live="assertive">
@@ -75,6 +77,13 @@ import { TranslationService } from '../../core/services/translation.service';
               {{ 'profile.passwordMinLength' | translate }}
             </div>
           </div>
+
+          <!-- CAPTCHA Component -->
+          <app-captcha 
+            *ngIf="captchaEnabled"
+            (tokenReceived)="onCaptchaToken($event)"
+            (error)="onCaptchaError($event)">
+          </app-captcha>
 
           <div *ngIf="errorMessage" class="alert alert-error">
             {{ errorMessage }}
@@ -382,6 +391,11 @@ export class RegisterComponent implements OnInit, OnDestroy {
   resendTimer: any = null;
   registeredEmail = '';
 
+  // CAPTCHA State
+  captchaEnabled = environment.captcha.enabled;
+  captchaToken: string | null = null;
+  captchaError = '';
+
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
@@ -404,15 +418,39 @@ export class RegisterComponent implements OnInit, OnDestroy {
     if (this.resendTimer) clearInterval(this.resendTimer);
   }
 
+  /**
+   * CAPTCHA Token empfangen
+   */
+  onCaptchaToken(token: string): void {
+    this.captchaToken = token;
+    this.captchaError = '';
+  }
+
+  /**
+   * CAPTCHA Fehler behandeln
+   */
+  onCaptchaError(error: string): void {
+    this.captchaError = error;
+    this.captchaToken = null;
+  }
+
   onSubmit(): void {
     if (this.registerForm.valid) {
+      // CAPTCHA Validation (wenn aktiviert)
+      if (this.captchaEnabled && !this.captchaToken) {
+        this.errorMessage = this.translationService.translate('auth.captchaRequired') || 
+                           'Please complete the CAPTCHA verification';
+        return;
+      }
+
       this.loading = true;
       this.errorMessage = '';
       this.successMessage = '';
 
       const formData = {
         ...this.registerForm.value,
-        lang: this.translationService.currentLang() || 'en'
+        lang: this.translationService.currentLang() || 'en',
+        captchaToken: this.captchaToken // CAPTCHA Token hinzufügen
       };
 
       this.authService.register(formData).subscribe({

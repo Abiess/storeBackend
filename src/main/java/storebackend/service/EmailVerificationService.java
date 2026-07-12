@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import storebackend.entity.EmailVerification;
 import storebackend.entity.User;
+import storebackend.exception.RateLimitExceededException;
 import storebackend.repository.EmailVerificationRepository;
 import storebackend.repository.UserRepository;
 
@@ -21,6 +22,8 @@ public class EmailVerificationService {
     private final EmailVerificationRepository emailVerificationRepository;
     private final UserRepository userRepository;
     private final EmailService emailService;
+
+    private static final int RESEND_COOLDOWN_MINUTES = 2; // Cooldown zwischen Resend-Requests
 
     /**
      * Erstellt einen Verification-Token und sendet Email
@@ -95,6 +98,7 @@ public class EmailVerificationService {
 
     /**
      * Sendet eine neue Verification-Email (Resend-Funktionalität)
+     * MIT COOLDOWN-SCHUTZ gegen Spam
      */
     @Transactional
     public void resendVerificationEmail(String email) {
@@ -103,6 +107,22 @@ public class EmailVerificationService {
 
         if (user.getEmailVerified()) {
             throw new RuntimeException("Email is already verified");
+        }
+
+        // Prüfe Cooldown: Wann wurde der letzte Token erstellt?
+        EmailVerification existingVerification = emailVerificationRepository.findByUser(user)
+            .orElse(null);
+
+        if (existingVerification != null) {
+            LocalDateTime lastSent = existingVerification.getCreatedAt();
+            LocalDateTime cooldownEnd = lastSent.plusMinutes(RESEND_COOLDOWN_MINUTES);
+
+            if (LocalDateTime.now().isBefore(cooldownEnd)) {
+                long secondsRemaining = java.time.Duration.between(LocalDateTime.now(), cooldownEnd).getSeconds();
+                throw new RateLimitExceededException(
+                    String.format("Please wait %d seconds before requesting another verification email", secondsRemaining)
+                );
+            }
         }
 
         createAndSendVerificationToken(user);
@@ -117,3 +137,4 @@ public class EmailVerificationService {
         log.info("Expired verification tokens cleaned up");
     }
 }
+

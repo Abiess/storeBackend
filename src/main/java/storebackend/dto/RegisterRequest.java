@@ -21,6 +21,9 @@ public class RegisterRequest {
     // Optional: Bevorzugte Sprache des Users (de/en/ar) – Default "en"
     private String lang;
 
+    // Optional: CAPTCHA Token (hCaptcha oder reCAPTCHA)
+    private String captchaToken;
+
     // Explizite Getter für Lombok-Kompatibilität
     public String getEmail() {
         return email;
@@ -36,5 +39,9 @@ public class RegisterRequest {
 
     public String getLang() {
         return lang;
+    }
+
+    public String getCaptchaToken() {
+        return captchaToken;
     }
 }

@@ -42,6 +42,22 @@ jobs:
           echo "✅ Clarity ID injected: ${CLARITY_VAL}"
           grep clarityId storeFrontend/src/environments/environment.prod.ts
 
+      # ── hCaptcha Site Key injizieren ────────────────────────────────
+      # Ersetzt den Platzhalter __HCAPTCHA_SITE_KEY__ in environment.prod.ts
+      # mit dem echten Site Key aus dem GitHub Secret HCAPTCHA_SITE_KEY.
+      # WICHTIG: Site Key ist PUBLIC (Frontend), Secret Key ist PRIVATE (Backend)!
+      - name: Inject HCAPTCHA_SITE_KEY into environment.prod.ts
+        run: |
+          HCAPTCHA_VAL="${{ secrets.HCAPTCHA_SITE_KEY }}"
+          if [ -n "$HCAPTCHA_VAL" ]; then
+            sed -i "s/__HCAPTCHA_SITE_KEY__/${HCAPTCHA_VAL}/g" storeFrontend/src/environments/environment.prod.ts
+            echo "✅ hCaptcha Site Key injected: ${HCAPTCHA_VAL}"
+            grep siteKey storeFrontend/src/environments/environment.prod.ts
+          else
+            echo "⚠️  HCAPTCHA_SITE_KEY Secret nicht gesetzt - CAPTCHA wird deaktiviert"
+            sed -i "s/__HCAPTCHA_SITE_KEY__//g" storeFrontend/src/environments/environment.prod.ts
+          fi
+
       # ── Angular Frontend bauen (Production) ────────────────────────
       - name: Build Angular Frontend (Production)
         run: |
@@ -272,6 +288,11 @@ jobs:
             export TELEGRAM_AUTH_BOT_TOKEN="${{ secrets.TELEGRAM_AUTH_BOT_TOKEN }}"
             export CLARITY_ID="${{ secrets.CLARITY_ID }}"
             export UNSPLASH_ACCESS_KEY="${{ secrets.UNSPLASH_ACCESS_KEY }}"
+            export CAPTCHA_ENABLED="${{ secrets.CAPTCHA_ENABLED }}"
+            export CAPTCHA_PROVIDER="${{ secrets.CAPTCHA_PROVIDER }}"
+            export CAPTCHA_SECRET="${{ secrets.CAPTCHA_SECRET }}"
+            export CAPTCHA_MIN_SCORE="${{ secrets.CAPTCHA_MIN_SCORE }}"
+            export EMAIL_VERIFICATION_SKIP="${{ secrets.EMAIL_VERIFICATION_SKIP }}"
             export DHL_ENABLED="${{ secrets.DHL_ENABLED }}"
             export DHL_ENV="${{ secrets.DHL_ENV }}"
             export DHL_CLIENT_ID="${{ secrets.DHL_CLIENT_ID }}"

@@ -253,3 +253,29 @@ dhl:
   sandbox-shipper-postal-code: ${DHL_SANDBOX_SHIPPER_POSTAL_CODE:53113}
   sandbox-shipper-city: ${DHL_SANDBOX_SHIPPER_CITY:Bonn}
   sandbox-shipper-country: ${DHL_SANDBOX_SHIPPER_COUNTRY:DE}
+
+# Email Verification Configuration
+email:
+  verification:
+    skip-for-login: ${EMAIL_VERIFICATION_SKIP:false}
+
+# CAPTCHA Configuration (Bot-Schutz für Registrierung, Login, Password-Reset)
+# Provider: hcaptcha (empfohlen, DSGVO-konform) oder recaptcha
+# hCaptcha Setup: https://www.hcaptcha.com/ (kostenlos, DSGVO-konform)
+# reCAPTCHA Setup: https://www.google.com/recaptcha/admin (Google, v3)
+# WICHTIG: CAPTCHA_SECRET ist der SECRET KEY (serverseitig, NIEMALS im Frontend!)
+captcha:
+  enabled: ${CAPTCHA_ENABLED:true}
+  provider: ${CAPTCHA_PROVIDER:hcaptcha}
+  secret: ${CAPTCHA_SECRET:}
+  min-score: ${CAPTCHA_MIN_SCORE:0.5}
+
+# Unsplash API Configuration
+# Key anlegen: https://unsplash.com/developers
+# Production-Key (5.000 req/h) über Unsplash-Support beantragen.
+# SICHERHEIT: Dieser Key darf NIEMALS ins Angular-Frontend oder Git gelangen!
+unsplash:
+  api:
+    key: ${UNSPLASH_ACCESS_KEY:}
+    base-url: https://api.unsplash.com
+    results-per-page: 12

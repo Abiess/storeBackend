@@ -29,5 +29,23 @@ export const environment = {
    * HINWEIS: Diese Einstellung steuert den "cookieMask" Parameter beim Clarity-Init.
    * Siehe: https://learn.microsoft.com/en-us/clarity/setup-and-installation/cookie-masking
    */
-  clarityMaskData: false
+  clarityMaskData: false,
+
+  /**
+   * CAPTCHA Configuration (Production)
+   * Provider: 'hcaptcha' (empfohlen, DSGVO-konform) oder 'recaptcha'
+   * 
+   * hCaptcha Setup:
+   * 1. https://www.hcaptcha.com/ → Register → Sites → New Site
+   * 2. Domain: markt.ma (+ optional Subdomains: *.markt.ma)
+   * 3. Kopiere SITE KEY (hier eintragen)
+   * 4. Kopiere SECRET KEY (Backend: CAPTCHA_SECRET Environment Variable)
+   * 
+   * GitHub Deploy: SECRET "HCAPTCHA_SITE_KEY" → wird via sed ersetzt vor Build
+   */
+  captcha: {
+    enabled: true,
+    provider: 'hcaptcha' as 'hcaptcha' | 'recaptcha',
+    siteKey: '__HCAPTCHA_SITE_KEY__' // CI: wird durch deploy.yml ersetzt
+  }
 };

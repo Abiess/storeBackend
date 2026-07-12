@@ -15,15 +15,19 @@ import storebackend.service.AuthService;
 import storebackend.service.CartService;
 import storebackend.service.EmailVerificationService;
 import storebackend.service.PasswordResetService;
+import storebackend.service.RateLimitService;
+import storebackend.service.CaptchaService;
 import storebackend.repository.UserRepository;
 import storebackend.util.IpAddressUtil;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
+@Slf4j
 public class AuthController {
 
     private final AuthService authService;
@@ -31,6 +35,8 @@ public class AuthController {
     private final UserRepository userRepository;
     private final EmailVerificationService emailVerificationService;
     private final PasswordResetService passwordResetService;
+    private final RateLimitService rateLimitService;
+    private final CaptchaService captchaService;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request,
@@ -39,6 +45,26 @@ public class AuthController {
         // Rate Limiting Check
         String ipAddress = IpAddressUtil.getClientIpAddress(httpRequest);
 
+        // 1. IP-basiertes Rate Limit prüfen
+        if (!rateLimitService.checkIpRateLimit(ipAddress)) {
+            log.warn("Rate limit exceeded for IP: {} on /register", ipAddress);
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(new ErrorResponse("Too many requests. Please try again later."));
+        }
+
+        // 2. E-Mail-basiertes Rate Limit prüfen
+        if (!rateLimitService.checkEmailRateLimit(request.getEmail())) {
+            log.warn("Rate limit exceeded for email: {} on /register", request.getEmail());
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(new ErrorResponse("Too many registration attempts for this email. Please try again later."));
+        }
+
+        // 3. CAPTCHA validieren
+        if (!captchaService.validateCaptcha(request.getCaptchaToken(), ipAddress)) {
+            log.warn("CAPTCHA validation failed for IP: {} on /register", ipAddress);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse("CAPTCHA validation failed. Please try again."));
+        }
 
         try {
             AuthResponse response = authService.register(request);
@@ -66,11 +92,33 @@ public class AuthController {
         // Rate Limiting Check
         String ipAddress = IpAddressUtil.getClientIpAddress(httpRequest);
 
+        // 1. IP-basiertes Rate Limit prüfen
+        if (!rateLimitService.checkIpRateLimit(ipAddress)) {
+            log.warn("Rate limit exceeded for IP: {} on /login", ipAddress);
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(new ErrorResponse("Too many requests. Please try again later."));
+        }
+
+        // 2. Account Lockout prüfen (nach zu vielen fehlgeschlagenen Versuchen)
+        if (rateLimitService.isAccountLocked(request.getEmail())) {
+            log.warn("Account locked for email: {} on /login", request.getEmail());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new ErrorResponse("Account temporarily locked due to too many failed login attempts. Please try again later."));
+        }
+
+        // 3. CAPTCHA validieren (nur wenn mehrere fehlgeschlagene Versuche)
+        int remainingAttempts = rateLimitService.getRemainingLoginAttempts(request.getEmail());
+        if (remainingAttempts <= 2 && !captchaService.validateCaptcha(request.getCaptchaToken(), ipAddress)) {
+            log.warn("CAPTCHA validation failed for IP: {} on /login", ipAddress);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse("CAPTCHA validation failed. Please try again."));
+        }
 
         try {
             AuthResponse response = authService.login(request);
 
             // Reset login attempts nach erfolgreichem Login
+            rateLimitService.resetLoginAttempts(request.getEmail());
 
             // Migriere Gast-Warenkorb wenn sessionId vorhanden (aus Body oder Query-Param)
             String cartSessionId = request.getSessionId() != null ? request.getSessionId() : sessionId;
@@ -83,6 +131,9 @@ public class AuthController {
 
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
+            // Login-Versuch aufzeichnen (für Account Lockout)
+            rateLimitService.recordLoginAttempt(request.getEmail());
+            
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new ErrorResponse(e.getMessage()));
         }
@@ -108,10 +159,30 @@ public class AuthController {
      * POST /api/auth/resend-verification
      */
     @PostMapping("/resend-verification")
-    public ResponseEntity<?> resendVerificationEmail(@RequestBody ResendVerificationRequest request) {
+    public ResponseEntity<?> resendVerificationEmail(@RequestBody ResendVerificationRequest request, 
+                                                     HttpServletRequest httpRequest) {
+        String ipAddress = IpAddressUtil.getClientIpAddress(httpRequest);
+
+        // 1. IP-basiertes Rate Limit prüfen
+        if (!rateLimitService.checkIpRateLimit(ipAddress)) {
+            log.warn("Rate limit exceeded for IP: {} on /resend-verification", ipAddress);
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(new ErrorResponse("Too many requests. Please try again later."));
+        }
+
+        // 2. E-Mail-basiertes Rate Limit prüfen
+        if (!rateLimitService.checkEmailRateLimit(request.email())) {
+            log.warn("Rate limit exceeded for email: {} on /resend-verification", request.email());
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(new ErrorResponse("Too many requests for this email. Please try again later."));
+        }
+
         try {
             emailVerificationService.resendVerificationEmail(request.email());
             return ResponseEntity.ok(new SuccessResponse("Verification email sent successfully!"));
+        } catch (storebackend.exception.RateLimitExceededException e) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(new ErrorResponse(e.getMessage()));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ErrorResponse(e.getMessage()));
@@ -123,7 +194,24 @@ public class AuthController {
      * POST /api/auth/forgot-password
      */
     @PostMapping("/forgot-password")
-    public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+    public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request,
+                                           HttpServletRequest httpRequest) {
+        String ipAddress = IpAddressUtil.getClientIpAddress(httpRequest);
+
+        // 1. IP-basiertes Rate Limit prüfen
+        if (!rateLimitService.checkIpRateLimit(ipAddress)) {
+            log.warn("Rate limit exceeded for IP: {} on /forgot-password", ipAddress);
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(new ErrorResponse("Too many requests. Please try again later."));
+        }
+
+        // 2. E-Mail-basiertes Rate Limit prüfen
+        if (!rateLimitService.checkEmailRateLimit(request.email())) {
+            log.warn("Rate limit exceeded for email: {} on /forgot-password", request.email());
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(new ErrorResponse("Too many requests for this email. Please try again later."));
+        }
+
         try {
             passwordResetService.initiatePasswordReset(request.email());
             // SECURITY: Immer success zurückgeben, auch wenn Email nicht existiert (verhindert User Enumeration)

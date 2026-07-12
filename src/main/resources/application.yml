@@ -110,6 +110,21 @@ markt:
   assets:
     default-base-url: ${MARKT_ASSETS_BASE_URL:https://markt.minio.ma/store-assets/default-assets}
 
+# Email Verification Configuration
+email:
+  verification:
+    skip-for-login: ${EMAIL_VERIFICATION_SKIP:false}
+
+# CAPTCHA Configuration (Bot-Schutz für Registrierung, Login, Password-Reset)
+# Provider: hcaptcha (empfohlen) oder recaptcha
+# hCaptcha Setup: https://www.hcaptcha.com/ (kostenlos, DSGVO-konform)
+# reCAPTCHA Setup: https://www.google.com/recaptcha/admin
+captcha:
+  enabled: ${CAPTCHA_ENABLED:true}
+  provider: ${CAPTCHA_PROVIDER:hcaptcha}
+  secret: ${CAPTCHA_SECRET:}
+  min-score: ${CAPTCHA_MIN_SCORE:0.5}
+
 # MinIO disabled locally by default
 minio:
   enabled: false

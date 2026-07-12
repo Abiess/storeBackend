@@ -937,7 +937,12 @@
     "reqMinChars": "Mindestens 6 Zeichen",
     "reqMoreChars": "10+ Zeichen (empfohlen)",
     "reqUpperLower": "Groß- & Kleinbuchstaben",
-    "reqNumberSpecial": "Zahl oder Sonderzeichen"
+    "reqNumberSpecial": "Zahl oder Sonderzeichen",
+    "captchaRequired": "Bitte schließen Sie die CAPTCHA-Verifizierung ab",
+    "captchaFailed": "CAPTCHA-Verifizierung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "rateLimitExceeded": "Zu viele Anfragen. Bitte versuchen Sie es später erneut.",
+    "accountLocked": "Ihr Konto wurde vorübergehend gesperrt. Bitte versuchen Sie es später erneut.",
+    "emailRateLimitExceeded": "Zu viele Anfragen für diese E-Mail-Adresse. Bitte warten Sie."
   },
   "restaurant": {
     "reserve": "Reservieren / Bestellen",

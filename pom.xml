@@ -124,6 +124,26 @@
             <artifactId>mapstruct</artifactId>
             <version>${mapstruct.version}</version>
         </dependency>
+
+        <!-- Bucket4j für Rate Limiting -->
+        <dependency>
+            <groupId>com.bucket4j</groupId>
+            <artifactId>bucket4j-core</artifactId>
+            <version>8.2.0</version>
+        </dependency>
+
+        <!-- Caffeine Cache für Rate Limiting -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+
+        <!-- HTTP Client für CAPTCHA Validation -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
