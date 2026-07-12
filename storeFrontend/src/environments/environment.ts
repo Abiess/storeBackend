@@ -38,11 +38,11 @@ export const environment = {
    * 2. Kopiere SITE KEY (sichtbar, für Frontend)
    * 3. Kopiere SECRET KEY (geheim, für Backend Environment Variable)
    * 
-   * Development: enabled = false (Skip CAPTCHA)
+   * Development: enabled = true für lokale Tests (mit echtem hCaptcha)
    */
   captcha: {
-    enabled: false,
+    enabled: true,
     provider: 'hcaptcha' as 'hcaptcha' | 'recaptcha',
-    siteKey: '' // Development: leer = kein CAPTCHA
+    siteKey: 'd978e6ec-bbdc-4cc6-ba62-668efb8ca398' // hCaptcha Test Site Key (always passes)
   }
 };
