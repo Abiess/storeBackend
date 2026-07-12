@@ -58,15 +58,16 @@ public class CaptchaService {
             return true;
         }
 
+        // Secret Key nicht konfiguriert → CAPTCHA überspringen (keine Validierung möglich)
+        if (captchaSecret == null || captchaSecret.isBlank()) {
+            log.warn("⚠️ CAPTCHA secret not configured - CAPTCHA validation skipped!");
+            log.warn("⚠️ For production: Set CAPTCHA_SECRET in environment variables");
+            return true; // ✅ CHANGED: return true statt false
+        }
+
         // Token fehlt
         if (captchaToken == null || captchaToken.isBlank()) {
             log.warn("CAPTCHA token is missing");
-            return false;
-        }
-
-        // Secret Key nicht konfiguriert
-        if (captchaSecret == null || captchaSecret.isBlank()) {
-            log.error("CAPTCHA secret is not configured! Set captcha.secret in application.yml");
             return false;
         }
 
