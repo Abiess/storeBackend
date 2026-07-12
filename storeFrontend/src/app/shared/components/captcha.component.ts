@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, PLATFORM_ID, Inject } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser, CommonModule } from '@angular/common';
 import { environment } from '../../../environments/environment';
 
 /**
@@ -18,6 +18,7 @@ import { environment } from '../../../environments/environment';
 @Component({
   selector: 'app-captcha',
   standalone: true,
+  imports: [CommonModule],  // ✅ FIX: NgIf und andere Common Directives
   template: `
     <div *ngIf="captchaEnabled && !captchaToken">
       <!-- hCaptcha Container -->
