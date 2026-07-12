@@ -66,12 +66,22 @@ jobs:
           npm run build:prod
           echo "✅ Frontend Build fertig"
           echo ""
-          echo "🔍 Verifikation: Kein __CLARITY_ID__ Platzhalter im dist?"
+          echo "🔍 Verifikation: Keine Platzhalter im dist?"
+          
+          # Prüfe __CLARITY_ID__
           if grep -r "__CLARITY_ID__" dist/markt-ma-frontend/ --include="*.js" --include="*.html" -l 2>/dev/null; then
             echo "❌ __CLARITY_ID__ Platzhalter noch im dist – sed-Schritt fehlgeschlagen!"
             exit 1
           else
-            echo "✅ Kein Platzhalter im dist – Clarity-ID korrekt eingebettet"
+            echo "✅ __CLARITY_ID__ korrekt eingebettet"
+          fi
+          
+          # Prüfe __HCAPTCHA_SITE_KEY__
+          if grep -r "__HCAPTCHA_SITE_KEY__" dist/markt-ma-frontend/ --include="*.js" --include="*.html" -l 2>/dev/null; then
+            echo "❌ __HCAPTCHA_SITE_KEY__ Platzhalter noch im dist – sed-Schritt fehlgeschlagen!"
+            exit 1
+          else
+            echo "✅ __HCAPTCHA_SITE_KEY__ korrekt eingebettet"
           fi
           ls -lh dist/markt-ma-frontend/ | head -20
 
