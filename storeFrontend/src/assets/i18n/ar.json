@@ -793,7 +793,23 @@
       "validateShipment": "التحقق من شحنة DHL",
       "validateShipmentSuccess": "تم التحقق من شحنة DHL بنجاح. لم يتم إنشاء ملصق.",
       "validationFailed": "فشل التحقق من DHL",
-      "createLabel": "إنشاء ملصق DHL"
+      "createLabel": "إنشاء ملصق DHL",
+      "previewDialogTitle": "مراجعة ملصق الشحن DHL",
+      "previewOrderNumber": "الطلب",
+      "previewConsignee": "المستلم",
+      "previewShipper": "المرسل",
+      "previewProduct": "المنتج",
+      "previewBillingNumber": "رقم الفاتورة",
+      "previewWeight": "الوزن",
+      "previewDimensions": "الأبعاد",
+      "previewEnvironment": "البيئة",
+      "previewCredentialsSource": "مصدر بيانات الاعتماد",
+      "previewNoLabelYet": "لم يتم إنشاء ملصق بعد.",
+      "previewNoCosts": "لم يتم تحمل تكاليف DHL بعد.",
+      "previewProductionWarning": "أنت تقوم بإنشاء ملصق شحن DHL حقيقي. قد يؤدي ذلك إلى تكاليف شحن على عقد عميل DHL التجاري الخاص بك.",
+      "previewSandboxInfo": "إنشاء ملصق تجريبي - بدون تكاليف حقيقية.",
+      "previewCancel": "إلغاء",
+      "previewConfirm": "إنشاء ملصق مباشر"
     }
   },
   "trust": {

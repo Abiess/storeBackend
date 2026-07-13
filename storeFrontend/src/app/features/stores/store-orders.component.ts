@@ -501,15 +501,88 @@ export class StoreOrdersComponent implements OnInit {
   }
 
   createDhlLabel(order: Order): void {
-    // Verbesserte Confirm-Message mit Kostenwarnung
-    // Da wir das Environment nicht sicher kennen, verwenden wir die generische Warnung
-    const confirmMessage = 
-      'Du erstellst jetzt ein DHL Versandlabel für diese Bestellung. Im Live-Modus können dadurch Versandkosten über deinen DHL Geschäftskundenvertrag entstehen. Fortfahren?';
-    
-    if (!confirm(confirmMessage)) {
-      return;
+    // 1. Erst Validate aufrufen für Preview-Daten
+    this.loading = true;
+    const validateUrl = `${environment.apiUrl}/admin/orders/${order.id}/dhl/validate`;
+
+    this.http.post<any>(validateUrl, {}).subscribe({
+      next: (validateResponse) => {
+        this.loading = false;
+        console.log('✅ DHL Validate successful:', validateResponse);
+        
+        // 2. Preview Dialog mit Daten anzeigen
+        this.showLabelPreviewDialog(order, validateResponse);
+      },
+      error: (error) => {
+        console.error('❌ DHL Validate failed:', error);
+        this.loading = false;
+        
+        // Bei Validate-Fehler: Fehlermeldung anzeigen, KEIN Label erstellen
+        const messageKey = error.error?.messageKey;
+        const message = error.error?.message || error.message || 'Unbekannter Fehler';
+        
+        if (messageKey === 'shipping.dhl.pickupNotAllowed') {
+          alert('DHL Versand ist für Abholungen nicht verfügbar.');
+        } else if (messageKey === 'shipping.dhl.invalidClient') {
+          alert('DHL API-Zugangsdaten ungültig. Bitte überprüfe Client ID und Secret.');
+        } else if (messageKey === 'shipping.dhl.invalidGrant') {
+          alert('DHL Benutzername oder Passwort ungültig.');
+        } else {
+          alert(`DHL Validierung fehlgeschlagen:\n\n${message}`);
+        }
+      }
+    });
+  }
+
+  /**
+   * Zeigt Preview-Dialog mit Validate-Daten und erstellt erst nach Bestätigung das Label
+   */
+  private showLabelPreviewDialog(order: Order, validateResponse: any): void {
+    // Preview-Text aufbauen
+    const preview = `
+DHL Versandlabel prüfen
+━━━━━━━━━━━━━━━━━━━━━━
+
+Bestellung: ${validateResponse.orderNumber || order.orderNumber || '#' + order.id}
+Empfänger: ${validateResponse.consigneeName || 'Nicht verfügbar'}
+Adresse: ${validateResponse.consigneeAddress || 'Nicht verfügbar'}
+
+Absender: ${validateResponse.shipperName || 'Nicht verfügbar'}
+Adresse: ${validateResponse.shipperAddress || 'Nicht verfügbar'}
+
+Produkt: ${validateResponse.productLabel || 'DHL Paket National'}
+Abrechnungsnummer: ${validateResponse.billingNumberMasked || '****'}
+Gewicht: ${validateResponse.weight || 'N/A'}
+Maße: ${validateResponse.dimensions || 'N/A'}
+
+Umgebung: ${validateResponse.environment || 'N/A'}
+Zugangsdaten: ${validateResponse.credentialsSource || 'N/A'}
+
+━━━━━━━━━━━━━━━━━━━━━━
+⚠️ Es wurde noch kein Label erstellt.
+⚠️ Es sind noch keine DHL Kosten entstanden.
+━━━━━━━━━━━━━━━━━━━━━━
+
+${validateResponse.environment === 'PRODUCTION' ? 
+  '⚠️ WICHTIG: Du erstellst jetzt ein echtes DHL Versandlabel.\nDadurch können Versandkosten über deinen DHL Geschäftskundenvertrag entstehen.' : 
+  '✓ Sandbox: Es entstehen keine echten Kosten.'}
+
+Fortfahren und Label erstellen?
+    `.trim();
+
+    // Bestätigung anfordern
+    if (!confirm(preview)) {
+      return; // Benutzer hat abgebrochen
     }
 
+    // 3. Erst JETZT echtes Label erstellen
+    this.createDhlLabelConfirmed(order);
+  }
+
+  /**
+   * Erstellt das echte DHL Label (nach Validate + Confirm)
+   */
+  private createDhlLabelConfirmed(order: Order): void {
     this.loading = true;
     const url = `${environment.apiUrl}/admin/orders/${order.id}/dhl/create-label`;
 

@@ -900,7 +900,23 @@
       "validateShipment": "Valider l'envoi DHL",
       "validateShipmentSuccess": "Envoi DHL validé avec succès. Aucune étiquette n'a été créée.",
       "validationFailed": "La validation DHL a échoué",
-      "createLabel": "Créer une étiquette DHL"
+      "createLabel": "Créer une étiquette DHL",
+      "previewDialogTitle": "Vérifier l'étiquette d'expédition DHL",
+      "previewOrderNumber": "Commande",
+      "previewConsignee": "Destinataire",
+      "previewShipper": "Expéditeur",
+      "previewProduct": "Produit",
+      "previewBillingNumber": "Numéro de facturation",
+      "previewWeight": "Poids",
+      "previewDimensions": "Dimensions",
+      "previewEnvironment": "Environnement",
+      "previewCredentialsSource": "Source des identifiants",
+      "previewNoLabelYet": "Aucune étiquette n'a encore été créée.",
+      "previewNoCosts": "Aucun frais DHL n'a encore été engagé.",
+      "previewProductionWarning": "Vous créez une étiquette d'expédition DHL réelle. Cela peut entraîner des frais d'expédition sur votre contrat client professionnel DHL.",
+      "previewSandboxInfo": "Créer une étiquette sandbox – aucun frais réel.",
+      "previewCancel": "Annuler",
+      "previewConfirm": "Créer une étiquette en direct"
     }
   },
   "sidebar": {

@@ -75,8 +75,68 @@ public class DhlLabelService {
         // 5. Call DHL Validate API (config-aware)
         DhlShipmentResponse response = dhlShippingClient.validateShipment(config, request);
         
+        // 6. Enrich Response mit Preview-Daten (sichere Daten für UI Dialog)
+        enrichPreviewData(response, order, config);
+        
         log.info("✅ DHL validation completed for order {}", order.getId());
         return response;
+    }
+    
+    /**
+     * Enriches Response mit sicheren Preview-Daten für UI Dialog
+     * KEINE Secrets: kein label.b64, kein Password, kein Client Secret
+     */
+    private void enrichPreviewData(DhlShipmentResponse response, Order order, DhlSettingsResolver.ResolvedDhlConfig config) {
+        // Order Number
+        response.setOrderNumber(order.getOrderNumber() != null ? order.getOrderNumber() : "#" + order.getId());
+        
+        // Consignee (Empfänger)
+        Address shipping = order.getShippingAddress();
+        if (shipping != null) {
+            response.setConsigneeName(
+                (shipping.getFirstName() + " " + shipping.getLastName()).trim()
+            );
+            response.setConsigneeAddress(String.format(
+                "%s, %s %s, %s",
+                shipping.getAddress1() != null ? shipping.getAddress1() : "",
+                shipping.getPostalCode() != null ? shipping.getPostalCode() : "",
+                shipping.getCity() != null ? shipping.getCity() : "",
+                shipping.getCountry() != null ? shipping.getCountry() : ""
+            ));
+        }
+        
+        // Shipper (Absender) - aus config-Feldern
+        response.setShipperName(config.getShipperName());
+        response.setShipperAddress(String.format(
+            "%s %s, %s %s, %s",
+            config.getShipperStreet() != null ? config.getShipperStreet() : "",
+            config.getShipperHouseNumber() != null ? config.getShipperHouseNumber() : "",
+            config.getShipperPostalCode() != null ? config.getShipperPostalCode() : "",
+            config.getShipperCity() != null ? config.getShipperCity() : "",
+            config.getShipperCountry() != null ? config.getShipperCountry() : ""
+        ));
+        
+        // Product Label
+        response.setProductLabel("DHL Paket National (V01PAK)");
+        
+        // Billing Number maskiert
+        response.setBillingNumberMasked(config.getMaskedBillingNumber());
+        
+        // Weight & Dimensions
+        int weightGrams = config.getDefaultWeightGrams();
+        double weightKg = weightGrams / 1000.0;
+        response.setWeight(String.format("%.2f kg", weightKg));
+        
+        response.setDimensions(String.format(
+            "%d x %d x %d mm",
+            config.getDefaultLengthMm(),
+            config.getDefaultWidthMm(),
+            config.getDefaultHeightMm()
+        ));
+        
+        // Environment & Credentials Source
+        response.setEnvironment(config.getEnvironment().toString());
+        response.setCredentialsSource(config.getCredentialsSource());
     }
     
     /**

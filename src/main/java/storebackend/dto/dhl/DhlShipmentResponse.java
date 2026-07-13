@@ -20,6 +20,8 @@ import java.util.List;
  *     }
  *   ]
  * }
+ * 
+ * Preview Fields: Sichere Vorschau-Daten für UI (kein label.b64, keine Secrets)
  */
 @Data
 public class DhlShipmentResponse {
@@ -29,6 +31,19 @@ public class DhlShipmentResponse {
     
     @JsonProperty("items")
     private List<ShipmentItem> items;
+    
+    // === PREVIEW FIELDS (für UI Dialog, KEINE Secrets) ===
+    private String orderNumber;              // Order Number
+    private String consigneeName;            // Empfänger Name
+    private String consigneeAddress;         // Empfänger Adresse (1 Zeile)
+    private String shipperName;              // Absender Name
+    private String shipperAddress;           // Absender Adresse (1 Zeile)
+    private String productLabel;             // z.B. "DHL Paket National"
+    private String billingNumberMasked;      // **********0101
+    private String weight;                   // z.B. "2.5 kg"
+    private String dimensions;               // z.B. "30x20x15 cm"
+    private String environment;              // SANDBOX | PRODUCTION
+    private String credentialsSource;        // SANDBOX | STORE | PLATFORM
     
     // Helper methods for first item (meist nur 1 Shipment)
     public String getShipmentNo() {

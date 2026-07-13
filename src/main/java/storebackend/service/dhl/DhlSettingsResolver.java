@@ -444,6 +444,18 @@ public class DhlSettingsResolver {
         }
         
         /**
+         * Maskiert Billing Number für UI (nur letzte 4 Ziffern)
+         * z.B. "63856291150101" → "**********0101"
+         */
+        public String getMaskedBillingNumber() {
+            if (billingNumber == null || billingNumber.length() < 4) {
+                return "****";
+            }
+            String stars = "*".repeat(billingNumber.length() - 4);
+            return stars + billingNumber.substring(billingNumber.length() - 4);
+        }
+        
+        /**
          * Sichere Logging-Info (keine Secrets!)
          * Für Audit-Trail und Debugging.
          */

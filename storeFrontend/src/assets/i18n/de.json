@@ -1157,7 +1157,23 @@
       "validateShipment": "DHL Sendung prüfen",
       "validateShipmentSuccess": "DHL Sendung erfolgreich geprüft. Es wurde kein Label erstellt.",
       "validationFailed": "DHL Validierung fehlgeschlagen",
-      "createLabel": "DHL Label erstellen"
+      "createLabel": "DHL Label erstellen",
+      "previewDialogTitle": "DHL Versandlabel prüfen",
+      "previewOrderNumber": "Bestellung",
+      "previewConsignee": "Empfänger",
+      "previewShipper": "Absender",
+      "previewProduct": "Produkt",
+      "previewBillingNumber": "Abrechnungsnummer",
+      "previewWeight": "Gewicht",
+      "previewDimensions": "Maße",
+      "previewEnvironment": "Umgebung",
+      "previewCredentialsSource": "Zugangsdaten-Quelle",
+      "previewNoLabelYet": "Es wurde noch kein Label erstellt.",
+      "previewNoCosts": "Es sind noch keine DHL Kosten entstanden.",
+      "previewProductionWarning": "Du erstellst jetzt ein echtes DHL Versandlabel. Dadurch können Versandkosten über deinen DHL Geschäftskundenvertrag entstehen.",
+      "previewSandboxInfo": "Sandbox Label erstellen – keine echten Kosten.",
+      "previewCancel": "Abbrechen",
+      "previewConfirm": "Live Label erstellen"
     }
   },
   "sidebar": {

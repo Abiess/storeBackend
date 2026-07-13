@@ -911,7 +911,23 @@
       "validateShipment": "Validate DHL Shipment",
       "validateShipmentSuccess": "DHL shipment successfully validated. No label was created.",
       "validationFailed": "DHL validation failed",
-      "createLabel": "Create DHL Label"
+      "createLabel": "Create DHL Label",
+      "previewDialogTitle": "Review DHL Shipping Label",
+      "previewOrderNumber": "Order",
+      "previewConsignee": "Recipient",
+      "previewShipper": "Sender",
+      "previewProduct": "Product",
+      "previewBillingNumber": "Billing Number",
+      "previewWeight": "Weight",
+      "previewDimensions": "Dimensions",
+      "previewEnvironment": "Environment",
+      "previewCredentialsSource": "Credentials Source",
+      "previewNoLabelYet": "No label has been created yet.",
+      "previewNoCosts": "No DHL costs have been incurred yet.",
+      "previewProductionWarning": "You are creating a real DHL shipping label. This may incur shipping costs on your DHL business customer contract.",
+      "previewSandboxInfo": "Create sandbox label – no real costs.",
+      "previewCancel": "Cancel",
+      "previewConfirm": "Create Live Label"
     }
   },
   "sidebar": {
