@@ -15,6 +15,17 @@ import storebackend.dto.dhl.DhlShipmentResponse;
 /**
  * DHL Shipping Client - Label Creation & Validation
  * API: /parcel/de/shipping/v2
+ * 
+ * Multi-Store Support:
+ * - Nutzt ResolvedDhlConfig für store-aware API Calls
+ * - Unterstützt SANDBOX | STORE | PLATFORM Credentials
+ * - Token Management via DhlAuthClient
+ * 
+ * Security:
+ * - Kein access_token loggen
+ * - Kein clientSecret loggen
+ * - Kein label.b64 loggen
+ * - Nur config.getLoggingInfo() für Audit
  */
 @Service
 @RequiredArgsConstructor
@@ -65,21 +76,29 @@ public class DhlShippingClient {
     /**
      * Validate Shipment (ohne Label zu erzeugen)
      * POST /orders?validate=true
+     * 
+     * EMPFOHLEN: Nutze diese Methode mit config für store-aware validation
+     * 
+     * @param config Resolved DHL Config
+     * @param request DHL Shipment Request
+     * @return DHL Validation Response
      */
-    public DhlShipmentResponse validateShipment(DhlShipmentRequest request) {
-        if (!dhlProperties.isEnabled()) {
-            throw new IllegalStateException("DHL Integration is disabled");
-        }
-        
+    public DhlShipmentResponse validateShipment(
+        DhlSettingsResolver.ResolvedDhlConfig config,
+        DhlShipmentRequest request
+    ) {
         try {
-            String url = dhlProperties.getShippingBaseUrl() + "/orders?validate=true";
-            String token = dhlAuthClient.getAccessToken();
+            String url = config.getShippingBaseUrl() + "/orders?validate=true";
+            String token = dhlAuthClient.getAccessToken(config);
             
             HttpHeaders headers = createHeaders(token);
             HttpEntity<DhlShipmentRequest> httpRequest = new HttpEntity<>(request, headers);
             
-            log.info("🔍 Validating DHL shipment for refNo: {}", 
-                request.getShipments().get(0).getRefNo());
+            log.info("🔍 Validating DHL shipment: refNo={}, credentialsSource={}, {}",
+                request.getShipments().get(0).getRefNo(),
+                config.getCredentialsSource(),
+                config.getLoggingInfo()
+            );
             
             ResponseEntity<DhlShipmentResponse> response = restTemplate.exchange(
                 url,
@@ -114,8 +133,14 @@ public class DhlShippingClient {
             
         } catch (HttpClientErrorException.Unauthorized e) {
             log.warn("⚠️ DHL Token expired, retrying with fresh token...");
-            dhlAuthClient.invalidateToken();
-            return validateShipment(request); // Retry
+            dhlAuthClient.invalidateToken(config);
+            return validateShipment(config, request); // Retry
+            
+        } catch (HttpClientErrorException.BadRequest e) {
+            // 400: DHL Validation Fehler
+            String errorBody = e.getResponseBodyAsString();
+            log.error("❌ DHL Validation failed (400 Bad Request): {}", errorBody);
+            throw new RuntimeException("DHL Validation failed: " + errorBody, e);
             
         } catch (HttpClientErrorException e) {
             log.error("❌ DHL Validation failed with status {}: {}", 
@@ -129,29 +154,69 @@ public class DhlShippingClient {
     }
     
     /**
-     * Create Shipment Label
-     * POST /orders
+     * Validate Shipment (alte Methode - deprecated)
+     * POST /orders?validate=true
+     * 
+     * @deprecated Nutze stattdessen validateShipment(ResolvedDhlConfig config, DhlShipmentRequest request)
      */
-    public DhlShipmentResponse createLabel(DhlShipmentRequest request) {
+    @Deprecated
+    public DhlShipmentResponse validateShipment(DhlShipmentRequest request) {
+        log.warn("Using deprecated validateShipment() without config parameter. " +
+            "This only works for global Sandbox. Use validateShipment(config, request) instead.");
+        
         if (!dhlProperties.isEnabled()) {
             throw new IllegalStateException("DHL Integration is disabled");
         }
         
+        // Baue minimale Config aus globalen Properties (nur Sandbox!)
+        if (!dhlProperties.isSandbox()) {
+            throw new UnsupportedOperationException(
+                "Production mode requires config parameter. " +
+                "Use validateShipment(ResolvedDhlConfig config, DhlShipmentRequest request)."
+            );
+        }
+        
+        // Build minimal config for deprecated method
+        DhlSettingsResolver.ResolvedDhlConfig globalConfig = new DhlSettingsResolver.ResolvedDhlConfig();
+        globalConfig.setCredentialsSource("DEPRECATED");
+        globalConfig.setEnvironment(dhlProperties.getEnv());
+        globalConfig.setClientId(dhlProperties.getClientId());
+        globalConfig.setClientSecret(dhlProperties.getClientSecret());
+        globalConfig.setUsername(dhlProperties.getSandboxUsername());
+        globalConfig.setPassword(dhlProperties.getSandboxPassword());
+        
+        return validateShipment(globalConfig, request);
+    }
+    
+    /**
+     * Create Shipment Label
+     * POST /orders
+     * 
+     * EMPFOHLEN: Nutze diese Methode mit config für store-aware label creation
+     * 
+     * @param config Resolved DHL Config
+     * @param request DHL Shipment Request
+     * @return DHL Label Response mit PDF
+     */
+    public DhlShipmentResponse createLabel(
+        DhlSettingsResolver.ResolvedDhlConfig config,
+        DhlShipmentRequest request
+    ) {
         try {
-            String url = dhlProperties.getShippingBaseUrl() + "/orders";
-            String token = dhlAuthClient.getAccessToken();
+            String url = config.getShippingBaseUrl() + "/orders";
+            String token = dhlAuthClient.getAccessToken(config);
             
             HttpHeaders headers = createHeaders(token);
             HttpEntity<DhlShipmentRequest> httpRequest = new HttpEntity<>(request, headers);
             
-            // Sanitized logging (NO personal data!)
+            // Sanitized logging (NO personal data, NO label.b64!)
             DhlShipmentRequest.Shipment shipment = request.getShipments().get(0);
             DhlShipmentRequest.Address shipper = shipment.getShipper();
             DhlShipmentRequest.Address consignee = shipment.getConsignee();
             DhlShipmentRequest.Details details = shipment.getDetails();
             
             log.info("📦 Creating DHL shipment: refNo={}, product={}, billingNumber={}, " +
-                    "shipper={}/{}/{}, consignee={}/{}/{}, weight={}{}, dim={}x{}x{}{}, env={}",
+                    "shipper={}/{}/{}, consignee={}/{}/{}, weight={}{}, dim={}x{}x{}{}, credentialsSource={}, {}",
                 shipment.getRefNo(),
                 shipment.getProduct(),
                 maskBillingNumber(shipment.getBillingNumber()),
@@ -167,41 +232,9 @@ public class DhlShippingClient {
                 details.getDim().getWidth(),
                 details.getDim().getHeight(),
                 details.getDim().getUom(),
-                dhlProperties.getEnv()
+                config.getCredentialsSource(),
+                config.getLoggingInfo()
             );
-            
-            // DEBUG: Structural dump (Feldtypen, keine Werte!)
-            log.debug("🔍 DHL Request Structure:");
-            log.debug("  profile={} (String)", request.getProfile());
-            log.debug("  shipments[0].product={} (String)", shipment.getProduct());
-            log.debug("  shipments[0].billingNumber=***0102 (String, length={})", 
-                shipment.getBillingNumber().length());
-            log.debug("  shipments[0].refNo={} (String)", shipment.getRefNo());
-            log.debug("  shipments[0].shipDate={} ({})", 
-                shipment.getShipDate() != null ? "set" : "null",
-                shipment.getShipDate() != null ? "String" : "omitted");
-            log.debug("  shipments[0].shipper.name1={} (String, length={})", 
-                shipper.getName1() != null ? "set" : "null",
-                shipper.getName1() != null ? shipper.getName1().length() : 0);
-            log.debug("  shipments[0].shipper.country={} ({})", 
-                shipper.getCountry(),
-                shipper.getCountry() != null ? "String" : "null");
-            log.debug("  shipments[0].shipper.email={} ({})", 
-                shipper.getEmail() != null ? "set" : "null",
-                shipper.getEmail() != null ? "String" : "omitted");
-            log.debug("  shipments[0].consignee.country={} ({})", 
-                consignee.getCountry(),
-                consignee.getCountry() != null ? "String" : "null");
-            log.debug("  shipments[0].details.weight.value={} ({})", 
-                details.getWeight().getValue(),
-                details.getWeight().getValue().getClass().getSimpleName());
-            log.debug("  shipments[0].details.weight.uom={} (String)", 
-                details.getWeight().getUom());
-            log.debug("  shipments[0].details.dim.height={} ({})", 
-                details.getDim().getHeight(),
-                details.getDim().getHeight().getClass().getSimpleName());
-            log.debug("  shipments[0].details.dim.uom={} (String)", 
-                details.getDim().getUom());
             
             ResponseEntity<DhlShipmentResponse> response = restTemplate.exchange(
                 url,
@@ -219,6 +252,7 @@ public class DhlShippingClient {
                 log.info("   UUID: {}", body.getUuid());
                 log.info("   Label Format: {}", 
                     body.getLabel() != null ? body.getLabel().getFileFormat() : "N/A");
+                // WICHTIG: label.b64 NICHT loggen!
                 
                 // Log validation warnings (Errors würden zu Fehler führen)
                 if (body.getValidationMessages() != null && !body.getValidationMessages().isEmpty()) {
@@ -235,8 +269,14 @@ public class DhlShippingClient {
             
         } catch (HttpClientErrorException.Unauthorized e) {
             log.warn("⚠️ DHL Token expired, retrying with fresh token...");
-            dhlAuthClient.invalidateToken();
-            return createLabel(request); // Retry
+            dhlAuthClient.invalidateToken(config);
+            return createLabel(config, request); // Retry
+            
+        } catch (HttpClientErrorException.BadRequest e) {
+            // 400: DHL Validation Fehler
+            String errorBody = e.getResponseBodyAsString();
+            log.error("❌ DHL Shipment creation failed (400 Bad Request): {}", errorBody);
+            throw new RuntimeException("DHL Shipment creation failed: " + errorBody, e);
             
         } catch (HttpClientErrorException e) {
             log.error("❌ DHL Shipment creation failed with status {}: {}", 
@@ -256,14 +296,47 @@ public class DhlShippingClient {
             }
             
             throw new RuntimeException(dhlError + ": " + e.getStatusCode() + " " + 
-                e.getStatusText() + " on " + e.getClass().getSimpleName().replace("HttpClientErrorException$", "") + 
-                " request for \"" + dhlProperties.getShippingBaseUrl() + "/orders\": \"" + 
-                dhlDetail + "\"", e);
+                e.getStatusText() + " - " + dhlDetail, e);
             
         } catch (RestClientException e) {
             log.error("❌ DHL Shipping API Error: {}", e.getMessage());
             throw new RuntimeException("DHL Shipping API Error", e);
         }
+    }
+    
+    /**
+     * Create Shipment Label (alte Methode - deprecated)
+     * POST /orders
+     * 
+     * @deprecated Nutze stattdessen createLabel(ResolvedDhlConfig config, DhlShipmentRequest request)
+     */
+    @Deprecated
+    public DhlShipmentResponse createLabel(DhlShipmentRequest request) {
+        log.warn("Using deprecated createLabel() without config parameter. " +
+            "This only works for global Sandbox. Use createLabel(config, request) instead.");
+        
+        if (!dhlProperties.isEnabled()) {
+            throw new IllegalStateException("DHL Integration is disabled");
+        }
+        
+        // Baue minimale Config aus globalen Properties (nur Sandbox!)
+        if (!dhlProperties.isSandbox()) {
+            throw new UnsupportedOperationException(
+                "Production mode requires config parameter. " +
+                "Use createLabel(ResolvedDhlConfig config, DhlShipmentRequest request)."
+            );
+        }
+        
+        // Build minimal config for deprecated method
+        DhlSettingsResolver.ResolvedDhlConfig globalConfig = new DhlSettingsResolver.ResolvedDhlConfig();
+        globalConfig.setCredentialsSource("DEPRECATED");
+        globalConfig.setEnvironment(dhlProperties.getEnv());
+        globalConfig.setClientId(dhlProperties.getClientId());
+        globalConfig.setClientSecret(dhlProperties.getClientSecret());
+        globalConfig.setUsername(dhlProperties.getSandboxUsername());
+        globalConfig.setPassword(dhlProperties.getSandboxPassword());
+        
+        return createLabel(globalConfig, request);
     }
     
     /**

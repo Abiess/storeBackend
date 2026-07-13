@@ -1129,7 +1129,26 @@
       "productionCredentialsMissing": "Production-Modus erfordert Store-spezifische Zugangsdaten",
       "clientIdMissing": "Client ID fehlt. Bitte Client ID vom DHL Developer Portal eingeben.",
       "clientSecretMissing": "Client Secret fehlt. Bitte Client Secret vom DHL Developer Portal eingeben.",
-      "configIncomplete": "DHL-Konfiguration unvollständig"
+      "configIncomplete": "DHL-Konfiguration unvollständig",
+      "simpleModeHint": "Du brauchst keinen eigenen DHL Developer-Portal-Zugang. markt.ma stellt die technische DHL API-Anbindung bereit. Du benötigst nur deine DHL Geschäftskunden-Zugangsdaten und deine Abrechnungsnummer.",
+      "advancedApiCredentials": "Erweiterte DHL API Zugangsdaten",
+      "advancedApiCredentialsHint": "Nur nötig, wenn du eigene DHL Developer-Portal Zugangsdaten verwenden möchtest.",
+      "productionCostWarning": "Live-Versand kann echte Versandlabels erzeugen. Versandkosten laufen über deinen DHL Geschäftskundenvertrag.",
+      "credentialsSourcePlatform": "markt.ma Plattform-Anbindung",
+      "credentialsSourceStore": "Eigene API-Zugangsdaten",
+      "credentialsSourceSandbox": "Sandbox (Testumgebung)",
+      "passwordConfigured": "Passwort gesetzt",
+      "clientSecretConfigured": "Client Secret gesetzt",
+      "platformCredentialsAvailable": "Plattform-Anbindung verfügbar",
+      "liveLabelConfirm": "Du erstellst jetzt ein DHL Versandlabel für diese Bestellung. Im Live-Modus können dadurch Versandkosten über deinen DHL Geschäftskundenvertrag entstehen. Fortfahren?",
+      "liveLabelSandbox": "DHL Testlabel in Sandbox erstellen? Es entstehen keine echten Kosten.",
+      "liveLabelProduction": "Du erstellst jetzt ein echtes DHL Versandlabel. Dadurch können Versandkosten über deinen DHL Geschäftskundenvertrag entstehen. Fortfahren?",
+      "invalidClient": "API-Zugangsdaten sind falsch oder nicht aktiviert. Prüfe Client ID / Client Secret.",
+      "invalidGrant": "DHL Geschäftskunden-Zugangsdaten sind falsch. Prüfe Benutzername / Passwort.",
+      "platformCredentialsMissing": "Live-Versand ist noch nicht aktiviert. markt.ma benötigt dafür eine DHL Production API-Freigabe.",
+      "invalidBillingNumber": "Die DHL Abrechnungsnummer ist ungültig. Sie muss aus 14 Ziffern bestehen, z. B. EKP + Verfahren + Teilnahme.",
+      "pickupNotAllowed": "Abholung benötigt kein DHL Versandlabel.",
+      "decryptionFailed": "Entschlüsselung der Zugangsdaten fehlgeschlagen."
     }
   },
   "sidebar": {

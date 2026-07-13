@@ -106,10 +106,49 @@ public class DhlProperties {
     private String sandboxShipperCountry = "DE";
     
     /**
+     * Platform Client ID (markt.ma zentral)
+     * Wird genutzt wenn Store keine eigenen Credentials hat.
+     * Nur für Production relevant.
+     */
+    private String platformClientId;
+    
+    /**
+     * Platform Client Secret (markt.ma zentral)
+     * SICHERHEIT: Darf NIEMALS geloggt werden!
+     */
+    private String platformClientSecret;
+    
+    /**
+     * Platform Credentials erlaubt?
+     * Default: false (sichere Voreinstellung)
+     * Nur auf true setzen wenn Platform Credentials konfiguriert und freigegeben sind.
+     */
+    private boolean platformCredentialsAllowed = false;
+    
+    /**
      * Ist Sandbox Mode aktiv?
      */
     public boolean isSandbox() {
         return "sandbox".equalsIgnoreCase(env);
+    }
+    
+    /**
+     * Sind Platform Credentials vollständig konfiguriert?
+     */
+    public boolean hasPlatformCredentials() {
+        return platformCredentialsAllowed
+                && platformClientId != null && !platformClientId.isBlank()
+                && platformClientSecret != null && !platformClientSecret.isBlank();
+    }
+    
+    /**
+     * Maskierte Platform Client ID für Logging (erste 4 Zeichen)
+     */
+    public String getMaskedPlatformClientId() {
+        if (platformClientId == null || platformClientId.length() <= 4) {
+            return "****";
+        }
+        return platformClientId.substring(0, 4) + "****";
     }
     
     /**

@@ -447,7 +447,12 @@ export class StoreOrdersComponent implements OnInit {
   }
 
   createDhlLabel(order: Order): void {
-    if (!confirm(`DHL-Label für Bestellung ${order.orderNumber} erstellen?`)) {
+    // Verbesserte Confirm-Message mit Kostenwarnung
+    // Da wir das Environment nicht sicher kennen, verwenden wir die generische Warnung
+    const confirmMessage = 
+      'Du erstellst jetzt ein DHL Versandlabel für diese Bestellung. Im Live-Modus können dadurch Versandkosten über deinen DHL Geschäftskundenvertrag entstehen. Fortfahren?';
+    
+    if (!confirm(confirmMessage)) {
       return;
     }
 

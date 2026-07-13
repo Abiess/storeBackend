@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 
 /**
  * Service for managing store delivery settings
- * Inkludiert DHL Settings mit Secret Masking
+ * Inkludiert DHL Settings mit Secret Masking + Encryption
  */
 @Service
 @RequiredArgsConstructor
@@ -26,6 +26,7 @@ public class StoreDeliverySettingsService {
     
     private final StoreDeliverySettingsRepository settingsRepository;
     private final StoreRepository storeRepository;
+    private final SecretEncryptionService encryptionService;
 
     public StoreDeliverySettingsDTO getSettings(Long storeId) {
         StoreDeliverySettings settings = settingsRepository.findByStoreId(storeId)
@@ -66,7 +67,8 @@ public class StoreDeliverySettingsService {
         }
         
         // SECRET: dhlClientSecret
-        updateSecretField(
+        // WICHTIG: Encrypt before save if new value provided
+        updateSecretFieldEncrypted(
             request.getDhlClientSecret(),
             settings.getDhlClientSecret(),
             settings::setDhlClientSecret
@@ -77,7 +79,8 @@ public class StoreDeliverySettingsService {
         }
         
         // SECRET: dhlPassword
-        updateSecretField(
+        // WICHTIG: Encrypt before save if new value provided
+        updateSecretFieldEncrypted(
             request.getDhlPassword(),
             settings.getDhlPassword(),
             settings::setDhlPassword
@@ -137,12 +140,12 @@ public class StoreDeliverySettingsService {
     }
     
     /**
-     * Secret Field Update Logic:
+     * Secret Field Update Logic (mit Encryption):
      * - Wenn requestValue == null oder "********" → vorhandenen Wert behalten
      * - Wenn requestValue == "" (leer) → Secret löschen (null)
-     * - Sonst → neuer Wert setzen
+     * - Sonst → neuer Wert ENCRYPT und setzen
      */
-    private void updateSecretField(String requestValue, String currentValue, 
+    private void updateSecretFieldEncrypted(String requestValue, String currentValue, 
                                    java.util.function.Consumer<String> setter) {
         if (requestValue == null || MASKED_SECRET.equals(requestValue)) {
             // Masked oder nicht gesendet → behalten
@@ -151,10 +154,22 @@ public class StoreDeliverySettingsService {
         if (requestValue.isEmpty()) {
             // Leer → löschen
             setter.accept(null);
+            log.debug("Secret field deleted");
         } else {
-            // Neuer Wert → setzen
-            setter.accept(requestValue);
+            // Neuer Wert → ENCRYPT before save
+            String encrypted = encryptionService.encrypt(requestValue);
+            setter.accept(encrypted);
+            log.debug("Secret field encrypted and saved");
         }
+    }
+    
+    /**
+     * @deprecated Use updateSecretFieldEncrypted() instead
+     */
+    @Deprecated
+    private void updateSecretField(String requestValue, String currentValue, 
+                                   java.util.function.Consumer<String> setter) {
+        updateSecretFieldEncrypted(requestValue, currentValue, setter);
     }
 
     private StoreDeliverySettings createDefaultSettings(Long storeId) {

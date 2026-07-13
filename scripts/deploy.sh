@@ -211,6 +211,26 @@ DHL_SANDBOX_SHIPPER_POSTAL_CODE=${DHL_SANDBOX_SHIPPER_POSTAL_CODE:-53113}
 DHL_SANDBOX_SHIPPER_CITY=${DHL_SANDBOX_SHIPPER_CITY:-Bonn}
 DHL_SANDBOX_SHIPPER_COUNTRY=${DHL_SANDBOX_SHIPPER_COUNTRY:-DE}
 
+# ════════════════════════════════════════════════════════════
+# DHL Platform Credentials (markt.ma zentral)
+# ════════════════════════════════════════════════════════════
+# Diese Credentials ermöglichen Production-Versand für normale Händler,
+# ohne dass sie einen eigenen DHL Developer Portal Account benötigen.
+# Händler bringen nur mit: DHL Geschäftskunden-Username, Passwort, Abrechnungsnummer.
+#
+# WICHTIG:
+# - Client Secret NIEMALS loggen oder echo ausgeben
+# - Platform Credentials nur nutzen wenn ALLOWED=true
+# - Store-spezifische Credentials haben Vorrang
+#
+# Defaults: leer = deaktiviert
+DHL_PLATFORM_CLIENT_ID=${DHL_PLATFORM_CLIENT_ID:-}
+DHL_PLATFORM_CLIENT_SECRET=${DHL_PLATFORM_CLIENT_SECRET:-}
+DHL_PLATFORM_CREDENTIALS_ALLOWED=${DHL_PLATFORM_CREDENTIALS_ALLOWED:-false}
+# SECURITY: Encryption Key für DB-Felder (Passwörter, API Secrets)
+# WICHTIG: NIEMALS loggen! Key muss stabil bleiben (nicht bei jedem Deploy neu generieren).
+APP_SECRET_ENCRYPTION_KEY=${APP_SECRET_ENCRYPTION_KEY:-}
+
 # ── Frontend Analytics (nur Dokumentation – wird beim Angular-Build gebacken) ──
 # Microsoft Clarity: ID in storeFrontend/src/environments/environment.prod.ts
 # setzen, dann Frontend neu bauen: cd storeFrontend && npm run build -- --configuration=production
@@ -225,7 +245,18 @@ EOF"
 
 sudo chown "$APP_USER:$APP_USER" "$ENV_FILE"
 sudo chmod 600 "$ENV_FILE"
-echo "✅ Environment file written."
+echo "✅ /etc/storebackend.env updated"
+
+# Security Check: Warnung wenn Encryption Key fehlt
+if [ -z "${APP_SECRET_ENCRYPTION_KEY:-}" ]; then
+  echo "⚠️  WARNING: APP_SECRET_ENCRYPTION_KEY is not set!"
+  echo "   Secrets (passwords, API keys) cannot be encrypted in database."
+  echo "   This is acceptable for dev/test, but NOT for production."
+  echo "   Generate with: openssl rand -base64 32"
+  echo "   Add to GitHub Secrets as: APP_SECRET_ENCRYPTION_KEY"
+else
+  echo "✅ APP_SECRET_ENCRYPTION_KEY is configured (length: ${#APP_SECRET_ENCRYPTION_KEY} chars)"
+fi
 
 echo "🔄 Reloading systemd daemon..."
 sudo systemctl daemon-reload

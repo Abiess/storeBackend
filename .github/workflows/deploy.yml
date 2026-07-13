@@ -326,6 +326,10 @@ jobs:
             export DHL_SANDBOX_SHIPPER_POSTAL_CODE="${{ secrets.DHL_SANDBOX_SHIPPER_POSTAL_CODE }}"
             export DHL_SANDBOX_SHIPPER_CITY="${{ secrets.DHL_SANDBOX_SHIPPER_CITY }}"
             export DHL_SANDBOX_SHIPPER_COUNTRY="${{ secrets.DHL_SANDBOX_SHIPPER_COUNTRY }}"
+            export DHL_PLATFORM_CLIENT_ID="${{ secrets.DHL_PLATFORM_CLIENT_ID }}"
+            export DHL_PLATFORM_CLIENT_SECRET="${{ secrets.DHL_PLATFORM_CLIENT_SECRET }}"
+            export DHL_PLATFORM_CREDENTIALS_ALLOWED="${{ secrets.DHL_PLATFORM_CREDENTIALS_ALLOWED }}"
+            export APP_SECRET_ENCRYPTION_KEY="${{ secrets.APP_SECRET_ENCRYPTION_KEY }}"
             cd /opt/storebackend
             bash scripts/deploy.sh
 

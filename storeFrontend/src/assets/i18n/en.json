@@ -883,7 +883,26 @@
       "productionCredentialsMissing": "Production mode requires store-specific credentials",
       "clientIdMissing": "Client ID is missing. Please enter your Client ID from DHL Developer Portal.",
       "clientSecretMissing": "Client Secret is missing. Please enter your Client Secret from DHL Developer Portal.",
-      "configIncomplete": "DHL configuration incomplete"
+      "configIncomplete": "DHL configuration incomplete",
+      "simpleModeHint": "You don't need your own DHL Developer Portal account. markt.ma provides the technical DHL API connection. You only need your DHL business customer credentials and billing number.",
+      "advancedApiCredentials": "Advanced DHL API Credentials",
+      "advancedApiCredentialsHint": "Only required if you want to use your own DHL Developer Portal credentials.",
+      "productionCostWarning": "Live shipping can create real shipping labels. Shipping costs will be charged to your DHL business customer contract.",
+      "credentialsSourcePlatform": "markt.ma Platform Connection",
+      "credentialsSourceStore": "Own API Credentials",
+      "credentialsSourceSandbox": "Sandbox (Test Environment)",
+      "passwordConfigured": "Password configured",
+      "clientSecretConfigured": "Client Secret configured",
+      "platformCredentialsAvailable": "Platform connection available",
+      "liveLabelConfirm": "You are about to create a DHL shipping label for this order. In live mode, this may incur shipping costs through your DHL business customer contract. Continue?",
+      "liveLabelSandbox": "Create DHL test label in Sandbox? No real costs will be incurred.",
+      "liveLabelProduction": "You are about to create a real DHL shipping label. This may incur shipping costs through your DHL business customer contract. Continue?",
+      "invalidClient": "API credentials are wrong or not activated. Check Client ID / Client Secret.",
+      "invalidGrant": "DHL business customer credentials are wrong. Check username / password.",
+      "platformCredentialsMissing": "Live shipping is not yet activated. markt.ma needs DHL Production API approval for this.",
+      "invalidBillingNumber": "The DHL billing number is invalid. It must consist of 14 digits, e.g. EKP + procedure + participation.",
+      "pickupNotAllowed": "Pickup orders do not require a DHL shipping label.",
+      "decryptionFailed": "Decryption of credentials failed."
     }
   },
   "sidebar": {

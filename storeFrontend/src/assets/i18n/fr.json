@@ -872,7 +872,26 @@
       "apiUnreachable": "API d'expédition DHL inaccessible",
       "testFailed": "Échec du test de connexion",
       "disabled": "L'intégration DHL est désactivée",
-      "configError": "Configuration DHL invalide"
+      "configError": "Configuration DHL invalide",
+      "simpleModeHint": "Vous n'avez pas besoin de votre propre compte DHL Developer Portal. markt.ma fournit la connexion technique à l'API DHL. Vous avez seulement besoin de vos identifiants de client professionnel DHL et de votre numéro de facturation.",
+      "advancedApiCredentials": "Identifiants API DHL avancés",
+      "advancedApiCredentialsHint": "Uniquement requis si vous souhaitez utiliser vos propres identifiants DHL Developer Portal.",
+      "productionCostWarning": "L'expédition en direct peut créer de vraies étiquettes d'expédition. Les frais d'expédition seront facturés sur votre contrat client professionnel DHL.",
+      "credentialsSourcePlatform": "Connexion plateforme markt.ma",
+      "credentialsSourceStore": "Identifiants API propres",
+      "credentialsSourceSandbox": "Sandbox (environnement de test)",
+      "passwordConfigured": "Mot de passe configuré",
+      "clientSecretConfigured": "Client Secret configuré",
+      "platformCredentialsAvailable": "Connexion plateforme disponible",
+      "liveLabelConfirm": "Vous êtes sur le point de créer une étiquette d'expédition DHL pour cette commande. En mode direct, cela peut entraîner des frais d'expédition via votre contrat client professionnel DHL. Continuer ?",
+      "liveLabelSandbox": "Créer une étiquette de test DHL dans Sandbox ? Aucun coût réel ne sera engagé.",
+      "liveLabelProduction": "Vous êtes sur le point de créer une vraie étiquette d'expédition DHL. Cela peut entraîner des frais d'expédition via votre contrat client professionnel DHL. Continuer ?",
+      "invalidClient": "Les identifiants API sont incorrects ou non activés. Vérifiez Client ID / Client Secret.",
+      "invalidGrant": "Les identifiants de client professionnel DHL sont incorrects. Vérifiez nom d'utilisateur / mot de passe.",
+      "platformCredentialsMissing": "L'expédition en direct n'est pas encore activée. markt.ma a besoin d'une approbation API de production DHL pour cela.",
+      "invalidBillingNumber": "Le numéro de facturation DHL est invalide. Il doit être composé de 14 chiffres, par ex. EKP + procédure + participation.",
+      "pickupNotAllowed": "Les commandes de retrait ne nécessitent pas d'étiquette d'expédition DHL.",
+      "decryptionFailed": "Le déchiffrement des identifiants a échoué."
     }
   },
   "sidebar": {

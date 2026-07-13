@@ -1,15 +1,12 @@
 package storebackend.service.dhl;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestTemplate;
-import storebackend.config.DhlProperties;
-import storebackend.dto.dhl.DhlTokenResponse;
+import org.springframework.web.client.HttpClientErrorException;
+import storebackend.entity.StoreDeliverySettings;
+import storebackend.exception.DhlConfigurationException;
+import storebackend.repository.StoreDeliverySettingsRepository;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -17,275 +14,176 @@ import java.util.Map;
 /**
  * DHL Connection Test Service
  * 
- * Testet DHL Verbindung mit Store-spezifischen oder globalen Credentials
- * OHNE Label zu erzeugen (kostenfrei)
+ * Testet DHL Verbindung OHNE Label zu erzeugen (kostenfrei).
+ * 
+ * Ablauf:
+ * 1. Store Settings laden
+ * 2. DhlSettingsResolver.resolve() nutzen (wie Validate/Label)
+ * 3. Token abrufen über DhlAuthClient (wie Validate/Label)
+ * 4. Success oder klare Fehlermeldung
+ * 
+ * WICHTIG:
+ * - Verwendet EXAKT dieselbe Credential-Entscheidung wie Label/Validate
+ * - Keine eigene Token-Logik
+ * - Keine Secrets in Response
+ * - Logging nur mit config.getLoggingInfo()
  */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class DhlConnectionTestService {
     
-    private final DhlProperties globalDhlProperties;
     private final DhlSettingsResolver dhlSettingsResolver;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final DhlAuthClient dhlAuthClient;
+    private final StoreDeliverySettingsRepository deliverySettingsRepository;
     
     /**
      * Testet DHL Verbindung für einen Store
      * 
+     * Nutzt dieselbe Resolver-Logik wie Label/Validate.
+     * Holt nur Token über DhlAuthClient (keine Label-Erstellung).
+     * 
      * @param storeId Store ID
-     * @return Test Result Map mit success, error, messageKey etc.
+     * @return Test Result Map mit success, error, messageKey, credentialsSource etc.
      */
     public Map<String, Object> testConnection(Long storeId) {
         Map<String, Object> response = new LinkedHashMap<>();
         
         try {
-            // 1. Resolve Store-spezifische oder globale DHL Config
-            DhlSettingsResolver.ResolvedDhlConfig config = dhlSettingsResolver.resolve(storeId);
+            // 1. Store Settings laden
+            StoreDeliverySettings settings = deliverySettingsRepository.findByStoreId(storeId)
+                .orElse(null);
             
-            if (config == null) {
-                response.put("success", false);
-                response.put("error", "DHL_NOT_CONFIGURED");
-                response.put("messageKey", "shipping.dhl.notConfigured");
-                response.put("message", "DHL is not configured for this store");
-                return response;
-            }
-            
-            // PRODUCTION ohne Store Credentials → Fehler
-            if ("PRODUCTION".equalsIgnoreCase(config.getEnvironment()) && "ENV".equals(config.getSource())) {
-                response.put("success", false);
-                response.put("error", "PRODUCTION_CREDENTIALS_MISSING");
-                response.put("messageKey", "shipping.dhl.productionCredentialsMissing");
-                response.put("message", "Production DHL requires store-specific credentials");
-                return response;
-            }
-            
-            response.put("configSource", config.getSource());
-            response.put("environment", config.getEnvironment());
-            
-            // WICHTIG: Validiere dass Credentials nicht leer sind
-            if (config.getClientId() == null || config.getClientId().trim().isEmpty()) {
-                response.put("success", false);
-                response.put("error", "CLIENT_ID_MISSING");
-                response.put("messageKey", "shipping.dhl.clientIdMissing");
-                response.put("message", "DHL Client ID is missing. Please enter your Client ID from DHL Developer Portal.");
-                return response;
-            }
-            
-            if (config.getClientSecret() == null || config.getClientSecret().trim().isEmpty()) {
-                response.put("success", false);
-                response.put("error", "CLIENT_SECRET_MISSING");
-                response.put("messageKey", "shipping.dhl.clientSecretMissing");
-                response.put("message", "DHL Client Secret is missing. Please enter your Client Secret from DHL Developer Portal.");
-                return response;
-            }
-            
-            // 2. Test Auth (Token abrufen)
-            String token;
+            // 2. Resolve DHL Config (wie Label/Validate)
+            DhlSettingsResolver.ResolvedDhlConfig config;
             try {
-                token = fetchTestToken(config);
-                response.put("authSuccess", true);
-                response.put("tokenReceived", token != null && !token.isEmpty());
-                log.info("✅ DHL Auth successful for store {} (env: {}, source: {})", 
-                    storeId, config.getEnvironment(), config.getSource());
-            } catch (IllegalStateException e) {
-                // Validation error (missing credentials)
-                log.error("❌ DHL Config validation failed for store {}: {}", storeId, e.getMessage());
+                config = dhlSettingsResolver.resolve(storeId);
+            } catch (DhlConfigurationException e) {
+                log.warn("❌ DHL Config failed for store {}: {}", storeId, e.getMessageKey());
                 response.put("success", false);
-                response.put("authSuccess", false);
-                response.put("error", "CONFIG_INCOMPLETE");
-                response.put("messageKey", "shipping.dhl.configIncomplete");
+                response.put("messageKey", e.getMessageKey());
                 response.put("message", e.getMessage());
+                
+                // Security Flags für UI
+                addSecurityFlags(response, settings);
+                
                 return response;
             } catch (Exception e) {
-                log.error("❌ DHL Auth failed for store {}: {}", storeId, e.getMessage());
+                log.error("❌ DHL Config failed for store {}", storeId, e);
                 response.put("success", false);
-                response.put("authSuccess", false);
-                response.put("error", "AUTH_FAILED");
-                response.put("messageKey", "shipping.dhl.authFailed");
-                response.put("message", "DHL authentication failed: " + e.getMessage());
+                response.put("messageKey", "shipping.dhl.connectionFailed");
+                response.put("message", "Configuration error: " + e.getMessage());
+                
+                // Security Flags für UI
+                addSecurityFlags(response, settings);
+                
                 return response;
             }
             
-            // 3. Test Shipping API Erreichbarkeit (Health Check)
+            // 3. Credentials Source und Environment
+            response.put("environment", config.getEnvironment());
+            response.put("credentialsSource", config.getCredentialsSource());
+            
+            log.debug("🧪 DHL Connection Test for store {} | {}", storeId, config.getLoggingInfo());
+            
+            // 4. Token abrufen (wie Label/Validate)
             try {
-                String apiBaseUrl = getShippingApiBaseUrl(config.getEnvironment());
-                JsonNode apiInfo = testShippingApi(apiBaseUrl, token);
-                response.put("apiReachable", true);
-                response.put("apiVersion", apiInfo != null && apiInfo.has("version") ? apiInfo.get("version").asText() : "unknown");
-                log.info("✅ DHL Shipping API reachable for store {}", storeId);
+                String token = dhlAuthClient.getAccessToken(config);
+                
+                if (token == null || token.isEmpty()) {
+                    log.error("❌ DHL Auth returned null/empty token for store {}", storeId);
+                    response.put("success", false);
+                    response.put("messageKey", "shipping.dhl.authFailed");
+                    response.put("message", "Authentication failed: No token received");
+                    
+                    addSecurityFlags(response, settings);
+                    return response;
+                }
+                
+                // SUCCESS ✅
+                response.put("success", true);
+                response.put("messageKey", "shipping.dhl.connectionSuccess");
+                response.put("message", "DHL connection test successful ✅");
+                
+                log.info("✅ DHL Connection Test successful for store {} | {}", 
+                    storeId, config.getLoggingInfo());
+                
+            } catch (HttpClientErrorException.Unauthorized e) {
+                // 401: Client ID/Secret oder Username/Password falsch
+                String errorBody = e.getResponseBodyAsString();
+                
+                if (errorBody.contains("invalid_client")) {
+                    log.error("❌ DHL Auth failed for store {}: invalid_client (API Key/Secret wrong or not activated)", storeId);
+                    response.put("success", false);
+                    response.put("messageKey", "shipping.dhl.invalidClient");
+                    response.put("message", "API credentials are wrong or not activated. Check Client ID / Client Secret.");
+                } else if (errorBody.contains("invalid_grant")) {
+                    log.error("❌ DHL Auth failed for store {}: invalid_grant (Username/Password wrong)", storeId);
+                    response.put("success", false);
+                    response.put("messageKey", "shipping.dhl.invalidGrant");
+                    response.put("message", "DHL business customer credentials are wrong. Check Username / Password.");
+                } else {
+                    log.error("❌ DHL Auth failed for store {}: {} - {}", storeId, e.getStatusCode(), errorBody);
+                    response.put("success", false);
+                    response.put("messageKey", "shipping.dhl.authFailed");
+                    response.put("message", "Authentication failed: " + e.getMessage());
+                }
+                
             } catch (Exception e) {
-                log.error("❌ DHL Shipping API unreachable for store {}: {}", storeId, e.getMessage());
+                log.error("❌ DHL Auth failed for store {}", storeId, e);
                 response.put("success", false);
-                response.put("apiReachable", false);
-                response.put("error", "API_UNREACHABLE");
-                response.put("messageKey", "shipping.dhl.apiUnreachable");
-                response.put("message", "DHL Shipping API unreachable: " + e.getMessage());
-                return response;
+                response.put("messageKey", "shipping.dhl.authFailed");
+                response.put("message", "Authentication failed: " + e.getMessage());
             }
             
-            // All OK!
-            response.put("success", true);
-            response.put("messageKey", "shipping.dhl.connectionSuccess");
-            response.put("message", "DHL connection test successful ✅");
+            // Security Flags für UI
+            addSecurityFlags(response, settings);
             
-            log.info("✅ DHL Connection Test successful for store {} (env: {}, source: {})", 
-                storeId, config.getEnvironment(), config.getSource());
             return response;
             
         } catch (Exception e) {
             log.error("❌ DHL Connection Test failed for store {}", storeId, e);
-            response.put("success", false);
-            response.put("error", "TEST_FAILED");
-            response.put("messageKey", "shipping.dhl.connectionFailed");
-            response.put("message", "Connection test failed: " + e.getMessage());
-            return response;
+            
+            Map<String, Object> errorResponse = new LinkedHashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("messageKey", "shipping.dhl.connectionFailed");
+            errorResponse.put("message", "Connection test failed: " + e.getMessage());
+            
+            // Security Flags für UI
+            StoreDeliverySettings settings = deliverySettingsRepository.findByStoreId(storeId)
+                .orElse(null);
+            addSecurityFlags(errorResponse, settings);
+            
+            return errorResponse;
         }
     }
     
     /**
-     * Holt Token mit Store-spezifischen Credentials (ohne Cache)
+     * Fügt Security Flags zur Response hinzu (KEINE Secrets, nur Flags)
+     * 
+     * Für UI:
+     * - passwordConfigured: ja/nein
+     * - clientSecretConfigured: ja/nein
+     * - platformCredentialsAvailable: ja/nein
      */
-    private String fetchTestToken(DhlSettingsResolver.ResolvedDhlConfig config) {
-        String authUrl = getAuthUrl(config.getEnvironment());
-        
-        // Validate Client Credentials BEFORE sending request
-        if (config.getClientId() == null || config.getClientId().trim().isEmpty()) {
-            throw new IllegalStateException("DHL Client ID is missing or empty");
-        }
-        if (config.getClientSecret() == null || config.getClientSecret().trim().isEmpty()) {
-            throw new IllegalStateException("DHL Client Secret is missing or empty");
-        }
-        
-        // Request Body: x-www-form-urlencoded
-        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
-        body.add("grant_type", "password");
-        body.add("client_id", config.getClientId().trim());
-        body.add("client_secret", config.getClientSecret().trim());
-        
-        // Username/Password
-        String username;
-        String password;
-        
-        if (config.isSandbox()) {
-            // Sandbox: Nutze config username/password oder fallback zu global
-            username = (config.getUsername() != null && !config.getUsername().trim().isEmpty())
-                ? config.getUsername().trim()
-                : globalDhlProperties.getSandboxUsername();
-            password = (config.getPassword() != null && !config.getPassword().trim().isEmpty())
-                ? config.getPassword().trim()
-                : globalDhlProperties.getSandboxPassword();
-            
-            if (username == null || username.isEmpty()) {
-                throw new IllegalStateException("DHL Sandbox username is missing (set DHL_SANDBOX_USERNAME in env or store settings)");
-            }
-            if (password == null || password.isEmpty()) {
-                throw new IllegalStateException("DHL Sandbox password is missing (set DHL_SANDBOX_PASSWORD in env or store settings)");
-            }
-            
-            body.add("username", username);
-            body.add("password", password);
+    private void addSecurityFlags(Map<String, Object> response, StoreDeliverySettings settings) {
+        if (settings != null) {
+            response.put("passwordConfigured", 
+                settings.getDhlPassword() != null && !settings.getDhlPassword().isEmpty());
+            response.put("clientSecretConfigured", 
+                settings.getDhlClientSecret() != null && !settings.getDhlClientSecret().isEmpty());
         } else {
-            // Production: MUSS Store-Credentials haben
-            if (config.getUsername() == null || config.getUsername().trim().isEmpty()) {
-                throw new IllegalStateException("Production DHL requires store-specific username");
-            }
-            if (config.getPassword() == null || config.getPassword().trim().isEmpty()) {
-                throw new IllegalStateException("Production DHL requires store-specific password");
-            }
-            username = config.getUsername().trim();
-            password = config.getPassword().trim();
-            body.add("username", username);
-            body.add("password", password);
+            response.put("passwordConfigured", false);
+            response.put("clientSecretConfigured", false);
         }
         
-        // Headers
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        
-        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
-        
-        // Log request details (ohne Secrets!)
-        String usernameForLog = config.isSandbox() 
-            ? (username != null ? username.substring(0, Math.min(3, username.length())) + "***" : "null")
-            : (config.getUsername() != null ? config.getUsername().substring(0, Math.min(3, config.getUsername().length())) + "***" : "null");
-        
-        log.debug("DHL Auth Request: URL={}, grant_type=password, client_id={}, username={}", 
-            authUrl, 
-            config.getClientId().substring(0, Math.min(5, config.getClientId().length())) + "***",
-            usernameForLog);
-        
-        // POST Request
-        ResponseEntity<DhlTokenResponse> response = restTemplate.exchange(
-            authUrl,
-            HttpMethod.POST,
-            request,
-            DhlTokenResponse.class
-        );
-        
-        if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
-            return response.getBody().getAccessToken();
-        }
-        
-        throw new RuntimeException("DHL Auth failed: " + response.getStatusCode());
-    }
-    
-    /**
-     * Testet Shipping API Erreichbarkeit (kein Label erstellen)
-     */
-    private JsonNode testShippingApi(String apiBaseUrl, String token) {
-        // Simple GET Request zum API Root (health check)
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + token);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        
-        HttpEntity<Void> request = new HttpEntity<>(headers);
-        
+        // Platform Credentials available?
         try {
-            ResponseEntity<JsonNode> response = restTemplate.exchange(
-                apiBaseUrl,
-                HttpMethod.GET,
-                request,
-                JsonNode.class
-            );
-            
-            return response.getBody();
+            DhlSettingsResolver.ResolvedDhlConfig testConfig = dhlSettingsResolver.resolve(null);
+            response.put("platformCredentialsAvailable", 
+                "PLATFORM".equals(testConfig.getCredentialsSource()));
         } catch (Exception e) {
-            log.warn("Shipping API health check failed (trying HEAD request): {}", e.getMessage());
-            
-            // Fallback: HEAD Request
-            try {
-                ResponseEntity<Void> headResponse = restTemplate.exchange(
-                    apiBaseUrl,
-                    HttpMethod.HEAD,
-                    request,
-                    Void.class
-                );
-                
-                if (headResponse.getStatusCode().is2xxSuccessful()) {
-                    log.info("API reachable via HEAD request");
-                    return null; // OK but no version info
-                }
-            } catch (Exception e2) {
-                log.error("API not reachable via HEAD: {}", e2.getMessage());
-            }
-            
-            throw new RuntimeException("Shipping API unreachable", e);
-        }
-    }
-    
-    private String getAuthUrl(String environment) {
-        if ("PRODUCTION".equalsIgnoreCase(environment)) {
-            return "https://api.dhl.com/parcel/de/account/auth/ropc/v1/token";
-        } else {
-            return "https://api-sandbox.dhl.com/parcel/de/account/auth/ropc/v1/token";
-        }
-    }
-    
-    private String getShippingApiBaseUrl(String environment) {
-        if ("PRODUCTION".equalsIgnoreCase(environment)) {
-            return "https://api.dhl.com/parcel/de/shipping/v2";
-        } else {
-            return "https://api-sandbox.dhl.com/parcel/de/shipping/v2";
+            response.put("platformCredentialsAvailable", false);
         }
     }
 }

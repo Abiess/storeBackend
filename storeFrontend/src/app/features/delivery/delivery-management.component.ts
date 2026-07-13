@@ -166,25 +166,50 @@ import {
                     </select>
                   </div>
 
-                  <div class="form-grid">
-                    <div class="form-group">
-                      <label>{{ 'shipping.dhl.clientId' | translate }}</label>
-                      <input type="text" class="form-control" [(ngModel)]="dhlForm.dhlClientId" 
-                             placeholder="abc123xyz" />
+                  <!-- Production Warnung -->
+                  <div *ngIf="dhlForm.dhlEnvironment === 'PRODUCTION'" class="alert alert-warning" style="margin-top: 12px; padding: 12px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+                    ⚠️ {{ 'shipping.dhl.productionCostWarning' | translate }}
+                  </div>
+
+                  <!-- Einfacher Modus Hinweis -->
+                  <div class="info-box" style="margin-top: 16px; padding: 12px; background: #e3f2fd; border-left: 4px solid #2196f3; border-radius: 4px;">
+                    💡 {{ 'shipping.dhl.simpleModeHint' | translate }}
+                  </div>
+
+                  <!-- Erweiterte API Zugangsdaten (einklappbar) -->
+                  <div class="advanced-credentials-section" style="margin-top: 16px;">
+                    <div class="advanced-credentials-header" style="cursor: pointer; padding: 12px; background: #f5f5f5; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;" (click)="dhlAdvancedExpanded = !dhlAdvancedExpanded">
+                      <strong>🔧 {{ 'shipping.dhl.advancedApiCredentials' | translate }}</strong>
+                      <span>{{ dhlAdvancedExpanded ? '▲' : '▼' }}</span>
                     </div>
-                    <div class="form-group">
-                      <label>{{ 'shipping.dhl.clientSecret' | translate }}</label>
-                      <input [type]="showDhlClientSecret ? 'text' : 'password'" class="form-control" 
-                             [(ngModel)]="dhlForm.dhlClientSecret" 
-                             [placeholder]="dhlForm.dhlClientSecret === '********' ? ('shipping.dhl.secretPlaceholder' | translate) : ''" />
-                      <button type="button" class="btn-show-secret" (click)="showDhlClientSecret = !showDhlClientSecret" 
-                              *ngIf="dhlForm.dhlClientSecret && dhlForm.dhlClientSecret !== '********'">
-                        {{ showDhlClientSecret ? '🙈' : '👁️' }}
-                      </button>
+                    
+                    <div *ngIf="dhlAdvancedExpanded" class="advanced-credentials-content" style="margin-top: 12px; padding: 12px; border: 1px solid #e0e0e0; border-radius: 4px; background: #fafafa;">
+                      <p style="margin-bottom: 12px; color: #666; font-size: 0.9em;">
+                        💡 {{ 'shipping.dhl.advancedApiCredentialsHint' | translate }}
+                      </p>
+                      
+                      <div class="form-grid">
+                        <div class="form-group">
+                          <label>{{ 'shipping.dhl.clientId' | translate }}</label>
+                          <input type="text" class="form-control" [(ngModel)]="dhlForm.dhlClientId" 
+                                 placeholder="abc123xyz" />
+                        </div>
+                        <div class="form-group">
+                          <label>{{ 'shipping.dhl.clientSecret' | translate }}</label>
+                          <input [type]="showDhlClientSecret ? 'text' : 'password'" class="form-control" 
+                                 [(ngModel)]="dhlForm.dhlClientSecret" 
+                                 [placeholder]="dhlForm.dhlClientSecret === '********' ? ('shipping.dhl.secretPlaceholder' | translate) : ''" />
+                          <button type="button" class="btn-show-secret" (click)="showDhlClientSecret = !showDhlClientSecret" 
+                                  *ngIf="dhlForm.dhlClientSecret && dhlForm.dhlClientSecret !== '********'">
+                            {{ showDhlClientSecret ? '🙈' : '👁️' }}
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <div class="form-grid">
+                  <!-- DHL Business Customer Credentials -->
+                  <div class="form-grid" style="margin-top: 16px;">
                     <div class="form-group">
                       <label>{{ 'shipping.dhl.username' | translate }}</label>
                       <input type="text" class="form-control" [(ngModel)]="dhlForm.dhlUsername" />
@@ -1013,6 +1038,7 @@ export class DeliveryManagementComponent implements OnInit, OnDestroy {
   dhlExpanded = false;
   dhlSaving = false;
   dhlTesting = false; // NEW: For connection test
+  dhlAdvancedExpanded = false; // NEW: For advanced API credentials collapse
   showDhlClientSecret = false;
   showDhlPassword = false;
   dhlForm: any = {
@@ -1283,7 +1309,17 @@ export class DeliveryManagementComponent implements OnInit, OnDestroy {
             this.dhlTesting = false;
             
             if (testResult.success) {
-              this.toastService.success('DHL Verbindung erfolgreich ✅');
+              // Detaillierte Success-Message
+              const mode = this.getCredentialsSourceLabel(testResult.credentialsSource);
+              const passwordStatus = testResult.passwordConfigured ? 
+                this.translateKey('shipping.dhl.passwordConfigured') + ': ✅' : 
+                this.translateKey('shipping.dhl.passwordConfigured') + ': ❌';
+              
+              this.toastService.success(
+                `${this.translateKey('shipping.dhl.connectionSuccess')}\n\n` +
+                `${mode}\n` +
+                `${passwordStatus}`
+              );
             } else {
               // Error mit messageKey
               const messageKey = testResult.messageKey || 'shipping.dhl.connectionFailed';
@@ -1306,25 +1342,6 @@ export class DeliveryManagementComponent implements OnInit, OnDestroy {
         this.dhlTesting = false;
       }
     });
-  }
-
-  /**
-   * Helper: Translate key (fallback to raw key if not found)
-   */
-  private translateKey(key: string): string {
-    // Simple translation - in real app use TranslateService
-    const translations: any = {
-      'shipping.dhl.connectionSuccess': 'DHL Verbindung erfolgreich',
-      'shipping.dhl.connectionFailed': 'DHL Verbindung fehlgeschlagen',
-      'shipping.dhl.notConfigured': 'DHL ist nicht konfiguriert',
-      'shipping.dhl.authFailed': 'DHL Authentifizierung fehlgeschlagen',
-      'shipping.dhl.apiUnreachable': 'DHL API nicht erreichbar',
-      'shipping.dhl.productionCredentialsMissing': 'Production-Modus erfordert Store-spezifische Zugangsdaten',
-      'shipping.dhl.clientIdMissing': 'Client ID fehlt. Bitte Client ID vom DHL Developer Portal eingeben.',
-      'shipping.dhl.clientSecretMissing': 'Client Secret fehlt. Bitte Client Secret vom DHL Developer Portal eingeben.',
-      'shipping.dhl.configIncomplete': 'DHL-Konfiguration unvollständig'
-    };
-    return translations[key] || key;
   }
 
   editSettingsInline(): void { this.toastService.info('Settings-Dialog öffnen (bestehende Dialog-Komponente)'); }
@@ -1524,5 +1541,34 @@ export class DeliveryManagementComponent implements OnInit, OnDestroy {
   /** Spring LocalDateTime-Array oder ISO-String → JS Date für DatePipe */
   parseDate(value: any): Date | null {
     return toDate(value);
+  }
+
+  /**
+   * Übersetzt einen Credentials Source in benutzerfreundlichen Label
+   */
+  getCredentialsSourceLabel(source: string): string {
+    const translations: Record<string, string> = {
+      'SANDBOX': 'Sandbox (Testumgebung)',
+      'PLATFORM': 'markt.ma Plattform-Anbindung',
+      'STORE': 'Eigene API-Zugangsdaten'
+    };
+    return translations[source] || source;
+  }
+
+  /**
+   * Übersetzt einen i18n Key (simplified for MVP)
+   */
+  translateKey(key: string): string {
+    // Simplified translation - nutzt hardcoded Fallbacks für MVP
+    // In Production würde man hier den TranslationService nutzen
+    const translations: Record<string, string> = {
+      'shipping.dhl.connectionSuccess': 'DHL Verbindung erfolgreich',
+      'shipping.dhl.passwordConfigured': 'Passwort gesetzt',
+      'shipping.dhl.connectionFailed': 'DHL Verbindung fehlgeschlagen',
+      'shipping.dhl.invalidClient': 'API-Zugangsdaten sind falsch oder nicht aktiviert',
+      'shipping.dhl.invalidGrant': 'DHL Geschäftskunden-Zugangsdaten sind falsch',
+      'shipping.dhl.platformCredentialsMissing': 'Live-Versand ist noch nicht aktiviert'
+    };
+    return translations[key] || key;
   }
 }

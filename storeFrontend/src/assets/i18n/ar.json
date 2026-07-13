@@ -764,7 +764,26 @@
       "productionCredentialsMissing": "يتطلب وضع Production بيانات اعتماد خاصة بالمتجر",
       "clientIdMissing": "معرف العميل مفقود. يرجى إدخال معرف العميل من بوابة مطوري DHL.",
       "clientSecretMissing": "سر العميل مفقود. يرجى إدخال سر العميل من بوابة مطوري DHL.",
-      "configIncomplete": "تكوين DHL غير مكتمل"
+      "configIncomplete": "تكوين DHL غير مكتمل",
+      "simpleModeHint": "لا تحتاج إلى حساب DHL Developer Portal خاص بك. تقدم markt.ma الاتصال التقني بواجهة برمجة التطبيقات DHL. أنت بحاجة فقط إلى بيانات اعتماد عميل الأعمال DHL ورقم الفوترة.",
+      "advancedApiCredentials": "بيانات اعتماد API المتقدمة لـ DHL",
+      "advancedApiCredentialsHint": "مطلوب فقط إذا كنت ترغب في استخدام بيانات اعتماد DHL Developer Portal الخاصة بك.",
+      "productionCostWarning": "يمكن أن يؤدي الشحن المباشر إلى إنشاء ملصقات شحن حقيقية. سيتم تحميل تكاليف الشحن على عقد عميل الأعمال DHL الخاص بك.",
+      "credentialsSourcePlatform": "اتصال منصة markt.ma",
+      "credentialsSourceStore": "بيانات اعتماد API الخاصة",
+      "credentialsSourceSandbox": "Sandbox (بيئة اختبار)",
+      "passwordConfigured": "تم تكوين كلمة المرور",
+      "clientSecretConfigured": "تم تكوين Client Secret",
+      "platformCredentialsAvailable": "اتصال المنصة متاح",
+      "liveLabelConfirm": "أنت على وشك إنشاء ملصق شحن DHL لهذا الطلب. في الوضع المباشر، قد يؤدي ذلك إلى تكبد تكاليف الشحن من خلال عقد عميل الأعمال DHL الخاص بك. هل تريد المتابعة؟",
+      "liveLabelSandbox": "إنشاء ملصق اختبار DHL في Sandbox؟ لن يتم تكبد تكاليف حقيقية.",
+      "liveLabelProduction": "أنت على وشك إنشاء ملصق شحن DHL حقيقي. قد يؤدي ذلك إلى تكبد تكاليف الشحن من خلال عقد عميل الأعمال DHL الخاص بك. هل تريد المتابعة؟",
+      "invalidClient": "بيانات اعتماد API خاطئة أو غير مفعلة. تحقق من Client ID / Client Secret.",
+      "invalidGrant": "بيانات اعتماد عميل الأعمال DHL خاطئة. تحقق من اسم المستخدم / كلمة المرور.",
+      "platformCredentialsMissing": "لم يتم تفعيل الشحن المباشر بعد. تحتاج markt.ma إلى موافقة DHL Production API لذلك.",
+      "invalidBillingNumber": "رقم الفوترة DHL غير صالح. يجب أن يتكون من 14 رقمًا، على سبيل المثال EKP + الإجراء + المشاركة.",
+      "pickupNotAllowed": "لا تتطلب طلبات الاستلام ملصق شحن DHL.",
+      "decryptionFailed": "فشل فك تشفير بيانات الاعتماد."
     }
   },
   "trust": {

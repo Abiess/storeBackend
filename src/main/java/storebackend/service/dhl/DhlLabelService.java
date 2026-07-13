@@ -10,6 +10,7 @@ import storebackend.entity.Address;
 import storebackend.entity.Order;
 import storebackend.entity.Store;
 import storebackend.entity.User;
+import storebackend.util.DhlBillingNumberUtil;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -18,6 +19,16 @@ import java.util.List;
 /**
  * DHL Label Service
  * Business Logic für DHL Shipment Validation und Label Creation
+ * 
+ * Multi-Store Support:
+ * - Nutzt DhlSettingsResolver für SANDBOX | STORE | PLATFORM Credentials
+ * - Config-aware API Calls über DhlShippingClient
+ * - Idempotenz: Verhindert doppelte Label-Erstellung
+ * - PICKUP Orders werden blockiert
+ * 
+ * Security:
+ * - Keine Secrets/Tokens im Log
+ * - config.getLoggingInfo() für Audit
  */
 @Service
 @RequiredArgsConstructor
@@ -40,25 +51,29 @@ public class DhlLabelService {
         // 1. Security: Store Owner Check
         dhlSecurityHelper.checkOrderOwnership(order, currentUser);
         
-        // 2. Resolve DHL Config (Production Credentials Check)
-        DhlSettingsResolver.ResolvedDhlConfig config = dhlSettingsResolver.resolve(order.getStore().getId());
-        if (config == null) {
+        // 2. Validation: PICKUP Orders dürfen kein DHL Label bekommen
+        if ("PICKUP".equals(order.getDeliveryType())) {
             throw new IllegalStateException(
-                "DHL is not configured for this store. " +
-                "Please configure DHL settings in Store Shipping Settings. " +
-                "Production mode requires store-specific credentials. " +
-                "messageKey: shipping.dhl.storeCredentialsRequired"
+                "DHL shipping labels are not available for pickup orders. " +
+                "This order is configured for customer pickup (deliveryType=PICKUP). " +
+                "messageKey: shipping.dhl.pickupNotAllowed"
             );
         }
         
-        log.info("🔍 Validating DHL shipment for order {} (env: {})", 
-            order.getId(), config.getEnvironment());
+        // 3. Resolve DHL Config (SANDBOX | STORE | PLATFORM)
+        DhlSettingsResolver.ResolvedDhlConfig config = dhlSettingsResolver.resolve(order.getStore().getId());
         
-        // 3. Build DHL Request
+        log.info("🔍 Validating DHL shipment: orderId={}, credentialsSource={}, {}",
+            order.getId(),
+            config.getCredentialsSource(),
+            config.getLoggingInfo()
+        );
+        
+        // 4. Build DHL Request
         DhlShipmentRequest request = buildShipmentRequest(order, config, false);
         
-        // 4. Call DHL Validate API
-        DhlShipmentResponse response = dhlShippingClient.validateShipment(request);
+        // 5. Call DHL Validate API (config-aware)
+        DhlShipmentResponse response = dhlShippingClient.validateShipment(config, request);
         
         log.info("✅ DHL validation completed for order {}", order.getId());
         return response;
@@ -67,6 +82,9 @@ public class DhlLabelService {
     /**
      * Create Shipping Label
      * Erstellt DHL Label und gibt Base64 PDF + Tracking zurück
+     * 
+     * Idempotenz: Wenn Order bereits ein Label hat, wird keine neue Sendung erstellt.
+     * PICKUP: Abholungen werden blockiert (keine Versandlabel nötig).
      * 
      * @param order Order Entity (mit eager-loaded Store)
      * @param currentUser Aktuell eingeloggter User
@@ -81,32 +99,62 @@ public class DhlLabelService {
             throw new IllegalStateException(
                 "DHL shipping labels are not available for pickup orders. " +
                 "This order is configured for customer pickup (deliveryType=PICKUP). " +
-                "messageKey: orders.dhl.notAvailableForPickup"
+                "messageKey: shipping.dhl.pickupNotAllowed"
             );
         }
         
-        // 3. Resolve DHL Config (Production Credentials Check)
+        // 3. Idempotenz: Prüfe ob Order bereits ein DHL Label hat
+        if (order.getDhlShipmentNo() != null && !order.getDhlShipmentNo().isBlank()) {
+            log.info("⚠️ Order {} already has DHL Shipment No: {} - returning existing data (no new label created)",
+                order.getId(),
+                order.getDhlShipmentNo()
+            );
+            
+            // Baue Response aus vorhandenen Order-Daten
+            // WICHTIG: Kein neues DHL API Call, keine Kosten
+            DhlShipmentResponse existingResponse = new DhlShipmentResponse();
+            
+            // Baue items Array mit vorhandenen Daten
+            DhlShipmentResponse.ShipmentItem item = new DhlShipmentResponse.ShipmentItem();
+            item.setShipmentNo(order.getDhlShipmentNo());
+            item.setRoutingCode(order.getDhlRoutingCode());
+            item.setUuid(order.getDhlUuid());
+            
+            existingResponse.setItems(List.of(item));
+            
+            // Label PDF ist bereits in MinIO gespeichert
+            if (order.getDhlLabelUrl() != null && !order.getDhlLabelUrl().isBlank()) {
+                // WICHTIG: label.b64 NICHT zurückgeben (zu groß, nicht mehr vorhanden)
+                // Frontend nutzt dhlLabelUrl für Download
+                log.info("   Existing label URL: {}", order.getDhlLabelUrl());
+            }
+            
+            return existingResponse;
+        }
+        
+        // 4. Resolve DHL Config (SANDBOX | STORE | PLATFORM)
         DhlSettingsResolver.ResolvedDhlConfig config = dhlSettingsResolver.resolve(order.getStore().getId());
-        if (config == null) {
-            throw new IllegalStateException(
-                "DHL is not configured for this store. " +
-                "Please configure DHL settings in Store Shipping Settings. " +
-                "Production mode requires store-specific credentials. " +
-                "messageKey: shipping.dhl.storeCredentialsRequired"
-            );
-        }
         
-        log.info("📦 Creating DHL label for order {} (env: {})", 
-            order.getId(), config.getEnvironment());
+        log.info("📦 Creating DHL label: orderId={}, credentialsSource={}, {}",
+            order.getId(),
+            config.getCredentialsSource(),
+            config.getLoggingInfo()
+        );
         
-        // 4. Build DHL Request (mit Label-Erstellung)
+        // 5. Build DHL Request (mit Label-Erstellung)
         DhlShipmentRequest request = buildShipmentRequest(order, config, true);
         
-        // 5. Call DHL Create Label API
-        DhlShipmentResponse response = dhlShippingClient.createLabel(request);
+        // 6. Call DHL Create Label API (config-aware)
+        // WICHTIG: Dies erzeugt ein echtes DHL Label und verursacht Kosten!
+        DhlShipmentResponse response = dhlShippingClient.createLabel(config, request);
         
-        log.info("✅ DHL label created for order {} → Shipment No: {}", 
-            order.getId(), response.getShipmentNo());
+        log.info("✅ DHL label created: orderId={}, shipmentNo={}, routingCode={}, uuid={}",
+            order.getId(),
+            response.getShipmentNo(),
+            response.getRoutingCode(),
+            response.getUuid()
+        );
+        // WICHTIG: label.b64 NICHT loggen (zu groß, sensibel)
         
         return response;
     }
@@ -121,6 +169,16 @@ public class DhlLabelService {
         boolean createLabel
     ) {
         Store store = order.getStore();
+        
+        // Billing Number normalisieren und validieren
+        // WICHTIG: DHL erwartet exakt 14 Ziffern ohne Leerzeichen/Sonderzeichen!
+        String rawBillingNumber = config.getBillingNumber();
+        String normalizedBillingNumber = DhlBillingNumberUtil.normalizeAndValidate(rawBillingNumber);
+        
+        log.debug("DHL billing number normalized: {} → {}",
+            DhlBillingNumberUtil.maskForLogging(rawBillingNumber),
+            DhlBillingNumberUtil.maskForLogging(normalizedBillingNumber)
+        );
         
         // Shipper = Store (Absender) - nutzt config statt direkt properties
         DhlShipmentRequest.Address shipper = buildShipperAddress(store, config);
@@ -137,7 +195,7 @@ public class DhlLabelService {
         // Build Shipment mit resolved config
         DhlShipmentRequest.Shipment shipment = DhlShipmentRequest.Shipment.builder()
             .product(dhlProperties.getDefaultProduct()) // V01PAK = DHL Paket National
-            .billingNumber(config.getBillingNumber())
+            .billingNumber(normalizedBillingNumber) // ✅ Normalisiert und validiert!
             .refNo(refNo)
             .shipper(shipper)
             .consignee(consignee)
