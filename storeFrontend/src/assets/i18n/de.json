@@ -1173,7 +1173,8 @@
       "previewProductionWarning": "Du erstellst jetzt ein echtes DHL Versandlabel. Dadurch können Versandkosten über deinen DHL Geschäftskundenvertrag entstehen.",
       "previewSandboxInfo": "Sandbox Label erstellen – keine echten Kosten.",
       "previewCancel": "Abbrechen",
-      "previewConfirm": "Live Label erstellen"
+      "previewConfirm": "Live Label erstellen",
+      "countryNotSupportedForProduct": "DHL Paket National ist nur für Sendungen innerhalb Deutschlands verfügbar"
     }
   },
   "sidebar": {

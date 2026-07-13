@@ -809,7 +809,8 @@
       "previewProductionWarning": "أنت تقوم بإنشاء ملصق شحن DHL حقيقي. قد يؤدي ذلك إلى تكاليف شحن على عقد عميل DHL التجاري الخاص بك.",
       "previewSandboxInfo": "إنشاء ملصق تجريبي - بدون تكاليف حقيقية.",
       "previewCancel": "إلغاء",
-      "previewConfirm": "إنشاء ملصق مباشر"
+      "previewConfirm": "إنشاء ملصق مباشر",
+      "countryNotSupportedForProduct": "DHL Paket National متاح فقط للشحنات داخل ألمانيا"
     }
   },
   "trust": {

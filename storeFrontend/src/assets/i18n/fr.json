@@ -916,7 +916,8 @@
       "previewProductionWarning": "Vous créez une étiquette d'expédition DHL réelle. Cela peut entraîner des frais d'expédition sur votre contrat client professionnel DHL.",
       "previewSandboxInfo": "Créer une étiquette sandbox – aucun frais réel.",
       "previewCancel": "Annuler",
-      "previewConfirm": "Créer une étiquette en direct"
+      "previewConfirm": "Créer une étiquette en direct",
+      "countryNotSupportedForProduct": "DHL Paket National est uniquement disponible pour les envois en Allemagne"
     }
   },
   "sidebar": {

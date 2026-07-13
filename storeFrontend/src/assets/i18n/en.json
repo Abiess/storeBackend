@@ -927,7 +927,8 @@
       "previewProductionWarning": "You are creating a real DHL shipping label. This may incur shipping costs on your DHL business customer contract.",
       "previewSandboxInfo": "Create sandbox label – no real costs.",
       "previewCancel": "Cancel",
-      "previewConfirm": "Create Live Label"
+      "previewConfirm": "Create Live Label",
+      "countryNotSupportedForProduct": "DHL Paket National is only available for shipments within Germany"
     }
   },
   "sidebar": {

@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { CartService, Cart } from '../../core/services/cart.service';
 import { CheckoutService } from '../../core/services/checkout.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -13,11 +14,12 @@ import { PlaceholderImageUtil } from '../../shared/utils/placeholder-image.util'
 import { PhoneVerificationService } from '../../core/services/phone-verification.service';
 import { DeliveryService } from '../../core/services/delivery.service';
 import { PlatformDeliveryService, GlobalDeliveryOption } from '../../core/services/platform-delivery.service';
-import { DeliveryOption, DeliveryOptionsResponse } from '../../core/models';
+import { DeliveryOption, DeliveryOptionsResponse, PublicStore } from '../../core/models';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
+import { environment } from '@env/environment';
 
 @Component({
     selector: 'app-checkout',
@@ -301,12 +303,12 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
                   />
                   <span class="delivery-icon">📦</span>
                   <div class="delivery-details">
-                    <strong>{{ publicStore.dhlShippingLabel || 'DHL Versand' }}</strong>
-                    <span class="delivery-desc">{{ publicStore.dhlShippingDescription || 'Lieferung mit DHL Paket' }}</span>
+                    <strong>{{ publicStore?.dhlShippingLabel || 'DHL Versand' }}</strong>
+                    <span class="delivery-desc">{{ publicStore?.dhlShippingDescription || 'Lieferung mit DHL Paket' }}</span>
                   </div>
                   <div class="delivery-price">
-                    <span *ngIf="publicStore.dhlShippingPrice === 0" class="free-badge">{{ 'checkout.free' | translate }}</span>
-                    <span *ngIf="publicStore.dhlShippingPrice > 0">{{ publicStore.dhlShippingPrice | number:'1.2-2' }} MAD</span>
+                    <span *ngIf="publicStore?.dhlShippingPrice === 0" class="free-badge">{{ 'checkout.free' | translate }}</span>
+                    <span *ngIf="publicStore && publicStore.dhlShippingPrice && publicStore.dhlShippingPrice > 0">{{ publicStore.dhlShippingPrice | number:'1.2-2' }} MAD</span>
                   </div>
                   <div class="delivery-check" *ngIf="selectedShippingProvider === 'DHL'">✓</div>
                 </label>
@@ -1643,7 +1645,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     selectedDeliveryType: 'PICKUP' | 'DELIVERY' = 'PICKUP'; // PICKUP ist Standard
     
     // DHL Shipping & Provider Selection
-    publicStore: any = null; // PublicStore from subdomain service
+    publicStore: PublicStore | null = null; // PublicStore from subdomain service
     selectedShippingProvider: 'PICKUP' | 'DHL' | 'GLOBAL_DELIVERY' = 'PICKUP';
 
     constructor(
@@ -1656,7 +1658,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         private subdomainService: SubdomainService,
         private phoneVerificationService: PhoneVerificationService,
         private deliveryService: DeliveryService,
-        private platformDeliveryService: PlatformDeliveryService
+        private platformDeliveryService: PlatformDeliveryService,
+        private http: HttpClient
     ) {
         this.checkoutForm = this.fb.group({
             customerEmail: ['', [Validators.required, Validators.email]],
@@ -1684,10 +1687,35 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit(): void {
-        this.subdomainService.resolveStore().subscribe(store => {
-            if (store) {
-                this.storeId = store.storeId;
-                this.publicStore = store; // Store DHL shipping info
+        this.subdomainService.resolveStore().subscribe(subdomainInfo => {
+            if (subdomainInfo && subdomainInfo.storeId) {
+                this.storeId = subdomainInfo.storeId;
+                
+                // Load full PublicStore data for DHL shipping info
+                // SubdomainService liefert nur minimales SubdomainInfo, nicht das volle PublicStore
+                // Daher müssen wir das PublicStore separat laden
+                this.http.get<any>(`${environment.apiUrl}/public/store/resolve?host=${window.location.hostname}`)
+                    .subscribe({
+                        next: (store) => {
+                            this.publicStore = store as PublicStore;
+                            
+                            // TEMP DEBUG - Problem 1 Diagnose
+                            console.log('🔍 [DEBUG] PublicStore loaded:', {
+                                storeId: store.storeId,
+                                slug: store.slug,
+                                dhlShippingEnabled: store.dhlShippingEnabled,
+                                dhlShippingLabel: store.dhlShippingLabel,
+                                dhlShippingPrice: store.dhlShippingPrice,
+                                hasPublicStore: !!this.publicStore,
+                                publicStoreDhlEnabled: this.publicStore?.dhlShippingEnabled
+                            });
+                            // END TEMP DEBUG
+                        },
+                        error: (err) => {
+                            console.error('❌ Failed to load PublicStore:', err);
+                        }
+                    });
+                
                 this.loadCart();
             }
         });

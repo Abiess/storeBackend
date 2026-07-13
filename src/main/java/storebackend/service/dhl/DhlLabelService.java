@@ -60,7 +60,10 @@ public class DhlLabelService {
             );
         }
         
-        // 3. Resolve DHL Config (SANDBOX | STORE | PLATFORM)
+        // 3. Country Guard: V01PAK nur für Deutschland
+        validateCountryForProduct(order);
+        
+        // 4. Resolve DHL Config (SANDBOX | STORE | PLATFORM)
         DhlSettingsResolver.ResolvedDhlConfig config = dhlSettingsResolver.resolve(order.getStore().getId());
         
         log.info("🔍 Validating DHL shipment: orderId={}, credentialsSource={}, {}",
@@ -69,13 +72,16 @@ public class DhlLabelService {
             config.getLoggingInfo()
         );
         
-        // 4. Build DHL Request
+        // 5. Build DHL Request
         DhlShipmentRequest request = buildShipmentRequest(order, config, false);
         
-        // 5. Call DHL Validate API (config-aware)
+        // DEBUG: Sichere Request-Daten loggen (KEINE Secrets)
+        logSafeDhlRequestData(order, config, request);
+        
+        // 6. Call DHL Validate API (config-aware)
         DhlShipmentResponse response = dhlShippingClient.validateShipment(config, request);
         
-        // 6. Enrich Response mit Preview-Daten (sichere Daten für UI Dialog)
+        // 7. Enrich Response mit Preview-Daten (sichere Daten für UI Dialog)
         enrichPreviewData(response, order, config);
         
         log.info("✅ DHL validation completed for order {}", order.getId());
@@ -163,7 +169,10 @@ public class DhlLabelService {
             );
         }
         
-        // 3. Idempotenz: Prüfe ob Order bereits ein DHL Label hat
+        // 3. Country Guard: V01PAK nur für Deutschland
+        validateCountryForProduct(order);
+        
+        // 4. Idempotenz: Prüfe ob Order bereits ein DHL Label hat
         if (order.getDhlShipmentNo() != null && !order.getDhlShipmentNo().isBlank()) {
             log.info("⚠️ Order {} already has DHL Shipment No: {} - returning existing data (no new label created)",
                 order.getId(),
@@ -408,33 +417,113 @@ public class DhlLabelService {
     /**
      * Map country codes to DHL format
      * DHL erwartet ISO 3166-1 alpha-3 Codes (DEU, AUT, CHE)
-     * UI speichert ISO 3166-1 alpha-2 (DE, AT, CH)
+     * UI speichert ISO 3166-1 alpha-2 (DE, AT, CH) oder Ländernamen
      */
     private String mapCountryCode(String countryCode) {
         if (countryCode == null || countryCode.isBlank()) {
             return "DEU"; // Default Deutschland
         }
         
+        // Normalisieren: trim + uppercase
+        String normalized = countryCode.trim().toUpperCase();
+        
         // Map alpha-2 → alpha-3
-        return switch (countryCode.toUpperCase()) {
-            case "DE" -> "DEU";
-            case "AT" -> "AUT";
-            case "CH" -> "CHE";
-            case "FR" -> "FRA";
-            case "NL" -> "NLD";
-            case "BE" -> "BEL";
-            case "LU" -> "LUX";
-            case "IT" -> "ITA";
-            case "ES" -> "ESP";
-            case "PL" -> "POL";
-            case "CZ" -> "CZE";
-            case "DK" -> "DNK";
-            case "SE" -> "SWE";
-            case "NO" -> "NOR";
+        return switch (normalized) {
+            // Deutschland
+            case "DE", "DEU", "DEUTSCHLAND", "GERMANY" -> "DEU";
+            
+            // Europa
+            case "AT", "AUT", "ÖSTERREICH", "AUSTRIA" -> "AUT";
+            case "CH", "CHE", "SCHWEIZ", "SWITZERLAND" -> "CHE";
+            case "FR", "FRA", "FRANKREICH", "FRANCE" -> "FRA";
+            case "NL", "NLD", "NIEDERLANDE", "NETHERLANDS" -> "NLD";
+            case "BE", "BEL", "BELGIEN", "BELGIUM" -> "BEL";
+            case "LU", "LUX", "LUXEMBURG", "LUXEMBOURG" -> "LUX";
+            case "IT", "ITA", "ITALIEN", "ITALY" -> "ITA";
+            case "ES", "ESP", "SPANIEN", "SPAIN" -> "ESP";
+            case "PL", "POL", "POLEN", "POLAND" -> "POL";
+            case "CZ", "CZE", "TSCHECHIEN", "CZECH REPUBLIC" -> "CZE";
+            case "DK", "DNK", "DÄNEMARK", "DENMARK" -> "DNK";
+            case "SE", "SWE", "SCHWEDEN", "SWEDEN" -> "SWE";
+            case "NO", "NOR", "NORWEGEN", "NORWAY" -> "NOR";
+            
+            // Afrika / MENA
+            case "MA", "MAR", "MAROKKO", "MOROCCO" -> "MAR";
+            case "DZ", "DZA", "ALGERIEN", "ALGERIA" -> "DZA";
+            case "TN", "TUN", "TUNESIEN", "TUNISIA" -> "TUN";
+            case "EG", "EGY", "ÄGYPTEN", "EGYPT" -> "EGY";
+            
             default -> {
                 log.warn("⚠️ Unknown country code '{}', using DEU as fallback", countryCode);
                 yield "DEU";
             }
         };
+    }
+    
+    /**
+     * Validates Country for Product V01PAK (DHL Paket National)
+     * V01PAK ist NUR für Sendungen innerhalb Deutschlands!
+     * 
+     * @throws IllegalStateException wenn Empfängerland nicht Deutschland ist
+     */
+    private void validateCountryForProduct(Order order) {
+        Address shippingAddress = order.getShippingAddress();
+        if (shippingAddress == null) {
+            throw new IllegalStateException("Order has no shipping address: " + order.getId());
+        }
+        
+        String country = mapCountryCode(shippingAddress.getCountry());
+        
+        // V01PAK = DHL Paket National → nur DEU
+        if (!"DEU".equals(country)) {
+            String countryDisplay = shippingAddress.getCountry() != null ? 
+                shippingAddress.getCountry() : "unbekannt";
+            
+            log.warn("⚠️ DHL Paket National (V01PAK) nicht verfügbar für Land: {} (mapped: {})", 
+                countryDisplay, country);
+            
+            throw new IllegalStateException(
+                "DHL Paket National (V01PAK) ist nur für Sendungen innerhalb Deutschlands verfügbar. " +
+                "Empfängerland: " + countryDisplay + ". " +
+                "messageKey: shipping.dhl.countryNotSupportedForProduct"
+            );
+        }
+    }
+    
+    /**
+     * Loggt sichere DHL Request-Daten für Debugging (KEINE Secrets!)
+     */
+    private void logSafeDhlRequestData(Order order, DhlSettingsResolver.ResolvedDhlConfig config, 
+                                       DhlShipmentRequest request) {
+        Address shipping = order.getShippingAddress();
+        
+        log.info("🔍 DHL Request Data (SAFE): orderId={}, refNo={}, product={}, country={}, " +
+                 "postalCode={}, city={}, weight={}kg, dimensions={}x{}x{}mm, billingNumber={}",
+            order.getId(),
+            request.getShipments() != null && !request.getShipments().isEmpty() ? 
+                request.getShipments().get(0).getRefNo() : "N/A",
+            request.getShipments() != null && !request.getShipments().isEmpty() ? 
+                request.getShipments().get(0).getProduct() : "N/A",
+            shipping != null ? shipping.getCountry() : "N/A",
+            shipping != null ? shipping.getPostalCode() : "N/A",
+            shipping != null ? shipping.getCity() : "N/A",
+            request.getShipments() != null && !request.getShipments().isEmpty() &&
+                request.getShipments().get(0).getDetails() != null &&
+                request.getShipments().get(0).getDetails().getWeight() != null ?
+                request.getShipments().get(0).getDetails().getWeight().getValue() : 0,
+            request.getShipments() != null && !request.getShipments().isEmpty() &&
+                request.getShipments().get(0).getDetails() != null &&
+                request.getShipments().get(0).getDetails().getDim() != null ?
+                request.getShipments().get(0).getDetails().getDim().getLength() : 0,
+            request.getShipments() != null && !request.getShipments().isEmpty() &&
+                request.getShipments().get(0).getDetails() != null &&
+                request.getShipments().get(0).getDetails().getDim() != null ?
+                request.getShipments().get(0).getDetails().getDim().getWidth() : 0,
+            request.getShipments() != null && !request.getShipments().isEmpty() &&
+                request.getShipments().get(0).getDetails() != null &&
+                request.getShipments().get(0).getDetails().getDim() != null ?
+                request.getShipments().get(0).getDetails().getDim().getHeight() : 0,
+            config.getMaskedBillingNumber()
+        );
     }
 }

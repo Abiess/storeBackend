@@ -1,6 +1,7 @@
 package storebackend.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -9,6 +10,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import storebackend.config.DhlProperties;
 import storebackend.dto.dhl.DhlShipmentResponse;
 import storebackend.entity.Order;
@@ -291,17 +294,109 @@ public class DhlAdminController {
             
         } catch (IllegalStateException e) {
             log.error("❌ Validation failed: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", "VALIDATION_ERROR",
-                "message", e.getMessage()
+            
+            // Parse messageKey aus Exception Message (falls vorhanden)
+            String messageKey = null;
+            if (e.getMessage() != null && e.getMessage().contains("messageKey:")) {
+                int startIdx = e.getMessage().indexOf("messageKey:") + 11;
+                int endIdx = e.getMessage().indexOf("\n", startIdx);
+                if (endIdx == -1) endIdx = e.getMessage().indexOf(".", startIdx);
+                if (endIdx == -1) endIdx = e.getMessage().length();
+                messageKey = e.getMessage().substring(startIdx, endIdx).trim();
+            }
+            
+            Map<String, Object> errorResponse = new LinkedHashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("error", "VALIDATION_ERROR");
+            errorResponse.put("message", e.getMessage());
+            if (messageKey != null) {
+                errorResponse.put("messageKey", messageKey);
+            }
+            
+            return ResponseEntity.badRequest().body(errorResponse);
+            
+        } catch (HttpClientErrorException e) {
+            // DHL API 4xx (Bad Request, ungültige Daten)
+            log.error("❌ DHL API Client Error (4xx) for order {}: status={}, body={}", 
+                orderId, e.getStatusCode().value(), e.getResponseBodyAsString());
+            
+            Map<String, Object> errorResponse = new LinkedHashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("error", "DHL_VALIDATION_FAILED");
+            errorResponse.put("dhlStatusCode", e.getStatusCode().value());
+            
+            // Parse DHL Response Body
+            try {
+                String dhlErrorDetail = parseDhlErrorResponse(e.getResponseBodyAsString());
+                errorResponse.put("message", dhlErrorDetail);
+            } catch (Exception parseEx) {
+                errorResponse.put("message", "DHL Validation Error (Status: " + e.getStatusCode() + ")");
+            }
+            
+            return ResponseEntity.status(400).body(errorResponse);
+            
+        } catch (HttpServerErrorException e) {
+            // DHL API 5xx (Server Error)
+            log.error("❌ DHL API Server Error (5xx) for order {}: status={}", 
+                orderId, e.getStatusCode().value());
+            
+            return ResponseEntity.status(502).body(Map.of(
+                "success", false,
+                "error", "DHL_API_UNAVAILABLE",
+                "message", "DHL API ist vorübergehend nicht verfügbar. Bitte versuchen Sie es später erneut.",
+                "dhlStatusCode", e.getStatusCode().value()
             ));
             
         } catch (Exception e) {
             log.error("❌ DHL validation error for order {}", orderId, e);
             return ResponseEntity.status(500).body(Map.of(
-                "error", "DHL_API_ERROR",
-                "message", e.getMessage()
+                "success", false,
+                "error", "INTERNAL_ERROR",
+                "message", e.getMessage() != null ? e.getMessage() : "Interner Fehler bei DHL Validierung"
             ));
+        }
+    }
+    
+    /**
+     * Parse DHL API Error Response
+     * Extrahiert detail/validationMessages aus DHL Response Body
+     */
+    private String parseDhlErrorResponse(String responseBody) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(responseBody);
+            
+            // Status Detail
+            if (root.has("status") && root.get("status").has("detail")) {
+                return root.get("status").get("detail").asText();
+            }
+            
+            // Validation Messages (items array)
+            if (root.has("items") && root.get("items").isArray() && root.get("items").size() > 0) {
+                JsonNode item = root.get("items").get(0);
+                if (item.has("validationMessages") && item.get("validationMessages").isArray()) {
+                    JsonNode messages = item.get("validationMessages");
+                    StringBuilder sb = new StringBuilder();
+                    for (JsonNode msg : messages) {
+                        if (msg.has("validationMessage")) {
+                            sb.append(msg.get("validationMessage").asText()).append("; ");
+                        }
+                    }
+                    if (sb.length() > 0) {
+                        return sb.toString();
+                    }
+                }
+            }
+            
+            // Fallback: ganzen Body zurückgeben (max 500 Zeichen)
+            if (responseBody.length() > 500) {
+                return responseBody.substring(0, 500) + "...";
+            }
+            return responseBody;
+            
+        } catch (Exception e) {
+            log.warn("Could not parse DHL error response", e);
+            return responseBody;
         }
     }
     
