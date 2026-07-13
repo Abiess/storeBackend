@@ -336,6 +336,12 @@
     "billingAddress": "Rechnungsadresse",
     "sameBilling": "Rechnungsadresse ist identisch mit Lieferadresse",
     "shippingMethod": "Versandmethode",
+    "shippingDhlTitle": "DHL Versand",
+    "shippingDhlDesc": "Lieferung mit DHL Paket",
+    "shippingPickupTitle": "Abholung im Geschäft",
+    "shippingPickupDesc": "Ihre Bestellung wird zur Abholung bereitgestellt",
+    "shippingProviderDhl": "DHL",
+    "shippingSelectMethod": "Bitte wählen Sie eine Versandmethode",
     "paymentMethod": "Zahlungsmethode",
     "orderSummary": "Bestellübersicht",
     "placeOrder": "Bestellung aufgeben",
@@ -1113,7 +1119,6 @@
       "productNational": "DHL Paket National (V01PAK)",
       "liveCostWarning": "Du erstellst jetzt ein echtes DHL Label über deinen DHL Geschäftskundenvertrag. Dadurch können Versandkosten bei DHL entstehen. Fortfahren?",
       "connectionTest": "Verbindung testen",
-      "validateShipment": "Sendung validieren",
       "createLiveLabel": "Live-Label erstellen",
       "sandboxMode": "Testmodus",
       "productionMode": "Live / kostenrelevant",
@@ -1148,7 +1153,11 @@
       "platformCredentialsMissing": "Live-Versand ist noch nicht aktiviert. markt.ma benötigt dafür eine DHL Production API-Freigabe.",
       "invalidBillingNumber": "Die DHL Abrechnungsnummer ist ungültig. Sie muss aus 14 Ziffern bestehen, z. B. EKP + Verfahren + Teilnahme.",
       "pickupNotAllowed": "Abholung benötigt kein DHL Versandlabel.",
-      "decryptionFailed": "Entschlüsselung der Zugangsdaten fehlgeschlagen."
+      "decryptionFailed": "Entschlüsselung der Zugangsdaten fehlgeschlagen.",
+      "validateShipment": "DHL Sendung prüfen",
+      "validateShipmentSuccess": "DHL Sendung erfolgreich geprüft. Es wurde kein Label erstellt.",
+      "validationFailed": "DHL Validierung fehlgeschlagen",
+      "createLabel": "DHL Label erstellen"
     }
   },
   "sidebar": {

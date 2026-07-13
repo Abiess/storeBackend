@@ -162,6 +162,13 @@ public class PublicOrderController {
             // Extract delivery information – default: PICKUP wenn nicht angegeben
             storebackend.enums.DeliveryType deliveryType = storebackend.enums.DeliveryType.PICKUP;
             storebackend.enums.DeliveryMode deliveryMode = null;
+            
+            // NEW: Shipping Provider (DHL, PICKUP, GLOBAL_DELIVERY)
+            String shippingProvider = null;
+            if (request.containsKey("shippingProvider") && request.get("shippingProvider") != null) {
+                shippingProvider = (String) request.get("shippingProvider");
+                log.info("📦 Shipping Provider: {}", shippingProvider);
+            }
 
             if (request.containsKey("deliveryType") && request.get("deliveryType") != null) {
                 try {
@@ -222,7 +229,8 @@ public class PublicOrderController {
                 paymentMethod,
                 phoneVerificationId,
                 deliveryType,
-                deliveryMode
+                deliveryMode,
+                shippingProvider
             );
 
             log.info("✅ Order created successfully: {} (Mode: {}, Payment: {})",

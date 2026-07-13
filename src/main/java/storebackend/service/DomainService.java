@@ -8,10 +8,12 @@ import storebackend.config.SaasProperties;
 import storebackend.dto.PublicStoreDTO;
 import storebackend.entity.Domain;
 import storebackend.entity.Store;
+import storebackend.entity.StoreDeliverySettings;
 import storebackend.entity.User;
 import storebackend.enums.DomainType;
 import storebackend.enums.StoreStatus;
 import storebackend.repository.DomainRepository;
+import storebackend.repository.StoreDeliverySettingsRepository;
 import storebackend.repository.StoreRepository;
 import storebackend.util.StoreAccessChecker;
 
@@ -28,6 +30,7 @@ public class DomainService {
     private final DomainRepository domainRepository;
     private final StoreRepository storeRepository;
     private final SaasProperties saasProperties;
+    private final StoreDeliverySettingsRepository deliverySettingsRepository;
     private final SecureRandom secureRandom = new SecureRandom();
 
     public List<Domain> getDomainsForStore(Long storeId, User currentUser) {
@@ -172,6 +175,10 @@ public class DomainService {
                     dto.setAddress(store.getAddress());
                     dto.setGoogleMapsUrl(store.getGoogleMapsUrl());
                     dto.setReservationWhatsappText(store.getReservationWhatsappText());
+                    
+                    // DHL Shipping Info (NO SECRETS)
+                    mapDhlShippingInfo(dto, store.getId());
+                    
                     return dto;
                 });
 
@@ -229,6 +236,10 @@ public class DomainService {
                             dto.setAddress(store.getAddress());
                             dto.setGoogleMapsUrl(store.getGoogleMapsUrl());
                             dto.setReservationWhatsappText(store.getReservationWhatsappText());
+                            
+                            // DHL Shipping Info (NO SECRETS)
+                            mapDhlShippingInfo(dto, store.getId());
+                            
                             return dto;
                         });
 
@@ -390,5 +401,39 @@ public class DomainService {
         }
 
         return h.toLowerCase();
+    }
+    
+    /**
+     * Maps DHL shipping info to PublicStoreDTO (NO SECRETS!).
+     * Only public-safe fields for checkout display.
+     */
+    private void mapDhlShippingInfo(PublicStoreDTO dto, Long storeId) {
+        try {
+            Optional<StoreDeliverySettings> settings = deliverySettingsRepository.findById(storeId);
+            if (settings.isPresent() && Boolean.TRUE.equals(settings.get().getDhlEnabled())) {
+                StoreDeliverySettings s = settings.get();
+                
+                // Check if DHL is minimally configured (username + billing number present)
+                boolean isConfigured = s.getDhlUsername() != null && !s.getDhlUsername().isBlank()
+                                    && s.getDhlBillingNumber() != null && !s.getDhlBillingNumber().isBlank();
+                
+                if (isConfigured) {
+                    dto.setDhlShippingEnabled(true);
+                    dto.setDhlShippingLabel("DHL Versand");
+                    dto.setDhlShippingDescription("Lieferung mit DHL Paket");
+                    dto.setDhlShippingPrice(4.99); // MVP: Fixed price, later configurable
+                    
+                    log.debug("✅ DHL shipping enabled for store {} (NO SECRETS exposed)", storeId);
+                } else {
+                    dto.setDhlShippingEnabled(false);
+                    log.debug("⚠️ DHL enabled but not configured for store {}", storeId);
+                }
+            } else {
+                dto.setDhlShippingEnabled(false);
+            }
+        } catch (Exception e) {
+            log.warn("❌ Error loading DHL shipping info for store {}: {}", storeId, e.getMessage());
+            dto.setDhlShippingEnabled(false);
+        }
     }
 }

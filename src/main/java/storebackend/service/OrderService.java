@@ -80,7 +80,8 @@ public class OrderService {
                                      PaymentMethod paymentMethod,
                                      Long phoneVerificationId,
                                      DeliveryType deliveryType,
-                                     DeliveryMode deliveryMode) {
+                                     DeliveryMode deliveryMode,
+                                     String shippingProvider) {
 
         Cart cart = cartRepository.findById(cartId)
                 .orElseThrow(() -> new RuntimeException("Cart not found"));
@@ -172,6 +173,7 @@ public class OrderService {
         order.setDeliveryMode(deliveryMode);
         order.setDeliveryFee(deliveryFee);
         order.setEtaMinutes(etaMinutes);
+        order.setShippingProvider(shippingProvider); // NEW: DHL, PICKUP, GLOBAL_DELIVERY
 
         // Set shipping address
         Address shippingAddr = new Address();

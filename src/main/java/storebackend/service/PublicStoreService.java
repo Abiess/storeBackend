@@ -48,7 +48,12 @@ public class PublicStoreService {
             store.getOpeningHours(),
             store.getAddress(),
             store.getGoogleMapsUrl(),
-            store.getReservationWhatsappText()
+            store.getReservationWhatsappText(),
+            // DHL Shipping (set to null/false for MVP - not implemented here)
+            false,
+            null,
+            null,
+            null
         );
     }
 }

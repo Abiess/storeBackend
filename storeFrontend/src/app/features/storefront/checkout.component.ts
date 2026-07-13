@@ -285,18 +285,44 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
                   <div class="delivery-check" *ngIf="selectedDeliveryType === 'PICKUP'">✓</div>
                 </label>
 
+                <!-- DHL Versand Option (wenn verfügbar) -->
+                <label
+                  *ngIf="publicStore?.dhlShippingEnabled"
+                  class="delivery-option-card"
+                  [class.selected]="selectedShippingProvider === 'DHL'"
+                  (click)="selectDhlShipping()"
+                >
+                  <input
+                    type="radio"
+                    name="globalDelivery"
+                    value="DHL"
+                    [checked]="selectedShippingProvider === 'DHL'"
+                    style="display:none"
+                  />
+                  <span class="delivery-icon">📦</span>
+                  <div class="delivery-details">
+                    <strong>{{ publicStore.dhlShippingLabel || 'DHL Versand' }}</strong>
+                    <span class="delivery-desc">{{ publicStore.dhlShippingDescription || 'Lieferung mit DHL Paket' }}</span>
+                  </div>
+                  <div class="delivery-price">
+                    <span *ngIf="publicStore.dhlShippingPrice === 0" class="free-badge">{{ 'checkout.free' | translate }}</span>
+                    <span *ngIf="publicStore.dhlShippingPrice > 0">{{ publicStore.dhlShippingPrice | number:'1.2-2' }} MAD</span>
+                  </div>
+                  <div class="delivery-check" *ngIf="selectedShippingProvider === 'DHL'">✓</div>
+                </label>
+
                 <!-- Andere Lieferoptionen -->
                 <label
                   *ngFor="let opt of globalDeliveryOptions"
                   class="delivery-option-card"
-                  [class.selected]="selectedGlobalDeliveryOption?.id === opt.id && selectedDeliveryType !== 'PICKUP'"
+                  [class.selected]="selectedGlobalDeliveryOption?.id === opt.id && selectedShippingProvider === 'GLOBAL_DELIVERY'"
                   (click)="selectGlobalDeliveryOption(opt)"
                 >
                   <input
                     type="radio"
                     name="globalDelivery"
                     [value]="opt.id"
-                    [checked]="selectedGlobalDeliveryOption?.id === opt.id && selectedDeliveryType !== 'PICKUP'"
+                    [checked]="selectedGlobalDeliveryOption?.id === opt.id && selectedShippingProvider === 'GLOBAL_DELIVERY'"
                     style="display:none"
                   />
                   <span class="delivery-icon">{{ opt.icon || '🚚' }}</span>
@@ -311,7 +337,7 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
                     <span *ngIf="opt.price === 0" class="free-badge">{{ 'checkout.free' | translate }}</span>
                     <span *ngIf="opt.price > 0">{{ opt.price | number:'1.2-2' }} MAD</span>
                   </div>
-                  <div class="delivery-check" *ngIf="selectedGlobalDeliveryOption?.id === opt.id && selectedDeliveryType !== 'PICKUP'">✓</div>
+                  <div class="delivery-check" *ngIf="selectedGlobalDeliveryOption?.id === opt.id && selectedShippingProvider === 'GLOBAL_DELIVERY'">✓</div>
                 </label>
               </div>
             </section>
@@ -1615,6 +1641,10 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     selectedGlobalDeliveryOption: GlobalDeliveryOption | null = null;
     loadingGlobalDelivery = false;
     selectedDeliveryType: 'PICKUP' | 'DELIVERY' = 'PICKUP'; // PICKUP ist Standard
+    
+    // DHL Shipping & Provider Selection
+    publicStore: any = null; // PublicStore from subdomain service
+    selectedShippingProvider: 'PICKUP' | 'DHL' | 'GLOBAL_DELIVERY' = 'PICKUP';
 
     constructor(
         private fb: FormBuilder,
@@ -1657,6 +1687,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         this.subdomainService.resolveStore().subscribe(store => {
             if (store) {
                 this.storeId = store.storeId;
+                this.publicStore = store; // Store DHL shipping info
                 this.loadCart();
             }
         });
@@ -1792,17 +1823,27 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         this.selectedDeliveryType = 'PICKUP';
         this.selectedGlobalDeliveryOption = null;
         this.selectedShippingMethod = 'PICKUP';
+        this.selectedShippingProvider = 'PICKUP';
     }
 
     selectGlobalDeliveryOption(option: GlobalDeliveryOption): void {
         this.selectedDeliveryType = 'DELIVERY';
         this.selectedGlobalDeliveryOption = option;
+        this.selectedShippingProvider = 'GLOBAL_DELIVERY';
         // Versandmethode für Bestellformular ableiten
         if (option.deliveryType === 'EXPRESS' || option.deliveryType === 'SAME_DAY') {
             this.selectedShippingMethod = 'EXPRESS';
         } else {
             this.selectedShippingMethod = 'STANDARD';
         }
+    }
+    
+    /** Wählt DHL Versand als Liefermethode */
+    selectDhlShipping(): void {
+        this.selectedDeliveryType = 'DELIVERY';
+        this.selectedGlobalDeliveryOption = null;
+        this.selectedShippingMethod = 'STANDARD';
+        this.selectedShippingProvider = 'DHL';
     }
 
     loadSavedPhone(phoneNumber: string): void {
@@ -1888,6 +1929,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
             shippingAddress: formValue.shippingAddress,
             billingAddress: this.sameAsShipping ? formValue.shippingAddress : formValue.billingAddress,
             paymentMethod: this.selectedPaymentMethod,
+            // Shipping Provider: DHL, PICKUP, GLOBAL_DELIVERY
+            shippingProvider: this.selectedShippingProvider,
             // PICKUP oder globale Lieferoption
             deliveryType: this.selectedDeliveryType === 'PICKUP' ? 'PICKUP' : (this.selectedGlobalDeliveryOption?.deliveryType || 'STANDARD'),
             deliveryOptionId: this.selectedDeliveryType === 'PICKUP' ? null : (this.selectedGlobalDeliveryOption?.id || null),

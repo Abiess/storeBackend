@@ -36,4 +36,7 @@ public class CheckoutRequestDTO {
 
     // Fuer Cash on Delivery erforderlich
     private Long phoneVerificationId;
+    
+    // Shipping Provider: "DHL", "PICKUP", "GLOBAL_DELIVERY", etc.
+    private String shippingProvider;
 }

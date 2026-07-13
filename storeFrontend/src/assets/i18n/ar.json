@@ -145,6 +145,13 @@
     "shippingAddress": "عنوان الشحن",
     "billingAddress": "عنوان الفاتورة",
     "sameBilling": "عنوان الفاتورة مطابق لعنوان الشحن",
+    "shippingMethod": "طريقة الشحن",
+    "shippingDhlTitle": "شحن DHL",
+    "shippingDhlDesc": "التسليم عبر DHL Paket",
+    "shippingPickupTitle": "استلام من المتجر",
+    "shippingPickupDesc": "سيتم تجهيز طلبك للاستلام",
+    "shippingProviderDhl": "DHL",
+    "shippingSelectMethod": "يرجى اختيار طريقة الشحن",
     "paymentMethod": "طريقة الدفع",
     "orderSummary": "ملخص الطلب",
     "placeOrder": "تأكيد الطلب",
@@ -748,7 +755,6 @@
       "productNational": "DHL Paket National (V01PAK)",
       "liveCostWarning": "أنت على وشك إنشاء ملصق DHL حقيقي عبر حساب DHL التجاري الخاص بك. قد يؤدي هذا إلى تكاليف شحن في DHL. المتابعة؟",
       "connectionTest": "اختبار الاتصال",
-      "validateShipment": "التحقق من الشحنة",
       "createLiveLabel": "إنشاء ملصق مباشر",
       "sandboxMode": "وضع الاختبار",
       "productionMode": "مباشر / له تكلفة",
@@ -783,7 +789,11 @@
       "platformCredentialsMissing": "لم يتم تفعيل الشحن المباشر بعد. تحتاج markt.ma إلى موافقة DHL Production API لذلك.",
       "invalidBillingNumber": "رقم الفوترة DHL غير صالح. يجب أن يتكون من 14 رقمًا، على سبيل المثال EKP + الإجراء + المشاركة.",
       "pickupNotAllowed": "لا تتطلب طلبات الاستلام ملصق شحن DHL.",
-      "decryptionFailed": "فشل فك تشفير بيانات الاعتماد."
+      "decryptionFailed": "فشل فك تشفير بيانات الاعتماد.",
+      "validateShipment": "التحقق من شحنة DHL",
+      "validateShipmentSuccess": "تم التحقق من شحنة DHL بنجاح. لم يتم إنشاء ملصق.",
+      "validationFailed": "فشل التحقق من DHL",
+      "createLabel": "إنشاء ملصق DHL"
     }
   },
   "trust": {

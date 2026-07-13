@@ -218,6 +218,12 @@
     "billingAddress": "Adresse de facturation",
     "sameBilling": "L'adresse de facturation est la même que l'adresse de livraison",
     "shippingMethod": "Mode de livraison",
+    "shippingDhlTitle": "Livraison DHL",
+    "shippingDhlDesc": "Livraison par DHL Paket",
+    "shippingPickupTitle": "Retrait en magasin",
+    "shippingPickupDesc": "Votre commande sera prête pour le retrait",
+    "shippingProviderDhl": "DHL",
+    "shippingSelectMethod": "Veuillez sélectionner une méthode d'expédition",
     "paymentMethod": "Mode de paiement",
     "orderSummary": "Récapitulatif de la commande",
     "placeOrder": "Passer la commande",
@@ -863,7 +869,6 @@
       "productNational": "DHL Paket National (V01PAK)",
       "liveCostWarning": "Vous êtes sur le point de créer une étiquette DHL réelle via votre compte professionnel DHL. Cela peut entraîner des frais d'expédition chez DHL. Continuer ?",
       "connectionTest": "Tester la connexion",
-      "validateShipment": "Valider l'expédition",
       "createLiveLabel": "Créer une étiquette en direct",
       "sandboxMode": "Mode test",
       "productionMode": "En direct / frais applicables",
@@ -891,7 +896,11 @@
       "platformCredentialsMissing": "L'expédition en direct n'est pas encore activée. markt.ma a besoin d'une approbation API de production DHL pour cela.",
       "invalidBillingNumber": "Le numéro de facturation DHL est invalide. Il doit être composé de 14 chiffres, par ex. EKP + procédure + participation.",
       "pickupNotAllowed": "Les commandes de retrait ne nécessitent pas d'étiquette d'expédition DHL.",
-      "decryptionFailed": "Le déchiffrement des identifiants a échoué."
+      "decryptionFailed": "Le déchiffrement des identifiants a échoué.",
+      "validateShipment": "Valider l'envoi DHL",
+      "validateShipmentSuccess": "Envoi DHL validé avec succès. Aucune étiquette n'a été créée.",
+      "validationFailed": "La validation DHL a échoué",
+      "createLabel": "Créer une étiquette DHL"
     }
   },
   "sidebar": {

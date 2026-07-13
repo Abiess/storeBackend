@@ -302,10 +302,20 @@ export class StoreOrdersComponent implements OnInit {
       handler: (order) => this.navigateToOrder(order.id)
     },
     {
+      icon: '✅',
+      label: 'DHL Sendung prüfen',
+      handler: (order) => this.validateDhlShipment(order),
+      visible: (order: Order) => 
+        !order.dhlShipmentNo && 
+        (order.shippingProvider === 'DHL' || (!order.shippingProvider && (order.status === 'PENDING' || order.status === 'CONFIRMED')))
+    },
+    {
       icon: '📦',
-      label: 'DHL Label',
+      label: 'DHL Label erstellen',
       handler: (order) => this.createDhlLabel(order),
-      visible: (order: Order) => !order.dhlShipmentNo && (order.status === 'PENDING' || order.status === 'CONFIRMED')
+      visible: (order: Order) => 
+        !order.dhlShipmentNo && 
+        (order.shippingProvider === 'DHL' || (!order.shippingProvider && (order.status === 'PENDING' || order.status === 'CONFIRMED')))
     },
     {
       icon: '📄',
@@ -444,6 +454,50 @@ export class StoreOrdersComponent implements OnInit {
 
   getItemName(item: any): string {
     return item.productTitle || item.productName || item.name || 'Unbekanntes Produkt';
+  }
+
+  validateDhlShipment(order: Order): void {
+    if (!confirm('DHL Sendung für Bestellung ' + order.orderNumber + ' validieren?\n\n' +
+                 'Dies prüft nur die Sendung, erstellt kein Label und verursacht keine Kosten.')) {
+      return;
+    }
+
+    this.loading = true;
+    const url = `${environment.apiUrl}/admin/orders/${order.id}/dhl/validate`;
+
+    this.http.post<any>(url, {}).subscribe({
+      next: (response) => {
+        console.log('✅ DHL Validation successful:', response);
+        this.loading = false;
+        
+        let message = 'DHL Sendung erfolgreich geprüft. Es wurde kein Label erstellt.';
+        
+        // Optional: Validation Messages anzeigen
+        if (response.validationMessages && response.validationMessages.length > 0) {
+          message += '\n\nHinweise:\n' + response.validationMessages.join('\n');
+        }
+        
+        alert(message);
+      },
+      error: (error) => {
+        console.error('❌ DHL Validation failed:', error);
+        this.loading = false;
+        
+        // Try to extract messageKey or message from error
+        let errorMessage = 'DHL Validierung fehlgeschlagen';
+        
+        if (error.error?.messageKey) {
+          // TODO: Translate messageKey via TranslateService
+          errorMessage = error.error.message || errorMessage;
+        } else if (error.error?.message) {
+          errorMessage = error.error.message;
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        alert(`❌ ${errorMessage}`);
+      }
+    });
   }
 
   createDhlLabel(order: Order): void {

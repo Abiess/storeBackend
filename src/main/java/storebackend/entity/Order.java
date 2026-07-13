@@ -130,6 +130,9 @@ public class Order {
 
     @Column(name = "delivery_provider_id")
     private Long deliveryProviderId;
+    
+    @Column(name = "shipping_provider", length = 50)
+    private String shippingProvider; // "DHL", "PICKUP", "GLOBAL_DELIVERY", etc.
 
     @Column(name = "delivery_fee", precision = 10, scale = 2)
     private BigDecimal deliveryFee;

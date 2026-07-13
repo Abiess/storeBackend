@@ -217,7 +217,13 @@
     "billingAddress": "Billing address",
     "sameBilling": "Billing address is the same as shipping address",
     "shippingMethod": "Shipping method",
-    "paymentMethod": "Payment method",
+    "shippingDhlTitle": "DHL Shipping",
+    "shippingDhlDesc": "Delivery via DHL Parcel",
+    "shippingPickupTitle": "Store Pickup",
+    "shippingPickupDesc": "Your order will be ready for pickup",
+    "shippingProviderDhl": "DHL",
+    "shippingSelectMethod": "Please select a shipping method",
+    "paymentMethod": "Payment Method",
     "orderSummary": "Order summary",
     "placeOrder": "Place order",
     "firstName": "First name",
@@ -867,7 +873,6 @@
       "productNational": "DHL Paket National (V01PAK)",
       "liveCostWarning": "You are about to create a real DHL label via your DHL business account. This may incur shipping costs at DHL. Continue?",
       "connectionTest": "Test connection",
-      "validateShipment": "Validate shipment",
       "createLiveLabel": "Create live label",
       "sandboxMode": "Test mode",
       "productionMode": "Live / cost-relevant",
@@ -902,7 +907,11 @@
       "platformCredentialsMissing": "Live shipping is not yet activated. markt.ma needs DHL Production API approval for this.",
       "invalidBillingNumber": "The DHL billing number is invalid. It must consist of 14 digits, e.g. EKP + procedure + participation.",
       "pickupNotAllowed": "Pickup orders do not require a DHL shipping label.",
-      "decryptionFailed": "Decryption of credentials failed."
+      "decryptionFailed": "Decryption of credentials failed.",
+      "validateShipment": "Validate DHL Shipment",
+      "validateShipmentSuccess": "DHL shipment successfully validated. No label was created.",
+      "validationFailed": "DHL validation failed",
+      "createLabel": "Create DHL Label"
     }
   },
   "sidebar": {

@@ -381,6 +381,9 @@ export interface Order {
   dhlShipmentNo?: string;
   dhlLabelUrl?: string;
   
+  // Shipping Provider
+  shippingProvider?: string; // "DHL", "PICKUP", "GLOBAL_DELIVERY"
+  
   paymentMethod?: string; // CASH_ON_DELIVERY, BANK_TRANSFER, CREDIT_CARD, PAYPAL
   phoneVerificationId?: number;
   phoneVerified?: boolean;
@@ -684,6 +687,11 @@ export interface PublicStore {
   address?: string;
   googleMapsUrl?: string;
   reservationWhatsappText?: string;
+  // ─── DHL Shipping (Public Info Only - NO SECRETS) ────────────
+  dhlShippingEnabled?: boolean;
+  dhlShippingLabel?: string;
+  dhlShippingDescription?: string;
+  dhlShippingPrice?: number;
 }
 
 export enum StoreStatus {
