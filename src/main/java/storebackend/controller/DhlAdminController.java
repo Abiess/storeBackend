@@ -337,15 +337,32 @@ public class DhlAdminController {
             
         } catch (HttpServerErrorException e) {
             // DHL API 5xx (Server Error)
-            log.error("❌ DHL API Server Error (5xx) for order {}: status={}", 
-                orderId, e.getStatusCode().value());
+            log.error("❌ DHL API Server Error (5xx) for order {}: status={}, body={}", 
+                orderId, e.getStatusCode().value(), e.getResponseBodyAsString());
             
-            return ResponseEntity.status(502).body(Map.of(
-                "success", false,
-                "error", "DHL_API_UNAVAILABLE",
-                "message", "DHL API ist vorübergehend nicht verfügbar. Bitte versuchen Sie es später erneut.",
-                "dhlStatusCode", e.getStatusCode().value()
-            ));
+            Map<String, Object> errorResponse = new LinkedHashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("error", "DHL_API_UNAVAILABLE");
+            errorResponse.put("messageKey", "shipping.dhl.apiUnavailable");
+            errorResponse.put("message", "DHL konnte die Sendung gerade nicht verarbeiten. Bitte prüfe die Sendungsdaten oder versuche es später erneut.");
+            errorResponse.put("dhlStatus", e.getStatusCode().value());
+            
+            // Parse DHL error detail if available
+            try {
+                String dhlDetail = parseDhlErrorResponse(e.getResponseBodyAsString());
+                if (dhlDetail != null && !dhlDetail.isBlank()) {
+                    errorResponse.put("dhlDetail", dhlDetail);
+                }
+            } catch (Exception ignored) {
+                // Fallback: Raw response body
+                String responseBody = e.getResponseBodyAsString();
+                if (responseBody != null && !responseBody.isBlank()) {
+                    errorResponse.put("dhlDetail", responseBody.length() > 500 ? 
+                        responseBody.substring(0, 500) + "..." : responseBody);
+                }
+            }
+            
+            return ResponseEntity.status(502).body(errorResponse);
             
         } catch (Exception e) {
             log.error("❌ DHL validation error for order {}", orderId, e);

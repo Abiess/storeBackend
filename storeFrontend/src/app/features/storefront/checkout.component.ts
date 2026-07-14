@@ -257,6 +257,14 @@ import { environment } from '@env/environment';
             <section class="form-section">
               <h2>🚚 {{ 'checkout.shippingMethod' | translate }}</h2>
 
+              <!-- TEMP DEBUG: DHL Visibility Check -->
+              <div style="background: #fff3cd; border: 1px solid #ffc107; padding: 8px; margin-bottom: 10px; font-size: 12px; font-family: monospace;">
+                DEBUG: publicStore={{ publicStore ? 'SET' : 'NULL' }} | 
+                dhlEnabled={{ publicStore?.dhlShippingEnabled }} | 
+                shouldShowDHL={{ publicStore?.dhlShippingEnabled === true }}
+              </div>
+              <!-- END TEMP DEBUG -->
+
               <!-- Globale Lieferoptionen (plattformweit verwaltet) -->
               <div *ngIf="loadingGlobalDelivery" class="delivery-loading">
                 <div class="spinner-sm"></div> {{ 'checkout.deliveryLoading' | translate }}
@@ -1699,16 +1707,26 @@ export class CheckoutComponent implements OnInit, OnDestroy {
                         next: (store) => {
                             this.publicStore = store as PublicStore;
                             
-                            // TEMP DEBUG - Problem 1 Diagnose
-                            console.log('🔍 [DEBUG] PublicStore loaded:', {
+                            // TEMP DEBUG - DHL Checkout Visibility
+                            console.log('🔍 [CHECKOUT-DEBUG] PublicStore loaded:', {
                                 storeId: store.storeId,
                                 slug: store.slug,
                                 dhlShippingEnabled: store.dhlShippingEnabled,
                                 dhlShippingLabel: store.dhlShippingLabel,
                                 dhlShippingPrice: store.dhlShippingPrice,
-                                hasPublicStore: !!this.publicStore,
-                                publicStoreDhlEnabled: this.publicStore?.dhlShippingEnabled
+                                publicStoreIsSet: !!this.publicStore,
+                                publicStoreDhlEnabled: this.publicStore?.dhlShippingEnabled,
+                                templateShouldShow: this.publicStore?.dhlShippingEnabled === true
                             });
+                            
+                            // CRITICAL: Verify template condition
+                            setTimeout(() => {
+                                console.log('🔍 [CHECKOUT-DEBUG] After 500ms - publicStore still set?', {
+                                    publicStoreExists: !!this.publicStore,
+                                    dhlEnabled: this.publicStore?.dhlShippingEnabled,
+                                    dhlLabel: this.publicStore?.dhlShippingLabel
+                                });
+                            }, 500);
                             // END TEMP DEBUG
                         },
                         error: (err) => {
