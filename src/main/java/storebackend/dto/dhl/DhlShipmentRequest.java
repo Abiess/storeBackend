@@ -124,6 +124,6 @@ public class DhlShipmentRequest {
         private String uom;  // "g" | "kg"
         
         @JsonProperty("value")
-        private Integer value;
+        private java.math.BigDecimal value;  // Dezimalwerte für kg (z.B. 0.5, 1.0, 1.5)
     }
 }

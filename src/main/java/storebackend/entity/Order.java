@@ -150,6 +150,21 @@ public class Order {
 
     @Column(name = "phone_verified")
     private Boolean phoneVerified = false;
+    
+    // PACKAGE DIMENSIONS & WEIGHT (für Shipping/DHL/etc.)
+    // Generische Felder, nutzbar für alle Versanddienstleister
+    // Wenn NULL → Fallback auf Store Default Settings
+    @Column(name = "package_weight_grams")
+    private Integer packageWeightGrams;  // Gewicht in Gramm (z.B. 500, 1000, 1500)
+    
+    @Column(name = "package_length_mm")
+    private Integer packageLengthMm;  // Länge in Millimetern
+    
+    @Column(name = "package_width_mm")
+    private Integer packageWidthMm;  // Breite in Millimetern
+    
+    @Column(name = "package_height_mm")
+    private Integer packageHeightMm;  // Höhe in Millimetern
 
     // MARKETPLACE: Order Items Collection
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

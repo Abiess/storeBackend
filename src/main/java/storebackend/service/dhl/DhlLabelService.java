@@ -256,7 +256,7 @@ public class DhlLabelService {
         DhlShipmentRequest.Address consignee = buildConsigneeAddress(order);
         
         // Shipment Details (Gewicht, Dimensionen)
-        DhlShipmentRequest.Details details = buildShipmentDetails(config);
+        DhlShipmentRequest.Details details = buildShipmentDetails(order, config);
         
         // Reference Number (für Tracking)
         String refNo = "MARKTMA-" + order.getId();
@@ -386,26 +386,93 @@ public class DhlLabelService {
     
     /**
      * Build Shipment Details (Gewicht, Dimensionen)
-     * Nutzt config defaults
+     * 
+     * Fallback-Strategie:
+     * 1. Order-spezifische Paketdaten (wenn gesetzt)
+     * 2. Store Default Settings (aus config)
+     * 3. Fehler wenn nichts verfügbar
+     * 
+     * Gewicht-Conversion:
+     * - Order/Config speichern in Gramm
+     * - DHL erwartet kg mit Dezimalstelle
+     * - 500g → 0.5 kg
+     * - 1000g → 1 kg
+     * - 1500g → 1.5 kg
      */
-    private DhlShipmentRequest.Details buildShipmentDetails(DhlSettingsResolver.ResolvedDhlConfig config) {
-        // TODO: Order/Product Entity hat noch keine weight/dimensions Felder!
-        // Für jetzt: Default-Werte aus config verwenden
+    private DhlShipmentRequest.Details buildShipmentDetails(
+        Order order, 
+        DhlSettingsResolver.ResolvedDhlConfig config
+    ) {
+        // 1. Gewicht ermitteln (Order > Store > Fehler)
+        Integer weightGrams = null;
+        String weightSource = null;
         
-        // Gewicht: Config speichert in Gramm, DHL erwartet kg als Integer
-        int weightGrams = config.getDefaultWeightGrams();
-        int weightKg = Math.max(1, weightGrams / 1000); // Gramm → kg, mindestens 1
+        if (order.getPackageWeightGrams() != null && order.getPackageWeightGrams() > 0) {
+            weightGrams = order.getPackageWeightGrams();
+            weightSource = "Order";
+        } else if (config.getDefaultWeightGrams() != null && config.getDefaultWeightGrams() > 0) {
+            weightGrams = config.getDefaultWeightGrams();
+            weightSource = "Store Default";
+        }
+        
+        if (weightGrams == null || weightGrams <= 0) {
+            throw new IllegalStateException(
+                "Package weight missing. Please set weight in order details or store settings. " +
+                "messageKey: shipping.dhl.missingPackageDetails"
+            );
+        }
+        
+        // CRITICAL: Convert Gramm → kg mit Dezimalstelle
+        // 500g → 0.5 kg, 1000g → 1.0 kg, 1500g → 1.5 kg
+        // DHL erwartet weight.uom="kg" mit Dezimalwert
+        java.math.BigDecimal weightKg = java.math.BigDecimal.valueOf(weightGrams)
+            .divide(java.math.BigDecimal.valueOf(1000), 3, java.math.RoundingMode.HALF_UP)
+            .stripTrailingZeros();
+        
+        log.debug("Weight: {}g ({}) → {}kg for DHL", weightGrams, weightSource, weightKg);
         
         DhlShipmentRequest.Weight weight = DhlShipmentRequest.Weight.builder()
             .uom("kg") // ← WICHTIG: DHL erwartet "kg", nicht "g"!
-            .value(weightKg) // DHL erwartet Integer für kg
+            .value(weightKg) // BigDecimal: 0.5 kg, 1 kg, 1.5 kg
             .build();
+        
+        // 2. Dimensionen ermitteln (Order > Store > Fehler)
+        Integer lengthMm = null;
+        Integer widthMm = null;
+        Integer heightMm = null;
+        String dimSource = null;
+        
+        if (order.getPackageLengthMm() != null && order.getPackageLengthMm() > 0 &&
+            order.getPackageWidthMm() != null && order.getPackageWidthMm() > 0 &&
+            order.getPackageHeightMm() != null && order.getPackageHeightMm() > 0) {
+            lengthMm = order.getPackageLengthMm();
+            widthMm = order.getPackageWidthMm();
+            heightMm = order.getPackageHeightMm();
+            dimSource = "Order";
+        } else if (config.getDefaultLengthMm() != null && config.getDefaultLengthMm() > 0 &&
+                   config.getDefaultWidthMm() != null && config.getDefaultWidthMm() > 0 &&
+                   config.getDefaultHeightMm() != null && config.getDefaultHeightMm() > 0) {
+            lengthMm = config.getDefaultLengthMm();
+            widthMm = config.getDefaultWidthMm();
+            heightMm = config.getDefaultHeightMm();
+            dimSource = "Store Default";
+        }
+        
+        if (lengthMm == null || lengthMm <= 0 || widthMm == null || widthMm <= 0 || 
+            heightMm == null || heightMm <= 0) {
+            throw new IllegalStateException(
+                "Package dimensions missing. Please set dimensions in order details or store settings. " +
+                "messageKey: shipping.dhl.missingPackageDetails"
+            );
+        }
+        
+        log.debug("Dimensions: {}x{}x{}mm ({})", lengthMm, widthMm, heightMm, dimSource);
         
         DhlShipmentRequest.Dimensions dimensions = DhlShipmentRequest.Dimensions.builder()
             .uom("mm") // Millimeter
-            .length(config.getDefaultLengthMm())
-            .width(config.getDefaultWidthMm())
-            .height(config.getDefaultHeightMm())
+            .length(lengthMm)
+            .width(widthMm)
+            .height(heightMm)
             .build();
         
         return DhlShipmentRequest.Details.builder()
@@ -492,49 +559,129 @@ public class DhlLabelService {
     
     /**
      * Loggt sichere DHL Request-Daten für Debugging (KEINE Secrets!)
+     * Detaillierter Dump für 1:1 Vergleich mit funktionierendem Postman Request
      */
     private void logSafeDhlRequestData(Order order, DhlSettingsResolver.ResolvedDhlConfig config, 
                                        DhlShipmentRequest request) {
+        if (request.getShipments() == null || request.getShipments().isEmpty()) {
+            log.warn("⚠️ DHL Request has no shipments!");
+            return;
+        }
+        
+        DhlShipmentRequest.Shipment shipment = request.getShipments().get(0);
         Address shipping = order.getShippingAddress();
         
         // Country Mapping Debug
         String countryRaw = shipping != null ? shipping.getCountry() : "N/A";
         String countryMapped = shipping != null ? mapCountryCode(shipping.getCountry()) : "N/A";
         
-        DhlShipmentRequest.Shipment shipment = request.getShipments() != null && !request.getShipments().isEmpty() ? 
-            request.getShipments().get(0) : null;
+        log.info("═══════════════════════════════════════════════════════════════");
+        log.info("🔍 DHL REQUEST PREVIEW (SAFE - NO SECRETS) - Order {}", order.getId());
+        log.info("═══════════════════════════════════════════════════════════════");
         
-        log.info("🔍 DHL Request Data (SAFE): orderId={}, refNo={}, product={}, " +
-                 "countryRaw={}, countryMapped={}, postalCode={}, city={}, weight={}kg, " +
-                 "dimensions={}x{}x{}mm, billingNumber={}, credentialsSource={}, environment={}",
-            order.getId(),
-            shipment != null ? shipment.getRefNo() : "N/A",
-            shipment != null ? shipment.getProduct() : "N/A",
-            countryRaw,
-            countryMapped,
-            shipping != null ? shipping.getPostalCode() : "N/A",
-            shipping != null ? shipping.getCity() : "N/A",
-            shipment != null && shipment.getDetails() != null && shipment.getDetails().getWeight() != null ?
-                shipment.getDetails().getWeight().getValue() : 0,
-            shipment != null && shipment.getDetails() != null && shipment.getDetails().getDim() != null ?
-                shipment.getDetails().getDim().getLength() : 0,
-            shipment != null && shipment.getDetails() != null && shipment.getDetails().getDim() != null ?
-                shipment.getDetails().getDim().getWidth() : 0,
-            shipment != null && shipment.getDetails() != null && shipment.getDetails().getDim() != null ?
-                shipment.getDetails().getDim().getHeight() : 0,
-            config.getMaskedBillingNumber(),
-            config.getCredentialsSource(),
-            config.getEnvironment()
-        );
+        // Basic Info
+        log.info("📋 BASIC:");
+        log.info("   profile: {}", request.getProfile());
+        log.info("   product: {}", shipment.getProduct());
+        log.info("   refNo: {}", shipment.getRefNo());
+        log.info("   billingNumber: {}", config.getMaskedBillingNumber());
         
-        // CRITICAL: Log actual consignee country in DHL request
-        if (shipment != null && shipment.getConsignee() != null) {
-            log.info("🔍 DHL Request Consignee Country: {}", shipment.getConsignee().getCountry());
+        // Country Mapping
+        log.info("🌍 COUNTRY MAPPING:");
+        log.info("   countryRaw: {}", countryRaw);
+        log.info("   countryMapped: {}", countryMapped);
+        
+        // Shipper (Absender)
+        if (shipment.getShipper() != null) {
+            DhlShipmentRequest.Address shipper = shipment.getShipper();
+            log.info("📤 SHIPPER (Absender):");
+            log.info("   name1: {}", shipper.getName1());
+            log.info("   addressStreet: {}", shipper.getAddressStreet());
+            log.info("   addressHouse: {}", shipper.getAddressHouse());
+            log.info("   postalCode: {}", shipper.getPostalCode());
+            log.info("   city: {}", shipper.getCity());
+            log.info("   country: {}", shipper.getCountry());
+            log.info("   email: {}", shipper.getEmail() != null ? "***@***.***" : "null");
+        } else {
+            log.warn("   ⚠️ Shipper is NULL!");
         }
         
-        // CRITICAL: Log actual shipper country in DHL request
-        if (shipment != null && shipment.getShipper() != null) {
-            log.info("🔍 DHL Request Shipper Country: {}", shipment.getShipper().getCountry());
+        // Consignee (Empfänger)
+        if (shipment.getConsignee() != null) {
+            DhlShipmentRequest.Address consignee = shipment.getConsignee();
+            log.info("📥 CONSIGNEE (Empfänger):");
+            log.info("   name1: {}", consignee.getName1());
+            log.info("   addressStreet: {}", consignee.getAddressStreet());
+            log.info("   addressHouse: {}", consignee.getAddressHouse());
+            log.info("   postalCode: {}", consignee.getPostalCode());
+            log.info("   city: {}", consignee.getCity());
+            log.info("   country: {}", consignee.getCountry());
+            log.info("   email: {}", consignee.getEmail() != null ? "***@***.***" : "null");
+        } else {
+            log.warn("   ⚠️ Consignee is NULL!");
+        }
+        
+        // Details (Weight + Dimensions)
+        if (shipment.getDetails() != null) {
+            log.info("📦 DETAILS:");
+            if (shipment.getDetails().getWeight() != null) {
+                log.info("   weight.value: {} ({})", 
+                    shipment.getDetails().getWeight().getValue(),
+                    shipment.getDetails().getWeight().getUom());
+                // Zusätzlich: Original Gramm-Wert aus Order/Config
+                if (order.getPackageWeightGrams() != null) {
+                    log.info("   weight.source: Order ({}g)", order.getPackageWeightGrams());
+                } else {
+                    log.info("   weight.source: Store Default ({}g)", config.getDefaultWeightGrams());
+                }
+            } else {
+                log.warn("   ⚠️ Weight is NULL!");
+            }
+            
+            if (shipment.getDetails().getDim() != null) {
+                log.info("   dim.length: {}", shipment.getDetails().getDim().getLength());
+                log.info("   dim.width: {}", shipment.getDetails().getDim().getWidth());
+                log.info("   dim.height: {}", shipment.getDetails().getDim().getHeight());
+                log.info("   dim.uom: {}", shipment.getDetails().getDim().getUom());
+                // Zusätzlich: Quelle
+                if (order.getPackageLengthMm() != null) {
+                    log.info("   dim.source: Order");
+                } else {
+                    log.info("   dim.source: Store Default");
+                }
+            } else {
+                log.warn("   ⚠️ Dimensions are NULL!");
+            }
+        } else {
+            log.warn("   ⚠️ Details are NULL!");
+        }
+        
+        // Environment
+        log.info("🔧 ENVIRONMENT:");
+        log.info("   credentialsSource: {}", config.getCredentialsSource());
+        log.info("   environment: {}", config.getEnvironment());
+        
+        log.info("═══════════════════════════════════════════════════════════════");
+        
+        // CRITICAL CHECKS
+        boolean hasIssues = false;
+        if (shipment.getShipper() == null || shipment.getConsignee() == null) {
+            log.error("❌ CRITICAL: Shipper or Consignee is NULL!");
+            hasIssues = true;
+        }
+        if (shipment.getConsignee() != null && !"DEU".equals(shipment.getConsignee().getCountry())) {
+            log.error("❌ CRITICAL: Consignee country is '{}' but should be 'DEU' for V01PAK!", 
+                shipment.getConsignee().getCountry());
+            hasIssues = true;
+        }
+        if (shipment.getShipper() != null && !"DEU".equals(shipment.getShipper().getCountry())) {
+            log.error("❌ CRITICAL: Shipper country is '{}' but should be 'DEU'!", 
+                shipment.getShipper().getCountry());
+            hasIssues = true;
+        }
+        
+        if (!hasIssues) {
+            log.info("✅ All critical checks passed");
         }
     }
 }
