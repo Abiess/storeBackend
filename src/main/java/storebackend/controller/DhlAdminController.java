@@ -284,6 +284,7 @@ public class DhlAdminController {
             DhlShipmentResponse response = dhlLabelService.validateShipment(order, currentUser);
             
             Map<String, Object> result = new LinkedHashMap<>();
+            result.put("success", true);  // ← Explizites success Feld für klarere Frontend-Logik
             result.put("orderId", orderId);
             result.put("validation", "SUCCESS");
             result.put("shipmentNo", response.getShipmentNo());

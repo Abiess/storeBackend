@@ -304,7 +304,15 @@ export class OrderDetailProfessionalComponent implements OnInit {
     this.dhlService.validateShipment(this.storeId, this.orderId, request).subscribe({
       next: (response) => {
         this.dhlProcessing = false;
-        if (response.success && response.validation === 'SUCCESS') {
+        
+        // ✅ Robuste Success-Erkennung
+        // Backend kann success: true liefern ODER validation: "SUCCESS" ODER status.status: 200
+        const isSuccess =
+          response?.validation === 'SUCCESS' ||
+          response?.status?.status === 200 ||
+          response?.success === true;
+        
+        if (isSuccess) {
           this.dhlSuccess = true;
           this.showPreview = true;  // ← Zeige DHL-Style Preview
           this.dhlValidateResponse = response;  // ← Speichere Response für Preview
@@ -313,7 +321,8 @@ export class OrderDetailProfessionalComponent implements OnInit {
         } else if (response.validation === 'VALIDATION_FAILED') {
           this.dhlError = 'DHL Validation fehlgeschlagen: ' + (response.validationMessages?.map(m => m.validationMessage).join(', ') || 'Unbekannter Fehler');
         } else {
-          this.dhlError = response.message || 'Unbekannter Fehler';
+          // Fallback: Verwende verfügbare Fehlermeldungen
+          this.dhlError = response.message || response.status?.detail || response.error || 'DHL Prüfung fehlgeschlagen';
         }
       },
       error: (err) => {
@@ -339,13 +348,20 @@ export class OrderDetailProfessionalComponent implements OnInit {
     this.dhlService.createLabel(this.storeId, this.orderId, request).subscribe({
       next: (response) => {
         this.dhlProcessing = false;
-        if (response.success && response.labelUrl) {
+        
+        // ✅ Robuste Success-Erkennung für Label
+        const isSuccess =
+          response?.labelUrl ||
+          response?.shipmentNo ||
+          response?.success === true;
+        
+        if (isSuccess) {
           this.dhlSuccess = true;
           this.dhlResult = `DHL Label erfolgreich erstellt! Shipment No: ${response.shipmentNo || 'N/A'}`;
           // Reload order to update tracking
           this.loadOrderDetails();
         } else {
-          this.dhlError = response.message || 'DHL Label Erstellung fehlgeschlagen.';
+          this.dhlError = response.message || response.error || 'DHL Label Erstellung fehlgeschlagen.';
         }
       },
       error: (err) => {
