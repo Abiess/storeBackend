@@ -114,7 +114,7 @@ public class WooCommerceImageService {
             errorMessage
         ));
         logEntry.setProductName(productTitle);
-        logEntry.setWoocommerceProductId(0L); // Temp value
+        logEntry.setWoocommerceProductId(null); // null für Bild-Logs ohne WC Product ID
         
         importLogRepository.save(logEntry);
     }

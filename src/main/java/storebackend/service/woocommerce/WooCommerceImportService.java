@@ -462,7 +462,7 @@ public class WooCommerceImportService {
         logEntry.setStatus(level); // SUCCESS, WARNING, ERROR
         logEntry.setErrorMessage(message);
         logEntry.setProductName(productName);
-        logEntry.setWoocommerceProductId(0L); // Temp value for MVP
+        logEntry.setWoocommerceProductId(null); // null für Logs ohne Produktbezug
         
         // Only save if store is set (to avoid constraint violation)
         if (logEntry.getStore() != null) {

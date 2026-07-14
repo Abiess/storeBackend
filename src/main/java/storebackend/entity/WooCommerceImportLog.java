@@ -11,15 +11,11 @@ import java.time.LocalDateTime;
  * WooCommerce Import Log.
  * 
  * Protokolliert jeden Import-Versuch pro Produkt.
- * UNIQUE constraint verhindert doppelten Import derselben WC Product ID.
+ * KEIN Unique Constraint - mehrere Logs pro Produkt/Job erlaubt.
  */
 @Entity
 @Table(
     name = "woocommerce_import_log",
-    uniqueConstraints = @UniqueConstraint(
-        name = "uq_woocommerce_import",
-        columnNames = {"store_id", "woocommerce_product_id"}
-    ),
     indexes = {
         @Index(name = "idx_wc_import_log_job", columnList = "job_id"),
         @Index(name = "idx_wc_import_log_status", columnList = "status"),
@@ -49,8 +45,9 @@ public class WooCommerceImportLog {
 
     /**
      * WooCommerce Product ID (Original)
+     * NULL für Kategorie-Logs, Summary-Logs, Job-Logs ohne Produktbezug
      */
-    @Column(name = "woocommerce_product_id", nullable = false)
+    @Column(name = "woocommerce_product_id")
     private Long woocommerceProductId;
 
     /**
