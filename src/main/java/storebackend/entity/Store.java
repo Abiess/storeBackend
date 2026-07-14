@@ -53,8 +53,7 @@ public class Store {
      * Wenn true: Kunden erhalten WhatsApp-Benachrichtigungen bei Order-Status-Änderungen
      * (analog zu E-Mail-Benachrichtigungen, sofern Kundennummer vorhanden).
      */
-    @Column(name = "whatsapp_notifications_enabled", nullable = false,
-            columnDefinition = "boolean default false")
+    @Column(name = "whatsapp_notifications_enabled", nullable = false)
     private boolean whatsappNotificationsEnabled = false;
 
     // ─── Social Media & Kontakt-Links ────────────────────────
@@ -85,8 +84,7 @@ public class Store {
      * RESTAURANT / RIAD aktivieren das Menü-/Restaurant-Template.
      */
     @Enumerated(EnumType.STRING)
-    @Column(name = "business_type", nullable = false,
-            columnDefinition = "varchar(20) default 'SHOP'")
+    @Column(name = "business_type", length = 20, nullable = false)
     private BusinessType businessType = BusinessType.SHOP;
 
     /** Öffnungszeiten als einfacher Freitext (MVP, kein JSON). */
@@ -133,8 +131,7 @@ public class Store {
      * Bot-Schutz für öffentliche Bestellungen aktiviert.
      * Default: true (Schutz aktiv)
      */
-    @Column(name = "bot_protection_enabled", nullable = false,
-            columnDefinition = "boolean default true")
+    @Column(name = "bot_protection_enabled", nullable = false)
     private boolean botProtectionEnabled = true;
 
     /**
@@ -142,8 +139,7 @@ public class Store {
      * Default: SUSPICIOUS_ONLY
      */
     @Enumerated(EnumType.STRING)
-    @Column(name = "bot_protection_mode", nullable = false,
-            columnDefinition = "varchar(20) default 'SUSPICIOUS_ONLY'")
+    @Column(name = "bot_protection_mode", length = 20, nullable = false)
     private storebackend.enums.BotProtectionMode botProtectionMode = 
         storebackend.enums.BotProtectionMode.SUSPICIOUS_ONLY;
 
