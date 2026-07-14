@@ -449,24 +449,32 @@ public class WooCommerceImportService {
     }
 
     private void saveLog(Long jobId, String level, String message, String productName) {
-        // Fetch store from job if needed (for MVP: minimal fix)
-        WooCommerceImportLog logEntry = new WooCommerceImportLog();
-        
-        // Try to get store from job
-        if (jobId != null) {
-            importJobRepository.findById(jobId).ifPresent(job -> {
-                logEntry.setStore(job.getStore());  // ✅ FIX Bug #2
-            });
-        }
-        
-        logEntry.setStatus(level); // SUCCESS, WARNING, ERROR
-        logEntry.setErrorMessage(message);
-        logEntry.setProductName(productName);
-        logEntry.setWoocommerceProductId(null); // null für Logs ohne Produktbezug
-        
-        // Only save if store is set (to avoid constraint violation)
-        if (logEntry.getStore() != null) {
-            importLogRepository.save(logEntry);
+        try {
+            // Fetch store from job if needed (for MVP: minimal fix)
+            WooCommerceImportLog logEntry = new WooCommerceImportLog();
+            
+            // Try to get store from job
+            if (jobId != null) {
+                importJobRepository.findById(jobId).ifPresent(job -> {
+                    logEntry.setStore(job.getStore());  // ✅ FIX Bug #2
+                });
+            }
+            
+            logEntry.setStatus(level); // SUCCESS, WARNING, ERROR
+            logEntry.setErrorMessage(message);
+            logEntry.setProductName(productName);
+            logEntry.setWoocommerceProductId(null); // null für Logs ohne Produktbezug
+            
+            // Only save if store is set (to avoid constraint violation)
+            if (logEntry.getStore() != null) {
+                importLogRepository.save(logEntry);
+            } else {
+                log.warn("⚠️ ImportLog not saved: store is null (jobId={})", jobId);
+            }
+        } catch (Exception e) {
+            // Log-Fehler dürfen Import nicht crashen
+            log.error("⚠️ Failed to save ImportLog: {} (level={}, message={})", 
+                e.getMessage(), level, message);
         }
     }
 

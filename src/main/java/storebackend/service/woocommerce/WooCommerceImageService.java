@@ -105,18 +105,24 @@ public class WooCommerceImageService {
             return;
         }
 
-        WooCommerceImportLog logEntry = new WooCommerceImportLog();
-        logEntry.setStore(store);  // ✅ FIX Bug #2
-        logEntry.setStatus("WARNING");
-        logEntry.setErrorMessage(String.format(
-            "Image import failed for product '%s'. Product imported without image. Error: %s",
-            productTitle,
-            errorMessage
-        ));
-        logEntry.setProductName(productTitle);
-        logEntry.setWoocommerceProductId(null); // null für Bild-Logs ohne WC Product ID
-        
-        importLogRepository.save(logEntry);
+        try {
+            WooCommerceImportLog logEntry = new WooCommerceImportLog();
+            logEntry.setStore(store);  // ✅ FIX Bug #2
+            logEntry.setStatus("WARNING");
+            logEntry.setErrorMessage(String.format(
+                "Image import failed for product '%s'. Product imported without image. Error: %s",
+                productTitle,
+                errorMessage
+            ));
+            logEntry.setProductName(productTitle);
+            logEntry.setWoocommerceProductId(null); // null für Bild-Logs ohne WC Product ID
+            
+            importLogRepository.save(logEntry);
+        } catch (Exception e) {
+            // Log-Fehler dürfen Import nicht crashen
+            log.error("⚠️ Failed to save image warning log: {} (product={})", 
+                e.getMessage(), productTitle);
+        }
     }
 
     /**
