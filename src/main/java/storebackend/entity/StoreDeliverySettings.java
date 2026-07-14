@@ -89,6 +89,11 @@ public class StoreDeliverySettings {
     private String dhlShipperPhone;
     
     // Default Package Dimensions
+    // WICHTIG: Gewicht in GRAMM speichern, nicht in kg!
+    // UI sollte kg anzeigen, aber als Gramm speichern:
+    //   - UI zeigt "1 kg" → speichert 1000g
+    //   - UI zeigt "0.5 kg" → speichert 500g
+    // Minimum für DHL: 100g (wird sonst als Fehler behandelt)
     @Column(name = "dhl_default_weight_grams")
     private Integer dhlDefaultWeightGrams;
     

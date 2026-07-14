@@ -316,26 +316,57 @@ public class DhlLabelService {
         String street = address1;
         String houseNumber = "";
         
-        // Simple Parsing: Letztes Wort als Hausnummer (wenn es Ziffern enthält)
+        // IMPROVED: Street/House Splitting für verschiedene Formate
+        // Unterstützt:
+        // - "Löwenbergerstr.5b" → "Löwenbergerstr.", "5b"
+        // - "Löwenbergerstr. 5b" → "Löwenbergerstr.", "5b"
+        // - "Löwenberger Straße 5b" → "Löwenberger Straße", "5b"
+        // - "Hauptstraße 123" → "Hauptstraße", "123"
         if (address1 != null && !address1.isBlank()) {
-            String[] parts = address1.trim().split("\\s+");
-            if (parts.length > 1) {
-                String lastPart = parts[parts.length - 1];
-                // Wenn letzter Teil Ziffer enthält → Hausnummer
-                if (lastPart.matches(".*\\d+.*")) {
-                    houseNumber = lastPart;
-                    street = address1.substring(0, address1.lastIndexOf(lastPart)).trim();
+            String trimmed = address1.trim();
+            
+            // Pattern 1: Hausnummer am Ende (mit oder ohne Leerzeichen)
+            // Regex: Straßenname gefolgt von optional Leerzeichen, dann Ziffern + optional Buchstaben
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
+                "^(.+?)\\s*(\\d+[a-zA-Z]?)$"
+            );
+            java.util.regex.Matcher matcher = pattern.matcher(trimmed);
+            
+            if (matcher.matches()) {
+                street = matcher.group(1).trim();
+                houseNumber = matcher.group(2).trim();
+                
+                // Cleanup: Entferne trailing Punkt/Komma von Straße
+                if (street.endsWith(".") || street.endsWith(",")) {
+                    street = street.substring(0, street.length() - 1).trim();
+                }
+            } else {
+                // Pattern 2: Fallback - Split bei letztem Leerzeichen
+                String[] parts = trimmed.split("\\s+");
+                if (parts.length > 1) {
+                    String lastPart = parts[parts.length - 1];
+                    if (lastPart.matches(".*\\d+.*")) {
+                        houseNumber = lastPart;
+                        street = trimmed.substring(0, trimmed.lastIndexOf(lastPart)).trim();
+                    }
                 }
             }
         }
         
         // Fallback wenn Parsing fehlschlägt
-        if (street.isBlank()) {
-            street = address1 != null ? address1 : "Unbekannt";
+        if (street == null || street.isBlank()) {
+            street = address1 != null && !address1.isBlank() ? address1 : "Unbekannt";
         }
-        if (houseNumber.isBlank()) {
-            houseNumber = "1"; // Default
+        
+        // IMPORTANT: Keine automatische "1" mehr - lieber Warnung loggen
+        if (houseNumber == null || houseNumber.isBlank()) {
+            log.warn("⚠️ Could not extract house number from address: '{}'. " +
+                     "DHL may reject this address. Consider validating address format before DHL call. " +
+                     "messageKey: shipping.dhl.missingHouseNumber", address1);
+            houseNumber = "1"; // Fallback für DHL (required field)
         }
+        
+        log.debug("Address split: '{}' → street='{}', house='{}'", address1, street, houseNumber);
         
         String fullName = (shippingAddress.getFirstName() + " " + shippingAddress.getLastName()).trim();
         
@@ -420,6 +451,16 @@ public class DhlLabelService {
                 "Package weight missing. Please set weight in order details or store settings. " +
                 "messageKey: shipping.dhl.missingPackageDetails"
             );
+        }
+        
+        // CRITICAL: Mindestgewicht validieren (100g Minimum für DHL)
+        // Häufiger Bug: UI speichert "1" als 1g statt 1000g (1kg)
+        if (weightGrams < 100) {
+            log.warn("⚠️ Weight too small: {}g from {}. This is likely a configuration error " +
+                     "(e.g., UI saved '1 kg' as '1g' instead of '1000g'). " +
+                     "Using fallback: 1000g (1kg).", weightGrams, weightSource);
+            weightGrams = 1000; // Fallback auf 1kg
+            weightSource = weightSource + " (fallback to 1kg due to unrealistic value)";
         }
         
         // CRITICAL: Convert Gramm → kg mit Dezimalstelle
