@@ -177,6 +177,24 @@
         </button>
       </div>
 
+      <!-- DHL Shipping -->
+      <div class="detail-card dhl-card">
+        <h2>📦 DHL Versand</h2>
+        <p class="dhl-info">Erstelle Versandlabels direkt über die DHL API.</p>
+        <button
+          class="btn-primary btn-full dhl-validate-btn"
+          (click)="openDhlValidateDialog()"
+          [disabled]="!order">
+          🔍 Sendung prüfen (kostenfrei)
+        </button>
+        <button
+          class="btn-primary btn-full dhl-label-btn"
+          (click)="openDhlLabelDialog()"
+          [disabled]="!order">
+          📄 Live Label erstellen
+        </button>
+      </div>
+
       <!-- Timeline -->
       <div class="detail-card">
         <h2>📅 Timeline</h2>
@@ -206,6 +224,188 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DHL Dialog Modal -->
+  <div class="dhl-dialog-overlay" *ngIf="showDhlDialog" (click)="closeDhlDialog()">
+    <div class="dhl-dialog" (click)="$event.stopPropagation()">
+      <div class="dhl-dialog-header">
+        <h2>
+          {{ dhlDialogMode === 'validate' ? '🔍 DHL Sendung prüfen' : '📄 DHL Label erstellen' }}
+        </h2>
+        <button class="close-btn" (click)="closeDhlDialog()">×</button>
+      </div>
+
+      <div class="dhl-dialog-content" *ngIf="!dhlSuccess && !dhlError">
+        <!-- Order Info -->
+        <div class="dhl-section">
+          <h3>Bestellung</h3>
+          <div class="info-row">
+            <label>Bestellnummer:</label>
+            <span>{{ order?.orderNumber }}</span>
+          </div>
+          <div class="info-row">
+            <label>Kunde:</label>
+            <span>{{ order?.customerName || 'Gast' }}</span>
+          </div>
+          <div class="info-row">
+            <label>Betrag:</label>
+            <span>{{ order?.totalAmount | currency:'EUR' }}</span>
+          </div>
+        </div>
+
+        <!-- Receiver Address -->
+        <div class="dhl-section" *ngIf="getAddress(order?.shippingAddress) as shipping">
+          <h3>📥 Empfänger</h3>
+          <div class="address-compact">
+            <p><strong>{{ shipping.firstName }} {{ shipping.lastName }}</strong></p>
+            <p>{{ shipping.address1 }}</p>
+            <p>{{ shipping.postalCode }} {{ shipping.city }}</p>
+            <p>{{ shipping.country }}</p>
+            <p *ngIf="order?.customerEmail"><small>{{ order?.customerEmail }}</small></p>
+          </div>
+        </div>
+
+        <!-- Package Data (Editable) -->
+        <div class="dhl-section">
+          <h3>📦 Paketdaten</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Gewicht (kg) *</label>
+              <input
+                type="number"
+                [(ngModel)]="dhlWeightKg"
+                step="0.1"
+                min="0.1"
+                max="31.5"
+                class="form-control">
+            </div>
+            <div class="form-group">
+              <label>Länge (cm) *</label>
+              <input
+                type="number"
+                [(ngModel)]="dhlLengthCm"
+                min="1"
+                max="120"
+                class="form-control">
+            </div>
+            <div class="form-group">
+              <label>Breite (cm) *</label>
+              <input
+                type="number"
+                [(ngModel)]="dhlWidthCm"
+                min="1"
+                max="60"
+                class="form-control">
+            </div>
+            <div class="form-group">
+              <label>Höhe (cm) *</label>
+              <input
+                type="number"
+                [(ngModel)]="dhlHeightCm"
+                min="1"
+                max="60"
+                class="form-control">
+            </div>
+          </div>
+        </div>
+
+        <!-- DHL Product Info -->
+        <div class="dhl-section">
+          <h3>📋 DHL Produkt</h3>
+          <div class="info-row">
+            <label>Produkt:</label>
+            <span>DHL Paket National (V01PAK)</span>
+          </div>
+          <div class="info-row">
+            <label>Profil:</label>
+            <span>STANDARD_GRUPPENPROFIL</span>
+          </div>
+        </div>
+
+        <!-- Warning for Live Label -->
+        <div class="dhl-warning" *ngIf="dhlDialogMode === 'label'">
+          ⚠️ <strong>Achtung:</strong> Du erstellst jetzt ein echtes DHL Versandlabel. 
+          Dadurch können Versandkosten über deinen DHL Geschäftskundenvertrag entstehen.
+        </div>
+
+        <!-- Info for Validate -->
+        <div class="dhl-info-box" *ngIf="dhlDialogMode === 'validate'">
+          ℹ️ Die Prüfung ist kostenfrei und erstellt kein Label.
+        </div>
+      </div>
+
+      <!-- Success State -->
+      <div class="dhl-dialog-content" *ngIf="dhlSuccess">
+        <div class="dhl-success">
+          <div class="success-icon">✅</div>
+          <p>{{ dhlResult }}</p>
+        </div>
+      </div>
+
+      <!-- Error State -->
+      <div class="dhl-dialog-content" *ngIf="dhlError">
+        <div class="dhl-error">
+          <div class="error-icon">❌</div>
+          <p>{{ dhlError }}</p>
+        </div>
+      </div>
+
+      <!-- Label Confirm State (zusätzliche Sicherheitsabfrage) -->
+      <div class="dhl-dialog-content" *ngIf="showLabelConfirm && dhlDialogMode === 'label' && !dhlSuccess && !dhlError">
+        <div class="dhl-final-confirm">
+          <div class="confirm-icon">⚠️</div>
+          <h3>Kostenpflichtige Aktion bestätigen</h3>
+          <p>
+            Du erstellst jetzt ein echtes DHL Versandlabel mit folgenden Paketdaten:
+          </p>
+          <div class="confirm-package-summary">
+            <p><strong>Gewicht:</strong> {{ dhlWeightKg }} kg</p>
+            <p><strong>Maße:</strong> {{ dhlLengthCm }} × {{ dhlWidthCm }} × {{ dhlHeightCm }} cm</p>
+          </div>
+          <p class="confirm-warning">
+            Dadurch können <strong>Versandkosten über deinen DHL Geschäftskundenvertrag</strong> entstehen.
+          </p>
+          <p><strong>Möchtest du wirklich fortfahren?</strong></p>
+        </div>
+      </div>
+
+      <!-- Dialog Footer -->
+      <div class="dhl-dialog-footer">
+        <button class="btn-secondary" (click)="closeDhlDialog()" [disabled]="dhlProcessing" *ngIf="!showLabelConfirm">
+          {{ dhlSuccess ? 'Schließen' : 'Abbrechen' }}
+        </button>
+        
+        <!-- Validate oder Label Bestätigung -->
+        <button
+          class="btn-primary"
+          (click)="confirmDhlAction()"
+          [disabled]="dhlProcessing || dhlSuccess || dhlWeightKg <= 0"
+          *ngIf="!dhlSuccess && !dhlError && !showLabelConfirm">
+          {{ dhlProcessing ? 'Wird verarbeitet...' : (dhlDialogMode === 'validate' ? 'Sendung prüfen' : 'Weiter →') }}
+        </button>
+        
+        <!-- Label Final Confirm Buttons -->
+        <button class="btn-secondary" (click)="cancelLabelConfirm()" *ngIf="showLabelConfirm">
+          ← Zurück
+        </button>
+        <button
+          class="btn-primary btn-danger"
+          (click)="confirmDhlAction()"
+          [disabled]="dhlProcessing"
+          *ngIf="showLabelConfirm">
+          {{ dhlProcessing ? 'Label wird erstellt...' : 'Ja, kostenpflichtiges Label erstellen' }}
+        </button>
+        
+        <!-- Error OK Button -->
+        <button
+          class="btn-primary"
+          (click)="closeDhlDialog()"
+          *ngIf="dhlError">
+          OK
+        </button>
       </div>
     </div>
   </div>

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import storebackend.config.DhlProperties;
+import storebackend.dto.dhl.DhlPackageDataRequest;
 import storebackend.dto.dhl.DhlShipmentResponse;
 import storebackend.entity.Order;
 import storebackend.entity.User;
@@ -239,10 +240,11 @@ public class DhlAdminController {
      */
     @PostMapping("/api/admin/orders/{orderId}/dhl/validate")
     @PreAuthorize("isAuthenticated()")
-    @Transactional(readOnly = true)
+    @Transactional  // ← NICHT mehr readOnly - Order Paketdaten werden gespeichert!
     public ResponseEntity<?> validateShipment(
         @PathVariable Long orderId,
-        @AuthenticationPrincipal User currentUser
+        @AuthenticationPrincipal User currentUser,
+        @RequestBody(required = false) DhlPackageDataRequest packageDataRequest
     ) {
         try {
             if (!dhlProperties.isEnabled()) {
@@ -262,6 +264,22 @@ public class DhlAdminController {
             
             log.info("🔍 Validating DHL shipment for order {} by user {}", 
                 orderId, currentUser.getEmail());
+            
+            // Package Data aus Request (falls vorhanden) an Order setzen UND SPEICHERN
+            if (packageDataRequest != null && hasPackageData(packageDataRequest)) {
+                log.info("📦 Using package data from request: {}g, {}×{}×{}mm",
+                    packageDataRequest.getPackageWeightGrams(),
+                    packageDataRequest.getPackageLengthMm(),
+                    packageDataRequest.getPackageWidthMm(),
+                    packageDataRequest.getPackageHeightMm());
+                
+                // Order Paketdaten speichern für bessere UX
+                order.setPackageWeightGrams(packageDataRequest.getPackageWeightGrams());
+                order.setPackageLengthMm(packageDataRequest.getPackageLengthMm());
+                order.setPackageWidthMm(packageDataRequest.getPackageWidthMm());
+                order.setPackageHeightMm(packageDataRequest.getPackageHeightMm());
+                orderRepository.save(order);  // ← SPEICHERN auch bei Validate!
+            }
             
             DhlShipmentResponse response = dhlLabelService.validateShipment(order, currentUser);
             
@@ -424,12 +442,13 @@ public class DhlAdminController {
      * Erstellt DHL Label, speichert PDF in MinIO und aktualisiert Order
      * IDEMPOTENT: Wenn Label bereits existiert, wird vorhandenes zurückgegeben
      */
-    @PostMapping("/api/admin/orders/{orderId}/dhl/create-label")
+    @PostMapping({"/api/admin/orders/{orderId}/dhl/create-label", "/api/admin/orders/{orderId}/dhl/label"})
     @PreAuthorize("isAuthenticated()")
     @Transactional
     public ResponseEntity<?> createLabel(
         @PathVariable Long orderId,
-        @AuthenticationPrincipal User currentUser
+        @AuthenticationPrincipal User currentUser,
+        @RequestBody(required = false) DhlPackageDataRequest packageDataRequest
     ) {
         try {
             if (!dhlProperties.isEnabled()) {
@@ -446,6 +465,22 @@ public class DhlAdminController {
             // Initialisiere lazy-loaded Store
             order.getStore().getId();
             order.getStore().getOwner().getId();
+            
+            // Package Data aus Request (falls vorhanden) an Order setzen
+            if (packageDataRequest != null && hasPackageData(packageDataRequest)) {
+                log.info("📦 Using package data from request for label creation: {}g, {}×{}×{}mm",
+                    packageDataRequest.getPackageWeightGrams(),
+                    packageDataRequest.getPackageLengthMm(),
+                    packageDataRequest.getPackageWidthMm(),
+                    packageDataRequest.getPackageHeightMm());
+                
+                // Order Paketdaten speichern für bessere UX (Transaction ist nicht readOnly)
+                order.setPackageWeightGrams(packageDataRequest.getPackageWeightGrams());
+                order.setPackageLengthMm(packageDataRequest.getPackageLengthMm());
+                order.setPackageWidthMm(packageDataRequest.getPackageWidthMm());
+                order.setPackageHeightMm(packageDataRequest.getPackageHeightMm());
+                orderRepository.save(order);
+            }
             
             // IDEMPOTENCY CHECK: Label bereits erstellt?
             if (order.getDhlShipmentNo() != null && !order.getDhlShipmentNo().isBlank()) {
@@ -526,5 +561,15 @@ public class DhlAdminController {
                 "message", e.getMessage()
             ));
         }
+    }
+    
+    /**
+     * Helper: Prüft ob PackageDataRequest valide Paketdaten enthält
+     */
+    private boolean hasPackageData(DhlPackageDataRequest request) {
+        return request.getPackageWeightGrams() != null && request.getPackageWeightGrams() > 0 &&
+               request.getPackageLengthMm() != null && request.getPackageLengthMm() > 0 &&
+               request.getPackageWidthMm() != null && request.getPackageWidthMm() > 0 &&
+               request.getPackageHeightMm() != null && request.getPackageHeightMm() > 0;
     }
 }

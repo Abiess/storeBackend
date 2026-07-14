@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { OrderService } from '../../core/services/order.service';
+import { DhlService, DhlValidateRequest } from '../../core/services/dhl.service';
 import { Order, OrderStatus, OrderStatusHistory, OrderItem, Address } from '../../core/models';
 import { StoreNavigationComponent } from '../../shared/components/store-navigation.component';
 import { toDate } from '../../core/utils/date.utils';
@@ -38,6 +39,21 @@ export class OrderDetailProfessionalComponent implements OnInit {
   newNote = '';
   addingNote = false;
 
+  // DHL Dialog
+  showDhlDialog = false;
+  dhlDialogMode: 'validate' | 'label' = 'validate';
+  dhlProcessing = false;
+  dhlSuccess = false;
+  dhlError: string | null = null;
+  dhlResult: string | null = null;
+  showLabelConfirm = false;  // Zusätzlicher Confirm vor Live Label
+  
+  // DHL Paketdaten (editierbar in Dialog, in kg/cm)
+  dhlWeightKg: number = 1;
+  dhlLengthCm: number = 30;
+  dhlWidthCm: number = 20;
+  dhlHeightCm: number = 15;
+
   // Available statuses
   availableStatuses: OrderStatus[] = [
     OrderStatus.PENDING,
@@ -52,7 +68,8 @@ export class OrderDetailProfessionalComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private orderService: OrderService
+    private orderService: OrderService,
+    private dhlService: DhlService
   ) {}
 
   ngOnInit(): void {
@@ -182,6 +199,132 @@ export class OrderDetailProfessionalComponent implements OnInit {
         console.error('Error adding note:', err);
         alert('Fehler beim Hinzufügen der Notiz');
         this.addingNote = false;
+      }
+    });
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // DHL SHIPMENT METHODS
+  // ══════════════════════════════════════════════════════════════
+
+  openDhlValidateDialog(): void {
+    this.dhlDialogMode = 'validate';
+    this.initDhlDialogData();
+    this.showDhlDialog = true;
+  }
+
+  openDhlLabelDialog(): void {
+    this.dhlDialogMode = 'label';
+    this.initDhlDialogData();
+    this.showDhlDialog = true;
+  }
+
+  closeDhlDialog(): void {
+    this.showDhlDialog = false;
+    this.dhlSuccess = false;
+    this.dhlError = null;
+    this.dhlResult = null;
+    this.dhlProcessing = false;
+    this.showLabelConfirm = false;  // ← Reset Confirm State
+  }
+
+  private initDhlDialogData(): void {
+    // Initialize with Order Package Data (if set) or fallback to defaults
+    if (this.order?.packageWeightGrams && this.order.packageWeightGrams > 0) {
+      this.dhlWeightKg = this.order.packageWeightGrams / 1000;
+    } else {
+      this.dhlWeightKg = 1; // Default 1kg
+    }
+
+    if (this.order?.packageLengthMm && this.order.packageLengthMm > 0) {
+      this.dhlLengthCm = this.order.packageLengthMm / 10;
+      this.dhlWidthCm = (this.order.packageWidthMm || 200) / 10;
+      this.dhlHeightCm = (this.order.packageHeightMm || 150) / 10;
+    } else {
+      // Defaults from store settings (assume 30x20x15 cm)
+      this.dhlLengthCm = 30;
+      this.dhlWidthCm = 20;
+      this.dhlHeightCm = 15;
+    }
+  }
+
+  confirmDhlAction(): void {
+    if (this.dhlDialogMode === 'validate') {
+      this.executeDhlValidate();
+    } else {
+      // Für Live Label: Zusätzlicher Confirm-Schritt
+      if (!this.showLabelConfirm) {
+        this.showLabelConfirm = true;  // Zeige finale Kostenwarnung
+      } else {
+        this.executeDhlCreateLabel();  // User hat bestätigt
+      }
+    }
+  }
+
+  cancelLabelConfirm(): void {
+    this.showLabelConfirm = false;
+  }
+
+  private executeDhlValidate(): void {
+    this.dhlProcessing = true;
+    this.dhlError = null;
+    this.dhlSuccess = false;
+
+    const request: DhlValidateRequest = {
+      packageWeightGrams: Math.round(this.dhlWeightKg * 1000),
+      packageLengthMm: Math.round(this.dhlLengthCm * 10),
+      packageWidthMm: Math.round(this.dhlWidthCm * 10),
+      packageHeightMm: Math.round(this.dhlHeightCm * 10)
+    };
+
+    this.dhlService.validateShipment(this.storeId, this.orderId, request).subscribe({
+      next: (response) => {
+        this.dhlProcessing = false;
+        if (response.success && response.validation === 'SUCCESS') {
+          this.dhlSuccess = true;
+          this.dhlResult = 'DHL Sendung erfolgreich geprüft. Es wurde kein Label erstellt und keine Kosten verursacht.';
+        } else if (response.validation === 'VALIDATION_FAILED') {
+          this.dhlError = 'DHL Validation fehlgeschlagen: ' + (response.validationMessages?.map(m => m.validationMessage).join(', ') || 'Unbekannter Fehler');
+        } else {
+          this.dhlError = response.message || 'Unbekannter Fehler';
+        }
+      },
+      error: (err) => {
+        console.error('DHL Validate Error:', err);
+        this.dhlProcessing = false;
+        this.dhlError = err.error?.message || 'DHL Validierung fehlgeschlagen. Bitte prüfe die Sendungsdaten.';
+      }
+    });
+  }
+
+  private executeDhlCreateLabel(): void {
+    this.dhlProcessing = true;
+    this.dhlError = null;
+    this.dhlSuccess = false;
+
+    const request: DhlValidateRequest = {
+      packageWeightGrams: Math.round(this.dhlWeightKg * 1000),
+      packageLengthMm: Math.round(this.dhlLengthCm * 10),
+      packageWidthMm: Math.round(this.dhlWidthCm * 10),
+      packageHeightMm: Math.round(this.dhlHeightCm * 10)
+    };
+
+    this.dhlService.createLabel(this.storeId, this.orderId, request).subscribe({
+      next: (response) => {
+        this.dhlProcessing = false;
+        if (response.success && response.labelUrl) {
+          this.dhlSuccess = true;
+          this.dhlResult = `DHL Label erfolgreich erstellt! Shipment No: ${response.shipmentNo || 'N/A'}`;
+          // Reload order to update tracking
+          this.loadOrderDetails();
+        } else {
+          this.dhlError = response.message || 'DHL Label Erstellung fehlgeschlagen.';
+        }
+      },
+      error: (err) => {
+        console.error('DHL Label Error:', err);
+        this.dhlProcessing = false;
+        this.dhlError = err.error?.message || 'DHL Label Erstellung fehlgeschlagen.';
       }
     });
   }

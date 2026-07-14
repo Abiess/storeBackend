@@ -333,6 +333,350 @@ textarea.form-control {
   margin: 0 auto 1rem;
 }
 
+// ══════════════════════════════════════════════════════════════
+// DHL DIALOG STYLES (markt.ma Design mit Lila-Gradient)
+// ══════════════════════════════════════════════════════════════
+
+.dhl-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  
+  h2 {
+    color: white;
+  }
+  
+  .dhl-info {
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    opacity: 0.95;
+  }
+  
+  .dhl-validate-btn,
+  .dhl-label-btn {
+    margin-bottom: 0.5rem;
+    background: white;
+    color: #667eea;
+    font-weight: 600;
+    
+    &:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.95);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.dhl-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.dhl-dialog {
+  background: white;
+  border-radius: 16px;
+  max-width: 700px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease-out;
+}
+
+.dhl-dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 16px 16px 0 0;
+  
+  h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+  
+  .close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+  }
+}
+
+.dhl-dialog-content {
+  padding: 2rem;
+  max-height: calc(90vh - 200px);
+  overflow-y: auto;
+}
+
+.dhl-section {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  
+  &:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+  }
+  
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #667eea;
+    margin: 0 0 1rem 0;
+  }
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  
+  label {
+    font-weight: 500;
+    color: #6b7280;
+  }
+  
+  span {
+    color: #1f2937;
+    font-weight: 500;
+  }
+}
+
+.address-compact {
+  background: #f9fafb;
+  padding: 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  
+  p {
+    margin: 0.25rem 0;
+  }
+  
+  small {
+    color: #6b7280;
+  }
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+.dhl-warning {
+  background: #fef3c7;
+  border-left: 4px solid #f59e0b;
+  padding: 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #92400e;
+  margin-top: 1rem;
+}
+
+.dhl-info-box {
+  background: #dbeafe;
+  border-left: 4px solid #3b82f6;
+  padding: 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #1e40af;
+  margin-top: 1rem;
+}
+
+.dhl-success,
+.dhl-error {
+  text-align: center;
+  padding: 2rem;
+  
+  .success-icon,
+  .error-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+  }
+  
+  p {
+    font-size: 1.1rem;
+    color: #1f2937;
+    margin: 0;
+  }
+}
+
+.dhl-final-confirm {
+  text-align: center;
+  padding: 2rem;
+  
+  .confirm-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+  }
+  
+  h3 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #dc2626;
+    margin: 0 0 1rem 0;
+  }
+  
+  p {
+    font-size: 1rem;
+    color: #1f2937;
+    margin: 0.5rem 0;
+  }
+  
+  .confirm-package-summary {
+    background: #f9fafb;
+    padding: 1rem;
+    border-radius: 8px;
+    margin: 1rem auto;
+    max-width: 300px;
+    
+    p {
+      margin: 0.25rem 0;
+      font-size: 0.9rem;
+      text-align: left;
+    }
+  }
+  
+  .confirm-warning {
+    background: #fef3c7;
+    border-left: 4px solid #f59e0b;
+    padding: 1rem;
+    border-radius: 8px;
+    color: #92400e;
+    margin: 1rem 0;
+    font-size: 0.95rem;
+  }
+}
+
+.dhl-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 1.5rem 2rem;
+  border-top: 1px solid #e5e7eb;
+  
+  button {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+    
+    &.btn-secondary {
+      background: #e5e7eb;
+      color: #1f2937;
+      
+      &:hover:not(:disabled) {
+        background: #d1d5db;
+      }
+    }
+    
+    &.btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      
+      &:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      }
+      
+      &.btn-danger {
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        
+        &:hover:not(:disabled) {
+          box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+        }
+      }
+    }
+    
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .dhl-dialog {
+    width: 95%;
+    max-height: 95vh;
+  }
+  
+  .dhl-dialog-header {
+    padding: 1rem 1.5rem;
+    
+    h2 {
+      font-size: 1.2rem;
+    }
+  }
+  
+  .dhl-dialog-content {
+    padding: 1.5rem;
+  }
+  
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .dhl-dialog-footer {
+    flex-direction: column-reverse;
+    
+    button {
+      width: 100%;
+    }
+  }
+}
+
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }

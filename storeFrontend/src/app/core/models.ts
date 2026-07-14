@@ -384,6 +384,12 @@ export interface Order {
   // Shipping Provider
   shippingProvider?: string; // "DHL", "PICKUP", "GLOBAL_DELIVERY"
   
+  // Package Dimensions & Weight (für DHL/Versand)
+  packageWeightGrams?: number;
+  packageLengthMm?: number;
+  packageWidthMm?: number;
+  packageHeightMm?: number;
+  
   paymentMethod?: string; // CASH_ON_DELIVERY, BANK_TRANSFER, CREDIT_CARD, PAYPAL
   phoneVerificationId?: number;
   phoneVerified?: boolean;
