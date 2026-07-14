@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -395,6 +395,8 @@ export class RegisterComponent implements OnInit, OnDestroy {
   captchaEnabled = environment.captcha.enabled;
   captchaToken: string | null = null;
   captchaError = '';
+  captchaConfigurationError = false;
+  @ViewChild(CaptchaComponent) captchaComponent?: CaptchaComponent;
 
   constructor(
     private fb: FormBuilder,
@@ -420,10 +422,21 @@ export class RegisterComponent implements OnInit, OnDestroy {
 
   /**
    * CAPTCHA Token empfangen
+   * SECURITY: Keine Token-Längen in Production (könnte Fingerprinting ermöglichen)
    */
   onCaptchaToken(token: string): void {
     this.captchaToken = token;
     this.captchaError = '';
+    this.captchaConfigurationError = false;
+    
+    // Nur in Development loggen
+    if (!environment.production) {
+      const isRealToken = token && token !== 'CAPTCHA_DISABLED_DEV_MODE';
+      console.log('[REGISTER] CAPTCHA Token empfangen:', {
+        type: isRealToken ? 'REAL' : 'DUMMY',
+        length: token?.length ?? 0
+      });
+    }
   }
 
   /**
@@ -432,12 +445,32 @@ export class RegisterComponent implements OnInit, OnDestroy {
   onCaptchaError(error: string): void {
     this.captchaError = error;
     this.captchaToken = null;
+    
+    // Konfigurationsfehler = harter Fehler in Production
+    if (error === 'CAPTCHA_CONFIGURATION_ERROR') {
+      this.captchaConfigurationError = true;
+    }
   }
 
   onSubmit(): void {
     if (this.registerForm.valid) {
-      // CAPTCHA Validation (wenn aktiviert)
+      // Konfigurationsfehler blockiert Submit in Production
+      if (environment.production && this.captchaConfigurationError) {
+        this.errorMessage = this.translationService.translate('auth.captchaConfigError') || 
+                           'Die Sicherheitsprüfung konnte nicht geladen werden. Bitte versuchen Sie es später erneut.';
+        return;
+      }
+
+      // CAPTCHA Token vorhanden?
       if (this.captchaEnabled && !this.captchaToken) {
+        this.errorMessage = this.translationService.translate('auth.captchaRequired') || 
+                           'Please complete the CAPTCHA verification';
+        return;
+      }
+
+      // WICHTIG: Dummy-Token vom Dev-Mode nicht in Production akzeptieren!
+      if (environment.production && this.captchaEnabled && this.captchaToken === 'CAPTCHA_DISABLED_DEV_MODE') {
+        console.error('[REGISTER] CRITICAL: Dummy-Token in Production!');
         this.errorMessage = this.translationService.translate('auth.captchaRequired') || 
                            'Please complete the CAPTCHA verification';
         return;
@@ -450,59 +483,49 @@ export class RegisterComponent implements OnInit, OnDestroy {
       const formData = {
         ...this.registerForm.value,
         lang: this.translationService.currentLang() || 'en',
-        captchaToken: this.captchaToken // CAPTCHA Token hinzufügen
+        captchaToken: this.captchaToken
       };
 
       this.authService.register(formData).subscribe({
         next: () => {
           this.loading = false;
           this.registeredEmail = formData.email;
-          this.successMessage = this.translationService.translate('auth.registerSuccess');
-          this.startResendCooldown(60);
-          this.registerForm.reset();
+          this.successMessage = this.translationService.translate('auth.registrationSuccess') ||
+                               'Registration successful! Please check your email to verify your account.';
+          
+          // WICHTIG: Token nach erfolgreichem Submit löschen und Widget zurücksetzen
+          this.resetCaptcha();
         },
-        error: (error) => {
+        error: (err) => {
           this.loading = false;
-          const errorMsg = error.error?.message || '';
+          console.error('Registration error:', err);
           
-          const emailExistsPatterns = [
-            'email already exists',
-            'email already registered',
-            'already exists',
-            'bereits registriert',
-            'existiert bereits',
-            'already in use',
-            'duplicate',
-            'constraint'
-          ];
+          // WICHTIG: Token nach Fehler löschen und Widget zurücksetzen
+          this.resetCaptcha();
           
-          const isEmailExists = emailExistsPatterns.some(pattern => 
-            errorMsg.toLowerCase().includes(pattern.toLowerCase())
-          ) || error.status === 409;
-
-          if (isEmailExists) {
+          if (err.status === 409 && err.error?.error === 'USER_EXISTS') {
             this.errorMessage = this.translationService.translate('auth.emailAlreadyExists') ||
-                               'Diese E-Mail ist bereits registriert.';
-            
-            this.redirectCountdown = 3;
-            this.redirectTimer = setInterval(() => {
-              this.redirectCountdown--;
-              if (this.redirectCountdown <= 0) {
-                clearInterval(this.redirectTimer);
-                this.router.navigate(['/login'], {
-                  queryParams: { 
-                    returnUrl: this.returnUrl,
-                    email: formData.email,
-                    autoFill: 'true'
-                  }
-                });
-              }
-            }, 1000);
+                               'This email address is already registered.';
+          } else if (err.status === 400 && err.error?.error === 'CAPTCHA_VALIDATION_FAILED') {
+            this.errorMessage = this.translationService.translate('auth.captchaInvalid') ||
+                               'CAPTCHA validation failed. Please try again.';
           } else {
-            this.errorMessage = errorMsg || this.translationService.translate('auth.registerFailed');
+            this.errorMessage = err.error?.message ||
+                               this.translationService.translate('auth.registrationError') ||
+                               'Registration failed. Please try again.';
           }
         }
       });
+    }
+  }
+
+  /**
+   * Reset CAPTCHA Token und Widget nach Submit oder Fehler
+   */
+  private resetCaptcha(): void {
+    this.captchaToken = null;
+    if (this.captchaComponent) {
+      this.captchaComponent.reset();
     }
   }
 

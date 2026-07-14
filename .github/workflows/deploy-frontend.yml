@@ -62,6 +62,23 @@ jobs:
           echo "✅ Clarity ID injected: ${CLARITY_VAL:-<empty – Clarity disabled>}"
           grep clarityId storeFrontend/src/environments/environment.prod.ts
 
+      # ── hCaptcha Site Key injizieren ────────────────────────────
+      # Ersetzt den Platzhalter in environment.prod.ts VOR dem Build.
+      # WICHTIG: GitHub Secret HCAPTCHA_SITE_KEY muss gesetzt sein!
+      - name: Inject HCAPTCHA_SITE_KEY into environment.prod.ts
+        run: |
+          HCAPTCHA_VAL="${{ secrets.HCAPTCHA_SITE_KEY }}"
+          if [ -z "$HCAPTCHA_VAL" ]; then
+            echo "⚠️ WARNING: HCAPTCHA_SITE_KEY Secret ist nicht gesetzt!"
+            echo "⚠️ CAPTCHA wird nicht funktionieren auf Production!"
+            echo "⚠️ Setze GitHub Secret: Settings → Secrets → HCAPTCHA_SITE_KEY"
+            # Optional: Build abbrechen wenn hCaptcha fehlt
+            # exit 1
+          fi
+          sed -i "s/__HCAPTCHA_SITE_KEY__/${HCAPTCHA_VAL}/g" storeFrontend/src/environments/environment.prod.ts
+          echo "✅ hCaptcha Site Key injected: ${HCAPTCHA_VAL:-<MISSING>}"
+          grep "siteKey:" storeFrontend/src/environments/environment.prod.ts
+
       - name: Build Angular app
         working-directory: storeFrontend
         run: npm run build:prod
@@ -69,12 +86,22 @@ jobs:
       - name: Verify no unreplaced placeholders in dist
         working-directory: storeFrontend
         run: |
+          echo "🔍 Checking for unreplaced placeholders in dist..."
+          
+          # Check for Clarity placeholder
           if grep -r "__CLARITY_ID__" dist/markt-ma-frontend/ --include="*.js" --include="*.html" -l 2>/dev/null; then
             echo "❌ __CLARITY_ID__ Platzhalter noch im dist – sed-Schritt fehlgeschlagen!"
             exit 1
-          else
-            echo "✅ Kein Platzhalter im dist – Build sauber"
           fi
+          
+          # Check for hCaptcha placeholder
+          if grep -r "__HCAPTCHA_SITE_KEY__" dist/markt-ma-frontend/ --include="*.js" --include="*.html" -l 2>/dev/null; then
+            echo "❌ __HCAPTCHA_SITE_KEY__ Platzhalter noch im dist – sed-Schritt fehlgeschlagen!"
+            echo "⚠️ GitHub Secret HCAPTCHA_SITE_KEY ist vermutlich nicht gesetzt!"
+            exit 1
+          fi
+          
+          echo "✅ Keine Platzhalter im dist – Build sauber"
 
       - name: Create deployment package
         working-directory: storeFrontend

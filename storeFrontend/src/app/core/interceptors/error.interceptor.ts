@@ -19,13 +19,11 @@ export class ErrorInterceptor implements HttpInterceptor {
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     return next.handle(req).pipe(
       catchError((error: HttpErrorResponse) => {
-        // Detailliertes Logging für Debugging
+        // Detailliertes Logging für Debugging (KEINE sensiblen Daten)
         console.error('HTTP Error:', {
           status: error.status,
           statusText: error.statusText,
           url: error.url,
-          error: error.error,
-          headers: error.headers,
           message: error.message
         });
 
@@ -42,11 +40,6 @@ export class ErrorInterceptor implements HttpInterceptor {
         // Prüfe ob User eingeloggt ist
         const currentUser = this.authService.getCurrentUser();
         const token = this.authService.getToken();
-        console.log('Current User:', currentUser);
-        console.log('Token exists:', !!token);
-        console.log('Is public storefront request:', isPublicStorefrontRequest);
-        console.log('Is storefront subdomain:', isStorefrontSubdomain);
-        console.log('Is public page:', isPublicPage);
 
         if (error.status === 401) {
           // Unauthorized - nur umleiten wenn es KEIN öffentlicher Storefront-Request ist

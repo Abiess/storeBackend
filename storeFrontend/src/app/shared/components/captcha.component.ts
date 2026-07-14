@@ -18,17 +18,24 @@ import { environment } from '../../../environments/environment';
   standalone: true,
   imports: [CommonModule],
   template: `
-    @if (captchaEnabled && !captchaToken) {
+    @if (captchaEnabled && !captchaToken && !captchaConfigurationError) {
       <div #captchaContainer class="captcha-wrapper"></div>
     }
     @if (captchaToken) {
       <div class="captcha-success">✅ Verification successful</div>
+    }
+    @if (captchaConfigurationError) {
+      <div class="captcha-error">⚠️ Sicherheitsprüfung konnte nicht geladen werden</div>
     }
   `,
   styles: [`
     .captcha-wrapper { margin: 16px 0; min-height: 78px; }
     .captcha-success {
       color: #10b981; font-size: 14px; margin: 8px 0;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .captcha-error {
+      color: #ef4444; font-size: 14px; margin: 8px 0;
       display: flex; align-items: center; gap: 8px;
     }
   `]
@@ -44,6 +51,7 @@ export class CaptchaComponent implements OnInit, AfterViewInit, OnDestroy {
   provider = environment.captcha?.provider ?? 'hcaptcha';
   siteKey = environment.captcha?.siteKey ?? '';
   captchaToken: string | null = null;
+  captchaConfigurationError = false;
 
   private widgetId: string | null = null;
   private readonly isBrowser: boolean;
@@ -53,14 +61,32 @@ export class CaptchaComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnInit() {
-    if (!this.isBrowser || !this.captchaEnabled) {
+    // SSR: Kein Browser-API, keine CAPTCHA-Logik
+    if (!this.isBrowser) {
+      return;
+    }
+
+    // CAPTCHA explizit deaktiviert in Development
+    if (!environment.production && !this.captchaEnabled) {
+      console.log('[CAPTCHA] CAPTCHA deaktiviert in Development environment');
       this.emitDummyToken();
       return;
     }
 
-    if (!this.siteKey || this.siteKey.includes('__') || this.siteKey.trim() === '') {
-      console.warn('[CAPTCHA] Site Key ist Platzhalter oder leer – CAPTCHA übersprungen');
-      this.emitDummyToken();
+    // CAPTCHA aktiviert, aber Site Key fehlt oder ist Platzhalter
+    if (this.captchaEnabled && (!this.siteKey || this.siteKey.includes('__') || this.siteKey.trim() === '')) {
+      console.error('[CAPTCHA] CRITICAL: Site Key fehlt oder ist Platzhalter!');
+      console.error('[CAPTCHA] Production-Build ohne GitHub Secret HCAPTCHA_SITE_KEY?');
+      
+      if (environment.production) {
+        // Production: Harter Konfigurationsfehler
+        this.captchaConfigurationError = true;
+        this.error.emit('CAPTCHA_CONFIGURATION_ERROR');
+      } else {
+        // Development: Fallback zu Dummy-Token
+        console.warn('[CAPTCHA] Development: Fallback zu Dummy-Token');
+        this.emitDummyToken();
+      }
       return;
     }
 
@@ -68,12 +94,19 @@ export class CaptchaComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit() {
-    if (!this.isBrowser || !this.captchaEnabled || !this.siteKey || this.siteKey.includes('__')) {
+    // Nur Widget rendern wenn Browser UND CAPTCHA enabled UND kein Konfigurationsfehler
+    if (!this.isBrowser || !this.captchaEnabled || this.captchaConfigurationError) {
       return;
     }
+    
+    if (!this.siteKey || this.siteKey.includes('__') || this.siteKey.trim() === '') {
+      // Site Key fehlt - bereits in ngOnInit behandelt
+      return;
+    }
+    
     this.loadScript().then(() => this.renderWidget()).catch(err => {
       console.error('[CAPTCHA] Script-Load fehlgeschlagen:', err);
-      this.error.emit('CAPTCHA Script Load Failed');
+      this.error.emit('CAPTCHA_SCRIPT_LOAD_FAILED');
     });
   }
 
@@ -142,7 +175,13 @@ export class CaptchaComponent implements OnInit, AfterViewInit, OnDestroy {
       this.widgetId = hcaptcha.render(container, {
         sitekey: this.siteKey,
         callback: (token: string) => {
-          console.log('[CAPTCHA] ✅ Token erhalten');
+          // SECURITY: Keine Token-Längen in Production (Fingerprinting-Risiko)
+          if (!environment.production) {
+            console.log('[CAPTCHA] Token erhalten:', {
+              present: !!token,
+              length: token?.length ?? 0
+            });
+          }
           this.captchaToken = token;
           this.tokenReceived.emit(token);
         },

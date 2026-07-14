@@ -123,6 +123,7 @@ captcha:
   enabled: ${CAPTCHA_ENABLED:true}
   provider: ${CAPTCHA_PROVIDER:hcaptcha}
   secret: ${CAPTCHA_SECRET:}
+  site-key: ${HCAPTCHA_SITE_KEY:}
   min-score: ${CAPTCHA_MIN_SCORE:0.5}
 
 # MinIO disabled locally by default

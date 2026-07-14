@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import lombok.ToString;
 
 @Data
 public class RegisterRequest {
@@ -13,6 +14,7 @@ public class RegisterRequest {
 
     @NotBlank(message = "Password is required")
     @Size(min = 6, message = "Password must be at least 6 characters")
+    @ToString.Exclude
     private String password;
 
     // Optional: Für Warenkorb-Migration von Gast zu User
@@ -22,6 +24,7 @@ public class RegisterRequest {
     private String lang;
 
     // Optional: CAPTCHA Token (hCaptcha oder reCAPTCHA)
+    @ToString.Exclude
     private String captchaToken;
 
     // Explizite Getter für Lombok-Kompatibilität

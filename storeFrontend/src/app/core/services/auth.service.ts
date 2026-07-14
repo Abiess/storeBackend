@@ -109,23 +109,20 @@ export class AuthService {
     return this.http.post<AuthResponse>(`${environment.apiUrl}/auth/register`, data)
       .pipe(
         tap(response => {
-          // FIXED: Debug-Ausgabe für Token-Speicherung
-          console.log('📝 Registrierung erfolgreich - Response:', response);
-          console.log('🔑 Token erhalten:', response.token ? 'Ja (Länge: ' + response.token.length + ')' : 'Nein');
-          console.log('👤 User:', response.user);
+          // SECURITY: KEINE personenbezogenen Daten in Production-Logs
+          // Nur Status-Meldungen, keine E-Mail, kein Token-Inhalt
+          if (!environment.production) {
+            console.log('📝 Registrierung erfolgreich - User:', response.user?.email);
+          } else {
+            console.log('📝 Registrierung erfolgreich');
+          }
 
-          // Store token and user after successful registration - FIXED: use 'auth_token' everywhere
+          // Store token and user after successful registration
           localStorage.setItem('auth_token', response.token);
           localStorage.setItem('currentUser', JSON.stringify(response.user));
           this.currentUserSubject.next(response.user);
 
-          // FIXED: Verifiziere sofort, dass Token gespeichert wurde
-          const storedToken = localStorage.getItem('auth_token');
-          console.log('✅ Token gespeichert:', storedToken ? 'Ja (Länge: ' + storedToken.length + ')' : 'Nein');
-          console.log('🔍 Token-Vergleich:', storedToken === response.token ? 'Identisch ✅' : 'UNTERSCHIEDLICH ❌');
-
-          // FIXED: Nach Registrierung - Trigger Warenkorb-Update (Guest-Cart wird migriert!)
-          console.log('✅ Registrierung erfolgreich - Trigger Warenkorb-Update für Migration');
+          // Nach Registrierung - Trigger Warenkorb-Update (Guest-Cart wird migriert!)
           if (this.cartService) {
             this.cartService.triggerCartUpdate();
           }
