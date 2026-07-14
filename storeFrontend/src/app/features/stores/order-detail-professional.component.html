@@ -256,6 +256,20 @@
           </div>
         </div>
 
+        <!-- Shipper Address (Store) -->
+        <div class="dhl-section" *ngIf="storeData">
+          <h3>📤 Absender</h3>
+          <div class="address-compact">
+            <p><strong>{{ storeData.name }}</strong></p>
+            <p *ngIf="storeData.address">{{ storeData.address }}</p>
+            <p *ngIf="storeData.contactEmail"><small>📧 {{ storeData.contactEmail }}</small></p>
+            <p *ngIf="storeData.contactPhone"><small>📞 {{ storeData.contactPhone }}</small></p>
+          </div>
+          <div class="info-note" *ngIf="!storeData.address">
+            ℹ️ <em>Bitte Store-Adresse in den Einstellungen hinterlegen.</em>
+          </div>
+        </div>
+
         <!-- Receiver Address -->
         <div class="dhl-section" *ngIf="shippingAddress">
           <h3>📥 Empfänger / Lieferadresse</h3>
@@ -390,21 +404,21 @@
               <label>Name:</label>
               <span>{{ storeData?.name || '–' }}</span>
             </div>
-            <div class="preview-field full-width">
+            <div class="preview-field full-width" *ngIf="storeData?.address">
               <label>Adresse:</label>
-              <span>{{ storeData?.address || '–' }}</span>
+              <span>{{ storeData?.address }}</span>
             </div>
-            <div class="preview-field">
+            <div class="preview-field" *ngIf="storeData?.contactPhone">
               <label>Telefon:</label>
-              <span>{{ storeData?.contactPhone || '–' }}</span>
+              <span>{{ storeData?.contactPhone }}</span>
             </div>
-            <div class="preview-field">
+            <div class="preview-field" *ngIf="storeData?.contactEmail">
               <label>E-Mail:</label>
-              <span>{{ storeData?.contactEmail || '–' }}</span>
+              <span>{{ storeData?.contactEmail }}</span>
             </div>
           </div>
           <div class="info-note" *ngIf="!storeData?.address">
-            ℹ️ <em>Bitte Store-Adresse in den Einstellungen hinterlegen für vollständige DHL-Daten.</em>
+            ℹ️ <em>Bitte Store-Adresse in den Einstellungen hinterlegen.</em>
           </div>
         </div>
 
