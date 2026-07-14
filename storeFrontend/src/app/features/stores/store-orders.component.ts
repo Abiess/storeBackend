@@ -304,7 +304,7 @@ export class StoreOrdersComponent implements OnInit {
     {
       icon: '✅',
       label: 'DHL Sendung prüfen',
-      handler: (order) => this.validateDhlShipment(order),
+      handler: (order) => this.navigateToOrder(order.id), // ← Öffne Detail-Seite statt direktem Validate
       visible: (order: Order) => 
         !order.dhlShipmentNo && 
         (order.shippingProvider === 'DHL' || (!order.shippingProvider && (order.status === 'PENDING' || order.status === 'CONFIRMED')))
@@ -312,7 +312,7 @@ export class StoreOrdersComponent implements OnInit {
     {
       icon: '📦',
       label: 'DHL Label erstellen',
-      handler: (order) => this.createDhlLabel(order),
+      handler: (order) => this.navigateToOrder(order.id), // ← Öffne Detail-Seite statt direktem Label-Create
       visible: (order: Order) => 
         !order.dhlShipmentNo && 
         (order.shippingProvider === 'DHL' || (!order.shippingProvider && (order.status === 'PENDING' || order.status === 'CONFIRMED')))
@@ -456,6 +456,12 @@ export class StoreOrdersComponent implements OnInit {
     return item.productTitle || item.productName || item.name || 'Unbekanntes Produkt';
   }
 
+  // ════════════════════════════════════════════════════════════════════
+  // DEPRECATED: Diese Methoden wurden durch den DHL Preview Dialog in
+  // order-detail-professional.component ersetzt. Buttons navigieren jetzt
+  // zur Order-Detail-Seite statt direkt API-Calls mit window.confirm zu machen.
+  // ════════════════════════════════════════════════════════════════════
+  /*
   validateDhlShipment(order: Order): void {
     if (!confirm('DHL Sendung für Bestellung ' + order.orderNumber + ' validieren?\n\n' +
                  'Dies prüft nur die Sendung, erstellt kein Label und verursacht keine Kosten.')) {
@@ -534,9 +540,6 @@ export class StoreOrdersComponent implements OnInit {
     });
   }
 
-  /**
-   * Zeigt Preview-Dialog mit Validate-Daten und erstellt erst nach Bestätigung das Label
-   */
   private showLabelPreviewDialog(order: Order, validateResponse: any): void {
     // Preview-Text aufbauen
     const preview = `
@@ -579,9 +582,6 @@ Fortfahren und Label erstellen?
     this.createDhlLabelConfirmed(order);
   }
 
-  /**
-   * Erstellt das echte DHL Label (nach Validate + Confirm)
-   */
   private createDhlLabelConfirmed(order: Order): void {
     this.loading = true;
     const url = `${environment.apiUrl}/admin/orders/${order.id}/dhl/create-label`;
@@ -608,6 +608,7 @@ Fortfahren und Label erstellen?
       }
     });
   }
+  */
 
   downloadDhlLabel(order: Order): void {
     if (order.dhlLabelUrl) {

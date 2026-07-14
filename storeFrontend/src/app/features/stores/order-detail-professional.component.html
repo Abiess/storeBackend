@@ -241,30 +241,39 @@
       <div class="dhl-dialog-content" *ngIf="!dhlSuccess && !dhlError && !showPreview && !showLabelConfirm">
         <!-- Order Info -->
         <div class="dhl-section">
-          <h3>Bestellung</h3>
+          <h3>📋 Bestellung</h3>
           <div class="info-row">
             <label>Bestellnummer:</label>
-            <span>{{ order?.orderNumber }}</span>
+            <span>{{ order?.orderNumber || 'MARKTMA-' + order?.id }}</span>
           </div>
           <div class="info-row">
             <label>Kunde:</label>
             <span>{{ order?.customerName || 'Gast' }}</span>
           </div>
           <div class="info-row">
-            <label>Betrag:</label>
-            <span>{{ order?.totalAmount | currency:'EUR' }}</span>
+            <label>Versandart:</label>
+            <span>{{ order?.shippingProvider || 'DHL' }}</span>
           </div>
         </div>
 
         <!-- Receiver Address -->
-        <div class="dhl-section" *ngIf="getAddress(order?.shippingAddress) as shipping">
-          <h3>📥 Empfänger</h3>
+        <div class="dhl-section" *ngIf="shippingAddress">
+          <h3>📥 Empfänger / Lieferadresse</h3>
           <div class="address-compact">
-            <p><strong>{{ shipping.firstName }} {{ shipping.lastName }}</strong></p>
-            <p>{{ shipping.address1 }}</p>
-            <p>{{ shipping.postalCode }} {{ shipping.city }}</p>
-            <p>{{ shipping.country }}</p>
-            <p *ngIf="order?.customerEmail"><small>{{ order?.customerEmail }}</small></p>
+            <p><strong>{{ shippingAddress.firstName }} {{ shippingAddress.lastName }}</strong></p>
+            <p>{{ shippingAddress.address1 }}{{ shippingAddress.address2 ? ', ' + shippingAddress.address2 : '' }}</p>
+            <p>{{ shippingAddress.postalCode }} {{ shippingAddress.city }}</p>
+            <p>{{ shippingAddress.country }}</p>
+            <p *ngIf="order?.customerEmail"><small>📧 {{ order?.customerEmail }}</small></p>
+            <p *ngIf="shippingAddress.phone"><small>📞 {{ shippingAddress.phone }}</small></p>
+          </div>
+        </div>
+
+        <!-- Warning: No Shipping Address -->
+        <div class="dhl-section" *ngIf="!shippingAddress">
+          <div class="dhl-warning">
+            ⚠️ <strong>Keine Lieferadresse gefunden.</strong><br>
+            Bitte überprüfe die Bestellung und füge eine Lieferadresse hinzu, bevor du ein DHL Label erstellst.
           </div>
         </div>
 
@@ -399,13 +408,14 @@
           </div>
         </div>
 
-        <!-- Empfänger -->
+        <!-- Empfänger / Lieferadresse -->
         <div class="preview-section">
-          <h3>📥 Empfänger</h3>
+          <h3>📥 Empfänger / Lieferadresse</h3>
           <div class="preview-grid">
             <div class="preview-field full-width">
               <label>Name:</label>
-              <span>{{ order?.customerName || 'Gast' }}</span>
+              <span *ngIf="shippingAddress">{{ shippingAddress.firstName }} {{ shippingAddress.lastName }}</span>
+              <span *ngIf="!shippingAddress">{{ order?.customerName || 'Gast' }}</span>
             </div>
             <div class="preview-field">
               <label>Straße/Hausnummer:</label>
@@ -434,6 +444,9 @@
               <label>E-Mail-Adresse:</label>
               <span>{{ order?.customerEmail || '–' }}</span>
             </div>
+          </div>
+          <div class="info-note" *ngIf="!shippingAddress">
+            ⚠️ <em>Keine Lieferadresse gefunden. Bitte Adresse in der Bestellung prüfen.</em>
           </div>
         </div>
 

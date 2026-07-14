@@ -53,7 +53,7 @@ export class DhlService {
    * DHL Sendung validieren (kein Label, keine Kosten)
    */
   validateShipment(storeId: number, orderId: number, request?: DhlValidateRequest): Observable<DhlValidateResponse> {
-    const url = `${this.baseUrl}/api/admin/orders/${orderId}/dhl/validate`;
+    const url = `${this.baseUrl}/admin/orders/${orderId}/dhl/validate`;
     return this.http.post<DhlValidateResponse>(url, request || {});
   }
 
@@ -61,7 +61,7 @@ export class DhlService {
    * Live DHL Label erstellen (Kosten!)
    */
   createLabel(storeId: number, orderId: number, request?: DhlValidateRequest): Observable<DhlLabelResponse> {
-    const url = `${this.baseUrl}/api/admin/orders/${orderId}/dhl/label`;
+    const url = `${this.baseUrl}/admin/orders/${orderId}/dhl/label`;
     return this.http.post<DhlLabelResponse>(url, request || {});
   }
 }

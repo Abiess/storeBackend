@@ -647,10 +647,11 @@ public class DhlLabelService {
             log.warn("   ⚠️ Shipper is NULL!");
         }
         
-        // Consignee (Empfänger)
+        // Consignee (Empfänger / Lieferadresse)
         if (shipment.getConsignee() != null) {
             DhlShipmentRequest.Address consignee = shipment.getConsignee();
-            log.info("📥 CONSIGNEE (Empfänger):");
+            log.info("📥 CONSIGNEE (Empfänger / Lieferadresse):");
+            log.info("   addressSource: SHIPPING_ADDRESS");  // ← WICHTIG: Quelle loggen
             log.info("   name1: {}", consignee.getName1());
             log.info("   addressStreet: {}", consignee.getAddressStreet());
             log.info("   addressHouse: {}", consignee.getAddressHouse());
