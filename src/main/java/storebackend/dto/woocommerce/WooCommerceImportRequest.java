@@ -1,31 +1,42 @@
 package storebackend.dto.woocommerce;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 /**
  * Request: WooCommerce Import starten
  */
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class WooCommerceImportRequest {
     
     /**
-     * Bestehende Produkte aktualisieren? (MVP: false = Skip)
+     * Specific product IDs to import (optional).
+     * If null or empty, import all products from preview.
      */
-    private Boolean updateExisting = false;
+    private List<Long> productIds;
     
     /**
      * Bilder importieren?
      */
-    private Boolean importImages = true;
+    @Builder.Default
+    private boolean importImages = true;
     
     /**
-     * Max. Anzahl Produkte (null = alle)
-     * Wird durch Plan-Limits begrenzt
+     * Bestehende Produkte überspringen?
+     */
+    @Builder.Default
+    private boolean skipExisting = true;
+    
+    /**
+     * Max. Anzahl Produkte (null = alle, max 50 für MVP)
      */
     private Integer limit;
-    
-    /**
-     * Ab Seite X importieren (für teilweisen Import)
-     */
-    private Integer startPage = 1;
 }
+

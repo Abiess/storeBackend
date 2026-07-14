@@ -44,6 +44,7 @@ public class WooCommerceController {
     private final StoreRepository storeRepository;
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
+    private final storebackend.service.woocommerce.WooCommerceImportService importService;
 
     // ─────────────────────────────────────────────────────────────────────────
     // GET Config
@@ -245,6 +246,53 @@ public class WooCommerceController {
                 "messageKey", getErrorMessageKey(e),
                 "detail", e.getMessage()
             ));
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // POST Import
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @PostMapping("/import")
+    public ResponseEntity<WooCommerceImportResponse> startImport(
+            @PathVariable Long storeId,
+            @RequestBody(required = false) WooCommerceImportRequest request,
+            @AuthenticationPrincipal User user) {
+        
+        verifyOwnership(storeId, user);
+        
+        // Default request if not provided
+        if (request == null) {
+            request = WooCommerceImportRequest.builder()
+                    .importImages(true)
+                    .skipExisting(true)
+                    .build();
+        }
+        
+        try {
+            WooCommerceImportResponse response = importService.startImport(storeId, request, user);
+            
+            log.info("✅ WooCommerce import completed for store {}: {} imported, {} skipped, {} failed", 
+                storeId, 
+                response.getImportedCount(),
+                response.getSkippedCount(),
+                response.getFailedCount()
+            );
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("❌ WooCommerce import failed for store {}: {}", storeId, e.getMessage());
+            
+            WooCommerceImportResponse errorResponse = WooCommerceImportResponse.builder()
+                    .status("FAILED")
+                    .importedCount(0)
+                    .skippedCount(0)
+                    .failedCount(0)
+                    .messageKey("woocommerce.import.failed")
+                    .build();
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
 

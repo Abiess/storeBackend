@@ -58,6 +58,21 @@ export class WooCommerceService {
       {}
     );
   }
+
+  /**
+   * Startet WooCommerce Import.
+   */
+  startImport(storeId: number, request?: WooCommerceImportRequest): Observable<WooCommerceImportResponse> {
+    const body = request || {
+      importImages: true,
+      skipExisting: true
+    };
+    
+    return this.http.post<WooCommerceImportResponse>(
+      `${this.apiUrl}/stores/${storeId}/woocommerce/import`,
+      body
+    );
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -121,4 +136,25 @@ export interface WooCommerceProductPreview {
   alreadyImported: boolean;
   hasVariantLimitWarning: boolean;
   skipReason?: string;
+}
+
+export interface WooCommerceImportRequest {
+  productIds?: number[];
+  importImages?: boolean;
+  skipExisting?: boolean;
+  limit?: number;
+}
+
+export interface WooCommerceImportResponse {
+  jobId: number;
+  status: string; // IN_PROGRESS | COMPLETED | FAILED
+  importedCount: number;
+  skippedCount: number;
+  failedCount: number;
+  warnings?: string[];
+  messageKey: string;
+  // Backwards compatibility
+  totalProducts?: number;
+  estimatedTime?: number;
+  message?: string;
 }

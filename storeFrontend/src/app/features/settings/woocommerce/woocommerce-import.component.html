@@ -262,40 +262,78 @@
         <button class="btn-secondary" (click)="goToStep('test')">
           ← {{ 'common.back' | translate }}
         </button>
-        <button class="btn-primary" 
-                (click)="goToStep('import')" 
-                [disabled]="!previewResult">
-          {{ 'common.next' | translate }} →
+        <button class="btn-primary btn-import" 
+                (click)="startImport()" 
+                [disabled]="!previewResult || importing">
+          <span *ngIf="!importing">🚀 {{ 'woocommerce.startImport' | translate }}</span>
+          <span *ngIf="importing">⏳ Importiere...</span>
         </button>
       </div>
     </div>
   </div>
 
   <!-- ================================================================ -->
-  <!-- STEP 4: Import (DISABLED) -->
+  <!-- STEP 4: Import -->
   <!-- ================================================================ -->
   <div class="step-content" *ngIf="currentStep === 'import'">
     <div class="import-card">
       <h2>🚀 {{ 'woocommerce.importTitle' | translate }}</h2>
       
-      <div class="coming-soon-notice">
-        <div class="icon">⏳</div>
-        <h3>{{ 'woocommerce.importComingSoon' | translate }}</h3>
-        <p>{{ 'woocommerce.importComingSoonHint' | translate }}</p>
+      <!-- Import Result (if completed) -->
+      <div class="import-result" *ngIf="importResult">
+        <div class="result-header" [ngClass]="importResult.status === 'COMPLETED' ? 'success' : 'error'">
+          <span class="icon">{{ importResult.status === 'COMPLETED' ? '✅' : '❌' }}</span>
+          <h3>{{ importResult.status === 'COMPLETED' ? 'Import abgeschlossen' : 'Import fehlgeschlagen' }}</h3>
+        </div>
+
+        <div class="import-stats">
+          <div class="stat success">
+            <strong>{{ importResult.importedCount }}</strong>
+            <span>importiert</span>
+          </div>
+          <div class="stat warn">
+            <strong>{{ importResult.skippedCount }}</strong>
+            <span>übersprungen</span>
+          </div>
+          <div class="stat error" *ngIf="importResult.failedCount > 0">
+            <strong>{{ importResult.failedCount }}</strong>
+            <span>Fehler</span>
+          </div>
+        </div>
+
+        <!-- Warnings -->
+        <div class="warnings" *ngIf="importResult.warnings && importResult.warnings.length > 0">
+          <h4>⚠️ Hinweise:</h4>
+          <ul>
+            <li *ngFor="let warning of importResult.warnings">{{ warning }}</li>
+          </ul>
+        </div>
       </div>
 
-      <div class="info-box">
-        <p>{{ 'woocommerce.importDoesNotModifyWooCommerce' | translate }}</p>
-      </div>
+      <!-- Import Form (if not yet imported) -->
+      <div class="import-form" *ngIf="!importResult">
+        <div class="info-box">
+          <p>{{ 'woocommerce.importInfo' | translate }}</p>
+          <p><strong>Hinweis:</strong> Variable Produkte werden im MVP noch nicht importiert und automatisch übersprungen.</p>
+        </div>
 
-      <button class="btn-import" disabled>
-        🚀 {{ 'woocommerce.startImport' | translate }} ({{ 'woocommerce.comingSoon' | translate }})
-      </button>
+        <button class="btn-import" 
+                (click)="startImport()" 
+                [disabled]="!previewResult || importing">
+          <span *ngIf="!importing">🚀 {{ 'woocommerce.startImport' | translate }}</span>
+          <span *ngIf="importing">⏳ Importiere...</span>
+        </button>
+      </div>
 
       <!-- Navigation -->
       <div class="step-navigation">
         <button class="btn-secondary" (click)="goToStep('preview')">
           ← {{ 'common.back' | translate }}
+        </button>
+        <button class="btn-primary" 
+                *ngIf="importResult"
+                (click)="goToStep('preview')">
+          {{ 'woocommerce.importAgain' | translate }}
         </button>
       </div>
     </div>

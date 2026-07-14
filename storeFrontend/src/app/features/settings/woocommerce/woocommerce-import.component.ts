@@ -1,6 +1,7 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { ToastService } from '@app/core/services/toast.service';
 import {
@@ -9,7 +10,9 @@ import {
   WooCommerceConfigRequest,
   WooCommerceTestResponse,
   WooCommercePreviewResponse,
-  WooCommerceProductPreview
+  WooCommerceProductPreview,
+  WooCommerceImportRequest,
+  WooCommerceImportResponse
 } from '@app/core/services/woocommerce.service';
 
 /**
@@ -33,7 +36,7 @@ import {
   styleUrls: ['./woocommerce-import.component.scss']
 })
 export class WooCommerceImportComponent implements OnInit {
-  @Input() storeId!: number;
+  storeId!: number;
 
   // Wizard State
   currentStep: 'config' | 'test' | 'preview' | 'import' = 'config';
@@ -56,15 +59,35 @@ export class WooCommerceImportComponent implements OnInit {
   // Preview Result
   previewResult: WooCommercePreviewResponse | null = null;
 
+  // Import State
+  importing: boolean = false;
+  importResult: WooCommerceImportResponse | null = null;
+
   // Error
   errorMessage: string | null = null;
 
   constructor(
+    private route: ActivatedRoute,
     private wooCommerceService: WooCommerceService,
     private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
+    // Extract storeId from route parameter
+    const idParam = this.route.snapshot.paramMap.get('id');
+    
+    if (!idParam) {
+      this.toastService.error('Store ID fehlt in der URL');
+      return;
+    }
+
+    this.storeId = Number(idParam);
+    
+    if (!this.storeId || Number.isNaN(this.storeId)) {
+      this.toastService.error('Ungültige Store ID');
+      return;
+    }
+
     this.loadConfig();
   }
 
@@ -194,6 +217,56 @@ export class WooCommerceImportComponent implements OnInit {
 
   goToStep(step: 'config' | 'test' | 'preview' | 'import'): void {
     this.currentStep = step;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Step 4: Import
+  // ─────────────────────────────────────────────────────────────────────────
+
+  startImport(): void {
+    if (!this.previewResult || this.importing) {
+      return;
+    }
+
+    this.importing = true;
+    this.errorMessage = null;
+    this.importResult = null;
+
+    const request: WooCommerceImportRequest = {
+      importImages: true,
+      skipExisting: true
+    };
+
+    this.wooCommerceService.startImport(this.storeId, request).subscribe({
+      next: (response: WooCommerceImportResponse) => {
+        this.importing = false;
+        this.importResult = response;
+
+        if (response.status === 'COMPLETED') {
+          // Success toast with details
+          const message = `Import abgeschlossen: ${response.importedCount} importiert, ${response.skippedCount} übersprungen, ${response.failedCount} Fehler`;
+          this.toastService.success(message);
+
+          // Show warnings if any
+          if (response.warnings && response.warnings.length > 0) {
+            response.warnings.forEach(warning => {
+              this.toastService.warning(warning);
+            });
+          }
+
+          this.currentStep = 'import';
+        } else {
+          this.toastService.error(response.messageKey || 'woocommerce.import.failed');
+        }
+      },
+      error: (err) => {
+        this.importing = false;
+        this.errorMessage = err.error?.messageKey || 'woocommerce.error.unknown';
+        if (this.errorMessage) {
+          this.toastService.error(this.errorMessage);
+        }
+      }
+    });
   }
 
   // ─────────────────────────────────────────────────────────────────────────
