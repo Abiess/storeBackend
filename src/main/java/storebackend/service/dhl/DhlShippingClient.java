@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import storebackend.config.DhlProperties;
@@ -94,6 +95,10 @@ public class DhlShippingClient {
             HttpHeaders headers = createHeaders(token);
             HttpEntity<DhlShipmentRequest> httpRequest = new HttpEntity<>(request, headers);
             
+            // CRITICAL: Log final URL with validate=true
+            log.info("🔍 DHL Validate Request URL: POST {}", 
+                url.replace(config.getShippingBaseUrl(), "/shipping/v2"));
+            
             log.info("🔍 Validating DHL shipment: refNo={}, credentialsSource={}, {}",
                 request.getShipments().get(0).getRefNo(),
                 config.getCredentialsSource(),
@@ -140,12 +145,20 @@ public class DhlShippingClient {
             // 400: DHL Validation Fehler
             String errorBody = e.getResponseBodyAsString();
             log.error("❌ DHL Validation failed (400 Bad Request): {}", errorBody);
-            throw new RuntimeException("DHL Validation failed: " + errorBody, e);
+            // Re-throw original exception to preserve status and body
+            throw e;
+            
+        } catch (HttpServerErrorException e) {
+            // 5xx: DHL Server Error - preserve original exception
+            log.error("❌ DHL API Server Error ({}): {}", 
+                e.getStatusCode().value(), e.getResponseBodyAsString());
+            throw e;
             
         } catch (HttpClientErrorException e) {
             log.error("❌ DHL Validation failed with status {}: {}", 
                 e.getStatusCode(), e.getResponseBodyAsString());
-            throw new RuntimeException("DHL Validation failed: " + e.getMessage(), e);
+            // Re-throw to preserve details
+            throw e;
             
         } catch (RestClientException e) {
             log.error("❌ DHL Validation API Error: {}", e.getMessage());

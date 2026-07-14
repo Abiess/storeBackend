@@ -497,33 +497,44 @@ public class DhlLabelService {
                                        DhlShipmentRequest request) {
         Address shipping = order.getShippingAddress();
         
-        log.info("🔍 DHL Request Data (SAFE): orderId={}, refNo={}, product={}, country={}, " +
-                 "postalCode={}, city={}, weight={}kg, dimensions={}x{}x{}mm, billingNumber={}",
+        // Country Mapping Debug
+        String countryRaw = shipping != null ? shipping.getCountry() : "N/A";
+        String countryMapped = shipping != null ? mapCountryCode(shipping.getCountry()) : "N/A";
+        
+        DhlShipmentRequest.Shipment shipment = request.getShipments() != null && !request.getShipments().isEmpty() ? 
+            request.getShipments().get(0) : null;
+        
+        log.info("🔍 DHL Request Data (SAFE): orderId={}, refNo={}, product={}, " +
+                 "countryRaw={}, countryMapped={}, postalCode={}, city={}, weight={}kg, " +
+                 "dimensions={}x{}x{}mm, billingNumber={}, credentialsSource={}, environment={}",
             order.getId(),
-            request.getShipments() != null && !request.getShipments().isEmpty() ? 
-                request.getShipments().get(0).getRefNo() : "N/A",
-            request.getShipments() != null && !request.getShipments().isEmpty() ? 
-                request.getShipments().get(0).getProduct() : "N/A",
-            shipping != null ? shipping.getCountry() : "N/A",
+            shipment != null ? shipment.getRefNo() : "N/A",
+            shipment != null ? shipment.getProduct() : "N/A",
+            countryRaw,
+            countryMapped,
             shipping != null ? shipping.getPostalCode() : "N/A",
             shipping != null ? shipping.getCity() : "N/A",
-            request.getShipments() != null && !request.getShipments().isEmpty() &&
-                request.getShipments().get(0).getDetails() != null &&
-                request.getShipments().get(0).getDetails().getWeight() != null ?
-                request.getShipments().get(0).getDetails().getWeight().getValue() : 0,
-            request.getShipments() != null && !request.getShipments().isEmpty() &&
-                request.getShipments().get(0).getDetails() != null &&
-                request.getShipments().get(0).getDetails().getDim() != null ?
-                request.getShipments().get(0).getDetails().getDim().getLength() : 0,
-            request.getShipments() != null && !request.getShipments().isEmpty() &&
-                request.getShipments().get(0).getDetails() != null &&
-                request.getShipments().get(0).getDetails().getDim() != null ?
-                request.getShipments().get(0).getDetails().getDim().getWidth() : 0,
-            request.getShipments() != null && !request.getShipments().isEmpty() &&
-                request.getShipments().get(0).getDetails() != null &&
-                request.getShipments().get(0).getDetails().getDim() != null ?
-                request.getShipments().get(0).getDetails().getDim().getHeight() : 0,
-            config.getMaskedBillingNumber()
+            shipment != null && shipment.getDetails() != null && shipment.getDetails().getWeight() != null ?
+                shipment.getDetails().getWeight().getValue() : 0,
+            shipment != null && shipment.getDetails() != null && shipment.getDetails().getDim() != null ?
+                shipment.getDetails().getDim().getLength() : 0,
+            shipment != null && shipment.getDetails() != null && shipment.getDetails().getDim() != null ?
+                shipment.getDetails().getDim().getWidth() : 0,
+            shipment != null && shipment.getDetails() != null && shipment.getDetails().getDim() != null ?
+                shipment.getDetails().getDim().getHeight() : 0,
+            config.getMaskedBillingNumber(),
+            config.getCredentialsSource(),
+            config.getEnvironment()
         );
+        
+        // CRITICAL: Log actual consignee country in DHL request
+        if (shipment != null && shipment.getConsignee() != null) {
+            log.info("🔍 DHL Request Consignee Country: {}", shipment.getConsignee().getCountry());
+        }
+        
+        // CRITICAL: Log actual shipper country in DHL request
+        if (shipment != null && shipment.getShipper() != null) {
+            log.info("🔍 DHL Request Shipper Country: {}", shipment.getShipper().getCountry());
+        }
     }
 }
