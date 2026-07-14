@@ -110,18 +110,26 @@ public class CaptchaService {
      * - Lehnt Timeouts/Fehler ab
      */
     private boolean validateHCaptcha(String token, String ipAddress) {
+        // DIAGNOSTIC: Log configuration (KEINE Secrets!)
+        log.info("hCaptcha validation starting: secretConfigured={}, siteKeyConfigured={}", 
+                 captchaSecret != null && !captchaSecret.isBlank(),
+                 captchaSiteKey != null && !captchaSiteKey.isBlank());
+
         WebClient webClient = webClientBuilder.baseUrl(HCAPTCHA_VERIFY_URL).build();
 
         // SECURITY: Site Key mitsenden zur Validierung
         Map<String, String> formData = new java.util.LinkedHashMap<>();
         formData.put("secret", captchaSecret);
-        formData.put("response", token);
+        formData.put("response", token);  // WICHTIG: Feld muss "response" heißen, nicht "token"!
         if (captchaSiteKey != null && !captchaSiteKey.isBlank()) {
             formData.put("sitekey", captchaSiteKey);
         }
         if (ipAddress != null && !ipAddress.isBlank()) {
             formData.put("remoteip", ipAddress);
         }
+
+        // DIAGNOSTIC: Log Request-Parameter (KEINE Werte!)
+        log.info("hCaptcha API call: fields={}", formData.keySet());
 
         HCaptchaResponse response = webClient.post()
             .contentType(org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED)
@@ -130,40 +138,46 @@ public class CaptchaService {
             .bodyToMono(HCaptchaResponse.class)
             .timeout(Duration.ofSeconds(5))
             .onErrorResume(e -> {
-                log.error("hCaptcha API call failed", e);
+                log.error("hCaptcha API call failed: {}", e.getMessage(), e);
                 return Mono.empty();
             })
             .block();
 
         // SECURITY: Timeout oder API-Fehler → Ablehnen
         if (response == null) {
-            log.error("CAPTCHA validation failed: no response from hCaptcha API");
+            log.error("CAPTCHA validation failed: no response from hCaptcha API (timeout or network error)");
             return false;
         }
 
+        // DIAGNOSTIC: Log vollständige Response (KEINE Token/Secrets!)
+        log.warn("hCaptcha API response: success={}, errors={}, hostname={}, challengeTimestamp={}", 
+                 response.isSuccess(),
+                 response.getErrorCodes(),
+                 response.getHostname(),
+                 response.getChallengeTimestamp());
+
         // SECURITY: success muss true sein
         if (!response.isSuccess()) {
-            log.warn("CAPTCHA validation failed: success=false, errors={}", response.getErrorCodes());
+            log.error("CAPTCHA validation FAILED: success=false, error-codes={}", response.getErrorCodes());
+            return false;
+        }
+
+        // SECURITY: Hostname null → ablehnen (MUSS vor equals-Prüfung kommen!)
+        if (response.getHostname() == null) {
+            log.error("CAPTCHA validation failed: hostname is null");
             return false;
         }
 
         // SECURITY: Hostname prüfen (NUR exakt markt.ma, NICHT boesermarkt.ma)
         // Aktuell nur Haupt-Domain erlaubt, keine Subdomains
         // Später für Subdomains: hostname.equals("markt.ma") || hostname.endsWith(".markt.ma")
-        if (response.getHostname() != null && 
-            !"markt.ma".equalsIgnoreCase(response.getHostname())) {
-            log.error("CAPTCHA validation failed: invalid hostname={}", response.getHostname());
+        if (!"markt.ma".equalsIgnoreCase(response.getHostname())) {
+            log.error("CAPTCHA validation failed: invalid hostname={} (expected: markt.ma)", response.getHostname());
             return false;
         }
 
-        // SECURITY: Hostname null → ablehnen
-        if (response.getHostname() == null) {
-            log.error("CAPTCHA validation failed: hostname is null");
-            return false;
-        }
-
-        // KEINE personenbezogenen Daten (IP) in Production-Logs
-        log.info("CAPTCHA validation success: provider=hcaptcha, hostname={}", response.getHostname());
+        // SUCCESS
+        log.info("CAPTCHA validation SUCCESS: provider=hcaptcha, hostname={}", response.getHostname());
         return true;
     }
 
