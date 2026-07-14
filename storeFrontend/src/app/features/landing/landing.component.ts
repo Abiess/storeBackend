@@ -5,6 +5,7 @@ import { TranslatePipe } from "@app/core/pipes/translate.pipe";
 import { VideoPlayerComponent } from "@app/features/landing/video-player.component";
 import { LucideAngularModule } from 'lucide-angular';
 import { ClarityService } from '@app/core/services/clarity.service';
+import { AuthService } from '@app/core/services/auth.service';
 
 type BusinessType = 'SHOP' | 'RESTAURANT' | 'RIAD';
 
@@ -146,7 +147,7 @@ export class LandingComponent implements OnInit, OnDestroy {
     }
   ];
   
-  constructor(private router: Router, private clarity: ClarityService) {}
+  constructor(private router: Router, private clarity: ClarityService, private authService: AuthService) {}
 
   ngOnInit(): void {
     this.trackEvent('landing_page_loaded');
@@ -226,7 +227,13 @@ export class LandingComponent implements OnInit, OnDestroy {
     this.trackEvent(`landing_${source}_cta_click`);
     this.clarity.setTag('flow', 'create-store');
     this.clarity.setTag('source', source);
-    this.router.navigate(['/create-store']);
+    
+    // FIX: Authenticated user → /store-wizard, public user → /create-store
+    if (this.authService.isAuthenticated()) {
+      this.router.navigate(['/store-wizard']);
+    } else {
+      this.router.navigate(['/create-store']);
+    }
   }
 
   onBusinessTypeClick(businessType: BusinessType): void {
@@ -237,7 +244,12 @@ export class LandingComponent implements OnInit, OnDestroy {
     // Store in localStorage für create-store-public
     localStorage.setItem('preferredBusinessType', businessType);
     
-    this.router.navigate(['/create-store']);
+    // FIX: Authenticated user → /store-wizard, public user → /create-store
+    if (this.authService.isAuthenticated()) {
+      this.router.navigate(['/store-wizard']);
+    } else {
+      this.router.navigate(['/create-store']);
+    }
   }
 
   onDemoClick(): void {

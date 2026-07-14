@@ -259,9 +259,9 @@ export class LoginComponent implements OnInit {
                 // z.B. /products/177?variant=35 würde sonst zu /products/177%3Fvariant%3D35
                 this.router.navigateByUrl(this.returnUrl);
               } else {
-                // Neuer User ohne Stores → zur einfachen Store-Erstellung
-                console.log('✨ Neuer User ohne Store. Zeige simple Store-Erstellung...');
-                this.router.navigate(['/create-store']);
+                // Neuer User ohne Stores → authenticated Store-Erstellung (owner = currentUser)
+                console.log('✨ Neuer User ohne Store. Zeige Store-Wizard...');
+                this.router.navigate(['/store-wizard']);
               }
             },
             error: () => {

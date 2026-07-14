@@ -1230,8 +1230,8 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
-    // FIX: Direkt zu /create-store navigieren (kein choose-path mehr)
-    this.router.navigate(['/create-store']);
+    // FIX: Authenticated user → /store-wizard (owner = currentUser)
+    this.router.navigate(['/store-wizard']);
   }
 
   closeCreateStoreModal(): void {
