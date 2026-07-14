@@ -10,6 +10,35 @@ export interface DeliverySettings {
   currency?: string;
   createdAt: Date;
   updatedAt: Date;
+  
+  // ════════════════════════════════════════════════════════════
+  // DHL INTEGRATION SETTINGS
+  // ════════════════════════════════════════════════════════════
+  dhlEnabled?: boolean;
+  dhlEnvironment?: string; // SANDBOX | PRODUCTION
+  
+  // Credentials (masked in Response)
+  dhlClientId?: string;
+  dhlClientSecret?: string; // Masked as "********"
+  dhlUsername?: string;
+  dhlPassword?: string; // Masked as "********"
+  dhlBillingNumber?: string;
+  
+  // Shipper Address (DHL Absenderadresse)
+  dhlShipperName?: string;
+  dhlShipperStreet?: string;
+  dhlShipperHouseNumber?: string;
+  dhlShipperPostalCode?: string;
+  dhlShipperCity?: string;
+  dhlShipperCountry?: string;
+  dhlShipperEmail?: string;
+  dhlShipperPhone?: string;
+  
+  // Default Package Dimensions
+  dhlDefaultWeightGrams?: number;
+  dhlDefaultLengthMm?: number;
+  dhlDefaultWidthMm?: number;
+  dhlDefaultHeightMm?: number;
 }
 
 export interface CreateDeliverySettingsRequest {

@@ -257,16 +257,22 @@
         </div>
 
         <!-- Shipper Address (Store) -->
-        <div class="dhl-section" *ngIf="storeData">
+        <div class="dhl-section">
           <h3>📤 Absender</h3>
           <div class="address-compact">
-            <p><strong>{{ storeData.name }}</strong></p>
-            <p *ngIf="storeData.address">{{ storeData.address }}</p>
-            <p *ngIf="storeData.contactEmail"><small>📧 {{ storeData.contactEmail }}</small></p>
-            <p *ngIf="storeData.contactPhone"><small>📞 {{ storeData.contactPhone }}</small></p>
+            <p><strong>{{ storeData?.name || 'Store' }}</strong></p>
+            <p *ngIf="deliverySettings?.dhlShipperStreet || deliverySettings?.dhlShipperHouseNumber">
+              {{ deliverySettings?.dhlShipperStreet }}{{ deliverySettings?.dhlShipperHouseNumber ? ' ' + deliverySettings?.dhlShipperHouseNumber : '' }}
+            </p>
+            <p *ngIf="deliverySettings?.dhlShipperPostalCode || deliverySettings?.dhlShipperCity">
+              {{ deliverySettings?.dhlShipperPostalCode }} {{ deliverySettings?.dhlShipperCity }}
+            </p>
+            <p *ngIf="deliverySettings?.dhlShipperCountry">{{ deliverySettings?.dhlShipperCountry }}</p>
+            <p *ngIf="deliverySettings?.dhlShipperEmail"><small>📧 {{ deliverySettings?.dhlShipperEmail }}</small></p>
+            <p *ngIf="deliverySettings?.dhlShipperPhone"><small>📞 {{ deliverySettings?.dhlShipperPhone }}</small></p>
           </div>
-          <div class="info-note" *ngIf="!storeData.address">
-            ℹ️ <em>Bitte Store-Adresse in den Einstellungen hinterlegen.</em>
+          <div class="info-note" *ngIf="!deliverySettings?.dhlShipperStreet">
+            ℹ️ <em>Bitte Absenderadresse in den Delivery Settings unter /delivery hinterlegen.</em>
           </div>
         </div>
 
@@ -401,24 +407,36 @@
           <h3>📤 Absender</h3>
           <div class="preview-grid">
             <div class="preview-field full-width">
-              <label>Name:</label>
+              <label>Firmenname:</label>
               <span>{{ storeData?.name || '–' }}</span>
             </div>
-            <div class="preview-field full-width" *ngIf="storeData?.address">
-              <label>Adresse:</label>
-              <span>{{ storeData?.address }}</span>
+            <div class="preview-field full-width" *ngIf="deliverySettings?.dhlShipperStreet || deliverySettings?.dhlShipperHouseNumber">
+              <label>Straße/Hausnummer:</label>
+              <span>{{ deliverySettings?.dhlShipperStreet }}{{ deliverySettings?.dhlShipperHouseNumber ? ' ' + deliverySettings?.dhlShipperHouseNumber : '' }}</span>
             </div>
-            <div class="preview-field" *ngIf="storeData?.contactPhone">
+            <div class="preview-field">
+              <label>PLZ:</label>
+              <span>{{ deliverySettings?.dhlShipperPostalCode || '–' }}</span>
+            </div>
+            <div class="preview-field">
+              <label>Stadt:</label>
+              <span>{{ deliverySettings?.dhlShipperCity || '–' }}</span>
+            </div>
+            <div class="preview-field">
+              <label>Land:</label>
+              <span>{{ deliverySettings?.dhlShipperCountry || '–' }}</span>
+            </div>
+            <div class="preview-field" *ngIf="deliverySettings?.dhlShipperPhone">
               <label>Telefon:</label>
-              <span>{{ storeData?.contactPhone }}</span>
+              <span>{{ deliverySettings?.dhlShipperPhone }}</span>
             </div>
-            <div class="preview-field" *ngIf="storeData?.contactEmail">
+            <div class="preview-field" *ngIf="deliverySettings?.dhlShipperEmail">
               <label>E-Mail:</label>
-              <span>{{ storeData?.contactEmail }}</span>
+              <span>{{ deliverySettings?.dhlShipperEmail }}</span>
             </div>
           </div>
-          <div class="info-note" *ngIf="!storeData?.address">
-            ℹ️ <em>Bitte Store-Adresse in den Einstellungen hinterlegen.</em>
+          <div class="info-note" *ngIf="!deliverySettings?.dhlShipperStreet">
+            ℹ️ <em>Bitte Absenderadresse in den Delivery Settings hinterlegen.</em>
           </div>
         </div>
 

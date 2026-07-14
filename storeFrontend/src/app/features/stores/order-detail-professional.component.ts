@@ -5,7 +5,9 @@ import { FormsModule } from '@angular/forms';
 import { OrderService } from '../../core/services/order.service';
 import { DhlService, DhlValidateRequest } from '../../core/services/dhl.service';
 import { StoreService } from '../../core/services/store.service';
+import { DeliverySettingsService } from '../../core/services/delivery-settings.service';
 import { Order, OrderStatus, OrderStatusHistory, OrderItem, Address, Store } from '../../core/models';
+import { DeliverySettings } from '../../core/models/delivery.model';
 import { StoreNavigationComponent } from '../../shared/components/store-navigation.component';
 import { toDate } from '../../core/utils/date.utils';
 
@@ -20,7 +22,8 @@ export class OrderDetailProfessionalComponent implements OnInit {
   storeId!: number;
   orderId!: number;
   order: Order | null = null;
-  storeData: Store | null = null;  // ← Store-Daten für Preview
+  storeData: Store | null = null;  // ← Store-Name für Firmenname
+  deliverySettings: DeliverySettings | null = null;  // ← DHL Absenderadresse
   orderItems: OrderItem[] = [];
   orderHistory: OrderStatusHistory[] = [];
   loading = false;
@@ -74,7 +77,8 @@ export class OrderDetailProfessionalComponent implements OnInit {
     private router: Router,
     private orderService: OrderService,
     private dhlService: DhlService,
-    private storeService: StoreService
+    private storeService: StoreService,
+    private deliverySettingsService: DeliverySettingsService
   ) {}
 
   ngOnInit(): void {
@@ -227,6 +231,7 @@ export class OrderDetailProfessionalComponent implements OnInit {
   }
 
   private loadStoreDataForDhl(): void {
+    // Store-Namen für Firmenname laden
     if (!this.storeData) {
       this.storeService.getStoreById(this.storeId).subscribe({
         next: (store) => {
@@ -234,7 +239,18 @@ export class OrderDetailProfessionalComponent implements OnInit {
         },
         error: (err) => {
           console.error('Error loading store data for DHL preview:', err);
-          // Fallback: Lade Store.name aus order.storeId wenn Store-Objekt nicht verfügbar
+        }
+      });
+    }
+    
+    // Delivery Settings für DHL Absenderadresse laden
+    if (!this.deliverySettings) {
+      this.deliverySettingsService.getDeliverySettings(this.storeId).subscribe({
+        next: (settings) => {
+          this.deliverySettings = settings;
+        },
+        error: (err) => {
+          console.error('Error loading delivery settings for DHL preview:', err);
         }
       });
     }
