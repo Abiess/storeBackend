@@ -238,7 +238,7 @@
         <button class="close-btn" (click)="closeDhlDialog()">×</button>
       </div>
 
-      <div class="dhl-dialog-content" *ngIf="!dhlSuccess && !dhlError">
+      <div class="dhl-dialog-content" *ngIf="!dhlSuccess && !dhlError && !showPreview && !showLabelConfirm">
         <!-- Order Info -->
         <div class="dhl-section">
           <h3>Bestellung</h3>
@@ -337,11 +337,169 @@
         </div>
       </div>
 
-      <!-- Success State -->
-      <div class="dhl-dialog-content" *ngIf="dhlSuccess">
-        <div class="dhl-success">
+      <!-- DHL-Style Preview nach Validate SUCCESS -->
+      <div class="dhl-dialog-content dhl-preview" *ngIf="showPreview && dhlSuccess">
+        <div class="preview-success-banner">
           <div class="success-icon">✅</div>
-          <p>{{ dhlResult }}</p>
+          <div class="success-text">
+            <strong>DHL Sendung erfolgreich geprüft</strong>
+            <p class="mb-0">Die Sendungsdaten wurden validiert. Es wurde kein Label erstellt und keine Kosten verursacht.</p>
+          </div>
+        </div>
+
+        <!-- Basisdaten -->
+        <div class="preview-section">
+          <div class="section-header">
+            <h3>📄 Basisdaten</h3>
+            <span class="gruppenprofil-badge">STANDARD_GRUPPENPROFIL</span>
+          </div>
+          <div class="preview-grid">
+            <div class="preview-field">
+              <label>Sendungsnummer (Retoure):</label>
+              <span>{{ dhlValidateResponse?.shipmentNo || '–' }}</span>
+            </div>
+            <div class="preview-field">
+              <label>Sendungs-Referenz:</label>
+              <span>MARKTMA-{{ order?.id }}</span>
+            </div>
+            <div class="preview-field">
+              <label>Datum Sendung:</label>
+              <span>{{ order?.createdAt | date:'dd.MM.yyyy HH:mm' }}</span>
+            </div>
+            <div class="preview-field">
+              <label>Art der Sendung:</label>
+              <span>DHL Paket</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Absender -->
+        <div class="preview-section">
+          <h3>📤 Absender</h3>
+          <div class="preview-grid">
+            <div class="preview-field full-width">
+              <label>Name:</label>
+              <span>{{ storeData?.name || '–' }}</span>
+            </div>
+            <div class="preview-field full-width">
+              <label>Adresse:</label>
+              <span>{{ storeData?.address || '–' }}</span>
+            </div>
+            <div class="preview-field">
+              <label>Telefon:</label>
+              <span>{{ storeData?.contactPhone || '–' }}</span>
+            </div>
+            <div class="preview-field">
+              <label>E-Mail:</label>
+              <span>{{ storeData?.contactEmail || '–' }}</span>
+            </div>
+          </div>
+          <div class="info-note" *ngIf="!storeData?.address">
+            ℹ️ <em>Bitte Store-Adresse in den Einstellungen hinterlegen für vollständige DHL-Daten.</em>
+          </div>
+        </div>
+
+        <!-- Empfänger -->
+        <div class="preview-section">
+          <h3>📥 Empfänger</h3>
+          <div class="preview-grid">
+            <div class="preview-field full-width">
+              <label>Name:</label>
+              <span>{{ order?.customerName || 'Gast' }}</span>
+            </div>
+            <div class="preview-field">
+              <label>Straße/Hausnummer:</label>
+              <span *ngIf="shippingAddress">
+                {{ shippingAddress.address1 }}{{ shippingAddress.address2 ? ', ' + shippingAddress.address2 : '' }}
+              </span>
+              <span *ngIf="!shippingAddress">{{ order?.shippingAddress || '–' }}</span>
+            </div>
+            <div class="preview-field">
+              <label>PLZ:</label>
+              <span>{{ shippingAddress?.postalCode || '–' }}</span>
+            </div>
+            <div class="preview-field">
+              <label>Stadt:</label>
+              <span>{{ shippingAddress?.city || '–' }}</span>
+            </div>
+            <div class="preview-field">
+              <label>Land:</label>
+              <span>{{ shippingAddress?.country || 'Deutschland' }}</span>
+            </div>
+            <div class="preview-field">
+              <label>Telefon:</label>
+              <span>{{ shippingAddress?.phone || '–' }}</span>
+            </div>
+            <div class="preview-field">
+              <label>E-Mail-Adresse:</label>
+              <span>{{ order?.customerEmail || '–' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gewicht & Maße -->
+        <div class="preview-section">
+          <h3>📦 Gewicht & Maße</h3>
+          <div class="preview-grid measures">
+            <div class="preview-field">
+              <label>Gewicht [kg]³:</label>
+              <span>{{ dhlWeightKg }}</span>
+            </div>
+            <div class="preview-field">
+              <label>Länge [cm]:</label>
+              <span>{{ dhlLengthCm }}</span>
+            </div>
+            <div class="preview-field">
+              <label>Höhe [cm]:</label>
+              <span>{{ dhlHeightCm }}</span>
+            </div>
+            <div class="preview-field">
+              <label>Breite [cm]:</label>
+              <span>{{ dhlWidthCm }}</span>
+            </div>
+            <div class="preview-field">
+              <label>Gurtmaß [cm]:</label>
+              <span>{{ (dhlLengthCm + dhlHeightCm + dhlWidthCm) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Produkte & Services -->
+        <div class="preview-section">
+          <h3>📋 Produkte & Services</h3>
+          <div class="service-item">
+            <span class="service-checkbox">☑</span>
+            <span>DHL Paket</span>
+          </div>
+        </div>
+
+        <!-- Abrechnungsdaten -->
+        <div class="preview-section">
+          <h3>💳 Abrechnungsdaten</h3>
+          <div class="preview-grid">
+            <div class="preview-field">
+              <label>Abrechnungsnummer:</label>
+              <span>********0101</span>
+            </div>
+            <div class="preview-field">
+              <label>Kostenstelle:</label>
+              <span>–</span>
+            </div>
+            <div class="preview-field">
+              <label>Blattnummer / ECR-Nr.:</label>
+              <span>–</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Final Action -->
+        <div class="preview-final-action">
+          <p class="warning-text">
+            ⚠️ <strong>Hinweis:</strong> Das echte DHL Label verursacht Versandkosten über deinen Geschäftskundenvertrag.
+          </p>
+          <button class="btn btn-create-label" (click)="closeDhlDialog(); openDhlLabelDialog()">
+            <span>🏷️</span> Echtes DHL Label erstellen
+          </button>
         </div>
       </div>
 
@@ -422,4 +580,5 @@
   <p>{{ error }}</p>
   <button class="btn-primary" (click)="goBack()">Zurück</button>
 </div>
+
 

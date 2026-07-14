@@ -645,6 +645,206 @@ textarea.form-control {
   }
 }
 
+// DHL-Style Preview Styles
+.dhl-preview {
+  animation: fadeIn 0.3s ease-in;
+
+  .preview-success-banner {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+
+    .success-icon {
+      font-size: 2.5rem;
+      flex-shrink: 0;
+    }
+
+    .success-text {
+      flex: 1;
+
+      strong {
+        display: block;
+        font-size: 1.2rem;
+        margin-bottom: 0.5rem;
+      }
+
+      p {
+        opacity: 0.95;
+        font-size: 0.95rem;
+      }
+    }
+  }
+
+  .preview-section {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    transition: all 0.2s;
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+      border-color: #667eea;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+
+      h3 {
+        margin: 0;
+        color: #1f2937;
+        font-size: 1.1rem;
+        font-weight: 600;
+      }
+
+      .gruppenprofil-badge {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+      }
+    }
+
+    h3 {
+      margin: 0 0 1rem 0;
+      color: #1f2937;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+  }
+
+  .info-note {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: #fef3c7;
+    border: 1px solid #fbbf24;
+    border-radius: 8px;
+    color: #78350f;
+    font-size: 0.9rem;
+
+    em {
+      font-style: normal;
+    }
+  }
+
+  .preview-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+
+    &.measures {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .preview-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+
+      &.full-width {
+        grid-column: 1 / -1;
+      }
+
+      label {
+        color: #6b7280;
+        font-size: 0.85rem;
+        font-weight: 500;
+      }
+
+      span {
+        color: #1f2937;
+        font-size: 0.95rem;
+        font-weight: 500;
+      }
+    }
+  }
+
+  .service-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: #f9fafb;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+
+    .service-checkbox {
+      color: #10b981;
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+
+    span:last-child {
+      color: #1f2937;
+      font-weight: 500;
+    }
+  }
+
+  .preview-final-action {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 2px solid #e5e7eb;
+    text-align: center;
+
+    .warning-text {
+      background: #fef3c7;
+      border: 1px solid #fbbf24;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      color: #78350f;
+      font-size: 0.95rem;
+      text-align: left;
+
+      strong {
+        color: #92400e;
+      }
+    }
+
+    .btn-create-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 1rem 2.5rem;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+
+      span {
+        font-size: 1.5rem;
+      }
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+    }
+  }
+}
+
 // Responsive
 @media (max-width: 768px) {
   .dhl-dialog {
@@ -666,6 +866,30 @@ textarea.form-control {
   
   .form-grid {
     grid-template-columns: 1fr;
+  }
+  
+  // Preview responsive
+  .preview-grid {
+    grid-template-columns: 1fr !important;
+    
+    .preview-field.full-width {
+      grid-column: 1;
+    }
+  }
+  
+  .preview-success-banner {
+    flex-direction: column;
+    text-align: center;
+    
+    .success-text strong {
+      font-size: 1.1rem;
+    }
+  }
+  
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 0.75rem;
   }
   
   .dhl-dialog-footer {

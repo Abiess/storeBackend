@@ -4,7 +4,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { OrderService } from '../../core/services/order.service';
 import { DhlService, DhlValidateRequest } from '../../core/services/dhl.service';
-import { Order, OrderStatus, OrderStatusHistory, OrderItem, Address } from '../../core/models';
+import { StoreService } from '../../core/services/store.service';
+import { Order, OrderStatus, OrderStatusHistory, OrderItem, Address, Store } from '../../core/models';
 import { StoreNavigationComponent } from '../../shared/components/store-navigation.component';
 import { toDate } from '../../core/utils/date.utils';
 
@@ -19,6 +20,7 @@ export class OrderDetailProfessionalComponent implements OnInit {
   storeId!: number;
   orderId!: number;
   order: Order | null = null;
+  storeData: Store | null = null;  // ← Store-Daten für Preview
   orderItems: OrderItem[] = [];
   orderHistory: OrderStatusHistory[] = [];
   loading = false;
@@ -47,6 +49,8 @@ export class OrderDetailProfessionalComponent implements OnInit {
   dhlError: string | null = null;
   dhlResult: string | null = null;
   showLabelConfirm = false;  // Zusätzlicher Confirm vor Live Label
+  showPreview = false;  // DHL-Style Preview nach Validate SUCCESS
+  dhlValidateResponse: any = null;  // Speichere Validate Response für Preview
   
   // DHL Paketdaten (editierbar in Dialog, in kg/cm)
   dhlWeightKg: number = 1;
@@ -69,7 +73,8 @@ export class OrderDetailProfessionalComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private orderService: OrderService,
-    private dhlService: DhlService
+    private dhlService: DhlService,
+    private storeService: StoreService
   ) {}
 
   ngOnInit(): void {
@@ -210,13 +215,29 @@ export class OrderDetailProfessionalComponent implements OnInit {
   openDhlValidateDialog(): void {
     this.dhlDialogMode = 'validate';
     this.initDhlDialogData();
+    this.loadStoreDataForDhl();
     this.showDhlDialog = true;
   }
 
   openDhlLabelDialog(): void {
     this.dhlDialogMode = 'label';
     this.initDhlDialogData();
+    this.loadStoreDataForDhl();
     this.showDhlDialog = true;
+  }
+
+  private loadStoreDataForDhl(): void {
+    if (!this.storeData) {
+      this.storeService.getStoreById(this.storeId).subscribe({
+        next: (store) => {
+          this.storeData = store;
+        },
+        error: (err) => {
+          console.error('Error loading store data for DHL preview:', err);
+          // Fallback: Lade Store.name aus order.storeId wenn Store-Objekt nicht verfügbar
+        }
+      });
+    }
   }
 
   closeDhlDialog(): void {
@@ -225,7 +246,9 @@ export class OrderDetailProfessionalComponent implements OnInit {
     this.dhlError = null;
     this.dhlResult = null;
     this.dhlProcessing = false;
-    this.showLabelConfirm = false;  // ← Reset Confirm State
+    this.showLabelConfirm = false;
+    this.showPreview = false;  // ← Reset Preview
+    this.dhlValidateResponse = null;  // ← Reset Response
   }
 
   private initDhlDialogData(): void {
@@ -269,6 +292,7 @@ export class OrderDetailProfessionalComponent implements OnInit {
     this.dhlProcessing = true;
     this.dhlError = null;
     this.dhlSuccess = false;
+    this.showPreview = false;
 
     const request: DhlValidateRequest = {
       packageWeightGrams: Math.round(this.dhlWeightKg * 1000),
@@ -282,7 +306,10 @@ export class OrderDetailProfessionalComponent implements OnInit {
         this.dhlProcessing = false;
         if (response.success && response.validation === 'SUCCESS') {
           this.dhlSuccess = true;
-          this.dhlResult = 'DHL Sendung erfolgreich geprüft. Es wurde kein Label erstellt und keine Kosten verursacht.';
+          this.showPreview = true;  // ← Zeige DHL-Style Preview
+          this.dhlValidateResponse = response;  // ← Speichere Response für Preview
+          // Order neu laden, damit gespeicherte Paketdaten sichtbar sind
+          this.loadOrderDetails();
         } else if (response.validation === 'VALIDATION_FAILED') {
           this.dhlError = 'DHL Validation fehlgeschlagen: ' + (response.validationMessages?.map(m => m.validationMessage).join(', ') || 'Unbekannter Fehler');
         } else {
@@ -330,6 +357,19 @@ export class OrderDetailProfessionalComponent implements OnInit {
   }
 
   // Utilities
+  // Helper to get shipping address as Address object (or null)
+  get shippingAddress(): Address | null {
+    if (this.order && typeof this.order.shippingAddress === 'object' && this.order.shippingAddress !== null) {
+      return this.order.shippingAddress as Address;
+    }
+    return null;
+  }
+
+  // Helper method to check if shippingAddress is an Address object (not string)
+  isAddressObject(address: Address | string | undefined): address is Address {
+    return typeof address === 'object' && address !== null;
+  }
+
   getStatusLabel(status: OrderStatus): string {
     const labels: Record<OrderStatus, string> = {
       [OrderStatus.PENDING]: 'Ausstehend',
