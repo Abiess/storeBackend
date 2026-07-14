@@ -175,6 +175,7 @@ TELEGRAM_AUTH_BOT_USERNAME=${TELEGRAM_AUTH_BOT_USERNAME:-marktma_verify_bot}
 # Unsplash API Key (Bildvorschläge im Wizard – NIEMALS ins Frontend/Git!)
 UNSPLASH_ACCESS_KEY=${UNSPLASH_ACCESS_KEY:-}
 
+# ═══════════════════════════════════════════════════════
 # CAPTCHA Configuration (Bot-Schutz für Registrierung, Login, Password-Reset)
 # Provider: hcaptcha (empfohlen, DSGVO-konform) oder recaptcha
 # hCaptcha: https://www.hcaptcha.com/ → Sites → New Site → Secret Key
@@ -182,6 +183,7 @@ UNSPLASH_ACCESS_KEY=${UNSPLASH_ACCESS_KEY:-}
 CAPTCHA_ENABLED=${CAPTCHA_ENABLED:-true}
 CAPTCHA_PROVIDER=${CAPTCHA_PROVIDER:-hcaptcha}
 CAPTCHA_SECRET=${CAPTCHA_SECRET:-}
+HCAPTCHA_SITE_KEY=${HCAPTCHA_SITE_KEY:-}
 CAPTCHA_MIN_SCORE=${CAPTCHA_MIN_SCORE:-0.5}
 EMAIL_VERIFICATION_SKIP=${EMAIL_VERIFICATION_SKIP:-false}
 

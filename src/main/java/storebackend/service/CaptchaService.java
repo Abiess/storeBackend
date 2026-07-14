@@ -6,12 +6,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 
 /**
  * CAPTCHA Validation Service
@@ -45,7 +47,7 @@ public class CaptchaService {
     @Value("${captcha.min-score:0.5}")
     private double minScore;
 
-    private static final String HCAPTCHA_VERIFY_URL = "https://hcaptcha.com/siteverify";
+    private static final String HCAPTCHA_VERIFY_URL = "https://api.hcaptcha.com/siteverify";
     private static final String RECAPTCHA_VERIFY_URL = "https://www.google.com/recaptcha/api/siteverify";
 
     /**
@@ -103,7 +105,7 @@ public class CaptchaService {
     /**
      * Validiert hCaptcha Token
      * SECURITY: 
-     * - Verwendet form-urlencoded POST (nicht JSON)
+     * - Verwendet form-urlencoded POST mit MultiValueMap (nicht JSON/LinkedHashMap!)
      * - Sendet Site Key mit zur Validierung
      * - Prüft success==true
      * - Prüft Hostname exakt (markt.ma, NICHT boesermarkt.ma)
@@ -117,15 +119,16 @@ public class CaptchaService {
 
         WebClient webClient = webClientBuilder.baseUrl(HCAPTCHA_VERIFY_URL).build();
 
-        // SECURITY: Site Key mitsenden zur Validierung
-        Map<String, String> formData = new java.util.LinkedHashMap<>();
-        formData.put("secret", captchaSecret);
-        formData.put("response", token);  // WICHTIG: Feld muss "response" heißen, nicht "token"!
+        // CRITICAL FIX: MultiValueMap für form-urlencoded (nicht LinkedHashMap!)
+        MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+        formData.add("secret", captchaSecret);
+        formData.add("response", token);  // WICHTIG: Feld muss "response" heißen, nicht "token"!
+        
         if (captchaSiteKey != null && !captchaSiteKey.isBlank()) {
-            formData.put("sitekey", captchaSiteKey);
+            formData.add("sitekey", captchaSiteKey);
         }
         if (ipAddress != null && !ipAddress.isBlank()) {
-            formData.put("remoteip", ipAddress);
+            formData.add("remoteip", ipAddress);
         }
 
         // DIAGNOSTIC: Log Request-Parameter (KEINE Werte!)
@@ -133,7 +136,7 @@ public class CaptchaService {
 
         HCaptchaResponse response = webClient.post()
             .contentType(org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED)
-            .bodyValue(formData)
+            .body(BodyInserters.fromFormData(formData))  // CRITICAL: fromFormData, nicht bodyValue!
             .retrieve()
             .bodyToMono(HCaptchaResponse.class)
             .timeout(Duration.ofSeconds(5))
@@ -183,24 +186,30 @@ public class CaptchaService {
 
     /**
      * Validiert Google reCAPTCHA v3 Token
-     * SECURITY: Prüft success==true, hostname, score und lehnt Timeouts/Fehler ab
+     * SECURITY: 
+     * - Verwendet form-urlencoded POST mit MultiValueMap (nicht JSON!)
+     * - Prüft success==true, hostname, score
+     * - Lehnt Timeouts/Fehler ab
      */
     private boolean validateReCaptcha(String token, String ipAddress) {
         WebClient webClient = webClientBuilder.baseUrl(RECAPTCHA_VERIFY_URL).build();
 
-        Map<String, String> body = Map.of(
-            "secret", captchaSecret,
-            "response", token,
-            "remoteip", ipAddress != null ? ipAddress : ""
-        );
+        // CRITICAL FIX: MultiValueMap für form-urlencoded (nicht Map!)
+        MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+        formData.add("secret", captchaSecret);
+        formData.add("response", token);
+        if (ipAddress != null && !ipAddress.isBlank()) {
+            formData.add("remoteip", ipAddress);
+        }
 
         ReCaptchaResponse response = webClient.post()
-            .bodyValue(body)
+            .contentType(org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED)
+            .body(BodyInserters.fromFormData(formData))  // CRITICAL: fromFormData, nicht bodyValue!
             .retrieve()
             .bodyToMono(ReCaptchaResponse.class)
             .timeout(Duration.ofSeconds(5))
             .onErrorResume(e -> {
-                log.error("reCAPTCHA API call failed", e);
+                log.error("reCAPTCHA API call failed: {}", e.getMessage(), e);
                 return Mono.empty();
             })
             .block();
@@ -217,9 +226,15 @@ public class CaptchaService {
             return false;
         }
 
-        // SECURITY: Hostname prüfen (nur markt.ma erlauben)
-        if (response.getHostname() != null && !response.getHostname().endsWith("markt.ma")) {
-            log.error("CAPTCHA validation failed: invalid hostname={}", response.getHostname());
+        // SECURITY: Hostname null → ablehnen
+        if (response.getHostname() == null) {
+            log.error("CAPTCHA validation failed: hostname is null");
+            return false;
+        }
+
+        // SECURITY: Hostname prüfen (NUR exakt markt.ma)
+        if (!"markt.ma".equalsIgnoreCase(response.getHostname())) {
+            log.error("CAPTCHA validation failed: invalid hostname={} (expected: markt.ma)", response.getHostname());
             return false;
         }
 

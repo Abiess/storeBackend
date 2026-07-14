@@ -301,6 +301,7 @@ jobs:
             export CAPTCHA_ENABLED="${{ secrets.CAPTCHA_ENABLED }}"
             export CAPTCHA_PROVIDER="${{ secrets.CAPTCHA_PROVIDER }}"
             export CAPTCHA_SECRET="${{ secrets.CAPTCHA_SECRET }}"
+            export HCAPTCHA_SITE_KEY="${{ secrets.HCAPTCHA_SITE_KEY }}"
             export CAPTCHA_MIN_SCORE="${{ secrets.CAPTCHA_MIN_SCORE }}"
             export EMAIL_VERIFICATION_SKIP="${{ secrets.EMAIL_VERIFICATION_SKIP }}"
             export DHL_ENABLED="${{ secrets.DHL_ENABLED }}"
