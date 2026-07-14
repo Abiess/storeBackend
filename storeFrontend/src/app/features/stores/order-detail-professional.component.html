@@ -260,7 +260,7 @@
         <div class="dhl-section">
           <h3>📤 Absender</h3>
           <div class="address-compact">
-            <p><strong>{{ storeData?.name || 'Store' }}</strong></p>
+            <p><strong>{{ deliverySettings?.dhlShipperName || storeData?.name || 'Firmenname fehlt' }}</strong></p>
             <p *ngIf="deliverySettings?.dhlShipperStreet || deliverySettings?.dhlShipperHouseNumber">
               {{ deliverySettings?.dhlShipperStreet }}{{ deliverySettings?.dhlShipperHouseNumber ? ' ' + deliverySettings?.dhlShipperHouseNumber : '' }}
             </p>
@@ -268,8 +268,6 @@
               {{ deliverySettings?.dhlShipperPostalCode }} {{ deliverySettings?.dhlShipperCity }}
             </p>
             <p *ngIf="deliverySettings?.dhlShipperCountry">{{ deliverySettings?.dhlShipperCountry }}</p>
-            <p *ngIf="deliverySettings?.dhlShipperEmail"><small>📧 {{ deliverySettings?.dhlShipperEmail }}</small></p>
-            <p *ngIf="deliverySettings?.dhlShipperPhone"><small>📞 {{ deliverySettings?.dhlShipperPhone }}</small></p>
           </div>
           <div class="info-note" *ngIf="!deliverySettings?.dhlShipperStreet">
             ℹ️ <em>Bitte Absenderadresse in den Delivery Settings unter /delivery hinterlegen.</em>
@@ -284,8 +282,6 @@
             <p>{{ shippingAddress.address1 }}{{ shippingAddress.address2 ? ', ' + shippingAddress.address2 : '' }}</p>
             <p>{{ shippingAddress.postalCode }} {{ shippingAddress.city }}</p>
             <p>{{ shippingAddress.country }}</p>
-            <p *ngIf="order?.customerEmail"><small>📧 {{ order?.customerEmail }}</small></p>
-            <p *ngIf="shippingAddress.phone"><small>📞 {{ shippingAddress.phone }}</small></p>
           </div>
         </div>
 
@@ -408,7 +404,7 @@
           <div class="preview-grid">
             <div class="preview-field full-width">
               <label>Firmenname:</label>
-              <span>{{ storeData?.name || '–' }}</span>
+              <span>{{ deliverySettings?.dhlShipperName || storeData?.name || '–' }}</span>
             </div>
             <div class="preview-field full-width" *ngIf="deliverySettings?.dhlShipperStreet || deliverySettings?.dhlShipperHouseNumber">
               <label>Straße/Hausnummer:</label>
@@ -425,14 +421,6 @@
             <div class="preview-field">
               <label>Land:</label>
               <span>{{ deliverySettings?.dhlShipperCountry || '–' }}</span>
-            </div>
-            <div class="preview-field" *ngIf="deliverySettings?.dhlShipperPhone">
-              <label>Telefon:</label>
-              <span>{{ deliverySettings?.dhlShipperPhone }}</span>
-            </div>
-            <div class="preview-field" *ngIf="deliverySettings?.dhlShipperEmail">
-              <label>E-Mail:</label>
-              <span>{{ deliverySettings?.dhlShipperEmail }}</span>
             </div>
           </div>
           <div class="info-note" *ngIf="!deliverySettings?.dhlShipperStreet">
@@ -467,14 +455,6 @@
             <div class="preview-field">
               <label>Land:</label>
               <span>{{ shippingAddress?.country || 'Deutschland' }}</span>
-            </div>
-            <div class="preview-field">
-              <label>Telefon:</label>
-              <span>{{ shippingAddress?.phone || '–' }}</span>
-            </div>
-            <div class="preview-field">
-              <label>E-Mail-Adresse:</label>
-              <span>{{ order?.customerEmail || '–' }}</span>
             </div>
           </div>
           <div class="info-note" *ngIf="!shippingAddress">
