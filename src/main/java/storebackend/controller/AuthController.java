@@ -17,11 +17,16 @@ import storebackend.service.EmailVerificationService;
 import storebackend.service.PasswordResetService;
 import storebackend.service.RateLimitService;
 import storebackend.service.CaptchaService;
+import storebackend.service.SecurityEventService;
 import storebackend.repository.UserRepository;
 import storebackend.util.IpAddressUtil;
+import storebackend.enums.EventType;
+import storebackend.enums.BlockReason;
+import storebackend.enums.MailType;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -37,37 +42,93 @@ public class AuthController {
     private final PasswordResetService passwordResetService;
     private final RateLimitService rateLimitService;
     private final CaptchaService captchaService;
+    private final SecurityEventService securityEventService;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request,
                                      @RequestParam(required = false) String sessionId,
                                      HttpServletRequest httpRequest) {
-        // Rate Limiting Check
+        String requestId = UUID.randomUUID().toString().substring(0, 8);
         String ipAddress = IpAddressUtil.getClientIpAddress(httpRequest);
 
         // 1. IP-basiertes Rate Limit prüfen
         if (!rateLimitService.checkIpRateLimit(ipAddress)) {
-            log.warn("Rate limit exceeded for IP: {} on /register", ipAddress);
+            log.warn("[{}] Rate limit exceeded for IP: {} on /register", requestId, ipAddress);
+            
+            securityEventService.logEvent(
+                securityEventService.builder("/api/auth/register")
+                    .requestId(requestId)
+                    .eventType(EventType.REGISTRATION_ATTEMPT)
+                    .httpMethod("POST")
+                    .request(httpRequest)
+                    .headers(httpRequest)
+                    .email(request.getEmail())
+                    .blocked(true, BlockReason.IP_RATE_LIMIT)
+                    .httpStatus(429)
+            );
+            
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                     .body(new ErrorResponse("Too many requests. Please try again later."));
         }
 
         // 2. E-Mail-basiertes Rate Limit prüfen
         if (!rateLimitService.checkEmailRateLimit(request.getEmail())) {
-            log.warn("Rate limit exceeded for email: {} on /register", request.getEmail());
+            log.warn("[{}] Rate limit exceeded for email: {} on /register", requestId, request.getEmail());
+            
+            securityEventService.logEvent(
+                securityEventService.builder("/api/auth/register")
+                    .requestId(requestId)
+                    .eventType(EventType.REGISTRATION_ATTEMPT)
+                    .httpMethod("POST")
+                    .request(httpRequest)
+                    .headers(httpRequest)
+                    .email(request.getEmail())
+                    .blocked(true, BlockReason.EMAIL_RATE_LIMIT)
+                    .httpStatus(429)
+            );
+            
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                     .body(new ErrorResponse("Too many registration attempts for this email. Please try again later."));
         }
 
         // 3. CAPTCHA validieren
         if (!captchaService.validateCaptcha(request.getCaptchaToken(), ipAddress)) {
-            log.warn("CAPTCHA validation failed for IP: {} on /register", ipAddress);
+            log.warn("[{}] CAPTCHA validation failed for IP: {} on /register", requestId, ipAddress);
+            
+            securityEventService.logEvent(
+                securityEventService.builder("/api/auth/register")
+                    .requestId(requestId)
+                    .eventType(EventType.REGISTRATION_ATTEMPT)
+                    .httpMethod("POST")
+                    .request(httpRequest)
+                    .headers(httpRequest)
+                    .email(request.getEmail())
+                    .captcha(request.getCaptchaToken() != null, false)
+                    .blocked(true, BlockReason.CAPTCHA_INVALID)
+                    .httpStatus(400)
+            );
+            
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ErrorResponse("CAPTCHA validation failed. Please try again."));
         }
 
         try {
             AuthResponse response = authService.register(request);
+
+            // ✅ LOG SUCCESSFUL REGISTRATION WITH EMAIL SENT
+            securityEventService.logEvent(
+                securityEventService.builder("/api/auth/register")
+                    .requestId(requestId)
+                    .eventType(EventType.EMAIL_VERIFICATION_SENT)
+                    .httpMethod("POST")
+                    .request(httpRequest)
+                    .headers(httpRequest)
+                    .email(request.getEmail())
+                    .mailType(MailType.EMAIL_VERIFICATION)
+                    .mailActuallySent(true)
+                    .blocked(false, null)
+                    .httpStatus(201)
+            );
 
             // Migriere Gast-Warenkorb wenn sessionId vorhanden (aus Body oder Query-Param)
             String cartSessionId = request.getSessionId() != null ? request.getSessionId() : sessionId;
@@ -89,19 +150,49 @@ public class AuthController {
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request,
                                    @RequestParam(required = false) String sessionId,
                                    HttpServletRequest httpRequest) {
-        // Rate Limiting Check
+        String requestId = UUID.randomUUID().toString().substring(0, 8);
         String ipAddress = IpAddressUtil.getClientIpAddress(httpRequest);
 
         // 1. IP-basiertes Rate Limit prüfen
         if (!rateLimitService.checkIpRateLimit(ipAddress)) {
-            log.warn("Rate limit exceeded for IP: {} on /login", ipAddress);
+            log.warn("[{}] Rate limit exceeded for IP: {} on /login", requestId, ipAddress);
+            
+            // Log blocked login attempt
+            securityEventService.logEvent(
+                securityEventService.builder("/api/auth/login")
+                    .requestId(requestId)
+                    .eventType(EventType.LOGIN_FAILED)
+                    .httpMethod("POST")
+                    .request(httpRequest)
+                    .headers(httpRequest)
+                    .email(request.getEmail())
+                    .loginSuccess(false)
+                    .blocked(true, BlockReason.IP_RATE_LIMIT)
+                    .httpStatus(429)
+            );
+            
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                     .body(new ErrorResponse("Too many requests. Please try again later."));
         }
 
         // 2. Account Lockout prüfen (nach zu vielen fehlgeschlagenen Versuchen)
         if (rateLimitService.isAccountLocked(request.getEmail())) {
-            log.warn("Account locked for email: {} on /login", request.getEmail());
+            log.warn("[{}] Account locked for email: {} on /login", requestId, request.getEmail());
+            
+            // Log blocked login attempt
+            securityEventService.logEvent(
+                securityEventService.builder("/api/auth/login")
+                    .requestId(requestId)
+                    .eventType(EventType.LOGIN_FAILED)
+                    .httpMethod("POST")
+                    .request(httpRequest)
+                    .headers(httpRequest)
+                    .email(request.getEmail())
+                    .loginSuccess(false)
+                    .blocked(true, BlockReason.ACCOUNT_LOCKED)
+                    .httpStatus(403)
+            );
+            
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new ErrorResponse("Account temporarily locked due to too many failed login attempts. Please try again later."));
         }
@@ -109,7 +200,23 @@ public class AuthController {
         // 3. CAPTCHA validieren (nur wenn mehrere fehlgeschlagene Versuche)
         int remainingAttempts = rateLimitService.getRemainingLoginAttempts(request.getEmail());
         if (remainingAttempts <= 2 && !captchaService.validateCaptcha(request.getCaptchaToken(), ipAddress)) {
-            log.warn("CAPTCHA validation failed for IP: {} on /login", ipAddress);
+            log.warn("[{}] CAPTCHA validation failed for IP: {} on /login", requestId, ipAddress);
+            
+            // Log blocked login attempt
+            securityEventService.logEvent(
+                securityEventService.builder("/api/auth/login")
+                    .requestId(requestId)
+                    .eventType(EventType.LOGIN_FAILED)
+                    .httpMethod("POST")
+                    .request(httpRequest)
+                    .headers(httpRequest)
+                    .email(request.getEmail())
+                    .captcha(request.getCaptchaToken() != null, false)
+                    .loginSuccess(false)
+                    .blocked(true, BlockReason.CAPTCHA_INVALID)
+                    .httpStatus(400)
+            );
+            
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ErrorResponse("CAPTCHA validation failed. Please try again."));
         }
@@ -119,6 +226,20 @@ public class AuthController {
 
             // Reset login attempts nach erfolgreichem Login
             rateLimitService.resetLoginAttempts(request.getEmail());
+
+            // ✅ LOG SUCCESSFUL LOGIN
+            securityEventService.logEvent(
+                securityEventService.builder("/api/auth/login")
+                    .requestId(requestId)
+                    .eventType(EventType.LOGIN_SUCCESS)
+                    .httpMethod("POST")
+                    .request(httpRequest)
+                    .headers(httpRequest)
+                    .email(request.getEmail())
+                    .loginSuccess(true)
+                    .blocked(false, null)
+                    .httpStatus(200)
+            );
 
             // Migriere Gast-Warenkorb wenn sessionId vorhanden (aus Body oder Query-Param)
             String cartSessionId = request.getSessionId() != null ? request.getSessionId() : sessionId;
@@ -133,6 +254,20 @@ public class AuthController {
         } catch (RuntimeException e) {
             // Login-Versuch aufzeichnen (für Account Lockout)
             rateLimitService.recordLoginAttempt(request.getEmail());
+            
+            // ❌ LOG FAILED LOGIN (Invalid Credentials)
+            securityEventService.logEvent(
+                securityEventService.builder("/api/auth/login")
+                    .requestId(requestId)
+                    .eventType(EventType.LOGIN_FAILED)
+                    .httpMethod("POST")
+                    .request(httpRequest)
+                    .headers(httpRequest)
+                    .email(request.getEmail())
+                    .loginSuccess(false)
+                    .blocked(true, BlockReason.INVALID_CREDENTIALS)
+                    .httpStatus(401)
+            );
             
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new ErrorResponse(e.getMessage()));
@@ -161,26 +296,81 @@ public class AuthController {
     @PostMapping("/resend-verification")
     public ResponseEntity<?> resendVerificationEmail(@RequestBody ResendVerificationRequest request, 
                                                      HttpServletRequest httpRequest) {
+        String requestId = UUID.randomUUID().toString().substring(0, 8);
         String ipAddress = IpAddressUtil.getClientIpAddress(httpRequest);
 
         // 1. IP-basiertes Rate Limit prüfen
         if (!rateLimitService.checkIpRateLimit(ipAddress)) {
-            log.warn("Rate limit exceeded for IP: {} on /resend-verification", ipAddress);
+            log.warn("[{}] Rate limit exceeded for IP: {} on /resend-verification", requestId, ipAddress);
+            
+            securityEventService.logEvent(
+                securityEventService.builder("/api/auth/resend-verification")
+                    .requestId(requestId)
+                    .eventType(EventType.EMAIL_VERIFICATION_RESENT)
+                    .httpMethod("POST")
+                    .request(httpRequest)
+                    .headers(httpRequest)
+                    .email(request.email())
+                    .blocked(true, BlockReason.IP_RATE_LIMIT)
+                    .httpStatus(429)
+            );
+            
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                     .body(new ErrorResponse("Too many requests. Please try again later."));
         }
 
         // 2. E-Mail-basiertes Rate Limit prüfen
         if (!rateLimitService.checkEmailRateLimit(request.email())) {
-            log.warn("Rate limit exceeded for email: {} on /resend-verification", request.email());
+            log.warn("[{}] Rate limit exceeded for email: {} on /resend-verification", requestId, request.email());
+            
+            securityEventService.logEvent(
+                securityEventService.builder("/api/auth/resend-verification")
+                    .requestId(requestId)
+                    .eventType(EventType.EMAIL_VERIFICATION_RESENT)
+                    .httpMethod("POST")
+                    .request(httpRequest)
+                    .headers(httpRequest)
+                    .email(request.email())
+                    .blocked(true, BlockReason.EMAIL_RATE_LIMIT)
+                    .httpStatus(429)
+            );
+            
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                     .body(new ErrorResponse("Too many requests for this email. Please try again later."));
         }
 
         try {
             emailVerificationService.resendVerificationEmail(request.email());
+            
+            // ✅ LOG SUCCESSFUL RESEND
+            securityEventService.logEvent(
+                securityEventService.builder("/api/auth/resend-verification")
+                    .requestId(requestId)
+                    .eventType(EventType.EMAIL_VERIFICATION_RESENT)
+                    .httpMethod("POST")
+                    .request(httpRequest)
+                    .headers(httpRequest)
+                    .email(request.email())
+                    .mailType(MailType.EMAIL_VERIFICATION)
+                    .mailActuallySent(true)
+                    .blocked(false, null)
+                    .httpStatus(200)
+            );
+            
             return ResponseEntity.ok(new SuccessResponse("Verification email sent successfully!"));
         } catch (storebackend.exception.RateLimitExceededException e) {
+            securityEventService.logEvent(
+                securityEventService.builder("/api/auth/resend-verification")
+                    .requestId(requestId)
+                    .eventType(EventType.EMAIL_VERIFICATION_RESENT)
+                    .httpMethod("POST")
+                    .request(httpRequest)
+                    .headers(httpRequest)
+                    .email(request.email())
+                    .blocked(true, BlockReason.EMAIL_RATE_LIMIT)
+                    .httpStatus(429)
+            );
+            
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                     .body(new ErrorResponse(e.getMessage()));
         } catch (RuntimeException e) {

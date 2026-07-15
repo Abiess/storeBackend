@@ -27,6 +27,8 @@ import storebackend.service.SecurityEventService;
 import storebackend.service.EmailDomainValidationService;
 import storebackend.config.SaasProperties;
 import storebackend.util.IpAddressUtil;
+import storebackend.enums.BlockReason;
+import storebackend.enums.RateLimitType;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
@@ -202,7 +204,17 @@ public class PublicStoreCreationController {
         
         // 1. HONEYPOT-Check (stiller Bot-Detektor)
         if (req.website() != null && !req.website().isBlank()) {
-            log.warn("🍯 HONEYPOT TRIGGERED: IP {} filled honeypot field on /save-email", ipAddress);
+            log.warn("╔═══════════════════════════════════════════════════════════════════════════╗");
+            log.warn("║ 🍯 HONEYPOT TRIGGERED - REQUEST BLOCKED                                    ║");
+            log.warn("╠═══════════════════════════════════════════════════════════════════════════╣");
+            log.warn("║ Endpoint:            /api/public/create-store/save-email                  ║");
+            log.warn("║ Client IP:           {}                                           ║", ipAddress);
+            log.warn("║ Email:               {}                                           ║", req.email());
+            log.warn("║ Honeypot value:      {}                                           ║", req.website());
+            log.warn("║ User-Agent:          {}                                           ║", httpRequest.getHeader("User-Agent"));
+            log.warn("║ Reason:              Honeypot field was filled (BOT DETECTED)             ║");
+            log.warn("║ Action:              REQUEST BLOCKED - NO EMAIL SENT                      ║");
+            log.warn("╚═══════════════════════════════════════════════════════════════════════════╝");
             
             // Security Event loggen
             securityEventService.logEvent(
@@ -210,7 +222,7 @@ public class PublicStoreCreationController {
                     .request(httpRequest)
                     .email(req.email())
                     .honeypot(true)
-                    .blocked(true, "Honeypot triggered")
+                    .blocked(true, BlockReason.HONEYPOT_TRIGGERED)
                     .mailSent(false)
                     .httpStatus(400)
             );
@@ -228,8 +240,8 @@ public class PublicStoreCreationController {
                 securityEventService.builder("/api/public/create-store/save-email")
                     .request(httpRequest)
                     .email(req.email())
-                    .rateLimit("ip")
-                    .blocked(true, "IP rate limit exceeded")
+                    .rateLimit(RateLimitType.IP)
+                    .blocked(true, BlockReason.IP_RATE_LIMIT)
                     .mailSent(false)
                     .httpStatus(429)
             );
@@ -246,8 +258,8 @@ public class PublicStoreCreationController {
                 securityEventService.builder("/api/public/create-store/save-email")
                     .request(httpRequest)
                     .email(req.email())
-                    .rateLimit("email")
-                    .blocked(true, "Email rate limit exceeded")
+                    .rateLimit(RateLimitType.EMAIL)
+                    .blocked(true, BlockReason.EMAIL_RATE_LIMIT)
                     .mailSent(false)
                     .httpStatus(429)
             );
@@ -264,8 +276,8 @@ public class PublicStoreCreationController {
                 securityEventService.builder("/api/public/create-store/save-email")
                     .request(httpRequest)
                     .email(req.email())
-                    .rateLimit("domain")
-                    .blocked(true, "Domain rate limit exceeded")
+                    .rateLimit(RateLimitType.DOMAIN)
+                    .blocked(true, BlockReason.DOMAIN_RATE_LIMIT)
                     .mailSent(false)
                     .httpStatus(429)
             );
@@ -283,7 +295,7 @@ public class PublicStoreCreationController {
                 securityEventService.builder("/api/public/create-store/save-email")
                     .request(httpRequest)
                     .email(req.email())
-                    .blocked(true, "Invalid or disposable email domain")
+                    .blocked(true, BlockReason.DISPOSABLE_EMAIL)
                     .mailSent(false)
                     .httpStatus(400)
             );
@@ -297,14 +309,25 @@ public class PublicStoreCreationController {
         boolean captchaValid = captchaPresent && captchaService.validateCaptcha(req.captchaToken(), ipAddress);
         
         if (!captchaValid) {
-            log.warn("🚫 CAPTCHA validation failed for /save-email: {}", ipAddress);
+            log.warn("╔═══════════════════════════════════════════════════════════════════════════╗");
+            log.warn("║ 🚫 CAPTCHA VALIDATION FAILED - REQUEST BLOCKED                             ║");
+            log.warn("╠═══════════════════════════════════════════════════════════════════════════╣");
+            log.warn("║ Endpoint:            /api/public/create-store/save-email                  ║");
+            log.warn("║ Client IP:           {}                                           ║", ipAddress);
+            log.warn("║ Email:               {}                                           ║", req.email());
+            log.warn("║ CAPTCHA present:     {}                                                  ║", captchaPresent);
+            log.warn("║ CAPTCHA valid:       {}                                                  ║", captchaValid);
+            log.warn("║ User-Agent:          {}                                           ║", httpRequest.getHeader("User-Agent"));
+            log.warn("║ Reason:              {}                                           ║", captchaPresent ? "CAPTCHA token invalid" : "CAPTCHA token missing");
+            log.warn("║ Action:              REQUEST BLOCKED - NO EMAIL SENT                      ║");
+            log.warn("╚═══════════════════════════════════════════════════════════════════════════╝");
             
             securityEventService.logEvent(
                 securityEventService.builder("/api/public/create-store/save-email")
                     .request(httpRequest)
                     .email(req.email())
                     .captcha(captchaPresent, false)
-                    .blocked(true, captchaPresent ? "CAPTCHA invalid" : "CAPTCHA missing")
+                    .blocked(true, captchaPresent ? BlockReason.CAPTCHA_INVALID : BlockReason.CAPTCHA_MISSING)
                     .mailSent(false)
                     .httpStatus(captchaPresent ? 400 : 403)
             );
@@ -350,8 +373,34 @@ public class PublicStoreCreationController {
             String storeUrl = "https://" + saasProperties.generateSubdomain(store.getSlug());
             String dashboardUrl = "https://markt.ma/stores/" + store.getId();
 
+            // ═══════════════════════════════════════════════════════════════════════════
+            // KRITISCHES LOGGING: STORE ACCESS EMAIL
+            // ═══════════════════════════════════════════════════════════════════════════
+            String requestId = UUID.randomUUID().toString().substring(0, 8);
+            log.warn("╔═══════════════════════════════════════════════════════════════════════════╗");
+            log.warn("║ === STORE ACCESS EMAIL WIRD VERSENDET ===                                  ║");
+            log.warn("╠═══════════════════════════════════════════════════════════════════════════╣");
+            log.warn("║ Request-ID:          {}                                            ║", requestId);
+            log.warn("║ Timestamp:           {}                                   ║", java.time.LocalDateTime.now());
+            log.warn("║ Endpoint:            /api/public/create-store/save-email                  ║");
+            log.warn("║ Client IP:           {}                                           ║", ipAddress);
+            log.warn("║ X-Forwarded-For:     {}                                           ║", httpRequest.getHeader("X-Forwarded-For"));
+            log.warn("║ Email:               {}                                           ║", req.email());
+            log.warn("║ User-Agent:          {}                                           ║", httpRequest.getHeader("User-Agent"));
+            log.warn("║ CAPTCHA valid:       YES (passed validation)                              ║");
+            log.warn("║ Honeypot triggered:  NO                                                    ║");
+            log.warn("║ Rate limit passed:   YES (IP + Email + Domain)                            ║");
+            log.warn("║ Domain valid:        YES (not disposable)                                 ║");
+            log.warn("║ Circuit Breaker:     OPEN (mail sending allowed)                          ║");
+            log.warn("║ Store ID:            {}                                                  ║", store.getId());
+            log.warn("║ Store Name:          {}                                           ║", store.getName());
+            log.warn("║ User ID:             {}                                                  ║", userId);
+            log.warn("╚═══════════════════════════════════════════════════════════════════════════╝");
+            
             // Store-Zugangs-Mail schicken
             emailService.sendStoreAccessEmail(req.email(), store.getName(), storeUrl, dashboardUrl, "de");
+            
+            log.warn("✅ Store Access Email ERFOLGREICH versendet an: {} (Request-ID: {})", req.email(), requestId);
 
             // Neuen JWT mit der echten E-Mail ausstellen
             String newToken = jwtUtil.generateToken(req.email(), userId, user.getRoles());

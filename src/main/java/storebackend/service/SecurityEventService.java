@@ -9,6 +9,10 @@ import org.springframework.transaction.annotation.Transactional;
 import storebackend.entity.SecurityEvent;
 import storebackend.repository.SecurityEventRepository;
 import storebackend.util.IpAddressUtil;
+import storebackend.enums.EventType;
+import storebackend.enums.MailType;
+import storebackend.enums.BlockReason;
+import storebackend.enums.RateLimitType;
 
 import java.time.LocalDateTime;
 
@@ -70,7 +74,9 @@ public class SecurityEventService {
         public SecurityEventBuilder request(HttpServletRequest request) {
             if (request != null) {
                 this.event.setClientIp(IpAddressUtil.getClientIpAddress(request));
-                this.event.setForwardedFor(request.getHeader("X-Forwarded-For"));
+                this.event.setRemoteAddr(request.getRemoteAddr());
+                this.event.setXForwardedFor(request.getHeader("X-Forwarded-For"));
+                this.event.setXRealIp(request.getHeader("X-Real-IP"));
                 this.event.setUserAgent(request.getHeader("User-Agent"));
             }
             return this;
@@ -107,12 +113,12 @@ public class SecurityEventService {
             return this;
         }
 
-        public SecurityEventBuilder rateLimit(String type) {
+        public SecurityEventBuilder rateLimit(RateLimitType type) {
             this.event.setRateLimitType(type);
             return this;
         }
 
-        public SecurityEventBuilder blocked(boolean blocked, String reason) {
+        public SecurityEventBuilder blocked(boolean blocked, BlockReason reason) {
             this.event.setBlocked(blocked);
             this.event.setBlockReason(reason);
             return this;
@@ -135,6 +141,56 @@ public class SecurityEventService {
 
         public SecurityEventBuilder user(Long userId) {
             this.event.setUserId(userId);
+            return this;
+        }
+        
+        public SecurityEventBuilder eventType(EventType eventType) {
+            this.event.setEventType(eventType);
+            return this;
+        }
+        
+        public SecurityEventBuilder httpMethod(String method) {
+            this.event.setHttpMethod(method);
+            return this;
+        }
+        
+        public SecurityEventBuilder mailType(MailType mailType) {
+            this.event.setMailType(mailType);
+            this.event.setMailTriggered(true); // implizit
+            return this;
+        }
+        
+        public SecurityEventBuilder mailActuallySent(boolean sent) {
+            this.event.setMailSent(sent);
+            return this;
+        }
+        
+        public SecurityEventBuilder killSwitch(boolean triggered) {
+            this.event.setKillSwitchTriggered(triggered);
+            return this;
+        }
+        
+        public SecurityEventBuilder circuitBreaker(boolean triggered) {
+            this.event.setCircuitBreakerTriggered(triggered);
+            return this;
+        }
+        
+        public SecurityEventBuilder loginSuccess(boolean success) {
+            this.event.setLoginSuccess(success);
+            this.event.setEventType(success ? EventType.LOGIN_SUCCESS : EventType.LOGIN_FAILED);
+            return this;
+        }
+        
+        public SecurityEventBuilder riskScore(int score) {
+            this.event.setRiskScore(score);
+            return this;
+        }
+        
+        public SecurityEventBuilder headers(HttpServletRequest request) {
+            if (request != null) {
+                this.event.setOrigin(request.getHeader("Origin"));
+                this.event.setReferer(request.getHeader("Referer"));
+            }
             return this;
         }
 

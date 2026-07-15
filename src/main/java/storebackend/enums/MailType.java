@@ -1,0 +1,22 @@
+package storebackend.enums;
+
+/**
+ * Mail-Typen für Security-Event-Tracking
+ */
+public enum MailType {
+    STORE_ACCESS,
+    EMAIL_VERIFICATION,
+    PASSWORD_RESET,
+    PASSWORD_RESET_CONFIRMATION,
+    PHONE_VERIFICATION,
+    ORDER_CONFIRMATION,
+    ORDER_SHIPPED,
+    ORDER_DELIVERED,
+    ORDER_CANCELLED,
+    WELCOME,
+    NEWSLETTER,
+    SUBSCRIPTION_RENEWAL,
+    SUBSCRIPTION_EXPIRED,
+    ABANDONED_CART,
+    OTHER
+}

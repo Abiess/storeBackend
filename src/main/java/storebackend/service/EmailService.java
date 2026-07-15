@@ -31,6 +31,19 @@ public class EmailService {
 
     @Value("${mail.enabled:false}")
     private boolean mailEnabled;
+    
+    // ══════════════════════════════════════════════════════════════════════════════════
+    // EMERGENCY KILL SWITCHES - Incident Response
+    // ══════════════════════════════════════════════════════════════════════════════════
+    
+    @Value("${feature.store-access-email.enabled:true}")
+    private boolean storeAccessEmailEnabled;
+    
+    @Value("${feature.verification-email.enabled:true}")
+    private boolean verificationEmailEnabled;
+    
+    @Value("${feature.password-reset-email.enabled:true}")
+    private boolean passwordResetEmailEnabled;
 
     // ==================================================================================
     // AUTH E-MAILS
@@ -42,6 +55,12 @@ public class EmailService {
     }
 
     public void sendVerificationEmail(String toEmail, String token, String lang) {
+        // EMERGENCY KILL SWITCH
+        if (!verificationEmailEnabled) {
+            log.error("🚨 EMERGENCY: Verification Email DISABLED via feature flag (to: {})", toEmail);
+            return;
+        }
+        
         if (!mailEnabled) {
             log.info("Mail disabled – verification URL: {}/verify?token={}", baseUrl, token);
             return;
@@ -103,18 +122,51 @@ public class EmailService {
 
     public void sendStoreAccessEmail(String toEmail, String storeName,
                                       String storeUrl, String dashboardUrl, String lang) {
+        // ═══════════════════════════════════════════════════════════════════════════
+        // EMERGENCY KILL SWITCH - Incident Response
+        // ═══════════════════════════════════════════════════════════════════════════
+        if (!storeAccessEmailEnabled) {
+            log.error("╔═══════════════════════════════════════════════════════════════════════════╗");
+            log.error("║ 🚨 EMERGENCY KILL SWITCH ACTIVE                                            ║");
+            log.error("╠═══════════════════════════════════════════════════════════════════════════╣");
+            log.error("║ Feature:             Store Access Email                                   ║");
+            log.error("║ Status:              DISABLED                                              ║");
+            log.error("║ Empfänger:           {}                                           ║", toEmail);
+            log.error("║ Store:               {}                                           ║", storeName);
+            log.error("║ Action:              MAIL NOT SENT (feature flag disabled)                ║");
+            log.error("║ Config:              feature.store-access-email.enabled=false             ║");
+            log.error("╚═══════════════════════════════════════════════════════════════════════════╝");
+            return; // Keine Mail senden
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════════════
+        // KRITISCH: Mail wird jetzt tatsächlich versendet
+        // ═══════════════════════════════════════════════════════════════════════════
+        log.warn("╔═══════════════════════════════════════════════════════════════════════════╗");
+        log.warn("║ >>> EMAILSERVICE.sendStoreAccessEmail() AUFGERUFEN <<<                     ║");
+        log.warn("╠═══════════════════════════════════════════════════════════════════════════╣");
+        log.warn("║ To:                  {}                                           ║", toEmail);
+        log.warn("║ Store Name:          {}                                           ║", storeName);
+        log.warn("║ Mail Enabled:        {}                                                  ║", mailEnabled);
+        log.warn("║ Feature Flag:        {}                                                  ║", storeAccessEmailEnabled);
+        log.warn("║ Circuit Breaker:     checking...                                          ║");
+        log.warn("╚═══════════════════════════════════════════════════════════════════════════╝");
+        
         if (!mailEnabled) {
-            log.info("Mail disabled – store access email to: {} storeUrl: {}", toEmail, storeUrl);
+            log.info("❌ Mail disabled – store access email to: {} storeUrl: {}", toEmail, storeUrl);
             return;
         }
         
         // Circuit Breaker Check
-        if (!circuitBreakerService.allowEmail("store-access")) {
+        boolean circuitAllowed = circuitBreakerService.allowEmail("store-access");
+        log.warn("🔄 Circuit Breaker Result: {} (allowed={})", circuitAllowed ? "OPEN" : "CLOSED", circuitAllowed);
+        
+        if (!circuitAllowed) {
             log.error("🚨 Circuit Breaker: Store access email to {} blocked (rate limit exceeded)", toEmail);
             return;
         }
         
-        try {
+        try{
             Map<String, Object> vars = new HashMap<>();
             vars.put("storeName",    storeName);
             vars.put("storeUrl",     storeUrl);
@@ -131,9 +183,16 @@ public class EmailService {
                     "Your store \"" + storeName + "\" is live \uD83D\uDE80 – markt.ma")
                 .replace("{{storeName}}", storeName);
             sendHtml(toEmail, subject, templateService.render("store-access.html", lang, vars));
-            log.info("Store access email sent to: {} for store: {}", toEmail, storeName);
+            log.warn("╔═══════════════════════════════════════════════════════════════════════════╗");
+            log.warn("║ ✅ MAIL ERFOLGREICH VERSENDET                                              ║");
+            log.warn("╠═══════════════════════════════════════════════════════════════════════════╣");
+            log.warn("║ Typ:                 Store Access Email                                   ║");
+            log.warn("║ Empfänger:           {}                                           ║", toEmail);
+            log.warn("║ Store:               {}                                           ║", storeName);
+            log.warn("║ Timestamp:           {}                                   ║", java.time.LocalDateTime.now());
+            log.warn("╚═══════════════════════════════════════════════════════════════════════════╝");
         } catch (Exception e) {
-            log.error("Failed to send store access email to: {}", toEmail, e);
+            log.error("❌ Failed to send store access email to: {}", toEmail, e);
         }
     }
 
@@ -142,6 +201,12 @@ public class EmailService {
     }
 
     public void sendPasswordResetEmail(String toEmail, String token, String lang) {
+        // EMERGENCY KILL SWITCH
+        if (!passwordResetEmailEnabled) {
+            log.error("🚨 EMERGENCY: Password Reset Email DISABLED via feature flag (to: {})", toEmail);
+            return;
+        }
+        
         if (!mailEnabled) {
             log.info("Mail disabled – reset URL: {}/reset-password?token={}", baseUrl, token);
             return;

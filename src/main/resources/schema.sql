@@ -1232,45 +1232,100 @@ WHERE NOT EXISTS (SELECT 1 FROM starter_carousel_item sci WHERE sci.pack_id = p.
 
 
 -- ════════════════════════════════════════════════════════════════════════════
--- V24: security_events – Audit-Log für Bot Protection & Rate Limiting
+-- V25: security_events – Erweitert für Enums + Login-Tracking + IP-Details
 -- ════════════════════════════════════════════════════════════════════════════
 
 CREATE TABLE IF NOT EXISTS security_events (
     id BIGSERIAL PRIMARY KEY,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     request_id VARCHAR(100),
+    
+    -- Event Classification
+    event_type VARCHAR(50),          -- Enum: LOGIN_SUCCESS, LOGIN_FAILED, REGISTRATION_ATTEMPT, etc.
+    http_method VARCHAR(10),         -- POST, GET, PUT, DELETE
+    http_status INTEGER,
+    
     endpoint VARCHAR(200) NOT NULL,
-    client_ip VARCHAR(50),
-    forwarded_for VARCHAR(200),
+    
+    -- IP Information (Multi-Proxy-Support)
+    client_ip VARCHAR(50),           -- Berechnete echte IP (IpAddressUtil)
+    remote_addr VARCHAR(50),         -- Request.getRemoteAddr()
+    x_forwarded_for VARCHAR(200),    -- X-Forwarded-For Header
+    x_real_ip VARCHAR(50),           -- X-Real-IP Header (NGINX)
+    
     user_agent VARCHAR(500),
-    email_masked VARCHAR(100),
-    email_domain VARCHAR(100),
-    phone_masked VARCHAR(50),
+    
+    -- DSGVO-konforme Email-Felder
+    email_masked VARCHAR(100),       -- te***@example.com
+    email_hash VARCHAR(64),          -- SHA-256(email + pepper)
+    email_domain VARCHAR(100),       -- example.com
+    
+    phone_masked VARCHAR(50),        -- +49***1234
+    
+    -- Protection Mechanisms
     captcha_present BOOLEAN,
     captcha_valid BOOLEAN,
     honeypot_triggered BOOLEAN,
-    rate_limit_type VARCHAR(50),
+    rate_limit_type VARCHAR(50),     -- Enum: IP, EMAIL, DOMAIN, PHONE, ENDPOINT
+    
     blocked BOOLEAN NOT NULL DEFAULT false,
-    block_reason VARCHAR(200),
-    mail_triggered BOOLEAN,
-    http_status INTEGER,
+    block_reason VARCHAR(200),       -- Enum: CAPTCHA_INVALID, IP_RATE_LIMIT, etc.
+    
+    -- Mail-Related
+    mail_type VARCHAR(50),           -- Enum: STORE_ACCESS, EMAIL_VERIFICATION, etc.
+    mail_triggered BOOLEAN,          -- Mail wurde ausgelöst
+    mail_sent BOOLEAN,               -- Mail tatsächlich versendet
+    
+    -- Emergency Controls
+    kill_switch_triggered BOOLEAN,
+    circuit_breaker_triggered BOOLEAN,
+    
+    -- Login-Tracking
+    login_success BOOLEAN,           -- Bei Login-Events: true/false
+    
+    -- Bot Detection
+    risk_score INTEGER,              -- 0-100 (optional)
+    
+    -- External Sources
+    origin VARCHAR(200),             -- Origin-Header (CORS)
+    referer VARCHAR(500),            -- Referer-Header
+    
+    -- Relations
     store_id BIGINT,
     user_id BIGINT,
+    
     CONSTRAINT fk_security_events_store FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE SET NULL,
     CONSTRAINT fk_security_events_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
--- Indizes für Performance (Grafana Queries)
+-- Performance-Indizes für Grafana
 CREATE INDEX IF NOT EXISTS idx_security_events_created_at ON security_events(created_at);
 CREATE INDEX IF NOT EXISTS idx_security_events_endpoint ON security_events(endpoint);
 CREATE INDEX IF NOT EXISTS idx_security_events_client_ip ON security_events(client_ip);
 CREATE INDEX IF NOT EXISTS idx_security_events_blocked ON security_events(blocked);
 CREATE INDEX IF NOT EXISTS idx_security_events_email_domain ON security_events(email_domain);
+CREATE INDEX IF NOT EXISTS idx_security_events_event_type ON security_events(event_type);
+CREATE INDEX IF NOT EXISTS idx_security_events_email_hash ON security_events(email_hash);
+CREATE INDEX IF NOT EXISTS idx_security_events_mail_type ON security_events(mail_type);
+CREATE INDEX IF NOT EXISTS idx_security_events_login_success ON security_events(login_success);
 
-COMMENT ON TABLE security_events IS 'Security Audit Log: CAPTCHA, Rate Limiting, Honeypot, Bot Protection';
+-- Composite Indizes für spezifische Queries
+CREATE INDEX IF NOT EXISTS idx_security_events_login_analysis 
+    ON security_events(endpoint, login_success, created_at) 
+    WHERE endpoint = '/api/auth/login';
+
+CREATE INDEX IF NOT EXISTS idx_security_events_mail_analysis 
+    ON security_events(mail_type, mail_sent, created_at) 
+    WHERE mail_sent = true;
+
+-- Dokumentation
+COMMENT ON TABLE security_events IS 'Security Audit Log: CAPTCHA, Rate Limiting, Honeypot, Bot Protection, Login-Tracking';
 COMMENT ON COLUMN security_events.email_masked IS 'DSGVO-konform: te***@example.com (nie volle E-Mail)';
+COMMENT ON COLUMN security_events.email_hash IS 'SHA-256(normalized_email + server_pepper) für Analytics';
 COMMENT ON COLUMN security_events.phone_masked IS 'DSGVO-konform: +49***1234 (nie volle Nummer)';
 COMMENT ON COLUMN security_events.blocked IS 'true = Request blockiert, false = durchgelassen';
 COMMENT ON COLUMN security_events.mail_triggered IS 'true = E-Mail wurde trotz Verdacht versendet';
+COMMENT ON COLUMN security_events.mail_sent IS 'true = E-Mail tatsächlich versendet';
+COMMENT ON COLUMN security_events.login_success IS 'Bei Login-Events: true = erfolgreich, false = fehlgeschlagen';
 
-RAISE NOTICE '✅ V24: security_events erstellt';
+RAISE NOTICE '✅ V25: security_events erweitert';

@@ -6,7 +6,13 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import org.hibernate.annotations.CreationTimestamp;
+import storebackend.enums.EventType;
+import storebackend.enums.MailType;
+import storebackend.enums.BlockReason;
+import storebackend.enums.RateLimitType;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.LocalDateTime;
 
 /**
@@ -15,14 +21,16 @@ import java.time.LocalDateTime;
  * Speichert Versuche auf geschützte Endpoints (Register, Login, Password Reset, etc.)
  * für Audit, Monitoring und Incident Response.
  * 
- * DSGVO-konform: Keine vollständigen E-Mails, nur maskierte Versionen + Domain
+ * DSGVO-konform: Keine vollständigen E-Mails, nur maskierte Versionen + Domain + Hash
  */
 @Entity
 @Table(name = "security_events", indexes = {
     @Index(name = "idx_security_events_created_at", columnList = "created_at"),
     @Index(name = "idx_security_events_endpoint", columnList = "endpoint"),
     @Index(name = "idx_security_events_client_ip", columnList = "client_ip"),
-    @Index(name = "idx_security_events_blocked", columnList = "blocked")
+    @Index(name = "idx_security_events_blocked", columnList = "blocked"),
+    @Index(name = "idx_security_events_event_type", columnList = "event_type"),
+    @Index(name = "idx_security_events_email_hash", columnList = "email_hash")
 })
 @Data
 @NoArgsConstructor
@@ -39,16 +47,33 @@ public class SecurityEvent {
     private LocalDateTime createdAt;
 
     @Column(name = "request_id", length = 100)
-    private String requestId; // Optional: für Request-Tracing
+    private String requestId;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name = "event_type", length = 50)
+    private EventType eventType;
+    
+    @Column(name = "http_method", length = 10)
+    private String httpMethod;
 
     @Column(name = "endpoint", nullable = false, length = 200)
-    private String endpoint; // z.B. "/api/auth/register", "/api/public/create-store/save-email"
+    private String endpoint;
+    
+    // ══════════════════════════════════════════════════════════════════════════════════
+    // IP INFORMATION (Multi-Proxy-Support für genaue IP-Tracking)
+    // ══════════════════════════════════════════════════════════════════════════════════
 
     @Column(name = "client_ip", length = 50)
-    private String clientIp; // IP-Adresse (anonymisiert nach Bedarf)
-
-    @Column(name = "forwarded_for", length = 200)
-    private String forwardedFor; // X-Forwarded-For Header (für Proxy-Setups)
+    private String clientIp; // Berechnete echte IP (aus IpAddressUtil)
+    
+    @Column(name = "remote_addr", length = 50)
+    private String remoteAddr; // HttpServletRequest.getRemoteAddr()
+    
+    @Column(name = "x_forwarded_for", length = 200)
+    private String xForwardedFor; // X-Forwarded-For Header (volle Kette)
+    
+    @Column(name = "x_real_ip", length = 50)
+    private String xRealIp; // X-Real-IP Header (NGINX)
 
     @Column(name = "user_agent", length = 500)
     private String userAgent;
@@ -71,14 +96,16 @@ public class SecurityEvent {
     @Column(name = "honeypot_triggered")
     private Boolean honeypotTriggered;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "rate_limit_type", length = 50)
-    private String rateLimitType; // "ip", "email", "domain", "phone", "endpoint"
+    private RateLimitType rateLimitType; // IP, EMAIL, DOMAIN, PHONE, ENDPOINT
 
     @Column(name = "blocked", nullable = false)
     private Boolean blocked; // true = Request wurde blockiert
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "block_reason", length = 200)
-    private String blockReason; // z.B. "CAPTCHA failed", "Rate limit exceeded", "Honeypot triggered"
+    private BlockReason blockReason; // CAPTCHA_INVALID, IP_RATE_LIMIT, etc.
 
     @Column(name = "mail_triggered")
     private Boolean mailTriggered; // true = E-Mail wurde gesendet (trotz potenziellem Spam)
@@ -91,6 +118,38 @@ public class SecurityEvent {
 
     @Column(name = "user_id")
     private Long userId; // Optional: falls User bekannt ist
+    
+    // ══════════════════════════════════════════════════════════════════════════════════
+    // ERWEITERTE FELDER - Incident Response & Grafana
+    // ══════════════════════════════════════════════════════════════════════════════════
+    
+    @Column(name = "email_hash", length = 64)
+    private String emailHash; // SHA-256 hash for analytics (nicht für Security!)
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name = "mail_type", length = 50)
+    private MailType mailType; // STORE_ACCESS, EMAIL_VERIFICATION, PASSWORD_RESET, etc.
+    
+    @Column(name = "mail_sent")
+    private Boolean mailSent; // true wenn Mail tatsächlich versendet (vs. mail_triggered)
+    
+    @Column(name = "kill_switch_triggered")
+    private Boolean killSwitchTriggered; // Emergency Kill Switch aktiv
+    
+    @Column(name = "circuit_breaker_triggered")
+    private Boolean circuitBreakerTriggered; // Circuit Breaker hat geblockt
+    
+    @Column(name = "login_success")
+    private Boolean loginSuccess; // Bei Login-Events: erfolgreich?
+    
+    @Column(name = "risk_score")
+    private Integer riskScore; // 0-100, optional für Bot-Detection
+    
+    @Column(name = "origin", length = 200)
+    private String origin; // Origin-Header
+    
+    @Column(name = "referer", length = 500)
+    private String referer; // Referer-Header
 
     // ── Helper-Methoden ──
 

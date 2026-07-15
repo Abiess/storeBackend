@@ -23,6 +23,8 @@ import storebackend.service.RateLimitService;
 import storebackend.service.CaptchaService;
 import storebackend.service.SecurityEventService;
 import storebackend.util.IpAddressUtil;
+import storebackend.enums.BlockReason;
+import storebackend.enums.RateLimitType;
 
 import java.util.HashSet;
 import java.util.List;
@@ -109,8 +111,8 @@ public class PhoneAuthController {
             // 1. IP Rate Limiting Check (5 requests / 15 minutes)
             if (!rateLimitService.checkIpRateLimit(ipAddress)) {
                 log.warn("⚠️ [PhoneAuth] Rate limit exceeded for IP: {}", ipAddress);
-                eventBuilder.rateLimit("IP")
-                    .blocked(true, "IP rate limit exceeded")
+                eventBuilder.rateLimit(RateLimitType.IP)
+                    .blocked(true, BlockReason.IP_RATE_LIMIT)
                     .httpStatus(429);
                 securityEventService.logEvent(eventBuilder);
                 return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
@@ -120,8 +122,8 @@ public class PhoneAuthController {
             // 2. Phone Number Rate Limiting Check (3 requests / hour)
             if (!rateLimitService.checkPhoneRateLimit(phoneNumber)) {
                 log.warn("⚠️ [PhoneAuth] Rate limit exceeded for phone: {}", maskPhone(phoneNumber));
-                eventBuilder.rateLimit("PHONE")
-                    .blocked(true, "Phone rate limit exceeded")
+                eventBuilder.rateLimit(RateLimitType.PHONE)
+                    .blocked(true, BlockReason.PHONE_RATE_LIMIT)
                     .httpStatus(429);
                 securityEventService.logEvent(eventBuilder);
                 return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
@@ -139,7 +141,7 @@ public class PhoneAuthController {
 
             if (!captchaValid) {
                 log.warn("⚠️ [PhoneAuth] CAPTCHA validation failed for IP: {}", ipAddress);
-                eventBuilder.blocked(true, "CAPTCHA validation failed")
+                eventBuilder.blocked(true, BlockReason.CAPTCHA_INVALID)
                     .httpStatus(400);
                 securityEventService.logEvent(eventBuilder);
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -170,7 +172,7 @@ public class PhoneAuthController {
                 ));
             } else {
                 log.warn("❌ [PhoneAuth] Code-Versand fehlgeschlagen: {}", result.getMessage());
-                eventBuilder.blocked(true, "Code sending failed: " + result.getMessage())
+                eventBuilder.blocked(true, BlockReason.UNKNOWN)
                     .httpStatus(400);
                 securityEventService.logEvent(eventBuilder);
                 
@@ -179,7 +181,7 @@ public class PhoneAuthController {
             }
         } catch (Exception e) {
             log.error("❌ [PhoneAuth] Fehler: {} – {}", e.getClass().getSimpleName(), e.getMessage(), e);
-            eventBuilder.blocked(true, "Internal error: " + e.getMessage())
+            eventBuilder.blocked(true, BlockReason.UNKNOWN)
                 .httpStatus(500);
             securityEventService.logEvent(eventBuilder);
             

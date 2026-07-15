@@ -313,4 +313,20 @@ public class CaptchaService {
         // Default: production
         return "production";
     }
+    
+    /**
+     * Prüft, ob CAPTCHA aktiviert ist
+     * @return true wenn CAPTCHA in Konfiguration aktiviert
+     */
+    public boolean isEnabled() {
+        return captchaEnabled;
+    }
+    
+    /**
+     * Gibt den konfigurierten Provider zurück
+     * @return "hcaptcha" oder "recaptcha"
+     */
+    public String getProvider() {
+        return captchaProvider;
+    }
 }
