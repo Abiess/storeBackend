@@ -5,8 +5,24 @@
     <p>{{ 'woocommerce.subtitle' | translate }}</p>
   </div>
 
-  <!-- Step Indicator -->
-  <div class="step-indicator">
+  <!-- Tab Navigation -->
+  <div class="tab-navigation">
+    <button 
+      class="tab-button" 
+      [class.active]="activeTab === 'import'"
+      (click)="switchTab('import')">
+      📦 {{ 'woocommerce.import' | translate }}
+    </button>
+    <button 
+      class="tab-button" 
+      [class.active]="activeTab === 'cleanup'"
+      (click)="switchTab('cleanup')">
+      🧹 {{ 'woocommerce.cleanup.tabTitle' | translate }}
+    </button>
+  </div>
+
+  <!-- Step Indicator (only for import tab) -->
+  <div class="step-indicator" *ngIf="activeTab === 'import'">
     <div class="step" 
          [class.active]="isStepActive('config')" 
          [class.completed]="isStepCompleted('config')"
@@ -47,7 +63,7 @@
   <!-- ================================================================ -->
   <!-- STEP 1: Config -->
   <!-- ================================================================ -->
-  <div class="step-content" *ngIf="currentStep === 'config'">
+  <div class="step-content" *ngIf="activeTab === 'import' && currentStep === 'config'">
     <div class="form-card">
       <h2>🔌 {{ 'woocommerce.connectionSettings' | translate }}</h2>
       
@@ -115,7 +131,7 @@
   <!-- ================================================================ -->
   <!-- STEP 2: Test Connection -->
   <!-- ================================================================ -->
-  <div class="step-content" *ngIf="currentStep === 'test'">
+  <div class="step-content" *ngIf="activeTab === 'import' && currentStep === 'test'">
     <div class="test-card">
       <h2>🔍 {{ 'woocommerce.testConnection' | translate }}</h2>
       <p>{{ 'woocommerce.testHint' | translate }}</p>
@@ -179,7 +195,7 @@
   <!-- ================================================================ -->
   <!-- STEP 3: Preview -->
   <!-- ================================================================ -->
-  <div class="step-content" *ngIf="currentStep === 'preview'">
+  <div class="step-content" *ngIf="activeTab === 'import' && currentStep === 'preview'">
     <div class="preview-card">
       <h2>👀 {{ 'woocommerce.previewTitle' | translate }}</h2>
       <p>{{ 'woocommerce.previewHint' | translate }}</p>
@@ -275,7 +291,7 @@
   <!-- ================================================================ -->
   <!-- STEP 4: Import -->
   <!-- ================================================================ -->
-  <div class="step-content" *ngIf="currentStep === 'import'">
+  <div class="step-content" *ngIf="activeTab === 'import' && currentStep === 'import'">
     <div class="import-card">
       <h2>🚀 {{ 'woocommerce.importTitle' | translate }}</h2>
       
@@ -334,6 +350,170 @@
                 *ngIf="importResult"
                 (click)="goToStep('preview')">
           {{ 'woocommerce.importAgain' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- CLEANUP TAB: Clean WooCommerce Descriptions -->
+  <!-- ================================================================ -->
+  <div class="cleanup-content" *ngIf="activeTab === 'cleanup'">
+    <div class="cleanup-card">
+      <h2>🧹 {{ 'woocommerce.cleanup.title' | translate }}</h2>
+      <p>{{ 'woocommerce.cleanup.description' | translate }}</p>
+
+      <!-- Start Preview Button -->
+      <div class="cleanup-actions" *ngIf="!cleanupPreview && !cleanupResult">
+        <button 
+          class="btn-primary" 
+          (click)="startCleanupPreview()" 
+          [disabled]="cleaningDescriptions">
+          <span *ngIf="!cleaningDescriptions">🔍 {{ 'woocommerce.cleanup.startPreview' | translate }}</span>
+          <span *ngIf="cleaningDescriptions">
+            <span class="spinner-inline"></span> {{ 'woocommerce.cleanup.loading' | translate }}
+          </span>
+        </button>
+      </div>
+
+      <!-- Preview Result -->
+      <div class="cleanup-preview" *ngIf="cleanupPreview">
+        <h3>{{ 'woocommerce.cleanup.previewTitle' | translate }}</h3>
+
+        <!-- Stats -->
+        <div class="cleanup-stats">
+          <div class="stat">
+            <strong>{{ cleanupPreview.checked }}</strong>
+            <span>{{ 'woocommerce.cleanup.checked' | translate }}</span>
+          </div>
+          <div class="stat" [class.warn]="cleanupPreview.affected > 0">
+            <strong>{{ cleanupPreview.affected }}</strong>
+            <span>{{ 'woocommerce.cleanup.affected' | translate }}</span>
+          </div>
+          <div class="stat error" *ngIf="cleanupPreview.errors && cleanupPreview.errors.length > 0">
+            <strong>{{ cleanupPreview.errors.length }}</strong>
+            <span>{{ 'woocommerce.cleanup.errors' | translate }}</span>
+          </div>
+        </div>
+
+        <!-- No affected products -->
+        <div class="info-box success" *ngIf="cleanupPreview.affected === 0">
+          <p>✅ {{ 'woocommerce.cleanup.noAffectedProducts' | translate }}</p>
+        </div>
+
+        <!-- Products Table -->
+        <div class="cleanup-table-wrapper" *ngIf="cleanupPreview.affected > 0 && cleanupPreview.products.length > 0">
+          <table class="cleanup-table">
+            <thead>
+              <tr>
+                <th>{{ 'woocommerce.cleanup.productName' | translate }}</th>
+                <th>{{ 'woocommerce.cleanup.before' | translate }}</th>
+                <th>{{ 'woocommerce.cleanup.after' | translate }}</th>
+                <th>{{ 'woocommerce.cleanup.status' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let product of cleanupPreview.products">
+                <td class="product-name">{{ product.title }}</td>
+                <td class="description-preview">
+                  <div class="preview-text">{{ truncateText(product.before, 150) }}</div>
+                </td>
+                <td class="description-preview">
+                  <div class="preview-text">{{ truncateText(product.after, 150) }}</div>
+                </td>
+                <td class="status-cell">
+                  <span class="badge status-processing" *ngIf="product.wouldChange">
+                    {{ 'woocommerce.cleanup.willChange' | translate }}
+                  </span>
+                  <span class="badge status-active" *ngIf="!product.wouldChange">
+                    {{ 'woocommerce.cleanup.noChange' | translate }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Errors -->
+        <div class="cleanup-errors" *ngIf="cleanupPreview.errors && cleanupPreview.errors.length > 0">
+          <h4>⚠️ {{ 'woocommerce.cleanup.errorsTitle' | translate }}</h4>
+          <ul>
+            <li *ngFor="let error of cleanupPreview.errors">{{ error }}</li>
+          </ul>
+        </div>
+
+        <!-- Actions -->
+        <div class="cleanup-actions">
+          <button class="btn-secondary" (click)="startCleanupPreview()">
+            🔄 {{ 'woocommerce.cleanup.runAgain' | translate }}
+          </button>
+          <button 
+            class="btn-primary" 
+            (click)="confirmCleanup()" 
+            [disabled]="cleanupPreview.affected === 0"
+            *ngIf="cleanupPreview.affected > 0">
+            🚀 {{ 'woocommerce.cleanup.runCleanup' | translate }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Cleanup Result (after execution) -->
+      <div class="cleanup-result" *ngIf="cleanupResult">
+        <div class="result-header success">
+          <span class="icon">✅</span>
+          <h3>{{ 'woocommerce.cleanup.cleanupComplete' | translate }}</h3>
+        </div>
+
+        <div class="cleanup-stats">
+          <div class="stat">
+            <strong>{{ cleanupResult.checked }}</strong>
+            <span>{{ 'woocommerce.cleanup.checked' | translate }}</span>
+          </div>
+          <div class="stat success">
+            <strong>{{ cleanupResult.updated }}</strong>
+            <span>{{ 'woocommerce.cleanup.updated' | translate }}</span>
+          </div>
+          <div class="stat error" *ngIf="cleanupResult.errors && cleanupResult.errors.length > 0">
+            <strong>{{ cleanupResult.errors.length }}</strong>
+            <span>{{ 'woocommerce.cleanup.errors' | translate }}</span>
+          </div>
+        </div>
+
+        <!-- Errors -->
+        <div class="cleanup-errors" *ngIf="cleanupResult.errors && cleanupResult.errors.length > 0">
+          <h4>⚠️ {{ 'woocommerce.cleanup.errorsTitle' | translate }}</h4>
+          <ul>
+            <li *ngFor="let error of cleanupResult.errors">{{ error }}</li>
+          </ul>
+        </div>
+
+        <!-- Run Again -->
+        <div class="cleanup-actions">
+          <button class="btn-primary" (click)="startCleanupPreview()">
+            🔄 {{ 'woocommerce.cleanup.runAgain' | translate }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cleanup Confirmation Dialog -->
+  <div class="modal-overlay" *ngIf="showCleanupConfirmDialog" (click)="cancelCleanup()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>⚠️ {{ 'woocommerce.cleanup.confirmTitle' | translate }}</h3>
+      </div>
+      <div class="modal-body">
+        <p>{{ 'woocommerce.cleanup.confirmMessage' | translate }}</p>
+        <p><strong>{{ cleanupPreview?.affected || 0 }}</strong> Produktbeschreibungen werden dauerhaft bereinigt.</p>
+        <p class="confirm-note">{{ 'woocommerce.cleanup.confirmNote' | translate }}</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="cancelCleanup()">
+          {{ 'woocommerce.cleanup.cancel' | translate }}
+        </button>
+        <button class="btn-primary" (click)="executeCleanup()">
+          {{ 'woocommerce.cleanup.confirm' | translate }}
         </button>
       </div>
     </div>

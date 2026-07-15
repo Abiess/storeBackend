@@ -12,17 +12,20 @@ import {
   WooCommercePreviewResponse,
   WooCommerceProductPreview,
   WooCommerceImportRequest,
-  WooCommerceImportResponse
+  WooCommerceImportResponse,
+  CleanDescriptionsResponse,
+  ProductCleanupPreview
 } from '@app/core/services/woocommerce.service';
 
 /**
  * WooCommerce Import UI.
  * 
- * 4-Schritte-Wizard:
+ * 4-Schritte-Wizard + Cleanup-Tab:
  * 1. Verbindung (Config speichern)
  * 2. Test (Connection testen)
  * 3. Preview (Produkte laden)
  * 4. Import (noch nicht aktiv - disabled)
+ * 5. Cleanup (Beschreibungen bereinigen)
  * 
  * Security:
  * - Consumer Secret wird NIEMALS angezeigt
@@ -37,6 +40,9 @@ import {
 })
 export class WooCommerceImportComponent implements OnInit {
   storeId!: number;
+
+  // Tab State
+  activeTab: 'import' | 'cleanup' = 'import';
 
   // Wizard State
   currentStep: 'config' | 'test' | 'preview' | 'import' = 'config';
@@ -62,6 +68,12 @@ export class WooCommerceImportComponent implements OnInit {
   // Import State
   importing: boolean = false;
   importResult: WooCommerceImportResponse | null = null;
+
+  // Cleanup State
+  cleaningDescriptions: boolean = false;
+  cleanupPreview: CleanDescriptionsResponse | null = null;
+  cleanupResult: CleanDescriptionsResponse | null = null;
+  showCleanupConfirmDialog: boolean = false;
 
   // Error
   errorMessage: string | null = null;
@@ -294,5 +306,133 @@ export class WooCommerceImportComponent implements OnInit {
     if (product.alreadyImported) return 'woocommerce.alreadyImported';
     if (product.hasVariantLimitWarning) return 'woocommerce.variantLimitWarning';
     return product.status;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Tab Navigation
+  // ─────────────────────────────────────────────────────────────────────────
+
+  switchTab(tab: 'import' | 'cleanup'): void {
+    this.activeTab = tab;
+    // Reset error when switching tabs
+    this.errorMessage = null;
+    // Close any open dialogs
+    this.showCleanupConfirmDialog = false;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Cleanup: WooCommerce Description Cleanup
+  // ─────────────────────────────────────────────────────────────────────────
+
+  startCleanupPreview(): void {
+    // Prevent double-click
+    if (this.cleaningDescriptions) {
+      return;
+    }
+
+    // Reset previous results and errors
+    this.cleanupPreview = null;
+    this.cleanupResult = null;
+    this.errorMessage = null;
+    this.cleaningDescriptions = true;
+
+    this.wooCommerceService.cleanDescriptions(this.storeId, true).subscribe({
+      next: (response: CleanDescriptionsResponse) => {
+        this.cleaningDescriptions = false;
+        this.cleanupPreview = response;
+
+        if (response.affected === 0) {
+          this.toastService.success('woocommerce.cleanup.noAffectedProducts');
+        } else {
+          this.toastService.success('woocommerce.cleanup.previewSuccess');
+        }
+      },
+      error: (err) => {
+        this.cleaningDescriptions = false;
+        
+        // Handle 401 and 403
+        if (err.status === 401) {
+          this.errorMessage = 'woocommerce.cleanup.unauthenticated';
+          this.toastService.error(this.errorMessage);
+          return;
+        }
+
+        if (err.status === 403) {
+          this.errorMessage = 'woocommerce.cleanup.accessDenied';
+          this.toastService.error(this.errorMessage);
+          return;
+        }
+
+        this.errorMessage = err.error?.messageKey || 'woocommerce.error.unknown';
+        if (this.errorMessage) {
+          this.toastService.error(this.errorMessage);
+        }
+      }
+    });
+  }
+
+  confirmCleanup(): void {
+    if (!this.cleanupPreview || this.cleanupPreview.affected === 0) {
+      return;
+    }
+
+    this.showCleanupConfirmDialog = true;
+  }
+
+  cancelCleanup(): void {
+    this.showCleanupConfirmDialog = false;
+  }
+
+  executeCleanup(): void {
+    // Can only execute after successful dry-run
+    if (!this.cleanupPreview || this.cleaningDescriptions) {
+      return;
+    }
+
+    this.showCleanupConfirmDialog = false;
+    this.cleaningDescriptions = true;
+    this.errorMessage = null;
+
+    this.wooCommerceService.cleanDescriptions(this.storeId, false).subscribe({
+      next: (response: CleanDescriptionsResponse) => {
+        this.cleaningDescriptions = false;
+        this.cleanupResult = response;
+        
+        // Clear preview to prevent re-execution
+        this.cleanupPreview = null;
+
+        if (response.updated > 0) {
+          this.toastService.success(`woocommerce.cleanup.cleanupSuccess: ${response.updated} Produkte bereinigt`);
+        } else {
+          this.toastService.info('woocommerce.cleanup.noChanges');
+        }
+      },
+      error: (err) => {
+        this.cleaningDescriptions = false;
+        
+        if (err.status === 401) {
+          this.errorMessage = 'woocommerce.cleanup.unauthenticated';
+          this.toastService.error(this.errorMessage);
+          return;
+        }
+
+        if (err.status === 403) {
+          this.errorMessage = 'woocommerce.cleanup.accessDenied';
+          this.toastService.error(this.errorMessage);
+          return;
+        }
+
+        this.errorMessage = err.error?.messageKey || 'woocommerce.cleanup.cleanupFailed';
+        if (this.errorMessage) {
+          this.toastService.error(this.errorMessage);
+        }
+      }
+    });
+  }
+
+  truncateText(text: string | null | undefined, maxLength: number = 300): string {
+    if (!text) return '';
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
   }
 }

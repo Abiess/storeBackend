@@ -73,6 +73,19 @@ export class WooCommerceService {
       body
     );
   }
+
+  /**
+   * Bereinigt WooCommerce-Produktbeschreibungen (HTML → Klartext).
+   */
+  cleanDescriptions(storeId: number, dryRun: boolean = true): Observable<CleanDescriptionsResponse> {
+    return this.http.post<CleanDescriptionsResponse>(
+      `${this.apiUrl}/admin/products/woocommerce/clean-descriptions`,
+      {
+        storeId: storeId,
+        dryRun: dryRun
+      }
+    );
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -157,4 +170,32 @@ export interface WooCommerceImportResponse {
   totalProducts?: number;
   estimatedTime?: number;
   message?: string;
+}
+
+/**
+ * Request für WooCommerce-Beschreibungsbereinigung.
+ */
+export interface CleanDescriptionsRequest {
+  storeId: number;
+  dryRun: boolean;
+}
+
+/**
+ * Response für WooCommerce-Beschreibungsbereinigung.
+ */
+export interface CleanDescriptionsResponse {
+  checked: number;         // Anzahl geprüfter Produkte
+  affected: number;        // Anzahl Produkte mit HTML
+  updated: number;         // Anzahl aktualisierter Produkte
+  dryRun: boolean;
+  products: ProductCleanupPreview[];
+  errors: string[];
+}
+
+export interface ProductCleanupPreview {
+  id: number;
+  title: string;
+  before: string;   // Max 300 Zeichen
+  after: string;    // Max 300 Zeichen
+  wouldChange: boolean;
 }
