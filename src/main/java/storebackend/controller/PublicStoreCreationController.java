@@ -14,6 +14,8 @@ import storebackend.entity.SecurityEvent;
 import storebackend.enums.BusinessType;
 import storebackend.enums.Role;
 import storebackend.enums.StoreStatus;
+import storebackend.enums.BlockReason;
+import storebackend.enums.MailType;
 import storebackend.repository.PlanRepository;
 import storebackend.repository.StoreRepository;
 import storebackend.repository.UserRepository;
@@ -27,7 +29,6 @@ import storebackend.service.SecurityEventService;
 import storebackend.service.EmailDomainValidationService;
 import storebackend.config.SaasProperties;
 import storebackend.util.IpAddressUtil;
-import storebackend.enums.BlockReason;
 import storebackend.enums.RateLimitType;
 
 import jakarta.validation.Valid;

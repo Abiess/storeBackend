@@ -36,9 +36,23 @@ public class SecurityEventService {
     @Async
     @Transactional
     public void logEvent(SecurityEventBuilder builder) {
+        SecurityEvent event = null;
         try {
-            SecurityEvent event = builder.build();
-            securityEventRepository.save(event);
+            event = builder.build();
+            
+            // DEBUG: Save attempt
+            log.info("SECURITY_EVENT_SAVE_ATTEMPT requestId={} {}", 
+                event.getRequestId(), 
+                formatEventForDebug(event));
+            
+            event = securityEventRepository.save(event);
+            
+            // DEBUG: Save successful
+            log.info("SECURITY_EVENT_SAVE_OK requestId={} endpoint={} eventId={} saved={}", 
+                event.getRequestId(),
+                event.getEndpoint(),
+                event.getId(),
+                event.getCreatedAt());
             
             // Bei kritischen Events zusätzlich loggen
             if (Boolean.TRUE.equals(event.getBlocked())) {
@@ -57,7 +71,12 @@ public class SecurityEventService {
                     event.getUserAgent());
             }
         } catch (Exception e) {
-            log.error("Failed to save security event", e);
+            log.error("SECURITY_EVENT_SAVE_FAILED requestId={} endpoint={} errorClass={} errorMsg={}", 
+                event != null ? event.getRequestId() : "UNKNOWN",
+                event != null ? event.getEndpoint() : "UNKNOWN",
+                e.getClass().getSimpleName(),
+                e.getMessage(),
+                e);
         }
     }
 

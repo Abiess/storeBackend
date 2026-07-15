@@ -45,6 +45,9 @@ public enum EventType {
     KILL_SWITCH_TRIGGERED,
     CIRCUIT_BREAKER_TRIGGERED,
     
+    // System
+    SYSTEM_TEST,  // For diagnostics testing
+    
     // Other
     API_REQUEST,
     SUSPICIOUS_ACTIVITY,

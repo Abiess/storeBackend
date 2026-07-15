@@ -48,4 +48,16 @@ public interface SecurityEventRepository extends JpaRepository<SecurityEvent, Lo
      * Cleanup alter Events (älter als X Tage)
      */
     void deleteByCreatedAtBefore(LocalDateTime before);
+    
+    /**
+     * Latest events für Diagnostics
+     */
+    List<SecurityEvent> findTop5ByOrderByCreatedAtDesc();
+    
+    /**
+     * Count by flags für Diagnostics
+     */
+    long countByBlocked(boolean blocked);
+    long countByMailTriggered(boolean mailTriggered);
+    long countByMailSent(boolean mailSent);
 }

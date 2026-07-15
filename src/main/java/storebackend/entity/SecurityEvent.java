@@ -107,9 +107,6 @@ public class SecurityEvent {
     @Column(name = "block_reason", length = 200)
     private BlockReason blockReason; // CAPTCHA_INVALID, IP_RATE_LIMIT, etc.
 
-    @Column(name = "mail_triggered")
-    private Boolean mailTriggered; // true = E-Mail wurde gesendet (trotz potenziellem Spam)
-
     @Column(name = "http_status")
     private Integer httpStatus; // HTTP-Statuscode der Antwort
 

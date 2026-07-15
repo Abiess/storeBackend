@@ -256,22 +256,4 @@ public class SecurityEventService {
     public long countRecentHoneypots() {
         return securityEventRepository.countHoneypotTriggersSince(LocalDateTime.now().minusHours(1));
     }
-    
-    /**
-     * Formatiert Event-Daten für Debug-Logging (KEINE sensiblen Daten!)
-     */
-    private String formatEventForDebug(SecurityEvent event) {
-        return String.format(
-            "endpoint=%s eventType=%s blocked=%s blockReason=%s mailTriggered=%s mailSent=%s mailType=%s httpStatus=%s clientIp=%s",
-            event.getEndpoint(),
-            event.getEventType(),
-            event.getBlocked(),
-            event.getBlockReason(),
-            event.getMailTriggered(),
-            event.getMailSent(),
-            event.getMailType(),
-            event.getHttpStatus(),
-            event.getClientIp() != null ? event.getClientIp().substring(0, Math.min(10, event.getClientIp().length())) + "..." : "null"
-        );
-    }
 }

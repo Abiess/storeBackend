@@ -187,6 +187,43 @@ public class SecurityEventService {
             return this;
         }
         
+        public SecurityEvent build() {
+            return this.event;
+        }
+    }
+    
+    /**
+     * Erstellt neuen Event-Builder
+     */
+    public SecurityEventBuilder builder(String endpoint) {
+        return new SecurityEventBuilder(endpoint);
+    }
+
+    /**
+     * Cleanup alte Events (für Scheduled Task)
+     */
+    @Transactional
+    public void cleanupOldEvents(int daysToKeep) {
+        LocalDateTime cutoff = LocalDateTime.now().minusDays(daysToKeep);
+        securityEventRepository.deleteByCreatedAtBefore(cutoff);
+        log.info("Security events older than {} days cleaned up", daysToKeep);
+    }
+
+    /**
+     * Zählt blockierte Events in letzter Stunde (für Monitoring)
+     */
+    public long countRecentBlocks() {
+        return securityEventRepository.countBlockedSince(LocalDateTime.now().minusHours(1));
+    }
+
+    /**
+     * Zählt Honeypot-Trigger in letzter Stunde (für Alarm)
+     */
+    public long countRecentHoneypots() {
+        return securityEventRepository.countHoneypotTriggersSince(LocalDateTime.now().minusHours(1));
+    }
+}
+        
         public SecurityEventBuilder mailActuallySent(boolean sent) {
             this.event.setMailSent(sent);
             return this;
@@ -227,6 +264,24 @@ public class SecurityEventService {
     }
 
     /**
+     * Formatiert Event-Daten für Debug-Logging (KEINE sensiblen Daten!)
+     */
+    private String formatEventForDebug(SecurityEvent event) {
+        return String.format(
+            "endpoint=%s eventType=%s blocked=%s blockReason=%s mailTriggered=%s mailSent=%s mailType=%s httpStatus=%s clientIp=%s",
+            event.getEndpoint(),
+            event.getEventType(),
+            event.getBlocked(),
+            event.getBlockReason(),
+            event.getMailTriggered(),
+            event.getMailSent(),
+            event.getMailType(),
+            event.getHttpStatus(),
+            event.getClientIp() != null ? event.getClientIp().substring(0, Math.min(10, event.getClientIp().length())) + "..." : "null"
+        );
+    }
+
+    /**
      * Erstellt neuen Event-Builder
      */
     public SecurityEventBuilder builder(String endpoint) {
@@ -255,23 +310,5 @@ public class SecurityEventService {
      */
     public long countRecentHoneypots() {
         return securityEventRepository.countHoneypotTriggersSince(LocalDateTime.now().minusHours(1));
-    }
-    
-    /**
-     * Formatiert Event-Daten für Debug-Logging (KEINE sensiblen Daten!)
-     */
-    private String formatEventForDebug(SecurityEvent event) {
-        return String.format(
-            "endpoint=%s eventType=%s blocked=%s blockReason=%s mailTriggered=%s mailSent=%s mailType=%s httpStatus=%s clientIp=%s",
-            event.getEndpoint(),
-            event.getEventType(),
-            event.getBlocked(),
-            event.getBlockReason(),
-            event.getMailTriggered(),
-            event.getMailSent(),
-            event.getMailType(),
-            event.getHttpStatus(),
-            event.getClientIp() != null ? event.getClientIp().substring(0, Math.min(10, event.getClientIp().length())) + "..." : "null"
-        );
     }
 }
