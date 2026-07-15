@@ -239,9 +239,9 @@ public class ProductService {
                         mediaDTO.setProductId(pm.getProduct().getId());
                         mediaDTO.setMediaId(pm.getMedia().getId());
 
-                        // Generiere URL über MinioService
+                        // Generiere permanente öffentliche URL über MinioService
                         try {
-                            String url = minioService.getPresignedUrl(pm.getMedia().getMinioObjectName(), 60);
+                            String url = minioService.getPublicUrl(pm.getMedia().getMinioObjectName());
                             mediaDTO.setUrl(url);
                         } catch (Exception e) {
                             // Fallback: leere URL
@@ -439,8 +439,8 @@ public class ProductService {
                     .findFirst()
                     .orElse(mediaList.get(0));
                 
-                // Generiere presigned MinIO-URL
-                String url = minioService.getPresignedUrl(primaryMedia.getMedia().getMinioObjectName(), 60);
+                // Generiere permanente öffentliche MinIO-URL (kein Ablaufdatum)
+                String url = minioService.getPublicUrl(primaryMedia.getMedia().getMinioObjectName());
                 if (url != null && !url.isEmpty()) {
                     return url;
                 }

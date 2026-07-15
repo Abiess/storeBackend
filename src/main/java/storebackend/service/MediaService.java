@@ -93,14 +93,15 @@ public class MediaService {
         storeUsageService.incrementImageCount(store);
 
         // Generate URL for response
-        // ✅ FÜR LOGOS: Permanente öffentliche URL (kein Ablaufdatum)
-        // ✅ FÜR ANDERE MEDIEN: Presigned URL (7 Tage)
+        // ✅ FÜR ÖFFENTLICHE MEDIEN: Permanente öffentliche URL (kein Ablaufdatum)
+        // ✅ FÜR PRIVATE MEDIEN: Presigned URL (7 Tage)
         String url;
-        if (mediaType == MediaType.LOGO || mediaType == MediaType.STORE_LOGO) {
+        if (isPublicMediaType(mediaType)) {
             url = minioService.getPublicUrl(minioObjectName); // Permanent, kein Expiry
-            log.info("✅ Logo returned with permanent URL (no expiry): {}", url);
+            log.info("✅ Public media returned with permanent URL: type={}, url={}", mediaType, url);
         } else {
-            url = minioService.getPresignedUrl(minioObjectName, 10080); // 7 Tage für andere Medien
+            url = minioService.getPresignedUrl(minioObjectName, 10080); // 7 Tage für private Medien
+            log.info("⚠️ Private media returned with presigned URL (7 days): type={}", mediaType);
         }
 
         log.info("Media uploaded successfully: {} for store {}", media.getId(), store.getId());
@@ -159,11 +160,15 @@ public class MediaService {
     }
 
     /**
-     * Get media URL
+     * Get media URL (public or presigned based on media type)
      */
     public String getMediaUrl(Long mediaId) {
         Media media = getMediaById(mediaId);
-        return minioService.getPresignedUrl(media.getMinioObjectName(), 10080); // 7 Tage
+        if (isPublicMediaType(media.getMediaType())) {
+            return minioService.getPublicUrl(media.getMinioObjectName()); // Permanent
+        } else {
+            return minioService.getPresignedUrl(media.getMinioObjectName(), 10080); // 7 Tage für private
+        }
     }
 
     /**
@@ -343,10 +348,27 @@ public class MediaService {
         dto.setSizeBytes(media.getSizeBytes());
         dto.setMediaType(media.getMediaType().name());
         dto.setAltText(media.getAltText());
-        // URLs immer frisch generieren (7 Tage Gültigkeit)
-        dto.setUrl(minioService.getPresignedUrl(media.getMinioObjectName(), 10080));
+        // URLs immer frisch generieren (public oder presigned je nach Typ)
+        if (isPublicMediaType(media.getMediaType())) {
+            dto.setUrl(minioService.getPublicUrl(media.getMinioObjectName())); // Permanent
+        } else {
+            dto.setUrl(minioService.getPresignedUrl(media.getMinioObjectName(), 10080)); // 7 Tage
+        }
         dto.setCreatedAt(media.getCreatedAt());
         return dto;
+    }
+
+    /**
+     * Prüft ob ein MediaType öffentlich sichtbar sein soll (Public URL) oder privat (Presigned URL)
+     */
+    private boolean isPublicMediaType(MediaType type) {
+        // Öffentliche Medien: Logos, Produktbilder, Slider, Banner
+        return type == MediaType.LOGO 
+            || type == MediaType.STORE_LOGO
+            || type == MediaType.PRODUCT_IMAGE
+            || type == MediaType.IMAGE  // Slider-Bilder
+            || type == MediaType.STORE_BANNER;
+        // OTHER bleibt privat (z.B. für private Dokumente)
     }
 }
 

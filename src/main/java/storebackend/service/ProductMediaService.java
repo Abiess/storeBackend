@@ -37,9 +37,9 @@ public class ProductMediaService {
                     dto.setSortOrder(pm.getSortOrder());
                     dto.setIsPrimary(pm.getIsPrimary());
 
-                    // Generate presigned URL
+                    // Generate permanent public URL
                     try {
-                        String url = minioService.getPresignedUrl(pm.getMedia().getMinioObjectName(), 60);
+                        String url = minioService.getPublicUrl(pm.getMedia().getMinioObjectName());
                         dto.setUrl(url);
                     } catch (Exception e) {
                         dto.setUrl("");

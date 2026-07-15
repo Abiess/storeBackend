@@ -8,6 +8,7 @@ import storebackend.entity.*;
 import storebackend.repository.*;
 import storebackend.service.MinioService;
 import storebackend.service.AuthService;
+import storebackend.service.ProductService;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -32,6 +33,7 @@ public class SimpleCartController {
     private final ProductVariantRepository productVariantRepository;
     private final ProductMediaRepository productMediaRepository;
     private final MinioService minioService;
+    private final ProductService productService;
     private final AuthService authService;
     private final UserRepository userRepository;
 
@@ -284,22 +286,10 @@ public class SimpleCartController {
                             dto.put("productTitle", product.getTitle());
                             dto.put("productDescription", product.getDescription());
 
-                            // Füge Produktbild hinzu
+                            // Füge Produktbild hinzu (nutzt zentrale Methode)
                             try {
-                                List<ProductMedia> media = productMediaRepository.findByProductIdOrderBySortOrderAsc(product.getId());
-                                if (!media.isEmpty()) {
-                                    ProductMedia primaryMedia = media.stream()
-                                        .filter(pm -> pm != null && pm.getIsPrimary() != null && pm.getIsPrimary())
-                                        .findFirst()
-                                        .orElse(media.get(0));
-
-                                    if (primaryMedia != null && primaryMedia.getMedia() != null) {
-                                        String imageUrl = minioService.getPresignedUrl(
-                                            primaryMedia.getMedia().getMinioObjectName(), 60
-                                        );
-                                        dto.put("imageUrl", imageUrl);
-                                    }
-                                }
+                                String imageUrl = productService.resolveProductImageUrl(product);
+                                dto.put("imageUrl", imageUrl);
                             } catch (Exception e) {
                                 log.warn("Could not load image for product {}: {}", product.getId(), e.getMessage());
                                 dto.put("imageUrl", null);

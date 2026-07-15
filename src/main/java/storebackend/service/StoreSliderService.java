@@ -296,16 +296,16 @@ public class StoreSliderService {
         dto.setStoreId(image.getStore().getId());
         dto.setMediaId(image.getMedia() != null ? image.getMedia().getId() : null);
         
-        // ✅ FIX: Generiere frische presigned URL wenn media vorhanden ist
+        // ✅ FIX: Generiere permanente öffentliche URL wenn media vorhanden ist
         String imageUrl;
         if (image.getMedia() != null) {
-            // Owner-Upload: Generiere frische URL von MinIO (7 Tage gültig)
+            // Owner-Upload: Generiere permanente öffentliche URL (kein Ablaufdatum)
             try {
-                imageUrl = minioService.getPresignedUrl(image.getMedia().getMinioObjectName(), 10080);
-                log.debug("Generated fresh presigned URL for slider image {} (media {})", 
+                imageUrl = minioService.getPublicUrl(image.getMedia().getMinioObjectName());
+                log.debug("Generated permanent public URL for slider image {} (media {})", 
                     image.getId(), image.getMedia().getId());
             } catch (Exception e) {
-                log.warn("Failed to generate presigned URL for slider image {}: {}", 
+                log.warn("Failed to generate public URL for slider image {}: {}", 
                     image.getId(), e.getMessage());
                 imageUrl = image.getImageUrl(); // Fallback zur gespeicherten URL
             }

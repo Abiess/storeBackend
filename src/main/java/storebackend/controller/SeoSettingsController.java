@@ -85,7 +85,7 @@ public class SeoSettingsController {
         try {
             // Upload via MinioService direkt (kein Medien-Limit für SEO-Assets)
             String objectName = minioService.uploadFile(file, storeId, "seo");
-            String publicUrl = minioService.getPresignedUrl(objectName, 60 * 24 * 7); // 7 Tage
+            String publicUrl = minioService.getPublicUrl(objectName); // Permanente öffentliche URL
 
             // Als SeoAsset speichern
             SeoAsset asset = new SeoAsset();
