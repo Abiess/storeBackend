@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(255) NOT NULL UNIQUE,
     name VARCHAR(255),
     password_hash VARCHAR(255) NOT NULL,
+    phone_number VARCHAR(20) UNIQUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     enabled BOOLEAN NOT NULL DEFAULT TRUE,
@@ -38,6 +39,9 @@ CREATE TABLE IF NOT EXISTS users (
     ai_calls_period_start TIMESTAMP,
     CONSTRAINT fk_users_plan FOREIGN KEY (plan_id) REFERENCES plans(id)
 );
+
+-- Migration: Phone-Auth Support hinzufügen (H2-compatible)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_number VARCHAR(20) UNIQUE;
 
 -- Email Verifications Tabelle
 CREATE TABLE IF NOT EXISTS email_verifications (
@@ -103,6 +107,12 @@ ALTER TABLE stores ADD COLUMN IF NOT EXISTS facebook_url TEXT;
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS instagram_url TEXT;
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS tiktok_url TEXT;
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS footer_text TEXT;
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS business_type VARCHAR(20) NOT NULL DEFAULT 'SHOP';
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS opening_hours TEXT;
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS address TEXT;
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS google_maps_url TEXT;
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS bot_protection_enabled BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS bot_protection_mode VARCHAR(20) NOT NULL DEFAULT 'SUSPICIOUS_ONLY';
 
 -- Domains Tabelle
 CREATE TABLE IF NOT EXISTS domains (

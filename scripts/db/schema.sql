@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS users (
                                      email VARCHAR(255) NOT NULL UNIQUE,
     name VARCHAR(255),
     password_hash VARCHAR(255) NOT NULL,
+    phone_number VARCHAR(20) UNIQUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     enabled BOOLEAN NOT NULL DEFAULT TRUE,
@@ -33,6 +34,9 @@ CREATE TABLE IF NOT EXISTS users (
     CONSTRAINT fk_users_plan FOREIGN KEY (plan_id) REFERENCES plans(id),
     CONSTRAINT chk_users_language CHECK (preferred_language IN ('en', 'de', 'ar'))
     );
+
+-- Migration: Phone-Auth Support hinzufügen
+ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_number VARCHAR(20) UNIQUE;
 
 -- Email Verifications Tabelle (für Email-Verification Feature)
 CREATE TABLE IF NOT EXISTS email_verifications (

@@ -257,14 +257,6 @@ import { environment } from '@env/environment';
             <section class="form-section">
               <h2>🚚 {{ 'checkout.shippingMethod' | translate }}</h2>
 
-              <!-- TEMP DEBUG: DHL Visibility Check -->
-              <div style="background: #fff3cd; border: 1px solid #ffc107; padding: 8px; margin-bottom: 10px; font-size: 12px; font-family: monospace;">
-                DEBUG: publicStore={{ publicStore ? 'SET' : 'NULL' }} | 
-                dhlEnabled={{ publicStore?.dhlShippingEnabled }} | 
-                shouldShowDHL={{ publicStore?.dhlShippingEnabled === true }}
-              </div>
-              <!-- END TEMP DEBUG -->
-
               <!-- Globale Lieferoptionen (plattformweit verwaltet) -->
               <div *ngIf="loadingGlobalDelivery" class="delivery-loading">
                 <div class="spinner-sm"></div> {{ 'checkout.deliveryLoading' | translate }}

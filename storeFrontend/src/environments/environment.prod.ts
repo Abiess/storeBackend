@@ -3,6 +3,7 @@ export const environment = {
   useMockData: false,
   apiUrl: 'https://api.markt.ma/api',
   publicApiUrl: 'https://api.markt.ma/api/public',
+  assetsBaseUrl: 'https://api.markt.ma',
   whatsappNumber: '+212675522961',
 
   /**

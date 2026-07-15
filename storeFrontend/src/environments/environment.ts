@@ -3,6 +3,7 @@ export const environment = {
   useMockData: false,
   apiUrl: 'http://localhost:8080/api',
   publicApiUrl: 'http://localhost:8080/api/public',
+  assetsBaseUrl: 'http://localhost:8080',
   whatsappNumber: '+212675522961',
 
   /**

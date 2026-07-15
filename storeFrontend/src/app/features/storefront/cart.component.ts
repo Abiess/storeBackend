@@ -6,6 +6,7 @@ import { CartService, Cart, CartItem } from '../../core/services/cart.service';
 import { SubdomainService } from '../../core/services/subdomain.service';
 import { PlaceholderImageUtil } from '../../shared/utils/placeholder-image.util';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
+import { environment } from '@env/environment';
 
 import { Subscription } from 'rxjs';
 
@@ -79,9 +80,16 @@ import { Subscription } from 'rxjs';
               <!-- Product Image -->
               <div class="card-img-wrap">
                 <img
-                  [src]="item.imageUrl || getPlaceholder()"
+                  *ngIf="getProductImageUrl(item) as imageUrl; else imageFallback"
+                  [src]="imageUrl"
                   [alt]="item.productTitle"
-                  (error)="onImgError($event)">
+                  class="product-image"
+                  (error)="onProductImageError($event)">
+                <ng-template #imageFallback>
+                  <div class="product-image-placeholder">
+                    📦
+                  </div>
+                </ng-template>
               </div>
 
               <!-- Product Details -->
@@ -461,6 +469,17 @@ import { Subscription } from 'rxjs';
       transition: transform 0.3s;
     }
     .cart-card:hover .card-img-wrap img { transform: scale(1.05); }
+
+    .product-image-placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #f5f5f7 0%, #e8e8ea 100%);
+      font-size: 2rem;
+      color: #ccc;
+    }
 
     @media (min-width: 480px) {
       .card-img-wrap { width: 90px; height: 90px; }
@@ -1016,6 +1035,36 @@ export class CartComponent implements OnInit, OnDestroy {
   trackItem(_: number, item: CartItem): number { return item.id; }
 
   getPlaceholder(): string { return PlaceholderImageUtil.getProductPlaceholder(); }
+
+  /**
+   * Zentrale Methode zur Auflösung der Produktbild-URL
+   * Unterstützt vollständige URLs und relative MinIO-Pfade
+   */
+  getProductImageUrl(item: CartItem): string | null {
+    const rawUrl = item.imageUrl;
+
+    if (!rawUrl) {
+      return null;
+    }
+
+    // Vollständige URLs direkt verwenden
+    if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) {
+      return rawUrl;
+    }
+
+    // Relative Pfade mit Base-URL vervollständigen
+    return `${environment.assetsBaseUrl}/${rawUrl.replace(/^\/+/, '')}`;
+  }
+
+  onProductImageError(e: Event): void {
+    // Bei Fehler: Element durch Platzhalter ersetzen
+    const imgElement = e.target as HTMLImageElement;
+    imgElement.style.display = 'none';
+    const placeholder = imgElement.parentElement?.querySelector('.product-image-placeholder') as HTMLElement;
+    if (placeholder) {
+      placeholder.style.display = 'flex';
+    }
+  }
 
   onImgError(e: Event): void {
     (e.target as HTMLImageElement).src = this.getPlaceholder();
