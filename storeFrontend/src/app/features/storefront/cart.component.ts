@@ -6,7 +6,6 @@ import { CartService, Cart, CartItem } from '../../core/services/cart.service';
 import { SubdomainService } from '../../core/services/subdomain.service';
 import { PlaceholderImageUtil } from '../../shared/utils/placeholder-image.util';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
-import { environment } from '@env/environment';
 
 import { Subscription } from 'rxjs';
 
@@ -80,11 +79,11 @@ import { Subscription } from 'rxjs';
               <!-- Product Image -->
               <div class="card-img-wrap">
                 <img
-                  *ngIf="getProductImageUrl(item) as imageUrl; else imageFallback"
-                  [src]="imageUrl"
+                  *ngIf="canShowImage(item); else imageFallback"
+                  [src]="item.imageUrl!"
                   [alt]="item.productTitle"
                   class="product-image"
-                  (error)="onProductImageError($event)">
+                  (error)="onProductImageError(item)">
                 <ng-template #imageFallback>
                   <div class="product-image-placeholder">
                     📦
@@ -908,6 +907,9 @@ export class CartComponent implements OnInit, OnDestroy {
   storeId: number | null = null;
   toast: string | null = null;
   private toastTimeout: any;
+  
+  // Track fehlgeschlagene Bilder
+  failedImageItems = new Set<number>();
 
   private cartUpdateSubscription?: Subscription;
 
@@ -1037,37 +1039,19 @@ export class CartComponent implements OnInit, OnDestroy {
   getPlaceholder(): string { return PlaceholderImageUtil.getProductPlaceholder(); }
 
   /**
-   * Zentrale Methode zur Auflösung der Produktbild-URL
-   * Unterstützt vollständige URLs und relative MinIO-Pfade
+   * Prüft, ob ein Bild angezeigt werden kann
+   * Liefert false bei null/empty URL oder wenn das Laden fehlgeschlagen ist
    */
-  getProductImageUrl(item: CartItem): string | null {
-    const rawUrl = item.imageUrl;
-
-    if (!rawUrl) {
-      return null;
-    }
-
-    // Vollständige URLs direkt verwenden
-    if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) {
-      return rawUrl;
-    }
-
-    // Relative Pfade mit Base-URL vervollständigen
-    return `${environment.assetsBaseUrl}/${rawUrl.replace(/^\/+/, '')}`;
+  canShowImage(item: CartItem): boolean {
+    return !!item.imageUrl?.trim() && !this.failedImageItems.has(item.id);
   }
 
-  onProductImageError(e: Event): void {
-    // Bei Fehler: Element durch Platzhalter ersetzen
-    const imgElement = e.target as HTMLImageElement;
-    imgElement.style.display = 'none';
-    const placeholder = imgElement.parentElement?.querySelector('.product-image-placeholder') as HTMLElement;
-    if (placeholder) {
-      placeholder.style.display = 'flex';
-    }
-  }
-
-  onImgError(e: Event): void {
-    (e.target as HTMLImageElement).src = this.getPlaceholder();
+  /**
+   * Handler für Bildfehler - markiert Item als fehlgeschlagen
+   * Frontend zeigt dann automatisch Platzhalter via *ngIf
+   */
+  onProductImageError(item: CartItem): void {
+    this.failedImageItems.add(item.id);
   }
 
   private showToast(msg: string): void {

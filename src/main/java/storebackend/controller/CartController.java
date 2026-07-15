@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import storebackend.entity.*;
 import storebackend.repository.*;
 import storebackend.service.CartService;
-import storebackend.service.MinioService;
+import storebackend.service.ProductService;
 import storebackend.security.JwtUtil;
 
 import java.math.BigDecimal;
@@ -23,8 +23,7 @@ public class CartController {
     private final CartService cartService;
     private final StoreRepository storeRepository;
     private final UserRepository userRepository;
-    private final MinioService minioService;
-    private final ProductMediaRepository productMediaRepository;
+    private final ProductService productService; // ✅ Nutze zentrale Bildauflösung
     private final JwtUtil jwtUtil;
 
     @GetMapping
@@ -235,9 +234,9 @@ public class CartController {
                     productDto.put("name", product.getTitle());
                     productDto.put("description", product.getDescription());
                     
-                    // Fallback: Wenn Variante kein Bild hat, verwende Produkt-Bild
+                    // Fallback: Wenn Variante kein Bild hat, verwende Produkt-Bild (zentrale Methode)
                     if (imageUrl == null || imageUrl.isEmpty()) {
-                        imageUrl = getProductImageUrl(product);
+                        imageUrl = productService.resolveProductImageUrl(product);
                     }
                     productDto.put("imageUrl", imageUrl);
                     
@@ -253,7 +252,7 @@ public class CartController {
 
                 Product product = item.getProduct();
                 productTitle = product.getTitle();
-                imageUrl = getProductImageUrl(product);
+                imageUrl = productService.resolveProductImageUrl(product); // ✅ Zentrale Methode
 
                 Map<String, Object> productDto = new HashMap<>();
                 productDto.put("id", product.getId());
@@ -266,7 +265,7 @@ public class CartController {
             }
 
             // FIXED: Setze imageUrl, productTitle, variantSku auf oberster Ebene (für Frontend!)
-            dto.put("imageUrl", imageUrl != null ? imageUrl : "/assets/placeholder-product.png");
+            dto.put("imageUrl", imageUrl); // null erlaubt - Frontend zeigt Platzhalter
             dto.put("productTitle", productTitle != null ? productTitle : "Unknown Product");
             dto.put("variantSku", variantSku != null ? variantSku : "");
 
@@ -299,35 +298,5 @@ public class CartController {
         } catch (Exception e) {
             throw new RuntimeException("Could not extract userId from token: " + e.getMessage());
         }
-    }
-
-    /**
-     * Holt die Bild-URL eines Produkts über ProductMedia
-     * FIXED: Mit mehreren Fallback-Optionen für Robustheit
-     */
-    private String getProductImageUrl(Product product) {
-        // Fallback 1: Versuche ProductMedia + MinIO
-        try {
-            List<ProductMedia> mediaList = productMediaRepository.findByProductIdOrderBySortOrderAsc(product.getId());
-            
-            if (!mediaList.isEmpty()) {
-                // Suche Primary Image
-                ProductMedia primaryMedia = mediaList.stream()
-                    .filter(ProductMedia::getIsPrimary)
-                    .findFirst()
-                    .orElse(mediaList.get(0));
-                
-                // Generiere presigned URL für MinIO
-                String url = minioService.getPresignedUrl(primaryMedia.getMedia().getMinioObjectName(), 60);
-                if (url != null && !url.isEmpty()) {
-                    return url;
-                }
-            }
-        } catch (Exception e) {
-            log.debug("ProductMedia/MinIO nicht verfügbar für Produkt {}: {}", product.getId(), e.getMessage());
-        }
-        
-        // Fallback 2: Verwende placeholder
-        return "/assets/placeholder-product.png";
     }
 }

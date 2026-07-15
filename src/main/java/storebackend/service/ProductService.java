@@ -257,28 +257,9 @@ public class ProductService {
 
             dto.setMedia(mediaList);
 
-            // Setze Primary Image URL
-            productMedia.stream()
-                    .filter(ProductMedia::getIsPrimary)
-                    .findFirst()
-                    .ifPresent(pm -> {
-                        try {
-                            String url = minioService.getPresignedUrl(pm.getMedia().getMinioObjectName(), 60);
-                            dto.setPrimaryImageUrl(url);
-                        } catch (Exception e) {
-                            dto.setPrimaryImageUrl("");
-                        }
-                    });
-
-            // Falls kein Primary-Bild, nimm das erste
-            if (dto.getPrimaryImageUrl() == null && !productMedia.isEmpty()) {
-                try {
-                    String url = minioService.getPresignedUrl(productMedia.get(0).getMedia().getMinioObjectName(), 60);
-                    dto.setPrimaryImageUrl(url);
-                } catch (Exception e) {
-                    dto.setPrimaryImageUrl("");
-                }
-            }
+            // Setze Primary Image URL über zentrale Methode
+            String primaryImageUrl = resolveProductImageUrl(product);
+            dto.setPrimaryImageUrl(primaryImageUrl);
         }
 
         // Lade Varianten für das Produkt
@@ -427,5 +408,53 @@ public class ProductService {
 
         product = productRepository.save(product);
         return toDTO(product);
+    }
+
+    /**
+     * ZENTRALE Methode zur Auflösung der Produktbild-URL.
+     * Wird von toDTO() und CartController verwendet.
+     * 
+     * Logik:
+     * 1. Suche Primary ProductMedia → MinIO presigned URL
+     * 2. Falls kein Primary, nimm erstes ProductMedia → MinIO presigned URL
+     * 3. Fallback: product.getImageUrl() (z.B. WooCommerce-Import)
+     * 4. Kein Bild: null (Frontend zeigt Platzhalter)
+     * 
+     * @param product Das Produkt
+     * @return Vollständige Bild-URL oder null
+     */
+    public String resolveProductImageUrl(Product product) {
+        if (product == null) {
+            return null;
+        }
+
+        // 1. Versuche ProductMedia + MinIO
+        try {
+            List<ProductMedia> mediaList = productMediaRepository.findByProductIdOrderBySortOrderAsc(product.getId());
+            
+            if (!mediaList.isEmpty()) {
+                // Suche Primary Image oder nimm erstes
+                ProductMedia primaryMedia = mediaList.stream()
+                    .filter(ProductMedia::getIsPrimary)
+                    .findFirst()
+                    .orElse(mediaList.get(0));
+                
+                // Generiere presigned MinIO-URL
+                String url = minioService.getPresignedUrl(primaryMedia.getMedia().getMinioObjectName(), 60);
+                if (url != null && !url.isEmpty()) {
+                    return url;
+                }
+            }
+        } catch (Exception e) {
+            // Log und fahre mit Fallback fort
+        }
+        
+        // 2. Fallback: product.getImageUrl() (z.B. WooCommerce-Import, externe URLs)
+        if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
+            return product.getImageUrl();
+        }
+        
+        // 3. Kein Bild verfügbar - Frontend zeigt Platzhalter
+        return null;
     }
 }
