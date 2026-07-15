@@ -49,6 +49,7 @@ public class WooCommerceImportService {
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
     private final StoreRepository storeRepository;
+    private final storebackend.util.HtmlToTextConverter htmlToTextConverter;
 
     private static final String EXTERNAL_SOURCE = "WOOCOMMERCE";
     private static final int MAX_IMPORT_SIZE = 50; // MVP: max 50 products per import
@@ -350,15 +351,26 @@ public class WooCommerceImportService {
 
     /**
      * Build product description.
+     * Konvertiert WooCommerce-HTML zu sauberem Klartext.
      */
     private String buildDescription(WooProductDto wooProduct) {
+        // 1. Wähle Beschreibungsfeld (description bevorzugt, short_description als Fallback)
+        String rawHtml = null;
+        
         if (wooProduct.getDescription() != null && !wooProduct.getDescription().isEmpty()) {
-            return wooProduct.getDescription();
+            rawHtml = wooProduct.getDescription();
+        } else if (wooProduct.getShortDescription() != null && !wooProduct.getShortDescription().isEmpty()) {
+            rawHtml = wooProduct.getShortDescription();
         }
-        if (wooProduct.getShortDescription() != null && !wooProduct.getShortDescription().isEmpty()) {
-            return wooProduct.getShortDescription();
+        
+        if (rawHtml == null || rawHtml.isEmpty()) {
+            return "";
         }
-        return "";
+        
+        // 2. HTML zu Klartext konvertieren (entfernt Tags, dekodiert Entities)
+        String cleanText = htmlToTextConverter.convert(rawHtml);
+        
+        return cleanText != null ? cleanText : "";
     }
 
     /**
