@@ -1,0 +1,448 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {"type": "grafana", "uid": "-- Grafana --"},
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+      "id": 1,
+      "panels": [],
+      "title": "📊 Übersicht",
+      "type": "row"
+    },
+    {
+      "datasource": {"type": "postgres", "uid": "${grafana-postgresql-datasource}"},
+      "description": "Gesamtanzahl Security-Requests im Zeitraum",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "blue", "value": null}]},
+          "unit": "short"
+        }
+      },
+      "gridPos": {"h": 4, "w": 3, "x": 0, "y": 1},
+      "id": 2,
+      "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+      "targets": [{"datasource": {"type": "postgres", "uid": "${DS_POSTGRES}"}, "format": "table", "rawQuery": true, "rawSql": "SELECT COUNT(*) as value FROM security_events WHERE $__timeFilter(created_at);", "refId": "A"}],
+      "title": "Requests gesamt",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "postgres", "uid": "${grafana-postgresql-datasource}"},
+      "description": "Anzahl blockierter Requests",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}]},
+          "unit": "short"
+        }
+      },
+      "gridPos": {"h": 4, "w": 3, "x": 3, "y": 1},
+      "id": 3,
+      "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+      "targets": [{"datasource": {"type": "postgres", "uid": "${DS_POSTGRES}"}, "format": "table", "rawQuery": true, "rawSql": "SELECT COUNT(*) as value FROM security_events WHERE $__timeFilter(created_at) AND blocked = true;", "refId": "A"}],
+      "title": "🚫 Blockiert",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "postgres", "uid": "${grafana-postgresql-datasource}"},
+      "description": "Blockierungsquote in Prozent",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 10}, {"color": "red", "value": 25}]},
+          "unit": "percent"
+        }
+      },
+      "gridPos": {"h": 4, "w": 3, "x": 6, "y": 1},
+      "id": 4,
+      "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+      "targets": [{"datasource": {"type": "postgres", "uid": "${DS_POSTGRES}"}, "format": "table", "rawQuery": true, "rawSql": "SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE blocked) / NULLIF(COUNT(*), 0), 1) as value FROM security_events WHERE $__timeFilter(created_at);", "refId": "A"}],
+      "title": "Block %",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "postgres", "uid": "${grafana-postgresql-datasource}"},
+      "description": "Anzahl eindeutiger Client-IPs",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "yellow", "value": null}]},
+          "unit": "short"
+        }
+      },
+      "gridPos": {"h": 4, "w": 3, "x": 9, "y": 1},
+      "id": 5,
+      "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+      "targets": [{"datasource": {"type": "postgres", "uid": "${DS_POSTGRES}"}, "format": "table", "rawQuery": true, "rawSql": "SELECT COUNT(DISTINCT client_ip) as value FROM security_events WHERE $__timeFilter(created_at) AND client_ip IS NOT NULL;", "refId": "A"}],
+      "title": "🌐 IPs",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "postgres", "uid": "${grafana-postgresql-datasource}"},
+      "description": "CAPTCHA Validierungsfehler",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}]},
+          "unit": "short"
+        }
+      },
+      "gridPos": {"h": 4, "w": 3, "x": 12, "y": 1},
+      "id": 6,
+      "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+      "targets": [{"datasource": {"type": "postgres", "uid": "${DS_POSTGRES}"}, "format": "table", "rawQuery": true, "rawSql": "SELECT COUNT(*) as value FROM security_events WHERE $__timeFilter(created_at) AND captcha_present = true AND captcha_valid = false;", "refId": "A"}],
+      "title": "❌ CAPTCHA Fehler",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "postgres", "uid": "${grafana-postgresql-datasource}"},
+      "description": "Honeypot wurde ausgelöst",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}]},
+          "unit": "short"
+        }
+      },
+      "gridPos": {"h": 4, "w": 3, "x": 15, "y": 1},
+      "id": 7,
+      "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+      "targets": [{"datasource": {"type": "postgres", "uid": "${DS_POSTGRES}"}, "format": "table", "rawQuery": true, "rawSql": "SELECT COUNT(*) as value FROM security_events WHERE $__timeFilter(created_at) AND honeypot_triggered = true;", "refId": "A"}],
+      "title": "🍯 Honeypot",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "postgres", "uid": "${DS_POSTGRES}"},
+      "description": "Rate Limit überschritten",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "orange", "value": null}]},
+          "unit": "short"
+        }
+      },
+      "gridPos": {"h": 4, "w": 3, "x": 18, "y": 1},
+      "id": 8,
+      "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+      "targets": [{"datasource": {"type": "postgres", "uid": "${DS_POSTGRES}"}, "format": "table", "rawQuery": true, "rawSql": "SELECT COUNT(*) as value FROM security_events WHERE $__timeFilter(created_at) AND rate_limit_type IS NOT NULL;", "refId": "A"}],
+      "title": "⏱️ Rate Limit",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "postgres", "uid": "${DS_POSTGRES}"},
+      "description": "Erfolgreich versendete E-Mails",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]},
+          "unit": "short"
+        }
+      },
+      "gridPos": {"h": 4, "w": 3, "x": 21, "y": 1},
+      "id": 9,
+      "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+      "targets": [{"datasource": {"type": "postgres", "uid": "${DS_POSTGRES}"}, "format": "table", "rawQuery": true, "rawSql": "SELECT COUNT(*) as value FROM security_events WHERE $__timeFilter(created_at) AND mail_triggered = true;", "refId": "A"}],
+      "title": "✉️ Mails",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 5},
+      "id": 10,
+      "panels": [],
+      "title": "📈 Zeitlicher Verlauf",
+      "type": "row"
+    },
+    {
+      "datasource": {"type": "postgres", "uid": "${DS_POSTGRES}"},
+      "description": "Security Events Timeline - Requests, Blockierungen, CAPTCHA-Fehler, E-Mails",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {"tooltip": false, "viz": false, "legend": false},
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {"type": "linear"},
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {"group": "A", "mode": "none"},
+            "thresholdsStyle": {"mode": "off"}
+          },
+          "mappings": [],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]},
+          "unit": "short"
+        },
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "Blockiert"}, "properties": [{"id": "color", "value": {"fixedColor": "red", "mode": "fixed"}}]},
+          {"matcher": {"id": "byName", "options": "CAPTCHA-Fehler"}, "properties": [{"id": "color", "value": {"fixedColor": "orange", "mode": "fixed"}}]},
+          {"matcher": {"id": "byName", "options": "E-Mails"}, "properties": [{"id": "color", "value": {"fixedColor": "green", "mode": "fixed"}}]}
+        ]
+      },
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 6},
+      "id": 11,
+      "options": {
+        "legend": {"calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true},
+        "tooltip": {"mode": "multi", "sort": "none"}
+      },
+      "targets": [{"datasource": {"type": "postgres", "uid": "${DS_POSTGRES}"}, "format": "time_series", "rawQuery": true, "rawSql": "SELECT\n  $__timeGroupAlias(created_at, '1m') as time,\n  COUNT(*) as \"Requests\",\n  COUNT(*) FILTER (WHERE blocked = true) as \"Blockiert\",\n  COUNT(*) FILTER (WHERE captcha_present = true AND captcha_valid = false) as \"CAPTCHA-Fehler\",\n  COUNT(*) FILTER (WHERE mail_triggered = true) as \"E-Mails\"\nFROM security_events\nWHERE $__timeFilter(created_at)\nGROUP BY 1\nORDER BY 1;", "refId": "A"}],
+      "title": "Security Events Timeline",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 14},
+      "id": 20,
+      "panels": [],
+      "title": "🎯 Top Angreifer",
+      "type": "row"
+    },
+    {
+      "datasource": {"type": "postgres", "uid": "${DS_POSTGRES}"},
+      "description": "Top 20 Angreifer-IPs mit Blockierungsstatistiken",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "custom": {"align": "auto", "cellOptions": {"type": "auto"}, "inspect": false},
+          "mappings": [],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}
+        },
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "Block %"}, "properties": [{"id": "custom.cellOptions", "value": {"mode": "gradient", "type": "color-background"}}, {"id": "color", "value": {"mode": "continuous-RdYlGr", "seriesBy": "max"}}, {"id": "unit", "value": "percent"}]},
+          {"matcher": {"id": "byName", "options": "Blockiert"}, "properties": [{"id": "custom.cellOptions", "value": {"mode": "gradient", "type": "color-background"}}, {"id": "color", "value": {"mode": "continuous-RdYlGr", "seriesBy": "max"}}]}
+        ]
+      },
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 15},
+      "id": 21,
+      "options": {"cellHeight": "sm", "footer": {"countRows": false, "fields": "", "reducer": ["sum"], "show": false}, "showHeader": true, "sortBy": []},
+      "targets": [{"datasource": {"type": "postgres", "uid": "${DS_POSTGRES}"}, "format": "table", "rawQuery": true, "rawSql": "SELECT\n  client_ip as \"IP\",\n  COUNT(*) as \"Requests\",\n  COUNT(*) FILTER (WHERE blocked) as \"Blockiert\",\n  ROUND(100.0 * COUNT(*) FILTER (WHERE blocked) / NULLIF(COUNT(*), 0), 1) as \"Block %\",\n  COUNT(DISTINCT email_masked) as \"E-Mails\",\n  COUNT(DISTINCT email_domain) as \"Domains\",\n  COUNT(DISTINCT endpoint) as \"Endpoints\",\n  MAX(created_at) as \"Letzter Zugriff\",\n  (\n    SELECT block_reason\n    FROM security_events se2\n    WHERE se2.client_ip = se.client_ip AND block_reason IS NOT NULL\n    GROUP BY block_reason\n    ORDER BY COUNT(*) DESC\n    LIMIT 1\n  ) as \"Häufigster Grund\"\nFROM security_events se\nWHERE $__timeFilter(created_at) AND client_ip IS NOT NULL\nGROUP BY client_ip\nORDER BY \"Requests\" DESC\nLIMIT 20;", "refId": "A"}],
+      "title": "Top 20 Angreifer-IPs",
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 25},
+      "id": 30,
+      "panels": [],
+      "title": "📧 E-Mail-Domains",
+      "type": "row"
+    },
+    {
+      "datasource": {"type": "postgres", "uid": "${DS_POSTGRES}"},
+      "description": "Top E-Mail-Domains (keine automatische Bösartig-Kennzeichnung)",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "custom": {"align": "auto", "cellOptions": {"type": "auto"}, "inspect": false},
+          "mappings": [],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 26},
+      "id": 31,
+      "options": {"cellHeight": "sm", "footer": {"countRows": false, "fields": "", "reducer": ["sum"], "show": false}, "showHeader": true},
+      "targets": [{"datasource": {"type": "postgres", "uid": "${DS_POSTGRES}"}, "format": "table", "rawQuery": true, "rawSql": "SELECT\n  email_domain as \"Domain\",\n  COUNT(*) as \"Versuche\",\n  COUNT(*) FILTER (WHERE blocked) as \"Blockiert\",\n  COUNT(DISTINCT client_ip) as \"IPs\",\n  COUNT(*) FILTER (WHERE mail_triggered = true) as \"Mails\",\n  COUNT(*) FILTER (WHERE captcha_present = true AND captcha_valid = false) as \"CAPTCHA-Fehler\",\n  MAX(created_at) as \"Letzter Zugriff\"\nFROM security_events\nWHERE $__timeFilter(created_at) AND email_domain IS NOT NULL\nGROUP BY email_domain\nORDER BY \"Versuche\" DESC\nLIMIT 20;", "refId": "A"}],
+      "title": "Top E-Mail-Domains",
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 34},
+      "id": 40,
+      "panels": [],
+      "title": "🔗 Endpoints",
+      "type": "row"
+    },
+    {
+      "datasource": {"type": "postgres", "uid": "${DS_POSTGRES}"},
+      "description": "Requests pro Endpoint",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "fillOpacity": 80, "gradientMode": "none", "hideFrom": {"tooltip": false, "viz": false, "legend": false}, "lineWidth": 1, "scaleDistribution": {"type": "linear"}, "thresholdsStyle": {"mode": "off"}},
+          "mappings": [],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]},
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 35},
+      "id": 41,
+      "options": {"barRadius": 0, "barWidth": 0.97, "fullHighlight": false, "groupWidth": 0.7, "legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true}, "orientation": "horizontal", "showValue": "auto", "stacking": "none", "tooltip": {"mode": "single", "sort": "none"}, "xTickLabelRotation": 0, "xTickLabelSpacing": 0},
+      "targets": [{"datasource": {"type": "postgres", "uid": "${DS_POSTGRES}"}, "format": "table", "rawQuery": true, "rawSql": "SELECT\n  endpoint as metric,\n  COUNT(*) as \"Total\"\nFROM security_events\nWHERE $__timeFilter(created_at)\nGROUP BY endpoint\nORDER BY \"Total\" DESC;", "refId": "A"}],
+      "title": "Requests pro Endpoint",
+      "type": "barchart"
+    },
+    {
+      "datasource": {"type": "postgres", "uid": "${DS_POSTGRES}"},
+      "description": "Verteilung der Blockierungsgründe",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"hideFrom": {"tooltip": false, "viz": false, "legend": false}},
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 35},
+      "id": 42,
+      "options": {
+        "legend": {"displayMode": "table", "placement": "right", "showLegend": true, "values": ["value", "percent"]},
+        "pieType": "donut",
+        "tooltip": {"mode": "single", "sort": "none"}
+      },
+      "targets": [{"datasource": {"type": "postgres", "uid": "${DS_POSTGRES}"}, "format": "table", "rawQuery": true, "rawSql": "SELECT\n  COALESCE(block_reason, 'Unbekannt') as metric,\n  COUNT(*) as value\nFROM security_events\nWHERE $__timeFilter(created_at) AND blocked = true\nGROUP BY block_reason\nORDER BY value DESC;", "refId": "A"}],
+      "title": "Blockierungsgründe",
+      "type": "piechart"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 43},
+      "id": 50,
+      "panels": [],
+      "title": "🔴 Live Feed",
+      "type": "row"
+    },
+    {
+      "datasource": {"type": "postgres", "uid": "${DS_POSTGRES}"},
+      "description": "Letzte 200 Security Events (ohne vollständige E-Mails/Tokens)",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "custom": {"align": "auto", "cellOptions": {"type": "auto"}, "inspect": false},
+          "mappings": [],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}
+        },
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "Allowed"}, "properties": [{"id": "custom.cellOptions", "value": {"mode": "basic", "type": "color-text"}}, {"id": "mappings", "value": [{"options": {"✓": {"color": "green", "index": 0}}, "type": "value"}, {"options": {"✗": {"color": "red", "index": 1}}, "type": "value"}]}]},
+          {"matcher": {"id": "byName", "options": "CAPTCHA"}, "properties": [{"id": "custom.cellOptions", "value": {"mode": "basic", "type": "color-text"}}, {"id": "mappings", "value": [{"options": {"✓": {"color": "green", "index": 0}}, "type": "value"}, {"options": {"✗": {"color": "red", "index": 1}}, "type": "value"}]}]}
+        ]
+      },
+      "gridPos": {"h": 12, "w": 24, "x": 0, "y": 44},
+      "id": 51,
+      "options": {"cellHeight": "sm", "footer": {"countRows": false, "fields": "", "reducer": ["sum"], "show": false}, "showHeader": true},
+      "targets": [{"datasource": {"type": "postgres", "uid": "${DS_POSTGRES}"}, "format": "table", "rawQuery": true, "rawSql": "SELECT\n  created_at as \"Zeit\",\n  endpoint as \"Endpoint\",\n  client_ip as \"IP\",\n  email_masked as \"E-Mail\",\n  email_domain as \"Domain\",\n  CASE WHEN captcha_valid THEN '✓' WHEN captcha_present THEN '✗' ELSE '-' END as \"CAPTCHA\",\n  CASE WHEN blocked THEN '✗' ELSE '✓' END as \"Allowed\",\n  block_reason as \"Block-Grund\",\n  CASE WHEN mail_triggered THEN '✓' ELSE '-' END as \"Mail\",\n  http_status as \"Status\",\n  SUBSTRING(user_agent, 1, 50) as \"User-Agent\"\nFROM security_events\nWHERE $__timeFilter(created_at)\nORDER BY created_at DESC\nLIMIT 200;", "refId": "A"}],
+      "title": "Letzte 200 Security Events",
+      "type": "table"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["security", "bot-protection", "markt.ma"],
+  "templating": {
+    "list": [
+      {
+        "current": {"selected": false, "text": "All", "value": "$__all"},
+        "datasource": {"type": "postgres", "uid": "${DS_POSTGRES}"},
+        "definition": "SELECT DISTINCT endpoint FROM security_events WHERE endpoint IS NOT NULL ORDER BY endpoint",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Endpoint",
+        "multi": true,
+        "name": "endpoint",
+        "options": [],
+        "query": "SELECT DISTINCT endpoint FROM security_events WHERE endpoint IS NOT NULL ORDER BY endpoint",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {"selected": false, "text": "All", "value": "$__all"},
+        "datasource": {"type": "postgres", "uid": "${DS_POSTGRES}"},
+        "definition": "SELECT DISTINCT client_ip FROM security_events WHERE client_ip IS NOT NULL ORDER BY client_ip",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Client IP",
+        "multi": true,
+        "name": "client_ip",
+        "options": [],
+        "query": "SELECT DISTINCT client_ip FROM security_events WHERE client_ip IS NOT NULL ORDER BY client_ip",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {"selected": false, "text": "All", "value": "$__all"},
+        "datasource": {"type": "postgres", "uid": "${DS_POSTGRES}"},
+        "definition": "SELECT DISTINCT email_domain FROM security_events WHERE email_domain IS NOT NULL ORDER BY email_domain",
+        "hide": 0,
+        "includeAll": true,
+        "label": "E-Mail Domain",
+        "multi": true,
+        "name": "email_domain",
+        "options": [],
+        "query": "SELECT DISTINCT email_domain FROM security_events WHERE email_domain IS NOT NULL ORDER BY email_domain",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {"selected": true, "text": "All", "value": "$__all"},
+        "hide": 0,
+        "includeAll": true,
+        "label": "Blocked",
+        "multi": false,
+        "name": "blocked",
+        "options": [
+          {"selected": true, "text": "All", "value": "$__all"},
+          {"selected": false, "text": "true", "value": "true"},
+          {"selected": false, "text": "false", "value": "false"}
+        ],
+        "query": "All,true,false",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      }
+    ]
+  },
+  "time": {"from": "now-6h", "to": "now"},
+  "timepicker": {},
+  "timezone": "",
+  "title": "markt.ma - Security & Bot Protection",
+  "uid": "markt-security-bot-protection",
+  "version": 1,
+  "weekStart": ""
+}

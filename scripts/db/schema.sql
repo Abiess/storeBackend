@@ -2142,3 +2142,48 @@ COMMENT ON COLUMN telegram_mtproto_config.last_message_ids IS 'Delta-Import: let
 
 RAISE NOTICE '✅ V23: telegram_mtproto_config erstellt';
 
+
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- V24: security_events – Audit-Log für Bot Protection & Rate Limiting
+-- ════════════════════════════════════════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS security_events (
+    id BIGSERIAL PRIMARY KEY,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    request_id VARCHAR(100),
+    endpoint VARCHAR(200) NOT NULL,
+    client_ip VARCHAR(50),
+    forwarded_for VARCHAR(200),
+    user_agent VARCHAR(500),
+    email_masked VARCHAR(100),
+    email_domain VARCHAR(100),
+    phone_masked VARCHAR(50),
+    captcha_present BOOLEAN,
+    captcha_valid BOOLEAN,
+    honeypot_triggered BOOLEAN,
+    rate_limit_type VARCHAR(50),
+    blocked BOOLEAN NOT NULL DEFAULT false,
+    block_reason VARCHAR(200),
+    mail_triggered BOOLEAN,
+    http_status INTEGER,
+    store_id BIGINT,
+    user_id BIGINT,
+    CONSTRAINT fk_security_events_store FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE SET NULL,
+    CONSTRAINT fk_security_events_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- Indizes für Performance (Grafana Queries)
+CREATE INDEX IF NOT EXISTS idx_security_events_created_at ON security_events(created_at);
+CREATE INDEX IF NOT EXISTS idx_security_events_endpoint ON security_events(endpoint);
+CREATE INDEX IF NOT EXISTS idx_security_events_client_ip ON security_events(client_ip);
+CREATE INDEX IF NOT EXISTS idx_security_events_blocked ON security_events(blocked);
+CREATE INDEX IF NOT EXISTS idx_security_events_email_domain ON security_events(email_domain);
+
+COMMENT ON TABLE security_events IS 'Security Audit Log: CAPTCHA, Rate Limiting, Honeypot, Bot Protection';
+COMMENT ON COLUMN security_events.email_masked IS 'DSGVO-konform: te***@example.com (nie volle E-Mail)';
+COMMENT ON COLUMN security_events.phone_masked IS 'DSGVO-konform: +49***1234 (nie volle Nummer)';
+COMMENT ON COLUMN security_events.blocked IS 'true = Request blockiert, false = durchgelassen';
+COMMENT ON COLUMN security_events.mail_triggered IS 'true = E-Mail wurde trotz Verdacht versendet';
+
+RAISE NOTICE '✅ V24: security_events erstellt';
