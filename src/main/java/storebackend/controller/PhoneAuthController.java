@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -18,6 +19,10 @@ import storebackend.repository.PlanRepository;
 import storebackend.repository.UserRepository;
 import storebackend.security.JwtUtil;
 import storebackend.service.PhoneVerificationService;
+import storebackend.service.RateLimitService;
+import storebackend.service.CaptchaService;
+import storebackend.service.SecurityEventService;
+import storebackend.util.IpAddressUtil;
 
 import java.util.HashSet;
 import java.util.List;
@@ -46,6 +51,9 @@ public class PhoneAuthController {
     private final PlanRepository planRepository;
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
+    private final RateLimitService rateLimitService;
+    private final CaptchaService captchaService;
+    private final SecurityEventService securityEventService;
 
     // ─── DTOs ──────────────────────────────────────────────────────────────────
 
@@ -55,7 +63,10 @@ public class PhoneAuthController {
         String phoneNumber,
 
         /** "whatsapp" oder "telegram" – Standard: whatsapp */
-        String channel
+        String channel,
+        
+        /** hCaptcha token for bot protection */
+        String captchaToken
     ) {}
 
     public record PhoneVerifyRequest(
@@ -73,18 +84,80 @@ public class PhoneAuthController {
     /**
      * Schritt 1: Verifizierungscode senden
      * POST /api/auth/phone/request-code
+     * 
+     * ✅ SECURITY: Rate Limiting (IP + Phone) + CAPTCHA + Security Event Logging
      */
     @PostMapping("/request-code")
-    public ResponseEntity<?> requestCode(@Valid @RequestBody PhoneCodeRequest request) {
-        log.info("📱 [PhoneAuth] Code angefordert für: {}", request.phoneNumber());
+    public ResponseEntity<?> requestCode(@Valid @RequestBody PhoneCodeRequest request, 
+                                        HttpServletRequest httpRequest) {
+        String phoneNumber = request.phoneNumber();
+        String ipAddress = IpAddressUtil.getClientIpAddress(httpRequest);
+        String forwardedFor = httpRequest.getHeader("X-Forwarded-For");
+        String userAgent = httpRequest.getHeader("User-Agent");
+        
+        log.info("📱 [PhoneAuth] Code angefordert für: {} von IP: {}", phoneNumber, ipAddress);
+
+        // Security Event Builder
+        SecurityEventService.SecurityEventBuilder eventBuilder = securityEventService.builder("/api/auth/phone/request-code")
+            .requestId(null)
+            .phone(phoneNumber);
 
         try {
+            // Set IP, User-Agent from request
+            eventBuilder.request(httpRequest);
+            
+            // 1. IP Rate Limiting Check (5 requests / 15 minutes)
+            if (!rateLimitService.checkIpRateLimit(ipAddress)) {
+                log.warn("⚠️ [PhoneAuth] Rate limit exceeded for IP: {}", ipAddress);
+                eventBuilder.rateLimit("IP")
+                    .blocked(true, "IP rate limit exceeded")
+                    .httpStatus(429);
+                securityEventService.logEvent(eventBuilder);
+                return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(new ErrorResponse("Zu viele Versuche. Bitte warten Sie einige Minuten."));
+            }
+
+            // 2. Phone Number Rate Limiting Check (3 requests / hour)
+            if (!rateLimitService.checkPhoneRateLimit(phoneNumber)) {
+                log.warn("⚠️ [PhoneAuth] Rate limit exceeded for phone: {}", maskPhone(phoneNumber));
+                eventBuilder.rateLimit("PHONE")
+                    .blocked(true, "Phone rate limit exceeded")
+                    .httpStatus(429);
+                securityEventService.logEvent(eventBuilder);
+                return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(new ErrorResponse("Zu viele Versuche für diese Nummer. Bitte später erneut versuchen."));
+            }
+
+            // 3. CAPTCHA Validation (serverseitig)
+            boolean captchaPresent = request.captchaToken() != null && !request.captchaToken().isBlank();
+            boolean captchaValid = false;
+            if (captchaPresent) {
+                captchaValid = captchaService.validateCaptcha(request.captchaToken(), ipAddress);
+            }
+            
+            eventBuilder.captcha(captchaPresent, captchaValid);
+
+            if (!captchaValid) {
+                log.warn("⚠️ [PhoneAuth] CAPTCHA validation failed for IP: {}", ipAddress);
+                eventBuilder.blocked(true, "CAPTCHA validation failed")
+                    .httpStatus(400);
+                securityEventService.logEvent(eventBuilder);
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse("Sicherheitsprüfung fehlgeschlagen. Bitte erneut versuchen."));
+            }
+
+            // 4. Send verification code
             String requestedChannel = request.channel() != null ? request.channel() : "whatsapp";
             PhoneVerificationService.PhoneVerificationResult result =
-                phoneVerificationService.sendVerificationCode(request.phoneNumber(), 0L, requestedChannel);
+                phoneVerificationService.sendVerificationCode(phoneNumber, 0L, requestedChannel);
 
             if (result.isSuccess()) {
-                log.info("✅ [PhoneAuth] Code gesendet via {}", result.getChannel());
+                log.info("✅ [PhoneAuth] Code gesendet via {} für: {}", result.getChannel(), maskPhone(phoneNumber));
+                eventBuilder.blocked(false, null)
+                    .mailSent(false) // SMS/WhatsApp, not email
+                    .httpStatus(200);
+                securityEventService.logEvent(eventBuilder);
+                
                 return ResponseEntity.ok(new CodeSentResponse(
                     true,
                     result.getVerificationId(),
@@ -97,14 +170,31 @@ public class PhoneAuthController {
                 ));
             } else {
                 log.warn("❌ [PhoneAuth] Code-Versand fehlgeschlagen: {}", result.getMessage());
+                eventBuilder.blocked(true, "Code sending failed: " + result.getMessage())
+                    .httpStatus(400);
+                securityEventService.logEvent(eventBuilder);
+                
                 return ResponseEntity.badRequest()
                     .body(new ErrorResponse(result.getMessage()));
             }
         } catch (Exception e) {
             log.error("❌ [PhoneAuth] Fehler: {} – {}", e.getClass().getSimpleName(), e.getMessage(), e);
+            eventBuilder.blocked(true, "Internal error: " + e.getMessage())
+                .httpStatus(500);
+            securityEventService.logEvent(eventBuilder);
+            
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponse("Fehler beim Senden des Codes: " + e.getMessage()));
+                .body(new ErrorResponse("Fehler beim Senden des Codes. Bitte erneut versuchen."));
         }
+    }
+    
+    /**
+     * Mask phone number for logging (DSGVO-compliant)
+     * +212600123456 → +212***3456
+     */
+    private String maskPhone(String phone) {
+        if (phone == null || phone.length() < 8) return "***";
+        return phone.substring(0, 4) + "***" + phone.substring(phone.length() - 4);
     }
 
     /**

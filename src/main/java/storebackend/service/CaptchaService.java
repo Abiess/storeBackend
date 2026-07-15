@@ -57,21 +57,36 @@ public class CaptchaService {
      * - Abgelaufene Tokens werden abgelehnt
      * - Wiederverwendete Tokens werden abgelehnt (hCaptcha meldet dies)
      * 
+     * FAIL-CLOSED: In Production wird NIEMALS übersprungen!
+     * 
      * @param captchaToken CAPTCHA-Token vom Frontend
      * @param ipAddress IP-Adresse des Clients (optional)
      * @return true wenn CAPTCHA gültig, false wenn ungültig
      */
     public boolean validateCaptcha(String captchaToken, String ipAddress) {
-        // CAPTCHA ist deaktiviert (Development-Modus)
+        // CRITICAL: Prüfe ob wir in Production sind
+        String profile = getActiveProfile();
+        boolean isProduction = !("dev".equals(profile) || "local".equals(profile) || "test".equals(profile));
+        
+        // CAPTCHA ist explizit deaktiviert
         if (!captchaEnabled) {
-            log.debug("CAPTCHA validation skipped (disabled in config)");
+            if (isProduction) {
+                log.error("🚨 SECURITY: CAPTCHA disabled in PRODUCTION - rejecting request!");
+                log.error("🚨 Set captcha.enabled=true or use dev/test profile");
+                return false; // FAIL-CLOSED in Production
+            }
+            log.debug("CAPTCHA validation skipped (disabled in dev/test mode)");
             return true;
         }
 
-        // Secret Key nicht konfiguriert → CAPTCHA überspringen (keine Validierung möglich)
+        // Secret Key nicht konfiguriert
         if (captchaSecret == null || captchaSecret.isBlank()) {
-            log.warn("⚠️ CAPTCHA secret not configured - CAPTCHA validation skipped!");
-            log.warn("⚠️ For production: Set CAPTCHA_SECRET in environment variables");
+            if (isProduction) {
+                log.error("🚨 SECURITY: CAPTCHA enabled but secret missing in PRODUCTION - rejecting request!");
+                log.error("🚨 Set CAPTCHA_SECRET environment variable");
+                return false; // FAIL-CLOSED in Production
+            }
+            log.warn("⚠️ CAPTCHA secret not configured - validation skipped in dev/test mode");
             return true;
         }
 
@@ -279,5 +294,23 @@ public class CaptchaService {
 
         @JsonProperty("error-codes")
         private List<String> errorCodes;
+    }
+
+    /**
+     * Ermittelt das aktive Spring-Profil
+     */
+    private String getActiveProfile() {
+        String profilesEnv = System.getenv("SPRING_PROFILES_ACTIVE");
+        if (profilesEnv != null && !profilesEnv.isBlank()) {
+            return profilesEnv.split(",")[0].trim();
+        }
+        
+        String profilesProp = System.getProperty("spring.profiles.active");
+        if (profilesProp != null && !profilesProp.isBlank()) {
+            return profilesProp.split(",")[0].trim();
+        }
+        
+        // Default: production
+        return "production";
     }
 }

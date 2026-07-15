@@ -212,6 +212,13 @@ public class AuthController {
                     .body(new ErrorResponse("Too many requests for this email. Please try again later."));
         }
 
+        // 3. CAPTCHA validieren (NEU!)
+        if (!captchaService.validateCaptcha(request.captchaToken(), ipAddress)) {
+            log.warn("CAPTCHA validation failed for IP: {} on /forgot-password", ipAddress);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse("CAPTCHA validation failed. Please try again."));
+        }
+
         try {
             passwordResetService.initiatePasswordReset(request.email());
             // SECURITY: Immer success zurückgeben, auch wenn Email nicht existiert (verhindert User Enumeration)
@@ -347,7 +354,7 @@ public class AuthController {
 
     public record ResendVerificationRequest(String email) {}
 
-    public record ForgotPasswordRequest(String email) {}
+    public record ForgotPasswordRequest(String email, String captchaToken) {}
 
     public record ResetPasswordRequest(String token, String newPassword) {}
 

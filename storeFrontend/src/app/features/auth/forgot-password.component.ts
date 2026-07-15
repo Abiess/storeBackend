@@ -6,6 +6,9 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 import { catchError, of } from 'rxjs';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { HCaptchaService } from '@app/core/services/hcaptcha.service';
+
+declare const hcaptcha: any; // hCaptcha global API
 
 @Component({
   selector: 'app-forgot-password',
@@ -48,12 +51,27 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
             </div>
           </div>
 
+          <!-- hCAPTCHA Widget -->
+          <div *ngIf="captchaEnabled" class="form-group captcha-container">
+            <div 
+              id="forgot-password-captcha" 
+              class="h-captcha" 
+              [attr.data-sitekey]="captchaSiteKey"
+              [attr.data-callback]="'onForgotPasswordCaptchaVerified'"
+              [attr.data-expired-callback]="'onForgotPasswordCaptchaExpired'"
+              [attr.data-error-callback]="'onForgotPasswordCaptchaError'">
+            </div>
+          </div>
+
           <div *ngIf="errorMessage" class="alert alert-error">
             <span class="alert-icon">⚠️</span>
             {{ errorMessage }}
           </div>
 
-          <button type="submit" class="btn btn-primary" [disabled]="forgotPasswordForm.invalid || loading">
+          <button 
+            type="submit" 
+            class="btn btn-primary" 
+            [disabled]="!isFormValid() || loading">
             <span *ngIf="loading" class="spinner"></span>
             {{ loading ? ('auth.forgotPasswordSending' | translate) : ('auth.forgotPasswordSend' | translate) }}
           </button>
@@ -231,6 +249,13 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       font-weight: 500;
     }
     .back-link a:hover { text-decoration: underline; }
+
+    /* hCAPTCHA Container */
+    .captcha-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
   `]
 })
 export class ForgotPasswordComponent {
@@ -238,42 +263,126 @@ export class ForgotPasswordComponent {
   loading = false;
   errorMessage = '';
   successMessage = '';
+  captchaToken = '';
+  captchaEnabled = environment.captcha.enabled;
+  captchaSiteKey = environment.captcha.siteKey;
+  private captchaWidgetId: any;
 
   constructor(
     private fb: FormBuilder,
-    private http: HttpClient
+    private http: HttpClient,
+    private hcaptchaService: HCaptchaService
   ) {
     this.forgotPasswordForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]]
     });
+
+    // Globale Callbacks für hCaptcha
+    (window as any).onForgotPasswordCaptchaVerified = (token: string) => this.onCaptchaVerified(token);
+    (window as any).onForgotPasswordCaptchaExpired = () => this.onCaptchaExpired();
+    (window as any).onForgotPasswordCaptchaError = (error: any) => this.onCaptchaError(error);
+  }
+
+  ngAfterViewInit() {
+    // hCaptcha Widget rendern wenn aktiviert
+    if (this.captchaEnabled && typeof hcaptcha !== 'undefined') {
+      setTimeout(() => {
+        try {
+          this.captchaWidgetId = hcaptcha.render('forgot-password-captcha', {
+            sitekey: this.captchaSiteKey,
+            callback: 'onForgotPasswordCaptchaVerified',
+            'expired-callback': 'onForgotPasswordCaptchaExpired',
+            'error-callback': 'onForgotPasswordCaptchaError'
+          });
+        } catch (e) {
+          console.error('hCaptcha render error:', e);
+        }
+      }, 100);
+    }
+  }
+
+  /**
+   * CAPTCHA verifiziert
+   */
+  onCaptchaVerified(token: string) {
+    this.captchaToken = token;
+    this.errorMessage = '';
+  }
+
+  /**
+   * CAPTCHA Fehler
+   */
+  onCaptchaError(error: any) {
+    console.error('hCaptcha error:', error);
+    this.captchaToken = '';
+    this.errorMessage = 'CAPTCHA-Fehler. Bitte laden Sie die Seite neu.';
+  }
+
+  /**
+   * CAPTCHA abgelaufen
+   */
+  onCaptchaExpired() {
+    this.captchaToken = '';
+    this.errorMessage = 'CAPTCHA abgelaufen. Bitte erneut verifizieren.';
+  }
+
+  /**
+   * CAPTCHA zurücksetzen
+   */
+  private resetCaptcha() {
+    this.captchaToken = '';
+    if (this.captchaEnabled && typeof hcaptcha !== 'undefined' && this.captchaWidgetId !== undefined) {
+      try {
+        hcaptcha.reset(this.captchaWidgetId);
+      } catch (e) {
+        console.error('hCaptcha reset error:', e);
+      }
+    }
+  }
+
+  /**
+   * Formular-Validierung inkl. CAPTCHA
+   */
+  isFormValid(): boolean {
+    const formValid = this.forgotPasswordForm.valid;
+    const captchaValid = !this.captchaEnabled || (this.captchaEnabled && this.captchaToken.length > 0);
+    return formValid && captchaValid;
   }
 
   onSubmit() {
-    if (this.forgotPasswordForm.valid) {
-      this.loading = true;
-      this.errorMessage = '';
-      this.successMessage = '';
-
-      const email = this.forgotPasswordForm.value.email;
-
-      this.http.post<{ message: string }>(`${environment.apiUrl}/auth/forgot-password`, { email })
-        .pipe(
-          catchError(error => {
-            return of({
-              error: true,
-              message: error.error?.message || 'Ein Fehler ist aufgetreten. Bitte versuche es später erneut.'
-            });
-          })
-        )
-        .subscribe((response: any) => {
-          this.loading = false;
-          if (response.error) {
-            this.errorMessage = response.message;
-          } else {
-            this.successMessage = response.message || 'Falls diese E-Mail-Adresse registriert ist, wurde ein Reset-Link gesendet. Bitte prüfe auch deinen Spam-Ordner.';
-            this.forgotPasswordForm.reset();
-          }
-        });
+    if (!this.isFormValid()) {
+      return;
     }
+
+    this.loading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    const payload = {
+      email: this.forgotPasswordForm.value.email,
+      captchaToken: this.captchaToken
+    };
+
+    this.http.post<{ message: string }>(`${environment.apiUrl}/auth/forgot-password`, payload)
+      .pipe(
+        catchError(error => {
+          return of({
+            error: true,
+            message: this.hcaptchaService.getSafeErrorMessage(error)
+          });
+        })
+      )
+      .subscribe((response: any) => {
+        this.loading = false;
+        if (response.error) {
+          this.errorMessage = response.message;
+          // CAPTCHA zurücksetzen bei Fehler
+          this.resetCaptcha();
+        } else {
+          this.successMessage = response.message || 'Falls diese E-Mail-Adresse registriert ist, wurde ein Reset-Link gesendet. Bitte prüfe auch deinen Spam-Ordner.';
+          this.forgotPasswordForm.reset();
+          this.resetCaptcha();
+        }
+      });
   }
 }

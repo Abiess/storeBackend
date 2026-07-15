@@ -21,6 +21,7 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
     private final EmailTemplateService templateService;
+    private final EmailCircuitBreakerService circuitBreakerService;
 
     @Value("${spring.mail.from:noreply@markt.ma}")
     private String fromEmail;
@@ -45,6 +46,13 @@ public class EmailService {
             log.info("Mail disabled – verification URL: {}/verify?token={}", baseUrl, token);
             return;
         }
+        
+        // Circuit Breaker Check
+        if (!circuitBreakerService.allowEmail("verification")) {
+            log.error("🚨 Circuit Breaker: Verification email to {} blocked (rate limit exceeded)", toEmail);
+            return;
+        }
+        
         try {
             Map<String, Object> vars = new HashMap<>();
             vars.put("verificationUrl", baseUrl + "/verify?token=" + token);
@@ -99,6 +107,13 @@ public class EmailService {
             log.info("Mail disabled – store access email to: {} storeUrl: {}", toEmail, storeUrl);
             return;
         }
+        
+        // Circuit Breaker Check
+        if (!circuitBreakerService.allowEmail("store-access")) {
+            log.error("🚨 Circuit Breaker: Store access email to {} blocked (rate limit exceeded)", toEmail);
+            return;
+        }
+        
         try {
             Map<String, Object> vars = new HashMap<>();
             vars.put("storeName",    storeName);
@@ -131,6 +146,13 @@ public class EmailService {
             log.info("Mail disabled – reset URL: {}/reset-password?token={}", baseUrl, token);
             return;
         }
+        
+        // Circuit Breaker Check
+        if (!circuitBreakerService.allowEmail("password-reset")) {
+            log.error("🚨 Circuit Breaker: Password reset email to {} blocked (rate limit exceeded)", toEmail);
+            return;
+        }
+        
         try {
             Map<String, Object> vars = new HashMap<>();
             vars.put("resetUrl",  baseUrl + "/reset-password?token=" + token);

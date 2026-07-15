@@ -1,5 +1,6 @@
 package storebackend.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import storebackend.entity.Plan;
 import storebackend.entity.Store;
 import storebackend.entity.User;
+import storebackend.entity.SecurityEvent;
 import storebackend.enums.BusinessType;
 import storebackend.enums.Role;
 import storebackend.enums.StoreStatus;
@@ -19,7 +21,12 @@ import storebackend.security.JwtUtil;
 import storebackend.service.EmailService;
 import storebackend.service.StarterPackService;
 import storebackend.service.StorePostCreateService;
+import storebackend.service.RateLimitService;
+import storebackend.service.CaptchaService;
+import storebackend.service.SecurityEventService;
+import storebackend.service.EmailDomainValidationService;
 import storebackend.config.SaasProperties;
+import storebackend.util.IpAddressUtil;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
@@ -55,6 +62,10 @@ public class PublicStoreCreationController {
     private final StorePostCreateService storePostCreateService;
     private final SaasProperties saasProperties;
     private final EmailService emailService;
+    private final RateLimitService rateLimitService;
+    private final CaptchaService captchaService;
+    private final SecurityEventService securityEventService;
+    private final EmailDomainValidationService emailDomainValidationService;
 
     public record CreateStorePublicRequest(
         @NotBlank(message = "Store-Name darf nicht leer sein")
@@ -174,11 +185,138 @@ public class PublicStoreCreationController {
      * Nachdem ein anonymer User seinen Store erstellt hat, kann er hier seine
      * echte E-Mail hinterlegen. Das System aktualisiert die Fake-Adresse,
      * schickt eine Store-Zugangs-Mail und stellt einen neuen JWT aus.
+     * 
+     * SECURITY: Vollständig abgesichert gegen Spam/Bot-Angriffe
      */
     @PostMapping("/save-email")
     public ResponseEntity<?> saveEmail(
             @RequestHeader("Authorization") String authHeader,
-            @Valid @RequestBody SaveEmailRequest req) {
+            @Valid @RequestBody SaveEmailRequest req,
+            HttpServletRequest httpRequest) {
+        
+        String ipAddress = IpAddressUtil.getClientIpAddress(httpRequest);
+        
+        // ══════════════════════════════════════════════════════════════════════════
+        // SECURITY CHECKS (mehrstufig)
+        // ══════════════════════════════════════════════════════════════════════════
+        
+        // 1. HONEYPOT-Check (stiller Bot-Detektor)
+        if (req.website() != null && !req.website().isBlank()) {
+            log.warn("🍯 HONEYPOT TRIGGERED: IP {} filled honeypot field on /save-email", ipAddress);
+            
+            // Security Event loggen
+            securityEventService.logEvent(
+                securityEventService.builder("/api/public/create-store/save-email")
+                    .request(httpRequest)
+                    .email(req.email())
+                    .honeypot(true)
+                    .blocked(true, "Honeypot triggered")
+                    .mailSent(false)
+                    .httpStatus(400)
+            );
+            
+            // Generische Antwort (Bot soll nicht merken, dass er erkannt wurde)
+            return ResponseEntity.badRequest()
+                .body(Map.of("message", "Invalid request"));
+        }
+        
+        // 2. IP Rate Limiting (3 pro 15 Minuten)
+        if (!rateLimitService.checkEndpointRateLimit("save-email", ipAddress)) {
+            log.warn("🚫 Rate limit (IP) exceeded for /save-email: {}", ipAddress);
+            
+            securityEventService.logEvent(
+                securityEventService.builder("/api/public/create-store/save-email")
+                    .request(httpRequest)
+                    .email(req.email())
+                    .rateLimit("ip")
+                    .blocked(true, "IP rate limit exceeded")
+                    .mailSent(false)
+                    .httpStatus(429)
+            );
+            
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(Map.of("message", "Too many requests. Please try again later."));
+        }
+        
+        // 3. E-Mail Rate Limiting (2 pro Stunde)
+        if (!rateLimitService.checkEmailRateLimit(req.email())) {
+            log.warn("🚫 Rate limit (Email) exceeded for /save-email: {}", SecurityEvent.maskEmail(req.email()));
+            
+            securityEventService.logEvent(
+                securityEventService.builder("/api/public/create-store/save-email")
+                    .request(httpRequest)
+                    .email(req.email())
+                    .rateLimit("email")
+                    .blocked(true, "Email rate limit exceeded")
+                    .mailSent(false)
+                    .httpStatus(429)
+            );
+            
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(Map.of("message", "Too many requests for this email. Please try again later."));
+        }
+        
+        // 4. Domain Rate Limiting (5 pro 15 Minuten)
+        if (!rateLimitService.checkDomainRateLimit(req.email())) {
+            log.warn("🚫 Rate limit (Domain) exceeded for /save-email: {}", SecurityEvent.extractDomain(req.email()));
+            
+            securityEventService.logEvent(
+                securityEventService.builder("/api/public/create-store/save-email")
+                    .request(httpRequest)
+                    .email(req.email())
+                    .rateLimit("domain")
+                    .blocked(true, "Domain rate limit exceeded")
+                    .mailSent(false)
+                    .httpStatus(429)
+            );
+            
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(Map.of("message", "Too many requests from this email domain. Please try again later."));
+        }
+        
+        // 5. E-Mail Domain Validation (Wegwerf-Mails blockieren)
+        EmailDomainValidationService.ValidationResult domainCheck = emailDomainValidationService.validate(req.email());
+        if (!domainCheck.valid()) {
+            log.warn("🚫 Invalid/disposable email domain blocked: {}", SecurityEvent.extractDomain(req.email()));
+            
+            securityEventService.logEvent(
+                securityEventService.builder("/api/public/create-store/save-email")
+                    .request(httpRequest)
+                    .email(req.email())
+                    .blocked(true, "Invalid or disposable email domain")
+                    .mailSent(false)
+                    .httpStatus(400)
+            );
+            
+            return ResponseEntity.badRequest()
+                .body(Map.of("message", domainCheck.reason()));
+        }
+        
+        // 6. CAPTCHA Validierung (serverseitig!)
+        boolean captchaPresent = req.captchaToken() != null && !req.captchaToken().isBlank();
+        boolean captchaValid = captchaPresent && captchaService.validateCaptcha(req.captchaToken(), ipAddress);
+        
+        if (!captchaValid) {
+            log.warn("🚫 CAPTCHA validation failed for /save-email: {}", ipAddress);
+            
+            securityEventService.logEvent(
+                securityEventService.builder("/api/public/create-store/save-email")
+                    .request(httpRequest)
+                    .email(req.email())
+                    .captcha(captchaPresent, false)
+                    .blocked(true, captchaPresent ? "CAPTCHA invalid" : "CAPTCHA missing")
+                    .mailSent(false)
+                    .httpStatus(captchaPresent ? 400 : 403)
+            );
+            
+            return ResponseEntity.status(captchaPresent ? HttpStatus.BAD_REQUEST : HttpStatus.FORBIDDEN)
+                .body(Map.of("message", "CAPTCHA validation failed. Please try again."));
+        }
+        
+        // ══════════════════════════════════════════════════════════════════════════
+        // ALLE CHECKS BESTANDEN - BUSINESS LOGIC
+        // ══════════════════════════════════════════════════════════════════════════
+        
         try {
             String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
             Long userId = jwtUtil.extractUserId(token);
@@ -217,6 +355,19 @@ public class PublicStoreCreationController {
 
             // Neuen JWT mit der echten E-Mail ausstellen
             String newToken = jwtUtil.generateToken(req.email(), userId, user.getRoles());
+            
+            // Security Event: Erfolg
+            securityEventService.logEvent(
+                securityEventService.builder("/api/public/create-store/save-email")
+                    .request(httpRequest)
+                    .email(req.email())
+                    .store(req.storeId())
+                    .user(userId)
+                    .captcha(true, true)
+                    .blocked(false, null)
+                    .mailSent(true)
+                    .httpStatus(200)
+            );
 
             return ResponseEntity.ok(Map.of(
                 "token", newToken,
@@ -225,6 +376,17 @@ public class PublicStoreCreationController {
 
         } catch (Exception e) {
             log.error("❌ [SaveEmail] Fehler: {}", e.getMessage(), e);
+            
+            // Security Event: Fehler
+            securityEventService.logEvent(
+                securityEventService.builder("/api/public/create-store/save-email")
+                    .request(httpRequest)
+                    .email(req.email())
+                    .blocked(false, null)
+                    .mailSent(false)
+                    .httpStatus(500)
+            );
+            
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("message", "Fehler beim Speichern der E-Mail: " + e.getMessage()));
         }
@@ -233,7 +395,9 @@ public class PublicStoreCreationController {
     public record SaveEmailRequest(
         @NotBlank @Email(message = "Ungültige E-Mail-Adresse")
         String email,
-        long storeId
+        long storeId,
+        String captchaToken,  // CAPTCHA Token (Pflicht!)
+        String website        // Honeypot-Feld (muss leer bleiben!)
     ) {}
 
     private String buildUniqueSlug(String requestedSlug, String storeName) {

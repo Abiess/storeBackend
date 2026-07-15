@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -8,6 +8,7 @@ import { OrderService } from '@app/core/services/order.service';
 import { CategoryService } from '@app/core/services/category.service';
 import { StoreService } from '@app/core/services/store.service';
 import { AuthService } from '@app/core/services/auth.service';
+import { HCaptchaService } from '@app/core/services/hcaptcha.service';
 import { Product, Order, Category } from '@app/core/models';
 import { toDate } from '@app/core/utils/date.utils';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
@@ -53,10 +54,30 @@ import { environment } from '@env/environment';
                 class="anon-email-input"
                 [disabled]="anonEmailSaving"
               />
+              <!-- Honeypot Field (unsichtbar) -->
+              <input
+                type="text"
+                name="website"
+                [(ngModel)]="anonWebsite"
+                autocomplete="off"
+                tabindex="-1"
+                aria-hidden="true"
+                style="position:absolute;left:-5000px;width:1px;height:1px;opacity:0;pointer-events:none"
+              />
+              <!-- hCaptcha Widget -->
+              <div 
+                id="save-email-captcha" 
+                class="h-captcha" 
+                [attr.data-sitekey]="captchaSiteKey"
+                [attr.data-callback]="'onSaveEmailCaptchaVerified'"
+                [attr.data-error-callback]="'onSaveEmailCaptchaError'"
+                [attr.data-expired-callback]="'onSaveEmailCaptchaExpired'"
+                style="margin: 12px 0;">
+              </div>
               <button
                 class="btn-save-email"
                 (click)="saveAnonEmail()"
-                [disabled]="anonEmailSaving || !anonEmail.includes('@')">
+                [disabled]="anonEmailSaving || !anonEmail.includes('@') || !saveEmailCaptchaToken">
                 <span *ngIf="anonEmailSaving" class="spinner-xs"></span>
                 <span *ngIf="!anonEmailSaving">{{ 'anonBanner.saveEmailBtn' | translate }}</span>
               </button>
@@ -858,7 +879,7 @@ import { environment } from '@env/environment';
     }
   `]
 })
-export class StoreDetailComponent implements OnInit {
+export class StoreDetailComponent implements OnInit, AfterViewInit {
   storeId!: number;
   storeSlug: string = '';
   storePublicUrl: string = '';
@@ -873,10 +894,14 @@ export class StoreDetailComponent implements OnInit {
   anonEmailSaving = false;
   anonEmailSaved = false;
   anonEmailError = '';
+  anonWebsite = '';  // Honeypot field
+  saveEmailCaptchaToken = '';
+  saveEmailCaptchaWidgetId: string | null = null;
   linkCopied = false;
   anonPwLinkSending = false;
   anonPwLinkSent = false;
   anonPwLinkError = '';
+  captchaSiteKey = environment.captcha.siteKey;
 
   toDate = toDate;
   productsLoading = false;
@@ -891,7 +916,8 @@ export class StoreDetailComponent implements OnInit {
     private categoryService: CategoryService,
     private storeService: StoreService,
     private authService: AuthService,
-    private http: HttpClient
+    private http: HttpClient,
+    private hCaptchaService: HCaptchaService
   ) {}
 
   ngOnInit(): void {
@@ -907,6 +933,39 @@ export class StoreDetailComponent implements OnInit {
         this.loadCategories();
       }
     });
+
+    // Global hCaptcha callbacks for save-email
+    (window as any).onSaveEmailCaptchaVerified = (token: string) => {
+      this.saveEmailCaptchaToken = token;
+    };
+    (window as any).onSaveEmailCaptchaError = () => {
+      this.saveEmailCaptchaToken = '';
+      this.anonEmailError = this.hCaptchaService.getSafeErrorMessage('verification_failed');
+    };
+    (window as any).onSaveEmailCaptchaExpired = () => {
+      this.saveEmailCaptchaToken = '';
+    };
+  }
+
+  ngAfterViewInit(): void {
+    // Render hCaptcha widget when anonymous banner is visible
+    if (this.isAnonymous && environment.captcha.enabled) {
+      setTimeout(() => {
+        const container = document.getElementById('save-email-captcha');
+        if (container && typeof (window as any).hcaptcha !== 'undefined') {
+          try {
+            this.saveEmailCaptchaWidgetId = (window as any).hcaptcha.render('save-email-captcha', {
+              sitekey: this.captchaSiteKey,
+              callback: 'onSaveEmailCaptchaVerified',
+              'error-callback': 'onSaveEmailCaptchaError',
+              'expired-callback': 'onSaveEmailCaptchaExpired'
+            });
+          } catch (err) {
+            console.error('Failed to render save-email hCaptcha:', err);
+          }
+        }
+      }, 100);
+    }
   }
 
   loadStoreInfo(): void {
@@ -932,12 +991,33 @@ export class StoreDetailComponent implements OnInit {
   saveAnonEmail(): void {
     const email = this.anonEmail.trim();
     if (!email.includes('@')) return;
+    
+    // CAPTCHA validation
+    if (!this.saveEmailCaptchaToken) {
+      this.anonEmailError = this.hCaptchaService.getSafeErrorMessage('missing_captcha');
+      return;
+    }
+
+    // Honeypot check (client-side pre-validation)
+    if (this.anonWebsite && this.anonWebsite.trim()) {
+      // Silent fail for bots - don't reveal honeypot
+      this.anonEmailError = this.hCaptchaService.getSafeErrorMessage('validation_failed');
+      this.resetSaveEmailCaptcha();
+      return;
+    }
+
     this.anonEmailSaving = true;
     this.anonEmailError = '';
     const token = this.authService.getToken();
+    
     this.http.post<{ token: string }>(
       `${environment.publicApiUrl}/create-store/save-email`,
-      { email, storeId: this.storeId },
+      { 
+        email, 
+        storeId: this.storeId,
+        captchaToken: this.saveEmailCaptchaToken,
+        website: this.anonWebsite
+      },
       { headers: { Authorization: `Bearer ${token}` } }
     ).subscribe({
       next: (res) => {
@@ -954,12 +1034,35 @@ export class StoreDetailComponent implements OnInit {
         }
         this.authService.setAuthFromStorage();
         this.isAnonymous = false;
+        this.resetSaveEmailCaptcha();
       },
       error: (err) => {
         this.anonEmailSaving = false;
-        this.anonEmailError = err?.error?.message || 'Fehler – bitte versuche es erneut.';
+        // User-friendly error messages
+        const status = err?.status;
+        if (status === 429) {
+          this.anonEmailError = this.hCaptchaService.getSafeErrorMessage('rate_limit');
+        } else if (status === 403 || status === 400) {
+          this.anonEmailError = this.hCaptchaService.getSafeErrorMessage('validation_failed');
+        } else if (status === 503) {
+          this.anonEmailError = this.hCaptchaService.getSafeErrorMessage('service_unavailable');
+        } else {
+          this.anonEmailError = err?.error?.message || this.hCaptchaService.getSafeErrorMessage('network_error');
+        }
+        this.resetSaveEmailCaptcha();
       }
     });
+  }
+
+  resetSaveEmailCaptcha(): void {
+    if (this.saveEmailCaptchaWidgetId && typeof (window as any).hcaptcha !== 'undefined') {
+      try {
+        (window as any).hcaptcha.reset(this.saveEmailCaptchaWidgetId);
+      } catch (err) {
+        console.error('Failed to reset save-email hCaptcha:', err);
+      }
+    }
+    this.saveEmailCaptchaToken = '';
   }
 
   requestPasswordLink(): void {
