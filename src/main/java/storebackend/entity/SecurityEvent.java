@@ -150,6 +150,41 @@ public class SecurityEvent {
     
     @Column(name = "referer", length = 500)
     private String referer; // Referer-Header
+    
+    // ── GeoIP / ASN Data ──
+    
+    @Column(name = "country_code", length = 2)
+    private String countryCode; // ISO country code (DE, US, CN)
+    
+    @Column(name = "country_name", length = 100)
+    private String countryName; // Country name (Germany, United States)
+    
+    @Column(name = "city", length = 100)
+    private String city; // City name (Berlin, New York)
+    
+    @Column(name = "latitude")
+    private Double latitude; // Latitude coordinate
+    
+    @Column(name = "longitude")
+    private Double longitude; // Longitude coordinate
+    
+    @Column(name = "continent", length = 50)
+    private String continent; // Continent (Europe, North America)
+    
+    @Column(name = "asn")
+    private Integer asn; // Autonomous System Number
+    
+    @Column(name = "asn_org", length = 200)
+    private String asnOrg; // ASN Organization (Hetzner, AWS, OVH)
+    
+    @Column(name = "isp", length = 200)
+    private String isp; // Internet Service Provider
+    
+    @Column(name = "cloud_provider", length = 50)
+    private String cloudProvider; // AWS, Google Cloud, Azure, etc.
+    
+    @Column(name = "is_hosting_provider")
+    private Boolean isHostingProvider; // True if from known hosting/cloud provider
 
     // ── Helper-Methoden ──
 

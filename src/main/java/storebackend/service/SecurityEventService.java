@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import storebackend.entity.SecurityEvent;
 import storebackend.repository.SecurityEventRepository;
 import storebackend.util.IpAddressUtil;
+import storebackend.dto.GeoIpData;
 import storebackend.enums.EventType;
 import storebackend.enums.MailType;
 import storebackend.enums.BlockReason;
@@ -27,6 +28,7 @@ import java.time.LocalDateTime;
 public class SecurityEventService {
 
     private final SecurityEventRepository securityEventRepository;
+    private final GeoIpService geoIpService;
 
     /**
      * Speichert Security Event asynchron
@@ -78,6 +80,26 @@ public class SecurityEventService {
                 this.event.setXForwardedFor(request.getHeader("X-Forwarded-For"));
                 this.event.setXRealIp(request.getHeader("X-Real-IP"));
                 this.event.setUserAgent(request.getHeader("User-Agent"));
+                this.event.setOrigin(request.getHeader("Origin"));
+                this.event.setReferer(request.getHeader("Referer"));
+                this.event.setHttpMethod(request.getMethod());
+            }
+            return this;
+        }
+        
+        public SecurityEventBuilder geoIp(GeoIpData geoIp) {
+            if (geoIp != null) {
+                this.event.setCountryCode(geoIp.getCountryCode());
+                this.event.setCountryName(geoIp.getCountryName());
+                this.event.setCity(geoIp.getCity());
+                this.event.setLatitude(geoIp.getLatitude());
+                this.event.setLongitude(geoIp.getLongitude());
+                this.event.setContinent(geoIp.getContinent());
+                this.event.setAsn(geoIp.getAsn());
+                this.event.setAsnOrg(geoIp.getAsnOrg());
+                this.event.setIsp(geoIp.getIsp());
+                this.event.setCloudProvider(geoIp.getCloudProvider());
+                this.event.setIsHostingProvider(geoIp.isHostingProvider());
             }
             return this;
         }

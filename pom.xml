@@ -144,6 +144,13 @@
             <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
 
+        <!-- MaxMind GeoIP2 für GeoLocation + ASN -->
+        <dependency>
+            <groupId>com.maxmind.geoip2</groupId>
+            <artifactId>geoip2</artifactId>
+            <version>4.2.0</version>
+        </dependency>
+
         <!-- jsoup für HTML-zu-Text-Konvertierung (WooCommerce Import) -->
         <dependency>
             <groupId>org.jsoup</groupId>
