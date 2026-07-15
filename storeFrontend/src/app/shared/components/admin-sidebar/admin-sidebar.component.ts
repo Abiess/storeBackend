@@ -201,6 +201,12 @@ export class AdminSidebarComponent implements OnInit {
                         requiresStore: true
                     },
                     {
+                        labelKey: 'sidebarAdmin.items.woocommerce',
+                        icon: 'shopping-bag',
+                        route: `${baseRoute}/woocommerce`,
+                        requiresStore: true
+                    },
+                    {
                         labelKey: 'sidebarAdmin.items.telegram',
                         icon: 'send',
                         route: `${baseRoute}/telegram`,
