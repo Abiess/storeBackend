@@ -1,0 +1,531 @@
+{
+  "version": 0,
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "hide": true,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard",
+        "enable": true
+      }
+    ]
+  },
+  "links": [],
+  "timepicker": {},
+  "refresh": "30s",
+  "id": null,
+  "title": "markt.ma - Mail Security Tracking",
+  "templating": {
+    "list": []
+  },
+  "panels": [
+    {
+      "gridPos": {
+        "y": 0,
+        "x": 0,
+        "w": 5,
+        "h": 4
+      },
+      "options": {
+        "textMode": "value_and_name",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "graphMode": "none",
+        "colorMode": "background",
+        "reduceOptions": {
+          "fields": "",
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "title": "📧 Mail Requests",
+      "fieldConfig": {
+        "overrides": [],
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "unit": "short"
+        }
+      },
+      "pluginVersion": "10.0.0",
+      "id": 1,
+      "targets": [
+        {
+          "editorMode": "code",
+          "format": "table",
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana-postgresql-datasource"
+          },
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          },
+          "rawSql": "SELECT COUNT(*)::double precision AS \"value\" FROM security_events WHERE $__timeFilter(created_at) AND mail_triggered = TRUE;",
+          "rawQuery": true
+        }
+      ],
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana-postgresql-datasource"
+      },
+      "type": "stat"
+    },
+    {
+      "gridPos": {
+        "y": 0,
+        "x": 5,
+        "w": 5,
+        "h": 4
+      },
+      "options": {
+        "textMode": "value_and_name",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "graphMode": "none",
+        "colorMode": "background",
+        "reduceOptions": {
+          "fields": "",
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "title": "🚫 Mail Blocked",
+      "fieldConfig": {
+        "overrides": [],
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              },
+              {
+                "value": 100,
+                "color": "yellow"
+              },
+              {
+                "value": 500,
+                "color": "red"
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "unit": "short"
+        }
+      },
+      "pluginVersion": "10.0.0",
+      "id": 2,
+      "targets": [
+        {
+          "editorMode": "code",
+          "format": "table",
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana-postgresql-datasource"
+          },
+          "refId": "A",
+          "rawSql": "SELECT COUNT(*)::double precision AS \"value\" FROM security_events WHERE $__timeFilter(created_at) AND mail_triggered = TRUE AND blocked = TRUE;",
+          "rawQuery": true
+        }
+      ],
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana-postgresql-datasource"
+      },
+      "type": "stat"
+    },
+    {
+      "gridPos": {
+        "y": 0,
+        "x": 10,
+        "w": 5,
+        "h": 4
+      },
+      "options": {
+        "textMode": "value_and_name",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "graphMode": "none",
+        "colorMode": "background",
+        "reduceOptions": {
+          "fields": "",
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "title": "✅ Mail Sent",
+      "fieldConfig": {
+        "overrides": [],
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": null,
+                "color": "gray"
+              },
+              {
+                "value": 1,
+                "color": "green"
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "unit": "short"
+        }
+      },
+      "pluginVersion": "10.0.0",
+      "id": 3,
+      "targets": [
+        {
+          "editorMode": "code",
+          "format": "table",
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana-postgresql-datasource"
+          },
+          "refId": "A",
+          "rawSql": "SELECT COUNT(*)::double precision AS \"value\" FROM security_events WHERE $__timeFilter(created_at) AND mail_sent = TRUE;",
+          "rawQuery": true
+        }
+      ],
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana-postgresql-datasource"
+      },
+      "type": "stat"
+    },
+    {
+      "gridPos": {
+        "y": 0,
+        "x": 15,
+        "w": 4,
+        "h": 4
+      },
+      "options": {
+        "textMode": "value_and_name",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "graphMode": "none",
+        "colorMode": "value",
+        "reduceOptions": {
+          "fields": "",
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "title": "📊 Success Rate",
+      "fieldConfig": {
+        "overrides": [],
+        "defaults": {
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": null,
+                "color": "red"
+              },
+              {
+                "value": 50,
+                "color": "yellow"
+              },
+              {
+                "value": 90,
+                "color": "green"
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "unit": "percent"
+        }
+      },
+      "pluginVersion": "10.0.0",
+      "id": 4,
+      "targets": [
+        {
+          "editorMode": "code",
+          "format": "table",
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana-postgresql-datasource"
+          },
+          "refId": "A",
+          "rawSql": "SELECT CASE WHEN COUNT(*) FILTER (WHERE mail_triggered = TRUE) > 0 THEN ROUND(100.0 * COUNT(*) FILTER (WHERE mail_sent = TRUE) / COUNT(*) FILTER (WHERE mail_triggered = TRUE), 2) ELSE 0 END::double precision AS \"Success Rate %\" FROM security_events WHERE $__timeFilter(created_at);",
+          "rawQuery": true
+        }
+      ],
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana-postgresql-datasource"
+      },
+      "type": "stat"
+    },
+    {
+      "gridPos": {
+        "y": 0,
+        "x": 19,
+        "w": 5,
+        "h": 4
+      },
+      "options": {
+        "textMode": "value_and_name",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "graphMode": "none",
+        "colorMode": "value",
+        "reduceOptions": {
+          "fields": "",
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "title": "🛡️ Block Rate",
+      "fieldConfig": {
+        "overrides": [],
+        "defaults": {
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              },
+              {
+                "value": 50,
+                "color": "yellow"
+              },
+              {
+                "value": 90,
+                "color": "orange"
+              },
+              {
+                "value": 98,
+                "color": "red"
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "unit": "percent"
+        }
+      },
+      "pluginVersion": "10.0.0",
+      "id": 5,
+      "targets": [
+        {
+          "editorMode": "code",
+          "format": "table",
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana-postgresql-datasource"
+          },
+          "refId": "A",
+          "rawSql": "SELECT CASE WHEN COUNT(*) FILTER (WHERE mail_triggered = TRUE) > 0 THEN ROUND(100.0 * COUNT(*) FILTER (WHERE mail_triggered = TRUE AND blocked = TRUE) / COUNT(*) FILTER (WHERE mail_triggered = TRUE), 2) ELSE 0 END::double precision AS \"Block Rate %\" FROM security_events WHERE $__timeFilter(created_at);",
+          "rawQuery": true
+        }
+      ],
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana-postgresql-datasource"
+      },
+      "type": "stat"
+    },
+    {
+      "fieldConfig": {
+        "overrides": [
+          {
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              }
+            ],
+            "matcher": {
+              "id": "byName",
+              "options": "Mail Triggered"
+            }
+          },
+          {
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              }
+            ],
+            "matcher": {
+              "id": "byName",
+              "options": "Mail Blocked"
+            }
+          },
+          {
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              }
+            ],
+            "matcher": {
+              "id": "byName",
+              "options": "Mail Sent"
+            }
+          }
+        ],
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              }
+            ]
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisColorMode": "text",
+            "barAlignment": 0,
+            "fillOpacity": 10,
+            "showPoints": "auto",
+            "lineInterpolation": "linear",
+            "thresholdsStyle": {
+              "mode": "off"
+            },
+            "lineWidth": 2,
+            "axisLabel": "",
+            "drawStyle": "line",
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "gradientMode": "none",
+            "axisPlacement": "auto",
+            "spanNulls": false,
+            "pointSize": 5,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "axisCenteredZero": false,
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": []
+        }
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana-postgresql-datasource"
+      },
+      "gridPos": {
+        "y": 4,
+        "x": 0,
+        "w": 24,
+        "h": 8
+      },
+      "type": "timeseries",
+      "title": "📈 Mail Timeline: Triggered vs Blocked vs Sent",
+      "targets": [
+        {
+          "editorMode": "code",
+          "format": "time_series",
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana-postgresql-datasource"
+          },
+          "refId": "A",
+          "rawSql": "SELECT $__timeGroupAlias(created_at, $__interval), COUNT(*) FILTER (WHERE mail_triggered = TRUE)::double precision AS \"Mail Triggered\", COUNT(*) FILTER (WHERE mail_triggered = TRUE AND blocked = TRUE)::double precision AS \"Mail Blocked\", COUNT(*) FILTER (WHERE mail_sent = TRUE)::double precision AS \"Mail Sent\" FROM security_events WHERE $__timeFilter(created_at) GROUP BY 1 ORDER BY 1;",
+          "rawQuery": true
+        }
+      ],
+      "id": 6,
+      "options": {
+        "legend": {
+          "placement": "right",
+          "calcs": [],
+          "showLegend": true,
+          "displayMode": "list"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      }
+    }
+  ],
+  "weekStart": "",
+  "editable": true,
+  "style": "dark",
+  "graphTooltip": 0,
+  "schemaVersion": 38,
+  "liveNow": false,
+  "fiscalYearStartMonth": 0,
+  "uid": "marktma-mail-security",
+  "tags": [
+    "security",
+    "mail",
+    "bot-protection",
+    "markt.ma"
+  ],
+  "timezone": "",
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  }
+}

@@ -130,8 +130,11 @@ public class SecurityEvent {
     @Column(name = "mail_type", length = 50)
     private MailType mailType; // STORE_ACCESS, EMAIL_VERIFICATION, PASSWORD_RESET, etc.
     
+    @Column(name = "mail_triggered")
+    private Boolean mailTriggered; // true = Request wollte Mail versenden (unabhängig ob blockiert)
+    
     @Column(name = "mail_sent")
-    private Boolean mailSent; // true wenn Mail tatsächlich versendet (vs. mail_triggered)
+    private Boolean mailSent; // true = Mail wurde TATSÄCHLICH erfolgreich versendet (nur wenn !blocked)
     
     @Column(name = "kill_switch_triggered")
     private Boolean killSwitchTriggered; // Emergency Kill Switch aktiv

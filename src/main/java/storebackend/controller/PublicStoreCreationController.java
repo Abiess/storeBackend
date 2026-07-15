@@ -221,9 +221,11 @@ public class PublicStoreCreationController {
                 securityEventService.builder("/api/public/create-store/save-email")
                     .request(httpRequest)
                     .email(req.email())
+                    .mailType(MailType.STORE_ACCESS)
+                    .mailTriggered(true)  // Request wollte Mail versenden
+                    .mailSent(false)      // Mail wurde NICHT versendet (Honeypot!)
                     .honeypot(true)
                     .blocked(true, BlockReason.HONEYPOT_TRIGGERED)
-                    .mailSent(false)
                     .httpStatus(400)
             );
             
@@ -240,9 +242,11 @@ public class PublicStoreCreationController {
                 securityEventService.builder("/api/public/create-store/save-email")
                     .request(httpRequest)
                     .email(req.email())
+                    .mailType(MailType.STORE_ACCESS)
+                    .mailTriggered(true)  // Request wollte Mail versenden
+                    .mailSent(false)      // Mail wurde NICHT versendet (IP Rate Limit!)
                     .rateLimit(RateLimitType.IP)
                     .blocked(true, BlockReason.IP_RATE_LIMIT)
-                    .mailSent(false)
                     .httpStatus(429)
             );
             
@@ -258,9 +262,11 @@ public class PublicStoreCreationController {
                 securityEventService.builder("/api/public/create-store/save-email")
                     .request(httpRequest)
                     .email(req.email())
+                    .mailType(MailType.STORE_ACCESS)
+                    .mailTriggered(true)  // Request wollte Mail versenden
+                    .mailSent(false)      // Mail wurde NICHT versendet (Email Rate Limit!)
                     .rateLimit(RateLimitType.EMAIL)
                     .blocked(true, BlockReason.EMAIL_RATE_LIMIT)
-                    .mailSent(false)
                     .httpStatus(429)
             );
             
@@ -276,9 +282,11 @@ public class PublicStoreCreationController {
                 securityEventService.builder("/api/public/create-store/save-email")
                     .request(httpRequest)
                     .email(req.email())
+                    .mailType(MailType.STORE_ACCESS)
+                    .mailTriggered(true)  // Request wollte Mail versenden
+                    .mailSent(false)      // Mail wurde NICHT versendet (Domain Rate Limit!)
                     .rateLimit(RateLimitType.DOMAIN)
                     .blocked(true, BlockReason.DOMAIN_RATE_LIMIT)
-                    .mailSent(false)
                     .httpStatus(429)
             );
             
@@ -295,8 +303,10 @@ public class PublicStoreCreationController {
                 securityEventService.builder("/api/public/create-store/save-email")
                     .request(httpRequest)
                     .email(req.email())
+                    .mailType(MailType.STORE_ACCESS)
+                    .mailTriggered(true)  // Request wollte Mail versenden
+                    .mailSent(false)      // Mail wurde NICHT versendet (Disposable Email!)
                     .blocked(true, BlockReason.DISPOSABLE_EMAIL)
-                    .mailSent(false)
                     .httpStatus(400)
             );
             
@@ -326,9 +336,11 @@ public class PublicStoreCreationController {
                 securityEventService.builder("/api/public/create-store/save-email")
                     .request(httpRequest)
                     .email(req.email())
+                    .mailType(MailType.STORE_ACCESS)
+                    .mailTriggered(true)  // Request wollte Mail versenden
+                    .mailSent(false)      // Mail wurde NICHT versendet (CAPTCHA!)
                     .captcha(captchaPresent, false)
                     .blocked(true, captchaPresent ? BlockReason.CAPTCHA_INVALID : BlockReason.CAPTCHA_MISSING)
-                    .mailSent(false)
                     .httpStatus(captchaPresent ? 400 : 403)
             );
             
@@ -412,9 +424,11 @@ public class PublicStoreCreationController {
                     .email(req.email())
                     .store(req.storeId())
                     .user(userId)
+                    .mailType(MailType.STORE_ACCESS)
+                    .mailTriggered(true)  // Request wollte Mail versenden
+                    .mailSent(true)       // Mail wurde TATSÄCHLICH versendet ✅
                     .captcha(true, true)
                     .blocked(false, null)
-                    .mailSent(true)
                     .httpStatus(200)
             );
 
@@ -431,8 +445,10 @@ public class PublicStoreCreationController {
                 securityEventService.builder("/api/public/create-store/save-email")
                     .request(httpRequest)
                     .email(req.email())
+                    .mailType(MailType.STORE_ACCESS)
+                    .mailTriggered(true)  // Request wollte Mail versenden
+                    .mailSent(false)      // Mail wurde NICHT versendet (Fehler!)
                     .blocked(false, null)
-                    .mailSent(false)
                     .httpStatus(500)
             );
             

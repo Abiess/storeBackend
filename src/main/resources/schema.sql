@@ -1318,14 +1318,28 @@ CREATE INDEX IF NOT EXISTS idx_security_events_mail_analysis
     ON security_events(mail_type, mail_sent, created_at) 
     WHERE mail_sent = true;
 
+-- Constraints: Daten-Integrität auf DB-Ebene erzwingen
+ALTER TABLE security_events
+DROP CONSTRAINT IF EXISTS chk_mail_sent_not_when_blocked;
+
+ALTER TABLE security_events
+ADD CONSTRAINT chk_mail_sent_not_when_blocked
+CHECK (
+    mail_sent = FALSE
+    OR blocked = FALSE
+);
+
 -- Dokumentation
 COMMENT ON TABLE security_events IS 'Security Audit Log: CAPTCHA, Rate Limiting, Honeypot, Bot Protection, Login-Tracking';
 COMMENT ON COLUMN security_events.email_masked IS 'DSGVO-konform: te***@example.com (nie volle E-Mail)';
 COMMENT ON COLUMN security_events.email_hash IS 'SHA-256(normalized_email + server_pepper) für Analytics';
 COMMENT ON COLUMN security_events.phone_masked IS 'DSGVO-konform: +49***1234 (nie volle Nummer)';
 COMMENT ON COLUMN security_events.blocked IS 'true = Request blockiert, false = durchgelassen';
-COMMENT ON COLUMN security_events.mail_triggered IS 'true = E-Mail wurde trotz Verdacht versendet';
-COMMENT ON COLUMN security_events.mail_sent IS 'true = E-Mail tatsächlich versendet';
+COMMENT ON COLUMN security_events.mail_triggered IS 'true = Request wollte eine E-Mail versenden (unabhängig ob blockiert)';
+COMMENT ON COLUMN security_events.mail_sent IS 'true = E-Mail wurde TATSÄCHLICH erfolgreich versendet (nur wenn blocked=false)';
 COMMENT ON COLUMN security_events.login_success IS 'Bei Login-Events: true = erfolgreich, false = fehlgeschlagen';
+
+COMMENT ON CONSTRAINT chk_mail_sent_not_when_blocked ON security_events IS 
+  'Verhindert inkonsistente Daten: blocked=true und mail_sent=true dürfen niemals gleichzeitig gesetzt sein.';
 
 RAISE NOTICE '✅ V25: security_events erweitert';

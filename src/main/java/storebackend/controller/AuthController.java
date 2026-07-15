@@ -103,6 +103,9 @@ public class AuthController {
                     .request(httpRequest)
                     .headers(httpRequest)
                     .email(request.getEmail())
+                    .mailType(MailType.EMAIL_VERIFICATION)
+                    .mailTriggered(true)  // Request wollte Mail versenden
+                    .mailSent(false)      // Mail wurde NICHT versendet (blockiert!)
                     .captcha(request.getCaptchaToken() != null, false)
                     .blocked(true, BlockReason.CAPTCHA_INVALID)
                     .httpStatus(400)
@@ -125,7 +128,8 @@ public class AuthController {
                     .headers(httpRequest)
                     .email(request.getEmail())
                     .mailType(MailType.EMAIL_VERIFICATION)
-                    .mailActuallySent(true)
+                    .mailTriggered(true)  // Request wollte Mail versenden
+                    .mailSent(true)       // Mail wurde TATSÄCHLICH versendet ✅
                     .blocked(false, null)
                     .httpStatus(201)
             );
@@ -352,7 +356,8 @@ public class AuthController {
                     .headers(httpRequest)
                     .email(request.email())
                     .mailType(MailType.EMAIL_VERIFICATION)
-                    .mailActuallySent(true)
+                    .mailTriggered(true)  // Request wollte Mail versenden
+                    .mailSent(true)       // Mail wurde TATSÄCHLICH versendet ✅
                     .blocked(false, null)
                     .httpStatus(200)
             );
@@ -367,6 +372,9 @@ public class AuthController {
                     .request(httpRequest)
                     .headers(httpRequest)
                     .email(request.email())
+                    .mailType(MailType.EMAIL_VERIFICATION)
+                    .mailTriggered(true)  // Request wollte Mail versenden
+                    .mailSent(false)      // Mail wurde NICHT versendet (Rate Limit!)
                     .blocked(true, BlockReason.EMAIL_RATE_LIMIT)
                     .httpStatus(429)
             );

@@ -146,8 +146,13 @@ public class SecurityEventService {
             return this;
         }
 
+        public SecurityEventBuilder mailTriggered(boolean triggered) {
+            this.event.setMailTriggered(triggered);
+            return this;
+        }
+        
         public SecurityEventBuilder mailSent(boolean sent) {
-            this.event.setMailTriggered(sent);
+            this.event.setMailSent(sent);
             return this;
         }
 
