@@ -137,7 +137,14 @@
       "variants": "Variantes",
       "saveFirst": "Remarque",
       "saveFirstHint": "Veuillez d'abord enregistrer le produit. Vous pourrez ensuite ajouter des variantes."
-    }
+    },
+    "taxCategory": "Catégorie de taxe",
+    "taxRate": "Taux de taxe",
+    "taxStandard": "Standard (19%)",
+    "taxReduced": "Réduit (7%)",
+    "taxZero": "Taux zéro (0%)",
+    "taxExempt": "Exonéré (0%)",
+    "taxResponsibilityHint": "ℹ️ Veuillez sélectionner le taux de taxe légalement applicable. La classification fiscale relève de la responsabilité du commerçant."
   },
   "KI-Assistent": "Assistant IA",
   "Basis Info": "Informations de base",
@@ -582,6 +589,37 @@
     "telegram": {
       "title": "Intégration Telegram",
       "description": "Connecter le canal Telegram pour l'import de produits"
+    },
+    "tax": {
+      "title": "Taxes et Devises",
+      "hint": "Définissez la devise, le pays et les paramètres fiscaux de votre boutique",
+      "currency": "Devise",
+      "currencyMAD": "Dirham marocain",
+      "currencyGBP": "Livre sterling",
+      "country": "Pays",
+      "countryDE": "Allemagne",
+      "countryMA": "Maroc",
+      "countryUS": "États-Unis",
+      "countryGB": "Royaume-Uni",
+      "priceMode": "Mode de prix",
+      "grossPrices": "Prix brut (TTC)",
+      "grossPricesHint": "Les prix sont affichés avec la TVA",
+      "netPrices": "Prix net (HT)",
+      "netPricesHint": "Les prix sont affichés hors TVA",
+      "vatEnabled": "TVA activée",
+      "vatEnabledHint": "Désactivez cette option si vous êtes exonéré de TVA",
+      "defaultTaxRate": "Taux de TVA standard",
+      "defaultTaxRateHint": "Taux de taxe régulier pour les produits (par ex. 19% en Allemagne)",
+      "shippingTaxRate": "Taux de TVA sur l'expédition",
+      "shippingTaxStrategy": "Stratégie de taxe d'expédition",
+      "shippingTaxStoreDefined": "Défini par la boutique (utilise le taux de TVA sur l'expédition)",
+      "shippingTaxStandard": "Utiliser le taux de TVA standard",
+      "shippingTaxProportional": "Proportionnel au panier",
+      "shippingTaxStrategyHint": "Comment la taxe sur les frais d'expédition doit-elle être calculée ?",
+      "vatExemptionText": "Texte d'exonération fiscale",
+      "vatExemptionTextPlaceholder": "Ex. Petite entreprise selon § 19 UStG",
+      "vatExemptionTextHint": "Ce texte est affiché lorsque la TVA est désactivée",
+      "currencyChangeWarning": "⚠️ Attention : Les montants de prix existants ne seront pas automatiquement convertis. Veuillez vérifier tous les prix des produits, variantes et expéditions par la suite."
     }
   },
   "table": {
