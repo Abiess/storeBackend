@@ -1,36 +1,34 @@
-import { Component, HostListener } from '@angular/core';
+import { Component, Input, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TranslationService, SupportedLanguage } from '../../../core/services/translation.service';
+import { TranslatePipe } from '../../../core/pipes/translate.pipe';
 
 @Component({
-  selector: 'app-language-selector',
+  selector: 'app-currency-selector',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe],
   template: `
     <div class="selector-dropdown" [class.open]="isOpen">
       <button 
         class="selector-button"
         (click)="toggleDropdown()"
-        [attr.aria-label]="'Sprache wechseln'"
+        [attr.aria-label]="'Währung anzeigen'"
         [attr.aria-expanded]="isOpen"
         type="button">
-        <span class="selector-icon">{{ getCurrentFlag() }}</span>
-        <span class="selector-label">{{ getCurrentLabel() }}</span>
+        <span class="selector-icon">{{ getCurrentSymbol() }}</span>
+        <span class="selector-label">{{ selectedCurrency }}</span>
         <svg class="selector-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="6 9 12 15 18 9"/>
         </svg>
       </button>
       
       <div class="selector-menu" *ngIf="isOpen">
-        <button 
-          class="selector-option"
-          [class.active]="lang === translationService.currentLang()"
-          *ngFor="let lang of languages"
-          (click)="changeLanguage(lang)"
-          type="button">
-          <span class="option-flag">{{ getFlag(lang) }}</span>
-          <span class="option-label">{{ getLanguageLabel(lang) }}</span>
-        </button>
+        <div class="currency-info">
+          <div class="info-row">
+            <span class="info-label">{{ 'storefront.storeCurrency' | translate }}</span>
+            <span class="info-value">{{ getCurrentSymbol() }} {{ selectedCurrency }}</span>
+          </div>
+          <p class="info-text">{{ 'storefront.currencyFixedByMerchant' | translate }}</p>
+        </div>
       </div>
     </div>
   `,
@@ -53,7 +51,7 @@ import { TranslationService, SupportedLanguage } from '../../../core/services/tr
       font-size: 0.875rem;
       font-weight: 500;
       color: #1d1d1f;
-      min-width: 120px;
+      min-width: 100px;
       
       &:hover {
         border-color: rgba(103, 126, 234, 0.3);
@@ -61,13 +59,14 @@ import { TranslationService, SupportedLanguage } from '../../../core/services/tr
       }
       
       .selector-icon {
-        font-size: 1.25rem;
+        font-size: 1.125rem;
         line-height: 1;
       }
       
       .selector-label {
         flex: 1;
         text-align: left;
+        font-weight: 600;
       }
       
       .selector-chevron {
@@ -97,6 +96,7 @@ import { TranslationService, SupportedLanguage } from '../../../core/services/tr
       overflow: hidden;
       z-index: 1000;
       animation: slideDown 0.2s ease;
+      min-width: 240px;
     }
     
     @keyframes slideDown {
@@ -110,42 +110,50 @@ import { TranslationService, SupportedLanguage } from '../../../core/services/tr
       }
     }
     
-    .selector-option {
+    .currency-info {
+      padding: 0.875rem;
+    }
+    
+    .info-row {
       display: flex;
+      justify-content: space-between;
       align-items: center;
-      gap: 0.625rem;
-      width: 100%;
-      padding: 0.625rem 0.75rem;
-      border: none;
-      background: white;
-      cursor: pointer;
-      transition: background 0.15s ease;
+      margin-bottom: 0.625rem;
+      padding-bottom: 0.625rem;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    }
+    
+    .info-label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    .info-value {
       font-size: 0.875rem;
+      font-weight: 600;
       color: #1d1d1f;
-      text-align: left;
-      
-      &:hover {
-        background: rgba(103, 126, 234, 0.08);
-      }
-      
-      &.active {
-        background: rgba(103, 126, 234, 0.15);
-        font-weight: 600;
-        color: #667eea;
-      }
-      
-      .option-flag {
-        font-size: 1.25rem;
-        line-height: 1;
-      }
+    }
+    
+    .info-text {
+      margin: 0;
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      color: #666;
     }
     
     /* Mobile */
     @media (max-width: 640px) {
       .selector-button {
-        min-width: 100px;
+        min-width: 80px;
         padding: 0.375rem 0.625rem;
         font-size: 0.8125rem;
+      }
+      
+      .selector-menu {
+        min-width: 200px;
       }
     }
     
@@ -153,13 +161,16 @@ import { TranslationService, SupportedLanguage } from '../../../core/services/tr
     [dir="rtl"] .selector-label {
       text-align: right;
     }
+    
+    [dir="rtl"] .info-row {
+      flex-direction: row-reverse;
+    }
   `]
 })
-export class LanguageSelectorComponent {
-  languages: SupportedLanguage[] = ['de', 'en', 'ar', 'fr'];
+export class CurrencySelectorComponent {
+  @Input() selectedCurrency: string = 'EUR';
+  
   isOpen = false;
-
-  constructor(public translationService: TranslationService) {}
 
   toggleDropdown(): void {
     this.isOpen = !this.isOpen;
@@ -173,36 +184,13 @@ export class LanguageSelectorComponent {
     }
   }
 
-  changeLanguage(lang: SupportedLanguage): void {
-    this.translationService.setLanguage(lang);
-    this.isOpen = false;
-  }
-
-  getCurrentFlag(): string {
-    return this.getFlag(this.translationService.currentLang());
-  }
-
-  getCurrentLabel(): string {
-    return this.getLanguageLabel(this.translationService.currentLang());
-  }
-
-  getFlag(lang: SupportedLanguage): string {
-    const flags: Record<SupportedLanguage, string> = {
-      de: '🇩🇪',
-      en: '🇬🇧',
-      ar: '🇸🇦',
-      fr: '🇫🇷'
+  getCurrentSymbol(): string {
+    const symbols: Record<string, string> = {
+      'EUR': '€',
+      'MAD': 'د.م.',
+      'USD': '$',
+      'GBP': '£'
     };
-    return flags[lang];
-  }
-
-  getLanguageLabel(lang: SupportedLanguage): string {
-    const labels: Record<SupportedLanguage, string> = {
-      de: 'Deutsch',
-      en: 'English',
-      ar: 'العربية',
-      fr: 'Français'
-    };
-    return labels[lang];
+    return symbols[this.selectedCurrency] ?? '€';
   }
 }

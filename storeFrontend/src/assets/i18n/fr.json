@@ -757,6 +757,8 @@
     "order": "Demander"
   },
   "storefront": {
+    "storeCurrency": "Devise du magasin",
+    "currencyFixedByMerchant": "Les prix sont affichés dans la devise définie par le commerçant.",
     "searchResults": "Résultats de recherche",
     "allProducts": "Tous les produits",
     "noSearchResults": "Aucun résultat de recherche",

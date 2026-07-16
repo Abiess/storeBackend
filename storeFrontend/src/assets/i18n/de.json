@@ -1025,6 +1025,8 @@
     "order": "Anfragen"
   },
   "storefront": {
+    "storeCurrency": "Store-Währung",
+    "currencyFixedByMerchant": "Die Preise werden in der vom Händler festgelegten Währung angezeigt.",
     "searchResults": "Suchergebnisse",
     "allProducts": "Alle Produkte",
     "noSearchResults": "Keine Suchergebnisse",

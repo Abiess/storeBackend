@@ -8,12 +8,13 @@ import { StorefrontAuthDialogComponent } from './storefront-auth-dialog.componen
 import { TranslationService } from '../../core/services/translation.service';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { LanguageSelectorComponent } from '../../shared/components/language-selector/language-selector.component';
+import { CurrencySelectorComponent } from '../../shared/components/currency-selector/currency-selector.component';
 import { PromoBannerComponent } from '../../shared/components/promo-banner/promo-banner.component';
 
 @Component({
   selector: 'app-storefront-header',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, StorefrontAuthDialogComponent, TranslatePipe, LanguageSelectorComponent, PromoBannerComponent],
+  imports: [CommonModule, RouterModule, FormsModule, StorefrontAuthDialogComponent, TranslatePipe, LanguageSelectorComponent, CurrencySelectorComponent, PromoBannerComponent],
   template: `
     <!-- Promo Banner mit besserer Logik -->
     <app-promo-banner [storeId]="storeId"></app-promo-banner>
@@ -70,7 +71,11 @@ import { PromoBannerComponent } from '../../shared/components/promo-banner/promo
 
         <!-- Header Actions -->
         <nav class="header-actions" aria-label="Header Navigation">
-          <app-language-selector></app-language-selector>
+          <!-- Language & Currency Selectors -->
+          <div class="header-selectors">
+            <app-language-selector></app-language-selector>
+            <app-currency-selector [selectedCurrency]="storeCurrencyCode"></app-currency-selector>
+          </div>
 
           <!-- Search Toggle (Mobile) -->
           <button class="icon-btn search-toggle-btn" (click)="toggleSearch()" type="button" aria-label="Suche öffnen">
@@ -312,6 +317,12 @@ import { PromoBannerComponent } from '../../shared/components/promo-banner/promo
       align-items: center;
       gap: 0.5rem;
       flex-shrink: 0;
+    }
+    
+    .header-selectors {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
     .icon-btn {
@@ -582,7 +593,11 @@ import { PromoBannerComponent } from '../../shared/components/promo-banner/promo
         right: -6px;
       }
 
-      app-language-selector { display: none; }
+      app-language-selector,
+      app-currency-selector,
+      .header-selectors {
+        display: none;
+      }
     }
 
     @media (max-width: 400px) {
@@ -604,6 +619,7 @@ export class StorefrontHeaderComponent {
   @Input() storeSlug!: string;
   @Input() storeLogo: string | null = null;
   @Input() storeId!: number; // Neu: für promo-banner
+  @Input() storeCurrencyCode: string = 'EUR'; // Währung des Stores
   @Input() cartItemCount = 0;
   @Output() cartClick = new EventEmitter<void>();
   @Output() searchChange = new EventEmitter<string>();

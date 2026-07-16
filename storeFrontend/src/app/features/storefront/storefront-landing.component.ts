@@ -115,6 +115,9 @@ export class StorefrontLandingComponent implements OnInit {
 
   /** Aktiver Template-Code für dynamisches Layout-Switching */
   activeTemplateCode: string = 'MODERN_GRID';
+  
+  /** Store-Währung für Currency-Selector */
+  storeCurrencyCode: string = 'EUR';
 
   /**
    * Restaurant-Modus aktiv, wenn Theme RESTAURANT_WARM ODER
@@ -774,6 +777,8 @@ export class StorefrontLandingComponent implements OnInit {
         this.storeTiktokUrl     = store.tiktokUrl     ?? null;
         this.storeFooterText    = store.footerText    ?? null;
         this.storeDescription   = store.description   ?? null;
+        // ─── Currency & Tax ───────────────────────────────────────
+        this.storeCurrencyCode  = (store.currencyCode ?? 'EUR') as string;
         // ─── Restaurant/Riad-Felder ───────────────────────────────
         this.storeBusinessType            = (store as any).businessType            ?? null;
         this.storeOpeningHours            = (store as any).openingHours            ?? null;

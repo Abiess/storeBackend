@@ -779,6 +779,8 @@
     "order": "Request"
   },
   "storefront": {
+    "storeCurrency": "Store currency",
+    "currencyFixedByMerchant": "Prices are displayed in the currency set by the merchant.",
     "searchResults": "Search results",
     "allProducts": "All products",
     "noSearchResults": "No search results",
