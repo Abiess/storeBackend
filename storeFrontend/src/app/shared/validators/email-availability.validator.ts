@@ -1,8 +1,7 @@
 import { AbstractControl, AsyncValidatorFn, ValidationErrors } from '@angular/forms';
 import { Observable, of, timer } from 'rxjs';
-import { map, switchMap, catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { map, switchMap, catchError } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
-import { inject } from '@angular/core';
 
 /**
  * Email-Verfügbarkeits-Validator (Async)
@@ -16,12 +15,14 @@ import { inject } from '@angular/core';
  * 
  * Verwendung:
  * ```typescript
- * this.form = this.fb.group({
- *   email: ['', 
- *     [Validators.required, Validators.email],
- *     [emailAvailabilityValidator()]  // Async validator als drittes Argument
- *   ]
- * });
+ * constructor(private http: HttpClient) {
+ *   this.form = this.fb.group({
+ *     email: ['', 
+ *       [Validators.required, Validators.email],
+ *       [emailAvailabilityValidator(this.http)]  // HttpClient übergeben
+ *     ]
+ *   });
+ * }
  * ```
  * 
  * Im Template:
@@ -32,10 +33,8 @@ import { inject } from '@angular/core';
  * </div>
  * ```
  */
-export function emailAvailabilityValidator(): AsyncValidatorFn {
+export function emailAvailabilityValidator(http: HttpClient): AsyncValidatorFn {
   return (control: AbstractControl): Observable<ValidationErrors | null> => {
-    const http = inject(HttpClient);
-    
     // Keine Prüfung wenn Feld leer oder ungültiges Format
     if (!control.value || control.errors?.['email']) {
       return of(null);

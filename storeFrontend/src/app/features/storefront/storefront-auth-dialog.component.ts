@@ -1,6 +1,7 @@
 import { Component, Output, EventEmitter, Input, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../core/services/auth.service';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { TranslationService } from '../../core/services/translation.service';
@@ -296,6 +297,7 @@ export class StorefrontAuthDialogComponent {
 
   constructor(
     private fb: FormBuilder,
+    private http: HttpClient,
     private authService: AuthService,
     private translationService: TranslationService,
     private errorHandler: RegistrationErrorHandler
@@ -307,7 +309,7 @@ export class StorefrontAuthDialogComponent {
     return this.fb.group({
       email: ['', 
         [Validators.required, Validators.email],
-        !this.isLogin ? [emailAvailabilityValidator()] : []  // Async validator nur bei Registrierung
+        !this.isLogin ? [emailAvailabilityValidator(this.http)] : []  // HttpClient übergeben
       ],
       password: ['', [Validators.required, Validators.minLength(PASSWORD_MIN_LENGTH)]],
       confirmPassword: [''] // Wird nur bei Registrierung validiert
