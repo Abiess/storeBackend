@@ -947,8 +947,6 @@
     "resendIn": "Erneut senden in",
     "resendSuccess": "✓ Verifikations-E-Mail erneut gesendet.",
     "resendFailed": "Senden fehlgeschlagen. Bitte später erneut versuchen.",
-    "goToLogin": "Zum Login",
-    "emailAlreadyExists": "Diese E-Mail ist bereits registriert.",
     "checkingEmail": "E-Mail wird geprüft...",
     "backToLogin": "Zurück zum Login",
     "forgotPasswordTitle": "Passwort vergessen?",
@@ -2685,5 +2683,43 @@
       "noChange": "Keine Änderung",
       "noChanges": "Keine Änderungen erforderlich"
     }
+  },
+  "teamInvitation": {
+    "title": "Team-Einladung",
+    "processing": "Einladung wird verarbeitet...",
+    "successTitle": "Willkommen im Team!",
+    "errorTitle": "Einladung konnte nicht angenommen werden",
+    "goToDashboard": "Zum Dashboard",
+    "sendInvitation": "Einladung senden",
+    "inviteMember": "Mitglied einladen",
+    "emailAddress": "E-Mail-Adresse",
+    "selectRole": "Rolle auswählen",
+    "pendingInvitations": "Offene Einladungen",
+    "activeMembers": "Aktive Mitglieder",
+    "invitedBy": "Eingeladen von",
+    "invitedAt": "Eingeladen am",
+    "expiresAt": "Läuft ab am",
+    "resend": "Erneut senden",
+    "revoke": "Widerrufen",
+    "status": {
+      "PENDING": "Ausstehend",
+      "ACCEPTED": "Angenommen",
+      "EXPIRED": "Abgelaufen",
+      "REVOKED": "Widerrufen"
+    },
+    "errors": {
+      "invalidToken": "Ungültiger oder abgelaufener Einladungslink",
+      "alreadyUsed": "Diese Einladung wurde bereits verwendet",
+      "emailMismatch": "Diese Einladung ist für eine andere E-Mail-Adresse bestimmt",
+      "alreadyMember": "Sie sind bereits Mitglied dieses Stores",
+      "sendFailed": "E-Mail-Versand fehlgeschlagen"
+    }
+  },
+  "roles": {
+    "owner": "Inhaber",
+    "admin": "Administrator",
+    "manager": "Manager",
+    "staff": "Mitarbeiter",
+    "employee": "Angestellter"
   }
 }

@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RoleService } from '@app/core/services/role.service';
-import { StoreRole, UserRole, ROLE_PERMISSIONS_MAP } from '@app/core/models';
+import { TeamInvitationService } from '@app/core/services/team-invitation.service';
+import { StoreRole, UserRole, ROLE_PERMISSIONS_MAP, TeamInvitation, CreateTeamInvitationRequest } from '@app/core/models';
 import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
 import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
 import {
@@ -193,6 +194,65 @@ interface TeamMemberForm {
             {{ toast.message }}
           </div>
         }
+
+        <!-- Offene Einladungen -->
+        <div class="section" *ngIf="pendingInvitations.length > 0 || loading">
+          <div class="section-header">
+            <h2>📬 Offene Einladungen</h2>
+          </div>
+
+          <table class="invitations-table" *ngIf="!loading && pendingInvitations.length > 0" style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden;">
+            <thead>
+              <tr style="background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
+                <th style="padding: 12px; text-align: left; font-weight: 600; color: #374151;">E-Mail</th>
+                <th style="padding: 12px; text-align: left; font-weight: 600; color: #374151;">Rolle</th>
+                <th style="padding: 12px; text-align: left; font-weight: 600; color: #374151;">Status</th>
+                <th style="padding: 12px; text-align: left; font-weight: 600; color: #374151;">Eingeladen am</th>
+                <th style="padding: 12px; text-align: left; font-weight: 600; color: #374151;">Läuft ab</th>
+                <th style="padding: 12px; text-align: left; font-weight: 600; color: #374151;">Aktionen</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let inv of pendingInvitations" style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px;">{{ inv.email }}</td>
+                <td style="padding: 12px;">{{ getRoleLabel(inv.role) }}</td>
+                <td style="padding: 12px;">
+                  <span [ngClass]="{
+                    'badge': true,
+                    'badge-pending': inv.status === 'PENDING',
+                    'badge-accepted': inv.status === 'ACCEPTED',
+                    'badge-expired': inv.status === 'EXPIRED',
+                    'badge-revoked': inv.status === 'REVOKED'
+                  }" style="padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">
+                    {{ inv.status }}
+                  </span>
+                </td>
+                <td style="padding: 12px;">{{ inv.createdAt | date:'short' }}</td>
+                <td style="padding: 12px;">{{ inv.expiresAt | date:'short' }}</td>
+                <td style="padding: 12px;">
+                  <button 
+                    type="button"
+                    class="btn btn-sm"
+                    (click)="resendInvitation(inv.id)"
+                    [disabled]="inv.status !== 'PENDING'"
+                    *ngIf="inv.status === 'PENDING'"
+                    style="margin-right: 8px; padding: 6px 12px; font-size: 0.875rem;">
+                    🔄 Erneut
+                  </button>
+                  <button 
+                    type="button"
+                    class="btn btn-sm btn-danger"
+                    (click)="revokeInvitation(inv.id)"
+                    [disabled]="inv.status !== 'PENDING'"
+                    *ngIf="inv.status === 'PENDING'"
+                    style="padding: 6px 12px; font-size: 0.875rem;">
+                    ✕ Widerrufen
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
   `,
   styles: [`
@@ -370,6 +430,8 @@ export class StoreRoleManagementComponent implements OnInit {
   deletingMember: StoreRole | null = null;
 
   toast: { message: string; type: 'success' | 'error' } | null = null;
+  
+  pendingInvitations: TeamInvitation[] = [];
 
   newMember: TeamMemberForm = {
     userId: null,
@@ -464,7 +526,8 @@ export class StoreRoleManagementComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    public roleService: RoleService
+    public roleService: RoleService,
+    private teamInvitationService: TeamInvitationService
   ) {}
 
   ngOnInit(): void {
@@ -488,6 +551,7 @@ export class StoreRoleManagementComponent implements OnInit {
     ];
 
     this.loadTeam();
+    this.loadInvitations();
   }
 
   loadTeam(): void {
@@ -522,30 +586,72 @@ export class StoreRoleManagementComponent implements OnInit {
   }
 
   addMember(): void {
-    if (!this.newMember.email || !this.newMember.role) return;
-
+    if (!this.newMember.email || !this.newMember.role) {
+      this.showToast('E-Mail und Rolle sind erforderlich', 'error');
+      return;
+    }
+    
+    if (this.newMember.role === UserRole.STORE_OWNER) {
+      this.showToast('STORE_OWNER kann nicht über Einladung vergeben werden', 'error');
+      return;
+    }
+    
     this.saving = true;
-    const userId = isNaN(+this.newMember.email) ? Math.floor(Math.random() * 1000) + 100 : +this.newMember.email;
-    const permissions = this.getPermissionsForRole(this.newMember.role);
-
-    const role: StoreRole = {
-      userId,
-      storeId: this.storeId,
-      role: this.newMember.role.toString(),
-      permissions
+    
+    const request: CreateTeamInvitationRequest = {
+      email: this.newMember.email.trim().toLowerCase(),
+      role: this.newMember.role
     };
-
-    this.roleService.addStoreRole(role).subscribe({
-      next: saved => {
-        this.teamMembers = [...this.teamMembers, saved];
-        this.showAddForm = false;
+    
+    this.teamInvitationService.createInvitation(this.storeId!, request).subscribe({
+      next: () => {
+        this.showToast('Einladung erfolgreich versendet', 'success');
         this.newMember = { userId: null, email: '', role: UserRole.STORE_STAFF, permissions: [] };
+        this.showAddForm = false;
+        this.loadInvitations();
         this.saving = false;
-        this.showToast('Teammitglied erfolgreich hinzugefügt', 'success');
       },
-      error: () => {
+      error: (err) => {
+        const errorMsg = err.error?.error || err.error?.message || 'Einladung fehlgeschlagen';
+        this.showToast(errorMsg, 'error');
         this.saving = false;
-        this.showToast('Fehler beim Hinzufügen des Mitglieds', 'error');
+      }
+    });
+  }
+  
+  loadInvitations(): void {
+    if (!this.storeId) return;
+    this.teamInvitationService.getInvitations(this.storeId).subscribe({
+      next: (invitations) => {
+        this.pendingInvitations = invitations;
+      },
+      error: (err) => {
+        console.error('Failed to load invitations', err);
+      }
+    });
+  }
+  
+  resendInvitation(id: number): void {
+    this.teamInvitationService.resendInvitation(this.storeId!, id).subscribe({
+      next: () => {
+        this.showToast('Einladung erneut versendet', 'success');
+        this.loadInvitations();
+      },
+      error: (err) => {
+        this.showToast('Fehler beim Versenden', 'error');
+      }
+    });
+  }
+  
+  revokeInvitation(id: number): void {
+    if (!confirm('Einladung wirklich widerrufen?')) return;
+    this.teamInvitationService.revokeInvitation(this.storeId!, id).subscribe({
+      next: () => {
+        this.showToast('Einladung widerrufen', 'success');
+        this.loadInvitations();
+      },
+      error: (err) => {
+        this.showToast('Fehler beim Widerrufen', 'error');
       }
     });
   }
@@ -564,6 +670,14 @@ export class StoreRoleManagementComponent implements OnInit {
     if (!this.editingMember) return;
     this.saving = true;
 
+    // ✅ DEBUG: Detaillierte Fehleranalyse
+    console.log('🔍 UPDATE Request:', {
+      storeId: this.editingMember.storeId,
+      userId: this.editingMember.userId,
+      roleId: this.editingMember.id,
+      newRole: this.editRole
+    });
+
     const updated: StoreRole = {
       ...this.editingMember,
       role: this.editRole,
@@ -577,9 +691,16 @@ export class StoreRoleManagementComponent implements OnInit {
         this.saving = false;
         this.showToast('Rolle erfolgreich aktualisiert', 'success');
       },
-      error: () => {
+      error: (err) => {
+        console.error('❌ UPDATE FAILED:', {
+          status: err.status,
+          statusText: err.statusText,
+          errorBody: err.error,
+          requestPayload: updated,
+          url: err.url
+        });
         this.saving = false;
-        this.showToast('Fehler beim Aktualisieren der Rolle', 'error');
+        this.showToast('Fehler beim Aktualisieren der Rolle: ' + (err.error?.message || err.statusText), 'error');
       }
     });
   }

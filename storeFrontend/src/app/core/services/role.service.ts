@@ -124,21 +124,36 @@ export class RoleService {
       );
   }
 
+  /** Rolle aktualisieren */
   updateStoreRole(role: StoreRole): Observable<StoreRole> {
-    const updated = { ...role, updatedAt: new Date().toISOString() };
+    // ✅ FIX: URL muss userId enthalten, nicht role.id
+    // ✅ FIX: Request-Body nur mit erlaubten Feldern
+    const payload = {
+      userId: role.userId,
+      role: role.role,
+      permissions: role.permissions
+    };
+    
+    console.log('🔧 UPDATE Request:', {
+      url: `${this.apiUrl}/stores/${role.storeId}/roles/${role.userId}`,
+      payload
+    });
+    
     return this.http
-      .put<StoreRole>(`${this.apiUrl}/stores/${role.storeId}/roles/${role.id}`, role, { headers: this.getAuthHeaders() })
+      .put<StoreRole>(
+        `${this.apiUrl}/stores/${role.storeId}/roles/${role.userId}`,
+        payload,
+        { headers: this.getAuthHeaders() }
+      )
       .pipe(
         tap(saved => {
           const idx = this.storeRolesState.findIndex(r => r.id === saved.id);
           if (idx >= 0) this.storeRolesState[idx] = saved;
           this.storeRoles$.next([...this.storeRolesState]);
         }),
-        catchError(() => {
-          const idx = this.storeRolesState.findIndex(r => r.id === role.id);
-          if (idx >= 0) this.storeRolesState[idx] = updated;
-          this.storeRoles$.next([...this.storeRolesState]);
-          return of(updated);
+        catchError((error) => {
+          console.error('❌ UPDATE FAILED (Service):', error);
+          throw error;  // ✅ Error weitergeben statt zu schlucken
         })
       );
   }

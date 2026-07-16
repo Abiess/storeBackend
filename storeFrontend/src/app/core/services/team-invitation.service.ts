@@ -1,0 +1,51 @@
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { environment } from '@env/environment';
+import { TeamInvitation, CreateTeamInvitationRequest } from '../models';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class TeamInvitationService {
+  private apiUrl = environment.apiUrl;
+
+  constructor(private http: HttpClient) {}
+
+  createInvitation(
+    storeId: number,
+    request: CreateTeamInvitationRequest
+  ): Observable<TeamInvitation> {
+    return this.http.post<TeamInvitation>(
+      `${this.apiUrl}/stores/${storeId}/team-invitations`,
+      request
+    );
+  }
+
+  getInvitations(storeId: number): Observable<TeamInvitation[]> {
+    return this.http.get<TeamInvitation[]>(
+      `${this.apiUrl}/stores/${storeId}/team-invitations`
+    );
+  }
+
+  revokeInvitation(storeId: number, invitationId: number): Observable<void> {
+    return this.http.post<void>(
+      `${this.apiUrl}/stores/${storeId}/team-invitations/${invitationId}/revoke`,
+      {}
+    );
+  }
+
+  resendInvitation(storeId: number, invitationId: number): Observable<void> {
+    return this.http.post<void>(
+      `${this.apiUrl}/stores/${storeId}/team-invitations/${invitationId}/resend`,
+      {}
+    );
+  }
+
+  acceptInvitation(token: string): Observable<{ success: boolean; message: string }> {
+    return this.http.post<{ success: boolean; message: string }>(
+      `${this.apiUrl}/team-invitations/accept`,
+      { token }
+    );
+  }
+}

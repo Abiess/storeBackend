@@ -160,14 +160,57 @@ export interface UserRoleInterface {
 
 export type PermissionType = string;
 
+// ============================================
+// STORE ROLES & PERMISSIONS
+// ============================================
+
+/** Store-Rolle (Response vom Backend) */
 export interface StoreRole {
   id?: number;
   userId: number;
+  userEmail?: string;
+  userName?: string;
   storeId: number;
   role: string;
   permissions: string[];
   createdAt?: string;
   updatedAt?: string;
+}
+
+/** Request zum Erstellen/Aktualisieren einer Store-Rolle */
+export interface StoreRoleRequest {
+  userId: number;
+  role: string;
+  permissions?: string[];
+}
+
+/** Request zum Erstellen einer Team-Einladung */
+export interface CreateTeamInvitationRequest {
+  email: string;
+  role: string;
+}
+
+/** Team-Einladung (Response) */
+export interface TeamInvitation {
+  id: number;
+  storeId: number;
+  email: string;
+  role: string;
+  status: InvitationStatus;
+  token?: string;
+  invitedByUserId: number;
+  invitedByUserName?: string;
+  createdAt: string;
+  expiresAt: string;
+  acceptedAt?: string;
+  revokedAt?: string;
+}
+
+export enum InvitationStatus {
+  PENDING = 'PENDING',
+  ACCEPTED = 'ACCEPTED',
+  EXPIRED = 'EXPIRED',
+  REVOKED = 'REVOKED'
 }
 
 export interface DomainRole {

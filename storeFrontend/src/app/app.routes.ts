@@ -48,6 +48,14 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/quick-start.component').then(m => m.QuickStartComponent)
     // KEIN authGuard – dieser Flow ist der Einstieg für neue Nutzer
   },
+  
+  // ── Team-Einladung akzeptieren (PUBLIC - redirectet zu Login wenn nicht eingeloggt) ──
+  {
+    path: 'invitations/accept',
+    loadComponent: () => import('./features/invitations/accept-invitation.component').then(m => m.AcceptInvitationComponent)
+    // KEIN authGuard – Component prüft selbst und redirectet zu Login mit returnUrl
+  },
+  
   // /create-store = öffentlich, kein Login erforderlich – nutzt das gemeinsame Store-Creation-UI
   {
     path: 'create-store',

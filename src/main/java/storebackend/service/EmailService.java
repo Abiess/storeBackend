@@ -262,6 +262,77 @@ public class EmailService {
     }
 
     // ==================================================================================
+    // TEAM INVITATIONS
+    // ==================================================================================
+
+    /**
+     * Team-Einladungs-E-Mail versenden
+     * 
+     * @param recipientEmail  E-Mail des eingeladenen Benutzers
+     * @param plainToken      Klartext-Token (nur für E-Mail, niemals in DB!)
+     * @param storeName       Name des Stores
+     * @param role            Zugewiesene Rolle
+     */
+    public void sendTeamInvitationEmail(String recipientEmail, String plainToken, String storeName, String role) {
+        sendTeamInvitationEmail(recipientEmail, plainToken, storeName, role, "en");
+    }
+
+    public void sendTeamInvitationEmail(String recipientEmail, String plainToken, String storeName, String role, String lang) {
+        if (!mailEnabled) {
+            log.info("📧 Mail disabled – team invitation would be sent to: {}", recipientEmail);
+            return;
+        }
+
+        try {
+            // Accept-URL mit Token
+            String acceptUrl = baseUrl + "/invitations/accept?token=" + plainToken;
+
+            // Rolle übersetzen
+            String roleTranslated = translateRole(role, lang);
+
+            Map<String, Object> vars = new HashMap<>();
+            vars.put("storeName", storeName);
+            vars.put("role", roleTranslated);
+            vars.put("acceptUrl", acceptUrl);
+            vars.put("expiryDays", "7");
+            vars.put("greeting", buildGreeting(lang, null));
+            vars.put("title", t(lang, "teamInvitation.title", "Team Invitation"));
+            vars.put("intro", t(lang, "teamInvitation.intro", "You have been invited to join"));
+            vars.put("roleLabel", t(lang, "teamInvitation.roleLabel", "Role"));
+            vars.put("btnLabel", t(lang, "teamInvitation.button", "Accept Invitation"));
+            vars.put("expiry", t(lang, "teamInvitation.expiry", "This invitation expires in 7 days."));
+            vars.put("emailNote", t(lang, "teamInvitation.emailNote", "This invitation is only valid for this email address."));
+            vars.put("securityNote", t(lang, "teamInvitation.securityNote", "We will never send passwords via email."));
+            addFooter(lang, vars);
+
+            String subject = templateService.renderSubject(
+                t(lang, "teamInvitation.subject", "Team Invitation - {{storeName}}"), vars);
+
+            sendHtml(recipientEmail, subject, templateService.render("team-invitation.html", lang, vars));
+            
+            log.info("✅ Team invitation email sent: to={}, store={}, role={}", 
+                    recipientEmail, storeName, role);
+
+        } catch (Exception e) {
+            log.error("❌ Failed to send team invitation email: to={}, store={}", 
+                    recipientEmail, storeName, e);
+            // Exception weiterwerfen, damit der Service Bescheid weiß
+            throw new RuntimeException("E-Mail-Versand fehlgeschlagen: " + e.getMessage(), e);
+        }
+    }
+
+    private String translateRole(String role, String lang) {
+        return switch (role) {
+            case "STORE_OWNER" -> t(lang, "roles.owner", "Owner");
+            case "STORE_ADMIN" -> t(lang, "roles.admin", "Administrator");
+            case "STORE_MANAGER" -> t(lang, "roles.manager", "Manager");
+            case "STORE_STAFF" -> t(lang, "roles.staff", "Staff");
+            case "STORE_EMPLOYEE" -> t(lang, "roles.employee", "Employee");
+            default -> role;
+        };
+    }
+
+    // ==================================================================================
     // STORE OWNER NOTIFICATIONS
     // ==================================================================================
 

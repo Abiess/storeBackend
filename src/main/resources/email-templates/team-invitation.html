@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 32px 24px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .content {
+            padding: 32px 24px;
+        }
+        .greeting {
+            font-size: 16px;
+            margin-bottom: 16px;
+        }
+        .intro {
+            font-size: 15px;
+            color: #666;
+            margin-bottom: 24px;
+        }
+        .store-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 16px;
+            margin: 24px 0;
+            border-radius: 4px;
+        }
+        .store-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        .role-label {
+            font-size: 13px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .role-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #667eea;
+        }
+        .button-container {
+            text-align: center;
+            margin: 32px 0;
+        }
+        .btn {
+            display: inline-block;
+            padding: 14px 32px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 16px;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        .info-box {
+            background: #fff8e1;
+            border-left: 4px solid #ffc107;
+            padding: 12px 16px;
+            margin: 24px 0;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #666;
+        }
+        .security-note {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 12px 16px;
+            margin: 24px 0;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #666;
+        }
+        .footer {
+            background: #f8f9fa;
+            padding: 24px;
+            text-align: center;
+            font-size: 13px;
+            color: #666;
+            border-top: 1px solid #e0e0e0;
+        }
+        .footer-links {
+            margin-top: 16px;
+        }
+        .footer-links a {
+            color: #667eea;
+            text-decoration: none;
+            margin: 0 8px;
+        }
+        @media only screen and (max-width: 600px) {
+            .container {
+                margin: 0;
+                border-radius: 0;
+            }
+            .content {
+                padding: 24px 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{{title}}</h1>
+        </div>
+        
+        <div class="content">
+            <div class="greeting">{{greeting}}</div>
+            
+            <div class="intro">
+                {{intro}} <strong>{{storeName}}</strong>
+            </div>
+
+            <div class="store-box">
+                <div class="store-name">{{storeName}}</div>
+                <div class="role-label">{{roleLabel}}</div>
+                <div class="role-value">{{role}}</div>
+            </div>
+
+            <div class="button-container">
+                <a href="{{acceptUrl}}" class="btn">{{btnLabel}}</a>
+            </div>
+
+            <div class="info-box">
+                ⏱️ {{expiry}}
+            </div>
+
+            <div class="info-box">
+                📧 {{emailNote}}
+            </div>
+
+            <div class="security-note">
+                🔒 {{securityNote}}
+            </div>
+        </div>
+
+        <div class="footer">
+            <div>{{footerText}}</div>
+            <div class="footer-links">
+                {{#helpUrl}}<a href="{{helpUrl}}">{{helpLabel}}</a>{{/helpUrl}}
+                {{#privacyUrl}}<a href="{{privacyUrl}}">{{privacyLabel}}</a>{{/privacyUrl}}
+            </div>
+        </div>
+    </div>
+</body>
+</html>
