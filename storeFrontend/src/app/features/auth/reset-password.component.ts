@@ -7,11 +7,20 @@ import { environment } from '@env/environment';
 import { catchError, of } from 'rxjs';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { PasswordStrengthIndicatorComponent } from '@app/shared/components/password-strength-indicator/password-strength-indicator.component';
+import { PasswordRequirementsComponent } from '@app/shared/auth/password-requirements.component';
+import { passwordMatchValidator, PASSWORD_MIN_LENGTH } from '@app/shared/validators/password.validators';
 
 @Component({
   selector: 'app-reset-password',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, TranslatePipe, PasswordStrengthIndicatorComponent],
+  imports: [
+    CommonModule, 
+    ReactiveFormsModule, 
+    RouterModule, 
+    TranslatePipe, 
+    PasswordStrengthIndicatorComponent,
+    PasswordRequirementsComponent
+  ],
   template: `
     <div class="page">
 
@@ -95,8 +104,12 @@ import { PasswordStrengthIndicatorComponent } from '@app/shared/components/passw
                   </button>
                 </div>
                 <div class="field-err" *ngIf="pw?.invalid && pw?.touched">
-                  {{ 'auth.resetPasswordMinLength' | translate }}
+                  {{ 'auth.passwordRequired' | translate }}
                 </div>
+
+                <!-- Password Requirements Component -->
+                <app-password-requirements [passwordControl]="pw">
+                </app-password-requirements>
 
                 <!-- Stärke-Anzeige + Checkliste (shared) -->
                 <app-password-strength-indicator [password]="pw?.value ?? ''">
@@ -342,9 +355,9 @@ export class ResetPasswordComponent implements OnInit {
     private http: HttpClient
   ) {
     this.resetPasswordForm = this.fb.group({
-      password: ['', [Validators.required, Validators.minLength(6)]],
+      password: ['', [Validators.required, Validators.minLength(PASSWORD_MIN_LENGTH)]],
       confirmPassword: ['', [Validators.required]]
-    }, { validators: this.passwordMatchValidator });
+    }, { validators: passwordMatchValidator() });
   }
 
   ngOnInit() {
@@ -359,12 +372,6 @@ export class ResetPasswordComponent implements OnInit {
 
   get pw()  { return this.resetPasswordForm.get('password'); }
   get cpw() { return this.resetPasswordForm.get('confirmPassword'); }
-
-  passwordMatchValidator(group: FormGroup) {
-    const pw  = group.get('password')?.value;
-    const cpw = group.get('confirmPassword')?.value;
-    return pw === cpw ? null : { passwordMismatch: true };
-  }
 
   private validateToken(token: string) {
     this.validatingToken = true;

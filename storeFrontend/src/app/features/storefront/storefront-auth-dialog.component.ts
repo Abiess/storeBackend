@@ -92,16 +92,17 @@ import { environment } from '../../../environments/environment';
             </div>
           </div>
           
-          <!-- CAPTCHA NUR bei Registrierung UND nur wenn alle anderen Felder gültig -->
+          <!-- CAPTCHA NUR bei Registrierung UND nur wenn Formular ausgefüllt -->
           <app-captcha 
             *ngIf="!isLogin && captchaEnabled && shouldShowCaptcha"
             (tokenReceived)="onCaptchaToken($event)"
             (error)="onCaptchaError($event)">
           </app-captcha>
           
-          <!-- Hinweis warum CAPTCHA noch nicht angezeigt wird -->
+          <!-- Hinweis warum CAPTCHA noch nicht angezeigt wird (nur wenn Felder fehlen) -->
           <div class="info-message" *ngIf="!isLogin && captchaEnabled && !shouldShowCaptcha && authForm.touched">
-            {{ 'auth.completFormFirst' | translate }}
+            <span class="info-icon">ℹ️</span>
+            {{ 'common.completFormFirst' | translate }}
           </div>
           
           <button type="submit" class="btn btn-primary" [disabled]="isSubmitDisabled">
@@ -316,10 +317,13 @@ export class StorefrontAuthDialogComponent {
   }
   
   /**
-   * CAPTCHA nur anzeigen wenn:
-   * - Email gültig und verfügbar
-   * - Passwort gültig
-   * - Passwort-Bestätigung gültig
+   * CAPTCHA anzeigen wenn:
+   * - Alle Felder ausgefüllt sind (auch wenn noch pending/validierend)
+   * - Passwort-Regeln erfüllt
+   * - Passwörter stimmen überein
+   * 
+   * WICHTIG: NICHT warten bis async Email-Validator fertig ist!
+   * Sonst wird CAPTCHA nie angezeigt während Email geprüft wird.
    */
   get shouldShowCaptcha(): boolean {
     if (this.isLogin) return false;
@@ -328,29 +332,43 @@ export class StorefrontAuthDialogComponent {
     const passwordControl = this.authForm.get('password');
     const confirmControl = this.authForm.get('confirmPassword');
     
-    const emailValid = emailControl?.valid === true && emailControl?.pending !== true;
-    const passwordValid = passwordControl?.valid === true;
-    const confirmValid = confirmControl?.valid === true;
+    // Email: Ausgefüllt und formal gültig (nicht auf async validator warten!)
+    const emailFilled = emailControl?.value && 
+                       !emailControl?.hasError('required') && 
+                       !emailControl?.hasError('email');
+    
+    // Passwort: Ausgefüllt und mindestens 12 Zeichen
+    const passwordValid = passwordControl?.value && 
+                         passwordControl.value.length >= PASSWORD_MIN_LENGTH;
+    
+    // Bestätigung: Ausgefüllt
+    const confirmFilled = confirmControl?.value;
+    
+    // Passwörter stimmen überein
     const passwordsMatch = this.authForm.hasError('passwordMismatch') !== true;
     
-    return emailValid && passwordValid && confirmValid && passwordsMatch;
+    return emailFilled && passwordValid && confirmFilled && passwordsMatch;
   }
   
   /**
    * Submit-Button nur aktiv wenn:
-   * - Form gültig
+   * - Form gültig (inkl. async validators)
    * - NICHT loading
-   * - Bei Registrierung: CAPTCHA gelöst (wenn angezeigt)
+   * - Bei Registrierung: CAPTCHA gelöst
    */
   get isSubmitDisabled(): boolean {
     if (this.loading) return true;
-    if (this.authForm.invalid) return true;
-    if (this.authForm.pending) return true;  // Warte auf async validators
     
-    // Bei Registrierung: CAPTCHA muss gelöst sein
-    if (!this.isLogin && this.captchaEnabled && this.shouldShowCaptcha && !this.captchaToken) {
-      return true;
+    // Bei Registrierung: CAPTCHA muss gelöst sein wenn angezeigt
+    if (!this.isLogin && this.captchaEnabled) {
+      if (this.shouldShowCaptcha && !this.captchaToken) {
+        return true;
+      }
     }
+    
+    // Form muss gültig sein (warte auf async validators)
+    if (this.authForm.invalid) return true;
+    if (this.authForm.pending) return true;
     
     return false;
   }

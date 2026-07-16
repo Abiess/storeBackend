@@ -4,11 +4,19 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { CustomerProfileService } from '../../core/services/customer-profile.service';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { PasswordStrengthIndicatorComponent } from '@app/shared/components/password-strength-indicator/password-strength-indicator.component';
+import { PasswordRequirementsComponent } from '@app/shared/auth/password-requirements.component';
+import { passwordMatchValidator, PASSWORD_MIN_LENGTH } from '@app/shared/validators/password.validators';
 
 @Component({
   selector: 'app-customer-password-change',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TranslatePipe, PasswordStrengthIndicatorComponent],
+  imports: [
+    CommonModule, 
+    ReactiveFormsModule, 
+    TranslatePipe, 
+    PasswordStrengthIndicatorComponent,
+    PasswordRequirementsComponent
+  ],
   template: `
     <div class="pw-change-wrap">
 
@@ -59,8 +67,12 @@ import { PasswordStrengthIndicatorComponent } from '@app/shared/components/passw
             </button>
           </div>
           <div class="field-err" *ngIf="pw?.invalid && pw?.touched">
-            {{ 'auth.resetPasswordMinLength' | translate }}
+            {{ 'auth.passwordRequired' | translate }}
           </div>
+
+          <!-- Passwort-Anforderungen (shared component) -->
+          <app-password-requirements [passwordControl]="pw">
+          </app-password-requirements>
 
           <!-- Stärke-Anzeige (shared) -->
           <app-password-strength-indicator [password]="pw?.value ?? ''">
@@ -304,16 +316,10 @@ export class CustomerPasswordChangeComponent {
     private customerService: CustomerProfileService
   ) {
     this.form = this.fb.group({
-      currentPassword: ['', [Validators.required, Validators.minLength(6)]],
-      password:        ['', [Validators.required, Validators.minLength(6)]],
+      currentPassword: ['', [Validators.required, Validators.minLength(PASSWORD_MIN_LENGTH)]],
+      password:        ['', [Validators.required, Validators.minLength(PASSWORD_MIN_LENGTH)]],
       confirmPassword: ['', [Validators.required]]
-    }, { validators: this.passwordMatchValidator });
-  }
-
-  passwordMatchValidator(group: FormGroup) {
-    const pw  = group.get('password')?.value;
-    const cpw = group.get('confirmPassword')?.value;
-    return pw === cpw ? null : { passwordMismatch: true };
+    }, { validators: passwordMatchValidator() });
   }
 
   onSubmit(): void {
