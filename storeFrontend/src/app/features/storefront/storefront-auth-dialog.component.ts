@@ -324,7 +324,7 @@ export class StorefrontAuthDialogComponent {
         !this.isLogin ? [emailAvailabilityValidator(this.http, environment.apiUrl)] : []  // HttpClient + apiUrl übergeben
       ],
       password: ['', [Validators.required, Validators.minLength(PASSWORD_MIN_LENGTH)]],
-      confirmPassword: [''] // Wird nur bei Registrierung validiert
+      confirmPassword: ['', !this.isLogin ? [Validators.required] : []] // Required bei Registrierung
     }, { 
       validators: !this.isLogin ? passwordMatchValidator() : null 
     });
@@ -436,6 +436,22 @@ export class StorefrontAuthDialogComponent {
         this.authForm.get(key)?.markAsTouched();
       });
       return;
+    }
+
+    // CRITICAL: Bei Registrierung MÜSSEN Passwörter übereinstimmen (defensive Prüfung)
+    if (!this.isLogin) {
+      const password = this.authForm.get('password')?.value;
+      const confirmPassword = this.authForm.get('confirmPassword')?.value;
+      
+      if (password !== confirmPassword) {
+        console.error('❌ SECURITY: Passwörter stimmen nicht überein!');
+        this.authForm.setErrors({ passwordMismatch: true });
+        this.authForm.get('confirmPassword')?.setErrors({ passwordMismatch: true });
+        this.authForm.get('confirmPassword')?.markAsTouched();
+        this.errorMessage = this.translationService.translate('auth.passwordsDoNotMatch') || 
+                           'Passwords do not match';
+        return;
+      }
     }
 
     // CAPTCHA Token vorhanden bei Registrierung?

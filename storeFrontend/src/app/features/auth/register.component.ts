@@ -424,6 +424,27 @@ export class RegisterComponent implements OnInit, OnDestroy {
         return;
       }
 
+      // Defensive Prüfung: Form muss gültig sein
+      if (this.registerForm.invalid) {
+        this.registerForm.markAllAsTouched();
+        console.error('[REGISTER] Form invalid:', this.registerForm.errors);
+        return;
+      }
+
+      // CRITICAL: Passwörter MÜSSEN übereinstimmen (defensive Prüfung)
+      const password = this.registerForm.get('password')?.value;
+      const confirmPassword = this.registerForm.get('confirmPassword')?.value;
+      
+      if (password !== confirmPassword) {
+        console.error('❌ SECURITY: Passwörter stimmen nicht überein!');
+        this.registerForm.setErrors({ passwordMismatch: true });
+        this.registerForm.get('confirmPassword')?.setErrors({ passwordMismatch: true });
+        this.registerForm.get('confirmPassword')?.markAsTouched();
+        this.errorMessage = this.translationService.translate('auth.passwordsDoNotMatch') || 
+                           'Passwords do not match';
+        return;
+      }
+
       // CAPTCHA Token vorhanden?
       if (this.captchaEnabled && !this.captchaToken) {
         this.errorMessage = this.translationService.translate('auth.captchaRequired') || 
@@ -444,7 +465,8 @@ export class RegisterComponent implements OnInit, OnDestroy {
       this.successMessage = '';
 
       const formData = {
-        ...this.registerForm.value,
+        email: this.registerForm.value.email,
+        password: password,  // Nur ein Passwort an Backend senden
         lang: this.translationService.currentLang() || 'en',
         captchaToken: this.captchaToken
       };
