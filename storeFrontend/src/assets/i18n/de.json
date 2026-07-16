@@ -961,6 +961,9 @@
     "registrationError": "Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.",
     "goToLogin": "Zur Anmeldung",
     "goToForgotPassword": "Passwort vergessen?",
+    "emailNotVerified": "Bitte bestätigen Sie zuerst Ihre E-Mail-Adresse.",
+    "emailNotVerifiedHint": "Prüfen Sie Ihren Posteingang und klicken Sie auf den Bestätigungslink.",
+    "resendVerificationEmail": "Bestätigungs-E-Mail erneut senden",
     "rateLimitExceeded": "Zu viele Anfragen. Bitte versuchen Sie es später erneut.",
     "accountLocked": "Ihr Konto wurde vorübergehend gesperrt. Bitte versuchen Sie es später erneut.",
     "emailRateLimitExceeded": "Zu viele Anfragen für diese E-Mail-Adresse. Bitte warten Sie."

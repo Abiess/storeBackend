@@ -6,6 +6,7 @@ import { TranslationService } from '../../core/services/translation.service';
  */
 export type RegistrationErrorCode = 
   | 'EMAIL_ALREADY_EXISTS'
+  | 'EMAIL_NOT_VERIFIED'
   | 'CAPTCHA_VALIDATION_FAILED'
   | 'INVALID_EMAIL'
   | 'INVALID_PASSWORD'
@@ -66,6 +67,9 @@ export class RegistrationErrorHandler {
     } else if (status === 0 || !status) {
       // Network error (keine Verbindung zum Server)
       code = 'NETWORK_ERROR';
+    } else if (backendMessage?.includes('verify your email') || backendMessage?.includes('email address before logging')) {
+      // Email not verified
+      code = 'EMAIL_NOT_VERIFIED';
     } else {
       code = 'UNKNOWN_ERROR';
     }
@@ -85,6 +89,10 @@ export class RegistrationErrorHandler {
       case 'EMAIL_ALREADY_EXISTS':
         return this.translationService.translate('auth.emailAlreadyExists') || 
                'This email address is already registered.';
+      
+      case 'EMAIL_NOT_VERIFIED':
+        return this.translationService.translate('auth.emailNotVerified') || 
+               'Please verify your email address first.';
       
       case 'CAPTCHA_VALIDATION_FAILED':
         return this.translationService.translate('auth.captchaInvalid') || 
@@ -113,6 +121,10 @@ export class RegistrationErrorHandler {
       case 'EMAIL_ALREADY_EXISTS':
         return this.translationService.translate('auth.emailExistsHint') || 
                'Try logging in or use password reset.';
+      
+      case 'EMAIL_NOT_VERIFIED':
+        return this.translationService.translate('auth.emailNotVerifiedHint') || 
+               'Check your inbox and click the confirmation link.';
       
       case 'CAPTCHA_VALIDATION_FAILED':
         return this.translationService.translate('auth.captchaFailedHint') || 

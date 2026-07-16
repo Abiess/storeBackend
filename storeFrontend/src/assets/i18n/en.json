@@ -715,6 +715,9 @@
     "registrationError": "Registration failed. Please try again.",
     "goToLogin": "Go to login",
     "goToForgotPassword": "Forgot password?",
+    "emailNotVerified": "Please verify your email address first.",
+    "emailNotVerifiedHint": "Check your inbox and click the confirmation link.",
+    "resendVerificationEmail": "Resend verification email",
     "rateLimitExceeded": "Too many requests. Please try again later.",
     "accountLocked": "Your account has been temporarily locked. Please try again later.",
     "emailRateLimitExceeded": "Too many requests for this email address. Please wait."

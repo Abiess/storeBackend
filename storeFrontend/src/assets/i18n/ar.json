@@ -313,6 +313,9 @@
     "registrationError": "فشل التسجيل. يرجى المحاولة مرة أخرى.",
     "goToLogin": "الذهاب لتسجيل الدخول",
     "goToForgotPassword": "نسيت كلمة المرور؟",
+    "emailNotVerified": "يرجى تأكيد عنوان بريدك الإلكتروني أولاً.",
+    "emailNotVerifiedHint": "تحقق من صندوق الوارد الخاص بك وانقر على رابط التأكيد.",
+    "resendVerificationEmail": "إعادة إرسال بريد التأكيد",
     "rateLimitExceeded": "الكثير من الطلبات. يرجى المحاولة لاحقاً.",
     "accountLocked": "تم قفل حسابك مؤقتاً. يرجى المحاولة لاحقاً.",
     "emailRateLimitExceeded": "الكثير من الطلبات لهذا البريد الإلكتروني. يرجى الانتظار."
