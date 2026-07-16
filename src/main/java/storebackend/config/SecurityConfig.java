@@ -47,6 +47,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/validate").permitAll()
                 .requestMatchers("/api/auth/verify", "/api/auth/resend-verification").permitAll()
                 .requestMatchers("/api/auth/forgot-password", "/api/auth/reset-password", "/api/auth/reset-password/validate").permitAll()
+                // Email availability check - öffentlich für Registrierung
+                .requestMatchers(HttpMethod.GET, "/api/auth/check-email").permitAll()
                 // Phone Auth (WhatsApp/Telegram Schnellstart – kein Login erforderlich)
                 .requestMatchers("/api/auth/phone/**").permitAll()
                 // Telegram Bot Webhook (empfängt Updates von Telegram)
