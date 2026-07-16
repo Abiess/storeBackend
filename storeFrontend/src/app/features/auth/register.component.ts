@@ -458,6 +458,10 @@ export class RegisterComponent implements OnInit, OnDestroy {
           
           // WICHTIG: Token nach erfolgreichem Submit löschen und Widget zurücksetzen
           this.resetCaptcha();
+          
+          // SECURITY: User ist NICHT angemeldet!
+          // Kein Token gespeichert, kein automatischer Login.
+          // User muss erst Email bestätigen.
         },
         error: (err) => {
           this.loading = false;

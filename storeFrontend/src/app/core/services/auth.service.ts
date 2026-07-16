@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
-import { User, AuthResponse, LoginRequest, RegisterRequest } from '../models';
+import { User, AuthResponse, RegistrationResponse, LoginRequest, RegisterRequest } from '../models';
 import { tap, catchError } from 'rxjs/operators';
 import { environment } from '@env/environment';
 
@@ -105,27 +105,32 @@ export class AuthService {
       );
   }
 
-  register(data: RegisterRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${environment.apiUrl}/auth/register`, data)
+  /**
+   * Registriert einen neuen Benutzer.
+   * 
+   * SECURITY: Speichert KEINEN Token!
+   * Der Benutzer muss erst seine E-Mail-Adresse bestätigen bevor er sich anmelden kann.
+   * 
+   * @returns RegistrationResponse ohne Token
+   */
+  register(data: RegisterRequest): Observable<RegistrationResponse> {
+    return this.http.post<RegistrationResponse>(`${environment.apiUrl}/auth/register`, data)
       .pipe(
         tap(response => {
           // SECURITY: KEINE personenbezogenen Daten in Production-Logs
-          // Nur Status-Meldungen, keine E-Mail, kein Token-Inhalt
           if (!environment.production) {
-            console.log('📝 Registrierung erfolgreich - User:', response.user?.email);
+            console.log('📝 Registrierung erfolgreich:', response.email);
+            console.log('📧 E-Mail-Bestätigung erforderlich');
           } else {
-            console.log('📝 Registrierung erfolgreich');
+            console.log('📝 Registrierung erfolgreich - Bestätigungs-E-Mail gesendet');
           }
 
-          // Store token and user after successful registration
-          localStorage.setItem('auth_token', response.token);
-          localStorage.setItem('currentUser', JSON.stringify(response.user));
-          this.currentUserSubject.next(response.user);
-
-          // Nach Registrierung - Trigger Warenkorb-Update (Guest-Cart wird migriert!)
-          if (this.cartService) {
-            this.cartService.triggerCartUpdate();
-          }
+          // SECURITY: KEINEN Token speichern!
+          // KEIN localStorage.setItem('auth_token', ...)
+          // KEIN currentUserSubject.next(...)
+          // KEINE Warenkorb-Migration!
+          
+          // User ist NICHT angemeldet und kann erst nach Email-Bestätigung + Login zugreifen
         })
       );
   }

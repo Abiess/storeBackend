@@ -99,14 +99,25 @@ public class EmailVerificationService {
     /**
      * Sendet eine neue Verification-Email (Resend-Funktionalität)
      * MIT COOLDOWN-SCHUTZ gegen Spam
+     * 
+     * SECURITY: Neutrale Antwort - verrät nicht ob Email existiert (User-Enumeration-Schutz)
      */
     @Transactional
     public void resendVerificationEmail(String email) {
         User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+            .orElse(null);
 
-        if (user.getEmailVerified()) {
-            throw new RuntimeException("Email is already verified");
+        // SECURITY: Neutrale Antwort - keine Information ob User existiert
+        if (user == null) {
+            log.debug("Resend verification requested for unknown email: {}", email);
+            // Einfach erfolgreich zurückgeben ohne Error
+            return;
+        }
+        
+        if (Boolean.TRUE.equals(user.getEmailVerified())) {
+            log.debug("Resend verification requested for already verified email: {}", email);
+            // Auch hier neutral: Erfolgreich zurückgeben
+            return;
         }
 
         // Prüfe Cooldown: Wann wurde der letzte Token erstellt?

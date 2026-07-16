@@ -1,11 +1,13 @@
 package storebackend.security;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -16,6 +18,8 @@ import storebackend.entity.User;
 import storebackend.repository.UserRepository;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Component
@@ -25,10 +29,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
+    private final ObjectMapper objectMapper;
 
-    public JwtAuthenticationFilter(JwtUtil jwtUtil, UserRepository userRepository) {
+    public JwtAuthenticationFilter(JwtUtil jwtUtil, UserRepository userRepository, ObjectMapper objectMapper) {
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
+        this.objectMapper = objectMapper;
     }
 
     /**
@@ -80,6 +86,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             logger.debug("Token validation: {}", isValid ? "VALID" : "INVALID");
 
                             if (isValid) {
+                                // SECURITY: Prüfe ob Email-Adresse bestätigt ist
+                                if (!Boolean.TRUE.equals(user.getEmailVerified())) {
+                                    logger.warn("❌ Email not verified for user: {}", email);
+                                    logger.warn("❌ Access denied - returning 401 with EMAIL_NOT_VERIFIED");
+                                    
+                                    // Sende 401 Unauthorized mit JSON-Response
+                                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                                    
+                                    Map<String, String> error = new HashMap<>();
+                                    error.put("code", "EMAIL_NOT_VERIFIED");
+                                    error.put("message", "Please verify your email address before continuing");
+                                    
+                                    response.getWriter().write(objectMapper.writeValueAsString(error));
+                                    return;  // Request wird HIER beendet, nicht weitergeleitet
+                                }
+                                
                                 var authorities = user.getRoles().stream()
                                         .map(role -> {
                                             String roleName = role.name();

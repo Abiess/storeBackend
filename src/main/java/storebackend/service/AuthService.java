@@ -9,11 +9,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import storebackend.dto.AuthResponse;
+import storebackend.dto.RegistrationResponse;
 import storebackend.dto.LoginRequest;
 import storebackend.dto.RegisterRequest;
 import storebackend.entity.Plan;
 import storebackend.entity.User;
 import storebackend.enums.Role;
+import storebackend.exception.EmailNotVerifiedException;
 import storebackend.repository.PlanRepository;
 import storebackend.repository.UserRepository;
 import storebackend.security.JwtUtil;
@@ -37,7 +39,7 @@ public class AuthService {
     private boolean skipEmailVerificationForLogin;
 
     @Transactional
-    public AuthResponse register(RegisterRequest request) {
+    public RegistrationResponse register(RegisterRequest request) {
         // Check if user already exists
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already registered");
@@ -70,23 +72,12 @@ public class AuthService {
         // Save user FIRST - muss committed sein bevor EmailVerification foreign key gesetzt wird
         user = userRepository.saveAndFlush(user);
 
-        // Generate JWT token
-        String token = jwtUtil.generateToken(user.getEmail(), user.getId(), user.getRoles());
-
-        // Create UserDTO
-        String primaryRole = user.getRoles().isEmpty() ? "USER" : user.getRoles().iterator().next().name();
-        AuthResponse.UserDTO userDTO = new AuthResponse.UserDTO(
-            user.getId(),
-            user.getEmail(),
-            user.getName(),
-            primaryRole,
-            user.getRoles().stream().map(Enum::name).collect(Collectors.toList())
-        );
-
+        // SECURITY: KEIN JWT-Token mehr! User muss erst Email bestätigen
         // Send verification email in SAME transaction - wird erst nach commit versendet
         emailVerificationService.createAndSendVerificationToken(user);
 
-        return new AuthResponse(token, userDTO);
+        // Return success response WITHOUT token, WITH masked email
+        return RegistrationResponse.successWithMaskedEmail(user.getEmail());
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -94,12 +85,13 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail())
             .orElseThrow(() -> new RuntimeException("Invalid email or password"));
 
-        // Check if email is verified (skip in development mode)
-        if (!skipEmailVerificationForLogin && !user.getEmailVerified()) {
-            throw new RuntimeException("Please verify your email address before logging in. Check your inbox for the verification link.");
+        // SECURITY: Check if email is verified BEFORE generating JWT
+        // Auch wenn Passwort korrekt ist, KEIN Token für unbestätigte User
+        if (!skipEmailVerificationForLogin && !Boolean.TRUE.equals(user.getEmailVerified())) {
+            throw new EmailNotVerifiedException();
         }
 
-        // Authenticate user
+        // Authenticate user (Password-Check)
         Authentication authentication = authenticationManager.authenticate(
             new UsernamePasswordAuthenticationToken(
                 request.getEmail(),

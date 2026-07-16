@@ -8,6 +8,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import storebackend.dto.AuthResponse;
+import storebackend.dto.RegistrationResponse;
 import storebackend.dto.LoginRequest;
 import storebackend.dto.RegisterRequest;
 import storebackend.entity.User;
@@ -162,7 +163,7 @@ public class AuthController {
         }
 
         try {
-            AuthResponse response = authService.register(request);
+            RegistrationResponse response = authService.register(request);
 
             // ✅ LOG SUCCESSFUL REGISTRATION WITH EMAIL SENT
             securityEventService.logEvent(
@@ -180,14 +181,8 @@ public class AuthController {
                     .httpStatus(201)
             );
 
-            // Migriere Gast-Warenkorb wenn sessionId vorhanden (aus Body oder Query-Param)
-            String cartSessionId = request.getSessionId() != null ? request.getSessionId() : sessionId;
-
-            if (cartSessionId != null && !cartSessionId.isEmpty()) {
-                User user = userRepository.findById(response.getUser().getId())
-                        .orElseThrow(() -> new RuntimeException("User not found"));
-                cartService.mergeGuestCartToUser(cartSessionId, user);
-            }
+            // SECURITY: KEINE Warenkorb-Migration! User ist noch NICHT angemeldet.
+            // Warenkorb-Migration erfolgt erst NACH Email-Verifizierung beim ersten Login.
 
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (RuntimeException e) {
@@ -301,6 +296,27 @@ public class AuthController {
             }
 
             return ResponseEntity.ok(response);
+        } catch (storebackend.exception.EmailNotVerifiedException e) {
+            // SECURITY: Email nicht bestätigt - 401 (nicht 403!)
+            // Kein failed login attempt aufzeichnen (Credentials sind korrekt!)
+            
+            log.warn("[{}] Email not verified for: {}", requestId, request.getEmail());
+            
+            securityEventService.logEvent(
+                securityEventService.builder("/api/auth/login")
+                    .requestId(requestId)
+                    .eventType(EventType.LOGIN_FAILED)
+                    .httpMethod("POST")
+                    .request(httpRequest)
+                    .headers(httpRequest)
+                    .email(request.getEmail())
+                    .loginSuccess(false)
+                    .blocked(true, BlockReason.EMAIL_NOT_VERIFIED)
+                    .httpStatus(401)  // 401, nicht 403!
+            );
+            
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)  // 401
+                    .body(new ErrorResponse("EMAIL_NOT_VERIFIED", e.getMessage()));
         } catch (RuntimeException e) {
             // Login-Versuch aufzeichnen (für Account Lockout)
             rateLimitService.recordLoginAttempt(request.getEmail());

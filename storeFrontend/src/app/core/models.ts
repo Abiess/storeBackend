@@ -16,6 +16,13 @@ export interface AuthResponse {
   user: User;
 }
 
+export interface RegistrationResponse {
+  registrationSuccessful: boolean;
+  emailVerificationRequired: boolean;
+  email: string;
+  message: string;
+}
+
 export interface LoginRequest {
   email: string;
   password: string;

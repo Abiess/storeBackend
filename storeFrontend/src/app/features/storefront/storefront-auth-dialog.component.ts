@@ -455,32 +455,37 @@ export class StorefrontAuthDialogComponent {
       captchaToken: this.captchaToken // Wichtig: Token mitsenden bei Registrierung
     };
 
-    const authObservable = this.isLogin
-      ? this.authService.login({ email: formData.email, password: formData.password })
-      : this.authService.register(formData);
-
-    authObservable.subscribe({
-      next: (response) => {
-        this.loading = false;
-        
-        if (this.isLogin) {
-          // Bei Login: Direkt schließen und success emiten
+    if (this.isLogin) {
+      // Login-Flow
+      this.authService.login({ email: formData.email, password: formData.password }).subscribe({
+        next: (response) => {
+          this.loading = false;
           console.log('✅ Login erfolgreich:', response);
           this.success.emit();
           this.close.emit();
-        } else {
-          // Bei Registrierung: Success-Panel anzeigen
+        },
+        error: (error: any) => {
+          console.error('❌ Login-Fehler:', error);
+          this.handleRegistrationError(error);
+        }
+      });
+    } else {
+      // Registrierungs-Flow
+      this.authService.register(formData).subscribe({
+        next: (response) => {
+          this.loading = false;
           console.log('✅ Registrierung erfolgreich:', response);
           this.registrationSuccess = true;
           this.registeredEmail = formData.email;
-          // NICHT schließen - Success-Panel bleibt im Dialog!
+          // WICHTIG: Benutzer ist NICHT angemeldet!
+          // User muss erst Email bestätigen und sich dann manuell anmelden.
+        },
+        error: (error: any) => {
+          console.error('❌ Registrierungsfehler:', error);
+          this.handleRegistrationError(error);
         }
-      },
-      error: (error) => {
-        console.error('❌ Authentifizierungsfehler:', error);
-        this.handleRegistrationError(error);
-      }
-    });
+      });
+    }
   }
 
   /**
