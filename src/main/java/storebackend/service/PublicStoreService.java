@@ -4,6 +4,8 @@ import org.springframework.stereotype.Service;
 import storebackend.dto.PublicStoreDTO;
 import storebackend.entity.Domain;
 import storebackend.entity.Store;
+import storebackend.enums.CurrencyCode;
+import storebackend.enums.PriceMode;
 import storebackend.enums.StoreStatus;
 import storebackend.repository.DomainRepository;
 
@@ -26,6 +28,10 @@ public class PublicStoreService {
             throw new RuntimeException("Store is not active");
         }
 
+        // NULL-safe mapping with intermediate variables
+        CurrencyCode currency = store.getCurrencyCode();
+        PriceMode priceMode = store.getPriceMode();
+        
         return new PublicStoreDTO(
             store.getId(),
             domain.getId(),
@@ -54,10 +60,10 @@ public class PublicStoreService {
             null,
             null,
             null,
-            // Currency & Tax (Public)
-            store.getCurrencyCode() != null ? store.getCurrencyCode().name() : "EUR",
+            // Currency & Tax (Public) - NULL-safe with intermediate variables
+            currency != null ? currency.name() : "EUR",
             store.getCountryCode() != null ? store.getCountryCode() : "DE",
-            store.getPriceMode() != null ? store.getPriceMode().name() : "GROSS"
+            priceMode != null ? priceMode.name() : "GROSS"
         );
     }
 }
