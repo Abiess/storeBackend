@@ -15,11 +15,14 @@ import { HttpClient } from '@angular/common/http';
  * 
  * Verwendung:
  * ```typescript
- * constructor(private http: HttpClient) {
+ * constructor(
+ *   private http: HttpClient,
+ *   @Inject(ENVIRONMENT) private env: any
+ * ) {
  *   this.form = this.fb.group({
  *     email: ['', 
  *       [Validators.required, Validators.email],
- *       [emailAvailabilityValidator(this.http)]  // HttpClient übergeben
+ *       [emailAvailabilityValidator(this.http, this.env.apiUrl)]
  *     ]
  *   });
  * }
@@ -33,7 +36,7 @@ import { HttpClient } from '@angular/common/http';
  * </div>
  * ```
  */
-export function emailAvailabilityValidator(http: HttpClient): AsyncValidatorFn {
+export function emailAvailabilityValidator(http: HttpClient, apiUrl: string): AsyncValidatorFn {
   return (control: AbstractControl): Observable<ValidationErrors | null> => {
     // Keine Prüfung wenn Feld leer oder ungültiges Format
     if (!control.value || control.errors?.['email']) {
@@ -41,9 +44,6 @@ export function emailAvailabilityValidator(http: HttpClient): AsyncValidatorFn {
     }
     
     const email = control.value.trim().toLowerCase();
-    
-    // API-URL aus Environment (könnte auch injected werden)
-    const apiUrl = 'http://localhost:8080/api'; // TODO: Aus Environment laden
     
     return timer(500).pipe(  // 500ms Debounce
       switchMap(() => 
@@ -82,11 +82,10 @@ export function emailAvailabilityValidator(http: HttpClient): AsyncValidatorFn {
  * Kann im Component verwendet werden für manuelle Prüfung.
  */
 export class EmailAvailabilityService {
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private apiUrl: string) {}
   
   checkEmailAvailability(email: string): Observable<{ available: boolean }> {
-    const apiUrl = 'http://localhost:8080/api'; // TODO: Aus Environment laden
-    return this.http.get<{ available: boolean }>(`${apiUrl}/auth/check-email`, {
+    return this.http.get<{ available: boolean }>(`${this.apiUrl}/auth/check-email`, {
       params: { email: email.trim().toLowerCase() }
     });
   }

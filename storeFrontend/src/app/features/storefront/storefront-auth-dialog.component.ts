@@ -309,7 +309,7 @@ export class StorefrontAuthDialogComponent {
     return this.fb.group({
       email: ['', 
         [Validators.required, Validators.email],
-        !this.isLogin ? [emailAvailabilityValidator(this.http)] : []  // HttpClient übergeben
+        !this.isLogin ? [emailAvailabilityValidator(this.http, environment.apiUrl)] : []  // HttpClient + apiUrl übergeben
       ],
       password: ['', [Validators.required, Validators.minLength(PASSWORD_MIN_LENGTH)]],
       confirmPassword: [''] // Wird nur bei Registrierung validiert
