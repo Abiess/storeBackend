@@ -149,6 +149,41 @@ public class StoreService {
             }
         }
 
+        // ─── Währung & Steuern (Defaults in Entity) ─────────────────────────────────
+        if (request.getCurrencyCode() != null && !request.getCurrencyCode().isBlank()) {
+            try {
+                store.setCurrencyCode(storebackend.enums.CurrencyCode.valueOf(request.getCurrencyCode().trim().toUpperCase()));
+            } catch (IllegalArgumentException ex) {
+                log.warn("Ungültiger currencyCode '{}' – Default EUR", request.getCurrencyCode());
+            }
+        }
+        if (request.getCountryCode() != null && !request.getCountryCode().isBlank()) {
+            store.setCountryCode(request.getCountryCode().trim().toUpperCase());
+        }
+        if (request.getPriceMode() != null && !request.getPriceMode().isBlank()) {
+            try {
+                store.setPriceMode(storebackend.enums.PriceMode.valueOf(request.getPriceMode().trim().toUpperCase()));
+            } catch (IllegalArgumentException ex) {
+                log.warn("Ungültiger priceMode '{}' – Default GROSS", request.getPriceMode());
+            }
+        }
+        if (request.getVatEnabled() != null) {
+            store.setVatEnabled(request.getVatEnabled());
+        }
+        if (request.getDefaultTaxRate() != null) {
+            store.setDefaultTaxRate(request.getDefaultTaxRate());
+        }
+        if (request.getShippingTaxRate() != null) {
+            store.setShippingTaxRate(request.getShippingTaxRate());
+        }
+        if (request.getShippingTaxStrategy() != null && !request.getShippingTaxStrategy().isBlank()) {
+            try {
+                store.setShippingTaxStrategy(storebackend.enums.ShippingTaxStrategy.valueOf(request.getShippingTaxStrategy().trim().toUpperCase()));
+            } catch (IllegalArgumentException ex) {
+                log.warn("Ungültiger shippingTaxStrategy '{}' – Default STORE_DEFINED", request.getShippingTaxStrategy());
+            }
+        }
+
         store = storeRepository.save(store);
 
         // IMPORTANT: Flush to DB immediately to catch constraint violations NOW
@@ -309,6 +344,44 @@ public class StoreService {
             } catch (IllegalArgumentException ex) {
                 log.warn("Ungültiger botProtectionMode '{}' – ignoriert", request.getBotProtectionMode());
             }
+        }
+
+        // ─── Währung & Steuern ────────────────────────────────────────
+        if (request.getCurrencyCode() != null && !request.getCurrencyCode().isBlank()) {
+            try {
+                store.setCurrencyCode(storebackend.enums.CurrencyCode.valueOf(request.getCurrencyCode().trim().toUpperCase()));
+            } catch (IllegalArgumentException ex) {
+                log.warn("Ungültiger currencyCode '{}' – ignoriert", request.getCurrencyCode());
+            }
+        }
+        if (request.getCountryCode() != null && !request.getCountryCode().isBlank()) {
+            store.setCountryCode(request.getCountryCode().trim().toUpperCase());
+        }
+        if (request.getPriceMode() != null && !request.getPriceMode().isBlank()) {
+            try {
+                store.setPriceMode(storebackend.enums.PriceMode.valueOf(request.getPriceMode().trim().toUpperCase()));
+            } catch (IllegalArgumentException ex) {
+                log.warn("Ungültiger priceMode '{}' – ignoriert", request.getPriceMode());
+            }
+        }
+        if (request.getVatEnabled() != null) {
+            store.setVatEnabled(request.getVatEnabled());
+        }
+        if (request.getDefaultTaxRate() != null) {
+            store.setDefaultTaxRate(request.getDefaultTaxRate());
+        }
+        if (request.getShippingTaxRate() != null) {
+            store.setShippingTaxRate(request.getShippingTaxRate());
+        }
+        if (request.getShippingTaxStrategy() != null && !request.getShippingTaxStrategy().isBlank()) {
+            try {
+                store.setShippingTaxStrategy(storebackend.enums.ShippingTaxStrategy.valueOf(request.getShippingTaxStrategy().trim().toUpperCase()));
+            } catch (IllegalArgumentException ex) {
+                log.warn("Ungültiger shippingTaxStrategy '{}' – ignoriert", request.getShippingTaxStrategy());
+            }
+        }
+        if (request.getVatExemptionText() != null) {
+            store.setVatExemptionText(request.getVatExemptionText().isBlank() ? null : request.getVatExemptionText().trim());
         }
 
         store = storeRepository.save(store);
@@ -556,6 +629,15 @@ public class StoreService {
         // ─── Bot-Schutz (nur für Admin-Bereich) ─────────────────────────
         dto.setBotProtectionEnabled(store.isBotProtectionEnabled());
         dto.setBotProtectionMode(store.getBotProtectionMode());
+        // ─── Währung & Steuern ─────────────────────────────────────────
+        dto.setCurrencyCode(store.getCurrencyCode());
+        dto.setCountryCode(store.getCountryCode());
+        dto.setPriceMode(store.getPriceMode());
+        dto.setVatEnabled(store.getVatEnabled());
+        dto.setDefaultTaxRate(store.getDefaultTaxRate());
+        dto.setShippingTaxRate(store.getShippingTaxRate());
+        dto.setShippingTaxStrategy(store.getShippingTaxStrategy());
+        dto.setVatExemptionText(store.getVatExemptionText());
         return dto;
     }
 

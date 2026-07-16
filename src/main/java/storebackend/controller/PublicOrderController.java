@@ -206,6 +206,11 @@ public class PublicOrderController {
                 key -> billingAddress.getOrDefault(key, "");
 
             // Create order mit PaymentMethod, PhoneVerificationId und Delivery Information
+            List<String> appliedCouponCodes = (List<String>) request.get("appliedCouponCodes");
+            if (appliedCouponCodes == null) {
+                appliedCouponCodes = java.util.Collections.emptyList();
+            }
+            
             Order order = orderService.createOrderFromCart(
                 cart.getId(),
                 customerEmail,
@@ -230,7 +235,8 @@ public class PublicOrderController {
                 phoneVerificationId,
                 deliveryType,
                 deliveryMode,
-                shippingProvider
+                shippingProvider,
+                appliedCouponCodes
             );
 
             log.info("✅ Order created successfully: {} (Mode: {}, Payment: {})",

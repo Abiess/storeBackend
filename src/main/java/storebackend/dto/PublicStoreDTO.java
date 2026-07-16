@@ -38,4 +38,9 @@ public class PublicStoreDTO {
     private String dhlShippingLabel;          // "DHL Versand"
     private String dhlShippingDescription;    // "Lieferung mit DHL Paket"
     private Double dhlShippingPrice;          // Optional: Versandkosten
+
+    // ─── Währung & Steuern (Public) ─────────────────────────
+    private String currencyCode;              // EUR, MAD, USD, GBP
+    private String countryCode;               // DE, MA, etc.
+    private String priceMode;                 // GROSS oder NET
 }

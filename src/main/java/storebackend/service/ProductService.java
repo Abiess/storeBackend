@@ -16,6 +16,7 @@ import storebackend.entity.ProductVariant;
 import storebackend.entity.Store;
 import storebackend.entity.User;
 import storebackend.enums.ProductStatus;
+import storebackend.enums.TaxCategory;
 import storebackend.repository.CategoryRepository;
 import storebackend.repository.ProductMediaRepository;
 import storebackend.repository.ProductRepository;
@@ -38,6 +39,7 @@ public class ProductService {
     private final MinioService minioService;
     private final ObjectMapper objectMapper;
     private final ProductVariantGenerationService variantGenerationService;
+    private final TaxCalculationService taxCalculationService;
 
     @Transactional(readOnly = true)
     public List<ProductDTO> getProductsByStore(Store store) {
@@ -100,6 +102,21 @@ public class ProductService {
             product.setCategory(category);
         }
 
+        // ─── Steuern: taxCategory → taxRate ableiten ─────────────────────────────────
+        TaxCategory taxCategory = TaxCategory.STANDARD; // Default
+        if (request.getTaxCategory() != null && !request.getTaxCategory().isBlank()) {
+            try {
+                taxCategory = TaxCategory.valueOf(request.getTaxCategory().trim().toUpperCase());
+            } catch (IllegalArgumentException ex) {
+                // Ignore – verwende Default
+            }
+        }
+        product.setTaxCategory(taxCategory);
+        
+        // Steuersatz automatisch aus Kategorie ableiten (Backend vertrauenswürdig)
+        BigDecimal taxRate = taxCalculationService.resolveTaxRate(taxCategory);
+        product.setTaxRate(taxRate);
+
         product = productRepository.save(product);
 
         // Increment product count
@@ -135,6 +152,19 @@ public class ProductService {
             product.setCategory(category);
         } else {
             product.setCategory(null);
+        }
+
+        // ─── Steuern: taxCategory → taxRate ableiten ─────────────────────────────────
+        if (request.getTaxCategory() != null && !request.getTaxCategory().isBlank()) {
+            try {
+                TaxCategory taxCategory = TaxCategory.valueOf(request.getTaxCategory().trim().toUpperCase());
+                product.setTaxCategory(taxCategory);
+                // Steuersatz automatisch aus Kategorie ableiten
+                BigDecimal taxRate = taxCalculationService.resolveTaxRate(taxCategory);
+                product.setTaxRate(taxRate);
+            } catch (IllegalArgumentException ex) {
+                // Ignore – behalte vorhandene Werte
+            }
         }
 
         product = productRepository.save(product);
@@ -276,6 +306,10 @@ public class ProductService {
                 && product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
             dto.setPrimaryImageUrl(product.getImageUrl());
         }
+
+        // ─── Steuern ─────────────────────────────────
+        dto.setTaxCategory(product.getTaxCategory());
+        dto.setTaxRate(product.getTaxRate());
 
         return dto;
     }

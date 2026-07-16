@@ -31,6 +31,27 @@ public class OrderDetailsDTO {
     private List<OrderItemDTO> items;
     private List<Map<String, Object>> statusHistory;
 
+    // ─── Currency & Tax Snapshot ─────────────────────────────────
+    private String currencyCode;  // EUR, MAD, USD, GBP (zum Zeitpunkt der Bestellung)
+    private String priceMode;     // GROSS oder NET (zum Zeitpunkt der Bestellung)
+    private String countryCode;   // DE, MA, etc. (zum Zeitpunkt der Bestellung)
+    
+    // ─── Tax Breakdown ─────────────────────────────────
+    private BigDecimal subtotalNet;
+    private BigDecimal subtotalGross;
+    private BigDecimal taxTotal;
+    private BigDecimal shippingNet;
+    private BigDecimal shippingTax;
+    private BigDecimal shippingGross;
+    private BigDecimal totalNet;
+    private BigDecimal totalGross;
+    private BigDecimal discountNet;
+    private BigDecimal discountTax;
+    private BigDecimal discountGross;
+    private String couponCodeSnapshot;
+    private String discountTypeSnapshot;
+    private BigDecimal discountValueSnapshot;
+
     /**
      * Innere Klasse für Kundeninformationen
      */
@@ -54,5 +75,14 @@ public class OrderDetailsDTO {
         private BigDecimal price;
         private BigDecimal subtotal;
         private String imageUrl;
+        
+        // ─── Tax Snapshot ─────────────────────────────────
+        private String taxCategory;        // STANDARD, REDUCED, ZERO, EXEMPT
+        private BigDecimal taxRate;        // z.B. 19.00 oder 7.00
+        private BigDecimal unitPriceNet;   // Einzelpreis netto
+        private BigDecimal unitPriceGross; // Einzelpreis brutto
+        private BigDecimal lineNet;        // Zeilensumme netto
+        private BigDecimal lineTax;        // Zeilensumme Steuer
+        private BigDecimal lineGross;      // Zeilensumme brutto
     }
 }

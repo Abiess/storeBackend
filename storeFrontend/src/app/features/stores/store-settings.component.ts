@@ -250,6 +250,134 @@ export interface SettingsTab {
           </form>
         </div>
 
+        <!-- Tax & Currency Settings -->
+        <div class="tab-content" *ngIf="activeTab === 'tax'">
+          <form [formGroup]="settingsForm" (ngSubmit)="saveSettings()">
+            <div class="settings-section-header">
+              <h3>💰 {{ 'settings.tax.title' | translate }}</h3>
+              <p class="section-hint">{{ 'settings.tax.hint' | translate }}</p>
+            </div>
+
+            <!-- Currency Warning -->
+            <div class="alert alert-warning" *ngIf="showCurrencyWarning">
+              <span class="alert-icon">⚠️</span>
+              <span>{{ 'settings.tax.currencyChangeWarning' | translate }}</span>
+            </div>
+
+            <div class="form-grid">
+              <!-- Currency -->
+              <div class="form-group">
+                <label for="currencyCode">{{ 'settings.tax.currency' | translate }} *</label>
+                <select id="currencyCode" formControlName="currencyCode" (change)="onCurrencyChange()">
+                  <option value="EUR">EUR – Euro</option>
+                  <option value="MAD">MAD – {{ 'settings.tax.currencyMAD' | translate }}</option>
+                  <option value="USD">USD – US-Dollar</option>
+                  <option value="GBP">GBP – {{ 'settings.tax.currencyGBP' | translate }}</option>
+                </select>
+              </div>
+
+              <!-- Country -->
+              <div class="form-group">
+                <label for="countryCode">{{ 'settings.tax.country' | translate }} *</label>
+                <select id="countryCode" formControlName="countryCode">
+                  <option value="DE">{{ 'settings.tax.countryDE' | translate }}</option>
+                  <option value="MA">{{ 'settings.tax.countryMA' | translate }}</option>
+                  <option value="US">{{ 'settings.tax.countryUS' | translate }}</option>
+                  <option value="GB">{{ 'settings.tax.countryGB' | translate }}</option>
+                </select>
+              </div>
+
+              <!-- Price Mode -->
+              <div class="form-group full-width">
+                <label>{{ 'settings.tax.priceMode' | translate }} *</label>
+                <div class="radio-group">
+                  <label class="radio-label">
+                    <input type="radio" formControlName="priceMode" value="GROSS">
+                    <span>{{ 'settings.tax.grossPrices' | translate }}</span>
+                    <small>{{ 'settings.tax.grossPricesHint' | translate }}</small>
+                  </label>
+                  <label class="radio-label">
+                    <input type="radio" formControlName="priceMode" value="NET">
+                    <span>{{ 'settings.tax.netPrices' | translate }}</span>
+                    <small>{{ 'settings.tax.netPricesHint' | translate }}</small>
+                  </label>
+                </div>
+              </div>
+
+              <!-- VAT Enabled -->
+              <div class="form-group full-width">
+                <label class="checkbox-label">
+                  <input type="checkbox" formControlName="vatEnabled">
+                  <span>{{ 'settings.tax.vatEnabled' | translate }}</span>
+                </label>
+                <small class="form-text">{{ 'settings.tax.vatEnabledHint' | translate }}</small>
+              </div>
+
+              <!-- Tax Rates (disabled if VAT is off) -->
+              <div class="form-group" [class.disabled]="!settingsForm.get('vatEnabled')?.value">
+                <label for="defaultTaxRate">{{ 'settings.tax.defaultTaxRate' | translate }} *</label>
+                <input
+                  id="defaultTaxRate"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  formControlName="defaultTaxRate"
+                  [disabled]="!settingsForm.get('vatEnabled')?.value"
+                  placeholder="19.00"
+                />
+                <small class="form-text">{{ 'settings.tax.defaultTaxRateHint' | translate }}</small>
+              </div>
+
+              <div class="form-group" [class.disabled]="!settingsForm.get('vatEnabled')?.value">
+                <label for="shippingTaxRate">{{ 'settings.tax.shippingTaxRate' | translate }} *</label>
+                <input
+                  id="shippingTaxRate"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  formControlName="shippingTaxRate"
+                  [disabled]="!settingsForm.get('vatEnabled')?.value"
+                  placeholder="19.00"
+                />
+              </div>
+
+              <!-- Shipping Tax Strategy -->
+              <div class="form-group full-width" [class.disabled]="!settingsForm.get('vatEnabled')?.value">
+                <label for="shippingTaxStrategy">{{ 'settings.tax.shippingTaxStrategy' | translate }} *</label>
+                <select
+                  id="shippingTaxStrategy"
+                  formControlName="shippingTaxStrategy"
+                  [disabled]="!settingsForm.get('vatEnabled')?.value">
+                  <option value="STORE_DEFINED">{{ 'settings.tax.shippingTaxStoreDefined' | translate }}</option>
+                  <option value="STANDARD_RATE">{{ 'settings.tax.shippingTaxStandard' | translate }}</option>
+                  <option value="PROPORTIONAL_TO_CART">{{ 'settings.tax.shippingTaxProportional' | translate }}</option>
+                </select>
+                <small class="form-text">{{ 'settings.tax.shippingTaxStrategyHint' | translate }}</small>
+              </div>
+
+              <!-- VAT Exemption Text -->
+              <div class="form-group full-width" *ngIf="!settingsForm.get('vatEnabled')?.value">
+                <label for="vatExemptionText">{{ 'settings.tax.vatExemptionText' | translate }}</label>
+                <textarea
+                  id="vatExemptionText"
+                  formControlName="vatExemptionText"
+                  rows="3"
+                  [placeholder]="'settings.tax.vatExemptionTextPlaceholder' | translate"
+                ></textarea>
+                <small class="form-text">{{ 'settings.tax.vatExemptionTextHint' | translate }}</small>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary" [disabled]="!settingsForm.valid || saving">
+                {{ saving ? ('common.saving' | translate) : ('common.save' | translate) }}
+              </button>
+            </div>
+          </form>
+        </div>
+
         <!-- Slider Settings -->
         <div class="tab-content" *ngIf="activeTab === 'slider'">
           <app-store-slider-editor></app-store-slider-editor>
@@ -1183,6 +1311,7 @@ export class StoreSettingsComponent implements OnInit {
   /** Wiederverwendbare Tab-Definition – analog NavTab */
   settingsTabs: SettingsTab[] = [
     { id: 'general',  icon: '⚙️', labelKey: 'settings.general' },
+    { id: 'tax',      icon: '💰', labelKey: 'settings.tax.title' },
     { id: 'social',   icon: '🔗', labelKey: 'Social & Kontakt' },
     { id: 'slider',   icon: '🎬', labelKey: 'settings.slider' },
     { id: 'shipping', icon: '📦', labelKey: 'settings.shipping.title' },
@@ -1216,6 +1345,10 @@ export class StoreSettingsComponent implements OnInit {
   savingShippingAddress = false;
   shippingAddressSaved = false;
   shippingAddressError: string | null = null;
+  
+  // Currency warning
+  showCurrencyWarning = false;
+  private originalCurrency?: string;
 
   constructor(
     private route: ActivatedRoute,
@@ -1247,7 +1380,16 @@ export class StoreSettingsComponent implements OnInit {
       reservationWhatsappText: ['', [Validators.maxLength(300)]],
       // ─── Bot-Schutz ──────────────────────────────────────────────
       botProtectionEnabled: [true],
-      botProtectionMode: ['SUSPICIOUS_ONLY']
+      botProtectionMode: ['SUSPICIOUS_ONLY'],
+      // ─── Currency & Tax Configuration ───────────────────────────
+      currencyCode: ['EUR', Validators.required],
+      countryCode: ['DE', Validators.required],
+      priceMode: ['GROSS', Validators.required],
+      vatEnabled: [true],
+      defaultTaxRate: [19, [Validators.required, Validators.min(0), Validators.max(100)]],
+      shippingTaxRate: [19, [Validators.required, Validators.min(0), Validators.max(100)]],
+      shippingTaxStrategy: ['STORE_DEFINED', Validators.required],
+      vatExemptionText: ['', [Validators.maxLength(500)]]
     });
 
     this.brandingForm = this.fb.group({
@@ -1331,8 +1473,21 @@ export class StoreSettingsComponent implements OnInit {
           googleMapsUrl:           store.googleMapsUrl           ?? '',
           reservationWhatsappText: store.reservationWhatsappText ?? '',
           botProtectionEnabled:    store.botProtectionEnabled    ?? true,
-          botProtectionMode:       store.botProtectionMode       ?? 'SUSPICIOUS_ONLY'
+          botProtectionMode:       store.botProtectionMode       ?? 'SUSPICIOUS_ONLY',
+          // Currency & Tax
+          currencyCode:        store.currencyCode        ?? 'EUR',
+          countryCode:         store.countryCode         ?? 'DE',
+          priceMode:           store.priceMode           ?? 'GROSS',
+          vatEnabled:          store.vatEnabled          ?? true,
+          defaultTaxRate:      store.defaultTaxRate      ?? 19,
+          shippingTaxRate:     store.shippingTaxRate     ?? 19,
+          shippingTaxStrategy: store.shippingTaxStrategy ?? 'STORE_DEFINED',
+          vatExemptionText:    store.vatExemptionText    ?? ''
         });
+        
+        // Track original currency for change warning
+        this.originalCurrency = store.currencyCode ?? 'EUR';
+        this.showCurrencyWarning = false;
         
         // Shipping Address Form patchen
         this.shippingAddressForm.patchValue({
@@ -1372,6 +1527,14 @@ export class StoreSettingsComponent implements OnInit {
         }
       });
     }
+  }
+
+  /**
+   * Currency change warning
+   */
+  onCurrencyChange(): void {
+    const currentCurrency = this.settingsForm.get('currencyCode')?.value;
+    this.showCurrencyWarning = currentCurrency !== this.originalCurrency;
   }
 
   /**

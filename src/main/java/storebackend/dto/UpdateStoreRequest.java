@@ -49,4 +49,22 @@ public class UpdateStoreRequest {
     private Boolean botProtectionEnabled;
     /** OFF | SUSPICIOUS_ONLY | ALWAYS_ON */
     private String botProtectionMode;
+
+    // ─── Währung & Steuern – optional, null = nicht ändern ─
+    /** Währung: EUR, MAD, USD, GBP */
+    private String currencyCode;
+    /** Land: DE, MA, etc. */
+    private String countryCode;
+    /** Preismodus: GROSS oder NET */
+    private String priceMode;
+    /** USt aktiv */
+    private Boolean vatEnabled;
+    /** Standard-Steuersatz */
+    private java.math.BigDecimal defaultTaxRate;
+    /** Versand-Steuersatz */
+    private java.math.BigDecimal shippingTaxRate;
+    /** Versandsteuer-Strategie: STORE_DEFINED, PROPORTIONAL_TO_CART, STANDARD_RATE */
+    private String shippingTaxStrategy;
+    /** Kleinunternehmer-Text: "Gemäß § 19 UStG wird keine Umsatzsteuer berechnet." */
+    private String vatExemptionText;
 }

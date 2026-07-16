@@ -2585,5 +2585,54 @@
       "noChange": "No Change",
       "noChanges": "No changes required"
     }
+  },
+  "common": {
+    "save": "Save",
+    "saving": "Saving..."
+  },
+  "settings": {
+    "tax": {
+      "title": "Tax & Currency",
+      "hint": "Configure the currency, country, and tax settings for your store",
+      "currency": "Currency",
+      "currencyMAD": "Moroccan Dirham",
+      "currencyGBP": "British Pound",
+      "country": "Country",
+      "countryDE": "Germany",
+      "countryMA": "Morocco",
+      "countryUS": "USA",
+      "countryGB": "United Kingdom",
+      "priceMode": "Price Model",
+      "grossPrices": "Gross Prices (incl. VAT)",
+      "grossPricesHint": "Prices are displayed including tax",
+      "netPrices": "Net Prices (excl. VAT)",
+      "netPricesHint": "Prices are displayed without tax",
+      "vatEnabled": "VAT Enabled",
+      "vatEnabledHint": "Disable this option if you are tax-exempt",
+      "defaultTaxRate": "Default Tax Rate",
+      "defaultTaxRateHint": "Standard tax rate for products (e.g. 19% in Germany)",
+      "shippingTaxRate": "Shipping Tax Rate",
+      "shippingTaxStrategy": "Shipping Tax Strategy",
+      "shippingTaxStoreDefined": "Store-Defined (uses shipping tax rate)",
+      "shippingTaxStandard": "Use Standard Tax Rate",
+      "shippingTaxProportional": "Proportional to Cart",
+      "shippingTaxStrategyHint": "How should shipping tax be calculated?",
+      "vatExemptionText": "VAT Exemption Text",
+      "vatExemptionTextPlaceholder": "e.g. Small business according to § 19 UStG",
+      "vatExemptionTextHint": "This text is displayed when VAT is disabled",
+      "currencyChangeWarning": "⚠️ Warning: Existing prices will not be automatically converted. Please check all product, variant, and shipping prices afterwards."
+    }
+  },
+  "product": {
+    "taxCategory": "Tax Category",
+    "taxRate": "Tax Rate",
+    "taxStandard": "Standard (19%)",
+    "taxReduced": "Reduced (7%)",
+    "taxZero": "Zero Rate (0%)",
+    "taxExempt": "Tax Exempt (0%)",
+    "taxResponsibilityHint": "ℹ️ Please select the legally applicable tax rate. Tax classification is the responsibility of the merchant.",
+    "required": {
+      "taxRate": "Please enter a valid tax rate"
+    }
   }
 }

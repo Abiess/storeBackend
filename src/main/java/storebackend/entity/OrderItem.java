@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import storebackend.enums.FulfillmentStatus;
+import storebackend.enums.TaxCategory;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -68,6 +69,39 @@ public class OrderItem {
 
     @Column(columnDefinition = "TEXT")
     private String productSnapshot; // JSON: Name, Image, Attributes zum Bestellzeitpunkt
+
+    // ─── Steuer-Snapshot (UNVERÄNDERLICH!) ────────────────────────
+    /**
+     * Steuersatz in Prozent (Snapshot vom Produkt zum Bestellzeitpunkt)
+     * Beispiel: 19.00, 7.00, 0.00
+     */
+    @Column(name = "tax_rate", precision = 5, scale = 2, nullable = false)
+    private BigDecimal taxRate = new BigDecimal("19.00");
+
+    /**
+     * Steuerkategorie (Snapshot)
+     * STANDARD (19%), REDUCED (7%), ZERO (0%), EXEMPT (steuerfrei)
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tax_category", nullable = false, length = 20)
+    private TaxCategory taxCategory = TaxCategory.STANDARD;
+
+    // ─── Preisaufschlüsselung pro Einheit ─────────────────────────
+    @Column(name = "unit_price_net", precision = 15, scale = 2, nullable = false)
+    private BigDecimal unitPriceNet;
+
+    @Column(name = "unit_price_gross", precision = 15, scale = 2, nullable = false)
+    private BigDecimal unitPriceGross;
+
+    // ─── Zeilenaufschlüsselung (Menge * Einheitspreis) ────────────
+    @Column(name = "line_net", precision = 15, scale = 2, nullable = false)
+    private BigDecimal lineNet;
+
+    @Column(name = "line_tax", precision = 15, scale = 2, nullable = false)
+    private BigDecimal lineTax;
+
+    @Column(name = "line_gross", precision = 15, scale = 2, nullable = false)
+    private BigDecimal lineGross;
 
     // ==================================================================================
     // DROPSHIPPING FULFILLMENT (Phase 1)

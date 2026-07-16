@@ -6,7 +6,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import storebackend.enums.StoreStatus;
 import storebackend.enums.BusinessType;
+import storebackend.enums.CurrencyCode;
+import storebackend.enums.PriceMode;
+import storebackend.enums.ShippingTaxStrategy;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -142,6 +146,68 @@ public class Store {
     @Column(name = "bot_protection_mode", length = 20, nullable = false)
     private storebackend.enums.BotProtectionMode botProtectionMode = 
         storebackend.enums.BotProtectionMode.SUSPICIOUS_ONLY;
+
+    // ─── Währungs- und Steuerkonfiguration ────────────────────────
+    /**
+     * Währung des Stores (ISO 4217)
+     * Default: EUR (Euro)
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "currency_code", nullable = false, length = 3)
+    private CurrencyCode currencyCode = CurrencyCode.EUR;
+
+    /**
+     * Land des Stores (ISO 3166-1 alpha-2)
+     * Default: DE (Deutschland)
+     */
+    @Column(name = "country_code", nullable = false, length = 2)
+    private String countryCode = "DE";
+
+    /**
+     * Preismodell: GROSS (inkl. MwSt.) oder NET (zzgl. MwSt.)
+     * Default: GROSS (Bruttopreise für B2C in Deutschland)
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "price_mode", nullable = false, length = 10)
+    private PriceMode priceMode = PriceMode.GROSS;
+
+    /**
+     * Umsatzsteuer aktiviert/deaktiviert
+     * Default: true
+     * Bei false: Kleinunternehmerregelung oder steuerfrei
+     */
+    @Column(name = "vat_enabled", nullable = false)
+    private Boolean vatEnabled = true;
+
+    /**
+     * Standard-Umsatzsteuersatz in Prozent
+     * Default: 19.00 (regulärer Steuersatz in Deutschland)
+     */
+    @Column(name = "default_tax_rate", precision = 5, scale = 2, nullable = false)
+    private BigDecimal defaultTaxRate = new BigDecimal("19.00");
+
+    /**
+     * Steuersatz für Versandkosten in Prozent
+     * Default: 19.00
+     */
+    @Column(name = "shipping_tax_rate", precision = 5, scale = 2, nullable = false)
+    private BigDecimal shippingTaxRate = new BigDecimal("19.00");
+
+    /**
+     * Strategie zur Besteuerung der Versandkosten
+     * Default: STORE_DEFINED (fester Steuersatz aus shippingTaxRate)
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "shipping_tax_strategy", length = 30, nullable = false)
+    private ShippingTaxStrategy shippingTaxStrategy = ShippingTaxStrategy.STORE_DEFINED;
+
+    /**
+     * Hinweistext für Kleinunternehmer oder Steuerbefreiung
+     * Wird auf Rechnungen angezeigt wenn vatEnabled=false
+     * Beispiel: "Gemäß § 19 UStG wird keine Umsatzsteuer berechnet."
+     */
+    @Column(name = "vat_exemption_text", columnDefinition = "TEXT")
+    private String vatExemptionText;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

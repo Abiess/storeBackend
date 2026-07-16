@@ -36,6 +36,12 @@ public class CreateProductRequest {
      */
     private List<VariantOptionInput> variantOptions = new ArrayList<>();
 
+    // ─── Steuern (optional - Defaults: STANDARD, 19.00) ─────
+    /** Steuerkategorie: STANDARD (19%), REDUCED (7%), ZERO, EXEMPT */
+    private String taxCategory;
+    /** Steuersatz (wird automatisch aus taxCategory abgeleitet wenn nicht explizit gesetzt) */
+    private BigDecimal taxRate;
+
     @Data
     @NoArgsConstructor
     @AllArgsConstructor

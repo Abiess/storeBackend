@@ -14,8 +14,9 @@ import { PlaceholderImageUtil } from '../../shared/utils/placeholder-image.util'
 import { PhoneVerificationService } from '../../core/services/phone-verification.service';
 import { DeliveryService } from '../../core/services/delivery.service';
 import { PlatformDeliveryService, GlobalDeliveryOption } from '../../core/services/platform-delivery.service';
-import { DeliveryOption, DeliveryOptionsResponse, PublicStore } from '../../core/models';
+import { DeliveryOption, DeliveryOptionsResponse, PublicStore, CurrencyCode } from '../../core/models';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
+import { StoreCurrencyPipe } from '../../core/pipes/store-currency.pipe';
 import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
@@ -30,6 +31,7 @@ import { environment } from '@env/environment';
         FormsModule,
         CouponInputComponent,
         TranslatePipe,
+        StoreCurrencyPipe,
         PageHeaderComponent
     ],
     template: `
@@ -308,7 +310,7 @@ import { environment } from '@env/environment';
                   </div>
                   <div class="delivery-price">
                     <span *ngIf="publicStore?.dhlShippingPrice === 0" class="free-badge">{{ 'checkout.free' | translate }}</span>
-                    <span *ngIf="publicStore && publicStore.dhlShippingPrice && publicStore.dhlShippingPrice > 0">{{ publicStore.dhlShippingPrice | number:'1.2-2' }} MAD</span>
+                    <span *ngIf="publicStore && publicStore.dhlShippingPrice && publicStore.dhlShippingPrice > 0">{{ publicStore.dhlShippingPrice | storeCurrency:storeCurrencyCode }}</span>
                   </div>
                   <div class="delivery-check" *ngIf="selectedShippingProvider === 'DHL'">✓</div>
                 </label>
@@ -337,7 +339,7 @@ import { environment } from '@env/environment';
                   </div>
                   <div class="delivery-price">
                     <span *ngIf="opt.price === 0" class="free-badge">{{ 'checkout.free' | translate }}</span>
-                    <span *ngIf="opt.price > 0">{{ opt.price | number:'1.2-2' }} MAD</span>
+                    <span *ngIf="opt.price > 0">{{ opt.price | storeCurrency:storeCurrencyCode }}</span>
                   </div>
                   <div class="delivery-check" *ngIf="selectedGlobalDeliveryOption?.id === opt.id && selectedShippingProvider === 'GLOBAL_DELIVERY'">✓</div>
                 </label>
@@ -525,7 +527,7 @@ import { environment } from '@env/environment';
             <div class="summary-row" *ngIf="selectedDeliveryType === 'DELIVERY' && selectedGlobalDeliveryOption">
               <span>🚚 {{ selectedGlobalDeliveryOption.name }}</span>
               <span *ngIf="selectedGlobalDeliveryOption.price === 0" class="free-shipping">{{ 'checkout.free' | translate }}</span>
-              <span *ngIf="selectedGlobalDeliveryOption.price > 0">{{ selectedGlobalDeliveryOption.price | number:'1.2-2' }} MAD</span>
+              <span *ngIf="selectedGlobalDeliveryOption.price > 0">{{ selectedGlobalDeliveryOption.price | storeCurrency:storeCurrencyCode }}</span>
             </div>
             <div class="summary-row" *ngIf="selectedDeliveryType === 'PICKUP'">
               <span>{{ 'checkout.pickupLabel' | translate }}</span>
@@ -1648,6 +1650,10 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     publicStore: PublicStore | null = null; // PublicStore from subdomain service
     selectedShippingProvider: 'PICKUP' | 'DHL' | 'GLOBAL_DELIVERY' = 'PICKUP';
 
+    get storeCurrencyCode(): CurrencyCode | string {
+        return this.publicStore?.currencyCode ?? 'EUR';
+    }
+
     constructor(
         private fb: FormBuilder,
         private cartService: CartService,
@@ -2061,7 +2067,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         if (!this.cart) return null;
 
         return {
-            currency: 'EUR',
+            currency: this.storeCurrencyCode.toLowerCase(),
             subtotalCents: Math.round(this.cart.subtotal * 100),
             customerEmail: this.checkoutForm.get('customerEmail')?.value || '',
             items: this.cart.items.map(item => ({

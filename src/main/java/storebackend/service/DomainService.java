@@ -176,6 +176,11 @@ public class DomainService {
                     dto.setGoogleMapsUrl(store.getGoogleMapsUrl());
                     dto.setReservationWhatsappText(store.getReservationWhatsappText());
                     
+                    // ─── Währung & Steuern (Public) ─────────────────────────
+                    dto.setCurrencyCode(store.getCurrencyCode() != null ? store.getCurrencyCode().name() : "EUR");
+                    dto.setCountryCode(store.getCountryCode() != null ? store.getCountryCode() : "DE");
+                    dto.setPriceMode(store.getPriceMode() != null ? store.getPriceMode().name() : "GROSS");
+                    
                     // DHL Shipping Info (NO SECRETS)
                     mapDhlShippingInfo(dto, store.getId());
                     
@@ -236,6 +241,11 @@ public class DomainService {
                             dto.setAddress(store.getAddress());
                             dto.setGoogleMapsUrl(store.getGoogleMapsUrl());
                             dto.setReservationWhatsappText(store.getReservationWhatsappText());
+                            
+                            // ─── Währung & Steuern (Public) ─────────────────────────
+                            dto.setCurrencyCode(store.getCurrencyCode() != null ? store.getCurrencyCode().name() : "EUR");
+                            dto.setCountryCode(store.getCountryCode() != null ? store.getCountryCode() : "DE");
+                            dto.setPriceMode(store.getPriceMode() != null ? store.getPriceMode().name() : "GROSS");
                             
                             // DHL Shipping Info (NO SECRETS)
                             mapDhlShippingInfo(dto, store.getId());

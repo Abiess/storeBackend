@@ -53,7 +53,11 @@ public class PublicStoreService {
             false,
             null,
             null,
-            null
+            null,
+            // Currency & Tax (Public)
+            store.getCurrencyCode() != null ? store.getCurrencyCode().name() : "EUR",
+            store.getCountryCode() != null ? store.getCountryCode() : "DE",
+            store.getPriceMode() != null ? store.getPriceMode().name() : "GROSS"
         );
     }
 }

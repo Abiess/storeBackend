@@ -3,6 +3,8 @@ package storebackend.dto;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 public class CreateStoreRequest {
     @NotBlank
@@ -29,4 +31,20 @@ public class CreateStoreRequest {
      * Starter-Pack (Kategorien/Produkte/Carousel) vorbefüllt.
      */
     private boolean seedSampleData = false;
+
+    // ─── Währung & Steuern (optional - Defaults in Entity) ─────
+    /** Währung: EUR (default), MAD, USD, GBP */
+    private String currencyCode;
+    /** Land: DE (default), MA, etc. */
+    private String countryCode;
+    /** Preismodus: GROSS (default) oder NET */
+    private String priceMode;
+    /** USt aktiv: true (default) */
+    private Boolean vatEnabled;
+    /** Standard-Steuersatz: 19.00 (default) */
+    private BigDecimal defaultTaxRate;
+    /** Versand-Steuersatz: 19.00 (default) */
+    private BigDecimal shippingTaxRate;
+    /** Versandsteuer-Strategie: STORE_DEFINED (default) */
+    private String shippingTaxStrategy;
 }

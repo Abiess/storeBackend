@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import storebackend.enums.ProductStatus;
+import storebackend.enums.TaxCategory;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -78,6 +79,33 @@ public class Product {
     // Review statistics (denormalized for performance)
     @Column(name = "average_rating", precision = 3, scale = 2)
     private java.math.BigDecimal averageRating = java.math.BigDecimal.ZERO;
+
+    // ─── Steuerkonfiguration ──────────────────────────────────────
+    /**
+     * Steuerkategorie des Produkts
+     * Default: STANDARD (regulärer Steuersatz 19%)
+     * 
+     * STANDARD: 19% (regulär)
+     * REDUCED: 7% (ermäßigt, z.B. Lebensmittel, Bücher)
+     * ZERO: 0% (Nullsteuersatz, aber umsatzsteuerpflichtig)
+     * EXEMPT: Steuerfrei (0%, nicht umsatzsteuerpflichtig)
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tax_category", nullable = false, length = 20)
+    private TaxCategory taxCategory = TaxCategory.STANDARD;
+
+    /**
+     * Steuersatz in Prozent
+     * Default: 19.00 (regulärer Steuersatz in Deutschland)
+     * 
+     * WICHTIG: Wird automatisch aus taxCategory abgeleitet:
+     * - STANDARD → 19.00
+     * - REDUCED → 7.00
+     * - ZERO → 0.00
+     * - EXEMPT → 0.00
+     */
+    @Column(name = "tax_rate", precision = 5, scale = 2, nullable = false)
+    private BigDecimal taxRate = new BigDecimal("19.00");
 
     @Column(name = "review_count")
     private Integer reviewCount = 0;

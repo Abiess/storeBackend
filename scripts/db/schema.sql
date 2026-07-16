@@ -97,6 +97,49 @@ CREATE TABLE IF NOT EXISTS stores (
 
 -- Migration: Fehlende Spalten für bestehende stores-Tabellen hinzufügen
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS greeting_message TEXT;
+-- ═══════════════════════════════════════════════════════════════════════════
+-- MIGRATION: Currency & Tax Configuration for Stores
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- Währungs- und Länder-Felder hinzufügen
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS currency_code VARCHAR(3);
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS country_code VARCHAR(2);
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS price_mode VARCHAR(10);
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS vat_enabled BOOLEAN;
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS default_tax_rate DECIMAL(5,2);
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS shipping_tax_rate DECIMAL(5,2);
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS shipping_tax_strategy VARCHAR(30);
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS vat_exemption_text TEXT;
+
+-- Bestehende Stores mit Defaults auffüllen (nur wenn NULL)
+UPDATE stores SET currency_code = 'EUR' WHERE currency_code IS NULL;
+UPDATE stores SET country_code = 'DE' WHERE country_code IS NULL;
+UPDATE stores SET price_mode = 'GROSS' WHERE price_mode IS NULL;
+UPDATE stores SET vat_enabled = TRUE WHERE vat_enabled IS NULL;
+UPDATE stores SET default_tax_rate = 19.00 WHERE default_tax_rate IS NULL;
+UPDATE stores SET shipping_tax_rate = 19.00 WHERE shipping_tax_rate IS NULL;
+UPDATE stores SET shipping_tax_strategy = 'STORE_DEFINED' WHERE shipping_tax_strategy IS NULL;
+
+-- NOT NULL Constraints setzen (erst nach Auffüllen!)
+ALTER TABLE stores ALTER COLUMN currency_code SET NOT NULL;
+ALTER TABLE stores ALTER COLUMN country_code SET NOT NULL;
+ALTER TABLE stores ALTER COLUMN price_mode SET NOT NULL;
+ALTER TABLE stores ALTER COLUMN vat_enabled SET NOT NULL;
+ALTER TABLE stores ALTER COLUMN default_tax_rate SET NOT NULL;
+ALTER TABLE stores ALTER COLUMN shipping_tax_rate SET NOT NULL;
+ALTER TABLE stores ALTER COLUMN shipping_tax_strategy SET NOT NULL;
+
+-- Defaults für neue Stores
+ALTER TABLE stores ALTER COLUMN currency_code SET DEFAULT 'EUR';
+ALTER TABLE stores ALTER COLUMN country_code SET DEFAULT 'DE';
+ALTER TABLE stores ALTER COLUMN price_mode SET DEFAULT 'GROSS';
+ALTER TABLE stores ALTER COLUMN vat_enabled SET DEFAULT TRUE;
+ALTER TABLE stores ALTER COLUMN default_tax_rate SET DEFAULT 19.00;
+ALTER TABLE stores ALTER COLUMN shipping_tax_rate SET DEFAULT 19.00;
+ALTER TABLE stores ALTER COLUMN shipping_tax_strategy SET DEFAULT 'STORE_DEFINED';
+
+-- Migration: Fehlende Spalten für bestehende stores-Tabellen hinzufügen
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS greeting_message TEXT;
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS contact_email VARCHAR(255);
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS contact_phone VARCHAR(50);
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS telegram_url TEXT;
@@ -104,6 +147,12 @@ ALTER TABLE stores ADD COLUMN IF NOT EXISTS facebook_url TEXT;
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS instagram_url TEXT;
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS tiktok_url TEXT;
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS footer_text TEXT;
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS business_type VARCHAR(20) NOT NULL DEFAULT 'SHOP';
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS opening_hours TEXT;
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS address TEXT;
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS google_maps_url TEXT;
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS bot_protection_enabled BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS bot_protection_mode VARCHAR(20) NOT NULL DEFAULT 'SUSPICIOUS_ONLY';
 
 -- Domains Tabelle
 CREATE TABLE IF NOT EXISTS domains (
@@ -260,6 +309,25 @@ CREATE TABLE IF NOT EXISTS products (
     CONSTRAINT fk_products_category FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
     CONSTRAINT fk_products_supplier FOREIGN KEY (supplier_id) REFERENCES users(id) ON DELETE CASCADE
     );
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- MIGRATION: Product Tax Configuration
+-- ═══════════════════════════════════════════════════════════════════════════
+
+ALTER TABLE products ADD COLUMN IF NOT EXISTS tax_category VARCHAR(20);
+ALTER TABLE products ADD COLUMN IF NOT EXISTS tax_rate DECIMAL(5,2);
+
+-- Bestehende Produkte mit Defaults auffüllen
+UPDATE products SET tax_category = 'STANDARD' WHERE tax_category IS NULL;
+UPDATE products SET tax_rate = 19.00 WHERE tax_rate IS NULL;
+
+-- NOT NULL Constraints
+ALTER TABLE products ALTER COLUMN tax_category SET NOT NULL;
+ALTER TABLE products ALTER COLUMN tax_rate SET NOT NULL;
+
+-- Defaults für neue Produkte
+ALTER TABLE products ALTER COLUMN tax_category SET DEFAULT 'STANDARD';
+ALTER TABLE products ALTER COLUMN tax_rate SET DEFAULT 19.00;
 
 -- Product Options
 CREATE TABLE IF NOT EXISTS product_options (
@@ -419,6 +487,141 @@ CREATE TABLE IF NOT EXISTS order_items (
     CONSTRAINT fk_order_items_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
     CONSTRAINT fk_order_items_variant FOREIGN KEY (variant_id) REFERENCES product_variants(id)
     );
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- MIGRATION: OrderItem Tax Snapshot & Price Breakdown
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- Tax Snapshot (unveränderlich!)
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS tax_rate DECIMAL(5,2);
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS tax_category VARCHAR(20);
+
+-- Unit-Preise (für 1 Stück, vor Rabatt)
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS unit_price_net DECIMAL(15,2);
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS unit_price_gross DECIMAL(15,2);
+
+-- Line-Totals VOR Rabatt
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS line_net_before_discount DECIMAL(15,2);
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS line_tax_before_discount DECIMAL(15,2);
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS line_gross_before_discount DECIMAL(15,2);
+
+-- Rabatt auf diesen Item (aus Coupon proportional verteilt)
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS line_discount_net DECIMAL(15,2);
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS line_discount_tax DECIMAL(15,2);
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS line_discount_gross DECIMAL(15,2);
+
+-- Line-Totals NACH Rabatt (Menge × Preis - Rabatt)
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS line_net DECIMAL(15,2);
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS line_tax DECIMAL(15,2);
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS line_gross DECIMAL(15,2);
+
+-- Bestehende OrderItems mit Defaults auffüllen
+UPDATE order_items SET tax_rate = 19.00 WHERE tax_rate IS NULL;
+UPDATE order_items SET tax_category = 'STANDARD' WHERE tax_category IS NULL;
+UPDATE order_items SET unit_price_net = 0.00 WHERE unit_price_net IS NULL;
+UPDATE order_items SET unit_price_gross = 0.00 WHERE unit_price_gross IS NULL;
+UPDATE order_items SET line_net_before_discount = 0.00 WHERE line_net_before_discount IS NULL;
+UPDATE order_items SET line_tax_before_discount = 0.00 WHERE line_tax_before_discount IS NULL;
+UPDATE order_items SET line_gross_before_discount = 0.00 WHERE line_gross_before_discount IS NULL;
+UPDATE order_items SET line_discount_net = 0.00 WHERE line_discount_net IS NULL;
+UPDATE order_items SET line_discount_tax = 0.00 WHERE line_discount_tax IS NULL;
+UPDATE order_items SET line_discount_gross = 0.00 WHERE line_discount_gross IS NULL;
+UPDATE order_items SET line_net = 0.00 WHERE line_net IS NULL;
+UPDATE order_items SET line_tax = 0.00 WHERE line_tax IS NULL;
+UPDATE order_items SET line_gross = 0.00 WHERE line_gross IS NULL;
+
+-- Defaults setzen
+ALTER TABLE order_items ALTER COLUMN tax_rate SET DEFAULT 19.00;
+ALTER TABLE order_items ALTER COLUMN tax_category SET DEFAULT 'STANDARD';
+ALTER TABLE order_items ALTER COLUMN unit_price_net SET DEFAULT 0.00;
+ALTER TABLE order_items ALTER COLUMN unit_price_gross SET DEFAULT 0.00;
+ALTER TABLE order_items ALTER COLUMN line_net_before_discount SET DEFAULT 0.00;
+ALTER TABLE order_items ALTER COLUMN line_tax_before_discount SET DEFAULT 0.00;
+ALTER TABLE order_items ALTER COLUMN line_gross_before_discount SET DEFAULT 0.00;
+ALTER TABLE order_items ALTER COLUMN line_discount_net SET DEFAULT 0.00;
+ALTER TABLE order_items ALTER COLUMN line_discount_tax SET DEFAULT 0.00;
+ALTER TABLE order_items ALTER COLUMN line_discount_gross SET DEFAULT 0.00;
+ALTER TABLE order_items ALTER COLUMN line_net SET DEFAULT 0.00;
+ALTER TABLE order_items ALTER COLUMN line_tax SET DEFAULT 0.00;
+ALTER TABLE order_items ALTER COLUMN line_gross SET DEFAULT 0.00;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- MIGRATION: Order Currency, Tax & Discount Snapshot
+-- ═══════════════════════════════════════════════════════════════════════════
+
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS currency_code VARCHAR(3);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS price_mode VARCHAR(10);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS country_code VARCHAR(2);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS vat_enabled BOOLEAN;
+
+-- Zwischensumme (Produkte ohne Versand)
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS subtotal_net DECIMAL(15,2);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS subtotal_gross DECIMAL(15,2);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS tax_total DECIMAL(15,2);
+
+-- Versandkosten aufgeschlüsselt
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_net DECIMAL(15,2);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_tax DECIMAL(15,2);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_gross DECIMAL(15,2);
+
+-- Gesamtsumme aufgeschlüsselt
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS total_net DECIMAL(15,2);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS total_gross DECIMAL(15,2);
+
+-- Rabatt aufgeschlüsselt
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_net DECIMAL(15,2);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_tax DECIMAL(15,2);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_gross DECIMAL(15,2);
+
+-- Coupon-Snapshot (unveränderlich!)
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS coupon_code_snapshot VARCHAR(100);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_type_snapshot VARCHAR(20);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_value_snapshot DECIMAL(15,2);
+
+-- Bestehende Orders mit Defaults auffüllen
+UPDATE orders SET currency_code = 'EUR' WHERE currency_code IS NULL;
+UPDATE orders SET price_mode = 'GROSS' WHERE price_mode IS NULL;
+UPDATE orders SET country_code = 'DE' WHERE country_code IS NULL;
+UPDATE orders SET vat_enabled = TRUE WHERE vat_enabled IS NULL;
+UPDATE orders SET subtotal_net = 0.00 WHERE subtotal_net IS NULL;
+UPDATE orders SET subtotal_gross = 0.00 WHERE subtotal_gross IS NULL;
+UPDATE orders SET tax_total = 0.00 WHERE tax_total IS NULL;
+UPDATE orders SET shipping_net = 0.00 WHERE shipping_net IS NULL;
+UPDATE orders SET shipping_tax = 0.00 WHERE shipping_tax IS NULL;
+UPDATE orders SET shipping_gross = 0.00 WHERE shipping_gross IS NULL;
+UPDATE orders SET total_net = 0.00 WHERE total_net IS NULL;
+UPDATE orders SET total_gross = 0.00 WHERE total_gross IS NULL;
+UPDATE orders SET discount_net = 0.00 WHERE discount_net IS NULL;
+UPDATE orders SET discount_tax = 0.00 WHERE discount_tax IS NULL;
+UPDATE orders SET discount_gross = 0.00 WHERE discount_gross IS NULL;
+
+-- NOT NULL für Pflichtfelder (erst nach Auffüllen!)
+ALTER TABLE orders ALTER COLUMN currency_code SET NOT NULL;
+ALTER TABLE orders ALTER COLUMN price_mode SET NOT NULL;
+ALTER TABLE orders ALTER COLUMN country_code SET NOT NULL;
+ALTER TABLE orders ALTER COLUMN vat_enabled SET NOT NULL;
+
+-- Defaults setzen
+ALTER TABLE orders ALTER COLUMN currency_code SET DEFAULT 'EUR';
+ALTER TABLE orders ALTER COLUMN price_mode SET DEFAULT 'GROSS';
+ALTER TABLE orders ALTER COLUMN country_code SET DEFAULT 'DE';
+ALTER TABLE orders ALTER COLUMN vat_enabled SET DEFAULT TRUE;
+ALTER TABLE orders ALTER COLUMN subtotal_net SET DEFAULT 0.00;
+ALTER TABLE orders ALTER COLUMN subtotal_gross SET DEFAULT 0.00;
+ALTER TABLE orders ALTER COLUMN tax_total SET DEFAULT 0.00;
+ALTER TABLE orders ALTER COLUMN shipping_net SET DEFAULT 0.00;
+ALTER TABLE orders ALTER COLUMN shipping_tax SET DEFAULT 0.00;
+ALTER TABLE orders ALTER COLUMN shipping_gross SET DEFAULT 0.00;
+ALTER TABLE orders ALTER COLUMN total_net SET DEFAULT 0.00;
+ALTER TABLE orders ALTER COLUMN total_gross SET DEFAULT 0.00;
+ALTER TABLE orders ALTER COLUMN discount_net SET DEFAULT 0.00;
+ALTER TABLE orders ALTER COLUMN discount_tax SET DEFAULT 0.00;
+ALTER TABLE orders ALTER COLUMN discount_gross SET DEFAULT 0.00;
+
+-- Kommentare für Dokumentation
+COMMENT ON COLUMN orders.coupon_code_snapshot IS 'Snapshot des verwendeten Coupon-Codes (unveränderlich)';
+COMMENT ON COLUMN orders.discount_type_snapshot IS 'Typ: PERCENT, FIXED, FREE_SHIPPING (unveränderlich)';
+COMMENT ON COLUMN orders.discount_value_snapshot IS 'Wert bei PERCENT (Prozentsatz) oder FIXED (Betrag in Store-Währung)';
 
 -- Order Status History
 CREATE TABLE IF NOT EXISTS order_status_history (

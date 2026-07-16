@@ -2486,5 +2486,54 @@
       "noChange": "لا تغيير",
       "noChanges": "لا توجد تغييرات مطلوبة"
     }
+  },
+  "common": {
+    "save": "حفظ",
+    "saving": "جاري الحفظ..."
+  },
+  "settings": {
+    "tax": {
+      "title": "الضرائب والعملة",
+      "hint": "قم بتكوين العملة والبلد وإعدادات الضرائب لمتجرك",
+      "currency": "العملة",
+      "currencyMAD": "الدرهم المغربي",
+      "currencyGBP": "الجنيه الإسترليني",
+      "country": "البلد",
+      "countryDE": "ألمانيا",
+      "countryMA": "المغرب",
+      "countryUS": "الولايات المتحدة",
+      "countryGB": "المملكة المتحدة",
+      "priceMode": "نموذج السعر",
+      "grossPrices": "الأسعار الإجمالية (شاملة الضريبة)",
+      "grossPricesHint": "يتم عرض الأسعار شاملة الضريبة",
+      "netPrices": "الأسعار الصافية (غير شاملة الضريبة)",
+      "netPricesHint": "يتم عرض الأسعار بدون ضريبة",
+      "vatEnabled": "الضريبة مفعلة",
+      "vatEnabledHint": "قم بإلغاء تنشيط هذا الخيار إذا كنت معفى من الضرائب",
+      "defaultTaxRate": "معدل الضريبة الافتراضي",
+      "defaultTaxRateHint": "معدل الضريبة القياسي للمنتجات (مثل 19٪ في ألمانيا)",
+      "shippingTaxRate": "معدل ضريبة الشحن",
+      "shippingTaxStrategy": "استراتيجية ضريبة الشحن",
+      "shippingTaxStoreDefined": "محدد من المتجر (يستخدم معدل ضريبة الشحن)",
+      "shippingTaxStandard": "استخدام معدل الضريبة القياسي",
+      "shippingTaxProportional": "متناسب مع سلة التسوق",
+      "shippingTaxStrategyHint": "كيف يجب حساب ضريبة الشحن؟",
+      "vatExemptionText": "نص الإعفاء الضريبي",
+      "vatExemptionTextPlaceholder": "مثال: شركة صغيرة وفقًا للمادة 19 UStG",
+      "vatExemptionTextHint": "يتم عرض هذا النص عند إلغاء تنشيط الضريبة",
+      "currencyChangeWarning": "⚠️ تحذير: لن يتم تحويل الأسعار الحالية تلقائيًا. يرجى التحقق من جميع أسعار المنتجات والمتغيرات والشحن بعد ذلك."
+    }
+  },
+  "product": {
+    "taxCategory": "فئة الضريبة",
+    "taxRate": "معدل الضريبة",
+    "taxStandard": "قياسي (19٪)",
+    "taxReduced": "مخفض (7٪)",
+    "taxZero": "معدل صفر (0٪)",
+    "taxExempt": "معفى من الضرائب (0٪)",
+    "taxResponsibilityHint": "ℹ️ يرجى اختيار معدل الضريبة المناسب قانونيًا. التصنيف الضريبي هو مسؤولية التاجر.",
+    "required": {
+      "taxRate": "يرجى إدخال معدل ضريبة صالح"
+    }
   }
 }

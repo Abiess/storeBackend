@@ -1,4 +1,15 @@
 // ============================================
+// CURRENCY & TAX TYPES
+// ============================================
+export type CurrencyCode = 'EUR' | 'MAD' | 'USD' | 'GBP';
+export type PriceMode = 'GROSS' | 'NET';
+export type TaxCategory = 'STANDARD' | 'REDUCED' | 'ZERO' | 'EXEMPT';
+export type ShippingTaxStrategy =
+  | 'STORE_DEFINED'
+  | 'STANDARD_RATE'
+  | 'PROPORTIONAL_TO_CART';
+
+// ============================================
 // USER & AUTH
 // ============================================
 export interface User {
@@ -298,6 +309,9 @@ export interface Product {
   categoryName?: string;
   category?: Category;
   categories?: Category[];
+  // ─── Tax Configuration ────────────────────────────────────────
+  taxCategory?: TaxCategory;
+  taxRate?: number;
   variants?: ProductVariant[];
   media?: ProductMedia[];
   imageUrl?: string;
@@ -404,6 +418,36 @@ export interface Order {
   statusHistory?: OrderStatusHistory[];
   createdAt: string;
   updatedAt: string;
+  
+  // ─── Currency & Tax Snapshot ──────────────────────────────────
+  currencyCode?: CurrencyCode | string;
+  priceMode?: PriceMode;
+  countryCode?: string;
+  vatEnabled?: boolean;
+  
+  // Subtotals (Produkte ohne Versand)
+  subtotalNet?: number;
+  subtotalGross?: number;
+  taxTotal?: number;
+  
+  // Versandkosten aufgeschlüsselt
+  shippingNet?: number;
+  shippingTax?: number;
+  shippingGross?: number;
+  
+  // Gesamtsumme aufgeschlüsselt
+  totalNet?: number;
+  totalGross?: number;
+  
+  // Rabatt aufgeschlüsselt
+  discountNet?: number;
+  discountTax?: number;
+  discountGross?: number;
+  
+  // Coupon-Snapshot
+  couponCodeSnapshot?: string;
+  discountTypeSnapshot?: string;
+  discountValueSnapshot?: number;
 }
 
 export enum OrderStatus {
@@ -432,6 +476,29 @@ export interface OrderItem {
   name?: string;
   variantSku?: string;
   sku?: string;
+  
+  // ─── Tax Snapshot & Price Breakdown ───────────────────────────
+  taxRate?: number;
+  taxCategory?: string;
+  
+  // Unit-Preise (für 1 Stück)
+  unitPriceNet?: number;
+  unitPriceGross?: number;
+  
+  // Line-Totals VOR Rabatt
+  lineNetBeforeDiscount?: number;
+  lineTaxBeforeDiscount?: number;
+  lineGrossBeforeDiscount?: number;
+  
+  // Rabatt auf diesen Item
+  lineDiscountNet?: number;
+  lineDiscountTax?: number;
+  lineDiscountGross?: number;
+  
+  // Line-Totals NACH Rabatt
+  lineNet?: number;
+  lineTax?: number;
+  lineGross?: number;
 }
 
 export interface OrderStatusHistory {
@@ -673,6 +740,15 @@ export interface Store {
   // ─── Bot-Schutz (nur für Admin-Bereich, NICHT öffentlich) ──────
   botProtectionEnabled?: boolean;
   botProtectionMode?: 'OFF' | 'SUSPICIOUS_ONLY' | 'ALWAYS_ON';
+  // ─── Currency & Tax Configuration ──────────────────────────────
+  currencyCode?: CurrencyCode | string;
+  countryCode?: string;
+  priceMode?: PriceMode;
+  vatEnabled?: boolean;
+  defaultTaxRate?: number;
+  shippingTaxRate?: number;
+  shippingTaxStrategy?: ShippingTaxStrategy;
+  vatExemptionText?: string;
 }
 
 export interface PublicStore {
@@ -705,6 +781,9 @@ export interface PublicStore {
   dhlShippingLabel?: string;
   dhlShippingDescription?: string;
   dhlShippingPrice?: number;
+  // ─── Currency & Tax (Public Info) ─────────────────────────────
+  currencyCode?: CurrencyCode | string;
+  priceMode?: PriceMode;
 }
 
 export enum StoreStatus {

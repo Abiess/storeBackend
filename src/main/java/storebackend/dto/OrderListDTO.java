@@ -28,6 +28,11 @@ public class OrderListDTO {
     private String trackingNumber;
     private Integer itemCount;
 
+    // ─── Currency & Tax Snapshot ─────────────────────────────────
+    private String currencyCode;  // EUR, MAD, USD, GBP
+    private String priceMode;     // GROSS oder NET
+    private String countryCode;   // DE, MA, etc.
+
     // Explizite Setter-Methoden (falls Lombok nicht korrekt funktioniert)
     public void setId(Long id) {
         this.id = id;

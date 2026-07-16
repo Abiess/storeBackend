@@ -139,6 +139,41 @@ import { Subscription } from 'rxjs';
             </div>
           </div>
 
+          <!-- Tax Category and Tax Rate -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="taxCategory">{{ 'product.taxCategory' | translate }} *</label>
+              <select id="taxCategory" formControlName="taxCategory">
+                <option value="STANDARD">{{ 'product.taxStandard' | translate }}</option>
+                <option value="REDUCED">{{ 'product.taxReduced' | translate }}</option>
+                <option value="ZERO">{{ 'product.taxZero' | translate }}</option>
+                <option value="EXEMPT">{{ 'product.taxExempt' | translate }}</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="taxRate">{{ 'product.taxRate' | translate }} (%) *</label>
+              <input 
+                id="taxRate"
+                type="number" 
+                formControlName="taxRate"
+                step="0.01"
+                min="0"
+                max="100"
+                placeholder="19.00"
+                [class.error]="productForm.get('taxRate')?.invalid && productForm.get('taxRate')?.touched"
+              />
+              <div class="error-message" *ngIf="productForm.get('taxRate')?.invalid && productForm.get('taxRate')?.touched">
+                {{ 'product.required.taxRate' | translate }}
+              </div>
+            </div>
+          </div>
+
+          <div class="tax-responsibility-hint">
+            <span class="hint-icon">ℹ️</span>
+            <span>{{ 'product.taxResponsibilityHint' | translate }}</span>
+          </div>
+
           <div class="form-row">
             <div class="form-group">
               <label for="status">{{ 'product.status' | translate }}</label>
@@ -1651,7 +1686,22 @@ export class ProductFormComponent implements OnInit, OnDestroy {
       basePrice: [0, [Validators.required, Validators.min(0.01)]],
       stock: [0, [Validators.min(0)]],
       status: [ProductStatus.DRAFT],
-      categoryId: [null]
+      categoryId: [null],
+      // Tax fields
+      taxCategory: ['STANDARD', Validators.required],
+      taxRate: [19, [Validators.required, Validators.min(0), Validators.max(100)]]
+    });
+    
+    // Auto-fill tax rate when category changes
+    this.productForm.get('taxCategory')?.valueChanges.subscribe(category => {
+      const rateMap: Record<string, number> = {
+        'STANDARD': 19,
+        'REDUCED': 7,
+        'ZERO': 0,
+        'EXEMPT': 0
+      };
+      const newRate = rateMap[category] ?? 19;
+      this.productForm.get('taxRate')?.setValue(newRate, { emitEvent: false });
     });
   }
 
@@ -1754,7 +1804,9 @@ export class ProductFormComponent implements OnInit, OnDestroy {
           basePrice: product.basePrice,
           stock: product.stock ?? 0,
           status: product.status,
-          categoryId: product.categoryId || null
+          categoryId: product.categoryId || null,
+          taxCategory: product.taxCategory ?? 'STANDARD',
+          taxRate: product.taxRate ?? 19
         });
 
         console.log('✅ Form patched with values:', this.productForm.value);

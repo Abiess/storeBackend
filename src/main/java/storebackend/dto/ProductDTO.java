@@ -2,6 +2,7 @@ package storebackend.dto;
 
 import lombok.Data;
 import storebackend.enums.ProductStatus;
+import storebackend.enums.TaxCategory;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -35,4 +36,8 @@ public class ProductDTO {
 
     // Varianten
     private List<ProductVariantDTO> variants;
+
+    // ─── Steuern ─────────────────────────────────
+    private TaxCategory taxCategory;
+    private BigDecimal taxRate;
 }

@@ -8,6 +8,8 @@ import storebackend.enums.OrderStatus;
 import storebackend.enums.DeliveryType;
 import storebackend.enums.DeliveryMode;
 import storebackend.enums.PaymentMethod;
+import storebackend.enums.CurrencyCode;
+import storebackend.enums.PriceMode;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -70,8 +72,81 @@ public class Order {
     @Column(name = "dhl_label_url", length = 500)
     private String dhlLabelUrl;
 
-    @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
-    private BigDecimal totalAmount;
+    @Column(name = "total_amount", precision = 10, scale = 2)
+    private BigDecimal totalAmount;  // Legacy field - synchronisiert von totalGross via PrePersist
+
+    // ─── Währungs- und Steuer-Snapshot (UNVERÄNDERLICH!) ──────────
+    /**
+     * Währung der Bestellung (Snapshot vom Store zum Bestellzeitpunkt)
+     * WICHTIG: Bleibt unveränderlich, auch wenn Store-Währung später geändert wird
+     * Default: EUR
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "currency_code", nullable = false, length = 3)
+    private CurrencyCode currencyCode = CurrencyCode.EUR;
+
+    /**
+     * Preismodell (Snapshot vom Store zum Bestellzeitpunkt)
+     * GROSS = Bruttopreise (inkl. MwSt.)
+     * NET = Nettopreise (zzgl. MwSt.)
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "price_mode", nullable = false, length = 10)
+    private PriceMode priceMode = PriceMode.GROSS;
+
+    /**
+     * Land des Stores (Snapshot für Steuerberechnungen)
+     * ISO 3166-1 alpha-2 (z.B. "DE", "MA")
+     */
+    @Column(name = "country_code", nullable = false, length = 2)
+    private String countryCode = "DE";
+
+    // ─── Zwischensumme (Produkte ohne Versand) ────────────────────
+    @Column(name = "subtotal_net", precision = 15, scale = 2)
+    private BigDecimal subtotalNet;
+
+    @Column(name = "subtotal_gross", precision = 15, scale = 2)
+    private BigDecimal subtotalGross;
+
+    @Column(name = "tax_total", precision = 15, scale = 2)
+    private BigDecimal taxTotal;
+
+    // ─── Versandkosten aufgeschlüsselt ────────────────────────────
+    @Column(name = "shipping_net", precision = 15, scale = 2)
+    private BigDecimal shippingNet;
+
+    @Column(name = "shipping_tax", precision = 15, scale = 2)
+    private BigDecimal shippingTax;
+
+    @Column(name = "shipping_gross", precision = 15, scale = 2)
+    private BigDecimal shippingGross;
+
+    // ─── Gesamtsumme aufgeschlüsselt ──────────────────────────────
+    @Column(name = "total_net", precision = 15, scale = 2)
+    private BigDecimal totalNet;
+
+    @Column(name = "total_gross", precision = 15, scale = 2)
+    private BigDecimal totalGross;
+
+    // ─── Rabatt (falls verwendet) ─────────────────────────────────
+    @Column(name = "discount_net", precision = 15, scale = 2)
+    private BigDecimal discountNet;
+
+    @Column(name = "discount_tax", precision = 15, scale = 2)
+    private BigDecimal discountTax;
+
+    @Column(name = "discount_gross", precision = 15, scale = 2)
+    private BigDecimal discountGross;
+    
+    // ─── Coupon-Snapshot (UNVERÄNDERLICH!) ────────────────────────
+    @Column(name = "coupon_code_snapshot", length = 100)
+    private String couponCodeSnapshot;
+    
+    @Column(name = "discount_type_snapshot", length = 20)
+    private String discountTypeSnapshot;
+    
+    @Column(name = "discount_value_snapshot", precision = 15, scale = 2)
+    private BigDecimal discountValueSnapshot;
 
     @Column(columnDefinition = "TEXT")
     private String notes;
@@ -176,10 +251,18 @@ public class Order {
         if (orderNumber == null) {
             orderNumber = "ORD-" + System.currentTimeMillis();
         }
+        // Legacy totalAmount von totalGross synchronisieren
+        if (this.totalGross != null) {
+            this.totalAmount = this.totalGross;
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+        // Legacy totalAmount synchronisieren
+        if (this.totalGross != null) {
+            this.totalAmount = this.totalGross;
+        }
     }
 }

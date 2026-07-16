@@ -3,7 +3,11 @@ package storebackend.dto;
 import lombok.Data;
 import storebackend.enums.StoreStatus;
 import storebackend.enums.BusinessType;
+import storebackend.enums.CurrencyCode;
+import storebackend.enums.PriceMode;
+import storebackend.enums.ShippingTaxStrategy;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -37,4 +41,14 @@ public class StoreDTO {
     // ─── Bot-Schutz (nur für Admin-Bereich, NICHT öffentlich) ─
     private boolean botProtectionEnabled;
     private storebackend.enums.BotProtectionMode botProtectionMode;
+
+    // ─── Währung & Steuern ─────────────────────────────────
+    private CurrencyCode currencyCode;
+    private String countryCode;
+    private PriceMode priceMode;
+    private Boolean vatEnabled;
+    private BigDecimal defaultTaxRate;
+    private BigDecimal shippingTaxRate;
+    private ShippingTaxStrategy shippingTaxStrategy;
+    private String vatExemptionText;
 }

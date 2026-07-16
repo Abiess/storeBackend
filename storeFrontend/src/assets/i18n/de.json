@@ -2645,5 +2645,54 @@
       "noChange": "Keine Änderung",
       "noChanges": "Keine Änderungen erforderlich"
     }
+  },
+  "common": {
+    "save": "Speichern",
+    "saving": "Wird gespeichert..."
+  },
+  "settings": {
+    "tax": {
+      "title": "Steuern & Währung",
+      "hint": "Legen Sie die Währung, das Land und die Steuereinstellungen für Ihren Store fest",
+      "currency": "Währung",
+      "currencyMAD": "Marokkanischer Dirham",
+      "currencyGBP": "Britisches Pfund",
+      "country": "Land",
+      "countryDE": "Deutschland",
+      "countryMA": "Marokko",
+      "countryUS": "USA",
+      "countryGB": "Großbritannien",
+      "priceMode": "Preismodell",
+      "grossPrices": "Bruttopreise (inkl. MwSt.)",
+      "grossPricesHint": "Preise werden mit Mehrwertsteuer angezeigt",
+      "netPrices": "Nettopreise (zzgl. MwSt.)",
+      "netPricesHint": "Preise werden ohne Mehrwertsteuer angezeigt",
+      "vatEnabled": "Umsatzsteuer aktiviert",
+      "vatEnabledHint": "Deaktivieren Sie diese Option, wenn Sie steuerbefreit sind",
+      "defaultTaxRate": "Standard-Steuersatz",
+      "defaultTaxRateHint": "Regulärer Steuersatz für Produkte (z.B. 19% in Deutschland)",
+      "shippingTaxRate": "Versand-Steuersatz",
+      "shippingTaxStrategy": "Versandsteuerstrategie",
+      "shippingTaxStoreDefined": "Store-definiert (nutzt Versand-Steuersatz)",
+      "shippingTaxStandard": "Standard-Steuersatz verwenden",
+      "shippingTaxProportional": "Proportional zum Warenkorb",
+      "shippingTaxStrategyHint": "Wie soll die Steuer auf Versandkosten berechnet werden?",
+      "vatExemptionText": "Steuerbefreiungstext",
+      "vatExemptionTextPlaceholder": "z.B. Kleinunternehmer gem. § 19 UStG",
+      "vatExemptionTextHint": "Dieser Text wird angezeigt, wenn die Umsatzsteuer deaktiviert ist",
+      "currencyChangeWarning": "⚠️ Achtung: Vorhandene Preisbeträge werden nicht automatisch umgerechnet. Bitte kontrollieren Sie anschließend alle Produkt-, Varianten- und Versandpreise."
+    }
+  },
+  "product": {
+    "taxCategory": "Steuerkategorie",
+    "taxRate": "Steuersatz",
+    "taxStandard": "Standard (19%)",
+    "taxReduced": "Ermäßigt (7%)",
+    "taxZero": "Nullsteuersatz (0%)",
+    "taxExempt": "Steuerfrei (0%)",
+    "taxResponsibilityHint": "ℹ️ Bitte wählen Sie den rechtlich zutreffenden Steuersatz. Die steuerliche Einordnung liegt in der Verantwortung des Händlers.",
+    "required": {
+      "taxRate": "Bitte geben Sie einen gültigen Steuersatz ein"
+    }
   }
 }
