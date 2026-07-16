@@ -6,12 +6,21 @@ import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { TranslationService } from '../../core/services/translation.service';
 import { CaptchaComponent } from '../../shared/components/captcha.component';
 import { passwordMatchValidator, PASSWORD_MIN_LENGTH } from '../../shared/validators/password.validators';
+import { PasswordRequirementsComponent } from '../../shared/auth/password-requirements.component';
+import { RegistrationSuccessComponent } from '../../shared/auth/registration-success.component';
 import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-storefront-auth-dialog',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TranslatePipe, CaptchaComponent],
+  imports: [
+    CommonModule, 
+    ReactiveFormsModule, 
+    TranslatePipe, 
+    CaptchaComponent,
+    PasswordRequirementsComponent,
+    RegistrationSuccessComponent
+  ],
   template: `
     <div class="dialog-overlay" (click)="close.emit()">
       <div class="dialog-content" (click)="$event.stopPropagation()">
@@ -23,7 +32,15 @@ import { environment } from '../../../environments/environment';
           {{ errorMessage }}
         </div>
         
-        <form [formGroup]="authForm" (ngSubmit)="onSubmit()">
+        <!-- Registrierung erfolgreich: Success Panel anzeigen -->
+        <app-registration-success
+          *ngIf="!isLogin && registrationSuccess"
+          [email]="registeredEmail"
+          (goToLogin)="handleGoToLogin()">
+        </app-registration-success>
+        
+        <!-- Formular anzeigen wenn NICHT erfolgreich registriert -->
+        <form [formGroup]="authForm" (ngSubmit)="onSubmit()" *ngIf="!registrationSuccess">
           <div class="form-group">
             <label for="email">{{ 'checkout.email' | translate }}</label>
             <input 
@@ -48,6 +65,12 @@ import { environment } from '../../../environments/environment';
             <div *ngIf="authForm.get('password')?.invalid && authForm.get('password')?.touched" class="error">
               {{ 'profile.passwordMinLength' | translate }} ({{ PASSWORD_MIN_LENGTH }} Zeichen)
             </div>
+            
+            <!-- Passwort-Anforderungen NUR bei Registrierung anzeigen -->
+            <app-password-requirements
+              *ngIf="!isLogin"
+              [passwordControl]="authForm.get('password')">
+            </app-password-requirements>
           </div>
           
           <!-- Passwort wiederholen NUR bei Registrierung -->
@@ -251,6 +274,8 @@ export class StorefrontAuthDialogComponent {
   authForm: FormGroup;
   loading = false;
   errorMessage = '';
+  registrationSuccess = false;
+  registeredEmail = '';
   
   // CAPTCHA State
   captchaEnabled = environment.captcha.enabled;
@@ -283,6 +308,7 @@ export class StorefrontAuthDialogComponent {
     this.isLogin = !this.isLogin;
     this.errorMessage = '';
     this.captchaToken = null;
+    this.registrationSuccess = false;
     
     // Form neu erstellen mit korrekten Validatoren
     const currentEmail = this.authForm.get('email')?.value;
@@ -352,10 +378,20 @@ export class StorefrontAuthDialogComponent {
 
     authObservable.subscribe({
       next: (response) => {
-        console.log('✅ Authentifizierung erfolgreich:', response);
         this.loading = false;
-        this.success.emit();
-        this.close.emit();
+        
+        if (this.isLogin) {
+          // Bei Login: Direkt schließen und success emiten
+          console.log('✅ Login erfolgreich:', response);
+          this.success.emit();
+          this.close.emit();
+        } else {
+          // Bei Registrierung: Success-Panel anzeigen
+          console.log('✅ Registrierung erfolgreich:', response);
+          this.registrationSuccess = true;
+          this.registeredEmail = formData.email;
+          // NICHT schließen - Success-Panel bleibt im Dialog!
+        }
       },
       error: (error) => {
         console.error('❌ Authentifizierungsfehler:', error);
@@ -376,6 +412,16 @@ export class StorefrontAuthDialogComponent {
         }
       }
     });
+  }
+
+  /**
+   * Wird vom Success-Panel aufgerufen
+   */
+  handleGoToLogin(): void {
+    // Schließe Dialog und emitte success
+    this.close.emit();
+    // Optional: Lade Seite neu oder navigiere zum Login
+    // Hier könnten wir auch eine Route zum Login aufrufen
   }
 
   /**

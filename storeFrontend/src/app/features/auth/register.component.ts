@@ -8,12 +8,22 @@ import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { TranslationService } from '../../core/services/translation.service';
 import { CaptchaComponent } from '../../shared/components/captcha.component';
 import { passwordMatchValidator, PASSWORD_MIN_LENGTH } from '../../shared/validators/password.validators';
+import { PasswordRequirementsComponent } from '../../shared/auth/password-requirements.component';
+import { RegistrationSuccessComponent } from '../../shared/auth/registration-success.component';
 import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, TranslatePipe, CaptchaComponent],
+  imports: [
+    CommonModule, 
+    ReactiveFormsModule, 
+    RouterModule, 
+    TranslatePipe, 
+    CaptchaComponent,
+    PasswordRequirementsComponent,
+    RegistrationSuccessComponent
+  ],
   template: `
     <!-- ── Redirect-Toast (oben rechts, prominente Animation) ── -->
     <div class="redirect-toast" *ngIf="redirectCountdown > 0" role="alert" aria-live="assertive">
@@ -77,6 +87,11 @@ import { environment } from '../../../environments/environment';
             <div *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched" class="error">
               {{ 'profile.passwordMinLength' | translate }} ({{ PASSWORD_MIN_LENGTH }} Zeichen)
             </div>
+            
+            <!-- Passwort-Anforderungen Anzeige -->
+            <app-password-requirements
+              [passwordControl]="registerForm.get('password')">
+            </app-password-requirements>
           </div>
 
           <div class="form-group">
@@ -113,27 +128,11 @@ import { environment } from '../../../environments/environment';
         </form>
 
         <!-- Erfolgs-Panel: Hinweis Email-Verifikation + Resend + Login -->
-        <div *ngIf="successMessage" class="success-panel" role="status" aria-live="polite">
-          <div class="success-icon">📧</div>
-          <h2>{{ 'auth.checkInboxTitle' | translate }}</h2>
-          <p class="success-text">{{ successMessage }}</p>
-          <p class="hint-text">{{ 'auth.checkSpamHint' | translate }}</p>
-
-          <div *ngIf="resendMessage" class="alert" [class.alert-success]="!resendError" [class.alert-error]="resendError">
-            {{ resendMessage }}
-          </div>
-
-          <div class="success-actions">
-            <button type="button" class="btn btn-secondary" (click)="resendVerification()" [disabled]="resending || resendCooldown > 0">
-              <span *ngIf="!resending && resendCooldown === 0">{{ 'auth.resendVerification' | translate }}</span>
-              <span *ngIf="resending">{{ 'auth.resending' | translate }}</span>
-              <span *ngIf="!resending && resendCooldown > 0">{{ 'auth.resendIn' | translate }} {{ resendCooldown }}s</span>
-            </button>
-            <button type="button" class="btn btn-primary" (click)="goToLogin()">
-              {{ 'auth.goToLogin' | translate }}
-            </button>
-          </div>
-        </div>
+        <app-registration-success
+          *ngIf="successMessage"
+          [email]="registeredEmail"
+          (goToLogin)="goToLogin()">
+        </app-registration-success>
 
         <p class="auth-footer" *ngIf="!successMessage">
           <a [routerLink]="['/login']" [queryParams]="{ returnUrl: returnUrl }">{{ 'auth.alreadyRegistered' | translate }}</a>
@@ -209,60 +208,6 @@ import { environment } from '../../../environments/environment';
     .auth-footer a {
       color: #667eea;
       font-weight: 600;
-    }
-
-    /* === Success Panel === */
-    .success-panel {
-      text-align: center;
-      animation: fadeIn 0.4s ease;
-    }
-    .success-icon {
-      font-size: 56px;
-      margin-bottom: 12px;
-      animation: pop 0.5s ease;
-    }
-    .success-panel h2 {
-      color: #28a745;
-      font-size: 22px;
-      margin-bottom: 12px;
-    }
-    .success-text {
-      color: #444;
-      line-height: 1.6;
-      margin-bottom: 12px;
-    }
-    .hint-text {
-      color: #888;
-      font-size: 13px;
-      margin-bottom: 20px;
-    }
-    .success-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-top: 20px;
-    }
-    .btn-secondary {
-      background: #f4f6f9;
-      color: #555;
-      border: 1px solid #ddd;
-    }
-    .btn-secondary:hover:not(:disabled) {
-      background: #e9ecef;
-    }
-    .alert-success {
-      background: #d4edda;
-      color: #155724;
-      padding: 10px 14px;
-      border-radius: 8px;
-      margin-bottom: 12px;
-      font-size: 14px;
-    }
-
-    @keyframes pop {
-      0% { transform: scale(0.5); opacity: 0; }
-      60% { transform: scale(1.15); opacity: 1; }
-      100% { transform: scale(1); }
     }
 
     /* ──────────────────────────────────────────
@@ -401,12 +346,7 @@ export class RegisterComponent implements OnInit, OnDestroy {
   redirectCountdown = 0;
   redirectTimer: any = null;
 
-  // Resend-Verification State
-  resending = false;
-  resendMessage = '';
-  resendError = false;
-  resendCooldown = 0;
-  resendTimer: any = null;
+  // Registrierte E-Mail für Success Panel
   registeredEmail = '';
 
   // CAPTCHA State
@@ -441,7 +381,6 @@ export class RegisterComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     if (this.redirectTimer) clearInterval(this.redirectTimer);
-    if (this.resendTimer) clearInterval(this.resendTimer);
   }
 
   /**
@@ -551,41 +490,6 @@ export class RegisterComponent implements OnInit, OnDestroy {
     if (this.captchaComponent) {
       this.captchaComponent.reset();
     }
-  }
-
-  resendVerification(): void {
-    if (this.resending || this.resendCooldown > 0 || !this.registeredEmail) return;
-    this.resending = true;
-    this.resendMessage = '';
-    this.resendError = false;
-
-    this.authService.resendVerificationEmail(this.registeredEmail).subscribe({
-      next: () => {
-        this.resending = false;
-        this.resendError = false;
-        this.resendMessage = this.translationService.translate('auth.resendSuccess')
-          || 'Verifikations-E-Mail wurde erneut gesendet.';
-        this.startResendCooldown(60);
-      },
-      error: (err) => {
-        this.resending = false;
-        this.resendError = true;
-        this.resendMessage = err?.error?.message
-          || this.translationService.translate('auth.resendFailed')
-          || 'Senden fehlgeschlagen. Bitte später erneut versuchen.';
-      }
-    });
-  }
-
-  private startResendCooldown(seconds: number): void {
-    this.resendCooldown = seconds;
-    if (this.resendTimer) clearInterval(this.resendTimer);
-    this.resendTimer = setInterval(() => {
-      this.resendCooldown--;
-      if (this.resendCooldown <= 0) {
-        clearInterval(this.resendTimer);
-      }
-    }, 1000);
   }
 
   goToLogin(): void {
