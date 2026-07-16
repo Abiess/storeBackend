@@ -665,6 +665,7 @@
     "resendFailed": "Failed to send. Please try again later.",
     "goToLogin": "Go to login",
     "emailAlreadyExists": "This email is already registered.",
+    "checkingEmail": "Checking email...",
     "backToLogin": "Back to login",
     "forgotPasswordTitle": "Forgot your password?",
     "forgotPasswordSubtitle": "Enter your email address – we will send you a reset link.",

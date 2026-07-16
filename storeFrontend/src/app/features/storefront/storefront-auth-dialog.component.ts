@@ -52,8 +52,20 @@ import { environment } from '../../../environments/environment';
               formControlName="email"
               [placeholder]="'checkout.emailPlaceholder' | translate"
             />
-            <div *ngIf="authForm.get('email')?.invalid && authForm.get('email')?.touched" class="error">
+            <!-- Email-Format-Fehler -->
+            <div *ngIf="authForm.get('email')?.hasError('email') && authForm.get('email')?.touched" class="error">
               {{ 'checkout.errors.email' | translate }}
+            </div>
+            <!-- Email bereits registriert -->
+            <div *ngIf="authForm.get('email')?.hasError('emailTaken') && authForm.get('email')?.touched" class="error">
+              {{ 'auth.emailAlreadyExists' | translate }}
+              <a (click)="switchToLogin()" style="margin-left: 5px; text-decoration: underline; cursor: pointer;">
+                {{ 'auth.goToLogin' | translate }}
+              </a>
+            </div>
+            <!-- Email wird geprüft... -->
+            <div *ngIf="authForm.get('email')?.pending" class="info">
+              <span style="opacity: 0.7;">{{ 'auth.checkingEmail' | translate }}</span>
             </div>
           </div>
           
@@ -479,6 +491,21 @@ export class StorefrontAuthDialogComponent {
     this.isLogin = true;
     this.authForm.reset();
     this.authForm = this.createForm();
+  }
+  
+  /**
+   * Wechselt von Registrierung zu Login (wenn Email bereits existiert)
+   */
+  switchToLogin(): void {
+    const currentEmail = this.authForm.get('email')?.value;
+    this.isLogin = true;
+    this.errorMessage = '';
+    this.authForm = this.createForm();
+    
+    // Email übernehmen
+    if (currentEmail) {
+      this.authForm.get('email')?.setValue(currentEmail);
+    }
   }
   
   /**

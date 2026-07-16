@@ -911,6 +911,7 @@
     "resendFailed": "Senden fehlgeschlagen. Bitte später erneut versuchen.",
     "goToLogin": "Zum Login",
     "emailAlreadyExists": "Diese E-Mail ist bereits registriert.",
+    "checkingEmail": "E-Mail wird geprüft...",
     "backToLogin": "Zurück zum Login",
     "forgotPasswordTitle": "Passwort vergessen?",
     "forgotPasswordSubtitle": "Gib deine E-Mail-Adresse ein – wir schicken dir einen Reset-Link.",
