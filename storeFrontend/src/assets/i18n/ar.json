@@ -305,6 +305,14 @@
     "captchaFailed": "فشل التحقق من CAPTCHA. يرجى المحاولة مرة أخرى.",
     "passwordsDoNotMatch": "كلمتا المرور غير متطابقتين",
     "passwordRequired": "يرجى إدخال كلمة مرور",
+    "emailAlreadyExists": "عنوان البريد الإلكتروني هذا مسجل بالفعل.",
+    "emailExistsHint": "حاول تسجيل الدخول أو استخدم إعادة تعيين كلمة المرور.",
+    "emailCheckRateLimit": "طلبات كثيرة جداً. يرجى المحاولة لاحقاً.",
+    "captchaFailedHint": "تمت إعادة تعيين CAPTCHA. يرجى حله مرة أخرى.",
+    "networkError": "خطأ في الشبكة. يرجى التحقق من اتصالك.",
+    "registrationError": "فشل التسجيل. يرجى المحاولة مرة أخرى.",
+    "goToLogin": "الذهاب لتسجيل الدخول",
+    "goToForgotPassword": "نسيت كلمة المرور؟",
     "rateLimitExceeded": "الكثير من الطلبات. يرجى المحاولة لاحقاً.",
     "accountLocked": "تم قفل حسابك مؤقتاً. يرجى المحاولة لاحقاً.",
     "emailRateLimitExceeded": "الكثير من الطلبات لهذا البريد الإلكتروني. يرجى الانتظار."
@@ -1131,7 +1139,9 @@
     "active": "نشط",
     "inactive": "غير نشط",
     "expand": "توسيع",
-    "collapse": "طي"
+    "collapse": "طي",
+    "checking": "جاري الفحص",
+    "completFormFirst": "يرجى ملء جميع الحقول بشكل صحيح أولاً"
   },
   "navigation": {
     "dashboard": "لوحة التحكم",

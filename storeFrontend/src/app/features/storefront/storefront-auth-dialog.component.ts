@@ -6,6 +6,8 @@ import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { TranslationService } from '../../core/services/translation.service';
 import { CaptchaComponent } from '../../shared/components/captcha.component';
 import { passwordMatchValidator, PASSWORD_MIN_LENGTH } from '../../shared/validators/password.validators';
+import { emailAvailabilityValidator } from '../../shared/validators/email-availability.validator';
+import { RegistrationErrorHandler } from '../../shared/auth/registration-error-handler.service';
 import { PasswordRequirementsComponent } from '../../shared/auth/password-requirements.component';
 import { RegistrationSuccessComponent } from '../../shared/auth/registration-success.component';
 import { environment } from '../../../environments/environment';
@@ -90,14 +92,19 @@ import { environment } from '../../../environments/environment';
             </div>
           </div>
           
-          <!-- CAPTCHA NUR bei Registrierung -->
+          <!-- CAPTCHA NUR bei Registrierung UND nur wenn alle anderen Felder gültig -->
           <app-captcha 
-            *ngIf="!isLogin && captchaEnabled"
+            *ngIf="!isLogin && captchaEnabled && shouldShowCaptcha"
             (tokenReceived)="onCaptchaToken($event)"
             (error)="onCaptchaError($event)">
           </app-captcha>
           
-          <button type="submit" class="btn btn-primary" [disabled]="loading || authForm.invalid || (!isLogin && !captchaToken && captchaEnabled)">
+          <!-- Hinweis warum CAPTCHA noch nicht angezeigt wird -->
+          <div class="info-message" *ngIf="!isLogin && captchaEnabled && !shouldShowCaptcha && authForm.touched">
+            {{ 'auth.completFormFirst' | translate }}
+          </div>
+          
+          <button type="submit" class="btn btn-primary" [disabled]="isSubmitDisabled">
             {{ loading ? ('common.loading' | translate) : (isLogin ? ('common.login' | translate) : ('header.register' | translate)) }}
           </button>
         </form>
@@ -289,19 +296,63 @@ export class StorefrontAuthDialogComponent {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private translationService: TranslationService
+    private translationService: TranslationService,
+    private errorHandler: RegistrationErrorHandler
   ) {
     this.authForm = this.createForm();
   }
 
   private createForm(): FormGroup {
     return this.fb.group({
-      email: ['', [Validators.required, Validators.email]],
+      email: ['', 
+        [Validators.required, Validators.email],
+        !this.isLogin ? [emailAvailabilityValidator()] : []  // Async validator nur bei Registrierung
+      ],
       password: ['', [Validators.required, Validators.minLength(PASSWORD_MIN_LENGTH)]],
       confirmPassword: [''] // Wird nur bei Registrierung validiert
     }, { 
       validators: !this.isLogin ? passwordMatchValidator() : null 
     });
+  }
+  
+  /**
+   * CAPTCHA nur anzeigen wenn:
+   * - Email gültig und verfügbar
+   * - Passwort gültig
+   * - Passwort-Bestätigung gültig
+   */
+  get shouldShowCaptcha(): boolean {
+    if (this.isLogin) return false;
+    
+    const emailControl = this.authForm.get('email');
+    const passwordControl = this.authForm.get('password');
+    const confirmControl = this.authForm.get('confirmPassword');
+    
+    const emailValid = emailControl?.valid === true && emailControl?.pending !== true;
+    const passwordValid = passwordControl?.valid === true;
+    const confirmValid = confirmControl?.valid === true;
+    const passwordsMatch = this.authForm.hasError('passwordMismatch') !== true;
+    
+    return emailValid && passwordValid && confirmValid && passwordsMatch;
+  }
+  
+  /**
+   * Submit-Button nur aktiv wenn:
+   * - Form gültig
+   * - NICHT loading
+   * - Bei Registrierung: CAPTCHA gelöst (wenn angezeigt)
+   */
+  get isSubmitDisabled(): boolean {
+    if (this.loading) return true;
+    if (this.authForm.invalid) return true;
+    if (this.authForm.pending) return true;  // Warte auf async validators
+    
+    // Bei Registrierung: CAPTCHA muss gelöst sein
+    if (!this.isLogin && this.captchaEnabled && this.shouldShowCaptcha && !this.captchaToken) {
+      return true;
+    }
+    
+    return false;
   }
 
   toggleMode(): void {
@@ -395,21 +446,7 @@ export class StorefrontAuthDialogComponent {
       },
       error: (error) => {
         console.error('❌ Authentifizierungsfehler:', error);
-        this.loading = false;
-        
-        // WICHTIG: Token nach Fehler zurücksetzen
-        this.resetCaptcha();
-        
-        // Spezifische Fehlermeldungen
-        if (error.status === 400 && error.error?.error === 'CAPTCHA_VALIDATION_FAILED') {
-          this.errorMessage = this.translationService.translate('auth.captchaInvalid') ||
-                             'CAPTCHA validation failed. Please try again.';
-        } else {
-          this.errorMessage = error.error?.message ||
-            (this.isLogin
-              ? this.translationService.translate('auth.loginDialogFailed')
-              : this.translationService.translate('auth.registerFailed'));
-        }
+        this.handleRegistrationError(error);
       }
     });
   }
@@ -418,10 +455,53 @@ export class StorefrontAuthDialogComponent {
    * Wird vom Success-Panel aufgerufen
    */
   handleGoToLogin(): void {
-    // Schließe Dialog und emitte success
-    this.close.emit();
-    // Optional: Lade Seite neu oder navigiere zum Login
-    // Hier könnten wir auch eine Route zum Login aufrufen
+    this.registrationSuccess = false;
+    this.isLogin = true;
+    this.authForm.reset();
+    this.authForm = this.createForm();
+  }
+  
+  /**
+   * ZENTRALE FEHLERBEHANDLUNG
+   * 
+   * - Parsed Backend-Fehler
+   * - Setzt CAPTCHA zurück
+   * - Erhält Formularwerte
+   * - Zeigt benutzerfreundliche Meldungen
+   */
+  private handleRegistrationError(error: any): void {
+    this.loading = false;
+    
+    // Parse error mit zentralem Handler
+    const registrationError = this.errorHandler.parseError(error);
+    
+    // CAPTCHA zurücksetzen nach JEDEM Fehler
+    this.resetCaptcha();
+    
+    // Fehlermeldung anzeigen
+    this.errorMessage = this.errorHandler.getDefaultMessage(registrationError.code);
+    
+    // Spezielle Behandlung für EMAIL_ALREADY_EXISTS
+    if (registrationError.code === 'EMAIL_ALREADY_EXISTS') {
+      // Setze Fehler direkt am Email-Control (überschreibt async validator)
+      const emailControl = this.authForm.get('email');
+      if (emailControl) {
+        emailControl.setErrors({
+          ...emailControl.errors,
+          emailTaken: true
+        });
+        emailControl.markAsTouched();
+      }
+    }
+    
+    // Hinweis-Meldung hinzufügen (wenn vorhanden)
+    const hint = this.errorHandler.getHintMessage(registrationError.code);
+    if (hint) {
+      this.errorMessage += ' ' + hint;
+    }
+    
+    // Form NICHT zurücksetzen - Benutzer soll nur CAPTCHA neu lösen!
+    // Email, Passwort, etc. bleiben erhalten
   }
 
   /**
@@ -430,7 +510,10 @@ export class StorefrontAuthDialogComponent {
   private resetCaptcha(): void {
     this.captchaToken = null;
     if (this.captchaComponent) {
-      this.captchaComponent.reset();
+      // Kleiner Delay damit das CAPTCHA sich sauber zurücksetzen kann
+      setTimeout(() => {
+        this.captchaComponent?.reset();
+      }, 100);
     }
   }
 }

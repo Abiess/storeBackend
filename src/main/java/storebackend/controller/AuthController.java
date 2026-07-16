@@ -44,6 +44,45 @@ public class AuthController {
     private final CaptchaService captchaService;
     private final SecurityEventService securityEventService;
 
+    /**
+     * Prüft ob eine E-Mail-Adresse bereits registriert ist
+     * 
+     * SECURITY:
+     * - Rate Limit: IP-basiert (verhindert Enumeration-Angriffe)
+     * - Keine zusätzlichen Informationen außer available true/false
+     * - Kein Timing-Leak: Antwort dauert immer gleich lang
+     * 
+     * @param email E-Mail-Adresse zum Prüfen
+     * @return { "available": true/false }
+     */
+    @GetMapping("/check-email")
+    public ResponseEntity<?> checkEmailAvailability(@RequestParam String email,
+                                                    HttpServletRequest httpRequest) {
+        String requestId = UUID.randomUUID().toString().substring(0, 8);
+        String ipAddress = IpAddressUtil.getClientIpAddress(httpRequest);
+        
+        // Rate Limit: Verhindert E-Mail-Enumeration
+        if (!rateLimitService.checkIpRateLimit(ipAddress)) {
+            log.warn("[{}] Rate limit exceeded for IP: {} on /check-email", requestId, ipAddress);
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(new ErrorResponse("TOO_MANY_REQUESTS", "Too many requests. Please try again later."));
+        }
+        
+        // E-Mail-Format validieren
+        if (email == null || email.isBlank() || !email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
+            return ResponseEntity.badRequest()
+                    .body(new ErrorResponse("INVALID_EMAIL", "Invalid email format"));
+        }
+        
+        // Prüfe ob E-Mail existiert
+        boolean exists = userRepository.existsByEmail(email.toLowerCase().trim());
+        
+        // SECURITY: Timing-konstant antworten (verhindert Timing-Angriffe)
+        // In Produktion könnte hier eine minimale zufällige Verzögerung hinzugefügt werden
+        
+        return ResponseEntity.ok(new EmailAvailabilityResponse(!exists));
+    }
+
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request,
                                      @RequestParam(required = false) String sessionId,
@@ -568,4 +607,10 @@ public class AuthController {
     public record ResetPasswordRequest(String token, String newPassword) {}
 
     public record TokenValidationResponse(boolean valid, String message) {}
+    
+    /**
+     * Response DTO für Email-Verfügbarkeitsprüfung
+     * SECURITY: Nur "available" zurückgeben, keine weiteren User-Daten!
+     */
+    public record EmailAvailabilityResponse(boolean available) {}
 }

@@ -310,7 +310,9 @@
     "active": "Active",
     "inactive": "Inactive",
     "expand": "Expand",
-    "collapse": "Collapse"
+    "collapse": "Collapse",
+    "checking": "Checking",
+    "completFormFirst": "Please complete all fields correctly first"
   },
   "loading": {
     "orders": "Loading orders..."
@@ -705,6 +707,14 @@
     "captchaFailed": "CAPTCHA verification failed. Please try again.",
     "passwordsDoNotMatch": "Passwords do not match",
     "passwordRequired": "Please enter a password",
+    "emailAlreadyExists": "This email address is already registered.",
+    "emailExistsHint": "Try logging in or use password reset.",
+    "emailCheckRateLimit": "Too many requests. Please try again later.",
+    "captchaFailedHint": "The CAPTCHA has been reset. Please solve it again.",
+    "networkError": "Network error. Please check your connection.",
+    "registrationError": "Registration failed. Please try again.",
+    "goToLogin": "Go to login",
+    "goToForgotPassword": "Forgot password?",
     "rateLimitExceeded": "Too many requests. Please try again later.",
     "accountLocked": "Your account has been temporarily locked. Please try again later.",
     "emailRateLimitExceeded": "Too many requests for this email address. Please wait."

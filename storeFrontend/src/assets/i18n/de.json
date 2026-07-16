@@ -429,7 +429,9 @@
     "active": "Aktiv",
     "inactive": "Inaktiv",
     "expand": "Erweitern",
-    "collapse": "Einklappen"
+    "collapse": "Einklappen",
+    "checking": "Prüfen",
+    "completFormFirst": "Bitte füllen Sie zuerst alle Felder korrekt aus"
   },
   "loading": {
     "orders": "Bestellungen werden geladen..."
@@ -951,6 +953,14 @@
     "captchaFailed": "CAPTCHA-Verifizierung fehlgeschlagen. Bitte versuchen Sie es erneut.",
     "passwordsDoNotMatch": "Die Passwörter stimmen nicht überein",
     "passwordRequired": "Bitte geben Sie ein Passwort ein",
+    "emailAlreadyExists": "Diese E-Mail-Adresse ist bereits registriert.",
+    "emailExistsHint": "Versuchen Sie sich anzumelden oder verwenden Sie die Passwort-Wiederherstellung.",
+    "emailCheckRateLimit": "Zu viele Anfragen. Bitte versuchen Sie es später erneut.",
+    "captchaFailedHint": "Das CAPTCHA wurde zurückgesetzt. Bitte lösen Sie es erneut.",
+    "networkError": "Netzwerkfehler. Bitte überprüfen Sie Ihre Verbindung.",
+    "registrationError": "Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "goToLogin": "Zur Anmeldung",
+    "goToForgotPassword": "Passwort vergessen?",
     "rateLimitExceeded": "Zu viele Anfragen. Bitte versuchen Sie es später erneut.",
     "accountLocked": "Ihr Konto wurde vorübergehend gesperrt. Bitte versuchen Sie es später erneut.",
     "emailRateLimitExceeded": "Zu viele Anfragen für diese E-Mail-Adresse. Bitte warten Sie."
