@@ -2455,6 +2455,7 @@ COMMENT ON COLUMN security_events.mail_triggered IS 'true = Request wollte eine 
 COMMENT ON COLUMN security_events.mail_sent IS 'true = E-Mail wurde TATSÄCHLICH erfolgreich versendet (nur wenn blocked=false)';
 COMMENT ON COLUMN security_events.login_success IS 'Bei Login-Events: true = erfolgreich, false = fehlgeschlagen';
 
+
 COMMENT ON CONSTRAINT chk_mail_sent_not_when_blocked ON security_events IS 
   'Verhindert inkonsistente Daten: blocked=true und mail_sent=true dürfen niemals gleichzeitig gesetzt sein.';
 
