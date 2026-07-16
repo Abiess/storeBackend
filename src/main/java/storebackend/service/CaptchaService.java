@@ -186,11 +186,14 @@ public class CaptchaService {
             return false;
         }
 
-        // SECURITY: Hostname prüfen (NUR exakt markt.ma, NICHT boesermarkt.ma)
-        // Aktuell nur Haupt-Domain erlaubt, keine Subdomains
-        // Später für Subdomains: hostname.equals("markt.ma") || hostname.endsWith(".markt.ma")
-        if (!"markt.ma".equalsIgnoreCase(response.getHostname())) {
-            log.error("CAPTCHA validation failed: invalid hostname={} (expected: markt.ma)", response.getHostname());
+        // SECURITY: Hostname prüfen (markt.ma UND alle Subdomains *.markt.ma)
+        // WICHTIG: Subdomains wie marrakesch.markt.ma, shop.markt.ma sind ERLAUBT
+        // NICHT erlaubt: boesermarkt.ma (fehlendes Punkt davor!)
+        String hostname = response.getHostname().toLowerCase();
+        boolean isValidHostname = hostname.equals("markt.ma") || hostname.endsWith(".markt.ma");
+        
+        if (!isValidHostname) {
+            log.error("CAPTCHA validation failed: invalid hostname={} (expected: markt.ma or *.markt.ma)", response.getHostname());
             return false;
         }
 
@@ -247,9 +250,12 @@ public class CaptchaService {
             return false;
         }
 
-        // SECURITY: Hostname prüfen (NUR exakt markt.ma)
-        if (!"markt.ma".equalsIgnoreCase(response.getHostname())) {
-            log.error("CAPTCHA validation failed: invalid hostname={} (expected: markt.ma)", response.getHostname());
+        // SECURITY: Hostname prüfen (markt.ma UND alle Subdomains *.markt.ma)
+        String hostname = response.getHostname().toLowerCase();
+        boolean isValidHostname = hostname.equals("markt.ma") || hostname.endsWith(".markt.ma");
+        
+        if (!isValidHostname) {
+            log.error("CAPTCHA validation failed: invalid hostname={} (expected: markt.ma or *.markt.ma)", response.getHostname());
             return false;
         }
 

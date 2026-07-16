@@ -7,6 +7,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { TranslationService } from '../../core/services/translation.service';
 import { CaptchaComponent } from '../../shared/components/captcha.component';
+import { passwordMatchValidator, PASSWORD_MIN_LENGTH } from '../../shared/validators/password.validators';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -74,7 +75,24 @@ import { environment } from '../../../environments/environment';
               [placeholder]="'profile.newPasswordPlaceholder' | translate"
             />
             <div *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched" class="error">
-              {{ 'profile.passwordMinLength' | translate }}
+              {{ 'profile.passwordMinLength' | translate }} ({{ PASSWORD_MIN_LENGTH }} Zeichen)
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="confirmPassword">{{ 'profile.confirmPassword' | translate }}</label>
+            <input 
+              id="confirmPassword" 
+              type="password" 
+              formControlName="confirmPassword" 
+              autocomplete="new-password"
+              [placeholder]="'profile.confirmPasswordPlaceholder' | translate"
+            />
+            <div *ngIf="registerForm.get('confirmPassword')?.invalid && registerForm.get('confirmPassword')?.touched" class="error">
+              {{ 'auth.passwordRequired' | translate }}
+            </div>
+            <div *ngIf="registerForm.hasError('passwordMismatch') && registerForm.get('confirmPassword')?.touched" class="error">
+              {{ 'auth.passwordsDoNotMatch' | translate }}
             </div>
           </div>
 
@@ -397,6 +415,9 @@ export class RegisterComponent implements OnInit, OnDestroy {
   captchaError = '';
   captchaConfigurationError = false;
   @ViewChild(CaptchaComponent) captchaComponent?: CaptchaComponent;
+  
+  // Password constants (für Template-Zugriff)
+  readonly PASSWORD_MIN_LENGTH = PASSWORD_MIN_LENGTH;
 
   constructor(
     private fb: FormBuilder,
@@ -407,7 +428,10 @@ export class RegisterComponent implements OnInit, OnDestroy {
   ) {
     this.registerForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]]
+      password: ['', [Validators.required, Validators.minLength(PASSWORD_MIN_LENGTH)]],
+      confirmPassword: ['', [Validators.required]]
+    }, { 
+      validators: passwordMatchValidator() 
     });
   }
 

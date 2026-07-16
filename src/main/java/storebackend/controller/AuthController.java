@@ -93,7 +93,14 @@ public class AuthController {
 
         // 3. CAPTCHA validieren
         if (!captchaService.validateCaptcha(request.getCaptchaToken(), ipAddress)) {
-            log.warn("[{}] CAPTCHA validation failed for IP: {} on /register", requestId, ipAddress);
+            // DIAGNOSTIC: Log warum CAPTCHA fehlgeschlagen ist
+            if (request.getCaptchaToken() == null || request.getCaptchaToken().isBlank()) {
+                log.warn("[{}] CAPTCHA validation failed: token missing (email: {})", requestId, request.getEmail());
+            } else if ("CAPTCHA_DISABLED_DEV_MODE".equals(request.getCaptchaToken())) {
+                log.warn("[{}] CAPTCHA validation failed: dummy token in production (email: {})", requestId, request.getEmail());
+            } else {
+                log.warn("[{}] CAPTCHA validation failed: invalid/expired token (email: {})", requestId, request.getEmail());
+            }
             
             securityEventService.logEvent(
                 securityEventService.builder("/api/auth/register")
@@ -112,7 +119,7 @@ public class AuthController {
             );
             
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ErrorResponse("CAPTCHA validation failed. Please try again."));
+                    .body(new ErrorResponse("CAPTCHA_VALIDATION_FAILED", "CAPTCHA validation failed. Please try again."));
         }
 
         try {
@@ -532,7 +539,11 @@ public class AuthController {
     }
 
     // Inner classes for responses
-    private record ErrorResponse(String message) {}
+    private record ErrorResponse(String error, String message) {
+        ErrorResponse(String message) {
+            this("ERROR", message);
+        }
+    }
 
     private record ValidateResponse(boolean valid, String email, Long userId) {}
 

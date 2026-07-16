@@ -1,14 +1,17 @@
-import { Component, Output, EventEmitter, Input } from '@angular/core';
+import { Component, Output, EventEmitter, Input, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { TranslationService } from '../../core/services/translation.service';
+import { CaptchaComponent } from '../../shared/components/captcha.component';
+import { passwordMatchValidator, PASSWORD_MIN_LENGTH } from '../../shared/validators/password.validators';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-storefront-auth-dialog',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TranslatePipe],
+  imports: [CommonModule, ReactiveFormsModule, TranslatePipe, CaptchaComponent],
   template: `
     <div class="dialog-overlay" (click)="close.emit()">
       <div class="dialog-content" (click)="$event.stopPropagation()">
@@ -40,14 +43,38 @@ import { TranslationService } from '../../core/services/translation.service';
               id="password" 
               type="password" 
               formControlName="password"
-              placeholder="••••••••"
+              placeholder="••••••••••••"
             />
             <div *ngIf="authForm.get('password')?.invalid && authForm.get('password')?.touched" class="error">
-              {{ 'auth.passwordMinLength' | translate }}
+              {{ 'profile.passwordMinLength' | translate }} ({{ PASSWORD_MIN_LENGTH }} Zeichen)
             </div>
           </div>
           
-          <button type="submit" class="btn btn-primary" [disabled]="loading || authForm.invalid">
+          <!-- Passwort wiederholen NUR bei Registrierung -->
+          <div class="form-group" *ngIf="!isLogin">
+            <label for="confirmPassword">{{ 'profile.confirmPassword' | translate }}</label>
+            <input 
+              id="confirmPassword" 
+              type="password" 
+              formControlName="confirmPassword"
+              placeholder="••••••••••••"
+            />
+            <div *ngIf="authForm.get('confirmPassword')?.invalid && authForm.get('confirmPassword')?.touched" class="error">
+              {{ 'auth.passwordRequired' | translate }}
+            </div>
+            <div *ngIf="authForm.hasError('passwordMismatch') && authForm.get('confirmPassword')?.touched" class="error">
+              {{ 'auth.passwordsDoNotMatch' | translate }}
+            </div>
+          </div>
+          
+          <!-- CAPTCHA NUR bei Registrierung -->
+          <app-captcha 
+            *ngIf="!isLogin && captchaEnabled"
+            (tokenReceived)="onCaptchaToken($event)"
+            (error)="onCaptchaError($event)">
+          </app-captcha>
+          
+          <button type="submit" class="btn btn-primary" [disabled]="loading || authForm.invalid || (!isLogin && !captchaToken && captchaEnabled)">
             {{ loading ? ('common.loading' | translate) : (isLogin ? ('common.login' | translate) : ('header.register' | translate)) }}
           </button>
         </form>
@@ -224,37 +251,104 @@ export class StorefrontAuthDialogComponent {
   authForm: FormGroup;
   loading = false;
   errorMessage = '';
+  
+  // CAPTCHA State
+  captchaEnabled = environment.captcha.enabled;
+  captchaToken: string | null = null;
+  captchaError = '';
+  @ViewChild(CaptchaComponent) captchaComponent?: CaptchaComponent;
+  
+  // Password constants (für Template-Zugriff)
+  readonly PASSWORD_MIN_LENGTH = PASSWORD_MIN_LENGTH;
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
     private translationService: TranslationService
   ) {
-    this.authForm = this.fb.group({
+    this.authForm = this.createForm();
+  }
+
+  private createForm(): FormGroup {
+    return this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]]
+      password: ['', [Validators.required, Validators.minLength(PASSWORD_MIN_LENGTH)]],
+      confirmPassword: [''] // Wird nur bei Registrierung validiert
+    }, { 
+      validators: !this.isLogin ? passwordMatchValidator() : null 
     });
   }
 
   toggleMode(): void {
     this.isLogin = !this.isLogin;
     this.errorMessage = '';
-    this.authForm.reset();
+    this.captchaToken = null;
+    
+    // Form neu erstellen mit korrekten Validatoren
+    const currentEmail = this.authForm.get('email')?.value;
+    this.authForm = this.createForm();
+    this.authForm.patchValue({ email: currentEmail });
+    
+    // CAPTCHA zurücksetzen
+    if (this.captchaComponent) {
+      this.captchaComponent.reset();
+    }
+  }
+
+  /**
+   * CAPTCHA Token empfangen
+   */
+  onCaptchaToken(token: string): void {
+    this.captchaToken = token;
+    this.captchaError = '';
+    
+    if (!environment.production) {
+      const isRealToken = token && token !== 'CAPTCHA_DISABLED_DEV_MODE';
+      console.log('[STOREFRONT AUTH] CAPTCHA Token empfangen:', {
+        type: isRealToken ? 'REAL' : 'DUMMY',
+        length: token?.length ?? 0
+      });
+    }
+  }
+
+  /**
+   * CAPTCHA Fehler behandeln
+   */
+  onCaptchaError(error: string): void {
+    this.captchaError = error;
+    this.captchaToken = null;
+    console.error('[STOREFRONT AUTH] CAPTCHA Error:', error);
   }
 
   onSubmit(): void {
     if (this.authForm.invalid) {
+      // Markiere alle Felder als touched um Fehler anzuzeigen
+      Object.keys(this.authForm.controls).forEach(key => {
+        this.authForm.get(key)?.markAsTouched();
+      });
+      return;
+    }
+
+    // CAPTCHA Token vorhanden bei Registrierung?
+    if (!this.isLogin && this.captchaEnabled && !this.captchaToken) {
+      this.errorMessage = this.translationService.translate('auth.captchaRequired') || 
+                         'Please complete the CAPTCHA verification';
       return;
     }
 
     this.loading = true;
     this.errorMessage = '';
 
-    const credentials = this.authForm.value;
+    const formData = {
+      email: this.authForm.value.email,
+      password: this.authForm.value.password,
+      lang: this.translationService.currentLang() || 'en',
+      captchaToken: this.captchaToken // Wichtig: Token mitsenden bei Registrierung
+    };
 
     const authObservable = this.isLogin
-      ? this.authService.login(credentials)
-      : this.authService.register(credentials);
+      ? this.authService.login({ email: formData.email, password: formData.password })
+      : this.authService.register(formData);
 
     authObservable.subscribe({
       next: (response) => {
@@ -266,12 +360,32 @@ export class StorefrontAuthDialogComponent {
       error: (error) => {
         console.error('❌ Authentifizierungsfehler:', error);
         this.loading = false;
-        this.errorMessage = error.error?.message ||
-          (this.isLogin
-            ? this.translationService.translate('auth.loginDialogFailed')
-            : this.translationService.translate('auth.registerFailed'));
+        
+        // WICHTIG: Token nach Fehler zurücksetzen
+        this.resetCaptcha();
+        
+        // Spezifische Fehlermeldungen
+        if (error.status === 400 && error.error?.error === 'CAPTCHA_VALIDATION_FAILED') {
+          this.errorMessage = this.translationService.translate('auth.captchaInvalid') ||
+                             'CAPTCHA validation failed. Please try again.';
+        } else {
+          this.errorMessage = error.error?.message ||
+            (this.isLogin
+              ? this.translationService.translate('auth.loginDialogFailed')
+              : this.translationService.translate('auth.registerFailed'));
+        }
       }
     });
+  }
+
+  /**
+   * Reset CAPTCHA Token und Widget nach Submit oder Fehler
+   */
+  private resetCaptcha(): void {
+    this.captchaToken = null;
+    if (this.captchaComponent) {
+      this.captchaComponent.reset();
+    }
   }
 }
 
