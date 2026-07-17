@@ -2,15 +2,19 @@ package storebackend.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import storebackend.dto.CreateTeamInvitationRequest;
 import storebackend.dto.TeamInvitationDTO;
+import storebackend.entity.Store;
 import storebackend.entity.StoreRole;
 import storebackend.entity.TeamInvitation;
 import storebackend.entity.User;
+import storebackend.repository.StoreRepository;
 import storebackend.repository.StoreRoleRepository;
 import storebackend.repository.TeamInvitationRepository;
 import storebackend.service.TeamInvitationService;
@@ -33,6 +37,7 @@ public class TeamInvitationController {
     private final TeamInvitationService invitationService;
     private final StoreRoleRepository storeRoleRepository;
     private final TeamInvitationRepository invitationRepository;
+    private final StoreRepository storeRepository;
 
     /**
      * Neue Team-Einladung erstellen
@@ -74,10 +79,16 @@ public class TeamInvitationController {
             @PathVariable Long storeId,
             @AuthenticationPrincipal User user
     ) {
+        log.info("📋 Team invitations access: storeId={}, userId={}",
+                storeId, user != null ? user.getId() : null);
+        log.debug("Team invitations access detail: email={}", 
+                user != null ? user.getEmail() : null);
+
         // Berechtigung prüfen
         requireOwnerOrAdmin(storeId, user);
 
         List<TeamInvitationDTO> invitations = invitationService.getInvitations(storeId);
+        log.info("✅ Returned {} invitations for store {}", invitations.size(), storeId);
         return ResponseEntity.ok(invitations);
     }
 
@@ -174,26 +185,61 @@ public class TeamInvitationController {
 
     /**
      * Prüfen ob Benutzer Owner oder Admin des Stores ist
+     * 
+     * Priorität:
+     * 1. Store Owner (über stores.owner_id) = immer erlaubt
+     * 2. STORE_ADMIN Rolle (über store_roles) = erlaubt
+     * 3. Alle anderen = verboten
+     * 
+     * HTTP Status Codes:
+     * - 401 Unauthorized: Nicht angemeldet
+     * - 404 Not Found: Store existiert nicht
+     * - 403 Forbidden: Keine Berechtigung für diesen Store
+     * - 200 OK: Zugriff erlaubt
      */
     private void requireOwnerOrAdmin(Long storeId, User user) {
-        StoreRole role = storeRoleRepository.findByStoreIdAndUserId(storeId, user.getId())
+        // 1. Authentifizierung prüfen → 401
+        if (user == null) {
+            log.warn("⚠️ Unauthorized access attempt: storeId={}, user is null", storeId);
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "Nicht angemeldet"
+            );
+        }
+
+        // 2. Store laden → 404 wenn nicht gefunden
+        Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> {
-                    log.warn("⚠️ Access denied: store={}, user={} (no role)", storeId, user.getId());
-                    return new AccessDeniedException("Keine Berechtigung für diesen Store");
+                    log.warn("⚠️ Store not found: storeId={}", storeId);
+                    return new ResponseStatusException(
+                            HttpStatus.NOT_FOUND,
+                            "Store nicht gefunden"
+                    );
                 });
 
-        if (!isOwnerOrAdmin(role.getRole())) {
-            log.warn("⚠️ Access denied: store={}, user={}, role={}", 
-                    storeId, user.getId(), role.getRole());
-            throw new AccessDeniedException("Nur Owner oder Admin dürfen Einladungen verwalten");
+        // 3. Prüfen ob Benutzer der Store Owner ist
+        Long ownerId = store.getOwner() != null ? store.getOwner().getId() : null;
+        
+        if (ownerId != null && ownerId.equals(user.getId())) {
+            log.debug("✅ Access granted: user={} is owner of store={}", user.getId(), storeId);
+            return;
         }
-    }
 
-    /**
-     * Prüfen ob Rolle Owner oder Admin ist
-     */
-    private boolean isOwnerOrAdmin(String roleStr) {
-        return "STORE_OWNER".equals(roleStr) || "STORE_ADMIN".equals(roleStr);
+        // 4. Prüfen ob Benutzer STORE_ADMIN Rolle hat
+        boolean isAdmin = storeRoleRepository
+                .findByStoreIdAndUserId(storeId, user.getId())
+                .map(role -> "STORE_ADMIN".equals(role.getRole()))
+                .orElse(false);
+
+        if (isAdmin) {
+            log.debug("✅ Access granted: user={} is STORE_ADMIN of store={}", user.getId(), storeId);
+            return;
+        }
+
+        // 5. Zugriff verweigert → 403
+        log.warn("⚠️ Access denied: storeId={}, userId={}, isOwner={}, isAdmin={}", 
+                storeId, user.getId(), false, false);
+        throw new AccessDeniedException("Zugriff verweigert: Keine Berechtigung für diesen Store");
     }
 
     /**
