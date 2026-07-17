@@ -42,10 +42,17 @@ export class TeamInvitationService {
     );
   }
 
-  acceptInvitation(token: string): Observable<{ success: boolean; message: string }> {
-    return this.http.post<{ success: boolean; message: string }>(
+  acceptInvitation(token: string): Observable<{ success: boolean; message: string; storeId: number }> {
+    return this.http.post<{ success: boolean; message: string; storeId: number }>(
       `${this.apiUrl}/team-invitations/accept`,
       { token }
+    );
+  }
+
+  getInvitationPreview(token: string): Observable<{ email: string; emailMasked: string; storeName: string; role: string; expiresAt: string }> {
+    return this.http.get<{ email: string; emailMasked: string; storeName: string; role: string; expiresAt: string }>(
+      `${this.apiUrl}/team-invitations/preview`,
+      { params: { token } }
     );
   }
 }

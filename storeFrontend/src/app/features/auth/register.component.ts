@@ -4,6 +4,7 @@ import { RouterModule, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { TeamInvitationService } from '../../core/services/team-invitation.service';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { TranslationService } from '../../core/services/translation.service';
 import { EmailStatusHandlerService } from '../../core/services/email-status-handler.service';
@@ -61,6 +62,15 @@ import { environment } from '../../../environments/environment';
         <h1>{{ 'auth.registerTitle' | translate }}</h1>
         <p class="subtitle">{{ 'auth.registerSubtitle' | translate }}</p>
         
+        <!-- Einladungs-Banner -->
+        <div *ngIf="invitationToken && invitationEmail" class="invitation-banner" role="status">
+          <span class="banner-icon">📧</span>
+          <div class="banner-content">
+            <div class="banner-title">Team-Einladung</div>
+            <div class="banner-text">Registrierung für: <strong>{{ invitationEmail }}</strong></div>
+          </div>
+        </div>
+        
         <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" *ngIf="!successMessage">
           <div class="form-group">
             <label for="email">{{ 'auth.email' | translate }}</label>
@@ -70,6 +80,8 @@ import { environment } from '../../../environments/environment';
               formControlName="email" 
               autocomplete="email"
               [placeholder]="'auth.emailPlaceholder' | translate"
+              [readonly]="!!invitationEmail"
+              [class.readonly-input]="!!invitationEmail"
             />
             <div *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched" class="error">
               {{ 'auth.emailInvalid' | translate }}
@@ -213,6 +225,53 @@ import { environment } from '../../../environments/environment';
       font-weight: 600;
     }
 
+    /* Invitation Banner */
+    .invitation-banner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: linear-gradient(135deg, rgba(102,126,234,0.1), rgba(118,75,162,0.08));
+      border: 2px solid rgba(102,126,234,0.3);
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      animation: bannerSlide 0.5s cubic-bezier(0.34,1.56,0.64,1);
+    }
+
+    @keyframes bannerSlide {
+      from { opacity: 0; transform: translateY(-10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .banner-icon {
+      font-size: 1.8rem;
+      flex-shrink: 0;
+    }
+
+    .banner-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .banner-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #4a3f8a;
+      margin-bottom: 2px;
+    }
+
+    .banner-text {
+      font-size: 0.85rem;
+      color: #5a4d99;
+      line-height: 1.3;
+    }
+
+    .readonly-input {
+      background-color: #f5f5f5 !important;
+      cursor: not-allowed;
+      border-color: #d0d0d0 !important;
+    }
+
     /* ──────────────────────────────────────────
        REDIRECT TOAST (oben rechts, fixed)
     ────────────────────────────────────────── */
@@ -348,6 +407,10 @@ export class RegisterComponent implements OnInit, OnDestroy {
   returnUrl = '/dashboard';
   redirectCountdown = 0;
   redirectTimer: any = null;
+  
+  // Invitation-Flow
+  invitationToken: string | null = null;
+  invitationEmail: string | null = null;
 
   // Registrierte E-Mail für Success Panel
   registeredEmail = '';
@@ -369,6 +432,7 @@ export class RegisterComponent implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
+    private teamInvitationService: TeamInvitationService,
     private router: Router,
     private route: ActivatedRoute,
     private translationService: TranslationService,
@@ -385,6 +449,18 @@ export class RegisterComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
+    
+    // Einladungs-Token aus Query-Params oder sessionStorage
+    this.invitationToken = this.route.snapshot.queryParams['invitationToken'] || 
+                           sessionStorage.getItem('pendingInvitationToken');
+    
+    if (this.invitationToken) {
+      // Token auch in sessionStorage speichern für späteren Verification-Flow
+      sessionStorage.setItem('pendingInvitationToken', this.invitationToken);
+      
+      // E-Mail aus Token-Preview laden (wenn möglich)
+      this.loadInvitationEmail();
+    }
   }
 
   ngOnDestroy(): void {
@@ -581,11 +657,38 @@ export class RegisterComponent implements OnInit, OnDestroy {
   }
 
   goToLogin(): void {
-    this.router.navigate(['/login'], {
-      queryParams: {
-        returnUrl: this.returnUrl,
-        email: this.registeredEmail,
-        autoFill: 'true'
+    // Wenn Einladungs-Token existiert, mit zur Login-Seite übergeben
+    if (this.invitationToken) {
+      // Token bleibt in sessionStorage für automatisches Akzeptieren nach Login
+      this.router.navigate(['/login']);
+    } else {
+      // Normaler Flow: Email vorausfüllen
+      this.router.navigate(['/login'], {
+        queryParams: { 
+          returnUrl: this.returnUrl,
+          email: this.registeredEmail,
+          autoFill: 'true'
+        }
+      });
+    }
+  }
+
+  private loadInvitationEmail(): void {
+    if (!this.invitationToken) return;
+    
+    this.teamInvitationService.getInvitationPreview(this.invitationToken).subscribe({
+      next: (preview) => {
+        // Volle E-Mail aus dem Backend verwenden
+        this.invitationEmail = preview.email;
+        
+        // E-Mail im Formular vorausfüllen
+        this.registerForm.patchValue({ email: preview.email });
+        
+        console.log('✅ Einladungs-E-Mail geladen:', preview.email);
+      },
+      error: (err) => {
+        console.warn('⚠️ Einladungs-Vorschau konnte nicht geladen werden:', err);
+        // Trotzdem fortfahren, User kann sich manuell registrieren
       }
     });
   }

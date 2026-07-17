@@ -2,6 +2,7 @@ package storebackend.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import storebackend.dto.CreateTeamInvitationRequest;
@@ -124,7 +125,7 @@ public class TeamInvitationService {
 
     /** Einladung per Token akzeptieren */
     @Transactional
-    public void acceptInvitation(String plainToken, User acceptingUser) {
+    public Long acceptInvitation(String plainToken, User acceptingUser) {
         // 1. Token hashen
         String tokenHash = hashToken(plainToken);
 
@@ -148,7 +149,7 @@ public class TeamInvitationService {
         if (!acceptingUser.getEmail().equalsIgnoreCase(invitation.getEmail())) {
             log.warn("⚠️ E-Mail-Mismatch bei Einladung: token={}, expected={}, actual={}",
                     tokenHash.substring(0, 8), invitation.getEmail(), acceptingUser.getEmail());
-            throw new RuntimeException("Diese Einladung ist für eine andere E-Mail-Adresse bestimmt");
+            throw new AccessDeniedException("Diese Einladung ist für eine andere E-Mail-Adresse bestimmt");
         }
 
         // 6. Prüfen ob User bereits Mitglied ist
@@ -175,6 +176,9 @@ public class TeamInvitationService {
         invitation.accept(acceptingUser);
         invitationRepository.save(invitation);
         log.info("✅ Einladung akzeptiert: id={}, email={}", invitation.getId(), invitation.getEmail());
+        
+        // 9. Store-ID zurückgeben für Frontend-Weiterleitung
+        return invitation.getStore().getId();
     }
 
     /** Einladung widerrufen */

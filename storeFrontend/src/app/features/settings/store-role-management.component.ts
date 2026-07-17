@@ -49,6 +49,9 @@ interface TeamMemberForm {
                 <div>
                   <div class="role-name">{{ role.label }}</div>
                   <div class="role-count">{{ getMemberCount(role.key) }} Mitglied(er)</div>
+                  <div class="role-invitations" *ngIf="getPendingInvitationCount(role.key) > 0">
+                    {{ getPendingInvitationCount(role.key) }} offene Einladung(en)
+                  </div>
                 </div>
               </div>
               <div class="role-desc">{{ role.description }}</div>
@@ -287,6 +290,7 @@ interface TeamMemberForm {
     .role-icon { font-size: 1.75rem; }
     .role-name { font-weight: 700; color: #1f2937; font-size: 0.9rem; }
     .role-count { font-size: 0.75rem; color: #667eea; font-weight: 600; }
+    .role-invitations { font-size: 0.7rem; color: #f59e0b; font-weight: 600; margin-top: 2px; }
     .role-desc { font-size: 0.8rem; color: #6b7280; margin-bottom: 0.5rem; line-height: 1.4; }
     .role-perms-count { font-size: 0.75rem; color: #9ca3af; }
 
@@ -579,6 +583,14 @@ export class StoreRoleManagementComponent implements OnInit {
 
   getMemberCount(roleKey: string): number {
     return this.teamMembers.filter(m => m.role === roleKey).length;
+  }
+
+  getPendingInvitationCount(roleCode: string): number {
+    return this.pendingInvitations.filter(
+      invitation =>
+        invitation.status === 'PENDING' &&
+        invitation.role === roleCode
+    ).length;
   }
 
   getRoleLabel(role: string): string {

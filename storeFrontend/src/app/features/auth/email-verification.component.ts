@@ -36,10 +36,18 @@ import { catchError, of } from 'rxjs';
           <p class="mt-2 text-sm text-gray-600">
             {{ message }}
           </p>
+          
+          <div *ngIf="hasPendingInvitation" class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p class="text-sm text-blue-800">
+              <strong>📧 Shop-Einladung wartet</strong><br>
+              Sie werden automatisch zum Login weitergeleitet, um Ihre Shop-Einladung anzunehmen.
+            </p>
+          </div>
+          
           <div class="mt-6">
             <a [routerLink]="['/login']" 
                class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-              Go to Login
+              {{ hasPendingInvitation ? 'Weiter zur Anmeldung' : 'Go to Login' }}
             </a>
           </div>
         </div>
@@ -79,6 +87,7 @@ export class EmailVerificationComponent implements OnInit {
   message: string = '';
   token: string | null = null;
   resending = false;
+  hasPendingInvitation = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -88,6 +97,7 @@ export class EmailVerificationComponent implements OnInit {
 
   ngOnInit() {
     this.token = this.route.snapshot.queryParamMap.get('token');
+    this.hasPendingInvitation = !!sessionStorage.getItem('pendingInvitationToken');
 
     if (!this.token) {
       this.status = 'error';
@@ -117,6 +127,15 @@ export class EmailVerificationComponent implements OnInit {
       } else {
         this.status = 'success';
         this.message = response.message || 'Your email has been verified successfully! You can now log in.';
+        
+        // Prüfen ob ein pendingInvitationToken existiert
+        const invitationToken = sessionStorage.getItem('pendingInvitationToken');
+        if (invitationToken) {
+          // Nach kurzer Verzögerung automatisch zum Login weiterleiten
+          setTimeout(() => {
+            this.router.navigate(['/login']);
+          }, 2000);
+        }
       }
     });
   }

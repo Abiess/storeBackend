@@ -4,6 +4,7 @@ import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
 import { StoreService } from '../../core/services/store.service';
+import { TeamInvitationService } from '../../core/services/team-invitation.service';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { LanguageService } from '../../core/services/language.service';
 import {LanguageSwitcherComponent} from "@app/core/i18n.exports";
@@ -204,6 +205,7 @@ export class LoginComponent implements OnInit {
       private fb: FormBuilder,
       private authService: AuthService,
       private storeService: StoreService,
+      private teamInvitationService: TeamInvitationService,
       private router: Router,
       private route: ActivatedRoute,
       private languageService: LanguageService
@@ -249,17 +251,24 @@ export class LoginComponent implements OnInit {
 
       this.authService.login(this.loginForm.value).subscribe({
         next: () => {
-          // Prüfe ob User bereits Stores hat
+          // Prüfen ob ein pendingInvitationToken existiert
+          const invitationToken = sessionStorage.getItem('pendingInvitationToken');
+          
+          if (invitationToken) {
+            // Einladung automatisch annehmen
+            this.acceptPendingInvitation(invitationToken);
+            return;
+          }
+          
+          // Normaler Login-Flow: Prüfe ob User bereits Stores hat
           this.storeService.getMyStores().subscribe({
             next: (stores: any[]) => {
               if (stores && stores.length > 0) {
                 // User hat bereits Stores → returnUrl oder Dashboard
                 console.log('🔄 User hat Stores. Weiterleitung zu:', this.returnUrl);
-                // navigateByUrl statt navigate([url]) – verhindert doppelte URL-Enkodierung
-                // z.B. /products/177?variant=35 würde sonst zu /products/177%3Fvariant%3D35
                 this.router.navigateByUrl(this.returnUrl);
               } else {
-                // Neuer User ohne Stores → authenticated Store-Erstellung (owner = currentUser)
+                // Neuer User ohne Stores → authenticated Store-Erstellung
                 console.log('✨ Neuer User ohne Store. Zeige Store-Wizard...');
                 this.router.navigate(['/store-wizard']);
               }
@@ -277,5 +286,56 @@ export class LoginComponent implements OnInit {
         }
       });
     }
+  }
+
+  private acceptPendingInvitation(token: string): void {
+    this.teamInvitationService.acceptInvitation(token).subscribe({
+      next: (response) => {
+        console.log('✅ Einladung nach Login akzeptiert:', response);
+        sessionStorage.removeItem('pendingInvitationToken');
+        this.loading = false;
+        
+        // UI aktualisieren (Store-Liste neu laden)
+        this.storeService.getMyStores().subscribe({
+          next: (stores) => {
+            console.log('✅ Store-Liste nach Einladung aktualisiert:', stores.length);
+            
+            // Token neu validieren um User-Daten zu aktualisieren
+            const token = this.authService.getToken();
+            if (token) {
+              (this.authService as any).validateTokenWithBackend();
+            }
+            
+            // Zu Store-Dashboard navigieren
+            if (response.storeId) {
+              this.router.navigate(['/stores', response.storeId, 'dashboard']);
+            } else {
+              this.router.navigate(['/dashboard']);
+            }
+          },
+          error: () => {
+            // Trotzdem navigieren, auch wenn Refresh fehlschlägt
+            if (response.storeId) {
+              this.router.navigate(['/stores', response.storeId, 'dashboard']);
+            } else {
+              this.router.navigate(['/dashboard']);
+            }
+          }
+        });
+      },
+      error: (err) => {
+        console.error('❌ Einladung konnte nicht angenommen werden:', err);
+        sessionStorage.removeItem('pendingInvitationToken');
+        this.loading = false;
+        
+        // Zeige Fehler, aber gehe trotzdem weiter
+        this.errorMessage = 'Einladung konnte nicht angenommen werden: ' + (err.error?.error || 'Unbekannter Fehler');
+        
+        // Nach kurzer Verzögerung zur normalen Zielseite
+        setTimeout(() => {
+          this.router.navigateByUrl(this.returnUrl);
+        }, 3000);
+      }
+    });
   }
 }

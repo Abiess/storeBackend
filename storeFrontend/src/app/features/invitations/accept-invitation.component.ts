@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TeamInvitationService } from '@app/core/services/team-invitation.service';
+import { AuthService } from '@app/core/services/auth.service';
+import { StoreService } from '@app/core/services/store.service';
 
 @Component({
   selector: 'app-accept-invitation',
@@ -15,27 +17,46 @@ import { TeamInvitationService } from '@app/core/services/team-invitation.servic
         </div>
 
         <div class="card-body">
+          <!-- Loading State -->
           <div *ngIf="loading" class="loading-state">
             <div class="spinner"></div>
-            <p>Einladung wird verarbeitet...</p>
+            <p>{{ loadingMessage }}</p>
           </div>
 
+          <!-- Success State -->
           <div *ngIf="success && !loading" class="success-state">
             <div class="icon">✅</div>
             <h3>Willkommen im Team!</h3>
             <p>{{ successMessage }}</p>
-            <button class="btn btn-primary" (click)="goToDashboard()">
-              Zum Dashboard
+            <button class="btn btn-primary" (click)="goToStoreDashboard()">
+              Zum Store-Dashboard
             </button>
           </div>
 
+          <!-- Error State -->
           <div *ngIf="error && !loading" class="error-state">
             <div class="icon">❌</div>
-            <h3>Einladung konnte nicht angenommen werden</h3>
+            <h3>{{ errorTitle }}</h3>
             <p>{{ errorMessage }}</p>
-            <button class="btn btn-secondary" (click)="goToLogin()">
-              Zum Login
-            </button>
+            
+            <!-- Preview-Informationen anzeigen -->
+            <div *ngIf="invitationPreview" class="info-box">
+              <p><strong>Store:</strong> {{ invitationPreview.storeName }}</p>
+              <p><strong>Rolle:</strong> {{ invitationPreview.role }}</p>
+              <p><strong>E-Mail:</strong> {{ invitationPreview.emailMasked }}</p>
+            </div>
+            
+            <div class="button-group">
+              <button *ngIf="needsLogin" class="btn btn-primary" (click)="goToLogin()">
+                Zum Login
+              </button>
+              <button *ngIf="needsRegister" class="btn btn-primary" (click)="goToRegister()">
+                Jetzt Registrieren
+              </button>
+              <button *ngIf="!needsLogin && !needsRegister" class="btn btn-secondary" (click)="goToLogin()">
+                Zurück zum Login
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -54,7 +75,7 @@ import { TeamInvitationService } from '@app/core/services/team-invitation.servic
       background: white;
       border-radius: 12px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-      max-width: 500px;
+      max-width: 550px;
       width: 100%;
       overflow: hidden;
     }
@@ -102,6 +123,26 @@ import { TeamInvitationService } from '@app/core/services/team-invitation.servic
       color: #f44336;
       margin: 0;
     }
+    .info-box {
+      background: #f5f5f5;
+      border-left: 4px solid #667eea;
+      padding: 16px;
+      margin: 16px 0;
+      text-align: left;
+      border-radius: 4px;
+    }
+    .info-box p {
+      margin: 8px 0;
+      font-size: 14px;
+      color: #333;
+    }
+    .button-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      margin-top: 16px;
+    }
     .btn {
       padding: 12px 32px;
       border: none;
@@ -109,7 +150,7 @@ import { TeamInvitationService } from '@app/core/services/team-invitation.servic
       font-size: 16px;
       font-weight: 600;
       cursor: pointer;
-      margin-top: 16px;
+      width: 100%;
     }
     .btn-primary {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -126,72 +167,177 @@ import { TeamInvitationService } from '@app/core/services/team-invitation.servic
 })
 export class AcceptInvitationComponent implements OnInit {
   loading = true;
+  loadingMessage = 'Einladung wird verarbeitet...';
   success = false;
   error = false;
   successMessage = '';
   errorMessage = '';
+  errorTitle = 'Einladung konnte nicht angenommen werden';
   token = '';
-  isSubmitting = false;
+  storeId?: number;
+  needsLogin = false;
+  needsRegister = false;
+  invitationPreview?: { emailMasked: string; storeName: string; role: string; expiresAt: string };
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private invitationService: TeamInvitationService
+    private invitationService: TeamInvitationService,
+    private authService: AuthService,
+    private storeService: StoreService
   ) {}
 
   ngOnInit(): void {
     this.token = this.route.snapshot.queryParamMap.get('token') || '';
 
     if (!this.token) {
-      this.error = true;
-      this.loading = false;
-      this.errorMessage = 'Kein gültiger Einladungslink';
+      this.showError('Kein gültiger Einladungslink', 'Der Link ist ungültig oder unvollständig.');
       return;
     }
 
-    this.acceptInvitation();
+    // Prüfen ob User eingeloggt ist
+    if (!this.authService.isAuthenticated()) {
+      // Token in sessionStorage speichern für späteren Login/Register-Flow
+      sessionStorage.setItem('pendingInvitationToken', this.token);
+      
+      // Einladungs-Preview laden
+      this.loadInvitationPreview();
+    } else {
+      // User ist eingeloggt → direkt akzeptieren
+      this.acceptInvitation();
+    }
+  }
+
+  private loadInvitationPreview(): void {
+    this.loadingMessage = 'Einladungsinformationen werden geladen...';
+    
+    this.invitationService.getInvitationPreview(this.token).subscribe({
+      next: (preview) => {
+        this.invitationPreview = preview;
+        this.needsLogin = true;
+        this.needsRegister = true;
+        this.showError(
+          'Anmeldung erforderlich',
+          'Um diese Einladung anzunehmen, müssen Sie sich anmelden oder registrieren.'
+        );
+      },
+      error: (err) => {
+        this.handlePreviewError(err);
+      }
+    });
   }
 
   private acceptInvitation(): void {
-    if (this.isSubmitting) return;
-    this.isSubmitting = true;
+    this.loading = true;
+    this.loadingMessage = 'Einladung wird angenommen...';
 
     this.invitationService.acceptInvitation(this.token).subscribe({
       next: (response) => {
         this.success = true;
         this.loading = false;
-        this.isSubmitting = false;
-        this.successMessage = response.message || 'Einladung erfolgreich angenommen';
+        this.storeId = response.storeId;
+        this.successMessage = response.message || 'Sie wurden erfolgreich zum Store-Team hinzugefügt!';
+        
+        // Token aus sessionStorage entfernen
+        sessionStorage.removeItem('pendingInvitationToken');
+        
+        // UI aktualisieren (Store-Liste, Berechtigungen, etc.)
+        this.refreshUserData();
       },
       error: (err) => {
-        this.error = true;
-        this.loading = false;
-        this.isSubmitting = false;
-        
-        if (err.status === 401) {
-          const currentUrl = this.router.url;
-          this.router.navigate(['/login'], {
-            queryParams: { returnUrl: currentUrl }
-          });
-          return;
-        }
-        
-        if (err.error && err.error.error) {
-          this.errorMessage = err.error.error;
-        } else {
-          this.errorMessage = 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.';
-        }
+        this.handleAcceptError(err);
       }
     });
   }
 
-  goToDashboard(): void {
-    this.router.navigate(['/dashboard']);
+  private refreshUserData(): void {
+    // Store-Liste neu laden
+    this.storeService.getMyStores().subscribe({
+      next: (stores) => {
+        console.log('✅ Store-Liste aktualisiert:', stores.length, 'Stores');
+        
+        // Token vom Backend neu validieren (lädt User-Daten inkl. neuer Berechtigungen)
+        const token = this.authService.getToken();
+        if (token) {
+          // Verwende die vorhandene validateTokenWithBackend Methode
+          (this.authService as any).validateTokenWithBackend();
+        }
+      },
+      error: (err) => {
+        console.warn('⚠️ Store-Liste konnte nicht aktualisiert werden:', err);
+      }
+    });
+  }
+
+  private handlePreviewError(err: any): void {
+    if (err.status === 404 || err.error?.error?.includes('Ungültiger')) {
+      this.showError('Ungültiger Link', 'Dieser Einladungslink ist nicht gültig.');
+    } else if (err.error?.error?.includes('abgelaufen')) {
+      this.showError('Link abgelaufen', 'Diese Einladung ist leider abgelaufen. Bitte kontaktieren Sie den Store-Administrator für eine neue Einladung.');
+    } else if (err.error?.error?.includes('nicht mehr gültig')) {
+      this.showError('Einladung bereits verwendet', 'Diese Einladung wurde bereits angenommen oder widerrufen.');
+    } else {
+      this.showError('Fehler', 'Die Einladungsinformationen konnten nicht geladen werden. Bitte versuchen Sie es erneut.');
+    }
+  }
+
+  private handleAcceptError(err: any): void {
+    this.loading = false;
+    this.error = true;
+    
+    if (err.status === 401) {
+      // User ist nicht eingeloggt
+      sessionStorage.setItem('pendingInvitationToken', this.token);
+      this.needsLogin = true;
+      this.needsRegister = true;
+      this.errorTitle = 'Anmeldung erforderlich';
+      this.errorMessage = 'Um diese Einladung anzunehmen, müssen Sie sich anmelden oder registrieren.';
+      return;
+    }
+    
+    if (err.status === 403) {
+      this.errorTitle = 'Falsche E-Mail-Adresse';
+      this.errorMessage = err.error?.error || 'Diese Einladung ist für eine andere E-Mail-Adresse bestimmt. Bitte melden Sie sich mit der korrekten E-Mail an.';
+    } else if (err.status === 404) {
+      this.errorTitle = 'Ungültiger Link';
+      this.errorMessage = 'Dieser Einladungslink ist nicht gültig.';
+    } else if (err.status === 409) {
+      this.errorTitle = 'Bereits Mitglied';
+      this.errorMessage = err.error?.error || 'Sie sind bereits Mitglied dieses Stores.';
+    } else if (err.status === 410) {
+      this.errorTitle = 'Link abgelaufen';
+      this.errorMessage = 'Diese Einladung ist leider abgelaufen. Bitte kontaktieren Sie den Store-Administrator für eine neue Einladung.';
+    } else {
+      this.errorTitle = 'Fehler';
+      this.errorMessage = err.error?.error || 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.';
+    }
+  }
+
+  private showError(title: string, message: string): void {
+    this.error = true;
+    this.loading = false;
+    this.errorTitle = title;
+    this.errorMessage = message;
+  }
+
+  goToStoreDashboard(): void {
+    if (this.storeId) {
+      this.router.navigate(['/stores', this.storeId, 'dashboard']);
+    } else {
+      this.router.navigate(['/dashboard']);
+    }
   }
 
   goToLogin(): void {
-    this.router.navigate(['/login'], {
-      queryParams: { returnUrl: `/invitations/accept?token=${this.token}` }
+    // Token bleibt in sessionStorage gespeichert
+    this.router.navigate(['/login']);
+  }
+
+  goToRegister(): void {
+    // Token als Query-Parameter und in sessionStorage
+    const email = this.invitationPreview?.emailMasked || '';
+    this.router.navigate(['/register'], {
+      queryParams: { invitationToken: this.token }
     });
   }
 }

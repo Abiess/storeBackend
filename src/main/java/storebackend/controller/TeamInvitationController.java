@@ -186,20 +186,33 @@ public class TeamInvitationController {
                 token.substring(0, Math.min(8, token.length())), user.getId());
 
         try {
-            invitationService.acceptInvitation(token, user);
+            Long storeId = invitationService.acceptInvitation(token, user);
             
-            log.info("✅ Invitation accepted successfully: user={}", user.getId());
+            log.info("✅ Invitation accepted successfully: user={}, store={}", user.getId(), storeId);
             
             return ResponseEntity.ok(Map.of(
                     "success", true,
-                    "message", "Einladung erfolgreich angenommen"
+                    "message", "Einladung erfolgreich angenommen",
+                    "storeId", storeId
             ));
             
         } catch (RuntimeException e) {
             log.error("❌ Accept invitation failed: user={}, error={}", 
                     user.getId(), e.getMessage());
             
-            return ResponseEntity.badRequest()
+            // Status-Code basierend auf Fehlertyp
+            HttpStatus status = HttpStatus.BAD_REQUEST;
+            if (e.getMessage().contains("abgelaufen")) {
+                status = HttpStatus.GONE; // 410
+            } else if (e.getMessage().contains("bereits verwendet") || e.getMessage().contains("bereits Mitglied")) {
+                status = HttpStatus.CONFLICT; // 409
+            } else if (e.getMessage().contains("andere E-Mail-Adresse")) {
+                status = HttpStatus.FORBIDDEN; // 403
+            } else if (e.getMessage().contains("Ungültiger")) {
+                status = HttpStatus.NOT_FOUND; // 404
+            }
+            
+            return ResponseEntity.status(status)
                     .body(Map.of("error", e.getMessage()));
         }
     }
@@ -269,6 +282,7 @@ public class TeamInvitationController {
 
     /**
      * Einladungs-Vorschau für nicht-eingeloggte Benutzer (PUBLIC!)
+     * Gibt die volle E-Mail zurück (nicht maskiert) damit der User sich damit registrieren kann
      */
     @GetMapping("/team-invitations/preview")
     public ResponseEntity<Map<String, Object>> previewInvitation(@RequestParam String token) {
@@ -286,6 +300,8 @@ public class TeamInvitationController {
         }
         
         Map<String, Object> preview = new HashMap<>();
+        // WICHTIG: Volle E-Mail zurückgeben für Registrierung
+        preview.put("email", invitation.getEmail());
         preview.put("emailMasked", maskEmail(invitation.getEmail()));
         preview.put("storeName", invitation.getStore().getName());
         preview.put("role", invitation.getRole());
