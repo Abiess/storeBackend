@@ -101,6 +101,14 @@ public class Order {
     @Column(name = "country_code", nullable = false, length = 2)
     private String countryCode = "DE";
 
+    /**
+     * Umsatzsteuer-Snapshot (Snapshot vom Store zum Bestellzeitpunkt)
+     * true = Umsatzsteuer wird berechnet
+     * false = Umsatzsteuer entfällt (alle TaxRates = 0)
+     */
+    @Column(name = "vat_enabled", nullable = false)
+    private Boolean vatEnabled = true;
+
     // ─── Zwischensumme (Produkte ohne Versand) ────────────────────
     @Column(name = "subtotal_net", precision = 15, scale = 2)
     private BigDecimal subtotalNet;
@@ -251,18 +259,44 @@ public class Order {
         if (orderNumber == null) {
             orderNumber = "ORD-" + System.currentTimeMillis();
         }
-        // Legacy totalAmount von totalGross synchronisieren
-        if (this.totalGross != null) {
-            this.totalAmount = this.totalGross;
+        
+        // ─── VALIDIERUNG statt automatischer Synchronisierung ─────────────────────────
+        // Die fachliche Zuweisung totalAmount = totalGross sollte im Service erfolgen,
+        // nicht versteckt im Entity-Hook. Hier nur noch finale Absicherung.
+        if (this.totalAmount == null || this.totalGross == null) {
+            throw new IllegalStateException(
+                "Order must have totalAmount and totalGross calculated before persisting. " +
+                "This is a critical bug - orders must be fully calculated in the service layer."
+            );
+        }
+        
+        // Konsistenz-Check
+        if (this.totalAmount.compareTo(this.totalGross) != 0) {
+            throw new IllegalStateException(
+                String.format(
+                    "Order totalAmount (%.2f) must equal totalGross (%.2f). " +
+                    "This indicates a calculation error in the service layer.",
+                    this.totalAmount, this.totalGross
+                )
+            );
         }
     }
 
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
-        // Legacy totalAmount synchronisieren
-        if (this.totalGross != null) {
-            this.totalAmount = this.totalGross;
+        
+        // Bei Updates ebenfalls Konsistenz prüfen
+        if (this.totalAmount != null && this.totalGross != null) {
+            if (this.totalAmount.compareTo(this.totalGross) != 0) {
+                throw new IllegalStateException(
+                    String.format(
+                        "Order totalAmount (%.2f) must equal totalGross (%.2f). " +
+                        "This indicates a calculation error in the service layer.",
+                        this.totalAmount, this.totalGross
+                    )
+                );
+            }
         }
     }
 }

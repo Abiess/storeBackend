@@ -166,7 +166,7 @@ public class OrderService {
         BigDecimal subtotalTax = BigDecimal.ZERO;
         BigDecimal subtotalGross = BigDecimal.ZERO;
 
-        // Create order (save early to get ID for items)
+        // Create order object (NOT persisted yet)
         Order order = new Order();
         order.setStore(store);
         order.setCustomer(customer);
@@ -181,6 +181,7 @@ public class OrderService {
         order.setCurrencyCode(currencyCode);
         order.setCountryCode(countryCode);
         order.setPriceMode(priceMode);
+        order.setVatEnabled(vatEnabled);
 
         // Set delivery information
         order.setDeliveryType(deliveryType);
@@ -210,7 +211,8 @@ public class OrderService {
         billingAddr.setCountry(billingCountry);
         order.setBillingAddress(billingAddr);
 
-        Order savedOrder = orderRepository.save(order);
+        // ─── CREATE ORDER ITEMS (not persisted yet) ──────────────────────────────────
+        List<OrderItem> orderItems = new java.util.ArrayList<>();
 
         // Create order items with tax calculations
         for (CartItem cartItem : cartItems) {
@@ -267,9 +269,9 @@ public class OrderService {
                 .setScale(2, RoundingMode.HALF_UP);
 
 
-            // Create order item
+            // Create order item (not persisted yet, will be saved with order)
             OrderItem orderItem = new OrderItem();
-            orderItem.setOrder(savedOrder);
+            orderItem.setOrder(order); // Set reference to unsaved order - FK will be resolved by Hibernate
             orderItem.setProduct(product);
             orderItem.setVariant(variant);
             orderItem.setName(product.getTitle());
@@ -303,38 +305,20 @@ public class OrderService {
 
             enrichOrderItemWithMarketplaceData(orderItem, product, store);
             
-            
-            orderItemRepository.save(orderItem);
-            
+            // Add to list (will be saved after order totals are calculated)
+            orderItems.add(orderItem);
 
             // Accumulate subtotals
             subtotalNet = subtotalNet.add(lineNet);
             subtotalTax = subtotalTax.add(lineTax);
             subtotalGross = subtotalGross.add(lineGross);
-
-            // Reduce inventory
-            if (variant != null) {
-                inventoryService.adjustInventory(
-                    variant.getId(),
-                    -quantity,
-                    "SALE",
-                    "Order " + savedOrder.getOrderNumber(),
-                    customer
-                );
-            }
         }
 
         // ─── RABATT/COUPON BERECHNEN (falls vorhanden) ───────────────────────────
-        // Items aus DB laden für Rabattberechnung (savedOrder.items ist noch nicht initialisiert)
-        List<OrderItem> savedItems = orderItemRepository.findByOrderId(savedOrder.getId());
-        
-        savedItems.forEach(item -> {
-        });
-        
         DiscountBreakdown discountBreakdown = calculateDiscountBreakdown(
             appliedCouponCodes,
             store,
-            savedItems,
+            orderItems, // Use in-memory items, not DB items
             subtotalGross.setScale(2, RoundingMode.HALF_UP),
             customerEmail,
             null, // domainHost - kann später aus Request extrahiert werden
@@ -365,20 +349,20 @@ public class OrderService {
         BigDecimal shippingGross = shippingBreakdown.gross();
 
         // ─── ORDER-SUMMEN MIT RABATT SETZEN ───────────────────────────────────────────
-        savedOrder.setSubtotalNet(subtotalNet.setScale(2, RoundingMode.HALF_UP));
-        savedOrder.setSubtotalGross(subtotalGross.setScale(2, RoundingMode.HALF_UP));
+        order.setSubtotalNet(subtotalNet.setScale(2, RoundingMode.HALF_UP));
+        order.setSubtotalGross(subtotalGross.setScale(2, RoundingMode.HALF_UP));
         
-        savedOrder.setDiscountNet(discountNet);
-        savedOrder.setDiscountTax(discountTax);
-        savedOrder.setDiscountGross(discountGross);
-        savedOrder.setCouponCodeSnapshot(discountBreakdown.couponCode());
-        savedOrder.setDiscountTypeSnapshot(discountBreakdown.discountType());
-        savedOrder.setDiscountValueSnapshot(discountBreakdown.discountValue());
+        order.setDiscountNet(discountNet);
+        order.setDiscountTax(discountTax);
+        order.setDiscountGross(discountGross);
+        order.setCouponCodeSnapshot(discountBreakdown.couponCode());
+        order.setDiscountTypeSnapshot(discountBreakdown.discountType());
+        order.setDiscountValueSnapshot(discountBreakdown.discountValue());
         
-        savedOrder.setShippingNet(shippingNet);
-        savedOrder.setShippingTax(shippingTax);
-        savedOrder.setShippingGross(shippingGross);
-        savedOrder.setDeliveryFee(shippingGross); // Legacy field
+        order.setShippingNet(shippingNet);
+        order.setShippingTax(shippingTax);
+        order.setShippingGross(shippingGross);
+        order.setDeliveryFee(shippingGross); // Legacy field
         
         // Formel: total = subtotal - discount + shipping
         BigDecimal taxTotal = subtotalTax
@@ -394,12 +378,38 @@ public class OrderService {
             .add(shippingGross)
             .setScale(2, RoundingMode.HALF_UP);
         
-        savedOrder.setTaxTotal(taxTotal);
-        savedOrder.setTotalNet(totalNet);
-        savedOrder.setTotalGross(totalGross);
-        savedOrder.setTotalAmount(totalGross); // Legacy field for compatibility
+        order.setTaxTotal(taxTotal);
+        order.setTotalNet(totalNet);
+        order.setTotalGross(totalGross);
+        order.setTotalAmount(totalGross); // Legacy field for compatibility
 
-        orderRepository.save(savedOrder);
+        // ─── VALIDIERUNG: Sicherstellen dass alle Pflichtfelder berechnet wurden ──────
+        validateCalculatedOrder(order, orderItems);
+
+        // ─── PERSIST ORDER & ITEMS IN ONE TRANSACTION ─────────────────────────────────
+        // Order wird EINMALIG mit vollständig berechneten Werten gespeichert
+        Order savedOrder = orderRepository.save(order);
+        
+        // OrderItems mit gespeicherter Order-ID persistieren
+        orderItems.forEach(item -> item.setOrder(savedOrder));
+        orderItemRepository.saveAll(orderItems);
+
+        // ─── INVENTORY ADJUSTMENTS ────────────────────────────────────────────────────
+        // Nach erfolgreicher Persistierung Lagerbestände anpassen
+        for (int i = 0; i < orderItems.size(); i++) {
+            OrderItem item = orderItems.get(i);
+            CartItem cartItem = cartItems.get(i);
+            
+            if (item.getVariant() != null) {
+                inventoryService.adjustInventory(
+                    item.getVariant().getId(),
+                    -item.getQuantity(),
+                    "SALE",
+                    "Order " + savedOrder.getOrderNumber(),
+                    customer
+                );
+            }
+        }
 
         // ─── COUPON-NUTZUNG FINALISIEREN (falls Coupon verwendet) ────────────────────
         if (discountBreakdown.validationRequest() != null && 
@@ -960,5 +970,89 @@ public class OrderService {
             coupon.getCode(), discountType, discountValue, freeShipping,
             request, response.getValidCoupons()
         );
+    }
+
+    /**
+     * Validiert eine berechnete Order vor dem finalen Speichern.
+     * Stellt sicher, dass alle Pflichtfelder korrekt berechnet wurden.
+     * 
+     * @param order Die zu validierende Order
+     * @param items Die OrderItems der Bestellung
+     * @throws IllegalStateException wenn Pflichtfelder fehlen oder inkonsistent sind
+     */
+    private void validateCalculatedOrder(Order order, List<OrderItem> items) {
+        // ─── NULL-Prüfungen ──────────────────────────────────────────────────────────
+        if (order.getTotalAmount() == null) {
+            throw new IllegalStateException(
+                "Order totalAmount was not calculated. This indicates a bug in order creation flow."
+            );
+        }
+
+        if (order.getTotalGross() == null || order.getTotalNet() == null) {
+            throw new IllegalStateException(
+                "Order totalGross/totalNet were not calculated. This indicates a bug in order creation flow."
+            );
+        }
+
+        if (order.getTaxTotal() == null) {
+            throw new IllegalStateException(
+                "Order taxTotal was not calculated. This indicates a bug in order creation flow."
+            );
+        }
+
+        if (order.getSubtotalNet() == null || order.getSubtotalGross() == null) {
+            throw new IllegalStateException(
+                "Order subtotals were not calculated. This indicates a bug in order creation flow."
+            );
+        }
+
+        // Shipping muss immer gesetzt sein (auch wenn PICKUP = 0.00)
+        if (order.getShippingNet() == null || order.getShippingGross() == null) {
+            throw new IllegalStateException(
+                "Order shipping amounts were not calculated. This indicates a bug in order creation flow."
+            );
+        }
+
+        // ─── KONSISTENZ-PRÜFUNGEN ────────────────────────────────────────────────────
+        // totalAmount muss mit totalGross synchron sein
+        if (order.getTotalAmount().compareTo(order.getTotalGross()) != 0) {
+            throw new IllegalStateException(
+                String.format(
+                    "Order totalAmount (%.2f) and totalGross (%.2f) are inconsistent. " +
+                    "This indicates a bug in order calculation.",
+                    order.getTotalAmount(), order.getTotalGross()
+                )
+            );
+        }
+
+        // Bei Bestellungen mit Items muss Subtotal > 0 sein
+        // (Ausnahme: 100%-Rabatt - dann ist totalGross = 0, aber subtotalGross > 0)
+        if (!items.isEmpty() && order.getSubtotalGross().signum() <= 0) {
+            throw new IllegalStateException(
+                "Order has items but subtotalGross is zero or negative. " +
+                "This indicates that item calculations were not performed correctly."
+            );
+        }
+
+        // Logische Prüfung: totalGross = subtotalGross - discountGross + shippingGross
+        BigDecimal expectedTotal = order.getSubtotalGross()
+            .subtract(order.getDiscountGross() != null ? order.getDiscountGross() : BigDecimal.ZERO)
+            .add(order.getShippingGross())
+            .setScale(2, RoundingMode.HALF_UP);
+        
+        if (order.getTotalGross().compareTo(expectedTotal) != 0) {
+            throw new IllegalStateException(
+                String.format(
+                    "Order total calculation is incorrect. " +
+                    "Expected: %.2f (subtotal %.2f - discount %.2f + shipping %.2f), " +
+                    "Got: %.2f",
+                    expectedTotal,
+                    order.getSubtotalGross(),
+                    order.getDiscountGross() != null ? order.getDiscountGross() : BigDecimal.ZERO,
+                    order.getShippingGross(),
+                    order.getTotalGross()
+                )
+            );
+        }
     }
 }
