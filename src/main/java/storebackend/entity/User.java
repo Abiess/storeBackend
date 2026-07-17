@@ -49,6 +49,10 @@ public class User {
 
     @Column(name = "email_verified", nullable = false)
     private Boolean emailVerified = false;
+    
+    /** Zeitpunkt des letzten Versands einer Aktivierungs-/Verifizierungs-Mail */
+    @Column(name = "activation_email_sent_at")
+    private LocalDateTime activationEmailSentAt;
 
     @Column(name = "preferred_language", length = 5, nullable = false)
     private String preferredLanguage = "en";
@@ -56,7 +60,6 @@ public class User {
     /** Telefonnummer für WhatsApp/Telegram-Auth (nullable für bestehende E-Mail-User) */
     @Column(name = "phone_number", length = 20, nullable = true, unique = true)
     private String phoneNumber;
-
 
     /** Anzahl AI-Calls (Bildgenerierung etc.) im aktuellen Monat. */
     @Column(name = "ai_calls_this_month", nullable = false)

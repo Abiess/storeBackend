@@ -18,8 +18,20 @@ public class CustomerProfile {
     private Long id;
 
     @OneToOne
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
+    
+    @ManyToOne
+    @JoinColumn(name = "store_id")
+    private Store store;
+    
+    /** External source (e.g., "WOOCOMMERCE") - store-specific */
+    @Column(name = "external_source", length = 50)
+    private String externalSource;
+    
+    /** External customer ID (e.g., WooCommerce customer ID) - store-specific */
+    @Column(name = "external_id", length = 100)
+    private String externalId;
 
     @Column(name = "first_name")
     private String firstName;

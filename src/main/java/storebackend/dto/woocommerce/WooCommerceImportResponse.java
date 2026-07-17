@@ -24,6 +24,21 @@ public class WooCommerceImportResponse {
     private Integer skippedCount;
     private Integer failedCount;
     
+    // Customer counts (wenn importCustomers=true)
+    private Integer customersImported;        // Neu erstellt
+    private Integer customersLinked;          // Existierender User → neuem Store zugeordnet
+    private Integer customersSkipped;         // Bereits im Store vorhanden
+    private Integer customersFailed;          // Fehler beim Import
+    
+    // Customer pagination
+    private Integer customerCurrentPage;
+    private Integer customerNextPage;
+    private Integer customerPageSize;
+    private Boolean hasMoreCustomers;
+    
+    // Importierte Kunden (nur neue, nicht linked) für Aktivierungsversand
+    private List<ImportedCustomerDto> importedCustomers;
+    
     // Warnings
     private List<String> warnings;
     

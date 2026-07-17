@@ -13,10 +13,7 @@ import storebackend.repository.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * WooCommerce Import Service.
@@ -24,6 +21,7 @@ import java.util.Map;
  * MVP Scope:
  * - Import categories (flat, no hierarchy)
  * - Import simple products (type=simple)
+ * - Import customers (with address)
  * - Skip variable products (type=variable) with warning
  * - Import images via WooCommerceImageService
  * - Skip duplicates (externalSource + externalId + SKU)
@@ -49,7 +47,10 @@ public class WooCommerceImportService {
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
     private final StoreRepository storeRepository;
+    private final UserRepository userRepository;
+    private final CustomerProfileRepository customerProfileRepository;
     private final storebackend.util.HtmlToTextConverter htmlToTextConverter;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     private static final String EXTERNAL_SOURCE = "WOOCOMMERCE";
     private static final int MAX_IMPORT_SIZE = 50; // MVP: max 50 products per import
@@ -110,6 +111,21 @@ public class WooCommerceImportService {
                 request.isImportImages()
             );
 
+            // Import customers (if requested)
+            CustomerImportResult customerResult = new CustomerImportResult();
+            if (request.isImportCustomers()) {
+                log.info("Importing WooCommerce customers for store {} (page {}, pageSize {})", 
+                    storeId, request.getCustomerPage(), request.getCustomerPageSize());
+                customerResult = importCustomers(
+                    config, 
+                    store, 
+                    jobId, 
+                    request.isImportOnlyCustomersWithOrders(),
+                    request.getCustomerPage(),
+                    request.getCustomerPageSize()
+                );
+            }
+
             // Update job
             job.setStatus("COMPLETED");
             job.setCompletedAt(LocalDateTime.now());
@@ -123,17 +139,37 @@ public class WooCommerceImportService {
                 "Import completed: %d imported, %d skipped, %d failed",
                 result.imported, result.skipped, result.failed
             ));
+            
+            if (request.isImportCustomers()) {
+                logSuccess(jobId, String.format(
+                    "Customers: %d created, %d linked, %d skipped, %d failed",
+                    customerResult.created, customerResult.linked, customerResult.skipped, customerResult.failed
+                ));
+            }
 
             // Build response
-            return WooCommerceImportResponse.builder()
+            WooCommerceImportResponse.WooCommerceImportResponseBuilder builder = WooCommerceImportResponse.builder()
                     .jobId(jobId)
                     .status("COMPLETED")
                     .importedCount(result.imported)
                     .skippedCount(result.skipped)
                     .failedCount(result.failed)
                     .warnings(result.warnings)
-                    .messageKey("woocommerce.import.success")
-                    .build();
+                    .messageKey("woocommerce.import.success");
+            
+            if (request.isImportCustomers()) {
+                builder.customersImported(customerResult.created)
+                       .customersLinked(customerResult.linked)
+                       .customersSkipped(customerResult.skipped)
+                       .customersFailed(customerResult.failed)
+                       .customerCurrentPage(customerResult.currentPage)
+                       .customerNextPage(customerResult.nextPage)
+                       .customerPageSize(customerResult.pageSize)
+                       .hasMoreCustomers(customerResult.hasMore)
+                       .importedCustomers(customerResult.importedCustomers);
+            }
+            
+            return builder.build();
 
         } catch (Exception e) {
             // Update job
@@ -499,5 +535,261 @@ public class WooCommerceImportService {
         int skipped = 0;
         int failed = 0;
         List<String> warnings = new ArrayList<>();
+    }
+    
+    private static class CustomerImportResult {
+        int created = 0;      // Neu erstellte User + Profile
+        int linked = 0;       // Existierende User → neues Profile für Store
+        int skipped = 0;      // Bereits im Store vorhanden
+        int failed = 0;       // Fehler
+        
+        // Pagination
+        int currentPage = 1;
+        int nextPage = 2;
+        int pageSize = 25;
+        boolean hasMore = false;
+        
+        // Importierte neue Kunden (für Aktivierungsliste)
+        List<storebackend.dto.woocommerce.ImportedCustomerDto> importedCustomers = new ArrayList<>();
+    }
+    
+    // ─────────────────────────────────────────────────────────────────────────
+    // Customer Import
+    // ─────────────────────────────────────────────────────────────────────────
+    
+    /**
+     * Import WooCommerce customers (paginated).
+     * 
+     * Security:
+     * - NO WordPress passwords imported
+     * - Users marked as emailVerified=false (must verify)
+     * - Secure random password (properly encoded)
+     * - Multi-tenant: User reuse + store-specific CustomerProfile
+     * - ExternalId stored at CustomerProfile (store-specific)
+     * 
+     * @param config WooCommerce config
+     * @param store Store
+     * @param jobId Import job ID
+     * @param onlyWithOrders Only import customers with orders
+     * @param page Page number (1-based)
+     * @param pageSize Customers per page (max 100)
+     * @return Customer import result
+     */
+    private CustomerImportResult importCustomers(
+            WooCommerceConfig config,
+            Store store,
+            Long jobId,
+            boolean onlyWithOrders,
+            int page,
+            int pageSize
+    ) {
+        CustomerImportResult result = new CustomerImportResult();
+        
+        // Validate and clamp pageSize
+        pageSize = Math.min(Math.max(pageSize, 10), 100);
+        
+        result.currentPage = page;
+        result.pageSize = pageSize;
+        
+        try {
+            // Fetch ONE page of customers from WooCommerce
+            List<storebackend.dto.woocommerce.api.WooCustomerDto> wooCustomers = 
+                apiClient.getCustomers(config, page, pageSize, null);
+            
+            log.info("Fetched {} customers from WooCommerce (page {}, pageSize {})", 
+                wooCustomers.size(), page, pageSize);
+            logInfo(jobId, String.format("Found %d customers on page %d", wooCustomers.size(), page));
+            
+            // Determine if there are more pages
+            result.hasMore = wooCustomers.size() >= pageSize;
+            result.nextPage = result.hasMore ? page + 1 : page;
+            
+            // Filter by orders if requested
+            if (onlyWithOrders) {
+                int originalCount = wooCustomers.size();
+                wooCustomers = wooCustomers.stream()
+                    .filter(c -> c.getOrdersCount() != null && c.getOrdersCount() > 0)
+                    .toList();
+                log.info("Filtered to {} customers with orders (from {})", wooCustomers.size(), originalCount);
+                logInfo(jobId, String.format("Filtered to %d customers with orders", wooCustomers.size()));
+            }
+            
+            for (storebackend.dto.woocommerce.api.WooCustomerDto wooCustomer : wooCustomers) {
+                try {
+                    // Skip if no email
+                    if (wooCustomer.getEmail() == null || wooCustomer.getEmail().trim().isEmpty()) {
+                        result.skipped++;
+                        log.warn("Skipping customer {}: no email", wooCustomer.getId());
+                        continue;
+                    }
+                    
+                    String email = wooCustomer.getEmail().trim().toLowerCase();
+                    
+                    // Check if CustomerProfile already exists for this store + externalId
+                    Optional<CustomerProfile> existingProfile = 
+                        customerProfileRepository.findByStoreIdAndExternalSourceAndExternalId(
+                            store.getId(), EXTERNAL_SOURCE, wooCustomer.getId().toString()
+                        );
+                    
+                    if (existingProfile.isPresent()) {
+                        result.skipped++;
+                        log.info("Skipping customer {}: already imported to store {}", 
+                            wooCustomer.getId(), store.getId());
+                        continue;
+                    }
+                    
+                    // Find or create User
+                    User user = userRepository.findByEmail(email)
+                        .orElseGet(() -> createUser(wooCustomer, email));
+                    
+                    boolean userCreated = user.getId() != null && 
+                        userRepository.findByEmail(email).isEmpty();
+                    
+                    if (userCreated) {
+                        user = userRepository.save(user);
+                    }
+                    
+                    // Check if CustomerProfile already exists for this user + store
+                    Optional<CustomerProfile> existingStoreProfile = 
+                        customerProfileRepository.findByUserIdAndStoreId(user.getId(), store.getId());
+                    
+                    if (existingStoreProfile.isPresent()) {
+                        result.skipped++;
+                        log.info("Skipping customer {}: user {} already linked to store {}", 
+                            wooCustomer.getId(), email, store.getId());
+                        continue;
+                    }
+                    
+                    // Create CustomerProfile (store-specific)
+                    CustomerProfile profile = new CustomerProfile();
+                    profile.setUser(user);
+                    profile.setStore(store);
+                    profile.setExternalSource(EXTERNAL_SOURCE);
+                    profile.setExternalId(wooCustomer.getId().toString());
+                    profile.setFirstName(wooCustomer.getFirstName());
+                    profile.setLastName(wooCustomer.getLastName());
+                    profile.setPhone(wooCustomer.getBilling() != null ? wooCustomer.getBilling().getPhone() : null);
+                    
+                    // Import billing address
+                    if (wooCustomer.getBilling() != null) {
+                        profile.setDefaultBillingAddress(buildBillingAddress(wooCustomer.getBilling()));
+                    }
+                    
+                    // Import shipping address
+                    if (wooCustomer.getShipping() != null) {
+                        profile.setDefaultShippingAddress(buildShippingAddress(wooCustomer.getShipping()));
+                    }
+                    
+                    customerProfileRepository.save(profile);
+                    
+                    if (userCreated) {
+                        result.created++;
+                        
+                        // Add to imported customers list (for activation UI)
+                        result.importedCustomers.add(new storebackend.dto.woocommerce.ImportedCustomerDto(
+                            user.getId(),
+                            user.getEmail(),
+                            user.getName(),
+                            user.getEmailVerified(),
+                            user.getActivationEmailSentAt()
+                        ));
+                        
+                        log.info("✅ Created user + profile: {} ({}) for store {}", 
+                            email, wooCustomer.getId(), store.getId());
+                    } else {
+                        result.linked++;
+                        log.info("✅ Linked existing user {} to store {} (WooCustomer: {})", 
+                            email, store.getId(), wooCustomer.getId());
+                    }
+                    
+                } catch (Exception e) {
+                    result.failed++;
+                    log.error("❌ Failed to import customer {}: {}", 
+                        wooCustomer.getId(), e.getMessage());
+                    logError(jobId, String.format(
+                        "Failed to import customer %s: %s", 
+                        wooCustomer.getEmail(), e.getMessage()
+                    ));
+                }
+            }
+            
+        } catch (Exception e) {
+            log.error("❌ Customer import failed: {}", e.getMessage());
+            logError(jobId, "Customer import failed: " + e.getMessage());
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Create new User from WooCommerce customer.
+     * SECURITY: Password is properly encoded, not stored in plain text.
+     */
+    private User createUser(storebackend.dto.woocommerce.api.WooCustomerDto wooCustomer, String email) {
+        User user = new User();
+        user.setEmail(email);
+        user.setName(buildFullName(wooCustomer.getFirstName(), wooCustomer.getLastName()));
+        
+        // SECURITY: Generate random password and encode it properly
+        String randomPassword = generateRandomPassword();
+        user.setPasswordHash(passwordEncoder.encode(randomPassword));
+        // Do NOT log the plain password!
+        
+        user.setEmailVerified(false); // User must verify email
+        user.setRoles(Set.of(storebackend.enums.Role.USER));
+        user.setPreferredLanguage("de"); // Default
+        
+        return user;
+    }
+    
+    /**
+     * Build billing Address from WooCommerce data.
+     */
+    private Address buildBillingAddress(storebackend.dto.woocommerce.api.WooCustomerDto.BillingAddress billing) {
+        Address address = new Address();
+        address.setFirstName(billing.getFirstName());
+        address.setLastName(billing.getLastName());
+        address.setAddress1(billing.getAddress1());
+        address.setAddress2(billing.getAddress2());
+        address.setCity(billing.getCity());
+        address.setPostalCode(billing.getPostcode());
+        address.setCountry(billing.getCountry());
+        address.setPhone(billing.getPhone());
+        return address;
+    }
+    
+    /**
+     * Build shipping Address from WooCommerce data.
+     */
+    private Address buildShippingAddress(storebackend.dto.woocommerce.api.WooCustomerDto.ShippingAddress shipping) {
+        Address address = new Address();
+        address.setFirstName(shipping.getFirstName());
+        address.setLastName(shipping.getLastName());
+        address.setAddress1(shipping.getAddress1());
+        address.setAddress2(shipping.getAddress2());
+        address.setCity(shipping.getCity());
+        address.setPostalCode(shipping.getPostcode());
+        address.setCountry(shipping.getCountry());
+        return address;
+    }
+    
+    /**
+     * Build full name from first and last name.
+     */
+    private String buildFullName(String firstName, String lastName) {
+        if (firstName == null || firstName.isEmpty()) {
+            return lastName != null ? lastName : "Customer";
+        }
+        if (lastName == null || lastName.isEmpty()) {
+            return firstName;
+        }
+        return firstName + " " + lastName;
+    }
+    
+    /**
+     * Generate random secure password.
+     */
+    private String generateRandomPassword() {
+        return java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 16);
     }
 }

@@ -86,6 +86,11 @@ export class WooCommerceService {
       }
     );
   }
+
+  /** Send activation email to imported customer */
+  sendActivationEmail(storeId: number, userId: number): Observable<any> {
+    return this.http.post(`${this.apiUrl}/stores/${storeId}/customers/activation/${userId}`, {});
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -156,6 +161,10 @@ export interface WooCommerceImportRequest {
   importImages?: boolean;
   skipExisting?: boolean;
   limit?: number;
+  importCustomers?: boolean;
+  importOnlyCustomersWithOrders?: boolean;
+  customerPage?: number;
+  customerPageSize?: number;
 }
 
 export interface WooCommerceImportResponse {
@@ -164,12 +173,29 @@ export interface WooCommerceImportResponse {
   importedCount: number;
   skippedCount: number;
   failedCount: number;
+  customersImported?: number;       // Neu erstellt
+  customersLinked?: number;         // Existierender User → neuem Store zugeordnet
+  customersSkipped?: number;        // Bereits im Store vorhanden
+  customersFailed?: number;         // Fehler
+  customerCurrentPage?: number;
+  customerNextPage?: number;
+  customerPageSize?: number;
+  hasMoreCustomers?: boolean;
+  importedCustomers?: ImportedCustomerDto[];  // Für Aktivierungsversand
   warnings?: string[];
   messageKey: string;
   // Backwards compatibility
   totalProducts?: number;
   estimatedTime?: number;
   message?: string;
+}
+
+export interface ImportedCustomerDto {
+  userId: number;
+  email: string;
+  name: string;
+  emailVerified: boolean;
+  activationEmailSentAt?: string;
 }
 
 /**

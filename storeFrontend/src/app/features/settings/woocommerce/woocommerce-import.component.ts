@@ -13,6 +13,7 @@ import {
   WooCommerceProductPreview,
   WooCommerceImportRequest,
   WooCommerceImportResponse,
+  ImportedCustomerDto,
   CleanDescriptionsResponse,
   ProductCleanupPreview
 } from '@app/core/services/woocommerce.service';
@@ -68,6 +69,17 @@ export class WooCommerceImportComponent implements OnInit {
   // Import State
   importing: boolean = false;
   importResult: WooCommerceImportResponse | null = null;
+  
+  // Import Options
+  importImages: boolean = true;
+  importCustomers: boolean = false;
+  importOnlyCustomersWithOrders: boolean = true;
+  customerPage: number = 1;
+  customerPageSize: number = 25;
+
+  // Customer Activation Tracking
+  activationLoading = new Set<number>();
+  activationResults = new Map<number, { sent: boolean; message: string }>();
 
   // Cleanup State
   cleaningDescriptions: boolean = false;
@@ -245,8 +257,12 @@ export class WooCommerceImportComponent implements OnInit {
     this.importResult = null;
 
     const request: WooCommerceImportRequest = {
-      importImages: true,
-      skipExisting: true
+      importImages: this.importImages,
+      skipExisting: true,
+      importCustomers: this.importCustomers,
+      importOnlyCustomersWithOrders: this.importOnlyCustomersWithOrders,
+      customerPage: this.customerPage,
+      customerPageSize: this.customerPageSize
     };
 
     this.wooCommerceService.startImport(this.storeId, request).subscribe({
@@ -256,7 +272,21 @@ export class WooCommerceImportComponent implements OnInit {
 
         if (response.status === 'COMPLETED') {
           // Success toast with details
-          const message = `Import abgeschlossen: ${response.importedCount} importiert, ${response.skippedCount} übersprungen, ${response.failedCount} Fehler`;
+          let message = `Import abgeschlossen: ${response.importedCount} Produkte importiert, ${response.skippedCount} übersprungen, ${response.failedCount} Fehler`;
+          
+          if (response.customersImported !== undefined || response.customersLinked !== undefined) {
+            const created = response.customersImported || 0;
+            const linked = response.customersLinked || 0;
+            const skipped = response.customersSkipped || 0;
+            const failed = response.customersFailed || 0;
+            message += `. Kunden: ${created} erstellt, ${linked} verknüpft, ${skipped} übersprungen, ${failed} Fehler`;
+            
+            // Update page for next import
+            if (response.hasMoreCustomers) {
+              this.customerPage = response.customerNextPage || (this.customerPage + 1);
+            }
+          }
+          
           this.toastService.success(message);
 
           // Show warnings if any
@@ -434,5 +464,55 @@ export class WooCommerceImportComponent implements OnInit {
     if (!text) return '';
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
+  }
+
+  /**
+   * Send activation email to imported customer
+   */
+  sendActivation(customer: ImportedCustomerDto): void {
+    if (this.activationLoading.has(customer.userId)) {
+      return;
+    }
+
+    this.activationLoading.add(customer.userId);
+
+    this.wooCommerceService
+      .sendActivationEmail(this.storeId, customer.userId)
+      .subscribe({
+        next: (response: any) => {
+          this.activationLoading.delete(customer.userId);
+
+          this.activationResults.set(customer.userId, {
+            sent: response.emailSent,
+            message: response.message
+          });
+
+          if (response.emailSent) {
+            // Update local timestamp
+            customer.activationEmailSentAt = 
+              response.activationEmailSentAt ?? new Date().toISOString();
+
+            this.toastService.success(
+              'Aktivierungs-E-Mail versendet'
+            );
+          } else {
+            this.toastService.warning(
+              response.message || 'E-Mail-Versand fehlgeschlagen'
+            );
+          }
+        },
+        error: () => {
+          this.activationLoading.delete(customer.userId);
+
+          this.activationResults.set(customer.userId, {
+            sent: false,
+            message: 'Error'
+          });
+
+          this.toastService.error(
+            'E-Mail-Versand fehlgeschlagen'
+          );
+        }
+      });
   }
 }

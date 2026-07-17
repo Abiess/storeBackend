@@ -273,6 +273,47 @@
         </div>
       </div>
 
+      <!-- Import Options -->
+      <div class="import-options">
+        <h3>📋 {{ 'woocommerce.importOptions' | translate }}</h3>
+        
+        <div class="option-group">
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="importImages" />
+            <span>{{ 'woocommerce.importImagesOption' | translate }}</span>
+          </label>
+          <small>{{ 'woocommerce.importImagesHint' | translate }}</small>
+        </div>
+
+        <div class="option-group">
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="importCustomers" />
+            <span>{{ 'woocommerce.importCustomersOption' | translate }}</span>
+          </label>
+          <small>{{ 'woocommerce.importCustomersHint' | translate }}</small>
+        </div>
+
+        <div class="option-group" *ngIf="importCustomers">
+          <label class="checkbox-label sub-option">
+            <input type="checkbox" [(ngModel)]="importOnlyCustomersWithOrders" />
+            <span>{{ 'woocommerce.importOnlyCustomersWithOrdersOption' | translate }}</span>
+          </label>
+          <small>{{ 'woocommerce.importOnlyCustomersWithOrdersHint' | translate }}</small>
+        </div>
+
+        <div class="info-box" *ngIf="importCustomers">
+          <span class="info-icon">ℹ️</span>
+          <div class="info-content">
+            <strong>{{ 'woocommerce.customerImportInfo.title' | translate }}</strong>
+            <ul>
+              <li>{{ 'woocommerce.customerImportInfo.noPasswords' | translate }}</li>
+              <li>{{ 'woocommerce.customerImportInfo.emailVerification' | translate }}</li>
+              <li>{{ 'woocommerce.customerImportInfo.duplicateCheck' | translate }}</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
       <!-- Navigation -->
       <div class="step-navigation">
         <button class="btn-secondary" (click)="goToStep('test')">
@@ -303,18 +344,95 @@
         </div>
 
         <div class="import-stats">
-          <div class="stat success">
-            <strong>{{ importResult.importedCount }}</strong>
-            <span>importiert</span>
+          <div class="stat-group">
+            <h4>📦 {{ 'woocommerce.products' | translate }}</h4>
+            <div class="stat success">
+              <strong>{{ importResult.importedCount }}</strong>
+              <span>{{ 'woocommerce.imported' | translate }}</span>
+            </div>
+            <div class="stat warn">
+              <strong>{{ importResult.skippedCount }}</strong>
+              <span>{{ 'woocommerce.skipped' | translate }}</span>
+            </div>
+            <div class="stat error" *ngIf="importResult.failedCount > 0">
+              <strong>{{ importResult.failedCount }}</strong>
+              <span>{{ 'woocommerce.failed' | translate }}</span>
+            </div>
           </div>
-          <div class="stat warn">
-            <strong>{{ importResult.skippedCount }}</strong>
-            <span>übersprungen</span>
+          
+          <div class="stat-group" *ngIf="importResult.customersImported !== undefined || importResult.customersLinked !== undefined">
+            <h4>👥 {{ 'woocommerce.customers' | translate }}</h4>
+            <div class="stat success" *ngIf="importResult.customersImported && importResult.customersImported > 0">
+              <strong>{{ importResult.customersImported }}</strong>
+              <span>{{ 'woocommerce.created' | translate }}</span>
+            </div>
+            <div class="stat info" *ngIf="importResult.customersLinked && importResult.customersLinked > 0">
+              <strong>{{ importResult.customersLinked }}</strong>
+              <span>{{ 'woocommerce.linked' | translate }}</span>
+            </div>
+            <div class="stat warn">
+              <strong>{{ importResult.customersSkipped || 0 }}</strong>
+              <span>{{ 'woocommerce.skipped' | translate }}</span>
+            </div>
+            <div class="stat error" *ngIf="importResult.customersFailed && importResult.customersFailed > 0">
+              <strong>{{ importResult.customersFailed }}</strong>
+              <span>{{ 'woocommerce.failed' | translate }}</span>
+            </div>
           </div>
-          <div class="stat error" *ngIf="importResult.failedCount > 0">
-            <strong>{{ importResult.failedCount }}</strong>
-            <span>Fehler</span>
+        </div>
+
+        <!-- Imported Customers (Activation required) -->
+        <section *ngIf="importResult.importedCustomers && importResult.importedCustomers.length > 0" class="imported-customers">
+          <h4>{{ 'woocommerce.customerActivation.title' | translate }}</h4>
+          <p class="info-text">{{ 'woocommerce.customerActivation.description' | translate }}</p>
+
+          <div *ngFor="let customer of importResult.importedCustomers" class="customer-row">
+            <div class="customer-info">
+              <strong>{{ customer.name || customer.email }}</strong>
+              <div class="email">{{ customer.email }}</div>
+
+              <small *ngIf="!customer.activationEmailSentAt" class="status pending">
+                {{ 'woocommerce.customerActivation.pending' | translate }}
+              </small>
+
+              <small *ngIf="customer.activationEmailSentAt" class="status sent">
+                {{ 'woocommerce.customerActivation.sentAt' | translate }}
+                {{ customer.activationEmailSentAt | date:'short' }}
+              </small>
+            </div>
+
+            <button type="button" 
+                    class="btn-activation"
+                    [disabled]="activationLoading.has(customer.userId)"
+                    (click)="sendActivation(customer)">
+              <span *ngIf="!activationLoading.has(customer.userId)">
+                {{ customer.activationEmailSentAt
+                  ? ('woocommerce.customerActivation.resend' | translate)
+                  : ('woocommerce.customerActivation.send' | translate)
+                }}
+              </span>
+
+              <span *ngIf="activationLoading.has(customer.userId)">
+                {{ 'common.loading' | translate }}...
+              </span>
+            </button>
           </div>
+        </section>
+
+        <!-- Customer Pagination (if hasMoreCustomers) -->
+        <div class="customer-pagination" *ngIf="importResult.hasMoreCustomers">
+          <div class="pagination-info">
+            <p>📊 {{ importResult.customerPageSize }} {{ 'woocommerce.customersProcessed' | translate }}</p>
+            <p class="next-page-hint">{{ 'woocommerce.moreCustomersAvailable' | translate }}</p>
+          </div>
+          <button class="btn-primary" 
+                  (click)="startImport()" 
+                  [disabled]="importing">
+            <span *ngIf="!importing">
+              ▶️ {{ 'woocommerce.importNextCustomers' | translate }} ({{ importResult.customerPageSize }})
+            </span>
+            <span *ngIf="importing">⏳ {{ 'woocommerce.importing' | translate }}...</span>
+          </button>
         </div>
 
         <!-- Warnings -->

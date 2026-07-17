@@ -18,6 +18,7 @@ import storebackend.entity.WooCommerceConfig;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -176,6 +177,86 @@ public class WooCommerceApiClient {
                 productId, getDomainForLog(shopUrl), e.getMessage());
             throw handleException(e);
         }
+    }
+
+    /**
+     * Lädt WooCommerce Kunden (paginiert).
+     * 
+     * @param page 1-basiert
+     * @param perPage max 100
+     * @param role Optional: "customer", "subscriber", etc.
+     */
+    public List<storebackend.dto.woocommerce.api.WooCustomerDto> getCustomers(WooCommerceConfig config, int page, int perPage, String role) {
+        String shopUrl = normalizeUrl(config.getShopUrl());
+        int limit = Math.min(perPage, MAX_PER_PAGE);
+        String endpoint = API_BASE + "/customers?page=" + page + "&per_page=" + limit;
+        
+        if (role != null && !role.isEmpty()) {
+            endpoint += "&role=" + role;
+        }
+        
+        log.info("Fetching WooCommerce customers: {}{} (page={}, per_page={})", 
+            getDomainForLog(shopUrl), API_BASE + "/customers", page, limit);
+        
+        try {
+            ResponseEntity<String> response = get(config, endpoint, String.class);
+            
+            List<storebackend.dto.woocommerce.api.WooCustomerDto> customers = objectMapper.readValue(
+                response.getBody(),
+                new TypeReference<List<storebackend.dto.woocommerce.api.WooCustomerDto>>() {}
+            );
+            
+            log.info("✅ Fetched {} customers from {}", customers.size(), getDomainForLog(shopUrl));
+            return customers;
+            
+        } catch (Exception e) {
+            log.error("❌ Failed to fetch customers from {}: {}", getDomainForLog(shopUrl), e.getMessage());
+            throw handleException(e);
+        }
+    }
+    
+    /**
+     * Lädt ALLE WooCommerce Kunden (alle Seiten).
+     * 
+     * SECURITY: Abbruch bei MAX_PAGES (Schutz vor Endlosschleife).
+     * 
+     * @param role Optional: Filter by role
+     * @return All customers (across all pages)
+     */
+    public List<storebackend.dto.woocommerce.api.WooCustomerDto> getAllCustomers(WooCommerceConfig config, String role) {
+        List<storebackend.dto.woocommerce.api.WooCustomerDto> allCustomers = new ArrayList<>();
+        int page = 1;
+        int maxPages = 100; // SECURITY: Prevent infinite loops
+        
+        log.info("Fetching ALL WooCommerce customers (paginated)...");
+        
+        while (page <= maxPages) {
+            List<storebackend.dto.woocommerce.api.WooCustomerDto> pageCustomers = 
+                getCustomers(config, page, MAX_PER_PAGE, role);
+            
+            if (pageCustomers.isEmpty()) {
+                log.info("✅ Reached end of customers at page {}", page);
+                break;
+            }
+            
+            allCustomers.addAll(pageCustomers);
+            
+            // If less than per_page results, it's the last page
+            if (pageCustomers.size() < MAX_PER_PAGE) {
+                log.info("✅ Last page {} contained {} customers (< {})", 
+                    page, pageCustomers.size(), MAX_PER_PAGE);
+                break;
+            }
+            
+            page++;
+        }
+        
+        if (page > maxPages) {
+            log.warn("⚠️ Reached MAX_PAGES limit ({}). Some customers may not be loaded.", maxPages);
+        }
+        
+        log.info("✅ Loaded total {} customers across {} pages", allCustomers.size(), page);
+        return allCustomers;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
