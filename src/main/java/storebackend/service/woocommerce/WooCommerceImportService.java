@@ -604,9 +604,17 @@ public class WooCommerceImportService {
             List<storebackend.dto.woocommerce.api.WooCustomerDto> wooCustomers = 
                 apiClient.getCustomers(config, page, pageSize, null);
             
-            log.info("Fetched {} customers from WooCommerce (page {}, pageSize {})", 
+            log.info("🔍 Fetched {} customers from WooCommerce (page {}, pageSize {})", 
                 wooCustomers.size(), page, pageSize);
             logInfo(jobId, String.format("Found %d customers on page %d", wooCustomers.size(), page));
+            
+            // DEBUG: Log first 5 customers with ordersCount values
+            int logLimit = Math.min(5, wooCustomers.size());
+            for (int i = 0; i < logLimit; i++) {
+                var c = wooCustomers.get(i);
+                log.info("🔍 Customer {}: id={}, email={}, ordersCount={}", 
+                    i + 1, c.getId(), c.getEmail(), c.getOrdersCount());
+            }
             
             // Determine if there are more pages
             result.hasMore = wooCustomers.size() >= pageSize;
@@ -615,11 +623,27 @@ public class WooCommerceImportService {
             // Filter by orders if requested
             if (onlyWithOrders) {
                 int originalCount = wooCustomers.size();
+                
+                // Count how many have ordersCount data
+                long withOrdersCountField = wooCustomers.stream()
+                    .filter(c -> c.getOrdersCount() != null)
+                    .count();
+                long withOrdersCountZero = wooCustomers.stream()
+                    .filter(c -> c.getOrdersCount() != null && c.getOrdersCount() == 0)
+                    .count();
+                long withOrdersCountPositive = wooCustomers.stream()
+                    .filter(c -> c.getOrdersCount() != null && c.getOrdersCount() > 0)
+                    .count();
+                
+                log.info("🔍 Orders count stats: total={}, hasField={}, zero={}, positive={}", 
+                    originalCount, withOrdersCountField, withOrdersCountZero, withOrdersCountPositive);
+                
                 wooCustomers = wooCustomers.stream()
                     .filter(c -> c.getOrdersCount() != null && c.getOrdersCount() > 0)
                     .toList();
-                log.info("Filtered to {} customers with orders (from {})", wooCustomers.size(), originalCount);
-                logInfo(jobId, String.format("Filtered to %d customers with orders", wooCustomers.size()));
+                    
+                log.warn("⚠️ Filtered to {} customers with orders (from {})", wooCustomers.size(), originalCount);
+                logInfo(jobId, String.format("Filtered to %d customers with orders (from %d)", wooCustomers.size(), originalCount));
             }
             
             for (storebackend.dto.woocommerce.api.WooCustomerDto wooCustomer : wooCustomers) {

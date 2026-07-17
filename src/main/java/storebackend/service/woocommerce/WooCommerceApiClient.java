@@ -201,12 +201,20 @@ public class WooCommerceApiClient {
         try {
             ResponseEntity<String> response = get(config, endpoint, String.class);
             
+            // DEBUG: Log raw JSON (first 500 chars)
+            String rawJson = response.getBody();
+            if (rawJson != null && rawJson.length() > 0) {
+                String preview = rawJson.length() > 500 ? rawJson.substring(0, 500) + "..." : rawJson;
+                log.debug("🔍 Raw WooCommerce customers JSON: {}", preview);
+            }
+            
             List<storebackend.dto.woocommerce.api.WooCustomerDto> customers = objectMapper.readValue(
                 response.getBody(),
                 new TypeReference<List<storebackend.dto.woocommerce.api.WooCustomerDto>>() {}
             );
             
-            log.info("✅ Fetched {} customers from {}", customers.size(), getDomainForLog(shopUrl));
+            log.info("✅ Fetched {} customers from {} (page {})", 
+                customers.size(), getDomainForLog(shopUrl), page);
             return customers;
             
         } catch (Exception e) {
