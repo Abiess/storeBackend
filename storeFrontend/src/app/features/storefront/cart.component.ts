@@ -6,13 +6,14 @@ import { CartService, Cart, CartItem } from '../../core/services/cart.service';
 import { SubdomainService } from '../../core/services/subdomain.service';
 import { PlaceholderImageUtil } from '../../shared/utils/placeholder-image.util';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
+import { QuantityStepperComponent } from '@app/shared/ui/quantity-stepper/quantity-stepper.component';
 
 import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-cart',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe],
+  imports: [CommonModule, FormsModule, TranslatePipe, QuantityStepperComponent],
   template: `
     <div class="cart-page">
 
@@ -111,17 +112,17 @@ import { Subscription } from 'rxjs';
 
                 <!-- Bottom: Qty + Line Total -->
                 <div class="card-bottom">
-                  <div class="qty-control">
-                    <button
-                      class="qty-btn"
-                      (click)="decreaseQuantity(item)"
-                      [disabled]="updatingItem === item.id">−</button>
-                    <span class="qty-display">{{ item.quantity }}</span>
-                    <button
-                      class="qty-btn"
-                      (click)="increaseQuantity(item)"
-                      [disabled]="updatingItem === item.id">+</button>
-                  </div>
+                  <app-quantity-stepper
+                    [value]="item.quantity"
+                    [min]="1"
+                    [max]="getMaxQuantity(item)"
+                    [loading]="updatingItem === item.id"
+                    [disabled]="updatingItem === item.id"
+                    [size]="'sm'"
+                    [allowDirectInput]="false"
+                    ariaLabel="Warenkorbmenge"
+                    (valueChange)="updateQuantity(item, $event)">
+                  </app-quantity-stepper>
                   <span class="line-total">{{ (getItemPrice(item) * item.quantity) | number:'1.2-2' }} €</span>
                 </div>
               </div>
@@ -967,38 +968,26 @@ export class CartComponent implements OnInit, OnDestroy {
     return this.computedSubtotal >= 50 ? 0 : this.shipping;
   }
 
-  increaseQuantity(item: CartItem): void {
-    // Optimistisches Update: Menge sofort erhöhen
-    item.quantity++;
+  updateQuantity(item: CartItem, newQuantity: number): void {
+    // Optimistisches Update
+    const oldQuantity = item.quantity;
+    item.quantity = newQuantity;
     this.updatingItem = item.id;
 
-    this.cartService.updateItem(item.id, item.quantity).subscribe({
+    this.cartService.updateItem(item.id, newQuantity).subscribe({
       next: () => { this.updatingItem = null; },
       error: () => {
-        item.quantity--; // Rollback
+        item.quantity = oldQuantity; // Rollback
         this.updatingItem = null;
         this.showToast('Fehler beim Aktualisieren');
       }
     });
   }
 
-  decreaseQuantity(item: CartItem): void {
-    if (item.quantity <= 1) {
-      this.removeItem(item);
-      return;
-    }
-    // Optimistisches Update
-    item.quantity--;
-    this.updatingItem = item.id;
-
-    this.cartService.updateItem(item.id, item.quantity).subscribe({
-      next: () => { this.updatingItem = null; },
-      error: () => {
-        item.quantity++; // Rollback
-        this.updatingItem = null;
-        this.showToast('Fehler beim Aktualisieren');
-      }
-    });
+  getMaxQuantity(item: CartItem): number {
+    // TODO: Implement stock tracking in CartItem
+    // For now, use reasonable default maximum
+    return 999;
   }
 
   removeItem(item: CartItem): void {

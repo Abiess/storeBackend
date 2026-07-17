@@ -1,0 +1,255 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// Quantity Stepper Component Styles
+// Based on Quick View Design (best existing variant)
+// ═══════════════════════════════════════════════════════════════════════════
+
+.quantity-stepper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  position: relative;
+
+  // ─── Button Base ──────────────────────────────────────────────────────────
+  &__btn {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    color: #495057;
+    font-size: 1.25rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    user-select: none;
+
+    &:hover:not(:disabled) {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-color: #667eea;
+      transform: translateY(-1px);
+    }
+
+    &:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    &:focus-visible {
+      outline: 2px solid #667eea;
+      outline-offset: 2px;
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      background: #f8f9fa;
+      color: #adb5bd;
+    }
+  }
+
+  &__icon {
+    display: block;
+    line-height: 1;
+  }
+
+  // ─── Value Wrapper ────────────────────────────────────────────────────────
+  &__value-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  // ─── Display (Read-only) ──────────────────────────────────────────────────
+  &__display {
+    text-align: center;
+    font-weight: 600;
+    color: #212529;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    background: white;
+  }
+
+  // ─── Input (Editable) ─────────────────────────────────────────────────────
+  &__input {
+    text-align: center;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    font-weight: 600;
+    color: #212529;
+    background: white;
+    transition: all 0.2s ease;
+
+    &:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    &:disabled {
+      background: #f8f9fa;
+      color: #6c757d;
+      cursor: not-allowed;
+    }
+
+    // Remove spinner arrows
+    &::-webkit-inner-spin-button,
+    &::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    
+    -moz-appearance: textfield;
+  }
+
+  // ─── Loading Spinner ──────────────────────────────────────────────────────
+  &__spinner {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #e9ecef;
+    border-top-color: #667eea;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SIZE VARIANTS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // ─── Small (SM) ───────────────────────────────────────────────────────────
+  &--sm {
+    .quantity-stepper__btn {
+      width: 32px;
+      height: 32px;
+      font-size: 1rem;
+      border-radius: 6px;
+    }
+
+    .quantity-stepper__display,
+    .quantity-stepper__input {
+      width: 48px;
+      height: 32px;
+      font-size: 0.875rem;
+      border-radius: 6px;
+    }
+  }
+
+  // ─── Medium (MD) – Default ────────────────────────────────────────────────
+  &--md {
+    .quantity-stepper__btn {
+      width: 40px;
+      height: 40px;
+      font-size: 1.25rem;
+      border-radius: 8px;
+    }
+
+    .quantity-stepper__display,
+    .quantity-stepper__input {
+      width: 60px;
+      height: 40px;
+      font-size: 1rem;
+      border-radius: 8px;
+    }
+  }
+
+  // ─── Large (LG) ───────────────────────────────────────────────────────────
+  &--lg {
+    .quantity-stepper__btn {
+      width: 48px;
+      height: 48px;
+      font-size: 1.5rem;
+      border-radius: 10px;
+    }
+
+    .quantity-stepper__display,
+    .quantity-stepper__input {
+      width: 72px;
+      height: 48px;
+      font-size: 1.125rem;
+      border-radius: 10px;
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // STATE MODIFIERS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // ─── Compact Mode ─────────────────────────────────────────────────────────
+  &--compact {
+    gap: 0.25rem;
+
+    .quantity-stepper__btn {
+      border-radius: 6px;
+    }
+
+    .quantity-stepper__display,
+    .quantity-stepper__input {
+      border-radius: 6px;
+    }
+  }
+
+  // ─── Disabled State ───────────────────────────────────────────────────────
+  &--disabled {
+    opacity: 0.6;
+    pointer-events: none;
+
+    .quantity-stepper__display,
+    .quantity-stepper__input {
+      background: #f8f9fa;
+      color: #6c757d;
+    }
+  }
+
+  // ─── Loading State ────────────────────────────────────────────────────────
+  &--loading {
+    .quantity-stepper__display,
+    .quantity-stepper__input {
+      color: transparent;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RTL SUPPORT
+// ═══════════════════════════════════════════════════════════════════════════
+
+[dir="rtl"] {
+  .quantity-stepper {
+    // Reverse button order visually (flex-direction: row-reverse would work too)
+    direction: ltr; // Keep direction for buttons, but reverse in parent if needed
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MOBILE / TOUCH OPTIMIZATIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+@media (max-width: 768px) {
+  .quantity-stepper {
+    // Ensure touch targets are at least 44x44px
+    &__btn {
+      min-width: 44px;
+      min-height: 44px;
+    }
+
+    &--sm {
+      .quantity-stepper__btn {
+        min-width: 40px;
+        min-height: 40px;
+      }
+    }
+  }
+}

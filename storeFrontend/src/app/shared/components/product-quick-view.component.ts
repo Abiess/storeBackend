@@ -6,6 +6,7 @@ import { ProductImageGalleryComponent } from './product-image-gallery.component'
 import { ProductReviewsComponent } from './product-reviews.component';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { TranslationService } from '@app/core/services/translation.service';
+import { QuantityStepperComponent } from '@app/shared/ui/quantity-stepper/quantity-stepper.component';
 
 /**
  * Product Quick View Modal Component
@@ -14,7 +15,7 @@ import { TranslationService } from '@app/core/services/translation.service';
 @Component({
   selector: 'app-product-quick-view',
   standalone: true,
-  imports: [CommonModule, FormsModule, ProductImageGalleryComponent, ProductReviewsComponent, TranslatePipe],
+  imports: [CommonModule, FormsModule, ProductImageGalleryComponent, ProductReviewsComponent, TranslatePipe, QuantityStepperComponent],
   template: `
     <div *ngIf="isOpen" class="quick-view-overlay" (click)="closeModal()">
       <div class="quick-view-modal" (click)="$event.stopPropagation()">
@@ -158,20 +159,16 @@ import { TranslationService } from '@app/core/services/translation.service';
             <!-- Menge -->
             <div class="quantity-section">
               <label class="quantity-label">{{ 'quickView.quantity' | translate }}</label>
-              <div class="quantity-controls">
-                <button class="qty-btn" (click)="decreaseQuantity()" [disabled]="quantity <= 1">
-                  −
-                </button>
-                <input
-                  type="number"
-                  class="qty-input"
-                  [(ngModel)]="quantity"
-                  [min]="1"
-                  [max]="99">
-                <button class="qty-btn" (click)="increaseQuantity()" [disabled]="quantity >= 99">
-                  +
-                </button>
-              </div>
+              <app-quantity-stepper
+                [value]="quantity"
+                [min]="1"
+                [max]="getMaxQuantity()"
+                [disabled]="!product || isAddingToCart"
+                [size]="'md'"
+                [allowDirectInput]="true"
+                [ariaLabel]="'quickView.quantity' | translate"
+                (valueChange)="onQuantityChange($event)">
+              </app-quantity-stepper>
             </div>
 
             <!-- Action Buttons -->
@@ -747,49 +744,7 @@ import { TranslationService } from '@app/core/services/translation.service';
       color: #333;
     }
 
-    .quantity-controls {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .qty-btn {
-      width: 40px;
-      height: 40px;
-      background: #f8f9fa;
-      border: 1px solid #dee2e6;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 1.25rem;
-      font-weight: 600;
-      line-height: 1;
-      transition: all 0.3s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0;
-    }
-
-    .qty-btn:hover:not(:disabled) {
-      background: #667eea;
-      color: white;
-      border-color: #667eea;
-    }
-
-    .qty-btn:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-
-    .qty-input {
-      width: 60px;
-      height: 40px;
-      text-align: center;
-      border: 1px solid #dee2e6;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: 600;
-    }
+    /* Old quantity controls removed - now using quantity-stepper component */
 
     .action-buttons {
       display: flex;
@@ -1321,15 +1276,24 @@ export class ProductQuickViewComponent implements OnInit, OnChanges {
   }
 
   increaseQuantity(): void {
-    if (this.quantity < 99) {
-      this.quantity++;
-    }
+    // Removed - now handled by quantity-stepper component
   }
 
   decreaseQuantity(): void {
-    if (this.quantity > 1) {
-      this.quantity--;
+    // Removed - now handled by quantity-stepper component
+  }
+
+  onQuantityChange(newQuantity: number): void {
+    this.quantity = newQuantity;
+  }
+
+  getMaxQuantity(): number {
+    if (!this.selectedVariant) {
+      return 99;
     }
+    // Lagerbestand prüfen
+    const stock = this.selectedVariant.stockQuantity || 0;
+    return stock > 0 ? Math.min(stock, 99) : 99;
   }
 
   async addToCart(): Promise<void> {

@@ -12,6 +12,7 @@ import { WishlistService } from '@app/core/services/wishlist.service';
 import { AuthService } from '@app/core/services/auth.service';
 import { SubdomainService } from '@app/core/services/subdomain.service';
 import { PublicApiService } from '@app/core/services/public-api.service';
+import { QuantityStepperComponent } from '@app/shared/ui/quantity-stepper/quantity-stepper.component';
 import { Subscription } from 'rxjs';
 
 interface Product {
@@ -30,7 +31,7 @@ interface Product {
 @Component({
   selector: 'app-storefront-product-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe, ProductVariantPickerComponent],  template: `
+  imports: [CommonModule, FormsModule, TranslatePipe, ProductVariantPickerComponent, QuantityStepperComponent],  template: `
     <div class="product-detail-page" *ngIf="product">
       <div class="breadcrumb">
         <a (click)="goBack()">← {{ 'common.back' | translate }}</a>
@@ -135,11 +136,16 @@ interface Product {
           <!-- Quantity Selector -->
           <div class="quantity-section">
             <label>{{ 'cart.quantity' | translate }}</label>
-            <div class="quantity-control">
-              <button (click)="decrementQuantity()" [disabled]="quantity <= 1">-</button>
-              <input type="number" [(ngModel)]="quantity" min="1" [max]="getMaxQuantity()">
-              <button (click)="incrementQuantity()" [disabled]="quantity >= getMaxQuantity()">+</button>
-            </div>
+            <app-quantity-stepper
+              [value]="quantity"
+              [min]="1"
+              [max]="getMaxQuantity()"
+              [disabled]="!product || adding"
+              [size]="'lg'"
+              [allowDirectInput]="true"
+              ariaLabel="Produktmenge"
+              (valueChange)="onQuantityChange($event)">
+            </app-quantity-stepper>
           </div>
 
           <!-- Add to Cart Button -->
@@ -1405,16 +1411,8 @@ export class StorefrontProductDetailComponent implements OnInit, OnDestroy {
     return Math.min(stock, 99);
   }
 
-  incrementQuantity() {
-    if (this.quantity < this.getMaxQuantity()) {
-      this.quantity++;
-    }
-  }
-
-  decrementQuantity() {
-    if (this.quantity > 1) {
-      this.quantity--;
-    }
+  onQuantityChange(newQuantity: number): void {
+    this.quantity = newQuantity;
   }
 
   canAddToCart(): boolean {

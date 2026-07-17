@@ -7,11 +7,12 @@ import { Product } from '@app/core/models';
 import { ProductImageGalleryComponent } from '@app/shared/components/product-image-gallery.component';
 import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
 import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
+import { QuantityStepperComponent } from '@app/shared/ui/quantity-stepper/quantity-stepper.component';
 
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, ProductImageGalleryComponent, PageHeaderComponent],
+  imports: [CommonModule, FormsModule, ProductImageGalleryComponent, PageHeaderComponent, QuantityStepperComponent],
   template: `
     <div class="product-detail-page" *ngIf="product">
       <!-- Page Header mit Breadcrumbs -->
@@ -72,15 +73,16 @@ import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
 
             <!-- Menge & In den Warenkorb -->
             <div class="actions-section">
-              <div class="quantity-selector">
-                <button class="qty-btn" (click)="decreaseQuantity()" [disabled]="quantity <= 1">-</button>
-                <input type="number"
-                       [(ngModel)]="quantity"
-                       min="1"
-                       class="qty-input"
-                       readonly>
-                <button class="qty-btn" (click)="increaseQuantity()">+</button>
-              </div>
+              <app-quantity-stepper
+                [value]="quantity"
+                [min]="1"
+                [max]="getMaxStock()"
+                [disabled]="!isInStock()"
+                [size]="'lg'"
+                [allowDirectInput]="true"
+                ariaLabel="Produktmenge"
+                (valueChange)="onQuantityChange($event)">
+              </app-quantity-stepper>
 
               <button class="btn-add-cart"
                       (click)="addToCart()"
@@ -524,14 +526,19 @@ export class ProductDetailComponent implements OnInit {
     this.selectedVariant = variant;
   }
 
-  increaseQuantity(): void {
-    this.quantity++;
+  onQuantityChange(newQuantity: number): void {
+    this.quantity = newQuantity;
   }
 
-  decreaseQuantity(): void {
-    if (this.quantity > 1) {
-      this.quantity--;
+  getMaxStock(): number {
+    if (!this.product) return 99;
+    
+    if (this.selectedVariant) {
+      const stock = this.selectedVariant.stock || 0;
+      return stock > 0 ? Math.min(stock, 999) : 999;
     }
+    
+    return 999;
   }
 
   addToCart(): void {
