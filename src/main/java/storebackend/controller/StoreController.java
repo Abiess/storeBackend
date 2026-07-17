@@ -90,6 +90,18 @@ class StoreManagementController {
     }
 
     /**
+     * Update Store Shipping Address (DHL Absender-Adresse)
+     * PUT /api/stores/{storeId}/shipping-address
+     */
+    @PutMapping("/{storeId}/shipping-address")
+    public ResponseEntity<StoreDTO> updateShippingAddress(
+            @PathVariable Long storeId,
+            @Valid @RequestBody storebackend.dto.StoreShippingAddressUpdateDTO request,
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(storeService.updateShippingAddress(storeId, request, user));
+    }
+
+    /**
      * Befüllt einen bestehenden Store mit Starter-Pack-Beispieldaten
      * (passend zum businessType RESTAURANT/RIAD, nur wenn noch leer).
      */
@@ -98,17 +110,5 @@ class StoreManagementController {
             @PathVariable Long storeId,
             @AuthenticationPrincipal User user) {
         return ResponseEntity.ok(storeService.applyStarterPackToStore(storeId, user));
-    }
-    
-    /**
-     * Update Store Shipping Address (DHL Absender-Adresse)
-     * PUT /api/me/stores/{storeId}/shipping-address
-     */
-    @PutMapping("/{storeId}/shipping-address")
-    public ResponseEntity<StoreDTO> updateShippingAddress(
-            @PathVariable Long storeId,
-            @Valid @RequestBody storebackend.dto.StoreShippingAddressUpdateDTO request,
-            @AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(storeService.updateShippingAddress(storeId, request, user));
     }
 }

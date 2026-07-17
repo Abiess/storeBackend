@@ -81,7 +81,7 @@ export class StoreService {
     email?: string;
   }): Observable<Store> {
     return this.http.put<Store>(
-      `${environment.apiUrl}/me/stores/${storeId}/shipping-address`,
+      `${environment.apiUrl}/stores/${storeId}/shipping-address`,
       shippingAddress
     );
   }
