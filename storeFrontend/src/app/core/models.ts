@@ -30,8 +30,12 @@ export interface AuthResponse {
 export interface RegistrationResponse {
   registrationSuccessful: boolean;
   emailVerificationRequired: boolean;
+  emailSent: boolean;
+  emailStatus: string;
+  emailErrorCode?: string | null;
   email: string;
   message: string;
+  retryAllowed: boolean;
 }
 
 export interface LoginRequest {
@@ -204,6 +208,14 @@ export interface TeamInvitation {
   expiresAt: string;
   acceptedAt?: string;
   revokedAt?: string;
+}
+
+export interface TeamInvitationResponse {
+  invitation: TeamInvitation;
+  emailSent: boolean;
+  emailStatus: 'SENT' | 'TEMPORARILY_FAILED' | 'PERMANENTLY_FAILED';
+  emailErrorCode?: string | null;
+  retryAllowed: boolean;
 }
 
 export enum InvitationStatus {

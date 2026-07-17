@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RoleService } from '@app/core/services/role.service';
 import { TeamInvitationService } from '@app/core/services/team-invitation.service';
+import { EmailStatusHandlerService } from '@app/core/services/email-status-handler.service';
 import { StoreRole, UserRole, ROLE_PERMISSIONS_MAP, TeamInvitation, CreateTeamInvitationRequest } from '@app/core/models';
 import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
 import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
@@ -429,7 +430,7 @@ export class StoreRoleManagementComponent implements OnInit {
   editRole = '';
   deletingMember: StoreRole | null = null;
 
-  toast: { message: string; type: 'success' | 'error' } | null = null;
+  toast: { message: string; type: 'success' | 'error' | 'warning' } | null = null;
   
   pendingInvitations: TeamInvitation[] = [];
 
@@ -483,10 +484,18 @@ export class StoreRoleManagementComponent implements OnInit {
 
   columns: ColumnConfig[] = [
     {
-      key: 'userId',
-      label: 'User-ID',
-      type: 'number',
-      width: '80px'
+      key: 'userName',
+      label: 'Name',
+      type: 'text',
+      formatFn: (value, item: any) => {
+        const name = value || 'Unbekannt';
+        return item.isOwner ? `👑 ${name}` : name;
+      }
+    },
+    {
+      key: 'userEmail',
+      label: 'E-Mail',
+      type: 'text'
     },
     {
       key: 'role',
@@ -513,13 +522,15 @@ export class StoreRoleManagementComponent implements OnInit {
     {
       icon: '✏️',
       label: 'Bearbeiten',
-      handler: (item: StoreRole) => this.openEdit(item)
+      handler: (item: StoreRole) => this.openEdit(item),
+      visible: (item: any) => !item.isOwner // Owner kann nicht bearbeitet werden
     },
     {
       icon: '🗑️',
       label: 'Entfernen',
       class: 'danger',
-      handler: (item: StoreRole) => this.openDelete(item)
+      handler: (item: StoreRole) => this.openDelete(item),
+      visible: (item: any) => !item.isOwner // Owner kann nicht entfernt werden
     }
   ];
 
@@ -527,7 +538,8 @@ export class StoreRoleManagementComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     public roleService: RoleService,
-    private teamInvitationService: TeamInvitationService
+    private teamInvitationService: TeamInvitationService,
+    private emailStatusHandler: EmailStatusHandlerService
   ) {}
 
   ngOnInit(): void {
@@ -604,11 +616,25 @@ export class StoreRoleManagementComponent implements OnInit {
     };
     
     this.teamInvitationService.createInvitation(this.storeId!, request).subscribe({
-      next: () => {
-        this.showToast('Einladung erfolgreich versendet', 'success');
-        this.newMember = { userId: null, email: '', role: UserRole.STORE_STAFF, permissions: [] };
-        this.showAddForm = false;
-        this.loadInvitations();
+      next: (response) => {
+        // Einladung zur Liste hinzufügen
+        this.pendingInvitations = [
+          response.invitation,
+          ...this.pendingInvitations.filter(
+            item => item.id !== response.invitation.id
+          )
+        ];
+
+        // Nachricht je nach E-Mail-Versandstatus anzeigen
+        if (response.emailSent) {
+          this.showToast('Einladung erfolgreich versendet', 'success');
+        } else {
+          // E-Mail konnte nicht versendet werden
+          const emailStatus = this.emailStatusHandler.resolve(response);
+          this.showToast(emailStatus.messageKey, 'warning');
+        }
+
+        this.resetInviteForm();
         this.saving = false;
       },
       error: (err) => {
@@ -617,6 +643,11 @@ export class StoreRoleManagementComponent implements OnInit {
         this.saving = false;
       }
     });
+  }
+
+  resetInviteForm(): void {
+    this.newMember = { userId: null, email: '', role: UserRole.STORE_STAFF, permissions: [] };
+    this.showAddForm = false;
   }
   
   loadInvitations(): void {
@@ -633,9 +664,21 @@ export class StoreRoleManagementComponent implements OnInit {
   
   resendInvitation(id: number): void {
     this.teamInvitationService.resendInvitation(this.storeId!, id).subscribe({
-      next: () => {
-        this.showToast('Einladung erneut versendet', 'success');
-        this.loadInvitations();
+      next: (response) => {
+        // Einladung in Liste aktualisieren
+        const index = this.pendingInvitations.findIndex(inv => inv.id === id);
+        if (index !== -1) {
+          this.pendingInvitations[index] = response.invitation;
+        }
+
+        // Nachricht je nach E-Mail-Versandstatus anzeigen
+        if (response.emailSent) {
+          this.showToast('Einladung erneut versendet', 'success');
+        } else {
+          // E-Mail konnte nicht versendet werden
+          const emailStatus = this.emailStatusHandler.resolve(response);
+          this.showToast(emailStatus.messageKey, 'warning');
+        }
       },
       error: (err) => {
         this.showToast('Fehler beim Versenden', 'error');
@@ -733,7 +776,7 @@ export class StoreRoleManagementComponent implements OnInit {
     });
   }
 
-  private showToast(message: string, type: 'success' | 'error'): void {
+  private showToast(message: string, type: 'success' | 'error' | 'warning'): void {
     this.toast = { message, type };
     setTimeout(() => this.toast = null, 3500);
   }

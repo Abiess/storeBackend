@@ -7,8 +7,9 @@ import { AuthService } from '../../core/services/auth.service';
 /**
  * Registrierung Erfolgs-Panel
  * 
- * Zeigt nach erfolgreicher Registrierung die "Posteingang prüfen" Ansicht.
- * Mit Resend-Funktionalität und Link zum Login.
+ * Zeigt nach erfolgreicher Registrierung entweder:
+ * - EMAIL_SENT: "Posteingang prüfen" (Standard)
+ * - EMAIL_FAILED: Warnung mit Resend-Button
  * 
  * WICHTIG: Dieselbe Komponente für Hauptdomain UND Storefront!
  * 
@@ -16,6 +17,8 @@ import { AuthService } from '../../core/services/auth.service';
  * ```html
  * <app-registration-success
  *   [email]="registeredEmail"
+ *   [emailSent]="response.emailSent"
+ *   [emailErrorCode]="response.emailErrorCode"
  *   (goToLogin)="handleGoToLogin()">
  * </app-registration-success>
  * ```
@@ -25,7 +28,8 @@ import { AuthService } from '../../core/services/auth.service';
   standalone: true,
   imports: [CommonModule, TranslatePipe],
   template: `
-    <div class="success-panel" role="status" aria-live="polite">
+    <!-- EMAIL_SENT: Posteingang prüfen -->
+    <div *ngIf="emailSent" class="success-panel" role="status" aria-live="polite">
       <div class="success-icon">📧</div>
       <h2>{{ 'auth.checkInboxTitle' | translate }}</h2>
       
@@ -39,6 +43,26 @@ import { AuthService } from '../../core/services/auth.service';
       
       <p class="hint-text">{{ 'auth.checkSpamHint' | translate }}</p>
 
+      <div class="success-actions">
+        <button type="button" class="btn btn-primary" (click)="goToLogin.emit()">
+          {{ 'auth.goToLogin' | translate }}
+        </button>
+      </div>
+    </div>
+
+    <!-- EMAIL_FAILED: Konto erstellt, aber E-Mail-Versand fehlgeschlagen -->
+    <div *ngIf="!emailSent" class="warning-panel" role="status" aria-live="polite">
+      <div class="warning-icon">⚠️</div>
+      <h2>{{ 'email.accountCreatedMailFailed' | translate }}</h2>
+      
+      <p class="warning-text">
+        {{ getEmailErrorMessage() | translate }}
+      </p>
+      
+      <p class="email-hint" *ngIf="email">
+        <strong>{{ email }}</strong>
+      </p>
+
       <div *ngIf="resendMessage" class="alert" [class.alert-success]="!resendError" [class.alert-error]="resendError">
         {{ resendMessage }}
       </div>
@@ -49,7 +73,7 @@ import { AuthService } from '../../core/services/auth.service';
           class="btn btn-secondary" 
           (click)="onResend()" 
           [disabled]="resending || resendCooldown > 0">
-          <span *ngIf="!resending && resendCooldown === 0">{{ 'auth.resendVerification' | translate }}</span>
+          <span *ngIf="!resending && resendCooldown === 0">{{ 'email.retry' | translate }}</span>
           <span *ngIf="resending">{{ 'auth.resending' | translate }}</span>
           <span *ngIf="!resending && resendCooldown > 0">{{ 'auth.resendIn' | translate }} {{ resendCooldown }}s</span>
         </button>
@@ -81,6 +105,29 @@ import { AuthService } from '../../core/services/auth.service';
       color: #28a745;
       font-size: 22px;
       margin-bottom: 12px;
+    }
+
+    .warning-panel {
+      text-align: center;
+      animation: fadeIn 0.4s ease;
+    }
+    
+    .warning-icon {
+      font-size: 56px;
+      margin-bottom: 12px;
+      animation: pop 0.5s ease;
+    }
+    
+    .warning-panel h2 {
+      color: #f59e0b;
+      font-size: 22px;
+      margin-bottom: 12px;
+    }
+    
+    .warning-text {
+      color: #444;
+      line-height: 1.6;
+      margin-bottom: 8px;
     }
     
     .success-text {
@@ -175,6 +222,8 @@ import { AuthService } from '../../core/services/auth.service';
 })
 export class RegistrationSuccessComponent {
   @Input() email = '';
+  @Input() emailSent = true; // true = EMAIL_SENT (default), false = EMAIL_FAILED
+  @Input() emailErrorCode: string | null = null;
   @Output() goToLogin = new EventEmitter<void>();
   
   resending = false;
@@ -187,6 +236,22 @@ export class RegistrationSuccessComponent {
     private authService: AuthService,
     private translationService: TranslationService
   ) {}
+
+  /**
+   * Gibt den passenden i18n-Key für den E-Mail-Fehler zurück
+   */
+  getEmailErrorMessage(): string {
+    switch (this.emailErrorCode) {
+      case 'SMTP_DAILY_LIMIT':
+        return 'email.dailyLimit';
+      case 'SMTP_AUTH_FAILED':
+        return 'email.configurationError';
+      case 'RATE_LIMIT_EXCEEDED':
+        return 'email.rateLimitExceeded';
+      default:
+        return 'email.temporarilyUnavailable';
+    }
+  }
   
   onResend(): void {
     if (this.resending || this.resendCooldown > 0 || !this.email) return;
@@ -196,12 +261,20 @@ export class RegistrationSuccessComponent {
     this.resendError = false;
     
     this.authService.resendVerificationEmail(this.email).subscribe({
-      next: () => {
+      next: (response: any) => {
         this.resending = false;
-        this.resendError = false;
-        this.resendMessage = this.translationService.translate('auth.resendSuccess')
-          || 'Verifikations-E-Mail wurde erneut gesendet.';
-        this.startResendCooldown(60);
+        
+        // Backend gibt jetzt strukturierte Response zurück
+        if (response.emailSent) {
+          this.resendError = false;
+          this.resendMessage = this.translationService.translate('email.sent')
+            || 'Verifikations-E-Mail wurde erneut gesendet.';
+          this.startResendCooldown(60);
+        } else {
+          // E-Mail konnte immer noch nicht versendet werden
+          this.resendError = true;
+          this.resendMessage = response.message || this.getEmailErrorMessage();
+        }
       },
       error: (err) => {
         this.resending = false;

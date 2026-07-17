@@ -2722,4 +2722,29 @@
     "staff": "Mitarbeiter",
     "employee": "Angestellter"
   }
+,
+  "email": {
+    "sent": "E-Mail wurde erfolgreich versendet",
+    "dailyLimit": "Das tägliche E-Mail-Limit wurde erreicht. Bitte versuchen Sie es in 24 Stunden erneut.",
+    "temporarilyUnavailable": "Die E-Mail konnte derzeit nicht versendet werden. Bitte versuchen Sie es später erneut.",
+    "configurationError": "Der E-Mail-Dienst ist aktuell nicht verfügbar. Bitte kontaktieren Sie den Support.",
+    "rateLimitExceeded": "Zu viele Anfragen. Bitte warten Sie einige Minuten.",
+    "serviceDisabled": "E-Mail-Versand ist in dieser Umgebung deaktiviert.",
+    "invalidRecipient": "Die E-Mail-Adresse ist ungültig.",
+    "retry": "E-Mail erneut senden",
+    "accountCreatedMailFailed": "Konto erfolgreich erstellt. Die Bestätigungs-E-Mail konnte derzeit nicht versendet werden.",
+    "help": {
+      "dailyLimit": "Das Sendelimit wird automatisch nach 24 Stunden zurückgesetzt.",
+      "rateLimitExceeded": "Bitte warten Sie einige Minuten bevor Sie es erneut versuchen."
+    }
+  },
+  "teamInvitation": {
+    "inviteSent": "Einladung erfolgreich versendet",
+    "inviteCreatedMailFailed": "Einladung wurde erstellt, aber die E-Mail konnte derzeit nicht versendet werden",
+    "inviteFailed": "Einladung fehlgeschlagen",
+    "resendSuccess": "Einladung erneut versendet",
+    "resendMailFailed": "Einladung aktualisiert, aber E-Mail konnte nicht versendet werden",
+    "resendFailed": "Fehler beim erneuten Versenden",
+    "mailFailed": "E-Mail-Versand fehlgeschlagen"
+  }
 }

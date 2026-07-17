@@ -10,10 +10,12 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import storebackend.dto.CreateTeamInvitationRequest;
 import storebackend.dto.TeamInvitationDTO;
+import storebackend.dto.TeamInvitationResponse;
 import storebackend.entity.Store;
 import storebackend.entity.StoreRole;
 import storebackend.entity.TeamInvitation;
 import storebackend.entity.User;
+import storebackend.exception.EmailDeliveryException;
 import storebackend.repository.StoreRepository;
 import storebackend.repository.StoreRoleRepository;
 import storebackend.repository.TeamInvitationRepository;
@@ -42,9 +44,13 @@ public class TeamInvitationController {
     /**
      * Neue Team-Einladung erstellen
      * Nur Owner oder Admin erlaubt
+     * 
+     * Response enthält echten E-Mail-Versandstatus:
+     * - emailSent=true  → "Einladung versendet" ✅
+     * - emailSent=false → "Einladung erstellt, E-Mail fehlgeschlagen" ⚠️
      */
     @PostMapping("/stores/{storeId}/team-invitations")
-    public ResponseEntity<TeamInvitationDTO> createInvitation(
+    public ResponseEntity<TeamInvitationResponse> createInvitation(
             @PathVariable Long storeId,
             @RequestBody CreateTeamInvitationRequest request,
             @AuthenticationPrincipal User user
@@ -58,16 +64,24 @@ public class TeamInvitationController {
         // STORE_OWNER darf nicht über Einladung vergeben werden
         if ("STORE_OWNER".equals(request.role)) {
             log.warn("⚠️ Attempted to invite as STORE_OWNER: store={}, by={}", storeId, user.getId());
-            throw new IllegalArgumentException("STORE_OWNER kann nicht über Einladung vergeben werden");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "STORE_OWNER kann nicht über Einladung vergeben werden"
+            );
         }
 
-        // Einladung erstellen
-        TeamInvitationDTO invitation = invitationService.createInvitation(storeId, request, user);
+        // Einladung erstellen (gibt strukturierte Response mit Email-Status zurück)
+        TeamInvitationResponse response = invitationService.createInvitation(storeId, request, user);
         
-        log.info("✅ Invitation created: id={}, store={}, email={}", 
-                invitation.id, storeId, request.email);
+        if (response.emailSent()) {
+            log.info("✅ Invitation created and email sent: id={}, store={}, email={}", 
+                    response.invitation().id, storeId, request.email);
+        } else {
+            log.warn("⚠️ Invitation created but email failed: id={}, store={}, email={}, errorCode={}",
+                    response.invitation().id, storeId, request.email, response.emailErrorCode());
+        }
         
-        return ResponseEntity.ok(invitation);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -117,9 +131,13 @@ public class TeamInvitationController {
     /**
      * Einladung erneut senden
      * Nur Owner oder Admin erlaubt
+     * 
+     * Response enthält echten E-Mail-Versandstatus:
+     * - emailSent=true  → "E-Mail versendet" ✅
+     * - emailSent=false → "E-Mail fehlgeschlagen" ⚠️
      */
     @PostMapping("/stores/{storeId}/team-invitations/{invitationId}/resend")
-    public ResponseEntity<Void> resendInvitation(
+    public ResponseEntity<TeamInvitationResponse> resendInvitation(
             @PathVariable Long storeId,
             @PathVariable Long invitationId,
             @AuthenticationPrincipal User user
@@ -130,10 +148,17 @@ public class TeamInvitationController {
         // Berechtigung prüfen
         requireOwnerOrAdmin(storeId, user);
 
-        invitationService.resendInvitation(invitationId, user);
+        // Einladung erneut senden (gibt strukturierte Response mit Email-Status zurück)
+        TeamInvitationResponse response = invitationService.resendInvitation(invitationId, user);
         
-        log.info("✅ Invitation resent: id={}", invitationId);
-        return ResponseEntity.ok().build();
+        if (response.emailSent()) {
+            log.info("✅ Invitation resent and email sent: id={}", invitationId);
+        } else {
+            log.warn("⚠️ Invitation resent but email failed: id={}, errorCode={}", 
+                    invitationId, response.emailErrorCode());
+        }
+        
+        return ResponseEntity.ok(response);
     }
 
     /**

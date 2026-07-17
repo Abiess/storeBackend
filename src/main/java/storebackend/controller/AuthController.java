@@ -8,6 +8,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import storebackend.dto.AuthResponse;
+import storebackend.dto.EmailDeliveryResult;
 import storebackend.dto.RegistrationResponse;
 import storebackend.dto.LoginRequest;
 import storebackend.dto.RegisterRequest;
@@ -165,21 +166,24 @@ public class AuthController {
         try {
             RegistrationResponse response = authService.register(request);
 
-            // ✅ LOG SUCCESSFUL REGISTRATION WITH EMAIL SENT
+            // ✅ LOG SUCCESSFUL REGISTRATION WITH REAL EMAIL STATUS
             securityEventService.logEvent(
                 securityEventService.builder("/api/auth/register")
                     .requestId(requestId)
-                    .eventType(EventType.EMAIL_VERIFICATION_SENT)
+                    .eventType(response.isEmailSent() ? EventType.EMAIL_VERIFICATION_SENT : EventType.REGISTRATION_ATTEMPT)
                     .httpMethod("POST")
                     .request(httpRequest)
                     .headers(httpRequest)
                     .email(request.getEmail())
                     .mailType(MailType.EMAIL_VERIFICATION)
                     .mailTriggered(true)  // Request wollte Mail versenden
-                    .mailSent(true)       // Mail wurde TATSÄCHLICH versendet ✅
+                    .mailSent(response.isEmailSent())  // Echter Status aus EmailDeliveryService!
                     .blocked(false, null)
                     .httpStatus(201)
             );
+            
+            log.info("[{}] Registration completed: userCreated=true, emailSent={}, emailStatus={}, errorCode={}", 
+                requestId, response.isEmailSent(), response.getEmailStatus(), response.getEmailErrorCode());
 
             // SECURITY: KEINE Warenkorb-Migration! User ist noch NICHT angemeldet.
             // Warenkorb-Migration erfolgt erst NACH Email-Verifizierung beim ersten Login.
@@ -480,9 +484,19 @@ public class AuthController {
         }
 
         try {
-            passwordResetService.initiatePasswordReset(request.email());
-            // SECURITY: Immer success zurückgeben, auch wenn Email nicht existiert (verhindert User Enumeration)
-            return ResponseEntity.ok(new SuccessResponse("If this email exists, a password reset link has been sent."));
+            // Sprache aus Request extrahieren (optional)
+            String preferredLang = request.email().contains("@") ? "en" : "en"; // Default EN
+            
+            EmailDeliveryResult emailResult = passwordResetService.initiatePasswordReset(
+                request.email(), 
+                preferredLang
+            );
+            
+            // SECURITY: Immer neutrale Antwort zurückgeben (verhindert User Enumeration)
+            // ABER: Intern wird echter Versandstatus geloggt
+            return ResponseEntity.ok(new SuccessResponse(
+                "If this email exists, a password reset link has been sent."
+            ));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ErrorResponse(e.getMessage()));
@@ -617,6 +631,15 @@ public class AuthController {
     private record SuccessResponse(String message) {}
 
     public record ResendVerificationRequest(String email) {}
+
+    private record EmailOperationResponseDto(
+        boolean operationSuccessful,
+        boolean emailSent,
+        String emailStatus,
+        String errorCode,
+        String message,
+        boolean retryAllowed
+    ) {}
 
     public record ForgotPasswordRequest(String email, String captchaToken) {}
 

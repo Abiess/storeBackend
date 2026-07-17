@@ -23,12 +23,40 @@ public class StoreRoleService {
     private final StoreRepository storeRepository;
     private final UserRepository userRepository;
 
-    /** Alle Rollen eines Stores abrufen */
+    /** Alle Rollen eines Stores abrufen (inkl. Owner) */
     public List<StoreRoleDTO> getRolesForStore(Long storeId) {
-        return storeRoleRepository.findByStoreId(storeId)
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found: " + storeId));
+        
+        List<StoreRoleDTO> roles = storeRoleRepository.findByStoreId(storeId)
                 .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
+        
+        // Owner an erster Stelle hinzufügen (falls nicht bereits in store_roles)
+        User owner = store.getOwner();
+        if (owner != null) {
+            boolean ownerAlreadyListed = roles.stream()
+                    .anyMatch(r -> r.userId.equals(owner.getId()));
+            
+            if (!ownerAlreadyListed) {
+                StoreRoleDTO ownerDto = new StoreRoleDTO();
+                ownerDto.id = null; // Kein DB-Eintrag in store_roles
+                ownerDto.userId = owner.getId();
+                ownerDto.userEmail = owner.getEmail();
+                ownerDto.userName = owner.getName();
+                ownerDto.storeId = storeId;
+                ownerDto.role = "STORE_OWNER";
+                ownerDto.permissions = List.of("*"); // Alle Berechtigungen
+                ownerDto.createdAt = store.getCreatedAt();
+                ownerDto.updatedAt = store.getUpdatedAt();
+                ownerDto.isOwner = true; // Flag für Frontend
+                
+                roles.add(0, ownerDto); // An erster Stelle
+            }
+        }
+        
+        return roles;
     }
 
     /** Neue Rolle hinzufügen */

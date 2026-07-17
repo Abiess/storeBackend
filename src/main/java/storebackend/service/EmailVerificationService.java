@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import storebackend.dto.EmailDeliveryResult;
 import storebackend.entity.EmailVerification;
 import storebackend.entity.User;
 import storebackend.exception.RateLimitExceededException;
@@ -29,9 +30,11 @@ public class EmailVerificationService {
      * Erstellt einen Verification-Token und sendet Email
      * WICHTIG: Läuft in derselben Transaction wie User-Registrierung (REQUIRED)
      * damit der Foreign Key constraint erfüllt ist
+     * 
+     * @return EmailDeliveryResult mit Status des E-Mail-Versands
      */
     @Transactional(propagation = Propagation.REQUIRED)
-    public void createAndSendVerificationToken(User user) {
+    public EmailDeliveryResult createAndSendVerificationToken(User user) {
         // Lösche alte Tokens für diesen User
         emailVerificationRepository.findByUser(user)
             .ifPresent(emailVerificationRepository::delete);
@@ -47,22 +50,27 @@ public class EmailVerificationService {
 
         emailVerificationRepository.save(verification);
 
-        log.info("Verification token created for user: {}", user.getEmail());
+        log.info("✅ Verification token created for user: {}", user.getEmail());
 
-        // Sende Email asynchron NACH dem Transaction-Commit
-        sendVerificationEmailAsync(user.getEmail(), token, user.getPreferredLanguage());
+        // Sende Email und return result
+        return sendVerificationEmailWithResult(user.getEmail(), token, user.getPreferredLanguage());
     }
 
     /**
-     * Sendet Verification-Email asynchron (ohne Transaktionskontext)
+     * Sendet Verification-Email und gibt Result zurück
      * Failures hier blockieren NICHT die User-Registrierung
+     * 
+     * @return EmailDeliveryResult mit Status, ErrorCode und User-Message
      */
-    private void sendVerificationEmailAsync(String email, String token, String lang) {
+    private EmailDeliveryResult sendVerificationEmailWithResult(String email, String token, String lang) {
         try {
-            emailService.sendVerificationEmail(email, token, lang != null ? lang : "en");
+            return emailService.sendVerificationEmailWithResult(email, token, lang != null ? lang : "en");
         } catch (Exception e) {
-            log.error("Failed to send verification email to: {}, but token was saved in DB. User can request resend.", email, e);
-            // ❌ NICHT werfen - Email-Fehler dürfen Registrierung nicht blockieren
+            log.error("❌ Failed to send verification email to: {}, but token was saved in DB. User can request resend.", email, e);
+            return EmailDeliveryResult.temporaryFailure(
+                "UNKNOWN_EMAIL_ERROR",
+                "Die Bestätigungs-E-Mail konnte derzeit nicht versendet werden. Sie können sie erneut anfordern."
+            );
         }
     }
 
@@ -101,23 +109,26 @@ public class EmailVerificationService {
      * MIT COOLDOWN-SCHUTZ gegen Spam
      * 
      * SECURITY: Neutrale Antwort - verrät nicht ob Email existiert (User-Enumeration-Schutz)
+     * ABER: Gibt intern den echten E-Mail-Versandstatus zurück für korrektes UI-Feedback
+     * 
+     * @return EmailDeliveryResult mit echtem Versandstatus (nur wenn User existiert)
      */
     @Transactional
-    public void resendVerificationEmail(String email) {
+    public EmailDeliveryResult resendVerificationEmail(String email) {
         User user = userRepository.findByEmail(email)
             .orElse(null);
 
         // SECURITY: Neutrale Antwort - keine Information ob User existiert
         if (user == null) {
             log.debug("Resend verification requested for unknown email: {}", email);
-            // Einfach erfolgreich zurückgeben ohne Error
-            return;
+            // Gebe "erfolgreichen" Fake-Result zurück (Security: User-Enumeration-Schutz)
+            return EmailDeliveryResult.success();
         }
         
         if (Boolean.TRUE.equals(user.getEmailVerified())) {
             log.debug("Resend verification requested for already verified email: {}", email);
-            // Auch hier neutral: Erfolgreich zurückgeben
-            return;
+            // Auch hier neutral: Fake-Success zurückgeben
+            return EmailDeliveryResult.success();
         }
 
         // Prüfe Cooldown: Wann wurde der letzte Token erstellt?
@@ -136,7 +147,8 @@ public class EmailVerificationService {
             }
         }
 
-        createAndSendVerificationToken(user);
+        // Erstelle Token und sende Mail - gibt echten EmailDeliveryResult zurück
+        return createAndSendVerificationToken(user);
     }
 
     /**

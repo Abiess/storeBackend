@@ -5,11 +5,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import storebackend.dto.CreateTeamInvitationRequest;
+import storebackend.dto.EmailDeliveryResult;
 import storebackend.dto.TeamInvitationDTO;
+import storebackend.dto.TeamInvitationResponse;
 import storebackend.entity.Store;
 import storebackend.entity.StoreRole;
 import storebackend.entity.TeamInvitation;
 import storebackend.entity.User;
+import storebackend.exception.EmailDeliveryException;
 import storebackend.repository.StoreRepository;
 import storebackend.repository.StoreRoleRepository;
 import storebackend.repository.TeamInvitationRepository;
@@ -48,7 +51,7 @@ public class TeamInvitationService {
 
     /** Neue Einladung erstellen */
     @Transactional
-    public TeamInvitationDTO createInvitation(Long storeId, CreateTeamInvitationRequest req, User inviter) {
+    public TeamInvitationResponse createInvitation(Long storeId, CreateTeamInvitationRequest req, User inviter) {
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found: " + storeId));
 
@@ -92,15 +95,31 @@ public class TeamInvitationService {
         log.info("✅ Team-Einladung erstellt: store={}, email={}, role={}, expires={}",
                 storeId, req.email, req.role, invitation.getExpiresAt());
 
-        // 6. E-Mail versenden (mit Klartext-Token!)
-        emailService.sendTeamInvitationEmail(
+        // 6. E-Mail versenden (NACH DB-Commit!)
+        // Falls E-Mail fehlschlägt, bleibt die Einladung gespeichert und kann per "Resend" erneut versendet werden
+        EmailDeliveryResult emailResult = emailService.sendTeamInvitationEmailWithResult(
                 req.email,
                 plainToken,
                 store.getName(),
-                req.role
+                req.role,
+                "en" // TODO: User-Präferenz berücksichtigen
         );
+        
+        if (emailResult.isSent()) {
+            log.info("✅ Einladungs-E-Mail versendet: id={}, email={}", invitation.getId(), req.email);
+        } else {
+            log.warn("⚠️ Einladungs-E-Mail konnte nicht versendet werden: id={}, email={}, errorCode={}",
+                    invitation.getId(), req.email, emailResult.errorCode());
+        }
 
-        return toDTO(invitation);
+        // 7. Strukturierte Response zurückgeben
+        return new TeamInvitationResponse(
+                toDTO(invitation),
+                emailResult.isSent(),
+                emailResult.status().name(),
+                emailResult.errorCode(),
+                !emailResult.isSent() // retryAllowed wenn nicht versendet
+        );
     }
 
     /** Einladung per Token akzeptieren */
@@ -174,9 +193,14 @@ public class TeamInvitationService {
                 invitationId, invitation.getEmail(), revoker.getId());
     }
 
-    /** Einladung erneut senden */
+    /** 
+     * Einladung erneut senden 
+     * Generiert neuen Token und sendet E-Mail erneut
+     * 
+     * @return TeamInvitationResponse mit echtem E-Mail-Versandstatus
+     */
     @Transactional
-    public void resendInvitation(Long invitationId, User inviter) {
+    public TeamInvitationResponse resendInvitation(Long invitationId, User inviter) {
         TeamInvitation invitation = invitationRepository.findById(invitationId)
                 .orElseThrow(() -> new RuntimeException("Einladung nicht gefunden"));
 
@@ -197,15 +221,30 @@ public class TeamInvitationService {
         invitation.setExpiresAt(LocalDateTime.now().plusDays(EXPIRY_DAYS));
         invitationRepository.save(invitation);
 
-        // E-Mail erneut senden
-        emailService.sendTeamInvitationEmail(
+        // E-Mail erneut senden (NACH DB-Commit!)
+        EmailDeliveryResult emailResult = emailService.sendTeamInvitationEmailWithResult(
                 invitation.getEmail(),
                 newPlainToken,
                 invitation.getStore().getName(),
-                invitation.getRole()
+                invitation.getRole(),
+                "en" // TODO: User-Präferenz berücksichtigen
         );
-
-        log.info("✅ Einladung erneut versendet: id={}, email={}", invitationId, invitation.getEmail());
+        
+        if (emailResult.isSent()) {
+            log.info("✅ Einladung erneut versendet: id={}, email={}", invitationId, invitation.getEmail());
+        } else {
+            log.warn("⚠️ Einladungs-E-Mail konnte nicht erneut versendet werden: id={}, email={}, errorCode={}",
+                    invitationId, invitation.getEmail(), emailResult.errorCode());
+        }
+        
+        // Strukturierte Response zurückgeben
+        return new TeamInvitationResponse(
+                toDTO(invitation),
+                emailResult.isSent(),
+                emailResult.status().name(),
+                emailResult.errorCode(),
+                !emailResult.isSent() // retryAllowed wenn nicht versendet
+        );
     }
 
     // ══════════════════════════════════════════════════════════════════════════

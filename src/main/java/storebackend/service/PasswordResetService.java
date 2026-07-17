@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import storebackend.dto.EmailDeliveryResult;
 import storebackend.entity.PasswordResetToken;
 import storebackend.entity.User;
 import storebackend.repository.PasswordResetTokenRepository;
@@ -25,17 +26,22 @@ public class PasswordResetService {
 
     /**
      * Erstellt einen Reset-Token und sendet Email
+     * 
+     * SECURITY: Neutrale Antwort - verrät NIEMALS ob Email existiert (User-Enumeration-Schutz)
+     * ABER: Gibt intern den echten E-Mail-Versandstatus zurück für korrektes Logging
+     * 
+     * @return EmailDeliveryResult - enthält echten Versandstatus (nur intern verwenden!)
      */
     @Transactional
-    public void initiatePasswordReset(String email) {
+    public EmailDeliveryResult initiatePasswordReset(String email, String preferredLanguage) {
         // User finden (oder ignorieren wenn nicht existiert - aus Sicherheitsgründen)
         User user = userRepository.findByEmail(email).orElse(null);
 
         if (user == null) {
             // SECURITY: Gib keine Info, ob Email existiert - verhindert User Enumeration
             log.info("Password reset requested for non-existent email: {}", email);
-            // Trotzdem "success" zurückgeben, aber keine Email senden
-            return;
+            // Trotzdem "success" zurückgeben (Fake-Result für Security)
+            return EmailDeliveryResult.success();
         }
 
         // Lösche alte Tokens für diesen User
@@ -53,10 +59,22 @@ public class PasswordResetService {
 
         passwordResetTokenRepository.save(resetToken);
 
-        // Sende Reset Email
-        emailService.sendPasswordResetEmail(user.getEmail(), token, user.getPreferredLanguage());
-
         log.info("Password reset token created for user: {}", user.getEmail());
+
+        // Sende Reset Email und gebe echten Versandstatus zurück
+        try {
+            return emailService.sendPasswordResetEmailWithResult(
+                user.getEmail(), 
+                token, 
+                preferredLanguage != null ? preferredLanguage : user.getPreferredLanguage()
+            );
+        } catch (Exception e) {
+            log.error("Failed to send password reset email to: {}, but token was saved", user.getEmail(), e);
+            return EmailDeliveryResult.temporaryFailure(
+                "UNKNOWN_EMAIL_ERROR",
+                "Die E-Mail konnte derzeit nicht versendet werden. Bitte später erneut versuchen."
+            );
+        }
     }
 
     /**

@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import storebackend.dto.EmailDeliveryResult;
 import storebackend.entity.OrderItem;
 
 import java.util.ArrayList;
@@ -22,6 +23,7 @@ public class EmailService {
     private final JavaMailSender mailSender;
     private final EmailTemplateService templateService;
     private final EmailCircuitBreakerService circuitBreakerService;
+    private final EmailDeliveryService emailDeliveryService;
 
     @Value("${spring.mail.from:noreply@markt.ma}")
     private String fromEmail;
@@ -54,22 +56,44 @@ public class EmailService {
         sendVerificationEmail(toEmail, token, "en");
     }
 
+    /**
+     * DEPRECATED: Nutze sendVerificationEmailWithResult() für neue Funktionen
+     * @deprecated Use sendVerificationEmailWithResult() to check email delivery status
+     */
+    @Deprecated
     public void sendVerificationEmail(String toEmail, String token, String lang) {
+        sendVerificationEmailWithResult(toEmail, token, lang);
+    }
+    
+    /**
+     * Verifikations-E-Mail mit Result-Status (NEUE METHODE)
+     * @return EmailDeliveryResult mit Status, ErrorCode und User-Message
+     */
+    public EmailDeliveryResult sendVerificationEmailWithResult(String toEmail, String token, String lang) {
         // EMERGENCY KILL SWITCH
         if (!verificationEmailEnabled) {
             log.error("🚨 EMERGENCY: Verification Email DISABLED via feature flag (to: {})", toEmail);
-            return;
+            return EmailDeliveryResult.permanentFailure(
+                "FEATURE_DISABLED",
+                "E-Mail-Versand ist derzeit deaktiviert."
+            );
         }
         
         if (!mailEnabled) {
             log.info("Mail disabled – verification URL: {}/verify?token={}", baseUrl, token);
-            return;
+            return EmailDeliveryResult.permanentFailure(
+                "MAIL_DISABLED",
+                "E-Mail-Versand ist in dieser Umgebung deaktiviert."
+            );
         }
         
         // Circuit Breaker Check
         if (!circuitBreakerService.allowEmail("verification")) {
             log.error("🚨 Circuit Breaker: Verification email to {} blocked (rate limit exceeded)", toEmail);
-            return;
+            return EmailDeliveryResult.temporaryFailure(
+                "RATE_LIMIT_EXCEEDED",
+                "Zu viele E-Mail-Anfragen. Bitte versuchen Sie es in wenigen Minuten erneut."
+            );
         }
         
         try {
@@ -85,10 +109,27 @@ public class EmailService {
 
             String subject = templateService.renderSubject(
                 t(lang, "verification.subject", "Verify your email address - Markt.ma"), vars);
-            sendHtml(toEmail, subject, templateService.render("email-verification.html", lang, vars));
-            log.info("Verification email (HTML/{}) sent to: {}", lang, toEmail);
+            
+            MimeMessage message = buildHtmlMessage(toEmail, subject, 
+                templateService.render("email-verification.html", lang, vars));
+            
+            EmailDeliveryResult result = emailDeliveryService.send(message, "verification");
+            
+            if (result.isSent()) {
+                log.info("✅ Verification email (HTML/{}) sent successfully", lang);
+            } else {
+                log.warn("⚠️ Verification email delivery failed: status={}, errorCode={}", 
+                    result.status(), result.errorCode());
+            }
+            
+            return result;
+            
         } catch (Exception e) {
-            log.error("Failed to send verification email to: {}", toEmail, e);
+            log.error("❌ Failed to prepare verification email", e);
+            return EmailDeliveryResult.permanentFailure(
+                "TEMPLATE_ERROR",
+                "Die E-Mail konnte nicht erstellt werden."
+            );
         }
     }
 
@@ -238,6 +279,77 @@ public class EmailService {
         }
     }
 
+    /**
+     * Sendet Password-Reset-E-Mail und gibt Result zurück
+     * Verwendet zentralen EmailDeliveryService für einheitliche Fehlerbehandlung
+     * 
+     * @return EmailDeliveryResult mit Status, ErrorCode und User-Message
+     */
+    public EmailDeliveryResult sendPasswordResetEmailWithResult(String toEmail, String token, String lang) {
+        // EMERGENCY KILL SWITCH
+        if (!passwordResetEmailEnabled) {
+            log.error("🚨 EMERGENCY: Password Reset Email DISABLED via feature flag (to: {})", toEmail);
+            return EmailDeliveryResult.permanentFailure(
+                "EMAIL_FEATURE_DISABLED",
+                "Der E-Mail-Versand ist derzeit deaktiviert."
+            );
+        }
+        
+        if (!mailEnabled) {
+            log.info("Mail disabled – reset URL: {}/reset-password?token={}", baseUrl, token);
+            return EmailDeliveryResult.permanentFailure(
+                "EMAIL_FEATURE_DISABLED",
+                "Der E-Mail-Versand ist derzeit deaktiviert."
+            );
+        }
+        
+        // Circuit Breaker Check
+        if (!circuitBreakerService.allowEmail("password-reset")) {
+            log.error("🚨 Circuit Breaker: Password reset email to {} blocked (rate limit exceeded)", toEmail);
+            return EmailDeliveryResult.temporaryFailure(
+                "RATE_LIMIT_EXCEEDED",
+                "Zu viele E-Mails wurden versendet. Bitte später erneut versuchen."
+            );
+        }
+        
+        try {
+            Map<String, Object> vars = new HashMap<>();
+            vars.put("resetUrl",  baseUrl + "/reset-password?token=" + token);
+            vars.put("greeting",  buildGreeting(lang, null));
+            vars.put("title",     t(lang, "passwordReset.title",  "Reset Your Password"));
+            vars.put("intro",     t(lang, "passwordReset.intro",  "We received a reset request."));
+            vars.put("btnLabel",  t(lang, "passwordReset.button", "Reset Password"));
+            vars.put("expiry",    t(lang, "passwordReset.expiry", "This link expires in 1 hour."));
+            vars.put("ignore",    t(lang, "passwordReset.ignore", ""));
+            addFooter(lang, vars);
+
+            String subject = templateService.renderSubject(
+                t(lang, "passwordReset.subject", "Reset your password - Markt.ma"), vars);
+            
+            // Build message without sending
+            MimeMessage message = buildHtmlMessage(toEmail, subject, 
+                templateService.render("password-reset.html", lang, vars));
+            
+            // Send via centralized EmailDeliveryService
+            EmailDeliveryResult result = emailDeliveryService.send(message, "password-reset");
+            
+            if (result.isSent()) {
+                log.info("✅ Password reset email (HTML/{}) sent to: {}", lang, toEmail);
+            } else {
+                log.warn("⚠️ Password reset email to {} failed: {}", toEmail, result.errorCode());
+            }
+            
+            return result;
+            
+        } catch (Exception e) {
+            log.error("❌ Failed to build password reset email for: {}", toEmail, e);
+            return EmailDeliveryResult.temporaryFailure(
+                "TEMPLATE_ERROR",
+                "Die E-Mail konnte nicht erstellt werden."
+            );
+        }
+    }
+
     public void sendPasswordResetConfirmationEmail(String toEmail, String name) {
         sendPasswordResetConfirmationEmail(toEmail, name, "en");
     }
@@ -266,21 +378,24 @@ public class EmailService {
     // ==================================================================================
 
     /**
-     * Team-Einladungs-E-Mail versenden
+     * Team-Einladungs-E-Mail versenden und Result zurückgeben
+     * Verwendet zentralen EmailDeliveryService für einheitliche Fehlerbehandlung
      * 
-     * @param recipientEmail  E-Mail des eingeladenen Benutzers
-     * @param plainToken      Klartext-Token (nur für E-Mail, niemals in DB!)
-     * @param storeName       Name des Stores
-     * @param role            Zugewiesene Rolle
+     * @return EmailDeliveryResult mit Status, ErrorCode und User-Message
      */
-    public void sendTeamInvitationEmail(String recipientEmail, String plainToken, String storeName, String role) {
-        sendTeamInvitationEmail(recipientEmail, plainToken, storeName, role, "en");
-    }
-
-    public void sendTeamInvitationEmail(String recipientEmail, String plainToken, String storeName, String role, String lang) {
+    public EmailDeliveryResult sendTeamInvitationEmailWithResult(
+            String recipientEmail, 
+            String plainToken, 
+            String storeName, 
+            String role, 
+            String lang
+    ) {
         if (!mailEnabled) {
             log.info("📧 Mail disabled – team invitation would be sent to: {}", recipientEmail);
-            return;
+            return EmailDeliveryResult.permanentFailure(
+                "EMAIL_FEATURE_DISABLED",
+                "Der E-Mail-Versand ist derzeit deaktiviert."
+            );
         }
 
         try {
@@ -288,7 +403,7 @@ public class EmailService {
             String acceptUrl = baseUrl + "/invitations/accept?token=" + plainToken;
 
             // Rolle übersetzen
-            String roleTranslated = translateRole(role, lang);
+            String roleTranslated = translateRole(role, lang != null ? lang : "en");
 
             Map<String, Object> vars = new HashMap<>();
             vars.put("storeName", storeName);
@@ -308,16 +423,29 @@ public class EmailService {
             String subject = templateService.renderSubject(
                 t(lang, "teamInvitation.subject", "Team Invitation - {{storeName}}"), vars);
 
-            sendHtml(recipientEmail, subject, templateService.render("team-invitation.html", lang, vars));
+            // Build message without sending
+            MimeMessage message = buildHtmlMessage(recipientEmail, subject, 
+                templateService.render("team-invitation.html", lang, vars));
             
-            log.info("✅ Team invitation email sent: to={}, store={}, role={}", 
-                    recipientEmail, storeName, role);
+            // Send via centralized EmailDeliveryService
+            EmailDeliveryResult result = emailDeliveryService.send(message, "team-invitation");
+            
+            if (result.isSent()) {
+                log.info("✅ Team invitation email sent: to={}, store={}, role={}", 
+                        recipientEmail, storeName, role);
+            } else {
+                log.warn("⚠️ Team invitation email to {} failed: {}", recipientEmail, result.errorCode());
+            }
+            
+            return result;
 
         } catch (Exception e) {
-            log.error("❌ Failed to send team invitation email: to={}, store={}", 
+            log.error("❌ Failed to build team invitation email: to={}, store={}", 
                     recipientEmail, storeName, e);
-            // Exception weiterwerfen, damit der Service Bescheid weiß
-            throw new RuntimeException("E-Mail-Versand fehlgeschlagen: " + e.getMessage(), e);
+            return EmailDeliveryResult.temporaryFailure(
+                "TEMPLATE_ERROR",
+                "Die E-Mail konnte nicht erstellt werden."
+            );
         }
     }
 
@@ -423,15 +551,20 @@ public class EmailService {
     // ORDER E-MAILS
     // ==================================================================================
 
-    /** Rückwärtskompatibel */
-    public void sendOrderConfirmation(String toEmail, String orderNumber, String storeName, Double totalAmount) {
-        sendOrderConfirmation(toEmail, orderNumber, storeName, totalAmount, new ArrayList<>(), null, "en");
-    }
+    /**
+     * Order Confirmation mit strukturiertem Delivery-Result.
+     * Verwendet den zentralen EmailDeliveryService für Fehlerklassifizierung.
+     */
+    public EmailDeliveryResult sendOrderConfirmationWithResult(
+            String toEmail, String orderNumber, String storeName,
+            Double totalAmount, List<OrderItem> items,
+            String storeLogo, String lang) {
+        
+        if (!mailEnabled) {
+            log.info("Mail disabled – order confirmation to masked recipient");
+            return EmailDeliveryResult.success();
+        }
 
-    public void sendOrderConfirmation(String toEmail, String orderNumber, String storeName,
-                                      Double totalAmount, List<OrderItem> items,
-                                      String storeLogo, String lang) {
-        if (!mailEnabled) { log.info("Mail disabled – order confirmation to: {}", toEmail); return; }
         try {
             Map<String, Object> vars = new HashMap<>();
             vars.put("orderNumber",       orderNumber);
@@ -474,23 +607,66 @@ public class EmailService {
 
             String subjectTpl = t(lang, "orderConfirmation.subject",
                     "Order Confirmation #{{orderNumber}} - {{storeName}}");
-            sendHtml(toEmail, templateService.renderSubject(subjectTpl, vars),
-                     templateService.render("order-confirmation.html", lang, vars));
-            log.info("Order confirmation (HTML/{}) sent to: {} order: {}", lang, toEmail, orderNumber);
+            String subject = templateService.renderSubject(subjectTpl, vars);
+            String htmlBody = templateService.render("order-confirmation.html", lang, vars);
+
+            MimeMessage message = buildHtmlMessage(toEmail, subject, htmlBody);
+            EmailDeliveryResult result = emailDeliveryService.send(message, "ORDER_CONFIRMATION");
+
+            if (result.isSent()) {
+                log.info("Order confirmation sent: order={}, lang={}", 
+                    orderNumber, lang);
+            } else {
+                log.warn("Order confirmation failed: order={}, errorCode={}", 
+                    orderNumber, result.errorCode());
+            }
+
+            return result;
+
         } catch (Exception e) {
-            log.error("Failed to send order confirmation to: {}", toEmail, e);
+            log.error("Order confirmation preparation failed: order={}", 
+                orderNumber, e);
+            return EmailDeliveryResult.temporaryFailure(
+                "TEMPLATE_ERROR",
+                "Die E-Mail konnte nicht vorbereitet werden."
+            );
+        }
+    }
+
+    /** Rückwärtskompatibel – delegiert an WithResult-Methode */
+    @Deprecated
+    public void sendOrderConfirmation(String toEmail, String orderNumber, String storeName,
+                                      Double totalAmount, List<OrderItem> items,
+                                      String storeLogo, String lang) {
+        EmailDeliveryResult result = sendOrderConfirmationWithResult(
+            toEmail, orderNumber, storeName, totalAmount, items, storeLogo, lang
+        );
+        if (!result.isSent()) {
+            log.warn("Order confirmation delivery failed (deprecated method): order={}, errorCode={}", 
+                orderNumber, result.errorCode());
         }
     }
 
     /** Rückwärtskompatibel */
-    public void sendShippingNotification(String toEmail, String orderNumber, String storeName, String trackingNumber) {
-        sendShippingNotification(toEmail, orderNumber, storeName, trackingNumber, null, null, null, "en");
+    @Deprecated
+    public void sendOrderConfirmation(String toEmail, String orderNumber, String storeName, Double totalAmount) {
+        sendOrderConfirmation(toEmail, orderNumber, storeName, totalAmount, new ArrayList<>(), null, "en");
     }
 
-    public void sendShippingNotification(String toEmail, String orderNumber, String storeName,
-                                         String trackingNumber, String trackingUrl,
-                                         String carrier, String storeLogo, String lang) {
-        if (!mailEnabled) { log.info("Mail disabled – shipping notification to: {}", toEmail); return; }
+    /**
+     * Shipping Notification mit strukturiertem Delivery-Result.
+     * Verwendet den zentralen EmailDeliveryService für Fehlerklassifizierung.
+     */
+    public EmailDeliveryResult sendShippingNotificationWithResult(
+            String toEmail, String orderNumber, String storeName,
+            String trackingNumber, String trackingUrl,
+            String carrier, String storeLogo, String lang) {
+        
+        if (!mailEnabled) {
+            log.info("Mail disabled – shipping notification to masked recipient");
+            return EmailDeliveryResult.success();
+        }
+
         try {
             Map<String, Object> vars = new HashMap<>();
             vars.put("orderNumber",      orderNumber);
@@ -516,17 +692,50 @@ public class EmailService {
 
             String subjectTpl = t(lang, "shipping.subject",
                     "Your Order #{{orderNumber}} Has Been Shipped - {{storeName}}");
-            sendHtml(toEmail, templateService.renderSubject(subjectTpl, vars),
-                     templateService.render("shipping-notification.html", lang, vars));
-            log.info("Shipping notification (HTML/{}) sent to: {} order: {}", lang, toEmail, orderNumber);
+            String subject = templateService.renderSubject(subjectTpl, vars);
+            String htmlBody = templateService.render("shipping-notification.html", lang, vars);
+
+            MimeMessage message = buildHtmlMessage(toEmail, subject, htmlBody);
+            EmailDeliveryResult result = emailDeliveryService.send(message, "SHIPPING_NOTIFICATION");
+
+            if (result.isSent()) {
+                log.info("Shipping notification sent: order={}, lang={}", 
+                    orderNumber, lang);
+            } else {
+                log.warn("Shipping notification failed: order={}, errorCode={}", 
+                    orderNumber, result.errorCode());
+            }
+
+            return result;
+
         } catch (Exception e) {
-            log.error("Failed to send shipping notification to: {}", toEmail, e);
+            log.error("Shipping notification preparation failed: order={}", 
+                orderNumber, e);
+            return EmailDeliveryResult.temporaryFailure(
+                "TEMPLATE_ERROR",
+                "Die E-Mail konnte nicht vorbereitet werden."
+            );
+        }
+    }
+
+    /** Rückwärtskompatibel – delegiert an WithResult-Methode */
+    @Deprecated
+    public void sendShippingNotification(String toEmail, String orderNumber, String storeName,
+                                         String trackingNumber, String trackingUrl,
+                                         String carrier, String storeLogo, String lang) {
+        EmailDeliveryResult result = sendShippingNotificationWithResult(
+            toEmail, orderNumber, storeName, trackingNumber, trackingUrl, carrier, storeLogo, lang
+        );
+        if (!result.isSent()) {
+            log.warn("Shipping notification delivery failed (deprecated method): order={}, errorCode={}", 
+                orderNumber, result.errorCode());
         }
     }
 
     /** Rückwärtskompatibel */
-    public void sendDeliveryConfirmation(String toEmail, String orderNumber, String storeName) {
-        sendDeliveryConfirmation(toEmail, orderNumber, storeName, null, "en");
+    @Deprecated
+    public void sendShippingNotification(String toEmail, String orderNumber, String storeName, String trackingNumber) {
+        sendShippingNotification(toEmail, orderNumber, storeName, trackingNumber, null, null, null, "en");
     }
 
     public void sendDeliveryConfirmation(String toEmail, String orderNumber, String storeName,
@@ -795,6 +1004,19 @@ public class EmailService {
         helper.setSubject(subject);
         helper.setText(html, true);
         mailSender.send(mime);
+    }
+    
+    /**
+     * Erstellt MimeMessage ohne zu senden (für EmailDeliveryService)
+     */
+    private MimeMessage buildHtmlMessage(String to, String subject, String html) throws Exception {
+        MimeMessage mime = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(mime, true, "UTF-8");
+        helper.setFrom(fromEmail);
+        helper.setTo(to);
+        helper.setSubject(subject);
+        helper.setText(html, true);
+        return mime;
     }
 
     /** Baut die Begrüßungszeile je Sprache */

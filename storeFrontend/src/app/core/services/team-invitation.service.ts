@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@env/environment';
-import { TeamInvitation, CreateTeamInvitationRequest } from '../models';
+import { TeamInvitation, TeamInvitationResponse, CreateTeamInvitationRequest } from '../models';
 
 @Injectable({
   providedIn: 'root'
@@ -15,8 +15,8 @@ export class TeamInvitationService {
   createInvitation(
     storeId: number,
     request: CreateTeamInvitationRequest
-  ): Observable<TeamInvitation> {
-    return this.http.post<TeamInvitation>(
+  ): Observable<TeamInvitationResponse> {
+    return this.http.post<TeamInvitationResponse>(
       `${this.apiUrl}/stores/${storeId}/team-invitations`,
       request
     );
@@ -35,8 +35,8 @@ export class TeamInvitationService {
     );
   }
 
-  resendInvitation(storeId: number, invitationId: number): Observable<void> {
-    return this.http.post<void>(
+  resendInvitation(storeId: number, invitationId: number): Observable<TeamInvitationResponse> {
+    return this.http.post<TeamInvitationResponse>(
       `${this.apiUrl}/stores/${storeId}/team-invitations/${invitationId}/resend`,
       {}
     );

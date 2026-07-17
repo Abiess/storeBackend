@@ -73,11 +73,12 @@ public class AuthService {
         user = userRepository.saveAndFlush(user);
 
         // SECURITY: KEIN JWT-Token mehr! User muss erst Email bestätigen
-        // Send verification email in SAME transaction - wird erst nach commit versendet
-        emailVerificationService.createAndSendVerificationToken(user);
+        // Send verification email in SAME transaction - gibt EmailDeliveryResult zurück
+        storebackend.dto.EmailDeliveryResult emailResult = 
+            emailVerificationService.createAndSendVerificationToken(user);
 
-        // Return success response WITHOUT token, WITH masked email
-        return RegistrationResponse.successWithMaskedEmail(user.getEmail());
+        // Return success response WITHOUT token, WITH masked email AND email status
+        return RegistrationResponse.successWithEmailStatus(user.getEmail(), emailResult);
     }
 
     public AuthResponse login(LoginRequest request) {

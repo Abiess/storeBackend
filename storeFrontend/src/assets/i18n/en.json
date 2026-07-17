@@ -701,8 +701,6 @@
     "resendIn": "Resend in",
     "resendSuccess": "✓ Verification email resent.",
     "resendFailed": "Failed to send. Please try again later.",
-    "goToLogin": "Go to login",
-    "emailAlreadyExists": "This email is already registered.",
     "checkingEmail": "Checking email...",
     "backToLogin": "Back to login",
     "forgotPasswordTitle": "Forgot your password?",
@@ -1588,149 +1586,6 @@
     "noSlug": "No slug",
     "hint": "Note:",
     "hintText": "Select the desired images (checkbox top left). These will be saved as products in your store."
-  },
-  "email": {
-    "greeting": "Hello {{name}},",
-    "greetingGuest": "Hello,",
-    "footerTeam": "Your Markt.ma Team",
-    "footerSupport": "For questions contact us at support@markt.ma",
-    "footerUnsubscribe": "You are receiving this email because you have an account at Markt.ma.",
-    "btnViewOrder": "View Order",
-    "btnTrackOrder": "Track Order",
-    "btnShopping": "Continue Shopping",
-    "btnSupport": "Contact Support",
-    "btnAccount": "My Account",
-    "verification": {
-      "subject": "Verify your email address - Markt.ma",
-      "title": "Verify Your Email",
-      "intro": "Welcome to Markt.ma! Please verify your email address to activate your account.",
-      "button": "Verify Email Address",
-      "expiry": "This link expires in 24 hours.",
-      "ignore": "If you did not create an account, please ignore this email."
-    },
-    "welcome": {
-      "subject": "Welcome to Markt.ma – Your email has been verified!",
-      "title": "Welcome to Markt.ma!",
-      "intro": "Your email address has been successfully verified. You can now log in and enjoy all features.",
-      "button": "Log In Now"
-    },
-    "passwordReset": {
-      "subject": "Reset your password - Markt.ma",
-      "title": "Reset Your Password",
-      "intro": "We received a request to reset your password.",
-      "button": "Reset Password",
-      "expiry": "This link expires in 1 hour.",
-      "ignore": "If you did not request a password reset, please ignore this email. Your password will remain unchanged."
-    },
-    "passwordChanged": {
-      "subject": "Your password has been changed - Markt.ma",
-      "title": "Password Successfully Changed",
-      "intro": "Your password has been successfully changed.",
-      "warning": "If you did not make this change, please contact our support immediately."
-    },
-    "orderConfirmation": {
-      "subject": "Order Confirmation #{{orderNumber}} - {{storeName}}",
-      "title": "Order Confirmed!",
-      "intro": "Thank you for your order! We have received it and are processing it.",
-      "labelOrderNumber": "Order Number",
-      "labelStore": "Store",
-      "labelTotal": "Total Amount",
-      "labelItems": "Ordered Items",
-      "labelShipping": "Shipping Address",
-      "labelProduct": "Item",
-      "labelQty": "Qty",
-      "labelPrice": "Price",
-      "labelItemTotal": "Total",
-      "outro": "You will receive another email once your order has been shipped."
-    },
-    "shipping": {
-      "subject": "Your Order #{{orderNumber}} Has Been Shipped - {{storeName}}",
-      "title": "Your Order Is On Its Way!",
-      "intro": "Great news! Your order has been shipped.",
-      "labelOrderNumber": "Order Number",
-      "labelTracking": "Tracking Number",
-      "labelCarrier": "Carrier",
-      "outro": "Your package should arrive within the next few days.",
-      "noTracking": "Tracking information will be available shortly.",
-      "btnTrack": "Track Shipment"
-    },
-    "delivery": {
-      "subject": "Your Order #{{orderNumber}} Has Been Delivered - {{storeName}}",
-      "title": "Order Successfully Delivered!",
-      "intro": "Your order has been successfully delivered. We hope you are satisfied!",
-      "labelOrderNumber": "Order Number",
-      "rating": "How was your experience? Leave a review!",
-      "outro": "Thank you for shopping at {{storeName}}!"
-    },
-    "cancellation": {
-      "subject": "Order #{{orderNumber}} Cancelled - {{storeName}}",
-      "title": "Order Cancelled",
-      "intro": "Your order has been cancelled.",
-      "labelOrderNumber": "Order Number",
-      "labelReason": "Cancellation Reason",
-      "outro": "If you have questions about the cancellation, please contact our support."
-    },
-    "subscription": {
-      "labelPlan": "Plan",
-      "labelDaysLeft": "Days left",
-      "labelAmount": "Amount",
-      "labelRenewal": "Renewal date",
-      "labelNext": "Next renewal",
-      "labelEnd": "End date",
-      "labelOldPlan": "Previous plan",
-      "labelNewPlan": "New plan",
-      "btnManage": "Manage Subscription",
-      "btnUpgrade": "Upgrade Now",
-      "btnReactivate": "Reactivate",
-      "btnDashboard": "Go to Dashboard",
-      "reminder": {
-        "subject": "Your subscription renews in {{daysLeft}} days",
-        "title": "Your subscription renews soon",
-        "intro": "Your subscription will renew automatically. Here are the details:",
-        "outro": "You can cancel anytime in your account."
-      },
-      "renewed": {
-        "subject": "Your {{planName}} subscription has been renewed",
-        "title": "Subscription renewed",
-        "intro": "Your subscription has been renewed successfully.",
-        "outro": "Thank you for staying with us!"
-      },
-      "expired": {
-        "subject": "Your {{planName}} subscription has expired",
-        "title": "Subscription expired",
-        "intro": "Your subscription has expired. You have been moved to the Free plan.",
-        "outro": "You can re-activate anytime to regain premium features."
-      },
-      "cancelled": {
-        "subject": "Your {{planName}} subscription has been cancelled",
-        "title": "Subscription cancelled",
-        "intro": "Your subscription has been cancelled as requested.",
-        "outro": "We'd love to have you back anytime!"
-      },
-      "upgraded": {
-        "subject": "Welcome to {{newPlanName}}!",
-        "title": "Welcome to {{newPlanName}}!",
-        "intro": "Your subscription has been upgraded successfully.",
-        "outro": "Enjoy your new features!"
-      }
-    },
-    "cart": {
-      "abandoned": {
-        "subject": "You left {{itemCount}} items in your cart - {{storeName}}",
-        "title": "Your cart is waiting for you",
-        "intro": "We noticed you left some items in your cart. Complete your purchase before they sell out!",
-        "outro": "This cart will be cleared automatically after 7 days.",
-        "labelItems": "Items in cart",
-        "btnCheckout": "Return to Cart"
-      }
-    },
-    "storeAccess": {
-      "subject": "Your store \"{{storeName}}\" is live 🚀 – markt.ma",
-      "title": "Your store is ready!",
-      "intro": "Your store is now live. Save this email – it contains your direct link to the dashboard and your store URL.",
-      "btnLabel": "Go to Dashboard",
-      "tip": "Tip: Save this email. It contains your direct access link to your store dashboard."
-    }
   },
   "usage": {
     "title": "Plan usage",
@@ -2625,5 +2480,29 @@
       "noChange": "No Change",
       "noChanges": "No changes required"
     }
+  },
+  "email": {
+    "sent": "Email sent successfully",
+    "dailyLimit": "Daily email limit reached. Please try again in 24 hours.",
+    "temporarilyUnavailable": "Email could not be sent. Please try again later.",
+    "configurationError": "Email service is currently unavailable. Please contact support.",
+    "rateLimitExceeded": "Too many requests. Please wait a few minutes.",
+    "serviceDisabled": "Email sending is disabled in this environment.",
+    "invalidRecipient": "The email address is invalid.",
+    "retry": "Resend email",
+    "accountCreatedMailFailed": "Account created successfully. The confirmation email could not be sent at this time.",
+    "help": {
+      "dailyLimit": "The sending limit will automatically reset after 24 hours.",
+      "rateLimitExceeded": "Please wait a few minutes before trying again."
+    }
+  },
+  "teamInvitation": {
+    "inviteSent": "Invitation sent successfully",
+    "inviteCreatedMailFailed": "Invitation created, but the email could not be sent at this time",
+    "inviteFailed": "Invitation failed",
+    "resendSuccess": "Invitation resent successfully",
+    "resendMailFailed": "Invitation updated, but email could not be sent",
+    "resendFailed": "Failed to resend invitation",
+    "mailFailed": "Email delivery failed"
   }
 }

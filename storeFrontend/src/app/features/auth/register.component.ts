@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { TranslationService } from '../../core/services/translation.service';
+import { EmailStatusHandlerService } from '../../core/services/email-status-handler.service';
 import { CaptchaComponent } from '../../shared/components/captcha.component';
 import { passwordMatchValidator, PASSWORD_MIN_LENGTH } from '../../shared/validators/password.validators';
 import { PasswordRequirementsComponent } from '../../shared/auth/password-requirements.component';
@@ -131,6 +132,8 @@ import { environment } from '../../../environments/environment';
         <app-registration-success
           *ngIf="successMessage"
           [email]="registeredEmail"
+          [emailSent]="registrationResponse?.emailSent ?? true"
+          [emailErrorCode]="registrationResponse?.emailErrorCode ?? null"
           (goToLogin)="goToLogin()">
         </app-registration-success>
 
@@ -348,6 +351,10 @@ export class RegisterComponent implements OnInit, OnDestroy {
 
   // Registrierte E-Mail für Success Panel
   registeredEmail = '';
+  
+  // NEUE: Email-Status-Tracking
+  registrationState: 'INITIAL' | 'EMAIL_SENT' | 'EMAIL_FAILED' = 'INITIAL';
+  registrationResponse: RegistrationResponse | null = null;
 
   // CAPTCHA State
   captchaEnabled = environment.captcha.enabled;
@@ -364,7 +371,8 @@ export class RegisterComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private router: Router,
     private route: ActivatedRoute,
-    private translationService: TranslationService
+    private translationService: TranslationService,
+    private emailStatusHandler: EmailStatusHandlerService
   ) {
     this.registerForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -472,11 +480,21 @@ export class RegisterComponent implements OnInit, OnDestroy {
       };
 
       this.authService.register(formData).subscribe({
-        next: () => {
+        next: (response: RegistrationResponse) => {
           this.loading = false;
           this.registeredEmail = formData.email;
-          this.successMessage = this.translationService.translate('auth.registrationSuccess') ||
-                               'Registration successful! Please check your email to verify your account.';
+          this.registrationResponse = response;
+          
+          // WICHTIG: Prüfe ob E-Mail wirklich versendet wurde!
+          if (response.emailSent) {
+            this.registrationState = 'EMAIL_SENT';
+          } else {
+            this.registrationState = 'EMAIL_FAILED';
+          }
+          
+          // successMessage immer setzen, damit SuccessPanel angezeigt wird
+          this.successMessage = 'Registration completed';
+          this.errorMessage = ''; // Keine globale Fehlermeldung, das Panel zeigt es
           
           // WICHTIG: Token nach erfolgreichem Submit löschen und Widget zurücksetzen
           this.resetCaptcha();
@@ -517,6 +535,50 @@ export class RegisterComponent implements OnInit, OnDestroy {
       this.captchaComponent.reset();
     }
   }
+  
+  /**
+   * E-Mail erneut senden (bei Versandfehler)
+   */
+  resendVerificationEmail(): void {
+    if (!this.registeredEmail || this.loading) return;
+    
+    this.loading = true;
+    this.errorMessage = '';
+    
+    this.authService.resendVerificationEmail(this.registeredEmail).subscribe({
+      next: (response: any) => {
+        this.loading = false;
+        
+        if (response.emailSent || response.success) {
+          this.registrationState = 'EMAIL_SENT';
+          this.successMessage = this.translationService.translate('email.sent') ||
+                               'E-Mail wurde erfolgreich versendet!';
+          this.errorMessage = '';
+        } else {
+          // Weiterhin fehlgeschlagen
+          this.errorMessage = response.message || 
+                             this.translationService.translate('email.temporarilyUnavailable') ||
+                             'Die E-Mail konnte derzeit nicht versendet werden.';
+        }
+      },
+      error: (err) => {
+        this.loading = false;
+        
+        // Spezielle Fehlerbehandlung
+        if (err.status === 429) {
+          this.errorMessage = this.translationService.translate('email.rateLimitExceeded') ||
+                             'Zu viele Anfragen. Bitte warten Sie einige Minuten.';
+        } else if (err.status === 503) {
+          this.errorMessage = this.translationService.translate('email.dailyLimit') ||
+                             'Das tägliche E-Mail-Limit wurde erreicht. Bitte versuchen Sie es in 24 Stunden erneut.';
+        } else {
+          this.errorMessage = err.error?.message || 
+                             this.translationService.translate('email.temporarilyUnavailable') ||
+                             'Die E-Mail konnte derzeit nicht versendet werden.';
+        }
+      }
+    });
+  }
 
   goToLogin(): void {
     this.router.navigate(['/login'], {
@@ -527,4 +589,16 @@ export class RegisterComponent implements OnInit, OnDestroy {
       }
     });
   }
+}
+
+// Interface für typisierte Response
+interface RegistrationResponse {
+  registrationSuccessful: boolean;
+  emailVerificationRequired: boolean;
+  emailSent: boolean;
+  emailStatus: string;
+  emailErrorCode?: string | null;
+  email: string;
+  message: string;
+  retryAllowed: boolean;
 }

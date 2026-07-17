@@ -14,5 +14,6 @@ public class StoreRoleDTO {
     public List<String> permissions;
     public LocalDateTime createdAt;
     public LocalDateTime updatedAt;
+    public Boolean isOwner; // true = Owner via stores.owner_id, false/null = store_roles
 }
 

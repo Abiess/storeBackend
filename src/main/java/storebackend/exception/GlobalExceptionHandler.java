@@ -76,18 +76,55 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Behandelt AiServiceException (AI-bezogene Fehler) → HTTP 400.
+     * Behandelt EmailNotVerifiedException → HTTP 403.
      */
-    @ExceptionHandler(AiServiceException.class)
-    public ResponseEntity<Map<String, Object>> handleAiServiceException(AiServiceException ex) {
+    @ExceptionHandler(EmailNotVerifiedException.class)
+    public ResponseEntity<Map<String, Object>> handleEmailNotVerifiedException(EmailNotVerifiedException ex) {
         Map<String, Object> errorResponse = new HashMap<>();
         errorResponse.put("timestamp", LocalDateTime.now().toString());
-        errorResponse.put("status", HttpStatus.BAD_REQUEST.value());
-        errorResponse.put("error", "AI Service Error");
+        errorResponse.put("status", HttpStatus.FORBIDDEN.value());
+        errorResponse.put("error", "Email Not Verified");
         errorResponse.put("message", ex.getMessage());
 
         return ResponseEntity
-            .status(HttpStatus.BAD_REQUEST)
+            .status(HttpStatus.FORBIDDEN)
+            .body(errorResponse);
+    }
+
+    /**
+     * Behandelt EmailDeliveryException → HTTP 503 Service Unavailable.
+     * 
+     * WICHTIG: Diese Exception wird NUR geworfen, wenn eine Operation OHNE erfolgreichen
+     * E-Mail-Versand nicht fortgesetzt werden kann.
+     * 
+     * Für Registrierung wird diese Exception NICHT geworfen - dort gibt's strukturiertes Response.
+     */
+    @ExceptionHandler(EmailDeliveryException.class)
+    public ResponseEntity<Map<String, Object>> handleEmailDeliveryException(EmailDeliveryException ex) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now().toString());
+        errorResponse.put("status", HttpStatus.SERVICE_UNAVAILABLE.value());
+        errorResponse.put("error", "Email Service Unavailable");
+        errorResponse.put("message", ex.getMessage());
+
+        return ResponseEntity
+            .status(HttpStatus.SERVICE_UNAVAILABLE)
+            .body(errorResponse);
+    }
+
+    /**
+     * Behandelt RateLimitExceededException → HTTP 429 Too Many Requests.
+     */
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<Map<String, Object>> handleRateLimitExceededException(RateLimitExceededException ex) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now().toString());
+        errorResponse.put("status", HttpStatus.TOO_MANY_REQUESTS.value());
+        errorResponse.put("error", "Rate Limit Exceeded");
+        errorResponse.put("message", ex.getMessage());
+
+        return ResponseEntity
+            .status(HttpStatus.TOO_MANY_REQUESTS)
             .body(errorResponse);
     }
 

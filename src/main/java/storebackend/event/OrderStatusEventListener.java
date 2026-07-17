@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import storebackend.dto.EmailDeliveryResult;
 import storebackend.entity.Order;
 import storebackend.entity.OrderItem;
 import storebackend.entity.Store;
@@ -84,12 +85,20 @@ public class OrderStatusEventListener {
         switch (newStatus) {
             case PENDING:
                 if (oldStatus == null) {
-                    // 1) E-Mail-Bestätigung an den Kunden
-                    emailService.sendOrderConfirmation(
+                    // 1) E-Mail-Bestätigung an den Kunden – ZENTRAL mit strukturiertem Result
+                    EmailDeliveryResult confirmationResult = emailService.sendOrderConfirmationWithResult(
                         customerEmail, orderNumber, storeName,
                         order.getTotalAmount().doubleValue(),
                         items, storeLogo, lang
                     );
+                    
+                    if (!confirmationResult.isSent()) {
+                        log.warn(
+                            "Order confirmation email failed: orderId={}, orderNumber={}, errorCode={}, message={}",
+                            order.getId(), orderNumber, confirmationResult.errorCode(), confirmationResult.userMessage()
+                        );
+                    }
+                    
                     // 2) WhatsApp-Bestätigung an den Kunden (wenn aktiviert + Nummer vorhanden)
                     if (waEnabled && customerPhone != null && !customerPhone.isBlank()) {
                         whatsAppService.sendOrderConfirmation(
@@ -128,10 +137,20 @@ public class OrderStatusEventListener {
             case SHIPPED:
                 String trackingUrl = order.getTrackingUrl();
                 String carrier     = order.getTrackingCarrier();
-                emailService.sendShippingNotification(
+                
+                // Versandbenachrichtigung – ZENTRAL mit strukturiertem Result
+                EmailDeliveryResult shippingResult = emailService.sendShippingNotificationWithResult(
                     customerEmail, orderNumber, storeName,
                     order.getTrackingNumber(), trackingUrl, carrier, storeLogo, lang
                 );
+                
+                if (!shippingResult.isSent()) {
+                    log.warn(
+                        "Shipping notification email failed: orderId={}, orderNumber={}, errorCode={}, message={}",
+                        order.getId(), orderNumber, shippingResult.errorCode(), shippingResult.userMessage()
+                    );
+                }
+                
                 if (waEnabled && customerPhone != null && !customerPhone.isBlank()) {
                     whatsAppService.sendShippingNotification(
                         customerPhone, orderNumber, storeName, order.getTrackingNumber(), lang);
