@@ -269,6 +269,14 @@ public class WooCommerceController {
                     .build();
         }
         
+        log.info("🔍 Received import request for store {}: importCustomers={}, importImages={}, skipExisting={}, customerPage={}, customerPageSize={}", 
+            storeId, 
+            request.isImportCustomers(),
+            request.isImportImages(),
+            request.isSkipExisting(),
+            request.getCustomerPage(),
+            request.getCustomerPageSize());
+        
         try {
             WooCommerceImportResponse response = importService.startImport(storeId, request, user);
             

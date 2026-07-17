@@ -113,8 +113,14 @@ public class WooCommerceImportService {
 
             // Import customers (if requested)
             CustomerImportResult customerResult = new CustomerImportResult();
+            log.info("🔍 Customer import request: importCustomers={}, importOnlyWithOrders={}, page={}, pageSize={}", 
+                request.isImportCustomers(), 
+                request.isImportOnlyCustomersWithOrders(),
+                request.getCustomerPage(),
+                request.getCustomerPageSize());
+            
             if (request.isImportCustomers()) {
-                log.info("Importing WooCommerce customers for store {} (page {}, pageSize {})", 
+                log.info("✅ Importing WooCommerce customers for store {} (page {}, pageSize {})", 
                     storeId, request.getCustomerPage(), request.getCustomerPageSize());
                 customerResult = importCustomers(
                     config, 
@@ -124,6 +130,8 @@ public class WooCommerceImportService {
                     request.getCustomerPage(),
                     request.getCustomerPageSize()
                 );
+            } else {
+                log.warn("⚠️ Customer import SKIPPED for store {} - importCustomers flag is FALSE", storeId);
             }
 
             // Update job
