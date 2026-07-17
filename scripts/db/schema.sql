@@ -236,33 +236,79 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     CONSTRAINT fk_subscriptions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
 
--- Customer Profiles Tabelle
-CREATE TABLE IF NOT EXISTS customer_profiles (
+    -- Customer Profiles (Store-specific customer data)
+    -- WICHTIG: user_id ist NICHT UNIQUE → ein User kann Kunde bei mehreren Stores sein (Multi-Tenant)
+    CREATE TABLE IF NOT EXISTS customer_profiles (
                                                  id BIGSERIAL PRIMARY KEY,
-                                                 user_id BIGINT NOT NULL UNIQUE,
+                                                 user_id BIGINT NOT NULL,
+                                                 store_id BIGINT NOT NULL,
+                                                 external_source VARCHAR(50),
+                                                 external_id VARCHAR(100),
                                                  first_name VARCHAR(255),
-    last_name VARCHAR(255),
-    phone VARCHAR(50),
-    shipping_first_name VARCHAR(255),
-    shipping_last_name VARCHAR(255),
-    shipping_address1 VARCHAR(255),
-    shipping_address2 VARCHAR(255),
-    shipping_city VARCHAR(255),
-    shipping_postal_code VARCHAR(50),
-    shipping_country VARCHAR(100),
-    shipping_phone VARCHAR(50),
-    billing_first_name VARCHAR(255),
-    billing_last_name VARCHAR(255),
-    billing_address1 VARCHAR(255),
-    billing_address2 VARCHAR(255),
-    billing_city VARCHAR(255),
-    billing_postal_code VARCHAR(50),
-    billing_country VARCHAR(100),
-    billing_phone VARCHAR(50),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_customer_profiles_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                                                 last_name VARCHAR(255),
+                                                 phone VARCHAR(50),
+                                                 shipping_first_name VARCHAR(255),
+                                                 shipping_last_name VARCHAR(255),
+                                                 shipping_address1 VARCHAR(255),
+                                                 shipping_address2 VARCHAR(255),
+                                                 shipping_city VARCHAR(255),
+                                                 shipping_postal_code VARCHAR(50),
+                                                 shipping_country VARCHAR(100),
+                                                 shipping_phone VARCHAR(50),
+                                                 billing_first_name VARCHAR(255),
+                                                 billing_last_name VARCHAR(255),
+                                                 billing_address1 VARCHAR(255),
+                                                 billing_address2 VARCHAR(255),
+                                                 billing_city VARCHAR(255),
+                                                 billing_postal_code VARCHAR(50),
+                                                 billing_country VARCHAR(100),
+                                                 billing_phone VARCHAR(50),
+                                                 created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                                 updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                                 CONSTRAINT fk_customer_profiles_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                                                 CONSTRAINT fk_customer_profiles_store FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE,
+                                                 CONSTRAINT uq_customer_profile_user_store UNIQUE (user_id, store_id),
+                                                 CONSTRAINT uq_customer_profile_store_external UNIQUE (store_id, external_source, external_id)
     );
+
+    -- Migration: Multi-Tenant Customer Profile Support
+    DO $$
+    BEGIN
+                                                 IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                                                WHERE table_name = 'customer_profiles' AND column_name = 'store_id') THEN
+                                                     ALTER TABLE customer_profiles ADD COLUMN store_id BIGINT;
+                                                     ALTER TABLE customer_profiles ADD CONSTRAINT fk_customer_profiles_store 
+                                                         FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE;
+                                                 END IF;
+    
+                                                 IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                                                WHERE table_name = 'customer_profiles' AND column_name = 'external_source') THEN
+                                                     ALTER TABLE customer_profiles ADD COLUMN external_source VARCHAR(50);
+                                                 END IF;
+    
+                                                 IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                                                WHERE table_name = 'customer_profiles' AND column_name = 'external_id') THEN
+                                                     ALTER TABLE customer_profiles ADD COLUMN external_id VARCHAR(100);
+                                                 END IF;
+    
+                                                 -- Remove old UNIQUE constraint on user_id
+                                                 IF EXISTS (SELECT 1 FROM information_schema.table_constraints 
+                                                            WHERE table_name = 'customer_profiles' AND constraint_name = 'customer_profiles_user_id_key') THEN
+                                                     ALTER TABLE customer_profiles DROP CONSTRAINT customer_profiles_user_id_key;
+                                                 END IF;
+    
+                                                 -- Add new constraints
+                                                 IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints 
+                                                                WHERE table_name = 'customer_profiles' AND constraint_name = 'uq_customer_profile_user_store') THEN
+                                                     ALTER TABLE customer_profiles ADD CONSTRAINT uq_customer_profile_user_store UNIQUE (user_id, store_id);
+                                                 END IF;
+    
+                                                 IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints 
+                                                                WHERE table_name = 'customer_profiles' AND constraint_name = 'uq_customer_profile_store_external') THEN
+                                                     ALTER TABLE customer_profiles ADD CONSTRAINT uq_customer_profile_store_external 
+                                                         UNIQUE (store_id, external_source, external_id);
+                                                 END IF;
+    END $$;
 
 -- Customer Addresses
 CREATE TABLE IF NOT EXISTS customer_addresses (
