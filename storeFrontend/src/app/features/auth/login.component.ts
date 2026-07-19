@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -7,12 +7,14 @@ import { StoreService } from '../../core/services/store.service';
 import { TeamInvitationService } from '../../core/services/team-invitation.service';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { LanguageService } from '../../core/services/language.service';
-import {LanguageSwitcherComponent} from "@app/core/i18n.exports";
+import { LanguageSwitcherComponent } from "@app/core/i18n.exports";
+import { CaptchaComponent } from '@app/shared/components/captcha.component';
+import { environment } from '@env/environment';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, LanguageSwitcherComponent, TranslatePipe],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, LanguageSwitcherComponent, TranslatePipe, CaptchaComponent],
   template: `
     <div class="auth-container">
       <div class="language-switcher-wrapper">
@@ -60,6 +62,13 @@ import {LanguageSwitcherComponent} from "@app/core/i18n.exports";
               {{ 'auth.passwordMinLength' | translate }}
             </div>
           </div>
+
+          <!-- CAPTCHA Component (wird nach Fehlerversuchen angezeigt) -->
+          <app-captcha 
+            *ngIf="showCaptcha && captchaEnabled"
+            (tokenReceived)="onCaptchaToken($event)"
+            (error)="onCaptchaError($event)">
+          </app-captcha>
 
           <div *ngIf="errorMessage" class="alert alert-error">
             {{ errorMessage }}
@@ -200,6 +209,12 @@ export class LoginComponent implements OnInit {
   errorMessage = '';
   returnUrl = '/dashboard';
   autoFilled = false;
+  
+  // CAPTCHA State
+  captchaEnabled = environment.captcha?.enabled ?? false;
+  showCaptcha = false;  // Wird nur nach Fehlerversuchen aktiviert
+  captchaToken: string | null = null;
+  @ViewChild(CaptchaComponent) captchaComponent?: CaptchaComponent;
 
   constructor(
       private fb: FormBuilder,
@@ -244,12 +259,35 @@ export class LoginComponent implements OnInit {
     });
   }
 
+  onCaptchaToken(token: string): void {
+    this.captchaToken = token;
+    if (!environment.production) {
+      console.log('[LOGIN] CAPTCHA token received');
+    }
+  }
+
+  onCaptchaError(error: string): void {
+    this.captchaToken = null;
+    console.error('[LOGIN] CAPTCHA error:', error);
+  }
+
   onSubmit(): void {
     if (this.loginForm.valid) {
+      // CAPTCHA-Check: Wenn Widget sichtbar ist, muss Token vorhanden sein
+      if (this.showCaptcha && this.captchaEnabled && !this.captchaToken) {
+        this.errorMessage = 'auth.captchaRequired';
+        return;
+      }
+
       this.loading = true;
       this.errorMessage = '';
 
-      this.authService.login(this.loginForm.value).subscribe({
+      const loginData = {
+        ...this.loginForm.value,
+        captchaToken: this.captchaToken  // Token mitschicken (null wenn nicht benötigt)
+      };
+
+      this.authService.login(loginData).subscribe({
         next: () => {
           // Prüfen ob ein pendingInvitationToken existiert
           const invitationToken = sessionStorage.getItem('pendingInvitationToken');
@@ -282,7 +320,19 @@ export class LoginComponent implements OnInit {
         },
         error: (error) => {
           this.loading = false;
-          this.errorMessage = error.error?.message || 'auth.loginFailed';
+          
+          // CAPTCHA erforderlich? → Widget anzeigen
+          if (error.status === 400 && error.error?.error === 'CAPTCHA_VALIDATION_FAILED') {
+            this.showCaptcha = true;
+            this.errorMessage = 'auth.captchaFailed';
+            // CAPTCHA-Token zurücksetzen
+            this.captchaToken = null;
+            if (this.captchaComponent) {
+              this.captchaComponent.reset();
+            }
+          } else {
+            this.errorMessage = error.error?.message || 'auth.loginFailed';
+          }
         }
       });
     }
