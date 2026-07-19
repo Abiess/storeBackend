@@ -656,6 +656,20 @@ export class StorefrontLandingComponent implements OnInit {
     }, 100);
   }
 
+  /** Bottom-Nav: Profile-Button → Header Auth-Dialog öffnen */
+  onBottomNavProfile(): void {
+    // Triggere den Header-Auth-Dialog
+    const header = document.querySelector('app-storefront-header') as any;
+    if (header && header.showAuthDialog !== undefined) {
+      // Scrolle nach oben und öffne Auth-Dialog
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setTimeout(() => {
+        const authBtn = document.querySelector('.header-auth-btn') as HTMLElement;
+        authBtn?.click();
+      }, 300);
+    }
+  }
+
   /** Header-Suche → Query an Marketplace-Grid weiterleiten */
   headerSearchQuery = '';
   onHeaderSearch(query: string): void {

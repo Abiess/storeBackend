@@ -1,7 +1,8 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { AuthService } from '@app/core/services/auth.service';
 
 /**
  * Mobile Bottom Navigation – Vibrant Redesign
@@ -80,10 +81,10 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       </button>
 
       <!-- Konto -->
-      <a class="nav-item"
-         routerLink="/storefront/profile"
-         routerLinkActive="active"
-         [attr.aria-label]="'navigation.myAccount' | translate">
+      <button class="nav-item"
+              (click)="onProfileClick()"
+              type="button"
+              [attr.aria-label]="'navigation.myAccount' | translate">
         <span class="nav-icon-box">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -91,7 +92,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
           </svg>
         </span>
         <span class="nav-label">{{ 'navigation.myAccount' | translate }}</span>
-      </a>
+      </button>
 
     </nav>
   `,
@@ -282,6 +283,21 @@ export class StorefrontBottomNavComponent {
 
   @Output() categoryClick = new EventEmitter<void>();
   @Output() searchClick = new EventEmitter<void>();
+  @Output() profileClick = new EventEmitter<void>();
+
+  constructor(
+    private authService: AuthService,
+    private router: Router
+  ) {}
+
+  onProfileClick(): void {
+    // Wenn eingeloggt → Profil, sonst → Login-Trigger
+    if (this.authService.currentUserValue) {
+      this.router.navigate(['/storefront/profile']);
+    } else {
+      this.profileClick.emit();
+    }
+  }
 
   get isRtl(): boolean {
     return document.documentElement.dir === 'rtl';
