@@ -10,6 +10,10 @@ export class AuthService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
+  get currentUserValue(): User | null {
+    return this.currentUserSubject.value;
+  }
+
   // FIXED: CartService wird später injiziert um zirkuläre Abhängigkeit zu vermeiden
   private cartService?: any;
 

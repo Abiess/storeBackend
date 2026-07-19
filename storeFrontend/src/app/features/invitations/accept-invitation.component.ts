@@ -35,9 +35,9 @@ import { StoreService } from '@app/core/services/store.service';
 
           <!-- Error State -->
           <div *ngIf="error && !loading" class="error-state">
-            <div class="icon">❌</div>
+            <div class="icon">{{ needsRegister ? '✉️' : '❌' }}</div>
             <h3>{{ errorTitle }}</h3>
-            <p>{{ errorMessage }}</p>
+            <p style="white-space: pre-line;">{{ errorMessage }}</p>
             
             <!-- Preview-Informationen anzeigen -->
             <div *ngIf="invitationPreview" class="info-box">
@@ -47,14 +47,18 @@ import { StoreService } from '@app/core/services/store.service';
             </div>
             
             <div class="button-group">
-              <button *ngIf="needsLogin" class="btn btn-primary" (click)="goToLogin()">
-                Zum Login
-              </button>
+              <!-- Fall 1: Nicht angemeldet → Registrieren -->
               <button *ngIf="needsRegister" class="btn btn-primary" (click)="goToRegister()">
                 Jetzt Registrieren
               </button>
-              <button *ngIf="!needsLogin && !needsRegister" class="btn btn-secondary" (click)="goToLogin()">
-                Zurück zum Login
+              
+              <!-- Fall 2: Falsche E-Mail → Abmelden und mit eingeladener E-Mail fortfahren -->
+              <button *ngIf="!needsRegister && invitationPreview" class="btn btn-primary" (click)="logoutAndRegister()">
+                Abmelden und mit eingeladener E-Mail fortfahren
+              </button>
+              
+              <button class="btn btn-secondary" (click)="goBack()">
+                Zurück
               </button>
             </div>
           </div>
@@ -195,17 +199,8 @@ export class AcceptInvitationComponent implements OnInit {
       return;
     }
 
-    // Prüfen ob User eingeloggt ist
-    if (!this.authService.isAuthenticated()) {
-      // Token in sessionStorage speichern für späteren Login/Register-Flow
-      sessionStorage.setItem('pendingInvitationToken', this.token);
-      
-      // Einladungs-Preview laden
-      this.loadInvitationPreview();
-    } else {
-      // User ist eingeloggt → direkt akzeptieren
-      this.acceptInvitation();
-    }
+    // IMMER Preview laden (zeigt E-Mail, Store, Rolle)
+    this.loadInvitationPreview();
   }
 
   private loadInvitationPreview(): void {
@@ -214,12 +209,35 @@ export class AcceptInvitationComponent implements OnInit {
     this.invitationService.getInvitationPreview(this.token).subscribe({
       next: (preview) => {
         this.invitationPreview = preview;
-        this.needsLogin = true;
-        this.needsRegister = true;
-        this.showError(
-          'Anmeldung erforderlich',
-          'Um diese Einladung anzunehmen, müssen Sie sich anmelden oder registrieren.'
-        );
+        
+        // FALL 1: Nicht angemeldet
+        if (!this.authService.isAuthenticated()) {
+          sessionStorage.setItem('pendingInvitationToken', this.token);
+          this.needsRegister = true;
+          this.showError(
+            'Einladung für ' + preview.storeName,
+            'Um diese Einladung anzunehmen, müssen Sie sich registrieren oder anmelden.'
+          );
+          return;
+        }
+        
+        // FALL 2 & 3: Angemeldet → E-Mail-Prüfung
+        const currentUser = this.authService.currentUserValue;
+        const invitedEmail = preview.email.toLowerCase().trim();
+        const currentEmail = currentUser?.email?.toLowerCase().trim();
+        
+        if (currentEmail === invitedEmail) {
+          // FALL 3: Richtige E-Mail → direkt annehmen
+          this.acceptInvitation();
+        } else {
+          // FALL 2: Falsche E-Mail → Abmelden anbieten
+          sessionStorage.setItem('pendingInvitationToken', this.token);
+          this.needsRegister = false;
+          this.showError(
+            'Falsche E-Mail-Adresse',
+            `Diese Einladung ist für ${preview.emailMasked} bestimmt.\n\nSie sind aktuell mit ${currentEmail} angemeldet.`
+          );
+        }
       },
       error: (err) => {
         this.handlePreviewError(err);
@@ -334,10 +352,25 @@ export class AcceptInvitationComponent implements OnInit {
   }
 
   goToRegister(): void {
-    // Token als Query-Parameter und in sessionStorage
-    const email = this.invitationPreview?.emailMasked || '';
+    // Token bleibt in sessionStorage gespeichert
     this.router.navigate(['/register'], {
       queryParams: { invitationToken: this.token }
     });
+  }
+
+  logoutAndRegister(): void {
+    // Fall 2: User abmelden und zur Registrierung mit eingeladener E-Mail
+    this.authService.logout();
+    sessionStorage.setItem('pendingInvitationToken', this.token);
+    
+    this.router.navigate(['/register'], {
+      queryParams: {
+        invitationToken: this.token
+      }
+    });
+  }
+
+  goBack(): void {
+    this.router.navigate(['/']);
   }
 }
