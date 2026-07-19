@@ -495,11 +495,13 @@ import { environment } from '@env/environment';
               />
               <div class="item-info">
                 <h4>{{ item.productTitle }}</h4>
-                <p>{{ item.variantSku }}</p>
+                <p *ngIf="item.variantSku && !item.variantSku.startsWith('DEFAULT-')" class="variant-sku">
+                  Art.-Nr.: {{ item.variantSku }}
+                </p>
                 <p class="quantity">{{ 'product.quantity' | translate: { count: item.quantity } }}</p>
               </div>
               <div class="item-price">
-                {{ (item.priceSnapshot * item.quantity) | number:'1.2-2' }} €
+                {{ (item.priceSnapshot * item.quantity) | storeCurrency: storeCurrencyCode }}
               </div>
             </div>
           </div>

@@ -220,6 +220,13 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       padding: 0 0.75rem;
       transition: border-color 0.2s;
     }
+
+    /* Desktop: Verstecke zweite Suche (Header-Suche reicht) */
+    @media (min-width: 768px) {
+      .mp-search-bar {
+        display: none;
+      }
+    }
     .mp-search-bar:focus-within {
       border-color: #764ba2;
       background: #fff;

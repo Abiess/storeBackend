@@ -31,10 +31,14 @@ interface Product {
 @Component({
   selector: 'app-storefront-product-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe, ProductVariantPickerComponent, QuantityStepperComponent],  template: `
+  imports: [CommonModule, FormsModule, TranslatePipe, ProductVariantPickerComponent, QuantityStepperComponent],
+  template: `
     <div class="product-detail-page" *ngIf="product">
       <div class="breadcrumb">
-        <a (click)="goBack()">← {{ 'common.back' | translate }}</a>
+        <button class="btn-back" (click)="goBack()">
+          <span class="back-icon">←</span>
+          <span>{{ 'common.back' | translate }}</span>
+        </button>
         <span *ngIf="product.categoryName"> / {{ product.categoryName }}</span>
         <span> / {{ product.title }}</span>
       </div>
@@ -265,6 +269,31 @@ interface Product {
       margin-bottom: 2rem;
       font-size: 0.875rem;
       color: #666;
+    }
+
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: #f5f5f5;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      color: #333;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-back:hover {
+      background: #ebebeb;
+      border-color: #d0d0d0;
+    }
+
+    .back-icon {
+      font-size: 1.1rem;
+      line-height: 1;
     }
 
     .breadcrumb a {

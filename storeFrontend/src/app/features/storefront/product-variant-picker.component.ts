@@ -101,7 +101,9 @@ interface ProductOption {
             ⚡ Nur noch {{ selectedVariant.stockQuantity }} verfügbar
           </span>
           <span *ngIf="selectedVariant.stockQuantity === 0">✕ Ausverkauft</span>
-          <span class="vp-stock__sku">SKU: {{ selectedVariant.sku }}</span>
+          <span class="vp-stock__sku" *ngIf="selectedVariant.sku && !selectedVariant.sku.startsWith('DEFAULT-')">
+            Art.-Nr.: {{ selectedVariant.sku }}
+          </span>
         </div>
       </div>
 
