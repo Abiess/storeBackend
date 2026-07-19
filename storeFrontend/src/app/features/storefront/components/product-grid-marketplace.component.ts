@@ -544,6 +544,7 @@ export class ProductGridMarketplaceComponent implements OnChanges {
   @Input() filteredProducts: Product[] = [];
   @Input() selectedCategory: Category | null = null;
   @Input() storeId: number = 0;
+  @Input() externalSearchQuery = ''; // Von Header-Suche gesteuert
 
   @Output() filterChange = new EventEmitter<Category | null>();
   @Output() addToCart = new EventEmitter<Product>();
@@ -579,11 +580,16 @@ export class ProductGridMarketplaceComponent implements OnChanges {
   ];
 
   ngOnChanges(changes: SimpleChanges): void {
+    // Externe Suche von Header synchronisieren
+    if (changes['externalSearchQuery']) {
+      this.searchQuery = this.externalSearchQuery;
+    }
+    
     // Wenn selectedCategory von außen geändert wird (z.B. Header-Pills) → Suche zurücksetzen
     if (changes['selectedCategory'] && !changes['selectedCategory'].firstChange) {
       this.searchQuery = '';
     }
-    if (changes['filteredProducts'] || changes['products'] || changes['selectedCategory']) {
+    if (changes['filteredProducts'] || changes['products'] || changes['selectedCategory'] || changes['externalSearchQuery']) {
       this.applyLocalFilters();
     }
   }
@@ -600,9 +606,42 @@ export class ProductGridMarketplaceComponent implements OnChanges {
         (p.description || '').toLowerCase().includes(q)
       );
     }
+    
+    // Sortierung anwenden
+    base = this.applySorting(base);
+    
     this.displayedProducts = base;
     this.currentPage = 1;
     this.updateVisibleProducts();
+  }
+
+  /** Sortierung auf Produktliste anwenden */
+  private applySorting(products: Product[]): Product[] {
+    const sorted = [...products];
+    
+    switch (this.activeSort) {
+      case 'price-asc':
+        sorted.sort((a, b) => a.basePrice - b.basePrice);
+        break;
+      case 'price-desc':
+        sorted.sort((a, b) => b.basePrice - a.basePrice);
+        break;
+      case 'name-asc':
+        sorted.sort((a, b) => (a.title || a.name || '').localeCompare(b.title || b.name || ''));
+        break;
+      case 'newest':
+        sorted.sort((a, b) => {
+          const dateA = new Date(a.createdAt || 0).getTime();
+          const dateB = new Date(b.createdAt || 0).getTime();
+          return dateB - dateA;
+        });
+        break;
+      default: // relevant
+        // Keep original order
+        break;
+    }
+    
+    return sorted;
   }
 
   private updateVisibleProducts(): void {
@@ -650,11 +689,13 @@ export class ProductGridMarketplaceComponent implements OnChanges {
 
   onSort(event: Event): void {
     this.activeSort = (event.target as HTMLSelectElement).value;
+    this.applyLocalFilters(); // Re-apply filters with new sort
     this.sortChange.emit(this.activeSort);
   }
 
   onSortOption(value: string): void {
     this.activeSort = value;
+    this.applyLocalFilters(); // Re-apply filters with new sort
     this.sortChange.emit(value);
     this.closeSortDrawer();
   }

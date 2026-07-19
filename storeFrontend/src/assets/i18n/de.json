@@ -170,6 +170,7 @@
     "create": "Produkt erstellen",
     "update": "Produkt aktualisieren",
     "price": "Preis",
+    "quantity": "{{count}} Artikel",
     "addToCart": "In den Warenkorb",
     "adding": "Wird hinzugefügt...",
     "addToWishlist": "Zur Wunschliste",

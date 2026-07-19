@@ -654,6 +654,12 @@ export class StorefrontLandingComponent implements OnInit {
         searchInput.focus();
       }
     }, 100);
+  }
+
+  /** Header-Suche → Query an Marketplace-Grid weiterleiten */
+  headerSearchQuery = '';
+  onHeaderSearch(query: string): void {
+    this.headerSearchQuery = query;
     setTimeout(() => { this.bottomNavSearchActive = false; }, 600);
   }
 

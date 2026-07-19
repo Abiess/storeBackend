@@ -14,7 +14,8 @@
       [storeId]="storeId || 0"
       [storeCurrencyCode]="storeCurrencyCode"
       [cartItemCount]="cartItemCount"
-      (cartClick)="router.navigate(['/cart'])">
+      (cartClick)="router.navigate(['/cart'])"
+      (searchChange)="onHeaderSearch($event)">
     </app-storefront-header>
 
     <!-- Category Pills Navigation - Mobile First -->
@@ -133,6 +134,7 @@
         [filteredProducts]="filteredProducts"
         [selectedCategory]="selectedCategory"
         [storeId]="storeId || 0"
+        [externalSearchQuery]="headerSearchQuery"
         (filterChange)="filterByCategory($event)"
         (addToCart)="addToCart($event)"
         (quickView)="openQuickView($event)"

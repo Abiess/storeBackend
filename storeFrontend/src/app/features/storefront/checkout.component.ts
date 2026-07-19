@@ -501,7 +501,12 @@ import { environment } from '@env/environment';
                 <p class="quantity">{{ 'product.quantity' | translate: { count: item.quantity } }}</p>
               </div>
               <div class="item-price">
-                {{ (item.priceSnapshot * item.quantity) | storeCurrency: storeCurrencyCode }}
+                <ng-container *ngIf="item.priceSnapshot !== null && item.priceSnapshot !== undefined; else fallbackPrice">
+                  {{ (item.priceSnapshot * item.quantity) | storeCurrency: storeCurrencyCode }}
+                </ng-container>
+                <ng-template #fallbackPrice>
+                  <span class="price-error">Preis nicht verfügbar</span>
+                </ng-template>
               </div>
             </div>
           </div>
@@ -806,9 +811,10 @@ import { environment } from '@env/environment';
 
     .summary-item {
       display: grid;
-      grid-template-columns: 60px 1fr auto;
+      grid-template-columns: 60px 1fr minmax(80px, auto);
       gap: 15px;
       margin-bottom: 15px;
+      align-items: center;
     }
 
     .summary-item img {
@@ -832,6 +838,14 @@ import { environment } from '@env/environment';
     .item-price {
       font-weight: 600;
       text-align: right;
+      white-space: nowrap;
+      min-width: 80px;
+    }
+
+    .price-error {
+      font-size: 12px;
+      color: #999;
+      font-style: italic;
     }
 
     .summary-totals {
