@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -135,7 +135,8 @@ import { environment } from '../../../environments/environment';
             {{ errorMessage }}
           </div>
 
-          <button type="submit" class="btn btn-primary" [disabled]="registerForm.invalid || loading">
+          <button type="submit" class="btn btn-primary" 
+            [disabled]="registerForm.invalid || loading || (captchaEnabled && !captchaToken)">
             {{ loading ? ('auth.registering' | translate) : ('auth.registerBtn' | translate) }}
           </button>
         </form>
@@ -436,7 +437,9 @@ export class RegisterComponent implements OnInit, OnDestroy {
     private router: Router,
     private route: ActivatedRoute,
     private translationService: TranslationService,
-    private emailStatusHandler: EmailStatusHandlerService
+    private emailStatusHandler: EmailStatusHandlerService,
+    private readonly cdr: ChangeDetectorRef,
+    private readonly ngZone: NgZone
   ) {
     this.registerForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -472,31 +475,47 @@ export class RegisterComponent implements OnInit, OnDestroy {
    * SECURITY: Keine Token-Längen in Production (könnte Fingerprinting ermöglichen)
    */
   onCaptchaToken(token: string): void {
-    this.captchaToken = token;
-    this.captchaError = '';
-    this.captchaConfigurationError = false;
-    
-    // Nur in Development loggen
-    if (!environment.production) {
-      const isRealToken = token && token !== 'CAPTCHA_DISABLED_DEV_MODE';
-      console.log('[REGISTER] CAPTCHA Token empfangen:', {
-        type: isRealToken ? 'REAL' : 'DUMMY',
-        length: token?.length ?? 0
+    this.ngZone.run(() => {
+      this.captchaToken = token;
+      this.captchaError = '';
+      this.captchaConfigurationError = false;
+      
+      this.registerForm.updateValueAndValidity({
+        emitEvent: true
       });
-    }
+      
+      this.cdr.detectChanges();
+      
+      // Nur in Development loggen
+      if (!environment.production) {
+        const isRealToken = token && token !== 'CAPTCHA_DISABLED_DEV_MODE';
+        console.log('[REGISTER] CAPTCHA Token empfangen:', {
+          type: isRealToken ? 'REAL' : 'DUMMY',
+          length: token?.length ?? 0
+        });
+      }
+    });
   }
 
   /**
    * CAPTCHA Fehler behandeln
    */
   onCaptchaError(error: string): void {
-    this.captchaError = error;
-    this.captchaToken = null;
-    
-    // Konfigurationsfehler = harter Fehler in Production
-    if (error === 'CAPTCHA_CONFIGURATION_ERROR') {
-      this.captchaConfigurationError = true;
-    }
+    this.ngZone.run(() => {
+      this.captchaError = error;
+      this.captchaToken = null;
+      
+      this.registerForm.updateValueAndValidity({
+        emitEvent: true
+      });
+      
+      this.cdr.detectChanges();
+      
+      // Konfigurationsfehler = harter Fehler in Production
+      if (error === 'CAPTCHA_CONFIGURATION_ERROR') {
+        this.captchaConfigurationError = true;
+      }
+    });
   }
 
   onSubmit(): void {

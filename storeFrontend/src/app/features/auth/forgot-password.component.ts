@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -271,7 +271,9 @@ export class ForgotPasswordComponent {
   constructor(
     private fb: FormBuilder,
     private http: HttpClient,
-    private hcaptchaService: HCaptchaService
+    private hcaptchaService: HCaptchaService,
+    private readonly cdr: ChangeDetectorRef,
+    private readonly ngZone: NgZone
   ) {
     this.forgotPasswordForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]]
@@ -305,25 +307,49 @@ export class ForgotPasswordComponent {
    * CAPTCHA verifiziert
    */
   onCaptchaVerified(token: string) {
-    this.captchaToken = token;
-    this.errorMessage = '';
+    this.ngZone.run(() => {
+      this.captchaToken = token;
+      this.errorMessage = '';
+      
+      this.forgotPasswordForm.updateValueAndValidity({
+        emitEvent: true
+      });
+      
+      this.cdr.detectChanges();
+    });
   }
 
   /**
    * CAPTCHA Fehler
    */
   onCaptchaError(error: any) {
-    console.error('hCaptcha error:', error);
-    this.captchaToken = '';
-    this.errorMessage = 'CAPTCHA-Fehler. Bitte laden Sie die Seite neu.';
+    this.ngZone.run(() => {
+      console.error('hCaptcha error:', error);
+      this.captchaToken = '';
+      this.errorMessage = 'CAPTCHA-Fehler. Bitte laden Sie die Seite neu.';
+      
+      this.forgotPasswordForm.updateValueAndValidity({
+        emitEvent: true
+      });
+      
+      this.cdr.detectChanges();
+    });
   }
 
   /**
    * CAPTCHA abgelaufen
    */
   onCaptchaExpired() {
-    this.captchaToken = '';
-    this.errorMessage = 'CAPTCHA abgelaufen. Bitte erneut verifizieren.';
+    this.ngZone.run(() => {
+      this.captchaToken = '';
+      this.errorMessage = 'CAPTCHA abgelaufen. Bitte erneut verifizieren.';
+      
+      this.forgotPasswordForm.updateValueAndValidity({
+        emitEvent: true
+      });
+      
+      this.cdr.detectChanges();
+    });
   }
 
   /**

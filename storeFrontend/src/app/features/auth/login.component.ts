@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -74,7 +74,8 @@ import { environment } from '@env/environment';
             {{ errorMessage }}
           </div>
 
-          <button type="submit" class="btn btn-primary" [disabled]="loginForm.invalid || loading">
+          <button type="submit" class="btn btn-primary" 
+            [disabled]="loginForm.invalid || loading || (showCaptcha && captchaEnabled && !captchaToken)">
             {{ loading ? ('auth.loggingIn' | translate) : ('auth.login' | translate) }}
           </button>
         </form>
@@ -223,7 +224,9 @@ export class LoginComponent implements OnInit {
       private teamInvitationService: TeamInvitationService,
       private router: Router,
       private route: ActivatedRoute,
-      private languageService: LanguageService
+      private languageService: LanguageService,
+      private readonly cdr: ChangeDetectorRef,
+      private readonly ngZone: NgZone
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -260,15 +263,33 @@ export class LoginComponent implements OnInit {
   }
 
   onCaptchaToken(token: string): void {
-    this.captchaToken = token;
-    if (!environment.production) {
-      console.log('[LOGIN] CAPTCHA token received');
-    }
+    this.ngZone.run(() => {
+      this.captchaToken = token;
+      
+      this.loginForm.updateValueAndValidity({
+        emitEvent: true
+      });
+      
+      this.cdr.detectChanges();
+      
+      if (!environment.production) {
+        console.log('[LOGIN] CAPTCHA token received');
+      }
+    });
   }
 
   onCaptchaError(error: string): void {
-    this.captchaToken = null;
-    console.error('[LOGIN] CAPTCHA error:', error);
+    this.ngZone.run(() => {
+      this.captchaToken = null;
+      
+      this.loginForm.updateValueAndValidity({
+        emitEvent: true
+      });
+      
+      this.cdr.detectChanges();
+      
+      console.error('[LOGIN] CAPTCHA error:', error);
+    });
   }
 
   onSubmit(): void {
