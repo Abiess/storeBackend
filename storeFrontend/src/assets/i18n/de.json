@@ -768,7 +768,34 @@
       "vatExemptionTextPlaceholder": "z.B. Kleinunternehmer gem. § 19 UStG",
       "vatExemptionTextHint": "Dieser Text wird angezeigt, wenn die Umsatzsteuer deaktiviert ist",
       "currencyChangeWarning": "⚠️ Achtung: Vorhandene Preisbeträge werden nicht automatisch umgerechnet. Bitte kontrollieren Sie anschließend alle Produkt-, Varianten- und Versandpreise."
-    }
+    },
+
+
+        "payments": {
+          "sectionTitle": "Zahlungen",
+          "title": "Zahlungsanbieter",
+          "subtitle": "Verwalte PayPal und andere Zahlungsmethoden",
+          "description": "PayPal, Stripe und weitere konfigurieren",
+          "paypal": {
+            "description": "Online-Zahlungen via PayPal akzeptieren"
+          },
+          "status": "Status",
+          "mode": "Modus",
+          "merchantId": "Merchant-ID",
+          "onboarding": "Onboarding",
+          "lastChecked": "Zuletzt geprüft",
+          "testMode": "Testmodus aktiv",
+          "testModeDescription": "Zahlungen werden nur in der PayPal-Sandbox simuliert. Keine echten Transaktionen.",
+          "checkConnection": "Verbindung prüfen",
+          "connectPayPal": "PayPal verbinden",
+          "comingSoon": "Demnächst verfügbar"
+
+      },
+      "common": {
+        "loading": "Laden",
+        "retry": "Wiederholen"
+      }
+
   },
   "table": {
     "image": "Bild",

@@ -16,6 +16,7 @@ import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-h
 import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { environment } from '@env/environment';
+import {PaymentSettingsComponent} from "@app/features/settings/payment-settings/payment-settings.component";
 
 interface SettingsCard {
   id: string;
@@ -37,7 +38,7 @@ interface SettingsSection {
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule, UserRolesComponent, RoleManagementComponent, AuditLogComponent, PageHeaderComponent, TranslatePipe],
+  imports: [CommonModule, FormsModule, UserRolesComponent, RoleManagementComponent, AuditLogComponent, PageHeaderComponent, TranslatePipe, PaymentSettingsComponent],
   template: `
     <div class="settings-container">
       <app-page-header
@@ -167,6 +168,8 @@ interface SettingsSection {
 
           <!-- ═══ Audit-Log (existierende Komponente) ═══ -->
           <app-audit-log *ngIf="activeTab === 'audit'" [storeId]="currentStoreId"></app-audit-log>
+          <!-- ═══ ZAHLUNGEN ═══ -->
+          <app-payment-settings *ngIf="activeTab === 'payments'"></app-payment-settings>
 
           <!-- ═══ PROFIL – echte Daten + Aktionen ═══ -->
           <div *ngIf="activeTab === 'profile'" class="detail-section">
@@ -757,6 +760,19 @@ export class SettingsComponent implements OnInit, OnDestroy {
       icon: '💳',
       cards: [
         { id: 'subscription', icon: '💎', title: 'settings.subscriptionCard.title', description: 'settings.subscriptionCard.description', route: '/subscription', badge: 'PRO', badgeClass: 'badge-pro' }
+      ]
+    },
+    {
+      title: 'settings.payments.sectionTitle',
+      icon: '💳',
+      cards: [
+        {
+          id: 'payments',
+          icon: '💰',
+          title: 'settings.payments.title',
+          description: 'settings.payments.description',
+          tab: 'payments'
+        }
       ]
     }
   ];

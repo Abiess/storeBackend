@@ -621,7 +621,31 @@
       "vatExemptionTextPlaceholder": "e.g. Small business according to § 19 UStG",
       "vatExemptionTextHint": "This text is displayed when VAT is disabled",
       "currencyChangeWarning": "⚠️ Warning: Existing prices will not be automatically converted. Please check all product, variant, and shipping prices afterwards."
+    },
+    "payments": {
+      "sectionTitle": "Payments",
+      "title": "Payment Providers",
+      "subtitle": "Manage PayPal and other payment methods",
+      "description": "Configure PayPal, Stripe and more",
+      "paypal": {
+        "description": "Accept online payments via PayPal"
+      },
+      "status": "Status",
+      "mode": "Mode",
+      "merchantId": "Merchant ID",
+      "onboarding": "Onboarding",
+      "lastChecked": "Last Checked",
+      "testMode": "Test Mode Active",
+      "testModeDescription": "Payments are simulated in PayPal Sandbox only. No real transactions.",
+      "checkConnection": "Check Connection",
+      "connectPayPal": "Connect PayPal",
+      "comingSoon": "Coming Soon"
     }
+  },
+  "common": {
+    "loading": "Loading",
+    "retry": "Retry"
+
   },
   "table": {
     "image": "Image",

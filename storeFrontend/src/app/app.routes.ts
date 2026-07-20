@@ -102,6 +102,11 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'settings/payments',
+    loadComponent: () => import('./features/settings/payment-settings/payment-settings.component').then(m => m.PaymentSettingsComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'subscription',
     loadComponent: () => import('./features/settings/subscription.component').then(m => m.SubscriptionComponent),
     canActivate: [authGuard]

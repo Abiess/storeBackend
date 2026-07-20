@@ -721,7 +721,31 @@
     "telegram": {
       "title": "تكامل Telegram",
       "description": "ربط قناة Telegram لاستيراد المنتجات"
+    },
+    "payments": {
+      "sectionTitle": "المدفوعات",
+      "title": "موفرو الدفع",
+      "subtitle": "إدارة PayPal وطرق الدفع الأخرى",
+      "description": "تكوين PayPal و Stripe والمزيد",
+      "paypal": {
+        "description": "قبول المدفوعات عبر الإنترنت عبر PayPal"
+      },
+      "status": "الحالة",
+      "mode": "الوضع",
+      "merchantId": "معرف التاجر",
+      "onboarding": "التسجيل",
+      "lastChecked": "آخر فحص",
+      "testMode": "وضع الاختبار نشط",
+      "testModeDescription": "يتم محاكاة المدفوعات في PayPal Sandbox فقط. لا توجد معاملات حقيقية.",
+      "checkConnection": "تحقق من الاتصال",
+      "connectPayPal": "ربط PayPal",
+      "comingSoon": "قريباً"
     }
+  },
+  "common": {
+    "loading": "جار التحميل",
+    "retry": "إعادة المحاولة"
+
   },
   "loading": {
     "orders": "جاري تحميل الطلبات..."
