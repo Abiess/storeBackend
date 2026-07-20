@@ -350,21 +350,17 @@ import { environment } from '@env/environment';
               </div>
             </section>
 
-           <!-- <section class="form-section">
+            <section class="form-section">
               <h2>💳 {{ 'checkout.paymentMethod' | translate }} {{ 'checkout.required' | translate }}</h2>
 
-              <div class="payment-methods">
-                <label class="payment-option disabled" title="Derzeit nicht verfügbar">
-                  <input type="radio" name="paymentMethod" value="CREDIT_CARD" disabled />
-                  <div class="payment-content">
-                    <span class="payment-icon">💳</span>
-                    <div class="payment-info">
-                      <strong>{{ 'payment.creditCard' | translate }}</strong>
-                      <small>Derzeit nicht verfügbar</small>
-                    </div>
-                  </div>
-                </label>
+              <!-- DEBUG: PayPal Status -->
+              <div style="padding:8px;border:1px solid red;margin-bottom:16px">
+                paypalEnabled={{ paypalEnabled }},
+                selected={{ selectedPaymentMethod }},
+                storeId={{ storeId }}
+              </div>
 
+              <div class="payment-methods">
                 <label *ngIf="paypalEnabled" class="payment-option" [class.selected]="selectedPaymentMethod === 'PAYPAL'">
                   <input
                     type="radio"
@@ -379,17 +375,6 @@ import { environment } from '@env/environment';
                     <div class="payment-info">
                       <strong>PayPal</strong>
                       <small>Sicher und schnell bezahlen</small>
-                    </div>
-                  </div>
-                </label>
-
-                <label class="payment-option disabled" title="Derzeit nicht verfügbar">
-                  <input type="radio" name="paymentMethod" value="BANK_TRANSFER" disabled />
-                  <div class="payment-content">
-                    <span class="payment-icon">🏦</span>
-                    <div class="payment-info">
-                      <strong>{{ 'payment.bankTransfer' | translate }}</strong>
-                      <small>Derzeit nicht verfügbar</small>
                     </div>
                   </div>
                 </label>
@@ -413,62 +398,10 @@ import { environment } from '@env/environment';
                 </label>
               </div>
 
-              <div *ngIf="selectedPaymentMethod === 'CASH_ON_DELIVERY'" class="phone-verification-box">
-                <div class="verification-header">
-                  <span class="icon">📱</span>
-                  <div>
-                    <h3>{{ 'payment.phoneVerification' | translate }}</h3>
-                    <p>{{ 'payment.phoneVerificationHint' | translate }}</p>
-                  </div>
-                  <span class="coming-soon-badge">🚧 Demnächst</span>
-                </div>
-
-                <div class="verification-step">
-                  <label>Telefonnummer (optional)</label>
-
-                  <div class="phone-input-group">
-                    <select
-                      [(ngModel)]="selectedCountry"
-                      [ngModelOptions]="{ standalone: true }"
-                      class="country-select"
-                      (change)="onCountryChange()"
-                      disabled
-                    >
-                      <option *ngFor="let country of countryCodes" [ngValue]="country">
-                        {{ country.flag }} {{ country.name }} ({{ country.dialCode }})
-                      </option>
-                    </select>
-
-                    <input
-                      type="tel"
-                      [(ngModel)]="phoneNumberLocal"
-                      [ngModelOptions]="{ standalone: true }"
-                      placeholder="1234567890"
-                      class="phone-input"
-                      disabled
-                    />
-
-                     DEAKTIVIERT: Telefonverifizierung noch nicht aktiv 
-                    <button
-                      type="button"
-                      class="btn-send-code"
-                      disabled
-                      title="Telefonverifizierung wird demnächst aktiviert"
-                    >
-                      📨 Code senden
-                    </button>
-                  </div>
-
-                  <small class="help-text coming-soon">
-                    🚧 Telefonverifizierung wird in Kürze aktiviert
-                  </small>
-                </div>
-              </div>
-
               <div *ngIf="!selectedPaymentMethod" class="error">
                 {{ 'checkout.paymentMethod' | translate }}
               </div>
-            </section> -->
+            </section>
 
             <section class="form-section" *ngIf="isUserLoggedIn()">
               <div class="checkbox-wrapper">
