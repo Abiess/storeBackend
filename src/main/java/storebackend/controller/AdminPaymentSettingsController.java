@@ -21,7 +21,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/stores/{storeId}/admin/payment-settings")
 @RequiredArgsConstructor
-@PreAuthorize("@storeAccessChecker.isStoreAdmin(#storeId)")
 @Slf4j
 public class AdminPaymentSettingsController {
     
@@ -31,6 +30,7 @@ public class AdminPaymentSettingsController {
      * Alle Payment-Konfigurationen für einen Store laden
      */
     @GetMapping
+    @PreAuthorize("@storeAccessChecker.isStoreAdmin(#storeId)")
     public ResponseEntity<List<PaymentSettingsDTO>> getPaymentSettings(@PathVariable Long storeId) {
         log.debug("GET payment settings: storeId={}", storeId);
         List<PaymentSettingsDTO> settings = adminPaymentService.getPaymentSettings(storeId);
@@ -41,6 +41,7 @@ public class AdminPaymentSettingsController {
      * PayPal-Konfiguration für einen Store laden
      */
     @GetMapping("/paypal")
+    @PreAuthorize("@storeAccessChecker.isStoreAdmin(#storeId)")
     public ResponseEntity<PaymentSettingsDTO> getPayPalSettings(@PathVariable Long storeId) {
         log.debug("GET PayPal settings: storeId={}", storeId);
         PaymentSettingsDTO settings = adminPaymentService.getPayPalSettings(storeId);
@@ -51,6 +52,7 @@ public class AdminPaymentSettingsController {
      * PayPal aktivieren/deaktivieren
      */
     @PutMapping("/paypal")
+    @PreAuthorize("@storeAccessChecker.isStoreAdmin(#storeId)")
     public ResponseEntity<PaymentSettingsDTO> updatePayPalSettings(
             @PathVariable Long storeId,
             @RequestBody PaymentSettingsUpdateRequest request) {
@@ -70,6 +72,7 @@ public class AdminPaymentSettingsController {
      * Verbindung prüfen (globale Credentials vorhanden?)
      */
     @PostMapping("/paypal/check-connection")
+    @PreAuthorize("@storeAccessChecker.isStoreAdmin(#storeId)")
     public ResponseEntity<PaymentSettingsDTO> checkPayPalConnection(@PathVariable Long storeId) {
         log.info("CHECK PayPal connection: storeId={}", storeId);
         PaymentSettingsDTO result = adminPaymentService.checkConnection(storeId, PaymentProvider.PAYPAL);
