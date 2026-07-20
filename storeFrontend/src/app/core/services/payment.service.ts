@@ -38,7 +38,7 @@ export class PaymentService {
     }
     
     return this.http.post<PaymentCreateResponse>(
-      `${this.apiUrl}/api/public/stores/${storeId}/checkout/payments`,
+      `${this.apiUrl}/public/stores/${storeId}/checkout/payments`,
       request,
       { headers }
     );
@@ -54,7 +54,7 @@ export class PaymentService {
     }
     
     return this.http.post<PaymentCaptureResponse>(
-      `${this.apiUrl}/api/public/stores/${storeId}/checkout/payments/${paymentId}/capture`,
+      `${this.apiUrl}/public/stores/${storeId}/checkout/payments/${paymentId}/capture`,
       {},
       { headers }
     );
@@ -70,7 +70,7 @@ export class PaymentService {
     }
     
     return this.http.get<PaymentStatusResponse>(
-      `${this.apiUrl}/api/public/stores/${storeId}/checkout/payments/${paymentId}/status`,
+      `${this.apiUrl}/public/stores/${storeId}/checkout/payments/${paymentId}/status`,
       { headers }
     );
   }
