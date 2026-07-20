@@ -14,7 +14,6 @@ import storebackend.repository.OrderRepository;
 import storebackend.repository.UserRepository;
 import storebackend.security.JwtUtil;
 import storebackend.service.PaymentService;
-import storebackend.util.StoreAccessChecker;
 
 @RestController
 @RequestMapping("/api/public/stores/{storeId}/checkout/payments")
@@ -25,7 +24,6 @@ public class PaymentController {
     private final PaymentService paymentService;
     private final OrderRepository orderRepo;
     private final UserRepository userRepo;
-    private final StoreAccessChecker storeAccessChecker;
     private final JwtUtil jwtUtil;
     
     @PostMapping
