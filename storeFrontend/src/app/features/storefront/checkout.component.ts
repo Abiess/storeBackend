@@ -20,7 +20,7 @@ import { StoreCurrencyPipe } from '../../core/pipes/store-currency.pipe';
 import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
 import { PayPalButtonComponent } from '@app/shared/components/paypal-button/paypal-button.component';
 import { PaymentService } from '@app/core/services/payment.service';
-import { PaymentProvider, PaymentCaptureResponse } from '@app/core/models/payment.model';
+import { PaymentProvider, PaymentCaptureResponse, PaymentStatus } from '@app/core/models/payment.model';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import { environment } from '@env/environment';
@@ -353,13 +353,6 @@ import { environment } from '@env/environment';
             <section class="form-section">
               <h2>💳 {{ 'checkout.paymentMethod' | translate }} {{ 'checkout.required' | translate }}</h2>
 
-              <!-- DEBUG: PayPal Status -->
-              <div style="padding:8px;border:1px solid red;margin-bottom:16px">
-                paypalEnabled={{ paypalEnabled }},
-                selected={{ selectedPaymentMethod }},
-                storeId={{ storeId }}
-              </div>
-
               <div class="payment-methods">
                 <label *ngIf="paypalEnabled" class="payment-option" [class.selected]="selectedPaymentMethod === 'PAYPAL'">
                   <input
@@ -417,7 +410,36 @@ import { environment } from '@env/environment';
               {{ errorMessage }}
             </div>
 
+            <!-- PayPal-Button-Bereich -->
+            <div *ngIf="selectedPaymentMethod === 'PAYPAL'" class="paypal-checkout-section">
+              <!-- Schritt 1: "Weiter zu PayPal" Button -->
+              <button
+                *ngIf="!tempOrderId"
+                type="button"
+                class="btn btn-primary btn-submit"
+                [disabled]="preparingPayPalOrder || checkoutForm.invalid"
+                (click)="preparePayPalOrder()"
+              >
+                {{ preparingPayPalOrder ? ('common.loading' | translate) : 'Weiter zu PayPal' }}
+              </button>
+
+              <!-- Schritt 2: PayPal-Button (nach Order-Erstellung) -->
+              <app-paypal-button
+                *ngIf="tempOrderId && checkoutToken"
+                [storeId]="storeId!"
+                [orderId]="tempOrderId"
+                [checkoutToken]="checkoutToken"
+                [amount]="getTotalWithDelivery()"
+                [currency]="storeCurrencyCode"
+                (paymentSuccess)="onPayPalSuccess($event)"
+                (paymentError)="onPayPalError($event)"
+                (paymentCancel)="onPayPalCancel()">
+              </app-paypal-button>
+            </div>
+
+            <!-- Normaler Submit-Button (nicht bei PayPal) -->
             <button
+              *ngIf="selectedPaymentMethod !== 'PAYPAL'"
               type="submit"
               class="btn btn-primary btn-submit"
               [disabled]="checkoutForm.invalid || submitting"
@@ -1563,6 +1585,12 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     storeId: number | null = null;
     selectedPaymentMethod: string | null = 'CASH_ON_DELIVERY';
     paypalEnabled = false;  // PayPal nur anzeigen, wenn konfiguriert
+    
+    // PayPal-spezifische Properties
+    tempOrderId: number | null = null;
+    checkoutToken: string | null = null;
+    preparingPayPalOrder = false;
+    
     phoneNumber = '';
     verificationCode = '';
     phoneVerified = false;
@@ -2395,6 +2423,12 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     onPaymentMethodChange(): void {
         console.log('💳 Zahlungsmethode geändert:', this.selectedPaymentMethod);
 
+        // PayPal-Order zurücksetzen bei Zahlungsartenwechsel
+        if (this.selectedPaymentMethod !== 'PAYPAL') {
+            this.tempOrderId = null;
+            this.checkoutToken = null;
+        }
+
         if (this.selectedPaymentMethod !== 'CASH_ON_DELIVERY') {
             this.phoneVerified = true;
             this.phoneVerificationId = null;
@@ -2404,6 +2438,136 @@ export class CheckoutComponent implements OnInit, OnDestroy {
             this.verificationCode = '';
             this.verificationError = '';
         }
+    }
+
+    /**
+     * Erstellt temporäre Order für PayPal-Zahlung
+     */
+    preparePayPalOrder(): void {
+        if (this.checkoutForm.invalid || !this.cart) {
+            this.checkoutForm.markAllAsTouched();
+            return;
+        }
+
+        this.preparingPayPalOrder = true;
+        this.errorMessage = '';
+
+        const formValue = this.checkoutForm.value;
+
+        const customerEmail = this.checkoutForm.get('customerEmail')?.disabled
+            ? this.checkoutForm.get('customerEmail')?.value
+            : formValue.customerEmail;
+
+        const request: any = {
+            storeId: this.cart.storeId,
+            customerEmail: customerEmail,
+            shippingAddress: formValue.shippingAddress,
+            billingAddress: this.sameAsShipping ? formValue.shippingAddress : formValue.billingAddress,
+            paymentMethod: 'PAYPAL',
+            shippingProvider: this.selectedShippingProvider,
+            deliveryType: this.selectedDeliveryType === 'PICKUP' ? 'PICKUP' : (this.selectedGlobalDeliveryOption?.deliveryType || 'STANDARD'),
+            deliveryOptionId: this.selectedDeliveryType === 'PICKUP' ? null : (this.selectedGlobalDeliveryOption?.id || null),
+            deliveryMode: null
+        };
+
+        if (formValue.notes?.trim()) {
+            request.notes = formValue.notes.trim();
+        }
+
+        const sessionId = localStorage.getItem('cartSessionId') || sessionStorage.getItem('cartSessionId');
+        if (sessionId && !this.isUserLoggedIn()) {
+            request.sessionId = sessionId;
+        }
+
+        console.log('🅿️ Erstelle temporäre PayPal-Order:', { email: customerEmail });
+
+        this.checkoutService.checkout(request).subscribe({
+            next: (response) => {
+                console.log('✅ Temporäre Order erstellt:', response);
+                this.tempOrderId = response.orderId;
+                this.checkoutToken = response.checkoutToken || null;
+                
+                // CRITICAL: Gast-Checkout MUSS checkoutToken haben
+                if (!this.checkoutToken && !this.isUserLoggedIn()) {
+                    this.tempOrderId = null;
+                    this.errorMessage = 'PayPal konnte nicht vorbereitet werden. Bitte versuchen Sie es erneut.';
+                    this.preparingPayPalOrder = false;
+                    return;
+                }
+                
+                this.preparingPayPalOrder = false;
+            },
+            error: (error) => {
+                this.preparingPayPalOrder = false;
+                this.errorMessage = error.message || 'Fehler beim Vorbereiten der PayPal-Zahlung.';
+                console.error('❌ PayPal-Order-Fehler:', error);
+            }
+        });
+    }
+
+    /**
+     * PayPal-Zahlung erfolgreich abgeschlossen
+     */
+    onPayPalSuccess(response: PaymentCaptureResponse): void {
+        console.log('✅ PayPal-Zahlung erfolgreich:', response);
+
+        if (response.status !== PaymentStatus.PAID) {
+            console.warn('⚠️ PayPal-Status ist nicht PAID:', response.status);
+            this.errorMessage = 'Zahlung noch nicht bestätigt. Bitte warten Sie einen Moment.';
+            return;
+        }
+
+        // Adressen speichern (falls gewünscht)
+        const formValue = this.checkoutForm.value;
+        if (this.saveAddressForFuture && this.isUserLoggedIn()) {
+            this.saveAddressToProfile(
+                formValue.shippingAddress,
+                this.sameAsShipping ? formValue.shippingAddress : formValue.billingAddress
+            );
+        }
+
+        const customerEmail = this.checkoutForm.get('customerEmail')?.disabled
+            ? this.checkoutForm.get('customerEmail')?.value
+            : formValue.customerEmail;
+
+        console.log('📧 Navigiere zur Bestätigung nach PayPal-Zahlung');
+
+        // Zur Bestellbestätigung navigieren
+        this.router.navigate(['/order-confirmation'], {
+            queryParams: {
+                orderNumber: `ORD-${this.tempOrderId}`,
+                email: customerEmail
+            }
+        });
+    }
+
+    /**
+     * PayPal-Zahlung fehlgeschlagen
+     */
+    onPayPalError(errorMessage: string | undefined): void {
+        console.error('❌ PayPal-Fehler:', errorMessage);
+        this.errorMessage = errorMessage || 'PayPal-Zahlung fehlgeschlagen. Bitte versuchen Sie es erneut oder wählen Sie eine andere Zahlungsart.';
+        // tempOrderId bleibt erhalten für erneuten Versuch
+    }
+
+    /**
+     * PayPal-Zahlung abgebrochen
+     */
+    onPayPalCancel(): void {
+        console.log('ℹ️ PayPal-Zahlung abgebrochen');
+        this.errorMessage = 'PayPal-Zahlung wurde abgebrochen. Sie können es erneut versuchen oder eine andere Zahlungsart wählen.';
+        // tempOrderId bleibt erhalten für erneuten Versuch
+    }
+
+    /**
+     * Gesamtbetrag inkl. Versandkosten für PayPal
+     */
+    getTotalWithDelivery(): number {
+        if (!this.cart) return 0;
+        const subtotal = this.cart.subtotal;
+        const deliveryFee = this.selectedDeliveryType === 'PICKUP' ? 0 : (this.selectedGlobalDeliveryOption?.price ?? 0);
+        const discounted = Math.max(0, subtotal - this.discountAmount);
+        return discounted + deliveryFee;
     }
 
     onCountryChange(): void {

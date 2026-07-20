@@ -250,6 +250,7 @@ public class PublicOrderController {
             response.put("customerEmail", customerEmail);
             response.put("paymentMethod", paymentMethod);
             response.put("phoneVerified", order.getPhoneVerified());
+            response.put("checkoutToken", order.getCheckoutToken());  // CRITICAL: PayPal benötigt den Token
             response.put("message", "Order created successfully");
 
             return ResponseEntity.ok(response);

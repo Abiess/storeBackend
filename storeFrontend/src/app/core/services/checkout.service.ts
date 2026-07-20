@@ -36,6 +36,7 @@ export interface CheckoutResponse {
   total: number;
   customerEmail: string;
   message: string;
+  checkoutToken?: string;  // Für Guest-Checkout und PayPal-Zugriff
 }
 
 export interface OrderDetails {

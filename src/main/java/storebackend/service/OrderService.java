@@ -176,6 +176,9 @@ public class OrderService {
         order.setPaymentMethod(paymentMethod);
         order.setPhoneVerificationId(phoneVerificationId);
         order.setPhoneVerified(phoneVerificationId != null);
+        
+        // CRITICAL: Checkout-Token für Gast-Checkout und PayPal generieren
+        order.setCheckoutToken(java.util.UUID.randomUUID().toString());
 
         // Store-Snapshot setzen
         order.setCurrencyCode(currencyCode);

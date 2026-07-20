@@ -227,6 +227,14 @@ public class Order {
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_method", length = 30)
     private PaymentMethod paymentMethod;
+    
+    /**
+     * Checkout-Token für Gast-Checkout und PayPal-Zahlungen
+     * Wird beim Erstellen der Order generiert und für sichere Payment-Operationen verwendet
+     * KRITISCH: Darf NICHT in Logs oder Fehlermeldungen erscheinen
+     */
+    @Column(name = "checkout_token", length = 255, unique = true)
+    private String checkoutToken;
 
     @Column(name = "phone_verification_id")
     private Long phoneVerificationId;
