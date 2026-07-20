@@ -113,34 +113,11 @@ class StoreAccessCheckerTest {
         assertFalse(hasAccess, "User 2 should NOT have access to Store 121 (not owner)");
     }
     
-    @Test
-    void testPlatformAdmin_ShouldGrantAccess() {
-        // Arrange
-        User adminUser = new User();
-        adminUser.setId(999L);
-        adminUser.setEmail("admin@markt.ma");
-        adminUser.setName("Platform Admin");
-        adminUser.setRoles(Collections.singleton(Role.ROLE_PLATFORM_ADMIN));
-        
-        Authentication auth = new UsernamePasswordAuthenticationToken(
-            adminUser.getEmail(), 
-            null, 
-            Collections.emptyList()
-        );
-        when(securityContext.getAuthentication()).thenReturn(auth);
-        when(userRepository.findByEmail(adminUser.getEmail())).thenReturn(Optional.of(adminUser));
-        // Store-Lookup nicht nötig für PLATFORM_ADMIN
-        
-        // Act
-        boolean hasAccess = storeAccessChecker.isStoreAdmin(121L);
-        
-        // Assert
-        assertTrue(hasAccess, "PLATFORM_ADMIN should have access to all stores");
-        
-        // Verify - sollte NICHT bis zum Store-Lookup kommen
-        verify(userRepository).findByEmail(adminUser.getEmail());
-        verify(storeRepository, never()).findById(anyLong());
-    }
+    /**
+     * PLATFORM_ADMIN Test entfernt - nur Store-Owner haben Zugriff
+     * (Wie vom User gefordert: Keine Rollen-Checks, nur Owner-Check)
+     */
+    // Test wurde entfernt
     
     @Test
     void testStoreNotFound_ShouldDenyAccess() {

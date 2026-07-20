@@ -2,16 +2,16 @@ package storebackend.util;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import storebackend.entity.Store;
 import storebackend.entity.User;
-import storebackend.enums.Role;
 import storebackend.repository.StoreRepository;
 import storebackend.repository.UserRepository;
 
-import java.util.Optional;
+import java.util.Objects;
 
 /**
  * Spring Bean für Store-Access-Checks in @PreAuthorize SpEL-Expressions
@@ -26,74 +26,62 @@ public class StoreAccessChecker {
 
     /**
      * Prüft, ob der aktuell eingeloggte User Admin-Rechte für einen Store hat
-     * (Owner oder PLATFORM_ADMIN).
+     * (Owner des Stores).
      * 
      * Für @PreAuthorize("@storeAccessChecker.isStoreAdmin(#storeId)")
      * 
      * @param storeId Store ID
-     * @return true wenn User Admin-Rechte hat, sonst false
+     * @return true wenn User Owner ist, sonst false
      */
     public boolean isStoreAdmin(Long storeId) {
         try {
             // 1. Authentication prüfen
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
-                log.warn("[ACCESS-DENIED] No authenticated user for storeId={}", storeId);
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            
+            if (authentication == null
+                || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken) {
+                log.warn("[ACCESS-DENIED] Not authenticated for storeId={}", storeId);
                 return false;
             }
+
+            // 2. User aus Authentication laden (email als Identifier)
+            String email = authentication.getName();
             
-            // 2. User aus Authentication laden
-            String authName = auth.getName();
-            log.info("[ACCESS-CHECK] auth.getName()='{}', storeId={}", authName, storeId);
+            User currentUser = userRepository.findByEmail(email).orElse(null);
             
-            Optional<User> userOpt = userRepository.findByEmail(authName);
-            if (userOpt.isEmpty()) {
-                log.warn("[ACCESS-DENIED] User not found in DB: authName='{}', storeId={}", 
-                    authName, storeId);
+            if (currentUser == null) {
+                log.warn("[ACCESS-DENIED] User not found: email='{}', storeId={}", 
+                    email, storeId);
                 return false;
             }
+
+            // 3. Store laden
+            Store store = storeRepository.findById(storeId).orElse(null);
             
-            User user = userOpt.get();
-            log.info("[ACCESS-CHECK] User loaded: userId={}, email='{}', roles={}", 
-                user.getId(), user.getEmail(), user.getRoles());
-            
-            // 3. PLATFORM_ADMIN hat Zugriff auf alle Stores
-            if (user.getRoles() != null && user.getRoles().contains(Role.ROLE_PLATFORM_ADMIN)) {
-                log.info("[ACCESS-GRANTED] ✅ PLATFORM_ADMIN: userId={}, storeId={}", 
-                    user.getId(), storeId);
-                return true;
-            }
-            
-            // 4. Store laden
-            Optional<Store> storeOpt = storeRepository.findById(storeId);
-            if (storeOpt.isEmpty()) {
-                log.warn("[ACCESS-DENIED] Store not found: storeId={}", storeId);
+            if (store == null || store.getOwner() == null) {
+                log.warn("[ACCESS-DENIED] Store not found or has no owner: storeId={}, userId={}", 
+                    storeId, currentUser.getId());
                 return false;
             }
+
+            // 4. Owner-Check (direkter Vergleich der IDs)
+            boolean isOwner = Objects.equals(store.getOwner().getId(), currentUser.getId());
             
-            Store store = storeOpt.get();
-            
-            // 5. Owner-Check (KRITISCH für PayPal Admin UI)
-            if (store.getOwner() == null) {
-                log.warn("[ACCESS-DENIED] Store has NO owner: storeId={}, userId={}", 
-                    storeId, user.getId());
-                return false;
-            }
-            
-            Long userId = user.getId();
-            Long ownerId = store.getOwner().getId();
-            
-            log.info("[ACCESS-CHECK] Ownership comparison: userId={}, storeOwnerId={}, storeId={}", 
-                userId, ownerId, storeId);
-            
-            boolean isOwner = ownerId != null && userId != null && ownerId.equals(userId);
+            // 5. Debug-Logging
+            log.info("[ACCESS-CHECK] storeId={}, authName='{}', currentUserId={}, ownerId={}, result={}",
+                storeId,
+                email,
+                currentUser.getId(),
+                store.getOwner().getId(),
+                isOwner);
             
             if (isOwner) {
                 log.info("[ACCESS-GRANTED] ✅ User is owner: userId={}, storeId={}, storeName='{}'", 
-                    userId, storeId, store.getName());
+                    currentUser.getId(), storeId, store.getName());
             } else {
-                log.warn("[ACCESS-DENIED] ❌ User is NOT owner: userId={}, storeId={}, storeOwnerId={}, storeName='{}'", 
-                    userId, storeId, ownerId, store.getName());
+                log.warn("[ACCESS-DENIED] ❌ User is NOT owner: userId={}, ownerId={}, storeId={}",
+                    currentUser.getId(), store.getOwner().getId(), storeId);
             }
             
             return isOwner;
@@ -126,7 +114,7 @@ public class StoreAccessChecker {
             return false;
         }
 
-        return store.getOwner().getId().equals(user.getId());
+        return Objects.equals(store.getOwner().getId(), user.getId());
     }
 
     /**
