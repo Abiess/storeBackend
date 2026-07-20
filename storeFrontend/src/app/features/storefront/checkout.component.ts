@@ -1762,13 +1762,15 @@ export class CheckoutComponent implements OnInit, OnDestroy {
                     });
                 
                 this.loadCart();
+                
+                // PayPal config NACH storeId-Setzung laden
+                this.checkPayPalConfiguration();
             }
         });
 
         this.restoreFormData();
         this.loadSavedAddresses();
         this.loadGlobalDeliveryOptions();
-        this.checkPayPalConfiguration();
 
         // Bug-Fix: debounce verhindert API-Calls bei jedem Tastendruck
         // distinctUntilChanged verhindert Reload wenn PLZ/Stadt/Land gleich bleibt
@@ -1858,7 +1860,13 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     }
     
     private checkPayPalConfiguration(): void {
+        console.log('🔍 PayPal config check started', {
+            storeId: this.storeId,
+            hasStoreId: !!this.storeId
+        });
+        
         if (!this.storeId) {
+            console.warn('⚠️ PayPal check skipped - storeId not yet set');
             this.paypalEnabled = false;
             return;
         }
@@ -1867,10 +1875,11 @@ export class CheckoutComponent implements OnInit, OnDestroy {
             next: response => {
                 this.paypalEnabled = response.paypal.enabled && response.paypal.configured;
                 console.log('✅ PayPal configuration loaded:', {
+                    storeId: this.storeId,
                     enabled: response.paypal.enabled,
                     configured: response.paypal.configured,
                     mode: response.paypal.mode,
-                    visible: this.paypalEnabled
+                    paypalEnabled: this.paypalEnabled
                 });
             },
             error: (err) => {
