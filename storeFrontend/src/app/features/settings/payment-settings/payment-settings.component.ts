@@ -1,10 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
 import { AdminPaymentService } from '@app/core/services/admin-payment.service';
+import { StoreContextService } from '@app/core/services/store-context.service';
 import { PaymentSettingsDTO } from '@app/core/models/payment-settings.model';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { Subscription } from 'rxjs';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-payment-settings',
@@ -12,7 +14,12 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
   imports: [CommonModule, FormsModule, TranslatePipe],
   template: `
     <div class="payment-settings">
-      <div class="section-header">
+      <!-- FEHLER: Kein Store-Kontext -->
+      <div class="error-state" *ngIf="!storeId">
+        <p class="error-message">⚠️ Kein gültiger Store ausgewählt.</p>
+      </div>
+
+      <div class="section-header" *ngIf="storeId">
         <div class="header-icon">💳</div>
         <div>
           <h2>{{ 'settings.payments.title' | translate }}</h2>
@@ -20,17 +27,17 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
         </div>
       </div>
 
-      <div class="loading-state" *ngIf="loading">
+      <div class="loading-state" *ngIf="loading && storeId">
         <div class="spinner"></div>
         <p>{{ 'common.loading' | translate }}...</p>
       </div>
 
-      <div class="error-state" *ngIf="error">
+      <div class="error-state" *ngIf="error && storeId">
         <p class="error-message">❌ {{ error }}</p>
         <button class="btn btn-outline" (click)="loadSettings()">{{ 'common.retry' | translate }}</button>
       </div>
 
-      <div class="payment-providers" *ngIf="!loading && !error && settings">
+      <div class="payment-providers" *ngIf="!loading && !error && settings && storeId">
         <div class="provider-card paypal-card">
           <div class="provider-header">
             <div class="provider-logo">💰</div>
@@ -154,37 +161,41 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
     }
   `]
 })
-export class PaymentSettingsComponent implements OnInit {
-  storeId!: number;
+export class PaymentSettingsComponent implements OnInit, OnDestroy {
+  storeId: number | null = null;
   settings?: PaymentSettingsDTO;
   loading = false;
   saving = false;
   error?: string;
+  
+  private subscription?: Subscription;
 
   constructor(
-    private route: ActivatedRoute,
-    private router: Router,
+    private storeContextService: StoreContextService,
     private adminPaymentService: AdminPaymentService
   ) {}
 
   ngOnInit() {
-    this.storeId = this.extractStoreId();
-    this.loadSettings();
+    // Store-ID aus StoreContextService laden (reaktiv)
+    this.subscription = this.storeContextService.storeId$.pipe(
+      filter((id): id is number => id !== null && id > 0)
+    ).subscribe(storeId => {
+      this.storeId = storeId;
+      this.loadSettings();
+    });
   }
-
-  private extractStoreId(): number {
-    let id = this.route.snapshot.paramMap.get('storeId') || this.route.snapshot.paramMap.get('id');
-    if (!id && this.route.parent) {
-      id = this.route.parent.snapshot.paramMap.get('id');
-    }
-    if (!id) {
-      const match = this.router.url.match(/\/stores\/(\d+)/);
-      if (match) id = match[1];
-    }
-    return Number(id);
+  
+  ngOnDestroy() {
+    this.subscription?.unsubscribe();
   }
 
   loadSettings() {
+    // CRITICAL: Nie API-Call mit storeId=0 oder null
+    if (!this.storeId || this.storeId <= 0) {
+      this.error = 'Kein gültiger Store ausgewählt.';
+      return;
+    }
+    
     this.loading = true;
     this.error = undefined;
     
@@ -195,14 +206,14 @@ export class PaymentSettingsComponent implements OnInit {
       },
       error: (err) => {
         console.error('Failed to load payment settings:', err);
-        this.error = 'Fehler beim Laden der Zahlungseinstellungen';
+        this.error = err.error?.message || 'Fehler beim Laden der Zahlungseinstellungen';
         this.loading = false;
       }
     });
   }
 
   togglePayPal() {
-    if (!this.settings || this.saving) return;
+    if (!this.settings || this.saving || !this.storeId) return;
     
     this.saving = true;
     const request = { 
@@ -217,7 +228,7 @@ export class PaymentSettingsComponent implements OnInit {
       },
       error: (err) => {
         console.error('Failed to update settings:', err);
-        this.error = 'Fehler beim Aktualisieren';
+        this.error = err.error?.message || 'Fehler beim Aktualisieren';
         this.saving = false;
         if (this.settings) {
           this.settings.enabled = !this.settings.enabled;
@@ -227,7 +238,7 @@ export class PaymentSettingsComponent implements OnInit {
   }
 
   checkConnection() {
-    if (this.saving) return;
+    if (this.saving || !this.storeId) return;
     
     this.saving = true;
     
@@ -238,7 +249,7 @@ export class PaymentSettingsComponent implements OnInit {
       },
       error: (err) => {
         console.error('Failed to check connection:', err);
-        this.error = 'Fehler beim Verbindungstest';
+        this.error = err.error?.message || 'Fehler beim Verbindungstest';
         this.saving = false;
       }
     });
