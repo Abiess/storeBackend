@@ -229,6 +229,22 @@ DHL_SANDBOX_SHIPPER_COUNTRY=${DHL_SANDBOX_SHIPPER_COUNTRY:-DE}
 DHL_PLATFORM_CLIENT_ID=${DHL_PLATFORM_CLIENT_ID:-}
 DHL_PLATFORM_CLIENT_SECRET=${DHL_PLATFORM_CLIENT_SECRET:-}
 DHL_PLATFORM_CREDENTIALS_ALLOWED=${DHL_PLATFORM_CREDENTIALS_ALLOWED:-true}
+
+# ── PayPal Payment Gateway (Phase 1A: Sandbox MVP) ──
+# PayPal Orders v2 API Credentials
+# Phase 1A: Globale Sandbox-Credentials für Plattform
+# Phase 1B: Store-spezifische Merchant Accounts via Partner Referrals API
+#
+# WICHTIG:
+# - Client Secret NIEMALS loggen oder echo ausgeben
+# - Mode: sandbox (Entwicklung/Test) oder live (Production)
+# - Ohne Credentials ist PayPal deaktiviert (configured=false)
+#
+# Defaults: leer = PayPal nicht konfiguriert
+PAYPAL_CLIENT_ID=${PAYPAL_CLIENT_ID:-}
+PAYPAL_CLIENT_SECRET=${PAYPAL_CLIENT_SECRET:-}
+PAYPAL_MODE=${PAYPAL_MODE:-sandbox}
+
 # SECURITY: Encryption Key für DB-Felder (Passwörter, API Secrets)
 # WICHTIG: NIEMALS loggen! Key muss stabil bleiben (nicht bei jedem Deploy neu generieren).
 APP_SECRET_ENCRYPTION_KEY=${APP_SECRET_ENCRYPTION_KEY:-}
@@ -258,6 +274,18 @@ if [ -z "${APP_SECRET_ENCRYPTION_KEY:-}" ]; then
   echo "   Add to GitHub Secrets as: APP_SECRET_ENCRYPTION_KEY"
 else
   echo "✅ APP_SECRET_ENCRYPTION_KEY is configured (length: ${#APP_SECRET_ENCRYPTION_KEY} chars)"
+fi
+
+# PayPal Configuration Check (ohne Secrets auszugeben)
+echo ""
+echo "🅿️  PayPal Configuration:"
+if [ -n "${PAYPAL_CLIENT_ID:-}" ] && [ -n "${PAYPAL_CLIENT_SECRET:-}" ]; then
+  echo "   ✅ PayPal configured: clientId=present, secret=present, mode=${PAYPAL_MODE}"
+else
+  echo "   ⚠️  PayPal not configured (clientId or secret missing)"
+  echo "   PayPal will be disabled in checkout (configured=false)"
+  echo "   Add GitHub Secrets: PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET"
+  echo "   Add GitHub Variable: PAYPAL_MODE (default: sandbox)"
 fi
 
 echo "🔄 Reloading systemd daemon..."

@@ -330,6 +330,9 @@ jobs:
             export DHL_PLATFORM_CLIENT_ID="${{ secrets.DHL_PLATFORM_CLIENT_ID }}"
             export DHL_PLATFORM_CLIENT_SECRET="${{ secrets.DHL_PLATFORM_CLIENT_SECRET }}"
             export DHL_PLATFORM_CREDENTIALS_ALLOWED="${{ secrets.DHL_PLATFORM_CREDENTIALS_ALLOWED }}"
+            export PAYPAL_CLIENT_ID="${{ secrets.PAYPAL_CLIENT_ID }}"
+            export PAYPAL_CLIENT_SECRET="${{ secrets.PAYPAL_CLIENT_SECRET }}"
+            export PAYPAL_MODE="${{ vars.PAYPAL_MODE || 'sandbox' }}"
             export APP_SECRET_ENCRYPTION_KEY="${{ secrets.APP_SECRET_ENCRYPTION_KEY }}"
             cd /opt/storebackend
             bash scripts/deploy.sh

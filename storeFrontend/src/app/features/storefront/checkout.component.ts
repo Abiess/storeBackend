@@ -18,6 +18,9 @@ import { DeliveryOption, DeliveryOptionsResponse, PublicStore, CurrencyCode } fr
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { StoreCurrencyPipe } from '../../core/pipes/store-currency.pipe';
 import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
+import { PayPalButtonComponent } from '@app/shared/components/paypal-button/paypal-button.component';
+import { PaymentService } from '@app/core/services/payment.service';
+import { PaymentProvider, PaymentCaptureResponse } from '@app/core/models/payment.model';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import { environment } from '@env/environment';
@@ -32,7 +35,8 @@ import { environment } from '@env/environment';
         CouponInputComponent,
         TranslatePipe,
         StoreCurrencyPipe,
-        PageHeaderComponent
+        PageHeaderComponent,
+        PayPalButtonComponent
     ],
     template: `
     <div class="checkout-container">
@@ -361,13 +365,20 @@ import { environment } from '@env/environment';
                   </div>
                 </label>
 
-                <label class="payment-option disabled" title="Derzeit nicht verfügbar">
-                  <input type="radio" name="paymentMethod" value="PAYPAL" disabled />
+                <label *ngIf="paypalEnabled" class="payment-option" [class.selected]="selectedPaymentMethod === 'PAYPAL'">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="PAYPAL"
+                    [(ngModel)]="selectedPaymentMethod"
+                    [ngModelOptions]="{ standalone: true }"
+                    (change)="onPaymentMethodChange()"
+                  />
                   <div class="payment-content">
                     <span class="payment-icon">🅿️</span>
                     <div class="payment-info">
                       <strong>PayPal</strong>
-                      <small>Derzeit nicht verfügbar</small>
+                      <small>Sicher und schnell bezahlen</small>
                     </div>
                   </div>
                 </label>
@@ -1618,6 +1629,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     saveAddressForFuture = false;
     storeId: number | null = null;
     selectedPaymentMethod: string | null = 'CASH_ON_DELIVERY';
+    paypalEnabled = false;  // PayPal nur anzeigen, wenn konfiguriert
     phoneNumber = '';
     verificationCode = '';
     phoneVerified = false;
@@ -1681,7 +1693,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         private phoneVerificationService: PhoneVerificationService,
         private deliveryService: DeliveryService,
         private platformDeliveryService: PlatformDeliveryService,
-        private http: HttpClient
+        private http: HttpClient,
+        private paymentService: PaymentService
     ) {
         this.checkoutForm = this.fb.group({
             customerEmail: ['', [Validators.required, Validators.email]],
@@ -1755,6 +1768,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         this.restoreFormData();
         this.loadSavedAddresses();
         this.loadGlobalDeliveryOptions();
+        this.checkPayPalConfiguration();
 
         // Bug-Fix: debounce verhindert API-Calls bei jedem Tastendruck
         // distinctUntilChanged verhindert Reload wenn PLZ/Stadt/Land gleich bleibt
@@ -1841,6 +1855,29 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         this.destroy$.next();
         this.destroy$.complete();
+    }
+    
+    private checkPayPalConfiguration(): void {
+        if (!this.storeId) {
+            this.paypalEnabled = false;
+            return;
+        }
+        
+        this.paymentService.getAvailablePaymentMethods(this.storeId).subscribe({
+            next: response => {
+                this.paypalEnabled = response.paypal.enabled && response.paypal.configured;
+                console.log('✅ PayPal configuration loaded:', {
+                    enabled: response.paypal.enabled,
+                    configured: response.paypal.configured,
+                    mode: response.paypal.mode,
+                    visible: this.paypalEnabled
+                });
+            },
+            error: (err) => {
+                console.error('❌ Failed to load payment methods:', err);
+                this.paypalEnabled = false;
+            }
+        });
     }
 
     /** Lädt plattformweite Lieferoptionen (vom Admin in DB gepflegt) */
