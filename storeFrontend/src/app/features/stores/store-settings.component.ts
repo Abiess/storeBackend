@@ -7,6 +7,7 @@ import { Store } from '../../core/models';
 import { StoreNavigationComponent } from '../../shared/components/store-navigation.component';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { StoreSliderEditorComponent } from './components/store-slider-editor.component';
+import { PaymentSettingsComponent } from '../settings/payment-settings/payment-settings.component';
 
 /**
  * Wiederverwendbares Settings-Tab Interface.
@@ -24,7 +25,7 @@ export interface SettingsTab {
 @Component({
   selector: 'app-store-settings',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, StoreNavigationComponent, TranslatePipe, StoreSliderEditorComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, StoreNavigationComponent, TranslatePipe, StoreSliderEditorComponent, PaymentSettingsComponent],
   template: `
     <div class="store-settings-container">
       <!-- Einheitliche Navigation -->
@@ -598,6 +599,11 @@ export interface SettingsTab {
               Domains verwalten
             </button>
           </div>
+        </div>
+
+        <!-- Payments Tab -->
+        <div class="tab-content" *ngIf="activeTab === 'payments'">
+          <app-payment-settings [storeIdOverride]="storeId"></app-payment-settings>
         </div>
 
         <!-- Advanced Settings -->
@@ -1312,6 +1318,7 @@ export class StoreSettingsComponent implements OnInit {
   settingsTabs: SettingsTab[] = [
     { id: 'general',  icon: '⚙️', labelKey: 'settings.general' },
     { id: 'tax',      icon: '💰', labelKey: 'settings.tax.title' },
+    { id: 'payments', icon: '💳', labelKey: 'Zahlungen' },
     { id: 'social',   icon: '🔗', labelKey: 'Social & Kontakt' },
     { id: 'slider',   icon: '🎬', labelKey: 'settings.slider' },
     { id: 'shipping', icon: '📦', labelKey: 'settings.shipping.title' },

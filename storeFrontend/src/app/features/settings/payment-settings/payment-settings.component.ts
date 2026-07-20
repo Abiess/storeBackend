@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -184,6 +184,8 @@ import { Subscription } from 'rxjs';
   `]
 })
 export class PaymentSettingsComponent implements OnInit, OnDestroy {
+  @Input() storeIdOverride?: number; // Wenn gesetzt, diesen Store verwenden statt selbst zu laden
+  
   stores: Store[] = [];
   selectedStoreId: number | null = null;
   loadingStores = false;
@@ -201,7 +203,14 @@ export class PaymentSettingsComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    // Stores des Users laden
+    // Wenn storeIdOverride gesetzt ist, direkt verwenden
+    if (this.storeIdOverride) {
+      this.selectedStoreId = this.storeIdOverride;
+      this.loadSettings();
+      return;
+    }
+    
+    // Sonst: Stores des Users laden
     this.loadStores();
   }
   

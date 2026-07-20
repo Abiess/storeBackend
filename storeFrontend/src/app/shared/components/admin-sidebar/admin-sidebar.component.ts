@@ -106,6 +106,11 @@ export class AdminSidebarComponent implements OnInit {
 
         const baseRoute = resolvedStoreId != null ? `/stores/${resolvedStoreId}` : '';
         this.currentStoreId = resolvedStoreId;
+        
+        // Store-ID in localStorage speichern für spätere Verwendung
+        if (resolvedStoreId != null) {
+            localStorage.setItem('lastActiveStoreId', resolvedStoreId.toString());
+        }
 
         // Slug laden falls Store-ID neu
         if (resolvedStoreId != null && resolvedStoreId !== this.slugLoadedForId) {

@@ -1,7 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { dashboardStoresRedirectGuard } from './core/guards/dashboard-stores-redirect.guard';
-import { settingsRedirectGuard } from './core/guards/settings-redirect.guard';
 
 export const routes: Routes = [
   // ==================== Legal Pages (Public) ====================
@@ -97,16 +96,7 @@ export const routes: Routes = [
 
 
   // ==================== User Settings ====================
-  {
-    path: 'settings',
-    loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent),
-    canActivate: [authGuard, settingsRedirectGuard]
-  },
-  {
-    path: 'settings/payments',
-    loadComponent: () => import('./features/settings/payment-settings/payment-settings.component').then(m => m.PaymentSettingsComponent),
-    canActivate: [authGuard, settingsRedirectGuard]
-  },
+  // GELÖSCHT: /settings und /settings/payments (jetzt in /stores/:id/settings integriert)
   {
     path: 'subscription',
     loadComponent: () => import('./features/settings/subscription.component').then(m => m.SubscriptionComponent),
