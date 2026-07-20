@@ -35,33 +35,36 @@ public class StoreAccessChecker {
      */
     public boolean isStoreAdmin(Long storeId) {
         try {
+            // 1. Authentication prüfen
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
-                log.info("[ACCESS-DENIED] No authenticated user for storeId={}", storeId);
+                log.warn("[ACCESS-DENIED] No authenticated user for storeId={}", storeId);
                 return false;
             }
             
-            String email = auth.getName();
-            log.info("[ACCESS-CHECK] Checking access for email={}, storeId={}", email, storeId);
+            // 2. User aus Authentication laden
+            String authName = auth.getName();
+            log.info("[ACCESS-CHECK] auth.getName()='{}', storeId={}", authName, storeId);
             
-            Optional<User> userOpt = userRepository.findByEmail(email);
+            Optional<User> userOpt = userRepository.findByEmail(authName);
             if (userOpt.isEmpty()) {
-                log.warn("[ACCESS-DENIED] User not found: email={}, storeId={}", email, storeId);
+                log.warn("[ACCESS-DENIED] User not found in DB: authName='{}', storeId={}", 
+                    authName, storeId);
                 return false;
             }
             
             User user = userOpt.get();
-            log.info("[ACCESS-CHECK] User found: userId={}, email={}, roles={}", 
+            log.info("[ACCESS-CHECK] User loaded: userId={}, email='{}', roles={}", 
                 user.getId(), user.getEmail(), user.getRoles());
             
-            // PLATFORM_ADMIN hat Zugriff auf alle Stores
-            if (user.getRoles().contains(Role.ROLE_PLATFORM_ADMIN)) {
-                log.info("[ACCESS-GRANTED] User is PLATFORM_ADMIN - userId={}, storeId={}", 
+            // 3. PLATFORM_ADMIN hat Zugriff auf alle Stores
+            if (user.getRoles() != null && user.getRoles().contains(Role.ROLE_PLATFORM_ADMIN)) {
+                log.info("[ACCESS-GRANTED] ✅ PLATFORM_ADMIN: userId={}, storeId={}", 
                     user.getId(), storeId);
                 return true;
             }
             
-            // Owner-Check
+            // 4. Store laden
             Optional<Store> storeOpt = storeRepository.findById(storeId);
             if (storeOpt.isEmpty()) {
                 log.warn("[ACCESS-DENIED] Store not found: storeId={}", storeId);
@@ -69,21 +72,35 @@ public class StoreAccessChecker {
             }
             
             Store store = storeOpt.get();
-            Long ownerId = store.getOwner() != null ? store.getOwner().getId() : null;
-            boolean isOwner = ownerId != null && ownerId.equals(user.getId());
+            
+            // 5. Owner-Check (KRITISCH für PayPal Admin UI)
+            if (store.getOwner() == null) {
+                log.warn("[ACCESS-DENIED] Store has NO owner: storeId={}, userId={}", 
+                    storeId, user.getId());
+                return false;
+            }
+            
+            Long userId = user.getId();
+            Long ownerId = store.getOwner().getId();
+            
+            log.info("[ACCESS-CHECK] Ownership comparison: userId={}, storeOwnerId={}, storeId={}", 
+                userId, ownerId, storeId);
+            
+            boolean isOwner = ownerId != null && userId != null && ownerId.equals(userId);
             
             if (isOwner) {
-                log.info("[ACCESS-GRANTED] User is owner: userId={}, storeId={}, ownerId={}", 
-                    user.getId(), storeId, ownerId);
+                log.info("[ACCESS-GRANTED] ✅ User is owner: userId={}, storeId={}, storeName='{}'", 
+                    userId, storeId, store.getName());
             } else {
-                log.warn("[ACCESS-DENIED] User is NOT owner: userId={}, storeId={}, ownerId={}", 
-                    user.getId(), storeId, ownerId);
+                log.warn("[ACCESS-DENIED] ❌ User is NOT owner: userId={}, storeId={}, storeOwnerId={}, storeName='{}'", 
+                    userId, storeId, ownerId, store.getName());
             }
             
             return isOwner;
             
         } catch (Exception e) {
-            log.error("[ACCESS-ERROR] StoreAccessCheck failed for storeId={}", storeId, e);
+            log.error("[ACCESS-ERROR] StoreAccessCheck failed for storeId={}: {}", 
+                storeId, e.getMessage(), e);
             return false;
         }
     }
