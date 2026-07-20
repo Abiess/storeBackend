@@ -1585,3 +1585,149 @@ COMMENT ON CONSTRAINT chk_mail_sent_not_when_blocked ON security_events IS
   'Verhindert inkonsistente Daten: blocked=true und mail_sent=true dürfen niemals gleichzeitig gesetzt sein.';
 
 RAISE NOTICE '✅ V25: security_events erweitert';
+
+
+-- =====================================================
+-- V11: PAYPAL PAYMENT INTEGRATION - PHASE 1B
+-- =====================================================
+
+-- Payment Transactions (zentrale Payment-Tracking-Tabelle)
+CREATE TABLE IF NOT EXISTS payment_transactions (
+    id BIGSERIAL PRIMARY KEY,
+    order_id BIGINT NOT NULL,
+    provider VARCHAR(30) NOT NULL,
+    status VARCHAR(30) NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL,
+    currency VARCHAR(3) NOT NULL DEFAULT 'EUR',
+    provider_order_id VARCHAR(100),
+    provider_capture_id VARCHAR(100),
+    provider_transaction_id VARCHAR(100),
+    idempotency_key VARCHAR(100) NOT NULL,
+    approved_at TIMESTAMP,
+    paid_at TIMESTAMP,
+    failed_at TIMESTAMP,
+    failure_code VARCHAR(50),
+    failure_message TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT fk_payment_transactions_order 
+        FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    CONSTRAINT uk_payment_transactions_idempotency 
+        UNIQUE (idempotency_key),
+    CONSTRAINT chk_payment_transactions_provider 
+        CHECK (provider IN ('PAYPAL', 'STRIPE', 'BANK_TRANSFER', 'CASH_ON_DELIVERY')),
+    CONSTRAINT chk_payment_transactions_status 
+        CHECK (status IN ('PENDING', 'PENDING_APPROVAL', 'APPROVED', 'PAID', 'FAILED', 'CANCELLED', 'REFUNDED', 'PARTIALLY_REFUNDED'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_payment_transactions_order ON payment_transactions(order_id);
+CREATE INDEX IF NOT EXISTS idx_payment_transactions_provider ON payment_transactions(provider);
+CREATE INDEX IF NOT EXISTS idx_payment_transactions_status ON payment_transactions(status);
+CREATE INDEX IF NOT EXISTS idx_payment_transactions_provider_order_id ON payment_transactions(provider_order_id);
+CREATE INDEX IF NOT EXISTS idx_payment_transactions_provider_capture_id ON payment_transactions(provider_capture_id);
+
+-- Store Payment Configuration (Store-spezifische Provider-Konfiguration)
+CREATE TABLE IF NOT EXISTS store_payment_configurations (
+    id BIGSERIAL PRIMARY KEY,
+    store_id BIGINT NOT NULL,
+    provider VARCHAR(30) NOT NULL,
+    enabled BOOLEAN NOT NULL DEFAULT FALSE,
+    mode VARCHAR(10) NOT NULL DEFAULT 'SANDBOX',
+    connection_status VARCHAR(20) NOT NULL DEFAULT 'NOT_CONNECTED',
+    merchant_account_id VARCHAR(100),
+    onboarding_completed BOOLEAN NOT NULL DEFAULT FALSE,
+    permissions_granted BOOLEAN NOT NULL DEFAULT FALSE,
+    email_confirmed BOOLEAN NOT NULL DEFAULT FALSE,
+    encrypted_credentials_ref TEXT,
+    last_checked_at TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT fk_store_payment_configurations_store 
+        FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE,
+    CONSTRAINT uk_store_payment_provider 
+        UNIQUE (store_id, provider),
+    CONSTRAINT chk_store_payment_provider 
+        CHECK (provider IN ('PAYPAL', 'STRIPE', 'BANK_TRANSFER', 'CASH_ON_DELIVERY')),
+    CONSTRAINT chk_store_payment_mode 
+        CHECK (mode IN ('SANDBOX', 'LIVE')),
+    CONSTRAINT chk_store_payment_connection_status 
+        CHECK (connection_status IN ('NOT_CONNECTED', 'PLATFORM_SANDBOX', 'CONNECTED', 'ERROR'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_store_payment_configurations_store ON store_payment_configurations(store_id);
+CREATE INDEX IF NOT EXISTS idx_store_payment_configurations_provider ON store_payment_configurations(provider);
+
+-- Payment Webhook Events (Event-Deduplizierung und Audit-Trail)
+CREATE TABLE IF NOT EXISTS payment_webhook_events (
+    id BIGSERIAL PRIMARY KEY,
+    provider VARCHAR(30) NOT NULL,
+    provider_event_id VARCHAR(100) NOT NULL,
+    event_type VARCHAR(100) NOT NULL,
+    processing_status VARCHAR(20) NOT NULL DEFAULT 'RECEIVED',
+    provider_order_id VARCHAR(100),
+    provider_capture_id VARCHAR(100),
+    payload_hash VARCHAR(64),
+    received_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    processed_at TIMESTAMP,
+    failure_code VARCHAR(50),
+    failure_message TEXT,
+    
+    CONSTRAINT uk_payment_webhook_provider_event 
+        UNIQUE (provider, provider_event_id),
+    CONSTRAINT chk_payment_webhook_provider 
+        CHECK (provider IN ('PAYPAL', 'STRIPE')),
+    CONSTRAINT chk_payment_webhook_status 
+        CHECK (processing_status IN ('RECEIVED', 'PROCESSING', 'PROCESSED', 'IGNORED', 'FAILED'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_payment_webhook_events_provider ON payment_webhook_events(provider);
+CREATE INDEX IF NOT EXISTS idx_payment_webhook_events_status ON payment_webhook_events(processing_status);
+CREATE INDEX IF NOT EXISTS idx_payment_webhook_events_provider_order ON payment_webhook_events(provider_order_id);
+CREATE INDEX IF NOT EXISTS idx_payment_webhook_events_provider_capture ON payment_webhook_events(provider_capture_id);
+
+-- Order Fulfillment Events (Idempotente Fulfillment-Tracking)
+CREATE TABLE IF NOT EXISTS order_fulfillment_events (
+    id BIGSERIAL PRIMARY KEY,
+    order_id BIGINT NOT NULL,
+    payment_transaction_id BIGINT,
+    event_type VARCHAR(50) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'COMPLETED',
+    failure_code VARCHAR(50),
+    failure_message TEXT,
+    retry_count INTEGER NOT NULL DEFAULT 0,
+    last_attempt_at TIMESTAMP,
+    triggered_by VARCHAR(100),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT fk_order_fulfillment_events_order 
+        FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    CONSTRAINT fk_order_fulfillment_events_payment 
+        FOREIGN KEY (payment_transaction_id) REFERENCES payment_transactions(id) ON DELETE SET NULL,
+    CONSTRAINT uk_order_fulfillment_event_type 
+        UNIQUE (order_id, event_type),
+    CONSTRAINT chk_order_fulfillment_event_type 
+        CHECK (event_type IN ('ORDER_CONFIRMED', 'CONFIRMATION_EMAIL_SENT', 'ADMIN_NOTIFIED', 
+                              'TELEGRAM_SENT', 'WHATSAPP_SENT', 'INVENTORY_REDUCED')),
+    CONSTRAINT chk_order_fulfillment_status 
+        CHECK (status IN ('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_order_fulfillment_events_order ON order_fulfillment_events(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_fulfillment_events_payment ON order_fulfillment_events(payment_transaction_id);
+CREATE INDEX IF NOT EXISTS idx_order_fulfillment_events_type ON order_fulfillment_events(event_type);
+CREATE INDEX IF NOT EXISTS idx_order_fulfillment_events_status ON order_fulfillment_events(status);
+
+-- Orders: Add checkout_token field for guest checkout security
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'orders' AND column_name = 'checkout_token'
+    ) THEN
+        ALTER TABLE orders ADD COLUMN checkout_token VARCHAR(36) UNIQUE;
+        RAISE NOTICE 'Added checkout_token column to orders';
+    END IF;
+END $$;
+
