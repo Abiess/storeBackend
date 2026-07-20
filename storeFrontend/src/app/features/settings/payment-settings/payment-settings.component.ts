@@ -1,12 +1,13 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { AdminPaymentService } from '@app/core/services/admin-payment.service';
-import { StoreContextService } from '@app/core/services/store-context.service';
+import { StoreService } from '@app/core/services/store.service';
 import { PaymentSettingsDTO } from '@app/core/models/payment-settings.model';
+import { Store } from '@app/core/models';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { Subscription } from 'rxjs';
-import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-payment-settings',
@@ -14,30 +15,49 @@ import { filter } from 'rxjs/operators';
   imports: [CommonModule, FormsModule, TranslatePipe],
   template: `
     <div class="payment-settings">
-      <!-- FEHLER: Kein Store-Kontext -->
-      <div class="error-state" *ngIf="!storeId">
-        <p class="error-message">⚠️ Kein gültiger Store ausgewählt.</p>
+      <!-- FEHLER: Keine Stores vorhanden -->
+      <div class="error-state" *ngIf="!loadingStores && stores.length === 0">
+        <p class="error-message">🏪 Sie haben noch keinen Store.</p>
+        <p style="margin: 8px 0; color: #666; font-size: 14px;">Bitte erstellen Sie zuerst einen Store.</p>
+        <button class="btn btn-primary" (click)="navigateToStoreCreation()">Store erstellen</button>
       </div>
 
-      <div class="section-header" *ngIf="storeId">
-        <div class="header-icon">💳</div>
-        <div>
-          <h2>{{ 'settings.payments.title' | translate }}</h2>
-          <p>{{ 'settings.payments.subtitle' | translate }}</p>
-        </div>
+      <!-- FEHLER: Stores vorhanden, aber keiner ausgewählt -->
+      <div class="error-state" *ngIf="!loadingStores && stores.length > 0 && !selectedStoreId">
+        <p class="error-message">📋 Bitte wählen Sie einen Store aus:</p>
+        <select class="store-selector" [(ngModel)]="selectedStoreId" (ngModelChange)="onStoreSelected()">
+          <option [value]="null" disabled selected>-- Store auswählen --</option>
+          <option *ngFor="let store of stores" [value]="store.id">{{ store.name }}</option>
+        </select>
       </div>
 
-      <div class="loading-state" *ngIf="loading && storeId">
+      <!-- LOADING: Stores werden geladen -->
+      <div class="loading-state" *ngIf="loadingStores">
         <div class="spinner"></div>
         <p>{{ 'common.loading' | translate }}...</p>
       </div>
 
-      <div class="error-state" *ngIf="error && storeId">
-        <p class="error-message">❌ {{ error }}</p>
-        <button class="btn btn-outline" (click)="loadSettings()">{{ 'common.retry' | translate }}</button>
-      </div>
+      <!-- MAIN CONTENT: Store ausgewählt -->
+      <div *ngIf="selectedStoreId && selectedStoreId > 0">
+        <div class="section-header">
+          <div class="header-icon">💳</div>
+          <div>
+            <h2>{{ 'settings.payments.title' | translate }}</h2>
+            <p>{{ 'settings.payments.subtitle' | translate }}</p>
+          </div>
+        </div>
 
-      <div class="payment-providers" *ngIf="!loading && !error && settings && storeId">
+        <div class="loading-state" *ngIf="loading">
+          <div class="spinner"></div>
+          <p>{{ 'common.loading' | translate }}...</p>
+        </div>
+
+        <div class="error-state" *ngIf="error">
+          <p class="error-message">❌ {{ error }}</p>
+          <button class="btn btn-outline" (click)="loadSettings()">{{ 'common.retry' | translate }}</button>
+        </div>
+
+        <div class="payment-providers" *ngIf="!loading && !error && settings">
         <div class="provider-card paypal-card">
           <div class="provider-header">
             <div class="provider-logo">💰</div>
@@ -152,6 +172,8 @@ import { filter } from 'rxjs/operators';
     .btn-primary:hover { opacity: 0.9; }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .spinner-sm { display: inline-block; width: 14px; height: 14px; border: 2px solid #fff; border-top: 2px solid transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    .store-selector { width: 100%; max-width: 400px; padding: 12px 16px; border: 2px solid #667eea; border-radius: 8px; font-size: 16px; margin-top: 16px; cursor: pointer; }
+    .store-selector:focus { outline: none; border-color: #764ba2; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); }
     @media (max-width: 768px) {
       .provider-header { flex-wrap: wrap; }
       .toggle-switch { order: -1; width: 100%; }
@@ -162,7 +184,9 @@ import { filter } from 'rxjs/operators';
   `]
 })
 export class PaymentSettingsComponent implements OnInit, OnDestroy {
-  storeId: number | null = null;
+  stores: Store[] = [];
+  selectedStoreId: number | null = null;
+  loadingStores = false;
   settings?: PaymentSettingsDTO;
   loading = false;
   saving = false;
@@ -171,27 +195,56 @@ export class PaymentSettingsComponent implements OnInit, OnDestroy {
   private subscription?: Subscription;
 
   constructor(
-    private storeContextService: StoreContextService,
+    private router: Router,
+    private storeService: StoreService,
     private adminPaymentService: AdminPaymentService
   ) {}
 
   ngOnInit() {
-    // Store-ID aus StoreContextService laden (reaktiv)
-    this.subscription = this.storeContextService.storeId$.pipe(
-      filter((id): id is number => id !== null && id > 0)
-    ).subscribe(storeId => {
-      this.storeId = storeId;
-      this.loadSettings();
-    });
+    // Stores des Users laden
+    this.loadStores();
   }
   
   ngOnDestroy() {
     this.subscription?.unsubscribe();
   }
+  
+  private loadStores() {
+    this.loadingStores = true;
+    this.storeService.getMyStores().subscribe({
+      next: (stores) => {
+        this.stores = stores;
+        this.loadingStores = false;
+        
+        // Bei genau einem Store: automatisch auswählen
+        if (stores.length === 1) {
+          this.selectedStoreId = stores[0].id;
+          this.loadSettings();
+        }
+        // Bei mehreren Stores: User muss auswählen (Dropdown wird angezeigt)
+        // Bei keinen Stores: Fehlermeldung wird angezeigt
+      },
+      error: (err) => {
+        console.error('Failed to load stores:', err);
+        this.error = 'Fehler beim Laden der Stores';
+        this.loadingStores = false;
+      }
+    });
+  }
+  
+  onStoreSelected() {
+    if (this.selectedStoreId && this.selectedStoreId > 0) {
+      this.loadSettings();
+    }
+  }
+  
+  navigateToStoreCreation() {
+    this.router.navigate(['/store-wizard']);
+  }
 
   loadSettings() {
     // CRITICAL: Nie API-Call mit storeId=0 oder null
-    if (!this.storeId || this.storeId <= 0) {
+    if (!this.selectedStoreId || this.selectedStoreId <= 0) {
       this.error = 'Kein gültiger Store ausgewählt.';
       return;
     }
@@ -199,7 +252,7 @@ export class PaymentSettingsComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.error = undefined;
     
-    this.adminPaymentService.getPayPalSettings(this.storeId).subscribe({
+    this.adminPaymentService.getPayPalSettings(this.selectedStoreId).subscribe({
       next: (data) => {
         this.settings = data;
         this.loading = false;
@@ -213,7 +266,7 @@ export class PaymentSettingsComponent implements OnInit, OnDestroy {
   }
 
   togglePayPal() {
-    if (!this.settings || this.saving || !this.storeId) return;
+    if (!this.settings || this.saving || !this.selectedStoreId) return;
     
     this.saving = true;
     const request = { 
@@ -221,7 +274,7 @@ export class PaymentSettingsComponent implements OnInit, OnDestroy {
       enabled: !this.settings.enabled 
     };
     
-    this.adminPaymentService.updatePayPalSettings(this.storeId, request).subscribe({
+    this.adminPaymentService.updatePayPalSettings(this.selectedStoreId, request).subscribe({
       next: (data) => {
         this.settings = data;
         this.saving = false;
@@ -238,11 +291,11 @@ export class PaymentSettingsComponent implements OnInit, OnDestroy {
   }
 
   checkConnection() {
-    if (this.saving || !this.storeId) return;
+    if (this.saving || !this.selectedStoreId) return;
     
     this.saving = true;
     
-    this.adminPaymentService.checkConnection(this.storeId).subscribe({
+    this.adminPaymentService.checkConnection(this.selectedStoreId).subscribe({
       next: (data) => {
         this.settings = data;
         this.saving = false;
