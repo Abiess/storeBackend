@@ -273,7 +273,7 @@ public class SimpleCartController {
                         Map<String, Object> dto = new java.util.HashMap<>();
                         dto.put("id", item.getId());
                         dto.put("quantity", item.getQuantity());
-                        dto.put("priceSnapshot", item.getPrice()); // FIXED: Verwende getPrice()
+                        dto.put("priceSnapshot", item.getPriceSnapshot()); // FIXED: Verwende getPriceSnapshot() statt getPrice()
 
                         // FIXED: Behandle Items ohne Varianten (einfache Produkte)
                         Product product = item.getProduct();
@@ -311,7 +311,7 @@ public class SimpleCartController {
 
             BigDecimal subtotal = items.stream()
                     .map(item -> {
-                        BigDecimal price = item.getPrice() != null ? item.getPrice() : BigDecimal.ZERO;
+                        BigDecimal price = item.getPriceSnapshot() != null ? item.getPriceSnapshot() : BigDecimal.ZERO;
                         return price.multiply(BigDecimal.valueOf(item.getQuantity()));
                     })
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -423,7 +423,8 @@ public class SimpleCartController {
                 cartItem.setProduct(product);
                 cartItem.setVariant(defaultVariant);
                 cartItem.setQuantity(quantity);
-                cartItem.setPriceSnapshot(product.getBasePrice() != null ? product.getBasePrice() : defaultVariant.getPrice());
+                // FIXED: Varianten-Price hat Vorrang vor Base-Price
+                cartItem.setPriceSnapshot(defaultVariant.getPrice() != null ? defaultVariant.getPrice() : product.getBasePrice());
                 cartItemRepository.save(cartItem);
                 log.info("✅ Added new cart item {} to cart {}", cartItem.getId(), cart.getId());
             }
@@ -433,7 +434,7 @@ public class SimpleCartController {
             int totalItemCount = allItems.stream().mapToInt(CartItem::getQuantity).sum();
             BigDecimal subtotal = allItems.stream()
                 .map(item -> {
-                    BigDecimal price = item.getPrice() != null ? item.getPrice() : BigDecimal.ZERO;
+                    BigDecimal price = item.getPriceSnapshot() != null ? item.getPriceSnapshot() : BigDecimal.ZERO;
                     return price.multiply(BigDecimal.valueOf(item.getQuantity()));
                 })
                 .reduce(BigDecimal.ZERO, BigDecimal::add);

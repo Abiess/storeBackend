@@ -24,7 +24,7 @@ export class PaymentService {
    */
   getAvailablePaymentMethods(storeId: number): Observable<PaymentMethodsResponse> {
     return this.http.get<PaymentMethodsResponse>(
-      `${this.apiUrl}/api/public/stores/${storeId}/payment-methods`
+      `${this.apiUrl}/public/stores/${storeId}/payment-methods`
     );
   }
 

@@ -40,6 +40,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     /**
      * Prometheus-Scraping (/actuator/**) läuft alle 15 Sekunden – JWT-Filter überspringen.
      * Swagger und API-Docs brauchen ebenfalls keinen JWT-Check.
+     * Public API endpoints (/api/public/**) ebenfalls überspringen.
      */
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -49,7 +50,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             || uri.startsWith("/swagger-ui/")
             || uri.startsWith("/swagger-ui.html")
             || uri.startsWith("/v3/api-docs/")
-            || uri.startsWith("/v3/api-docs");
+            || uri.startsWith("/v3/api-docs")
+            || uri.startsWith("/api/public/");  // PayPal payment-methods und andere public APIs
     }
 
     @Override
