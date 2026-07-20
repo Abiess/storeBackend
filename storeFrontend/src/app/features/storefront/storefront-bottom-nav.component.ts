@@ -19,7 +19,8 @@ import { AuthService } from '@app/core/services/auth.service';
       <!-- Home -->
       <a class="nav-item"
          routerLink="/"
-         routerLinkActive="active"
+         routerLinkActive="router-active"
+         [class.active]="!categoryActive && !searchActive"
          [routerLinkActiveOptions]="{exact: true}"
          [attr.aria-label]="'bottomNav.home' | translate">
         <span class="nav-icon-box">
@@ -108,7 +109,7 @@ import { AuthService } from '@app/core/services/auth.service';
         bottom: 0;
         inset-inline-start: 0;
         inset-inline-end: 0;
-        z-index: 900;
+        z-index: 10100; /* Über Chatbot (9999), aber unter critical Modals (10200+) */
         background: rgba(255, 255, 255, 0.92);
         backdrop-filter: blur(20px) saturate(180%);
         -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -145,9 +146,14 @@ import { AuthService } from '@app/core/services/auth.service';
       .nav-item.active {
         color: #667eea;
       }
+      
+      .nav-item.router-active {
+        color: #667eea;
+      }
 
       /* Active top line with gradient */
-      .nav-item.active::before {
+      .nav-item.active::before,
+      .nav-item.router-active::before {
         content: '';
         position: absolute;
         top: 0;
@@ -181,7 +187,8 @@ import { AuthService } from '@app/core/services/auth.service';
         }
       }
 
-      .nav-item.active .nav-icon-box {
+      .nav-item.active .nav-icon-box,
+      .nav-item.router-active .nav-icon-box {
         transform: translateY(-3px) scale(1.15);
         background: rgba(102, 126, 234, 0.1);
 
@@ -197,11 +204,18 @@ import { AuthService } from '@app/core/services/auth.service';
         max-width: 60px;
         transition: color 0.25s;
       }
+      
+      /* Cart Label muss auch clickbar sein */
+      .nav-item-cart .nav-label {
+        pointer-events: auto;
+      }
 
       /* ── FLOATING CART BUTTON ── */
       .nav-item-cart {
         position: relative;
         flex: 1.2;
+        /* WICHTIG: pointer-events nur auf den Button selbst, nicht auf die ganze Fläche */
+        pointer-events: none;
       }
 
       .cart-float-btn {
@@ -220,6 +234,8 @@ import { AuthService } from '@app/core/services/auth.service';
         transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         margin-top: -16px;
         border: 3px solid white;
+        /* Klicks wieder aktivieren NUR für den Button */
+        pointer-events: auto;
 
         svg { width: 22px; height: 22px; stroke: white; }
       }

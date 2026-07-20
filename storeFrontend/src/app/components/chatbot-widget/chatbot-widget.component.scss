@@ -440,8 +440,16 @@
    Der Sticky CTA ist ~80px + safe-area hoch. FAB wird nach oben verschoben,
    damit kein Overlap entsteht. Desktop (> 767px) bleibt unverändert. */
 @media (max-width: 767px) {
+  /* Product Detail Page */
   :host-context(body.is-product-detail) .chatbot-widget {
     bottom: calc(80px + env(safe-area-inset-bottom, 0px) + 16px);
+  }
+  
+  /* Alle Storefront-Seiten: Chatbot über der Bottom-Nav (64px + safe-area) */
+  :host-context(.storefront-wrapper) .chatbot-widget,
+  .chatbot-widget {
+    z-index: 10050; /* Unter Bottom-Nav (10100), aber sichtbar */
+    bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 16px);
   }
 }
 

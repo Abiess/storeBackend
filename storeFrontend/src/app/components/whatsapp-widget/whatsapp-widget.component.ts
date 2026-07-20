@@ -256,8 +256,16 @@ import { Subscription } from 'rxjs';
        Der Product Sticky CTA (volle Breite, ~80px) sitzt ganz unten.
        Desktop (> 767px) bleibt unverändert. */
     @media (max-width: 767px) {
+      /* Product Detail Page */
       :host-context(body.is-product-detail) {
         bottom: calc(80px + env(safe-area-inset-bottom, 0px) + 12px);
+      }
+      
+      /* Alle Storefront-Seiten: WhatsApp über der Bottom-Nav (64px + safe-area) */
+      :host-context(.storefront-wrapper),
+      :host {
+        z-index: 10050; /* Unter Bottom-Nav (10100), aber sichtbar */
+        bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 12px);
       }
     }
   `]
