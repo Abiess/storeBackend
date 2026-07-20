@@ -2530,9 +2530,26 @@ export class CheckoutComponent implements OnInit, OnDestroy {
             ? this.checkoutForm.get('customerEmail')?.value
             : formValue.customerEmail;
 
-        console.log('📧 Navigiere zur Bestätigung nach PayPal-Zahlung');
+        // CRITICAL: Warenkorb erst nach erfolgreicher Zahlung leeren
+        console.log('🗑️ Leere Warenkorb nach erfolgreicher PayPal-Zahlung');
+        this.cartService.clearCart().subscribe({
+            next: () => {
+                console.log('✅ Warenkorb geleert');
+                this.navigateToPayPalConfirmation(customerEmail);
+            },
+            error: (err) => {
+                console.error('⚠️ Warenkorb konnte nicht geleert werden:', err);
+                // Trotzdem zur Bestätigung navigieren
+                this.navigateToPayPalConfirmation(customerEmail);
+            }
+        });
+    }
 
-        // Zur Bestellbestätigung navigieren
+    /**
+     * Navigiere zur Bestellbestätigung nach PayPal-Zahlung
+     */
+    private navigateToPayPalConfirmation(customerEmail: string): void {
+        console.log('📧 Navigiere zur Bestätigung nach PayPal-Zahlung');
         this.router.navigate(['/order-confirmation'], {
             queryParams: {
                 orderNumber: `ORD-${this.tempOrderId}`,
