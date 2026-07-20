@@ -248,6 +248,9 @@ public class AuthController {
 
         // 3. CAPTCHA validieren (nur wenn mehrere fehlgeschlagene Versuche)
         int remainingAttempts = rateLimitService.getRemainingLoginAttempts(request.getEmail());
+        log.debug("[{}] Login attempt - email={}, remainingAttempts={}, captchaTokenPresent={}", 
+            requestId, request.getEmail(), remainingAttempts, request.getCaptchaToken() != null);
+            
         if (remainingAttempts <= 2 && !captchaService.validateCaptcha(request.getCaptchaToken(), ipAddress)) {
             log.warn("[{}] CAPTCHA validation failed for IP: {} on /login", requestId, ipAddress);
             
@@ -267,7 +270,8 @@ public class AuthController {
             );
             
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ErrorResponse("CAPTCHA validation failed. Please try again."));
+                    .body(new ErrorResponse("CAPTCHA_VALIDATION_FAILED", 
+                        "Die Sicherheitsprüfung ist abgelaufen. Bitte versuchen Sie die Anmeldung erneut."));
         }
 
         try {

@@ -64,6 +64,12 @@ public class CaptchaService {
      * @return true wenn CAPTCHA gültig, false wenn ungültig
      */
     public boolean validateCaptcha(String captchaToken, String ipAddress) {
+        // Debug-Logging (KEIN Token-Inhalt loggen!)
+        log.debug("[CAPTCHA] Validation request - tokenPresent={}, tokenLength={}, provider={}", 
+            captchaToken != null, 
+            captchaToken != null ? captchaToken.length() : 0, 
+            captchaProvider);
+            
         // CRITICAL: Prüfe ob wir in Production sind
         String profile = getActiveProfile();
         boolean isProduction = !("dev".equals(profile) || "local".equals(profile) || "test".equals(profile));

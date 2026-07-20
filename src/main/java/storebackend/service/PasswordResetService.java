@@ -23,6 +23,7 @@ public class PasswordResetService {
     private final UserRepository userRepository;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
+    private final RateLimitService rateLimitService;
 
     /**
      * Erstellt einen Reset-Token und sendet Email
@@ -122,6 +123,11 @@ public class PasswordResetService {
         // Setze neues Passwort
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         userRepository.save(user);
+        
+        // CRITICAL FIX: Reset login attempts nach erfolgreichem Passwort-Reset
+        // Ohne dies kann sich der User nicht einloggen, wenn vorher remainingAttempts <= 2 war
+        rateLimitService.resetLoginAttempts(user.getEmail());
+        log.info("Login attempts reset for user after password reset: {}", user.getEmail());
 
         // Markiere Token als verwendet
         resetToken.setUsedAt(LocalDateTime.now());

@@ -353,6 +353,13 @@ export class LoginComponent implements OnInit {
             }
           } else {
             this.errorMessage = error.error?.message || 'auth.loginFailed';
+            
+            // Falls CAPTCHA im Fehlertext erwähnt, aber Widget noch nicht sichtbar → aktivieren
+            if ((this.errorMessage.includes('CAPTCHA') || this.errorMessage.includes('Sicherheitsprüfung')) 
+                && !this.showCaptcha) {
+              this.showCaptcha = true;
+              this.captchaToken = null;
+            }
           }
         }
       });
