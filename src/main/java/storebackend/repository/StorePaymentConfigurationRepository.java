@@ -2,6 +2,7 @@ package storebackend.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import storebackend.entity.Store;
 import storebackend.entity.StorePaymentConfiguration;
 import storebackend.enums.PaymentProvider;
 
@@ -28,4 +29,12 @@ public interface StorePaymentConfigurationRepository extends JpaRepository<Store
      * Finde alle aktivierten Provider für einen Store
      */
     List<StorePaymentConfiguration> findByStoreIdAndEnabledTrue(Long storeId);
+    
+    /**
+     * Finde Store-Config mit Store-Entity
+     */
+    Optional<StorePaymentConfiguration> findByStoreAndProvider(
+        Store store, 
+        PaymentProvider provider
+    );
 }

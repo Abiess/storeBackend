@@ -31,6 +31,7 @@ public class PaymentService {
     private final PaymentTransactionRepository transactionRepo;
     private final OrderRepository orderRepo;
     private final StoreRepository storeRepo;
+    private final FulfillmentService fulfillmentService;
     
     @Transactional
     public PaymentTransaction createPayment(Long orderId, PaymentProvider provider, String returnUrl, String cancelUrl) {
@@ -235,4 +236,156 @@ public class PaymentService {
             case FAILED, CANCELLED, REFUNDED -> false;
         };
     }
+    
+    /**
+     * Zentrale Methode für Provider-Status-Updates (z.B. durch Webhooks)
+     * 
+     * IDEMPOTENT: Mehrfacher Aufruf mit gleichem Status ändert nichts
+     * RACE-SAFE: Capture und Webhook können gleichzeitig ankommen
+     * 
+     * @param provider Payment Provider (PAYPAL, etc.)
+     * @param providerOrderId Provider Order ID
+     * @param providerCaptureId Provider Capture ID (optional)
+     * @param newStatus Neuer PaymentStatus
+     */
+    @Transactional
+    public void processProviderStatusUpdate(
+            PaymentProvider provider,
+            String providerOrderId,
+            String providerCaptureId,
+            PaymentStatus newStatus
+    ) {
+        // 1. Transaction finden (bevorzugt nach Capture ID, fallback Order ID)
+        PaymentTransaction transaction = null;
+        
+        if (providerCaptureId != null && !providerCaptureId.isBlank()) {
+            transaction = transactionRepo.findByProviderCaptureId(providerCaptureId).orElse(null);
+        }
+        
+        if (transaction == null && providerOrderId != null && !providerOrderId.isBlank()) {
+            transaction = transactionRepo.findByProviderOrderId(providerOrderId).orElse(null);
+        }
+        
+        if (transaction == null) {
+            log.warn("No payment transaction found for providerOrderId={}, providerCaptureId={}", 
+                providerOrderId, providerCaptureId);
+            return;
+        }
+        
+        PaymentStatus oldStatus = transaction.getStatus();
+        
+        // 2. Idempotenz: Bereits im Zielstatus?
+        if (oldStatus == newStatus) {
+            log.info("Payment already in target status (idempotent): paymentId={}, status={}", 
+                transaction.getId(), newStatus);
+            return;
+        }
+        
+        // 3. Status-Update je nach neuem Status
+        switch (newStatus) {
+            case PAID:
+                handleProviderStatusPaid(transaction, providerCaptureId);
+                break;
+                
+            case PENDING:
+                handleProviderStatusPending(transaction);
+                break;
+                
+            case FAILED:
+                handleProviderStatusFailed(transaction);
+                break;
+                
+            case REFUNDED:
+            case PARTIALLY_REFUNDED:
+                handleProviderStatusRefunded(transaction, newStatus);
+                break;
+                
+            default:
+                log.warn("Unsupported provider status update: paymentId={}, newStatus={}", 
+                    transaction.getId(), newStatus);
+        }
+        
+        log.info("Provider status update processed: paymentId={}, {} -> {}", 
+            transaction.getId(), oldStatus, newStatus);
+    }
+    
+    private void handleProviderStatusPaid(PaymentTransaction transaction, String providerCaptureId) {
+        PaymentStatus oldStatus = transaction.getStatus();
+        
+        // Idempotenz: Bereits PAID?
+        if (oldStatus == PaymentStatus.PAID) {
+            return;
+        }
+        
+        // Status-Update
+        transaction.setStatus(PaymentStatus.PAID);
+        transaction.setPaidAt(LocalDateTime.now());
+        
+        // Capture ID setzen falls noch nicht vorhanden
+        if (providerCaptureId != null && !providerCaptureId.isBlank()) {
+            transaction.setProviderCaptureId(providerCaptureId);
+        }
+        
+        transactionRepo.save(transaction);
+        
+        // Order bestätigen und Fulfillment auslösen (idempotent!)
+        Order order = transaction.getOrder();
+        String triggeredBy = "WEBHOOK"; // oder "FRONTEND_CAPTURE" je nach Kontext
+        
+        fulfillmentService.confirmPaidOrder(order.getId(), transaction.getId(), triggeredBy);
+        
+        log.info("Order CONFIRMED and fulfillment triggered: orderId={}, paymentId={}", 
+            order.getId(), transaction.getId());
+    }
+    
+    private void handleProviderStatusPending(PaymentTransaction transaction) {
+        if (transaction.getStatus() == PaymentStatus.PENDING) {
+            return;
+        }
+        
+        transaction.setStatus(PaymentStatus.PENDING);
+        transactionRepo.save(transaction);
+        
+        // Order bleibt PENDING_PAYMENT
+        log.info("Payment PENDING: orderId={}, paymentId={}", 
+            transaction.getOrder().getId(), transaction.getId());
+    }
+    
+    private void handleProviderStatusFailed(PaymentTransaction transaction) {
+        if (transaction.getStatus() == PaymentStatus.FAILED) {
+            return;
+        }
+        
+        transaction.setStatus(PaymentStatus.FAILED);
+        transactionRepo.save(transaction);
+        
+        // Order bleibt PENDING_PAYMENT (User kann andere Zahlungsart wählen)
+        log.warn("Payment FAILED: orderId={}, paymentId={}", 
+            transaction.getOrder().getId(), transaction.getId());
+    }
+    
+    private void handleProviderStatusRefunded(PaymentTransaction transaction, PaymentStatus newStatus) {
+        PaymentStatus oldStatus = transaction.getStatus();
+        
+        // Nur von PAID zu REFUNDED/PARTIALLY_REFUNDED
+        if (oldStatus != PaymentStatus.PAID && oldStatus != PaymentStatus.PARTIALLY_REFUNDED) {
+            log.warn("Cannot refund payment not in PAID status: paymentId={}, currentStatus={}", 
+                transaction.getId(), oldStatus);
+            return;
+        }
+        
+        transaction.setStatus(newStatus);
+        transactionRepo.save(transaction);
+        
+        // Order-Status anpassen
+        Order order = transaction.getOrder();
+        if (newStatus == PaymentStatus.REFUNDED) {
+            // TODO: Order-Status für Full Refund (z.B. CANCELLED oder REFUNDED)
+            log.warn("Payment REFUNDED: orderId={}, paymentId={}", order.getId(), transaction.getId());
+        } else {
+            // PARTIALLY_REFUNDED
+            log.info("Payment PARTIALLY_REFUNDED: orderId={}, paymentId={}", order.getId(), transaction.getId());
+        }
+    }
 }
+

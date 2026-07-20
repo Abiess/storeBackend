@@ -15,6 +15,17 @@ public class PayPalConfig {
     private String clientSecret;
     private String mode = "sandbox";
     
+    /**
+     * Webhook-Konfiguration
+     */
+    private WebhookConfig webhook = new WebhookConfig();
+    
+    @Data
+    public static class WebhookConfig {
+        private String sandboxId;
+        private String liveId;
+    }
+    
     public boolean isSandbox() {
         return "sandbox".equalsIgnoreCase(mode);
     }
@@ -34,7 +45,27 @@ public class PayPalConfig {
         return configured;
     }
     
+    /**
+     * Prüft ob Webhook-Konfiguration vollständig ist
+     */
+    public boolean isWebhookConfigured() {
+        String webhookId = getActiveWebhookId();
+        boolean configured = webhookId != null && !webhookId.isBlank();
+        if (!configured) {
+            log.warn("PayPal Webhook not configured for mode: {}", mode);
+        }
+        return configured;
+    }
+    
+    /**
+     * Gibt die aktive Webhook-ID basierend auf dem Modus zurück
+     */
+    public String getActiveWebhookId() {
+        return isSandbox() ? webhook.getSandboxId() : webhook.getLiveId();
+    }
+    
     public String getMode() {
         return mode;
     }
 }
+

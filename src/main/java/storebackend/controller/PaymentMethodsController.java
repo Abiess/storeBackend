@@ -5,7 +5,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import storebackend.dto.PaymentMethodsResponse;
+import storebackend.entity.StorePaymentConfiguration;
+import storebackend.enums.ConnectionStatus;
+import storebackend.enums.PaymentProvider;
 import storebackend.payment.paypal.PayPalConfig;
+import storebackend.repository.StorePaymentConfigurationRepository;
 
 @RestController
 @RequestMapping("/api/public/stores/{storeId}")
@@ -14,27 +18,47 @@ import storebackend.payment.paypal.PayPalConfig;
 public class PaymentMethodsController {
     
     private final PayPalConfig paypalConfig;
+    private final StorePaymentConfigurationRepository storePaymentConfigRepo;
     
     @GetMapping("/payment-methods")
     public ResponseEntity<PaymentMethodsResponse> getPaymentMethods(@PathVariable Long storeId) {
-        // Phase 1A: Globale PayPal-Konfiguration für alle Stores
-        // Phase 1B: Store-spezifische Konfiguration aus StorePaymentConfiguration laden
+        // Phase 1B: Store-spezifische + globale Konfiguration prüfen
         
-        boolean paypalConfigured = paypalConfig.isConfigured();
-        String mode = paypalConfigured ? paypalConfig.getMode() : "SANDBOX";
+        boolean globalConfigured = paypalConfig.isConfigured();
+        String mode = paypalConfig.getMode();
+        
+        // Store-spezifische Config laden
+        StorePaymentConfiguration storeConfig = storePaymentConfigRepo
+            .findByStoreIdAndProvider(storeId, PaymentProvider.PAYPAL)
+            .orElse(null);
+        
+        boolean storeEnabled = storeConfig != null && storeConfig.isEnabled();
+        ConnectionStatus connectionStatus = storeConfig != null 
+            ? storeConfig.getConnectionStatus() 
+            : ConnectionStatus.NOT_CONNECTED;
+        
+        // PayPal ist nur verfügbar wenn:
+        // - Global konfiguriert UND
+        // - Store hat es aktiviert UND
+        // - ConnectionStatus erlaubt Zahlungen (PLATFORM_SANDBOX oder CONNECTED)
+        boolean paypalAvailable = globalConfigured 
+            && storeEnabled 
+            && (connectionStatus == ConnectionStatus.PLATFORM_SANDBOX 
+                || connectionStatus == ConnectionStatus.CONNECTED);
         
         PaymentMethodsResponse.PayPalConfig paypal = PaymentMethodsResponse.PayPalConfig.builder()
-            .enabled(true)  // Phase 1A: PayPal ist aktiviert, wenn konfiguriert
-            .configured(paypalConfigured)
+            .enabled(storeEnabled)
+            .configured(globalConfigured && paypalAvailable)
             .mode(mode)
+            .connectionStatus(connectionStatus.name())
             .build();
         
         PaymentMethodsResponse response = PaymentMethodsResponse.builder()
             .paypal(paypal)
             .build();
         
-        log.debug("Payment methods for store {}: PayPal configured={}, mode={}", 
-            storeId, paypalConfigured, mode);
+        log.debug("Payment methods for store {}: PayPal available={}, connectionStatus={}, mode={}", 
+            storeId, paypalAvailable, connectionStatus, mode);
         
         return ResponseEntity.ok(response);
     }

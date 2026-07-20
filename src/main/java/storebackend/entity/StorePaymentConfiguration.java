@@ -13,8 +13,13 @@ import java.time.LocalDateTime;
 /**
  * StorePaymentConfiguration - Store-spezifische Payment-Provider-Konfiguration
  * 
- * Für Phase 1A: Nur Sandbox-Modus mit globalen Credentials
- * Später: Merchant-Account-ID und verschlüsselte Store-spezifische Credentials
+ * Phase 1B: Unterstützt globale Plattform-Sandbox-Tests und Vorbereitung für Seller-Onboarding
+ * 
+ * WICHTIG:
+ * - Globale markt.ma Credentials: NIEMALS hier speichern
+ * - PAYPAL_CLIENT_ID und PAYPAL_CLIENT_SECRET: Server-Environment
+ * - Store-spezifische Credentials: Nur nach offiziellem PayPal Seller-Onboarding
+ * - merchantAccountId: Erst nach Seller-Onboarding vorhanden
  */
 @Entity
 @Table(
@@ -51,7 +56,6 @@ public class StorePaymentConfiguration {
 
     /**
      * Sandbox (Test) oder Live (Produktion)
-     * Phase 1A: Nur SANDBOX erlaubt
      */
     @Enumerated(EnumType.STRING)
     @Column(name = "mode", length = 10, nullable = false)
@@ -59,23 +63,46 @@ public class StorePaymentConfiguration {
 
     /**
      * Merchant Account ID (z.B. PayPal Merchant ID)
-     * Für Phase 1A: Optional (global config wird verwendet)
-     * Später: Verpflichtend für Live-Modus
+     * NULL = Test über globales markt.ma-Konto (PLATFORM_SANDBOX)
+     * Wert = Offiziell verbundener Merchant (CONNECTED)
      */
     @Column(name = "merchant_account_id", length = 100)
     private String merchantAccountId;
 
     /**
      * Status der Verbindung zum Provider
+     * NOT_CONNECTED = Nicht konfiguriert
+     * PLATFORM_SANDBOX = Test über globales markt.ma-Sandbox-Konto
+     * CONNECTED = Offizieller Merchant-Account verbunden
+     * ERROR = Verbindungsfehler
      */
     @Enumerated(EnumType.STRING)
     @Column(name = "connection_status", length = 20, nullable = false)
     private ConnectionStatus connectionStatus = ConnectionStatus.NOT_CONNECTED;
 
     /**
+     * Seller-Onboarding abgeschlossen?
+     * Nur bei CONNECTED = true
+     */
+    @Column(name = "onboarding_completed", nullable = false)
+    private boolean onboardingCompleted = false;
+
+    /**
+     * PayPal-Berechtigungen erteilt?
+     */
+    @Column(name = "permissions_granted", nullable = false)
+    private boolean permissionsGranted = false;
+
+    /**
+     * E-Mail-Adresse des Merchants bei PayPal bestätigt?
+     */
+    @Column(name = "email_confirmed", nullable = false)
+    private boolean emailConfirmed = false;
+
+    /**
      * Verschlüsselte Credentials oder Secret-Reference
      * NIEMALS im Klartext speichern!
-     * Phase 1A: NULL (globale Config aus Environment)
+     * Phase 1B: NULL (globale Config aus Environment)
      */
     @Column(name = "encrypted_credentials_ref", columnDefinition = "TEXT")
     private String encryptedCredentialsRef;

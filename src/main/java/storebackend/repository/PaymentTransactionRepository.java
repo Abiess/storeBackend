@@ -21,6 +21,17 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
     );
     
     /**
+     * Finde Payment-Transaction anhand Provider Order ID (ohne Provider-Check)
+     */
+    Optional<PaymentTransaction> findByProviderOrderId(String providerOrderId);
+    
+    /**
+     * Finde Payment-Transaction anhand Provider Capture ID
+     * Wichtig für Webhook-Zuordnung
+     */
+    Optional<PaymentTransaction> findByProviderCaptureId(String providerCaptureId);
+    
+    /**
      * Finde Payment-Transaction anhand Idempotency Key
      */
     Optional<PaymentTransaction> findByIdempotencyKey(String idempotencyKey);
@@ -43,3 +54,4 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
      */
     List<PaymentTransaction> findByStoreIdAndStatus(Long storeId, PaymentStatus status);
 }
+

@@ -333,6 +333,8 @@ jobs:
             export PAYPAL_CLIENT_ID="${{ secrets.PAYPAL_CLIENT_ID }}"
             export PAYPAL_CLIENT_SECRET="${{ secrets.PAYPAL_CLIENT_SECRET }}"
             export PAYPAL_MODE="${{ vars.PAYPAL_MODE || 'sandbox' }}"
+            export PAYPAL_SANDBOX_WEBHOOK_ID="${{ secrets.PAYPAL_SANDBOX_WEBHOOK_ID }}"
+            export PAYPAL_LIVE_WEBHOOK_ID="${{ secrets.PAYPAL_LIVE_WEBHOOK_ID }}"
             export APP_SECRET_ENCRYPTION_KEY="${{ secrets.APP_SECRET_ENCRYPTION_KEY }}"
             cd /opt/storebackend
             bash scripts/deploy.sh

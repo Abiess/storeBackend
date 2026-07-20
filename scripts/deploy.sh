@@ -244,6 +244,8 @@ DHL_PLATFORM_CREDENTIALS_ALLOWED=${DHL_PLATFORM_CREDENTIALS_ALLOWED:-true}
 PAYPAL_CLIENT_ID=${PAYPAL_CLIENT_ID:-}
 PAYPAL_CLIENT_SECRET=${PAYPAL_CLIENT_SECRET:-}
 PAYPAL_MODE=${PAYPAL_MODE:-sandbox}
+PAYPAL_SANDBOX_WEBHOOK_ID=${PAYPAL_SANDBOX_WEBHOOK_ID:-}
+PAYPAL_LIVE_WEBHOOK_ID=${PAYPAL_LIVE_WEBHOOK_ID:-}
 
 # SECURITY: Encryption Key für DB-Felder (Passwörter, API Secrets)
 # WICHTIG: NIEMALS loggen! Key muss stabil bleiben (nicht bei jedem Deploy neu generieren).
@@ -281,6 +283,25 @@ echo ""
 echo "🅿️  PayPal Configuration:"
 if [ -n "${PAYPAL_CLIENT_ID:-}" ] && [ -n "${PAYPAL_CLIENT_SECRET:-}" ]; then
   echo "   ✅ PayPal configured: clientId=present, secret=present, mode=${PAYPAL_MODE}"
+  
+  # Webhook-ID Check
+  if [ "${PAYPAL_MODE}" = "sandbox" ]; then
+    if [ -n "${PAYPAL_SANDBOX_WEBHOOK_ID:-}" ]; then
+      echo "   ✅ PayPal Sandbox Webhook ID configured"
+    else
+      echo "   ⚠️  PayPal Sandbox Webhook ID missing"
+      echo "   Webhook signature verification will fail!"
+      echo "   Add GitHub Secret: PAYPAL_SANDBOX_WEBHOOK_ID"
+    fi
+  elif [ "${PAYPAL_MODE}" = "live" ]; then
+    if [ -n "${PAYPAL_LIVE_WEBHOOK_ID:-}" ]; then
+      echo "   ✅ PayPal Live Webhook ID configured"
+    else
+      echo "   ⚠️  PayPal Live Webhook ID missing"
+      echo "   Webhook signature verification will fail!"
+      echo "   Add GitHub Secret: PAYPAL_LIVE_WEBHOOK_ID"
+    fi
+  fi
 else
   echo "   ⚠️  PayPal not configured (clientId or secret missing)"
   echo "   PayPal will be disabled in checkout (configured=false)"

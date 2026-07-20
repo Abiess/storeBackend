@@ -51,7 +51,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             || uri.startsWith("/swagger-ui.html")
             || uri.startsWith("/v3/api-docs/")
             || uri.startsWith("/v3/api-docs")
-            || uri.startsWith("/api/public/");  // PayPal payment-methods und andere public APIs
+            || uri.startsWith("/api/public/")  // PayPal payment-methods und andere public APIs
+            || uri.startsWith("/api/webhooks/");  // PayPal Webhooks (verifiziert eigene Signatur)
     }
 
     @Override

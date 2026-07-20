@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PaymentMethodsResponse {
+    
     private PayPalConfig paypal;
     
     @Data
@@ -20,5 +21,6 @@ public class PaymentMethodsResponse {
         private boolean enabled;
         private boolean configured;
         private String mode;
+        private String connectionStatus; // NOT_CONNECTED, PLATFORM_SANDBOX, CONNECTED, ERROR
     }
 }
