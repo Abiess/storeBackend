@@ -231,8 +231,8 @@ interface TeamMemberForm {
                     {{ inv.status }}
                   </span>
                 </td>
-                <td style="padding: 12px;">{{ inv.createdAt | date:'short' }}</td>
-                <td style="padding: 12px;">{{ inv.expiresAt | date:'short' }}</td>
+                <td style="padding: 12px;">{{ inv.createdAt ? (inv.createdAt | date:'short') : 'N/A' }}</td>
+                <td style="padding: 12px;">{{ inv.expiresAt ? (inv.expiresAt | date:'short') : 'N/A' }}</td>
                 <td style="padding: 12px;">
                   <button 
                     type="button"

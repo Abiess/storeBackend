@@ -100,7 +100,7 @@ import { Subscription } from 'rxjs';
 
               <div class="info-item" *ngIf="settings.lastCheckedAt">
                 <label>{{ 'settings.payments.lastChecked' | translate }}</label>
-                <span>{{ settings.lastCheckedAt | date:'short' }}</span>
+                <span>{{ settings.lastCheckedAt ? (settings.lastCheckedAt | date:'short') : 'Noch nicht geprüft' }}</span>
               </div>
             </div>
 

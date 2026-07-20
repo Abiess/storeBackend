@@ -397,7 +397,7 @@
 
               <small *ngIf="customer.activationEmailSentAt" class="status sent">
                 {{ 'woocommerce.customerActivation.sentAt' | translate }}
-                {{ customer.activationEmailSentAt | date:'short' }}
+                {{ customer.activationEmailSentAt ? (customer.activationEmailSentAt | date:'short') : 'N/A' }}
               </small>
             </div>
 

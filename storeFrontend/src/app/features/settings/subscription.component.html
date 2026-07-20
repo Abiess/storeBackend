@@ -36,7 +36,7 @@
 
         <div class="info-row" *ngIf="currentSubscription.renewalDate">
           <span class="label">Nächste Verlängerung:</span>
-          <span class="value">{{ currentSubscription.renewalDate | date:'dd.MM.yyyy' }}</span>
+          <span class="value">{{ currentSubscription.renewalDate ? (currentSubscription.renewalDate | date:'dd.MM.yyyy') : 'N/A' }}</span>
         </div>
 
         <div class="info-row" *ngIf="currentSubscription.paymentMethod">
