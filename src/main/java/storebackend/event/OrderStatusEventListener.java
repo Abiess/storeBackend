@@ -83,55 +83,80 @@ public class OrderStatusEventListener {
         List<OrderItem> items = order.getOrderItems() != null ? order.getOrderItems() : List.of();
 
         switch (newStatus) {
+            // ═══════════════════════════════════════════════════════════════════════════
+            // PENDING: Alte Logik - wird NICHT mehr verwendet
+            // Orders werden jetzt direkt mit CONFIRMED (COD/Cash) oder PENDING_PAYMENT (PayPal) erstellt
+            // ═══════════════════════════════════════════════════════════════════════════
             case PENDING:
-                if (oldStatus == null) {
-                    // 1) E-Mail-Bestätigung an den Kunden – ZENTRAL mit strukturiertem Result
-                    EmailDeliveryResult confirmationResult = emailService.sendOrderConfirmationWithResult(
-                        customerEmail, orderNumber, storeName,
-                        order.getTotalAmount().doubleValue(),
-                        items, storeLogo, lang
-                    );
-                    
-                    if (!confirmationResult.isSent()) {
-                        log.warn(
-                            "Order confirmation email failed: orderId={}, orderNumber={}, errorCode={}, message={}",
-                            order.getId(), orderNumber, confirmationResult.errorCode(), confirmationResult.userMessage()
-                        );
-                    }
-                    
-                    // 2) WhatsApp-Bestätigung an den Kunden (wenn aktiviert + Nummer vorhanden)
-                    if (waEnabled && customerPhone != null && !customerPhone.isBlank()) {
-                        whatsAppService.sendOrderConfirmation(
-                            customerPhone, orderNumber, storeName,
-                            order.getTotalAmount().doubleValue(), lang);
-                        log.info("[WA] Order confirmation sent to customer {}", customerPhone);
-                    }
-                    // 3) Neue-Bestellung-Benachrichtigung an den Store-Owner (E-Mail)
-                    String customerName   = order.getCustomer() != null ? order.getCustomer().getName()  : null;
-                    String paymentMethod  = order.getPaymentMethod() != null ? order.getPaymentMethod().name() : null;
-                    emailService.sendNewOrderNotificationToOwner(
-                        ownerEmail, ownerLang,
-                        orderNumber, storeName, storeLogo,
-                        order.getTotalAmount().doubleValue(),
-                        customerEmail, customerName, paymentMethod, items
-                    );
-                    // 4) Neue-Bestellung-Benachrichtigung an Owner via WhatsApp
-                    if (ownerWhatsapp != null && !ownerWhatsapp.isBlank()) {
-                        whatsAppService.sendNewOrderToOwner(
-                            ownerWhatsapp, orderNumber, storeName,
-                            order.getTotalAmount().doubleValue(), customerEmail, ownerLang);
-                        log.info("[WA] New order notification sent to owner {}", ownerWhatsapp);
-                    }
-                    // 5) Neue-Bestellung-Benachrichtigung an Owner via Telegram Bot
-                    if (telegramCfg != null && telegramBotService.isConfigured(telegramCfg)) {
-                        telegramBotService.sendNewOrderNotification(telegramCfg, order);
-                        log.info("[Telegram] New order notification sent via Bot for store {}", store.getId());
-                    }
-                }
+                // Legacy-Support: Falls doch eine Order mit PENDING erstellt wird
+                log.debug("Order in PENDING status - usually skipped, Orders go directly to CONFIRMED or PENDING_PAYMENT");
                 break;
 
+            // ═══════════════════════════════════════════════════════════════════════════
+            // CONFIRMED: E-MAIL NUR BEI BESTÄTIGTER ZAHLUNG!
+            // ═══════════════════════════════════════════════════════════════════════════
             case CONFIRMED:
-                log.info("Order confirmed – no extra email (already sent at PENDING)");
+                // Prüfe PaymentStatus: E-Mail nur wenn PAID (PayPal nach Webhook) oder null (COD/Cash)
+                storebackend.enums.PaymentStatus paymentStatus = order.getPaymentStatus();
+                
+                boolean shouldSendEmail = 
+                    paymentStatus == storebackend.enums.PaymentStatus.PAID  // PayPal bezahlt
+                    || paymentStatus == null;  // COD/Cash (keine Online-Zahlung)
+                
+                if (!shouldSendEmail) {
+                    log.warn("Order CONFIRMED but payment not yet completed: orderId={}, orderNumber={}, paymentStatus={}", 
+                        order.getId(), orderNumber, paymentStatus);
+                    break;
+                }
+                
+                log.info("Order confirmed with valid payment - sending notifications: orderId={}, paymentStatus={}", 
+                    order.getId(), paymentStatus);
+                
+                // 1) E-Mail-Bestätigung an den Kunden – ZENTRAL mit strukturiertem Result
+                EmailDeliveryResult confirmationResult = emailService.sendOrderConfirmationWithResult(
+                    customerEmail, orderNumber, storeName,
+                    order.getTotalAmount().doubleValue(),
+                    items, storeLogo, lang
+                );
+                
+                if (!confirmationResult.isSent()) {
+                    log.warn(
+                        "Order confirmation email failed: orderId={}, orderNumber={}, errorCode={}, message={}",
+                        order.getId(), orderNumber, confirmationResult.errorCode(), confirmationResult.userMessage()
+                    );
+                }
+                
+                // 2) WhatsApp-Bestätigung an den Kunden (wenn aktiviert + Nummer vorhanden)
+                if (waEnabled && customerPhone != null && !customerPhone.isBlank()) {
+                    whatsAppService.sendOrderConfirmation(
+                        customerPhone, orderNumber, storeName,
+                        order.getTotalAmount().doubleValue(), lang);
+                    log.info("[WA] Order confirmation sent to customer {}", customerPhone);
+                }
+                
+                // 3) Neue-Bestellung-Benachrichtigung an den Store-Owner (E-Mail)
+                String customerName   = order.getCustomer() != null ? order.getCustomer().getName()  : null;
+                String paymentMethod  = order.getPaymentMethod() != null ? order.getPaymentMethod().name() : null;
+                emailService.sendNewOrderNotificationToOwner(
+                    ownerEmail, ownerLang,
+                    orderNumber, storeName, storeLogo,
+                    order.getTotalAmount().doubleValue(),
+                    customerEmail, customerName, paymentMethod, items
+                );
+                
+                // 4) Neue-Bestellung-Benachrichtigung an Owner via WhatsApp
+                if (ownerWhatsapp != null && !ownerWhatsapp.isBlank()) {
+                    whatsAppService.sendNewOrderToOwner(
+                        ownerWhatsapp, orderNumber, storeName,
+                        order.getTotalAmount().doubleValue(), customerEmail, ownerLang);
+                    log.info("[WA] New order notification sent to owner {}", ownerWhatsapp);
+                }
+                
+                // 5) Neue-Bestellung-Benachrichtigung an Owner via Telegram Bot
+                if (telegramCfg != null && telegramBotService.isConfigured(telegramCfg)) {
+                    telegramBotService.sendNewOrderNotification(telegramCfg, order);
+                    log.info("[Telegram] New order notification sent via Bot for store {}", store.getId());
+                }
                 break;
 
             case SHIPPED:

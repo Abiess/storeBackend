@@ -412,6 +412,45 @@ import { environment } from '@env/environment';
 
             <!-- PayPal-Button-Bereich -->
             <div *ngIf="selectedPaymentMethod === 'PAYPAL'" class="paypal-checkout-section">
+              <!-- Sandbox-Test-Hinweis -->
+              <div *ngIf="isPayPalSandbox" class="sandbox-notice">
+                <div class="sandbox-notice-header">
+                  <span class="sandbox-icon">🧪</span>
+                  <strong>Testzahlung – kein echtes Geld</strong>
+                </div>
+                <p class="sandbox-notice-text">
+                  Bitte <strong>keine echten PayPal- oder Kartendaten</strong> verwenden.
+                  Diese Zahlung läuft ausschließlich über die PayPal-Sandbox (Testmodus).
+                  Es wird kein echtes Geld abgebucht.
+                </p>
+                <button 
+                  type="button" 
+                  class="btn btn-outline btn-sandbox-fill"
+                  (click)="fillSandboxCustomerData()"
+                  [disabled]="preparingPayPalOrder">
+                  📝 Testdaten einfügen
+                </button>
+                <div class="sandbox-help-expand">
+                  <details>
+                    <summary>ℹ️ PayPal-Sandbox-Testkonto verwenden</summary>
+                    <div class="sandbox-help-content">
+                      <p>
+                        Falls der PayPal-Login erscheint, verwende ein <strong>PayPal-Sandbox-Testkonto</strong>.
+                      </p>
+                      <p>
+                        Die Zugangsdaten findest du im 
+                        <a href="https://developer.paypal.com/dashboard/accounts" target="_blank" rel="noopener">
+                          PayPal Developer Dashboard
+                        </a>.
+                      </p>
+                      <p class="sandbox-warning">
+                        ⚠️ <strong>Niemals echte PayPal-Zugangsdaten</strong> in der Sandbox verwenden!
+                      </p>
+                    </div>
+                  </details>
+                </div>
+              </div>
+              
               <!-- Schritt 1: "Weiter zu PayPal" Button -->
               <button
                 *ngIf="!tempOrderId"
@@ -1568,6 +1607,134 @@ import { environment } from '@env/environment';
       font-size: 13px;
       flex-shrink: 0;
     }
+    
+    /* ═══════════════════════════════════════════════════════════════════════════
+       SANDBOX TEST NOTICE STYLES
+       ═══════════════════════════════════════════════════════════════════════════ */
+    .sandbox-notice {
+      background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%);
+      border: 2px solid #ffc107;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 12px rgba(255, 193, 7, 0.2);
+    }
+    
+    .sandbox-notice-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      font-size: 18px;
+      color: #856404;
+    }
+    
+    .sandbox-icon {
+      font-size: 32px;
+      line-height: 1;
+    }
+    
+    .sandbox-notice-text {
+      color: #856404;
+      font-size: 14px;
+      line-height: 1.6;
+      margin: 0 0 16px 0;
+    }
+    
+    .sandbox-notice-text strong {
+      color: #d32f2f;
+      font-weight: 600;
+    }
+    
+    .btn-sandbox-fill {
+      background: white;
+      border: 2px solid #ffc107;
+      color: #856404;
+      font-weight: 600;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .btn-sandbox-fill:hover:not(:disabled) {
+      background: #ffc107;
+      color: white;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(255, 193, 7, 0.3);
+    }
+    
+    .btn-sandbox-fill:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .sandbox-help-expand {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255, 193, 7, 0.3);
+    }
+    
+    .sandbox-help-expand details {
+      cursor: pointer;
+    }
+    
+    .sandbox-help-expand summary {
+      color: #856404;
+      font-weight: 600;
+      font-size: 14px;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+    
+    .sandbox-help-expand summary:hover {
+      background: rgba(255, 255, 255, 0.5);
+    }
+    
+    .sandbox-help-expand summary::-webkit-details-marker {
+      display: none;
+    }
+    
+    .sandbox-help-content {
+      padding: 16px 8px 8px 8px;
+      color: #856404;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    
+    .sandbox-help-content p {
+      margin: 0 0 12px 0;
+    }
+    
+    .sandbox-help-content a {
+      color: #667eea;
+      text-decoration: underline;
+      font-weight: 600;
+    }
+    
+    .sandbox-help-content a:hover {
+      color: #764ba2;
+    }
+    
+    .sandbox-warning {
+      background: #fff;
+      border-left: 4px solid #d32f2f;
+      padding: 12px;
+      border-radius: 4px;
+      margin-top: 12px;
+    }
+    
+    .sandbox-warning strong {
+      color: #d32f2f;
+    }
   `]
 })
 export class CheckoutComponent implements OnInit, OnDestroy {
@@ -1585,6 +1752,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     storeId: number | null = null;
     selectedPaymentMethod: string | null = 'CASH_ON_DELIVERY';
     paypalEnabled = false;  // PayPal nur anzeigen, wenn konfiguriert
+    isPayPalSandbox = false;  // Sandbox-Modus-Flag
     
     // PayPal-spezifische Properties
     tempOrderId: number | null = null;
@@ -1835,17 +2003,20 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         this.paymentService.getAvailablePaymentMethods(this.storeId).subscribe({
             next: response => {
                 this.paypalEnabled = response.paypal.enabled && response.paypal.configured;
+                this.isPayPalSandbox = response.paypal.mode === 'SANDBOX';  // Sandbox-Modus erkennen
                 console.log('✅ PayPal configuration loaded:', {
                     storeId: this.storeId,
                     enabled: response.paypal.enabled,
                     configured: response.paypal.configured,
                     mode: response.paypal.mode,
-                    paypalEnabled: this.paypalEnabled
+                    paypalEnabled: this.paypalEnabled,
+                    isPayPalSandbox: this.isPayPalSandbox
                 });
             },
             error: (err) => {
                 console.error('❌ Failed to load payment methods:', err);
                 this.paypalEnabled = false;
+                this.isPayPalSandbox = false;
             }
         });
     }
@@ -2574,6 +2745,46 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         console.log('ℹ️ PayPal-Zahlung abgebrochen');
         this.errorMessage = 'PayPal-Zahlung wurde abgebrochen. Sie können es erneut versuchen oder eine andere Zahlungsart wählen.';
         // tempOrderId bleibt erhalten für erneuten Versuch
+    }
+    
+    /**
+     * Füllt Testdaten für Sandbox-Testing (NUR Kundendaten, KEINE Zahlungsdaten!)
+     * SICHERHEIT: Niemals Zahlungsdaten (Kreditkarten, PayPal-Passwort) hier einfügen!
+     */
+    fillSandboxCustomerData(): void {
+        if (!this.isPayPalSandbox) {
+            console.warn('⚠️ Testdaten nur im Sandbox-Modus verfügbar');
+            return;
+        }
+        
+        console.log('🧪 Fülle Sandbox-Testdaten ein');
+        
+        // NUR Kundendaten, KEINE Zahlungsdaten!
+        this.checkoutForm.patchValue({
+            shippingFirstName: 'Hans',
+            shippingLastName: 'Mustermann',
+            shippingAddress1: 'Musterstraße 1',
+            shippingAddress2: '',
+            shippingCity: 'Nürnberg',
+            shippingPostalCode: '90402',
+            shippingCountry: 'Deutschland',
+            shippingPhone: '+49 911 12345678',
+            customerEmail: 'sandbox-buyer@markt.ma',
+            billingFirstName: 'Hans',
+            billingLastName: 'Mustermann',
+            billingAddress1: 'Musterstraße 1',
+            billingAddress2: '',
+            billingCity: 'Nürnberg',
+            billingPostalCode: '90402',
+            billingCountry: 'Deutschland'
+        });
+        
+        // Form als touched markieren für Validierung
+        Object.keys(this.checkoutForm.controls).forEach(key => {
+            this.checkoutForm.get(key)?.markAsTouched();
+        });
+        
+        console.log('✅ Testdaten eingefügt - Formular ist editierbar');
     }
 
     /**

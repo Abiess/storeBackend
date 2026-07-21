@@ -171,7 +171,35 @@ public class OrderService {
         order.setStore(store);
         order.setCustomer(customer);
         order.setCustomerEmail(customerEmail);
-        order.setStatus(OrderStatus.PENDING);
+        
+        // ─── PAYMENT-AWARE ORDER STATUS ──────────────────────────────────────────
+        // Status und PaymentStatus hängen von der Zahlungsart ab
+        switch (paymentMethod) {
+            case PAYPAL:
+                // PayPal: Wartet auf Zahlung und Webhook
+                order.setStatus(OrderStatus.PENDING_PAYMENT);
+                order.setPaymentStatus(storebackend.enums.PaymentStatus.PENDING_APPROVAL);
+                break;
+                
+            case CASH_ON_DELIVERY:
+                // COD: Sofort bestätigt, Zahlung bei Lieferung/Abholung
+                order.setStatus(OrderStatus.CONFIRMED);
+                order.setPaymentStatus(null); // Keine Online-Zahlung
+                break;
+                
+            case BANK_TRANSFER:
+                // Banküberweisung: Wartet auf manuelle Bestätigung
+                order.setStatus(OrderStatus.PENDING_PAYMENT);
+                order.setPaymentStatus(storebackend.enums.PaymentStatus.PENDING);
+                break;
+                
+            default:
+                // Fallback für CREDIT_CARD, STRIPE etc: Pending
+                order.setStatus(OrderStatus.PENDING);
+                order.setPaymentStatus(null);
+                break;
+        }
+        
         order.setNotes(notes);
         order.setPaymentMethod(paymentMethod);
         order.setPhoneVerificationId(phoneVerificationId);
@@ -434,14 +462,23 @@ public class OrderService {
         // MARKETPLACE: Calculate and create commissions
         revenueShareService.createCommissionsForOrder(savedOrder);
 
-        // Create initial status history
-        createStatusHistory(savedOrder, OrderStatus.PENDING, "Order created", null);
+        // Create initial status history with actual status
+        createStatusHistory(savedOrder, savedOrder.getStatus(), "Order created", null);
 
         // Clear cart
         cartItemRepository.deleteByCartId(cartId);
 
-        // Publish event for order confirmation email
-        eventPublisher.publishEvent(new OrderStatusChangedEvent(this, savedOrder, null, OrderStatus.PENDING));
+        // ─── EVENT/E-MAIL NUR BEI SOFORTIGER BESTÄTIGUNG ─────────────────────────
+        // Event nur publishen wenn Order sofort bestätigt wurde (COD/Cash)
+        // Bei PayPal: Event kommt erst nach Webhook (confirmPaymentAndOrder)
+        if (savedOrder.getStatus() == OrderStatus.CONFIRMED) {
+            eventPublisher.publishEvent(new OrderStatusChangedEvent(
+                this, 
+                savedOrder, 
+                null, 
+                OrderStatus.CONFIRMED
+            ));
+        }
 
         return savedOrder;
     }
@@ -779,6 +816,116 @@ public class OrderService {
         BigDecimal taxAmount,
         BigDecimal grossAmount
     ) {}
+    
+    // ═══════════════════════════════════════════════════════════════════════════
+    // PAYMENT STATE MACHINE - Idempotente Zahlungsbestätigung
+    // ═══════════════════════════════════════════════════════════════════════════
+    
+    /**
+     * Bestätigt Zahlung und Order - IDEMPOTENT!
+     * Wird aufgerufen nach erfolgreichem PayPal-Webhook oder sofortiger Zahlung.
+     * 
+     * WICHTIG: Mehrfache Aufrufe sind sicher (Idempotenz)
+     * 
+     * @param order Order die bestätigt werden soll
+     * @param paymentTransactionId Provider Transaction ID (z.B. PayPal Capture ID)
+     * @return true wenn Status geändert wurde, false wenn bereits bestätigt
+     */
+    @Transactional
+    public boolean confirmPaymentAndOrder(Order order, String paymentTransactionId) {
+        // Idempotenz-Check: Bereits bestätigt?
+        if (order.getPaymentStatus() == storebackend.enums.PaymentStatus.PAID 
+            && order.getStatus() == OrderStatus.CONFIRMED) {
+            // Bereits verarbeitet - zweiter Webhook oder Race Condition
+            return false;
+        }
+        
+        // Status setzen
+        order.setPaymentStatus(storebackend.enums.PaymentStatus.PAID);
+        OrderStatus oldStatus = order.getStatus();
+        order.setStatus(OrderStatus.CONFIRMED);
+        
+        // Speichern
+        order = orderRepository.save(order);
+        
+        // History-Eintrag
+        String note = paymentTransactionId != null 
+            ? "Payment confirmed: " + paymentTransactionId 
+            : "Payment confirmed";
+        createStatusHistory(order, OrderStatus.CONFIRMED, note, null);
+        
+        // Event publishen → löst E-Mail aus
+        eventPublisher.publishEvent(new OrderStatusChangedEvent(
+            this, 
+            order, 
+            oldStatus, 
+            OrderStatus.CONFIRMED
+        ));
+        
+        return true;
+    }
+    
+    /**
+     * Markiert Zahlung als fehlgeschlagen
+     * Für PayPal-Capture-Fehler, Timeout, etc.
+     * 
+     * @param order Order mit fehlgeschlagener Zahlung
+     * @param reason Fehlergrund
+     */
+    @Transactional
+    public void failPayment(Order order, String reason) {
+        // Idempotenz: Nicht überschreiben wenn bereits failed/cancelled
+        if (order.getPaymentStatus() == storebackend.enums.PaymentStatus.FAILED
+            || order.getStatus() == OrderStatus.PAYMENT_FAILED) {
+            return;
+        }
+        
+        order.setPaymentStatus(storebackend.enums.PaymentStatus.FAILED);
+        order.setStatus(OrderStatus.PAYMENT_FAILED);
+        
+        order = orderRepository.save(order);
+        
+        // History-Eintrag
+        String note = "Payment failed" + (reason != null ? ": " + reason : "");
+        createStatusHistory(order, OrderStatus.PAYMENT_FAILED, note, null);
+        
+        // KEIN Event-Publishing - keine E-Mail bei Fehler
+    }
+    
+    /**
+     * Storniert Order wegen abgebrochener/gecancelter Zahlung
+     * Für PayPal-Buyer-Cancel, Timeout, etc.
+     * 
+     * @param order Order die storniert werden soll
+     * @param reason Storno-Grund
+     */
+    @Transactional
+    public void cancelOrderPayment(Order order, String reason) {
+        // Idempotenz
+        if (order.getPaymentStatus() == storebackend.enums.PaymentStatus.CANCELLED
+            || order.getStatus() == OrderStatus.CANCELLED) {
+            return;
+        }
+        
+        OrderStatus oldStatus = order.getStatus();
+        order.setPaymentStatus(storebackend.enums.PaymentStatus.CANCELLED);
+        order.setStatus(OrderStatus.CANCELLED);
+        order.setCancelledAt(java.time.LocalDateTime.now());
+        
+        order = orderRepository.save(order);
+        
+        // History-Eintrag
+        String note = "Payment cancelled" + (reason != null ? ": " + reason : "");
+        createStatusHistory(order, OrderStatus.CANCELLED, note, null);
+        
+        // Event für Storno-Benachrichtigung (optional)
+        eventPublisher.publishEvent(new OrderStatusChangedEvent(
+            this, 
+            order, 
+            oldStatus, 
+            OrderStatus.CANCELLED
+        ));
+    }
     
     // ═══════════════════════════════════════════════════════════════════════════
     // COUPON/RABATT HELPER-KLASSEN

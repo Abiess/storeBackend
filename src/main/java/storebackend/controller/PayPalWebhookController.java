@@ -49,6 +49,10 @@ public class PayPalWebhookController {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
     
+    // NEW: OrderService für Order-Status-Updates
+    private final storebackend.service.OrderService orderService;
+    private final storebackend.repository.OrderRepository orderRepository;
+    
     @PostMapping
     public ResponseEntity<Void> handleWebhook(
             @RequestBody String rawPayload,
@@ -294,6 +298,29 @@ public class PayPalWebhookController {
             PaymentStatus.PAID
         );
         
+        // ═══════════════════════════════════════════════════════════════════════════
+        // KRITISCH: Order Status + E-Mail-Trigger
+        // ═══════════════════════════════════════════════════════════════════════════
+        // Order über PaymentTransaction finden und als PAID/CONFIRMED markieren
+        // Dies löst den E-Mail-Versand aus (via OrderStatusChangedEvent)
+        storebackend.entity.Order order = transaction.getOrder();
+        if (order != null) {
+            boolean statusChanged = orderService.confirmPaymentAndOrder(
+                order, 
+                webhookEvent.getProviderCaptureId()
+            );
+            
+            if (statusChanged) {
+                log.info("Order confirmed after PayPal Capture: orderId={}, orderNumber={}", 
+                    order.getId(), order.getOrderNumber());
+            } else {
+                log.debug("Order already confirmed (idempotent): orderId={}", order.getId());
+            }
+        } else {
+            log.warn("PaymentTransaction has no associated Order: transactionId={}", 
+                transaction.getId());
+        }
+        
         log.info("PayPal Capture COMPLETED processed: paymentId={}, orderId={}", 
             transaction.getId(), transaction.getOrder().getId());
     }
@@ -336,6 +363,14 @@ public class PayPalWebhookController {
             webhookEvent.getProviderCaptureId(),
             PaymentStatus.FAILED
         );
+        
+        // Order als fehlgeschlagen markieren
+        storebackend.entity.Order order = transaction.getOrder();
+        if (order != null) {
+            String reason = "PayPal Capture denied/failed: " + webhookEvent.getProviderCaptureId();
+            orderService.failPayment(order, reason);
+            log.info("Order payment failed: orderId={}, reason={}", order.getId(), reason);
+        }
         
         log.info("PayPal Capture DENIED processed: paymentId={}", transaction.getId());
     }

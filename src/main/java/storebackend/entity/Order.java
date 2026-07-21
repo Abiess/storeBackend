@@ -229,6 +229,15 @@ public class Order {
     private PaymentMethod paymentMethod;
     
     /**
+     * Zahlungsstatus - unabhängig vom OrderStatus
+     * Wird für PayPal-Zahlungen und andere Online-Payments verwendet
+     * NULL für Zahlungen vor Ort (COD/Pickup) die keine externe Verarbeitung brauchen
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_status", length = 30)
+    private storebackend.enums.PaymentStatus paymentStatus;
+    
+    /**
      * Checkout-Token für Gast-Checkout und PayPal-Zahlungen
      * Wird beim Erstellen der Order generiert und für sichere Payment-Operationen verwendet
      * KRITISCH: Darf NICHT in Logs oder Fehlermeldungen erscheinen
