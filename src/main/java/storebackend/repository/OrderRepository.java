@@ -1,6 +1,8 @@
 package storebackend.repository;
 
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -27,4 +29,12 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT COUNT(DISTINCT o.customerEmail) FROM Order o " +
            "WHERE o.store.owner.id = :ownerId AND o.customerEmail IS NOT NULL")
     long countDistinctCustomersByOwnerId(@Param("ownerId") Long ownerId);
+    
+    /**
+     * Lädt Order mit Pessimistic Write Lock (verhindert Race Conditions bei gleichzeitigen Updates)
+     * WICHTIG: Nur in @Transactional-Kontext verwenden!
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT o FROM Order o WHERE o.id = :id")
+    Optional<Order> findByIdForUpdate(@Param("id") Long id);
 }

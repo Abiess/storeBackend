@@ -31,7 +31,7 @@ public class PaymentService {
     private final PaymentTransactionRepository transactionRepo;
     private final OrderRepository orderRepo;
     private final StoreRepository storeRepo;
-    private final FulfillmentService fulfillmentService;
+    private final OrderCompletionService orderCompletionService;
     
     @Transactional
     public PaymentTransaction createPayment(Long orderId, PaymentProvider provider, String returnUrl, String cancelUrl) {
@@ -161,16 +161,35 @@ public class PaymentService {
         PaymentCaptureResult result = gateway.capturePayment(command);
         
         if (result.isSuccess() && result.getStatus() == PaymentStatus.PAID) {
+            log.info("[CAPTURE] PayPal capture successful: paymentId={}, captureId={}, orderId={}", 
+                paymentId, result.getProviderCaptureId(), order.getId());
+            
+            // 1. Payment-Status aktualisieren
             transaction.setStatus(PaymentStatus.PAID);
             transaction.setProviderCaptureId(result.getProviderCaptureId());
             transaction.setPaidAt(LocalDateTime.now());
+            transactionRepo.save(transaction);
             
+            // 2. Order-Status auf CONFIRMED + PaymentStatus auf PAID setzen
             order.setStatus(OrderStatus.CONFIRMED);
+            order.setPaymentStatus(PaymentStatus.PAID);
             order.setUpdatedAt(LocalDateTime.now());
             orderRepo.save(order);
             
-            log.info("Payment captured successfully: paymentId={}, captureId={}, orderId={}", 
-                paymentId, result.getProviderCaptureId(), order.getId());
+            log.info("[CAPTURE] Order status updated: orderId={}, status=CONFIRMED, paymentStatus=PAID", order.getId());
+            
+            // 3. ZENTRALE Order-Completion aufrufen (idempotent!)
+            //    → Bestand reduzieren (wenn noch nicht geschehen)
+            //    → E-Mails senden (wenn noch nicht geschehen)
+            //    → Benachrichtigungen senden
+            try {
+                orderCompletionService.completePaidOrder(order.getId());
+            } catch (Exception e) {
+                log.error("[CAPTURE-ERROR] Order completion failed: orderId={}, error={}", order.getId(), e.getMessage(), e);
+                // NICHT durchschlagen - Payment wurde bereits erfasst
+                // Completion kann später manuell oder via Webhook wiederholt werden
+            }
+            
         } else if (result.getStatus() == PaymentStatus.PENDING) {
             transaction.setStatus(PaymentStatus.PENDING);
             transaction.setProviderCaptureId(result.getProviderCaptureId());
@@ -317,6 +336,9 @@ public class PaymentService {
             return;
         }
         
+        log.info("[WEBHOOK] Processing PAID status: paymentId={}, orderId={}", 
+            transaction.getId(), transaction.getOrder().getId());
+        
         // Status-Update
         transaction.setStatus(PaymentStatus.PAID);
         transaction.setPaidAt(LocalDateTime.now());
@@ -328,14 +350,24 @@ public class PaymentService {
         
         transactionRepo.save(transaction);
         
-        // Order bestätigen und Fulfillment auslösen (idempotent!)
+        // Order bestätigen
         Order order = transaction.getOrder();
-        String triggeredBy = "WEBHOOK"; // oder "FRONTEND_CAPTURE" je nach Kontext
+        if (order.getStatus() != OrderStatus.CONFIRMED) {
+            order.setStatus(OrderStatus.CONFIRMED);
+            order.setPaymentStatus(PaymentStatus.PAID);
+            order.setUpdatedAt(LocalDateTime.now());
+            orderRepo.save(order);
+        }
         
-        fulfillmentService.confirmPaidOrder(order.getId(), transaction.getId(), triggeredBy);
+        log.info("[WEBHOOK] Order status updated: orderId={}, status=CONFIRMED, paymentStatus=PAID", order.getId());
         
-        log.info("Order CONFIRMED and fulfillment triggered: orderId={}, paymentId={}", 
-            order.getId(), transaction.getId());
+        // ZENTRALE Order-Completion aufrufen (idempotent!)
+        try {
+            orderCompletionService.completePaidOrder(order.getId());
+        } catch (Exception e) {
+            log.error("[WEBHOOK-ERROR] Order completion failed: orderId={}, error={}", order.getId(), e.getMessage(), e);
+            // NICHT durchschlagen - Payment wurde bereits erfasst
+        }
     }
     
     private void handleProviderStatusPending(PaymentTransaction transaction) {
