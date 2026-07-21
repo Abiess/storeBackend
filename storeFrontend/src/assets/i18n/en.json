@@ -2562,5 +2562,56 @@
     "resendMailFailed": "Invitation updated, but email could not be sent",
     "resendFailed": "Failed to resend invitation",
     "mailFailed": "Email delivery failed"
+  },
+  "ANALYTICS": {
+    "TITLE": "Analytics",
+    "DATE_RANGE": "Date Range",
+    "TODAY": "Today",
+    "LAST_7_DAYS": "Last 7 Days",
+    "LAST_30_DAYS": "Last 30 Days",
+    "THIS_YEAR": "This Year",
+    "CUSTOM": "Custom",
+    "FROM": "From",
+    "TO": "To",
+    "LOADING": "Loading Analytics...",
+    "REVENUE": "Revenue",
+    "TOTAL_REVENUE": "Total Revenue",
+    "ORDERS": "Orders",
+    "PAID_ORDERS": "Paid Orders",
+    "AVG_ORDER_VALUE": "Avg. Order Value",
+    "AVG_PER_ORDER": "Average per Order",
+    "TOP_PRODUCTS": "Top Products",
+    "PRODUCT_NAME": "Product Name",
+    "QUANTITY_SOLD": "Quantity Sold",
+    "ORDER_COUNT": "Order Count",
+    "ORDERS_BY_STATUS": "Orders by Status",
+    "ORDERS_BY_PAYMENT": "Orders by Payment Method",
+    "NO_PRODUCTS": "No products in selected period",
+    "NO_ORDERS": "No orders in selected period",
+    "NO_PAYMENTS": "No payments in selected period",
+    "ERROR": {
+      "ACCESS_DENIED": "You do not have access to this store's analytics.",
+      "INVALID_DATE_RANGE": "Invalid date range: start date must be before end date.",
+      "RANGE_TOO_LARGE": "Date range too large: Maximum 2 years allowed.",
+      "GENERAL": "Error loading analytics. Please try again."
+    }
+  },
+  "ORDER_STATUS": {
+    "PENDING": "Pending",
+    "PENDING_PAYMENT": "Pending Payment",
+    "PAYMENT_FAILED": "Payment Failed",
+    "CONFIRMED": "Confirmed",
+    "PROCESSING": "Processing",
+    "SHIPPED": "Shipped",
+    "DELIVERED": "Delivered",
+    "CANCELLED": "Cancelled",
+    "REFUNDED": "Refunded"
+  },
+  "PAYMENT_METHOD": {
+    "PAYPAL": "PayPal",
+    "CASH_ON_DELIVERY": "Cash on Delivery",
+    "BANK_TRANSFER": "Bank Transfer",
+    "CREDIT_CARD": "Credit Card",
+    "STRIPE": "Stripe"
   }
 }

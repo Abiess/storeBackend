@@ -14,12 +14,13 @@ import { toDate } from '@app/core/utils/date.utils';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { OnboardingChecklistComponent } from '@app/shared/components/onboarding-checklist/onboarding-checklist.component';
 import { TelegramNotificationBadgeComponent } from '@app/shared/components/telegram-notification-badge/telegram-notification-badge.component';
+import { StoreAnalyticsComponent } from '@app/shared/components/store-analytics/store-analytics.component';
 import { environment } from '@env/environment';
 
 @Component({
   selector: 'app-store-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, TranslatePipe, OnboardingChecklistComponent, TelegramNotificationBadgeComponent],
+  imports: [CommonModule, RouterModule, FormsModule, TranslatePipe, OnboardingChecklistComponent, TelegramNotificationBadgeComponent, StoreAnalyticsComponent],
   template: `
     <div class="store-detail-page">
       <div class="content">
@@ -169,6 +170,11 @@ import { environment } from '@env/environment';
               </div>
             </div>
           </div>
+
+          <!-- Analytics Dashboard -->
+          @if (storeId) {
+            <app-store-analytics [storeId]="storeId"></app-store-analytics>
+          }
 
           <!-- Quick Actions -->
           <div class="section quick-actions-section">

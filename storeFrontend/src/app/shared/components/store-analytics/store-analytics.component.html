@@ -1,0 +1,154 @@
+<div class="analytics-container">
+  <!-- Zeitraumfilter -->
+  <div class="date-range-filter">
+    <mat-form-field>
+      <mat-label>{{ 'ANALYTICS.DATE_RANGE' | translate }}</mat-label>
+      <mat-select [(ngModel)]="selectedRange" (selectionChange)="loadAnalytics()">
+        <mat-option value="today">{{ 'ANALYTICS.TODAY' | translate }}</mat-option>
+        <mat-option value="last7days">{{ 'ANALYTICS.LAST_7_DAYS' | translate }}</mat-option>
+        <mat-option value="last30days">{{ 'ANALYTICS.LAST_30_DAYS' | translate }}</mat-option>
+        <mat-option value="thisYear">{{ 'ANALYTICS.THIS_YEAR' | translate }}</mat-option>
+        <mat-option value="custom">{{ 'ANALYTICS.CUSTOM' | translate }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    @if (selectedRange === 'custom') {
+      <mat-form-field>
+        <mat-label>{{ 'ANALYTICS.FROM' | translate }}</mat-label>
+        <input matInput type="date" [(ngModel)]="customFrom" (change)="loadAnalytics()">
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>{{ 'ANALYTICS.TO' | translate }}</mat-label>
+        <input matInput type="date" [(ngModel)]="customTo" (change)="loadAnalytics()">
+      </mat-form-field>
+    }
+  </div>
+
+  <!-- Loading -->
+  @if (loading) {
+    <div class="loading-spinner">
+      <mat-spinner diameter="50"></mat-spinner>
+      <p>{{ 'ANALYTICS.LOADING' | translate }}</p>
+    </div>
+  }
+
+  <!-- Error -->
+  @if (error && !loading) {
+    <div class="error-message">
+      <mat-icon>error</mat-icon>
+      <p>{{ error | translate }}</p>
+    </div>
+  }
+
+  <!-- Success State -->
+  @if (!loading && !error && summary) {
+    <!-- Kennzahlen-Karten -->
+    <div class="metrics-grid">
+      <!-- Umsatz -->
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>{{ 'ANALYTICS.REVENUE' | translate }}</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="metric-value">
+            {{ summary.totalRevenue | currency:summary.currencyCode:'symbol':'1.2-2' }}
+          </div>
+          <div class="metric-label">
+            {{ 'ANALYTICS.TOTAL_REVENUE' | translate }}
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Bestellungen -->
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>{{ 'ANALYTICS.ORDERS' | translate }}</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="metric-value">
+            {{ summary.paidOrderCount }}
+          </div>
+          <div class="metric-label">
+            {{ 'ANALYTICS.PAID_ORDERS' | translate }}
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Durchschnittlicher Bestellwert -->
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>{{ 'ANALYTICS.AVG_ORDER_VALUE' | translate }}</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="metric-value">
+            {{ summary.averageOrderValue | currency:summary.currencyCode:'symbol':'1.2-2' }}
+          </div>
+          <div class="metric-label">
+            {{ 'ANALYTICS.AVG_PER_ORDER' | translate }}
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Top-Produkte -->
+    <mat-card class="top-products-card">
+      <mat-card-header>
+        <mat-card-title>{{ 'ANALYTICS.TOP_PRODUCTS' | translate }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if (topProducts.length === 0) {
+          <p class="no-data">{{ 'ANALYTICS.NO_PRODUCTS' | translate }}</p>
+        } @else {
+          <app-responsive-data-list
+            [items]="topProducts"
+            [columns]="topProductsColumns"
+            [loading]="false">
+          </app-responsive-data-list>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Bestellungen nach Status -->
+    <mat-card class="order-stats-card">
+      <mat-card-header>
+        <mat-card-title>{{ 'ANALYTICS.ORDERS_BY_STATUS' | translate }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if (orderStats && getStatusEntries().length > 0) {
+          <ul class="stats-list">
+            @for (entry of getStatusEntries(); track entry.key) {
+              <li>
+                <span class="stat-label">{{ 'ORDER_STATUS.' + entry.key | translate }}</span>
+                <span class="stat-value">{{ entry.value }}</span>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="no-data">{{ 'ANALYTICS.NO_ORDERS' | translate }}</p>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Bestellungen nach Zahlungsart -->
+    <mat-card class="payment-stats-card">
+      <mat-card-header>
+        <mat-card-title>{{ 'ANALYTICS.ORDERS_BY_PAYMENT' | translate }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if (orderStats && getPaymentEntries().length > 0) {
+          <ul class="stats-list">
+            @for (entry of getPaymentEntries(); track entry.key) {
+              <li>
+                <span class="stat-label">{{ 'PAYMENT_METHOD.' + entry.key | translate }}</span>
+                <span class="stat-value">{{ entry.value }}</span>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="no-data">{{ 'ANALYTICS.NO_PAYMENTS' | translate }}</p>
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

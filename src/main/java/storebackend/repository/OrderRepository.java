@@ -8,7 +8,10 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import storebackend.entity.Order;
 import storebackend.enums.OrderStatus;
+import storebackend.enums.PaymentMethod;
+import storebackend.enums.PaymentStatus;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -37,4 +40,70 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT o FROM Order o WHERE o.id = :id")
     Optional<Order> findByIdForUpdate(@Param("id") Long id);
+    
+    // ============================================
+    // ANALYTICS QUERIES
+    // ============================================
+    
+    /**
+     * Gesamtumsatz für einen Store (mit optionalem Zeitraum)
+     * Nur bezahlte Bestellungen (paymentStatus=PAID), ohne stornierte/fehlgeschlagene Orders
+     */
+    @Query("SELECT COALESCE(SUM(o.totalGross), 0) FROM Order o " +
+           "WHERE o.store.id = :storeId " +
+           "AND o.paymentStatus = :paymentStatus " +
+           "AND o.status NOT IN (:excludedStatuses) " +
+           "AND (:from IS NULL OR o.createdAt >= :from) " +
+           "AND (:to IS NULL OR o.createdAt <= :to)")
+    BigDecimal sumRevenueByStore(
+        @Param("storeId") Long storeId,
+        @Param("paymentStatus") PaymentStatus paymentStatus,
+        @Param("excludedStatuses") List<OrderStatus> excludedStatuses,
+        @Param("from") LocalDateTime from,
+        @Param("to") LocalDateTime to
+    );
+    
+    /**
+     * Anzahl bezahlter Bestellungen (mit optionalem Zeitraum)
+     */
+    @Query("SELECT COUNT(o) FROM Order o " +
+           "WHERE o.store.id = :storeId " +
+           "AND o.paymentStatus = :paymentStatus " +
+           "AND (:from IS NULL OR o.createdAt >= :from) " +
+           "AND (:to IS NULL OR o.createdAt <= :to)")
+    Long countPaidOrders(
+        @Param("storeId") Long storeId,
+        @Param("paymentStatus") PaymentStatus paymentStatus,
+        @Param("from") LocalDateTime from,
+        @Param("to") LocalDateTime to
+    );
+    
+    /**
+     * Bestellungen nach Status gruppieren (mit optionalem Zeitraum)
+     */
+    @Query("SELECT o.status, COUNT(o) FROM Order o " +
+           "WHERE o.store.id = :storeId " +
+           "AND (:from IS NULL OR o.createdAt >= :from) " +
+           "AND (:to IS NULL OR o.createdAt <= :to) " +
+           "GROUP BY o.status")
+    List<Object[]> countByStoreGroupedByStatus(
+        @Param("storeId") Long storeId,
+        @Param("from") LocalDateTime from,
+        @Param("to") LocalDateTime to
+    );
+    
+    /**
+     * Bestellungen nach Zahlungsart gruppieren (mit optionalem Zeitraum)
+     */
+    @Query("SELECT o.paymentMethod, COUNT(o) FROM Order o " +
+           "WHERE o.store.id = :storeId " +
+           "AND o.paymentMethod IS NOT NULL " +
+           "AND (:from IS NULL OR o.createdAt >= :from) " +
+           "AND (:to IS NULL OR o.createdAt <= :to) " +
+           "GROUP BY o.paymentMethod")
+    List<Object[]> countByStoreGroupedByPaymentMethod(
+        @Param("storeId") Long storeId,
+        @Param("from") LocalDateTime from,
+        @Param("to") LocalDateTime to
+    );
 }

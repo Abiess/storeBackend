@@ -2410,5 +2410,56 @@
     "resendMailFailed": "تم تحديث الدعوة، ولكن تعذر إرسال البريد الإلكتروني",
     "resendFailed": "فشل إعادة الإرسال",
     "mailFailed": "فشل إرسال البريد الإلكتروني"
+  },
+  "ANALYTICS": {
+    "TITLE": "التحليلات",
+    "DATE_RANGE": "الفترة الزمنية",
+    "TODAY": "اليوم",
+    "LAST_7_DAYS": "آخر 7 أيام",
+    "LAST_30_DAYS": "آخر 30 يوماً",
+    "THIS_YEAR": "هذا العام",
+    "CUSTOM": "مخصص",
+    "FROM": "من",
+    "TO": "إلى",
+    "LOADING": "جاري تحميل التحليلات...",
+    "REVENUE": "الإيرادات",
+    "TOTAL_REVENUE": "إجمالي الإيرادات",
+    "ORDERS": "الطلبات",
+    "PAID_ORDERS": "الطلبات المدفوعة",
+    "AVG_ORDER_VALUE": "متوسط قيمة الطلب",
+    "AVG_PER_ORDER": "المتوسط لكل طلب",
+    "TOP_PRODUCTS": "المنتجات الأكثر مبيعاً",
+    "PRODUCT_NAME": "اسم المنتج",
+    "QUANTITY_SOLD": "الكمية المباعة",
+    "ORDER_COUNT": "عدد الطلبات",
+    "ORDERS_BY_STATUS": "الطلبات حسب الحالة",
+    "ORDERS_BY_PAYMENT": "الطلبات حسب طريقة الدفع",
+    "NO_PRODUCTS": "لا توجد منتجات في الفترة المحددة",
+    "NO_ORDERS": "لا توجد طلبات في الفترة المحددة",
+    "NO_PAYMENTS": "لا توجد مدفوعات في الفترة المحددة",
+    "ERROR": {
+      "ACCESS_DENIED": "ليس لديك صلاحية للوصول إلى تحليلات هذا المتجر.",
+      "INVALID_DATE_RANGE": "فترة زمنية غير صالحة: يجب أن يكون تاريخ البداية قبل تاريخ النهاية.",
+      "RANGE_TOO_LARGE": "الفترة الزمنية كبيرة جداً: الحد الأقصى سنتان.",
+      "GENERAL": "خطأ في تحميل التحليلات. يرجى المحاولة مرة أخرى."
+    }
+  },
+  "ORDER_STATUS": {
+    "PENDING": "قيد الانتظار",
+    "PENDING_PAYMENT": "في انتظار الدفع",
+    "PAYMENT_FAILED": "فشل الدفع",
+    "CONFIRMED": "مؤكد",
+    "PROCESSING": "قيد المعالجة",
+    "SHIPPED": "تم الشحن",
+    "DELIVERED": "تم التوصيل",
+    "CANCELLED": "ملغى",
+    "REFUNDED": "مسترد"
+  },
+  "PAYMENT_METHOD": {
+    "PAYPAL": "باي بال",
+    "CASH_ON_DELIVERY": "الدفع عند الاستلام",
+    "BANK_TRANSFER": "تحويل بنكي",
+    "CREDIT_CARD": "بطاقة ائتمان",
+    "STRIPE": "سترايب"
   }
 }

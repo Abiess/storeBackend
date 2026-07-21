@@ -2808,5 +2808,56 @@
     "resendMailFailed": "Einladung aktualisiert, aber E-Mail konnte nicht versendet werden",
     "resendFailed": "Fehler beim erneuten Versenden",
     "mailFailed": "E-Mail-Versand fehlgeschlagen"
+  },
+  "ANALYTICS": {
+    "TITLE": "Analytics",
+    "DATE_RANGE": "Zeitraum",
+    "TODAY": "Heute",
+    "LAST_7_DAYS": "Letzte 7 Tage",
+    "LAST_30_DAYS": "Letzte 30 Tage",
+    "THIS_YEAR": "Dieses Jahr",
+    "CUSTOM": "Benutzerdefiniert",
+    "FROM": "Von",
+    "TO": "Bis",
+    "LOADING": "Lade Analytics...",
+    "REVENUE": "Umsatz",
+    "TOTAL_REVENUE": "Gesamtumsatz",
+    "ORDERS": "Bestellungen",
+    "PAID_ORDERS": "Bezahlte Bestellungen",
+    "AVG_ORDER_VALUE": "Ø Bestellwert",
+    "AVG_PER_ORDER": "Durchschnitt pro Bestellung",
+    "TOP_PRODUCTS": "Top-Produkte",
+    "PRODUCT_NAME": "Produktname",
+    "QUANTITY_SOLD": "Verkaufte Menge",
+    "ORDER_COUNT": "Anzahl Bestellungen",
+    "ORDERS_BY_STATUS": "Bestellungen nach Status",
+    "ORDERS_BY_PAYMENT": "Bestellungen nach Zahlungsart",
+    "NO_PRODUCTS": "Keine Produkte im ausgewählten Zeitraum",
+    "NO_ORDERS": "Keine Bestellungen im ausgewählten Zeitraum",
+    "NO_PAYMENTS": "Keine Zahlungen im ausgewählten Zeitraum",
+    "ERROR": {
+      "ACCESS_DENIED": "Sie haben keinen Zugriff auf die Analytics dieses Stores.",
+      "INVALID_DATE_RANGE": "Ungültiger Zeitraum: Startdatum muss vor dem Enddatum liegen.",
+      "RANGE_TOO_LARGE": "Zeitraum zu groß: Maximal 2 Jahre erlaubt.",
+      "GENERAL": "Fehler beim Laden der Analytics. Bitte versuchen Sie es erneut."
+    }
+  },
+  "ORDER_STATUS": {
+    "PENDING": "Ausstehend",
+    "PENDING_PAYMENT": "Zahlung ausstehend",
+    "PAYMENT_FAILED": "Zahlung fehlgeschlagen",
+    "CONFIRMED": "Bestätigt",
+    "PROCESSING": "In Bearbeitung",
+    "SHIPPED": "Versendet",
+    "DELIVERED": "Zugestellt",
+    "CANCELLED": "Storniert",
+    "REFUNDED": "Erstattet"
+  },
+  "PAYMENT_METHOD": {
+    "PAYPAL": "PayPal",
+    "CASH_ON_DELIVERY": "Nachnahme",
+    "BANK_TRANSFER": "Banküberweisung",
+    "CREDIT_CARD": "Kreditkarte",
+    "STRIPE": "Stripe"
   }
 }

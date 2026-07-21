@@ -1,0 +1,140 @@
+.analytics-container {
+  padding: 20px;
+
+  .date-range-filter {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+
+    mat-form-field {
+      min-width: 200px;
+    }
+  }
+
+  .loading-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+
+    mat-spinner {
+      margin-bottom: 16px;
+    }
+
+    p {
+      color: #666;
+      margin: 0;
+    }
+  }
+
+  .error-message {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px;
+    background-color: #ffebee;
+    border-radius: 4px;
+    color: #c62828;
+    margin: 20px 0;
+
+    mat-icon {
+      color: #c62828;
+    }
+
+    p {
+      margin: 0;
+      font-weight: 500;
+    }
+  }
+
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+
+    mat-card {
+      text-align: center;
+
+      .metric-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #667eea;
+        margin: 16px 0 8px;
+      }
+
+      .metric-label {
+        font-size: 0.875rem;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+    }
+  }
+
+  .top-products-card,
+  .order-stats-card,
+  .payment-stats-card {
+    margin-bottom: 20px;
+  }
+
+  .stats-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+
+    li {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid #eee;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      .stat-label {
+        font-weight: 500;
+      }
+
+      .stat-value {
+        font-weight: 700;
+        color: #667eea;
+      }
+    }
+  }
+
+  .no-data {
+    text-align: center;
+    padding: 40px 20px;
+    color: #999;
+    font-style: italic;
+    margin: 0;
+  }
+}
+
+// Mobile-Optimierung
+@media (max-width: 600px) {
+  .analytics-container {
+    padding: 12px;
+
+    .metrics-grid {
+      grid-template-columns: 1fr;
+      gap: 12px;
+
+      mat-card .metric-value {
+        font-size: 2rem;
+      }
+    }
+
+    .date-range-filter {
+      flex-direction: column;
+
+      mat-form-field {
+        width: 100%;
+      }
+    }
+  }
+}

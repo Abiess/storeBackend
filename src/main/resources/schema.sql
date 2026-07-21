@@ -528,6 +528,8 @@ CREATE TABLE IF NOT EXISTS orders (
     delivery_provider_id BIGINT,
     delivery_fee DECIMAL(10, 2),
     eta_minutes INTEGER,
+    inventory_adjusted BOOLEAN NOT NULL DEFAULT FALSE,
+    confirmation_email_sent BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP,
     shipped_at TIMESTAMP,
