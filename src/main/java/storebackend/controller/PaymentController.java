@@ -147,10 +147,19 @@ public class PaymentController {
         Order order = orderRepo.findById(orderId)
             .orElseThrow(() -> new SecurityException("Order not found"));
         
+        // ═══════════════════════════════════════════════════════════════════════════
+        // STORE-ZUGEHÖRIGKEIT PRÜFEN
+        // ═══════════════════════════════════════════════════════════════════════════
         if (!order.getStore().getId().equals(storeId)) {
+            log.warn("[ACCESS-DENIED] Order {} does not belong to store {}", orderId, storeId);
             throw new SecurityException("Order does not belong to store");
         }
         
+        // ═══════════════════════════════════════════════════════════════════════════
+        // AUTHENTIFIZIERUNG: JWT-Token (eingeloggter User) ODER Checkout-Token (Gast)
+        // ═══════════════════════════════════════════════════════════════════════════
+        
+        // Versuch 1: JWT-Token validieren (eingeloggter Checkout)
         Long userId = null;
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
@@ -158,21 +167,60 @@ public class PaymentController {
                 String email = jwtUtil.extractEmail(token);
                 if (jwtUtil.validateToken(token, email)) {
                     userId = jwtUtil.extractUserId(token);
+                    log.debug("[AUTH-JWT] User {} authenticated via JWT for order {}", userId, orderId);
                 }
             } catch (Exception e) {
-                log.warn("Invalid token during payment access check");
+                log.debug("[AUTH-JWT] Invalid JWT token for order {}", orderId);
             }
         }
         
+        // Fall A: Eingeloggter User → User muss Order-Owner sein
         if (userId != null) {
             if (order.getCustomer() != null && !order.getCustomer().getId().equals(userId)) {
+                log.warn("[ACCESS-DENIED] User {} tried to access order {} owned by user {}", 
+                    userId, orderId, order.getCustomer().getId());
                 throw new SecurityException("Order does not belong to user");
             }
-        } else {
-            if (checkoutToken == null || checkoutToken.isBlank()) {
-                throw new SecurityException("Authentication required for payment");
-            }
+            log.debug("[AUTH-SUCCESS] User {} owns order {}", userId, orderId);
+            return;
         }
+        
+        // Fall B: Gast-Checkout → checkoutToken muss mit Order-Token übereinstimmen
+        if (checkoutToken == null || checkoutToken.isBlank()) {
+            log.warn("[ACCESS-DENIED] No authentication (JWT or checkout token) for order {}", orderId);
+            throw new SecurityException("Authentication required for payment");
+        }
+        
+        String orderToken = order.getCheckoutToken();
+        if (orderToken == null || orderToken.isBlank()) {
+            log.error("[SECURITY-ERROR] Order {} has no checkout token but guest access attempted", orderId);
+            throw new SecurityException("Order does not support guest checkout");
+        }
+        
+        // KRITISCH: Token muss exakt übereinstimmen (constant-time comparison)
+        if (!secureEquals(checkoutToken, orderToken)) {
+            log.warn("[ACCESS-DENIED] Invalid checkout token for order {}", orderId);
+            throw new SecurityException("Invalid checkout token");
+        }
+        
+        log.debug("[AUTH-SUCCESS] Guest checkout token validated for order {}", orderId);
+    }
+    
+    /**
+     * Constant-time String-Vergleich zur Vermeidung von Timing-Attacks
+     */
+    private boolean secureEquals(String a, String b) {
+        if (a == null || b == null) {
+            return false;
+        }
+        if (a.length() != b.length()) {
+            return false;
+        }
+        int result = 0;
+        for (int i = 0; i < a.length(); i++) {
+            result |= a.charAt(i) ^ b.charAt(i);
+        }
+        return result == 0;
     }
 }
 

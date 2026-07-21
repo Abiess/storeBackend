@@ -30,11 +30,12 @@ export class PaymentService {
 
   /**
    * Erstelle eine Payment-Transaction
+   * KRITISCH: checkoutToken muss als Header gesendet werden für Gast-Checkout
    */
   createPayment(storeId: number, request: PaymentCreateRequest): Observable<PaymentCreateResponse> {
-    const headers = new HttpHeaders();
+    let headers = new HttpHeaders();
     if (request.checkoutToken) {
-      headers.set('X-Checkout-Token', request.checkoutToken);
+      headers = headers.set('X-Checkout-Token', request.checkoutToken);
     }
     
     return this.http.post<PaymentCreateResponse>(
@@ -46,11 +47,15 @@ export class PaymentService {
 
   /**
    * Erfasse (capture) eine genehmigte Zahlung
+   * KRITISCH: checkoutToken wird für Gast-Checkout benötigt!
    */
   capturePayment(storeId: number, paymentId: number, checkoutToken?: string): Observable<PaymentCaptureResponse> {
-    const headers = new HttpHeaders();
+    let headers = new HttpHeaders();
     if (checkoutToken) {
-      headers.set('X-Checkout-Token', checkoutToken);
+      headers = headers.set('X-Checkout-Token', checkoutToken);
+      console.log('[PaymentService] Capturing with checkout token for guest checkout');
+    } else {
+      console.log('[PaymentService] Capturing with JWT auth for logged-in user');
     }
     
     return this.http.post<PaymentCaptureResponse>(
@@ -64,9 +69,9 @@ export class PaymentService {
    * Frage Payment-Status ab
    */
   getPaymentStatus(storeId: number, paymentId: number, checkoutToken?: string): Observable<PaymentStatusResponse> {
-    const headers = new HttpHeaders();
+    let headers = new HttpHeaders();
     if (checkoutToken) {
-      headers.set('X-Checkout-Token', checkoutToken);
+      headers = headers.set('X-Checkout-Token', checkoutToken);
     }
     
     return this.http.get<PaymentStatusResponse>(
