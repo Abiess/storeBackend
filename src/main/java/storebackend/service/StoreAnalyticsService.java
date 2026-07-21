@@ -2,6 +2,8 @@ package storebackend.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import storebackend.dto.analytics.OrderStatsDTO;
@@ -127,12 +129,15 @@ public class StoreAnalyticsService {
         log.info("[ANALYTICS] Fetching top {} products for storeId={}, from={}, to={}", 
             limit, storeId, dateRange.from(), dateRange.to());
         
+        // Pageable für LIMIT-Funktionalität
+        Pageable pageable = PageRequest.of(0, limit);
+        
         List<TopProductDTO> topProducts = orderItemRepository.findTopProductsByRevenue(
             storeId,
             PaymentStatus.PAID,
             dateRange.fromDateTime(),
             dateRange.toDateTime(),
-            limit
+            pageable
         );
         
         // LIMIT wird in JPQL nicht als Parameter unterstützt - manuell begrenzen

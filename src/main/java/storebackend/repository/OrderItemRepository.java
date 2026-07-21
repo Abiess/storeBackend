@@ -31,7 +31,7 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
     @Query("""
         SELECT new storebackend.dto.analytics.TopProductDTO(
             p.id,
-            p.name,
+            p.title,
             SUM(oi.quantity),
             SUM(oi.total),
             COUNT(DISTINCT o.id)
@@ -44,7 +44,7 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
         AND p IS NOT NULL
         AND (:from IS NULL OR o.createdAt >= :from)
         AND (:to IS NULL OR o.createdAt <= :to)
-        GROUP BY p.id, p.name
+        GROUP BY p.id, p.title
         ORDER BY SUM(oi.total) DESC
     """)
     List<TopProductDTO> findTopProductsByRevenue(
@@ -52,7 +52,7 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
         @Param("paymentStatus") PaymentStatus paymentStatus,
         @Param("from") LocalDateTime from,
         @Param("to") LocalDateTime to,
-        @Param("limit") int limit
+        org.springframework.data.domain.Pageable pageable
     );
 }
 
