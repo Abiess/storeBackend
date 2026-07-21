@@ -6,10 +6,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import storebackend.entity.Store;
 import storebackend.entity.User;
 import storebackend.enums.Role;
@@ -229,5 +232,163 @@ class StoreAccessCheckerTest {
         // Assert
         assertTrue(hasAccess, 
             "PRODUCTION TEST FAILED: User essoudati@hotmail.de (id=1) should have access to Store 121");
+    }
+    
+    // ========== SECURITY FIX TESTS: Principal-Typ-Auswertung ==========
+    
+    /**
+     * TEST 1: Principal ist User-Entity → Owner bekommt Zugriff
+     * Dies ist der PRODUCTION-Fall, der den 403-Fehler verursacht hat!
+     */
+    @Test
+    void testPrincipalIsUserEntity_OwnerShouldGetAccess() {
+        // Arrange - Principal ist direkt das User-Entity-Objekt
+        Authentication auth = new UsernamePasswordAuthenticationToken(
+            testUser,  // Principal ist User-Entity, NICHT String!
+            null, 
+            Collections.emptyList()
+        );
+        when(securityContext.getAuthentication()).thenReturn(auth);
+        when(storeRepository.findById(121L)).thenReturn(Optional.of(testStore));
+        
+        // Act
+        boolean hasAccess = storeAccessChecker.isStoreAdmin(121L);
+        
+        // Assert
+        assertTrue(hasAccess, "User-Entity as Principal should grant access to owner");
+        
+        // Verify - User sollte NICHT über Repository geladen werden
+        verify(userRepository, never()).findByEmail(anyString());
+    }
+    
+    /**
+     * TEST 2: Principal ist UserDetails → User wird über Username/E-Mail geladen
+     */
+    @Test
+    void testPrincipalIsUserDetails_ShouldLoadFromRepository() {
+        // Arrange - Principal ist Spring Security UserDetails
+        UserDetails userDetails = org.springframework.security.core.userdetails.User.builder()
+            .username(testUser.getEmail())
+            .password("dummy")
+            .authorities(Collections.emptyList())
+            .build();
+        
+        Authentication auth = new UsernamePasswordAuthenticationToken(
+            userDetails, 
+            null, 
+            Collections.emptyList()
+        );
+        when(securityContext.getAuthentication()).thenReturn(auth);
+        when(userRepository.findByEmail(testUser.getEmail())).thenReturn(Optional.of(testUser));
+        when(storeRepository.findById(121L)).thenReturn(Optional.of(testStore));
+        
+        // Act
+        boolean hasAccess = storeAccessChecker.isStoreAdmin(121L);
+        
+        // Assert
+        assertTrue(hasAccess, "UserDetails principal should load user from repository");
+        verify(userRepository).findByEmail(testUser.getEmail());
+    }
+    
+    /**
+     * TEST 3: Principal ist String/E-Mail → Fallback funktioniert
+     */
+    @Test
+    void testPrincipalIsString_FallbackShouldWork() {
+        // Arrange - Principal ist einfacher String (E-Mail)
+        Authentication auth = new UsernamePasswordAuthenticationToken(
+            testUser.getEmail(),  // Principal ist String
+            null, 
+            Collections.emptyList()
+        );
+        when(securityContext.getAuthentication()).thenReturn(auth);
+        when(userRepository.findByEmail(testUser.getEmail())).thenReturn(Optional.of(testUser));
+        when(storeRepository.findById(121L)).thenReturn(Optional.of(testStore));
+        
+        // Act
+        boolean hasAccess = storeAccessChecker.isStoreAdmin(121L);
+        
+        // Assert
+        assertTrue(hasAccess, "String principal (email) should work as fallback");
+        verify(userRepository).findByEmail(testUser.getEmail());
+    }
+    
+    /**
+     * TEST 4: User-Entity als Principal + fremder Store → false
+     */
+    @Test
+    void testPrincipalIsUserEntity_NotOwnerShouldBeDenied() {
+        // Arrange - User ist Principal, aber NICHT Owner des Stores
+        User otherUser = new User();
+        otherUser.setId(99L);
+        otherUser.setEmail("other@example.com");
+        otherUser.setRoles(Collections.singleton(Role.USER));
+        
+        Authentication auth = new UsernamePasswordAuthenticationToken(
+            otherUser,  // Principal ist User-Entity, aber nicht Owner
+            null, 
+            Collections.emptyList()
+        );
+        when(securityContext.getAuthentication()).thenReturn(auth);
+        when(storeRepository.findById(121L)).thenReturn(Optional.of(testStore));
+        
+        // Act
+        boolean hasAccess = storeAccessChecker.isStoreAdmin(121L);
+        
+        // Assert
+        assertFalse(hasAccess, "Non-owner user entity should be denied");
+    }
+    
+    /**
+     * TEST 5: AnonymousAuthenticationToken → false
+     */
+    @Test
+    void testAnonymousAuthentication_ShouldBeDenied() {
+        // Arrange - Anonymer User
+        Authentication auth = new AnonymousAuthenticationToken(
+            "anonymous", 
+            "anonymousUser", 
+            Collections.singletonList(new SimpleGrantedAuthority("ROLE_ANONYMOUS"))
+        );
+        when(securityContext.getAuthentication()).thenReturn(auth);
+        
+        // Act
+        boolean hasAccess = storeAccessChecker.isStoreAdmin(121L);
+        
+        // Assert
+        assertFalse(hasAccess, "Anonymous user should be denied");
+        
+        // Verify - Keine Repository-Calls bei anonymous
+        verify(userRepository, never()).findByEmail(anyString());
+        verify(storeRepository, never()).findById(anyLong());
+    }
+    
+    /**
+     * TEST 6: SECURITY - Passwort-Hash erscheint nicht in toString()
+     */
+    @Test
+    void testUserToString_ShouldNotExposePasswordHash() {
+        // Arrange
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("test@example.com");
+        user.setName("Test User");
+        user.setPasswordHash("$2a$10$SENSITIVE_HASH_VALUE");
+        user.setRoles(Collections.singleton(Role.USER));
+        user.setPreferredLanguage("de");
+        
+        // Act
+        String userString = user.toString();
+        
+        // Assert
+        assertNotNull(userString, "toString() should not be null");
+        assertFalse(userString.contains("$2a$10$"), 
+            "toString() MUST NOT expose password hash");
+        assertFalse(userString.contains("SENSITIVE_HASH_VALUE"), 
+            "toString() MUST NOT expose password hash");
+        assertTrue(userString.contains("id=1"), 
+            "toString() should contain id");
+        assertTrue(userString.contains("email='test@example.com'"), 
+            "toString() should contain email");
     }
 }

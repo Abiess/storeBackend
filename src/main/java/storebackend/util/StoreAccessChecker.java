@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import storebackend.entity.Store;
 import storebackend.entity.User;
@@ -28,6 +29,11 @@ public class StoreAccessChecker {
      * Prüft, ob der aktuell eingeloggte User Admin-Rechte für einen Store hat
      * (Owner des Stores).
      * 
+     * SECURITY FIX: Unterstützt jetzt verschiedene Principal-Typen:
+     * - User-Entity (direkt)
+     * - UserDetails (Username wird als E-Mail verwendet)
+     * - String/E-Mail (Fallback)
+     * 
      * Für @PreAuthorize("@storeAccessChecker.isStoreAdmin(#storeId)")
      * 
      * @param storeId Store ID
@@ -45,14 +51,31 @@ public class StoreAccessChecker {
                 return false;
             }
 
-            // 2. User aus Authentication laden (email als Identifier)
-            String email = authentication.getName();
+            // 2. User aus Principal laden - SECURITY FIX: Principal-Typ auswerten
+            User currentUser = null;
+            Object principal = authentication.getPrincipal();
             
-            User currentUser = userRepository.findByEmail(email).orElse(null);
+            if (principal instanceof User authenticatedUser) {
+                // Principal ist bereits ein User-Entity-Objekt
+                currentUser = authenticatedUser;
+                log.debug("[PRINCIPAL] Type: User entity, userId={}", currentUser.getId());
+            } else if (principal instanceof UserDetails userDetails) {
+                // Principal ist UserDetails → Username als E-Mail verwenden
+                currentUser = userRepository
+                    .findByEmail(userDetails.getUsername())
+                    .orElse(null);
+                log.debug("[PRINCIPAL] Type: UserDetails, username={}", userDetails.getUsername());
+            } else {
+                // Fallback: authentication.getName() als E-Mail
+                String identifier = authentication.getName();
+                currentUser = userRepository
+                    .findByEmail(identifier)
+                    .orElse(null);
+                log.debug("[PRINCIPAL] Type: String/fallback, name={}", identifier);
+            }
             
             if (currentUser == null) {
-                log.warn("[ACCESS-DENIED] User not found: email='{}', storeId={}", 
-                    email, storeId);
+                log.warn("[ACCESS-DENIED] Authenticated user could not be resolved, storeId={}", storeId);
                 return false;
             }
 
@@ -66,22 +89,23 @@ public class StoreAccessChecker {
             }
 
             // 4. Owner-Check (direkter Vergleich der IDs)
-            boolean isOwner = Objects.equals(store.getOwner().getId(), currentUser.getId());
+            Long userId = currentUser.getId();
+            Long ownerId = store.getOwner().getId();
+            boolean isOwner = Objects.equals(userId, ownerId);
             
-            // 5. Debug-Logging
-            log.info("[ACCESS-CHECK] storeId={}, authName='{}', currentUserId={}, ownerId={}, result={}",
+            // 5. SECURITY: Nur IDs und notwendige Infos loggen - NIE den Principal oder User-Objekt!
+            log.info("[ACCESS-CHECK] storeId={}, currentUserId={}, ownerId={}, result={}",
                 storeId,
-                email,
-                currentUser.getId(),
-                store.getOwner().getId(),
+                userId,
+                ownerId,
                 isOwner);
             
             if (isOwner) {
                 log.info("[ACCESS-GRANTED] ✅ User is owner: userId={}, storeId={}, storeName='{}'", 
-                    currentUser.getId(), storeId, store.getName());
+                    userId, storeId, store.getName());
             } else {
                 log.warn("[ACCESS-DENIED] ❌ User is NOT owner: userId={}, ownerId={}, storeId={}",
-                    currentUser.getId(), store.getOwner().getId(), storeId);
+                    userId, ownerId, storeId);
             }
             
             return isOwner;

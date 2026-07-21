@@ -161,4 +161,21 @@ public class User {
             this.preferredLanguage = "en";
         }
     }
+
+    /**
+     * SECURITY: Override toString() um zu verhindern, dass Lombok's @Data
+     * den passwordHash in Logs ausgibt.
+     */
+    @Override
+    public String toString() {
+        return "User{" +
+            "id=" + id +
+            ", email='" + email + '\'' +
+            ", name='" + name + '\'' +
+            ", roles=" + roles +
+            ", emailVerified=" + emailVerified +
+            ", preferredLanguage='" + preferredLanguage + '\'' +
+            ", phoneNumber='" + (phoneNumber != null ? "[REDACTED]" : null) + '\'' +
+            '}';
+    }
 }
