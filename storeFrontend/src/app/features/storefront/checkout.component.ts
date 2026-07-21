@@ -1756,6 +1756,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     
     // PayPal-spezifische Properties
     tempOrderId: number | null = null;
+    tempOrderNumber: string | null = null; // FIXED: Echte orderNumber speichern
     checkoutToken: string | null = null;
     preparingPayPalOrder = false;
     
@@ -2597,6 +2598,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         // PayPal-Order zurücksetzen bei Zahlungsartenwechsel
         if (this.selectedPaymentMethod !== 'PAYPAL') {
             this.tempOrderId = null;
+            this.tempOrderNumber = null; // FIXED: Auch orderNumber zurücksetzen
             this.checkoutToken = null;
         }
 
@@ -2661,11 +2663,13 @@ export class CheckoutComponent implements OnInit, OnDestroy {
             next: (response: any) => {
                 console.log('[Checkout] Temporary order created successfully:', response);
                 this.tempOrderId = response.orderId;
+                this.tempOrderNumber = response.orderNumber; // FIXED: Echte orderNumber speichern
                 this.checkoutToken = response.checkoutToken || null;
                 
                 // CRITICAL: Gast-Checkout MUSS checkoutToken haben
                 if (!this.checkoutToken && !this.isUserLoggedIn()) {
                     this.tempOrderId = null;
+                    this.tempOrderNumber = null;
                     this.errorMessage = 'PayPal konnte nicht vorbereitet werden. Bitte versuchen Sie es erneut.';
                     console.error('[Checkout] Missing checkoutToken for guest checkout');
                     return;
@@ -2736,9 +2740,13 @@ export class CheckoutComponent implements OnInit, OnDestroy {
      */
     private navigateToPayPalConfirmation(customerEmail: string): void {
         console.log('📧 Navigiere zur Bestätigung nach PayPal-Zahlung');
+        // FIXED: Verwende echte orderNumber statt selbst generierter
+        const orderNumberToUse = this.tempOrderNumber || `ORD-${this.tempOrderId}`;
+        console.log('📝 Verwende orderNumber:', orderNumberToUse);
+        
         this.router.navigate(['/order-confirmation'], {
             queryParams: {
-                orderNumber: `ORD-${this.tempOrderId}`,
+                orderNumber: orderNumberToUse,
                 email: customerEmail
             }
         });
@@ -2754,6 +2762,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         // KRITISCH: PayPal-Button zurücksetzen für erneuten Versuch
         // tempOrderId wird zurückgesetzt, damit der "Weiter zu PayPal"-Button wieder erscheint
         this.tempOrderId = null;
+        this.tempOrderNumber = null; // FIXED: Auch orderNumber zurücksetzen
         this.checkoutToken = null;
         this.preparingPayPalOrder = false;
     }
@@ -2767,6 +2776,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         
         // KRITISCH: PayPal-Button zurücksetzen für erneuten Versuch
         this.tempOrderId = null;
+        this.tempOrderNumber = null; // FIXED: Auch orderNumber zurücksetzen
         this.checkoutToken = null;
         this.preparingPayPalOrder = false;
     }
