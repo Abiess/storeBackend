@@ -97,9 +97,8 @@ class OrderCompletionServiceTest {
         item1.setVariant(variant1);
         testOrder.setOrderItems(List.of(item1));
         
-        // Set customer fields directly on order
+        // Set customer email on order (no customerName field in Order entity)
         testOrder.setCustomerEmail("customer@test.com");
-        testOrder.setCustomerName("Test Customer");
     }
     
     /**
@@ -134,7 +133,7 @@ class OrderCompletionServiceTest {
         verify(emailService, times(1)).sendNewOrderNotificationToOwner(
             eq("owner@example.com"), eq("de"), eq("ORDER-100"), 
             eq("Test Store"), eq("https://example.com/logo.png"), eq(100.0),
-            eq("customer@example.com"), eq("Test Customer"), isNull(), anyList()
+            eq("customer@example.com"), isNull(), isNull(), anyList()
         );
         verify(orderRepository, times(2)).save(testOrder);
         assertTrue(testOrder.getInventoryAdjusted());
