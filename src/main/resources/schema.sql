@@ -1731,3 +1731,43 @@ BEGIN
     END IF;
 END $$;
 
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Payment-Status für PayPal und andere Online-Zahlungen
+-- ═══════════════════════════════════════════════════════════════════════════
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'orders' AND column_name = 'payment_status'
+    ) THEN
+        ALTER TABLE orders ADD COLUMN payment_status VARCHAR(30);
+        RAISE NOTICE 'Added payment_status column to orders';
+    END IF;
+END $$;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Idempotenz-Flags für E-Mail und Inventory
+-- Verhindert doppelte E-Mails/Bestandsreduzierungen bei Race Conditions
+-- ═══════════════════════════════════════════════════════════════════════════
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'orders' AND column_name = 'confirmation_email_sent'
+    ) THEN
+        ALTER TABLE orders ADD COLUMN confirmation_email_sent BOOLEAN NOT NULL DEFAULT FALSE;
+        RAISE NOTICE 'Added confirmation_email_sent column to orders';
+    END IF;
+END $$;
+
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'orders' AND column_name = 'inventory_adjusted'
+    ) THEN
+        ALTER TABLE orders ADD COLUMN inventory_adjusted BOOLEAN NOT NULL DEFAULT FALSE;
+        RAISE NOTICE 'Added inventory_adjusted column to orders';
+    END IF;
+END $$;
+
