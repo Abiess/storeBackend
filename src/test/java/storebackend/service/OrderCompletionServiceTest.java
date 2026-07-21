@@ -224,7 +224,7 @@ class OrderCompletionServiceTest {
         doNothing().when(inventoryService).adjustForOrder(any(Order.class));
         when(emailService.sendOrderConfirmationWithResult(
             anyString(), anyString(), anyString(), anyDouble(), anyList(), anyString(), anyString()
-        )).thenReturn(EmailDeliveryResult.failure("SMTP_ERROR", "SMTP connection failed"));
+        )).thenReturn(EmailDeliveryResult.permanentFailure("SMTP_ERROR", "SMTP connection failed"));
         
         // Act
         orderCompletionService.completePaidOrder(100L);

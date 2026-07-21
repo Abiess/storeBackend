@@ -1,6 +1,8 @@
 package storebackend.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import storebackend.dto.CustomerProfileDTO;
@@ -12,12 +14,14 @@ import storebackend.entity.User;
 import storebackend.repository.CustomerProfileRepository;
 import storebackend.repository.UserRepository;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CustomerProfileService {
 
     private final CustomerProfileRepository customerProfileRepository;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional
     public CustomerProfileDTO getOrCreateProfile(Long userId) {
@@ -84,11 +88,38 @@ public class CustomerProfileService {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // TODO: Verify current password matches
-        // TODO: Hash new password
-        // TODO: Update user password
+        // Log input length (NO password characters!)
+        log.info("[PASSWORD-CHANGE] userId={}, currentPwdLength={}, newPwdLength={}, trimmedNewLength={}",
+            userId,
+            request.getCurrentPassword() != null ? request.getCurrentPassword().length() : 0,
+            request.getNewPassword() != null ? request.getNewPassword().length() : 0,
+            request.getNewPassword() != null ? request.getNewPassword().trim().length() : 0
+        );
 
-        throw new RuntimeException("Password change not yet implemented");
+        // Verify current password
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
+            log.warn("[PASSWORD-CHANGE] Current password mismatch for userId={}", userId);
+            throw new RuntimeException("Current password is incorrect");
+        }
+
+        // Validate new password
+        if (request.getNewPassword() == null || request.getNewPassword().trim().isEmpty()) {
+            throw new RuntimeException("New password cannot be empty");
+        }
+
+        if (request.getNewPassword().length() < 8) {
+            throw new RuntimeException("New password must be at least 8 characters long");
+        }
+
+        // Hash and set new password
+        String encodedPassword = passwordEncoder.encode(request.getNewPassword());
+        user.setPasswordHash(encodedPassword);
+        userRepository.save(user);
+
+        log.info("[PASSWORD-CHANGE] Password successfully changed for userId={}, hashPrefix={}",
+            userId,
+            encodedPassword.substring(0, Math.min(10, encodedPassword.length())) + "..."
+        );
     }
 
     private CustomerProfileDTO toDTO(CustomerProfile profile) {

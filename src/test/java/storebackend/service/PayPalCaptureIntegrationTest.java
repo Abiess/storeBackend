@@ -360,7 +360,7 @@ class PayPalCaptureIntegrationTest {
         // Mock: E-Mail-Fehler
         when(emailService.sendOrderConfirmationWithResult(
             anyString(), anyString(), anyString(), anyDouble(), anyList(), isNull(), anyString()
-        )).thenReturn(EmailDeliveryResult.failure("SMTP_ERROR", "Connection timeout"));
+        )).thenReturn(EmailDeliveryResult.permanentFailure("SMTP_ERROR", "Connection timeout"));
         
         // Act: Capture durchführen
         PaymentTransaction captured = paymentService.capturePayment(payment.getId());
