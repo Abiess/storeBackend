@@ -211,6 +211,31 @@ public class PayPalPaymentGateway implements PaymentGateway {
         Map<String, Object> request = new HashMap<>();
         request.put("intent", "CAPTURE");
         
+        // ═══════════════════════════════════════════════════════════════════════════
+        // SANDBOX-BUYER-EMAIL: Pre-Fill im PayPal-Checkout (NUR im Sandbox-Modus)
+        // ═══════════════════════════════════════════════════════════════════════════
+        // WICHTIG: Niemals Passwörter, Kartendaten oder sonstige Zugangsdaten!
+        // Nur die E-Mail zum Vorbefüllen des Login-Fensters
+        if (config.isSandbox() && config.getSandboxBuyerEmail() != null && !config.getSandboxBuyerEmail().isBlank()) {
+            Map<String, Object> paymentSource = new HashMap<>();
+            Map<String, Object> paypalSource = new HashMap<>();
+            
+            // E-Mail des Sandbox-Buyer-Kontos
+            paypalSource.put("email_address", config.getSandboxBuyerEmail());
+            
+            // Experience Context für sofortige Zahlung
+            Map<String, Object> experienceContext = new HashMap<>();
+            experienceContext.put("user_action", "PAY_NOW");
+            paypalSource.put("experience_context", experienceContext);
+            
+            paymentSource.put("paypal", paypalSource);
+            request.put("payment_source", paymentSource);
+            
+            log.debug("[SANDBOX] PayPal Create Order with pre-filled buyer email (password NOT included)");
+        } else if (!config.isSandbox()) {
+            log.debug("[LIVE] PayPal Create Order without pre-filled email (production mode)");
+        }
+        
         Map<String, Object> purchaseUnit = new HashMap<>();
         
         Map<String, Object> amount = new HashMap<>();

@@ -254,6 +254,28 @@ dhl:
   sandbox-shipper-city: ${DHL_SANDBOX_SHIPPER_CITY:Bonn}
   sandbox-shipper-country: ${DHL_SANDBOX_SHIPPER_COUNTRY:DE}
 
+# ═══════════════════════════════════════════════════════════════════════════
+# PayPal Payment Integration (Production-Server, aber Sandbox-Modus für Tests)
+# ═══════════════════════════════════════════════════════════════════════════
+# WICHTIG: In Production aktuell SANDBOX-Modus für Tests!
+# Client-ID und Secret aus PayPal Developer Dashboard:
+# https://developer.paypal.com/dashboard/applications
+# SICHERHEIT: Client Secret NIEMALS ins Git committen!
+paypal:
+  client-id: ${PAYPAL_CLIENT_ID:}
+  client-secret: ${PAYPAL_CLIENT_SECRET:}
+  mode: ${PAYPAL_MODE:sandbox}  # SANDBOX für Tests (später auf "live" umstellen!)
+  
+  # Sandbox-Buyer-Email für Pre-Fill im PayPal-Checkout
+  # Testkonto: test@markt.ma (Passwort separat dokumentiert)
+  sandbox-buyer-email: ${PAYPAL_SANDBOX_BUYER_EMAIL:test@markt.ma}
+  
+  # Webhook-IDs für verschiedene Modi
+  # Sandbox-Webhook URL: https://api.markt.ma/api/payments/paypal/webhook
+  webhook:
+    sandbox-id: ${PAYPAL_WEBHOOK_SANDBOX_ID:}
+    live-id: ${PAYPAL_WEBHOOK_LIVE_ID:}
+
 # Email Verification Configuration
 email:
   verification:

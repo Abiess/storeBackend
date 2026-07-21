@@ -192,3 +192,32 @@ dhl:
   sandbox-shipper-postal-code: ${DHL_SANDBOX_SHIPPER_POSTAL_CODE:53113}
   sandbox-shipper-city: ${DHL_SANDBOX_SHIPPER_CITY:Bonn}
   sandbox-shipper-country: ${DHL_SANDBOX_SHIPPER_COUNTRY:DE}
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PayPal Payment Integration
+# ═══════════════════════════════════════════════════════════════════════════
+# Client-ID und Secret aus PayPal Developer Dashboard:
+# https://developer.paypal.com/dashboard/applications
+# SICHERHEIT: Client Secret NIEMALS ins Git committen!
+paypal:
+  client-id: ${PAYPAL_CLIENT_ID:}
+  client-secret: ${PAYPAL_CLIENT_SECRET:}
+  mode: ${PAYPAL_MODE:sandbox}  # "sandbox" oder "live"
+  
+  # Sandbox-Buyer-Email für Pre-Fill im PayPal-Checkout (NUR im Sandbox-Modus)
+  # WICHTIG: Nur die E-Mail, NIEMALS Passwörter oder Kartendaten!
+  # Testkonto erstellen: https://developer.paypal.com/dashboard/accounts
+  sandbox-buyer-email: ${PAYPAL_SANDBOX_BUYER_EMAIL:test@markt.ma}
+  
+  # Webhook-IDs für verschiedene Modi
+  webhook:
+    sandbox-id: ${PAYPAL_WEBHOOK_SANDBOX_ID:}
+    live-id: ${PAYPAL_WEBHOOK_LIVE_ID:}
+
+# WhatsApp Business API (für Bestellbenachrichtigungen)
+# Optional – wird nur verwendet wenn aktiviert
+whatsapp:
+  enabled: ${WHATSAPP_ENABLED:false}
+  api-url: ${WHATSAPP_API_URL:}
+  api-key: ${WHATSAPP_API_KEY:}
+

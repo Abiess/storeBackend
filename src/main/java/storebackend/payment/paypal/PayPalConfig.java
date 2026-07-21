@@ -16,6 +16,13 @@ public class PayPalConfig {
     private String mode = "sandbox";
     
     /**
+     * Sandbox-Buyer E-Mail für Pre-Fill im PayPal-Checkout
+     * Nur im Sandbox-Modus verwendet - NIEMALS Passwörter oder Kartendaten speichern!
+     * Diese E-Mail wird nur verwendet um das PayPal-Login-Fenster vorzubefüllen
+     */
+    private String sandboxBuyerEmail;
+    
+    /**
      * Webhook-Konfiguration
      */
     private WebhookConfig webhook = new WebhookConfig();
@@ -66,6 +73,18 @@ public class PayPalConfig {
     
     public String getMode() {
         return mode;
+    }
+    
+    /**
+     * Gibt die Sandbox-Buyer-Email zurück, falls konfiguriert
+     * KRITISCH: Nur im Sandbox-Modus verwenden, niemals im Live-Modus!
+     */
+    public String getSandboxBuyerEmail() {
+        if (!isSandbox()) {
+            log.warn("Attempted to access sandboxBuyerEmail in LIVE mode - ignoring");
+            return null;
+        }
+        return sandboxBuyerEmail;
     }
 }
 
