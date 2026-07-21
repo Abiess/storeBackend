@@ -85,9 +85,9 @@ class PayPalCaptureIntegrationTest {
         // Test-Owner erstellen
         testOwner = new User();
         testOwner.setEmail("owner@test.com");
-        testOwner.setPassword("password");
+        testOwner.setPasswordHash("$2a$10$dummyHashForTesting");
         testOwner.setName("Test Owner");
-        testOwner.setRole(Role.STORE_OWNER);
+        testOwner.getRoles().add(Role.ROLE_RESELLER);
         testOwner.setEmailVerified(true);
         testOwner.setPreferredLanguage("de");
         testOwner = userRepository.save(testOwner);
@@ -96,19 +96,19 @@ class PayPalCaptureIntegrationTest {
         testStore = new Store();
         testStore.setName("Test Store");
         testStore.setOwner(testOwner);
-        testStore.setDomain("test-store");
+        testStore.setSlug("test-store");
         testStore = storeRepository.save(testStore);
         
         // Test-Product und Variant erstellen
         Product product = new Product();
         product.setStore(testStore);
-        product.setName("Test Product");
-        product.setActive(true);
+        product.setTitle("Test Product");
+        product.setStatus(ProductStatus.ACTIVE);
         product = productRepository.save(product);
         
         testVariant = new ProductVariant();
         testVariant.setProduct(product);
-        testVariant.setName("Default");
+        testVariant.setSku("TEST-VAR-001");
         testVariant.setPrice(BigDecimal.valueOf(50.00));
         testVariant.setStockQuantity(100);  // Genug Bestand
         testVariant = productVariantRepository.save(testVariant);
@@ -116,9 +116,9 @@ class PayPalCaptureIntegrationTest {
         // Test-Customer (User) erstellen
         testCustomer = new User();
         testCustomer.setEmail("customer@test.com");
-        testCustomer.setPassword("password");
+        testCustomer.setPasswordHash("$2a$10$dummyHashForTesting");
         testCustomer.setName("Test Customer");
-        testCustomer.setRole(Role.CUSTOMER);
+        testCustomer.getRoles().add(Role.USER);
         testCustomer.setEmailVerified(true);
         testCustomer.setPreferredLanguage("en");
         testCustomer = userRepository.save(testCustomer);
@@ -142,9 +142,10 @@ class PayPalCaptureIntegrationTest {
         OrderItem item = new OrderItem();
         item.setOrder(testOrder);
         item.setVariant(testVariant);
+        item.setProduct(product);
         item.setQuantity(2);
-        item.setUnitPrice(BigDecimal.valueOf(50.00));
-        item.setTotalPrice(BigDecimal.valueOf(100.00));
+        item.setPrice(BigDecimal.valueOf(50.00));
+        item.setName("Test Product");
         testOrder.setOrderItems(List.of(item));
         
         testOrder = orderRepository.save(testOrder);

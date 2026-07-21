@@ -89,18 +89,17 @@ class OrderCompletionServiceTest {
         OrderItem item1 = new OrderItem();
         item1.setId(1L);
         item1.setQuantity(2);
+        item1.setName("Test Product");
+        item1.setPrice(BigDecimal.valueOf(50.00));
         ProductVariant variant1 = new ProductVariant();
         variant1.setId(1L);
         variant1.setStockQuantity(10);
         item1.setVariant(variant1);
         testOrder.setOrderItems(List.of(item1));
         
-        // Mock Customer
-        Customer customer = new Customer();
-        customer.setId(1L);
-        customer.setName("Test Customer");
-        customer.setPreferredLanguage("en");
-        testOrder.setCustomer(customer);
+        // Set customer fields directly on order
+        testOrder.setCustomerEmail("customer@test.com");
+        testOrder.setCustomerName("Test Customer");
     }
     
     /**
@@ -119,7 +118,8 @@ class OrderCompletionServiceTest {
         )).thenReturn(EmailDeliveryResult.success());
         doNothing().when(inventoryService).adjustForOrder(any(Order.class));
         doNothing().when(emailService).sendNewOrderNotificationToOwner(
-            anyString(), anyString(), anyString(), anyString(), anyDouble(), anyString(), anyString(), anyString(), anyList()
+            anyString(), anyString(), anyString(), anyString(), anyString(), any(Double.class), 
+            anyString(), anyString(), anyString(), anyList()
         );
         
         // Act
@@ -133,7 +133,7 @@ class OrderCompletionServiceTest {
         );
         verify(emailService, times(1)).sendNewOrderNotificationToOwner(
             eq("owner@example.com"), eq("de"), eq("ORDER-100"), 
-            eq("Test Store"), anyString(), eq(100.0),
+            eq("Test Store"), eq("https://example.com/logo.png"), eq(100.0),
             eq("customer@example.com"), eq("Test Customer"), isNull(), anyList()
         );
         verify(orderRepository, times(2)).save(testOrder);
