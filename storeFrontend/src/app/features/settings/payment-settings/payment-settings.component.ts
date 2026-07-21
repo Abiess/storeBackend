@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, Input } from '@angular/core';
+import { Component, OnInit, OnDestroy, OnChanges, SimpleChanges, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -15,15 +15,15 @@ import { Subscription } from 'rxjs';
   imports: [CommonModule, FormsModule, TranslatePipe],
   template: `
     <div class="payment-settings">
-      <!-- FEHLER: Keine Stores vorhanden -->
-      <div class="error-state" *ngIf="!loadingStores && stores.length === 0">
+      <!-- FEHLER: Keine Stores vorhanden (nur wenn kein storeIdOverride gesetzt ist) -->
+      <div class="error-state" *ngIf="!storeIdOverride && !loadingStores && stores.length === 0">
         <p class="error-message">🏪 Sie haben noch keinen Store.</p>
         <p style="margin: 8px 0; color: #666; font-size: 14px;">Bitte erstellen Sie zuerst einen Store.</p>
         <button class="btn btn-primary" (click)="navigateToStoreCreation()">Store erstellen</button>
       </div>
 
-      <!-- FEHLER: Stores vorhanden, aber keiner ausgewählt -->
-      <div class="error-state" *ngIf="!loadingStores && stores.length > 0 && !selectedStoreId">
+      <!-- FEHLER: Stores vorhanden, aber keiner ausgewählt (nur wenn kein storeIdOverride gesetzt ist) -->
+      <div class="error-state" *ngIf="!storeIdOverride && !loadingStores && stores.length > 0 && !selectedStoreId">
         <p class="error-message">📋 Bitte wählen Sie einen Store aus:</p>
         <select class="store-selector" [(ngModel)]="selectedStoreId" (ngModelChange)="onStoreSelected()">
           <option [value]="null" disabled selected>-- Store auswählen --</option>
@@ -37,8 +37,8 @@ import { Subscription } from 'rxjs';
         <p>{{ 'common.loading' | translate }}...</p>
       </div>
 
-      <!-- MAIN CONTENT: Store ausgewählt -->
-      <div *ngIf="selectedStoreId && selectedStoreId > 0">
+      <!-- MAIN CONTENT: Store ausgewählt (effectiveStoreId vorhanden) -->
+      <div *ngIf="hasEffectiveStore">
         <div class="section-header">
           <div class="header-icon">💳</div>
           <div>
@@ -113,11 +113,11 @@ import { Subscription } from 'rxjs';
             </div>
 
             <div class="actions">
-              <button class="btn btn-outline" (click)="checkConnection()" [disabled]="saving">
+              <button class="btn btn-outline" (click)="checkConnection()" [disabled]="!hasEffectiveStore || saving">
                 <span *ngIf="!saving">{{ 'settings.payments.checkConnection' | translate }}</span>
                 <span *ngIf="saving" class="spinner-sm"></span>
               </button>
-              <button class="btn btn-primary" disabled [title]="'settings.payments.comingSoon' | translate">
+              <button class="btn btn-primary" [disabled]="!hasEffectiveStore" [title]="'settings.payments.comingSoon' | translate">
                 {{ 'settings.payments.connectPayPal' | translate }}
               </button>
             </div>
@@ -183,7 +183,7 @@ import { Subscription } from 'rxjs';
     }
   `]
 })
-export class PaymentSettingsComponent implements OnInit, OnDestroy {
+export class PaymentSettingsComponent implements OnInit, OnChanges, OnDestroy {
   @Input() storeIdOverride?: number; // Wenn gesetzt, diesen Store verwenden statt selbst zu laden
   
   stores: Store[] = [];
@@ -202,9 +202,23 @@ export class PaymentSettingsComponent implements OnInit, OnDestroy {
     private adminPaymentService: AdminPaymentService
   ) {}
 
+  /**
+   * Gibt die effektive Store-ID zurück: storeIdOverride hat Priorität
+   */
+  get effectiveStoreId(): number | null {
+    return this.storeIdOverride ?? this.selectedStoreId;
+  }
+
+  /**
+   * Prüft, ob eine gültige Store-ID vorhanden ist
+   */
+  get hasEffectiveStore(): boolean {
+    return this.effectiveStoreId != null && this.effectiveStoreId > 0;
+  }
+
   ngOnInit() {
     // Wenn storeIdOverride gesetzt ist, direkt verwenden
-    if (this.storeIdOverride) {
+    if (this.storeIdOverride != null) {
       this.selectedStoreId = this.storeIdOverride;
       this.loadSettings();
       return;
@@ -212,6 +226,18 @@ export class PaymentSettingsComponent implements OnInit, OnDestroy {
     
     // Sonst: Stores des Users laden
     this.loadStores();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    // Falls storeIdOverride nach Initialisierung geändert wird
+    if (
+      changes['storeIdOverride'] &&
+      this.storeIdOverride != null &&
+      this.selectedStoreId !== this.storeIdOverride
+    ) {
+      this.selectedStoreId = this.storeIdOverride;
+      this.loadSettings();
+    }
   }
   
   ngOnDestroy() {
@@ -252,8 +278,10 @@ export class PaymentSettingsComponent implements OnInit, OnDestroy {
   }
 
   loadSettings() {
-    // CRITICAL: Nie API-Call mit storeId=0 oder null
-    if (!this.selectedStoreId || this.selectedStoreId <= 0) {
+    // CRITICAL: effectiveStoreId verwenden (berücksichtigt storeIdOverride)
+    const storeId = this.effectiveStoreId;
+    
+    if (storeId == null || storeId <= 0) {
       this.error = 'Kein gültiger Store ausgewählt.';
       return;
     }
@@ -261,7 +289,7 @@ export class PaymentSettingsComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.error = undefined;
     
-    this.adminPaymentService.getPayPalSettings(this.selectedStoreId).subscribe({
+    this.adminPaymentService.getPayPalSettings(storeId).subscribe({
       next: (data) => {
         this.settings = data;
         this.loading = false;
@@ -275,7 +303,9 @@ export class PaymentSettingsComponent implements OnInit, OnDestroy {
   }
 
   togglePayPal() {
-    if (!this.settings || this.saving || !this.selectedStoreId) return;
+    const storeId = this.effectiveStoreId;
+    
+    if (!this.settings || this.saving || storeId == null) return;
     
     this.saving = true;
     const request = { 
@@ -283,7 +313,7 @@ export class PaymentSettingsComponent implements OnInit, OnDestroy {
       enabled: !this.settings.enabled 
     };
     
-    this.adminPaymentService.updatePayPalSettings(this.selectedStoreId, request).subscribe({
+    this.adminPaymentService.updatePayPalSettings(storeId, request).subscribe({
       next: (data) => {
         this.settings = data;
         this.saving = false;
@@ -300,11 +330,13 @@ export class PaymentSettingsComponent implements OnInit, OnDestroy {
   }
 
   checkConnection() {
-    if (this.saving || !this.selectedStoreId) return;
+    const storeId = this.effectiveStoreId;
+    
+    if (this.saving || storeId == null) return;
     
     this.saving = true;
     
-    this.adminPaymentService.checkConnection(this.selectedStoreId).subscribe({
+    this.adminPaymentService.checkConnection(storeId).subscribe({
       next: (data) => {
         this.settings = data;
         this.saving = false;
