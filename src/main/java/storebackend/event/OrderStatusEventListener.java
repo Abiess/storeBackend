@@ -12,6 +12,7 @@ import storebackend.entity.Store;
 import storebackend.entity.TelegramStoreConfig;
 import storebackend.enums.OrderStatus;
 import storebackend.repository.TelegramStoreConfigRepository;
+import storebackend.repository.OrderRepository;
 import storebackend.service.EmailService;
 import storebackend.service.TelegramBotService;
 import storebackend.service.WhatsAppService;
@@ -31,6 +32,7 @@ public class OrderStatusEventListener {
     private final WhatsAppService whatsAppService;
     private final TelegramBotService telegramBotService;
     private final TelegramStoreConfigRepository telegramConfigRepository;
+    private final OrderRepository orderRepository;  // Für Idempotenz-Flag
 
     @Async
     @EventListener
@@ -96,6 +98,12 @@ public class OrderStatusEventListener {
             // CONFIRMED: E-MAIL NUR BEI BESTÄTIGTER ZAHLUNG!
             // ═══════════════════════════════════════════════════════════════════════════
             case CONFIRMED:
+                // ═══ IDEMPOTENZ-CHECK: E-Mail bereits versendet? ═══
+                if (order.getConfirmationEmailSent()) {
+                    log.info("Confirmation email already sent for order {} (idempotent)", orderNumber);
+                    break;
+                }
+                
                 // Prüfe PaymentStatus: E-Mail nur wenn PAID (PayPal nach Webhook) oder null (COD/Cash)
                 storebackend.enums.PaymentStatus paymentStatus = order.getPaymentStatus();
                 
@@ -157,6 +165,12 @@ public class OrderStatusEventListener {
                     telegramBotService.sendNewOrderNotification(telegramCfg, order);
                     log.info("[Telegram] New order notification sent via Bot for store {}", store.getId());
                 }
+                
+                // ═══ IDEMPOTENZ-FLAG SETZEN ═══
+                order.setConfirmationEmailSent(true);
+                orderRepository.save(order);
+                log.info("Confirmation email sent and flagged for order {}", orderNumber);
+                
                 break;
 
             case SHIPPED:

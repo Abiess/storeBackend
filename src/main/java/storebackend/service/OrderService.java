@@ -1,6 +1,7 @@
 package storebackend.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OrderService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
@@ -419,27 +421,36 @@ public class OrderService {
 
         // ─── PERSIST ORDER & ITEMS IN ONE TRANSACTION ─────────────────────────────────
         // Order wird EINMALIG mit vollständig berechneten Werten gespeichert
-        Order savedOrder = orderRepository.save(order);
+        final Order savedOrder = orderRepository.save(order);
         
         // OrderItems mit gespeicherter Order-ID persistieren
         orderItems.forEach(item -> item.setOrder(savedOrder));
         orderItemRepository.saveAll(orderItems);
 
         // ─── INVENTORY ADJUSTMENTS ────────────────────────────────────────────────────
-        // Nach erfolgreicher Persistierung Lagerbestände anpassen
-        for (int i = 0; i < orderItems.size(); i++) {
-            OrderItem item = orderItems.get(i);
-            CartItem cartItem = cartItems.get(i);
-            
-            if (item.getVariant() != null) {
-                inventoryService.adjustInventory(
-                    item.getVariant().getId(),
-                    -item.getQuantity(),
-                    "SALE",
-                    "Order " + savedOrder.getOrderNumber(),
-                    customer
-                );
+        // KRITISCH: Nur bei sofort bestätigten Orders (COD/Cash) Bestand reduzieren!
+        // Bei PayPal: Bestand wird erst nach Webhook-Bestätigung reduziert
+        Order orderToUpdate = savedOrder;
+        if (orderToUpdate.getStatus() == OrderStatus.CONFIRMED) {
+            // Bestand sofort reduzieren für COD/Cash
+            for (OrderItem item : orderItems) {
+                if (item.getVariant() != null) {
+                    inventoryService.adjustInventory(
+                        item.getVariant().getId(),
+                        -item.getQuantity(),
+                        "SALE",
+                        "Order " + orderToUpdate.getOrderNumber(),
+                        customer
+                    );
+                }
             }
+            orderToUpdate.setInventoryAdjusted(true);
+            orderToUpdate = orderRepository.save(orderToUpdate);  // Flag persistieren
+            log.info("Inventory adjusted immediately for confirmed order {}", orderToUpdate.getOrderNumber());
+        } else {
+            // Bei PENDING_PAYMENT: Bestand wird erst nach Zahlungsbestätigung reduziert
+            log.info("Inventory adjustment deferred: Order {} is {}, waiting for payment confirmation", 
+                orderToUpdate.getOrderNumber(), orderToUpdate.getStatus());
         }
 
         // ─── COUPON-NUTZUNG FINALISIEREN (falls Coupon verwendet) ────────────────────
@@ -836,7 +847,7 @@ public class OrderService {
         // Idempotenz-Check: Bereits bestätigt?
         if (order.getPaymentStatus() == storebackend.enums.PaymentStatus.PAID 
             && order.getStatus() == OrderStatus.CONFIRMED) {
-            // Bereits verarbeitet - zweiter Webhook oder Race Condition
+            log.debug("Order {} already confirmed (idempotent call)", order.getOrderNumber());
             return false;
         }
         
@@ -844,6 +855,31 @@ public class OrderService {
         order.setPaymentStatus(storebackend.enums.PaymentStatus.PAID);
         OrderStatus oldStatus = order.getStatus();
         order.setStatus(OrderStatus.CONFIRMED);
+        
+        // ═══════════════════════════════════════════════════════════════════════════
+        // BESTANDSREDUZIERUNG (mit Idempotenz-Schutz)
+        // ═══════════════════════════════════════════════════════════════════════════
+        if (!order.getInventoryAdjusted()) {
+            List<OrderItem> items = orderItemRepository.findByOrderId(order.getId());
+            User customer = order.getCustomer();
+            
+            for (OrderItem item : items) {
+                if (item.getVariant() != null) {
+                    inventoryService.adjustInventory(
+                        item.getVariant().getId(),
+                        -item.getQuantity(),
+                        "SALE",
+                        "Order " + order.getOrderNumber() + " confirmed",
+                        customer
+                    );
+                }
+            }
+            
+            order.setInventoryAdjusted(true);
+            log.info("Inventory adjusted for order {}", order.getOrderNumber());
+        } else {
+            log.debug("Inventory already adjusted for order {} (idempotent)", order.getOrderNumber());
+        }
         
         // Speichern
         order = orderRepository.save(order);
@@ -854,13 +890,16 @@ public class OrderService {
             : "Payment confirmed";
         createStatusHistory(order, OrderStatus.CONFIRMED, note, null);
         
-        // Event publishen → löst E-Mail aus
+        // Event publishen → löst E-Mail aus (mit Idempotenz im Listener)
         eventPublisher.publishEvent(new OrderStatusChangedEvent(
             this, 
             order, 
             oldStatus, 
             OrderStatus.CONFIRMED
         ));
+        
+        log.info("Order {} confirmed: payment={}, inventoryAdjusted={}", 
+            order.getOrderNumber(), paymentTransactionId, order.getInventoryAdjusted());
         
         return true;
     }

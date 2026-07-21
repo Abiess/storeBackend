@@ -22,7 +22,7 @@ import { PayPalButtonComponent } from '@app/shared/components/paypal-button/payp
 import { PaymentService } from '@app/core/services/payment.service';
 import { PaymentProvider, PaymentCaptureResponse, PaymentStatus } from '@app/core/models/payment.model';
 import { Subject } from 'rxjs';
-import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, takeUntil, finalize } from 'rxjs/operators';
 import { environment } from '@env/environment';
 
 @Component({
@@ -2650,11 +2650,16 @@ export class CheckoutComponent implements OnInit, OnDestroy {
             request.sessionId = sessionId;
         }
 
-        console.log('🅿️ Erstelle temporäre PayPal-Order:', { email: customerEmail });
+        console.log('[Checkout] preparePayPalOrder - Creating temporary order:', { email: customerEmail });
 
-        this.checkoutService.checkout(request).subscribe({
-            next: (response) => {
-                console.log('✅ Temporäre Order erstellt:', response);
+        this.checkoutService.checkout(request).pipe(
+            finalize(() => {
+                this.preparingPayPalOrder = false;
+                console.log('[Checkout] preparePayPalOrder completed - preparingPayPalOrder reset to false');
+            })
+        ).subscribe({
+            next: (response: any) => {
+                console.log('[Checkout] Temporary order created successfully:', response);
                 this.tempOrderId = response.orderId;
                 this.checkoutToken = response.checkoutToken || null;
                 
@@ -2662,16 +2667,26 @@ export class CheckoutComponent implements OnInit, OnDestroy {
                 if (!this.checkoutToken && !this.isUserLoggedIn()) {
                     this.tempOrderId = null;
                     this.errorMessage = 'PayPal konnte nicht vorbereitet werden. Bitte versuchen Sie es erneut.';
-                    this.preparingPayPalOrder = false;
+                    console.error('[Checkout] Missing checkoutToken for guest checkout');
                     return;
                 }
-                
-                this.preparingPayPalOrder = false;
             },
             error: (error) => {
-                this.preparingPayPalOrder = false;
-                this.errorMessage = error.message || 'Fehler beim Vorbereiten der PayPal-Zahlung.';
-                console.error('❌ PayPal-Order-Fehler:', error);
+                const statusCode = error.status || error.error?.status;
+                console.error('[Checkout] preparePayPalOrder ERROR:', {
+                    status: statusCode,
+                    message: error.message,
+                    error: error
+                });
+                
+                // Benutzerfreundliche Fehlermeldung
+                if (statusCode === 503) {
+                    this.errorMessage = 'Der Service ist momentan nicht erreichbar. Bitte versuchen Sie es in einigen Minuten erneut.';
+                } else if (statusCode >= 500) {
+                    this.errorMessage = 'Ein Server-Fehler ist aufgetreten. Bitte kontaktieren Sie den Support.';
+                } else {
+                    this.errorMessage = error.error?.message || error.message || 'Fehler beim Vorbereiten der PayPal-Zahlung.';
+                }
             }
         });
     }
@@ -2733,18 +2748,27 @@ export class CheckoutComponent implements OnInit, OnDestroy {
      * PayPal-Zahlung fehlgeschlagen
      */
     onPayPalError(errorMessage: string | undefined): void {
-        console.error('❌ PayPal-Fehler:', errorMessage);
+        console.error('[Checkout] PayPal payment ERROR:', errorMessage);
         this.errorMessage = errorMessage || 'PayPal-Zahlung fehlgeschlagen. Bitte versuchen Sie es erneut oder wählen Sie eine andere Zahlungsart.';
-        // tempOrderId bleibt erhalten für erneuten Versuch
+        
+        // KRITISCH: PayPal-Button zurücksetzen für erneuten Versuch
+        // tempOrderId wird zurückgesetzt, damit der "Weiter zu PayPal"-Button wieder erscheint
+        this.tempOrderId = null;
+        this.checkoutToken = null;
+        this.preparingPayPalOrder = false;
     }
 
     /**
      * PayPal-Zahlung abgebrochen
      */
     onPayPalCancel(): void {
-        console.log('ℹ️ PayPal-Zahlung abgebrochen');
+        console.log('[Checkout] PayPal payment CANCELLED by user');
         this.errorMessage = 'PayPal-Zahlung wurde abgebrochen. Sie können es erneut versuchen oder eine andere Zahlungsart wählen.';
-        // tempOrderId bleibt erhalten für erneuten Versuch
+        
+        // KRITISCH: PayPal-Button zurücksetzen für erneuten Versuch
+        this.tempOrderId = null;
+        this.checkoutToken = null;
+        this.preparingPayPalOrder = false;
     }
     
     /**

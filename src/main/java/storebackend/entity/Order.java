@@ -251,6 +251,20 @@ public class Order {
     @Column(name = "phone_verified")
     private Boolean phoneVerified = false;
     
+    /**
+     * Idempotenz-Flag: Wurde bereits eine Bestellbestätigungs-E-Mail gesendet?
+     * Verhindert doppelte E-Mails bei Race Conditions (Webhook + Capture-Response)
+     */
+    @Column(name = "confirmation_email_sent", nullable = false)
+    private Boolean confirmationEmailSent = false;
+    
+    /**
+     * Idempotenz-Flag: Wurde bereits Bestand reduziert?
+     * Verhindert doppelte Inventory-Adjustments
+     */
+    @Column(name = "inventory_adjusted", nullable = false)
+    private Boolean inventoryAdjusted = false;
+    
     // PACKAGE DIMENSIONS & WEIGHT (für Shipping/DHL/etc.)
     // Generische Felder, nutzbar für alle Versanddienstleister
     // Wenn NULL → Fallback auf Store Default Settings
