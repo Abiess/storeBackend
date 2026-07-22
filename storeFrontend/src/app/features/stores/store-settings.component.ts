@@ -1318,13 +1318,13 @@ export class StoreSettingsComponent implements OnInit {
   settingsTabs: SettingsTab[] = [
     { id: 'general',  icon: '⚙️', labelKey: 'settings.general' },
     { id: 'tax',      icon: '💰', labelKey: 'settings.tax.title' },
-    { id: 'payments', icon: '💳', labelKey: 'Zahlungen' },
-    { id: 'social',   icon: '🔗', labelKey: 'Social & Kontakt' },
+    { id: 'payments', icon: '💳', labelKey: 'settings.payments.sectionTitle' },
+    { id: 'social',   icon: '🔗', labelKey: 'settings.social.title' },
     { id: 'slider',   icon: '🎬', labelKey: 'settings.slider' },
     { id: 'shipping', icon: '📦', labelKey: 'settings.shipping.title' },
     { id: 'branding', icon: '🎨', labelKey: 'settings.branding.title', visible : false },
     { id: 'domain',   icon: '🌐', labelKey: 'settings.domain.title' },
-    { id: 'telegram', icon: '✈️', labelKey: 'Telegram' },
+    { id: 'telegram', icon: '✈️', labelKey: 'sidebar.items.telegram' },
     { id: 'advanced', icon: '🔧', labelKey: 'settings.advanced.title' }
   ];
 

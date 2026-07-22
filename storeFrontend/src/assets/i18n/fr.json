@@ -584,6 +584,25 @@
       "footerTextHint": "Une courte accroche sous votre logo dans le pied de page (max. 200 caractères).",
       "footerTextPlaceholder": "Votre boutique tout-en-un – rapide, abordable, fiable."
     },
+    "payments": {
+      "sectionTitle": "Paiements",
+      "title": "Fournisseurs de paiement",
+      "subtitle": "Gérer PayPal et autres méthodes de paiement",
+      "description": "Configurer PayPal, Stripe et plus",
+      "paypal": {
+        "description": "Accepter les paiements en ligne via PayPal"
+      },
+      "status": "Statut",
+      "mode": "Mode",
+      "merchantId": "ID Marchand",
+      "onboarding": "Intégration",
+      "lastChecked": "Dernière vérification",
+      "testMode": "Mode test actif",
+      "testModeDescription": "Les paiements ne sont simulés que dans le bac à sable PayPal. Aucune transaction réelle.",
+      "checkConnection": "Vérifier la connexion",
+      "connectPayPal": "Connecter PayPal",
+      "comingSoon": "Bientôt disponible"
+    },
     "noEmailHint": "Aucun e-mail défini – ajoutez-en un maintenant",
     "noEmailSet": "⚠️ Pas encore d'e-mail – enregistrez le lien de votre boutique !",
     "integrations": "Intégrations",
