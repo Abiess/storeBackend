@@ -199,6 +199,29 @@
     "maxFileSize": "Maximum file size: {{size}}",
     "allowedFormats": "PNG, JPG, WEBP supported"
   },
+  "wishlist": {
+    "title": "Wishlist",
+    "empty": "Your wishlist is empty",
+    "addToCart": "Add to cart",
+    "addAllToCart": "Add all to cart",
+    "addProducts": "Add products",
+    "viewProduct": "View product",
+    "addedOn": "Added on",
+    "inStock": "In stock",
+    "outOfStock": "Out of stock",
+    "loginRequired": "Login required",
+    "loginMessage": "Please log in to save your wishlist"
+  },
+  "savedCart": {
+    "title": "Saved Carts",
+    "empty": "No saved carts",
+    "name": "Name",
+    "description": "Description",
+    "items": "Items",
+    "save": "Save cart",
+    "restore": "Restore",
+    "expired": "Expired"
+  },
   "checkout": {
     "title": "Checkout",
     "back": "Back to cart",
@@ -257,6 +280,14 @@
     "loginBtn": "🔐 Login",
     "registerBtn": "📝 Register",
     "required": "*",
+    "subtotal": "Subtotal",
+    "shipping": "Shipping",
+    "vat": "VAT",
+    "total": "Total",
+    "freeShipping": "Free shipping",
+    "includedVat": "incl. VAT",
+    "netPriceNotice": "Net prices for businesses (VAT ID provided)",
+    "vatExemptNotice": "Tax-free delivery (outside EU)",
     "errors": {
       "email": "Please enter a valid email address",
       "firstName": "First name is required",
@@ -288,6 +319,7 @@
   },
   "common": {
     "actions": "Actions",
+    "add": "Add",
     "save": "Save",
     "saving": "Saving...",
     "generating": "Generating...",
@@ -319,7 +351,11 @@
     "expand": "Expand",
     "collapse": "Collapse",
     "checking": "Checking",
-    "completFormFirst": "Please complete all fields correctly first"
+    "completFormFirst": "Please complete all fields correctly first",
+    "next": "Next",
+    "previous": "Previous",
+    "remove": "Remove",
+    "submitting": "Submitting..."
   },
   "loading": {
     "orders": "Loading orders..."
@@ -642,11 +678,6 @@
       "connectPayPal": "Connect PayPal",
       "comingSoon": "Coming Soon"
     }
-  },
-  "common": {
-    "loading": "Loading",
-    "retry": "Retry"
-
   },
   "table": {
     "image": "Image",
@@ -2571,6 +2602,7 @@
   },
   "ANALYTICS": {
     "TITLE": "Analytics",
+    "SUBTITLE": "Revenue and order statistics for your store",
     "DATE_RANGE": "Date Range",
     "TODAY": "Today",
     "LAST_7_DAYS": "Last 7 Days",

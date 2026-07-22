@@ -319,6 +319,29 @@
     "maxFileSize": "Maximale Dateigröße: {{size}}",
     "allowedFormats": "PNG, JPG, WEBP unterstützt"
   },
+  "wishlist": {
+    "title": "Wunschliste",
+    "empty": "Ihre Wunschliste ist leer",
+    "addToCart": "In den Warenkorb",
+    "addAllToCart": "Alle in den Warenkorb",
+    "addProducts": "Produkte hinzufügen",
+    "viewProduct": "Produkt ansehen",
+    "addedOn": "Hinzugefügt am",
+    "inStock": "Auf Lager",
+    "outOfStock": "Nicht auf Lager",
+    "loginRequired": "Anmeldung erforderlich",
+    "loginMessage": "Bitte melden Sie sich an, um Ihre Wunschliste zu speichern"
+  },
+  "savedCart": {
+    "title": "Gespeicherte Warenkörbe",
+    "empty": "Keine gespeicherten Warenkörbe",
+    "name": "Name",
+    "description": "Beschreibung",
+    "items": "Artikel",
+    "save": "Warenkorb speichern",
+    "restore": "Wiederherstellen",
+    "expired": "Abgelaufen"
+  },
   "checkout": {
     "title": "Kasse",
     "back": "Zurück zum Warenkorb",
@@ -377,6 +400,14 @@
     "loginBtn": "🔐 Anmelden",
     "registerBtn": "📝 Registrieren",
     "required": "*",
+    "subtotal": "Zwischensumme",
+    "shipping": "Versand",
+    "vat": "MwSt.",
+    "total": "Gesamt",
+    "freeShipping": "Kostenloser Versand",
+    "includedVat": "inkl. MwSt.",
+    "netPriceNotice": "Nettopreise für Unternehmen (USt-IdNr. angegeben)",
+    "vatExemptNotice": "Steuerfreie Lieferung (außerhalb der EU)",
     "errors": {
       "email": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
       "firstName": "Vorname ist erforderlich",
@@ -408,6 +439,7 @@
   },
   "common": {
     "actions": "Aktionen",
+    "add": "Hinzufügen",
     "save": "Speichern",
     "saving": "Wird gespeichert...",
     "generating": "Wird generiert...",
@@ -439,7 +471,11 @@
     "expand": "Erweitern",
     "collapse": "Einklappen",
     "checking": "Prüfen",
-    "completFormFirst": "Bitte füllen Sie zuerst alle Felder korrekt aus"
+    "completFormFirst": "Bitte füllen Sie zuerst alle Felder korrekt aus",
+    "next": "Weiter",
+    "previous": "Zurück",
+    "remove": "Entfernen",
+    "submitting": "Wird übermittelt..."
   },
   "loading": {
     "orders": "Bestellungen werden geladen..."

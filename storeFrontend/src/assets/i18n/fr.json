@@ -200,6 +200,29 @@
     "maxFileSize": "Taille maximale du fichier : {{size}}",
     "allowedFormats": "PNG, JPG, WEBP pris en charge"
   },
+  "wishlist": {
+    "title": "Liste d'envies",
+    "empty": "Votre liste d'envies est vide",
+    "addToCart": "Ajouter au panier",
+    "addAllToCart": "Tout ajouter au panier",
+    "addProducts": "Ajouter des produits",
+    "viewProduct": "Voir le produit",
+    "addedOn": "Ajouté le",
+    "inStock": "En stock",
+    "outOfStock": "Rupture de stock",
+    "loginRequired": "Connexion requise",
+    "loginMessage": "Veuillez vous connecter pour sauvegarder votre liste d'envies"
+  },
+  "savedCart": {
+    "title": "Paniers sauvegardés",
+    "empty": "Aucun panier sauvegardé",
+    "name": "Nom",
+    "description": "Description",
+    "items": "Articles",
+    "save": "Sauvegarder le panier",
+    "restore": "Restaurer",
+    "expired": "Expiré"
+  },
   "checkout": {
     "title": "Paiement",
     "back": "Retour au panier",
@@ -258,6 +281,14 @@
     "loginBtn": "🔐 Connexion",
     "registerBtn": "📝 S'inscrire",
     "required": "*",
+    "subtotal": "Sous-total",
+    "shipping": "Livraison",
+    "vat": "TVA",
+    "total": "Total",
+    "freeShipping": "Livraison gratuite",
+    "includedVat": "TVA incluse",
+    "netPriceNotice": "Prix nets pour les entreprises (numéro de TVA fourni)",
+    "vatExemptNotice": "Livraison hors taxe (hors UE)",
     "errors": {
       "email": "Veuillez saisir une adresse e-mail valide",
       "firstName": "Le prénom est obligatoire",
@@ -289,6 +320,7 @@
   },
   "common": {
     "actions": "Actions",
+    "add": "Ajouter",
     "save": "Enregistrer",
     "saving": "Enregistrement...",
     "generating": "Génération...",
@@ -318,7 +350,13 @@
     "active": "Actif",
     "inactive": "Inactif",
     "expand": "Développer",
-    "collapse": "Réduire"
+    "collapse": "Réduire",
+    "checking": "Vérification",
+    "completFormFirst": "Veuillez d'abord remplir tous les champs correctement",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "remove": "Retirer",
+    "submitting": "Envoi en cours..."
   },
   "loading": {
     "orders": "Chargement des commandes..."
@@ -2595,5 +2633,57 @@
     "manager": "Gestionnaire",
     "staff": "Personnel",
     "employee": "Employé"
+  },
+  "ANALYTICS": {
+    "TITLE": "Analytique",
+    "SUBTITLE": "Statistiques des revenus et des commandes pour votre boutique",
+    "DATE_RANGE": "Période",
+    "TODAY": "Aujourd'hui",
+    "LAST_7_DAYS": "7 derniers jours",
+    "LAST_30_DAYS": "30 derniers jours",
+    "THIS_YEAR": "Cette année",
+    "CUSTOM": "Personnalisé",
+    "FROM": "De",
+    "TO": "À",
+    "LOADING": "Chargement de l'analytique...",
+    "REVENUE": "Revenu",
+    "TOTAL_REVENUE": "Revenu total",
+    "ORDERS": "Commandes",
+    "PAID_ORDERS": "Commandes payées",
+    "AVG_ORDER_VALUE": "Valeur moy. commande",
+    "AVG_PER_ORDER": "Moyenne par commande",
+    "TOP_PRODUCTS": "Produits populaires",
+    "PRODUCT_NAME": "Nom du produit",
+    "QUANTITY_SOLD": "Quantité vendue",
+    "ORDER_COUNT": "Nombre de commandes",
+    "ORDERS_BY_STATUS": "Commandes par statut",
+    "ORDERS_BY_PAYMENT": "Commandes par méthode de paiement",
+    "NO_PRODUCTS": "Aucun produit dans la période sélectionnée",
+    "NO_ORDERS": "Aucune commande dans la période sélectionnée",
+    "NO_PAYMENTS": "Aucun paiement dans la période sélectionnée",
+    "ERROR": {
+     "ACCESS_DENIED": "Vous n'avez pas accès à l'analytique de cette boutique.",
+     "INVALID_DATE_RANGE": "Période invalide: la date de début doit être avant la date de fin.",
+     "RANGE_TOO_LARGE": "Période trop grande: Maximum 2 ans autorisé.",
+     "GENERAL": "Erreur lors du chargement de l'analytique. Veuillez réessayer."
+    }
+  },
+  "ORDER_STATUS": {
+    "PENDING": "En attente",
+    "PENDING_PAYMENT": "Paiement en attente",
+    "PAYMENT_FAILED": "Paiement échoué",
+    "CONFIRMED": "Confirmé",
+    "PROCESSING": "En traitement",
+    "SHIPPED": "Expédié",
+    "DELIVERED": "Livré",
+    "CANCELLED": "Annulé",
+    "REFUNDED": "Remboursé"
+  },
+  "PAYMENT_METHOD": {
+    "PAYPAL": "PayPal",
+    "CASH_ON_DELIVERY": "Paiement à la livraison",
+    "BANK_TRANSFER": "Virement bancaire",
+    "CREDIT_CARD": "Carte de crédit",
+    "STRIPE": "Stripe"
   }
 }
