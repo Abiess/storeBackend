@@ -42,7 +42,8 @@
     "securePayment": "دفع آمن",
     "easyReturns": "إرجاع خلال 30 يوم",
     "updateError": "خطأ في تحديث السلة",
-    "itemRemoved": "تمت إزالة \"{{name}}\""
+    "itemRemoved": "تمت إزالة \"{{name}}\"",
+    "added": "تمت الإضافة إلى السلة"
   },
   "product": {
     "name": "اسم المنتج",
@@ -86,7 +87,8 @@
       "sku": "الرجاء إدخال رمز منتج صالح",
       "description": "الرجاء إدخال وصف المنتج",
       "price": "الرجاء إدخال سعر صالح",
-      "stock": "الرجاء إدخال كمية صحيحة"
+      "stock": "الرجاء إدخال كمية صحيحة",
+      "taxRate": "يرجى إدخال معدل ضريبي صالح"
     },
     "created": "تم إنشاء المنتج بنجاح!",
     "updated": "تم تحديث المنتج بنجاح!",
@@ -104,7 +106,36 @@
       "variants": "المتغيرات",
       "saveFirst": "ملاحظة",
       "saveFirstHint": "يرجى حفظ المنتج أولاً. ثم يمكنك إضافة المتغيرات."
-    }
+    },
+    "variants": {
+      "saveFirst": "احفظ المنتج أولاً",
+      "saveFirstHint": "يرجى حفظ المنتج قبل إضافة المتغيرات",
+      "title": "المتغيرات",
+      "defineOptions": "تحديد خيارات المنتج",
+      "optionName": "اسم الخيار",
+      "addOption": "إضافة خيار",
+      "addValue": "إضافة قيمة",
+      "optionsHint": "حدّد خيارات المنتج (مثل اللون، الحجم) والقيم المتاحة",
+      "generateTitle": "إنشاء المتغيرات",
+      "basePrice": "السعر الأساسي",
+      "baseStock": "المخزون الأساسي",
+      "generate": "إنشاء المتغيرات",
+      "generatedVariants": "المتغيرات المُنشأة",
+      "barcode": "الباركود/EAN",
+      "comparePrice": "سعر المقارنة",
+      "costPrice": "سعر التكلفة",
+      "weight": "الوزن",
+      "active": "نشط",
+      "stock": "المخزون",
+      "saveAll": "حفظ جميع المتغيرات"
+    },
+    "taxCategory": "فئة الضريبة",
+    "taxStandard": "قياسي (19%)",
+    "taxReduced": "مخفض (7%)",
+    "taxZero": "صفر (0%)",
+    "taxExempt": "معفى من الضريبة (0%)",
+    "taxRate": "معدل الضريبة",
+    "taxResponsibilityHint": "ℹ️ يرجى اختيار معدل الضريبة المطبق قانونياً. تصنيف الضرائب هو مسؤولية التاجر."
   },
   "media": {
     "uploadImages": "رفع الصور",
@@ -352,7 +383,8 @@
     "resendVerificationEmail": "إعادة إرسال بريد التأكيد",
     "rateLimitExceeded": "الكثير من الطلبات. يرجى المحاولة لاحقاً.",
     "accountLocked": "تم قفل حسابك مؤقتاً. يرجى المحاولة لاحقاً.",
-    "emailRateLimitExceeded": "الكثير من الطلبات لهذا البريد الإلكتروني. يرجى الانتظار."
+    "emailRateLimitExceeded": "الكثير من الطلبات لهذا البريد الإلكتروني. يرجى الانتظار.",
+    "registrationSuccess": "تم التسجيل بنجاح! يرجى التحقق من صندوق البريد الإلكتروني الخاص بك."
   },
   "restaurant": {
     "reserve": "احجز / اطلب",
@@ -425,7 +457,9 @@
       "activeFilters": "الفلاتر النشطة",
       "clearAll": "مسح جميع الفلاتر",
       "allLoaded": "تم تحميل جميع المنتجات {{total}}"
-    }
+    },
+    "shopByCategory": "تصفح حسب الفئة",
+    "shopByCategoryDesc": "استكشف مجموعتنا المنظمة من المنتجات"
   },
   "order": {
     "title": "تفاصيل الطلب",
@@ -776,16 +810,65 @@
       "checkConnection": "تحقق من الاتصال",
       "connectPayPal": "ربط PayPal",
       "comingSoon": "قريباً"
+    },
+    "shipping": {
+      "selectCountry": "اختر البلد",
+      "emailHint": "تُستخدم لإشعارات الشحن",
+      "title": "عنوان الشحن",
+      "hint": "عنوان المرسل لملصقات شحن DHL. يظهر هذا العنوان على جميع ملصقات الشحن.",
+      "street": "الشارع",
+      "streetPlaceholder": "شارع الملك",
+      "streetRequired": "الشارع مطلوب",
+      "houseNumber": "رقم المنزل",
+      "houseNumberRequired": "رقم المنزل مطلوب",
+      "postalCode": "الرمز البريدي",
+      "postalCodeRequired": "الرمز البريدي مطلوب",
+      "city": "المدينة",
+      "cityPlaceholder": "نورمبرغ",
+      "cityRequired": "المدينة مطلوبة",
+      "country": "البلد",
+      "countryRequired": "البلد مطلوب (مثل DE، AT، CH)",
+      "email": "البريد الإلكتروني (اختياري)",
+      "emailPlaceholder": "shipping@example.com",
+      "savedSuccess": "✅ تم حفظ عنوان الشحن بنجاح"
+    },
+    "saveButton": "حفظ",
+    "saving": "جاري الحفظ...",
+    "tax": {
+      "title": "الضرائب والعملة",
+      "hint": "حدّد العملة والبلد وإعدادات الضرائب لمتجرك",
+      "currency": "العملة",
+      "currencyMAD": "درهم مغربي",
+      "currencyGBP": "جنيه إسترليني",
+      "currencyChangeWarning": "تحذير: تغيير العملة يؤثر على جميع المنتجات",
+      "country": "البلد",
+      "countryDE": "ألمانيا",
+      "countryMA": "المغرب",
+      "countryUS": "الولايات المتحدة",
+      "countryGB": "بريطانيا",
+      "priceMode": "نموذج السعر",
+      "grossPrices": "أسعار إجمالية (شاملة الضريبة)",
+      "grossPricesHint": "تُعرض الأسعار مع ضريبة القيمة المضافة",
+      "netPrices": "أسعار صافية (باستثناء الضريبة)",
+      "netPricesHint": "تُعرض الأسعار بدون ضريبة القيمة المضافة",
+      "vatEnabled": "تفعيل ضريبة القيمة المضافة",
+      "vatEnabledHint": "عطّل هذا الخيار إذا كنت معفى من الضرائب",
+      "defaultTaxRate": "معدل الضريبة الافتراضي",
+      "defaultTaxRateHint": "معدل الضريبة العادي للمنتجات (مثل 19% في ألمانيا)",
+      "shippingTaxRate": "معدل ضريبة الشحن",
+      "shippingTaxStrategy": "استراتيجية ضريبة الشحن",
+      "shippingTaxStrategyHint": "كيفية حساب ضريبة تكاليف الشحن",
+      "shippingTaxStoreDefined": "معرّف من المتجر (يستخدم معدل ضريبة الشحن)",
+      "shippingTaxStandard": "قياسي (نفس معدل الضريبة الافتراضي)",
+      "shippingTaxProportional": "نسبي (متوسط ضرائب المنتجات)",
+      "vatExemptionText": "نص الإعفاء الضريبي",
+      "vatExemptionTextHint": "نص يُعرض للعملاء المعفيين من الضرائب",
+      "vatExemptionTextPlaceholder": "معفى من الضريبة حسب §..."
     }
   },
   "common": {
     "actions": "الإجراءات",
-    "add": "إضافة",
     "save": "حفظ",
-    "saving": "جاري الحفظ...",
-    "generating": "جاري الإنشاء...",
-    "loading": "جار التحميل",
-    "back": "رجوع",
     "cancel": "إلغاء",
     "delete": "حذف",
     "edit": "تعديل",
@@ -793,29 +876,34 @@
     "confirm": "تأكيد",
     "yes": "نعم",
     "no": "لا",
+    "loading": "جاري التحميل...",
     "error": "خطأ",
-    "success": "نجاح",
+    "success": "نجح",
+    "back": "رجوع",
     "login": "تسجيل الدخول",
     "logout": "تسجيل الخروج",
     "search": "بحث",
     "filter": "تصفية",
+    "showAll": "عرض الكل",
+    "poweredBy": "مدعوم من markt.ma",
+    "saveChanges": "حفظ التغييرات",
+    "reset": "إعادة تعيين",
+    "saving": "جاري الحفظ...",
+    "generating": "جاري التوليد...",
     "refresh": "تحديث",
     "retry": "إعادة المحاولة",
     "all": "الكل",
-    "showAll": "إظهار الكل",
-    "poweredBy": "مدعوم بواسطة markt.ma",
-    "saveChanges": "حفظ التغييرات",
-    "reset": "إعادة تعيين",
     "addAddress": "إضافة عنوان",
     "active": "نشط",
     "inactive": "غير نشط",
     "expand": "توسيع",
     "collapse": "طي",
-    "checking": "جاري التحقق",
-    "completFormFirst": "يرجى إكمال جميع الحقول بشكل صحيح أولاً",
+    "checking": "جاري الفحص",
+    "completFormFirst": "يرجى ملء جميع الحقول بشكل صحيح أولاً",
+    "add": "إضافة",
+    "remove": "إزالة",
     "next": "التالي",
     "previous": "السابق",
-    "remove": "إزالة",
     "submitting": "جاري الإرسال..."
   },
   "loading": {
@@ -1040,7 +1128,8 @@
     "showAllProducts": "عرض الكل",
     "loadingProducts": "جاري تحميل المنتجات...",
     "noProducts": "لا توجد منتجات بعد",
-    "createFirstProduct": "إنشاء أول منتج"
+    "createFirstProduct": "إنشاء أول منتج",
+    "noCategories": "لا توجد فئات"
   },
   "items": {
     "chatbot": "الشات بوت"
@@ -1205,41 +1294,6 @@
   },
   "validation": {
     "required": "هذا الحقل مطلوب"
-  },
-  "common": {
-    "actions": "الإجراءات",
-    "save": "حفظ",
-    "cancel": "إلغاء",
-    "delete": "حذف",
-    "edit": "تعديل",
-    "close": "إغلاق",
-    "confirm": "تأكيد",
-    "yes": "نعم",
-    "no": "لا",
-    "loading": "جاري التحميل...",
-    "error": "خطأ",
-    "success": "نجح",
-    "back": "رجوع",
-    "login": "تسجيل الدخول",
-    "logout": "تسجيل الخروج",
-    "search": "بحث",
-    "filter": "تصفية",
-    "showAll": "عرض الكل",
-    "poweredBy": "مدعوم من markt.ma",
-    "saveChanges": "حفظ التغييرات",
-    "reset": "إعادة تعيين",
-    "saving": "جاري الحفظ...",
-    "generating": "جاري التوليد...",
-    "refresh": "تحديث",
-    "retry": "إعادة المحاولة",
-    "all": "الكل",
-    "addAddress": "إضافة عنوان",
-    "active": "نشط",
-    "inactive": "غير نشط",
-    "expand": "توسيع",
-    "collapse": "طي",
-    "checking": "جاري الفحص",
-    "completFormFirst": "يرجى ملء جميع الحقول بشكل صحيح أولاً"
   },
   "navigation": {
     "dashboard": "لوحة التحكم",
@@ -2276,7 +2330,8 @@
       "section6Title": "6. أمن البيانات",
       "section6Content": "نطبق إجراءات أمان تقنية وتنظيمية (HTTPS/TLS، تجزئة كلمة المرور باستخدام bcrypt، التحكم في الوصول القائم على الأدوار).",
       "section7Title": "7. الاتصال",
-      "section7Todo": "⚠️ المطلوب: أدخل البريد الإلكتروني للاتصال للاستفسارات المتعلقة بحماية البيانات."
+      "section7Todo": "⚠️ المطلوب: أدخل البريد الإلكتروني للاتصال للاستفسارات المتعلقة بحماية البيانات.",
+      "section7Content": "محتوى القسم 7 سيتم إضافته"
     },
     "terms": {
       "title": "الشروط والأحكام",
@@ -2309,7 +2364,9 @@
       "section8Title": "8. حماية البيانات",
       "section8Content": "تتم معالجة البيانات الشخصية وفقاً لسياسة الخصوصية الخاصة بنا.",
       "section9Title": "9. القانون المعمول به",
-      "section9Todo": "⚠️ المطلوب: حدد القانون المعمول به والاختصاص القضائي (على سبيل المثال القانون الألماني، الاختصاص ميونيخ)."
+      "section9Todo": "⚠️ المطلوب: حدد القانون المعمول به والاختصاص القضائي (على سبيل المثال القانون الألماني، الاختصاص ميونيخ).",
+      "section4Content": "محتوى القسم 4 سيتم إضافته",
+      "section9Content": "محتوى القسم 9 سيتم إضافته"
     },
     "contact": {
       "title": "اتصل بنا",
@@ -2457,7 +2514,21 @@
       "willChange": "سيتم التغيير",
       "noChange": "لا تغيير",
       "noChanges": "لا توجد تغييرات مطلوبة"
-    }
+    },
+    "customerActivation": {
+      "title": "تفعيل العملاء",
+      "description": "إرسال رسائل تفعيل للعملاء المستوردين",
+      "pending": "معلق",
+      "sentAt": "تم الإرسال في",
+      "resend": "إعادة الإرسال",
+      "send": "إرسال"
+    },
+    "customersProcessed": "تم معالجة {{count}} عملاء",
+    "moreCustomersAvailable": "+{{count}} عميل آخر متاح",
+    "importNextCustomers": "استيراد العملاء التاليين",
+    "importing": "جاري الاستيراد...",
+    "importInfo": "💡 استيراد WooCommerce يتيح ترحيل المنتجات من المتاجر الموجودة",
+    "importAgain": "استيراد مرة أخرى"
   },
   "email": {
     "sent": "تم إرسال البريد الإلكتروني بنجاح",

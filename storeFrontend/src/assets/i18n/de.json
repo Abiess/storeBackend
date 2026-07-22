@@ -158,7 +158,8 @@
     "securePayment": "Sichere Zahlung",
     "easyReturns": "30 Tage Rückgabe",
     "updateError": "Fehler beim Aktualisieren",
-    "itemRemoved": "\"{{name}}\" entfernt"
+    "itemRemoved": "\"{{name}}\" entfernt",
+    "added": "Zum Warenkorb hinzugefügt"
   },
   "product": {
     "name": "Produktname",
@@ -170,7 +171,7 @@
     "create": "Produkt erstellen",
     "update": "Produkt aktualisieren",
     "price": "Preis",
-    "quantity": "{{count}} Artikel",
+    "quantity": "Menge: {{count}}",
     "addToCart": "In den Warenkorb",
     "adding": "Wird hinzugefügt...",
     "addToWishlist": "Zur Wunschliste",
@@ -194,7 +195,6 @@
     "discount": "-{{value}}%",
     "unitPrice": "({{price}} € / Stk.)",
     "sku": "SKU: {{sku}}",
-    "quantity": "Menge: {{count}}",
     "placeholder": {
       "name": "Produktname eingeben",
       "description": "Produktbeschreibung eingeben",
@@ -230,7 +230,9 @@
       "inStock": "Auf Lager",
       "outOfStock": "Nicht verfügbar",
       "saveAll": "Alle Varianten speichern",
-      "addValue": "Wert hinzufügen"
+      "addValue": "Wert hinzufügen",
+      "saveFirst": "Produkt zuerst speichern",
+      "saveFirstHint": "Bitte speichern Sie das Produkt, bevor Sie Varianten hinzufügen"
     },
     "aiAssistant": "KI-Assistent",
     "aiIntro": "Lassen Sie künstliche Intelligenz Produktinformationen aus Ihrem Bild generieren.",
@@ -240,7 +242,8 @@
       "sku": "Bitte geben Sie eine gültige SKU ein",
       "description": "Bitte geben Sie eine Beschreibung ein",
       "price": "Bitte geben Sie einen gültigen Preis ein",
-      "stock": "Bitte geben Sie eine gültige Menge ein"
+      "stock": "Bitte geben Sie eine gültige Menge ein",
+      "taxRate": "Bitte geben Sie einen gültigen Steuersatz ein"
     },
     "created": "Produkt erfolgreich erstellt!",
     "updated": "Produkt erfolgreich aktualisiert!",
@@ -612,7 +615,9 @@
       "countryHint": "ISO 3166-1 alpha-2 Code (z.B. DE für Deutschland)",
       "email": "E-Mail (optional)",
       "emailPlaceholder": "versand@example.com",
+      "emailHint": "Wird für Versandbenachrichtigungen verwendet",
       "emailInvalid": "Ungültige E-Mail-Adresse",
+      "selectCountry": "Land auswählen",
       "saveButton": "Versandadresse speichern",
       "saving": "Wird gespeichert...",
       "savedSuccess": "✅ Versandadresse erfolgreich gespeichert",
@@ -806,33 +811,31 @@
       "vatExemptionTextHint": "Dieser Text wird angezeigt, wenn die Umsatzsteuer deaktiviert ist",
       "currencyChangeWarning": "⚠️ Achtung: Vorhandene Preisbeträge werden nicht automatisch umgerechnet. Bitte kontrollieren Sie anschließend alle Produkt-, Varianten- und Versandpreise."
     },
-
-
-        "payments": {
-          "sectionTitle": "Zahlungen",
-          "title": "Zahlungsanbieter",
-          "subtitle": "Verwalte PayPal und andere Zahlungsmethoden",
-          "description": "PayPal, Stripe und weitere konfigurieren",
-          "paypal": {
-            "description": "Online-Zahlungen via PayPal akzeptieren"
-          },
-          "status": "Status",
-          "mode": "Modus",
-          "merchantId": "Merchant-ID",
-          "onboarding": "Onboarding",
-          "lastChecked": "Zuletzt geprüft",
-          "testMode": "Testmodus aktiv",
-          "testModeDescription": "Zahlungen werden nur in der PayPal-Sandbox simuliert. Keine echten Transaktionen.",
-          "checkConnection": "Verbindung prüfen",
-          "connectPayPal": "PayPal verbinden",
-          "comingSoon": "Demnächst verfügbar"
-
+    "payments": {
+      "sectionTitle": "Zahlungen",
+      "title": "Zahlungsanbieter",
+      "subtitle": "Verwalte PayPal und andere Zahlungsmethoden",
+      "description": "PayPal, Stripe und weitere konfigurieren",
+      "paypal": {
+        "description": "Online-Zahlungen via PayPal akzeptieren"
       },
-      "common": {
-        "loading": "Laden",
-        "retry": "Wiederholen"
-      }
-
+      "status": "Status",
+      "mode": "Modus",
+      "merchantId": "Merchant-ID",
+      "onboarding": "Onboarding",
+      "lastChecked": "Zuletzt geprüft",
+      "testMode": "Testmodus aktiv",
+      "testModeDescription": "Zahlungen werden nur in der PayPal-Sandbox simuliert. Keine echten Transaktionen.",
+      "checkConnection": "Verbindung prüfen",
+      "connectPayPal": "PayPal verbinden",
+      "comingSoon": "Demnächst verfügbar"
+    },
+    "common": {
+      "loading": "Laden",
+      "retry": "Wiederholen"
+    },
+    "saveButton": "Speichern",
+    "saving": "Wird gespeichert..."
   },
   "table": {
     "image": "Bild",
@@ -1073,7 +1076,8 @@
     "resendVerificationEmail": "Bestätigungs-E-Mail erneut senden",
     "rateLimitExceeded": "Zu viele Anfragen. Bitte versuchen Sie es später erneut.",
     "accountLocked": "Ihr Konto wurde vorübergehend gesperrt. Bitte versuchen Sie es später erneut.",
-    "emailRateLimitExceeded": "Zu viele Anfragen für diese E-Mail-Adresse. Bitte warten Sie."
+    "emailRateLimitExceeded": "Zu viele Anfragen für diese E-Mail-Adresse. Bitte warten Sie.",
+    "registrationSuccess": "Registrierung erfolgreich! Bitte überprüfen Sie Ihr E-Mail-Postfach."
   },
   "restaurant": {
     "reserve": "Reservieren / Bestellen",
@@ -1452,7 +1456,8 @@
     "showAllProducts": "Alle anzeigen",
     "loadingProducts": "Produkte werden geladen...",
     "noProducts": "Noch keine Produkte vorhanden",
-    "createFirstProduct": "Erstes Produkt erstellen"
+    "createFirstProduct": "Erstes Produkt erstellen",
+    "noCategories": "Keine Kategorien vorhanden"
   },
   "landing": {
     "nav": {
@@ -1689,146 +1694,18 @@
     }
   },
   "email": {
-    "greeting": "Hallo {{name}},",
-    "greetingGuest": "Hallo,",
-    "footerTeam": "Ihr Markt.ma Team",
-    "footerSupport": "Bei Fragen kontaktieren Sie uns unter support@markt.ma",
-    "footerUnsubscribe": "Sie erhalten diese E-Mail, weil Sie ein Konto bei Markt.ma haben.",
-    "btnViewOrder": "Bestellung ansehen",
-    "btnTrackOrder": "Bestellung verfolgen",
-    "btnShopping": "Weiter einkaufen",
-    "btnSupport": "Support kontaktieren",
-    "btnAccount": "Mein Konto",
-    "verification": {
-      "subject": "E-Mail-Adresse bestätigen - Markt.ma",
-      "title": "E-Mail bestätigen",
-      "intro": "Willkommen bei Markt.ma! Bitte bestätigen Sie Ihre E-Mail-Adresse, um Ihr Konto zu aktivieren.",
-      "button": "E-Mail bestätigen",
-      "expiry": "Dieser Link ist 24 Stunden gültig.",
-      "ignore": "Falls Sie kein Konto erstellt haben, ignorieren Sie diese E-Mail."
-    },
-    "welcome": {
-      "subject": "Willkommen bei Markt.ma – Ihre E-Mail wurde bestätigt!",
-      "title": "Willkommen bei Markt.ma!",
-      "intro": "Ihre E-Mail-Adresse wurde erfolgreich bestätigt. Sie können sich jetzt anmelden und alle Funktionen nutzen.",
-      "button": "Jetzt anmelden"
-    },
-    "passwordReset": {
-      "subject": "Passwort zurücksetzen - Markt.ma",
-      "title": "Passwort zurücksetzen",
-      "intro": "Wir haben eine Anfrage zum Zurücksetzen Ihres Passworts erhalten.",
-      "button": "Passwort zurücksetzen",
-      "expiry": "Dieser Link ist 1 Stunde gültig.",
-      "ignore": "Falls Sie kein Passwort-Reset angefordert haben, ignorieren Sie diese E-Mail. Ihr Passwort bleibt unverändert."
-    },
-    "passwordChanged": {
-      "subject": "Ihr Passwort wurde geändert - Markt.ma",
-      "title": "Passwort erfolgreich geändert",
-      "intro": "Ihr Passwort wurde erfolgreich geändert.",
-      "warning": "Falls Sie diese Änderung nicht vorgenommen haben, kontaktieren Sie sofort unseren Support."
-    },
-    "orderConfirmation": {
-      "subject": "Bestellbestätigung #{{orderNumber}} - {{storeName}}",
-      "title": "Bestellung bestätigt!",
-      "intro": "Vielen Dank für Ihre Bestellung! Wir haben sie erhalten und bearbeiten sie.",
-      "labelOrderNumber": "Bestellnummer",
-      "labelStore": "Shop",
-      "labelTotal": "Gesamtbetrag",
-      "labelItems": "Bestellte Artikel",
-      "labelShipping": "Lieferadresse",
-      "labelProduct": "Artikel",
-      "labelQty": "Menge",
-      "labelPrice": "Preis",
-      "labelItemTotal": "Gesamt",
-      "outro": "Sie erhalten eine weitere E-Mail, sobald Ihre Bestellung versendet wird."
-    },
-    "shipping": {
-      "subject": "Ihre Bestellung #{{orderNumber}} wurde versendet - {{storeName}}",
-      "title": "Ihre Bestellung ist unterwegs!",
-      "intro": "Gute Nachrichten! Ihre Bestellung wurde versendet.",
-      "labelOrderNumber": "Bestellnummer",
-      "labelTracking": "Sendungsverfolgungsnummer",
-      "labelCarrier": "Versanddienstleister",
-      "outro": "Ihr Paket sollte in den nächsten Tagen ankommen.",
-      "noTracking": "Die Sendungsverfolgungsnummer wird in Kürze verfügbar sein.",
-      "btnTrack": "Sendung verfolgen"
-    },
-    "delivery": {
-      "subject": "Ihre Bestellung #{{orderNumber}} wurde zugestellt - {{storeName}}",
-      "title": "Bestellung erfolgreich zugestellt!",
-      "intro": "Ihre Bestellung wurde erfolgreich zugestellt. Wir hoffen, Sie sind zufrieden!",
-      "labelOrderNumber": "Bestellnummer",
-      "rating": "Wie war Ihre Erfahrung? Hinterlassen Sie eine Bewertung!",
-      "outro": "Vielen Dank für Ihren Einkauf bei {{storeName}}!"
-    },
-    "cancellation": {
-      "subject": "Bestellung #{{orderNumber}} storniert - {{storeName}}",
-      "title": "Bestellung storniert",
-      "intro": "Ihre Bestellung wurde storniert.",
-      "labelOrderNumber": "Bestellnummer",
-      "labelReason": "Stornierungsgrund",
-      "outro": "Falls Sie Fragen zur Stornierung haben, kontaktieren Sie bitte unseren Support."
-    },
-    "subscription": {
-      "labelPlan": "Plan",
-      "labelDaysLeft": "Tage verbleibend",
-      "labelAmount": "Betrag",
-      "labelRenewal": "Verlängerungsdatum",
-      "labelNext": "Nächste Verlängerung",
-      "labelEnd": "Enddatum",
-      "labelOldPlan": "Bisheriger Plan",
-      "labelNewPlan": "Neuer Plan",
-      "btnManage": "Abonnement verwalten",
-      "btnUpgrade": "Jetzt upgraden",
-      "btnReactivate": "Reaktivieren",
-      "btnDashboard": "Zum Dashboard",
-      "reminder": {
-        "subject": "Ihr Abonnement verlängert sich in {{daysLeft}} Tagen",
-        "title": "Ihr Abonnement verlängert sich bald",
-        "intro": "Ihr Abonnement wird in Kürze automatisch verlängert. Hier sind die Details:",
-        "outro": "Sie können jederzeit in Ihrem Konto kündigen."
-      },
-      "renewed": {
-        "subject": "Ihr {{planName}}-Abonnement wurde verlängert",
-        "title": "Abonnement verlängert",
-        "intro": "Ihr Abonnement wurde erfolgreich verlängert.",
-        "outro": "Vielen Dank, dass Sie weiterhin zu unseren Kunden zählen!"
-      },
-      "expired": {
-        "subject": "Ihr {{planName}}-Abonnement ist abgelaufen",
-        "title": "Abonnement abgelaufen",
-        "intro": "Ihr Abonnement ist abgelaufen. Sie wurden auf den Free-Plan zurückgestuft.",
-        "outro": "Sie können jederzeit erneut upgraden, um wieder Zugriff auf alle Premium-Funktionen zu erhalten."
-      },
-      "cancelled": {
-        "subject": "Ihr {{planName}}-Abonnement wurde gekündigt",
-        "title": "Abonnement gekündigt",
-        "intro": "Ihr Abonnement wurde wie gewünscht gekündigt.",
-        "outro": "Wir würden uns freuen, Sie wieder bei uns begrüßen zu dürfen."
-      },
-      "upgraded": {
-        "subject": "Willkommen bei {{newPlanName}}!",
-        "title": "Willkommen bei {{newPlanName}}!",
-        "intro": "Ihr Abonnement wurde erfolgreich aktualisiert.",
-        "outro": "Viel Spaß mit Ihren neuen Funktionen!"
-      }
-    },
-    "cart": {
-      "abandoned": {
-        "subject": "Sie haben {{itemCount}} Artikel im Warenkorb - {{storeName}}",
-        "title": "Ihr Warenkorb wartet auf Sie",
-        "intro": "Wir haben bemerkt, dass Sie Artikel in Ihrem Warenkorb gelassen haben. Schließen Sie Ihren Einkauf ab, bevor sie ausverkauft sind!",
-        "outro": "Dieser Warenkorb wird nach 7 Tagen automatisch geleert.",
-        "labelItems": "Artikel im Warenkorb",
-        "btnCheckout": "Zurück zum Warenkorb"
-      }
-    },
-    "storeAccess": {
-      "subject": "Dein Store \"{{storeName}}\" ist live 🚀 – markt.ma",
-      "title": "Dein Store ist bereit!",
-      "intro": "Dein Store ist jetzt live. Speichere diese E-Mail – sie enthält deinen direkten Zugang zum Dashboard und zur Store-URL.",
-      "btnLabel": "Zum Dashboard",
-      "tip": "Tipp: Speichere diese E-Mail. Sie enthält deinen direkten Zugang zum Store-Dashboard und zur Store-URL."
+    "sent": "E-Mail wurde erfolgreich versendet",
+    "dailyLimit": "Das tägliche E-Mail-Limit wurde erreicht. Bitte versuchen Sie es in 24 Stunden erneut.",
+    "temporarilyUnavailable": "Die E-Mail konnte derzeit nicht versendet werden. Bitte versuchen Sie es später erneut.",
+    "configurationError": "Der E-Mail-Dienst ist aktuell nicht verfügbar. Bitte kontaktieren Sie den Support.",
+    "rateLimitExceeded": "Zu viele Anfragen. Bitte warten Sie einige Minuten.",
+    "serviceDisabled": "E-Mail-Versand ist in dieser Umgebung deaktiviert.",
+    "invalidRecipient": "Die E-Mail-Adresse ist ungültig.",
+    "retry": "E-Mail erneut senden",
+    "accountCreatedMailFailed": "Konto erfolgreich erstellt. Die Bestätigungs-E-Mail konnte derzeit nicht versendet werden.",
+    "help": {
+      "dailyLimit": "Das Sendelimit wird automatisch nach 24 Stunden zurückgesetzt.",
+      "rateLimitExceeded": "Bitte warten Sie einige Minuten bevor Sie es erneut versuchen."
     }
   },
   "usage": {
@@ -2591,7 +2468,8 @@
       "section6Title": "6. Datensicherheit",
       "section6Content": "Wir setzen technische und organisatorische Sicherheitsmaßnahmen ein (HTTPS/TLS, Passwort-Hashing mit bcrypt, rollenbasierte Zugriffskontrolle).",
       "section7Title": "7. Kontakt",
-      "section7Todo": "⚠️ TODO: Kontakt-E-Mail für Datenschutzanfragen eintragen."
+      "section7Todo": "⚠️ TODO: Kontakt-E-Mail für Datenschutzanfragen eintragen.",
+      "section7Content": "Inhalt für Abschnitt 7 folgt"
     },
     "terms": {
       "title": "Allgemeine Geschäftsbedingungen (AGB)",
@@ -2624,7 +2502,9 @@
       "section8Title": "8. Datenschutz",
       "section8Content": "Die Verarbeitung personenbezogener Daten erfolgt gemäß unserer Datenschutzerklärung.",
       "section9Title": "9. Anwendbares Recht",
-      "section9Todo": "⚠️ TODO: Anwendbares Recht und Gerichtsstand festlegen (z.B. deutsches Recht, Gerichtsstand München)."
+      "section9Todo": "⚠️ TODO: Anwendbares Recht und Gerichtsstand festlegen (z.B. deutsches Recht, Gerichtsstand München).",
+      "section4Content": "Inhalt für Abschnitt 4 folgt",
+      "section9Content": "Inhalt für Abschnitt 9 folgt"
     },
     "contact": {
       "title": "Kontakt",
@@ -2786,63 +2666,9 @@
       "willChange": "Wird geändert",
       "noChange": "Keine Änderung",
       "noChanges": "Keine Änderungen erforderlich"
-    }
-  },
-  "teamInvitation": {
-    "title": "Team-Einladung",
-    "processing": "Einladung wird verarbeitet...",
-    "successTitle": "Willkommen im Team!",
-    "errorTitle": "Einladung konnte nicht angenommen werden",
-    "goToDashboard": "Zum Dashboard",
-    "sendInvitation": "Einladung senden",
-    "inviteMember": "Mitglied einladen",
-    "emailAddress": "E-Mail-Adresse",
-    "selectRole": "Rolle auswählen",
-    "pendingInvitations": "Offene Einladungen",
-    "activeMembers": "Aktive Mitglieder",
-    "invitedBy": "Eingeladen von",
-    "invitedAt": "Eingeladen am",
-    "expiresAt": "Läuft ab am",
-    "resend": "Erneut senden",
-    "revoke": "Widerrufen",
-    "status": {
-      "PENDING": "Ausstehend",
-      "ACCEPTED": "Angenommen",
-      "EXPIRED": "Abgelaufen",
-      "REVOKED": "Widerrufen"
     },
-    "errors": {
-      "invalidToken": "Ungültiger oder abgelaufener Einladungslink",
-      "alreadyUsed": "Diese Einladung wurde bereits verwendet",
-      "emailMismatch": "Diese Einladung ist für eine andere E-Mail-Adresse bestimmt",
-      "alreadyMember": "Sie sind bereits Mitglied dieses Stores",
-      "sendFailed": "E-Mail-Versand fehlgeschlagen"
-    }
-  },
-  "roles": {
-    "teamAndRoles": "Team & Rollen",
-    "description": "Verwalten Sie Teammitglieder und deren Berechtigungen für diesen Shop",
-    "owner": "Inhaber",
-    "admin": "Administrator",
-    "manager": "Manager",
-    "staff": "Mitarbeiter",
-    "employee": "Angestellter"
-  }
-,
-  "email": {
-    "sent": "E-Mail wurde erfolgreich versendet",
-    "dailyLimit": "Das tägliche E-Mail-Limit wurde erreicht. Bitte versuchen Sie es in 24 Stunden erneut.",
-    "temporarilyUnavailable": "Die E-Mail konnte derzeit nicht versendet werden. Bitte versuchen Sie es später erneut.",
-    "configurationError": "Der E-Mail-Dienst ist aktuell nicht verfügbar. Bitte kontaktieren Sie den Support.",
-    "rateLimitExceeded": "Zu viele Anfragen. Bitte warten Sie einige Minuten.",
-    "serviceDisabled": "E-Mail-Versand ist in dieser Umgebung deaktiviert.",
-    "invalidRecipient": "Die E-Mail-Adresse ist ungültig.",
-    "retry": "E-Mail erneut senden",
-    "accountCreatedMailFailed": "Konto erfolgreich erstellt. Die Bestätigungs-E-Mail konnte derzeit nicht versendet werden.",
-    "help": {
-      "dailyLimit": "Das Sendelimit wird automatisch nach 24 Stunden zurückgesetzt.",
-      "rateLimitExceeded": "Bitte warten Sie einige Minuten bevor Sie es erneut versuchen."
-    }
+    "importInfo": "💡 WooCommerce-Import ermöglicht Produktmigration aus bestehenden Shops",
+    "importAgain": "Erneut importieren"
   },
   "teamInvitation": {
     "inviteSent": "Einladung erfolgreich versendet",
@@ -2852,6 +2678,15 @@
     "resendMailFailed": "Einladung aktualisiert, aber E-Mail konnte nicht versendet werden",
     "resendFailed": "Fehler beim erneuten Versenden",
     "mailFailed": "E-Mail-Versand fehlgeschlagen"
+  },
+  "roles": {
+    "teamAndRoles": "Team & Rollen",
+    "description": "Verwalten Sie Teammitglieder und deren Berechtigungen für diesen Shop",
+    "owner": "Inhaber",
+    "admin": "Administrator",
+    "manager": "Manager",
+    "staff": "Mitarbeiter",
+    "employee": "Angestellter"
   },
   "ANALYTICS": {
     "TITLE": "Analytics",

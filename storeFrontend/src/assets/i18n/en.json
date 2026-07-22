@@ -42,7 +42,8 @@
     "securePayment": "Secure Payment",
     "easyReturns": "30 Day Returns",
     "updateError": "Error updating cart",
-    "itemRemoved": "\"{{name}}\" removed"
+    "itemRemoved": "\"{{name}}\" removed",
+    "added": "Added to cart"
   },
   "product": {
     "name": "Product name",
@@ -112,7 +113,9 @@
       "inStock": "In Stock",
       "outOfStock": "Out of Stock",
       "saveAll": "Save All Variants",
-      "addValue": "Add Value"
+      "addValue": "Add Value",
+      "saveFirst": "Save product first",
+      "saveFirstHint": "Please save the product before adding variants"
     },
     "stock": "Stock",
     "required": {
@@ -120,7 +123,8 @@
       "sku": "Please enter a valid SKU",
       "description": "Please enter a description",
       "price": "Please enter a valid price",
-      "stock": "Please enter a valid quantity"
+      "stock": "Please enter a valid quantity",
+      "taxRate": "Please enter a valid tax rate"
     },
     "created": "Product successfully created!",
     "updated": "Product successfully updated!",
@@ -677,7 +681,30 @@
       "checkConnection": "Check Connection",
       "connectPayPal": "Connect PayPal",
       "comingSoon": "Coming Soon"
-    }
+    },
+    "shipping": {
+      "selectCountry": "Select country",
+      "emailHint": "Used for shipping notifications",
+      "title": "Shipping Address",
+      "hint": "Sender address for DHL shipping labels. This address appears on all shipping labels.",
+      "street": "Street",
+      "streetPlaceholder": "King Street",
+      "streetRequired": "Street is required",
+      "houseNumber": "House number",
+      "houseNumberRequired": "House number is required",
+      "postalCode": "Postal code",
+      "postalCodeRequired": "Postal code is required",
+      "city": "City",
+      "cityPlaceholder": "Nuremberg",
+      "cityRequired": "City is required",
+      "country": "Country",
+      "countryRequired": "Country is required (e.g. DE, AT, CH)",
+      "email": "Email (optional)",
+      "emailPlaceholder": "shipping@example.com",
+      "savedSuccess": "✅ Shipping address saved successfully"
+    },
+    "saveButton": "Save",
+    "saving": "Saving..."
   },
   "table": {
     "image": "Image",
@@ -818,7 +845,8 @@
     "resendVerificationEmail": "Resend verification email",
     "rateLimitExceeded": "Too many requests. Please try again later.",
     "accountLocked": "Your account has been temporarily locked. Please try again later.",
-    "emailRateLimitExceeded": "Too many requests for this email address. Please wait."
+    "emailRateLimitExceeded": "Too many requests for this email address. Please wait.",
+    "registrationSuccess": "Registration successful! Please check your email inbox."
   },
   "restaurant": {
     "reserve": "Reserve / Order",
@@ -1251,7 +1279,8 @@
     "showAllProducts": "Show all",
     "loadingProducts": "Loading products...",
     "noProducts": "No products yet",
-    "createFirstProduct": "Create first product"
+    "createFirstProduct": "Create first product",
+    "noCategories": "No categories available"
   },
   "landing": {
     "nav": {
@@ -2379,7 +2408,8 @@
       "section6Title": "6. Data security",
       "section6Content": "We implement technical and organizational security measures (HTTPS/TLS, password hashing with bcrypt, role-based access control).",
       "section7Title": "7. Contact",
-      "section7Todo": "⚠️ TODO: Enter contact email for data protection inquiries."
+      "section7Todo": "⚠️ TODO: Enter contact email for data protection inquiries.",
+      "section7Content": "Content for section 7 to follow"
     },
     "terms": {
       "title": "Terms and Conditions",
@@ -2412,7 +2442,9 @@
       "section8Title": "8. Data protection",
       "section8Content": "The processing of personal data is carried out in accordance with our privacy policy.",
       "section9Title": "9. Applicable law",
-      "section9Todo": "⚠️ TODO: Define applicable law and jurisdiction (e.g. German law, jurisdiction Munich)."
+      "section9Todo": "⚠️ TODO: Define applicable law and jurisdiction (e.g. German law, jurisdiction Munich).",
+      "section4Content": "Content for section 4 to follow",
+      "section9Content": "Content for section 9 to follow"
     },
     "contact": {
       "title": "Contact",
@@ -2574,7 +2606,9 @@
       "willChange": "Will Change",
       "noChange": "No Change",
       "noChanges": "No changes required"
-    }
+    },
+    "importInfo": "💡 WooCommerce import enables product migration from existing shops",
+    "importAgain": "Import again"
   },
   "email": {
     "sent": "Email sent successfully",

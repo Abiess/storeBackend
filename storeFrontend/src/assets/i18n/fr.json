@@ -42,7 +42,8 @@
     "securePayment": "Paiement sécurisé",
     "easyReturns": "Retours sous 30 jours",
     "updateError": "Erreur lors de la mise à jour du panier",
-    "itemRemoved": "\"{{name}}\" supprimé"
+    "itemRemoved": "\"{{name}}\" supprimé",
+    "added": "Ajouté au panier"
   },
   "product": {
     "name": "Nom du produit",
@@ -113,7 +114,9 @@
       "inStock": "En stock",
       "outOfStock": "Rupture de stock",
       "saveAll": "Enregistrer toutes les variantes",
-      "addValue": "Ajouter une valeur"
+      "addValue": "Ajouter une valeur",
+      "saveFirst": "Enregistrer le produit d'abord",
+      "saveFirstHint": "Veuillez enregistrer le produit avant d'ajouter des variantes"
     },
     "stock": "Stock",
     "required": {
@@ -121,7 +124,8 @@
       "sku": "Veuillez saisir un SKU valide",
       "description": "Veuillez saisir une description",
       "price": "Veuillez saisir un prix valide",
-      "stock": "Veuillez saisir une quantité valide"
+      "stock": "Veuillez saisir une quantité valide",
+      "taxRate": "Veuillez entrer un taux de taxe valide"
     },
     "created": "Produit créé avec succès !",
     "updated": "Produit mis à jour avec succès !",
@@ -678,7 +682,30 @@
       "vatExemptionTextPlaceholder": "Ex. Petite entreprise selon § 19 UStG",
       "vatExemptionTextHint": "Ce texte est affiché lorsque la TVA est désactivée",
       "currencyChangeWarning": "⚠️ Attention : Les montants de prix existants ne seront pas automatiquement convertis. Veuillez vérifier tous les prix des produits, variantes et expéditions par la suite."
-    }
+    },
+    "shipping": {
+      "selectCountry": "Sélectionner le pays",
+      "emailHint": "Utilisé pour les notifications d'expédition",
+      "title": "Adresse d'expédition",
+      "hint": "Adresse de l'expéditeur pour les étiquettes d'expédition DHL. Cette adresse apparaît sur toutes les étiquettes d'expédition.",
+      "street": "Rue",
+      "streetPlaceholder": "Rue du Roi",
+      "streetRequired": "La rue est requise",
+      "houseNumber": "Numéro de maison",
+      "houseNumberRequired": "Le numéro de maison est requis",
+      "postalCode": "Code postal",
+      "postalCodeRequired": "Le code postal est requis",
+      "city": "Ville",
+      "cityPlaceholder": "Nuremberg",
+      "cityRequired": "La ville est requise",
+      "country": "Pays",
+      "countryRequired": "Le pays est requis (par ex. DE, AT, CH)",
+      "email": "E-mail (optionnel)",
+      "emailPlaceholder": "shipping@example.com",
+      "savedSuccess": "✅ Adresse d'expédition enregistrée avec succès"
+    },
+    "saveButton": "Enregistrer",
+    "saving": "Enregistrement..."
   },
   "table": {
     "image": "Image",
@@ -800,7 +827,11 @@
     "reqMinChars": "Au moins 6 caractères",
     "reqMoreChars": "10+ caractères (recommandé)",
     "reqUpperLower": "Lettres majuscules et minuscules",
-    "reqNumberSpecial": "Chiffre ou caractère spécial"
+    "reqNumberSpecial": "Chiffre ou caractère spécial",
+    "passwordRequired": "Le mot de passe est requis",
+    "passwordsDoNotMatch": "Les mots de passe ne correspondent pas",
+    "registrationSuccess": "Inscription réussie ! Veuillez vérifier votre boîte e-mail.",
+    "checkingEmail": "Vérification de l'e-mail..."
   },
   "restaurant": {
     "reserve": "Réserver / Commander",
@@ -1020,7 +1051,9 @@
       "previewSandboxInfo": "Créer une étiquette sandbox – aucun frais réel.",
       "previewCancel": "Annuler",
       "previewConfirm": "Créer une étiquette en direct",
-      "countryNotSupportedForProduct": "DHL Paket National est uniquement disponible pour les envois en Allemagne"
+      "countryNotSupportedForProduct": "DHL Paket National est uniquement disponible pour les envois en Allemagne",
+      "testing": "Test",
+      "testConnection": "Tester la connexion"
     }
   },
   "sidebar": {
@@ -1226,7 +1259,8 @@
     "showAllProducts": "Tout afficher",
     "loadingProducts": "Chargement des produits...",
     "noProducts": "Aucun produit pour le moment",
-    "createFirstProduct": "Créer le premier produit"
+    "createFirstProduct": "Créer le premier produit",
+    "noCategories": "Aucune catégorie disponible"
   },
   "landing": {
     "nav": {
@@ -1763,7 +1797,9 @@
       "intro": "Votre boutique est maintenant en ligne. Conservez cet e-mail – il contient votre lien direct vers le tableau de bord et l'URL de votre boutique.",
       "btnLabel": "Aller au tableau de bord",
       "tip": "Conseil : conservez cet e-mail. Il contient votre lien d'accès direct au tableau de bord de votre boutique."
-    }
+    },
+    "accountCreatedMailFailed": "Compte créé, mais l'e-mail n'a pas pu être envoyé",
+    "retry": "Réessayer"
   },
   "usage": {
     "title": "Utilisation du plan",
@@ -2496,7 +2532,8 @@
       "section6Title": "6. Sécurité des données",
       "section6Content": "Nous mettons en œuvre des mesures de sécurité techniques et organisationnelles (HTTPS/TLS, hachage de mot de passe avec bcrypt, contrôle d'accès basé sur les rôles).",
       "section7Title": "7. Contact",
-      "section7Todo": "⚠️ TODO : Entrez l'email de contact pour les demandes de protection des données."
+      "section7Todo": "⚠️ TODO : Entrez l'email de contact pour les demandes de protection des données.",
+      "section7Content": "Contenu de la section 7 à suivre"
     },
     "terms": {
       "title": "Conditions générales",
@@ -2529,7 +2566,9 @@
       "section8Title": "8. Protection des données",
       "section8Content": "Le traitement des données personnelles est effectué conformément à notre politique de confidentialité.",
       "section9Title": "9. Droit applicable",
-      "section9Todo": "⚠️ TODO : Définir le droit applicable et la juridiction (par ex. droit allemand, juridiction Munich)."
+      "section9Todo": "⚠️ TODO : Définir le droit applicable et la juridiction (par ex. droit allemand, juridiction Munich).",
+      "section4Content": "Contenu de la section 4 à suivre",
+      "section9Content": "Contenu de la section 9 à suivre"
     },
     "contact": {
       "title": "Contact",
@@ -2623,7 +2662,130 @@
     "wpVersion": "Version WordPress",
     "noProducts": "Aucun produit trouvé",
     "productsFound": "Produits trouvés",
-    "secretHint": "Identifiants REST API de WooCommerce → Réglages → Avancé → REST API"
+    "secretHint": "Identifiants REST API de WooCommerce → Réglages → Avancé → REST API",
+    "cleanup": {
+      "tabTitle": "Nettoyage des données",
+      "title": "Nettoyage des données",
+      "description": "Supprimer les anciennes données d'importation",
+      "confirm": "Êtes-vous sûr de vouloir supprimer toutes les données WooCommerce ?",
+      "confirmButton": "Oui, supprimer",
+      "deleteProducts": "Supprimer les produits importés",
+      "deleteCategories": "Supprimer les catégories créées",
+      "deleteOrders": "Supprimer les commandes importées",
+      "deleteCustomers": "Supprimer les clients importés",
+      "deleteImages": "Supprimer les images téléchargées",
+      "deleteAll": "Tout supprimer",
+      "deleting": "Suppression en cours...",
+      "success": "✓ Données supprimées avec succès",
+      "error": "Erreur lors de la suppression",
+      "startPreview": "Démarrer l'aperçu",
+      "loading": "Chargement...",
+      "previewTitle": "Aperçu des changements",
+      "checked": "Vérifié",
+      "affected": "Concerné",
+      "errors": "Erreurs",
+      "noAffectedProducts": "Aucun produit avec des balises HTML trouvé",
+      "productName": "Nom du produit",
+      "before": "Avant",
+      "after": "Après",
+      "status": "Statut",
+      "unchanged": "Inchangé",
+      "changed": "Modifié",
+      "runCleanup": "Nettoyer maintenant",
+      "runAgain": "Vérifier à nouveau",
+      "updated": "Mis à jour",
+      "willChange": "Sera modifié",
+      "noChange": "Aucun changement",
+      "errorsTitle": "Erreurs",
+      "cleanupComplete": "Nettoyage terminé",
+      "confirmTitle": "Confirmer le nettoyage",
+      "confirmMessage": "Cette action modifiera de manière permanente les descriptions de produits.",
+      "confirmNote": "Aucun prix, image, variante ou catégorie ne sera modifié.",
+      "cancel": "Annuler"
+    },
+    "importOptions": "Options d'importation",
+    "importImagesOption": "Importer les images des produits",
+    "importImagesHint": "Télécharger et importer les images des produits depuis WooCommerce",
+    "importCustomersOption": "Importer les clients",
+    "importCustomersHint": "Importer les comptes clients avec leurs données personnelles",
+    "importOnlyCustomersWithOrdersOption": "Uniquement les clients avec commandes",
+    "importOnlyCustomersWithOrdersHint": "Ignorer les comptes clients sans historique de commandes",
+    "customerImportInfo": {
+      "title": "Importation de clients",
+      "noPasswords": "Les mots de passe ne peuvent pas être importés pour des raisons de sécurité",
+      "activationEmails": "Les clients importés reçoivent un e-mail d'activation",
+      "orderHistory": "L'historique des commandes est préservé et lié au compte",
+      "emailVerification": "✉️ Les utilisateurs doivent vérifier leur adresse e-mail à nouveau",
+      "duplicateCheck": "🔍 Les adresses e-mail existantes sont ignorées"
+    },
+    "customerActivation": {
+      "title": "Activation des clients",
+      "description": "Envoyer des e-mails d'activation aux clients importés",
+      "pending": "En attente",
+      "sentAt": "Envoyé le",
+      "resend": "Renvoyer",
+      "send": "Envoyer"
+    },
+    "customersProcessed": "{{count}} clients traités",
+    "moreCustomersAvailable": "+{{count}} clients supplémentaires disponibles",
+    "importNextCustomers": "Importer les clients suivants",
+    "importing": "Importation en cours...",
+    "importInfo": "💡 L'importation WooCommerce permet la migration de produits depuis des boutiques existantes",
+    "importAgain": "Importer à nouveau",
+    "retryImport": "Réessayer l'importation",
+    "productsImported": "Produits importés",
+    "categoriesCreated": "Catégories créées",
+    "imagesDownloaded": "Images téléchargées",
+    "totalDuration": "Durée totale",
+    "status": {
+      "pending": "En attente",
+      "running": "En cours",
+      "completed": "Terminé",
+      "failed": "Échec"
+    },
+    "failedReason": "Raison de l'échec",
+    "seconds": "{{seconds}} secondes",
+    "importError": "Erreur lors de l'importation",
+    "connectionTest": {
+      "title": "Test de connexion WooCommerce",
+      "testing": "Test en cours...",
+      "success": "✓ Connexion réussie",
+      "failed": "✗ Connexion échouée",
+      "productsFound": "{{count}} produits trouvés",
+      "error": "Erreur de connexion"
+    },
+    "importLog": {
+      "title": "Journal d'importation",
+      "empty": "Aucune entrée de journal",
+      "timestamp": "Horodatage",
+      "level": "Niveau",
+      "message": "Message",
+      "details": "Détails",
+      "showDetails": "Afficher les détails",
+      "hideDetails": "Masquer les détails",
+      "export": "Exporter le journal",
+      "clear": "Effacer le journal",
+      "refreshing": "Actualisation...",
+      "refresh": "Actualiser"
+    },
+    "importHistory": {
+      "title": "Historique d'importation",
+      "empty": "Aucun import précédent",
+      "date": "Date",
+      "status": "Statut",
+      "products": "Produits",
+      "duration": "Durée",
+      "viewLog": "Voir le journal",
+      "deleteEntry": "Supprimer l'entrée",
+      "confirmDelete": "Supprimer cette entrée d'historique ?"
+    },
+    "products": "Produits",
+    "imported": "Importé",
+    "skipped": "Ignoré",
+    "failed": "Erreur",
+    "customers": "Clients",
+    "created": "Créé",
+    "linked": "Lié"
   },
   "roles": {
     "teamAndRoles": "Équipe et rôles",
@@ -2662,10 +2824,10 @@
     "NO_ORDERS": "Aucune commande dans la période sélectionnée",
     "NO_PAYMENTS": "Aucun paiement dans la période sélectionnée",
     "ERROR": {
-     "ACCESS_DENIED": "Vous n'avez pas accès à l'analytique de cette boutique.",
-     "INVALID_DATE_RANGE": "Période invalide: la date de début doit être avant la date de fin.",
-     "RANGE_TOO_LARGE": "Période trop grande: Maximum 2 ans autorisé.",
-     "GENERAL": "Erreur lors du chargement de l'analytique. Veuillez réessayer."
+      "ACCESS_DENIED": "Vous n'avez pas accès à l'analytique de cette boutique.",
+      "INVALID_DATE_RANGE": "Période invalide: la date de début doit être avant la date de fin.",
+      "RANGE_TOO_LARGE": "Période trop grande: Maximum 2 ans autorisé.",
+      "GENERAL": "Erreur lors du chargement de l'analytique. Veuillez réessayer."
     }
   },
   "ORDER_STATUS": {
