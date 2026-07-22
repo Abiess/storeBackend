@@ -839,6 +839,19 @@ export interface PublicStore {
   // ─── Currency & Tax (Public Info) ─────────────────────────────
   currencyCode?: CurrencyCode | string;
   priceMode?: PriceMode;
+  // ─── Legal/Impressum (Public) ──────────────────────────────────
+  legalName?: string;
+  legalForm?: string;
+  authorizedRepresentative?: string;
+  commercialRegister?: string;
+  registerNumber?: string;
+  vatId?: string;
+  imprintComplete?: boolean;
+  // ─── Legal Texts (Store-specific, Public) ──────────────────────
+  termsAndConditionsText?: string;
+  privacyPolicyText?: string;
+  returnPolicyText?: string;
+  shippingPolicyText?: string;
 }
 
 export enum StoreStatus {

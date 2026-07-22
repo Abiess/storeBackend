@@ -418,6 +418,20 @@ public class StoreService {
                 storeId, user.getEmail(), store.getLegalResponsibilityVersion(), store.getLegalResponsibilityAcceptedAt());
         }
 
+        // ─── Legal Texts (store-specific) ───────────────────────────
+        if (request.getTermsAndConditionsText() != null) {
+            store.setTermsAndConditionsText(request.getTermsAndConditionsText().isBlank() ? null : request.getTermsAndConditionsText().trim());
+        }
+        if (request.getPrivacyPolicyText() != null) {
+            store.setPrivacyPolicyText(request.getPrivacyPolicyText().isBlank() ? null : request.getPrivacyPolicyText().trim());
+        }
+        if (request.getReturnPolicyText() != null) {
+            store.setReturnPolicyText(request.getReturnPolicyText().isBlank() ? null : request.getReturnPolicyText().trim());
+        }
+        if (request.getShippingPolicyText() != null) {
+            store.setShippingPolicyText(request.getShippingPolicyText().isBlank() ? null : request.getShippingPolicyText().trim());
+        }
+
         // ─── Automatische Impressum-Vollständigkeits-Prüfung ────────
         // Mindestanforderung: legalName, address, contactEmail
         boolean impressumComplete = store.getLegalName() != null && !store.getLegalName().isBlank()
@@ -690,6 +704,11 @@ public class StoreService {
         dto.setLegalResponsibilityAcceptedByUserId(store.getLegalResponsibilityAcceptedByUserId());
         dto.setLegalResponsibilityVersion(store.getLegalResponsibilityVersion());
         dto.setImprintComplete(store.getImprintComplete());
+        // ─── Legal Texts (store-specific, admin only) ───────────────
+        dto.setTermsAndConditionsText(store.getTermsAndConditionsText());
+        dto.setPrivacyPolicyText(store.getPrivacyPolicyText());
+        dto.setReturnPolicyText(store.getReturnPolicyText());
+        dto.setShippingPolicyText(store.getShippingPolicyText());
         return dto;
     }
 

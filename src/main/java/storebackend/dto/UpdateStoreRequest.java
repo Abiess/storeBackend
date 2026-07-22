@@ -87,4 +87,14 @@ public class UpdateStoreRequest {
     private java.time.LocalDateTime legalResponsibilityAcceptedAt;
     /** Consent-Version (z.B. "1.0") */
     private String legalResponsibilityVersion;
+
+    // ─── Legal Texts (store-specific) ──────────────────────────
+    /** AGB des Stores */
+    private String termsAndConditionsText;
+    /** Datenschutzerklärung des Stores */
+    private String privacyPolicyText;
+    /** Rückgaberecht / Widerrufsbelehrung */
+    private String returnPolicyText;
+    /** Versandinformationen / Lieferbedingungen */
+    private String shippingPolicyText;
 }

@@ -1,0 +1,226 @@
+{
+  "woocommerce.cleanup.willChange": {
+    "missing": [
+      "fr"
+    ],
+    "files": [
+      "src\\app\\features\\settings\\woocommerce\\woocommerce-import.component.html"
+    ]
+  },
+  "woocommerce.cleanup.noChange": {
+    "missing": [
+      "fr"
+    ],
+    "files": [
+      "src\\app\\features\\settings\\woocommerce\\woocommerce-import.component.html"
+    ]
+  },
+  "woocommerce.cleanup.errorsTitle": {
+    "missing": [
+      "fr"
+    ],
+    "files": [
+      "src\\app\\features\\settings\\woocommerce\\woocommerce-import.component.html"
+    ]
+  },
+  "woocommerce.cleanup.cleanupComplete": {
+    "missing": [
+      "fr"
+    ],
+    "files": [
+      "src\\app\\features\\settings\\woocommerce\\woocommerce-import.component.html"
+    ]
+  },
+  "woocommerce.cleanup.confirmTitle": {
+    "missing": [
+      "fr"
+    ],
+    "files": [
+      "src\\app\\features\\settings\\woocommerce\\woocommerce-import.component.html"
+    ]
+  },
+  "woocommerce.cleanup.confirmMessage": {
+    "missing": [
+      "fr"
+    ],
+    "files": [
+      "src\\app\\features\\settings\\woocommerce\\woocommerce-import.component.html"
+    ]
+  },
+  "woocommerce.cleanup.confirmNote": {
+    "missing": [
+      "fr"
+    ],
+    "files": [
+      "src\\app\\features\\settings\\woocommerce\\woocommerce-import.component.html"
+    ]
+  },
+  "woocommerce.cleanup.cancel": {
+    "missing": [
+      "fr"
+    ],
+    "files": [
+      "src\\app\\features\\settings\\woocommerce\\woocommerce-import.component.html"
+    ]
+  },
+  "auth.checkingEmail": {
+    "missing": [
+      "fr"
+    ],
+    "files": [
+      "src\\app\\features\\storefront\\storefront-auth-dialog.component.ts"
+    ]
+  },
+  "settings.shipping.title": {
+    "missing": [
+      "fr"
+    ],
+    "files": [
+      "src\\app\\features\\stores\\store-settings.component.ts"
+    ]
+  },
+  "settings.shipping.hint": {
+    "missing": [
+      "fr"
+    ],
+    "files": [
+      "src\\app\\features\\stores\\store-settings.component.ts"
+    ]
+  },
+  "settings.shipping.street": {
+    "missing": [
+      "fr"
+    ],
+    "files": [
+      "src\\app\\features\\stores\\store-settings.component.ts"
+    ]
+  },
+  "settings.shipping.streetPlaceholder": {
+    "missing": [
+      "fr"
+    ],
+    "files": [
+      "src\\app\\features\\stores\\store-settings.component.ts"
+    ]
+  },
+  "settings.shipping.streetRequired": {
+    "missing": [
+      "fr"
+    ],
+    "files": [
+      "src\\app\\features\\stores\\store-settings.component.ts"
+    ]
+  },
+  "settings.shipping.houseNumber": {
+    "missing": [
+      "fr"
+    ],
+    "files": [
+      "src\\app\\features\\stores\\store-settings.component.ts"
+    ]
+  },
+  "settings.shipping.houseNumberRequired": {
+    "missing": [
+      "fr"
+    ],
+    "files": [
+      "src\\app\\features\\stores\\store-settings.component.ts"
+    ]
+  },
+  "settings.shipping.postalCode": {
+    "missing": [
+      "fr"
+    ],
+    "files": [
+      "src\\app\\features\\stores\\store-settings.component.ts"
+    ]
+  },
+  "settings.shipping.postalCodeRequired": {
+    "missing": [
+      "fr"
+    ],
+    "files": [
+      "src\\app\\features\\stores\\store-settings.component.ts"
+    ]
+  },
+  "settings.shipping.city": {
+    "missing": [
+      "fr"
+    ],
+    "files": [
+      "src\\app\\features\\stores\\store-settings.component.ts"
+    ]
+  },
+  "settings.shipping.cityPlaceholder": {
+    "missing": [
+      "fr"
+    ],
+    "files": [
+      "src\\app\\features\\stores\\store-settings.component.ts"
+    ]
+  },
+  "settings.shipping.cityRequired": {
+    "missing": [
+      "fr"
+    ],
+    "files": [
+      "src\\app\\features\\stores\\store-settings.component.ts"
+    ]
+  },
+  "settings.shipping.country": {
+    "missing": [
+      "fr"
+    ],
+    "files": [
+      "src\\app\\features\\stores\\store-settings.component.ts"
+    ]
+  },
+  "settings.shipping.countryRequired": {
+    "missing": [
+      "fr"
+    ],
+    "files": [
+      "src\\app\\features\\stores\\store-settings.component.ts"
+    ]
+  },
+  "settings.shipping.email": {
+    "missing": [
+      "fr"
+    ],
+    "files": [
+      "src\\app\\features\\stores\\store-settings.component.ts"
+    ]
+  },
+  "settings.shipping.emailPlaceholder": {
+    "missing": [
+      "fr"
+    ],
+    "files": [
+      "src\\app\\features\\stores\\store-settings.component.ts"
+    ]
+  },
+  "settings.shipping.savedSuccess": {
+    "missing": [
+      "fr"
+    ],
+    "files": [
+      "src\\app\\features\\stores\\store-settings.component.ts"
+    ]
+  },
+  "email.accountCreatedMailFailed": {
+    "missing": [
+      "fr"
+    ],
+    "files": [
+      "src\\app\\shared\\auth\\registration-success.component.ts"
+    ]
+  },
+  "email.retry": {
+    "missing": [
+      "fr"
+    ],
+    "files": [
+      "src\\app\\shared\\auth\\registration-success.component.ts"
+    ]
+  }
+}

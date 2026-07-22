@@ -251,6 +251,23 @@ public class Store {
     @Column(name = "imprint_complete", nullable = false)
     private Boolean imprintComplete = false;
 
+    // ─── Legal Texts (Store-specific) ──────────────────────────
+    /** Allgemeine Geschäftsbedingungen (AGB) des Stores */
+    @Column(name = "terms_and_conditions_text", columnDefinition = "TEXT")
+    private String termsAndConditionsText;
+
+    /** Datenschutzerklärung des Stores */
+    @Column(name = "privacy_policy_text", columnDefinition = "TEXT")
+    private String privacyPolicyText;
+
+    /** Rückgaberecht / Widerrufsbelehrung */
+    @Column(name = "return_policy_text", columnDefinition = "TEXT")
+    private String returnPolicyText;
+
+    /** Versandinformationen / Lieferbedingungen */
+    @Column(name = "shipping_policy_text", columnDefinition = "TEXT")
+    private String shippingPolicyText;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private StoreStatus status = StoreStatus.ACTIVE;

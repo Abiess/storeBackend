@@ -63,4 +63,10 @@ public class StoreDTO {
     private Long legalResponsibilityAcceptedByUserId;
     private String legalResponsibilityVersion;
     private Boolean imprintComplete;
+
+    // ─── Legal Texts (store-specific, admin only) ──────────────
+    private String termsAndConditionsText;
+    private String privacyPolicyText;
+    private String returnPolicyText;
+    private String shippingPolicyText;
 }

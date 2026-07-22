@@ -52,4 +52,14 @@ public class PublicStoreDTO {
     private String registerNumber;            // Registernummer
     private String vatId;                     // USt-IdNr. (DE123...)
     private Boolean imprintComplete;          // Ist Impressum vollständig?
+
+    // ─── Legal Texts (store-specific, PUBLIC) ──────────────────────
+    /** AGB des Stores (öffentlich) */
+    private String termsAndConditionsText;
+    /** Datenschutzerklärung des Stores (öffentlich) */
+    private String privacyPolicyText;
+    /** Rückgaberecht / Widerrufsbelehrung (öffentlich) */
+    private String returnPolicyText;
+    /** Versandinformationen / Lieferbedingungen (öffentlich) */
+    private String shippingPolicyText;
 }

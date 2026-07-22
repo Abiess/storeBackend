@@ -71,7 +71,12 @@ public class PublicStoreService {
             store.getCommercialRegister(),
             store.getRegisterNumber(),
             store.getVatId(),
-            store.getImprintComplete()
+            store.getImprintComplete(),
+            // Legal Texts (store-specific, PUBLIC)
+            store.getTermsAndConditionsText(),
+            store.getPrivacyPolicyText(),
+            store.getReturnPolicyText(),
+            store.getShippingPolicyText()
         );
     }
 }

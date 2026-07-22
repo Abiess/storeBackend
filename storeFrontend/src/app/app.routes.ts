@@ -4,17 +4,61 @@ import { dashboardStoresRedirectGuard } from './core/guards/dashboard-stores-red
 
 export const routes: Routes = [
   // ==================== Legal Pages (Public) ====================
+  // Platform legal pages (markt.ma main domain)
   {
     path: 'impressum',
-    loadComponent: () => import('./features/legal/impressum.component').then(m => m.ImpressumComponent)
+    loadComponent: () => {
+      const hostname = window.location.hostname;
+      const isSubdomain = hostname.endsWith('.markt.ma') && 
+                         hostname !== 'markt.ma' && 
+                         hostname !== 'www.markt.ma';
+      
+      if (isSubdomain) {
+        // Store-specific imprint
+        return import('./features/legal/impressum-store.component').then(m => m.ImpressumStoreComponent);
+      } else {
+        // Platform imprint
+        return import('./features/legal/impressum.component').then(m => m.ImpressumComponent);
+      }
+    }
   },
   {
     path: 'datenschutz',
-    loadComponent: () => import('./features/legal/datenschutz.component').then(m => m.DatenschutzComponent)
+    loadComponent: () => {
+      const hostname = window.location.hostname;
+      const isSubdomain = hostname.endsWith('.markt.ma') && 
+                         hostname !== 'markt.ma' && 
+                         hostname !== 'www.markt.ma';
+      
+      if (isSubdomain) {
+        return import('./features/legal/datenschutz-store.component').then(m => m.DatenschutzStoreComponent);
+      } else {
+        return import('./features/legal/datenschutz.component').then(m => m.DatenschutzComponent);
+      }
+    }
   },
   {
     path: 'agb',
-    loadComponent: () => import('./features/legal/agb.component').then(m => m.AgbComponent)
+    loadComponent: () => {
+      const hostname = window.location.hostname;
+      const isSubdomain = hostname.endsWith('.markt.ma') && 
+                         hostname !== 'markt.ma' && 
+                         hostname !== 'www.markt.ma';
+      
+      if (isSubdomain) {
+        return import('./features/legal/agb-store.component').then(m => m.AgbStoreComponent);
+      } else {
+        return import('./features/legal/agb.component').then(m => m.AgbComponent);
+      }
+    }
+  },
+  {
+    path: 'rueckgabe',
+    loadComponent: () => import('./features/legal/rueckgabe-store.component').then(m => m.RueckgabeStoreComponent)
+  },
+  {
+    path: 'versand',
+    loadComponent: () => import('./features/legal/versand-store.component').then(m => m.VersandStoreComponent)
   },
   {
     path: 'kontakt',

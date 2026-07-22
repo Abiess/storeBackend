@@ -2368,7 +2368,11 @@
       "registerNumber": "Register number",
       "vatId": "VAT ID",
       "responsibleHeader": "Responsible for content according to § 55 Abs. 2 RStV",
-      "responsibleContent": "The responsible person corresponds to the company information stated above."
+      "responsibleContent": "The responsible person corresponds to the company information stated above.",
+      "notConfigured": "Imprint not yet complete",
+      "notConfiguredDesc": "The operator of this store has not yet completely provided their provider information.",
+      "incompleteNotice": "The imprint is not yet complete. Please add all required information.",
+      "legalForm": "Legal form"
     },
     "privacy": {
       "title": "Privacy Policy",
@@ -2409,7 +2413,9 @@
       "section6Content": "We implement technical and organizational security measures (HTTPS/TLS, password hashing with bcrypt, role-based access control).",
       "section7Title": "7. Contact",
       "section7Todo": "⚠️ TODO: Enter contact email for data protection inquiries.",
-      "section7Content": "Content for section 7 to follow"
+      "section7Content": "Content for section 7 to follow",
+      "notConfigured": "Privacy policy not yet available",
+      "notConfiguredDesc": "The operator of this store has not yet published a privacy policy."
     },
     "terms": {
       "title": "Terms and Conditions",
@@ -2444,7 +2450,9 @@
       "section9Title": "9. Applicable law",
       "section9Todo": "⚠️ TODO: Define applicable law and jurisdiction (e.g. German law, jurisdiction Munich).",
       "section4Content": "Content for section 4 to follow",
-      "section9Content": "Content for section 9 to follow"
+      "section9Content": "Content for section 9 to follow",
+      "notConfigured": "Terms and conditions not yet available",
+      "notConfiguredDesc": "The operator of this store has not yet published any terms and conditions."
     },
     "contact": {
       "title": "Contact",
@@ -2475,7 +2483,22 @@
       "mondayFriday": "Monday - Friday",
       "saturday": "Saturday",
       "sunday": "Sunday"
-    }
+    },
+    "return": {
+      "title": "Return policy",
+      "notConfigured": "Return policy not yet available",
+      "notConfiguredDesc": "The operator of this store has not yet published a return policy."
+    },
+    "shipping": {
+      "title": "Shipping information",
+      "notConfigured": "Shipping information not yet available",
+      "notConfiguredDesc": "The operator of this store has not yet published shipping information."
+    },
+    "owner": {
+      "setupHint": "This page is not yet fully configured for your customers. Please add the legal information in the store settings.",
+      "setupButton": "Configure now"
+    },
+    "platformNotice": "markt.ma provides the technical shop platform and is not the seller of the products offered in this store."
   },
   "woocommerce": {
     "categoryCount": "Category Count",

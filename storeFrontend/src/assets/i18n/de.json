@@ -2428,7 +2428,11 @@
       "registerNumber": "Registernummer",
       "vatId": "Umsatzsteuer-ID",
       "responsibleHeader": "Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV",
-      "responsibleContent": "Die verantwortliche Person entspricht den oben angegebenen Firmendaten."
+      "responsibleContent": "Die verantwortliche Person entspricht den oben angegebenen Firmendaten.",
+      "notConfigured": "Impressum noch nicht vollständig",
+      "notConfiguredDesc": "Der Betreiber dieses Stores hat seine Anbieterinformationen noch nicht vollständig hinterlegt.",
+      "incompleteNotice": "Das Impressum ist noch nicht vollständig. Bitte ergänzen Sie alle erforderlichen Angaben.",
+      "legalForm": "Rechtsform"
     },
     "privacy": {
       "title": "Datenschutzerklärung",
@@ -2469,7 +2473,9 @@
       "section6Content": "Wir setzen technische und organisatorische Sicherheitsmaßnahmen ein (HTTPS/TLS, Passwort-Hashing mit bcrypt, rollenbasierte Zugriffskontrolle).",
       "section7Title": "7. Kontakt",
       "section7Todo": "⚠️ TODO: Kontakt-E-Mail für Datenschutzanfragen eintragen.",
-      "section7Content": "Inhalt für Abschnitt 7 folgt"
+      "section7Content": "Inhalt für Abschnitt 7 folgt",
+      "notConfigured": "Datenschutzerklärung noch nicht hinterlegt",
+      "notConfiguredDesc": "Der Betreiber dieses Stores hat noch keine Datenschutzerklärung veröffentlicht."
     },
     "terms": {
       "title": "Allgemeine Geschäftsbedingungen (AGB)",
@@ -2504,7 +2510,9 @@
       "section9Title": "9. Anwendbares Recht",
       "section9Todo": "⚠️ TODO: Anwendbares Recht und Gerichtsstand festlegen (z.B. deutsches Recht, Gerichtsstand München).",
       "section4Content": "Inhalt für Abschnitt 4 folgt",
-      "section9Content": "Inhalt für Abschnitt 9 folgt"
+      "section9Content": "Inhalt für Abschnitt 9 folgt",
+      "notConfigured": "AGB noch nicht hinterlegt",
+      "notConfiguredDesc": "Der Betreiber dieses Stores hat noch keine Allgemeinen Geschäftsbedingungen veröffentlicht."
     },
     "contact": {
       "title": "Kontakt",
@@ -2535,7 +2543,22 @@
       "mondayFriday": "Montag - Freitag",
       "saturday": "Samstag",
       "sunday": "Sonntag"
-    }
+    },
+    "return": {
+      "title": "Rückgabebedingungen",
+      "notConfigured": "Rückgabebedingungen noch nicht hinterlegt",
+      "notConfiguredDesc": "Der Betreiber dieses Stores hat noch keine Rückgabebedingungen veröffentlicht."
+    },
+    "shipping": {
+      "title": "Versandbedingungen",
+      "notConfigured": "Versandbedingungen noch nicht hinterlegt",
+      "notConfiguredDesc": "Der Betreiber dieses Stores hat noch keine Versandinformationen veröffentlicht."
+    },
+    "owner": {
+      "setupHint": "Diese Seite ist für Ihre Kunden noch nicht vollständig eingerichtet. Bitte ergänzen Sie die rechtlichen Angaben in den Store-Einstellungen.",
+      "setupButton": "Jetzt einrichten"
+    },
+    "platformNotice": "markt.ma stellt die technische Shop-Plattform bereit und ist nicht Verkäufer der in diesem Store angebotenen Produkte."
   },
   "woocommerce": {
     "config": {

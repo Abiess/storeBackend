@@ -2492,7 +2492,11 @@
       "registerNumber": "Numéro d'enregistrement",
       "vatId": "Numéro de TVA",
       "responsibleHeader": "Responsable du contenu conformément au § 55 Abs. 2 RStV",
-      "responsibleContent": "La personne responsable correspond aux informations de l'entreprise indiquées ci-dessus."
+      "responsibleContent": "La personne responsable correspond aux informations de l'entreprise indiquées ci-dessus.",
+      "notConfigured": "Mentions légales non encore complètes",
+      "notConfiguredDesc": "L'exploitant de cette boutique n'a pas encore fourni complètement ses informations légales.",
+      "incompleteNotice": "Les mentions légales ne sont pas encore complètes. Veuillez ajouter toutes les informations requises.",
+      "legalForm": "Forme juridique"
     },
     "privacy": {
       "title": "Politique de confidentialité",
@@ -2533,7 +2537,9 @@
       "section6Content": "Nous mettons en œuvre des mesures de sécurité techniques et organisationnelles (HTTPS/TLS, hachage de mot de passe avec bcrypt, contrôle d'accès basé sur les rôles).",
       "section7Title": "7. Contact",
       "section7Todo": "⚠️ TODO : Entrez l'email de contact pour les demandes de protection des données.",
-      "section7Content": "Contenu de la section 7 à suivre"
+      "section7Content": "Contenu de la section 7 à suivre",
+      "notConfigured": "Déclaration de confidentialité non encore publiée",
+      "notConfiguredDesc": "L'exploitant de cette boutique n'a pas encore publié de déclaration de confidentialité."
     },
     "terms": {
       "title": "Conditions générales",
@@ -2568,7 +2574,9 @@
       "section9Title": "9. Droit applicable",
       "section9Todo": "⚠️ TODO : Définir le droit applicable et la juridiction (par ex. droit allemand, juridiction Munich).",
       "section4Content": "Contenu de la section 4 à suivre",
-      "section9Content": "Contenu de la section 9 à suivre"
+      "section9Content": "Contenu de la section 9 à suivre",
+      "notConfigured": "Conditions générales non encore publiées",
+      "notConfiguredDesc": "L'exploitant de cette boutique n'a pas encore publié de conditions générales."
     },
     "contact": {
       "title": "Contact",
@@ -2599,7 +2607,22 @@
       "mondayFriday": "Lundi - Vendredi",
       "saturday": "Samedi",
       "sunday": "Dimanche"
-    }
+    },
+    "return": {
+      "title": "Conditions de retour",
+      "notConfigured": "Conditions de retour non encore publiées",
+      "notConfiguredDesc": "L'exploitant de cette boutique n'a pas encore publié de conditions de retour."
+    },
+    "shipping": {
+      "title": "Informations de livraison",
+      "notConfigured": "Informations de livraison non encore publiées",
+      "notConfiguredDesc": "L'exploitant de cette boutique n'a pas encore publié d'informations de livraison."
+    },
+    "owner": {
+      "setupHint": "Cette page n'est pas encore entièrement configurée pour vos clients. Veuillez ajouter les informations légales dans les paramètres de la boutique.",
+      "setupButton": "Configurer maintenant"
+    },
+    "platformNotice": "markt.ma fournit la plateforme technique de boutique et n'est pas le vendeur des produits proposés dans cette boutique."
   },
   "woocommerce": {
     "error": {
