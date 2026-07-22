@@ -2584,6 +2584,7 @@
   },
   "roles": {
     "teamAndRoles": "Équipe et rôles",
+    "description": "Gérer les membres de l'équipe et leurs autorisations pour cette boutique",
     "owner": "Propriétaire",
     "admin": "Administrateur",
     "manager": "Gestionnaire",

@@ -2780,6 +2780,7 @@
   },
   "roles": {
     "teamAndRoles": "Team & Rollen",
+    "description": "Verwalten Sie Teammitglieder und deren Berechtigungen für diesen Shop",
     "owner": "Inhaber",
     "admin": "Administrator",
     "manager": "Manager",

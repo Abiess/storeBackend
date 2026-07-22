@@ -104,7 +104,16 @@ export class AdminLayoutComponent implements OnInit {
   }
 
   navigateToSettings(): void {
-    this.router.navigate(['/settings']);
+    // Extrahiere storeId aus aktueller Route
+    const url = this.router.url;
+    const match = url.match(/\/stores\/(\d+)/);
+    if (match && match[1]) {
+      this.router.navigate([`/stores/${match[1]}/settings`]);
+    } else {
+      // Fallback: Wenn keine storeId in URL, navigiere zu Dashboard
+      console.warn('⚠️ Keine storeId gefunden in URL:', url);
+      this.router.navigate(['/dashboard']);
+    }
     this.userDropdownOpen = false;
   }
 }

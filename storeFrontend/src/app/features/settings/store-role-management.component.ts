@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { TranslateModule } from '@ngx-translate/core';
 import { RoleService } from '@app/core/services/role.service';
 import { TeamInvitationService } from '@app/core/services/team-invitation.service';
 import { EmailStatusHandlerService } from '@app/core/services/email-status-handler.service';
@@ -27,14 +28,15 @@ interface TeamMemberForm {
   imports: [
     CommonModule,
     FormsModule,
+    TranslateModule,
     PageHeaderComponent,
     ResponsiveDataListComponent
   ],
   template: `
     <div class="role-page">
         <app-page-header
-          title="Team & Rollen"
-          subtitle="Verwalten Sie Teammitglieder und deren Berechtigungen für diesen Shop"
+          [title]="'roles.teamAndRoles' | translate"
+          [subtitle]="'roles.description' | translate"
           [breadcrumbs]="breadcrumbs"
           [showBackButton]="true"
           [actions]="headerActions"

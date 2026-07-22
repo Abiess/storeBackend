@@ -2617,6 +2617,7 @@
   },
   "roles": {
     "teamAndRoles": "Team & Roles",
+    "description": "Manage team members and their permissions for this shop",
     "owner": "Owner",
     "admin": "Administrator",
     "manager": "Manager",
