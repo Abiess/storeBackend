@@ -67,4 +67,24 @@ public class UpdateStoreRequest {
     private String shippingTaxStrategy;
     /** Kleinunternehmer-Text: "Gemäß § 19 UStG wird keine Umsatzsteuer berechnet." */
     private String vatExemptionText;
+
+    // ─── Legal/Impressum ─────────────────────────────────────
+    /** Offizieller Firmenname (z.B. "Müller GmbH" oder "Max Mustermann") */
+    private String legalName;
+    /** Rechtsform (z.B. "GmbH", "UG", "Einzelunternehmen") */
+    private String legalForm;
+    /** Vertretungsberechtigte Person (z.B. "Max Mustermann, Geschäftsführer") */
+    private String authorizedRepresentative;
+    /** Registergericht (z.B. "Amtsgericht Berlin-Charlottenburg") */
+    private String commercialRegister;
+    /** Registernummer (z.B. "HRB 123456 B") */
+    private String registerNumber;
+    /** Umsatzsteuer-Identifikationsnummer (z.B. "DE123456789") */
+    private String vatId;
+
+    // ─── Legal Consent (nur für Owner-Ansicht, nicht für Public) ──
+    /** Zeitstempel: Wann Store-Owner rechtliche Verantwortung bestätigt hat */
+    private java.time.LocalDateTime legalResponsibilityAcceptedAt;
+    /** Consent-Version (z.B. "1.0") */
+    private String legalResponsibilityVersion;
 }

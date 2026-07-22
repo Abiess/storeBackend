@@ -43,4 +43,13 @@ public class PublicStoreDTO {
     private String currencyCode;              // EUR, MAD, USD, GBP
     private String countryCode;               // DE, MA, etc.
     private String priceMode;                 // GROSS oder NET
+
+    // ─── Legal/Impressum (PUBLIC - für öffentliche Seiten) ─────
+    private String legalName;                 // Offizieller Firmenname
+    private String legalForm;                 // GmbH, UG, Einzelunternehmen, ...
+    private String authorizedRepresentative;  // Vertretungsberechtigte Person
+    private String commercialRegister;        // Registergericht
+    private String registerNumber;            // Registernummer
+    private String vatId;                     // USt-IdNr. (DE123...)
+    private Boolean imprintComplete;          // Ist Impressum vollständig?
 }

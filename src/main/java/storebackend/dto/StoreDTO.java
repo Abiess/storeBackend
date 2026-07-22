@@ -51,4 +51,16 @@ public class StoreDTO {
     private BigDecimal shippingTaxRate;
     private ShippingTaxStrategy shippingTaxStrategy;
     private String vatExemptionText;
+
+    // ─── Legal/Impressum (NICHT öffentlich, nur für Admin) ──────
+    private String legalName;
+    private String legalForm;
+    private String authorizedRepresentative;
+    private String commercialRegister;
+    private String registerNumber;
+    private String vatId;
+    private LocalDateTime legalResponsibilityAcceptedAt;
+    private Long legalResponsibilityAcceptedByUserId;
+    private String legalResponsibilityVersion;
+    private Boolean imprintComplete;
 }

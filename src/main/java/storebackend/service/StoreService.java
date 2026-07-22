@@ -384,6 +384,47 @@ public class StoreService {
             store.setVatExemptionText(request.getVatExemptionText().isBlank() ? null : request.getVatExemptionText().trim());
         }
 
+        // ─── Legal/Impressum-Felder ────────────────────────────────
+        if (request.getLegalName() != null) {
+            store.setLegalName(request.getLegalName().isBlank() ? null : request.getLegalName().trim());
+        }
+        if (request.getLegalForm() != null) {
+            store.setLegalForm(request.getLegalForm().isBlank() ? null : request.getLegalForm().trim());
+        }
+        if (request.getAuthorizedRepresentative() != null) {
+            store.setAuthorizedRepresentative(request.getAuthorizedRepresentative().isBlank() ? null : request.getAuthorizedRepresentative().trim());
+        }
+        if (request.getCommercialRegister() != null) {
+            store.setCommercialRegister(request.getCommercialRegister().isBlank() ? null : request.getCommercialRegister().trim());
+        }
+        if (request.getRegisterNumber() != null) {
+            store.setRegisterNumber(request.getRegisterNumber().isBlank() ? null : request.getRegisterNumber().trim());
+        }
+        if (request.getVatId() != null) {
+            store.setVatId(request.getVatId().isBlank() ? null : request.getVatId().trim());
+        }
+
+        // ─── Legal Consent Tracking ─────────────────────────────────
+        // Consent wird nur gesetzt wenn Legal-Felder bearbeitet wurden UND Consent-Zeitstempel mitgeliefert wurde
+        if (request.getLegalResponsibilityAcceptedAt() != null) {
+            store.setLegalResponsibilityAcceptedAt(request.getLegalResponsibilityAcceptedAt());
+            store.setLegalResponsibilityAcceptedByUserId(user.getId());
+            store.setLegalResponsibilityVersion(
+                request.getLegalResponsibilityVersion() != null && !request.getLegalResponsibilityVersion().isBlank()
+                    ? request.getLegalResponsibilityVersion().trim()
+                    : "1.0"
+            );
+            log.info("✅ Legal Consent recorded for Store {}: User {}, Version {}, Timestamp {}",
+                storeId, user.getEmail(), store.getLegalResponsibilityVersion(), store.getLegalResponsibilityAcceptedAt());
+        }
+
+        // ─── Automatische Impressum-Vollständigkeits-Prüfung ────────
+        // Mindestanforderung: legalName, address, contactEmail
+        boolean impressumComplete = store.getLegalName() != null && !store.getLegalName().isBlank()
+            && store.getAddress() != null && !store.getAddress().isBlank()
+            && store.getContactEmail() != null && !store.getContactEmail().isBlank();
+        store.setImprintComplete(impressumComplete);
+
         store = storeRepository.save(store);
         log.info("Store {} updated by user {}", storeId, user.getEmail());
 
@@ -638,6 +679,17 @@ public class StoreService {
         dto.setShippingTaxRate(store.getShippingTaxRate());
         dto.setShippingTaxStrategy(store.getShippingTaxStrategy());
         dto.setVatExemptionText(store.getVatExemptionText());
+        // ─── Legal/Impressum (nur für Admin) ───────────────────────────
+        dto.setLegalName(store.getLegalName());
+        dto.setLegalForm(store.getLegalForm());
+        dto.setAuthorizedRepresentative(store.getAuthorizedRepresentative());
+        dto.setCommercialRegister(store.getCommercialRegister());
+        dto.setRegisterNumber(store.getRegisterNumber());
+        dto.setVatId(store.getVatId());
+        dto.setLegalResponsibilityAcceptedAt(store.getLegalResponsibilityAcceptedAt());
+        dto.setLegalResponsibilityAcceptedByUserId(store.getLegalResponsibilityAcceptedByUserId());
+        dto.setLegalResponsibilityVersion(store.getLegalResponsibilityVersion());
+        dto.setImprintComplete(store.getImprintComplete());
         return dto;
     }
 

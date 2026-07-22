@@ -209,6 +209,48 @@ public class Store {
     @Column(name = "vat_exemption_text", columnDefinition = "TEXT")
     private String vatExemptionText;
 
+    // ─── Legal/Impressum-Felder ─────────────────────────────────
+    /** Offizieller Firmen-/Name (z.B. "Müller GmbH" oder "Max Mustermann") */
+    @Column(name = "legal_name", length = 255)
+    private String legalName;
+
+    /** Rechtsform (z.B. "GmbH", "UG", "Einzelunternehmen", "e.K.") */
+    @Column(name = "legal_form", length = 100)
+    private String legalForm;
+
+    /** Vertretungsberechtigte Person (z.B. "Max Mustermann, Geschäftsführer") */
+    @Column(name = "authorized_representative", length = 255)
+    private String authorizedRepresentative;
+
+    /** Registergericht (z.B. "Amtsgericht Berlin-Charlottenburg") */
+    @Column(name = "commercial_register", length = 255)
+    private String commercialRegister;
+
+    /** Registernummer (z.B. "HRB 123456 B") */
+    @Column(name = "register_number", length = 100)
+    private String registerNumber;
+
+    /** Umsatzsteuer-Identifikationsnummer (z.B. "DE123456789") */
+    @Column(name = "vat_id", length = 50)
+    private String vatId;
+
+    // ─── Legal Responsibility Consent Tracking ─────────────────
+    /** Zeitstempel: Wann Store-Owner Verantwortung bestätigt hat */
+    @Column(name = "legal_responsibility_accepted_at")
+    private LocalDateTime legalResponsibilityAcceptedAt;
+
+    /** User-ID: Wer Verantwortung bestätigt hat (FK zu User) */
+    @Column(name = "legal_responsibility_accepted_by_user_id")
+    private Long legalResponsibilityAcceptedByUserId;
+
+    /** Consent-Version (z.B. "1.0", "2024-01") für Versionierung */
+    @Column(name = "legal_responsibility_version", length = 20)
+    private String legalResponsibilityVersion;
+
+    /** Validierung: Ist Impressum vollständig ausgefüllt? */
+    @Column(name = "imprint_complete", nullable = false)
+    private Boolean imprintComplete = false;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private StoreStatus status = StoreStatus.ACTIVE;

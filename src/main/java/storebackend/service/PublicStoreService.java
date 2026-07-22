@@ -63,7 +63,15 @@ public class PublicStoreService {
             // Currency & Tax (Public) - NULL-safe with intermediate variables
             currency != null ? currency.name() : "EUR",
             store.getCountryCode() != null ? store.getCountryCode() : "DE",
-            priceMode != null ? priceMode.name() : "GROSS"
+            priceMode != null ? priceMode.name() : "GROSS",
+            // Legal/Impressum (PUBLIC - für öffentliche Seiten)
+            store.getLegalName(),
+            store.getLegalForm(),
+            store.getAuthorizedRepresentative(),
+            store.getCommercialRegister(),
+            store.getRegisterNumber(),
+            store.getVatId(),
+            store.getImprintComplete()
         );
     }
 }

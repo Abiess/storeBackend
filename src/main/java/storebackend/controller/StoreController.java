@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import storebackend.dto.CreateStoreRequest;
@@ -66,6 +67,7 @@ class StoreManagementController {
     }
 
     @GetMapping("/{storeId}")
+    @PreAuthorize("@storeAccessChecker.isStoreAdmin(#storeId)")
     public ResponseEntity<StoreDTO> getStoreById(
             @PathVariable Long storeId,
             @AuthenticationPrincipal User user) {
@@ -74,6 +76,7 @@ class StoreManagementController {
     }
 
     @PutMapping("/{storeId}")
+    @PreAuthorize("@storeAccessChecker.isStoreAdmin(#storeId)")
     public ResponseEntity<StoreDTO> updateStore(
             @PathVariable Long storeId,
             @Valid @RequestBody UpdateStoreRequest request,
@@ -82,6 +85,7 @@ class StoreManagementController {
     }
 
     @DeleteMapping("/{storeId}")
+    @PreAuthorize("@storeAccessChecker.isStoreAdmin(#storeId)")
     public ResponseEntity<Void> deleteStore(
             @PathVariable Long storeId,
             @AuthenticationPrincipal User user) {
@@ -94,6 +98,7 @@ class StoreManagementController {
      * PUT /api/stores/{storeId}/shipping-address
      */
     @PutMapping("/{storeId}/shipping-address")
+    @PreAuthorize("@storeAccessChecker.isStoreAdmin(#storeId)")
     public ResponseEntity<StoreDTO> updateShippingAddress(
             @PathVariable Long storeId,
             @Valid @RequestBody storebackend.dto.StoreShippingAddressUpdateDTO request,
@@ -106,6 +111,7 @@ class StoreManagementController {
      * (passend zum businessType RESTAURANT/RIAD, nur wenn noch leer).
      */
     @PostMapping("/{storeId}/apply-starter-pack")
+    @PreAuthorize("@storeAccessChecker.isStoreAdmin(#storeId)")
     public ResponseEntity<StoreDTO> applyStarterPack(
             @PathVariable Long storeId,
             @AuthenticationPrincipal User user) {
