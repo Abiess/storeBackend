@@ -390,47 +390,6 @@ jobs:
             sudo journalctl -u storebackend -n 120 --no-pager || true
             exit 1
 
-      # ── Research Agent ausführen + CSV herunterladen ────────────────
-      - name: Run Research Agent (optional)
-        if: github.event_name == 'schedule' || github.event.inputs.run_research_agent == 'true'
-        uses: appleboy/ssh-action@v1.2.2
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          command_timeout: 45m
-          script: |
-            SOURCE="${{ github.event.inputs.agent_source || 'avito' }}"
-            OUTPUT_DIR="/opt/research-agent/output"
-
-            echo "🧹 Bereinige alte DEMO/ERROR-CSVs..."
-            find "$OUTPUT_DIR" -name "*_DEMO_*.csv" -delete 2>/dev/null || true
-            find "$OUTPUT_DIR" -name "*_ERROR_*.csv" -delete 2>/dev/null || true
-            find "$OUTPUT_DIR" -maxdepth 1 -name "markt-ma-leads_*.csv" -exec mv {} "$OUTPUT_DIR/archive/" \; 2>/dev/null || true
-
-            echo "🔍 Research Agent startet – Quelle: $SOURCE"
-            cd /opt/research-agent
-            node main.js \
-              --source "$SOURCE" \
-              --pages 3 \
-              --seller-type all \
-              --min-score 0 \
-              --min-conversion 0 \
-              --min-saas 0 \
-              --min-products 0 \
-              --top 20 \
-              --output "$OUTPUT_DIR"
-
-            # Nur REAL-CSV kopieren
-            REAL_CSV=$(ls -t "$OUTPUT_DIR"/*_REAL_*.csv 2>/dev/null | head -1)
-            if [ -n "$REAL_CSV" ]; then
-              cp "$REAL_CSV" /tmp/latest-leads.csv
-              echo "✅ REAL-CSV bereit: $REAL_CSV ($(wc -l < /tmp/latest-leads.csv) Zeilen)"
-            else
-              echo "❌ Keine REAL-CSV gefunden – kein Artifact-Upload"
-              exit 1
-            fi
 
       - name: Download CSV (Research Agent Ergebnisse)
         if: github.event_name == 'schedule' || github.event.inputs.run_research_agent == 'true'

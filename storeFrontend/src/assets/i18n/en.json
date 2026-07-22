@@ -674,6 +674,7 @@
   "footer": {
     "about": "About us",
     "contact": "Contact",
+    "contactUs": "Contact",
     "terms": "Terms & Conditions",
     "privacy": "Privacy Policy",
     "imprint": "Imprint",
@@ -683,8 +684,12 @@
     "copyright": "© {{year}} All rights reserved",
     "info": "Information",
     "followUs": "Follow us",
-    "poweredBy": "Powered by markt.ma",
-    "contactUs": "Contact"
+    "quickLinks": "Quick Links",
+    "home": "Home",
+    "products": "Products",
+    "categories": "Categories",
+    "legal": "Legal",
+    "poweredBy": "Powered by"
   },
   "trust": {
     "freeShipping": "Free shipping",

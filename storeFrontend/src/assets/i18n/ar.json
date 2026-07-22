@@ -218,6 +218,7 @@
   "footer": {
     "about": "من نحن",
     "contact": "اتصل بنا",
+    "contactUs": "تواصل معنا",
     "terms": "الشروط والأحكام",
     "privacy": "سياسة الخصوصية",
     "imprint": "بيانات الناشر",
@@ -227,8 +228,12 @@
     "copyright": "© {{year}} جميع الحقوق محفوظة",
     "info": "معلومات",
     "followUs": "تابعنا",
-    "poweredBy": "مشغّل بواسطة markt.ma",
-    "contactUs": "تواصل معنا"
+    "quickLinks": "روابط سريعة",
+    "home": "الرئيسية",
+    "products": "المنتجات",
+    "categories": "الفئات",
+    "legal": "قانوني",
+    "poweredBy": "مشغّل بواسطة"
   },
   "auth": {
     "loginTitle": "تسجيل الدخول إلى markt.ma",

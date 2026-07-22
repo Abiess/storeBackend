@@ -824,6 +824,7 @@
   "footer": {
     "about": "Über uns",
     "contact": "Kontakt",
+    "contactUs": "Kontakt",
     "terms": "AGB",
     "privacy": "Datenschutz",
     "imprint": "Impressum",
@@ -833,8 +834,12 @@
     "copyright": "© {{year}} Alle Rechte vorbehalten",
     "info": "Informationen",
     "followUs": "Folge uns",
-    "poweredBy": "Powered by markt.ma",
-    "contactUs": "Kontakt"
+    "quickLinks": "Schnelllinks",
+    "home": "Startseite",
+    "products": "Produkte",
+    "categories": "Kategorien",
+    "legal": "Rechtliches",
+    "poweredBy": "Powered by"
   },
   "items": {
     "chatbot": "Chatbot"
