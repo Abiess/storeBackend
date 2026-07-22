@@ -1,29 +1,38 @@
-<div class="analytics-container">
-  <!-- Zeitraumfilter -->
-  <div class="date-range-filter">
-    <mat-form-field>
-      <mat-label>{{ 'ANALYTICS.DATE_RANGE' | translate }}</mat-label>
-      <mat-select [(ngModel)]="selectedRange" (selectionChange)="loadAnalytics()">
-        <mat-option value="today">{{ 'ANALYTICS.TODAY' | translate }}</mat-option>
-        <mat-option value="last7days">{{ 'ANALYTICS.LAST_7_DAYS' | translate }}</mat-option>
-        <mat-option value="last30days">{{ 'ANALYTICS.LAST_30_DAYS' | translate }}</mat-option>
-        <mat-option value="thisYear">{{ 'ANALYTICS.THIS_YEAR' | translate }}</mat-option>
-        <mat-option value="custom">{{ 'ANALYTICS.CUSTOM' | translate }}</mat-option>
-      </mat-select>
-    </mat-form-field>
+<div class="analytics-section">
+  <!-- Analytics Header mit Zeitraumfilter -->
+  <div class="analytics-header">
+    <div class="analytics-title">
+      <h2>{{ 'ANALYTICS.TITLE' | translate }}</h2>
+      <p class="analytics-subtitle">{{ 'ANALYTICS.SUBTITLE' | translate }}</p>
+    </div>
 
-    @if (selectedRange === 'custom') {
+    <div class="analytics-filter">
       <mat-form-field>
-        <mat-label>{{ 'ANALYTICS.FROM' | translate }}</mat-label>
-        <input matInput type="date" [(ngModel)]="customFrom" (change)="loadAnalytics()">
+        <mat-label>{{ 'ANALYTICS.DATE_RANGE' | translate }}</mat-label>
+        <mat-select [(ngModel)]="selectedRange" (selectionChange)="loadAnalytics()">
+          <mat-option value="today">{{ 'ANALYTICS.TODAY' | translate }}</mat-option>
+          <mat-option value="last7days">{{ 'ANALYTICS.LAST_7_DAYS' | translate }}</mat-option>
+          <mat-option value="last30days">{{ 'ANALYTICS.LAST_30_DAYS' | translate }}</mat-option>
+          <mat-option value="thisYear">{{ 'ANALYTICS.THIS_YEAR' | translate }}</mat-option>
+          <mat-option value="custom">{{ 'ANALYTICS.CUSTOM' | translate }}</mat-option>
+        </mat-select>
       </mat-form-field>
 
-      <mat-form-field>
-        <mat-label>{{ 'ANALYTICS.TO' | translate }}</mat-label>
-        <input matInput type="date" [(ngModel)]="customTo" (change)="loadAnalytics()">
-      </mat-form-field>
-    }
+      @if (selectedRange === 'custom') {
+        <mat-form-field>
+          <mat-label>{{ 'ANALYTICS.FROM' | translate }}</mat-label>
+          <input matInput type="date" [(ngModel)]="customFrom" (change)="loadAnalytics()">
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label>{{ 'ANALYTICS.TO' | translate }}</mat-label>
+          <input matInput type="date" [(ngModel)]="customTo" (change)="loadAnalytics()">
+        </mat-form-field>
+      }
+    </div>
   </div>
+
+  <div class="analytics-container">
 
   <!-- Loading -->
   @if (loading) {
@@ -151,4 +160,5 @@
       </mat-card-content>
     </mat-card>
   }
+  </div>
 </div>

@@ -1,5 +1,55 @@
+.analytics-section {
+  margin: 24px 0;
+  padding: 24px;
+  background: var(--surface-card, #ffffff);
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.analytics-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #eee;
+
+  .analytics-title {
+    flex: 1;
+
+    h2 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #333;
+      margin: 0 0 8px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .analytics-subtitle {
+      font-size: 0.9rem;
+      color: #666;
+      margin: 0;
+    }
+  }
+
+  .analytics-filter {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+
+    mat-form-field {
+      min-width: 180px;
+    }
+  }
+}
+
 .analytics-container {
-  padding: 20px;
+  padding: 0;
 
   .date-range-filter {
     display: flex;
@@ -116,7 +166,31 @@
 }
 
 // Mobile-Optimierung
-@media (max-width: 600px) {
+@media (max-width: 768px) {
+  .analytics-section {
+    margin: 16px 0;
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .analytics-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+
+    .analytics-title h2 {
+      font-size: 1.5rem;
+    }
+
+    .analytics-filter {
+      flex-direction: column;
+
+      mat-form-field {
+        width: 100%;
+      }
+    }
+  }
+
   .analytics-container {
     padding: 12px;
 
@@ -126,14 +200,6 @@
 
       mat-card .metric-value {
         font-size: 2rem;
-      }
-    }
-
-    .date-range-filter {
-      flex-direction: column;
-
-      mat-form-field {
-        width: 100%;
       }
     }
   }

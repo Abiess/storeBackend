@@ -2814,6 +2814,7 @@
   },
   "ANALYTICS": {
     "TITLE": "Analytics",
+    "SUBTITLE": "Umsatz- und Bestellstatistiken für Ihren Store",
     "DATE_RANGE": "Zeitraum",
     "TODAY": "Heute",
     "LAST_7_DAYS": "Letzte 7 Tage",
