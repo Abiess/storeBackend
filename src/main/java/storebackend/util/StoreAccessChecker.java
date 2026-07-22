@@ -79,8 +79,8 @@ public class StoreAccessChecker {
                 return false;
             }
 
-            // 3. Store laden
-            Store store = storeRepository.findById(storeId).orElse(null);
+            // 3. Store laden (MIT Owner wegen Lazy Loading!)
+            Store store = storeRepository.findByIdWithOwner(storeId).orElse(null);
             
             if (store == null || store.getOwner() == null) {
                 log.warn("[ACCESS-DENIED] Store not found or has no owner: storeId={}, userId={}", 
