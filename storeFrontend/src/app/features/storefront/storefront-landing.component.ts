@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { SubdomainService } from '@app/core/services/subdomain.service';
 import { ProductService } from '@app/core/services/product.service';
@@ -38,6 +38,7 @@ import { RestaurantWarmLayoutComponent } from './components/restaurant-warm-layo
   standalone: true,
   imports: [
     CommonModule,
+    RouterModule,
     TranslatePipe,
     StorefrontHeaderComponent,
     StorefrontBottomNavComponent,
@@ -815,5 +816,12 @@ export class StorefrontLandingComponent implements OnInit {
   onFooterLogoError(): void {
     this.footerLogoError = true;
     console.warn('⚠️ Footer-Logo konnte nicht geladen werden, verwende Store-Namen als Fallback');
+  }
+
+  getWhatsappLink(): string {
+    if (!this.storeWhatsappNumber) return '';
+    // Remove all non-digits
+    const cleanNumber = this.storeWhatsappNumber.replace(/\D/g, '');
+    return `https://wa.me/${cleanNumber}`;
   }
 }
