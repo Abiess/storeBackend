@@ -30,7 +30,7 @@ import { QuantityStepperComponent } from '@app/shared/ui/quantity-stepper/quanti
           <div class="gallery-section">
             <app-product-image-gallery
               [images]="getProductImages()"
-              [primaryImageUrl]="product.title"
+              [primaryImageUrl]="product.primaryImageUrl"
               [productTitle]="product.title">
             </app-product-image-gallery>
           </div>
