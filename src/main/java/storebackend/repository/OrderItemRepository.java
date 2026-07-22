@@ -42,8 +42,8 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
         WHERE o.store.id = :storeId
         AND o.paymentStatus = :paymentStatus
         AND p IS NOT NULL
-        AND (:from IS NULL OR o.createdAt >= :from)
-        AND (:to IS NULL OR o.createdAt <= :to)
+        AND o.createdAt >= :from
+        AND o.createdAt <= :to
         GROUP BY p.id, p.title
         ORDER BY SUM(oi.total) DESC
     """)

@@ -53,8 +53,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
            "WHERE o.store.id = :storeId " +
            "AND o.paymentStatus = :paymentStatus " +
            "AND o.status NOT IN (:excludedStatuses) " +
-           "AND (:from IS NULL OR o.createdAt >= :from) " +
-           "AND (:to IS NULL OR o.createdAt <= :to)")
+           "AND o.createdAt >= :from " +
+           "AND o.createdAt <= :to")
     BigDecimal sumRevenueByStore(
         @Param("storeId") Long storeId,
         @Param("paymentStatus") PaymentStatus paymentStatus,
@@ -69,8 +69,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT COUNT(o) FROM Order o " +
            "WHERE o.store.id = :storeId " +
            "AND o.paymentStatus = :paymentStatus " +
-           "AND (:from IS NULL OR o.createdAt >= :from) " +
-           "AND (:to IS NULL OR o.createdAt <= :to)")
+           "AND o.createdAt >= :from " +
+           "AND o.createdAt <= :to")
     Long countPaidOrders(
         @Param("storeId") Long storeId,
         @Param("paymentStatus") PaymentStatus paymentStatus,
@@ -83,8 +83,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
      */
     @Query("SELECT o.status, COUNT(o) FROM Order o " +
            "WHERE o.store.id = :storeId " +
-           "AND (:from IS NULL OR o.createdAt >= :from) " +
-           "AND (:to IS NULL OR o.createdAt <= :to) " +
+           "AND o.createdAt >= :from " +
+           "AND o.createdAt <= :to " +
            "GROUP BY o.status")
     List<Object[]> countByStoreGroupedByStatus(
         @Param("storeId") Long storeId,
@@ -98,8 +98,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT o.paymentMethod, COUNT(o) FROM Order o " +
            "WHERE o.store.id = :storeId " +
            "AND o.paymentMethod IS NOT NULL " +
-           "AND (:from IS NULL OR o.createdAt >= :from) " +
-           "AND (:to IS NULL OR o.createdAt <= :to) " +
+           "AND o.createdAt >= :from " +
+           "AND o.createdAt <= :to " +
            "GROUP BY o.paymentMethod")
     List<Object[]> countByStoreGroupedByPaymentMethod(
         @Param("storeId") Long storeId,
