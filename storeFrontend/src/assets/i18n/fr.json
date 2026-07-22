@@ -326,6 +326,7 @@
   "navigation": {
     "dashboard": "Tableau de bord",
     "store": "Boutique",
+    "stores": "Boutiques",
     "overview": "Vue d'ensemble",
     "categories": "Catégories",
     "allProducts": "Tous les produits",
@@ -2561,5 +2562,13 @@
     "noProducts": "Aucun produit trouvé",
     "productsFound": "Produits trouvés",
     "secretHint": "Identifiants REST API de WooCommerce → Réglages → Avancé → REST API"
+  },
+  "roles": {
+    "teamAndRoles": "Équipe et rôles",
+    "owner": "Propriétaire",
+    "admin": "Administrateur",
+    "manager": "Gestionnaire",
+    "staff": "Personnel",
+    "employee": "Employé"
   }
 }

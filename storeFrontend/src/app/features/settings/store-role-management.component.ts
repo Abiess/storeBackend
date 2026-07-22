@@ -555,8 +555,8 @@ export class StoreRoleManagementComponent implements OnInit {
 
     this.breadcrumbs = [
       { label: 'navigation.dashboard', route: '/dashboard', icon: '🏠' },
-      { label: 'Stores', route: '/dashboard', icon: '🏪' },
-      { label: 'Team & Rollen', icon: '👥' }
+      { label: 'navigation.stores', route: '/dashboard', icon: '🏪' },
+      { label: 'roles.teamAndRoles', icon: '👥' }
     ];
 
     this.headerActions = [

@@ -447,6 +447,7 @@
   "navigation": {
     "dashboard": "Dashboard",
     "store": "Shop",
+    "stores": "Shops",
     "overview": "Übersicht",
     "categories": "Kategorien",
     "allProducts": "Alle Produkte",
@@ -2778,6 +2779,7 @@
     }
   },
   "roles": {
+    "teamAndRoles": "Team & Rollen",
     "owner": "Inhaber",
     "admin": "Administrator",
     "manager": "Manager",

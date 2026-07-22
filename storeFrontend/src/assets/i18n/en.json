@@ -327,6 +327,7 @@
   "navigation": {
     "dashboard": "Dashboard",
     "store": "Store",
+    "stores": "Stores",
     "overview": "Overview",
     "categories": "Categories",
     "allProducts": "All products",
@@ -2613,5 +2614,13 @@
     "BANK_TRANSFER": "Bank Transfer",
     "CREDIT_CARD": "Credit Card",
     "STRIPE": "Stripe"
+  },
+  "roles": {
+    "teamAndRoles": "Team & Roles",
+    "owner": "Owner",
+    "admin": "Administrator",
+    "manager": "Manager",
+    "staff": "Staff",
+    "employee": "Employee"
   }
 }
