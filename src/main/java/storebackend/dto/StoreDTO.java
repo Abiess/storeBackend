@@ -66,7 +66,12 @@ public class StoreDTO {
 
     // ─── Legal Texts (store-specific, admin only) ──────────────
     private String termsAndConditionsText;
+    private String termsAndConditionsStatus;  // NOT_CONFIGURED, DRAFT, PUBLISHED
     private String privacyPolicyText;
+    private String privacyPolicyStatus;
     private String returnPolicyText;
+    private String returnPolicyStatus;
     private String shippingPolicyText;
+    private String shippingPolicyStatus;
+    private Boolean legalResponsibilityAccepted;  // Consent-Flag
 }

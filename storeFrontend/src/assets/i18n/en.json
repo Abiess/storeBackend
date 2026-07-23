@@ -704,7 +704,57 @@
       "savedSuccess": "✅ Shipping address saved successfully"
     },
     "saveButton": "Save",
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "legal": {
+      "title": "Legal",
+      "imprint": {
+        "street": "Street",
+        "city": "City",
+        "vatId": "VAT ID",
+        "save": "Save Imprint Data",
+        "registerNumber": "Register Number",
+        "authorizedRepresentative": "Authorized Representative",
+        "contactEmail": "Contact Email",
+        "legalName": "Company Name / Name",
+        "country": "Country",
+        "contactPhone": "Contact Phone",
+        "houseNumber": "House Number",
+        "commercialRegister": "Commercial Register",
+        "title": "Imprint",
+        "legalForm": "Legal Form",
+        "postalCode": "Postal Code",
+        "address": "Address"
+      },
+      "status": {
+        "draft": "Draft",
+        "published": "Published",
+        "not_configured": "Not Configured"
+      },
+      "consent": {
+        "truthful": "My information is complete and truthful.",
+        "title": "Confirm Legal Responsibility",
+        "confirm": "Confirm and Publish",
+        "operator": "I am the operator and seller of this store.",
+        "intro": "Before publishing legal texts, please confirm:",
+        "responsible": "I am responsible for products, content and legal texts."
+      },
+      "actions": {
+        "unpublish": "Unpublish",
+        "preview": "Preview",
+        "publish": "Publish",
+        "saveDraft": "Save as Draft"
+      },
+      "texts": {
+        "terms": "Terms and Conditions",
+        "return": "Return Policy",
+        "placeholder": "Enter your legal text here...",
+        "privacy": "Privacy Policy",
+        "shipping": "Shipping Policy",
+        "title": "Legal Texts",
+        "charCount": "characters",
+        "maxLength": "Maximum length: 50,000 characters"
+      }
+    }
   },
   "table": {
     "image": "Image",
@@ -2346,34 +2396,6 @@
       "lastUpdated": "Last updated",
       "date": "June 25, 2026 (DRAFT)"
     },
-    "impressum": {
-      "title": "Legal Notice",
-      "companyHeader": "Information according to § 5 TMG",
-      "companyTodo": "⚠️ TODO: Please enter your complete company information here.",
-      "companyName": "Company name",
-      "address": "Address",
-      "city": "City, ZIP, Country",
-      "country": "Country",
-      "contactHeader": "Contact",
-      "contactTodo": "⚠️ TODO: Please enter your contact information here.",
-      "email": "Email",
-      "phone": "Phone",
-      "website": "Website",
-      "representativeHeader": "Authorized representative",
-      "representativeTodo": "⚠️ TODO: Enter name of managing director / owner.",
-      "representative": "Represented by",
-      "registerHeader": "Register entry",
-      "registerTodo": "⚠️ TODO: Enter commercial register information (if applicable).",
-      "registerCourt": "Register court",
-      "registerNumber": "Register number",
-      "vatId": "VAT ID",
-      "responsibleHeader": "Responsible for content according to § 55 Abs. 2 RStV",
-      "responsibleContent": "The responsible person corresponds to the company information stated above.",
-      "notConfigured": "Imprint not yet complete",
-      "notConfiguredDesc": "The operator of this store has not yet completely provided their provider information.",
-      "incompleteNotice": "The imprint is not yet complete. Please add all required information.",
-      "legalForm": "Legal form"
-    },
     "privacy": {
       "title": "Privacy Policy",
       "draftNotice": "This privacy policy is a draft and must be reviewed by a lawyer before publication.",
@@ -2498,7 +2520,28 @@
       "setupHint": "This page is not yet fully configured for your customers. Please add the legal information in the store settings.",
       "setupButton": "Configure now"
     },
-    "platformNotice": "markt.ma provides the technical shop platform and is not the seller of the products offered in this store."
+    "platformNotice": "markt.ma provides the technical shop platform and is not the seller of the products offered in this store.",
+    "impressum": {
+      "register": "Commercial Register",
+      "address": "Address",
+      "representative": "Authorized Representative",
+      "incomplete": {
+        "message": "The operator of this store has not yet provided complete imprint information.",
+        "toSettings": "Go to Settings",
+        "title": "Imprint Incomplete",
+        "ownerHint": "You are the operator. Please provide your information in the settings."
+      },
+      "contact": "Contact",
+      "email": "Email",
+      "operator": "Operator",
+      "title": "Imprint",
+      "phone": "Phone",
+      "vatId": "VAT ID"
+    },
+    "platform": {
+      "tempNotice": "This is a technical interim solution and not a complete imprint.",
+      "updating": "The platform's imprint information is currently being updated."
+    }
   },
   "woocommerce": {
     "categoryCount": "Category Count",

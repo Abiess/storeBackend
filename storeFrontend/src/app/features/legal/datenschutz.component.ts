@@ -10,21 +10,16 @@ import { TranslatePipe } from '@ngx-translate/core';
     <div class="legal-page">
       <div class="legal-container">
         <h1 class="legal-title">{{ 'legal.privacy.title' | translate }}</h1>
-        
+          
         <div class="legal-alert">
           <span class="alert-icon">⚠️</span>
-          <p>{{ 'legal.privacy.draftNotice' | translate }}</p>
+          <p>{{ 'legal.platform.tempNotice' | translate }}</p>
         </div>
 
         <section class="legal-section">
           <h2>{{ 'legal.privacy.section1Title' | translate }}</h2>
           <div class="legal-content">
-            <div class="legal-info">
-              <p><strong>{{ 'legal.privacy.companyName' | translate }}:</strong> markt.ma</p>
-              <p><strong>{{ 'legal.privacy.address' | translate }}:</strong> Musterstraße 123, 10115 Berlin, Deutschland</p>
-              <p><strong>{{ 'legal.privacy.email' | translate }}:</strong> datenschutz&#64;markt.ma</p>
-              <p><strong>{{ 'legal.privacy.phone' | translate }}:</strong> +212675522961</p>
-            </div>
+            <p>{{ 'legal.platform.updating' | translate }}</p>
           </div>
         </section>
 

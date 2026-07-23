@@ -256,17 +256,50 @@ public class Store {
     @Column(name = "terms_and_conditions_text", columnDefinition = "TEXT")
     private String termsAndConditionsText;
 
+    /** Status der AGB: NOT_CONFIGURED | DRAFT | PUBLISHED */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "terms_and_conditions_status", length = 20, nullable = false)
+    private storebackend.enums.LegalTextStatus termsAndConditionsStatus = 
+        storebackend.enums.LegalTextStatus.NOT_CONFIGURED;
+
     /** Datenschutzerklärung des Stores */
     @Column(name = "privacy_policy_text", columnDefinition = "TEXT")
     private String privacyPolicyText;
+
+    /** Status der Datenschutzerklärung: NOT_CONFIGURED | DRAFT | PUBLISHED */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "privacy_policy_status", length = 20, nullable = false)
+    private storebackend.enums.LegalTextStatus privacyPolicyStatus = 
+        storebackend.enums.LegalTextStatus.NOT_CONFIGURED;
 
     /** Rückgaberecht / Widerrufsbelehrung */
     @Column(name = "return_policy_text", columnDefinition = "TEXT")
     private String returnPolicyText;
 
+    /** Status der Rückgabebedingungen: NOT_CONFIGURED | DRAFT | PUBLISHED */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "return_policy_status", length = 20, nullable = false)
+    private storebackend.enums.LegalTextStatus returnPolicyStatus = 
+        storebackend.enums.LegalTextStatus.NOT_CONFIGURED;
+
     /** Versandinformationen / Lieferbedingungen */
     @Column(name = "shipping_policy_text", columnDefinition = "TEXT")
     private String shippingPolicyText;
+
+    /** Status der Versandbedingungen: NOT_CONFIGURED | DRAFT | PUBLISHED */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "shipping_policy_status", length = 20, nullable = false)
+    private storebackend.enums.LegalTextStatus shippingPolicyStatus = 
+        storebackend.enums.LegalTextStatus.NOT_CONFIGURED;
+
+    /** 
+     * Consent-Flag: Wurde rechtliche Verantwortung für Veröffentlichung bestätigt?
+     * true = aktuell gültige Bestätigung vorhanden
+     * false/null = keine aktuelle Bestätigung
+     * Wird bei Veröffentlichung auf true gesetzt, bei Zurückziehen bleibt true (Historie)
+     */
+    @Column(name = "legal_responsibility_accepted", nullable = false)
+    private Boolean legalResponsibilityAccepted = false;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

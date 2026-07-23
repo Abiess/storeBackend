@@ -72,11 +72,19 @@ public class PublicStoreService {
             store.getRegisterNumber(),
             store.getVatId(),
             store.getImprintComplete(),
-            // Legal Texts (store-specific, PUBLIC)
-            store.getTermsAndConditionsText(),
-            store.getPrivacyPolicyText(),
-            store.getReturnPolicyText(),
-            store.getShippingPolicyText()
+            // Legal Texts (store-specific, PUBLIC) - NUR wenn Status = PUBLISHED
+            store.getTermsAndConditionsStatus() == storebackend.enums.LegalTextStatus.PUBLISHED 
+                ? store.getTermsAndConditionsText() 
+                : null,
+            store.getPrivacyPolicyStatus() == storebackend.enums.LegalTextStatus.PUBLISHED 
+                ? store.getPrivacyPolicyText() 
+                : null,
+            store.getReturnPolicyStatus() == storebackend.enums.LegalTextStatus.PUBLISHED 
+                ? store.getReturnPolicyText() 
+                : null,
+            store.getShippingPolicyStatus() == storebackend.enums.LegalTextStatus.PUBLISHED 
+                ? store.getShippingPolicyText() 
+                : null
         );
     }
 }

@@ -835,7 +835,57 @@
       "retry": "Wiederholen"
     },
     "saveButton": "Speichern",
-    "saving": "Wird gespeichert..."
+    "saving": "Wird gespeichert...",
+    "legal": {
+      "title": "Rechtliches",
+      "imprint": {
+        "title": "Impressum",
+        "legalName": "Firmenname / Name",
+        "legalForm": "Rechtsform",
+        "authorizedRepresentative": "Vertretungsberechtigter",
+        "commercialRegister": "Handelsregister",
+        "registerNumber": "Registernummer",
+        "vatId": "USt-IdNr.",
+        "contactEmail": "Kontakt-E-Mail",
+        "contactPhone": "Kontakt-Telefon",
+        "address": "Anschrift",
+        "street": "Straße",
+        "houseNumber": "Hausnummer",
+        "postalCode": "PLZ",
+        "city": "Stadt",
+        "country": "Land",
+        "save": "Impressumsdaten speichern"
+      },
+      "texts": {
+        "title": "Rechtstexte",
+        "terms": "AGB (Allgemeine Geschäftsbedingungen)",
+        "privacy": "Datenschutzerklärung",
+        "return": "Rückgabebedingungen",
+        "shipping": "Versandbedingungen",
+        "placeholder": "Geben Sie hier Ihren Rechtstext ein...",
+        "charCount": "Zeichen",
+        "maxLength": "Maximale Länge: 50.000 Zeichen"
+      },
+      "actions": {
+        "saveDraft": "Als Entwurf speichern",
+        "preview": "Vorschau",
+        "publish": "Veröffentlichen",
+        "unpublish": "Veröffentlichung zurückziehen"
+      },
+      "status": {
+        "not_configured": "Nicht eingerichtet",
+        "draft": "Entwurf",
+        "published": "Veröffentlicht"
+      },
+      "consent": {
+        "title": "Rechtliche Verantwortung bestätigen",
+        "intro": "Bevor Sie Rechtstexte veröffentlichen, bestätigen Sie bitte:",
+        "operator": "Ich bin Betreiber und Verkäufer dieses Stores.",
+        "truthful": "Meine Angaben sind vollständig und wahrheitsgemäß.",
+        "responsible": "Ich bin für Produkte, Inhalte und Rechtstexte verantwortlich.",
+        "confirm": "Bestätigen und veröffentlichen"
+      }
+    }
   },
   "table": {
     "image": "Bild",
@@ -2406,34 +2456,6 @@
       "lastUpdated": "Zuletzt aktualisiert",
       "date": "25.06.2026 (ENTWURF)"
     },
-    "impressum": {
-      "title": "Impressum",
-      "companyHeader": "Angaben gemäß § 5 TMG",
-      "companyTodo": "⚠️ TODO: Hier müssen Ihre vollständigen Firmendaten eingetragen werden.",
-      "companyName": "Firmenname",
-      "address": "Adresse",
-      "city": "Stadt, PLZ, Land",
-      "country": "Land",
-      "contactHeader": "Kontakt",
-      "contactTodo": "⚠️ TODO: Hier müssen Ihre Kontaktdaten eingetragen werden.",
-      "email": "E-Mail",
-      "phone": "Telefon",
-      "website": "Website",
-      "representativeHeader": "Vertretungsberechtigte Person",
-      "representativeTodo": "⚠️ TODO: Name des Geschäftsführers / Inhabers eintragen.",
-      "representative": "Vertreten durch",
-      "registerHeader": "Registereintrag",
-      "registerTodo": "⚠️ TODO: Handelsregister-Informationen eintragen (falls vorhanden).",
-      "registerCourt": "Registergericht",
-      "registerNumber": "Registernummer",
-      "vatId": "Umsatzsteuer-ID",
-      "responsibleHeader": "Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV",
-      "responsibleContent": "Die verantwortliche Person entspricht den oben angegebenen Firmendaten.",
-      "notConfigured": "Impressum noch nicht vollständig",
-      "notConfiguredDesc": "Der Betreiber dieses Stores hat seine Anbieterinformationen noch nicht vollständig hinterlegt.",
-      "incompleteNotice": "Das Impressum ist noch nicht vollständig. Bitte ergänzen Sie alle erforderlichen Angaben.",
-      "legalForm": "Rechtsform"
-    },
     "privacy": {
       "title": "Datenschutzerklärung",
       "draftNotice": "Diese Datenschutzerklärung ist ein Entwurf und muss vor Veröffentlichung durch einen Fachanwalt geprüft werden.",
@@ -2558,7 +2580,28 @@
       "setupHint": "Diese Seite ist für Ihre Kunden noch nicht vollständig eingerichtet. Bitte ergänzen Sie die rechtlichen Angaben in den Store-Einstellungen.",
       "setupButton": "Jetzt einrichten"
     },
-    "platformNotice": "markt.ma stellt die technische Shop-Plattform bereit und ist nicht Verkäufer der in diesem Store angebotenen Produkte."
+    "platformNotice": "markt.ma stellt die technische Shop-Plattform bereit und ist nicht Verkäufer der in diesem Store angebotenen Produkte.",
+    "impressum": {
+      "title": "Impressum",
+      "operator": "Anbieter",
+      "address": "Anschrift",
+      "contact": "Kontakt",
+      "email": "E-Mail",
+      "phone": "Telefon",
+      "representative": "Vertretungsberechtigter",
+      "register": "Handelsregister",
+      "vatId": "Umsatzsteuer-ID",
+      "incomplete": {
+        "title": "Impressum noch nicht vollständig",
+        "message": "Der Betreiber dieses Stores hat seine Anbieterinformationen noch nicht vollständig hinterlegt.",
+        "ownerHint": "Sie sind der Betreiber. Bitte hinterlegen Sie Ihre Daten in den Einstellungen.",
+        "toSettings": "Zu den Einstellungen"
+      }
+    },
+    "platform": {
+      "updating": "Die Anbieterinformationen der Plattform werden derzeit aktualisiert.",
+      "tempNotice": "Dies ist eine technische Zwischenlösung und kein vollständiges Impressum."
+    }
   },
   "woocommerce": {
     "config": {

@@ -705,7 +705,57 @@
       "savedSuccess": "✅ Adresse d'expédition enregistrée avec succès"
     },
     "saveButton": "Enregistrer",
-    "saving": "Enregistrement..."
+    "saving": "Enregistrement...",
+    "legal": {
+      "texts": {
+        "terms": "Conditions générales de vente",
+        "privacy": "Politique de confidentialité",
+        "return": "Politique de retour",
+        "charCount": "caractères",
+        "placeholder": "Entrez votre texte juridique ici...",
+        "title": "Textes juridiques",
+        "shipping": "Politique d'expédition",
+        "maxLength": "Longueur maximale : 50 000 caractères"
+      },
+      "consent": {
+        "truthful": "Mes informations sont complètes et véridiques.",
+        "intro": "Avant de publier des textes juridiques, veuillez confirmer :",
+        "operator": "Je suis l'opérateur et le vendeur de cette boutique.",
+        "confirm": "Confirmer et publier",
+        "title": "Confirmer la responsabilité juridique",
+        "responsible": "Je suis responsable des produits, du contenu et des textes juridiques."
+      },
+      "status": {
+        "not_configured": "Non configuré",
+        "published": "Publié",
+        "draft": "Brouillon"
+      },
+      "imprint": {
+        "commercialRegister": "Registre du commerce",
+        "registerNumber": "Numéro d'enregistrement",
+        "street": "Rue",
+        "contactPhone": "Téléphone de contact",
+        "vatId": "Numéro de TVA",
+        "authorizedRepresentative": "Représentant autorisé",
+        "legalName": "Nom de l'entreprise / Nom",
+        "save": "Enregistrer les mentions légales",
+        "postalCode": "Code postal",
+        "houseNumber": "Numéro",
+        "title": "Mentions légales",
+        "address": "Adresse",
+        "country": "Pays",
+        "legalForm": "Forme juridique",
+        "city": "Ville",
+        "contactEmail": "E-mail de contact"
+      },
+      "title": "Mentions légales",
+      "actions": {
+        "publish": "Publier",
+        "preview": "Aperçu",
+        "unpublish": "Dépublier",
+        "saveDraft": "Enregistrer comme brouillon"
+      }
+    }
   },
   "table": {
     "image": "Image",
@@ -2470,34 +2520,6 @@
       "lastUpdated": "Dernière mise à jour",
       "date": "25 juin 2026 (BROUILLON)"
     },
-    "impressum": {
-      "title": "Mentions légales",
-      "companyHeader": "Informations conformément au § 5 TMG",
-      "companyTodo": "⚠️ TODO : Veuillez entrer ici vos informations complètes sur l'entreprise.",
-      "companyName": "Nom de l'entreprise",
-      "address": "Adresse",
-      "city": "Ville, Code postal, Pays",
-      "country": "Pays",
-      "contactHeader": "Contact",
-      "contactTodo": "⚠️ TODO : Veuillez entrer vos coordonnées ici.",
-      "email": "Email",
-      "phone": "Téléphone",
-      "website": "Site web",
-      "representativeHeader": "Représentant autorisé",
-      "representativeTodo": "⚠️ TODO : Entrez le nom du directeur général / propriétaire.",
-      "representative": "Représenté par",
-      "registerHeader": "Inscription au registre",
-      "registerTodo": "⚠️ TODO : Entrez les informations du registre du commerce (le cas échéant).",
-      "registerCourt": "Tribunal d'enregistrement",
-      "registerNumber": "Numéro d'enregistrement",
-      "vatId": "Numéro de TVA",
-      "responsibleHeader": "Responsable du contenu conformément au § 55 Abs. 2 RStV",
-      "responsibleContent": "La personne responsable correspond aux informations de l'entreprise indiquées ci-dessus.",
-      "notConfigured": "Mentions légales non encore complètes",
-      "notConfiguredDesc": "L'exploitant de cette boutique n'a pas encore fourni complètement ses informations légales.",
-      "incompleteNotice": "Les mentions légales ne sont pas encore complètes. Veuillez ajouter toutes les informations requises.",
-      "legalForm": "Forme juridique"
-    },
     "privacy": {
       "title": "Politique de confidentialité",
       "draftNotice": "Cette politique de confidentialité est un projet et doit être examinée par un avocat avant publication.",
@@ -2622,7 +2644,28 @@
       "setupHint": "Cette page n'est pas encore entièrement configurée pour vos clients. Veuillez ajouter les informations légales dans les paramètres de la boutique.",
       "setupButton": "Configurer maintenant"
     },
-    "platformNotice": "markt.ma fournit la plateforme technique de boutique et n'est pas le vendeur des produits proposés dans cette boutique."
+    "platformNotice": "markt.ma fournit la plateforme technique de boutique et n'est pas le vendeur des produits proposés dans cette boutique.",
+    "impressum": {
+      "address": "Adresse",
+      "contact": "Contact",
+      "incomplete": {
+        "title": "Mentions légales incomplètes",
+        "toSettings": "Aller aux paramètres",
+        "message": "L'opérateur de cette boutique n'a pas encore fourni d'informations complètes.",
+        "ownerHint": "Vous êtes l'opérateur. Veuillez fournir vos informations dans les paramètres."
+      },
+      "operator": "Opérateur",
+      "register": "Registre du commerce",
+      "representative": "Représentant autorisé",
+      "title": "Mentions légales",
+      "email": "E-mail",
+      "vatId": "Numéro de TVA",
+      "phone": "Téléphone"
+    },
+    "platform": {
+      "updating": "Les mentions légales de la plateforme sont en cours de mise à jour.",
+      "tempNotice": "Ceci est une solution technique provisoire et non des mentions légales complètes."
+    }
   },
   "woocommerce": {
     "error": {

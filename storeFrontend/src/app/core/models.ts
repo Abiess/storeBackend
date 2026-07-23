@@ -804,6 +804,34 @@ export interface Store {
   shippingTaxRate?: number;
   shippingTaxStrategy?: ShippingTaxStrategy;
   vatExemptionText?: string;
+  // ─── Legal/Impressum (Admin only) ──────────────────────────────
+  legalName?: string;
+  legalForm?: string;
+  authorizedRepresentative?: string;
+  commercialRegister?: string;
+  registerNumber?: string;
+  vatId?: string;
+  imprintComplete?: boolean;
+  legalResponsibilityAccepted?: boolean;
+  legalResponsibilityAcceptedAt?: string;
+  legalResponsibilityAcceptedByUserId?: number;
+  legalResponsibilityVersion?: string;
+  // ─── Shipping Address (Admin only, for DHL/Shipping) ──────────
+  shippingAddressStreet?: string;
+  shippingAddressHouseNumber?: string;
+  shippingAddressPostalCode?: string;
+  shippingAddressCity?: string;
+  shippingAddressCountry?: string;
+  shippingAddressEmail?: string;
+  // ─── Legal Texts & Status (Admin only) ─────────────────────────
+  termsAndConditionsText?: string;
+  termsAndConditionsStatus?: 'NOT_CONFIGURED' | 'DRAFT' | 'PUBLISHED';
+  privacyPolicyText?: string;
+  privacyPolicyStatus?: 'NOT_CONFIGURED' | 'DRAFT' | 'PUBLISHED';
+  returnPolicyText?: string;
+  returnPolicyStatus?: 'NOT_CONFIGURED' | 'DRAFT' | 'PUBLISHED';
+  shippingPolicyText?: string;
+  shippingPolicyStatus?: 'NOT_CONFIGURED' | 'DRAFT' | 'PUBLISHED';
 }
 
 export interface PublicStore {
@@ -847,6 +875,12 @@ export interface PublicStore {
   registerNumber?: string;
   vatId?: string;
   imprintComplete?: boolean;
+  // ─── Shipping Address (Public - for Impressum) ─────────────────
+  shippingAddressStreet?: string;
+  shippingAddressHouseNumber?: string;
+  shippingAddressPostalCode?: string;
+  shippingAddressCity?: string;
+  shippingAddressCountry?: string;
   // ─── Legal Texts (Store-specific, Public) ──────────────────────
   termsAndConditionsText?: string;
   privacyPolicyText?: string;

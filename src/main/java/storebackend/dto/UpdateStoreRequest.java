@@ -91,10 +91,28 @@ public class UpdateStoreRequest {
     // ─── Legal Texts (store-specific) ──────────────────────────
     /** AGB des Stores */
     private String termsAndConditionsText;
+    /** Status der AGB (für Admin, nicht für Veröffentlichungs-Aktionen) */
+    private String termsAndConditionsStatus;
+    
     /** Datenschutzerklärung des Stores */
     private String privacyPolicyText;
+    /** Status der Datenschutzerklärung */
+    private String privacyPolicyStatus;
+    
     /** Rückgaberecht / Widerrufsbelehrung */
     private String returnPolicyText;
+    /** Status der Rückgabebedingungen */
+    private String returnPolicyStatus;
+    
     /** Versandinformationen / Lieferbedingungen */
     private String shippingPolicyText;
+    /** Status der Versandbedingungen */
+    private String shippingPolicyStatus;
+    
+    /**
+     * Consent-Flag: Wurde rechtliche Verantwortung bestätigt?
+     * WICHTIG: Wird bei Veröffentlichungs-Aktionen automatisch gesetzt,
+     * NICHT vom Frontend direkt editierbar
+     */
+    private Boolean legalResponsibilityAccepted;
 }

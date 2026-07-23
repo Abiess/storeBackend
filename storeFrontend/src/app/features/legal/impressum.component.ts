@@ -17,55 +17,16 @@ import { TranslatePipe } from '@ngx-translate/core';
       </div>
 
       <div class="legal-container">
-        <section class="legal-section">
-          <div class="section-icon">🏢</div>
-          <h2>{{ 'legal.impressum.companyHeader' | translate }}</h2>
-          <div class="legal-content">
-            <div class="legal-info">
-              <p><strong>{{ 'legal.impressum.companyName' | translate }}:</strong> markt.ma GmbH</p>
-              <p><strong>{{ 'legal.impressum.address' | translate }}:</strong> Musterstraße 123</p>
-              <p><strong>{{ 'legal.impressum.city' | translate }}:</strong> 10115 Berlin</p>
-              <p><strong>{{ 'legal.impressum.country' | translate }}:</strong> Deutschland</p>
-            </div>
+        <div class="legal-notice">
+          <div class="notice-icon">ℹ️</div>
+          <div class="notice-content">
+            <h2>{{ 'legal.platform.updating' | translate }}</h2>
+            <p>{{ 'legal.platform.tempNotice' | translate }}</p>
           </div>
-        </section>
-
-        <section class="legal-section">
-          <div class="section-icon">📞</div>
-          <h2>{{ 'legal.impressum.contactHeader' | translate }}</h2>
-          <div class="legal-content">
-            <div class="legal-info">
-              <p><strong>{{ 'legal.impressum.email' | translate }}:</strong> <a href="mailto:info@markt.ma" class="legal-link">info&#64;markt.ma</a></p>
-              <p><strong>{{ 'legal.impressum.phone' | translate }}:</strong> <a href="tel:+493012345678" class="legal-link">+49 30 12345678</a></p>
-              <p><strong>{{ 'legal.impressum.website' | translate }}:</strong> <a href="https://markt.ma" target="_blank" class="legal-link">https://markt.ma</a></p>
-            </div>
-          </div>
-        </section>
+        </div>
 
         <section class="legal-section">
           <div class="section-icon">👤</div>
-          <h2>{{ 'legal.impressum.representativeHeader' | translate }}</h2>
-          <div class="legal-content">
-            <div class="legal-info">
-              <p><strong>{{ 'legal.impressum.representative' | translate }}:</strong> Max Mustermann (Geschäftsführer)</p>
-            </div>
-          </div>
-        </section>
-
-        <section class="legal-section">
-          <div class="section-icon">📋</div>
-          <h2>{{ 'legal.impressum.registerHeader' | translate }}</h2>
-          <div class="legal-content">
-            <div class="legal-info">
-              <p><strong>{{ 'legal.impressum.registerCourt' | translate }}:</strong> Amtsgericht Berlin-Charlottenburg</p>
-              <p><strong>{{ 'legal.impressum.registerNumber' | translate }}:</strong> HRB 123456 B</p>
-              <p><strong>{{ 'legal.impressum.vatId' | translate }}:</strong> DE123456789</p>
-            </div>
-          </div>
-        </section>
-
-        <section class="legal-section">
-          <div class="section-icon">✍️</div>
           <h2>{{ 'legal.impressum.responsibleHeader' | translate }}</h2>
           <div class="legal-content">
             <p>{{ 'legal.impressum.responsibleContent' | translate }}</p>
@@ -80,7 +41,6 @@ import { TranslatePipe } from '@ngx-translate/core';
             <span class="footer-separator">•</span>
             <a routerLink="/kontakt" class="footer-link">{{ 'legal.contact.title' | translate }}</a>
           </div>
-          <p class="footer-copyright">© 2026 markt.ma GmbH. Alle Rechte vorbehalten.</p>
         </div>
       </div>
     </div>
@@ -122,6 +82,36 @@ import { TranslatePipe } from '@ngx-translate/core';
       border-radius: 16px 16px 0 0;
       padding: 3rem 2rem;
       box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .legal-notice {
+      background: #fef3c7;
+      border: 2px solid #fcd34d;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .notice-icon {
+      font-size: 2rem;
+      flex-shrink: 0;
+    }
+
+    .notice-content h2 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: #92400e;
+      margin: 0 0 0.5rem 0;
+    }
+
+    .notice-content p {
+      font-size: 0.9375rem;
+      color: #92400e;
+      margin: 0;
+      line-height: 1.6;
     }
 
     .legal-section {

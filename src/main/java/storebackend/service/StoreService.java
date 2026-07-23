@@ -420,19 +420,73 @@ public class StoreService {
 
         // ─── Legal Texts (store-specific) ───────────────────────────
         if (request.getTermsAndConditionsText() != null) {
+            validateLegalText(request.getTermsAndConditionsText(), "AGB");
             store.setTermsAndConditionsText(request.getTermsAndConditionsText().isBlank() ? null : request.getTermsAndConditionsText().trim());
         }
+        if (request.getTermsAndConditionsStatus() != null) {
+            storebackend.enums.LegalTextStatus termsStatus = parseLegalTextStatus(request.getTermsAndConditionsStatus(), "AGB");
+            validateLegalTextStatusChange(termsStatus, store.getTermsAndConditionsText(), "AGB");
+            store.setTermsAndConditionsStatus(termsStatus);
+        }
+        
         if (request.getPrivacyPolicyText() != null) {
+            validateLegalText(request.getPrivacyPolicyText(), "Datenschutzerklärung");
             store.setPrivacyPolicyText(request.getPrivacyPolicyText().isBlank() ? null : request.getPrivacyPolicyText().trim());
         }
+        if (request.getPrivacyPolicyStatus() != null) {
+            storebackend.enums.LegalTextStatus privacyStatus = parseLegalTextStatus(request.getPrivacyPolicyStatus(), "Datenschutzerklärung");
+            validateLegalTextStatusChange(privacyStatus, store.getPrivacyPolicyText(), "Datenschutzerklärung");
+            store.setPrivacyPolicyStatus(privacyStatus);
+        }
+        
         if (request.getReturnPolicyText() != null) {
+            validateLegalText(request.getReturnPolicyText(), "Rückgabebedingungen");
             store.setReturnPolicyText(request.getReturnPolicyText().isBlank() ? null : request.getReturnPolicyText().trim());
         }
+        if (request.getReturnPolicyStatus() != null) {
+            storebackend.enums.LegalTextStatus returnStatus = parseLegalTextStatus(request.getReturnPolicyStatus(), "Rückgabebedingungen");
+            validateLegalTextStatusChange(returnStatus, store.getReturnPolicyText(), "Rückgabebedingungen");
+            store.setReturnPolicyStatus(returnStatus);
+        }
+        
         if (request.getShippingPolicyText() != null) {
+            validateLegalText(request.getShippingPolicyText(), "Versandbedingungen");
             store.setShippingPolicyText(request.getShippingPolicyText().isBlank() ? null : request.getShippingPolicyText().trim());
         }
+        if (request.getShippingPolicyStatus() != null) {
+            storebackend.enums.LegalTextStatus shippingStatus = parseLegalTextStatus(request.getShippingPolicyStatus(), "Versandbedingungen");
+            validateLegalTextStatusChange(shippingStatus, store.getShippingPolicyText(), "Versandbedingungen");
+            store.setShippingPolicyStatus(shippingStatus);
+        }
 
-        // ─── Automatische Impressum-Vollständigkeits-Prüfung ────────
+        // ─── Legal Consent Tracking ─────────────────────────────────
+        // Consent wird NUR aktualisiert wenn:
+        // 1. Request enthält legalResponsibilityAccepted = true
+        // 2. UND mindestens ein Status wird auf PUBLISHED gesetzt
+        boolean isPublishing = 
+            (request.getTermsAndConditionsStatus() != null && "PUBLISHED".equals(request.getTermsAndConditionsStatus())) ||
+            (request.getPrivacyPolicyStatus() != null && "PUBLISHED".equals(request.getPrivacyPolicyStatus())) ||
+            (request.getReturnPolicyStatus() != null && "PUBLISHED".equals(request.getReturnPolicyStatus())) ||
+            (request.getShippingPolicyStatus() != null && "PUBLISHED".equals(request.getShippingPolicyStatus()));
+        
+        if (isPublishing) {
+            // Veröffentlichung erfordert expliziten Consent
+            if (request.getLegalResponsibilityAccepted() == null || !request.getLegalResponsibilityAccepted()) {
+                throw new RuntimeException("Veröffentlichung erfordert Bestätigung der rechtlichen Verantwortung");
+            }
+            
+            // Consent-Daten aktualisieren
+            store.setLegalResponsibilityAccepted(true);
+            store.setLegalResponsibilityAcceptedAt(java.time.LocalDateTime.now());
+            store.setLegalResponsibilityAcceptedByUserId(user.getId());
+            store.setLegalResponsibilityVersion(
+                request.getLegalResponsibilityVersion() != null && !request.getLegalResponsibilityVersion().isBlank()
+                    ? request.getLegalResponsibilityVersion().trim()
+                    : "1.0"
+            );
+            log.info("✅ Legal Consent recorded for Store {}: User {}, Version {}, Timestamp {}",
+                storeId, user.getEmail(), store.getLegalResponsibilityVersion(), store.getLegalResponsibilityAcceptedAt());
+        }
         // Mindestanforderung: legalName, address, contactEmail
         boolean impressumComplete = store.getLegalName() != null && !store.getLegalName().isBlank()
             && store.getAddress() != null && !store.getAddress().isBlank()
@@ -654,6 +708,74 @@ public class StoreService {
         return toDTO(store);
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // HELPER: Legal Text Validation
+    // ═══════════════════════════════════════════════════════════════
+
+    /**
+     * Validiert einen Legal-Text (max. 50.000 Zeichen).
+     * 
+     * @param text Der zu validierende Text
+     * @param fieldName Name des Feldes (für Fehlermeldungen)
+     * @throws RuntimeException wenn Validierung fehlschlägt
+     */
+    private void validateLegalText(String text, String fieldName) {
+        if (text == null || text.isBlank()) {
+            return; // Leere Texte sind erlaubt (werden zu null)
+        }
+        
+        String trimmed = text.trim();
+        if (trimmed.length() > 50000) {
+            throw new RuntimeException(fieldName + " darf maximal 50.000 Zeichen enthalten (aktuell: " + trimmed.length() + ")");
+        }
+    }
+
+    /**
+     * Validiert eine Status-Änderung für einen Legal-Text.
+     * 
+     * @param status Der neue Status
+     * @param text Der Text-Inhalt
+     * @param fieldName Name des Feldes (für Fehlermeldungen)
+     * @throws RuntimeException wenn Validierung fehlschlägt
+     */
+    private void validateLegalTextStatusChange(storebackend.enums.LegalTextStatus status, String text, String fieldName) {
+        // PUBLISHED erfordert nicht-leeren Text
+        if (status == storebackend.enums.LegalTextStatus.PUBLISHED) {
+            if (text == null || text.trim().isEmpty()) {
+                throw new RuntimeException(fieldName + " kann nicht veröffentlicht werden: Text ist leer");
+            }
+        }
+        
+        // NOT_CONFIGURED setzt Text automatisch zurück
+        if (status == storebackend.enums.LegalTextStatus.NOT_CONFIGURED && text != null && !text.isBlank()) {
+            log.warn("{} Status wird auf NOT_CONFIGURED gesetzt, aber Text ist nicht leer. Text wird gelöscht.", fieldName);
+        }
+    }
+
+    /**
+     * Parst einen Status-String zu LegalTextStatus Enum.
+     * 
+     * @param statusStr Status als String
+     * @param fieldName Name des Feldes (für Fehlermeldungen)
+     * @return LegalTextStatus Enum
+     * @throws RuntimeException wenn Status ungültig ist
+     */
+    private storebackend.enums.LegalTextStatus parseLegalTextStatus(String statusStr, String fieldName) {
+        if (statusStr == null || statusStr.isBlank()) {
+            return storebackend.enums.LegalTextStatus.NOT_CONFIGURED;
+        }
+        
+        try {
+            return storebackend.enums.LegalTextStatus.valueOf(statusStr.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException(fieldName + " Status ungültig: '" + statusStr + "'. Erlaubt: NOT_CONFIGURED, DRAFT, PUBLISHED");
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // HELPER: DTO Mapping
+    // ═══════════════════════════════════════════════════════════════
+
     private StoreDTO toDTO(Store store) {
         StoreDTO dto = new StoreDTO();
         dto.setId(store.getId());
@@ -706,9 +828,14 @@ public class StoreService {
         dto.setImprintComplete(store.getImprintComplete());
         // ─── Legal Texts (store-specific, admin only) ───────────────
         dto.setTermsAndConditionsText(store.getTermsAndConditionsText());
+        dto.setTermsAndConditionsStatus(store.getTermsAndConditionsStatus() != null ? store.getTermsAndConditionsStatus().name() : "NOT_CONFIGURED");
         dto.setPrivacyPolicyText(store.getPrivacyPolicyText());
+        dto.setPrivacyPolicyStatus(store.getPrivacyPolicyStatus() != null ? store.getPrivacyPolicyStatus().name() : "NOT_CONFIGURED");
         dto.setReturnPolicyText(store.getReturnPolicyText());
+        dto.setReturnPolicyStatus(store.getReturnPolicyStatus() != null ? store.getReturnPolicyStatus().name() : "NOT_CONFIGURED");
         dto.setShippingPolicyText(store.getShippingPolicyText());
+        dto.setShippingPolicyStatus(store.getShippingPolicyStatus() != null ? store.getShippingPolicyStatus().name() : "NOT_CONFIGURED");
+        dto.setLegalResponsibilityAccepted(store.getLegalResponsibilityAccepted());
         return dto;
     }
 

@@ -590,6 +590,255 @@ export interface SettingsTab {
           </div>
         </div>
 
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- Legal Tab: Rechtliches (Impressum + Rechtstexte) -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <div class="tab-content" *ngIf="activeTab === 'legal'">
+          <div class="legal-section">
+            <h2 class="section-title">📋 {{ 'settings.legal.imprint.title' | translate }}</h2>
+            <p class="section-hint">{{ 'settings.legal.imprint.hint' | translate }}</p>
+
+            <div class="form-grid">
+              <!-- legalName -->
+              <div class="form-group">
+                <label for="legal-name">{{ 'settings.legal.imprint.legalName' | translate }} *</label>
+                <input id="legal-name" type="text" [(ngModel)]="legalData.legalName" 
+                       class="form-control" [placeholder]="'settings.legal.imprint.legalNamePlaceholder' | translate" />
+              </div>
+
+              <!-- legalForm -->
+              <div class="form-group">
+                <label for="legal-form">{{ 'settings.legal.imprint.legalForm' | translate }}</label>
+                <input id="legal-form" type="text" [(ngModel)]="legalData.legalForm" 
+                       class="form-control" [placeholder]="'settings.legal.imprint.legalFormPlaceholder' | translate" />
+              </div>
+
+              <!-- authorizedRepresentative -->
+              <div class="form-group full-width">
+                <label for="legal-representative">{{ 'settings.legal.imprint.representative' | translate }}</label>
+                <input id="legal-representative" type="text" [(ngModel)]="legalData.authorizedRepresentative" 
+                       class="form-control" [placeholder]="'settings.legal.imprint.representativePlaceholder' | translate" />
+              </div>
+
+              <!-- commercialRegister -->
+              <div class="form-group">
+                <label for="legal-register">{{ 'settings.legal.imprint.register' | translate }}</label>
+                <input id="legal-register" type="text" [(ngModel)]="legalData.commercialRegister" 
+                       class="form-control" [placeholder]="'settings.legal.imprint.registerPlaceholder' | translate" />
+              </div>
+
+              <!-- registerNumber -->
+              <div class="form-group">
+                <label for="legal-register-number">{{ 'settings.legal.imprint.registerNumber' | translate }}</label>
+                <input id="legal-register-number" type="text" [(ngModel)]="legalData.registerNumber" 
+                       class="form-control" [placeholder]="'settings.legal.imprint.registerNumberPlaceholder' | translate" />
+              </div>
+
+              <!-- vatId -->
+              <div class="form-group">
+                <label for="legal-vat">{{ 'settings.legal.imprint.vatId' | translate }}</label>
+                <input id="legal-vat" type="text" [(ngModel)]="legalData.vatId" 
+                       class="form-control" [placeholder]="'settings.legal.imprint.vatIdPlaceholder' | translate" />
+              </div>
+
+              <!-- contactEmail -->
+              <div class="form-group">
+                <label for="legal-email">{{ 'settings.legal.imprint.email' | translate }} *</label>
+                <input id="legal-email" type="email" [(ngModel)]="legalData.contactEmail" 
+                       class="form-control" [placeholder]="'settings.legal.imprint.emailPlaceholder' | translate" />
+              </div>
+
+              <!-- contactPhone -->
+              <div class="form-group">
+                <label for="legal-phone">{{ 'settings.legal.imprint.phone' | translate }}</label>
+                <input id="legal-phone" type="tel" [(ngModel)]="legalData.contactPhone" 
+                       class="form-control" [placeholder]="'settings.legal.imprint.phonePlaceholder' | translate" />
+              </div>
+
+              <!-- Shipping Address -->
+              <div class="form-group full-width">
+                <h3 class="subsection-title">📍 {{ 'settings.legal.imprint.address' | translate }}</h3>
+              </div>
+
+              <div class="form-group">
+                <label for="legal-street">{{ 'settings.legal.imprint.street' | translate }} *</label>
+                <input id="legal-street" type="text" [(ngModel)]="legalData.shippingAddressStreet" 
+                       class="form-control" [placeholder]="'settings.legal.imprint.streetPlaceholder' | translate" />
+              </div>
+
+              <div class="form-group">
+                <label for="legal-house">{{ 'settings.legal.imprint.houseNumber' | translate }} *</label>
+                <input id="legal-house" type="text" [(ngModel)]="legalData.shippingAddressHouseNumber" 
+                       class="form-control" [placeholder]="'settings.legal.imprint.houseNumberPlaceholder' | translate" />
+              </div>
+
+              <div class="form-group">
+                <label for="legal-postal">{{ 'settings.legal.imprint.postalCode' | translate }} *</label>
+                <input id="legal-postal" type="text" [(ngModel)]="legalData.shippingAddressPostalCode" 
+                       class="form-control" [placeholder]="'settings.legal.imprint.postalCodePlaceholder' | translate" />
+              </div>
+
+              <div class="form-group">
+                <label for="legal-city">{{ 'settings.legal.imprint.city' | translate }} *</label>
+                <input id="legal-city" type="text" [(ngModel)]="legalData.shippingAddressCity" 
+                       class="form-control" [placeholder]="'settings.legal.imprint.cityPlaceholder' | translate" />
+              </div>
+
+              <div class="form-group">
+                <label for="legal-country">{{ 'settings.legal.imprint.country' | translate }} *</label>
+                <input id="legal-country" type="text" [(ngModel)]="legalData.shippingAddressCountry" 
+                       class="form-control" placeholder="DE" maxlength="2" />
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn btn-primary" (click)="saveLegalImprint()" [disabled]="savingLegal">
+                {{ savingLegal ? ('common.saving' | translate) : ('common.save' | translate) }}
+              </button>
+            </div>
+          </div>
+
+          <!-- ═══════════════════════════════════════════════════════════ -->
+          <!-- Rechtstexte: AGB, Datenschutz, Rückgabe, Versand -->
+          <!-- ═══════════════════════════════════════════════════════════ -->
+          <div class="legal-texts-section">
+            <h2 class="section-title">📄 {{ 'settings.legal.texts.title' | translate }}</h2>
+            <p class="section-hint">{{ 'settings.legal.texts.hint' | translate }}</p>
+
+            <!-- AGB -->
+            <div class="legal-text-card">
+              <div class="legal-text-header">
+                <h3>{{ 'settings.legal.texts.terms.title' | translate }}</h3>
+                <span class="status-badge" [class]="'status-' + legalData.termsAndConditionsStatus?.toLowerCase()">
+                  {{ 'settings.legal.status.' + legalData.termsAndConditionsStatus?.toLowerCase() | translate }}
+                </span>
+              </div>
+              <textarea [(ngModel)]="legalData.termsAndConditionsText" rows="8" class="form-control"
+                        [placeholder]="'settings.legal.texts.terms.placeholder' | translate"
+                        maxlength="50000"></textarea>
+              <div class="char-counter">
+                {{ legalData.termsAndConditionsText?.length || 0 }} / 50.000 {{ 'common.characters' | translate }}
+              </div>
+              <div class="legal-text-actions">
+                <button class="btn btn-secondary" (click)="saveDraft('terms')" [disabled]="savingLegal">
+                  💾 {{ 'settings.legal.actions.saveDraft' | translate }}
+                </button>
+                <button class="btn btn-info" (click)="previewText('terms')" [disabled]="!legalData.termsAndConditionsText">
+                  👁️ {{ 'settings.legal.actions.preview' | translate }}
+                </button>
+                <button class="btn btn-success" (click)="publishText('terms')" 
+                        [disabled]="!legalData.termsAndConditionsText?.trim() || savingLegal"
+                        *ngIf="legalData.termsAndConditionsStatus !== 'PUBLISHED'">
+                  ✅ {{ 'settings.legal.actions.publish' | translate }}
+                </button>
+                <button class="btn btn-warning" (click)="unpublishText('terms')" [disabled]="savingLegal"
+                        *ngIf="legalData.termsAndConditionsStatus === 'PUBLISHED'">
+                  ⏸️ {{ 'settings.legal.actions.unpublish' | translate }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Datenschutz -->
+            <div class="legal-text-card">
+              <div class="legal-text-header">
+                <h3>{{ 'settings.legal.texts.privacy.title' | translate }}</h3>
+                <span class="status-badge" [class]="'status-' + legalData.privacyPolicyStatus?.toLowerCase()">
+                  {{ 'settings.legal.status.' + legalData.privacyPolicyStatus?.toLowerCase() | translate }}
+                </span>
+              </div>
+              <textarea [(ngModel)]="legalData.privacyPolicyText" rows="8" class="form-control"
+                        [placeholder]="'settings.legal.texts.privacy.placeholder' | translate"
+                        maxlength="50000"></textarea>
+              <div class="char-counter">
+                {{ legalData.privacyPolicyText?.length || 0 }} / 50.000 {{ 'common.characters' | translate }}
+              </div>
+              <div class="legal-text-actions">
+                <button class="btn btn-secondary" (click)="saveDraft('privacy')" [disabled]="savingLegal">
+                  💾 {{ 'settings.legal.actions.saveDraft' | translate }}
+                </button>
+                <button class="btn btn-info" (click)="previewText('privacy')" [disabled]="!legalData.privacyPolicyText">
+                  👁️ {{ 'settings.legal.actions.preview' | translate }}
+                </button>
+                <button class="btn btn-success" (click)="publishText('privacy')" 
+                        [disabled]="!legalData.privacyPolicyText?.trim() || savingLegal"
+                        *ngIf="legalData.privacyPolicyStatus !== 'PUBLISHED'">
+                  ✅ {{ 'settings.legal.actions.publish' | translate }}
+                </button>
+                <button class="btn btn-warning" (click)="unpublishText('privacy')" [disabled]="savingLegal"
+                        *ngIf="legalData.privacyPolicyStatus === 'PUBLISHED'">
+                  ⏸️ {{ 'settings.legal.actions.unpublish' | translate }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Rückgabe -->
+            <div class="legal-text-card">
+              <div class="legal-text-header">
+                <h3>{{ 'settings.legal.texts.return.title' | translate }}</h3>
+                <span class="status-badge" [class]="'status-' + legalData.returnPolicyStatus?.toLowerCase()">
+                  {{ 'settings.legal.status.' + legalData.returnPolicyStatus?.toLowerCase() | translate }}
+                </span>
+              </div>
+              <textarea [(ngModel)]="legalData.returnPolicyText" rows="8" class="form-control"
+                        [placeholder]="'settings.legal.texts.return.placeholder' | translate"
+                        maxlength="50000"></textarea>
+              <div class="char-counter">
+                {{ legalData.returnPolicyText?.length || 0 }} / 50.000 {{ 'common.characters' | translate }}
+              </div>
+              <div class="legal-text-actions">
+                <button class="btn btn-secondary" (click)="saveDraft('return')" [disabled]="savingLegal">
+                  💾 {{ 'settings.legal.actions.saveDraft' | translate }}
+                </button>
+                <button class="btn btn-info" (click)="previewText('return')" [disabled]="!legalData.returnPolicyText">
+                  👁️ {{ 'settings.legal.actions.preview' | translate }}
+                </button>
+                <button class="btn btn-success" (click)="publishText('return')" 
+                        [disabled]="!legalData.returnPolicyText?.trim() || savingLegal"
+                        *ngIf="legalData.returnPolicyStatus !== 'PUBLISHED'">
+                  ✅ {{ 'settings.legal.actions.publish' | translate }}
+                </button>
+                <button class="btn btn-warning" (click)="unpublishText('return')" [disabled]="savingLegal"
+                        *ngIf="legalData.returnPolicyStatus === 'PUBLISHED'">
+                  ⏸️ {{ 'settings.legal.actions.unpublish' | translate }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Versand -->
+            <div class="legal-text-card">
+              <div class="legal-text-header">
+                <h3>{{ 'settings.legal.texts.shipping.title' | translate }}</h3>
+                <span class="status-badge" [class]="'status-' + legalData.shippingPolicyStatus?.toLowerCase()">
+                  {{ 'settings.legal.status.' + legalData.shippingPolicyStatus?.toLowerCase() | translate }}
+                </span>
+              </div>
+              <textarea [(ngModel)]="legalData.shippingPolicyText" rows="8" class="form-control"
+                        [placeholder]="'settings.legal.texts.shipping.placeholder' | translate"
+                        maxlength="50000"></textarea>
+              <div class="char-counter">
+                {{ legalData.shippingPolicyText?.length || 0 }} / 50.000 {{ 'common.characters' | translate }}
+              </div>
+              <div class="legal-text-actions">
+                <button class="btn btn-secondary" (click)="saveDraft('shipping')" [disabled]="savingLegal">
+                  💾 {{ 'settings.legal.actions.saveDraft' | translate }}
+                </button>
+                <button class="btn btn-info" (click)="previewText('shipping')" [disabled]="!legalData.shippingPolicyText">
+                  👁️ {{ 'settings.legal.actions.preview' | translate }}
+                </button>
+                <button class="btn btn-success" (click)="publishText('shipping')" 
+                        [disabled]="!legalData.shippingPolicyText?.trim() || savingLegal"
+                        *ngIf="legalData.shippingPolicyStatus !== 'PUBLISHED'">
+                  ✅ {{ 'settings.legal.actions.publish' | translate }}
+                </button>
+                <button class="btn btn-warning" (click)="unpublishText('shipping')" [disabled]="savingLegal"
+                        *ngIf="legalData.shippingPolicyStatus === 'PUBLISHED'">
+                  ⏸️ {{ 'settings.legal.actions.unpublish' | translate }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Domain Settings -->
         <div class="tab-content" *ngIf="activeTab === 'domain'">
           <div class="domain-info">
@@ -1293,6 +1542,392 @@ export interface SettingsTab {
       font-size: 1.2rem;
       line-height: 1;
     }
+
+    /* ══════════════════════════════════════════════════════════ */
+    /* LEGAL TAB: Rechtliches */
+    /* ══════════════════════════════════════════════════════════ */
+
+    .legal-section {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .subsection-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: #111827;
+      margin: 0 0 1rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .legal-texts-section {
+      display: grid;
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .legal-text-card {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 1.25rem;
+      transition: border-color 0.2s ease;
+    }
+
+    .legal-text-card:focus-within {
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .legal-text-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .legal-text-header h4 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #374151;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.375rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .status-badge.status-not_configured,
+    .status-badge.status-NOT_CONFIGURED {
+      background: #f3f4f6;
+      color: #6b7280;
+      border: 1px solid #d1d5db;
+    }
+
+    .status-badge.status-draft,
+    .status-badge.status-DRAFT {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fcd34d;
+    }
+
+    .status-badge.status-published,
+    .status-badge.status-PUBLISHED {
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #6ee7b7;
+    }
+
+    .legal-text-card textarea {
+      width: 100%;
+      min-height: 150px;
+      padding: 0.75rem;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      resize: vertical;
+      transition: border-color 0.2s ease;
+      background: #fff;
+    }
+
+    .legal-text-card textarea:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .char-counter {
+      font-size: 0.8125rem;
+      color: #6b7280;
+      text-align: right;
+      margin-top: 0.375rem;
+    }
+
+    .char-counter.warning {
+      color: #dc2626;
+      font-weight: 600;
+    }
+
+    .legal-text-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.625rem;
+      margin-top: 1rem;
+    }
+
+    .legal-text-actions button {
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      min-height: 36px;
+    }
+
+    .legal-text-actions button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .legal-text-actions button.btn-draft {
+      background: #f59e0b;
+      color: #fff;
+    }
+
+    .legal-text-actions button.btn-draft:hover:not(:disabled) {
+      background: #d97706;
+    }
+
+    .legal-text-actions button.btn-preview {
+      background: #6366f1;
+      color: #fff;
+    }
+
+    .legal-text-actions button.btn-preview:hover:not(:disabled) {
+      background: #4f46e5;
+    }
+
+    .legal-text-actions button.btn-publish {
+      background: #10b981;
+      color: #fff;
+    }
+
+    .legal-text-actions button.btn-publish:hover:not(:disabled) {
+      background: #059669;
+    }
+
+    .legal-text-actions button.btn-unpublish {
+      background: #ef4444;
+      color: #fff;
+    }
+
+    .legal-text-actions button.btn-unpublish:hover:not(:disabled) {
+      background: #dc2626;
+    }
+
+    /* ══════════════════════════════════════════════════════════ */
+    /* MODALS: Consent + Preview */
+    /* ══════════════════════════════════════════════════════════ */
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      padding: 1rem;
+      backdrop-filter: blur(4px);
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .modal-content {
+      background: #fff;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 540px;
+      max-height: 90vh;
+      overflow: auto;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      animation: slideUp 0.3s ease;
+    }
+
+    .modal-content.modal-large {
+      max-width: 800px;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.5rem;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .modal-header h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #111827;
+      margin: 0;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: #6b7280;
+      cursor: pointer;
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      transition: background 0.2s ease;
+    }
+
+    .modal-close:hover {
+      background: #f3f4f6;
+      color: #111827;
+    }
+
+    .modal-body {
+      padding: 1.5rem;
+    }
+
+    .modal-footer {
+      padding: 1.5rem;
+      border-top: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+    }
+
+    .consent-intro {
+      font-size: 0.9375rem;
+      color: #374151;
+      margin: 0 0 1.5rem 0;
+      line-height: 1.6;
+    }
+
+    .consent-checkboxes {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .consent-checkbox {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      cursor: pointer;
+      padding: 0.75rem;
+      border-radius: 8px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      transition: background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .consent-checkbox:hover {
+      background: #f3f4f6;
+      border-color: #d1d5db;
+    }
+
+    .consent-checkbox input[type="checkbox"] {
+      margin-top: 2px;
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .consent-checkbox span {
+      font-size: 0.9375rem;
+      color: #111827;
+      line-height: 1.5;
+      user-select: none;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .preview-content {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 1.25rem;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    .preview-content pre {
+      margin: 0;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+      color: #111827;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    /* ══════════════════════════════════════════════════════════ */
+    /* RESPONSIVE */
+    /* ══════════════════════════════════════════════════════════ */
+
+    @media (max-width: 768px) {
+      .store-settings-container {
+        padding: 1rem;
+      }
+
+      .legal-text-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .legal-text-actions {
+        width: 100%;
+      }
+
+      .legal-text-actions button {
+        flex: 1;
+        justify-content: center;
+      }
+
+      .modal-content {
+        max-width: 100%;
+        margin: 0.5rem;
+      }
+    }
   `]
 })
 export class StoreSettingsComponent implements OnInit {
@@ -1318,6 +1953,7 @@ export class StoreSettingsComponent implements OnInit {
   settingsTabs: SettingsTab[] = [
     { id: 'general',  icon: '⚙️', labelKey: 'settings.general' },
     { id: 'tax',      icon: '💰', labelKey: 'settings.tax.title' },
+    { id: 'legal',    icon: '📝', labelKey: 'settings.legal.title' },  // ← NEU
     { id: 'payments', icon: '💳', labelKey: 'settings.payments.sectionTitle' },
     { id: 'social',   icon: '🔗', labelKey: 'settings.social.title' },
     { id: 'slider',   icon: '🎬', labelKey: 'settings.slider' },
@@ -1507,6 +2143,9 @@ export class StoreSettingsComponent implements OnInit {
         });
         
         this.loading = false;
+        
+        // Legal-Daten nach erfolgreichem Laden initialisieren
+        this.loadLegalData();
       },
       error: (error) => {
         this.error = 'Fehler beim Laden der Store-Einstellungen';
@@ -1534,6 +2173,212 @@ export class StoreSettingsComponent implements OnInit {
         }
       });
     }
+
+    // ═══════════════════════════════════════════════════════════════
+    // LEGAL TAB: Rechtliches (Impressum + Rechtstexte)
+    // ═══════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
+  // LEGAL TAB: Rechtliches (Impressum + Rechtstexte)
+  // ═══════════════════════════════════════════════════════════════
+
+  /** Lädt Legal-Daten aus Store-Objekt */
+  loadLegalData(): void {
+    if (!this.store) return;
+    this.legalData = {
+      legalName: (this.store as any).legalName || '',
+      legalForm: (this.store as any).legalForm || '',
+        authorizedRepresentative: (this.store as any).authorizedRepresentative || '',
+        commercialRegister: (this.store as any).commercialRegister || '',
+        registerNumber: (this.store as any).registerNumber || '',
+        vatId: (this.store as any).vatId || '',
+        contactEmail: (this.store as any).contactEmail || '',
+        contactPhone: (this.store as any).contactPhone || '',
+        shippingAddressStreet: (this.store as any).shippingAddressStreet || '',
+        shippingAddressHouseNumber: (this.store as any).shippingAddressHouseNumber || '',
+        shippingAddressPostalCode: (this.store as any).shippingAddressPostalCode || '',
+        shippingAddressCity: (this.store as any).shippingAddressCity || '',
+        shippingAddressCountry: (this.store as any).shippingAddressCountry || 'DE',
+        termsAndConditionsText: (this.store as any).termsAndConditionsText || '',
+        termsAndConditionsStatus: (this.store as any).termsAndConditionsStatus || 'NOT_CONFIGURED',
+        privacyPolicyText: (this.store as any).privacyPolicyText || '',
+        privacyPolicyStatus: (this.store as any).privacyPolicyStatus || 'NOT_CONFIGURED',
+        returnPolicyText: (this.store as any).returnPolicyText || '',
+        returnPolicyStatus: (this.store as any).returnPolicyStatus || 'NOT_CONFIGURED',
+        shippingPolicyText: (this.store as any).shippingPolicyText || '',
+        shippingPolicyStatus: (this.store as any).shippingPolicyStatus || 'NOT_CONFIGURED'
+      };
+    }
+
+    /** Speichert Impressums-Felder */
+    saveLegalImprint(): void {
+      this.savingLegal = true;
+      const payload = {
+        legalName: this.legalData.legalName,
+        legalForm: this.legalData.legalForm,
+        authorizedRepresentative: this.legalData.authorizedRepresentative,
+        commercialRegister: this.legalData.commercialRegister,
+        registerNumber: this.legalData.registerNumber,
+        vatId: this.legalData.vatId,
+        contactEmail: this.legalData.contactEmail,
+        contactPhone: this.legalData.contactPhone,
+        shippingAddressStreet: this.legalData.shippingAddressStreet,
+        shippingAddressHouseNumber: this.legalData.shippingAddressHouseNumber,
+        shippingAddressPostalCode: this.legalData.shippingAddressPostalCode,
+        shippingAddressCity: this.legalData.shippingAddressCity,
+        shippingAddressCountry: this.legalData.shippingAddressCountry
+      };
+
+      this.storeService.updateStore(this.storeId, payload).subscribe({
+        next: () => {
+          this.savingLegal = false;
+          // TODO: Replace with toast notification
+          console.log('✅ Impressum data saved');
+          this.loadStore();
+        },
+        error: (err) => {
+          this.savingLegal = false;
+          console.error('❌ Error saving imprint:', err);
+        }
+      });
+    }
+
+    /** Als Entwurf speichern */
+    saveDraft(field: 'terms' | 'privacy' | 'return' | 'shipping'): void {
+      this.savingLegal = true;
+      const payload: any = {};
+    
+      if (field === 'terms') {
+        payload.termsAndConditionsText = this.legalData.termsAndConditionsText;
+        payload.termsAndConditionsStatus = 'DRAFT';
+      } else if (field === 'privacy') {
+        payload.privacyPolicyText = this.legalData.privacyPolicyText;
+        payload.privacyPolicyStatus = 'DRAFT';
+      } else if (field === 'return') {
+        payload.returnPolicyText = this.legalData.returnPolicyText;
+        payload.returnPolicyStatus = 'DRAFT';
+      } else if (field === 'shipping') {
+        payload.shippingPolicyText = this.legalData.shippingPolicyText;
+        payload.shippingPolicyStatus = 'DRAFT';
+      }
+
+      this.storeService.updateStore(this.storeId, payload).subscribe({
+        next: () => {
+          this.savingLegal = false;
+          console.log('✅ Draft saved');
+          this.loadStore();
+        },
+        error: (err) => {
+          this.savingLegal = false;
+          console.error('❌ Error saving draft:', err);
+        }
+      });
+    }
+
+    /** Vorschau anzeigen */
+    previewText(field: 'terms' | 'privacy' | 'return' | 'shipping'): void {
+      const titles: Record<string, string> = {
+        terms: 'Preview: Terms and Conditions',
+        privacy: 'Preview: Privacy Policy',
+        return: 'Preview: Return Policy',
+        shipping: 'Preview: Shipping Policy'
+      };
+    
+    this.previewTitle = titles[field];
+    
+    if (field === 'terms') {
+      this.previewContent = this.legalData.termsAndConditionsText || '';
+    } else if (field === 'privacy') {
+      this.previewContent = this.legalData.privacyPolicyText || '';
+    } else if (field === 'return') {
+      this.previewContent = this.legalData.returnPolicyText || '';
+    } else if (field === 'shipping') {
+      this.previewContent = this.legalData.shippingPolicyText || '';
+    }
+    this.showPreviewModal = true;
+  }
+
+  /** Veröffentlichen (mit Consent) */
+  publishText(field: 'terms' | 'privacy' | 'return' | 'shipping'): void {
+    this.pendingPublishField = field;
+    this.consent = { operator: false, truthful: false, responsible: false };
+    this.showConsentModal = true;
+  }
+
+  /** Consent bestätigen und veröffentlichen */
+  confirmAndPublish(): void {
+    if (!this.consentValid || !this.pendingPublishField) return;
+
+    this.savingLegal = true;
+    const field = this.pendingPublishField;
+    const payload: any = {
+      legalResponsibilityAccepted: true,
+      legalResponsibilityVersion: '1.0'
+    };
+
+    if (field === 'terms') {
+      payload.termsAndConditionsText = this.legalData.termsAndConditionsText;
+      payload.termsAndConditionsStatus = 'PUBLISHED';
+    } else if (field === 'privacy') {
+      payload.privacyPolicyText = this.legalData.privacyPolicyText;
+      payload.privacyPolicyStatus = 'PUBLISHED';
+    } else if (field === 'return') {
+      payload.returnPolicyText = this.legalData.returnPolicyText;
+      payload.returnPolicyStatus = 'PUBLISHED';
+    } else if (field === 'shipping') {
+      payload.shippingPolicyText = this.legalData.shippingPolicyText;
+      payload.shippingPolicyStatus = 'PUBLISHED';
+    }
+
+    this.storeService.updateStore(this.storeId, payload).subscribe({
+      next: () => {
+        this.savingLegal = false;
+        this.showConsentModal = false;
+        this.pendingPublishField = null;
+        console.log('✅ Published');
+        this.loadStore();
+      },
+      error: (err) => {
+        this.savingLegal = false;
+        console.error('❌ Error publishing:', err);
+      }
+    });
+  }
+
+  /** Veröffentlichung zurückziehen */
+  unpublishText(field: 'terms' | 'privacy' | 'return' | 'shipping'): void {
+    // Confirm dialog would be translated via i18n service in production
+    if (!confirm('Unpublish? Text will be saved as draft.')) return;
+
+    this.savingLegal = true;
+    const payload: any = {};
+
+    if (field === 'terms') {
+      payload.termsAndConditionsStatus = 'DRAFT';
+    } else if (field === 'privacy') {
+      payload.privacyPolicyStatus = 'DRAFT';
+    } else if (field === 'return') {
+      payload.returnPolicyStatus = 'DRAFT';
+    } else if (field === 'shipping') {
+      payload.shippingPolicyStatus = 'DRAFT';
+    }
+
+    this.storeService.updateStore(this.storeId, payload).subscribe({
+      next: () => {
+        this.savingLegal = false;
+        console.log('✅ Unpublished - now draft');
+        this.loadStore();
+      },
+      error: (err) => {
+        this.savingLegal = false;
+        console.error('❌ Error unpublishing:', err);
+      }
+    });
+  }
+
+  closeConsentModal(): void {
+    this.showConsentModal = false;
+    this.pendingPublishField = null;
+    this.consent = { operator: false, truthful: false, responsible: false };
   }
 
   /**
