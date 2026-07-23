@@ -1949,6 +1949,20 @@ export class StoreSettingsComponent implements OnInit {
   /** Setzt man auf true, werden beta-Tabs angezeigt */
   isBetaUser = false;
 
+  /** Legal Tab Data */
+  legalData: any = {};
+  savingLegal = false;
+  previewTitle = '';
+  previewContent = '';
+  showPreviewModal = false;
+  showConsentModal = false;
+  pendingPublishField: 'terms' | 'privacy' | 'return' | 'shipping' | null = null;
+  consent = { operator: false, truthful: false, responsible: false };
+
+  get consentValid(): boolean {
+    return this.consent.operator && this.consent.truthful && this.consent.responsible;
+  }
+
   /** Wiederverwendbare Tab-Definition – analog NavTab */
   settingsTabs: SettingsTab[] = [
     { id: 'general',  icon: '⚙️', labelKey: 'settings.general' },
@@ -2173,10 +2187,8 @@ export class StoreSettingsComponent implements OnInit {
         }
       });
     }
+  }
 
-    // ═══════════════════════════════════════════════════════════════
-    // LEGAL TAB: Rechtliches (Impressum + Rechtstexte)
-    // ═══════════════════════════════════════════════════════════════
   // ═══════════════════════════════════════════════════════════════
   // LEGAL TAB: Rechtliches (Impressum + Rechtstexte)
   // ═══════════════════════════════════════════════════════════════
@@ -2187,104 +2199,104 @@ export class StoreSettingsComponent implements OnInit {
     this.legalData = {
       legalName: (this.store as any).legalName || '',
       legalForm: (this.store as any).legalForm || '',
-        authorizedRepresentative: (this.store as any).authorizedRepresentative || '',
-        commercialRegister: (this.store as any).commercialRegister || '',
-        registerNumber: (this.store as any).registerNumber || '',
-        vatId: (this.store as any).vatId || '',
-        contactEmail: (this.store as any).contactEmail || '',
-        contactPhone: (this.store as any).contactPhone || '',
-        shippingAddressStreet: (this.store as any).shippingAddressStreet || '',
-        shippingAddressHouseNumber: (this.store as any).shippingAddressHouseNumber || '',
-        shippingAddressPostalCode: (this.store as any).shippingAddressPostalCode || '',
-        shippingAddressCity: (this.store as any).shippingAddressCity || '',
-        shippingAddressCountry: (this.store as any).shippingAddressCountry || 'DE',
-        termsAndConditionsText: (this.store as any).termsAndConditionsText || '',
-        termsAndConditionsStatus: (this.store as any).termsAndConditionsStatus || 'NOT_CONFIGURED',
-        privacyPolicyText: (this.store as any).privacyPolicyText || '',
-        privacyPolicyStatus: (this.store as any).privacyPolicyStatus || 'NOT_CONFIGURED',
-        returnPolicyText: (this.store as any).returnPolicyText || '',
-        returnPolicyStatus: (this.store as any).returnPolicyStatus || 'NOT_CONFIGURED',
-        shippingPolicyText: (this.store as any).shippingPolicyText || '',
-        shippingPolicyStatus: (this.store as any).shippingPolicyStatus || 'NOT_CONFIGURED'
-      };
-    }
+      authorizedRepresentative: (this.store as any).authorizedRepresentative || '',
+      commercialRegister: (this.store as any).commercialRegister || '',
+      registerNumber: (this.store as any).registerNumber || '',
+      vatId: (this.store as any).vatId || '',
+      contactEmail: (this.store as any).contactEmail || '',
+      contactPhone: (this.store as any).contactPhone || '',
+      shippingAddressStreet: (this.store as any).shippingAddressStreet || '',
+      shippingAddressHouseNumber: (this.store as any).shippingAddressHouseNumber || '',
+      shippingAddressPostalCode: (this.store as any).shippingAddressPostalCode || '',
+      shippingAddressCity: (this.store as any).shippingAddressCity || '',
+      shippingAddressCountry: (this.store as any).shippingAddressCountry || 'DE',
+      termsAndConditionsText: (this.store as any).termsAndConditionsText || '',
+      termsAndConditionsStatus: (this.store as any).termsAndConditionsStatus || 'NOT_CONFIGURED',
+      privacyPolicyText: (this.store as any).privacyPolicyText || '',
+      privacyPolicyStatus: (this.store as any).privacyPolicyStatus || 'NOT_CONFIGURED',
+      returnPolicyText: (this.store as any).returnPolicyText || '',
+      returnPolicyStatus: (this.store as any).returnPolicyStatus || 'NOT_CONFIGURED',
+      shippingPolicyText: (this.store as any).shippingPolicyText || '',
+      shippingPolicyStatus: (this.store as any).shippingPolicyStatus || 'NOT_CONFIGURED'
+    };
+  }
 
-    /** Speichert Impressums-Felder */
-    saveLegalImprint(): void {
-      this.savingLegal = true;
-      const payload = {
-        legalName: this.legalData.legalName,
-        legalForm: this.legalData.legalForm,
-        authorizedRepresentative: this.legalData.authorizedRepresentative,
-        commercialRegister: this.legalData.commercialRegister,
-        registerNumber: this.legalData.registerNumber,
-        vatId: this.legalData.vatId,
-        contactEmail: this.legalData.contactEmail,
-        contactPhone: this.legalData.contactPhone,
-        shippingAddressStreet: this.legalData.shippingAddressStreet,
-        shippingAddressHouseNumber: this.legalData.shippingAddressHouseNumber,
-        shippingAddressPostalCode: this.legalData.shippingAddressPostalCode,
-        shippingAddressCity: this.legalData.shippingAddressCity,
-        shippingAddressCountry: this.legalData.shippingAddressCountry
-      };
+  /** Speichert Impressums-Felder */
+  saveLegalImprint(): void {
+    this.savingLegal = true;
+    const payload = {
+      legalName: this.legalData.legalName,
+      legalForm: this.legalData.legalForm,
+      authorizedRepresentative: this.legalData.authorizedRepresentative,
+      commercialRegister: this.legalData.commercialRegister,
+      registerNumber: this.legalData.registerNumber,
+      vatId: this.legalData.vatId,
+      contactEmail: this.legalData.contactEmail,
+      contactPhone: this.legalData.contactPhone,
+      shippingAddressStreet: this.legalData.shippingAddressStreet,
+      shippingAddressHouseNumber: this.legalData.shippingAddressHouseNumber,
+      shippingAddressPostalCode: this.legalData.shippingAddressPostalCode,
+      shippingAddressCity: this.legalData.shippingAddressCity,
+      shippingAddressCountry: this.legalData.shippingAddressCountry
+    };
 
-      this.storeService.updateStore(this.storeId, payload).subscribe({
-        next: () => {
-          this.savingLegal = false;
-          // TODO: Replace with toast notification
-          console.log('✅ Impressum data saved');
-          this.loadStore();
-        },
-        error: (err) => {
-          this.savingLegal = false;
-          console.error('❌ Error saving imprint:', err);
-        }
-      });
-    }
-
-    /** Als Entwurf speichern */
-    saveDraft(field: 'terms' | 'privacy' | 'return' | 'shipping'): void {
-      this.savingLegal = true;
-      const payload: any = {};
-    
-      if (field === 'terms') {
-        payload.termsAndConditionsText = this.legalData.termsAndConditionsText;
-        payload.termsAndConditionsStatus = 'DRAFT';
-      } else if (field === 'privacy') {
-        payload.privacyPolicyText = this.legalData.privacyPolicyText;
-        payload.privacyPolicyStatus = 'DRAFT';
-      } else if (field === 'return') {
-        payload.returnPolicyText = this.legalData.returnPolicyText;
-        payload.returnPolicyStatus = 'DRAFT';
-      } else if (field === 'shipping') {
-        payload.shippingPolicyText = this.legalData.shippingPolicyText;
-        payload.shippingPolicyStatus = 'DRAFT';
+    this.storeService.updateStore(this.storeId, payload as any).subscribe({
+      next: () => {
+        this.savingLegal = false;
+        // TODO: Replace with toast notification
+        console.log('✅ Impressum data saved');
+        this.loadStore();
+      },
+      error: (err) => {
+        this.savingLegal = false;
+        console.error('❌ Error saving imprint:', err);
       }
+    });
+  }
 
-      this.storeService.updateStore(this.storeId, payload).subscribe({
-        next: () => {
-          this.savingLegal = false;
-          console.log('✅ Draft saved');
-          this.loadStore();
-        },
-        error: (err) => {
-          this.savingLegal = false;
-          console.error('❌ Error saving draft:', err);
-        }
-      });
+  /** Als Entwurf speichern */
+  saveDraft(field: 'terms' | 'privacy' | 'return' | 'shipping'): void {
+    this.savingLegal = true;
+    const payload: any = {};
+  
+    if (field === 'terms') {
+      payload.termsAndConditionsText = this.legalData.termsAndConditionsText;
+      payload.termsAndConditionsStatus = 'DRAFT';
+    } else if (field === 'privacy') {
+      payload.privacyPolicyText = this.legalData.privacyPolicyText;
+      payload.privacyPolicyStatus = 'DRAFT';
+    } else if (field === 'return') {
+      payload.returnPolicyText = this.legalData.returnPolicyText;
+      payload.returnPolicyStatus = 'DRAFT';
+    } else if (field === 'shipping') {
+      payload.shippingPolicyText = this.legalData.shippingPolicyText;
+      payload.shippingPolicyStatus = 'DRAFT';
     }
 
-    /** Vorschau anzeigen */
-    previewText(field: 'terms' | 'privacy' | 'return' | 'shipping'): void {
-      const titles: Record<string, string> = {
-        terms: 'Preview: Terms and Conditions',
-        privacy: 'Preview: Privacy Policy',
-        return: 'Preview: Return Policy',
-        shipping: 'Preview: Shipping Policy'
-      };
-    
+    this.storeService.updateStore(this.storeId, payload).subscribe({
+      next: () => {
+        this.savingLegal = false;
+        console.log('✅ Draft saved');
+        this.loadStore();
+      },
+      error: (err) => {
+        this.savingLegal = false;
+        console.error('❌ Error saving draft:', err);
+      }
+    });
+  }
+
+  /** Vorschau anzeigen */
+  previewText(field: 'terms' | 'privacy' | 'return' | 'shipping'): void {
+    const titles: Record<string, string> = {
+      terms: 'Preview: Terms and Conditions',
+      privacy: 'Preview: Privacy Policy',
+      return: 'Preview: Return Policy',
+      shipping: 'Preview: Shipping Policy'
+    };
+  
     this.previewTitle = titles[field];
-    
+  
     if (field === 'terms') {
       this.previewContent = this.legalData.termsAndConditionsText || '';
     } else if (field === 'privacy') {

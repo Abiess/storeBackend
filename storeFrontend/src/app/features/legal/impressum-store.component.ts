@@ -73,7 +73,7 @@ import { LegalBaseComponent } from './legal-base.component';
           </p>
           
           <!-- Owner-Link zu Settings -->
-          <div class="owner-notice" *ngIf="isOwner()">
+          <div class="owner-notice" *ngIf="isOwner">
             <p>{{ 'legal.impressum.incomplete.ownerHint' | translate }}</p>
             <a [routerLink]="['/stores', store?.id, 'settings']" 
                [queryParams]="{tab: 'legal'}"
