@@ -36,7 +36,88 @@ public class MinioService {
     }
 
     /**
-     * Upload file to MinIO
+     * Gibt den Namen des privaten Buckets zurück
+     */
+    public String getPrivateBucket() {
+        return minioProperties.getPrivateBucket();
+    }
+
+    /**
+     * Upload file to private bucket (für sensible Dokumente)
+     */
+    public void uploadToPrivateBucket(InputStream inputStream, long sizeBytes,
+                                      String contentType, String objectName) {
+        checkMinioAvailable();
+        String privateBucket = minioProperties.getPrivateBucket();
+        if (privateBucket == null || privateBucket.isEmpty()) {
+            throw new RuntimeException("Private bucket not configured");
+        }
+
+        try {
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(privateBucket)
+                            .object(objectName)
+                            .stream(inputStream, sizeBytes, -1)
+                            .contentType(contentType)
+                            .build()
+            );
+            log.info("✅ File uploaded to PRIVATE bucket: {}/{}", privateBucket, objectName);
+        } catch (Exception e) {
+            log.error("Error uploading to private bucket: {}", objectName, e);
+            throw new RuntimeException("Failed to upload to private bucket", e);
+        }
+    }
+
+    /**
+     * Get file from private bucket
+     */
+    public InputStream getFileFromPrivateBucket(String objectName) {
+        checkMinioAvailable();
+        String privateBucket = minioProperties.getPrivateBucket();
+        if (privateBucket == null || privateBucket.isEmpty()) {
+            throw new RuntimeException("Private bucket not configured");
+        }
+
+        try {
+            return minioClient.getObject(
+                    GetObjectArgs.builder()
+                            .bucket(privateBucket)
+                            .object(objectName)
+                            .build()
+            );
+        } catch (Exception e) {
+            log.error("Error getting file from private bucket", e);
+            throw new RuntimeException("Failed to get file from private bucket", e);
+        }
+    }
+
+    /**
+     * Delete file from private bucket
+     */
+    public void deleteFileFromPrivateBucket(String objectName) {
+        checkMinioAvailable();
+        String privateBucket = minioProperties.getPrivateBucket();
+        if (privateBucket == null || privateBucket.isEmpty()) {
+            throw new RuntimeException("Private bucket not configured");
+        }
+
+        try {
+            minioClient.removeObject(
+                    RemoveObjectArgs.builder()
+                            .bucket(privateBucket)
+                            .object(objectName)
+                            .build()
+            );
+            log.info("✅ File deleted from PRIVATE bucket: {}/{}", privateBucket, objectName);
+        } catch (Exception e) {
+            log.error("Error deleting file from private bucket", e);
+            throw new RuntimeException("Failed to delete file from private bucket", e);
+        }
+    }
+
+    /**
+     * Upload file to MinIO (public bucket - existierende Methode)
      */
     public String uploadFile(MultipartFile file, Long storeId, String folder) throws IOException {
         checkMinioAvailable();

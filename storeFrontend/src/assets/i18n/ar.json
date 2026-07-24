@@ -1197,7 +1197,8 @@
       "storeSetup": "إعداد المتجر",
       "account": "الحساب",
       "team": "الفريق والأدوار",
-      "platform": "إدارة المنصة"
+      "platform": "إدارة المنصة",
+      "purchasing": "المشتريات"
     },
     "items": {
       "dashboard": "لوحة التحكم",
@@ -1216,7 +1217,8 @@
       "teamRoles": "الفريق والأدوار",
       "telegram": "تيليغرام",
       "woocommerce": "استيراد WooCommerce",
-      "platformDelivery": "🚚 خيارات التوصيل"
+      "platformDelivery": "🚚 خيارات التوصيل",
+      "supplierInvoices": "فواتير الموردين"
     },
     "noStore": {
       "hint": "لم يتم اختيار متجر",
@@ -2680,5 +2682,62 @@
     "manager": "مدير",
     "staff": "موظف",
     "employee": "عامل"
+  },
+  "SUPPLIER_INVOICES": {
+    "UPLOAD": {
+      "ALLOWED_TYPES": "أنواع الملفات المسموحة",
+      "OR": "أو",
+      "UPLOADING": "جاري التحميل...",
+      "DRAG_DROP": "اسحب الملف هنا أو انقر للتحميل",
+      "MAX_SIZE": "الحد الأقصى لحجم الملف",
+      "SELECT_FILE": "اختر ملف"
+    },
+    "TITLE": "فواتير الموردين",
+    "ERRORS": {
+      "EMPTY_FILE": "الملف فارغ",
+      "FILE_TOO_LARGE": "الملف كبير جداً (الحد الأقصى 10 ميجابايت)",
+      "NO_FILE": "الرجاء تحديد ملف",
+      "UNAUTHORIZED": "غير مصرح",
+      "FORBIDDEN": "تم رفض الوصول",
+      "NO_STORE_ID": "لم يتم العثور على معرف المتجر",
+      "NOT_FOUND": "المستند غير موجود",
+      "INVALID_FILE_TYPE": "نوع ملف غير صالح",
+      "UNKNOWN": "حدث خطأ غير معروف",
+      "PREVIEW_FAILED": "تعذر تحميل المعاينة"
+    },
+    "SUBTITLE": "تحميل وإدارة الفواتير الواردة",
+    "MESSAGES": {
+      "CONFIRM_DELETE": "هل تريد حقاً حذف '{filename}'؟",
+      "DELETE_SUCCESS": "تم حذف المستند بنجاح",
+      "UPLOAD_SUCCESS": "تم تحميل المستند بنجاح"
+    },
+    "PREVIEW": {
+      "RETRY": "إعادة المحاولة",
+      "LOADING": "جاري تحميل المستند...",
+      "ERROR_TITLE": "خطأ في التحميل"
+    },
+    "ACTIONS": {
+      "DELETE": "حذف",
+      "DOWNLOAD": "تنزيل",
+      "VIEW": "عرض"
+    },
+    "STATUS": {
+      "FAILED": "فشل",
+      "PREVIEW_READY": "جاهز",
+      "UPLOADED": "تم التحميل"
+    },
+    "LIST": {
+      "EMPTY_TITLE": "لا توجد مستندات",
+      "TITLE": "المستندات المحملة",
+      "TYPE": "النوع",
+      "PAGES": "الصفحات",
+      "LOADING": "جاري تحميل المستندات...",
+      "EMPTY_MESSAGE": "قم بتحميل أول فاتورة مورد",
+      "STATUS": "الحالة",
+      "SIZE": "الحجم",
+      "ACTIONS": "الإجراءات",
+      "FILENAME": "اسم الملف",
+      "DATE": "التاريخ"
+    }
   }
 }

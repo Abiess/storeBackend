@@ -1582,7 +1582,8 @@
       "storeSetup": "Store Setup",
       "account": "Account",
       "team": "Team & Roles",
-      "platform": "Platform Admin"
+      "platform": "Platform Admin",
+      "purchasing": "Purchasing"
     },
     "items": {
       "dashboard": "Dashboard",
@@ -1601,7 +1602,8 @@
       "teamRoles": "Team & Roles",
       "telegram": "Telegram",
       "woocommerce": "WooCommerce Import",
-      "platformDelivery": "🚚 Delivery Options"
+      "platformDelivery": "🚚 Delivery Options",
+      "supplierInvoices": "Supplier Invoices"
     },
     "noStore": {
       "hint": "No store selected",
@@ -2760,5 +2762,62 @@
     "manager": "Manager",
     "staff": "Staff",
     "employee": "Employee"
+  },
+  "SUPPLIER_INVOICES": {
+    "UPLOAD": {
+      "ALLOWED_TYPES": "Allowed file types",
+      "OR": "or",
+      "UPLOADING": "Uploading...",
+      "DRAG_DROP": "Drag file here or click to upload",
+      "MAX_SIZE": "Maximum file size",
+      "SELECT_FILE": "Select file"
+    },
+    "TITLE": "Supplier Invoices",
+    "ERRORS": {
+      "EMPTY_FILE": "The file is empty",
+      "FILE_TOO_LARGE": "File is too large (max. 10 MB)",
+      "NO_FILE": "Please select a file",
+      "UNAUTHORIZED": "Unauthorized",
+      "FORBIDDEN": "Access denied",
+      "NO_STORE_ID": "No store ID found",
+      "NOT_FOUND": "Document not found",
+      "INVALID_FILE_TYPE": "Invalid file type",
+      "UNKNOWN": "An unknown error occurred",
+      "PREVIEW_FAILED": "Preview could not be loaded"
+    },
+    "SUBTITLE": "Upload and manage incoming invoices",
+    "MESSAGES": {
+      "CONFIRM_DELETE": "Do you really want to delete '{filename}'?",
+      "DELETE_SUCCESS": "Document deleted successfully",
+      "UPLOAD_SUCCESS": "Document uploaded successfully"
+    },
+    "PREVIEW": {
+      "RETRY": "Retry",
+      "LOADING": "Loading document...",
+      "ERROR_TITLE": "Error loading"
+    },
+    "ACTIONS": {
+      "DELETE": "Delete",
+      "DOWNLOAD": "Download",
+      "VIEW": "View"
+    },
+    "STATUS": {
+      "FAILED": "Failed",
+      "PREVIEW_READY": "Ready",
+      "UPLOADED": "Uploaded"
+    },
+    "LIST": {
+      "EMPTY_TITLE": "No documents",
+      "TITLE": "Uploaded Documents",
+      "TYPE": "Type",
+      "PAGES": "Pages",
+      "LOADING": "Loading documents...",
+      "EMPTY_MESSAGE": "Upload your first supplier invoice",
+      "STATUS": "Status",
+      "SIZE": "Size",
+      "ACTIONS": "Actions",
+      "FILENAME": "Filename",
+      "DATE": "Date"
+    }
   }
 }

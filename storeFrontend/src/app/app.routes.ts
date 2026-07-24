@@ -274,6 +274,11 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'stores/:id/supplier-invoices',
+    loadComponent: () => import('./features/supplier-invoices/supplier-invoices.component').then(m => m.SupplierInvoicesComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'stores/:id/theme',
     loadComponent: () => import('./features/stores/store-theme.component').then(m => m.StoreThemeComponent),
     canActivate: [authGuard]

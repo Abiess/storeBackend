@@ -12,7 +12,8 @@ public class MinioProperties {
     private String publicEndpoint; // Öffentliche URL für Browser-Zugriff
     private String accessKey;
     private String secretKey;
-    private String bucket;
+    private String bucket; // Öffentlicher Bucket für Produktbilder, Logos etc.
+    private String privateBucket; // Privater Bucket für Dokumente (Lieferantenrechnungen)
     private String region = "us-east-1";
     private boolean secure = false;
 
@@ -35,6 +36,10 @@ public class MinioProperties {
 
     public String getBucket() {
         return bucket;
+    }
+
+    public String getPrivateBucket() {
+        return privateBucket;
     }
 
     public String getRegion() {

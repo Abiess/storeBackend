@@ -189,6 +189,7 @@ minio:
   access-key: ${MINIO_ACCESS_KEY:miniomarkt}
   secret-key: ${MINIO_SECRET_KEY:miniopassword!}
   bucket: ${MINIO_BUCKET:store-assets}
+  private-bucket: ${MINIO_PRIVATE_BUCKET:store-private-documents}
   region: ${MINIO_REGION:us-east-1}
 
   # endpoint is http internally - secure=false

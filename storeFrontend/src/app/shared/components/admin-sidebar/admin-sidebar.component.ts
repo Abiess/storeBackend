@@ -149,6 +149,17 @@ export class AdminSidebarComponent implements OnInit {
                 ]
             },
             {
+                titleKey: 'sidebarAdmin.groups.purchasing',
+                items: [
+                    {
+                        labelKey: 'sidebarAdmin.items.supplierInvoices',
+                        icon: 'file-text',
+                        route: `${baseRoute}/supplier-invoices`,
+                        requiresStore: true
+                    }
+                ]
+            },
+            {
                 titleKey: 'sidebarAdmin.groups.customerService',
                 items: [
                     {

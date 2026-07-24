@@ -1562,7 +1562,8 @@
       "storeSetup": "Configuration de la boutique",
       "account": "Compte",
       "team": "Équipe et rôles",
-      "platform": "Administration de la plateforme"
+      "platform": "Administration de la plateforme",
+      "purchasing": "Achats"
     },
     "items": {
       "dashboard": "Tableau de bord",
@@ -1580,7 +1581,8 @@
       "roles": "Rôles",
       "teamRoles": "Équipe et rôles",
       "telegram": "Telegram",
-      "platformDelivery": "🚚 Options de livraison"
+      "platformDelivery": "🚚 Options de livraison",
+      "supplierInvoices": "Factures fournisseurs"
     },
     "noStore": {
       "hint": "Aucune boutique sélectionnée",
@@ -2913,5 +2915,62 @@
     "BANK_TRANSFER": "Virement bancaire",
     "CREDIT_CARD": "Carte de crédit",
     "STRIPE": "Stripe"
+  },
+  "SUPPLIER_INVOICES": {
+    "UPLOAD": {
+      "ALLOWED_TYPES": "Types de fichiers autorisés",
+      "OR": "ou",
+      "UPLOADING": "Téléchargement en cours...",
+      "DRAG_DROP": "Déposer le fichier ici ou cliquer pour télécharger",
+      "MAX_SIZE": "Taille maximale du fichier",
+      "SELECT_FILE": "Sélectionner un fichier"
+    },
+    "TITLE": "Factures fournisseurs",
+    "ERRORS": {
+      "EMPTY_FILE": "Le fichier est vide",
+      "FILE_TOO_LARGE": "Le fichier est trop volumineux (max. 10 Mo)",
+      "NO_FILE": "Veuillez sélectionner un fichier",
+      "UNAUTHORIZED": "Non autorisé",
+      "FORBIDDEN": "Accès refusé",
+      "NO_STORE_ID": "Aucun ID de magasin trouvé",
+      "NOT_FOUND": "Document introuvable",
+      "INVALID_FILE_TYPE": "Type de fichier non valide",
+      "UNKNOWN": "Une erreur inconnue s'est produite",
+      "PREVIEW_FAILED": "Impossible de charger l'aperçu"
+    },
+    "SUBTITLE": "Télécharger et gérer les factures entrantes",
+    "MESSAGES": {
+      "CONFIRM_DELETE": "Voulez-vous vraiment supprimer '{filename}' ?",
+      "DELETE_SUCCESS": "Document supprimé avec succès",
+      "UPLOAD_SUCCESS": "Document téléchargé avec succès"
+    },
+    "PREVIEW": {
+      "RETRY": "Réessayer",
+      "LOADING": "Chargement du document...",
+      "ERROR_TITLE": "Erreur de chargement"
+    },
+    "ACTIONS": {
+      "DELETE": "Supprimer",
+      "DOWNLOAD": "Télécharger",
+      "VIEW": "Afficher"
+    },
+    "STATUS": {
+      "FAILED": "Échoué",
+      "PREVIEW_READY": "Prêt",
+      "UPLOADED": "Téléchargé"
+    },
+    "LIST": {
+      "EMPTY_TITLE": "Aucun document",
+      "TITLE": "Documents téléchargés",
+      "TYPE": "Type",
+      "PAGES": "Pages",
+      "LOADING": "Chargement des documents...",
+      "EMPTY_MESSAGE": "Téléchargez votre première facture fournisseur",
+      "STATUS": "Statut",
+      "SIZE": "Taille",
+      "ACTIONS": "Actions",
+      "FILENAME": "Nom du fichier",
+      "DATE": "Date"
+    }
   }
 }

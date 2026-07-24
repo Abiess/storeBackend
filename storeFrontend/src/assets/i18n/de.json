@@ -946,7 +946,8 @@
       "storeSetup": "Store Setup",
       "team": "Team & Rollen",
       "account": "Account",
-      "platform": "Plattform-Admin"
+      "platform": "Plattform-Admin",
+      "purchasing": "Einkauf"
     },
     "items": {
       "dashboard": "Dashboard",
@@ -965,7 +966,8 @@
       "roles": "Rollen",
       "teamRoles": "Team & Rollen",
       "telegram": "Telegram",
-      "platformDelivery": "🚚 Lieferoptionen"
+      "platformDelivery": "🚚 Lieferoptionen",
+      "supplierInvoices": "Lieferantenrechnungen"
     },
     "noStore": {
       "hint": "Kein Store ausgewählt",
@@ -2805,5 +2807,62 @@
     "BANK_TRANSFER": "Banküberweisung",
     "CREDIT_CARD": "Kreditkarte",
     "STRIPE": "Stripe"
+  },
+  "SUPPLIER_INVOICES": {
+    "UPLOAD": {
+      "ALLOWED_TYPES": "Erlaubte Dateitypen",
+      "OR": "oder",
+      "UPLOADING": "Wird hochgeladen...",
+      "DRAG_DROP": "Datei hierher ziehen oder klicken zum Hochladen",
+      "MAX_SIZE": "Maximale Dateigröße",
+      "SELECT_FILE": "Datei auswählen"
+    },
+    "TITLE": "Lieferantenrechnungen",
+    "ERRORS": {
+      "EMPTY_FILE": "Die Datei ist leer",
+      "FILE_TOO_LARGE": "Datei ist zu groß (max. 10 MB)",
+      "NO_FILE": "Bitte wählen Sie eine Datei aus",
+      "UNAUTHORIZED": "Nicht autorisiert",
+      "FORBIDDEN": "Zugriff verweigert",
+      "NO_STORE_ID": "Keine Store-ID gefunden",
+      "NOT_FOUND": "Dokument nicht gefunden",
+      "INVALID_FILE_TYPE": "Ungültiger Dateityp",
+      "UNKNOWN": "Ein unbekannter Fehler ist aufgetreten",
+      "PREVIEW_FAILED": "Vorschau konnte nicht geladen werden"
+    },
+    "SUBTITLE": "Eingangsrechnungen hochladen und verwalten",
+    "MESSAGES": {
+      "CONFIRM_DELETE": "Möchten Sie '{filename}' wirklich löschen?",
+      "DELETE_SUCCESS": "Dokument erfolgreich gelöscht",
+      "UPLOAD_SUCCESS": "Dokument erfolgreich hochgeladen"
+    },
+    "PREVIEW": {
+      "RETRY": "Erneut versuchen",
+      "LOADING": "Dokument wird geladen...",
+      "ERROR_TITLE": "Fehler beim Laden"
+    },
+    "ACTIONS": {
+      "DELETE": "Löschen",
+      "DOWNLOAD": "Herunterladen",
+      "VIEW": "Anzeigen"
+    },
+    "STATUS": {
+      "FAILED": "Fehlgeschlagen",
+      "PREVIEW_READY": "Bereit",
+      "UPLOADED": "Hochgeladen"
+    },
+    "LIST": {
+      "EMPTY_TITLE": "Keine Dokumente vorhanden",
+      "TITLE": "Hochgeladene Dokumente",
+      "TYPE": "Typ",
+      "PAGES": "Seiten",
+      "LOADING": "Dokumente werden geladen...",
+      "EMPTY_MESSAGE": "Laden Sie Ihre erste Lieferantenrechnung hoch",
+      "STATUS": "Status",
+      "SIZE": "Größe",
+      "ACTIONS": "Aktionen",
+      "FILENAME": "Dateiname",
+      "DATE": "Datum"
+    }
   }
 }
