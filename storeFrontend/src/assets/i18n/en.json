@@ -2770,7 +2770,9 @@
       "UPLOADING": "Uploading...",
       "DRAG_DROP": "Drag file here or click to upload",
       "MAX_SIZE": "Maximum file size",
-      "SELECT_FILE": "Select file"
+      "SELECT_FILE": "Select file",
+      "TITLE": "Upload Invoice",
+      "BUTTON": "Upload Invoice"
     },
     "TITLE": "Supplier Invoices",
     "ERRORS": {
@@ -2783,7 +2785,8 @@
       "NOT_FOUND": "Document not found",
       "INVALID_FILE_TYPE": "Invalid file type",
       "UNKNOWN": "An unknown error occurred",
-      "PREVIEW_FAILED": "Preview could not be loaded"
+      "PREVIEW_FAILED": "Preview could not be loaded",
+      "UPLOAD_FAILED": "Upload failed"
     },
     "SUBTITLE": "Upload and manage incoming invoices",
     "MESSAGES": {
@@ -2818,6 +2821,7 @@
       "ACTIONS": "Actions",
       "FILENAME": "Filename",
       "DATE": "Date"
-    }
+    },
+    "SEARCH_PLACEHOLDER": "Search documents..."
   }
 }

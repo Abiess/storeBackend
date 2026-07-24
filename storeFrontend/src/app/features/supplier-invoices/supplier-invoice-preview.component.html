@@ -7,43 +7,43 @@
     <!-- PDF Controls -->
     <div *ngIf="isPdf && !loading && !error" class="pdf-controls">
       <button mat-icon-button (click)="previousPage()" [disabled]="currentPage <= 1">
-        <mat-icon>chevron_left</mat-icon>
+        <lucide-icon name="chevron-left" [size]="20"></lucide-icon>
       </button>
       <span class="page-info">{{ currentPage }} / {{ totalPages }}</span>
       <button mat-icon-button (click)="nextPage()" [disabled]="currentPage >= totalPages">
-        <mat-icon>chevron_right</mat-icon>
+        <lucide-icon name="chevron-right" [size]="20"></lucide-icon>
       </button>
       <span class="divider">|</span>
       <button mat-icon-button (click)="pdfZoomOut()" [disabled]="pdfZoom <= 50">
-        <mat-icon>zoom_out</mat-icon>
+        <lucide-icon name="zoom-out" [size]="20"></lucide-icon>
       </button>
       <span class="zoom-level">{{ pdfZoom }}%</span>
       <button mat-icon-button (click)="pdfZoomIn()" [disabled]="pdfZoom >= 200">
-        <mat-icon>zoom_in</mat-icon>
+        <lucide-icon name="zoom-in" [size]="20"></lucide-icon>
       </button>
       <button mat-icon-button (click)="pdfResetZoom()">
-        <mat-icon>refresh</mat-icon>
+        <lucide-icon name="rotate-cw" [size]="20"></lucide-icon>
       </button>
     </div>
 
     <!-- Image Controls -->
     <div *ngIf="isImage && !loading && !error" class="image-controls">
       <button mat-icon-button (click)="zoomOut()" [disabled]="imageZoom <= 0.5">
-        <mat-icon>zoom_out</mat-icon>
+        <lucide-icon name="zoom-out" [size]="20"></lucide-icon>
       </button>
       <span class="zoom-level">{{ (imageZoom * 100) | number:'1.0-0' }}%</span>
       <button mat-icon-button (click)="zoomIn()" [disabled]="imageZoom >= 3">
-        <mat-icon>zoom_in</mat-icon>
+        <lucide-icon name="zoom-in" [size]="20"></lucide-icon>
       </button>
       <span class="divider">|</span>
       <button mat-icon-button (click)="rotateLeft()">
-        <mat-icon>rotate_left</mat-icon>
+        <lucide-icon name="rotate-cw" [size]="20" style="transform: scaleX(-1)"></lucide-icon>
       </button>
       <button mat-icon-button (click)="rotateRight()">
-        <mat-icon>rotate_right</mat-icon>
+        <lucide-icon name="rotate-cw" [size]="20"></lucide-icon>
       </button>
       <button mat-icon-button (click)="resetZoom()">
-        <mat-icon>refresh</mat-icon>
+        <lucide-icon name="rotate-cw" [size]="20"></lucide-icon>
       </button>
     </div>
 
@@ -51,10 +51,10 @@
     <span class="divider">|</span>
     <button mat-icon-button (click)="downloadOriginal()" [disabled]="loading || error"
             [matTooltip]="'SUPPLIER_INVOICES.ACTIONS.DOWNLOAD' | translate">
-      <mat-icon>download</mat-icon>
+      <lucide-icon name="download" [size]="20"></lucide-icon>
     </button>
     <button mat-icon-button (click)="close()">
-      <mat-icon>close</mat-icon>
+      <lucide-icon name="x" [size]="20"></lucide-icon>
     </button>
   </mat-toolbar>
 
@@ -68,11 +68,11 @@
 
     <!-- Error State -->
     <div *ngIf="error" class="error-state">
-      <mat-icon class="error-icon">error_outline</mat-icon>
+      <lucide-icon name="x" [size]="64" class="error-icon"></lucide-icon>
       <h3>{{ 'SUPPLIER_INVOICES.PREVIEW.ERROR_TITLE' | translate }}</h3>
       <p>{{ errorMessage }}</p>
       <button mat-raised-button color="primary" (click)="loadDocument()">
-        <mat-icon>refresh</mat-icon>
+        <lucide-icon name="rotate-cw" [size]="18"></lucide-icon>
         {{ 'SUPPLIER_INVOICES.PREVIEW.RETRY' | translate }}
       </button>
     </div>

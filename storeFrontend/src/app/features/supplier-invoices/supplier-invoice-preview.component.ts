@@ -8,6 +8,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { LucideAngularModule } from 'lucide-angular';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { SupplierInvoiceService, SupplierInvoiceDocument } from '../../core/services/supplier-invoice.service';
 import { Subject, takeUntil } from 'rxjs';
@@ -29,7 +30,8 @@ interface DialogData {
     MatToolbarModule,
     MatTooltipModule,
     MatDialogModule,
-    TranslateModule
+    TranslateModule,
+    LucideAngularModule
   ],
   templateUrl: './supplier-invoice-preview.component.html',
   styleUrls: ['./supplier-invoice-preview.component.scss']

@@ -28,7 +28,7 @@ export interface UploadProgress {
   providedIn: 'root'
 })
 export class SupplierInvoiceService {
-  private readonly baseUrl = `${environment.apiUrl}/api/stores`;
+  private readonly baseUrl = `${environment.apiUrl}/stores`;
 
   // Validierung
   private readonly ALLOWED_MIME_TYPES = [

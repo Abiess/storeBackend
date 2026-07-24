@@ -14,7 +14,9 @@ import {
   // Restaurant Icons
   UtensilsCrossed, Beef, Coffee, Flame, Fish, Salad, Cake,
   // Riad Icons
-  Building, Wallet, Heart
+  Building, Wallet, Heart,
+  // Supplier Invoice Icons
+  FileText, Upload, Eye, Trash2, Download, RotateCw, ZoomIn, ZoomOut, CloudUpload
 } from 'lucide-angular';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS, HttpClient } from '@angular/common/http';
@@ -71,7 +73,9 @@ export const appConfig: ApplicationConfig = {
         // Restaurant Icons
         UtensilsCrossed, Beef, Coffee, Flame, Fish, Salad, Cake,
         // Riad Icons
-        Building, Wallet, Heart
+        Building, Wallet, Heart,
+        // Supplier Invoice Icons
+        FileText, Upload, Eye, Trash2, Download, RotateCw, ZoomIn, ZoomOut, CloudUpload
       })
     },
     // Standard Locale (kann dynamisch überschrieben werden)

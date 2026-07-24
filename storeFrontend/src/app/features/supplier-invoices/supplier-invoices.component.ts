@@ -2,17 +2,14 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatCardModule } from '@angular/material/card';
-import { MatTableModule } from '@angular/material/table';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { LucideAngularModule } from 'lucide-angular';
 import { SupplierInvoiceService, SupplierInvoiceDocument } from '../../core/services/supplier-invoice.service';
+import { ResponsiveDataListComponent, ColumnConfig, ActionConfig } from '../../shared/components/responsive-data-list/responsive-data-list.component';
 import { Subject, takeUntil } from 'rxjs';
+import { SupplierInvoiceUploadDialogComponent } from './supplier-invoice-upload-dialog.component';
 import { SupplierInvoicePreviewComponent } from './supplier-invoice-preview.component';
 
 @Component({
@@ -21,30 +18,102 @@ import { SupplierInvoicePreviewComponent } from './supplier-invoice-preview.comp
   imports: [
     CommonModule,
     MatButtonModule,
-    MatIconModule,
-    MatProgressBarModule,
-    MatProgressSpinnerModule,
-    MatCardModule,
-    MatTableModule,
     MatDialogModule,
     MatSnackBarModule,
-    MatTooltipModule,
-    TranslateModule
+    TranslateModule,
+    LucideAngularModule,
+    ResponsiveDataListComponent
   ],
-  templateUrl: './supplier-invoices.component.html',
-  styleUrls: ['./supplier-invoices.component.scss']
+  template: `
+    <div class="page-container">
+      <!-- Page Header -->
+      <div class="page-header">
+        <div>
+          <h1>{{ 'SUPPLIER_INVOICES.TITLE' | translate }}</h1>
+          <p class="subtitle">{{ 'SUPPLIER_INVOICES.SUBTITLE' | translate }}</p>
+        </div>
+        <button mat-raised-button color="primary" (click)="openUploadDialog()">
+          <lucide-icon name="upload" [size]="18"></lucide-icon>
+          {{ 'SUPPLIER_INVOICES.UPLOAD.BUTTON' | translate }}
+        </button>
+      </div>
+
+      <!-- Responsive Data List -->
+      <app-responsive-data-list
+        [items]="documents"
+        [columns]="columns"
+        [actions]="actions"
+        [loading]="loading"
+        [searchable]="true"
+        [searchPlaceholder]="'SUPPLIER_INVOICES.SEARCH_PLACEHOLDER' | translate"
+        [emptyMessage]="'SUPPLIER_INVOICES.LIST.EMPTY_MESSAGE' | translate"
+        [emptyIcon]="'📦'"
+        [rowClickable]="true"
+        (rowClick)="openPreview($event)">
+      </app-responsive-data-list>
+    </div>
+  `,
+  styles: [`
+    .page-container {
+      padding: 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 24px;
+      gap: 16px;
+
+      h1 {
+        margin: 0 0 8px 0;
+        font-size: 28px;
+        font-weight: 500;
+        color: #333;
+      }
+
+      .subtitle {
+        margin: 0;
+        color: #666;
+        font-size: 14px;
+      }
+
+      button {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .page-container {
+        padding: 16px;
+      }
+
+      .page-header {
+        flex-direction: column;
+        align-items: stretch;
+
+        button {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+    }
+  `]
 })
 export class SupplierInvoicesComponent implements OnInit, OnDestroy {
   storeId!: number;
   documents: SupplierInvoiceDocument[] = [];
   loading = false;
-  uploading = false;
-  uploadProgress = 0;
-  dragOver = false;
+
+  columns: ColumnConfig[] = [];
+  actions: ActionConfig[] = [];
 
   private destroy$ = new Subject<void>();
-
-  displayedColumns = ['icon', 'filename', 'type', 'size', 'pages', 'date', 'status', 'actions'];
 
   constructor(
     private route: ActivatedRoute,
@@ -57,6 +126,8 @@ export class SupplierInvoicesComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.extractStoreId();
+    this.setupColumns();
+    this.setupActions();
     this.loadDocuments();
   }
 
@@ -85,6 +156,75 @@ export class SupplierInvoicesComponent implements OnInit, OnDestroy {
     this.storeId = parseInt(id, 10);
   }
 
+  private setupColumns(): void {
+    this.columns = [
+      {
+        key: 'mimeType',
+        label: this.translate.instant('SUPPLIER_INVOICES.LIST.TYPE'),
+        type: 'custom',
+        width: '60px',
+        mobileLabel: this.translate.instant('SUPPLIER_INVOICES.LIST.TYPE'),
+        formatFn: (value) => this.supplierInvoiceService.getFileIcon(value)
+      },
+      {
+        key: 'originalFilename',
+        label: this.translate.instant('SUPPLIER_INVOICES.LIST.FILENAME'),
+        type: 'text',
+        mobileLabel: this.translate.instant('SUPPLIER_INVOICES.LIST.FILENAME')
+      },
+      {
+        key: 'mimeType',
+        label: this.translate.instant('SUPPLIER_INVOICES.LIST.TYPE'),
+        type: 'custom',
+        hideOnMobile: true,
+        formatFn: (value) => this.getFileTypeLabel(value)
+      },
+      {
+        key: 'fileSize',
+        label: this.translate.instant('SUPPLIER_INVOICES.LIST.SIZE'),
+        type: 'custom',
+        mobileLabel: this.translate.instant('SUPPLIER_INVOICES.LIST.SIZE'),
+        formatFn: (value) => this.supplierInvoiceService.formatFileSize(value)
+      },
+      {
+        key: 'pageCount',
+        label: this.translate.instant('SUPPLIER_INVOICES.LIST.PAGES'),
+        type: 'number',
+        hideOnMobile: true
+      },
+      {
+        key: 'createdAt',
+        label: this.translate.instant('SUPPLIER_INVOICES.LIST.DATE'),
+        type: 'date',
+        mobileLabel: this.translate.instant('SUPPLIER_INVOICES.LIST.DATE')
+      },
+      {
+        key: 'uploadStatus',
+        label: this.translate.instant('SUPPLIER_INVOICES.LIST.STATUS'),
+        type: 'badge',
+        mobileLabel: this.translate.instant('SUPPLIER_INVOICES.LIST.STATUS'),
+        formatFn: (value) => this.translate.instant(`SUPPLIER_INVOICES.STATUS.${value}`),
+        badgeClass: (value) => this.getStatusClass(value)
+      }
+    ];
+  }
+
+  private setupActions(): void {
+    this.actions = [
+      {
+        icon: '👁️',
+        label: this.translate.instant('SUPPLIER_INVOICES.ACTIONS.VIEW'),
+        handler: (doc) => this.openPreview(doc)
+      },
+      {
+        icon: '🗑️',
+        label: this.translate.instant('SUPPLIER_INVOICES.ACTIONS.DELETE'),
+        class: 'danger',
+        handler: (doc) => this.confirmDelete(doc)
+      }
+    ];
+  }
+
   loadDocuments(): void {
     this.loading = true;
     this.supplierInvoiceService.getDocuments(this.storeId)
@@ -104,67 +244,18 @@ export class SupplierInvoicesComponent implements OnInit, OnDestroy {
       });
   }
 
-  onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files.length > 0) {
-      this.uploadFile(input.files[0]);
-    }
-  }
+  openUploadDialog(): void {
+    const dialogRef = this.dialog.open(SupplierInvoiceUploadDialogComponent, {
+      width: '600px',
+      maxWidth: '90vw',
+      data: { storeId: this.storeId }
+    });
 
-  onDrop(event: DragEvent): void {
-    event.preventDefault();
-    event.stopPropagation();
-    this.dragOver = false;
-
-    if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
-      this.uploadFile(event.dataTransfer.files[0]);
-    }
-  }
-
-  onDragOver(event: DragEvent): void {
-    event.preventDefault();
-    event.stopPropagation();
-    this.dragOver = true;
-  }
-
-  onDragLeave(event: DragEvent): void {
-    event.preventDefault();
-    event.stopPropagation();
-    this.dragOver = false;
-  }
-
-  private uploadFile(file: File): void {
-    // Validate
-    const validationError = this.supplierInvoiceService.validateFile(file);
-    if (validationError) {
-      this.showError(validationError);
-      return;
-    }
-
-    this.uploading = true;
-    this.uploadProgress = 0;
-
-    this.supplierInvoiceService.uploadDocument(this.storeId, file)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (result) => {
-          if ('progress' in result) {
-            this.uploadProgress = result.progress;
-          } else {
-            // Upload complete
-            this.uploading = false;
-            this.uploadProgress = 0;
-            this.showSuccess('SUPPLIER_INVOICES.MESSAGES.UPLOAD_SUCCESS');
-            this.loadDocuments(); // Refresh list
-          }
-        },
-        error: (err) => {
-          console.error('Upload failed:', err);
-          this.uploading = false;
-          this.uploadProgress = 0;
-          this.handleError(err);
-        }
-      });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === 'success') {
+        this.loadDocuments();
+      }
+    });
   }
 
   openPreview(doc: SupplierInvoiceDocument): void {
@@ -193,7 +284,7 @@ export class SupplierInvoicesComponent implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.showSuccess('SUPPLIER_INVOICES.MESSAGES.DELETE_SUCCESS');
-          this.loadDocuments(); // Refresh list
+          this.loadDocuments();
         },
         error: (err) => {
           console.error('Delete failed:', err);
@@ -202,15 +293,7 @@ export class SupplierInvoicesComponent implements OnInit, OnDestroy {
       });
   }
 
-  formatFileSize(bytes: number): string {
-    return this.supplierInvoiceService.formatFileSize(bytes);
-  }
-
-  getFileIcon(mimeType: string): string {
-    return this.supplierInvoiceService.getFileIcon(mimeType);
-  }
-
-  getFileTypeLabel(mimeType: string): string {
+  private getFileTypeLabel(mimeType: string): string {
     if (mimeType === 'application/pdf') return 'PDF';
     if (mimeType === 'image/jpeg') return 'JPEG';
     if (mimeType === 'image/png') return 'PNG';
@@ -218,17 +301,13 @@ export class SupplierInvoicesComponent implements OnInit, OnDestroy {
     return mimeType;
   }
 
-  getStatusClass(status: string): string {
+  private getStatusClass(status: string): string {
     switch (status) {
       case 'UPLOADED': return 'status-active';
       case 'PREVIEW_READY': return 'status-active';
       case 'FAILED': return 'status-inactive';
       default: return '';
     }
-  }
-
-  getStatusLabel(status: string): string {
-    return `SUPPLIER_INVOICES.STATUS.${status}`;
   }
 
   private handleError(error: any): void {
@@ -244,8 +323,6 @@ export class SupplierInvoicesComponent implements OnInit, OnDestroy {
       message = 'SUPPLIER_INVOICES.ERRORS.FILE_TOO_LARGE';
     } else if (error.status === 415) {
       message = 'SUPPLIER_INVOICES.ERRORS.INVALID_FILE_TYPE';
-    } else if (error.error?.message) {
-      message = error.error.message;
     }
 
     this.showError(message);

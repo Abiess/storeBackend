@@ -2815,7 +2815,9 @@
       "UPLOADING": "Wird hochgeladen...",
       "DRAG_DROP": "Datei hierher ziehen oder klicken zum Hochladen",
       "MAX_SIZE": "Maximale Dateigröße",
-      "SELECT_FILE": "Datei auswählen"
+      "SELECT_FILE": "Datei auswählen",
+      "TITLE": "Rechnung hochladen",
+      "BUTTON": "Rechnung hochladen"
     },
     "TITLE": "Lieferantenrechnungen",
     "ERRORS": {
@@ -2828,7 +2830,8 @@
       "NOT_FOUND": "Dokument nicht gefunden",
       "INVALID_FILE_TYPE": "Ungültiger Dateityp",
       "UNKNOWN": "Ein unbekannter Fehler ist aufgetreten",
-      "PREVIEW_FAILED": "Vorschau konnte nicht geladen werden"
+      "PREVIEW_FAILED": "Vorschau konnte nicht geladen werden",
+      "UPLOAD_FAILED": "Upload fehlgeschlagen"
     },
     "SUBTITLE": "Eingangsrechnungen hochladen und verwalten",
     "MESSAGES": {
@@ -2863,6 +2866,7 @@
       "ACTIONS": "Aktionen",
       "FILENAME": "Dateiname",
       "DATE": "Datum"
-    }
+    },
+    "SEARCH_PLACEHOLDER": "Dokumente durchsuchen..."
   }
 }

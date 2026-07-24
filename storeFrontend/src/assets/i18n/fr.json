@@ -2923,7 +2923,9 @@
       "UPLOADING": "Téléchargement en cours...",
       "DRAG_DROP": "Déposer le fichier ici ou cliquer pour télécharger",
       "MAX_SIZE": "Taille maximale du fichier",
-      "SELECT_FILE": "Sélectionner un fichier"
+      "SELECT_FILE": "Sélectionner un fichier",
+      "TITLE": "Télécharger facture",
+      "BUTTON": "Télécharger facture"
     },
     "TITLE": "Factures fournisseurs",
     "ERRORS": {
@@ -2936,7 +2938,8 @@
       "NOT_FOUND": "Document introuvable",
       "INVALID_FILE_TYPE": "Type de fichier non valide",
       "UNKNOWN": "Une erreur inconnue s'est produite",
-      "PREVIEW_FAILED": "Impossible de charger l'aperçu"
+      "PREVIEW_FAILED": "Impossible de charger l'aperçu",
+      "UPLOAD_FAILED": "Échec du téléchargement"
     },
     "SUBTITLE": "Télécharger et gérer les factures entrantes",
     "MESSAGES": {
@@ -2971,6 +2974,7 @@
       "ACTIONS": "Actions",
       "FILENAME": "Nom du fichier",
       "DATE": "Date"
-    }
+    },
+    "SEARCH_PLACEHOLDER": "Rechercher des documents..."
   }
 }
