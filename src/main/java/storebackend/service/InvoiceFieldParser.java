@@ -99,12 +99,12 @@ public class InvoiceFieldParser {
 
         // Parse Felder
         String supplierName = parseSupplierName(rawText, confidence, warnings);
-        String invoiceNumber = parseField(rawText, INVOICE_NUMBER_PATTERNS, confidence, "invoiceNumber");
-        LocalDate invoiceDate = parseDate(rawText, INVOICE_DATE_PATTERNS, confidence, "invoiceDate");
+        String invoiceNumber = parseInvoiceNumber(rawText, confidence, warnings);
+        LocalDate invoiceDate = parseInvoiceDate(rawText, confidence, warnings);
         LocalDate deliveryDate = parseDate(rawText, DELIVERY_DATE_PATTERNS, confidence, "deliveryDate");
         BigDecimal netAmount = parseAmount(rawText, NET_AMOUNT_PATTERNS, confidence, "netAmount");
-        BigDecimal taxAmount = parseAmount(rawText, TAX_AMOUNT_PATTERNS, confidence, "taxAmount");
         BigDecimal grossAmount = parseAmount(rawText, GROSS_AMOUNT_PATTERNS, confidence, "grossAmount");
+        BigDecimal taxAmount = parseTaxAmount(rawText, netAmount, grossAmount, confidence, warnings);
         String currency = parseCurrency(rawText, confidence);
 
         // Plausibilitätsprüfung
@@ -224,15 +224,29 @@ public class InvoiceFieldParser {
     private String parseSupplierName(String text, Map<String, Double> confidence, List<String> warnings) {
         String[] lines = text.split("\n");
         
-        // Suche nach Firmenkennzeichnung in ersten 10 Zeilen
-        for (int i = 0; i < Math.min(10, lines.length); i++) {
+        // Sammle alle Firmenkandidaten mit Bewertung
+        List<SupplierCandidate> candidates = new ArrayList<>();
+        
+        for (int i = 0; i < Math.min(30, lines.length); i++) {
             String line = lines[i].trim();
-            if (line.length() < 3) continue;
+            if (line.length() < 5) continue;
             
             Matcher matcher = COMPANY_PATTERN.matcher(line);
             if (matcher.matches()) {
+                double score = evaluateSupplierCandidate(line, text);
+                candidates.add(new SupplierCandidate(line, score));
+            }
+        }
+        
+        // Sortiere nach Score und wähle besten
+        if (!candidates.isEmpty()) {
+            candidates.sort((a, b) -> Double.compare(b.score, a.score));
+            SupplierCandidate best = candidates.get(0);
+            
+            // Mindestanforderung: score > 0.5
+            if (best.score > 0.5) {
                 confidence.put("supplierName", 0.9);
-                return line;
+                return best.name;
             }
         }
 
@@ -248,6 +262,228 @@ public class InvoiceFieldParser {
 
         confidence.put("supplierName", 0.0);
         return null;
+    }
+    
+    private double evaluateSupplierCandidate(String line, String fullText) {
+        double score = 1.0;
+        
+        // Zähle Buchstaben pro Wort (ohne Rechtsform)
+        String withoutSuffix = line.replaceAll("(?i)(GmbH|UG|AG|SARL|SA|Ltd\\.|Limited|Inc\\.|Corp\\.).*", "").trim();
+        String[] words = withoutSuffix.split("\\s+");
+        
+        if (words.length == 0 || withoutSuffix.isEmpty()) return 0.1; // Keine Wörter = sehr niedrig
+        if (words.length < 2) score *= 0.3; // Zu kurz
+        
+        // Durchschnittliche Wortlänge
+        double avgWordLength = 0;
+        for (String word : words) {
+            avgWordLength += word.replaceAll("[^a-zA-Z]", "").length();
+        }
+        avgWordLength /= words.length;
+        
+        if (avgWordLength < 2) score *= 0.2; // Zerstörte Wörter wie "R wm oe"
+        if (avgWordLength >= 4) score *= 1.5; // Vollständige Wörter
+        
+        // Häufigkeit im Text (mehrfach = vertrauenswürdiger)
+        if (withoutSuffix.length() > 0) {
+            int occurrences = (fullText.length() - fullText.replace(withoutSuffix, "").length()) / withoutSuffix.length();
+            if (occurrences > 1) score *= 1.3;
+        }
+        
+        return Math.min(score, 2.0);
+    }
+    
+    private static class SupplierCandidate {
+        String name;
+        double score;
+        SupplierCandidate(String name, double score) {
+            this.name = name;
+            this.score = score;
+        }
+    }
+    
+    // Spezielle Rechnungsnummer-Erkennung mit Lieferschein-Ausschluss
+    private String parseInvoiceNumber(String text, Map<String, Double> confidence, List<String> warnings) {
+        String[] lines = text.split("\n");
+        
+        // Sammle alle Nummern-Kandidaten
+        List<InvoiceNumberCandidate> candidates = new ArrayList<>();
+        
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i];
+            String prevLine = i > 0 ? lines[i - 1] : "";
+            String combinedContext = prevLine + " " + line;
+            
+            // Prüfe auf Lieferschein-Kontext
+            if (DELIVERY_NOTE_PATTERN.matcher(combinedContext).find()) {
+                continue; // Überspringe diese Zeile
+            }
+            
+            // Versuche alle Patterns
+            for (int p = 0; p < INVOICE_NUMBER_PATTERNS.length; p++) {
+                Matcher matcher = INVOICE_NUMBER_PATTERNS[p].matcher(line);
+                while (matcher.find()) {
+                    String number = matcher.group(1).trim();
+                    double score = 1.0;
+                    
+                    // Heuristisches Pattern hat niedrigere Konfidenz
+                    if (p == INVOICE_NUMBER_PATTERNS.length - 1) {
+                        score = 0.7;
+                        
+                        // Bonus wenn Kundennummer und Datum in derselben Zeile
+                        if (line.matches(".*\\d{5,}.*\\d{2}/\\d{2}/\\d{4}.*")) {
+                            score = 0.95; // Sehr wahrscheinlich Rechnungskopfzeile
+                        }
+                    }
+                    
+                    candidates.add(new InvoiceNumberCandidate(number, score));
+                }
+            }
+        }
+        
+        // Wähle Kandidaten mit höchstem Score
+        if (!candidates.isEmpty()) {
+            candidates.sort((a, b) -> Double.compare(b.score, a.score));
+            InvoiceNumberCandidate best = candidates.get(0);
+            confidence.put("invoiceNumber", best.score);
+            return best.number;
+        }
+        
+        confidence.put("invoiceNumber", 0.0);
+        return null;
+    }
+    
+    private static class InvoiceNumberCandidate {
+        String number;
+        double score;
+        InvoiceNumberCandidate(String number, double score) {
+            this.number = number;
+            this.score = score;
+        }
+    }
+    
+    // Rechnungsdatum darf nicht aus Lieferdatum übernommen werden
+    private LocalDate parseInvoiceDate(String text, Map<String, Double> confidence, List<String> warnings) {
+        String[] lines = text.split("\n");
+        
+        // Suche explizite Rechnungsdatum-Labels
+        for (Pattern pattern : INVOICE_DATE_PATTERNS) {
+            Matcher matcher = pattern.matcher(text);
+            if (matcher.find()) {
+                String dateStr = matcher.group(1).trim();
+                LocalDate date = tryParseDate(dateStr);
+                if (date != null) {
+                    confidence.put("invoiceDate", 1.0);
+                    return date;
+                }
+            }
+        }
+        
+        // Suche Datum in Rechnungskopfzeile (mit Rechnungsnummer + Kundennummer)
+        for (String line : lines) {
+            if (line.matches(".*20\\d{2}/\\d{4,8}.*\\d{5,}.*\\d{2}/\\d{2}/\\d{4}.*")) {
+                // Zeile enthält: Rechnungsnummer, Kundennummer, Datum
+                Pattern datePattern = Pattern.compile("(\\d{2}/\\d{2}/\\d{4})");
+                Matcher matcher = datePattern.matcher(line);
+                if (matcher.find()) {
+                    String dateStr = matcher.group(1);
+                    LocalDate date = tryParseDate(dateStr);
+                    if (date != null) {
+                        confidence.put("invoiceDate", 0.9);
+                        return date;
+                    }
+                }
+            }
+        }
+        
+        confidence.put("invoiceDate", 0.0);
+        return null;
+    }
+    
+    // MwSt. mit Plausibilitätsprüfung
+    private BigDecimal parseTaxAmount(String text, BigDecimal netAmount, BigDecimal grossAmount, 
+                                       Map<String, Double> confidence, List<String> warnings) {
+        // Sammle alle MwSt.-Kandidaten
+        List<TaxCandidate> candidates = new ArrayList<>();
+        
+        String[] lines = text.split("\n");
+        for (String line : lines) {
+            for (Pattern pattern : TAX_AMOUNT_PATTERNS) {
+                Matcher matcher = pattern.matcher(line);
+                if (matcher.find()) {
+                    String amountStr = matcher.group(1).trim();
+                    BigDecimal amount = parseAmountString(amountStr);
+                    
+                    if (amount != null) {
+                        double score = 1.0;
+                        
+                        // Prüfe auf Tabellenüberschrift-Artefakt (z.B. "MwSt.Betrag 34 Art.")
+                        if (line.matches(".*(?:Art\\.?|Kolli|Spalte).*")) {
+                            score = 0.1; // Sehr niedrig
+                        }
+                        
+                        // Bevorzuge Zeilen mit Doppelpunkt und Währung
+                        if (line.contains(":") && line.matches(".*[€£$].*")) {
+                            score = 1.2;
+                        }
+                        
+                        candidates.add(new TaxCandidate(amount, score));
+                    }
+                }
+            }
+        }
+        
+        // Plausibilitätsprüfung mit Netto/Gesamt
+        if (netAmount != null && grossAmount != null) {
+            BigDecimal calculatedTax = grossAmount.subtract(netAmount);
+            
+            // Suche Kandidaten nahe dem berechneten Wert
+            for (TaxCandidate candidate : candidates) {
+                BigDecimal diff = candidate.amount.subtract(calculatedTax).abs();
+                if (diff.compareTo(new BigDecimal("0.02")) <= 0) {
+                    // Perfekte Übereinstimmung
+                    confidence.put("taxAmount", 1.0);
+                    return candidate.amount;
+                }
+            }
+            
+            // Wenn beste Kandidat unplausibel ist, verwende berechneten Wert
+            if (!candidates.isEmpty()) {
+                candidates.sort((a, b) -> Double.compare(b.score, a.score));
+                TaxCandidate best = candidates.get(0);
+                
+                BigDecimal diff = best.amount.subtract(calculatedTax).abs();
+                if (diff.compareTo(new BigDecimal("10.00")) > 0) {
+                    // Zu große Differenz - verwende berechneten Wert
+                    confidence.put("taxAmount", 0.8);
+                    warnings.add("MwSt. aus Gesamt minus Netto abgeleitet");
+                    return calculatedTax;
+                } else {
+                    confidence.put("taxAmount", best.score);
+                    return best.amount;
+                }
+            }
+        }
+        
+        // Fallback: Bester Kandidat ohne Plausibilitätsprüfung
+        if (!candidates.isEmpty()) {
+            candidates.sort((a, b) -> Double.compare(b.score, a.score));
+            TaxCandidate best = candidates.get(0);
+            confidence.put("taxAmount", best.score);
+            return best.amount;
+        }
+        
+        confidence.put("taxAmount", 0.0);
+        return null;
+    }
+    
+    private static class TaxCandidate {
+        BigDecimal amount;
+        double score;
+        TaxCandidate(BigDecimal amount, double score) {
+            this.amount = amount;
+            this.score = score;
+        }
     }
 
     private String parseCurrency(String text, Map<String, Double> confidence) {

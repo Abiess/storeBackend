@@ -100,6 +100,7 @@ export class SupplierInvoicePreviewComponent implements OnInit, OnDestroy {
     }
     
     this.loadDocument();
+    this.loadCachedParseResult();
   }
 
   ngOnDestroy(): void {
@@ -279,22 +280,65 @@ export class SupplierInvoicePreviewComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Parse invoice with field extraction
-  parseInvoice(): void {
-    this.parsing = true;
-    
-    this.supplierInvoiceService.parseInvoice(this.data.storeId, this.data.document.id, 6)
+  // Load cached parse result if available
+  loadCachedParseResult(): void {
+    this.supplierInvoiceService.getParseResult(this.data.storeId, this.data.document.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (result) => {
           this.parseResult = result;
-          this.parsedFields = { ...result.fields }; // Editable copy
+          this.parsedFields = {
+            supplierName: result.fields?.supplierName ?? null,
+            invoiceNumber: result.fields?.invoiceNumber ?? null,
+            invoiceDate: result.fields?.invoiceDate ?? null,
+            deliveryDate: result.fields?.deliveryDate ?? null,
+            netAmount: result.fields?.netAmount ?? null,
+            taxAmount: result.fields?.taxAmount ?? null,
+            grossAmount: result.fields?.grossAmount ?? null,
+            currency: result.fields?.currency ?? 'EUR'
+          };
+          this.hasOcrResult = true;
+          this.showOcrPanel = true;
+        },
+        error: (err) => {
+          // 404 is expected when no cached result exists yet
+          if (err.status !== 404) {
+            console.error('Failed to load parse result:', err);
+          }
+        }
+      });
+  }
+
+  // Parse invoice with field extraction
+  parseInvoice(force: boolean = false): void {
+    this.parsing = true;
+    
+    this.supplierInvoiceService.parseInvoice(this.data.storeId, this.data.document.id, 6, force)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (result) => {
+          this.parseResult = result;
+          this.parsedFields = {
+            supplierName: result.fields?.supplierName ?? null,
+            invoiceNumber: result.fields?.invoiceNumber ?? null,
+            invoiceDate: result.fields?.invoiceDate ?? null,
+            deliveryDate: result.fields?.deliveryDate ?? null,
+            netAmount: result.fields?.netAmount ?? null,
+            taxAmount: result.fields?.taxAmount ?? null,
+            grossAmount: result.fields?.grossAmount ?? null,
+            currency: result.fields?.currency ?? 'EUR'
+          };
           this.parsing = false;
           this.hasOcrResult = true;
           this.showOcrPanel = true;
           
+          const hasAnyField = Object.values(this.parsedFields).some(v => v !== null && v !== '');
+          const message = hasAnyField
+            ? 'Rechnung erfolgreich ausgelesen'
+            : 'Text wurde erkannt, Rechnungsfelder konnten jedoch nicht zugeordnet werden';
+          
           this.snackBar.open(
-            'Rechnung erfolgreich ausgelesen',
+            message,
             this.translate.instant('COMMON.CLOSE'),
             { duration: 3000 }
           );
@@ -309,6 +353,11 @@ export class SupplierInvoicePreviewComponent implements OnInit, OnDestroy {
           );
         }
       });
+  }
+  
+  // Reparse with force=true
+  reparseInvoice(): void {
+    this.parseInvoice(true);
   }
 
   // Get confidence class for field styling

@@ -34,7 +34,7 @@ import java.util.Optional;
 @Slf4j
 public class InvoiceParseService {
     
-    private static final String PARSER_VERSION = "invoice-parser-v2";
+    private static final String PARSER_VERSION = "invoice-parser-v3";
     
     private final SupplierInvoiceDocumentRepository documentRepository;
     private final SupplierInvoiceParseResultRepository parseResultRepository;

@@ -112,9 +112,14 @@
     <div *ngIf="showOcrPanel" class="ocr-panel">
       <div class="ocr-header">
         <h3>Rechnungsdaten</h3>
-        <button mat-icon-button (click)="parseInvoice()" [disabled]="parsing || !!parseResult"
+        <button mat-icon-button (click)="parseInvoice(false)" [disabled]="parsing || !!parseResult"
                 matTooltip="Rechnung auslesen">
           <lucide-icon name="zap" [size]="18"></lucide-icon>
+        </button>
+        <button mat-icon-button (click)="reparseInvoice()" [disabled]="parsing"
+                *ngIf="parseResult"
+                matTooltip="Neu auslesen (force)">
+          <lucide-icon name="refresh-cw" [size]="18"></lucide-icon>
         </button>
       </div>
 

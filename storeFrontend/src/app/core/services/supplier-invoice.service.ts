@@ -238,15 +238,28 @@ export class SupplierInvoiceService {
   }
 
   /**
+   * Get cached parse result if available
+   */
+  getParseResult(
+    storeId: number,
+    documentId: number
+  ): Observable<InvoiceParseResult> {
+    return this.http.get<InvoiceParseResult>(
+      `${this.baseUrl}/${storeId}/supplier-invoices/documents/${documentId}/parse-result`
+    );
+  }
+
+  /**
    * Parse invoice with OCR + field extraction
    */
   parseInvoice(
     storeId: number,
     documentId: number,
-    psmMode: 3 | 4 | 6 = 6
+    psmMode: 3 | 4 | 6 = 6,
+    force: boolean = false
   ): Observable<InvoiceParseResult> {
     return this.http.post<InvoiceParseResult>(
-      `${this.baseUrl}/${storeId}/supplier-invoices/documents/${documentId}/parse?psmMode=${psmMode}`,
+      `${this.baseUrl}/${storeId}/supplier-invoices/documents/${documentId}/parse?psmMode=${psmMode}&force=${force}`,
       null
     );
   }
