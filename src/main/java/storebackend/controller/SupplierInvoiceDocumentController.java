@@ -6,7 +6,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,12 +19,20 @@ import storebackend.dto.SupplierInvoiceDocumentDTO;
 import storebackend.entity.Store;
 import storebackend.entity.SupplierInvoiceDocument;
 import storebackend.entity.User;
+import storebackend.enums.InvoiceDocumentType;
+import storebackend.enums.InvoiceParseStatus;
 import storebackend.repository.StoreRepository;
+import storebackend.service.LocalInvoiceOcrService;
+import storebackend.service.PDFBoxTextExtractor;
 import storebackend.service.SupplierInvoiceDocumentService;
 import storebackend.util.StoreAccessChecker;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/stores/{storeId}/supplier-invoices")
@@ -33,6 +43,8 @@ public class SupplierInvoiceDocumentController {
 
     private final SupplierInvoiceDocumentService documentService;
     private final StoreRepository storeRepository;
+    private final PDFBoxTextExtractor pdfBoxTextExtractor;
+    private final LocalInvoiceOcrService localInvoiceOcrService;
 
     /**
      * Upload einer Lieferantenrechnung (PDF oder Bild)
@@ -252,4 +264,185 @@ public class SupplierInvoiceDocumentController {
     }
 
     record CountResponse(long count) {}
+
+    /**
+     * OCR-Test-Endpunkt (Phase 2B)
+     * Extrahiert Text ohne Speicherung. Gibt Map<String, Object> zurück.
+     */
+    @Operation(summary = "Extract text with OCR (test endpoint)")
+    @PostMapping("/documents/{documentId}/ocr")
+    @PreAuthorize("@storeAccessChecker.isStoreAdmin(#storeId)")
+    public ResponseEntity<Map<String, Object>> runOcr(
+            @PathVariable Long storeId,
+            @PathVariable Long documentId,
+            @RequestParam(defaultValue = "6") Integer psmMode
+    ) {
+        if (psmMode == null || (psmMode != 3 && psmMode != 4 && psmMode != 6)) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "status", "FAILED",
+                    "errorMessage", "Erlaubte PSM-Modi sind 3, 4 und 6."
+            ));
+        }
+
+        SupplierInvoiceDocument document =
+                documentService.getDocument(documentId, storeId);
+
+        String mimeType = document.getMimeType();
+
+        try {
+            if ("application/pdf".equalsIgnoreCase(mimeType)) {
+                byte[] content;
+
+                try (InputStream input =
+                             documentService.getDocumentContent(documentId, storeId)) {
+                    content = input.readAllBytes();
+                }
+
+                PDFBoxTextExtractor.PdfTextExtractionResult pdfResult;
+
+                try (InputStream pdfInput = new ByteArrayInputStream(content)) {
+                    pdfResult = pdfBoxTextExtractor.extractText(pdfInput);
+                }
+
+                if (pdfResult.status() == InvoiceParseStatus.TEXT_EXTRACTED) {
+                    Map<String, Object> response = new LinkedHashMap<>();
+                    response.put("documentId", documentId);
+                    response.put("documentType", pdfResult.documentType().name());
+                    response.put("status", pdfResult.status().name());
+                    response.put("engine", "pdfbox");
+                    response.put("languages", List.of());
+                    response.put("psmMode", null);
+                    response.put("pageCount", pdfResult.pageCount());
+                    response.put("durationMs", 0L);
+                    response.put("characterCount", pdfResult.characterCount());
+                    response.put("nonEmptyLineCount", pdfResult.nonEmptyLineCount());
+                    response.put("rawText", pdfResult.rawText());
+                    response.put("textPerPage", pdfResult.textPerPage());
+                    response.put("errorMessage", pdfResult.errorMessage());
+
+                    return ResponseEntity.ok()
+                            .cacheControl(CacheControl.noStore())
+                            .body(response);
+                }
+
+                if (!localInvoiceOcrService.isTesseractAvailable()) {
+                    return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                            .cacheControl(CacheControl.noStore())
+                            .body(Map.of(
+                                    "documentId", documentId,
+                                    "documentType", pdfResult.documentType().name(),
+                                    "status", "FAILED",
+                                    "errorMessage", "Tesseract ist auf dem Server nicht verfügbar."
+                            ));
+                }
+
+                LocalInvoiceOcrService.OcrExtractionResult ocrResult;
+
+                try (InputStream ocrInput = new ByteArrayInputStream(content)) {
+                    ocrResult =
+                            localInvoiceOcrService.extractTextWithOcr(ocrInput, psmMode);
+                }
+
+                return buildOcrResponse(documentId, pdfResult.documentType(), ocrResult);
+            }
+
+            if ("image/jpeg".equalsIgnoreCase(mimeType)
+                    || "image/png".equalsIgnoreCase(mimeType)
+                    || "image/webp".equalsIgnoreCase(mimeType)) {
+
+                if (!localInvoiceOcrService.isTesseractAvailable()) {
+                    return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                            .cacheControl(CacheControl.noStore())
+                            .body(Map.of(
+                                    "documentId", documentId,
+                                    "documentType", InvoiceDocumentType.IMAGE.name(),
+                                    "status", "FAILED",
+                                    "errorMessage", "Tesseract ist auf dem Server nicht verfügbar."
+                            ));
+                }
+
+                try (InputStream input =
+                             documentService.getDocumentContent(documentId, storeId)) {
+
+                    LocalInvoiceOcrService.OcrExtractionResult ocrResult =
+                            localInvoiceOcrService.extractTextWithOcr(input, psmMode);
+
+                    return buildOcrResponse(
+                            documentId,
+                            InvoiceDocumentType.IMAGE,
+                            ocrResult
+                    );
+                }
+            }
+
+            return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                    .cacheControl(CacheControl.noStore())
+                    .body(Map.of(
+                            "documentId", documentId,
+                            "status", "FAILED",
+                            "errorMessage", "Dieser Dateityp wird für OCR nicht unterstützt."
+                    ));
+
+        } catch (IOException ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .cacheControl(CacheControl.noStore())
+                    .body(Map.of(
+                            "documentId", documentId,
+                            "status", "FAILED",
+                            "errorMessage", "Das Dokument konnte nicht gelesen werden."
+                    ));
+        }
+    }
+
+    private ResponseEntity<Map<String, Object>> buildOcrResponse(
+            Long documentId,
+            InvoiceDocumentType documentType,
+            LocalInvoiceOcrService.OcrExtractionResult result
+    ) {
+        Map<String, Object> response = new LinkedHashMap<>();
+
+        response.put("documentId", documentId);
+        response.put("documentType", documentType.name());
+        response.put("status", result.status().name());
+        response.put("engine", result.engine());
+        response.put("languages", result.languages());
+        response.put("psmMode", result.psmMode());
+        response.put("pageCount", result.pageCount());
+        response.put("durationMs", result.durationMs());
+        response.put("characterCount", countMeaningfulCharacters(result.rawText()));
+        response.put("nonEmptyLineCount", countNonEmptyLines(result.rawText()));
+        response.put("rawText", result.rawText());
+        response.put("textPerPage", result.textPerPage());
+        response.put("errorMessage", result.errorMessage());
+
+        HttpStatus status = result.status() == InvoiceParseStatus.OCR_COMPLETED
+                ? HttpStatus.OK
+                : HttpStatus.UNPROCESSABLE_ENTITY;
+
+        return ResponseEntity.status(status)
+                .cacheControl(CacheControl.noStore())
+                .body(response);
+    }
+
+    private int countMeaningfulCharacters(String text) {
+        if (text == null || text.isBlank()) {
+            return 0;
+        }
+
+        return (int) text.codePoints()
+                .filter(cp -> !Character.isWhitespace(cp))
+                .filter(cp -> !Character.isISOControl(cp))
+                .count();
+    }
+
+    private int countNonEmptyLines(String text) {
+        if (text == null || text.isBlank()) {
+            return 0;
+        }
+
+        return (int) text.lines()
+                .map(String::trim)
+                .filter(line -> !line.isEmpty())
+                .count();
+    }
 }
