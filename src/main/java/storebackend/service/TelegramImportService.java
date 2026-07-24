@@ -43,6 +43,7 @@ public class TelegramImportService {
     private final CategoryService categoryService;
     private final CategoryRepository categoryRepository;
     private final MediaService mediaService;
+    private final MinioService minioService;
     private final ProductMediaRepository productMediaRepository;
     private final ProductRepository productRepository;
 
@@ -166,6 +167,7 @@ public class TelegramImportService {
                 Product product = productRepository.findById(productId).orElse(null);
                 if (product != null) {
                     int sortOrder = 0;
+                    boolean imageUrlUpdated = false;
                     for (String photoUrl : post.getPhotoUrls()) {
                         try {
                             Media media = mediaService.uploadFromUrl(store, photoUrl, title + " (Telegram)");
@@ -177,12 +179,21 @@ public class TelegramImportService {
                             productMedia.setSortOrder(sortOrder);
                             productMedia.setIsPrimary(sortOrder == 0);
                             productMediaRepository.save(productMedia);
+
+                            if (!imageUrlUpdated && (product.getImageUrl() == null || product.getImageUrl().isBlank())) {
+                                product.setImageUrl(minioService.getPublicUrl("store-assets", media.getMinioObjectName()));
+                                imageUrlUpdated = true;
+                            }
                             sortOrder++;
 
                             log.info("[TelegramImport] ✅ Bild {} verknüpft mit Produkt {}", media.getId(), productId);
                         } catch (Exception imgEx) {
                             log.warn("[TelegramImport] Bild-Upload fehlgeschlagen für msgId={}: {}", msgId, imgEx.getMessage());
                         }
+                    }
+
+                    if (imageUrlUpdated) {
+                        productRepository.save(product);
                     }
                 }
             }
@@ -310,4 +321,3 @@ public class TelegramImportService {
         return dto;
     }
 }
-

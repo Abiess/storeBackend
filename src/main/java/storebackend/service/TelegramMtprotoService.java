@@ -60,6 +60,7 @@ public class TelegramMtprotoService {
     private final CategoryService categoryService;
     private final CategoryRepository categoryRepository;
     private final MediaService mediaService;
+    private final MinioService minioService;
     private final ObjectMapper objectMapper;
     private final ProductMediaRepository productMediaRepository;
     private final ProductRepository productRepository;
@@ -86,6 +87,7 @@ public class TelegramMtprotoService {
             CategoryService categoryService,
             CategoryRepository categoryRepository,
             MediaService mediaService,
+            MinioService minioService,
             ObjectMapper objectMapper,
             ProductMediaRepository productMediaRepository,
             ProductRepository productRepository,
@@ -98,6 +100,7 @@ public class TelegramMtprotoService {
         this.categoryService = categoryService;
         this.categoryRepository = categoryRepository;
         this.mediaService = mediaService;
+        this.minioService = minioService;
         this.objectMapper = objectMapper;
         this.productMediaRepository = productMediaRepository;
         this.productRepository = productRepository;
@@ -669,6 +672,7 @@ public class TelegramMtprotoService {
             JsonNode photoBytesArr = post.path("photo_bytes_list");
             if (photoBytesArr.isArray() && photoBytesArr.size() > 0) {
                 int sortOrder = 0;
+                boolean imageUrlUpdated = false;
                 for (JsonNode photoNode : photoBytesArr) {
                     String b64 = photoNode.asText();
                     if (b64 != null && !b64.isBlank()) {
@@ -681,6 +685,11 @@ public class TelegramMtprotoService {
                             productMedia.setSortOrder(sortOrder);
                             productMedia.setIsPrimary(sortOrder == 0);
                             productMediaRepository.save(productMedia);
+
+                            if (!imageUrlUpdated && (product.getImageUrl() == null || product.getImageUrl().isBlank())) {
+                                product.setImageUrl(minioService.getPublicUrl("store-assets", media.getMinioObjectName()));
+                                imageUrlUpdated = true;
+                            }
                             sortOrder++;
                             log.info("[MTProto] ✅ Bild {} verknüpft mit Produkt {}", media.getId(), product.getId());
                         } catch (Exception imgErr) {
@@ -688,6 +697,10 @@ public class TelegramMtprotoService {
                             log.warn("[MTProto] Bild-Upload fehlgeschlagen: {}", imgErr.getMessage());
                         }
                     }
+                }
+
+                if (imageUrlUpdated) {
+                    productRepository.save(product);
                 }
             }
         } else {
@@ -985,4 +998,3 @@ public class TelegramMtprotoService {
         }
     }
 }
-

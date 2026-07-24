@@ -232,12 +232,20 @@ public class MinioService {
      * Format: {publicEndpoint}/{bucket}/{objectName}
      */
     public String getPublicUrl(String objectName) {
-        if (objectName == null || objectName.isBlank()) return "";
+        return getPublicUrl(minioProperties.getBucket(), objectName);
+    }
+
+    /**
+     * Permanente, nicht ablaufende öffentliche URL.
+     * Format: {publicEndpoint}/{bucket}/{path}
+     */
+    public String getPublicUrl(String bucket, String path) {
+        if (bucket == null || bucket.isBlank() || path == null || path.isBlank()) return "";
         String base = (minioProperties.getPublicEndpoint() != null && !minioProperties.getPublicEndpoint().isBlank())
             ? minioProperties.getPublicEndpoint()
             : minioProperties.getEndpoint();
         if (base.endsWith("/")) base = base.substring(0, base.length() - 1);
-        return base + "/" + minioProperties.getBucket() + "/" + objectName;
+        return base + "/" + bucket + "/" + path;
     }
 
     /**

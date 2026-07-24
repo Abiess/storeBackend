@@ -449,8 +449,8 @@ public class ProductService {
      * Wird von toDTO() und CartController verwendet.
      * 
      * Logik:
-     * 1. Suche Primary ProductMedia → MinIO presigned URL
-     * 2. Falls kein Primary, nimm erstes ProductMedia → MinIO presigned URL
+     * 1. Suche Primary ProductMedia → permanente öffentliche MinIO-URL
+     * 2. Falls kein Primary, nimm erstes ProductMedia → permanente öffentliche MinIO-URL
      * 3. Fallback: product.getImageUrl() (z.B. WooCommerce-Import)
      * 4. Kein Bild: null (Frontend zeigt Platzhalter)
      * 
