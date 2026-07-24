@@ -11,6 +11,8 @@ import { ResponsiveDataListComponent, ColumnConfig, ActionConfig } from '../../s
 import { Subject, takeUntil } from 'rxjs';
 import { SupplierInvoiceUploadDialogComponent } from './supplier-invoice-upload-dialog.component';
 import { SupplierInvoicePreviewComponent } from './supplier-invoice-preview.component';
+import { toDate, getLocaleForLanguage } from '../../core/utils/date.utils';
+import { LanguageService } from '../../core/services/language.service';
 
 @Component({
   selector: 'app-supplier-invoices',
@@ -121,7 +123,8 @@ export class SupplierInvoicesComponent implements OnInit, OnDestroy {
     private supplierInvoiceService: SupplierInvoiceService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
-    private translate: TranslateService
+    private translate: TranslateService,
+    private languageService: LanguageService
   ) {}
 
   ngOnInit(): void {
@@ -129,6 +132,14 @@ export class SupplierInvoicesComponent implements OnInit, OnDestroy {
     this.setupColumns();
     this.setupActions();
     this.loadDocuments();
+
+    // Subscribe to language changes to update columns and actions dynamically
+    this.languageService.currentLanguage$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.setupColumns();
+        this.setupActions();
+      });
   }
 
   ngOnDestroy(): void {
@@ -157,6 +168,10 @@ export class SupplierInvoicesComponent implements OnInit, OnDestroy {
   }
 
   private setupColumns(): void {
+    // Get current locale from central mapping
+    const currentLang = this.translate.currentLang || this.translate.defaultLang || 'de';
+    const locale = getLocaleForLanguage(currentLang);
+
     this.columns = [
       {
         key: 'mimeType',
@@ -195,8 +210,12 @@ export class SupplierInvoicesComponent implements OnInit, OnDestroy {
       {
         key: 'createdAt',
         label: this.translate.instant('SUPPLIER_INVOICES.LIST.DATE'),
-        type: 'date',
-        mobileLabel: this.translate.instant('SUPPLIER_INVOICES.LIST.DATE')
+        type: 'text',
+        mobileLabel: this.translate.instant('SUPPLIER_INVOICES.LIST.DATE'),
+        formatFn: (value) => {
+          const d = toDate(value);
+          return d ? d.toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+        }
       },
       {
         key: 'uploadStatus',
@@ -231,9 +250,11 @@ export class SupplierInvoicesComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (docs) => {
-          this.documents = docs.sort((a, b) => 
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
+          this.documents = docs.sort((a, b) => {
+            const dateA = toDate(a.createdAt);
+            const dateB = toDate(b.createdAt);
+            return (dateB?.getTime() || 0) - (dateA?.getTime() || 0);
+          });
           this.loading = false;
         },
         error: (err) => {

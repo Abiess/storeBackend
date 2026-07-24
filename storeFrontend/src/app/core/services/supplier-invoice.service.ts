@@ -3,6 +3,7 @@ import { HttpClient, HttpEvent, HttpEventType, HttpHeaders } from '@angular/comm
 import { Observable, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
+import { BackendDateTime } from '@app/core/utils/date.utils';
 
 export interface SupplierInvoiceDocument {
   id: number;
@@ -14,8 +15,8 @@ export interface SupplierInvoiceDocument {
   pageCount: number | null;
   uploadStatus: 'UPLOADED' | 'PREVIEW_READY' | 'FAILED';
   uploadedByUserId: number;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: BackendDateTime;
+  updatedAt: BackendDateTime;
 }
 
 export interface UploadProgress {

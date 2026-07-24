@@ -63,6 +63,23 @@ spring:
           timeout: 5000
           writetimeout: 5000
 
+# Telegram Bot Auth (Phone-Verification via Telegram)
+telegram:
+  auth:
+    bot-token: ${TELEGRAM_AUTH_BOT_TOKEN:}
+    bot-username: ${TELEGRAM_AUTH_BOT_USERNAME:marktma_verify_bot}
+
+# Invoice OCR Configuration (Tesseract) - DEV Defaults
+invoice:
+  ocr:
+    tesseract-command: ${INVOICE_OCR_TESSERACT_COMMAND:tesseract}
+    languages: ${INVOICE_OCR_LANGUAGES:deu+eng}
+    dpi: ${INVOICE_OCR_DPI:300}
+    psm-mode: ${INVOICE_OCR_PSM_MODE:6}
+    timeout-seconds: ${INVOICE_OCR_TIMEOUT_SECONDS:60}
+    max-pages: ${INVOICE_OCR_MAX_PAGES:20}
+    max-concurrent-jobs: ${INVOICE_OCR_MAX_CONCURRENT_JOBS:1}
+
 server:
   port: 8080
   tomcat:
