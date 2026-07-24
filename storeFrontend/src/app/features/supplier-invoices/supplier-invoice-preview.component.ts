@@ -10,12 +10,13 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { SupplierInvoiceService, SupplierInvoiceDocument } from '../../core/services/supplier-invoice.service';
+import { SupplierInvoiceService, SupplierInvoiceDocument, SupplierInvoiceOcrResult } from '../../core/services/supplier-invoice.service';
 import { Subject, takeUntil } from 'rxjs';
 
 interface DialogData {
   storeId: number;
   document: SupplierInvoiceDocument;
+  ocrResult?: SupplierInvoiceOcrResult;
 }
 
 @Component({
@@ -55,6 +56,11 @@ export class SupplierInvoicePreviewComponent implements OnInit, OnDestroy {
   totalPages = 1;
   pdfZoom = 100;
   
+  // For OCR Results
+  hasOcrResult = false;
+  showOcrPanel = false;
+  ocrResult: SupplierInvoiceOcrResult | null = null;
+  
   private blobUrl: string | null = null;
   private destroy$ = new Subject<void>();
 
@@ -71,6 +77,13 @@ export class SupplierInvoicePreviewComponent implements OnInit, OnDestroy {
     this.isPdf = this.supplierInvoiceService.isPdf(this.data.document.mimeType);
     this.isImage = this.supplierInvoiceService.isImage(this.data.document.mimeType);
     this.totalPages = this.data.document.pageCount || 1;
+    
+    // Check if OCR result was passed
+    if (this.data.ocrResult) {
+      this.ocrResult = this.data.ocrResult;
+      this.hasOcrResult = true;
+      this.showOcrPanel = true;
+    }
     
     this.loadDocument();
   }
@@ -208,5 +221,46 @@ export class SupplierInvoicePreviewComponent implements OnInit, OnDestroy {
 
   getImageTransform(): string {
     return `scale(${this.imageZoom}) rotate(${this.imageRotation}deg)`;
+  }
+
+  // OCR Panel toggle
+  toggleOcrPanel(): void {
+    this.showOcrPanel = !this.showOcrPanel;
+  }
+
+  // Format OCR duration
+  formatDuration(ms: number): string {
+    if (ms < 1000) return `${ms}ms`;
+    return `${(ms / 1000).toFixed(1)}s`;
+  }
+
+  // Get status badge class
+  getOcrStatusClass(): string {
+    if (!this.ocrResult) return '';
+    
+    switch (this.ocrResult.status) {
+      case 'TEXT_EXTRACTED':
+      case 'OCR_COMPLETED':
+        return 'status-active';
+      case 'FAILED':
+        return 'status-inactive';
+      default:
+        return '';
+    }
+  }
+
+  // Copy OCR text to clipboard
+  copyOcrText(): void {
+    if (!this.ocrResult?.rawText) return;
+
+    navigator.clipboard.writeText(this.ocrResult.rawText).then(() => {
+      this.snackBar.open(
+        this.translate.instant('SUPPLIER_INVOICES.OCR.TEXT_COPIED'),
+        this.translate.instant('COMMON.CLOSE'),
+        { duration: 2000 }
+      );
+    }).catch(err => {
+      console.error('Copy failed:', err);
+    });
   }
 }

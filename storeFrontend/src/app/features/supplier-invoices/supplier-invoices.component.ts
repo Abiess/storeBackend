@@ -236,6 +236,11 @@ export class SupplierInvoicesComponent implements OnInit, OnDestroy {
         handler: (doc) => this.openPreview(doc)
       },
       {
+        icon: '📝',
+        label: this.translate.instant('SUPPLIER_INVOICES.ACTIONS.READ_OCR'),
+        handler: (doc) => this.runOcr(doc)
+      },
+      {
         icon: '🗑️',
         label: this.translate.instant('SUPPLIER_INVOICES.ACTIONS.DELETE'),
         class: 'danger',
@@ -312,6 +317,68 @@ export class SupplierInvoicesComponent implements OnInit, OnDestroy {
           this.handleError(err);
         }
       });
+  }
+
+  runOcr(doc: SupplierInvoiceDocument): void {
+    const loadingMessage = this.snackBar.open(
+      this.translate.instant('SUPPLIER_INVOICES.OCR.RUNNING'),
+      '',
+      { duration: 0 }
+    );
+
+    this.supplierInvoiceService.runOcr(this.storeId, doc.id, 6)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (result) => {
+          loadingMessage.dismiss();
+          
+          if (result.status === 'OCR_COMPLETED' || result.status === 'TEXT_EXTRACTED') {
+            // Show OCR result in preview dialog
+            this.dialog.open(SupplierInvoicePreviewComponent, {
+              data: { 
+                storeId: this.storeId, 
+                document: doc,
+                ocrResult: result
+              },
+              width: '90vw',
+              maxWidth: '1200px',
+              height: '90vh',
+              panelClass: 'supplier-invoice-preview-dialog'
+            });
+          } else {
+            this.showError('SUPPLIER_INVOICES.OCR.FAILED');
+          }
+        },
+        error: (err) => {
+          loadingMessage.dismiss();
+          console.error('OCR failed:', err);
+          this.handleOcrError(err);
+        }
+      });
+  }
+
+  private handleOcrError(error: any): void {
+    let message = 'SUPPLIER_INVOICES.OCR.FAILED';
+
+    if (error.status === 400) {
+      message = 'SUPPLIER_INVOICES.ERRORS.BAD_REQUEST';
+    } else if (error.status === 401) {
+      message = 'SUPPLIER_INVOICES.ERRORS.UNAUTHORIZED';
+    } else if (error.status === 403) {
+      message = 'SUPPLIER_INVOICES.ERRORS.FORBIDDEN';
+    } else if (error.status === 404) {
+      message = 'SUPPLIER_INVOICES.ERRORS.NOT_FOUND';
+    } else if (error.status === 415) {
+      message = 'SUPPLIER_INVOICES.OCR.UNSUPPORTED_TYPE';
+    } else if (error.status === 422) {
+      message = 'SUPPLIER_INVOICES.OCR.FAILED';
+    } else if (error.status === 503) {
+      message = 'SUPPLIER_INVOICES.OCR.TESSERACT_UNAVAILABLE';
+    } else if (error.status === 500) {
+      message = 'SUPPLIER_INVOICES.OCR.READ_ERROR';
+    }
+
+    this.showError(message);
   }
 
   private getFileTypeLabel(mimeType: string): string {

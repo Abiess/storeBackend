@@ -2939,7 +2939,8 @@
       "INVALID_FILE_TYPE": "Type de fichier non valide",
       "UNKNOWN": "Une erreur inconnue s'est produite",
       "PREVIEW_FAILED": "Impossible de charger l'aperçu",
-      "UPLOAD_FAILED": "Échec du téléchargement"
+      "UPLOAD_FAILED": "Échec du téléchargement",
+      "BAD_REQUEST": "Demande invalide"
     },
     "SUBTITLE": "Télécharger et gérer les factures entrantes",
     "MESSAGES": {
@@ -2955,7 +2956,30 @@
     "ACTIONS": {
       "DELETE": "Supprimer",
       "DOWNLOAD": "Télécharger",
-      "VIEW": "Afficher"
+      "VIEW": "Afficher",
+      "READ_OCR": "Lire"
+    },
+    "OCR": {
+      "TITLE": "Texte extrait",
+      "RUNNING": "Lecture de la facture...",
+      "FAILED": "Impossible de lire la facture",
+      "TESSERACT_UNAVAILABLE": "L'OCR n'est pas encore disponible sur le serveur. Tesseract n'est pas installé.",
+      "UNSUPPORTED_TYPE": "Ce type de fichier n'est pas pris en charge pour l'OCR",
+      "READ_ERROR": "Le document n'a pas pu être lu",
+      "STATUS": "Statut",
+      "STATUS_TEXT_EXTRACTED": "Texte extrait",
+      "STATUS_OCR_COMPLETED": "OCR terminé",
+      "STATUS_FAILED": "Échoué",
+      "ENGINE": "Moteur",
+      "LANGUAGES": "Langues",
+      "PAGES": "Pages",
+      "DURATION": "Durée",
+      "CHARACTERS": "Caractères",
+      "LINES": "Lignes",
+      "RAW_TEXT": "Texte brut",
+      "COPY_TEXT": "Copier le texte",
+      "TEXT_COPIED": "Texte copié dans le presse-papiers",
+      "TOGGLE_PANEL": "Basculer le panneau OCR"
     },
     "STATUS": {
       "FAILED": "Échoué",

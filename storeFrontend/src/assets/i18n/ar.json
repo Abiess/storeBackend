@@ -2706,7 +2706,8 @@
       "INVALID_FILE_TYPE": "نوع ملف غير صالح",
       "UNKNOWN": "حدث خطأ غير معروف",
       "PREVIEW_FAILED": "تعذر تحميل المعاينة",
-      "UPLOAD_FAILED": "فشل التحميل"
+      "UPLOAD_FAILED": "فشل التحميل",
+      "BAD_REQUEST": "طلب غير صالح"
     },
     "SUBTITLE": "تحميل وإدارة الفواتير الواردة",
     "MESSAGES": {
@@ -2722,7 +2723,30 @@
     "ACTIONS": {
       "DELETE": "حذف",
       "DOWNLOAD": "تنزيل",
-      "VIEW": "عرض"
+      "VIEW": "عرض",
+      "READ_OCR": "قراءة"
+    },
+    "OCR": {
+      "TITLE": "النص المستخرج",
+      "RUNNING": "جاري قراءة الفاتورة...",
+      "FAILED": "تعذرت قراءة الفاتورة",
+      "TESSERACT_UNAVAILABLE": "التعرف الضوئي على الحروف غير متاح بعد على الخادم. Tesseract غير مثبت.",
+      "UNSUPPORTED_TYPE": "نوع الملف هذا غير مدعوم للتعرف الضوئي",
+      "READ_ERROR": "تعذرت قراءة المستند",
+      "STATUS": "الحالة",
+      "STATUS_TEXT_EXTRACTED": "تم استخراج النص",
+      "STATUS_OCR_COMPLETED": "اكتمل التعرف الضوئي",
+      "STATUS_FAILED": "فشل",
+      "ENGINE": "المحرك",
+      "LANGUAGES": "اللغات",
+      "PAGES": "الصفحات",
+      "DURATION": "المدة",
+      "CHARACTERS": "الأحرف",
+      "LINES": "الأسطر",
+      "RAW_TEXT": "النص الخام",
+      "COPY_TEXT": "نسخ النص",
+      "TEXT_COPIED": "تم نسخ النص إلى الحافظة",
+      "TOGGLE_PANEL": "تبديل لوحة التعرف الضوئي"
     },
     "STATUS": {
       "FAILED": "فشل",

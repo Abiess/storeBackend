@@ -2831,7 +2831,8 @@
       "INVALID_FILE_TYPE": "Ungültiger Dateityp",
       "UNKNOWN": "Ein unbekannter Fehler ist aufgetreten",
       "PREVIEW_FAILED": "Vorschau konnte nicht geladen werden",
-      "UPLOAD_FAILED": "Upload fehlgeschlagen"
+      "UPLOAD_FAILED": "Upload fehlgeschlagen",
+      "BAD_REQUEST": "Ungültige Anfrage"
     },
     "SUBTITLE": "Eingangsrechnungen hochladen und verwalten",
     "MESSAGES": {
@@ -2847,7 +2848,30 @@
     "ACTIONS": {
       "DELETE": "Löschen",
       "DOWNLOAD": "Herunterladen",
-      "VIEW": "Anzeigen"
+      "VIEW": "Anzeigen",
+      "READ_OCR": "Auslesen"
+    },
+    "OCR": {
+      "TITLE": "Ausgelesener Text",
+      "RUNNING": "Rechnung wird ausgelesen...",
+      "FAILED": "Rechnung konnte nicht ausgelesen werden",
+      "TESSERACT_UNAVAILABLE": "OCR ist auf dem Server noch nicht verfügbar. Tesseract ist nicht installiert.",
+      "UNSUPPORTED_TYPE": "Dieser Dateityp wird für OCR nicht unterstützt",
+      "READ_ERROR": "Das Dokument konnte nicht gelesen werden",
+      "STATUS": "Status",
+      "STATUS_TEXT_EXTRACTED": "Text extrahiert",
+      "STATUS_OCR_COMPLETED": "OCR abgeschlossen",
+      "STATUS_FAILED": "Fehlgeschlagen",
+      "ENGINE": "Engine",
+      "LANGUAGES": "Sprachen",
+      "PAGES": "Seiten",
+      "DURATION": "Laufzeit",
+      "CHARACTERS": "Zeichen",
+      "LINES": "Zeilen",
+      "RAW_TEXT": "Rohtext",
+      "COPY_TEXT": "Text kopieren",
+      "TEXT_COPIED": "Text in Zwischenablage kopiert",
+      "TOGGLE_PANEL": "OCR-Panel umschalten"
     },
     "STATUS": {
       "FAILED": "Fehlgeschlagen",

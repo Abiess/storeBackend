@@ -2786,7 +2786,8 @@
       "INVALID_FILE_TYPE": "Invalid file type",
       "UNKNOWN": "An unknown error occurred",
       "PREVIEW_FAILED": "Preview could not be loaded",
-      "UPLOAD_FAILED": "Upload failed"
+      "UPLOAD_FAILED": "Upload failed",
+      "BAD_REQUEST": "Invalid request"
     },
     "SUBTITLE": "Upload and manage incoming invoices",
     "MESSAGES": {
@@ -2802,7 +2803,30 @@
     "ACTIONS": {
       "DELETE": "Delete",
       "DOWNLOAD": "Download",
-      "VIEW": "View"
+      "VIEW": "View",
+      "READ_OCR": "Read"
+    },
+    "OCR": {
+      "TITLE": "Extracted Text",
+      "RUNNING": "Reading invoice...",
+      "FAILED": "Could not read invoice",
+      "TESSERACT_UNAVAILABLE": "OCR is not yet available on the server. Tesseract is not installed.",
+      "UNSUPPORTED_TYPE": "This file type is not supported for OCR",
+      "READ_ERROR": "The document could not be read",
+      "STATUS": "Status",
+      "STATUS_TEXT_EXTRACTED": "Text extracted",
+      "STATUS_OCR_COMPLETED": "OCR completed",
+      "STATUS_FAILED": "Failed",
+      "ENGINE": "Engine",
+      "LANGUAGES": "Languages",
+      "PAGES": "Pages",
+      "DURATION": "Duration",
+      "CHARACTERS": "Characters",
+      "LINES": "Lines",
+      "RAW_TEXT": "Raw text",
+      "COPY_TEXT": "Copy text",
+      "TEXT_COPIED": "Text copied to clipboard",
+      "TOGGLE_PANEL": "Toggle OCR panel"
     },
     "STATUS": {
       "FAILED": "Failed",

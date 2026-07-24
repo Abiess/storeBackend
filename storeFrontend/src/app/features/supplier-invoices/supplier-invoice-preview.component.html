@@ -1,8 +1,15 @@
-<div class="preview-container">
+<div class="preview-container" [class.with-ocr-panel]="showOcrPanel">
   <!-- Toolbar -->
   <mat-toolbar color="primary" class="preview-toolbar">
     <span class="document-title">{{ data.document.originalFilename }}</span>
     <span class="toolbar-spacer"></span>
+    
+    <!-- OCR Toggle -->
+    <button *ngIf="hasOcrResult" mat-icon-button (click)="toggleOcrPanel()"
+            [matTooltip]="'SUPPLIER_INVOICES.OCR.TOGGLE_PANEL' | translate">
+      <lucide-icon [name]="showOcrPanel ? 'panel-right-close' : 'panel-right-open'" [size]="20"></lucide-icon>
+    </button>
+    <span *ngIf="hasOcrResult" class="divider">|</span>
     
     <!-- PDF Controls -->
     <div *ngIf="isPdf && !loading && !error" class="pdf-controls">
@@ -58,43 +65,102 @@
     </button>
   </mat-toolbar>
 
-  <!-- Content Area -->
-  <div class="preview-content">
-    <!-- Loading State -->
-    <div *ngIf="loading" class="loading-state">
-      <mat-spinner diameter="60"></mat-spinner>
-      <p>{{ 'SUPPLIER_INVOICES.PREVIEW.LOADING' | translate }}</p>
+  <!-- Main Content Area with OCR Panel -->
+  <div class="content-wrapper">
+    <!-- Left: Document Viewer -->
+    <div class="preview-content">
+      <!-- Loading State -->
+      <div *ngIf="loading" class="loading-state">
+        <mat-spinner diameter="60"></mat-spinner>
+        <p>{{ 'SUPPLIER_INVOICES.PREVIEW.LOADING' | translate }}</p>
+      </div>
+
+      <!-- Error State -->
+      <div *ngIf="error" class="error-state">
+        <lucide-icon name="x" [size]="64" class="error-icon"></lucide-icon>
+        <h3>{{ 'SUPPLIER_INVOICES.PREVIEW.ERROR_TITLE' | translate }}</h3>
+        <p>{{ errorMessage }}</p>
+        <button mat-raised-button color="primary" (click)="loadDocument()">
+          <lucide-icon name="rotate-cw" [size]="18"></lucide-icon>
+          {{ 'SUPPLIER_INVOICES.PREVIEW.RETRY' | translate }}
+        </button>
+      </div>
+
+      <!-- PDF Viewer (Native Browser) -->
+      <div *ngIf="isPdf && !loading && !error" class="pdf-viewer">
+        <iframe 
+          [src]="pdfUrl" 
+          [style.width]="pdfZoom + '%'"
+          [style.height]="pdfZoom + '%'"
+          frameborder="0">
+        </iframe>
+      </div>
+
+      <!-- Image Viewer -->
+      <div *ngIf="isImage && !loading && !error" class="image-viewer">
+        <div class="image-wrapper">
+          <img 
+            [src]="imageUrl" 
+            [alt]="data.document.originalFilename"
+            [style.transform]="getImageTransform()"
+            class="preview-image">
+        </div>
+      </div>
     </div>
 
-    <!-- Error State -->
-    <div *ngIf="error" class="error-state">
-      <lucide-icon name="x" [size]="64" class="error-icon"></lucide-icon>
-      <h3>{{ 'SUPPLIER_INVOICES.PREVIEW.ERROR_TITLE' | translate }}</h3>
-      <p>{{ errorMessage }}</p>
-      <button mat-raised-button color="primary" (click)="loadDocument()">
-        <lucide-icon name="rotate-cw" [size]="18"></lucide-icon>
-        {{ 'SUPPLIER_INVOICES.PREVIEW.RETRY' | translate }}
-      </button>
-    </div>
+    <!-- Right: OCR Result Panel -->
+    <div *ngIf="showOcrPanel && ocrResult" class="ocr-panel">
+      <div class="ocr-header">
+        <h3>{{ 'SUPPLIER_INVOICES.OCR.TITLE' | translate }}</h3>
+        <button mat-icon-button (click)="copyOcrText()" [disabled]="!ocrResult.rawText"
+                [matTooltip]="'SUPPLIER_INVOICES.OCR.COPY_TEXT' | translate">
+          <lucide-icon name="copy" [size]="18"></lucide-icon>
+        </button>
+      </div>
 
-    <!-- PDF Viewer (Native Browser) -->
-    <div *ngIf="isPdf && !loading && !error" class="pdf-viewer">
-      <iframe 
-        [src]="pdfUrl" 
-        [style.width]="pdfZoom + '%'"
-        [style.height]="pdfZoom + '%'"
-        frameborder="0">
-      </iframe>
-    </div>
+      <div class="ocr-metadata">
+        <div class="metadata-row">
+          <span class="label">{{ 'SUPPLIER_INVOICES.OCR.STATUS' | translate }}:</span>
+          <span [class]="'badge ' + getOcrStatusClass()">
+            {{ 'SUPPLIER_INVOICES.OCR.STATUS_' + ocrResult.status | translate }}
+          </span>
+        </div>
+        <div class="metadata-row" *ngIf="ocrResult.engine">
+          <span class="label">{{ 'SUPPLIER_INVOICES.OCR.ENGINE' | translate }}:</span>
+          <span>{{ ocrResult.engine }}</span>
+        </div>
+        <div class="metadata-row" *ngIf="ocrResult.languages.length > 0">
+          <span class="label">{{ 'SUPPLIER_INVOICES.OCR.LANGUAGES' | translate }}:</span>
+          <span>{{ ocrResult.languages.join(', ') }}</span>
+        </div>
+        <div class="metadata-row">
+          <span class="label">{{ 'SUPPLIER_INVOICES.OCR.PAGES' | translate }}:</span>
+          <span>{{ ocrResult.pageCount }}</span>
+        </div>
+        <div class="metadata-row">
+          <span class="label">{{ 'SUPPLIER_INVOICES.OCR.DURATION' | translate }}:</span>
+          <span>{{ formatDuration(ocrResult.durationMs) }}</span>
+        </div>
+        <div class="metadata-row">
+          <span class="label">{{ 'SUPPLIER_INVOICES.OCR.CHARACTERS' | translate }}:</span>
+          <span>{{ ocrResult.characterCount }}</span>
+        </div>
+        <div class="metadata-row">
+          <span class="label">{{ 'SUPPLIER_INVOICES.OCR.LINES' | translate }}:</span>
+          <span>{{ ocrResult.nonEmptyLineCount }}</span>
+        </div>
+      </div>
 
-    <!-- Image Viewer -->
-    <div *ngIf="isImage && !loading && !error" class="image-viewer">
-      <div class="image-wrapper">
-        <img 
-          [src]="imageUrl" 
-          [alt]="data.document.originalFilename"
-          [style.transform]="getImageTransform()"
-          class="preview-image">
+      <div class="ocr-text-section">
+        <h4>{{ 'SUPPLIER_INVOICES.OCR.RAW_TEXT' | translate }}</h4>
+        <div class="raw-text-wrapper">
+          <pre class="raw-text">{{ ocrResult.rawText }}</pre>
+        </div>
+      </div>
+
+      <div *ngIf="ocrResult.errorMessage" class="ocr-error">
+        <lucide-icon name="alert-circle" [size]="16"></lucide-icon>
+        {{ ocrResult.errorMessage }}
       </div>
     </div>
   </div>

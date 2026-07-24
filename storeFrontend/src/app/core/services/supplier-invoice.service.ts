@@ -25,6 +25,22 @@ export interface UploadProgress {
   message?: string;
 }
 
+export interface SupplierInvoiceOcrResult {
+  documentId: number;
+  documentType: 'TEXT_PDF' | 'SCANNED_PDF' | 'IMAGE' | 'UNKNOWN';
+  status: 'TEXT_EXTRACTED' | 'OCR_RUNNING' | 'OCR_COMPLETED' | 'FAILED';
+  engine: string | null;
+  languages: string[];
+  psmMode: number | null;
+  pageCount: number;
+  durationMs: number;
+  characterCount: number;
+  nonEmptyLineCount: number;
+  rawText: string;
+  textPerPage: string[];
+  errorMessage: string | null;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -180,5 +196,19 @@ export class SupplierInvoiceService {
    */
   isImage(mimeType: string): boolean {
     return mimeType.startsWith('image/');
+  }
+
+  /**
+   * Run OCR on a document
+   */
+  runOcr(
+    storeId: number,
+    documentId: number,
+    psmMode: 3 | 4 | 6 = 6
+  ): Observable<SupplierInvoiceOcrResult> {
+    return this.http.post<SupplierInvoiceOcrResult>(
+      `${this.baseUrl}/${storeId}/supplier-invoices/documents/${documentId}/ocr?psmMode=${psmMode}`,
+      null
+    );
   }
 }
