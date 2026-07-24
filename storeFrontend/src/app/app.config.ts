@@ -16,7 +16,8 @@ import {
   // Riad Icons
   Building, Wallet, Heart,
   // Supplier Invoice Icons
-  FileText, Upload, Eye, Trash2, Download, RotateCw, ZoomIn, ZoomOut, CloudUpload
+  FileText, Upload, Eye, Trash2, Download, RotateCw, ZoomIn, ZoomOut, CloudUpload,
+  PanelRightOpen, PanelRightClose
 } from 'lucide-angular';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS, HttpClient } from '@angular/common/http';
@@ -75,7 +76,8 @@ export const appConfig: ApplicationConfig = {
         // Riad Icons
         Building, Wallet, Heart,
         // Supplier Invoice Icons
-        FileText, Upload, Eye, Trash2, Download, RotateCw, ZoomIn, ZoomOut, CloudUpload
+        FileText, Upload, Eye, Trash2, Download, RotateCw, ZoomIn, ZoomOut, CloudUpload,
+        PanelRightOpen, PanelRightClose
       })
     },
     // Standard Locale (kann dynamisch überschrieben werden)
