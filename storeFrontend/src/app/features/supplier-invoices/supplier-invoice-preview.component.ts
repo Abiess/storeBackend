@@ -286,19 +286,8 @@ export class SupplierInvoicePreviewComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (result) => {
-          this.parseResult = result;
-          this.parsedFields = {
-            supplierName: result.fields?.supplierName ?? null,
-            invoiceNumber: result.fields?.invoiceNumber ?? null,
-            invoiceDate: result.fields?.invoiceDate ?? null,
-            deliveryDate: result.fields?.deliveryDate ?? null,
-            netAmount: result.fields?.netAmount ?? null,
-            taxAmount: result.fields?.taxAmount ?? null,
-            grossAmount: result.fields?.grossAmount ?? null,
-            currency: result.fields?.currency ?? 'EUR'
-          };
-          this.hasOcrResult = true;
-          this.showOcrPanel = true;
+          console.log('GET /parse-result response:', result);
+          this.applyParseResult(result);
         },
         error: (err) => {
           // 404 is expected when no cached result exists yet
@@ -317,22 +306,11 @@ export class SupplierInvoicePreviewComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (result) => {
-          this.parseResult = result;
-          this.parsedFields = {
-            supplierName: result.fields?.supplierName ?? null,
-            invoiceNumber: result.fields?.invoiceNumber ?? null,
-            invoiceDate: result.fields?.invoiceDate ?? null,
-            deliveryDate: result.fields?.deliveryDate ?? null,
-            netAmount: result.fields?.netAmount ?? null,
-            taxAmount: result.fields?.taxAmount ?? null,
-            grossAmount: result.fields?.grossAmount ?? null,
-            currency: result.fields?.currency ?? 'EUR'
-          };
+          console.log('POST /parse response:', result);
+          this.applyParseResult(result);
           this.parsing = false;
-          this.hasOcrResult = true;
-          this.showOcrPanel = true;
           
-          const hasAnyField = Object.values(this.parsedFields).some(v => v !== null && v !== '');
+          const hasAnyField = Object.values(this.parsedFields || {}).some(v => v !== null && v !== '');
           const message = hasAnyField
             ? 'Rechnung erfolgreich ausgelesen'
             : 'Text wurde erkannt, Rechnungsfelder konnten jedoch nicht zugeordnet werden';
@@ -353,6 +331,33 @@ export class SupplierInvoicePreviewComponent implements OnInit, OnDestroy {
           );
         }
       });
+  }
+  
+  // Central method to apply parse result (used by both GET and POST)
+  private applyParseResult(result: InvoiceParseResult): void {
+    console.log('applyParseResult called with:', result);
+    console.log('result.fields:', result.fields);
+    
+    this.parseResult = result;
+    
+    // Extract fields with proper fallback
+    const fields = result.fields;
+    
+    this.parsedFields = {
+      supplierName: fields?.supplierName ?? null,
+      invoiceNumber: fields?.invoiceNumber ?? null,
+      invoiceDate: fields?.invoiceDate ?? null,
+      deliveryDate: fields?.deliveryDate ?? null,
+      netAmount: fields?.netAmount ?? null,
+      taxAmount: fields?.taxAmount ?? null,
+      grossAmount: fields?.grossAmount ?? null,
+      currency: fields?.currency ?? null
+    };
+    
+    console.log('parsedFields after mapping:', this.parsedFields);
+    
+    this.hasOcrResult = true;
+    this.showOcrPanel = true;
   }
   
   // Reparse with force=true

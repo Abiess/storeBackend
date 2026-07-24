@@ -55,7 +55,10 @@ export interface ParsedInvoiceFields {
 export interface InvoiceParseResult {
   documentId: number;
   status: 'COMPLETED' | 'FAILED';
-  ocr: {
+  cached?: boolean;
+  parsedAt?: string;
+  parserVersion?: string;
+  ocr?: {
     engine: string;
     pageCount: number;
     durationMs: number;
@@ -63,7 +66,7 @@ export interface InvoiceParseResult {
   fields: ParsedInvoiceFields;
   confidence: { [key: string]: number };
   warnings: string[];
-  rawText: string;
+  rawText?: string;
 }
 
 @Injectable({

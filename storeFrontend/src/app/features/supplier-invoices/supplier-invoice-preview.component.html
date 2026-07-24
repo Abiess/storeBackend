@@ -214,7 +214,7 @@
         <mat-expansion-panel class="raw-text-panel">
           <mat-expansion-panel-header>
             <mat-panel-title>
-              Rohtext ({{ parseResult.ocr.pageCount }} Seiten, {{ parseResult.ocr.durationMs }}ms)
+              Rohtext ({{ parseResult.ocr?.pageCount ?? 0 }} Seiten, {{ parseResult.ocr?.durationMs ?? 0 }}ms)
             </mat-panel-title>
           </mat-expansion-panel-header>
           <div class="raw-text-wrapper">
