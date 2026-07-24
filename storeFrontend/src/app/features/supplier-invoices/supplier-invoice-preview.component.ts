@@ -1,5 +1,6 @@
 import { Component, Inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -7,10 +8,13 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { SupplierInvoiceService, SupplierInvoiceDocument, SupplierInvoiceOcrResult } from '../../core/services/supplier-invoice.service';
+import { SupplierInvoiceService, SupplierInvoiceDocument, SupplierInvoiceOcrResult, InvoiceParseResult, ParsedInvoiceFields } from '../../core/services/supplier-invoice.service';
 import { Subject, takeUntil } from 'rxjs';
 
 interface DialogData {
@@ -24,6 +28,7 @@ interface DialogData {
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
@@ -31,6 +36,9 @@ interface DialogData {
     MatToolbarModule,
     MatTooltipModule,
     MatDialogModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatExpansionModule,
     TranslateModule,
     LucideAngularModule
   ],
@@ -60,6 +68,12 @@ export class SupplierInvoicePreviewComponent implements OnInit, OnDestroy {
   hasOcrResult = false;
   showOcrPanel = false;
   ocrResult: SupplierInvoiceOcrResult | null = null;
+  
+  // For Parsed Fields
+  parseResult: InvoiceParseResult | null = null;
+  parsedFields: ParsedInvoiceFields | null = null;
+  parsing = false;
+  showRawText = false;
   
   private blobUrl: string | null = null;
   private destroy$ = new Subject<void>();
@@ -251,9 +265,10 @@ export class SupplierInvoicePreviewComponent implements OnInit, OnDestroy {
 
   // Copy OCR text to clipboard
   copyOcrText(): void {
-    if (!this.ocrResult?.rawText) return;
+    const textToCopy = this.parseResult?.rawText || this.ocrResult?.rawText;
+    if (!textToCopy) return;
 
-    navigator.clipboard.writeText(this.ocrResult.rawText).then(() => {
+    navigator.clipboard.writeText(textToCopy).then(() => {
       this.snackBar.open(
         this.translate.instant('SUPPLIER_INVOICES.OCR.TEXT_COPIED'),
         this.translate.instant('COMMON.CLOSE'),
@@ -262,5 +277,58 @@ export class SupplierInvoicePreviewComponent implements OnInit, OnDestroy {
     }).catch(err => {
       console.error('Copy failed:', err);
     });
+  }
+
+  // Parse invoice with field extraction
+  parseInvoice(): void {
+    this.parsing = true;
+    
+    this.supplierInvoiceService.parseInvoice(this.data.storeId, this.data.document.id, 6)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (result) => {
+          this.parseResult = result;
+          this.parsedFields = { ...result.fields }; // Editable copy
+          this.parsing = false;
+          this.hasOcrResult = true;
+          this.showOcrPanel = true;
+          
+          this.snackBar.open(
+            'Rechnung erfolgreich ausgelesen',
+            this.translate.instant('COMMON.CLOSE'),
+            { duration: 3000 }
+          );
+        },
+        error: (err) => {
+          console.error('Parse failed:', err);
+          this.parsing = false;
+          this.snackBar.open(
+            'Fehler beim Auslesen der Rechnung',
+            this.translate.instant('COMMON.CLOSE'),
+            { duration: 5000, panelClass: ['error-snackbar'] }
+          );
+        }
+      });
+  }
+
+  // Get confidence class for field styling
+  getConfidenceClass(fieldName: string): string {
+    if (!this.parseResult?.confidence) return '';
+    const confidence = this.parseResult.confidence[fieldName];
+    
+    if (!confidence || confidence === 0) return 'confidence-none';
+    if (confidence < 1.0) return 'confidence-low';
+    return '';
+  }
+
+  // Get confidence percentage for display
+  getConfidencePercent(fieldName: string): number {
+    if (!this.parseResult?.confidence) return 0;
+    return Math.round((this.parseResult.confidence[fieldName] || 0) * 100);
+  }
+
+  // Toggle raw text visibility
+  toggleRawText(): void {
+    this.showRawText = !this.showRawText;
   }
 }

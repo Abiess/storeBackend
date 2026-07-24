@@ -108,59 +108,157 @@
       </div>
     </div>
 
-    <!-- Right: OCR Result Panel -->
-    <div *ngIf="showOcrPanel && ocrResult" class="ocr-panel">
+    <!-- Right: Parse Result & OCR Panel -->
+    <div *ngIf="showOcrPanel" class="ocr-panel">
       <div class="ocr-header">
-        <h3>{{ 'SUPPLIER_INVOICES.OCR.TITLE' | translate }}</h3>
-        <button mat-icon-button (click)="copyOcrText()" [disabled]="!ocrResult.rawText"
-                [matTooltip]="'SUPPLIER_INVOICES.OCR.COPY_TEXT' | translate">
-          <lucide-icon name="copy" [size]="18"></lucide-icon>
+        <h3>Rechnungsdaten</h3>
+        <button mat-icon-button (click)="parseInvoice()" [disabled]="parsing || !!parseResult"
+                matTooltip="Rechnung auslesen">
+          <lucide-icon name="zap" [size]="18"></lucide-icon>
         </button>
       </div>
 
-      <div class="ocr-metadata">
-        <div class="metadata-row">
-          <span class="label">{{ 'SUPPLIER_INVOICES.OCR.STATUS' | translate }}:</span>
-          <span [class]="'badge ' + getOcrStatusClass()">
-            {{ 'SUPPLIER_INVOICES.OCR.STATUS_' + ocrResult.status | translate }}
-          </span>
+      <!-- Parsed Fields Section -->
+      <div *ngIf="parseResult" class="parsed-fields">
+        <!-- Warnings -->
+        <div *ngIf="parseResult.warnings.length > 0" class="warnings-section">
+          <div *ngFor="let warning of parseResult.warnings" class="warning-item">
+            <lucide-icon name="alert-circle" [size]="16"></lucide-icon>
+            {{ warning }}
+          </div>
         </div>
-        <div class="metadata-row" *ngIf="ocrResult.engine">
-          <span class="label">{{ 'SUPPLIER_INVOICES.OCR.ENGINE' | translate }}:</span>
-          <span>{{ ocrResult.engine }}</span>
+
+        <!-- Editable Form Fields -->
+        <div class="field-grid" *ngIf="parsedFields">
+          <mat-form-field appearance="outline" [class]="getConfidenceClass('supplierName')">
+            <mat-label>Lieferant</mat-label>
+            <input matInput [(ngModel)]="parsedFields!.supplierName" placeholder="Nicht erkannt">
+            <mat-hint *ngIf="getConfidencePercent('supplierName') < 100 && getConfidencePercent('supplierName') > 0">
+              Confidence: {{ getConfidencePercent('supplierName') }}%
+            </mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" [class]="getConfidenceClass('invoiceNumber')">
+            <mat-label>Rechnungsnummer</mat-label>
+            <input matInput [(ngModel)]="parsedFields!.invoiceNumber" placeholder="Nicht erkannt">
+            <mat-hint *ngIf="getConfidencePercent('invoiceNumber') < 100 && getConfidencePercent('invoiceNumber') > 0">
+              Confidence: {{ getConfidencePercent('invoiceNumber') }}%
+            </mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" [class]="getConfidenceClass('invoiceDate')">
+            <mat-label>Rechnungsdatum</mat-label>
+            <input matInput type="date" [(ngModel)]="parsedFields!.invoiceDate" placeholder="Nicht erkannt">
+            <mat-hint *ngIf="getConfidencePercent('invoiceDate') < 100 && getConfidencePercent('invoiceDate') > 0">
+              Confidence: {{ getConfidencePercent('invoiceDate') }}%
+            </mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" [class]="getConfidenceClass('deliveryDate')">
+            <mat-label>Lieferdatum</mat-label>
+            <input matInput type="date" [(ngModel)]="parsedFields!.deliveryDate" placeholder="Nicht erkannt">
+            <mat-hint *ngIf="getConfidencePercent('deliveryDate') < 100 && getConfidencePercent('deliveryDate') > 0">
+              Confidence: {{ getConfidencePercent('deliveryDate') }}%
+            </mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" [class]="getConfidenceClass('netAmount')">
+            <mat-label>Nettobetrag</mat-label>
+            <input matInput type="number" step="0.01" [(ngModel)]="parsedFields!.netAmount" placeholder="Nicht erkannt">
+            <span matSuffix>{{ parsedFields!.currency || 'EUR' }}</span>
+            <mat-hint *ngIf="getConfidencePercent('netAmount') < 100 && getConfidencePercent('netAmount') > 0">
+              Confidence: {{ getConfidencePercent('netAmount') }}%
+            </mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" [class]="getConfidenceClass('taxAmount')">
+            <mat-label>MwSt.-Betrag</mat-label>
+            <input matInput type="number" step="0.01" [(ngModel)]="parsedFields!.taxAmount" placeholder="Nicht erkannt">
+            <span matSuffix>{{ parsedFields!.currency || 'EUR' }}</span>
+            <mat-hint *ngIf="getConfidencePercent('taxAmount') < 100 && getConfidencePercent('taxAmount') > 0">
+              Confidence: {{ getConfidencePercent('taxAmount') }}%
+            </mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" [class]="getConfidenceClass('grossAmount')">
+            <mat-label>Gesamtbetrag</mat-label>
+            <input matInput type="number" step="0.01" [(ngModel)]="parsedFields!.grossAmount" placeholder="Nicht erkannt">
+            <span matSuffix>{{ parsedFields!.currency || 'EUR' }}</span>
+            <mat-hint *ngIf="getConfidencePercent('grossAmount') < 100 && getConfidencePercent('grossAmount') > 0">
+              Confidence: {{ getConfidencePercent('grossAmount') }}%
+            </mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" [class]="getConfidenceClass('currency')">
+            <mat-label>Währung</mat-label>
+            <input matInput [(ngModel)]="parsedFields!.currency" placeholder="Nicht erkannt">
+            <mat-hint *ngIf="getConfidencePercent('currency') < 100 && getConfidencePercent('currency') > 0">
+              Confidence: {{ getConfidencePercent('currency') }}%
+            </mat-hint>
+          </mat-form-field>
         </div>
-        <div class="metadata-row" *ngIf="ocrResult.languages.length > 0">
-          <span class="label">{{ 'SUPPLIER_INVOICES.OCR.LANGUAGES' | translate }}:</span>
-          <span>{{ ocrResult.languages.join(', ') }}</span>
+
+        <!-- Action Button (placeholder, no DB save yet) -->
+        <div class="action-section">
+          <button mat-raised-button color="primary" disabled>
+            Als Entwurf übernehmen (noch nicht verfügbar)
+          </button>
         </div>
-        <div class="metadata-row">
-          <span class="label">{{ 'SUPPLIER_INVOICES.OCR.PAGES' | translate }}:</span>
-          <span>{{ ocrResult.pageCount }}</span>
+
+        <!-- Collapsible Raw Text -->
+        <mat-expansion-panel class="raw-text-panel">
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              Rohtext ({{ parseResult.ocr.pageCount }} Seiten, {{ parseResult.ocr.durationMs }}ms)
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+          <div class="raw-text-wrapper">
+            <button mat-icon-button (click)="copyOcrText()" matTooltip="Text kopieren" class="copy-btn">
+              <lucide-icon name="copy" [size]="16"></lucide-icon>
+            </button>
+            <pre class="raw-text">{{ parseResult.rawText }}</pre>
+          </div>
+        </mat-expansion-panel>
+      </div>
+
+      <!-- Legacy OCR Result Display (fallback) -->
+      <div *ngIf="ocrResult && !parseResult" class="ocr-legacy">
+        <div class="ocr-metadata">
+          <div class="metadata-row">
+            <span class="label">Status:</span>
+            <span [class]="'badge ' + getOcrStatusClass()">{{ ocrResult.status }}</span>
+          </div>
+          <div class="metadata-row" *ngIf="ocrResult.engine">
+            <span class="label">Engine:</span>
+            <span>{{ ocrResult.engine }}</span>
+          </div>
+          <div class="metadata-row">
+            <span class="label">Seiten:</span>
+            <span>{{ ocrResult.pageCount }}</span>
+          </div>
+          <div class="metadata-row">
+            <span class="label">Dauer:</span>
+            <span>{{ formatDuration(ocrResult.durationMs) }}</span>
+          </div>
         </div>
-        <div class="metadata-row">
-          <span class="label">{{ 'SUPPLIER_INVOICES.OCR.DURATION' | translate }}:</span>
-          <span>{{ formatDuration(ocrResult.durationMs) }}</span>
+
+        <div class="ocr-text-section">
+          <h4>Rohtext</h4>
+          <div class="raw-text-wrapper">
+            <pre class="raw-text">{{ ocrResult.rawText }}</pre>
+          </div>
         </div>
-        <div class="metadata-row">
-          <span class="label">{{ 'SUPPLIER_INVOICES.OCR.CHARACTERS' | translate }}:</span>
-          <span>{{ ocrResult.characterCount }}</span>
-        </div>
-        <div class="metadata-row">
-          <span class="label">{{ 'SUPPLIER_INVOICES.OCR.LINES' | translate }}:</span>
-          <span>{{ ocrResult.nonEmptyLineCount }}</span>
+
+        <div *ngIf="ocrResult.errorMessage" class="ocr-error">
+          <lucide-icon name="alert-circle" [size]="16"></lucide-icon>
+          {{ ocrResult.errorMessage }}
         </div>
       </div>
 
-      <div class="ocr-text-section">
-        <h4>{{ 'SUPPLIER_INVOICES.OCR.RAW_TEXT' | translate }}</h4>
-        <div class="raw-text-wrapper">
-          <pre class="raw-text">{{ ocrResult.rawText }}</pre>
-        </div>
-      </div>
-
-      <div *ngIf="ocrResult.errorMessage" class="ocr-error">
-        <lucide-icon name="alert-circle" [size]="16"></lucide-icon>
-        {{ ocrResult.errorMessage }}
+      <!-- Parsing State -->
+      <div *ngIf="parsing" class="parsing-state">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p>Rechnung wird ausgelesen...</p>
       </div>
     </div>
   </div>

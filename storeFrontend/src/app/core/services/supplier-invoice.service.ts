@@ -41,6 +41,31 @@ export interface SupplierInvoiceOcrResult {
   errorMessage: string | null;
 }
 
+export interface ParsedInvoiceFields {
+  supplierName: string | null;
+  invoiceNumber: string | null;
+  invoiceDate: string | null;
+  deliveryDate: string | null;
+  netAmount: number | null;
+  taxAmount: number | null;
+  grossAmount: number | null;
+  currency: string | null;
+}
+
+export interface InvoiceParseResult {
+  documentId: number;
+  status: 'COMPLETED' | 'FAILED';
+  ocr: {
+    engine: string;
+    pageCount: number;
+    durationMs: number;
+  };
+  fields: ParsedInvoiceFields;
+  confidence: { [key: string]: number };
+  warnings: string[];
+  rawText: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -208,6 +233,20 @@ export class SupplierInvoiceService {
   ): Observable<SupplierInvoiceOcrResult> {
     return this.http.post<SupplierInvoiceOcrResult>(
       `${this.baseUrl}/${storeId}/supplier-invoices/documents/${documentId}/ocr?psmMode=${psmMode}`,
+      null
+    );
+  }
+
+  /**
+   * Parse invoice with OCR + field extraction
+   */
+  parseInvoice(
+    storeId: number,
+    documentId: number,
+    psmMode: 3 | 4 | 6 = 6
+  ): Observable<InvoiceParseResult> {
+    return this.http.post<InvoiceParseResult>(
+      `${this.baseUrl}/${storeId}/supplier-invoices/documents/${documentId}/parse?psmMode=${psmMode}`,
       null
     );
   }
