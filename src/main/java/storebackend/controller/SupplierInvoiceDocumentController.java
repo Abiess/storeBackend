@@ -18,15 +18,13 @@ import org.springframework.web.multipart.MultipartFile;
 import storebackend.dto.SupplierInvoiceDocumentDTO;
 import storebackend.entity.Store;
 import storebackend.entity.SupplierInvoiceDocument;
+import storebackend.entity.SupplierInvoiceParseResult;
 import storebackend.entity.User;
 import storebackend.enums.InvoiceDocumentType;
 import storebackend.enums.InvoiceParseStatus;
 import storebackend.repository.StoreRepository;
 import storebackend.dto.ParsedInvoiceFields;
-import storebackend.service.InvoiceFieldParser;
-import storebackend.service.LocalInvoiceOcrService;
-import storebackend.service.PDFBoxTextExtractor;
-import storebackend.service.SupplierInvoiceDocumentService;
+import storebackend.service.*;
 import storebackend.util.StoreAccessChecker;
 
 import java.io.ByteArrayInputStream;
@@ -48,6 +46,7 @@ public class SupplierInvoiceDocumentController {
     private final PDFBoxTextExtractor pdfBoxTextExtractor;
     private final LocalInvoiceOcrService localInvoiceOcrService;
     private final InvoiceFieldParser invoiceFieldParser;
+    private final InvoiceParseService invoiceParseService;
 
     /**
      * Upload einer Lieferantenrechnung (PDF oder Bild)
@@ -447,6 +446,123 @@ public class SupplierInvoiceDocumentController {
                 .map(String::trim)
                 .filter(line -> !line.isEmpty())
                 .count();
+    }
+
+    /**
+     * Parse-Endpunkt mit Cache: OCR + strukturiertes Parsing.
+     * Verwendet den neuen InvoiceParseService mit Checksummen und Cache.
+     */
+    @Operation(summary = "Parse invoice with cache", 
+               description = "Parse invoice using OCR + field extraction with intelligent caching. " +
+                            "Results are cached based on document checksum and parser version.")
+    @PostMapping("/documents/{documentId}/parse")
+    @PreAuthorize("@storeAccessChecker.isStoreAdmin(#storeId)")
+    public ResponseEntity<Map<String, Object>> parseInvoiceWithCache(
+            @PathVariable Long storeId,
+            @PathVariable Long documentId,
+            @RequestParam(defaultValue = "6") Integer psmMode,
+            @RequestParam(defaultValue = "false") boolean force
+    ) {
+        log.info("Parse request: storeId={}, documentId={}, psmMode={}, force={}", 
+                 storeId, documentId, psmMode, force);
+        
+        if (psmMode == null || (psmMode != 3 && psmMode != 4 && psmMode != 6)) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "status", "FAILED",
+                    "errorMessage", "Erlaubte PSM-Modi sind 3, 4 und 6."
+            ));
+        }
+
+        try {
+            SupplierInvoiceParseResult result = invoiceParseService.parse(storeId, documentId, psmMode, force);
+            
+            // Response zusammenstellen
+            Map<String, Object> response = new LinkedHashMap<>();
+            response.put("documentId", documentId);
+            response.put("status", result.getParseStatus().name());
+            response.put("cached", !force && result.getParsedAt() != null);
+            response.put("parsedAt", result.getParsedAt());
+            response.put("parserVersion", result.getParserVersion());
+            
+            // OCR Metadaten
+            Map<String, Object> ocrInfo = new LinkedHashMap<>();
+            ocrInfo.put("engine", result.getExtractionMethod());
+            ocrInfo.put("rawTextLength", result.getRawText() != null ? result.getRawText().length() : 0);
+            response.put("ocr", ocrInfo);
+            
+            // Strukturierte Felder
+            Map<String, Object> fields = new LinkedHashMap<>();
+            fields.put("supplierName", result.getSupplierName());
+            fields.put("invoiceNumber", result.getInvoiceNumber());
+            fields.put("invoiceDate", result.getInvoiceDate());
+            fields.put("deliveryDate", result.getDeliveryDate());
+            fields.put("netAmount", result.getNetAmount());
+            fields.put("taxAmount", result.getTaxAmount());
+            fields.put("grossAmount", result.getGrossAmount());
+            fields.put("currency", result.getCurrency());
+            response.put("fields", fields);
+            
+            // Confidence und Warnings
+            response.put("confidence", result.getConfidenceJson());
+            response.put("warnings", result.getWarningsJson());
+            
+            // Rohtext (für Debugging)
+            response.put("rawText", result.getRawText());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("Parse failed for documentId={}: {}", documentId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "status", "FAILED",
+                            "errorMessage", e.getMessage()
+                    ));
+        }
+    }
+
+    /**
+     * GET gespeichertes Parse-Ergebnis (ohne OCR auszulösen).
+     * Frontend ruft dies zuerst auf beim Öffnen eines Dokuments.
+     */
+    @Operation(summary = "Get cached parse result", 
+               description = "Retrieve previously cached parse result without triggering OCR. " +
+                            "Returns 404 if no result exists yet.")
+    @GetMapping("/documents/{documentId}/parse-result")
+    @PreAuthorize("@storeAccessChecker.isStoreAdmin(#storeId)")
+    public ResponseEntity<Map<String, Object>> getParseResult(
+            @PathVariable Long storeId,
+            @PathVariable Long documentId
+    ) {
+        log.debug("GET parse-result: storeId={}, documentId={}", storeId, documentId);
+        
+        return invoiceParseService.getParseResult(storeId, documentId)
+                .map(result -> {
+                    Map<String, Object> response = new LinkedHashMap<>();
+                    response.put("documentId", documentId);
+                    response.put("status", result.getParseStatus().name());
+                    response.put("cached", true);
+                    response.put("parsedAt", result.getParsedAt());
+                    response.put("parserVersion", result.getParserVersion());
+                    
+                    Map<String, Object> fields = new LinkedHashMap<>();
+                    fields.put("supplierName", result.getSupplierName());
+                    fields.put("invoiceNumber", result.getInvoiceNumber());
+                    fields.put("invoiceDate", result.getInvoiceDate());
+                    fields.put("deliveryDate", result.getDeliveryDate());
+                    fields.put("netAmount", result.getNetAmount());
+                    fields.put("taxAmount", result.getTaxAmount());
+                    fields.put("grossAmount", result.getGrossAmount());
+                    fields.put("currency", result.getCurrency());
+                    response.put("fields", fields);
+                    
+                    response.put("confidence", result.getConfidenceJson());
+                    response.put("warnings", result.getWarningsJson());
+                    response.put("rawText", result.getRawText());
+                    
+                    return ResponseEntity.ok(response);
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
     /**

@@ -4,10 +4,16 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import storebackend.enums.InvoiceDocumentType;
 import storebackend.enums.InvoiceParseStatus;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Ergebnis der Rechnungsanalyse (Phase 2A: Nur lokale PDFBox-Extraktion).
@@ -123,6 +129,67 @@ public class SupplierInvoiceParseResult {
      */
     @Column(name = "error_message", columnDefinition = "TEXT")
     private String errorMessage;
+    
+    // ============ Cache-System Felder (ab V007) ============
+    
+    /**
+     * SHA-256 Checksumme des Dokuments für Cache-Invalidierung.
+     */
+    @Column(name = "document_checksum", length = 64)
+    private String documentChecksum;
+    
+    /**
+     * Zeitpunkt des erfolgreichen Parsings (für Cache-Alter).
+     */
+    @Column(name = "parsed_at")
+    private LocalDateTime parsedAt;
+    
+    // ============ Strukturierte Rechnungsfelder ============
+    
+    @Column(name = "supplier_name", length = 500)
+    private String supplierName;
+    
+    @Column(name = "invoice_number", length = 100)
+    private String invoiceNumber;
+    
+    @Column(name = "customer_number", length = 100)
+    private String customerNumber;
+    
+    @Column(name = "invoice_date")
+    private LocalDate invoiceDate;
+    
+    @Column(name = "delivery_date")
+    private LocalDate deliveryDate;
+    
+    @Column(name = "net_amount", precision = 19, scale = 2)
+    private BigDecimal netAmount;
+    
+    @Column(name = "tax_amount", precision = 19, scale = 2)
+    private BigDecimal taxAmount;
+    
+    @Column(name = "gross_amount", precision = 19, scale = 2)
+    private BigDecimal grossAmount;
+    
+    @Column(name = "currency", length = 3)
+    private String currency;
+    
+    // ============ Confidence und Warnungen ============
+    
+    /**
+     * Confidence-Werte pro Feld (0.0-1.0) als JSONB.
+     * Beispiel: {"supplierName": 0.9, "invoiceNumber": 1.0}
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "confidence_json", columnDefinition = "jsonb")
+    private Map<String, Double> confidenceJson;
+    
+    /**
+     * Warnungen aus der Analyse als JSONB.
+     * Beispiel: ["Gesamtbetrag passt nicht zur Berechnung", "Lieferant unsicher"]
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "warnings_json", columnDefinition = "jsonb")
+    private List<String> warningsJson;
     
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

@@ -42,24 +42,23 @@ public class InvoiceFieldParser {
 
     // Betragsfelder - mehrsprachige Labels
     private static final Pattern[] NET_AMOUNT_PATTERNS = {
-        Pattern.compile("Netto\\s*:?\\s*([0-9.,]+)\\s*€?", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("Nettobetrag\\s*:?\\s*([0-9.,]+)\\s*€?", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("Subtotal\\s*:?\\s*([0-9.,]+)\\s*€?", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("Sous-total\\s*:?\\s*([0-9.,]+)\\s*€?", Pattern.CASE_INSENSITIVE)
+        Pattern.compile("Netto(?:betrag)?\\s*:?\\s*([0-9.,]+)\\s*[€£$]?", Pattern.CASE_INSENSITIVE),
+        Pattern.compile("(?:^|\\s)Net\\s*:?\\s*([0-9.,]+)\\s*[€£$]?", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE),
+        Pattern.compile("Subtotal\\s*:?\\s*([0-9.,]+)\\s*[€£$]?", Pattern.CASE_INSENSITIVE),
+        Pattern.compile("Sous-total\\s*:?\\s*([0-9.,]+)\\s*[€£$]?", Pattern.CASE_INSENSITIVE)
     };
 
     private static final Pattern[] TAX_AMOUNT_PATTERNS = {
-        Pattern.compile("MwSt\\.?\\s*(?:\\([^)]+\\))?\\s*:?\\s*([0-9.,]+)\\s*€?", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("USt\\.?\\s*(?:\\([^)]+\\))?\\s*:?\\s*([0-9.,]+)\\s*€?", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("VAT\\s*(?:\\([^)]+\\))?\\s*:?\\s*([0-9.,]+)\\s*€?", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("TVA\\s*(?:\\([^)]+\\))?\\s*:?\\s*([0-9.,]+)\\s*€?", Pattern.CASE_INSENSITIVE)
+        Pattern.compile("MwSt\\.?\\s*(?:\\([^)]+\\))?\\s*:?\\s*([0-9.,]+)\\s*[€£$]?", Pattern.CASE_INSENSITIVE),
+        Pattern.compile("USt\\.?\\s*(?:\\([^)]+\\))?\\s*:?\\s*([0-9.,]+)\\s*[€£$]?", Pattern.CASE_INSENSITIVE),
+        Pattern.compile("VAT\\s*(?:\\([^)]+\\))?\\s*:?\\s*([0-9.,]+)\\s*[€£$]?", Pattern.CASE_INSENSITIVE),
+        Pattern.compile("TVA\\s*(?:\\([^)]+\\))?\\s*:?\\s*([0-9.,]+)\\s*[€£$]?", Pattern.CASE_INSENSITIVE)
     };
 
     private static final Pattern[] GROSS_AMOUNT_PATTERNS = {
-        Pattern.compile("Gesamt\\s*:?\\s*([0-9.,]+)\\s*€?", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("Gesamtbetrag\\s*:?\\s*([0-9.,]+)\\s*€?", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("Total\\s*:?\\s*([0-9.,]+)\\s*€?", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("Total\\s*TTC\\s*:?\\s*([0-9.,]+)\\s*€?", Pattern.CASE_INSENSITIVE)
+        Pattern.compile("Gesamt(?:betrag)?\\s*:?\\s*([0-9.,]+)\\s*[€£$]?", Pattern.CASE_INSENSITIVE),
+        Pattern.compile("Total\\s+TTC\\s*:?\\s*([0-9.,]+)\\s*[€£$]?", Pattern.CASE_INSENSITIVE),
+        Pattern.compile("(?:^|\\s)Total\\s*:?\\s*([0-9.,]+)\\s*[€£$]?", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE)
     };
 
     // Datumsformate
@@ -177,16 +176,34 @@ public class InvoiceFieldParser {
 
     private BigDecimal parseAmountString(String amountStr) {
         try {
-            // Deutsches Format: 1.693,81 oder 1693,81
-            if (amountStr.contains(",")) {
-                String normalized = amountStr.replace(".", "").replace(",", ".");
-                return new BigDecimal(normalized);
+            int dotPos = amountStr.indexOf('.');
+            int commaPos = amountStr.indexOf(',');
+            
+            // Beide vorhanden: Prüfe Reihenfolge
+            if (dotPos != -1 && commaPos != -1) {
+                if (dotPos < commaPos) {
+                    // Deutsches Format: 1.693,81
+                    return new BigDecimal(amountStr.replace(".", "").replace(",", "."));
+                } else {
+                    // Englisches Format: 1,693.81
+                    return new BigDecimal(amountStr.replace(",", ""));
+                }
             }
-            // Englisches Format: 1,693.81 oder 1693.81
-            else {
-                String normalized = amountStr.replace(",", "");
-                return new BigDecimal(normalized);
+            
+            // Nur Komma: Prüfe Position
+            if (commaPos != -1) {
+                // Wenn mehr als 2 Ziffern nach Komma ODER Komma ist nicht 3 Stellen vom Ende
+                int digitsAfterComma = amountStr.length() - commaPos - 1;
+                if (digitsAfterComma != 2 && digitsAfterComma != 3) {
+                    // Wahrscheinlich Tausendertrennzeichen: 1,543 → 1543
+                    return new BigDecimal(amountStr.replace(",", ""));
+                }
+                // Standard: Komma als Dezimaltrenner: 1543,40 → 1543.40
+                return new BigDecimal(amountStr.replace(",", "."));
             }
+            
+            // Nur Punkt oder nichts
+            return new BigDecimal(amountStr.replace(",", ""));
         } catch (NumberFormatException e) {
             return null;
         }

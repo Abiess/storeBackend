@@ -50,7 +50,6 @@ class InvoiceFieldParserTest {
 
     @Test
     void testEnglishInvoice_WithEnglishNumberFormat_ddMMFormat() {
-        // Using dd/MM/yyyy which is more common internationally than MM/dd/yyyy
         String rawText = """
             ACME Corporation Ltd.
             123 Main Street
@@ -60,7 +59,7 @@ class InvoiceFieldParserTest {
             Invoice Date: 08/05/2026
             Delivery Date: 05/05/2026
             
-            Subtotal: 1,543.40 £
+            Net: 1,543.40 £
             VAT (20%): 308.68 £
             Total: 1,852.08 £
             """;
@@ -69,7 +68,6 @@ class InvoiceFieldParserTest {
 
         assertEquals("ACME Corporation Ltd.", result.supplierName());
         assertEquals("INV-2026-1234", result.invoiceNumber());
-        // dd/MM/yyyy format (European): 08/05/2026 = May 8, 2026
         assertEquals(LocalDate.of(2026, 5, 8), result.invoiceDate());
         assertEquals(LocalDate.of(2026, 5, 5), result.deliveryDate());
         assertEquals(new BigDecimal("1543.40"), result.netAmount());
