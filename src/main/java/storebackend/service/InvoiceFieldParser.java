@@ -49,10 +49,10 @@ public class InvoiceFieldParser {
     };
 
     private static final Pattern[] TAX_AMOUNT_PATTERNS = {
-        Pattern.compile("MwSt\\.?\\s*:?\\s*([0-9.,]+)\\s*€?", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("USt\\.?\\s*:?\\s*([0-9.,]+)\\s*€?", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("VAT\\s*:?\\s*([0-9.,]+)\\s*€?", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("TVA\\s*:?\\s*([0-9.,]+)\\s*€?", Pattern.CASE_INSENSITIVE)
+        Pattern.compile("MwSt\\.?\\s*(?:\\([^)]+\\))?\\s*:?\\s*([0-9.,]+)\\s*€?", Pattern.CASE_INSENSITIVE),
+        Pattern.compile("USt\\.?\\s*(?:\\([^)]+\\))?\\s*:?\\s*([0-9.,]+)\\s*€?", Pattern.CASE_INSENSITIVE),
+        Pattern.compile("VAT\\s*(?:\\([^)]+\\))?\\s*:?\\s*([0-9.,]+)\\s*€?", Pattern.CASE_INSENSITIVE),
+        Pattern.compile("TVA\\s*(?:\\([^)]+\\))?\\s*:?\\s*([0-9.,]+)\\s*€?", Pattern.CASE_INSENSITIVE)
     };
 
     private static final Pattern[] GROSS_AMOUNT_PATTERNS = {
@@ -68,7 +68,8 @@ public class InvoiceFieldParser {
         DateTimeFormatter.ofPattern("dd/MM/yyyy"),
         DateTimeFormatter.ofPattern("yyyy-MM-dd"),
         DateTimeFormatter.ofPattern("dd.MM.yy"),
-        DateTimeFormatter.ofPattern("dd/MM/yy")
+        DateTimeFormatter.ofPattern("dd/MM/yy"),
+        DateTimeFormatter.ofPattern("MM/dd/yyyy") // US format
     };
 
     // Firmenkennzeichnungen
