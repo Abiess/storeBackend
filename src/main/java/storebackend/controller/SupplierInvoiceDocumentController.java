@@ -23,6 +23,7 @@ import storebackend.entity.User;
 import storebackend.enums.InvoiceDocumentType;
 import storebackend.enums.InvoiceParseStatus;
 import storebackend.repository.StoreRepository;
+import storebackend.repository.SupplierInvoiceParseResultRepository;
 import storebackend.dto.ParsedInvoiceFields;
 import storebackend.service.*;
 import storebackend.util.StoreAccessChecker;
@@ -47,6 +48,8 @@ public class SupplierInvoiceDocumentController {
     private final LocalInvoiceOcrService localInvoiceOcrService;
     private final InvoiceFieldParser invoiceFieldParser;
     private final InvoiceParseService invoiceParseService;
+    private final SupplierCorrectionService supplierCorrectionService;
+    private final SupplierInvoiceParseResultRepository parseResultRepository;
 
     /**
      * Upload einer Lieferantenrechnung (PDF oder Bild)
@@ -577,5 +580,86 @@ public class SupplierInvoiceDocumentController {
                     return ResponseEntity.ok(response);
                 })
                 .orElse(ResponseEntity.notFound().build());
+    }
+    
+    /**
+     * Confirm supplier name correction (Phase 3A Learning System).
+     * Stores user-confirmed corrections for future invoices.
+     */
+    @Operation(summary = "Confirm supplier name correction", 
+               description = "Learn supplier name correction for future invoices (Phase 3A)")
+    @PostMapping("/documents/{documentId}/corrections/supplier-name")
+    @PreAuthorize("@storeAccessChecker.isStoreAdmin(#storeId)")
+    public ResponseEntity<?> confirmSupplierNameCorrection(
+            @PathVariable Long storeId,
+            @PathVariable Long documentId,
+            @RequestBody storebackend.dto.ConfirmSupplierCorrectionRequest request,
+            @AuthenticationPrincipal User user
+    ) {
+        log.info("Confirming supplier correction: storeId={}, documentId={}, raw={}, corrected={}",
+                storeId, documentId, request.getRawValue(), request.getCorrectedValue());
+        
+        try {
+            // Verify document belongs to store
+            SupplierInvoiceDocument document = documentService.getDocument(documentId, storeId);
+            
+            // Store correction if requested
+            if (request.isRememberForFuture()) {
+                storebackend.entity.SupplierFieldCorrection correction = 
+                    supplierCorrectionService.confirmSupplierNameCorrection(
+                        storeId,
+                        request.getRawValue(),
+                        request.getCorrectedValue(),
+                        null,  // supplierId (future)
+                        user != null ? user.getId() : null
+                    );
+                
+                // Update parse result for this document
+                parseResultRepository.findByDocumentIdAndStoreId(documentId, storeId)
+                    .ifPresent(result -> {
+                        result.setSupplierName(correction.getCorrectedValue());
+                        result.setSupplierNameSource("USER_EDITED");
+                        parseResultRepository.save(result);
+                        log.info("Updated parse result with user-confirmed supplier name");
+                    });
+                
+                // Build response
+                storebackend.dto.ConfirmSupplierCorrectionResponse response = 
+                    new storebackend.dto.ConfirmSupplierCorrectionResponse();
+                response.setFieldType(correction.getFieldType());
+                response.setRawValue(correction.getRawValue());
+                response.setCorrectedValue(correction.getCorrectedValue());
+                response.setConfirmationCount(correction.getConfirmationCount());
+                response.setActive(correction.getActive());
+                
+                return ResponseEntity.ok(response);
+            } else {
+                // Just update this document's parse result
+                parseResultRepository.findByDocumentIdAndStoreId(documentId, storeId)
+                    .ifPresent(result -> {
+                        result.setSupplierName(request.getCorrectedValue());
+                        result.setSupplierNameSource("USER_EDITED");
+                        parseResultRepository.save(result);
+                    });
+                
+                return ResponseEntity.ok(Map.of(
+                    "message", "Supplier name updated for this document only",
+                    "correctedValue", request.getCorrectedValue()
+                ));
+            }
+            
+        } catch (SupplierCorrectionService.ConflictingCorrectionException e) {
+            log.warn("Conflicting correction: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("error", "CONFLICTING_CORRECTION", "message", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid correction request: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "INVALID_REQUEST", "message", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Failed to confirm supplier correction", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "INTERNAL_ERROR", "message", e.getMessage()));
+        }
     }
 }

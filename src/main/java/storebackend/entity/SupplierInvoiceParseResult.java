@@ -175,6 +175,12 @@ public class SupplierInvoiceParseResult {
     @Column(name = "supplier_name", length = 500)
     private String supplierName;
     
+    /**
+     * Source of supplier_name: PARSER, LEARNED_CORRECTION, USER_EDITED
+     */
+    @Column(name = "supplier_name_source", length = 50)
+    private String supplierNameSource;
+    
     @Column(name = "invoice_number", length = 100)
     private String invoiceNumber;
     

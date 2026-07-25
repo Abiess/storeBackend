@@ -41,6 +41,7 @@ public class InvoiceParseService {
     private final SupplierInvoiceDocumentService documentService;
     private final LocalInvoiceOcrService ocrService;
     private final InvoiceFieldParser fieldParser;
+    private final SupplierCorrectionService supplierCorrectionService;
     
     /**
      * Parse-Ergebnis mit Cache-Logik.
@@ -132,9 +133,27 @@ public class InvoiceParseService {
             ParsedInvoiceFields fields = fieldParser.parse(rawText);
             log.debug("Parser found {} fields", countNonNullFields(fields));
             
+            // 6a. Apply learned supplier name correction (Phase 3A)
+            String supplierName = fields.supplierName();
+            String supplierNameSource = "PARSER";
+            
+            if (supplierName != null && !supplierName.isEmpty()) {
+                Optional<storebackend.entity.SupplierFieldCorrection> correction =
+                    supplierCorrectionService.findSupplierNameCorrection(storeId, supplierName);
+                
+                if (correction.isPresent()) {
+                    String correctedName = correction.get().getCorrectedValue();
+                    log.info("Applying learned supplier correction: '{}' → '{}'", 
+                        supplierName, correctedName);
+                    supplierName = correctedName;
+                    supplierNameSource = "LEARNED_CORRECTION";
+                }
+            }
+            
             // 7. Ergebnis speichern
             result.setRawText(rawText);
-            result.setSupplierName(fields.supplierName());
+            result.setSupplierName(supplierName);
+            result.setSupplierNameSource(supplierNameSource);
             result.setInvoiceNumber(fields.invoiceNumber());
             result.setInvoiceDate(fields.invoiceDate());
             result.setDeliveryDate(fields.deliveryDate());
