@@ -48,8 +48,13 @@ public class SupplierInvoiceDocumentController {
     private final LocalInvoiceOcrService localInvoiceOcrService;
     private final InvoiceFieldParser invoiceFieldParser;
     private final InvoiceParseService invoiceParseService;
-    private final SupplierCorrectionService supplierCorrectionService;
     private final SupplierInvoiceParseResultRepository parseResultRepository;
+    private final SupplierCorrectionService supplierCorrectionService;
+    
+    // Phase 3B-1B: Line item services
+    private final InvoiceLineDTOMapper lineDTOMapper;
+    private final SupplierProductMappingService productMappingService;
+    private final InvoiceLineUpdateService lineUpdateService;
 
     /**
      * Upload einer Lieferantenrechnung (PDF oder Bild)
@@ -523,6 +528,11 @@ public class SupplierInvoiceDocumentController {
             // Rohtext (für Debugging)
             response.put("rawText", result.getRawText());
             
+            // Phase 3B-1B: Line items
+            List<storebackend.entity.SupplierInvoiceLine> lines = invoiceParseService.getLineItems(storeId, documentId);
+            response.put("lines", lineDTOMapper.toDTOList(lines));
+            response.put("lineSummary", lineDTOMapper.calculateSummary(lines));
+            
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
@@ -590,6 +600,11 @@ public class SupplierInvoiceDocumentController {
                     response.put("confidence", result.getConfidenceJson());
                     response.put("warnings", result.getWarningsJson());
                     response.put("rawText", result.getRawText());
+                    
+                    // Phase 3B-1B: Line items
+                    List<storebackend.entity.SupplierInvoiceLine> lines = invoiceParseService.getLineItems(storeId, documentId);
+                    response.put("lines", lineDTOMapper.toDTOList(lines));
+                    response.put("lineSummary", lineDTOMapper.calculateSummary(lines));
                     
                     return ResponseEntity.ok(response);
                 })
@@ -674,6 +689,142 @@ public class SupplierInvoiceDocumentController {
             log.error("Failed to confirm supplier correction", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "INTERNAL_ERROR", "message", e.getMessage()));
+        }
+    }
+    
+    // ==================================================================================
+    // Phase 3B-1B: Invoice Line Management Endpoints
+    // ==================================================================================
+    
+    /**
+     * Update invoice line (user corrections).
+     */
+    @Operation(summary = "Update invoice line", 
+               description = "Update line fields after user correction. Sets userCorrected=true and status=CONFIRMED.")
+    @PutMapping("/documents/{documentId}/lines/{lineId}")
+    @PreAuthorize("@storeAccessChecker.isStoreAdmin(#storeId)")
+    public ResponseEntity<?> updateInvoiceLine(
+            @PathVariable Long storeId,
+            @PathVariable Long documentId,
+            @PathVariable Long lineId,
+            @RequestBody storebackend.dto.UpdateLineRequest request
+    ) {
+        log.info("Update line request: storeId={}, documentId={}, lineId={}", storeId, documentId, lineId);
+        
+        try {
+            storebackend.entity.SupplierInvoiceLine updated = 
+                lineUpdateService.updateLine(storeId, documentId, lineId, request);
+            
+            return ResponseEntity.ok(lineDTOMapper.toDTO(updated));
+            
+        } catch (SecurityException e) {
+            log.warn("Security violation: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Forbidden", "message", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid request: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Bad Request", "message", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Failed to update line: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Internal Server Error", "message", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Map invoice line to product.
+     */
+    @Operation(summary = "Map line to product", 
+               description = "Assign a store product to an invoice line. Optionally create learned mapping with rememberForFuture=true.")
+    @PostMapping("/documents/{documentId}/lines/{lineId}/product-mapping")
+    @PreAuthorize("@storeAccessChecker.isStoreAdmin(#storeId)")
+    public ResponseEntity<?> mapLineToProduct(
+            @PathVariable Long storeId,
+            @PathVariable Long documentId,
+            @PathVariable Long lineId,
+            @RequestBody storebackend.dto.ProductMappingRequest request
+    ) {
+        log.info("Map line to product: storeId={}, documentId={}, lineId={}, productId={}, remember={}",
+                storeId, documentId, lineId, request.getProductId(), request.getRememberForFuture());
+        
+        try {
+            storebackend.entity.SupplierInvoiceLine mapped = 
+                lineUpdateService.mapToProduct(storeId, documentId, lineId, request);
+            
+            return ResponseEntity.ok(lineDTOMapper.toDTO(mapped));
+            
+        } catch (SecurityException e) {
+            log.warn("Security violation: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Forbidden", "message", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid request: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Bad Request", "message", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Failed to map line to product: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Internal Server Error", "message", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Bulk confirm lines.
+     */
+    @Operation(summary = "Bulk confirm lines", 
+               description = "Confirm multiple lines at once. Optionally skip lines with warnings.")
+    @PostMapping("/documents/{documentId}/lines/bulk-confirm")
+    @PreAuthorize("@storeAccessChecker.isStoreAdmin(#storeId)")
+    public ResponseEntity<?> bulkConfirmLines(
+            @PathVariable Long storeId,
+            @PathVariable Long documentId,
+            @RequestBody Map<String, Object> request
+    ) {
+        log.info("Bulk confirm lines: storeId={}, documentId={}", storeId, documentId);
+        
+        try {
+            @SuppressWarnings("unchecked")
+            List<Long> lineIds = (List<Long>) request.get("lineIds");
+            Boolean onlyWithoutWarnings = (Boolean) request.getOrDefault("onlyWithoutWarnings", false);
+            
+            if (lineIds == null || lineIds.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Bad Request", "message", "lineIds cannot be empty"));
+            }
+            
+            // Convert Integer to Long if needed (JSON deserialization quirk)
+            List<Long> convertedIds = new java.util.ArrayList<>();
+            for (Object id : lineIds) {
+                if (id instanceof Integer) {
+                    convertedIds.add(((Integer) id).longValue());
+                } else if (id instanceof Long) {
+                    convertedIds.add((Long) id);
+                } else {
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("error", "Bad Request", "message", "Invalid lineId type: " + id.getClass()));
+                }
+            }
+            
+            storebackend.service.InvoiceLineUpdateService.BulkConfirmResult result = 
+                lineUpdateService.bulkConfirm(storeId, documentId, convertedIds, onlyWithoutWarnings);
+            
+            // Get updated summary
+            List<storebackend.entity.SupplierInvoiceLine> lines = invoiceParseService.getLineItems(storeId, documentId);
+            storebackend.dto.LineSummaryDTO summary = lineDTOMapper.calculateSummary(lines);
+            
+            Map<String, Object> response = new LinkedHashMap<>();
+            response.put("requested", result.requested);
+            response.put("confirmed", result.confirmed);
+            response.put("skipped", result.skipped);
+            response.put("lineSummary", summary);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("Failed to bulk confirm lines: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Internal Server Error", "message", e.getMessage()));
         }
     }
 }
