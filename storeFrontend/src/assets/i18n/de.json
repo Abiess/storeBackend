@@ -2832,7 +2832,9 @@
       "UNKNOWN": "Ein unbekannter Fehler ist aufgetreten",
       "PREVIEW_FAILED": "Vorschau konnte nicht geladen werden",
       "UPLOAD_FAILED": "Upload fehlgeschlagen",
-      "BAD_REQUEST": "Ungültige Anfrage"
+      "BAD_REQUEST": "Ungültige Anfrage",
+      "CONFLICTING_CORRECTION": "Für diesen erkannten Lieferantennamen existiert bereits eine andere Korrektur",
+      "CORRECTION_FAILED": "Korrektur konnte nicht gespeichert werden"
     },
     "SUBTITLE": "Eingangsrechnungen hochladen und verwalten",
     "MESSAGES": {
@@ -2871,7 +2873,32 @@
       "RAW_TEXT": "Rohtext",
       "COPY_TEXT": "Text kopieren",
       "TEXT_COPIED": "Text in Zwischenablage kopiert",
-      "TOGGLE_PANEL": "OCR-Panel umschalten"
+      "TOGGLE_PANEL": "OCR-Panel umschalten",
+      "REPARSE": "Erneut auslesen",
+      "LOADED_FROM_CACHE": "Aus Cache geladen",
+      "COMPLETED": "OCR abgeschlossen ({{pageCount}} Seiten, {{duration}}s)"
+    },
+    "FIELDS": {
+      "SUPPLIER_NAME": "Lieferant",
+      "INVOICE_NUMBER": "Rechnungsnummer",
+      "INVOICE_DATE": "Rechnungsdatum",
+      "DELIVERY_DATE": "Lieferdatum",
+      "NET_AMOUNT": "Nettobetrag",
+      "TAX_AMOUNT": "MwSt.-Betrag",
+      "GROSS_AMOUNT": "Bruttobetrag",
+      "CURRENCY": "Währung"
+    },
+    "LEARNING": {
+      "ORIGINALLY_DETECTED": "Ursprünglich erkannt",
+      "REMEMBER_CORRECTION": "Diese Korrektur für zukünftige Rechnungen merken",
+      "CONFIRM_CORRECTION": "Korrektur bestätigen",
+      "CORRECTION_SAVED": "Korrektur gespeichert",
+      "CORRECTION_SAVED_AND_REMEMBERED": "Korrektur gespeichert und wird bei zukünftigen Rechnungen berücksichtigt"
+    },
+    "SOURCES": {
+      "PARSER": "Automatisch erkannt",
+      "LEARNED_CORRECTION": "Aus früherer Korrektur übernommen",
+      "USER_EDITED": "Von dir bestätigt"
     },
     "STATUS": {
       "FAILED": "Fehlgeschlagen",

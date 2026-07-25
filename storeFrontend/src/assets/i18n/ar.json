@@ -2707,7 +2707,9 @@
       "UNKNOWN": "حدث خطأ غير معروف",
       "PREVIEW_FAILED": "تعذر تحميل المعاينة",
       "UPLOAD_FAILED": "فشل التحميل",
-      "BAD_REQUEST": "طلب غير صالح"
+      "BAD_REQUEST": "طلب غير صالح",
+      "CONFLICTING_CORRECTION": "يوجد بالفعل تصحيح مختلف لاسم المورد المكتشف هذا",
+      "CORRECTION_FAILED": "تعذر حفظ التصحيح"
     },
     "SUBTITLE": "تحميل وإدارة الفواتير الواردة",
     "MESSAGES": {
@@ -2746,7 +2748,32 @@
       "RAW_TEXT": "النص الخام",
       "COPY_TEXT": "نسخ النص",
       "TEXT_COPIED": "تم نسخ النص إلى الحافظة",
-      "TOGGLE_PANEL": "تبديل لوحة التعرف الضوئي"
+      "TOGGLE_PANEL": "تبديل لوحة التعرف الضوئي",
+      "REPARSE": "إعادة القراءة",
+      "LOADED_FROM_CACHE": "تم التحميل من ذاكرة التخزين المؤقت",
+      "COMPLETED": "اكتمل التعرف الضوئي ({{pageCount}} صفحات، {{duration}} ثانية)"
+    },
+    "FIELDS": {
+      "SUPPLIER_NAME": "المورد",
+      "INVOICE_NUMBER": "رقم الفاتورة",
+      "INVOICE_DATE": "تاريخ الفاتورة",
+      "DELIVERY_DATE": "تاريخ التسليم",
+      "NET_AMOUNT": "المبلغ الصافي",
+      "TAX_AMOUNT": "مبلغ الضريبة",
+      "GROSS_AMOUNT": "المبلغ الإجمالي",
+      "CURRENCY": "العملة"
+    },
+    "LEARNING": {
+      "ORIGINALLY_DETECTED": "تم اكتشافه في الأصل",
+      "REMEMBER_CORRECTION": "تذكر هذا التصحيح للفواتير المستقبلية",
+      "CONFIRM_CORRECTION": "تأكيد التصحيح",
+      "CORRECTION_SAVED": "تم حفظ التصحيح",
+      "CORRECTION_SAVED_AND_REMEMBERED": "تم حفظ التصحيح وسيتم تطبيقه على الفواتير المستقبلية"
+    },
+    "SOURCES": {
+      "PARSER": "تم الكشف تلقائيًا",
+      "LEARNED_CORRECTION": "مطبق من تصحيح سابق",
+      "USER_EDITED": "تم تأكيده من قبلك"
     },
     "STATUS": {
       "FAILED": "فشل",

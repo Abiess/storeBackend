@@ -2940,7 +2940,9 @@
       "UNKNOWN": "Une erreur inconnue s'est produite",
       "PREVIEW_FAILED": "Impossible de charger l'aperçu",
       "UPLOAD_FAILED": "Échec du téléchargement",
-      "BAD_REQUEST": "Demande invalide"
+      "BAD_REQUEST": "Demande invalide",
+      "CONFLICTING_CORRECTION": "Une autre correction existe déjà pour ce nom de fournisseur détecté",
+      "CORRECTION_FAILED": "Impossible d'enregistrer la correction"
     },
     "SUBTITLE": "Télécharger et gérer les factures entrantes",
     "MESSAGES": {
@@ -2979,7 +2981,32 @@
       "RAW_TEXT": "Texte brut",
       "COPY_TEXT": "Copier le texte",
       "TEXT_COPIED": "Texte copié dans le presse-papiers",
-      "TOGGLE_PANEL": "Basculer le panneau OCR"
+      "TOGGLE_PANEL": "Basculer le panneau OCR",
+      "REPARSE": "Relire",
+      "LOADED_FROM_CACHE": "Chargé depuis le cache",
+      "COMPLETED": "OCR terminé ({{pageCount}} pages, {{duration}}s)"
+    },
+    "FIELDS": {
+      "SUPPLIER_NAME": "Fournisseur",
+      "INVOICE_NUMBER": "Numéro de facture",
+      "INVOICE_DATE": "Date de facture",
+      "DELIVERY_DATE": "Date de livraison",
+      "NET_AMOUNT": "Montant net",
+      "TAX_AMOUNT": "Montant de la TVA",
+      "GROSS_AMOUNT": "Montant brut",
+      "CURRENCY": "Devise"
+    },
+    "LEARNING": {
+      "ORIGINALLY_DETECTED": "Détecté à l'origine",
+      "REMEMBER_CORRECTION": "Mémoriser cette correction pour les futures factures",
+      "CONFIRM_CORRECTION": "Confirmer la correction",
+      "CORRECTION_SAVED": "Correction enregistrée",
+      "CORRECTION_SAVED_AND_REMEMBERED": "Correction enregistrée et sera appliquée aux futures factures"
+    },
+    "SOURCES": {
+      "PARSER": "Détecté automatiquement",
+      "LEARNED_CORRECTION": "Appliqué depuis une correction précédente",
+      "USER_EDITED": "Confirmé par vous"
     },
     "STATUS": {
       "FAILED": "Échoué",

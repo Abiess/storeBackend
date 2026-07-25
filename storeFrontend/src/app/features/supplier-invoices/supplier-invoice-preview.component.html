@@ -147,11 +147,43 @@
         <div class="field-grid" *ngIf="parsedFields">
           <mat-form-field appearance="outline" [class]="getConfidenceClass('supplierName')">
             <mat-label>Lieferant</mat-label>
-            <input matInput [(ngModel)]="parsedFields!.supplierName" placeholder="Nicht erkannt">
-            <mat-hint *ngIf="getConfidencePercent('supplierName') < 100 && getConfidencePercent('supplierName') > 0">
+            <input matInput [(ngModel)]="editedSupplierName" placeholder="Nicht erkannt">
+            <mat-hint *ngIf="getFieldSourceLabel('supplierName')">
+              {{ getFieldSourceLabel('supplierName') }}
+            </mat-hint>
+            <mat-hint *ngIf="!getFieldSourceLabel('supplierName') && getConfidencePercent('supplierName') < 100 && getConfidencePercent('supplierName') > 0">
               Confidence: {{ getConfidencePercent('supplierName') }}%
             </mat-hint>
           </mat-form-field>
+          
+          <!-- Phase 3A: Learning Panel -->
+          <div *ngIf="supplierNameWasChanged" class="learning-panel">
+            <div class="learning-info">
+              <span class="learning-label">{{ 'SUPPLIER_INVOICES.LEARNING.ORIGINALLY_DETECTED' | translate }}:</span>
+              <span class="learning-value">{{ originalSupplierName }}</span>
+            </div>
+            
+            <mat-checkbox
+              [(ngModel)]="rememberSupplierCorrection"
+              class="learning-checkbox"
+            >
+              {{ 'SUPPLIER_INVOICES.LEARNING.REMEMBER_CORRECTION' | translate }}
+            </mat-checkbox>
+            
+            <button
+              mat-raised-button
+              color="primary"
+              (click)="confirmSupplierCorrection()"
+              [disabled]="isSavingSupplierCorrection"
+              class="learning-confirm-button"
+            >
+              @if (isSavingSupplierCorrection) {
+                <mat-spinner diameter="20"></mat-spinner>
+              } @else {
+                {{ 'SUPPLIER_INVOICES.LEARNING.CONFIRM_CORRECTION' | translate }}
+              }
+            </button>
+          </div>
 
           <mat-form-field appearance="outline" [class]="getConfidenceClass('invoiceNumber')">
             <mat-label>Rechnungsnummer</mat-label>

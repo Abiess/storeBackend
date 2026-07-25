@@ -434,6 +434,70 @@
   }
 }
 
+// Phase 3A: Learning Panel
+.learning-panel {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  
+  .learning-info {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    
+    .learning-label {
+      font-size: 13px;
+      opacity: 0.9;
+    }
+    
+    .learning-value {
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+  }
+  
+  .learning-checkbox {
+    ::ng-deep .mat-mdc-checkbox-label {
+      color: white !important;
+      font-size: 14px;
+    }
+  }
+  
+  .learning-confirm-button {
+    align-self: flex-start;
+    background: white !important;
+    color: #764ba2 !important;
+    font-weight: 600;
+    
+    &:disabled {
+      background: rgba(255, 255, 255, 0.5) !important;
+    }
+    
+    mat-spinner {
+      display: inline-block;
+      ::ng-deep circle {
+        stroke: #764ba2 !important;
+      }
+    }
+  }
+}
+
+.field-source-hint {
+  color: #667eea;
+  font-size: 12px;
+  font-weight: 500;
+}
+
 // Dialog overrides (via panelClass in component)
 ::ng-deep .supplier-invoice-preview-dialog {
   .mat-mdc-dialog-container {

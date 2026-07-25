@@ -11,11 +11,12 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatExpansionModule } from '@angular/material/expansion';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { SupplierInvoiceService, SupplierInvoiceDocument, SupplierInvoiceOcrResult, InvoiceParseResult, ParsedInvoiceFields } from '../../core/services/supplier-invoice.service';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, finalize } from 'rxjs';
 
 interface DialogData {
   storeId: number;
@@ -75,6 +76,13 @@ export class SupplierInvoicePreviewComponent implements OnInit, OnDestroy {
   parsedFields: ParsedInvoiceFields | null = null;
   parsing = false;
   showRawText = false;
+  
+  // Phase 3A: Learning System
+  originalSupplierName = '';
+  editedSupplierName = '';
+  rememberSupplierCorrection = true;
+  isSavingSupplierCorrection = false;
+  fieldSources: { [key: string]: string } = {};
   
   private blobUrl: string | null = null;
   private destroy$ = new Subject<void>();
@@ -355,6 +363,7 @@ export class SupplierInvoicePreviewComponent implements OnInit, OnDestroy {
     console.log('result.fields:', result.fields);
     
     this.parseResult = result;
+    this.fieldSources = result.fieldSources || {};
     
     // Extract fields with proper fallback
     const fields = result.fields;
@@ -369,6 +378,10 @@ export class SupplierInvoicePreviewComponent implements OnInit, OnDestroy {
       grossAmount: fields?.grossAmount ?? null,
       currency: fields?.currency ?? null
     };
+    
+    // Phase 3A: Track original supplier name for learning system
+    this.originalSupplierName = fields?.supplierName || '';
+    this.editedSupplierName = fields?.supplierName || '';
     
     console.log('parsedFields after mapping:', this.parsedFields);
     
@@ -400,5 +413,87 @@ export class SupplierInvoicePreviewComponent implements OnInit, OnDestroy {
   // Toggle raw text visibility
   toggleRawText(): void {
     this.showRawText = !this.showRawText;
+  }
+  
+  // Phase 3A: Learning System Helpers
+  
+  get supplierNameWasChanged(): boolean {
+    const original = this.normalizeForComparison(this.originalSupplierName);
+    const edited = this.normalizeForComparison(this.editedSupplierName);
+    return original !== edited && edited.trim().length > 0;
+  }
+  
+  private normalizeForComparison(value: string): string {
+    return value.toLowerCase().replace(/\s+/g, ' ').trim();
+  }
+  
+  getFieldSourceLabel(fieldName: string): string {
+    const source = this.fieldSources[fieldName];
+    if (!source) {
+      return '';
+    }
+    
+    const key = `SUPPLIER_INVOICES.SOURCES.${source}`;
+    return this.translate.instant(key);
+  }
+  
+  confirmSupplierCorrection(): void {
+    if (!this.supplierNameWasChanged || this.isSavingSupplierCorrection || !this.data.document?.id) {
+      return;
+    }
+    
+    // Trim values
+    const rawValue = this.originalSupplierName.trim();
+    const correctedValue = this.editedSupplierName.trim();
+    
+    if (!rawValue || !correctedValue) {
+      return;
+    }
+    
+    this.isSavingSupplierCorrection = true;
+    
+    this.supplierInvoiceService
+      .confirmSupplierNameCorrection(
+        this.data.storeId,
+        this.data.document.id,
+        {
+          rawValue,
+          correctedValue,
+          rememberForFuture: this.rememberSupplierCorrection
+        }
+      )
+      .pipe(finalize(() => {
+        this.isSavingSupplierCorrection = false;
+      }))
+      .subscribe({
+        next: (response) => {
+          // Update tracking
+          this.originalSupplierName = correctedValue;
+          this.fieldSources = {
+            ...this.fieldSources,
+            supplierName: 'USER_EDITED'
+          };
+          
+          // Success message
+          const message = this.rememberSupplierCorrection
+            ? this.translate.instant('SUPPLIER_INVOICES.LEARNING.CORRECTION_SAVED_AND_REMEMBERED')
+            : this.translate.instant('SUPPLIER_INVOICES.LEARNING.CORRECTION_SAVED');
+          
+          this.snackBar.open(message, '', { duration: 4000 });
+        },
+        error: (error) => this.handleCorrectionError(error)
+      });
+  }
+  
+  private handleCorrectionError(error: any): void {
+    let message: string;
+    
+    if (error.status === 409) {
+      message = this.translate.instant('SUPPLIER_INVOICES.ERRORS.CONFLICTING_CORRECTION');
+    } else {
+      message = this.translate.instant('SUPPLIER_INVOICES.ERRORS.CORRECTION_FAILED');
+    }
+    
+    this.snackBar.open(message, '', { duration: 5000 });
   }
 }

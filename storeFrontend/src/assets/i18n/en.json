@@ -2787,7 +2787,9 @@
       "UNKNOWN": "An unknown error occurred",
       "PREVIEW_FAILED": "Preview could not be loaded",
       "UPLOAD_FAILED": "Upload failed",
-      "BAD_REQUEST": "Invalid request"
+      "BAD_REQUEST": "Invalid request",
+      "CONFLICTING_CORRECTION": "A different correction already exists for this detected supplier name",
+      "CORRECTION_FAILED": "Could not save correction"
     },
     "SUBTITLE": "Upload and manage incoming invoices",
     "MESSAGES": {
@@ -2826,7 +2828,32 @@
       "RAW_TEXT": "Raw text",
       "COPY_TEXT": "Copy text",
       "TEXT_COPIED": "Text copied to clipboard",
-      "TOGGLE_PANEL": "Toggle OCR panel"
+      "TOGGLE_PANEL": "Toggle OCR panel",
+      "REPARSE": "Re-read",
+      "LOADED_FROM_CACHE": "Loaded from cache",
+      "COMPLETED": "OCR completed ({{pageCount}} pages, {{duration}}s)"
+    },
+    "FIELDS": {
+      "SUPPLIER_NAME": "Supplier",
+      "INVOICE_NUMBER": "Invoice Number",
+      "INVOICE_DATE": "Invoice Date",
+      "DELIVERY_DATE": "Delivery Date",
+      "NET_AMOUNT": "Net Amount",
+      "TAX_AMOUNT": "Tax Amount",
+      "GROSS_AMOUNT": "Gross Amount",
+      "CURRENCY": "Currency"
+    },
+    "LEARNING": {
+      "ORIGINALLY_DETECTED": "Originally detected",
+      "REMEMBER_CORRECTION": "Remember this correction for future invoices",
+      "CONFIRM_CORRECTION": "Confirm correction",
+      "CORRECTION_SAVED": "Correction saved",
+      "CORRECTION_SAVED_AND_REMEMBERED": "Correction saved and will be applied to future invoices"
+    },
+    "SOURCES": {
+      "PARSER": "Automatically detected",
+      "LEARNED_CORRECTION": "Applied from previous correction",
+      "USER_EDITED": "Confirmed by you"
     },
     "STATUS": {
       "FAILED": "Failed",

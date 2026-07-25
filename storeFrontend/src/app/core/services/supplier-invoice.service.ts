@@ -64,9 +64,24 @@ export interface InvoiceParseResult {
     durationMs: number;
   };
   fields: ParsedInvoiceFields;
+  fieldSources?: { [key: string]: string };
   confidence: { [key: string]: number };
   warnings: string[];
   rawText?: string;
+}
+
+export interface SupplierNameCorrectionRequest {
+  rawValue: string;
+  correctedValue: string;
+  rememberForFuture: boolean;
+}
+
+export interface SupplierNameCorrectionResponse {
+  fieldType: string;
+  rawValue: string;
+  correctedValue: string;
+  confirmationCount: number;
+  active: boolean;
 }
 
 @Injectable({
@@ -266,6 +281,20 @@ export class SupplierInvoiceService {
     return this.http.post<InvoiceParseResult>(
       `${this.baseUrl}/${storeId}/supplier-invoices/documents/${documentId}/parse?psmMode=${psmMode}&force=${force}`,
       null
+    );
+  }
+
+  /**
+   * Confirm supplier name correction (Phase 3A Learning System)
+   */
+  confirmSupplierNameCorrection(
+    storeId: number,
+    documentId: number,
+    request: SupplierNameCorrectionRequest
+  ): Observable<SupplierNameCorrectionResponse> {
+    return this.http.post<SupplierNameCorrectionResponse>(
+      `${this.baseUrl}/${storeId}/supplier-invoices/documents/${documentId}/corrections/supplier-name`,
+      request
     );
   }
 }
