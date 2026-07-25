@@ -112,13 +112,23 @@
     <div *ngIf="showOcrPanel" class="ocr-panel">
       <div class="ocr-header">
         <h3>Rechnungsdaten</h3>
-        <button mat-icon-button (click)="parseInvoice(false)" [disabled]="parsing || !!parseResult"
-                matTooltip="Rechnung auslesen">
+        <!-- Blitz-Button: Immer klickbar, ruft force=true auf -->
+        <button 
+          type="button"
+          mat-icon-button 
+          (click)="reparseInvoice()" 
+          [disabled]="parsing"
+          [matTooltip]="parseResult ? 'Neu auslesen (force)' : 'Rechnung auslesen'"
+          [attr.aria-label]="'Rechnung auslesen'">
           <lucide-icon name="zap" [size]="18"></lucide-icon>
         </button>
-        <button mat-icon-button (click)="reparseInvoice()" [disabled]="parsing"
-                *ngIf="parseResult"
-                matTooltip="Neu auslesen (force)">
+        <!-- Refresh-Button nur wenn schon geparst wurde -->
+        <button 
+          mat-icon-button 
+          (click)="parseInvoice(false)" 
+          [disabled]="parsing || !parseResult"
+          *ngIf="parseResult"
+          matTooltip="Cached Result neu laden">
           <lucide-icon name="refresh-cw" [size]="18"></lucide-icon>
         </button>
       </div>
