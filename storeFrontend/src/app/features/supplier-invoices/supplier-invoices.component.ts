@@ -236,9 +236,9 @@ export class SupplierInvoicesComponent implements OnInit, OnDestroy {
         handler: (doc) => this.openPreview(doc)
       },
       {
-        icon: '📝',
+        icon: '⚡',
         label: this.translate.instant('SUPPLIER_INVOICES.ACTIONS.READ_OCR'),
-        handler: (doc) => this.runOcr(doc)
+        handler: (doc) => this.parseInvoice(doc)
       },
       {
         icon: '🗑️',
@@ -319,26 +319,26 @@ export class SupplierInvoicesComponent implements OnInit, OnDestroy {
       });
   }
 
-  runOcr(doc: SupplierInvoiceDocument): void {
+  parseInvoice(doc: SupplierInvoiceDocument): void {
     const loadingMessage = this.snackBar.open(
       this.translate.instant('SUPPLIER_INVOICES.OCR.RUNNING'),
       '',
       { duration: 0 }
     );
 
-    this.supplierInvoiceService.runOcr(this.storeId, doc.id, 6)
+    this.supplierInvoiceService.parseInvoice(this.storeId, doc.id, 6, true)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (result) => {
           loadingMessage.dismiss();
           
-          if (result.status === 'OCR_COMPLETED' || result.status === 'TEXT_EXTRACTED') {
-            // Show OCR result in preview dialog
+          if (result.status === 'OCR_COMPLETED') {
+            // Show parse result in preview dialog
             this.dialog.open(SupplierInvoicePreviewComponent, {
               data: { 
                 storeId: this.storeId, 
                 document: doc,
-                ocrResult: result
+                parseResult: result
               },
               width: '90vw',
               maxWidth: '1200px',

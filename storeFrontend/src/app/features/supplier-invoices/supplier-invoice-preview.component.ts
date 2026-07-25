@@ -20,7 +20,8 @@ import { Subject, takeUntil } from 'rxjs';
 interface DialogData {
   storeId: number;
   document: SupplierInvoiceDocument;
-  ocrResult?: SupplierInvoiceOcrResult;
+  ocrResult?: SupplierInvoiceOcrResult;  // deprecated, use parseResult
+  parseResult?: InvoiceParseResult;
 }
 
 @Component({
@@ -92,8 +93,23 @@ export class SupplierInvoicePreviewComponent implements OnInit, OnDestroy {
     this.isImage = this.supplierInvoiceService.isImage(this.data.document.mimeType);
     this.totalPages = this.data.document.pageCount || 1;
     
-    // Check if OCR result was passed
-    if (this.data.ocrResult) {
+    // Check if parse result was passed (new behavior)
+    if (this.data.parseResult) {
+      this.parseResult = this.data.parseResult;
+      this.parsedFields = this.parseResult.fields ? {
+        supplierName: this.parseResult.fields.supplierName || null,
+        invoiceNumber: this.parseResult.fields.invoiceNumber || null,
+        invoiceDate: this.parseResult.fields.invoiceDate || null,
+        deliveryDate: this.parseResult.fields.deliveryDate || null,
+        netAmount: this.parseResult.fields.netAmount || null,
+        taxAmount: this.parseResult.fields.taxAmount || null,
+        grossAmount: this.parseResult.fields.grossAmount || null,
+        currency: this.parseResult.fields.currency || null
+      } : null;
+      this.showOcrPanel = true;
+    }
+    // Legacy: Check if OCR result was passed (deprecated)
+    else if (this.data.ocrResult) {
       this.ocrResult = this.data.ocrResult;
       this.hasOcrResult = true;
       this.showOcrPanel = true;

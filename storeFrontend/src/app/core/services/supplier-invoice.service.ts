@@ -54,7 +54,7 @@ export interface ParsedInvoiceFields {
 
 export interface InvoiceParseResult {
   documentId: number;
-  status: 'COMPLETED' | 'FAILED';
+  status: 'OCR_COMPLETED' | 'FAILED';
   cached?: boolean;
   parsedAt?: string;
   parserVersion?: string;
@@ -227,13 +227,15 @@ export class SupplierInvoiceService {
   }
 
   /**
-   * Run OCR on a document
+   * @deprecated Use parseInvoice() instead with force=true
+   * This method will be removed in a future version
    */
   runOcr(
     storeId: number,
     documentId: number,
     psmMode: 3 | 4 | 6 = 6
   ): Observable<SupplierInvoiceOcrResult> {
+    console.warn('runOcr() is deprecated. Use parseInvoice() instead.');
     return this.http.post<SupplierInvoiceOcrResult>(
       `${this.baseUrl}/${storeId}/supplier-invoices/documents/${documentId}/ocr?psmMode=${psmMode}`,
       null
