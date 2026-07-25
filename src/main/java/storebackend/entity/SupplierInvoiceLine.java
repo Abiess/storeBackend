@@ -2,6 +2,9 @@ package storebackend.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import storebackend.enums.LineStatus;
+import storebackend.enums.MappingSource;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -65,6 +68,21 @@ public class SupplierInvoiceLine {
     @Column(name = "warnings_json", columnDefinition = "TEXT")
     private String warningsJson;
     
+    // Phase 3B-1B: Status and mapping fields
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", length = 50, nullable = false)
+    private LineStatus status = LineStatus.UNREVIEWED;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name = "mapping_source", length = 50)
+    private MappingSource mappingSource;
+    
+    @Column(name = "suggested_product_id")
+    private Long suggestedProductId;
+    
+    @Column(name = "user_corrected", nullable = false)
+    private Boolean userCorrected = false;
+    
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
     
@@ -75,6 +93,12 @@ public class SupplierInvoiceLine {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+        if (status == null) {
+            status = LineStatus.UNREVIEWED;
+        }
+        if (userCorrected == null) {
+            userCorrected = false;
+        }
     }
     
     @PreUpdate

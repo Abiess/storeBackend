@@ -1,14 +1,20 @@
 package storebackend.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import storebackend.dto.ParsedInvoiceFields;
+import storebackend.dto.ParsedInvoiceLine;
 import storebackend.entity.SupplierInvoiceDocument;
+import storebackend.entity.SupplierInvoiceLine;
 import storebackend.entity.SupplierInvoiceParseResult;
 import storebackend.enums.InvoiceParseStatus;
+import storebackend.enums.LineStatus;
 import storebackend.repository.SupplierInvoiceDocumentRepository;
+import storebackend.repository.SupplierInvoiceLineRepository;
 import storebackend.repository.SupplierInvoiceParseResultRepository;
 
 import java.io.IOException;
@@ -16,7 +22,9 @@ import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -28,6 +36,7 @@ import java.util.Optional;
  * - Transaktionale Speicherung
  * - Force-Reload-Unterstützung
  * - OCR + Regex-basiertes Field-Parsing
+ * - Phase 3B-1B: Line item parsing + product mapping
  */
 @Service
 @RequiredArgsConstructor
@@ -38,10 +47,14 @@ public class InvoiceParseService {
     
     private final SupplierInvoiceDocumentRepository documentRepository;
     private final SupplierInvoiceParseResultRepository parseResultRepository;
+    private final SupplierInvoiceLineRepository lineRepository;
     private final SupplierInvoiceDocumentService documentService;
     private final LocalInvoiceOcrService ocrService;
     private final InvoiceFieldParser fieldParser;
+    private final InvoiceLineItemParser lineItemParser;
     private final SupplierCorrectionService supplierCorrectionService;
+    private final SupplierProductMappingService productMappingService;
+    private final ObjectMapper objectMapper;
     
     /**
      * Parse-Ergebnis mit Cache-Logik.
@@ -179,6 +192,31 @@ public class InvoiceParseService {
             result = parseResultRepository.save(result);
             log.info("Parse completed for documentId={}", documentId);
             
+            // 8. Phase 3B-1B: Parse and save line items
+            if (force) {
+                // Delete old lines when forcing re-parse
+                lineRepository.deleteByDocumentId(documentId);
+                log.debug("Deleted old lines for documentId={}", documentId);
+            }
+            
+            try {
+                List<ParsedInvoiceLine> parsedLines = lineItemParser.parse(rawText);
+                log.info("Parsed {} line items", parsedLines.size());
+                
+                List<SupplierInvoiceLine> savedLines = saveLineItems(
+                    parsedLines,
+                    storeId,
+                    documentId,
+                    result.getId(),
+                    supplierName
+                );
+                
+                log.info("Saved {} line items with learned mappings applied", savedLines.size());
+            } catch (Exception e) {
+                log.error("Line item parsing failed (continuing without lines): {}", e.getMessage(), e);
+                // Don't fail the whole parse if lines fail
+            }
+            
             return result;
             
         } catch (Exception e) {
@@ -235,5 +273,71 @@ public class InvoiceParseService {
     public Optional<SupplierInvoiceParseResult> getParseResult(Long storeId, Long documentId) {
         log.debug("Loading cached parse result for documentId={}, storeId={}", documentId, storeId);
         return parseResultRepository.findByDocumentIdAndStoreId(documentId, storeId);
+    }
+    
+    /**
+     * Phase 3B-1B: Save parsed line items with learned product mappings.
+     */
+    private List<SupplierInvoiceLine> saveLineItems(
+        List<ParsedInvoiceLine> parsedLines,
+        Long storeId,
+        Long documentId,
+        Long parseResultId,
+        String supplierName
+    ) {
+        List<SupplierInvoiceLine> savedLines = new ArrayList<>();
+        
+        for (ParsedInvoiceLine parsed : parsedLines) {
+            SupplierInvoiceLine line = new SupplierInvoiceLine();
+            line.setStoreId(storeId);
+            line.setDocumentId(documentId);
+            line.setParseResultId(parseResultId);
+            line.setPositionNumber(parsed.positionNumber());
+            line.setSupplierArticleNumber(parsed.supplierArticleNumber());
+            line.setDescription(parsed.description());
+            line.setQuantity(parsed.quantity());
+            line.setUnit(parsed.unit());
+            line.setPackagingUnit(parsed.packagingUnit());
+            line.setUnitPrice(parsed.unitPrice());
+            line.setLineTotal(parsed.lineTotal());
+            line.setTaxRate(parsed.taxRate());
+            line.setDiscount(parsed.discount());
+            line.setConfidence(parsed.confidence());
+            line.setRawText(parsed.rawText());
+            
+            // Serialize warnings as JSON
+            if (parsed.warnings() != null && !parsed.warnings().isEmpty()) {
+                try {
+                    line.setWarningsJson(objectMapper.writeValueAsString(parsed.warnings()));
+                } catch (JsonProcessingException e) {
+                    log.warn("Failed to serialize warnings for line {}: {}", parsed.positionNumber(), e.getMessage());
+                    line.setWarningsJson(null);
+                }
+            }
+            
+            // Set initial status based on confidence and warnings
+            if (!parsed.warnings().isEmpty() || parsed.confidence() < 0.90) {
+                line.setStatus(LineStatus.REVIEW_REQUIRED);
+            } else {
+                line.setStatus(LineStatus.UNREVIEWED);
+            }
+            
+            // Apply learned product mappings
+            if (supplierName != null) {
+                productMappingService.applyLearnedMapping(line, supplierName);
+            }
+            
+            SupplierInvoiceLine saved = lineRepository.save(line);
+            savedLines.add(saved);
+        }
+        
+        return savedLines;
+    }
+    
+    /**
+     * Phase 3B-1B: Load saved line items for a document.
+     */
+    public List<SupplierInvoiceLine> getLineItems(Long storeId, Long documentId) {
+        return lineRepository.findByDocumentIdAndStoreIdOrderByPositionNumberAsc(documentId, storeId);
     }
 }
