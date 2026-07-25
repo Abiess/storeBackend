@@ -144,6 +144,32 @@ public class SupplierInvoiceParseResult {
     @Column(name = "parsed_at")
     private LocalDateTime parsedAt;
     
+    // ============ OCR-Metadaten ============
+    
+    /**
+     * Anzahl Seiten (aus OCR-Engine).
+     */
+    @Column(name = "page_count")
+    private Integer pageCount;
+    
+    /**
+     * OCR-Dauer in Millisekunden.
+     */
+    @Column(name = "duration_ms")
+    private Long durationMs;
+    
+    /**
+     * Verwendete OCR-Engine (z.B. "TESSERACT", "PDFBOX").
+     */
+    @Column(name = "ocr_engine", length = 50)
+    private String ocrEngine;
+    
+    /**
+     * Erkannte/verwendete Sprachen (kommagetrennt, z.B. "deu,eng").
+     */
+    @Column(name = "ocr_languages", length = 200)
+    private String ocrLanguages;
+    
     // ============ Strukturierte Rechnungsfelder ============
     
     @Column(name = "supplier_name", length = 500)

@@ -115,9 +115,9 @@ public class InvoiceParseService {
         try {
             // 5. OCR durchführen
             String rawText;
+            LocalInvoiceOcrService.OcrExtractionResult ocrResult;
             try (InputStream input = documentService.getDocumentContent(documentId, storeId)) {
-                LocalInvoiceOcrService.OcrExtractionResult ocrResult = 
-                    ocrService.extractTextWithOcr(input, psmMode);
+                ocrResult = ocrService.extractTextWithOcr(input, psmMode);
                 
                 if (ocrResult.status() != InvoiceParseStatus.OCR_COMPLETED) {
                     throw new RuntimeException("OCR fehlgeschlagen: " + ocrResult.errorMessage());
@@ -125,7 +125,8 @@ public class InvoiceParseService {
                 
                 rawText = ocrResult.rawText();
             }
-            log.debug("OCR extracted {} characters", rawText.length());
+            log.debug("OCR extracted {} characters from {} pages in {}ms", 
+                rawText.length(), ocrResult.pageCount(), ocrResult.durationMs());
             
             // 6. Felder parsen
             ParsedInvoiceFields fields = fieldParser.parse(rawText);
@@ -143,6 +144,13 @@ public class InvoiceParseService {
             result.setCurrency(fields.currency());
             result.setConfidenceJson(fields.confidence());
             result.setWarningsJson(fields.warnings());
+            
+            // OCR-Metadaten speichern
+            result.setPageCount(ocrResult.pageCount());
+            result.setDurationMs(ocrResult.durationMs());
+            result.setOcrEngine(ocrResult.engine());
+            result.setOcrLanguages(ocrResult.languages() != null ? 
+                String.join(",", ocrResult.languages()) : null);
             
             result.setParseStatus(InvoiceParseStatus.OCR_COMPLETED);
             result.setParsedAt(LocalDateTime.now());

@@ -486,7 +486,11 @@ public class SupplierInvoiceDocumentController {
             
             // OCR Metadaten
             Map<String, Object> ocrInfo = new LinkedHashMap<>();
-            ocrInfo.put("engine", result.getExtractionMethod());
+            ocrInfo.put("engine", result.getOcrEngine() != null ? result.getOcrEngine() : result.getExtractionMethod());
+            ocrInfo.put("languages", result.getOcrLanguages() != null ? 
+                List.of(result.getOcrLanguages().split(",")) : List.of());
+            ocrInfo.put("pageCount", result.getPageCount());
+            ocrInfo.put("durationMs", result.getDurationMs());
             ocrInfo.put("rawTextLength", result.getRawText() != null ? result.getRawText().length() : 0);
             response.put("ocr", ocrInfo);
             
@@ -544,6 +548,16 @@ public class SupplierInvoiceDocumentController {
                     response.put("cached", true);
                     response.put("parsedAt", result.getParsedAt());
                     response.put("parserVersion", result.getParserVersion());
+                    
+                    // OCR Metadaten
+                    Map<String, Object> ocrInfo = new LinkedHashMap<>();
+                    ocrInfo.put("engine", result.getOcrEngine() != null ? result.getOcrEngine() : result.getExtractionMethod());
+                    ocrInfo.put("languages", result.getOcrLanguages() != null ? 
+                        List.of(result.getOcrLanguages().split(",")) : List.of());
+                    ocrInfo.put("pageCount", result.getPageCount());
+                    ocrInfo.put("durationMs", result.getDurationMs());
+                    ocrInfo.put("rawTextLength", result.getRawText() != null ? result.getRawText().length() : 0);
+                    response.put("ocr", ocrInfo);
                     
                     Map<String, Object> fields = new LinkedHashMap<>();
                     fields.put("supplierName", result.getSupplierName());

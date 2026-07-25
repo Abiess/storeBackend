@@ -16,24 +16,29 @@ class InvoiceFieldParserProductionTest {
 
     @Test
     void testProductionInvoice_DocumentId3() {
-        // Echter OCR-Text aus Production (gekürzt auf relevante Teile)
+        // Echter OCR-Text aus Production mit allen problematischen Zeilen
         String rawText = """
             MARZOUK HANDELS GMBH
             Industriestr. 42
             12345 Musterstadt
+            
+            2026/00442 60534 08/05/2026
+            Lieferschein Nr. 2026/00399
             
             Rechnung Nr. 2026/00442
             Kundennr: 60534
             Datum: 08/05/2026
             Lieferdatum: 05/05/2026
             
-            Position  Menge  Einheit  Bezeichnung  Einzelpreis  Gesamtpreis
-            1         10     Stk      Produkt A    154.34       1543.40
+            Position  Menge  MwSt.Betrag 34 Art.  Bezeichnung  Einzelpreis  Gesamtpreis
+            1         10     Stk                   Produkt A    154.34       1543.40
             
             NETTOBETRAG: 1.543,40
             MwSt. BETRAG: 150,41
             Saldo zu bezahlen: 1693.81 EUR
             ENDBETRAG: 1.693,81 EUR
+            
+            R wm oe GmbH
             """;
 
         ParsedInvoiceFields result = parser.parse(rawText);
@@ -51,24 +56,29 @@ class InvoiceFieldParserProductionTest {
         System.out.println("confidence: " + result.confidence());
         System.out.println("warnings: " + result.warnings());
 
-        // Assertions
-        assertNotNull(result.supplierName(), "Lieferant muss erkannt werden");
-        assertTrue(result.supplierName().contains("MARZOUK"), 
-            "Lieferant sollte 'MARZOUK' enthalten, ist aber: " + result.supplierName());
-
-        assertNotNull(result.invoiceNumber(), "Rechnungsnummer muss erkannt werden");
-        assertEquals("2026/00442", result.invoiceNumber());
-
-        assertNotNull(result.netAmount(), "Nettobetrag muss erkannt werden");
-        assertEquals(new BigDecimal("1543.40"), result.netAmount());
-
-        assertNotNull(result.taxAmount(), "MwSt. muss erkannt werden");
-        assertEquals(new BigDecimal("150.41"), result.taxAmount());
-
-        assertNotNull(result.grossAmount(), "Gesamtbetrag muss erkannt werden");
-        assertEquals(new BigDecimal("1693.81"), result.grossAmount());
-
-        assertEquals("EUR", result.currency());
+        // Assertions für alle 8 Felder
+        assertEquals("MARZOUK HANDELS GMBH", result.supplierName(), 
+            "Lieferant muss 'MARZOUK HANDELS GMBH' sein (nicht 'R wm oe GmbH')");
+        
+        assertEquals("2026/00442", result.invoiceNumber(), 
+            "Rechnungsnummer muss '2026/00442' sein (nicht Lieferschein '2026/00399')");
+        
+        assertEquals(java.time.LocalDate.of(2026, 5, 8), result.invoiceDate(), 
+            "Rechnungsdatum muss 08.05.2026 sein (nicht Lieferdatum)");
+        
+        assertEquals(java.time.LocalDate.of(2026, 5, 5), result.deliveryDate(), 
+            "Lieferdatum muss 05.05.2026 sein");
+        
+        assertEquals(new BigDecimal("1543.40"), result.netAmount(), 
+            "Nettobetrag muss 1543.40 sein");
+        
+        assertEquals(new BigDecimal("150.41"), result.taxAmount(), 
+            "MwSt. muss 150.41 sein (nicht 34 aus Tabellenüberschrift)");
+        
+        assertEquals(new BigDecimal("1693.81"), result.grossAmount(), 
+            "Gesamtbetrag muss 1693.81 sein");
+        
+        assertEquals("EUR", result.currency(), "Währung muss EUR sein");
     }
     
     @Test
