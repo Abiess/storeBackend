@@ -509,6 +509,13 @@ public class SupplierInvoiceDocumentController {
             fields.put("currency", result.getCurrency());
             response.put("fields", fields);
             
+            // Phase 3A: Field Sources
+            Map<String, Object> fieldSources = new LinkedHashMap<>();
+            if (result.getSupplierNameSource() != null) {
+                fieldSources.put("supplierName", result.getSupplierNameSource());
+            }
+            response.put("fieldSources", fieldSources);
+            
             // Confidence und Warnings
             response.put("confidence", result.getConfidenceJson());
             response.put("warnings", result.getWarningsJson());
@@ -572,6 +579,13 @@ public class SupplierInvoiceDocumentController {
                     fields.put("grossAmount", result.getGrossAmount());
                     fields.put("currency", result.getCurrency());
                     response.put("fields", fields);
+                    
+                    // Phase 3A: Field Sources
+                    Map<String, Object> fieldSources = new LinkedHashMap<>();
+                    if (result.getSupplierNameSource() != null) {
+                        fieldSources.put("supplierName", result.getSupplierNameSource());
+                    }
+                    response.put("fieldSources", fieldSources);
                     
                     response.put("confidence", result.getConfidenceJson());
                     response.put("warnings", result.getWarningsJson());
