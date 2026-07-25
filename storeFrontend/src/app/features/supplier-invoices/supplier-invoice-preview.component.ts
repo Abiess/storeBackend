@@ -420,7 +420,7 @@ export class SupplierInvoicePreviewComponent implements OnInit, OnDestroy {
   get supplierNameWasChanged(): boolean {
     const original = this.normalizeForComparison(this.originalSupplierName);
     const edited = this.normalizeForComparison(this.editedSupplierName);
-    return original !== edited && edited.trim().length > 0;
+    return edited.length > 0 && original !== edited;
   }
   
   private normalizeForComparison(value: string): string {

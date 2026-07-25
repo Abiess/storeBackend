@@ -147,7 +147,12 @@
         <div class="field-grid" *ngIf="parsedFields">
           <mat-form-field appearance="outline" [class]="getConfidenceClass('supplierName')">
             <mat-label>Lieferant</mat-label>
-            <input matInput [(ngModel)]="editedSupplierName" placeholder="Nicht erkannt">
+            <input 
+              matInput 
+              [(ngModel)]="editedSupplierName" 
+              name="supplierName"
+              placeholder="Nicht erkannt"
+            >
             <mat-hint *ngIf="getFieldSourceLabel('supplierName')">
               {{ getFieldSourceLabel('supplierName') }}
             </mat-hint>
