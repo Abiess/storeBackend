@@ -240,4 +240,25 @@ export class ProductService {
   getDefaultAiModel(): string {
     return '';  // leer = Auto
   }
+  
+  /**
+   * Phase 3B-1B: Search products by query (title, SKU, EAN).
+   * Uses getProducts and filters clientside.
+   */
+  searchProducts(storeId: number, query: string): Observable<Product[]> {
+    if (!query || query.length < 2) {
+      return of([]);
+    }
+    
+    const lowerQuery = query.toLowerCase();
+    
+    return this.getProducts(storeId, 'ACTIVE').pipe(
+      map(products => products.filter(p => {
+        const titleMatch = p.title?.toLowerCase().includes(lowerQuery);
+        const skuMatch = p.sku?.toLowerCase().includes(lowerQuery);
+        // EAN field does not exist in Product model
+        return titleMatch || skuMatch;
+      }).slice(0, 20)) // Limit to 20 results
+    );
+  }
 }

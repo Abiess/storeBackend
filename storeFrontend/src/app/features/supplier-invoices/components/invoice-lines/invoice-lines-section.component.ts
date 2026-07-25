@@ -300,9 +300,9 @@ export class InvoiceLinesSectionComponent implements OnInit, OnChanges {
       .filter((id): id is number => id !== null && !this.productsCache.has(id));
     
     if (productIds.length > 0) {
-      // Load products - using existing product service
+      // Load products - using existing product service (storeId, productId)
       productIds.forEach(id => {
-        this.productService.getProduct(id, this.storeId).subscribe({
+        this.productService.getProduct(this.storeId, id).subscribe({
           next: (product: any) => {
             this.productsCache.set(id, {
               id: product.id,
@@ -363,7 +363,7 @@ export class InvoiceLinesSectionComponent implements OnInit, OnChanges {
     
     // Search products using existing service
     this.productService.searchProducts(this.storeId, query).subscribe({
-      next: (results: any) => {
+      next: (results: any[]) => {
         this.productResults = results.map((p: any) => ({
           id: p.id,
           title: p.title,
@@ -389,7 +389,7 @@ export class InvoiceLinesSectionComponent implements OnInit, OnChanges {
       this.assigningProductLineId,
       { productId: this.selectedProductId, rememberForFuture: this.rememberMapping }
     ).subscribe({
-      next: (updated) => {
+      next: (updated: InvoiceLine) => {
         const index = this.lines.findIndex(l => l.id === updated.id);
         if (index !== -1) {
           this.lines[index] = updated;
@@ -398,7 +398,7 @@ export class InvoiceLinesSectionComponent implements OnInit, OnChanges {
         this.assigningProduct = false;
         this.cancelProductAssignment();
       },
-      error: (err) => {
+      error: (err: any) => {
         this.assigningProduct = false;
         this.assignmentError = err.error?.message || 'Zuordnung fehlgeschlagen.';
       }
@@ -420,10 +420,10 @@ export class InvoiceLinesSectionComponent implements OnInit, OnChanges {
       lineIds,
       onlyWithoutWarnings: true
     }).subscribe({
-      next: (result) => {
+      next: (result: any) => {
         // Reload parse result to get updated lines
         this.invoiceService.getParseResult(this.storeId, this.documentId).subscribe({
-          next: (parseResult) => {
+          next: (parseResult: any) => {
             if (parseResult.lines) {
               this.lines = parseResult.lines;
               this.summary = parseResult.lineSummary || this.calculateSummary();

@@ -126,11 +126,11 @@ export class InvoiceLineEditFormComponent implements OnInit {
     
     this.invoiceService.updateInvoiceLine(this.storeId, this.documentId, this.line.id, request)
       .subscribe({
-        next: (updated) => {
+        next: (updated: InvoiceLine) => {
           this.loading = false;
           this.saved.emit(updated);
         },
-        error: (err) => {
+        error: (err: any) => {
           this.loading = false;
           this.error = err.error?.message || 'Position konnte nicht gespeichert werden.';
         }

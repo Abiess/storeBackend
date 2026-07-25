@@ -17,6 +17,7 @@ import { LucideAngularModule } from 'lucide-angular';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { SupplierInvoiceService, SupplierInvoiceDocument, SupplierInvoiceOcrResult, InvoiceParseResult, ParsedInvoiceFields } from '../../core/services/supplier-invoice.service';
 import { Subject, takeUntil, finalize } from 'rxjs';
+import { InvoiceLinesSectionComponent } from './components/invoice-lines/invoice-lines-section.component';
 
 interface DialogData {
   storeId: number;
@@ -41,8 +42,10 @@ interface DialogData {
     MatFormFieldModule,
     MatInputModule,
     MatExpansionModule,
+    MatCheckboxModule,
     TranslateModule,
-    LucideAngularModule
+    LucideAngularModule,
+    InvoiceLinesSectionComponent
   ],
   templateUrl: './supplier-invoice-preview.component.html',
   styleUrls: ['./supplier-invoice-preview.component.scss']

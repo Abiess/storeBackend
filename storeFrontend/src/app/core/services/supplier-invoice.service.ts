@@ -68,6 +68,66 @@ export interface InvoiceParseResult {
   confidence: { [key: string]: number };
   warnings: string[];
   rawText?: string;
+  lines?: InvoiceLine[];
+  lineSummary?: LineSummary;
+}
+
+// Phase 3B-1: Invoice Line Types
+export interface InvoiceLine {
+  id: number;
+  positionNumber: number;
+  supplierArticleNumber: string | null;
+  description: string | null;
+  quantity: number | null;
+  unit: string | null;
+  packagingUnit: number | null;
+  unitPrice: number | null;
+  lineTotal: number | null;
+  taxRate: number | null;
+  discount: number | null;
+  confidence: number;
+  warnings: string[];
+  status: 'UNREVIEWED' | 'REVIEW_REQUIRED' | 'CONFIRMED' | 'MAPPED';
+  mappingSource: 'NONE' | 'LEARNED_MAPPING' | 'USER_ASSIGNED';
+  suggestedProductId: number | null;
+  userCorrected: boolean;
+  calculatedStockQuantity?: number | null;
+}
+
+export interface LineSummary {
+  detected: number;
+  confirmed: number;
+  mapped: number;
+  needsReview: number;
+}
+
+export interface UpdateLineRequest {
+  supplierArticleNumber?: string | null;
+  description?: string | null;
+  quantity?: number | null;
+  unit?: string | null;
+  packagingUnit?: number | null;
+  unitPrice?: number | null;
+  lineTotal?: number | null;
+  taxRate?: number | null;
+  discount?: number | null;
+}
+
+export interface ProductMappingRequest {
+  productId: number;
+  rememberForFuture: boolean;
+}
+
+export interface BulkConfirmRequest {
+  lineIds: number[];
+  onlyWithoutWarnings: boolean;
+}
+
+export interface BulkConfirmResponse {
+  requested: number;
+  confirmed: number;
+  skipped: number;
+  lineSummary: LineSummary;
 }
 
 export interface SupplierNameCorrectionRequest {
@@ -294,6 +354,28 @@ export class SupplierInvoiceService {
   ): Observable<SupplierNameCorrectionResponse> {
     return this.http.post<SupplierNameCorrectionResponse>(
       `${this.baseUrl}/${storeId}/supplier-invoices/documents/${documentId}/corrections/supplier-name`,
+      request
+    );
+  }
+  
+  // Phase 3B-1: Invoice Line Item Operations
+  updateInvoiceLine(storeId: number, documentId: number, lineId: number, request: UpdateLineRequest): Observable<InvoiceLine> {
+    return this.http.put<InvoiceLine>(
+      `${this.baseUrl}/${storeId}/supplier-invoices/documents/${documentId}/lines/${lineId}`,
+      request
+    );
+  }
+  
+  assignProductMapping(storeId: number, documentId: number, lineId: number, request: ProductMappingRequest): Observable<InvoiceLine> {
+    return this.http.post<InvoiceLine>(
+      `${this.baseUrl}/${storeId}/supplier-invoices/documents/${documentId}/lines/${lineId}/product-mapping`,
+      request
+    );
+  }
+  
+  bulkConfirmLines(storeId: number, documentId: number, request: BulkConfirmRequest): Observable<BulkConfirmResponse> {
+    return this.http.post<BulkConfirmResponse>(
+      `${this.baseUrl}/${storeId}/supplier-invoices/documents/${documentId}/lines/bulk-confirm`,
       request
     );
   }

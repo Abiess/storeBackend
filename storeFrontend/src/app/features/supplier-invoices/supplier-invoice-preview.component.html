@@ -271,6 +271,15 @@
             <pre class="raw-text">{{ parseResult.rawText }}</pre>
           </div>
         </mat-expansion-panel>
+
+        <!-- Phase 3B-1: Invoice Line Items -->
+        <app-invoice-lines-section
+          *ngIf="parseResult.lines && parseResult.lines.length > 0 && parseResult.lineSummary"
+          [storeId]="data.storeId"
+          [documentId]="data.document.id"
+          [lines]="parseResult.lines"
+          [summary]="parseResult.lineSummary!">
+        </app-invoice-lines-section>
       </div>
 
       <!-- Legacy OCR Result Display (fallback) -->
