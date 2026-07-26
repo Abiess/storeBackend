@@ -338,6 +338,56 @@
       font-size: 14px;
     }
   }
+  
+  // Lines Summary in Preview
+  .lines-summary {
+    padding: 16px;
+    
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+      
+      .summary-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        background: #f8f9fa;
+        border-radius: 4px;
+        
+        .summary-label {
+          font-size: 13px;
+          color: #666;
+        }
+        
+        .summary-value {
+          font-size: 16px;
+          font-weight: 600;
+          
+          &.warning {
+            color: #e65100;
+          }
+          
+          &.success {
+            color: #2e7d32;
+          }
+        }
+      }
+    }
+    
+    .lines-actions {
+      display: flex;
+      justify-content: flex-end;
+      
+      button {
+        lucide-icon {
+          margin-right: 8px;
+        }
+      }
+    }
+  }
 
   .ocr-legacy {
     flex: 1;

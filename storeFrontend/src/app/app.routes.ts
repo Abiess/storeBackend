@@ -279,6 +279,11 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'stores/:id/supplier-invoices/:documentId/lines',
+    loadComponent: () => import('./features/supplier-invoices/pages/invoice-lines-page/invoice-lines-page.component').then(m => m.InvoiceLinesPageComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'stores/:id/theme',
     loadComponent: () => import('./features/stores/store-theme.component').then(m => m.StoreThemeComponent),
     canActivate: [authGuard]

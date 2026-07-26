@@ -272,14 +272,43 @@
           </div>
         </mat-expansion-panel>
 
-        <!-- Phase 3B-1: Invoice Line Items -->
-        <app-invoice-lines-section
-          *ngIf="parseResult.lines && parseResult.lines.length > 0 && parseResult.lineSummary"
-          [storeId]="data.storeId"
-          [documentId]="data.document.id"
-          [lines]="parseResult.lines"
-          [summary]="parseResult.lineSummary!">
-        </app-invoice-lines-section>
+        <!-- Phase 3B-1: Invoice Line Items Summary -->
+        <mat-expansion-panel *ngIf="parseResult && parseResult.lineSummary" class="parse-section">
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <lucide-icon name="list" [size]="20"></lucide-icon>
+              <span>{{ 'SUPPLIER_INVOICES.LINES.SUMMARY_TITLE' | translate }}</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+          
+          <div class="lines-summary">
+            <div class="summary-grid">
+              <div class="summary-item">
+                <span class="summary-label">{{ 'SUPPLIER_INVOICES.LINES.DETECTED' | translate }}:</span>
+                <span class="summary-value">{{ parseResult.lineSummary.detected }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">{{ 'SUPPLIER_INVOICES.LINES.NEEDS_REVIEW' | translate }}:</span>
+                <span class="summary-value warning">{{ parseResult.lineSummary.needsReview }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">{{ 'SUPPLIER_INVOICES.LINES.CONFIRMED' | translate }}:</span>
+                <span class="summary-value">{{ parseResult.lineSummary.confirmed }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">{{ 'SUPPLIER_INVOICES.LINES.MAPPED' | translate }}:</span>
+                <span class="summary-value success">{{ parseResult.lineSummary.mapped }}</span>
+              </div>
+            </div>
+            
+            <div class="lines-actions">
+              <button mat-raised-button color="primary" (click)="navigateToLines()">
+                <lucide-icon name="edit" [size]="18"></lucide-icon>
+                {{ 'SUPPLIER_INVOICES.LINES.EDIT_BUTTON' | translate }}
+              </button>
+            </div>
+          </div>
+        </mat-expansion-panel>
       </div>
 
       <!-- Legacy OCR Result Display (fallback) -->

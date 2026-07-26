@@ -2853,6 +2853,107 @@
       "GROSS_AMOUNT": "Gross Amount",
       "CURRENCY": "Currency"
     },
+    "LINES": {
+      "SUMMARY_TITLE": "Invoice Line Items",
+      "DETECTED": "Detected",
+      "NEEDS_REVIEW": "Needs Review",
+      "CONFIRMED": "Confirmed",
+      "MAPPED": "Mapped",
+      "EDIT_BUTTON": "Edit Line Items"
+    }
+  },
+  "INVOICE_LINES": {
+    "TITLE": "Edit Invoice Line Items",
+    "LOADING": "Loading line items...",
+    "SUMMARY": {
+      "DETECTED": "detected",
+      "CONFIRMED": "confirmed",
+      "MAPPED": "mapped",
+      "NEEDS_REVIEW": "needs review"
+    },
+    "SELECTION": {
+      "SELECTED": "line items selected",
+      "CLEAR": "Clear selection"
+    },
+    "FILTERS": {
+      "ALL": "All",
+      "REVIEW": "Needs Review",
+      "UNMAPPED": "Not Mapped",
+      "MAPPED": "Mapped"
+    },
+    "SEARCH_PLACEHOLDER": "Search by article number or description...",
+    "TABLE": {
+      "POS": "Pos.",
+      "ARTICLE_NR": "Article No.",
+      "DESCRIPTION": "Description",
+      "QUANTITY": "Quantity",
+      "UNIT": "Unit",
+      "VPE": "Pkg Unit",
+      "UNIT_PRICE": "Unit Price",
+      "LINE_TOTAL": "Total",
+      "TAX_RATE": "VAT",
+      "PRODUCT": "Product",
+      "STATUS": "Status",
+      "ACTIONS": "Actions"
+    },
+    "PRODUCT": {
+      "MAPPED": "Mapped",
+      "ASSIGN": "Assign"
+    },
+    "ACTIONS": {
+      "ADD_LINE": "Add Line Item",
+      "BULK_CONFIRM": "Confirm All",
+      "EDIT": "Edit",
+      "ASSIGN_PRODUCT": "Assign Product",
+      "SPLIT": "Split",
+      "MERGE": "Merge",
+      "DELETE": "Delete"
+    },
+    "CREATE": {
+      "TITLE": "Add New Line Item",
+      "ARTICLE_NR": "Supplier Article No.",
+      "DESCRIPTION": "Description",
+      "QUANTITY": "Quantity",
+      "UNIT": "Unit",
+      "VPE": "Pkg Unit",
+      "UNIT_PRICE": "Unit Price (€)",
+      "LINE_TOTAL": "Total (€)",
+      "TAX_RATE": "VAT (%)"
+    },
+    "EDIT": {
+      "TITLE": "Edit Line Item",
+      "ARTICLE_NR": "Article Number",
+      "DESCRIPTION": "Description",
+      "QUANTITY": "Quantity",
+      "UNIT": "Unit",
+      "VPE": "Pkg Unit",
+      "UNIT_PRICE": "Unit Price",
+      "LINE_TOTAL": "Total",
+      "TAX_RATE": "VAT"
+    },
+    "SPLIT": {
+      "TITLE": "Split Line Item",
+      "ORIGINAL": "Original",
+      "POSITION": "Split Position (character index)",
+      "PART_A": "Part A",
+      "PART_B": "Part B",
+      "CONFIRM": "Split"
+    },
+    "WARNINGS": {
+      "COUNT": "warning(s)",
+      "MISSING_NUMERIC_FIELDS": "Numeric values missing",
+      "LINE_TOTAL_MISMATCH": "Total amount mismatch",
+      "ARTICLE_NUMBER_MISSING": "Article number not detected"
+    },
+    "EMPTY": {
+      "TITLE": "No line items found"
+    }
+  },
+      "NET_AMOUNT": "Net Amount",
+      "TAX_AMOUNT": "Tax Amount",
+      "GROSS_AMOUNT": "Gross Amount",
+      "CURRENCY": "Currency"
+    },
     "LEARNING": {
       "ORIGINALLY_DETECTED": "Originally detected",
       "REMEMBER_CORRECTION": "Remember this correction for future invoices",

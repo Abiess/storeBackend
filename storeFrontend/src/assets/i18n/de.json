@@ -2898,6 +2898,101 @@
       "GROSS_AMOUNT": "Bruttobetrag",
       "CURRENCY": "Währung"
     },
+    "LINES": {
+      "SUMMARY_TITLE": "Rechnungspositionen",
+      "DETECTED": "Erkannt",
+      "NEEDS_REVIEW": "Bitte prüfen",
+      "CONFIRMED": "Bestätigt",
+      "MAPPED": "Zugeordnet",
+      "EDIT_BUTTON": "Positionen bearbeiten"
+    }
+  },
+  "INVOICE_LINES": {
+    "TITLE": "Rechnungspositionen bearbeiten",
+    "LOADING": "Positionen werden geladen...",
+    "SUMMARY": {
+      "DETECTED": "erkannt",
+      "CONFIRMED": "bestätigt",
+      "MAPPED": "zugeordnet",
+      "NEEDS_REVIEW": "prüfen"
+    },
+    "SELECTION": {
+      "SELECTED": "Positionen ausgewählt",
+      "CLEAR": "Auswahl entfernen"
+    },
+    "FILTERS": {
+      "ALL": "Alle",
+      "REVIEW": "Bitte prüfen",
+      "UNMAPPED": "Nicht zugeordnet",
+      "MAPPED": "Zugeordnet"
+    },
+    "SEARCH_PLACEHOLDER": "Nach Artikelnummer oder Beschreibung suchen...",
+    "TABLE": {
+      "POS": "Pos.",
+      "ARTICLE_NR": "Art.-Nr.",
+      "DESCRIPTION": "Beschreibung",
+      "QUANTITY": "Menge",
+      "UNIT": "Einheit",
+      "VPE": "VPE",
+      "UNIT_PRICE": "Einkaufspreis",
+      "LINE_TOTAL": "Gesamt",
+      "TAX_RATE": "MwSt.",
+      "PRODUCT": "Produkt",
+      "STATUS": "Status",
+      "ACTIONS": "Aktionen"
+    },
+    "PRODUCT": {
+      "MAPPED": "Zugeordnet",
+      "ASSIGN": "Zuordnen"
+    },
+    "ACTIONS": {
+      "ADD_LINE": "Position hinzufügen",
+      "BULK_CONFIRM": "Alle bestätigen",
+      "EDIT": "Bearbeiten",
+      "ASSIGN_PRODUCT": "Produkt zuordnen",
+      "SPLIT": "Aufteilen",
+      "MERGE": "Zusammenführen",
+      "DELETE": "Löschen"
+    },
+    "CREATE": {
+      "TITLE": "Neue Position hinzufügen",
+      "ARTICLE_NR": "Lieferanten-Art.-Nr.",
+      "DESCRIPTION": "Beschreibung",
+      "QUANTITY": "Menge",
+      "UNIT": "Einheit",
+      "VPE": "VPE",
+      "UNIT_PRICE": "Einkaufspreis (€)",
+      "LINE_TOTAL": "Gesamt (€)",
+      "TAX_RATE": "MwSt. (%)"
+    },
+    "EDIT": {
+      "TITLE": "Position bearbeiten",
+      "ARTICLE_NR": "Artikelnummer",
+      "DESCRIPTION": "Beschreibung",
+      "QUANTITY": "Menge",
+      "UNIT": "Einheit",
+      "VPE": "VPE",
+      "UNIT_PRICE": "Einkaufspreis",
+      "LINE_TOTAL": "Gesamt",
+      "TAX_RATE": "MwSt."
+    },
+    "SPLIT": {
+      "TITLE": "Position aufteilen",
+      "ORIGINAL": "Original",
+      "POSITION": "Trennposition (Zeichen-Index)",
+      "PART_A": "Teil A",
+      "PART_B": "Teil B",
+      "CONFIRM": "Aufteilen"
+    },
+    "WARNINGS": {
+      "COUNT": "Warnung(en)",
+      "MISSING_NUMERIC_FIELDS": "Zahlenwerte fehlen",
+      "LINE_TOTAL_MISMATCH": "Gesamtbetrag stimmt nicht überein",
+      "ARTICLE_NUMBER_MISSING": "Artikelnummer nicht erkannt"
+    },
+    "EMPTY": {
+      "TITLE": "Keine Positionen gefunden"
+    },
     "LEARNING": {
       "ORIGINALLY_DETECTED": "Ursprünglich erkannt",
       "REMEMBER_CORRECTION": "Diese Korrektur für zukünftige Rechnungen merken",

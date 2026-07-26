@@ -1,0 +1,375 @@
+<div class="invoice-lines-page">
+  <!-- Header -->
+  <div class="page-header">
+    <button mat-icon-button (click)="backToDocument()" class="back-button">
+      <lucide-icon name="arrow-left" [size]="20"></lucide-icon>
+    </button>
+    <div class="header-content">
+      <h1>{{ 'INVOICE_LINES.TITLE' | translate }}</h1>
+      <div class="summary-chips">
+        <span class="chip">{{ summary.detected }} {{ 'INVOICE_LINES.SUMMARY.DETECTED' | translate }}</span>
+        <span class="chip chip-confirmed">{{ summary.confirmed }} {{ 'INVOICE_LINES.SUMMARY.CONFIRMED' | translate }}</span>
+        <span class="chip chip-mapped">{{ summary.mapped }} {{ 'INVOICE_LINES.SUMMARY.MAPPED' | translate }}</span>
+        <span class="chip chip-review">{{ summary.needsReview }} {{ 'INVOICE_LINES.SUMMARY.NEEDS_REVIEW' | translate }}</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button mat-raised-button color="accent" (click)="startCreateLine()">
+        <lucide-icon name="plus" [size]="18"></lucide-icon>
+        {{ 'INVOICE_LINES.ACTIONS.ADD_LINE' | translate }}
+      </button>
+      <button mat-raised-button color="primary" (click)="bulkConfirm()" [disabled]="loading">
+        {{ 'INVOICE_LINES.ACTIONS.BULK_CONFIRM' | translate }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Selection Info Bar -->
+  <div class="selection-bar" *ngIf="selectedForImport.size > 0">
+    <strong>{{ selectedForImport.size }} {{ 'INVOICE_LINES.SELECTION.SELECTED' | translate }}</strong>
+    <button mat-button (click)="selectedForImport.clear()">
+      <lucide-icon name="x" [size]="16"></lucide-icon>
+      {{ 'INVOICE_LINES.SELECTION.CLEAR' | translate }}
+    </button>
+  </div>
+
+  <!-- Filters & Search -->
+  <div class="filters-toolbar">
+    <div class="filter-tabs">
+      <button
+        *ngFor="let f of filters"
+        [class.active]="currentFilter === f.type"
+        (click)="currentFilter = f.type"
+        class="filter-tab">
+        {{ f.label | translate }} ({{ getFilteredCount(f.type) }})
+      </button>
+    </div>
+    <div class="search-box">
+      <input
+        type="text"
+        [(ngModel)]="searchQuery"
+        [placeholder]="'INVOICE_LINES.SEARCH_PLACEHOLDER' | translate" />
+      <lucide-icon name="search" [size]="18"></lucide-icon>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-state" *ngIf="loading">
+    <p>{{ 'INVOICE_LINES.LOADING' | translate }}</p>
+  </div>
+
+  <!-- Desktop Table -->
+  <div class="desktop-table-container" *ngIf="!loading && filteredLines.length > 0">
+    <table class="lines-table">
+      <thead>
+        <tr>
+          <th class="col-checkbox sticky-left">
+            <mat-checkbox
+              [checked]="selectedForImport.size === filteredLines.length && filteredLines.length > 0"
+              [indeterminate]="selectedForImport.size > 0 && selectedForImport.size < filteredLines.length"
+              (change)="toggleAllSelection()">
+            </mat-checkbox>
+          </th>
+          <th class="col-pos sticky-left">{{ 'INVOICE_LINES.TABLE.POS' | translate }}</th>
+          <th class="col-article sticky-left">{{ 'INVOICE_LINES.TABLE.ARTICLE_NR' | translate }}</th>
+          <th class="col-description sticky-left">{{ 'INVOICE_LINES.TABLE.DESCRIPTION' | translate }}</th>
+          <th class="col-quantity">{{ 'INVOICE_LINES.TABLE.QUANTITY' | translate }}</th>
+          <th class="col-unit">{{ 'INVOICE_LINES.TABLE.UNIT' | translate }}</th>
+          <th class="col-vpe">{{ 'INVOICE_LINES.TABLE.VPE' | translate }}</th>
+          <th class="col-price">{{ 'INVOICE_LINES.TABLE.UNIT_PRICE' | translate }}</th>
+          <th class="col-total">{{ 'INVOICE_LINES.TABLE.LINE_TOTAL' | translate }}</th>
+          <th class="col-tax">{{ 'INVOICE_LINES.TABLE.TAX_RATE' | translate }}</th>
+          <th class="col-product">{{ 'INVOICE_LINES.TABLE.PRODUCT' | translate }}</th>
+          <th class="col-status sticky-right">{{ 'INVOICE_LINES.TABLE.STATUS' | translate }}</th>
+          <th class="col-actions sticky-right">{{ 'INVOICE_LINES.TABLE.ACTIONS' | translate }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let line of filteredLines" [class.selected]="selectedForImport.has(line.id)">
+          <td class="col-checkbox sticky-left">
+            <mat-checkbox
+              [checked]="selectedForImport.has(line.id)"
+              (change)="toggleImportSelection(line.id)">
+            </mat-checkbox>
+          </td>
+          <td class="col-pos sticky-left">{{ line.positionNumber }}</td>
+          <td class="col-article sticky-left">
+            <span class="article-number">{{ line.supplierArticleNumber || '—' }}</span>
+          </td>
+          <td class="col-description sticky-left">
+            <div class="description-cell">
+              <p class="description-text">{{ line.description || '—' }}</p>
+              <div class="warnings" *ngIf="line.warnings.length > 0">
+                <span class="warning-badge" [matTooltip]="line.warnings.join('\n')">
+                  ⚠️ {{ line.warnings.length }} {{ 'INVOICE_LINES.WARNINGS.COUNT' | translate }}
+                </span>
+              </div>
+            </div>
+          </td>
+          <td class="col-quantity">{{ line.quantity | number:'1.0-3' }}</td>
+          <td class="col-unit">{{ line.unit || '—' }}</td>
+          <td class="col-vpe">{{ line.packagingUnit | number:'1.0-2' }}</td>
+          <td class="col-price">{{ line.unitPrice | number:'1.2-4' }} €</td>
+          <td class="col-total">{{ line.lineTotal | number:'1.2-2' }} €</td>
+          <td class="col-tax">{{ line.taxRate }}%</td>
+          <td class="col-product">
+            <span *ngIf="line.status === 'MAPPED'" class="mapped-indicator">
+              <lucide-icon name="check-circle" [size]="16"></lucide-icon>
+              {{ 'INVOICE_LINES.PRODUCT.MAPPED' | translate }}
+            </span>
+            <button *ngIf="line.status !== 'MAPPED'" mat-button (click)="mappingLine = line" class="btn-assign">
+              {{ 'INVOICE_LINES.PRODUCT.ASSIGN' | translate }}
+            </button>
+          </td>
+          <td class="col-status sticky-right">
+            <app-invoice-line-status-badge [status]="line.status"></app-invoice-line-status-badge>
+          </td>
+          <td class="col-actions sticky-right">
+            <button mat-icon-button [matMenuTriggerFor]="lineMenu">
+              <lucide-icon name="more-vertical" [size]="18"></lucide-icon>
+            </button>
+            <mat-menu #lineMenu="matMenu">
+              <button mat-menu-item (click)="startEditLine(line)">
+                <lucide-icon name="edit" [size]="16"></lucide-icon>
+                <span>{{ 'INVOICE_LINES.ACTIONS.EDIT' | translate }}</span>
+              </button>
+              <button mat-menu-item (click)="mappingLine = line">
+                <lucide-icon name="link" [size]="16"></lucide-icon>
+                <span>{{ 'INVOICE_LINES.ACTIONS.ASSIGN_PRODUCT' | translate }}</span>
+              </button>
+              <button mat-menu-item (click)="startSplitLine(line)">
+                <lucide-icon name="scissors" [size]="16"></lucide-icon>
+                <span>{{ 'INVOICE_LINES.ACTIONS.SPLIT' | translate }}</span>
+              </button>
+              <button mat-menu-item (click)="mergeWithNext(line)" [disabled]="!canMergeWithNext(line)">
+                <lucide-icon name="merge" [size]="16"></lucide-icon>
+                <span>{{ 'INVOICE_LINES.ACTIONS.MERGE' | translate }}</span>
+              </button>
+              <mat-divider></mat-divider>
+              <button mat-menu-item (click)="deleteLine(line)" class="delete-action">
+                <lucide-icon name="trash-2" [size]="16"></lucide-icon>
+                <span>{{ 'INVOICE_LINES.ACTIONS.DELETE' | translate }}</span>
+              </button>
+            </mat-menu>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile Cards -->
+  <div class="mobile-cards-container" *ngIf="!loading && filteredLines.length > 0">
+    <div *ngFor="let line of filteredLines" class="line-card" [class.selected]="selectedForImport.has(line.id)">
+      <div class="card-header">
+        <mat-checkbox
+          [checked]="selectedForImport.has(line.id)"
+          (change)="toggleImportSelection(line.id)">
+        </mat-checkbox>
+        <span class="position-number">Pos. {{ line.positionNumber }}</span>
+        <app-invoice-line-status-badge [status]="line.status"></app-invoice-line-status-badge>
+        <button mat-icon-button [matMenuTriggerFor]="mobileMenu">
+          <lucide-icon name="more-vertical" [size]="18"></lucide-icon>
+        </button>
+        <mat-menu #mobileMenu="matMenu">
+          <button mat-menu-item (click)="startEditLine(line)">
+            <lucide-icon name="edit" [size]="16"></lucide-icon>
+            <span>{{ 'INVOICE_LINES.ACTIONS.EDIT' | translate }}</span>
+          </button>
+          <button mat-menu-item (click)="mappingLine = line">
+            <lucide-icon name="link" [size]="16"></lucide-icon>
+            <span>{{ 'INVOICE_LINES.ACTIONS.ASSIGN_PRODUCT' | translate }}</span>
+          </button>
+          <button mat-menu-item (click)="startSplitLine(line)">
+            <lucide-icon name="scissors" [size]="16"></lucide-icon>
+            <span>{{ 'INVOICE_LINES.ACTIONS.SPLIT' | translate }}</span>
+          </button>
+          <button mat-menu-item (click)="mergeWithNext(line)" [disabled]="!canMergeWithNext(line)">
+            <lucide-icon name="merge" [size]="16"></lucide-icon>
+            <span>{{ 'INVOICE_LINES.ACTIONS.MERGE' | translate }}</span>
+          </button>
+          <mat-divider></mat-divider>
+          <button mat-menu-item (click)="deleteLine(line)" class="delete-action">
+            <lucide-icon name="trash-2" [size]="16"></lucide-icon>
+            <span>{{ 'INVOICE_LINES.ACTIONS.DELETE' | translate }}</span>
+          </button>
+        </mat-menu>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <label>{{ 'INVOICE_LINES.TABLE.ARTICLE_NR' | translate }}:</label>
+          <span>{{ line.supplierArticleNumber || '—' }}</span>
+        </div>
+        <div class="field full-width">
+          <label>{{ 'INVOICE_LINES.TABLE.DESCRIPTION' | translate }}:</label>
+          <p>{{ line.description || '—' }}</p>
+        </div>
+        <div class="field">
+          <label>{{ 'INVOICE_LINES.TABLE.QUANTITY' | translate }}:</label>
+          <span>{{ line.quantity | number:'1.0-3' }} {{ line.unit }}</span>
+        </div>
+        <div class="field">
+          <label>{{ 'INVOICE_LINES.TABLE.VPE' | translate }}:</label>
+          <span>{{ line.packagingUnit | number:'1.0-2' }}</span>
+        </div>
+        <div class="field">
+          <label>{{ 'INVOICE_LINES.TABLE.UNIT_PRICE' | translate }}:</label>
+          <span>{{ line.unitPrice | number:'1.2-4' }} €</span>
+        </div>
+        <div class="field">
+          <label>{{ 'INVOICE_LINES.TABLE.LINE_TOTAL' | translate }}:</label>
+          <span>{{ line.lineTotal | number:'1.2-2' }} €</span>
+        </div>
+        <div class="warnings" *ngIf="line.warnings.length > 0">
+          <span class="warning-badge">⚠️ {{ line.warnings.length }} {{ 'INVOICE_LINES.WARNINGS.COUNT' | translate }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="!loading && filteredLines.length === 0">
+    <lucide-icon name="inbox" [size]="48"></lucide-icon>
+    <p>{{ 'INVOICE_LINES.EMPTY.TITLE' | translate }}</p>
+  </div>
+</div>
+
+<!-- Create Line Dialog -->
+<div class="modal-overlay" *ngIf="creatingNewLine" (click)="cancelCreateLine()">
+  <div class="modal-content create-line-dialog" (click)="$event.stopPropagation()">
+    <h2>{{ 'INVOICE_LINES.CREATE.TITLE' | translate }}</h2>
+    <div class="form-grid">
+      <div class="form-field full-width">
+        <label>{{ 'INVOICE_LINES.CREATE.ARTICLE_NR' | translate }} *</label>
+        <input type="text" [(ngModel)]="newLineData.supplierArticleNumber" />
+      </div>
+      <div class="form-field full-width">
+        <label>{{ 'INVOICE_LINES.CREATE.DESCRIPTION' | translate }} *</label>
+        <textarea rows="3" [(ngModel)]="newLineData.description"></textarea>
+      </div>
+      <div class="form-field">
+        <label>{{ 'INVOICE_LINES.CREATE.QUANTITY' | translate }}</label>
+        <input type="number" step="0.001" [(ngModel)]="newLineData.quantity" />
+      </div>
+      <div class="form-field">
+        <label>{{ 'INVOICE_LINES.CREATE.UNIT' | translate }}</label>
+        <input type="text" [(ngModel)]="newLineData.unit" />
+      </div>
+      <div class="form-field">
+        <label>{{ 'INVOICE_LINES.CREATE.VPE' | translate }}</label>
+        <input type="number" step="0.01" [(ngModel)]="newLineData.packagingUnit" />
+      </div>
+      <div class="form-field">
+        <label>{{ 'INVOICE_LINES.CREATE.UNIT_PRICE' | translate }}</label>
+        <input type="number" step="0.0001" [(ngModel)]="newLineData.unitPrice" />
+      </div>
+      <div class="form-field">
+        <label>{{ 'INVOICE_LINES.CREATE.LINE_TOTAL' | translate }}</label>
+        <input type="number" step="0.01" [(ngModel)]="newLineData.lineTotal" />
+      </div>
+      <div class="form-field">
+        <label>{{ 'INVOICE_LINES.CREATE.TAX_RATE' | translate }}</label>
+        <input type="number" step="1" [(ngModel)]="newLineData.taxRate" />
+      </div>
+    </div>
+    <div class="dialog-actions">
+      <button mat-button (click)="cancelCreateLine()">{{ 'COMMON.CANCEL' | translate }}</button>
+      <button mat-raised-button color="primary" (click)="confirmCreateLine()">
+        {{ 'COMMON.SAVE' | translate }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Line Drawer -->
+<div class="drawer-overlay" *ngIf="editingLine" (click)="cancelEditLine()">
+  <div class="drawer-content edit-drawer" (click)="$event.stopPropagation()">
+    <div class="drawer-header">
+      <h2>{{ 'INVOICE_LINES.EDIT.TITLE' | translate }} {{ editingLine.positionNumber }}</h2>
+      <button mat-icon-button (click)="cancelEditLine()">
+        <lucide-icon name="x" [size]="20"></lucide-icon>
+      </button>
+    </div>
+    <div class="drawer-body">
+      <div class="form-field">
+        <label>{{ 'INVOICE_LINES.EDIT.ARTICLE_NR' | translate }}</label>
+        <input type="text" [(ngModel)]="editingLine.supplierArticleNumber" />
+      </div>
+      <div class="form-field">
+        <label>{{ 'INVOICE_LINES.EDIT.DESCRIPTION' | translate }}</label>
+        <textarea rows="4" [(ngModel)]="editingLine.description"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>{{ 'INVOICE_LINES.EDIT.QUANTITY' | translate }}</label>
+          <input type="number" step="0.001" [(ngModel)]="editingLine.quantity" />
+        </div>
+        <div class="form-field">
+          <label>{{ 'INVOICE_LINES.EDIT.UNIT' | translate }}</label>
+          <input type="text" [(ngModel)]="editingLine.unit" />
+        </div>
+      </div>
+      <div class="form-field">
+        <label>{{ 'INVOICE_LINES.EDIT.VPE' | translate }}</label>
+        <input type="number" step="0.01" [(ngModel)]="editingLine.packagingUnit" />
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>{{ 'INVOICE_LINES.EDIT.UNIT_PRICE' | translate }}</label>
+          <input type="number" step="0.0001" [(ngModel)]="editingLine.unitPrice" />
+        </div>
+        <div class="form-field">
+          <label>{{ 'INVOICE_LINES.EDIT.LINE_TOTAL' | translate }}</label>
+          <input type="number" step="0.01" [(ngModel)]="editingLine.lineTotal" />
+        </div>
+      </div>
+      <div class="form-field">
+        <label>{{ 'INVOICE_LINES.EDIT.TAX_RATE' | translate }}</label>
+        <input type="number" step="1" [(ngModel)]="editingLine.taxRate" />
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <button mat-button (click)="cancelEditLine()">{{ 'COMMON.CANCEL' | translate }}</button>
+      <button mat-raised-button color="primary" (click)="saveEditLine()">
+        {{ 'COMMON.SAVE' | translate }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Split Line Dialog -->
+<div class="modal-overlay" *ngIf="splitDialogLine" (click)="cancelSplitLine()">
+  <div class="modal-content split-dialog" (click)="$event.stopPropagation()">
+    <h2>{{ 'INVOICE_LINES.SPLIT.TITLE' | translate }} {{ splitDialogLine.positionNumber }}</h2>
+    <div class="split-preview">
+      <div class="original-text">
+        <strong>{{ 'INVOICE_LINES.SPLIT.ORIGINAL' | translate }}:</strong>
+        <p>{{ splitDialogLine.description }}</p>
+      </div>
+      <div class="form-field">
+        <label>{{ 'INVOICE_LINES.SPLIT.POSITION' | translate }}:</label>
+        <input
+          type="range"
+          [min]="1"
+          [max]="(splitDialogLine.description?.length || 1) - 1"
+          [(ngModel)]="splitPosition" />
+        <span>{{ splitPosition }}</span>
+      </div>
+      <div class="split-parts">
+        <div class="part">
+          <strong>{{ 'INVOICE_LINES.SPLIT.PART_A' | translate }}:</strong>
+          <p>{{ (splitDialogLine.description || '').substring(0, splitPosition) }}</p>
+        </div>
+        <div class="part">
+          <strong>{{ 'INVOICE_LINES.SPLIT.PART_B' | translate }}:</strong>
+          <p>{{ (splitDialogLine.description || '').substring(splitPosition) }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="dialog-actions">
+      <button mat-button (click)="cancelSplitLine()">{{ 'COMMON.CANCEL' | translate }}</button>
+      <button mat-raised-button color="primary" (click)="confirmSplitLine()">
+        {{ 'INVOICE_LINES.SPLIT.CONFIRM' | translate }}
+      </button>
+    </div>
+  </div>
+</div>

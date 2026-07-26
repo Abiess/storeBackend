@@ -1,6 +1,7 @@
 import { Component, Inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -17,7 +18,7 @@ import { LucideAngularModule } from 'lucide-angular';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { SupplierInvoiceService, SupplierInvoiceDocument, SupplierInvoiceOcrResult, InvoiceParseResult, ParsedInvoiceFields } from '../../core/services/supplier-invoice.service';
 import { Subject, takeUntil, finalize } from 'rxjs';
-import { InvoiceLinesSectionComponent } from './components/invoice-lines/invoice-lines-section.component';
+
 
 interface DialogData {
   storeId: number;
@@ -44,8 +45,7 @@ interface DialogData {
     MatExpansionModule,
     MatCheckboxModule,
     TranslateModule,
-    LucideAngularModule,
-    InvoiceLinesSectionComponent
+    LucideAngularModule
   ],
   templateUrl: './supplier-invoice-preview.component.html',
   styleUrls: ['./supplier-invoice-preview.component.scss']
@@ -96,7 +96,8 @@ export class SupplierInvoicePreviewComponent implements OnInit, OnDestroy {
     private supplierInvoiceService: SupplierInvoiceService,
     private sanitizer: DomSanitizer,
     private snackBar: MatSnackBar,
-    private translate: TranslateService
+    private translate: TranslateService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -232,6 +233,11 @@ export class SupplierInvoicePreviewComponent implements OnInit, OnDestroy {
 
   close(): void {
     this.dialogRef.close();
+  }
+  
+  navigateToLines(): void {
+    this.dialogRef.close();
+    this.router.navigate(['/stores', this.data.storeId, 'supplier-invoices', this.data.document.id, 'lines']);
   }
 
   private revokeObjectUrl(): void {
