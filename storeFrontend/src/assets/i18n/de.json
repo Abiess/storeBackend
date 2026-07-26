@@ -2809,6 +2809,16 @@
     "STRIPE": "Stripe"
   },
   "SUPPLIER_INVOICES": {
+    "LIST": {
+      "TYPE": "Typ",
+      "FILENAME": "Dateiname",
+      "STATUS": "Status",
+      "SIZE": "Größe",
+      "PAGES": "Seiten",
+      "DATE": "Datum",
+      "EMPTY_MESSAGE": "Keine Dokumente vorhanden",
+      "ACTIONS": "Aktionen"
+    },
     "UPLOAD": {
       "ALLOWED_TYPES": "Erlaubte Dateitypen",
       "OR": "oder",

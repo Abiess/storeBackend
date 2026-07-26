@@ -22,13 +22,19 @@ import java.util.stream.Collectors;
 @Service
 public class InvoiceLineItemParser {
     
+    // Strategy A: Standard format with position number
     private static final Pattern POSITION_START_PATTERN = Pattern.compile(
         "^(\\d{1,3})\\s+(\\d{3,6})\\s+(.+)$"
     );
     
+    // Strategy B: Marzouk fallback - line starting with article number (no position number)
+    private static final Pattern MARZOUK_LINE_PATTERN = Pattern.compile(
+        "^(\\d{5,8})\\s+(.+)$"
+    );
+    
     private static final Set<String> TABLE_START_MARKERS = Set.of(
         "pos", "a-nr", "artikel", "beschreibung", "menge", "einheit", 
-        "vpe", "e-preis", "gpreis", "mwst"
+        "vpe", "e-preis", "gpreis", "mwst", "kolli", "preis", "betrag"
     );
     
     private static final Set<String> TABLE_END_MARKERS = Set.of(
@@ -52,9 +58,10 @@ public class InvoiceLineItemParser {
     );
     
     private final boolean debug;
+    private String parserStrategy = "UNKNOWN";
     
     public InvoiceLineItemParser() {
-        this.debug = false;
+        this.debug = true; // TEMPORARILY ENABLED FOR PRODUCTION DEBUG
     }
     
     /**
@@ -97,7 +104,16 @@ public class InvoiceLineItemParser {
         // Step 4: Build position blocks
         List<PositionBlock> blocks = buildPositionBlocks(tableLines);
         
-        if (debug) System.out.println("Built " + blocks.size() + " position blocks");
+        if (debug) {
+            System.out.println("===== PARSER DEBUG FOR MARZOUK =====");
+            System.out.println("Strategy: " + parserStrategy);
+            System.out.println("Built " + blocks.size() + " position blocks");
+            System.out.println("Table lines count: " + tableLines.size());
+            System.out.println("First 5 table lines:");
+            for (int i = 0; i < Math.min(5, tableLines.size()); i++) {
+                System.out.println("  [" + i + "] " + tableLines.get(i));
+            }
+        }
         
         // Step 5: Parse each block
         List<ParsedInvoiceLine> result = blocks.stream()
@@ -207,17 +223,22 @@ public class InvoiceLineItemParser {
     
     /**
      * Build position blocks: group lines by position number.
+     * Strategy A: Standard format with position number (1 234567 Description...)
+     * Strategy B: Marzouk fallback - lines starting with article number only (234567 Description...)
      * Filter out page markers from continuation lines.
      */
     private List<PositionBlock> buildPositionBlocks(List<String> lines) {
         List<PositionBlock> blocks = new ArrayList<>();
         PositionBlock currentBlock = null;
+        int autoPositionNumber = 1;
+        boolean useMarzoukStrategy = false;
         
+        // First pass: Try Strategy A
         for (String line : lines) {
             Matcher matcher = POSITION_START_PATTERN.matcher(line);
             
             if (matcher.matches()) {
-                // New position
+                // Strategy A match found
                 if (currentBlock != null) {
                     blocks.add(currentBlock);
                 }
@@ -227,8 +248,7 @@ public class InvoiceLineItemParser {
                 currentBlock.articleNumber = matcher.group(2);
                 currentBlock.lines.add(matcher.group(3).trim());
             } else if (currentBlock != null && !isPageMarker(line)) {
-                // Continuation line (multi-line description or additional data)
-                // But skip if it's a page marker
+                // Continuation line
                 currentBlock.lines.add(line.trim());
             }
         }
@@ -237,11 +257,50 @@ public class InvoiceLineItemParser {
             blocks.add(currentBlock);
         }
         
+        // If Strategy A found nothing, try Strategy B (Marzouk fallback)
+        if (blocks.isEmpty()) {
+            if (debug) System.out.println("Strategy A failed, trying Strategy B (Marzouk fallback)...");
+            useMarzoukStrategy = true;
+            parserStrategy = "STRATEGY_B_MARZOUK_FALLBACK";
+            
+            currentBlock = null;
+            for (String line : lines) {
+                Matcher matcher = MARZOUK_LINE_PATTERN.matcher(line);
+                
+                if (matcher.matches()) {
+                    // Marzouk format: article number followed by description
+                    if (currentBlock != null) {
+                        blocks.add(currentBlock);
+                    }
+                    
+                    currentBlock = new PositionBlock();
+                    currentBlock.positionNumber = autoPositionNumber++;
+                    currentBlock.articleNumber = matcher.group(1);
+                    currentBlock.lines.add(matcher.group(2).trim());
+                    
+                    if (debug) System.out.println("  Marzouk line detected: pos=" + currentBlock.positionNumber + 
+                                                " art=" + currentBlock.articleNumber + 
+                                                " desc=" + matcher.group(2).substring(0, Math.min(30, matcher.group(2).length())));
+                } else if (currentBlock != null && !isPageMarker(line)) {
+                    // Continuation line
+                    currentBlock.lines.add(line.trim());
+                }
+            }
+            
+            if (currentBlock != null) {
+                blocks.add(currentBlock);
+            }
+        } else {
+            parserStrategy = "STRATEGY_A_STANDARD";
+        }
+        
         return blocks;
     }
     
     /**
      * Parse a position block into ParsedInvoiceLine.
+     * Tolerant mode: Accept lines even if not all numeric values are present.
+     * Set REVIEW_REQUIRED status and add warnings instead of discarding.
      */
     private ParsedInvoiceLine parseBlock(PositionBlock block) {
         try {
@@ -277,9 +336,25 @@ public class InvoiceLineItemParser {
             
             // Remaining tokens = description
             String description = String.join(" ", tokens).trim();
+            if (description.isEmpty()) {
+                description = combinedText; // Fallback: use original text
+            }
             
             // Plausibility check
             double confidence = 0.9;
+            
+            // Check if critical numeric fields are missing
+            int missingFields = 0;
+            if (quantity == null) missingFields++;
+            if (unitPrice == null) missingFields++;
+            if (lineTotal == null) missingFields++;
+            
+            if (missingFields > 0) {
+                warnings.add("Missing " + missingFields + " numeric field(s) - marked for review");
+                confidence = 0.5;
+            }
+            
+            // If we have all values, validate calculation
             if (quantity != null && packagingUnit != null && unitPrice != null && lineTotal != null) {
                 BigDecimal calculated = quantity
                     .multiply(packagingUnit)
@@ -295,12 +370,10 @@ public class InvoiceLineItemParser {
                     ));
                     confidence = 0.7;
                 }
-            } else {
-                confidence = 0.6;
-                warnings.add("Missing numeric values for plausibility check");
             }
             
-            return new ParsedInvoiceLine(
+            // CHANGED: Return line even if fields are missing (don't return null)
+            ParsedInvoiceLine line = new ParsedInvoiceLine(
                 block.positionNumber,
                 block.articleNumber,
                 description,
@@ -316,9 +389,30 @@ public class InvoiceLineItemParser {
                 warnings
             );
             
+            if (debug && !warnings.isEmpty()) {
+                System.out.println("  Position " + block.positionNumber + " warnings: " + warnings);
+            }
+            
+            return line;
+            
         } catch (Exception e) {
             if (debug) System.out.println("Failed to parse block " + block.positionNumber + ": " + e.getMessage());
-            return null;
+            
+            // CHANGED: Return partial line instead of null
+            try {
+                String combinedText = String.join(" ", block.lines);
+                return new ParsedInvoiceLine(
+                    block.positionNumber,
+                    block.articleNumber,
+                    combinedText,
+                    null, null, null, null, null, null, null,
+                    0.3,
+                    combinedText,
+                    List.of("Parse error: " + e.getMessage())
+                );
+            } catch (Exception ex) {
+                return null; // Last resort
+            }
         }
     }
     

@@ -2684,6 +2684,16 @@
     "employee": "عامل"
   },
   "SUPPLIER_INVOICES": {
+    "LIST": {
+      "TYPE": "النوع",
+      "FILENAME": "اسم الملف",
+      "STATUS": "الحالة",
+      "SIZE": "الحجم",
+      "PAGES": "الصفحات",
+      "DATE": "التاريخ",
+      "EMPTY_MESSAGE": "لا توجد مستندات",
+      "ACTIONS": "الإجراءات"
+    },
     "UPLOAD": {
       "ALLOWED_TYPES": "أنواع الملفات المسموحة",
       "OR": "أو",

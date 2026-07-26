@@ -2764,6 +2764,16 @@
     "employee": "Employee"
   },
   "SUPPLIER_INVOICES": {
+    "LIST": {
+      "TYPE": "Type",
+      "FILENAME": "Filename",
+      "STATUS": "Status",
+      "SIZE": "Size",
+      "PAGES": "Pages",
+      "DATE": "Date",
+      "EMPTY_MESSAGE": "No documents available",
+      "ACTIONS": "Actions"
+    },
     "UPLOAD": {
       "ALLOWED_TYPES": "Allowed file types",
       "OR": "or",
