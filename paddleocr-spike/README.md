@@ -54,11 +54,60 @@ sudo ./install.sh
 
 **Dauer**: ~5-10 Minuten (abhängig von Internet-Geschwindigkeit)
 
+**Nach Installation**:
+- Versionen in `requirements-lock.txt` gespeichert
+- Modelle beim ersten OCR-Aufruf heruntergeladen
+
+---
+
+## Smoke Test (ZUERST!)
+
+### 3. Funktionstest ohne Kundendaten
+
+**Vor dem echten Test**: Smoke Test mit synthetischem Dokument.
+
+```bash
+cd /opt/paddleocr-spike
+source venv/bin/activate
+python smoke-test.py
+```
+
+**Prüft**:
+- ✅ PaddleOCR 3.x Import funktioniert
+- ✅ Engine kann initialisiert werden
+- ✅ OCR liefert Output
+- ✅ Keine Crashes
+
+**Erwartete Ausgabe**:
+```
+======================================
+PaddleOCR Smoke Test
+======================================
+✅ PaddlePaddle: 3.0.0b1
+✅ PaddleOCR: 3.0.0
+✅ PaddleOCR 3.x Import erfolgreich
+
+📦 Initialisiere PaddleOCR Engine...
+✅ Engine initialisiert
+
+🖼️  Erstelle synthetisches Testbild...
+✅ Testbild erstellt: (600, 800, 3)
+
+🔍 Führe OCR durch...
+✅ OCR erfolgreich: 6 Zeilen erkannt
+
+======================================
+✅ SMOKE TEST BESTANDEN
+======================================
+```
+
+**Nur bei Erfolg** → weiter mit echtem Test.
+
 ---
 
 ## Test vorbereiten
 
-### 3. PDF-Testdokument ablegen
+### 4. PDF-Testdokument ablegen
 
 ```bash
 # Lokale Datei auf VPS kopieren (NICHT committen!)
@@ -74,7 +123,7 @@ scp /pfad/zu/marzouk-2026-00442.pdf user@vps:/opt/paddleocr-spike/local-test-dat
 
 ## Test ausführen
 
-### 4. Test starten
+### 5. Test starten
 
 ```bash
 cd /opt/paddleocr-spike
