@@ -326,6 +326,14 @@
         <label>{{ 'INVOICE_LINES.EDIT.TAX_RATE' | translate }}</label>
         <input type="number" step="1" [(ngModel)]="editingLine.taxRate" />
       </div>
+      
+      <!-- Phase 3B-3: Learn from correction -->
+      <div class="form-field remember-correction" *ngIf="canRememberCorrection(editingLine)">
+        <mat-checkbox [(ngModel)]="rememberCorrection">
+          {{ 'INVOICE_LINES.EDIT.REMEMBER_CORRECTION' | translate }}
+        </mat-checkbox>
+        <p class="hint">{{ 'INVOICE_LINES.EDIT.REMEMBER_HINT' | translate }}</p>
+      </div>
     </div>
     <div class="drawer-footer">
       <button mat-button (click)="cancelEditLine()">{{ 'COMMON.CANCEL' | translate }}</button>

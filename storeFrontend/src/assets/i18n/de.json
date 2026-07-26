@@ -2974,7 +2974,9 @@
       "VPE": "VPE",
       "UNIT_PRICE": "Einkaufspreis",
       "LINE_TOTAL": "Gesamt",
-      "TAX_RATE": "MwSt."
+      "TAX_RATE": "MwSt.",
+      "REMEMBER_CORRECTION": "Korrektur für zukünftige Rechnungen merken",
+      "REMEMBER_HINT": "Beschreibung, Einheit, VPE und MwSt. werden als Stammdaten gespeichert"
     },
     "SPLIT": {
       "TITLE": "Position aufteilen",

@@ -124,6 +124,7 @@ public class SupplierProductMappingService {
     
     /**
      * Apply learned mappings to a line (suggest product based on supplier + article number).
+     * Phase 3B-3: Also apply learned master data (description, unit, VPE, tax rate).
      */
     public void applyLearnedMapping(storebackend.entity.SupplierInvoiceLine line, String supplierName) {
         if (line.getSupplierArticleNumber() == null || supplierName == null) {
@@ -137,12 +138,116 @@ public class SupplierProductMappingService {
         );
         
         if (mapping.isPresent()) {
+            SupplierProductMapping m = mapping.get();
+            
+            // Apply product mapping
             line.setMappingSource(MappingSource.LEARNED_MAPPING);
-            line.setSuggestedProductId(mapping.get().getProductId());
-            log.debug("Applied learned mapping to line {}: article={} → product={}",
+            line.setSuggestedProductId(m.getProductId());
+            
+            // Phase 3B-3: Apply learned master data as suggestions
+            if (m.getCorrectedDescription() != null && !m.getCorrectedDescription().trim().isEmpty()) {
+                line.setDescription(m.getCorrectedDescription());
+            }
+            if (m.getDefaultUnit() != null && !m.getDefaultUnit().trim().isEmpty()) {
+                line.setUnit(m.getDefaultUnit());
+            }
+            if (m.getDefaultPackagingUnit() != null) {
+                line.setPackagingUnit(m.getDefaultPackagingUnit());
+            }
+            if (m.getDefaultTaxRate() != null) {
+                line.setTaxRate(m.getDefaultTaxRate());
+            }
+            
+            log.debug("Applied learned mapping to line {}: article={} → product={}, desc={}, unit={}, vpe={}, tax={}",
                 line.getPositionNumber(),
                 line.getSupplierArticleNumber(),
-                mapping.get().getProductId());
+                m.getProductId(),
+                m.getCorrectedDescription() != null ? m.getCorrectedDescription().substring(0, Math.min(20, m.getCorrectedDescription().length())) + "..." : null,
+                m.getDefaultUnit(),
+                m.getDefaultPackagingUnit(),
+                m.getDefaultTaxRate());
         }
+    }
+    
+    /**
+     * Phase 3B-3: Learn master data from user correction.
+     * Stores corrected description, default unit, VPE, tax rate, and product mapping.
+     * Only transactional (quantity, prices, discount) are NOT learned.
+     */
+    @Transactional
+    public void learnMasterData(
+        Long storeId,
+        String supplierName,
+        String supplierArticleNumber,
+        String correctedDescription,
+        String defaultUnit,
+        java.math.BigDecimal defaultPackagingUnit,
+        java.math.BigDecimal defaultTaxRate,
+        Long productId
+    ) {
+        if (supplierName == null || supplierArticleNumber == null) {
+            log.warn("Cannot learn master data: missing supplier name or article number");
+            return;
+        }
+        
+        String normalizedSupplier = normalizer.normalize(supplierName);
+        String trimmedArticle = supplierArticleNumber.trim();
+        
+        Optional<SupplierProductMapping> existing = mappingRepository
+            .findByStoreIdAndNormalizedSupplierNameAndSupplierArticleNumberAndActiveTrue(
+                storeId,
+                normalizedSupplier,
+                trimmedArticle
+            );
+        
+        SupplierProductMapping mapping;
+        
+        if (existing.isPresent()) {
+            mapping = existing.get();
+            
+            // Update product mapping if provided and different
+            if (productId != null && !productId.equals(mapping.getProductId())) {
+                mapping.setProductId(productId);
+                mapping.setConfirmationCount(1); // Reset on product change
+            } else if (productId != null) {
+                mapping.setConfirmationCount(mapping.getConfirmationCount() + 1);
+            }
+        } else {
+            // Create new mapping
+            mapping = new SupplierProductMapping();
+            mapping.setStoreId(storeId);
+            mapping.setSupplierName(supplierName);
+            mapping.setNormalizedSupplierName(normalizedSupplier);
+            mapping.setSupplierArticleNumber(trimmedArticle);
+            mapping.setConfirmationCount(1);
+            mapping.setActive(true);
+            
+            if (productId != null) {
+                mapping.setProductId(productId);
+            }
+        }
+        
+        // Update master data fields (Phase 3B-3)
+        if (correctedDescription != null && !correctedDescription.trim().isEmpty()) {
+            mapping.setCorrectedDescription(correctedDescription);
+        }
+        if (defaultUnit != null && !defaultUnit.trim().isEmpty()) {
+            mapping.setDefaultUnit(defaultUnit);
+        }
+        if (defaultPackagingUnit != null) {
+            mapping.setDefaultPackagingUnit(defaultPackagingUnit);
+        }
+        if (defaultTaxRate != null) {
+            mapping.setDefaultTaxRate(defaultTaxRate);
+        }
+        
+        mapping.setLastConfirmedAt(java.time.LocalDateTime.now());
+        
+        mappingRepository.save(mapping);
+        
+        log.info("Learned master data: store={} supplier={} article={} → desc={} unit={} vpe={} tax={} product={}",
+            storeId, normalizedSupplier, trimmedArticle, 
+            correctedDescription != null ? correctedDescription.substring(0, Math.min(30, correctedDescription.length())) + "..." : null,
+            defaultUnit, defaultPackagingUnit, defaultTaxRate, productId);
     }
 }

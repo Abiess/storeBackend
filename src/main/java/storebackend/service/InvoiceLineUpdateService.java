@@ -92,12 +92,58 @@ public class InvoiceLineUpdateService {
             line.setStatus(LineStatus.CONFIRMED);
         }
         
+        // Phase 3B-3: Learn from correction if requested
+        if (Boolean.TRUE.equals(request.getRememberCorrection())) {
+            learnFromCorrection(storeId, documentId, line);
+        }
+        
         // Recalculate plausibility and warnings
         recalculateWarnings(line);
         
         return lineRepository.save(line);
     }
     
+    /**
+     * Phase 3B-3: Learn master data from user correction for future invoices.
+     * Only learns if supplier name and supplier article number are available.
+     */
+    private void learnFromCorrection(Long storeId, Long documentId, SupplierInvoiceLine line) {
+        // Require supplier article number
+        if (line.getSupplierArticleNumber() == null || line.getSupplierArticleNumber().trim().isEmpty()) {
+            log.warn("Cannot learn from correction: missing supplier article number");
+            return;
+        }
+        
+        // Get supplier name from parse result
+        String supplierName = null;
+        Optional<SupplierInvoiceParseResult> parseResult = 
+            parseResultRepository.findByDocumentIdAndStoreId(documentId, storeId);
+        if (parseResult.isPresent()) {
+            supplierName = parseResult.get().getSupplierName();
+        }
+        
+        if (supplierName == null || supplierName.trim().isEmpty()) {
+            log.warn("Cannot learn from correction: missing supplier name");
+            return;
+        }
+        
+        // Learn the master data (description, unit, VPE, tax rate, product mapping)
+        productMappingService.learnMasterData(
+            storeId,
+            supplierName,
+            line.getSupplierArticleNumber(),
+            line.getDescription(),
+            line.getUnit(),
+            line.getPackagingUnit(),
+            line.getTaxRate(),
+            line.getSuggestedProductId()
+        );
+        
+        log.info("Learned master data: store={} supplier={} article={} → description={} unit={} vpe={} tax={} product={}",
+            storeId, supplierName, line.getSupplierArticleNumber(), 
+            line.getDescription(), line.getUnit(), line.getPackagingUnit(), line.getTaxRate(), line.getSuggestedProductId());
+    }
+
     /**
      * Map a line to a product.
      */

@@ -57,6 +57,7 @@ export class InvoiceLinesPageComponent implements OnInit, OnDestroy {
   
   // Drawer/Dialog state
   editingLine: InvoiceLine | null = null;
+  rememberCorrection = false; // Phase 3B-3: Learn from correction checkbox
   mappingLine: InvoiceLine | null = null;
   splitDialogLine: InvoiceLine | null = null;
   splitPosition = 0;
@@ -222,10 +223,17 @@ export class InvoiceLinesPageComponent implements OnInit, OnDestroy {
   
   startEditLine(line: InvoiceLine) {
     this.editingLine = { ...line };
+    this.rememberCorrection = false; // Reset checkbox
   }
   
   cancelEditLine() {
     this.editingLine = null;
+    this.rememberCorrection = false;
+  }
+  
+  canRememberCorrection(line: InvoiceLine): boolean {
+    // Can only learn if supplier article number is present
+    return !!(line && line.supplierArticleNumber && line.supplierArticleNumber.trim());
   }
   
   saveEditLine() {
@@ -240,7 +248,8 @@ export class InvoiceLinesPageComponent implements OnInit, OnDestroy {
       unitPrice: this.editingLine.unitPrice,
       lineTotal: this.editingLine.lineTotal,
       taxRate: this.editingLine.taxRate,
-      discount: this.editingLine.discount
+      discount: this.editingLine.discount,
+      rememberCorrection: this.rememberCorrection // Phase 3B-3
     };
     
     this.invoiceService.updateInvoiceLine(this.storeId, this.documentId, this.editingLine.id, updates)
@@ -252,6 +261,7 @@ export class InvoiceLinesPageComponent implements OnInit, OnDestroy {
             this.lines[index] = updated;
           }
           this.editingLine = null;
+          this.rememberCorrection = false;
           this.snackBar.open('Gespeichert', 'OK', { duration: 2000 });
         },
         error: (err: any) => {

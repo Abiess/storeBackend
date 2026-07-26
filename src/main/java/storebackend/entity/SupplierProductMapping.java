@@ -39,7 +39,23 @@ public class SupplierProductMapping {
     @Column(name = "product_id", nullable = false)
     private Long productId;
     
-    // Additional context
+    // Phase 3B-3: Master Data Learning - corrected values for future invoices
+    @Column(name = "corrected_description", length = 1000)
+    private String correctedDescription;
+    
+    @Column(name = "default_unit", length = 50)
+    private String defaultUnit;
+    
+    @Column(name = "default_packaging_unit", precision = 19, scale = 4)
+    private BigDecimal defaultPackagingUnit;
+    
+    @Column(name = "default_tax_rate", precision = 5, scale = 2)
+    private BigDecimal defaultTaxRate;
+    
+    @Column(name = "last_confirmed_at")
+    private LocalDateTime lastConfirmedAt;
+    
+    // Legacy fields (kept for backward compatibility)
     @Column(name = "packaging_unit", precision = 19, scale = 4)
     private BigDecimal packagingUnit;
     
