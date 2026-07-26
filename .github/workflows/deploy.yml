@@ -146,6 +146,75 @@ jobs:
           target: "/opt/storebackend/"
           strip_components: 0
 
+      # ── PaddleOCR Spike deployen (KEIN Auto-Install!) ──────────────
+      # Nur Dateien übertragen, keine Installation, keine Tests.
+      # Lokale Testdaten (local-test-data/, local-test-output/, venv/)
+      # werden NICHT übertragen und bleiben auf dem Server erhalten.
+      - name: Check for customer PDFs in paddleocr-spike (security)
+        run: |
+          echo "🔒 Prüfe paddleocr-spike auf Kundendaten..."
+          FOUND_PDF=$(find paddleocr-spike -type f \( -iname "*.pdf" -o -iname "*.png" -o -iname "*.jpg" \) 2>/dev/null || true)
+          if [ -n "$FOUND_PDF" ]; then
+            echo "❌ FEHLER: Kundendaten gefunden in paddleocr-spike!"
+            echo "$FOUND_PDF"
+            echo ""
+            echo "Diese Dateien dürfen NIEMALS deployed werden!"
+            exit 1
+          fi
+          echo "✅ Keine Kundendaten gefunden"
+
+      - name: Deploy PaddleOCR Spike files to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          source: "paddleocr-spike/install.sh,paddleocr-spike/run-test.sh,paddleocr-spike/test_paddleocr.py,paddleocr-spike/smoke-test.py,paddleocr-spike/cleanup.sh,paddleocr-spike/requirements.txt,paddleocr-spike/README.md,paddleocr-spike/SETUP.md"
+          target: "/tmp/paddleocr-spike-deploy/"
+          strip_components: 1
+
+      - name: Install PaddleOCR Spike files (preserve local data)
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            echo "📦 Installing PaddleOCR spike files..."
+            
+            # Zielverzeichnis anlegen (falls nicht vorhanden)
+            sudo install -d -m 750 /opt/paddleocr-spike
+            
+            # Dateien kopieren (KEIN rm -rf, KEIN rsync --delete!)
+            # Lokale Daten bleiben erhalten: venv/, local-test-data/, local-test-output/
+            sudo cp /tmp/paddleocr-spike-deploy/install.sh /opt/paddleocr-spike/
+            sudo cp /tmp/paddleocr-spike-deploy/run-test.sh /opt/paddleocr-spike/
+            sudo cp /tmp/paddleocr-spike-deploy/test_paddleocr.py /opt/paddleocr-spike/
+            sudo cp /tmp/paddleocr-spike-deploy/smoke-test.py /opt/paddleocr-spike/
+            sudo cp /tmp/paddleocr-spike-deploy/cleanup.sh /opt/paddleocr-spike/
+            sudo cp /tmp/paddleocr-spike-deploy/requirements.txt /opt/paddleocr-spike/
+            sudo cp /tmp/paddleocr-spike-deploy/README.md /opt/paddleocr-spike/
+            sudo cp /tmp/paddleocr-spike-deploy/SETUP.md /opt/paddleocr-spike/
+            
+            # Berechtigungen setzen
+            sudo chmod 750 /opt/paddleocr-spike/*.sh
+            sudo chmod 640 /opt/paddleocr-spike/*.py
+            sudo chmod 640 /opt/paddleocr-spike/*.txt
+            sudo chmod 640 /opt/paddleocr-spike/*.md
+            
+            # Temp-Ordner aufräumen
+            rm -rf /tmp/paddleocr-spike-deploy
+            
+            echo ""
+            echo "✅ PaddleOCR spike files deployed to /opt/paddleocr-spike"
+            echo "ℹ️  Installation was not started"
+            echo "ℹ️  Run manually: cd /opt/paddleocr-spike && sudo ./install.sh"
+            echo ""
+            echo "📂 Deployed files:"
+            ls -lh /opt/paddleocr-spike/*.sh /opt/paddleocr-spike/*.py /opt/paddleocr-spike/*.txt /opt/paddleocr-spike/*.md 2>/dev/null || true
+
       # ── Angular Frontend deployen ───────────────────────────────────
       # dist/markt-ma-frontend/ → /var/www/markt.ma (nginx Root)
       - name: Deploy Frontend to VPS (/var/www/markt.ma)
