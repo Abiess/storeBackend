@@ -1,0 +1,19 @@
+# PaddleOCR Spike - Python Dependencies
+# Für Ubuntu VPS mit Python 3.8+
+
+# PaddlePaddle (CPU-Version)
+paddlepaddle==2.6.0
+
+# PaddleOCR
+paddleocr==2.7.3
+
+# PDF-Verarbeitung
+pdf2image==1.16.3
+Pillow==10.2.0
+
+# System-Monitoring
+psutil==5.9.8
+
+# Utilities
+numpy>=1.23.5
+opencv-python-headless>=4.8.0
