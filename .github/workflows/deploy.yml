@@ -215,6 +215,34 @@ jobs:
             echo "📂 Deployed files:"
             ls -lh /opt/paddleocr-spike/*.sh /opt/paddleocr-spike/*.py /opt/paddleocr-spike/*.txt /opt/paddleocr-spike/*.md 2>/dev/null || true
 
+      # ── Invoice AI Service deployen (KEIN Auto-Install!) ───────────
+      # Dateien für separaten FastAPI-Service auf ai.markt.ma
+      # KEINE automatische Installation, KEINE automatische Aktivierung.
+      - name: Deploy Invoice AI Service files to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          source: "invoice-ai-service/main.py,invoice-ai-service/models.py,invoice-ai-service/requirements.txt,invoice-ai-service/invoice-ai.service,invoice-ai-service/nginx-ai-markt-ma.conf,invoice-ai-service/deploy-invoice-ai.sh"
+          target: "/tmp/invoice-ai-service-deploy/"
+          strip_components: 1
+
+      - name: Install Invoice AI Service files (no auto-activation)
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            echo "📦 Deploying Invoice AI Service..."
+            
+            # Deployment-Script ausführen
+            chmod +x /tmp/invoice-ai-service-deploy/deploy-invoice-ai.sh
+            bash /tmp/invoice-ai-service-deploy/deploy-invoice-ai.sh
+
       # ── Angular Frontend deployen ───────────────────────────────────
       # dist/markt-ma-frontend/ → /var/www/markt.ma (nginx Root)
       - name: Deploy Frontend to VPS (/var/www/markt.ma)

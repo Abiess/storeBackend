@@ -1,0 +1,28 @@
+[Unit]
+Description=Invoice AI Service (Ollama qwen2.5vl:3b)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/invoice-ai-service
+
+# Environment-Datei mit INVOICE_AI_TOKEN
+EnvironmentFile=/etc/markt-ma/invoice-ai.env
+
+# FastAPI mit uvicorn
+ExecStart=/opt/invoice-ai-service/venv/bin/python /opt/invoice-ai-service/main.py
+
+# Restart-Strategie
+Restart=on-failure
+RestartSec=10s
+StartLimitInterval=300s
+StartLimitBurst=5
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=invoice-ai
+
+[Install]
+WantedBy=multi-user.target
