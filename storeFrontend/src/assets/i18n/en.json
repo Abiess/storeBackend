@@ -2883,13 +2883,14 @@
     },
     "SEARCH_PLACEHOLDER": "Search by article number or description...",
     "TABLE": {
+      "SELECT": "Select",
       "POS": "Pos.",
       "ARTICLE_NR": "Article No.",
       "DESCRIPTION": "Description",
       "QUANTITY": "Quantity",
       "UNIT": "Unit",
       "VPE": "Pkg Unit",
-      "UNIT_PRICE": "Unit Price",
+      "UNIT_PRICE": "Price",
       "LINE_TOTAL": "Total",
       "TAX_RATE": "VAT",
       "PRODUCT": "Product",
@@ -2902,12 +2903,15 @@
     },
     "ACTIONS": {
       "ADD_LINE": "Add Line Item",
-      "BULK_CONFIRM": "Confirm All",
+      "BULK_CONFIRM": "Confirm Selected",
       "EDIT": "Edit",
+      "ASSIGN": "Assign Product",
       "ASSIGN_PRODUCT": "Assign Product",
       "SPLIT": "Split",
+      "MERGE_NEXT": "Merge with Next",
       "MERGE": "Merge",
-      "DELETE": "Delete"
+      "DELETE": "Delete",
+      "MORE": "More Actions"
     },
     "CREATE": {
       "TITLE": "Add New Line Item",
@@ -2929,7 +2933,9 @@
       "VPE": "Pkg Unit",
       "UNIT_PRICE": "Unit Price",
       "LINE_TOTAL": "Total",
-      "TAX_RATE": "VAT"
+      "TAX_RATE": "VAT",
+      "REMEMBER_CORRECTION": "Remember correction for future invoices",
+      "REMEMBER_HINT": "Description, unit, packaging unit and tax rate will be saved as master data"
     },
     "SPLIT": {
       "TITLE": "Split Line Item",
@@ -2940,8 +2946,9 @@
       "CONFIRM": "Split"
     },
     "WARNINGS": {
-      "COUNT": "warning(s)",
-      "MISSING_NUMERIC_FIELDS": "Numeric values missing",
+      "COUNT": "{{count}} hint",
+      "COUNT_PLURAL": "{{count}} hints",
+      "MISSING_NUMERIC_FIELDS": "{{count}} numeric values missing",
       "LINE_TOTAL_MISMATCH": "Total amount mismatch",
       "ARTICLE_NUMBER_MISSING": "Article number not detected"
     },

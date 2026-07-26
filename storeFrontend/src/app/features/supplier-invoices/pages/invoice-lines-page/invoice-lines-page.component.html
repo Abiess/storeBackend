@@ -100,8 +100,9 @@
             <div class="description-cell">
               <p class="description-text">{{ line.description || '—' }}</p>
               <div class="warnings" *ngIf="line.warnings.length > 0">
-                <span class="warning-badge" [matTooltip]="line.warnings.join('\n')">
-                  ⚠️ {{ line.warnings.length }} {{ 'INVOICE_LINES.WARNINGS.COUNT' | translate }}
+                <span class="warning-badge" [matTooltip]="line.warnings.join(' • ')">
+                  <lucide-icon name="alert-circle" [size]="12"></lucide-icon>
+                  {{ 'INVOICE_LINES.WARNINGS.MISSING_NUMERIC_FIELDS' | translate: {count: line.warnings.length} }}
                 </span>
               </div>
             </div>
@@ -134,7 +135,7 @@
                 <span>{{ 'INVOICE_LINES.ACTIONS.EDIT' | translate }}</span>
               </button>
               <button mat-menu-item (click)="mappingLine = line">
-                <lucide-icon name="link" [size]="16"></lucide-icon>
+                <lucide-icon name="link-2" [size]="16"></lucide-icon>
                 <span>{{ 'INVOICE_LINES.ACTIONS.ASSIGN_PRODUCT' | translate }}</span>
               </button>
               <button mat-menu-item (click)="startSplitLine(line)">
@@ -176,7 +177,7 @@
             <span>{{ 'INVOICE_LINES.ACTIONS.EDIT' | translate }}</span>
           </button>
           <button mat-menu-item (click)="mappingLine = line">
-            <lucide-icon name="link" [size]="16"></lucide-icon>
+            <lucide-icon name="link-2" [size]="16"></lucide-icon>
             <span>{{ 'INVOICE_LINES.ACTIONS.ASSIGN_PRODUCT' | translate }}</span>
           </button>
           <button mat-menu-item (click)="startSplitLine(line)">
@@ -220,7 +221,10 @@
           <span>{{ line.lineTotal | number:'1.2-2' }} €</span>
         </div>
         <div class="warnings" *ngIf="line.warnings.length > 0">
-          <span class="warning-badge">⚠️ {{ line.warnings.length }} {{ 'INVOICE_LINES.WARNINGS.COUNT' | translate }}</span>
+          <span class="warning-badge">
+            <lucide-icon name="alert-circle" [size]="12"></lucide-icon>
+            {{ 'INVOICE_LINES.WARNINGS.MISSING_NUMERIC_FIELDS' | translate: {count: line.warnings.length} }}
+          </span>
         </div>
       </div>
     </div>
@@ -381,3 +385,4 @@
     </div>
   </div>
 </div>
+

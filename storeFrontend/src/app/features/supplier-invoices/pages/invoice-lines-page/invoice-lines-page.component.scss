@@ -174,27 +174,32 @@
     font-size: 0.875rem;
 
     thead tr {
-      background: #f8f9fa;
+      background: #f5f5f5;
+      position: sticky;
+      top: 0;
+      z-index: 15;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 
       th {
         padding: 1rem 0.75rem;
         text-align: left;
         font-weight: 600;
-        color: #666;
-        border-bottom: 2px solid #e0e0e0;
+        color: #333;
+        background: #f5f5f5;
+        border-bottom: 2px solid #d0d0d0;
         white-space: nowrap;
 
         &.sticky-left {
           position: sticky;
-          background: #f8f9fa;
-          z-index: 10;
+          background: #f5f5f5;
+          z-index: 20;
         }
 
         &.sticky-right {
           position: sticky;
           right: 0;
-          background: #f8f9fa;
-          z-index: 10;
+          background: #f5f5f5;
+          z-index: 20;
         }
       }
     }
@@ -238,24 +243,24 @@
 
     // Column widths and sticky positions
     .col-checkbox {
-      width: 48px;
+      width: 44px;
       left: 0;
     }
 
     .col-pos {
-      width: 60px;
-      left: 48px;
+      width: 56px;
+      left: 44px;
     }
 
     .col-article {
-      width: 140px;
-      left: 108px;
+      width: 90px;
+      left: 100px;
     }
 
     .col-description {
-      min-width: 320px;
+      min-width: 360px;
       max-width: 520px;
-      left: 248px;
+      left: 190px;
 
       .description-cell {
         .description-text {
@@ -269,30 +274,56 @@
 
         .warnings {
           .warning-badge {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
             padding: 0.25rem 0.5rem;
-            background: #ffe0b2;
-            color: #e65100;
+            background: #fff3cd;
+            color: #856404;
             border-radius: 4px;
             font-size: 0.75rem;
             cursor: help;
+            
+            lucide-icon {
+              width: 12px;
+              height: 12px;
+            }
           }
         }
       }
     }
 
-    .col-quantity,
-    .col-unit,
-    .col-vpe,
-    .col-price,
-    .col-total,
-    .col-tax {
+    .col-quantity {
+      width: 90px;
+      text-align: right;
+    }
+
+    .col-unit {
+      width: 90px;
+    }
+
+    .col-vpe {
+      width: 80px;
+      text-align: right;
+    }
+
+    .col-price {
       width: 100px;
       text-align: right;
     }
 
+    .col-total {
+      width: 110px;
+      text-align: right;
+    }
+
+    .col-tax {
+      width: 80px;
+      text-align: right;
+    }
+
     .col-product {
-      width: 160px;
+      width: 180px;
 
       .mapped-indicator {
         display: flex;
@@ -312,11 +343,11 @@
 
     .col-status {
       width: 120px;
-      right: 60px;
+      right: 72px;
     }
 
     .col-actions {
-      width: 60px;
+      width: 72px;
       right: 0;
       text-align: center;
     }

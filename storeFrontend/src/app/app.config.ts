@@ -17,7 +17,9 @@ import {
   Building, Wallet, Heart,
   // Supplier Invoice Icons
   FileText, Upload, Eye, Trash2, Download, RotateCw, ZoomIn, ZoomOut, CloudUpload,
-  PanelRightOpen, PanelRightClose, AlertCircle, Copy, Edit, Plus
+  PanelRightOpen, PanelRightClose, AlertCircle, Copy, Edit, Plus,
+  // Invoice Lines Actions Icons
+  Scissors, Merge, MoveVertical, MoreVertical
 } from 'lucide-angular';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS, HttpClient } from '@angular/common/http';
@@ -77,7 +79,9 @@ export const appConfig: ApplicationConfig = {
         Building, Wallet, Heart,
         // Supplier Invoice Icons
         FileText, Upload, Eye, Trash2, Download, RotateCw, ZoomIn, ZoomOut, CloudUpload,
-        PanelRightOpen, PanelRightClose, AlertCircle, Copy, Edit, Plus
+        PanelRightOpen, PanelRightClose, AlertCircle, Copy, Edit, Plus,
+        // Invoice Lines Actions
+        Scissors, Merge, MoveVertical, MoreVertical
       })
     },
     // Standard Locale (kann dynamisch überschrieben werden)

@@ -2928,13 +2928,14 @@
     },
     "SEARCH_PLACEHOLDER": "Nach Artikelnummer oder Beschreibung suchen...",
     "TABLE": {
+      "SELECT": "Auswahl",
       "POS": "Pos.",
       "ARTICLE_NR": "Art.-Nr.",
       "DESCRIPTION": "Beschreibung",
       "QUANTITY": "Menge",
       "UNIT": "Einheit",
       "VPE": "VPE",
-      "UNIT_PRICE": "Einkaufspreis",
+      "UNIT_PRICE": "Preis",
       "LINE_TOTAL": "Gesamt",
       "TAX_RATE": "MwSt.",
       "PRODUCT": "Produkt",
@@ -2947,12 +2948,15 @@
     },
     "ACTIONS": {
       "ADD_LINE": "Position hinzufügen",
-      "BULK_CONFIRM": "Alle bestätigen",
+      "BULK_CONFIRM": "Ausgewählte bestätigen",
       "EDIT": "Bearbeiten",
+      "ASSIGN": "Produkt zuordnen",
       "ASSIGN_PRODUCT": "Produkt zuordnen",
       "SPLIT": "Aufteilen",
+      "MERGE_NEXT": "Mit nächster Position zusammenführen",
       "MERGE": "Zusammenführen",
-      "DELETE": "Löschen"
+      "DELETE": "Löschen",
+      "MORE": "Weitere Aktionen"
     },
     "CREATE": {
       "TITLE": "Neue Position hinzufügen",
@@ -2987,8 +2991,9 @@
       "CONFIRM": "Aufteilen"
     },
     "WARNINGS": {
-      "COUNT": "Warnung(en)",
-      "MISSING_NUMERIC_FIELDS": "Zahlenwerte fehlen",
+      "COUNT": "{{count}} Hinweis",
+      "COUNT_PLURAL": "{{count}} Hinweise",
+      "MISSING_NUMERIC_FIELDS": "{{count}} Zahlenwerte fehlen",
       "LINE_TOTAL_MISMATCH": "Gesamtbetrag stimmt nicht überein",
       "ARTICLE_NUMBER_MISSING": "Artikelnummer nicht erkannt"
     },
