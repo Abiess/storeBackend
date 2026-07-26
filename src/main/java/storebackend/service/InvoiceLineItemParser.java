@@ -27,14 +27,20 @@ public class InvoiceLineItemParser {
         "^(\\d{1,3})\\s+(\\d{3,6})\\s+(.+)$"
     );
     
-    // Strategy B: Marzouk fallback - line starting with article number (no position number)
+    // Strategy B: Marzouk fallback - line starting with article number (3-8 digits, tolerates pipes/OCR noise)
     private static final Pattern MARZOUK_LINE_PATTERN = Pattern.compile(
-        "^(\\d{5,8})\\s+(.+)$"
+        "^\\s*['\">_|\\[]*\\s*(\\d{3,8})\\s*[|_\\]]*\\s*(.+)$"
+    );
+    
+    // Pattern for product lines without article number (OCR missed it)
+    private static final Pattern PRODUCT_LINE_WITHOUT_NUMBER = Pattern.compile(
+        "^\\s*[A-ZÄÖÜ]{2,}.*\\d.*$" // Starts with uppercase word, contains digit later
     );
     
     private static final Set<String> TABLE_START_MARKERS = Set.of(
-        "pos", "a-nr", "artikel", "beschreibung", "menge", "einheit", 
-        "vpe", "e-preis", "gpreis", "mwst", "kolli", "preis", "betrag"
+        "pos", "a-nr", "artikel", "trio", "beschreibung", "menge", "monge", "enge",
+        "einheit", "vpe", "e-preis", "gpreis", "preis", "mwst", "kolli", "betrag", "borg", 
+        "st", "stv", "six", "katt"
     );
     
     private static final Set<String> TABLE_END_MARKERS = Set.of(
@@ -49,12 +55,12 @@ public class InvoiceLineItemParser {
     // Page break and document metadata patterns to filter
     private static final Pattern PAGE_MARKER_PATTERN = Pattern.compile(
         "(?i)^\\s*(" +
-        "fortsetzung(\\s+(auf\\s+)?nächster\\s+seite|(\\s+lieferschein|\\s+rechnung)\\s+\\d+)?|" +
+        "fortsetzung(\\s+(auf\\s+)?(nächster|nachster)\\s+seite)?|" +
         "seite\\s*\\d+\\s*/\\s*\\d+|" +
         "lieferschein\\s+\\d+|" +
         "rechnung\\s+\\d+|" +
         "mit\\s+camscanner\\s+gescannt" +
-        ")\\s*$"
+        ")\\s*[.]*\\s*$"
     );
     
     private final boolean debug;
@@ -127,16 +133,31 @@ public class InvoiceLineItemParser {
     }
     
     /**
-     * Normalize text: trim, lowercase for matching.
+     * Normalize text: trim, clean OCR artifacts (pipes, brackets).
      * Filter out page markers and document metadata.
      */
     private List<String> normalizeText(String rawText) {
         return Arrays.stream(rawText.split("\\r?\\n"))
+            .map(this::cleanOcrLine)
             .map(String::trim)
             .filter(line -> !line.isEmpty())
             .filter(line -> !line.equals("--- PAGE BREAK ---"))
             .filter(line -> !isPageMarker(line))
             .collect(Collectors.toList());
+    }
+    
+    /**
+     * Clean OCR artifacts from line: normalize pipes, brackets, underscores.
+     * Keep decimal separators intact.
+     */
+    private String cleanOcrLine(String line) {
+        // Replace multiple pipes/brackets/underscores with single space
+        line = line.replaceAll("[|\\[\\]_]{2,}", " ");
+        // Replace single structural characters with space (but not in numbers)
+        line = line.replaceAll("(?<!\\d)[|\\[\\]_](?!\\d)", " ");
+        // Collapse multiple spaces
+        line = line.replaceAll("\\s{2,}", " ");
+        return line;
     }
     
     /**
@@ -147,7 +168,7 @@ public class InvoiceLineItemParser {
     }
     
     /**
-     * Detect table start and end.
+     * Detect table start and end with OCR-tolerant header recognition.
      */
     private TableRegion detectTableRegion(List<String> lines) {
         Integer startLine = null;
@@ -156,14 +177,22 @@ public class InvoiceLineItemParser {
         for (int i = 0; i < lines.size(); i++) {
             String line = lines.get(i).toLowerCase();
             
-            // Start: line contains table header keywords
+            // Start: line contains table header keywords (tolerant for OCR errors)
             if (startLine == null) {
                 long headerCount = TABLE_START_MARKERS.stream()
                     .filter(line::contains)
                     .count();
                 
-                if (headerCount >= 3) {
+                // Require: beschreibung/preis + at least one of (menge/betrag/st)
+                boolean hasDescription = line.contains("beschreibung") || line.contains("katt");
+                boolean hasPrice = line.contains("preis");
+                boolean hasQtyOrAmount = line.contains("menge") || line.contains("monge") || 
+                                        line.contains("enge") || line.contains("betrag") || 
+                                        line.contains("borg") || line.contains("st");
+                
+                if ((headerCount >= 3) || (hasDescription && hasPrice && hasQtyOrAmount)) {
                     startLine = i + 1; // Start after header
+                    if (debug) System.out.println("Table header detected at line " + i + ": " + line);
                     if (debug) System.out.println("Table starts at line " + startLine);
                 }
             }
@@ -224,7 +253,8 @@ public class InvoiceLineItemParser {
     /**
      * Build position blocks: group lines by position number.
      * Strategy A: Standard format with position number (1 234567 Description...)
-     * Strategy B: Marzouk fallback - lines starting with article number only (234567 Description...)
+     * Strategy B: Marzouk fallback - lines starting with 3-8 digit article number
+     * Strategy C: Product lines without article number (OCR missed it)
      * Filter out page markers from continuation lines.
      */
     private List<PositionBlock> buildPositionBlocks(List<String> lines) {
@@ -279,11 +309,31 @@ public class InvoiceLineItemParser {
                     currentBlock.lines.add(matcher.group(2).trim());
                     
                     if (debug) System.out.println("  Marzouk line detected: pos=" + currentBlock.positionNumber + 
-                                                " art=" + currentBlock.supplierArticleNumber +
+                                                " art=" + currentBlock.supplierArticleNumber + 
                                                 " desc=" + matcher.group(2).substring(0, Math.min(30, matcher.group(2).length())));
                 } else if (currentBlock != null && !isPageMarker(line)) {
-                    // Continuation line
-                    currentBlock.lines.add(line.trim());
+                    // Check if this might be a product line without article number
+                    Matcher noNumberMatcher = PRODUCT_LINE_WITHOUT_NUMBER.matcher(line);
+                    if (noNumberMatcher.matches() && currentBlock.lines.isEmpty()) {
+                        // Looks like a product line but OCR missed the article number
+                        // Start a new block without article number
+                        if (currentBlock != null) {
+                            blocks.add(currentBlock);
+                        }
+                        
+                        currentBlock = new PositionBlock();
+                        currentBlock.positionNumber = autoPositionNumber++;
+                        currentBlock.supplierArticleNumber = null; // Missing
+                        currentBlock.lines.add(line.trim());
+                        currentBlock.missingArticleNumber = true;
+                        
+                        if (debug) System.out.println("  Product line without article number: pos=" + 
+                                                    currentBlock.positionNumber + " desc=" + 
+                                                    line.substring(0, Math.min(30, line.length())));
+                    } else {
+                        // Continuation line
+                        currentBlock.lines.add(line.trim());
+                    }
                 }
             }
             
@@ -352,6 +402,12 @@ public class InvoiceLineItemParser {
             if (missingFields > 0) {
                 warnings.add("Missing " + missingFields + " numeric field(s) - marked for review");
                 confidence = 0.5;
+            }
+            
+            // Special warning if article number is missing (OCR error)
+            if (block.supplierArticleNumber == null || block.supplierArticleNumber.isEmpty()) {
+                warnings.add("Article number not detected by OCR");
+                confidence = 0.4;
             }
             
             // If we have all values, validate calculation
@@ -537,5 +593,6 @@ public class InvoiceLineItemParser {
         int positionNumber;
         String supplierArticleNumber;
         List<String> lines = new ArrayList<>();
+        boolean missingArticleNumber = false; // OCR missed article number
     }
 }
