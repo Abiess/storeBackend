@@ -3070,6 +3070,8 @@
   },
   "IMPORT_PREVIEW": {
     "TITLE": "Importvorschau",
+    "OPEN_PREVIEW": "Importvorschau öffnen",
+    "BUTTON_DISABLED_HINT": "Prüfen oder zuordnen Sie zuerst mindestens eine Position",
     "LOADING": "Vorschau wird geladen...",
     "BACK_TO_LINES": "Zurück zu den Positionen",
     "RELOAD": "Vorschau neu laden",
@@ -3096,9 +3098,11 @@
       "PACKAGING": "VPE",
       "STOCK_ADD": "Bestandszugang",
       "CATEGORY_ID": "Kategorie-ID",
+      "SELECT_CATEGORY": "Kategorie auswählen",
       "CATEGORY_PLACEHOLDER": "z.B. 5 für Gewürze",
       "CATEGORY_HINT": "Bitte die ID der passenden Kategorie eingeben",
       "RETAIL_PRICE": "Verkaufspreis",
+      "MARKUP": "Aufschlag",
       "PRICE_PLACEHOLDER": "z.B. 4.99",
       "PRICE_HINT": "Preis für Endkunden in Euro"
     },
@@ -3133,7 +3137,8 @@
       "SELLING_PRICE_REQUIRED": "Verkaufspreis fehlt",
       "STOCK_QUANTITY_CONFIRMATION_REQUIRED": "Bestandsmenge muss bestätigt werden",
       "ALREADY_IMPORTED": "Bereits importiert",
-      "PRODUCT_NOT_FOUND": "Produkt nicht gefunden"
+      "PRODUCT_NOT_FOUND": "Produkt nicht gefunden",
+      "ERROR": "Fehler"
     },
     "SELECTION": {
       "SELECTED": "{{selected}} von {{total}} importierbaren Positionen ausgewählt",

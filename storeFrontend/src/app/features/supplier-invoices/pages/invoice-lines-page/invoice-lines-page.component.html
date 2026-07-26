@@ -25,6 +25,14 @@
         <lucide-icon name="plus" [size]="18"></lucide-icon>
         {{ 'INVOICE_LINES.ACTIONS.ADD_LINE' | translate }}
       </button>
+      <span
+        [matTooltip]="!hasConfirmedLines ? ('IMPORT_PREVIEW.BUTTON_DISABLED_HINT' | translate) : ''"
+        [matTooltipDisabled]="hasConfirmedLines">
+        <button mat-raised-button color="primary" (click)="openImportPreview()" [disabled]="!hasConfirmedLines">
+          <lucide-icon name="list-checks" [size]="18"></lucide-icon>
+          {{ 'IMPORT_PREVIEW.OPEN_PREVIEW' | translate }}
+        </button>
+      </span>
       <button mat-raised-button color="primary" (click)="bulkConfirm()" [disabled]="loading || selectedForImport.size === 0" [matTooltip]="'INVOICE_LINES.ACTIONS.BULK_CONFIRM_HINT' | translate">
         {{ 'INVOICE_LINES.ACTIONS.BULK_CONFIRM' | translate }}
       </button>
@@ -444,4 +452,3 @@
     </div>
   </div>
 </div>
-

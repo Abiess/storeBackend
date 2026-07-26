@@ -170,6 +170,16 @@ export class InvoiceLinesPageComponent implements OnInit, OnDestroy {
       default: return 0;
     }
   }
+
+  get hasConfirmedLines(): boolean {
+    return this.lines.some(line =>
+      line.status === 'CONFIRMED' || line.status === 'MAPPED'
+    );
+  }
+
+  openImportPreview(): void {
+    this.router.navigate(['/stores', this.storeId, 'supplier-invoices', this.documentId, 'import-preview']);
+  }
   
   toggleImportSelection(lineId: number) {
     if (this.selectedForImport.has(lineId)) {

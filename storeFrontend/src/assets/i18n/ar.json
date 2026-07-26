@@ -2945,6 +2945,8 @@
   },
   "IMPORT_PREVIEW": {
     "TITLE": "معاينة الاستيراد",
+    "OPEN_PREVIEW": "فتح معاينة الاستيراد",
+    "BUTTON_DISABLED_HINT": "راجع أو عين موضعًا واحدًا على الأقل أولاً",
     "LOADING": "جارٍ تحميل المعاينة...",
     "BACK_TO_LINES": "العودة إلى المواضع",
     "RELOAD": "إعادة تحميل المعاينة",
@@ -2971,9 +2973,11 @@
       "PACKAGING": "وحدة التعبئة",
       "STOCK_ADD": "إضافة المخزون",
       "CATEGORY_ID": "معرف الفئة",
+      "SELECT_CATEGORY": "اختر الفئة",
       "CATEGORY_PLACEHOLDER": "مثال: 5 للتوابل",
       "CATEGORY_HINT": "يُرجى إدخال معرف الفئة المطابقة",
       "RETAIL_PRICE": "سعر البيع",
+      "MARKUP": "الهامش",
       "PRICE_PLACEHOLDER": "مثال: 4.99",
       "PRICE_HINT": "السعر للعملاء النهائيين باليورو"
     },
@@ -3008,7 +3012,8 @@
       "SELLING_PRICE_REQUIRED": "سعر البيع مفقود",
       "STOCK_QUANTITY_CONFIRMATION_REQUIRED": "كمية المخزون تحتاج إلى تأكيد",
       "ALREADY_IMPORTED": "تم الاستيراد بالفعل",
-      "PRODUCT_NOT_FOUND": "المنتج غير موجود"
+      "PRODUCT_NOT_FOUND": "المنتج غير موجود",
+      "ERROR": "خطأ"
     },
     "SELECTION": {
       "SELECTED": "{{selected}} من {{total}} مواضع قابلة للاستيراد محددة",

@@ -3027,6 +3027,8 @@
   },
   "IMPORT_PREVIEW": {
     "TITLE": "Import Preview",
+    "OPEN_PREVIEW": "Open Import Preview",
+    "BUTTON_DISABLED_HINT": "Review or assign at least one line first",
     "LOADING": "Loading preview...",
     "BACK_TO_LINES": "Back to Lines",
     "RELOAD": "Reload Preview",
@@ -3053,9 +3055,11 @@
       "PACKAGING": "Pkg Unit",
       "STOCK_ADD": "Stock Addition",
       "CATEGORY_ID": "Category ID",
+      "SELECT_CATEGORY": "Select Category",
       "CATEGORY_PLACEHOLDER": "e.g. 5 for Spices",
       "CATEGORY_HINT": "Please enter the ID of the matching category",
       "RETAIL_PRICE": "Retail Price",
+      "MARKUP": "Markup",
       "PRICE_PLACEHOLDER": "e.g. 4.99",
       "PRICE_HINT": "Price for end customers in Euro"
     },
@@ -3090,7 +3094,8 @@
       "SELLING_PRICE_REQUIRED": "Selling price missing",
       "STOCK_QUANTITY_CONFIRMATION_REQUIRED": "Stock quantity needs confirmation",
       "ALREADY_IMPORTED": "Already imported",
-      "PRODUCT_NOT_FOUND": "Product not found"
+      "PRODUCT_NOT_FOUND": "Product not found",
+      "ERROR": "Error"
     },
     "SELECTION": {
       "SELECTED": "{{selected}} of {{total}} importable lines selected",

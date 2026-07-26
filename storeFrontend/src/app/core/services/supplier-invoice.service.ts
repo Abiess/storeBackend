@@ -4,6 +4,7 @@ import { Observable, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { BackendDateTime } from '@app/core/utils/date.utils';
+import { SupplierInvoiceImportPreviewResponse } from '@app/core/models/import-preview.model';
 
 export interface SupplierInvoiceDocument {
   id: number;
@@ -393,6 +394,12 @@ export class SupplierInvoiceService {
     return this.http.post<BulkConfirmResponse>(
       `${this.baseUrl}/${storeId}/supplier-invoices/documents/${documentId}/lines/bulk-confirm`,
       request
+    );
+  }
+
+  getImportPreview(storeId: number, documentId: number): Observable<SupplierInvoiceImportPreviewResponse> {
+    return this.http.get<SupplierInvoiceImportPreviewResponse>(
+      `${this.baseUrl}/${storeId}/supplier-invoices/documents/${documentId}/import-preview`
     );
   }
   
