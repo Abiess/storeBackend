@@ -16,6 +16,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import storebackend.dto.SupplierInvoiceDocumentDTO;
+import storebackend.dto.SupplierInvoiceImportPreviewResponse;
 import storebackend.entity.Store;
 import storebackend.entity.SupplierInvoiceDocument;
 import storebackend.entity.SupplierInvoiceParseResult;
@@ -55,6 +56,9 @@ public class SupplierInvoiceDocumentController {
     private final InvoiceLineDTOMapper lineDTOMapper;
     private final SupplierProductMappingService productMappingService;
     private final InvoiceLineUpdateService lineUpdateService;
+    
+    // Phase 4A: Import service
+    private final SupplierInvoiceImportService importService;
 
     /**
      * Upload einer Lieferantenrechnung (PDF oder Bild)
@@ -964,6 +968,42 @@ public class SupplierInvoiceDocumentController {
                     .body(Map.of("error", "Bad Request", "message", e.getMessage()));
         } catch (Exception e) {
             log.error("Failed to merge line: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Internal Server Error", "message", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Phase 4A: GET Import-Preview für ein Dokument.
+     * Zeigt was importiert werden würde OHNE Daten zu ändern.
+     */
+    @GetMapping("/documents/{documentId}/import-preview")
+    @Operation(summary = "Get import preview", description = "Preview what would be imported WITHOUT making any changes")
+    public ResponseEntity<?> getImportPreview(
+            @PathVariable Long storeId,
+            @PathVariable Long documentId,
+            @AuthenticationPrincipal User user) {
+        
+        try {
+            // Security: Check store access
+            Store store = storeRepository.findById(storeId)
+                    .orElseThrow(() -> new RuntimeException("Store not found"));
+            
+            if (store.getOwner() == null || !store.getOwner().getId().equals(user.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "Access denied to this store"));
+            }
+            
+            // Generate preview (read-only)
+            SupplierInvoiceImportPreviewResponse preview = importService.generatePreview(storeId, documentId);
+            return ResponseEntity.ok(preview);
+            
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid request: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Bad Request", "message", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Failed to generate import preview: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Internal Server Error", "message", e.getMessage()));
         }

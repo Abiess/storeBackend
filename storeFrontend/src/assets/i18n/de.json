@@ -3067,5 +3067,78 @@
       "DATE": "Datum"
     },
     "SEARCH_PLACEHOLDER": "Dokumente durchsuchen..."
+  },
+  "IMPORT_PREVIEW": {
+    "TITLE": "Importvorschau",
+    "LOADING": "Vorschau wird geladen...",
+    "BACK_TO_LINES": "Zurück zu den Positionen",
+    "RELOAD": "Vorschau neu laden",
+    "NO_CHANGES_YET": "Es wurden noch keine Produkte erstellt und keine Bestände verändert",
+    "SUMMARY": {
+      "EXISTING_PRODUCTS": "Bestehende Produkte",
+      "NEW_PRODUCTS": "Neue Produkte",
+      "NEEDS_DECISION": "Müssen geprüft werden",
+      "SKIPPED": "Werden übersprungen"
+    },
+    "EXISTING_PRODUCTS": {
+      "TITLE": "Bestehende Produkte aktualisieren",
+      "DESCRIPTION": "Diese Produkte sind bereits im Store vorhanden und deren Bestand wird erhöht"
+    },
+    "NEW_PRODUCTS": {
+      "TITLE": "Neue Produkte vorbereiten",
+      "DESCRIPTION": "Diese Produkte werden neu angelegt. Bitte Kategorie und Verkaufspreis ergänzen",
+      "READY": "Bereit",
+      "NOT_READY": "Angaben fehlen",
+      "ARTICLE_NUMBER": "Lieferanten-Art.-Nr.",
+      "PURCHASE_PRICE": "Einkaufspreis",
+      "TAX_RATE": "MwSt.",
+      "UNIT": "Einheit",
+      "PACKAGING": "VPE",
+      "STOCK_ADD": "Bestandszugang",
+      "CATEGORY_ID": "Kategorie-ID",
+      "CATEGORY_PLACEHOLDER": "z.B. 5 für Gewürze",
+      "CATEGORY_HINT": "Bitte die ID der passenden Kategorie eingeben",
+      "RETAIL_PRICE": "Verkaufspreis",
+      "PRICE_PLACEHOLDER": "z.B. 4.99",
+      "PRICE_HINT": "Preis für Endkunden in Euro"
+    },
+    "NEEDS_DECISION": {
+      "TITLE": "Zuerst prüfen",
+      "DESCRIPTION": "Diese Positionen müssen erst geprüft oder zugeordnet werden",
+      "EDIT_LINE": "Position bearbeiten"
+    },
+    "SKIPPED": {
+      "TITLE": "Nicht importierbare oder bereits importierte Positionen",
+      "DESCRIPTION": "Diese Positionen werden beim Import übersprungen",
+      "IMPORTED_AT": "Importiert am"
+    },
+    "TABLE": {
+      "INVOICE_LINE": "Rechnungsposition",
+      "STORE_PRODUCT": "Store-Produkt",
+      "MATCH_REASON": "Zuordnung",
+      "CURRENT_STOCK": "Aktueller Bestand",
+      "STOCK_CHANGE": "Zugang",
+      "NEW_STOCK": "Neuer Bestand",
+      "PURCHASE_PRICE": "Einkaufspreis"
+    },
+    "MATCH_REASON": {
+      "USER_ASSIGNED": "Vom Benutzer zugeordnet",
+      "LEARNED_MAPPING": "Aus früherer Zuordnung",
+      "SKU_MATCH": "Über SKU erkannt"
+    },
+    "WARNING_CODE": {
+      "LINE_NOT_REVIEWED": "Position wurde noch nicht geprüft",
+      "PRODUCT_MAPPING_MISSING": "Kein passendes Store-Produkt zugeordnet",
+      "CATEGORY_REQUIRED": "Kategorie fehlt",
+      "SELLING_PRICE_REQUIRED": "Verkaufspreis fehlt",
+      "STOCK_QUANTITY_CONFIRMATION_REQUIRED": "Bestandsmenge muss bestätigt werden",
+      "ALREADY_IMPORTED": "Bereits importiert",
+      "PRODUCT_NOT_FOUND": "Produkt nicht gefunden"
+    },
+    "SELECTION": {
+      "SELECTED": "{{selected}} von {{total}} importierbaren Positionen ausgewählt",
+      "IMPORT_BUTTON": "Import durchführen",
+      "COMING_NEXT": "Der eigentliche Import folgt im nächsten Schritt"
+    }
   }
 }

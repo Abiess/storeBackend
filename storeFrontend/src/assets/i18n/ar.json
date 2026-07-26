@@ -2942,5 +2942,78 @@
       "CORRECTION_SAVED_AND_REMEMBERED": "تم حفظ التصحيح وسيتم تطبيقه على الفواتير المستقبلية",
       "LEARNED_FROM_PREVIOUS": "من تصحيح سابق"
     }
+  },
+  "IMPORT_PREVIEW": {
+    "TITLE": "معاينة الاستيراد",
+    "LOADING": "جارٍ تحميل المعاينة...",
+    "BACK_TO_LINES": "العودة إلى المواضع",
+    "RELOAD": "إعادة تحميل المعاينة",
+    "NO_CHANGES_YET": "لم يتم إنشاء منتجات ولم يتم تعديل المخزون بعد",
+    "SUMMARY": {
+      "EXISTING_PRODUCTS": "المنتجات الموجودة",
+      "NEW_PRODUCTS": "المنتجات الجديدة",
+      "NEEDS_DECISION": "تحتاج إلى المراجعة",
+      "SKIPPED": "سيتم تخطيها"
+    },
+    "EXISTING_PRODUCTS": {
+      "TITLE": "تحديث المنتجات الموجودة",
+      "DESCRIPTION": "هذه المنتجات موجودة بالفعل في المتجر وسيتم زيادة مخزونها"
+    },
+    "NEW_PRODUCTS": {
+      "TITLE": "تحضير المنتجات الجديدة",
+      "DESCRIPTION": "سيتم إنشاء هذه المنتجات حديثًا. يُرجى إضافة الفئة وسعر البيع",
+      "READY": "جاهز",
+      "NOT_READY": "معلومات مفقودة",
+      "ARTICLE_NUMBER": "رقم المادة من المورد",
+      "PURCHASE_PRICE": "سعر الشراء",
+      "TAX_RATE": "ضريبة القيمة المضافة",
+      "UNIT": "الوحدة",
+      "PACKAGING": "وحدة التعبئة",
+      "STOCK_ADD": "إضافة المخزون",
+      "CATEGORY_ID": "معرف الفئة",
+      "CATEGORY_PLACEHOLDER": "مثال: 5 للتوابل",
+      "CATEGORY_HINT": "يُرجى إدخال معرف الفئة المطابقة",
+      "RETAIL_PRICE": "سعر البيع",
+      "PRICE_PLACEHOLDER": "مثال: 4.99",
+      "PRICE_HINT": "السعر للعملاء النهائيين باليورو"
+    },
+    "NEEDS_DECISION": {
+      "TITLE": "المراجعة أولاً",
+      "DESCRIPTION": "يجب مراجعة هذه المواضع أو تعيينها أولاً",
+      "EDIT_LINE": "تعديل الموضع"
+    },
+    "SKIPPED": {
+      "TITLE": "مواضع غير قابلة للاستيراد أو مستوردة بالفعل",
+      "DESCRIPTION": "سيتم تخطي هذه المواضع أثناء الاستيراد",
+      "IMPORTED_AT": "تم الاستيراد في"
+    },
+    "TABLE": {
+      "INVOICE_LINE": "موضع الفاتورة",
+      "STORE_PRODUCT": "منتج المتجر",
+      "MATCH_REASON": "المطابقة",
+      "CURRENT_STOCK": "المخزون الحالي",
+      "STOCK_CHANGE": "الإضافة",
+      "NEW_STOCK": "المخزون الجديد",
+      "PURCHASE_PRICE": "سعر الشراء"
+    },
+    "MATCH_REASON": {
+      "USER_ASSIGNED": "تم التعيين من قبل المستخدم",
+      "LEARNED_MAPPING": "من التعيين السابق",
+      "SKU_MATCH": "مطابق عبر SKU"
+    },
+    "WARNING_CODE": {
+      "LINE_NOT_REVIEWED": "لم تتم مراجعة الموضع بعد",
+      "PRODUCT_MAPPING_MISSING": "لم يتم تعيين منتج متجر مطابق",
+      "CATEGORY_REQUIRED": "الفئة مفقودة",
+      "SELLING_PRICE_REQUIRED": "سعر البيع مفقود",
+      "STOCK_QUANTITY_CONFIRMATION_REQUIRED": "كمية المخزون تحتاج إلى تأكيد",
+      "ALREADY_IMPORTED": "تم الاستيراد بالفعل",
+      "PRODUCT_NOT_FOUND": "المنتج غير موجود"
+    },
+    "SELECTION": {
+      "SELECTED": "{{selected}} من {{total}} مواضع قابلة للاستيراد محددة",
+      "IMPORT_BUTTON": "تنفيذ الاستيراد",
+      "COMING_NEXT": "سيتبع الاستيراد الفعلي في الخطوة التالية"
+    }
   }
 }
