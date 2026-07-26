@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -77,7 +77,8 @@ export class InvoiceLinesPageComponent implements OnInit, OnDestroy {
     private router: Router,
     private invoiceService: SupplierInvoiceService,
     private dialog: MatDialog,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private translate: TranslateService
   ) {}
   
   ngOnInit() {
@@ -268,9 +269,16 @@ export class InvoiceLinesPageComponent implements OnInit, OnDestroy {
           if (index !== -1) {
             this.lines[index] = updated;
           }
+          this.summary = this.calculateSummary();
           this.editingLine = null;
+          
+          // Toast with i18n
+          const savedMsg = this.translate.instant('INVOICE_LINES.EDIT.SAVED');
+          const learnedMsg = this.rememberCorrection 
+            ? ' ' + this.translate.instant('INVOICE_LINES.EDIT.SAVED_AND_LEARNED')
+            : '';
+          this.snackBar.open(savedMsg + learnedMsg, 'OK', { duration: 4000 });
           this.rememberCorrection = false;
-          this.snackBar.open('Gespeichert', 'OK', { duration: 2000 });
         },
         error: (err: any) => {
           this.snackBar.open(err.error?.message || 'Fehler beim Speichern', 'OK', { duration: 3000 });

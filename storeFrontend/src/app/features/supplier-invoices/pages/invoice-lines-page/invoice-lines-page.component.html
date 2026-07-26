@@ -304,55 +304,104 @@
       </button>
     </div>
     <div class="drawer-body">
-      <div class="form-field">
-        <label>{{ 'INVOICE_LINES.EDIT.ARTICLE_NR' | translate }}</label>
-        <input type="text" [(ngModel)]="editingLine.supplierArticleNumber" />
-      </div>
-      <div class="form-field">
-        <label>{{ 'INVOICE_LINES.EDIT.DESCRIPTION' | translate }}</label>
-        <textarea rows="4" [(ngModel)]="editingLine.description"></textarea>
-      </div>
-      <div class="form-row">
-        <div class="form-field">
-          <label>{{ 'INVOICE_LINES.EDIT.QUANTITY' | translate }}</label>
-          <input type="number" step="0.001" [(ngModel)]="editingLine.quantity" />
+      
+      <!-- Section: Master Data (will be learned) -->
+      <div class="form-section">
+        <div class="section-header">
+          <h3>{{ 'INVOICE_LINES.EDIT.SECTION_MASTER_DATA' | translate }}</h3>
+          <p class="section-hint">{{ 'INVOICE_LINES.EDIT.SECTION_MASTER_DATA_HINT' | translate }}</p>
         </div>
+        
         <div class="form-field">
-          <label>{{ 'INVOICE_LINES.EDIT.UNIT' | translate }}</label>
-          <input type="text" [(ngModel)]="editingLine.unit" />
+          <label>{{ 'INVOICE_LINES.EDIT.ARTICLE_NR' | translate }}</label>
+          <input type="text" [(ngModel)]="editingLine.supplierArticleNumber" />
+        </div>
+        
+        <div class="form-field">
+          <label>{{ 'INVOICE_LINES.EDIT.DESCRIPTION' | translate }}</label>
+          <textarea rows="3" [(ngModel)]="editingLine.description"></textarea>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-field">
+            <label>{{ 'INVOICE_LINES.EDIT.UNIT' | translate }}</label>
+            <input type="text" [(ngModel)]="editingLine.unit" />
+          </div>
+          <div class="form-field">
+            <label>{{ 'INVOICE_LINES.EDIT.VPE' | translate }}</label>
+            <input type="number" step="0.01" [(ngModel)]="editingLine.packagingUnit" />
+          </div>
+        </div>
+        
+        <div class="form-field">
+          <label>{{ 'INVOICE_LINES.EDIT.TAX_RATE' | translate }}</label>
+          <input type="number" step="1" [(ngModel)]="editingLine.taxRate" />
         </div>
       </div>
-      <div class="form-field">
-        <label>{{ 'INVOICE_LINES.EDIT.VPE' | translate }}</label>
-        <input type="number" step="0.01" [(ngModel)]="editingLine.packagingUnit" />
-      </div>
-      <div class="form-row">
-        <div class="form-field">
-          <label>{{ 'INVOICE_LINES.EDIT.UNIT_PRICE' | translate }}</label>
-          <input type="number" step="0.0001" [(ngModel)]="editingLine.unitPrice" />
+      
+      <mat-divider></mat-divider>
+      
+      <!-- Section: Invoice Values (not learned) -->
+      <div class="form-section">
+        <div class="section-header">
+          <h3>{{ 'INVOICE_LINES.EDIT.SECTION_INVOICE_VALUES' | translate }}</h3>
+          <p class="section-hint">{{ 'INVOICE_LINES.EDIT.SECTION_INVOICE_VALUES_HINT' | translate }}</p>
         </div>
+        
+        <div class="form-row">
+          <div class="form-field">
+            <label>{{ 'INVOICE_LINES.EDIT.QUANTITY' | translate }}</label>
+            <input type="number" step="0.001" [(ngModel)]="editingLine.quantity" />
+          </div>
+          <div class="form-field">
+            <label>{{ 'INVOICE_LINES.EDIT.UNIT_PRICE' | translate }}</label>
+            <input type="number" step="0.0001" [(ngModel)]="editingLine.unitPrice" />
+          </div>
+        </div>
+        
         <div class="form-field">
           <label>{{ 'INVOICE_LINES.EDIT.LINE_TOTAL' | translate }}</label>
           <input type="number" step="0.01" [(ngModel)]="editingLine.lineTotal" />
         </div>
       </div>
-      <div class="form-field">
-        <label>{{ 'INVOICE_LINES.EDIT.TAX_RATE' | translate }}</label>
-        <input type="number" step="1" [(ngModel)]="editingLine.taxRate" />
+      
+      <mat-divider></mat-divider>
+      
+      <!-- Learning Section -->
+      <div class="form-section learning-section">
+        <div class="learn-checkbox-container" *ngIf="canRememberCorrection(editingLine); else cannotLearn">
+          <mat-checkbox [(ngModel)]="rememberCorrection">
+            {{ 'INVOICE_LINES.EDIT.REMEMBER_CORRECTION' | translate }}
+          </mat-checkbox>
+          
+          <div class="learn-info" *ngIf="rememberCorrection">
+            <div class="learn-info-block">
+              <strong>{{ 'INVOICE_LINES.EDIT.REMEMBER_SAVED' | translate }}</strong>
+              <p>{{ 'INVOICE_LINES.EDIT.REMEMBER_SAVED_LIST' | translate }}</p>
+            </div>
+            <div class="learn-info-block">
+              <strong>{{ 'INVOICE_LINES.EDIT.REMEMBER_NOT_SAVED' | translate }}</strong>
+              <p>{{ 'INVOICE_LINES.EDIT.REMEMBER_NOT_SAVED_LIST' | translate }}</p>
+            </div>
+            <p class="learn-supplier-hint">{{ 'INVOICE_LINES.EDIT.REMEMBER_SUPPLIER_HINT' | translate }}</p>
+          </div>
+        </div>
+        
+        <ng-template #cannotLearn>
+          <div class="learn-disabled-hint">
+            <lucide-icon name="info" [size]="16"></lucide-icon>
+            {{ 'INVOICE_LINES.EDIT.REMEMBER_DISABLED' | translate }}
+          </div>
+        </ng-template>
       </div>
       
-      <!-- Phase 3B-3: Learn from correction -->
-      <div class="form-field remember-correction" *ngIf="canRememberCorrection(editingLine)">
-        <mat-checkbox [(ngModel)]="rememberCorrection">
-          {{ 'INVOICE_LINES.EDIT.REMEMBER_CORRECTION' | translate }}
-        </mat-checkbox>
-        <p class="hint">{{ 'INVOICE_LINES.EDIT.REMEMBER_HINT' | translate }}</p>
-      </div>
     </div>
     <div class="drawer-footer">
-      <button mat-button (click)="cancelEditLine()">{{ 'COMMON.CANCEL' | translate }}</button>
+      <button mat-button (click)="cancelEditLine()">
+        {{ 'INVOICE_LINES.EDIT.CANCEL' | translate }}
+      </button>
       <button mat-raised-button color="primary" (click)="saveEditLine()">
-        {{ 'COMMON.SAVE' | translate }}
+        {{ 'INVOICE_LINES.EDIT.SAVE' | translate }}
       </button>
     </div>
   </div>

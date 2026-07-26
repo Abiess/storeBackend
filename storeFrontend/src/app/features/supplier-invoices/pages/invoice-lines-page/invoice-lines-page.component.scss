@@ -637,6 +637,99 @@
       flex: 1;
       overflow-y: auto;
       padding: 2rem;
+      
+      .form-section {
+        margin-bottom: 1.5rem;
+        
+        &:last-child {
+          margin-bottom: 0;
+        }
+        
+        .section-header {
+          margin-bottom: 1rem;
+          
+          h3 {
+            margin: 0 0 0.25rem 0;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #333;
+          }
+          
+          .section-hint {
+            margin: 0;
+            font-size: 0.8rem;
+            color: #666;
+          }
+        }
+      }
+      
+      .learning-section {
+        padding-top: 1rem;
+        
+        .learn-checkbox-container {
+          mat-checkbox {
+            font-weight: 500;
+          }
+          
+          .learn-info {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f5f9ff;
+            border-radius: 6px;
+            border-left: 3px solid #667eea;
+            
+            .learn-info-block {
+              margin-bottom: 0.75rem;
+              
+              &:last-of-type {
+                margin-bottom: 0.5rem;
+              }
+              
+              strong {
+                display: block;
+                font-size: 0.85rem;
+                color: #333;
+                margin-bottom: 0.25rem;
+              }
+              
+              p {
+                margin: 0;
+                font-size: 0.8rem;
+                color: #555;
+              }
+            }
+            
+            .learn-supplier-hint {
+              margin: 0;
+              padding-top: 0.5rem;
+              border-top: 1px solid #e0e7ff;
+              font-size: 0.75rem;
+              color: #667eea;
+              font-style: italic;
+            }
+          }
+        }
+        
+        .learn-disabled-hint {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.75rem;
+          background: #fff3cd;
+          border-radius: 6px;
+          border-left: 3px solid #ffc107;
+          font-size: 0.85rem;
+          color: #856404;
+          
+          lucide-icon {
+            flex-shrink: 0;
+          }
+        }
+      }
+      
+      mat-divider {
+        margin: 1.5rem 0;
+      }
 
       .form-field {
         margin-bottom: 1.5rem;
