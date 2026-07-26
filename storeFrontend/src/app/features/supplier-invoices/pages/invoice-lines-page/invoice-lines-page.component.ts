@@ -417,6 +417,43 @@ export class InvoiceLinesPageComponent implements OnInit, OnDestroy {
     });
   }
   
+  getWarningMessage(line: InvoiceLine): string {
+    if (line.warnings.length === 0) return '';
+    
+    // Finde fehlende Felder
+    const missingFields: string[] = [];
+    
+    if (!line.quantity) missingFields.push('Menge');
+    if (!line.unit) missingFields.push('Einheit');
+    if (!line.packagingUnit) missingFields.push('VPE');
+    if (!line.unitPrice) missingFields.push('Einkaufspreis');
+    if (!line.lineTotal) missingFields.push('Gesamtbetrag');
+    
+    // Prüfe Gesamtbetrag-Abweichung
+    const hasMismatch = line.warnings.some(w => w.includes('mismatch') || w.includes('stimmt nicht'));
+    
+    // Erstelle verständliche Meldung
+    if (missingFields.length > 0) {
+      if (missingFields.length === 1) {
+        return `${missingFields[0]} fehlt`;
+      } else if (missingFields.length === 2) {
+        return `${missingFields.join(' und ')} fehlen`;
+      } else {
+        const last = missingFields.pop();
+        return `Bitte ${missingFields.join(', ')} und ${last} ergänzen.`;
+      }
+    } else if (hasMismatch) {
+      return this.translate.instant('INVOICE_LINES.WARNINGS.LINE_TOTAL_MISMATCH');
+    } else if (line.warnings.some(w => w.includes('not recognized') || w.includes('Artikelnummer'))) {
+      return this.translate.instant('INVOICE_LINES.WARNINGS.ARTICLE_NUMBER_MISSING');
+    }
+    
+    // Fallback
+    return line.warnings.length === 1 
+      ? '1 Angabe fehlt' 
+      : `${line.warnings.length} Angaben fehlen`;
+  }
+  
   translateWarning(warning: string): string {
     // Map backend warnings to i18n keys
     if (warning.includes('Missing') && warning.includes('numeric field')) {

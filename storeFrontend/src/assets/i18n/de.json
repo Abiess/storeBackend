@@ -2953,7 +2953,9 @@
     },
     "PRODUCT": {
       "MAPPED": "Zugeordnet",
-      "ASSIGN": "Zuordnen"
+      "ASSIGN": "Produkt zuordnen",
+      "PRODUCT_NAME": "Produktname",
+      "LEARNED_MAPPING": "Aus früherer Zuordnung übernommen"
     },
     "ACTIONS": {
       "ADD_LINE": "Position hinzufügen",
@@ -2969,6 +2971,8 @@
       "MORE": "Weitere Aktionen",
       "BACK_TO_DOCUMENT": "Zurück zum Dokument"
     },
+    "IMPORT_PREVIEW_DISABLED_HINT": "Prüfen oder ordnen Sie zuerst mindestens eine Position zu.",
+    "BULK_CONFIRM_DISABLED_HINT": "Wählen Sie zuerst mindestens eine Position aus.",
     "CREATE": {
       "TITLE": "Neue Position hinzufügen",
       "ARTICLE_NR": "Lieferanten-Art.-Nr.",
@@ -3034,7 +3038,8 @@
       "UNREVIEWED": "Noch nicht geprüft",
       "REVIEW_REQUIRED": "Bitte prüfen",
       "CONFIRMED": "Geprüft",
-      "MAPPED": "Produkt zugeordnet"
+      "MAPPED": "Produkt zugeordnet",
+      "POSITION_MAPPED": "Position zugeordnet"
     },
     "LEARNING": {
       "ORIGINALLY_DETECTED": "Ursprünglich erkannt",

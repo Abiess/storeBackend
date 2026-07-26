@@ -26,16 +26,20 @@
         {{ 'INVOICE_LINES.ACTIONS.ADD_LINE' | translate }}
       </button>
       <span
-        [matTooltip]="!hasConfirmedLines ? ('IMPORT_PREVIEW.BUTTON_DISABLED_HINT' | translate) : ''"
+        [matTooltip]="!hasConfirmedLines ? ('INVOICE_LINES.IMPORT_PREVIEW_DISABLED_HINT' | translate) : ''"
         [matTooltipDisabled]="hasConfirmedLines">
         <button mat-raised-button color="primary" (click)="openImportPreview()" [disabled]="!hasConfirmedLines">
-          <lucide-icon name="list-checks" [size]="18"></lucide-icon>
+          <lucide-icon name="list-check" [size]="18"></lucide-icon>
           {{ 'IMPORT_PREVIEW.OPEN_PREVIEW' | translate }}
         </button>
       </span>
-      <button mat-raised-button color="primary" (click)="bulkConfirm()" [disabled]="loading || selectedForImport.size === 0" [matTooltip]="'INVOICE_LINES.ACTIONS.BULK_CONFIRM_HINT' | translate">
-        {{ 'INVOICE_LINES.ACTIONS.BULK_CONFIRM' | translate }}
-      </button>
+      <span
+        [matTooltip]="selectedForImport.size === 0 ? ('INVOICE_LINES.BULK_CONFIRM_DISABLED_HINT' | translate) : ''"
+        [matTooltipDisabled]="selectedForImport.size > 0">
+        <button mat-raised-button color="primary" (click)="bulkConfirm()" [disabled]="loading || selectedForImport.size === 0">
+          {{ 'INVOICE_LINES.ACTIONS.BULK_CONFIRM' | translate }}
+        </button>
+      </span>
     </div>
   </div>
 
@@ -118,9 +122,9 @@
                 {{ 'INVOICE_LINES.LEARNING.LEARNED_FROM_PREVIOUS' | translate }}
               </span>
               <div class="warnings" *ngIf="line.warnings.length > 0">
-                <span class="warning-badge" [matTooltip]="'INVOICE_LINES.WARNINGS.MISSING_NUMERIC_FIELDS_DETAIL' | translate">
+                <span class="warning-badge">
                   <lucide-icon name="alert-circle" [size]="12"></lucide-icon>
-                  {{ (line.warnings.length === 1 ? 'INVOICE_LINES.WARNINGS.MISSING_NUMERIC_FIELDS' : 'INVOICE_LINES.WARNINGS.MISSING_NUMERIC_FIELDS_PLURAL') | translate: {count: line.warnings.length} }}
+                  {{ getWarningMessage(line) }}
                 </span>
               </div>
             </div>
@@ -132,11 +136,15 @@
           <td class="col-total">{{ line.lineTotal | number:'1.2-2' }} €</td>
           <td class="col-tax">{{ line.taxRate }}%</td>
           <td class="col-product">
-            <span *ngIf="line.status === 'MAPPED'" class="mapped-indicator">
-              <lucide-icon name="check-circle" [size]="16"></lucide-icon>
-              {{ 'INVOICE_LINES.PRODUCT.MAPPED' | translate }}
-            </span>
-            <button *ngIf="line.status !== 'MAPPED'" mat-button (click)="mappingLine = line" class="btn-assign">
+            <div *ngIf="line.status === 'MAPPED'" class="product-mapped">
+              <lucide-icon name="check-circle" [size]="16" class="icon-success"></lucide-icon>
+              <div class="product-info">
+                <span class="product-name">Produktname hier</span>
+                <span class="status-text">{{ 'INVOICE_LINES.STATUS.MAPPED' | translate }}</span>
+              </div>
+            </div>
+            <button *ngIf="line.status !== 'MAPPED'" mat-raised-button color="accent" (click)="mappingLine = line" class="btn-assign-product" size="small">
+              <lucide-icon name="link-2" [size]="14"></lucide-icon>
               {{ 'INVOICE_LINES.PRODUCT.ASSIGN' | translate }}
             </button>
           </td>

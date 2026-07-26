@@ -2851,7 +2851,9 @@
     },
     "PRODUCT": {
       "MAPPED": "مخصصة",
-      "ASSIGN": "تخصيص"
+      "ASSIGN": "تخصيص منتج",
+      "PRODUCT_NAME": "اسم المنتج",
+      "LEARNED_MAPPING": "مطبق من التخصيص السابق"
     },
     "ACTIONS": {
       "ADD_LINE": "إضافة بند",
@@ -2867,6 +2869,8 @@
       "MORE": "المزيد من الإجراءات",
       "BACK_TO_DOCUMENT": "العودة إلى المستند"
     },
+    "IMPORT_PREVIEW_DISABLED_HINT": "يرجى مراجعة أو تخصيص بند واحد على الأقل أولاً.",
+    "BULK_CONFIRM_DISABLED_HINT": "يرجى تحديد بند واحد على الأقل أولاً.",
     "CREATE": {
       "TITLE": "إضافة بند جديد",
       "ARTICLE_NR": "رقم مقالة المورد",
@@ -2932,7 +2936,8 @@
       "UNREVIEWED": "لم تتم المراجعة",
       "REVIEW_REQUIRED": "بحاجة إلى مراجعة",
       "CONFIRMED": "تم الفحص",
-      "MAPPED": "تم تخصيص المنتج"
+      "MAPPED": "تم تخصيص المنتج",
+      "POSITION_MAPPED": "تم تخصيص البند"
     },
     "LEARNING": {
       "ORIGINALLY_DETECTED": "تم اكتشافه في الأصل",

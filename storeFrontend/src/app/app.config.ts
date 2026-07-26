@@ -21,7 +21,7 @@ import {
   // Invoice Lines Actions Icons
   Scissors, Merge, MoveVertical, MoreVertical,
   // Invoice Lines Navigation Icons
-  ArrowLeft, RefreshCw, List
+  ArrowLeft, RefreshCw, List, ListCheck
 } from 'lucide-angular';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS, HttpClient } from '@angular/common/http';
@@ -85,7 +85,7 @@ export const appConfig: ApplicationConfig = {
         // Invoice Lines Actions
         Scissors, Merge, MoveVertical, MoreVertical,
         // Invoice Lines Navigation
-        ArrowLeft, RefreshCw, List
+        ArrowLeft, RefreshCw, List, ListCheck
       })
     },
     // Standard Locale (kann dynamisch überschrieben werden)

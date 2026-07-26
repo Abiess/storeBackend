@@ -2920,7 +2920,9 @@
     },
     "PRODUCT": {
       "MAPPED": "Mapped",
-      "ASSIGN": "Assign"
+      "ASSIGN": "Assign Product",
+      "PRODUCT_NAME": "Product Name",
+      "LEARNED_MAPPING": "Applied from previous assignment"
     },
     "ACTIONS": {
       "ADD_LINE": "Add Line Item",
@@ -2936,6 +2938,8 @@
       "MORE": "More Actions",
       "BACK_TO_DOCUMENT": "Back to Document"
     },
+    "IMPORT_PREVIEW_DISABLED_HINT": "Please review or assign at least one line item first.",
+    "BULK_CONFIRM_DISABLED_HINT": "Please select at least one line item first.",
     "CREATE": {
       "TITLE": "Add New Line Item",
       "ARTICLE_NR": "Supplier Article No.",
@@ -3001,7 +3005,8 @@
       "UNREVIEWED": "Not Reviewed",
       "REVIEW_REQUIRED": "Needs Review",
       "CONFIRMED": "Reviewed",
-      "MAPPED": "Product Assigned"
+      "MAPPED": "Product Assigned",
+      "POSITION_MAPPED": "Position Mapped"
     }
   },
   "SUPPLIER_INVOICES_STATUS": {
