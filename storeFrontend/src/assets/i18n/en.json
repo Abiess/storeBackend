@@ -2860,6 +2860,18 @@
       "CONFIRMED": "Confirmed",
       "MAPPED": "Mapped",
       "EDIT_BUTTON": "Edit Line Items"
+    },
+    "LEARNING": {
+      "ORIGINALLY_DETECTED": "Originally detected",
+      "REMEMBER_CORRECTION": "Remember this correction for future invoices",
+      "CONFIRM_CORRECTION": "Confirm correction",
+      "CORRECTION_SAVED": "Correction saved",
+      "CORRECTION_SAVED_AND_REMEMBERED": "Correction saved and will be applied to future invoices"
+    },
+    "SOURCES": {
+      "PARSER": "Automatically detected",
+      "LEARNED_CORRECTION": "Applied from previous correction",
+      "USER_EDITED": "Confirmed by you"
     }
   },
   "INVOICE_LINES": {
@@ -2956,28 +2968,12 @@
       "TITLE": "No line items found"
     }
   },
-      "NET_AMOUNT": "Net Amount",
-      "TAX_AMOUNT": "Tax Amount",
-      "GROSS_AMOUNT": "Gross Amount",
-      "CURRENCY": "Currency"
-    },
-    "LEARNING": {
-      "ORIGINALLY_DETECTED": "Originally detected",
-      "REMEMBER_CORRECTION": "Remember this correction for future invoices",
-      "CONFIRM_CORRECTION": "Confirm correction",
-      "CORRECTION_SAVED": "Correction saved",
-      "CORRECTION_SAVED_AND_REMEMBERED": "Correction saved and will be applied to future invoices"
-    },
-    "SOURCES": {
-      "PARSER": "Automatically detected",
-      "LEARNED_CORRECTION": "Applied from previous correction",
-      "USER_EDITED": "Confirmed by you"
-    },
-    "STATUS": {
-      "FAILED": "Failed",
-      "PREVIEW_READY": "Ready",
-      "UPLOADED": "Uploaded"
-    },
+  "SUPPLIER_INVOICES_STATUS": {
+    "FAILED": "Failed",
+    "PREVIEW_READY": "Ready",
+    "UPLOADED": "Uploaded"
+  },
+  "SUPPLIER_INVOICES_EXTENDED": {
     "LIST": {
       "EMPTY_TITLE": "No documents",
       "TITLE": "Uploaded Documents",
