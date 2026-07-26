@@ -754,6 +754,38 @@
             border-color: #667eea;
           }
         }
+        
+        // Missing field - yellow border
+        &.field-missing {
+          input,
+          textarea {
+            border: 2px solid #ffc107;
+            background: #fffbf0;
+          }
+        }
+        
+        // Uncertain field - orange/warning indicator
+        &.field-uncertain {
+          input,
+          textarea {
+            border-color: #ff9800;
+            background: #fff8f0;
+          }
+        }
+        
+        // Field hint/warning text
+        .field-hint {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          margin-top: 0.5rem;
+          font-size: 0.8rem;
+          color: #e65100;
+          
+          lucide-icon {
+            flex-shrink: 0;
+          }
+        }
       }
 
       .form-row {

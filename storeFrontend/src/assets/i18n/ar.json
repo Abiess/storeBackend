@@ -2926,8 +2926,10 @@
       "MISSING_NUMERIC_FIELDS": "{{count}} قيمة رقمية مفقودة",
       "MISSING_NUMERIC_FIELDS_PLURAL": "{{count}} قيم رقمية مفقودة",
       "MISSING_NUMERIC_FIELDS_DETAIL": "يرجى مراجعة الكمية أو وحدة التعبئة أو سعر الشراء أو المجموع.",
-      "LINE_TOTAL_MISMATCH": "عدم تطابق المبلغ الإجمالي",
-      "ARTICLE_NUMBER_MISSING": "لم يتم اكتشاف رقم المقالة"
+      "LINE_TOTAL_MISMATCH": "قيم البند لا تتطابق حسابياً",
+      "LINE_TOTAL_MISMATCH_DETAIL": "يرجى فحص الكمية ووحدة التعبئة وسعر الشراء والمجموع.",
+      "ARTICLE_NUMBER_MISSING": "لم يتم اكتشاف رقم المقالة",
+      "UNASSIGNED_OCR_VALUES": "تم اكتشاف أرقام إضافية ولكن لم يتم تخصيصها بشكل موثوق"
     },
     "EMPTY": {
       "TITLE": "لم يتم العثور على بنود"

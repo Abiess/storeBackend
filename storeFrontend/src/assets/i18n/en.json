@@ -2995,8 +2995,10 @@
       "MISSING_NUMERIC_FIELDS": "{{count}} numeric value missing",
       "MISSING_NUMERIC_FIELDS_PLURAL": "{{count}} numeric values missing",
       "MISSING_NUMERIC_FIELDS_DETAIL": "Please review quantity, pkg unit, purchase price or total.",
-      "LINE_TOTAL_MISMATCH": "Total amount mismatch",
-      "ARTICLE_NUMBER_MISSING": "Article number not detected"
+      "LINE_TOTAL_MISMATCH": "Position values do not match mathematically",
+      "LINE_TOTAL_MISMATCH_DETAIL": "Please check quantity, packaging unit, purchase price and total.",
+      "ARTICLE_NUMBER_MISSING": "Article number not detected",
+      "UNASSIGNED_OCR_VALUES": "Additional numbers were detected but could not be reliably assigned"
     },
     "EMPTY": {
       "TITLE": "No line items found"

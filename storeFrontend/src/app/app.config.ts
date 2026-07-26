@@ -17,7 +17,7 @@ import {
   Building, Wallet, Heart,
   // Supplier Invoice Icons
   FileText, Upload, Eye, Trash2, Download, RotateCw, ZoomIn, ZoomOut, CloudUpload,
-  PanelRightOpen, PanelRightClose, AlertCircle, Copy, Edit, Plus,
+  PanelRightOpen, PanelRightClose, AlertCircle, AlertTriangle, Copy, Edit, Plus,
   // Invoice Lines Actions Icons
   Scissors, Merge, MoveVertical, MoreVertical,
   // Invoice Lines Navigation Icons
@@ -81,7 +81,7 @@ export const appConfig: ApplicationConfig = {
         Building, Wallet, Heart,
         // Supplier Invoice Icons
         FileText, Upload, Eye, Trash2, Download, RotateCw, ZoomIn, ZoomOut, CloudUpload,
-        PanelRightOpen, PanelRightClose, AlertCircle, Copy, Edit, Plus,
+        PanelRightOpen, PanelRightClose, AlertCircle, AlertTriangle, Copy, Edit, Plus,
         // Invoice Lines Actions
         Scissors, Merge, MoveVertical, MoreVertical,
         // Invoice Lines Navigation

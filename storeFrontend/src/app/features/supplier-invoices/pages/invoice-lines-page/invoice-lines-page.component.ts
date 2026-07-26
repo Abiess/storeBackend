@@ -420,38 +420,99 @@ export class InvoiceLinesPageComponent implements OnInit, OnDestroy {
   getWarningMessage(line: InvoiceLine): string {
     if (line.warnings.length === 0) return '';
     
-    // Finde fehlende Felder
+    // Kategorisiere Felder nach Status
     const missingFields: string[] = [];
+    const uncertainFields: string[] = [];
     
-    if (!line.quantity) missingFields.push('Menge');
-    if (!line.unit) missingFields.push('Einheit');
-    if (!line.packagingUnit) missingFields.push('VPE');
-    if (!line.unitPrice) missingFields.push('Einkaufspreis');
-    if (!line.lineTotal) missingFields.push('Gesamtbetrag');
-    
-    // Prüfe Gesamtbetrag-Abweichung
-    const hasMismatch = line.warnings.some(w => w.includes('mismatch') || w.includes('stimmt nicht'));
-    
-    // Erstelle verständliche Meldung
-    if (missingFields.length > 0) {
-      if (missingFields.length === 1) {
-        return `${missingFields[0]} fehlt`;
-      } else if (missingFields.length === 2) {
-        return `${missingFields.join(' und ')} fehlen`;
-      } else {
-        const last = missingFields.pop();
-        return `Bitte ${missingFields.join(', ')} und ${last} ergänzen.`;
-      }
-    } else if (hasMismatch) {
-      return this.translate.instant('INVOICE_LINES.WARNINGS.LINE_TOTAL_MISMATCH');
-    } else if (line.warnings.some(w => w.includes('not recognized') || w.includes('Artikelnummer'))) {
-      return this.translate.instant('INVOICE_LINES.WARNINGS.ARTICLE_NUMBER_MISSING');
+    // MISSING: Wirklich null oder leer
+    if (!line.quantity) {
+      missingFields.push('Menge');
+    }
+    if (!line.unit) {
+      missingFields.push('Einheit');
+    }
+    if (!line.packagingUnit) {
+      missingFields.push('VPE');
+    }
+    if (!line.unitPrice) {
+      missingFields.push('Einkaufspreis');
+    }
+    if (!line.lineTotal) {
+      missingFields.push('Gesamtbetrag');
     }
     
-    // Fallback
-    return line.warnings.length === 1 
-      ? '1 Angabe fehlt' 
-      : `${line.warnings.length} Angaben fehlen`;
+    // UNCERTAIN: Wert vorhanden, aber unsicher
+    // Wenn line.warnings existieren UND Felder vorhanden sind, dann sind sie unsicher
+    const hasWarnings = line.warnings.length > 0;
+    
+    if (hasWarnings) {
+      // Prüfe ob Beschreibung ungewöhnliche Zahlen enthält (UNASSIGNED_OCR_VALUES)
+      const descHasNumbers = line.description && /\d+[.,]\d+|\d+\s*[xX]\s*\d+/.test(line.description);
+      
+      // Wenn Felder vorhanden sind aber Warnings existieren, sind sie unsicher
+      if (line.quantity && line.warnings.some(w => w.toLowerCase().includes('numeric') || w.includes('missing'))) {
+        uncertainFields.push('Menge');
+      }
+      if (line.packagingUnit && line.warnings.some(w => w.toLowerCase().includes('numeric') || w.includes('missing'))) {
+        uncertainFields.push('VPE');
+      }
+      if (line.lineTotal && line.warnings.some(w => w.toLowerCase().includes('numeric') || w.includes('missing'))) {
+        uncertainFields.push('Gesamtbetrag');
+      }
+    }
+    
+    // Prüfe Gesamtbetrag-Abweichung (Plausibilitätsprüfung)
+    const hasMismatch = line.warnings.some(w => w.includes('mismatch') || w.toLowerCase().includes('expected'));
+    
+    // Prüfe UNASSIGNED_OCR_VALUES
+    const hasUnassignedNumbers = line.description && /[\d.,]+\s*[)\]}\|]+\s*[\d.,]+/.test(line.description);
+    
+    // Erstelle verständliche Meldung
+    const parts: string[] = [];
+    
+    // Teil 1: Fehlende Felder
+    if (missingFields.length > 0) {
+      if (missingFields.length === 1) {
+        parts.push(`${missingFields[0]} fehlt`);
+      } else if (missingFields.length === 2) {
+        parts.push(`${missingFields.join(' und ')} fehlen`);
+      } else {
+        const last = missingFields.pop();
+        parts.push(`${missingFields.join(', ')} und ${last} fehlen`);
+      }
+    }
+    
+    // Teil 2: Unsichere Felder
+    if (uncertainFields.length > 0) {
+      if (uncertainFields.length === 1) {
+        parts.push(`${uncertainFields[0]} bitte prüfen`);
+      } else if (uncertainFields.length === 2) {
+        parts.push(`${uncertainFields.join(' und ')} bitte prüfen`);
+      } else {
+        const last = uncertainFields.pop();
+        parts.push(`${uncertainFields.join(', ')} und ${last} bitte prüfen`);
+      }
+    }
+    
+    // Teil 3: Plausibilitätswarnung
+    if (hasMismatch) {
+      parts.push(this.translate.instant('INVOICE_LINES.WARNINGS.LINE_TOTAL_MISMATCH'));
+    }
+    
+    // Teil 4: UNASSIGNED_OCR_VALUES
+    if (hasUnassignedNumbers && !hasMismatch) {
+      parts.push(this.translate.instant('INVOICE_LINES.WARNINGS.UNASSIGNED_OCR_VALUES'));
+    }
+    
+    // Kombiniere Teile
+    if (parts.length === 0) {
+      // Fallback für unbekannte Warnungen
+      return line.warnings.length === 1 
+        ? '1 Angabe fehlt' 
+        : `${line.warnings.length} Angaben fehlen`;
+    }
+    
+    return parts.join('. ') + '.';
   }
   
   translateWarning(warning: string): string {
@@ -475,6 +536,83 @@ export class InvoiceLinesPageComponent implements OnInit, OnDestroy {
       mapped: this.lines.filter(l => l.status === 'MAPPED').length,
       needsReview: this.lines.filter(l => l.status === 'UNREVIEWED' || l.status === 'REVIEW_REQUIRED').length
     };
+  }
+  
+  // Field validation helpers for drawer
+  getFieldStatus(line: InvoiceLine, fieldName: 'unit' | 'packagingUnit' | 'quantity' | 'unitPrice' | 'lineTotal'): 'missing' | 'uncertain' | 'valid' {
+    if (!line) return 'valid';
+    
+    const value = line[fieldName];
+    const warnings = line.warnings || [];
+    
+    // Check if field is truly missing (null or empty)
+    if (value === null || value === undefined || value === '') {
+      const missingCode = this.getMissingCode(fieldName);
+      if (warnings.includes(missingCode)) {
+        return 'missing';
+      }
+    }
+    
+    // Check if field is uncertain (present but flagged)
+    const uncertainCode = this.getUncertainCode(fieldName);
+    if (warnings.includes(uncertainCode)) {
+      return 'uncertain';
+    }
+    
+    // Check if LINE_TOTAL_MISMATCH affects this field
+    if (warnings.includes('LINE_TOTAL_MISMATCH')) {
+      if (['quantity', 'packagingUnit', 'unitPrice', 'lineTotal'].includes(fieldName)) {
+        return 'uncertain';
+      }
+    }
+    
+    return 'valid';
+  }
+  
+  private getMissingCode(fieldName: string): string {
+    const map: Record<string, string> = {
+      'unit': 'MISSING_UNIT',
+      'packagingUnit': 'MISSING_PACKAGING_UNIT',
+      'quantity': 'MISSING_QUANTITY',
+      'unitPrice': 'MISSING_PURCHASE_PRICE',
+      'lineTotal': 'MISSING_LINE_TOTAL'
+    };
+    return map[fieldName] || '';
+  }
+  
+  private getUncertainCode(fieldName: string): string {
+    const map: Record<string, string> = {
+      'quantity': 'UNCERTAIN_QUANTITY',
+      'packagingUnit': 'UNCERTAIN_PACKAGING_UNIT',
+      'unitPrice': 'UNCERTAIN_PURCHASE_PRICE',
+      'lineTotal': 'UNCERTAIN_LINE_TOTAL'
+    };
+    return map[fieldName] || '';
+  }
+  
+  getFieldWarning(line: InvoiceLine, fieldName: 'unit' | 'packagingUnit' | 'quantity' | 'unitPrice' | 'lineTotal'): string {
+    const status = this.getFieldStatus(line, fieldName);
+    if (status === 'missing') {
+      const labels: Record<string, string> = {
+        'unit': 'Einheit wurde nicht erkannt.',
+        'packagingUnit': 'VPE wurde nicht erkannt.',
+        'quantity': 'Menge wurde nicht erkannt.',
+        'unitPrice': 'Einkaufspreis wurde nicht erkannt.',
+        'lineTotal': 'Gesamtbetrag wurde nicht erkannt.'
+      };
+      return labels[fieldName] || '';
+    }
+    if (status === 'uncertain') {
+      const labels: Record<string, string> = {
+        'unit': 'Einheit bitte prüfen.',
+        'packagingUnit': 'VPE wurde möglicherweise falsch erkannt.',
+        'quantity': 'Menge wurde möglicherweise falsch erkannt.',
+        'unitPrice': 'Einkaufspreis bitte prüfen.',
+        'lineTotal': 'Gesamtbetrag bitte prüfen.'
+      };
+      return labels[fieldName] || '';
+    }
+    return '';
   }
   
   backToDocument() {

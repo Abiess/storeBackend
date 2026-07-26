@@ -408,24 +408,38 @@ public class InvoiceLineItemParser {
             // Plausibility check
             double confidence = 0.9;
             
-            // Check if critical numeric fields are missing
-            int missingFields = 0;
-            if (quantity == null) missingFields++;
-            if (unitPrice == null) missingFields++;
-            if (lineTotal == null) missingFields++;
-            
-            if (missingFields > 0) {
-                warnings.add("Missing " + missingFields + " numeric field(s) - marked for review");
+            // Check for missing critical fields (truly null/empty)
+            if (quantity == null) {
+                warnings.add("MISSING_QUANTITY");
                 confidence = 0.5;
+            }
+            if (packagingUnit == null) {
+                warnings.add("MISSING_PACKAGING_UNIT");
+                confidence = Math.min(confidence, 0.5);
+            }
+            if (unitPrice == null) {
+                warnings.add("MISSING_PURCHASE_PRICE");
+                confidence = Math.min(confidence, 0.5);
+            }
+            if (lineTotal == null) {
+                warnings.add("MISSING_LINE_TOTAL");
+                confidence = Math.min(confidence, 0.5);
             }
             
             // Special warning if article number is missing (OCR error)
             if (block.supplierArticleNumber == null || block.supplierArticleNumber.isEmpty()) {
-                warnings.add("Article number not detected by OCR");
+                warnings.add("MISSING_ARTICLE_NUMBER");
                 confidence = 0.4;
             }
             
-            // If we have all values, validate calculation
+            // Check for unassigned OCR values (numbers in description that couldn't be parsed)
+            if (description != null && description.matches(".*[\\d.,]+\\s*[)\\]}|]+\\s*[\\d.,]+.*")) {
+                warnings.add("UNASSIGNED_OCR_VALUES");
+                // This suggests values are present but misplaced
+                confidence = Math.min(confidence, 0.6);
+            }
+            
+            // If we have all values, validate calculation (plausibility check)
             if (quantity != null && packagingUnit != null && unitPrice != null && lineTotal != null) {
                 BigDecimal calculated = quantity
                     .multiply(packagingUnit)
@@ -435,11 +449,26 @@ public class InvoiceLineItemParser {
                 BigDecimal difference = lineTotal.subtract(calculated).abs();
                 
                 if (difference.compareTo(new BigDecimal("0.03")) > 0) {
-                    warnings.add(String.format(
-                        "Line total mismatch: expected %.2f, got %.2f (diff: %.2f)",
-                        calculated, lineTotal, difference
-                    ));
+                    warnings.add("LINE_TOTAL_MISMATCH");
                     confidence = 0.7;
+                    // Mark quantity and packaging unit as uncertain when total doesn't match
+                    if (!warnings.contains("UNCERTAIN_QUANTITY")) {
+                        warnings.add("UNCERTAIN_QUANTITY");
+                    }
+                    if (!warnings.contains("UNCERTAIN_PACKAGING_UNIT")) {
+                        warnings.add("UNCERTAIN_PACKAGING_UNIT");
+                    }
+                }
+            } else if (quantity != null || packagingUnit != null || unitPrice != null) {
+                // Some values present but incomplete - mark existing ones as uncertain
+                if (quantity != null && confidence < 0.7) {
+                    warnings.add("UNCERTAIN_QUANTITY");
+                }
+                if (packagingUnit != null && confidence < 0.7) {
+                    warnings.add("UNCERTAIN_PACKAGING_UNIT");
+                }
+                if (unitPrice != null && confidence < 0.7) {
+                    warnings.add("UNCERTAIN_PURCHASE_PRICE");
                 }
             }
             

@@ -3028,8 +3028,10 @@
       "MISSING_NUMERIC_FIELDS": "{{count}} Zahlenwert fehlt",
       "MISSING_NUMERIC_FIELDS_PLURAL": "{{count}} Zahlenwerte fehlen",
       "MISSING_NUMERIC_FIELDS_DETAIL": "Bitte Menge, VPE, Einkaufspreis oder Gesamtbetrag prüfen.",
-      "LINE_TOTAL_MISMATCH": "Gesamtbetrag stimmt nicht überein",
-      "ARTICLE_NUMBER_MISSING": "Artikelnummer nicht erkannt"
+      "LINE_TOTAL_MISMATCH": "Positionswerte stimmen rechnerisch nicht überein",
+      "LINE_TOTAL_MISMATCH_DETAIL": "Bitte Menge, VPE, Einkaufspreis und Gesamtbetrag kontrollieren.",
+      "ARTICLE_NUMBER_MISSING": "Artikelnummer nicht erkannt",
+      "UNASSIGNED_OCR_VALUES": "Weitere Zahlen wurden erkannt, konnten aber nicht sicher zugeordnet werden"
     },
     "EMPTY": {
       "TITLE": "Keine Positionen gefunden"

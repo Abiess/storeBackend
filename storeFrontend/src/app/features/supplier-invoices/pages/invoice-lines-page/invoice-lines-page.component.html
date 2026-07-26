@@ -339,13 +339,21 @@
         </div>
         
         <div class="form-row">
-          <div class="form-field">
+          <div class="form-field" [ngClass]="{'field-missing': getFieldStatus(editingLine, 'unit') === 'missing', 'field-uncertain': getFieldStatus(editingLine, 'unit') === 'uncertain'}">
             <label>{{ 'INVOICE_LINES.EDIT.UNIT' | translate }}</label>
             <input type="text" [(ngModel)]="editingLine.unit" />
+            <div class="field-hint" *ngIf="getFieldWarning(editingLine, 'unit')">
+              <lucide-icon [name]="getFieldStatus(editingLine, 'unit') === 'missing' ? 'alert-triangle' : 'alert-circle'" [size]="14"></lucide-icon>
+              {{ getFieldWarning(editingLine, 'unit') }}
+            </div>
           </div>
-          <div class="form-field">
+          <div class="form-field" [ngClass]="{'field-missing': getFieldStatus(editingLine, 'packagingUnit') === 'missing', 'field-uncertain': getFieldStatus(editingLine, 'packagingUnit') === 'uncertain'}">
             <label>{{ 'INVOICE_LINES.EDIT.VPE' | translate }}</label>
             <input type="number" step="0.01" [(ngModel)]="editingLine.packagingUnit" />
+            <div class="field-hint" *ngIf="getFieldWarning(editingLine, 'packagingUnit')">
+              <lucide-icon [name]="getFieldStatus(editingLine, 'packagingUnit') === 'missing' ? 'alert-triangle' : 'alert-circle'" [size]="14"></lucide-icon>
+              {{ getFieldWarning(editingLine, 'packagingUnit') }}
+            </div>
           </div>
         </div>
         
@@ -365,19 +373,31 @@
         </div>
         
         <div class="form-row">
-          <div class="form-field">
+          <div class="form-field" [ngClass]="{'field-missing': getFieldStatus(editingLine, 'quantity') === 'missing', 'field-uncertain': getFieldStatus(editingLine, 'quantity') === 'uncertain'}">
             <label>{{ 'INVOICE_LINES.EDIT.QUANTITY' | translate }}</label>
             <input type="number" step="0.001" [(ngModel)]="editingLine.quantity" />
+            <div class="field-hint" *ngIf="getFieldWarning(editingLine, 'quantity')">
+              <lucide-icon [name]="getFieldStatus(editingLine, 'quantity') === 'missing' ? 'alert-triangle' : 'alert-circle'" [size]="14"></lucide-icon>
+              {{ getFieldWarning(editingLine, 'quantity') }}
+            </div>
           </div>
-          <div class="form-field">
+          <div class="form-field" [ngClass]="{'field-missing': getFieldStatus(editingLine, 'unitPrice') === 'missing', 'field-uncertain': getFieldStatus(editingLine, 'unitPrice') === 'uncertain'}">
             <label>{{ 'INVOICE_LINES.EDIT.UNIT_PRICE' | translate }}</label>
             <input type="number" step="0.0001" [(ngModel)]="editingLine.unitPrice" />
+            <div class="field-hint" *ngIf="getFieldWarning(editingLine, 'unitPrice')">
+              <lucide-icon [name]="getFieldStatus(editingLine, 'unitPrice') === 'missing' ? 'alert-triangle' : 'alert-circle'" [size]="14"></lucide-icon>
+              {{ getFieldWarning(editingLine, 'unitPrice') }}
+            </div>
           </div>
         </div>
         
-        <div class="form-field">
+        <div class="form-field" [ngClass]="{'field-missing': getFieldStatus(editingLine, 'lineTotal') === 'missing', 'field-uncertain': getFieldStatus(editingLine, 'lineTotal') === 'uncertain'}">
           <label>{{ 'INVOICE_LINES.EDIT.LINE_TOTAL' | translate }}</label>
           <input type="number" step="0.01" [(ngModel)]="editingLine.lineTotal" />
+          <div class="field-hint" *ngIf="getFieldWarning(editingLine, 'lineTotal')">
+            <lucide-icon [name]="getFieldStatus(editingLine, 'lineTotal') === 'missing' ? 'alert-triangle' : 'alert-circle'" [size]="14"></lucide-icon>
+            {{ getFieldWarning(editingLine, 'lineTotal') }}
+          </div>
         </div>
       </div>
       
