@@ -89,14 +89,38 @@ echo "   ✅ $PYTHON_VERSION"
 
 # 5. System-Dependencies installieren
 echo ""
-echo "5️⃣  Installiere System-Dependencies..."
+echo "5️⃣  Prüfe System-Dependencies..."
 
+MISSING_DEPS=""
 if ! dpkg -l | grep -q poppler-utils; then
-    echo "   Installiere poppler-utils..."
-    sudo apt-get update -qq
-    sudo apt-get install -y poppler-utils libglib2.0-0 libsm6 libxrender1 libxext6 libgomp1
+    MISSING_DEPS="$MISSING_DEPS poppler-utils"
+fi
+if ! dpkg -l | grep -q libglib2.0-0; then
+    MISSING_DEPS="$MISSING_DEPS libglib2.0-0"
+fi
+if ! dpkg -l | grep -q libsm6; then
+    MISSING_DEPS="$MISSING_DEPS libsm6"
+fi
+
+if [ -n "$MISSING_DEPS" ]; then
+    echo "   ⚠️  Folgende Pakete fehlen:$MISSING_DEPS"
+    echo ""
+    echo "   Installation erforderlich:"
+    echo "   sudo apt-get update"
+    echo "   sudo apt-get install -y $MISSING_DEPS libxrender1 libxext6 libgomp1"
+    echo ""
+    read -p "Jetzt installieren? (y/N) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "   Installiere Dependencies..."
+        sudo apt-get update -qq
+        sudo apt-get install -y $MISSING_DEPS libxrender1 libxext6 libgomp1
+    else
+        echo "   ❌ Installation abgebrochen"
+        exit 1
+    fi
 else
-    echo "   ✅ poppler-utils bereits installiert"
+    echo "   ✅ Alle Dependencies installiert"
 fi
 
 # 6. Spike-Verzeichnis erstellen
@@ -130,18 +154,20 @@ source "$VENV_DIR/bin/activate"
 # Pip upgrade
 pip install --upgrade pip -q
 
-echo "   Installiere: paddlepaddle paddleocr..."
-pip install paddlepaddle==2.6.0 -q
-pip install paddleocr==2.7.3 -q
-
-echo "   Installiere: pdf2image psutil..."
-pip install pdf2image psutil pillow -q
+echo "   Installiere Dependencies aus requirements.txt..."
+pip install -r "$SPIKE_DIR/requirements.txt" -q
 
 echo ""
 echo "   📦 Installierte Versionen:"
 python --version
-pip show paddlepaddle | grep "Version:"
-pip show paddleocr | grep "Version:"
+pip show paddlepaddle | grep "Version:" | head -1
+pip show paddleocr | grep "Version:" | head -1
+
+# Versionen festhalten (requirements-lock.txt)
+echo ""
+echo "   💾 Erstelle requirements-lock.txt..."
+pip freeze > "$SPIKE_DIR/requirements-lock.txt"
+echo "   ✅ Versionen gespeichert"
 
 # 9. Installationsgröße messen
 echo ""

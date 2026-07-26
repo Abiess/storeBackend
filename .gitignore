@@ -32,6 +32,8 @@ Thumbs.db
 *.tmp
 temp/
 
+# Ignore test PDFs (KUNDENDATEN!)
+src/test/resources/**/*.pdf
 
 # AI-Kontext Timestamp (lokal)
 # .ai-context-updated  ? nicht ignorieren, soll committed werden
