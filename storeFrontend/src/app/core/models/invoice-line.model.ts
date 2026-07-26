@@ -60,3 +60,18 @@ export interface BulkConfirmResponse {
   skipped: number;
   lineSummary: LineSummary;
 }
+
+export interface CreateLineRequest {
+  supplierArticleNumber: string;
+  description: string;
+  quantity?: number;
+  unit?: string;
+  packagingUnit?: number;
+  unitPrice?: number;
+  lineTotal?: number;
+  taxRate?: number;
+}
+
+export interface SplitLineRequest {
+  splitPosition: number;
+}

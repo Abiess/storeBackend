@@ -279,7 +279,7 @@ public class InvoiceLineUpdateService {
         }
         
         // Get highest position number
-        List<SupplierInvoiceLine> existingLines = lineRepository.findByDocumentIdAndStoreIdOrderByPositionNumber(documentId, storeId);
+        List<SupplierInvoiceLine> existingLines = lineRepository.findByDocumentIdAndStoreIdOrderByPositionNumberAsc(documentId, storeId);
         int newPositionNumber = existingLines.stream()
             .map(SupplierInvoiceLine::getPositionNumber)
             .max(Comparator.naturalOrder())
@@ -414,7 +414,7 @@ public class InvoiceLineUpdateService {
         }
         
         // Find next line by position number
-        List<SupplierInvoiceLine> allLines = lineRepository.findByDocumentIdAndStoreIdOrderByPositionNumber(documentId, storeId);
+        List<SupplierInvoiceLine> allLines = lineRepository.findByDocumentIdAndStoreIdOrderByPositionNumberAsc(documentId, storeId);
         SupplierInvoiceLine nextLine = null;
         for (int i = 0; i < allLines.size() - 1; i++) {
             if (allLines.get(i).getId().equals(lineId)) {
@@ -450,7 +450,7 @@ public class InvoiceLineUpdateService {
      * Renumber lines after insertion/deletion.
      */
     private void renumberLinesAfter(Long storeId, Long documentId, Integer startPosition) {
-        List<SupplierInvoiceLine> lines = lineRepository.findByDocumentIdAndStoreIdOrderByPositionNumber(documentId, storeId);
+        List<SupplierInvoiceLine> lines = lineRepository.findByDocumentIdAndStoreIdOrderByPositionNumberAsc(documentId, storeId);
         int nextNumber = startPosition + 1;
         
         for (SupplierInvoiceLine l : lines) {

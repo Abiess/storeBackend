@@ -56,15 +56,19 @@ public class InvoiceLineItemParser {
     private static final Pattern PAGE_MARKER_PATTERN = Pattern.compile(
         "(?i)^\\s*(" +
         "fortsetzung(\\s+(auf\\s+)?(nächster|nachster)\\s+seite)?|" +
-        "seite\\s*\\d+\\s*/\\s*\\d+|" +
+        "seite\\s*[:]*\\s*\\d+\\s*/\\s*\\d+|" +
+        "lieferdatum|" +
+        "geschäftsführer|" +
+        "amtsgericht|" +
+        "telefon|" +
+        "iban|" +
+        "steuernummer|" +
+        "\\d{5}\\s+(nürnberg|münchen|berlin|hamburg|köln)|" +  // PLZ Stadt
+        "\\d{4}/\\d{5}|" +  // Rechnungsnummer Format
         "lieferschein\\s+\\d+|" +
         "rechnung\\s+\\d+|" +
         "mit\\s+camscanner\\s+gescannt" +
         ")\\s*[.]*\\s*$"
-    );
-    
-    private static final Set<String> KNOWN_UNITS = Set.of(
-        "kolli", "kilo", "stück", "stk", "kg", "liter", "l", "g", "ml"
     );
     
     private final boolean debug;

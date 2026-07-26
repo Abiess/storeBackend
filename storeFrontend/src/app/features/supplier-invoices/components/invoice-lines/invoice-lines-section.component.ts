@@ -33,11 +33,20 @@ type FilterType = 'ALL' | 'REVIEW' | 'UNMAPPED' | 'MAPPED';
     <div class="invoice-lines-section" *ngIf="lines.length > 0">
       <h3>Erkannte Positionen ({{ lines.length }})</h3>
       
+      <!-- Import Selection Counter -->
+      <div class="import-selection-info" *ngIf="selectedForImport.size > 0">
+        <strong>{{ selectedForImport.size }} von {{ lines.length }} Positionen ausgewählt</strong>
+      </div>
+      
       <app-invoice-line-summary
         [summary]="summary"
         [loading]="bulkLoading"
         (bulkConfirm)="onBulkConfirm()">
       </app-invoice-line-summary>
+      
+      <div class="actions-bar">
+        <button class="btn-add" (click)="startCreateLine()">+ Position hinzufügen</button>
+      </div>
       
       <div class="filter-tabs">
         <button 
@@ -53,6 +62,7 @@ type FilterType = 'ALL' | 'REVIEW' | 'UNMAPPED' | 'MAPPED';
         <table>
           <thead>
             <tr>
+              <th><input type="checkbox" disabled title="Alle auswählen" /></th>
               <th>Pos.</th>
               <th>Art.-Nr.</th>
               <th>Beschreibung</th>
@@ -70,6 +80,13 @@ type FilterType = 'ALL' | 'REVIEW' | 'UNMAPPED' | 'MAPPED';
           <tbody>
             <ng-container *ngFor="let line of filteredLines">
               <tr [class.editing]="editingLineId === line.id">
+                <td>
+                  <input 
+                    type="checkbox" 
+                    [checked]="selectedForImport.has(line.id)"
+                    (change)="toggleImportSelection(line.id)"
+                    title="Für Import auswählen" />
+                </td>
                 <td>{{ line.positionNumber }}</td>
                 <td>{{ line.supplierArticleNumber || '-' }}</td>
                 <td>
@@ -104,16 +121,32 @@ type FilterType = 'ALL' | 'REVIEW' | 'UNMAPPED' | 'MAPPED';
                 <td>
                   <button 
                     *ngIf="editingLineId !== line.id"
-                    class="btn-sm"
+                    class="btn-sm btn-edit"
                     (click)="startEdit(line)">
                     Bearbeiten
+                  </button>
+                  <button 
+                    class="btn-sm btn-delete"
+                    (click)="deleteLine(line)">
+                    Löschen
+                  </button>
+                  <button 
+                    class="btn-sm btn-split"
+                    (click)="startSplitLine(line)">
+                    Aufteilen
+                  </button>
+                  <button 
+                    *ngIf="canMergeWithNext(line)"
+                    class="btn-sm btn-merge"
+                    (click)="mergeWithNext(line)">
+                    Zusammenführen
                   </button>
                 </td>
               </tr>
               
               <!-- Edit Form Row -->
               <tr *ngIf="editingLineId === line.id">
-                <td colspan="12">
+                <td colspan="13">
                   <app-invoice-line-edit-form
                     [line]="line"
                     [storeId]="storeId"
@@ -126,7 +159,7 @@ type FilterType = 'ALL' | 'REVIEW' | 'UNMAPPED' | 'MAPPED';
               
               <!-- Product Assignment Row -->
               <tr *ngIf="assigningProductLineId === line.id">
-                <td colspan="12">
+                <td colspan="13">
                   <div class="product-assignment">
                     <h4>Produkt zuordnen für Position {{ line.positionNumber }}</h4>
                     
@@ -220,10 +253,101 @@ type FilterType = 'ALL' | 'REVIEW' | 'UNMAPPED' | 'MAPPED';
           </div>
           
           <div class="card-actions">
+            <button class="btn-sm" (click)="toggleImportSelection(line.id)">
+              {{ selectedForImport.has(line.id) ? '✓ Ausgewählt' : 'Auswählen' }}
+            </button>
             <button class="btn-sm" (click)="startEdit(line)">Bearbeiten</button>
             <button class="btn-sm" (click)="startProductAssignment(line)">
               {{ line.suggestedProductId ? 'Produkt ändern' : 'Produkt zuordnen' }}
             </button>
+            <button class="btn-sm btn-delete" (click)="deleteLine(line)">Löschen</button>
+            <button class="btn-sm btn-split" (click)="startSplitLine(line)">Aufteilen</button>
+            <button *ngIf="canMergeWithNext(line)" class="btn-sm btn-merge" (click)="mergeWithNext(line)">
+              Zusammenführen
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Create Line Dialog -->
+      <div class="modal-overlay" *ngIf="creatingNewLine" (click)="cancelCreateLine()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+          <h3>Neue Position hinzufügen</h3>
+          <div class="form-group">
+            <label>Lieferanten-Art.-Nr. *</label>
+            <input type="text" [(ngModel)]="newLineData.supplierArticleNumber" />
+          </div>
+          <div class="form-group">
+            <label>Beschreibung *</label>
+            <textarea rows="3" [(ngModel)]="newLineData.description"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Menge</label>
+              <input type="number" step="0.001" [(ngModel)]="newLineData.quantity" />
+            </div>
+            <div class="form-group">
+              <label>Einheit</label>
+              <input type="text" [(ngModel)]="newLineData.unit" />
+            </div>
+            <div class="form-group">
+              <label>VPE</label>
+              <input type="number" step="0.01" [(ngModel)]="newLineData.packagingUnit" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Einkaufspreis (€)</label>
+              <input type="number" step="0.0001" [(ngModel)]="newLineData.unitPrice" />
+            </div>
+            <div class="form-group">
+              <label>Gesamt (€)</label>
+              <input type="number" step="0.01" [(ngModel)]="newLineData.lineTotal" />
+            </div>
+            <div class="form-group">
+              <label>MwSt. (%)</label>
+              <input type="number" step="1" [(ngModel)]="newLineData.taxRate" />
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button class="btn-cancel" (click)="cancelCreateLine()">Abbrechen</button>
+            <button class="btn-confirm" (click)="confirmCreateLine()">Hinzufügen</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Split Line Dialog -->
+      <div class="modal-overlay" *ngIf="splitDialogLine" (click)="cancelSplitLine()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+          <h3>Position {{ splitDialogLine?.positionNumber }} aufteilen</h3>
+          <div class="split-preview">
+            <div class="original-text">
+              <strong>Original:</strong>
+              <p>{{ splitDialogLine?.description }}</p>
+            </div>
+            <div class="form-group">
+              <label>Trennposition (Zeichen-Index):</label>
+              <input 
+                type="range" 
+                [min]="1" 
+                [max]="(splitDialogLine?.description?.length || 1) - 1"
+                [(ngModel)]="splitPosition" />
+              <span>{{ splitPosition }}</span>
+            </div>
+            <div class="split-parts">
+              <div class="part-a">
+                <strong>Teil A:</strong>
+                <p>{{ (splitDialogLine?.description || '').substring(0, splitPosition) }}</p>
+              </div>
+              <div class="part-b">
+                <strong>Teil B:</strong>
+                <p>{{ (splitDialogLine?.description || '').substring(splitPosition) }}</p>
+              </div>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button class="btn-cancel" (click)="cancelSplitLine()">Abbrechen</button>
+            <button class="btn-confirm" (click)="confirmSplitLine()">Aufteilen</button>
           </div>
         </div>
       </div>
@@ -236,6 +360,15 @@ export class InvoiceLinesSectionComponent implements OnInit, OnChanges {
   @Input() documentId!: number;
   @Input() lines: InvoiceLine[] = [];
   @Input() summary: LineSummary = { detected: 0, confirmed: 0, mapped: 0, needsReview: 0 };
+  
+  // Phase 3B-2: Line management state
+  creatingNewLine = false;
+  newLineData: any = {};
+  splitDialogLine: InvoiceLine | null = null;
+  splitPosition = 0;
+  
+  // Import selection
+  selectedForImport = new Set<number>();
   
   currentFilter: FilterType = 'ALL';
   filters = [
@@ -450,5 +583,147 @@ export class InvoiceLinesSectionComponent implements OnInit, OnChanges {
       mapped: this.lines.filter(l => l.status === 'MAPPED').length,
       needsReview: this.lines.filter(l => l.status === 'UNREVIEWED' || l.status === 'REVIEW_REQUIRED').length
     };
+  }
+  
+  // Phase 3B-2: Manual line management
+  toggleImportSelection(lineId: number) {
+    if (this.selectedForImport.has(lineId)) {
+      this.selectedForImport.delete(lineId);
+    } else {
+      this.selectedForImport.add(lineId);
+    }
+  }
+  
+  startCreateLine() {
+    this.newLineData = {
+      supplierArticleNumber: '',
+      description: '',
+      quantity: null,
+      unit: 'Stk',
+      packagingUnit: null,
+      unitPrice: null,
+      lineTotal: null,
+      taxRate: 19
+    };
+    this.creatingNewLine = true;
+  }
+  
+  cancelCreateLine() {
+    this.creatingNewLine = false;
+    this.newLineData = {};
+  }
+  
+  confirmCreateLine() {
+    if (!this.newLineData.supplierArticleNumber || !this.newLineData.description) {
+      alert('Artikelnummer und Beschreibung sind Pflichtfelder.');
+      return;
+    }
+    
+    this.invoiceService.createInvoiceLine(this.storeId, this.documentId, this.newLineData).subscribe({
+      next: (created: InvoiceLine) => {
+        this.lines.push(created);
+        this.lines.sort((a, b) => a.positionNumber - b.positionNumber);
+        this.summary = this.calculateSummary();
+        this.creatingNewLine = false;
+        this.newLineData = {};
+        alert('Position erfolgreich hinzugefügt.');
+      },
+      error: (err: any) => {
+        alert(err.error?.message || 'Fehler beim Hinzufügen der Position.');
+      }
+    });
+  }
+  
+  deleteLine(line: InvoiceLine) {
+    if (!confirm(`Position ${line.positionNumber} wirklich löschen?\n\nDas zugeordnete Store-Produkt wird nicht gelöscht.`)) {
+      return;
+    }
+    
+    this.invoiceService.deleteInvoiceLine(this.storeId, this.documentId, line.id).subscribe({
+      next: () => {
+        const index = this.lines.findIndex(l => l.id === line.id);
+        if (index !== -1) {
+          this.lines.splice(index, 1);
+        }
+        this.selectedForImport.delete(line.id);
+        this.summary = this.calculateSummary();
+        alert('Position gelöscht.');
+      },
+      error: (err: any) => {
+        alert(err.error?.message || 'Fehler beim Löschen.');
+      }
+    });
+  }
+  
+  startSplitLine(line: InvoiceLine) {
+    this.splitDialogLine = line;
+    this.splitPosition = Math.floor((line.description?.length || 0) / 2);
+  }
+  
+  cancelSplitLine() {
+    this.splitDialogLine = null;
+    this.splitPosition = 0;
+  }
+  
+  confirmSplitLine() {
+    if (!this.splitDialogLine) return;
+    
+    const desc = this.splitDialogLine.description || '';
+    if (this.splitPosition <= 0 || this.splitPosition >= desc.length) {
+      alert('Ungültige Trennposition.');
+      return;
+    }
+    
+    this.invoiceService.splitInvoiceLine(
+      this.storeId,
+      this.documentId,
+      this.splitDialogLine.id,
+      { splitPosition: this.splitPosition }
+    ).subscribe({
+      next: (result: InvoiceLine[]) => {
+        // Replace old line with two new lines
+        const index = this.lines.findIndex(l => l.id === this.splitDialogLine!.id);
+        if (index !== -1) {
+          this.lines.splice(index, 1, ...result);
+        }
+        this.summary = this.calculateSummary();
+        this.cancelSplitLine();
+        alert(`Position aufgeteilt in ${result.length} Positionen.`);
+      },
+      error: (err: any) => {
+        alert(err.error?.message || 'Fehler beim Aufteilen.');
+      }
+    });
+  }
+  
+  canMergeWithNext(line: InvoiceLine): boolean {
+    const index = this.lines.findIndex(l => l.id === line.id);
+    return index !== -1 && index < this.lines.length - 1;
+  }
+  
+  mergeWithNext(line: InvoiceLine) {
+    const index = this.lines.findIndex(l => l.id === line.id);
+    if (index === -1 || index >= this.lines.length - 1) return;
+    
+    const nextLine = this.lines[index + 1];
+    const desc1 = line.description || '';
+    const desc2 = nextLine.description || '';
+    
+    if (!confirm(`Position ${line.positionNumber} mit Position ${nextLine.positionNumber} zusammenführen?\n\n"${desc1}"\n\n+\n\n"${desc2}"`)) {
+      return;
+    }
+    
+    this.invoiceService.mergeInvoiceLineWithNext(this.storeId, this.documentId, line.id).subscribe({
+      next: (merged: InvoiceLine) => {
+        // Remove next line, update current
+        this.lines.splice(index, 2, merged);
+        this.selectedForImport.delete(nextLine.id);
+        this.summary = this.calculateSummary();
+        alert('Positionen zusammengeführt.');
+      },
+      error: (err: any) => {
+        alert(err.error?.message || 'Fehler beim Zusammenführen.');
+      }
+    });
   }
 }

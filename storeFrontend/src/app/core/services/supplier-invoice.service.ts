@@ -130,6 +130,22 @@ export interface BulkConfirmResponse {
   lineSummary: LineSummary;
 }
 
+// Phase 3B-2: Manual Line Management
+export interface CreateLineRequest {
+  supplierArticleNumber: string;
+  description: string;
+  quantity?: number;
+  unit?: string;
+  packagingUnit?: number;
+  unitPrice?: number;
+  lineTotal?: number;
+  taxRate?: number;
+}
+
+export interface SplitLineRequest {
+  splitPosition: number;
+}
+
 export interface SupplierNameCorrectionRequest {
   rawValue: string;
   correctedValue: string;
@@ -377,6 +393,34 @@ export class SupplierInvoiceService {
     return this.http.post<BulkConfirmResponse>(
       `${this.baseUrl}/${storeId}/supplier-invoices/documents/${documentId}/lines/bulk-confirm`,
       request
+    );
+  }
+  
+  // Phase 3B-2: Manual Line Management
+  createInvoiceLine(storeId: number, documentId: number, request: CreateLineRequest): Observable<InvoiceLine> {
+    return this.http.post<InvoiceLine>(
+      `${this.baseUrl}/${storeId}/supplier-invoices/documents/${documentId}/lines`,
+      request
+    );
+  }
+  
+  deleteInvoiceLine(storeId: number, documentId: number, lineId: number): Observable<void> {
+    return this.http.delete<void>(
+      `${this.baseUrl}/${storeId}/supplier-invoices/documents/${documentId}/lines/${lineId}`
+    );
+  }
+  
+  splitInvoiceLine(storeId: number, documentId: number, lineId: number, request: SplitLineRequest): Observable<InvoiceLine[]> {
+    return this.http.post<InvoiceLine[]>(
+      `${this.baseUrl}/${storeId}/supplier-invoices/documents/${documentId}/lines/${lineId}/split`,
+      request
+    );
+  }
+  
+  mergeInvoiceLineWithNext(storeId: number, documentId: number, lineId: number): Observable<InvoiceLine> {
+    return this.http.post<InvoiceLine>(
+      `${this.baseUrl}/${storeId}/supplier-invoices/documents/${documentId}/lines/${lineId}/merge-next`,
+      {}
     );
   }
 }
