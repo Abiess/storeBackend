@@ -202,6 +202,61 @@
   }
 }
 
+.no-results {
+  padding: 2rem;
+  text-align: center;
+  color: #666;
+  
+  p {
+    margin: 0 0 0.5rem 0;
+    font-weight: 600;
+    font-size: 1rem;
+  }
+  
+  small {
+    color: #999;
+    font-size: 0.875rem;
+  }
+}
+
+.selected-product-summary {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: white;
+  border: 2px solid #667eea;
+  border-radius: 0.5rem;
+  
+  h5 {
+    margin: 0 0 1rem 0;
+    color: #667eea;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  
+  .summary-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  .summary-item {
+    display: flex;
+    justify-content: space-between;
+    
+    label {
+      font-weight: 600;
+      color: #666;
+      font-size: 0.875rem;
+    }
+    
+    span {
+      color: #333;
+      font-size: 0.875rem;
+      text-align: right;
+    }
+  }
+}
+
 .remember-checkbox {
   margin-bottom: 1rem;
   

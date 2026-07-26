@@ -14,6 +14,7 @@ interface ProductSummary {
   title: string;
   sku?: string;
   price?: number;
+  stockQuantity?: number;
 }
 
 type FilterType = 'ALL' | 'REVIEW' | 'UNMAPPED' | 'MAPPED';
@@ -181,9 +182,33 @@ type FilterType = 'ALL' | 'REVIEW' | 'UNMAPPED' | 'MAPPED';
                         <div class="product-info">
                           <strong>{{ product.title }}</strong>
                           <small *ngIf="product.sku">SKU: {{ product.sku }}</small>
-                          <small *ngIf="product.price">{{ product.price | number:'1.2-2' }} €</small>
+                          <small *ngIf="product.price">Preis: {{ product.price | number:'1.2-2' }} €</small>
+                          <small *ngIf="product.stockQuantity !== undefined">Bestand: {{ product.stockQuantity }}</small>
                         </div>
                         <div class="checkmark" *ngIf="selectedProductId === product.id">✓</div>
+                      </div>
+                    </div>
+                    
+                    <div class="no-results" *ngIf="productSearchQuery.length >= 2 && productResults.length === 0">
+                      <p>Kein passendes Produkt gefunden.</p>
+                      <small>Suche nach: Produktname, SKU</small>
+                    </div>
+                    
+                    <div class="selected-product-summary" *ngIf="selectedProductId">
+                      <h5>Ausgewähltes Produkt</h5>
+                      <div class="summary-grid">
+                        <div class="summary-item">
+                          <label>Produktname:</label>
+                          <span>{{ getSelectedProduct()?.title }}</span>
+                        </div>
+                        <div class="summary-item" *ngIf="getSelectedProduct()?.sku">
+                          <label>SKU:</label>
+                          <span>{{ getSelectedProduct()?.sku }}</span>
+                        </div>
+                        <div class="summary-item" *ngIf="getSelectedProduct()?.stockQuantity !== undefined">
+                          <label>Aktueller Bestand:</label>
+                          <span>{{ getSelectedProduct()?.stockQuantity }}</span>
+                        </div>
                       </div>
                     </div>
                     
@@ -441,7 +466,8 @@ export class InvoiceLinesSectionComponent implements OnInit, OnChanges {
               id: product.id,
               title: product.title,
               sku: product.sku,
-              price: product.price
+              price: product.price,
+              stockQuantity: product.stockQuantity
             });
           },
           error: () => {}
@@ -452,6 +478,11 @@ export class InvoiceLinesSectionComponent implements OnInit, OnChanges {
   
   getProductName(productId: number): string {
     return this.productsCache.get(productId)?.title || 'Produkt laden...';
+  }
+  
+  getSelectedProduct(): ProductSummary | null {
+    if (!this.selectedProductId) return null;
+    return this.productResults.find(p => p.id === this.selectedProductId) || null;
   }
   
   startEdit(line: InvoiceLine) {
@@ -530,10 +561,21 @@ export class InvoiceLinesSectionComponent implements OnInit, OnChanges {
         }
         this.assigningProduct = false;
         this.cancelProductAssignment();
+        alert('Produkt erfolgreich zugeordnet.');
       },
       error: (err: any) => {
         this.assigningProduct = false;
-        this.assignmentError = err.error?.message || 'Zuordnung fehlgeschlagen.';
+        
+        // User-friendly error messages
+        if (err.status === 404) {
+          this.assignmentError = 'Position wurde nicht gefunden.';
+        } else if (err.status === 403) {
+          this.assignmentError = 'Produkt gehört nicht zu diesem Store.';
+        } else if (err.error?.message) {
+          this.assignmentError = err.error.message;
+        } else {
+          this.assignmentError = 'Produkt konnte nicht zugeordnet werden.';
+        }
       }
     });
   }
