@@ -245,7 +245,7 @@ public class InvoiceLineItemParser {
                 
                 currentBlock = new PositionBlock();
                 currentBlock.positionNumber = Integer.parseInt(matcher.group(1));
-                currentBlock.articleNumber = matcher.group(2);
+                currentBlock.supplierArticleNumber = matcher.group(2);
                 currentBlock.lines.add(matcher.group(3).trim());
             } else if (currentBlock != null && !isPageMarker(line)) {
                 // Continuation line
@@ -275,11 +275,11 @@ public class InvoiceLineItemParser {
                     
                     currentBlock = new PositionBlock();
                     currentBlock.positionNumber = autoPositionNumber++;
-                    currentBlock.articleNumber = matcher.group(1);
+                    currentBlock.supplierArticleNumber = matcher.group(1);
                     currentBlock.lines.add(matcher.group(2).trim());
                     
                     if (debug) System.out.println("  Marzouk line detected: pos=" + currentBlock.positionNumber + 
-                                                " art=" + currentBlock.articleNumber + 
+                                                " art=" + currentBlock.supplierArticleNumber +
                                                 " desc=" + matcher.group(2).substring(0, Math.min(30, matcher.group(2).length())));
                 } else if (currentBlock != null && !isPageMarker(line)) {
                     // Continuation line
@@ -375,7 +375,7 @@ public class InvoiceLineItemParser {
             // CHANGED: Return line even if fields are missing (don't return null)
             ParsedInvoiceLine line = new ParsedInvoiceLine(
                 block.positionNumber,
-                block.articleNumber,
+                block.supplierArticleNumber,
                 description,
                 quantity,
                 unit,
@@ -403,7 +403,7 @@ public class InvoiceLineItemParser {
                 String combinedText = String.join(" ", block.lines);
                 return new ParsedInvoiceLine(
                     block.positionNumber,
-                    block.articleNumber,
+                    block.supplierArticleNumber,
                     combinedText,
                     null, null, null, null, null, null, null,
                     0.3,
@@ -535,7 +535,7 @@ public class InvoiceLineItemParser {
      */
     private static class PositionBlock {
         int positionNumber;
-        String articleNumber;
+        String supplierArticleNumber;
         List<String> lines = new ArrayList<>();
     }
 }
