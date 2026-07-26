@@ -2804,5 +2804,126 @@
       "DATE": "التاريخ"
     },
     "SEARCH_PLACEHOLDER": "بحث عن مستندات..."
+  },
+  "INVOICE_LINES": {
+    "TITLE": "تحرير بنود الفاتورة",
+    "CONTEXT": {
+      "INVOICE": "فاتورة",
+      "POSITIONS_COUNT": "تم اكتشاف {{count}} بند",
+      "POSITIONS_COUNT_PLURAL": "تم اكتشاف {{count}} بنود"
+    },
+    "LOADING": "جاري تحميل البنود...",
+    "SUMMARY": {
+      "DETECTED": "بنود مكتشفة",
+      "DETECTED_SHORT": "مكتشفة",
+      "CONFIRMED": "بنود تم فحصها",
+      "CONFIRMED_SHORT": "تم فحصها",
+      "MAPPED": "مخصصة للمنتجات",
+      "MAPPED_SHORT": "مخصصة",
+      "NEEDS_REVIEW": "بحاجة إلى مراجعة",
+      "NEEDS_REVIEW_SHORT": "مراجعة"
+    },
+    "SELECTION": {
+      "SELECTED": "بنود محددة",
+      "CLEAR": "إلغاء التحديد"
+    },
+    "FILTERS": {
+      "ALL": "الكل",
+      "REVIEW": "بحاجة إلى مراجعة",
+      "UNMAPPED": "غير مخصصة",
+      "MAPPED": "مخصصة"
+    },
+    "SEARCH_PLACEHOLDER": "بحث برقم المقالة أو الوصف...",
+    "TABLE": {
+      "SELECT": "تحديد",
+      "POS": "رقم",
+      "ARTICLE_NR": "رقم مقالة المورد",
+      "DESCRIPTION": "الوصف",
+      "QUANTITY": "الكمية",
+      "UNIT": "الوحدة",
+      "VPE": "وحدة التعبئة",
+      "UNIT_PRICE": "سعر الشراء",
+      "LINE_TOTAL": "المجموع",
+      "TAX_RATE": "الضريبة",
+      "PRODUCT": "المنتج",
+      "STATUS": "حالة المراجعة",
+      "ACTIONS": "الإجراءات"
+    },
+    "PRODUCT": {
+      "MAPPED": "مخصصة",
+      "ASSIGN": "تخصيص"
+    },
+    "ACTIONS": {
+      "ADD_LINE": "إضافة بند",
+      "BULK_CONFIRM": "تعليم المحددة كمفحوصة",
+      "BULK_CONFIRM_HINT": "لن يتم إنشاء منتجات ولن يتم تغيير المخزون.",
+      "EDIT": "تحرير",
+      "ASSIGN": "تخصيص منتج",
+      "ASSIGN_PRODUCT": "تخصيص منتج",
+      "SPLIT": "تقسيم",
+      "MERGE_NEXT": "دمج مع البند التالي",
+      "MERGE": "دمج",
+      "DELETE": "حذف",
+      "MORE": "المزيد من الإجراءات",
+      "BACK_TO_DOCUMENT": "العودة إلى المستند"
+    },
+    "CREATE": {
+      "TITLE": "إضافة بند جديد",
+      "ARTICLE_NR": "رقم مقالة المورد",
+      "DESCRIPTION": "الوصف",
+      "QUANTITY": "الكمية",
+      "UNIT": "الوحدة",
+      "VPE": "وحدة التعبئة",
+      "UNIT_PRICE": "سعر الشراء (€)",
+      "LINE_TOTAL": "المجموع (€)",
+      "TAX_RATE": "الضريبة (%)"
+    },
+    "EDIT": {
+      "TITLE": "تحرير البند",
+      "ARTICLE_NR": "رقم المقالة",
+      "DESCRIPTION": "الوصف",
+      "QUANTITY": "الكمية",
+      "UNIT": "الوحدة",
+      "VPE": "وحدة التعبئة",
+      "UNIT_PRICE": "سعر الشراء",
+      "LINE_TOTAL": "المجموع",
+      "TAX_RATE": "الضريبة",
+      "REMEMBER_CORRECTION": "تذكر التصحيح للفواتير المستقبلية",
+      "REMEMBER_HINT": "سيتم حفظ الوصف والوحدة ووحدة التعبئة والضريبة كبيانات أساسية"
+    },
+    "SPLIT": {
+      "TITLE": "تقسيم البند",
+      "ORIGINAL": "الأصل",
+      "POSITION": "موضع التقسيم (فهرس الحرف)",
+      "PART_A": "الجزء أ",
+      "PART_B": "الجزء ب",
+      "CONFIRM": "تقسيم"
+    },
+    "WARNINGS": {
+      "COUNT": "{{count}} ملاحظة",
+      "COUNT_PLURAL": "{{count}} ملاحظات",
+      "MISSING_NUMERIC_FIELDS": "{{count}} قيمة رقمية مفقودة",
+      "MISSING_NUMERIC_FIELDS_PLURAL": "{{count}} قيم رقمية مفقودة",
+      "MISSING_NUMERIC_FIELDS_DETAIL": "يرجى مراجعة الكمية أو وحدة التعبئة أو سعر الشراء أو المجموع.",
+      "LINE_TOTAL_MISMATCH": "عدم تطابق المبلغ الإجمالي",
+      "ARTICLE_NUMBER_MISSING": "لم يتم اكتشاف رقم المقالة"
+    },
+    "EMPTY": {
+      "TITLE": "لم يتم العثور على بنود"
+    },
+    "STATUS": {
+      "UNREVIEWED": "لم تتم المراجعة",
+      "REVIEW_REQUIRED": "بحاجة إلى مراجعة",
+      "CONFIRMED": "تم الفحص",
+      "MAPPED": "تم تخصيص المنتج"
+    },
+    "LEARNING": {
+      "ORIGINALLY_DETECTED": "تم اكتشافه في الأصل",
+      "REMEMBER_CORRECTION": "تذكر هذا التصحيح للفواتير المستقبلية",
+      "CONFIRM_CORRECTION": "تأكيد التصحيح",
+      "CORRECTION_SAVED": "تم حفظ التصحيح",
+      "CORRECTION_SAVED_AND_REMEMBERED": "تم حفظ التصحيح وسيتم تطبيقه على الفواتير المستقبلية",
+      "LEARNED_FROM_PREVIOUS": "من تصحيح سابق"
+    }
   }
 }

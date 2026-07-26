@@ -272,6 +272,17 @@
           overflow: hidden;
         }
 
+        .learned-badge {
+          display: inline-block;
+          padding: 0.125rem 0.5rem;
+          background: #d1f2eb;
+          color: #0e5e4a;
+          border-radius: 4px;
+          font-size: 0.7rem;
+          font-weight: 500;
+          margin: 0.25rem 0;
+        }
+
         .warnings {
           .warning-badge {
             display: inline-flex;

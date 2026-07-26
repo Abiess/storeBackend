@@ -106,6 +106,9 @@
           <td class="col-description sticky-left">
             <div class="description-cell">
               <p class="description-text">{{ line.description || '—' }}</p>
+              <span class="learned-badge" *ngIf="line.mappingSource === 'LEARNED_MAPPING'">
+                {{ 'INVOICE_LINES.LEARNING.LEARNED_FROM_PREVIOUS' | translate }}
+              </span>
               <div class="warnings" *ngIf="line.warnings.length > 0">
                 <span class="warning-badge" [matTooltip]="'INVOICE_LINES.WARNINGS.MISSING_NUMERIC_FIELDS_DETAIL' | translate">
                   <lucide-icon name="alert-circle" [size]="12"></lucide-icon>
