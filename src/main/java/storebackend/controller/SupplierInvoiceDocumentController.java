@@ -827,4 +827,145 @@ public class SupplierInvoiceDocumentController {
                     .body(Map.of("error", "Internal Server Error", "message", e.getMessage()));
         }
     }
+    
+    /**
+     * Phase 3B-2: Manually create a new invoice line.
+     */
+    @Operation(summary = "Create invoice line manually", 
+               description = "Add a new invoice line manually (for missing OCR positions).")
+    @PostMapping("/documents/{documentId}/lines")
+    @PreAuthorize("@storeAccessChecker.isStoreAdmin(#storeId)")
+    public ResponseEntity<?> createInvoiceLine(
+            @PathVariable Long storeId,
+            @PathVariable Long documentId,
+            @RequestBody storebackend.dto.CreateLineRequest request
+    ) {
+        log.info("Create line request: storeId={}, documentId={}", storeId, documentId);
+        
+        try {
+            storebackend.entity.SupplierInvoiceLine created = 
+                lineUpdateService.createLine(storeId, documentId, request);
+            
+            return ResponseEntity.status(HttpStatus.CREATED).body(lineDTOMapper.toDTO(created));
+            
+        } catch (SecurityException e) {
+            log.warn("Security violation: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Forbidden", "message", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid request: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Bad Request", "message", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Failed to create line: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Internal Server Error", "message", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Phase 3B-2: Delete an invoice line.
+     */
+    @Operation(summary = "Delete invoice line", 
+               description = "Delete a wrongly detected invoice line (e.g. metadata recognized as product).")
+    @DeleteMapping("/documents/{documentId}/lines/{lineId}")
+    @PreAuthorize("@storeAccessChecker.isStoreAdmin(#storeId)")
+    public ResponseEntity<?> deleteInvoiceLine(
+            @PathVariable Long storeId,
+            @PathVariable Long documentId,
+            @PathVariable Long lineId
+    ) {
+        log.info("Delete line request: storeId={}, documentId={}, lineId={}", storeId, documentId, lineId);
+        
+        try {
+            lineUpdateService.deleteLine(storeId, documentId, lineId);
+            
+            return ResponseEntity.noContent().build();
+            
+        } catch (SecurityException e) {
+            log.warn("Security violation: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Forbidden", "message", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid request: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Bad Request", "message", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Failed to delete line: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Internal Server Error", "message", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Phase 3B-2: Split an invoice line at text position.
+     */
+    @Operation(summary = "Split invoice line", 
+               description = "Split a line containing multiple products at a text position.")
+    @PostMapping("/documents/{documentId}/lines/{lineId}/split")
+    @PreAuthorize("@storeAccessChecker.isStoreAdmin(#storeId)")
+    public ResponseEntity<?> splitInvoiceLine(
+            @PathVariable Long storeId,
+            @PathVariable Long documentId,
+            @PathVariable Long lineId,
+            @RequestBody storebackend.dto.SplitLineRequest request
+    ) {
+        log.info("Split line request: storeId={}, documentId={}, lineId={}, splitAt={}", 
+                storeId, documentId, lineId, request.getSplitPosition());
+        
+        try {
+            List<storebackend.entity.SupplierInvoiceLine> result = 
+                lineUpdateService.splitLine(storeId, documentId, lineId, request.getSplitPosition());
+            
+            return ResponseEntity.ok(result.stream().map(lineDTOMapper::toDTO).toList());
+            
+        } catch (SecurityException e) {
+            log.warn("Security violation: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Forbidden", "message", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid request: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Bad Request", "message", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Failed to split line: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Internal Server Error", "message", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Phase 3B-2: Merge invoice line with next line.
+     */
+    @Operation(summary = "Merge invoice line with next", 
+               description = "Merge a line with the next line (for split product descriptions).")
+    @PostMapping("/documents/{documentId}/lines/{lineId}/merge-next")
+    @PreAuthorize("@storeAccessChecker.isStoreAdmin(#storeId)")
+    public ResponseEntity<?> mergeInvoiceLineWithNext(
+            @PathVariable Long storeId,
+            @PathVariable Long documentId,
+            @PathVariable Long lineId
+    ) {
+        log.info("Merge line request: storeId={}, documentId={}, lineId={}", storeId, documentId, lineId);
+        
+        try {
+            storebackend.entity.SupplierInvoiceLine merged = 
+                lineUpdateService.mergeWithNext(storeId, documentId, lineId);
+            
+            return ResponseEntity.ok(lineDTOMapper.toDTO(merged));
+            
+        } catch (SecurityException e) {
+            log.warn("Security violation: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Forbidden", "message", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid request: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Bad Request", "message", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Failed to merge line: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Internal Server Error", "message", e.getMessage()));
+        }
+    }
 }

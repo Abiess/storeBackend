@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import storebackend.dto.CreateLineRequest;
 import storebackend.dto.ProductMappingRequest;
 import storebackend.dto.UpdateLineRequest;
 import storebackend.entity.Product;
@@ -19,6 +20,7 @@ import storebackend.repository.SupplierInvoiceParseResultRepository;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -261,6 +263,201 @@ public class InvoiceLineUpdateService {
             this.requested = requested;
             this.confirmed = confirmed;
             this.skipped = skipped;
+        }
+    }
+    
+    /**
+     * Phase 3B-2: Manually create a new invoice line.
+     */
+    @Transactional
+    public SupplierInvoiceLine createLine(Long storeId, Long documentId, CreateLineRequest request) {
+        // Security: Verify document belongs to store
+        Optional<SupplierInvoiceParseResult> parseResult = 
+            parseResultRepository.findByDocumentIdAndStoreId(documentId, storeId);
+        if (parseResult.isEmpty()) {
+            throw new IllegalArgumentException("Document not found or does not belong to store");
+        }
+        
+        // Get highest position number
+        List<SupplierInvoiceLine> existingLines = lineRepository.findByDocumentIdAndStoreIdOrderByPositionNumber(documentId, storeId);
+        int newPositionNumber = existingLines.stream()
+            .map(SupplierInvoiceLine::getPositionNumber)
+            .max(Comparator.naturalOrder())
+            .orElse(0) + 1;
+        
+        // Create new line
+        SupplierInvoiceLine line = new SupplierInvoiceLine();
+        line.setStoreId(storeId);
+        line.setDocumentId(documentId);
+        line.setPositionNumber(newPositionNumber);
+        line.setSupplierArticleNumber(request.getSupplierArticleNumber());
+        line.setDescription(request.getDescription());
+        line.setQuantity(request.getQuantity());
+        line.setUnit(request.getUnit());
+        line.setPackagingUnit(request.getPackagingUnit());
+        line.setUnitPrice(request.getUnitPrice());
+        line.setLineTotal(request.getLineTotal());
+        line.setTaxRate(request.getTaxRate());
+        line.setDiscount(BigDecimal.ZERO);
+        line.setConfidence(1.0); // Manually created, no OCR uncertainty
+        line.setUserCorrected(true);
+        line.setStatus(LineStatus.CONFIRMED);
+        line.setRawText("Manually created by user");
+        line.setWarningsJson(null);
+        
+        return lineRepository.save(line);
+    }
+    
+    /**
+     * Phase 3B-2: Delete an invoice line.
+     */
+    @Transactional
+    public void deleteLine(Long storeId, Long documentId, Long lineId) {
+        // Security: Load and verify ownership
+        SupplierInvoiceLine line = lineRepository.findById(lineId)
+                .orElseThrow(() -> new IllegalArgumentException("Line not found: " + lineId));
+        
+        if (!line.getStoreId().equals(storeId)) {
+            throw new SecurityException("Line does not belong to store " + storeId);
+        }
+        
+        if (!line.getDocumentId().equals(documentId)) {
+            throw new IllegalArgumentException("Line does not belong to document " + documentId);
+        }
+        
+        // Soft delete or hard delete (hard delete for now - only deletes invoice line, not store product)
+        lineRepository.delete(line);
+        log.info("Deleted invoice line: storeId={}, documentId={}, lineId={}", storeId, documentId, lineId);
+    }
+    
+    /**
+     * Phase 3B-2: Split a line at text position.
+     */
+    @Transactional
+    public List<SupplierInvoiceLine> splitLine(Long storeId, Long documentId, Long lineId, Integer splitPosition) {
+        // Security: Load and verify ownership
+        SupplierInvoiceLine line = lineRepository.findById(lineId)
+                .orElseThrow(() -> new IllegalArgumentException("Line not found: " + lineId));
+        
+        if (!line.getStoreId().equals(storeId)) {
+            throw new SecurityException("Line does not belong to store " + storeId);
+        }
+        
+        if (!line.getDocumentId().equals(documentId)) {
+            throw new IllegalArgumentException("Line does not belong to document " + documentId);
+        }
+        
+        String description = line.getDescription();
+        if (description == null || splitPosition < 0 || splitPosition >= description.length()) {
+            throw new IllegalArgumentException("Invalid split position: " + splitPosition);
+        }
+        
+        // Split description
+        String part1 = description.substring(0, splitPosition).trim();
+        String part2 = description.substring(splitPosition).trim();
+        
+        if (part1.isEmpty() || part2.isEmpty()) {
+            throw new IllegalArgumentException("Split would result in empty description");
+        }
+        
+        // Update original line (Part A)
+        line.setDescription(part1);
+        line.setLineTotal(null); // Reset numeric values - user must re-enter
+        line.setQuantity(null);
+        line.setUnitPrice(null);
+        line.setStatus(LineStatus.REVIEW_REQUIRED);
+        line.setUserCorrected(true);
+        lineRepository.save(line);
+        
+        // Create new line (Part B)
+        SupplierInvoiceLine newLine = new SupplierInvoiceLine();
+        newLine.setStoreId(storeId);
+        newLine.setDocumentId(documentId);
+        newLine.setPositionNumber(line.getPositionNumber() + 1); // Insert after original
+        newLine.setSupplierArticleNumber(null); // User must enter
+        newLine.setDescription(part2);
+        newLine.setQuantity(null);
+        newLine.setUnit(line.getUnit());
+        newLine.setPackagingUnit(null);
+        newLine.setUnitPrice(null);
+        newLine.setLineTotal(null);
+        newLine.setTaxRate(line.getTaxRate());
+        newLine.setDiscount(BigDecimal.ZERO);
+        newLine.setConfidence(0.5);
+        newLine.setUserCorrected(true);
+        newLine.setStatus(LineStatus.REVIEW_REQUIRED);
+        newLine.setRawText("Split from line " + lineId);
+        newLine.setWarningsJson(null);
+        lineRepository.save(newLine);
+        
+        // Renumber subsequent lines
+        renumberLinesAfter(storeId, documentId, line.getPositionNumber());
+        
+        return List.of(line, newLine);
+    }
+    
+    /**
+     * Phase 3B-2: Merge line with next line.
+     */
+    @Transactional
+    public SupplierInvoiceLine mergeWithNext(Long storeId, Long documentId, Long lineId) {
+        // Security: Load and verify ownership
+        SupplierInvoiceLine line = lineRepository.findById(lineId)
+                .orElseThrow(() -> new IllegalArgumentException("Line not found: " + lineId));
+        
+        if (!line.getStoreId().equals(storeId)) {
+            throw new SecurityException("Line does not belong to store " + storeId);
+        }
+        
+        if (!line.getDocumentId().equals(documentId)) {
+            throw new IllegalArgumentException("Line does not belong to document " + documentId);
+        }
+        
+        // Find next line by position number
+        List<SupplierInvoiceLine> allLines = lineRepository.findByDocumentIdAndStoreIdOrderByPositionNumber(documentId, storeId);
+        SupplierInvoiceLine nextLine = null;
+        for (int i = 0; i < allLines.size() - 1; i++) {
+            if (allLines.get(i).getId().equals(lineId)) {
+                nextLine = allLines.get(i + 1);
+                break;
+            }
+        }
+        
+        if (nextLine == null) {
+            throw new IllegalArgumentException("No next line to merge with");
+        }
+        
+        // Merge descriptions
+        String mergedDescription = line.getDescription() + " " + nextLine.getDescription();
+        line.setDescription(mergedDescription);
+        line.setUserCorrected(true);
+        line.setStatus(LineStatus.REVIEW_REQUIRED); // User must verify
+        
+        // Keep first line's numeric values, discard second
+        lineRepository.save(line);
+        
+        // Delete next line
+        lineRepository.delete(nextLine);
+        
+        // Renumber subsequent lines
+        renumberLinesAfter(storeId, documentId, line.getPositionNumber());
+        
+        log.info("Merged lines: {} + {} → {}", lineId, nextLine.getId(), line.getId());
+        return line;
+    }
+    
+    /**
+     * Renumber lines after insertion/deletion.
+     */
+    private void renumberLinesAfter(Long storeId, Long documentId, Integer startPosition) {
+        List<SupplierInvoiceLine> lines = lineRepository.findByDocumentIdAndStoreIdOrderByPositionNumber(documentId, storeId);
+        int nextNumber = startPosition + 1;
+        
+        for (SupplierInvoiceLine l : lines) {
+            if (l.getPositionNumber() > startPosition) {
+                l.setPositionNumber(nextNumber++);
+                lineRepository.save(l);
+            }
         }
     }
 }

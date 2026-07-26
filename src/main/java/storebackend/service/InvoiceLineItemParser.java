@@ -63,6 +63,10 @@ public class InvoiceLineItemParser {
         ")\\s*[.]*\\s*$"
     );
     
+    private static final Set<String> KNOWN_UNITS = Set.of(
+        "kolli", "kilo", "stück", "stk", "kg", "liter", "l", "g", "ml"
+    );
+    
     private final boolean debug;
     private String parserStrategy = "UNKNOWN";
     
@@ -311,7 +315,14 @@ public class InvoiceLineItemParser {
                     if (debug) System.out.println("  Marzouk line detected: pos=" + currentBlock.positionNumber + 
                                                 " art=" + currentBlock.supplierArticleNumber + 
                                                 " desc=" + matcher.group(2).substring(0, Math.min(30, matcher.group(2).length())));
-                } else if (currentBlock != null && !isPageMarker(line)) {
+                } else if (isPageMarker(line)) {
+                    // Page break marker: end current block and don't add as continuation
+                    if (debug) System.out.println("  Page marker detected - ending current block: " + line);
+                    if (currentBlock != null) {
+                        blocks.add(currentBlock);
+                        currentBlock = null; // Force new block for next line
+                    }
+                } else if (currentBlock != null) {
                     // Check if this might be a product line without article number
                     Matcher noNumberMatcher = PRODUCT_LINE_WITHOUT_NUMBER.matcher(line);
                     if (noNumberMatcher.matches() && currentBlock.lines.isEmpty()) {
