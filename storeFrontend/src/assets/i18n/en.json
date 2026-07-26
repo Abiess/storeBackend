@@ -2876,12 +2876,21 @@
   },
   "INVOICE_LINES": {
     "TITLE": "Edit Invoice Line Items",
+    "CONTEXT": {
+      "INVOICE": "Invoice",
+      "POSITIONS_COUNT": "{{count}} line item detected",
+      "POSITIONS_COUNT_PLURAL": "{{count}} line items detected"
+    },
     "LOADING": "Loading line items...",
     "SUMMARY": {
-      "DETECTED": "detected",
-      "CONFIRMED": "confirmed",
-      "MAPPED": "mapped",
-      "NEEDS_REVIEW": "needs review"
+      "DETECTED": "line items detected",
+      "DETECTED_SHORT": "detected",
+      "CONFIRMED": "line items reviewed",
+      "CONFIRMED_SHORT": "reviewed",
+      "MAPPED": "assigned to products",
+      "MAPPED_SHORT": "assigned",
+      "NEEDS_REVIEW": "need review",
+      "NEEDS_REVIEW_SHORT": "review"
     },
     "SELECTION": {
       "SELECTED": "line items selected",
@@ -2897,16 +2906,16 @@
     "TABLE": {
       "SELECT": "Select",
       "POS": "Pos.",
-      "ARTICLE_NR": "Article No.",
+      "ARTICLE_NR": "Supplier Article No.",
       "DESCRIPTION": "Description",
       "QUANTITY": "Quantity",
       "UNIT": "Unit",
       "VPE": "Pkg Unit",
-      "UNIT_PRICE": "Price",
+      "UNIT_PRICE": "Purchase Price",
       "LINE_TOTAL": "Total",
       "TAX_RATE": "VAT",
       "PRODUCT": "Product",
-      "STATUS": "Status",
+      "STATUS": "Review Status",
       "ACTIONS": "Actions"
     },
     "PRODUCT": {
@@ -2915,7 +2924,8 @@
     },
     "ACTIONS": {
       "ADD_LINE": "Add Line Item",
-      "BULK_CONFIRM": "Confirm Selected",
+      "BULK_CONFIRM": "Mark Selected as Reviewed",
+      "BULK_CONFIRM_HINT": "No products will be created and no inventory will be changed.",
       "EDIT": "Edit",
       "ASSIGN": "Assign Product",
       "ASSIGN_PRODUCT": "Assign Product",
@@ -2923,7 +2933,8 @@
       "MERGE_NEXT": "Merge with Next",
       "MERGE": "Merge",
       "DELETE": "Delete",
-      "MORE": "More Actions"
+      "MORE": "More Actions",
+      "BACK_TO_DOCUMENT": "Back to Document"
     },
     "CREATE": {
       "TITLE": "Add New Line Item",
@@ -2960,12 +2971,20 @@
     "WARNINGS": {
       "COUNT": "{{count}} hint",
       "COUNT_PLURAL": "{{count}} hints",
-      "MISSING_NUMERIC_FIELDS": "{{count}} numeric values missing",
+      "MISSING_NUMERIC_FIELDS": "{{count}} numeric value missing",
+      "MISSING_NUMERIC_FIELDS_PLURAL": "{{count}} numeric values missing",
+      "MISSING_NUMERIC_FIELDS_DETAIL": "Please review quantity, pkg unit, purchase price or total.",
       "LINE_TOTAL_MISMATCH": "Total amount mismatch",
       "ARTICLE_NUMBER_MISSING": "Article number not detected"
     },
     "EMPTY": {
       "TITLE": "No line items found"
+    },
+    "STATUS": {
+      "UNREVIEWED": "Not Reviewed",
+      "REVIEW_REQUIRED": "Needs Review",
+      "CONFIRMED": "Reviewed",
+      "MAPPED": "Product Assigned"
     }
   },
   "SUPPLIER_INVOICES_STATUS": {

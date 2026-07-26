@@ -46,6 +46,7 @@ export class InvoiceLinesPageComponent implements OnInit, OnDestroy {
   
   storeId!: number;
   documentId!: number;
+  document: any = null; // Will hold document details (supplier, invoice number)
   
   loading = true;
   lines: InvoiceLine[] = [];
@@ -115,6 +116,13 @@ export class InvoiceLinesPageComponent implements OnInit, OnDestroy {
         next: (result: InvoiceParseResult) => {
           this.lines = result.lines || [];
           this.summary = result.lineSummary || this.calculateSummary();
+          // Store document context for header
+          if (result.fields) {
+            this.document = {
+              supplierName: result.fields.supplierName || '',
+              invoiceNumber: result.fields.invoiceNumber || ''
+            };
+          }
           this.loading = false;
         },
         error: (err: any) => {

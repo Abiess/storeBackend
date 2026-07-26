@@ -2909,12 +2909,21 @@
   },
   "INVOICE_LINES": {
     "TITLE": "Rechnungspositionen bearbeiten",
+    "CONTEXT": {
+      "INVOICE": "Rechnung",
+      "POSITIONS_COUNT": "{{count}} Position erkannt",
+      "POSITIONS_COUNT_PLURAL": "{{count}} Positionen erkannt"
+    },
     "LOADING": "Positionen werden geladen...",
     "SUMMARY": {
-      "DETECTED": "erkannt",
-      "CONFIRMED": "bestätigt",
-      "MAPPED": "zugeordnet",
-      "NEEDS_REVIEW": "prüfen"
+      "DETECTED": "Positionen erkannt",
+      "DETECTED_SHORT": "erkannt",
+      "CONFIRMED": "Positionen geprüft",
+      "CONFIRMED_SHORT": "geprüft",
+      "MAPPED": "Produkten zugeordnet",
+      "MAPPED_SHORT": "zugeordnet",
+      "NEEDS_REVIEW": "müssen geprüft werden",
+      "NEEDS_REVIEW_SHORT": "prüfen"
     },
     "SELECTION": {
       "SELECTED": "Positionen ausgewählt",
@@ -2930,16 +2939,16 @@
     "TABLE": {
       "SELECT": "Auswahl",
       "POS": "Pos.",
-      "ARTICLE_NR": "Art.-Nr.",
+      "ARTICLE_NR": "Lieferanten-Art.-Nr.",
       "DESCRIPTION": "Beschreibung",
       "QUANTITY": "Menge",
       "UNIT": "Einheit",
       "VPE": "VPE",
-      "UNIT_PRICE": "Preis",
+      "UNIT_PRICE": "Einkaufspreis",
       "LINE_TOTAL": "Gesamt",
       "TAX_RATE": "MwSt.",
       "PRODUCT": "Produkt",
-      "STATUS": "Status",
+      "STATUS": "Prüfstatus",
       "ACTIONS": "Aktionen"
     },
     "PRODUCT": {
@@ -2948,7 +2957,8 @@
     },
     "ACTIONS": {
       "ADD_LINE": "Position hinzufügen",
-      "BULK_CONFIRM": "Ausgewählte bestätigen",
+      "BULK_CONFIRM": "Ausgewählte als geprüft markieren",
+      "BULK_CONFIRM_HINT": "Dabei werden noch keine Produkte erstellt und keine Bestände verändert.",
       "EDIT": "Bearbeiten",
       "ASSIGN": "Produkt zuordnen",
       "ASSIGN_PRODUCT": "Produkt zuordnen",
@@ -2956,7 +2966,8 @@
       "MERGE_NEXT": "Mit nächster Position zusammenführen",
       "MERGE": "Zusammenführen",
       "DELETE": "Löschen",
-      "MORE": "Weitere Aktionen"
+      "MORE": "Weitere Aktionen",
+      "BACK_TO_DOCUMENT": "Zurück zum Dokument"
     },
     "CREATE": {
       "TITLE": "Neue Position hinzufügen",
@@ -2993,13 +3004,21 @@
     "WARNINGS": {
       "COUNT": "{{count}} Hinweis",
       "COUNT_PLURAL": "{{count}} Hinweise",
-      "MISSING_NUMERIC_FIELDS": "{{count}} Zahlenwerte fehlen",
+      "MISSING_NUMERIC_FIELDS": "{{count}} Zahlenwert fehlt",
+      "MISSING_NUMERIC_FIELDS_PLURAL": "{{count}} Zahlenwerte fehlen",
+      "MISSING_NUMERIC_FIELDS_DETAIL": "Bitte Menge, VPE, Einkaufspreis oder Gesamtbetrag prüfen.",
       "LINE_TOTAL_MISMATCH": "Gesamtbetrag stimmt nicht überein",
       "ARTICLE_NUMBER_MISSING": "Artikelnummer nicht erkannt"
     },
     "EMPTY": {
       "TITLE": "Keine Positionen gefunden"
     },
+    "STATUS": {
+      "UNREVIEWED": "Noch nicht geprüft",
+      "REVIEW_REQUIRED": "Bitte prüfen",
+      "CONFIRMED": "Geprüft",
+      "MAPPED": "Produkt zugeordnet"
+    },
     "LEARNING": {
       "ORIGINALLY_DETECTED": "Ursprünglich erkannt",
       "REMEMBER_CORRECTION": "Diese Korrektur für zukünftige Rechnungen merken",

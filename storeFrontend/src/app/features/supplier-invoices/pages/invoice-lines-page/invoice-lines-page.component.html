@@ -1,16 +1,23 @@
 <div class="invoice-lines-page">
   <!-- Header -->
   <div class="page-header">
-    <button mat-icon-button (click)="backToDocument()" class="back-button">
+    <button mat-icon-button (click)="backToDocument()" class="back-button" [attr.aria-label]="'INVOICE_LINES.ACTIONS.BACK_TO_DOCUMENT' | translate">
       <lucide-icon name="arrow-left" [size]="20"></lucide-icon>
     </button>
     <div class="header-content">
       <h1>{{ 'INVOICE_LINES.TITLE' | translate }}</h1>
+      <div class="document-context" *ngIf="document">
+        <span class="supplier-name">{{ document.supplierName }}</span>
+        <span class="separator" *ngIf="document.supplierName && document.invoiceNumber"> · </span>
+        <span class="invoice-number" *ngIf="document.invoiceNumber">
+          {{ 'INVOICE_LINES.CONTEXT.INVOICE' | translate }} {{ document.invoiceNumber }}
+        </span>
+      </div>
       <div class="summary-chips">
         <span class="chip">{{ summary.detected }} {{ 'INVOICE_LINES.SUMMARY.DETECTED' | translate }}</span>
+        <span class="chip chip-review">{{ summary.needsReview }} {{ 'INVOICE_LINES.SUMMARY.NEEDS_REVIEW' | translate }}</span>
         <span class="chip chip-confirmed">{{ summary.confirmed }} {{ 'INVOICE_LINES.SUMMARY.CONFIRMED' | translate }}</span>
         <span class="chip chip-mapped">{{ summary.mapped }} {{ 'INVOICE_LINES.SUMMARY.MAPPED' | translate }}</span>
-        <span class="chip chip-review">{{ summary.needsReview }} {{ 'INVOICE_LINES.SUMMARY.NEEDS_REVIEW' | translate }}</span>
       </div>
     </div>
     <div class="header-actions">
@@ -18,7 +25,7 @@
         <lucide-icon name="plus" [size]="18"></lucide-icon>
         {{ 'INVOICE_LINES.ACTIONS.ADD_LINE' | translate }}
       </button>
-      <button mat-raised-button color="primary" (click)="bulkConfirm()" [disabled]="loading">
+      <button mat-raised-button color="primary" (click)="bulkConfirm()" [disabled]="loading || selectedForImport.size === 0" [matTooltip]="'INVOICE_LINES.ACTIONS.BULK_CONFIRM_HINT' | translate">
         {{ 'INVOICE_LINES.ACTIONS.BULK_CONFIRM' | translate }}
       </button>
     </div>
@@ -100,9 +107,9 @@
             <div class="description-cell">
               <p class="description-text">{{ line.description || '—' }}</p>
               <div class="warnings" *ngIf="line.warnings.length > 0">
-                <span class="warning-badge" [matTooltip]="line.warnings.join(' • ')">
+                <span class="warning-badge" [matTooltip]="'INVOICE_LINES.WARNINGS.MISSING_NUMERIC_FIELDS_DETAIL' | translate">
                   <lucide-icon name="alert-circle" [size]="12"></lucide-icon>
-                  {{ 'INVOICE_LINES.WARNINGS.MISSING_NUMERIC_FIELDS' | translate: {count: line.warnings.length} }}
+                  {{ (line.warnings.length === 1 ? 'INVOICE_LINES.WARNINGS.MISSING_NUMERIC_FIELDS' : 'INVOICE_LINES.WARNINGS.MISSING_NUMERIC_FIELDS_PLURAL') | translate: {count: line.warnings.length} }}
                 </span>
               </div>
             </div>
