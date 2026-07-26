@@ -35,8 +35,8 @@ public class SupplierProductMapping {
     @Column(name = "normalized_description", length = 500)
     private String normalizedDescription;
     
-    // Mapped product
-    @Column(name = "product_id", nullable = false)
+    // Mapped product (optional - can be NULL if only master data is learned)
+    @Column(name = "product_id")
     private Long productId;
     
     // Phase 3B-3: Master Data Learning - corrected values for future invoices
