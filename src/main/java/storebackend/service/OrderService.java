@@ -291,13 +291,14 @@ public class OrderService {
             }
             
 
-            // Determine tax category and rate
-            storebackend.enums.TaxCategory taxCategory = product.getTaxCategory() != null
-                ? product.getTaxCategory()
+            // ✅ KRITISCH: Tax-Daten vom FRISCH GELADENEN freshProduct verwenden
+            // Alte Tax-Werte vom CartItem-Lazy-Load würden veraltete Steuersätze enthalten
+            storebackend.enums.TaxCategory taxCategory = freshProduct.getTaxCategory() != null
+                ? freshProduct.getTaxCategory()
                 : storebackend.enums.TaxCategory.STANDARD;
 
-            BigDecimal taxRate = product.getTaxRate() != null
-                ? product.getTaxRate()
+            BigDecimal taxRate = freshProduct.getTaxRate() != null
+                ? freshProduct.getTaxRate()
                 : (store.getDefaultTaxRate() != null 
                     ? store.getDefaultTaxRate() 
                     : new BigDecimal("19.00"));
