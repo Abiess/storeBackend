@@ -222,6 +222,7 @@ public class PublicOrderController {
                 getFromShipping.apply("postalCode"),
                 getFromShipping.apply("country"),
                 getFromShipping.apply("phone"),
+                getFromShipping.apply("company"),  // B2B: company
                 getFromBilling.apply("firstName"),
                 getFromBilling.apply("lastName"),
                 getFromBilling.apply("address1"),
@@ -229,7 +230,9 @@ public class PublicOrderController {
                 getFromBilling.apply("city"),
                 getFromBilling.apply("postalCode"),
                 getFromBilling.apply("country"),
+                getFromBilling.apply("company"),   // B2B: company
                 notes,
+                (String) request.get("customerReference"),  // B2B: customerReference
                 customer,
                 paymentMethod,
                 phoneVerificationId,

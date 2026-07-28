@@ -30,6 +30,9 @@ public class CheckoutRequestDTO {
     private Map<String, String> billingAddress;
 
     private String notes;
+    
+    // B2B Fields
+    private String customerReference; // PO-Nummer oder Kundenreferenz
 
     @NotNull(message = "Zahlungsmethode ist erforderlich")
     private PaymentMethod paymentMethod;

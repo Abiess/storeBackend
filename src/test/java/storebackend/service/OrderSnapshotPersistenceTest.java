@@ -95,8 +95,11 @@ public class OrderSnapshotPersistenceTest {
             cart.getId(),
             "test@example.com",
             "John", "Doe", "Street 1", "", "Berlin", "10115", "DE", "+4912345",
+            null,  // shippingCompany
             "John", "Doe", "Street 1", "", "Berlin", "10115", "DE",
-            "Test order",
+            null,  // billingCompany
+            "Test order",  // notes
+            null,  // customerReference
             null, // customer
             PaymentMethod.CASH_ON_DELIVERY,
             null, // phoneVerificationId

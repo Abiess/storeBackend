@@ -59,7 +59,11 @@ public class OrderDiscountAndShippingTest {
         Order order = orderService.createOrderFromCart(
             cart.getId(), "test@example.com",
             "John", "Doe", "Street 1", "", "Berlin", "10115", "DE", "+4912345",
-            "John", "Doe", "Street 1", "", "Berlin", "10115", "DE", "Test",
+            null,  // shippingCompany
+            "John", "Doe", "Street 1", "", "Berlin", "10115", "DE",
+            null,  // billingCompany
+            "Test",  // notes
+            null,  // customerReference
             null, PaymentMethod.CASH_ON_DELIVERY, null,
             DeliveryType.PICKUP, null, null,
             Arrays.asList("TEST10")
@@ -109,7 +113,11 @@ public class OrderDiscountAndShippingTest {
         Order order = orderService.createOrderFromCart(
             cart.getId(), "test@example.com",
             "John", "Doe", "Street 1", "", "Berlin", "10115", "DE", "+4912345",
-            "John", "Doe", "Street 1", "", "Berlin", "10115", "DE", "Test",
+            null,  // shippingCompany
+            "John", "Doe", "Street 1", "", "Berlin", "10115", "DE",
+            null,  // billingCompany
+            "Test",  // notes
+            null,  // customerReference
             null, PaymentMethod.CASH_ON_DELIVERY, null,
             DeliveryType.PICKUP, null, null,
             Arrays.asList("SAVE20")
@@ -154,7 +162,11 @@ public class OrderDiscountAndShippingTest {
         Order order = orderService.createOrderFromCart(
             cart.getId(), "test@example.com",
             "John", "Doe", "Street 1", "", "Berlin", "10115", "DE", "+4912345",
-            "John", "Doe", "Street 1", "", "Berlin", "10115", "DE", "Test",
+            null,  // shippingCompany
+            "John", "Doe", "Street 1", "", "Berlin", "10115", "DE",
+            null,  // billingCompany
+            "Test",  // notes
+            null,  // customerReference
             null, PaymentMethod.CASH_ON_DELIVERY, null,
             DeliveryType.DELIVERY,  // Lieferung, nicht Pickup
             DeliveryMode.STANDARD,  // Standardversand
@@ -187,7 +199,11 @@ public class OrderDiscountAndShippingTest {
         Order order = orderService.createOrderFromCart(
             cart.getId(), "test@example.com",
             "John", "Doe", "Street 1", "", "Berlin", "10115", "DE", "+4912345",
-            "John", "Doe", "Street 1", "", "Berlin", "10115", "DE", "Test",
+            null,  // shippingCompany
+            "John", "Doe", "Street 1", "", "Berlin", "10115", "DE",
+            null,  // billingCompany
+            "Test",  // notes
+            null,  // customerReference
             null, PaymentMethod.CASH_ON_DELIVERY, null,
             DeliveryType.DELIVERY,
             DeliveryMode.STANDARD,

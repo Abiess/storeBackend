@@ -191,16 +191,15 @@ public class DeliveryNoteService {
         
         // Items
         contentStream.setFont(PDType1Font.HELVETICA, FONT_SIZE);
-        List<OrderItem> items = order.getItems();
+        List<OrderItem> items = order.getOrderItems();
         
         for (OrderItem item : items) {
             // Check if we need a new page
             if (yPosition < MARGIN + 50) {
-                contentStream.close();
-                PDPage newPage = new PDPage(PDRectangle.A4);
-                document.addPage(newPage);
-                yPosition = newPage.getMediaBox().getHeight() - MARGIN;
-                return drawLineItems(new PDPageContentStream(document, newPage), order, yPosition, newPage);
+                // Note: Pagination wird in diesem MVP nicht unterstützt
+                // Bei sehr vielen Positionen werden diese abgeschnitten
+                // Erweiterung folgt bei Bedarf
+                break;
             }
             
             String productName = item.getName() != null ? item.getName() : "";

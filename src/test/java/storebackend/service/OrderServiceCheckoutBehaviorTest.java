@@ -145,8 +145,12 @@ public class OrderServiceCheckoutBehaviorTest {
         orderService.createOrderFromCart(
             1L, "test@test.com",
             "Max", "Mustermann", "Street 1", null, "Berlin", "10115", "DE", "+491234567890",
+            null,  // shippingCompany
             "Max", "Mustermann", "Street 1", null, "Berlin", "10115", "DE",
-            null, customer, PaymentMethod.CASH_ON_DELIVERY, null,
+            null,  // billingCompany
+            null,  // notes
+            null,  // customerReference
+            customer, PaymentMethod.CASH_ON_DELIVERY, null,
             DeliveryType.PICKUP, null, null, List.of()
         );
 
@@ -223,8 +227,12 @@ public class OrderServiceCheckoutBehaviorTest {
         orderService.createOrderFromCart(
             1L, "test@test.com",
             "Max", "Mustermann", "Street 1", null, "Berlin", "10115", "DE", "+491234567890",
+            null,  // shippingCompany
             "Max", "Mustermann", "Street 1", null, "Berlin", "10115", "DE",
-            null, customer, PaymentMethod.CASH_ON_DELIVERY, null,
+            null,  // billingCompany
+            null,  // notes
+            null,  // customerReference
+            customer, PaymentMethod.CASH_ON_DELIVERY, null,
             DeliveryType.PICKUP, null, null, List.of()
         );
 

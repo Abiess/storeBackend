@@ -82,10 +82,12 @@ public class OrderService {
                                      String shippingAddress1, String shippingAddress2,
                                      String shippingCity, String shippingPostalCode,
                                      String shippingCountry, String shippingPhone,
+                                     String shippingCompany,
                                      String billingFirstName, String billingLastName,
                                      String billingAddress1, String billingAddress2,
                                      String billingCity, String billingPostalCode,
-                                     String billingCountry, String notes,
+                                     String billingCountry, String billingCompany,
+                                     String notes, String customerReference,
                                      User customer,
                                      PaymentMethod paymentMethod,
                                      Long phoneVerificationId,
@@ -207,6 +209,7 @@ public class OrderService {
         }
         
         order.setNotes(notes);
+        order.setCustomerReference(customerReference);
         order.setPaymentMethod(paymentMethod);
         order.setPhoneVerificationId(phoneVerificationId);
         order.setPhoneVerified(phoneVerificationId != null);
@@ -228,6 +231,7 @@ public class OrderService {
 
         // Set addresses
         Address shippingAddr = new Address();
+        shippingAddr.setCompany(shippingCompany);
         shippingAddr.setFirstName(shippingFirstName);
         shippingAddr.setLastName(shippingLastName);
         shippingAddr.setAddress1(shippingAddress1);
@@ -239,6 +243,7 @@ public class OrderService {
         order.setShippingAddress(shippingAddr);
 
         Address billingAddr = new Address();
+        billingAddr.setCompany(billingCompany);
         billingAddr.setFirstName(billingFirstName);
         billingAddr.setLastName(billingLastName);
         billingAddr.setAddress1(billingAddress1);
@@ -575,6 +580,7 @@ public class OrderService {
         dto.setShippingAddress(order.getShippingAddress());
         dto.setBillingAddress(order.getBillingAddress());
         dto.setNotes(order.getNotes());
+        dto.setCustomerReference(order.getCustomerReference());  // B2B
 
         // Currency & Tax Snapshot
         dto.setCurrencyCode(order.getCurrencyCode() != null ? order.getCurrencyCode().name() : "EUR");

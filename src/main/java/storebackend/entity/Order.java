@@ -170,6 +170,7 @@ public class Order {
     // FIXED: Shipping Address eingebettet
     @Embedded
     @AttributeOverrides({
+        @AttributeOverride(name = "company", column = @Column(name = "shipping_company")),
         @AttributeOverride(name = "firstName", column = @Column(name = "shipping_first_name")),
         @AttributeOverride(name = "lastName", column = @Column(name = "shipping_last_name")),
         @AttributeOverride(name = "address1", column = @Column(name = "shipping_address1")),
@@ -184,6 +185,7 @@ public class Order {
     // FIXED: Billing Address eingebettet
     @Embedded
     @AttributeOverrides({
+        @AttributeOverride(name = "company", column = @Column(name = "billing_company")),
         @AttributeOverride(name = "firstName", column = @Column(name = "billing_first_name")),
         @AttributeOverride(name = "lastName", column = @Column(name = "billing_last_name")),
         @AttributeOverride(name = "address1", column = @Column(name = "billing_address1")),

@@ -20,6 +20,9 @@ public class OrderDetailsDTO {
     private BigDecimal totalAmount;
     private String notes;
     private String customerEmail;
+    
+    // B2B Fields
+    private String customerReference; // PO-Nummer oder Kundenreferenz
     private CustomerDTO customer;
     private Address shippingAddress;
     private Address billingAddress;
