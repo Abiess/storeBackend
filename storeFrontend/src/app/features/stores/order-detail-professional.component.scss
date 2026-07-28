@@ -19,6 +19,33 @@
   gap: 1rem;
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.btn-delivery-note {
+  white-space: nowrap;
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 0.625rem 1.25rem;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-delivery-note:hover:not(:disabled) {
+  background: #5a67d8;
+}
+
+.btn-delivery-note:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* btn-back styles are now in styles.scss */
 
 .detail-header h1 {

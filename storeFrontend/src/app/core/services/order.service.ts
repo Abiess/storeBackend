@@ -73,4 +73,13 @@ export class OrderService {
     }
     return this.http.post(`${environment.apiUrl}/stores/${storeId}/orders/${orderId}/notes`, { note });
   }
+  
+  /**
+   * B2B: Download delivery note PDF
+   */
+  getDeliveryNotePdf(storeId: number, orderId: number): Observable<Blob> {
+    return this.http.get(`${environment.apiUrl}/stores/${storeId}/orders/${orderId}/delivery-note`, {
+      responseType: 'blob'
+    });
+  }
 }

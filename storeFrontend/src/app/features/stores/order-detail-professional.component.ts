@@ -9,12 +9,13 @@ import { DeliverySettingsService } from '../../core/services/delivery-settings.s
 import { Order, OrderStatus, OrderStatusHistory, OrderItem, Address, Store } from '../../core/models';
 import { DeliverySettings } from '../../core/models/delivery.model';
 import { StoreNavigationComponent } from '../../shared/components/store-navigation.component';
+import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { toDate } from '../../core/utils/date.utils';
 
 @Component({
   selector: 'app-order-detail-professional',
   standalone: true,
-  imports: [CommonModule, FormsModule, StoreNavigationComponent],
+  imports: [CommonModule, FormsModule, StoreNavigationComponent, TranslatePipe],
   templateUrl: './order-detail-professional.component.html',
   styleUrls: ['./order-detail-professional.component.scss']
 })
@@ -60,6 +61,9 @@ export class OrderDetailProfessionalComponent implements OnInit {
   dhlLengthCm: number = 30;
   dhlWidthCm: number = 20;
   dhlHeightCm: number = 15;
+  
+  // B2B: Delivery Note Download
+  downloadingDeliveryNote = false;
 
   // Available statuses
   availableStatuses: OrderStatus[] = [
@@ -433,6 +437,34 @@ export class OrderDetailProfessionalComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/dashboard/stores', this.storeId, 'orders']);
+  }
+  
+  /** B2B: Download delivery note PDF */
+  downloadDeliveryNote(): void {
+    if (!this.order || this.downloadingDeliveryNote) {
+      return;
+    }
+    
+    this.downloadingDeliveryNote = true;
+    this.error = null;
+    
+    this.orderService.getDeliveryNotePdf(this.storeId, this.orderId).subscribe({
+      next: (blob) => {
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `lieferschein-${this.order!.orderNumber}.pdf`;
+        link.click();
+        window.URL.revokeObjectURL(url);
+        this.downloadingDeliveryNote = false;
+      },
+      error: (err) => {
+        console.error('Delivery note download failed:', err);
+        this.error = 'Lieferschein konnte nicht erstellt werden';
+        this.downloadingDeliveryNote = false;
+      }
+    });
   }
 
   formatTimestamp(timestamp: string | Date): string {

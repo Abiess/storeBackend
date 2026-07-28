@@ -401,6 +401,10 @@
     "shippingAddress": "Lieferadresse",
     "billingAddress": "Rechnungsadresse",
     "sameBilling": "Rechnungsadresse ist identisch mit Lieferadresse",
+    "orderAsCompany": "Als Firma bestellen",
+    "company": "Firma",
+    "customerReference": "Kundenreferenz / PO-Nummer",
+    "customerReferencePlaceholder": "z.B. PO-2026-0042",
     "shippingMethod": "Versandmethode",
     "shippingDhlTitle": "DHL Versand",
     "shippingDhlDesc": "Lieferung mit DHL Paket",
@@ -1284,6 +1288,12 @@
     "quantity": "Menge",
     "price": "Preis",
     "grandTotal": "Gesamtsumme",
+    "deliveryNote": {
+      "title": "Lieferschein",
+      "download": "Lieferschein herunterladen",
+      "downloading": "Lieferschein wird erstellt...",
+      "error": "Lieferschein konnte nicht erstellt werden"
+    },
     "searchPlaceholder": "Nach Bestellnummer oder E-Mail suchen...",
     "dhlCreateLabel": "DHL-Label erstellen",
     "dhlLabelCreated": "DHL-Label erfolgreich erstellt!",

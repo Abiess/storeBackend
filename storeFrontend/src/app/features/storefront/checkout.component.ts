@@ -121,8 +121,36 @@ import { environment } from '@env/environment';
               </div>
             </section>
 
+            <!-- B2B: Als Firma bestellen -->
+            <section class="form-section">
+              <div class="checkbox-wrapper">
+                <label>
+                  <input type="checkbox" [(ngModel)]="orderAsCompany" [ngModelOptions]="{standalone: true}" />
+                  {{ 'checkout.orderAsCompany' | translate }}
+                </label>
+              </div>
+
+              <div *ngIf="orderAsCompany" class="b2b-fields">
+                <div class="form-group">
+                  <label for="customerReference">{{ 'checkout.customerReference' | translate }}</label>
+                  <input
+                    id="customerReference"
+                    type="text"
+                    formControlName="customerReference"
+                    [placeholder]="'checkout.customerReferencePlaceholder' | translate"
+                  />
+                </div>
+              </div>
+            </section>
+
             <section class="form-section" formGroupName="shippingAddress">
               <h2>{{ 'checkout.shippingAddress' | translate }}</h2>
+
+              <!-- B2B: Company field -->
+              <div *ngIf="orderAsCompany" class="form-group">
+                <label for="shippingCompany">{{ 'checkout.company' | translate }}</label>
+                <input id="shippingCompany" type="text" formControlName="company" />
+              </div>
 
               <div class="form-row">
                 <div class="form-group">
@@ -202,6 +230,12 @@ import { environment } from '@env/environment';
 
               <div *ngIf="!sameAsShipping" formGroupName="billingAddress">
                 <h2>{{ 'checkout.billingAddress' | translate }}</h2>
+
+                <!-- B2B: Company field -->
+                <div *ngIf="orderAsCompany" class="form-group">
+                  <label for="billingCompany">{{ 'checkout.company' | translate }}</label>
+                  <input id="billingCompany" type="text" formControlName="company" />
+                </div>
 
                 <div class="form-row">
                   <div class="form-group">
@@ -773,6 +807,14 @@ import { environment } from '@env/environment';
     .checkbox-wrapper input[type="checkbox"] {
       width: auto;
       cursor: pointer;
+    }
+    
+    .b2b-fields {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      border-left: 3px solid #667eea;
     }
 
     .error {
@@ -1744,6 +1786,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     submitting = false;
     errorMessage = '';
     sameAsShipping = true;
+    orderAsCompany = false;  // B2B: Als Firma bestellen
     headerActions: HeaderAction[] = [];
     selectedShippingMethod = 'STANDARD';
     discountAmount = 0;
@@ -1829,6 +1872,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         this.checkoutForm = this.fb.group({
             customerEmail: ['', [Validators.required, Validators.email]],
             shippingAddress: this.fb.group({
+                company: [''],  // B2B: Firmenname
                 firstName: ['', Validators.required],
                 lastName: ['', Validators.required],
                 address1: ['', Validators.required],
@@ -1839,6 +1883,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
                 phone: ['']
             }),
             billingAddress: this.fb.group({
+                company: [''],  // B2B: Firmenname
                 firstName: [''],
                 lastName: [''],
                 address1: [''],
@@ -1847,7 +1892,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
                 postalCode: [''],
                 country: ['Deutschland']
             }),
-            notes: ['']
+            notes: [''],
+            customerReference: ['']  // B2B: PO-Nummer/Kundenreferenz
         });
     }
 
@@ -2178,6 +2224,11 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
         if (formValue.notes?.trim()) {
             request.notes = formValue.notes.trim();
+        }
+        
+        // B2B: customerReference
+        if (formValue.customerReference?.trim()) {
+            request.customerReference = formValue.customerReference.trim();
         }
 
         // Session-ID für Guest-Checkout

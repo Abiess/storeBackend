@@ -282,6 +282,10 @@
     "shippingAddress": "Shipping address",
     "billingAddress": "Billing address",
     "sameBilling": "Billing address is the same as shipping address",
+    "orderAsCompany": "Order as company",
+    "company": "Company",
+    "customerReference": "Customer Reference / PO Number",
+    "customerReferencePlaceholder": "e.g. PO-2026-0042",
     "shippingMethod": "Shipping method",
     "shippingDhlTitle": "DHL Shipping",
     "shippingDhlDesc": "Delivery via DHL Parcel",
@@ -1050,6 +1054,12 @@
     "quantity": "Quantity",
     "price": "Price",
     "grandTotal": "Grand total",
+    "deliveryNote": {
+      "title": "Delivery Note",
+      "download": "Download Delivery Note",
+      "downloading": "Creating delivery note...",
+      "error": "Could not create delivery note"
+    },
     "searchPlaceholder": "Search by order number or email...",
     "dhlCreateLabel": "Create DHL label",
     "dhlLabelCreated": "DHL label created successfully!",

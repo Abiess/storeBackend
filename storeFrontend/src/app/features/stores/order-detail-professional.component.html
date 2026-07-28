@@ -8,6 +8,15 @@
       <h1>📦 Bestellung {{ order?.orderNumber }}</h1>
     </div>
     <div class="header-right">
+      <button 
+        class="btn btn-secondary btn-delivery-note" 
+        (click)="downloadDeliveryNote()" 
+        [disabled]="downloadingDeliveryNote"
+        title="{{ 'order.deliveryNote.download' | translate }}"
+      >
+        <span *ngIf="!downloadingDeliveryNote">📄 {{ 'order.deliveryNote.download' | translate }}</span>
+        <span *ngIf="downloadingDeliveryNote">⏳ {{ 'order.deliveryNote.downloading' | translate }}</span>
+      </button>
       <span class="status-badge" [ngClass]="getStatusClass(order!.status)">
         {{ getStatusLabel(order!.status) }}
       </span>

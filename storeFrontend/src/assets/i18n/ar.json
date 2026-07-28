@@ -230,6 +230,10 @@
     "shippingAddress": "عنوان الشحن",
     "billingAddress": "عنوان الفاتورة",
     "sameBilling": "عنوان الفاتورة مطابق لعنوان الشحن",
+    "orderAsCompany": "الطلب كشركة",
+    "company": "الشركة",
+    "customerReference": "مرجع العميل / رقم أمر الشراء",
+    "customerReferencePlaceholder": "مثال: PO-2026-0042",
     "shippingMethod": "طريقة الشحن",
     "shippingDhlTitle": "شحن DHL",
     "shippingDhlDesc": "التسليم عبر DHL Paket",
@@ -538,6 +542,12 @@
     "quantity": "الكمية",
     "price": "السعر",
     "grandTotal": "الإجمالي",
+    "deliveryNote": {
+      "title": "مذكرة التسليم",
+      "download": "تحميل مذكرة التسليم",
+      "downloading": "جارٍ إنشاء مذكرة التسليم...",
+      "error": "تعذر إنشاء مذكرة التسليم"
+    },
     "searchPlaceholder": "البحث برقم الطلب أو البريد الإلكتروني...",
     "dhlCreateLabel": "إنشاء ملصق DHL",
     "dhlLabelCreated": "تم إنشاء ملصق DHL بنجاح!",
