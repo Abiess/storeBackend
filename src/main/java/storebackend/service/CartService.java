@@ -287,22 +287,29 @@ public class CartService {
     /**
      * Berechnet den wirksamen Preis unter Berücksichtigung von Staffelpreisen.
      * 
+     * WICHTIG: Kein Vergleich mit basePrice!
+     * - Keine passende Stufe → basePrice
+     * - Passende Stufe → tierPrice (direkt, ohne Vergleich)
+     * 
+     * Admin-UI soll warnen, wenn tierPrice > basePrice.
+     * Hier wird nicht stillschweigend korrigiert.
+     * 
      * @param product Produkt
      * @param basePrice Basispreis (product.basePrice oder variant.price)
      * @param quantity Menge
-     * @return Wirksamer Stückpreis (kann günstiger sein als basePrice)
+     * @return Wirksamer Stückpreis
      */
-    private java.math.BigDecimal calculateEffectivePrice(Product product, java.math.BigDecimal basePrice, int quantity) {
+    private BigDecimal calculateEffectivePrice(Product product, BigDecimal basePrice, int quantity) {
         if (product == null || basePrice == null || quantity < 1) {
-            return basePrice != null ? basePrice : java.math.BigDecimal.ZERO;
+            return basePrice != null ? basePrice : BigDecimal.ZERO;
         }
 
         try {
             // Versuche Staffelpreis zu berechnen
-            java.math.BigDecimal tierPrice = tierPriceService.calculateEffectiveUnitPrice(product, quantity);
+            BigDecimal tierPrice = tierPriceService.calculateEffectiveUnitPrice(product, quantity);
             
-            // Wenn Staffelpreis günstiger ist, verwende diesen
-            if (tierPrice != null && tierPrice.compareTo(basePrice) < 0) {
+            // Wenn Staffelpreis gefunden wurde, verwende diesen (ohne Vergleich mit basePrice!)
+            if (tierPrice != null && !tierPrice.equals(basePrice)) {
                 log.debug("✅ Staffelpreis angewendet: product={}, qty={}, base={}, tier={}", 
                     product.getId(), quantity, basePrice, tierPrice);
                 return tierPrice;
@@ -312,7 +319,7 @@ public class CartService {
                 product.getId(), e.getMessage());
         }
 
-        // Fallback: Basispreis
+        // Fallback oder keine Stufe erreicht → Basispreis
         return basePrice;
     }
 }
