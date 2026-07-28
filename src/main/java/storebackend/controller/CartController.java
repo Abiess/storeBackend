@@ -194,7 +194,8 @@ public class CartController {
         }
     }
 
-    private Map<String, Object> buildCartResponse(Cart cart, List<CartItem> items) {
+    // Package-private für Tests
+    Map<String, Object> buildCartResponse(Cart cart, List<CartItem> items) {
         Map<String, Object> response = new HashMap<>();
         response.put("id", cart.getId());
         response.put("sessionId", cart.getSessionId());
