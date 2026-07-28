@@ -240,13 +240,12 @@ import { Subscription } from 'rxjs';
 
                     <div class="form-group tier-active">
                       <label>{{ 'product.tierPricing.active' | translate }}</label>
-                      <label class="checkbox-inline">
-                        <input 
-                          type="checkbox" 
-                          [(ngModel)]="tier.active"
-                          [ngModelOptions]="{standalone: true}"
-                        />
-                      </label>
+                      <input 
+                        type="checkbox" 
+                        [(ngModel)]="tier.active"
+                        [ngModelOptions]="{standalone: true}"
+                        class="tier-checkbox"
+                      />
                     </div>
 
                     <button 
@@ -1839,18 +1838,18 @@ import { Subscription } from 'rxjs';
       padding-top: 1.5rem;
     }
 
-    .checkbox-inline {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      cursor: pointer;
-      user-select: none;
+    .tier-active label {
+      font-size: 0.85rem;
+      margin-bottom: 0.25rem;
     }
 
-    .checkbox-inline input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
+    .tier-checkbox,
+    .tier-active input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
       cursor: pointer;
+      margin: 0;
+      accent-color: #667eea;
     }
 
     .btn-remove-tier {
