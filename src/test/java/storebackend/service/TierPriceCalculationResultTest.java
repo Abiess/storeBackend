@@ -2,27 +2,21 @@ package storebackend.service;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import storebackend.dto.TierPriceCalculationResult;
-import storebackend.entity.Product;
-import storebackend.entity.ProductVariant;
-import storebackend.repository.ProductRepository;
 
 import java.math.BigDecimal;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
 
 /**
- * Unit-Test: Verifiziert, dass OrderService.createOrderFromCart()
- * den ProductTierPriceService zur Neuberechnung von Preisen verwendet
+ * Unit-Test: TierPriceCalculationResult Factory-Methoden
+ * 
+ * Testet die DTO-Factory-Methoden und BigDecimal-Vergleiche.
+ * KEINE echten Service- oder Controller-Tests.
  */
 @ExtendWith(MockitoExtension.class)
-public class OrderServiceTierPriceIntegrationTest {
+public class TierPriceCalculationResultTest {
 
     @Test
     public void testTierPriceCalculationResult_WithTierPrice() {

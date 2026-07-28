@@ -272,7 +272,7 @@ public class CartController {
             dto.put("productTitle", productTitle != null ? productTitle : "Unknown Product");
             dto.put("variantSku", variantSku != null ? variantSku : "");
 
-            // ✅ STAFFELPREIS-METADATEN FÜR FRONTEND
+            // ✅ STAFFELPREIS-METADATEN FÜR FRONTEND (immer setzen für konsistente API)
             Product product = item.getVariant() != null && item.getVariant().getProduct() != null
                 ? item.getVariant().getProduct()
                 : item.getProduct();
@@ -289,6 +289,12 @@ public class CartController {
                 dto.put("effectiveUnitPrice", tierCalc.getEffectiveUnitPrice());
                 dto.put("tierPriceApplied", tierCalc.getTierPriceApplied());
                 dto.put("appliedTierMinimumQuantity", tierCalc.getAppliedTierMinimumQuantity());
+            } else {
+                // Product null → Konsistente API-Antwort mit fallback-Werten
+                dto.put("baseUnitPrice", item.getPriceSnapshot());
+                dto.put("effectiveUnitPrice", item.getPriceSnapshot());
+                dto.put("tierPriceApplied", false);
+                dto.put("appliedTierMinimumQuantity", null);
             }
 
             return dto;
