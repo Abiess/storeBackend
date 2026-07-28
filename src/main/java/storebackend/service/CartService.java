@@ -74,6 +74,21 @@ public class CartService {
         // ✅ Items werden durch @EntityGraph bereits geladen
         List<CartItem> items = cartItemRepository.findByCartId(cart.getId());
         
+        // ✅ WICHTIG: Zugriff auf lazy Properties INNERHALB der Transaktion
+        // Damit Hibernate die Proxies auflöst BEVOR die Transaktion endet
+        cart.getStore().getId(); // Force load Store
+        for (CartItem item : items) {
+            if (item.getProduct() != null) {
+                item.getProduct().getId(); // Force load Product
+            }
+            if (item.getVariant() != null) {
+                item.getVariant().getId(); // Force load Variant
+                if (item.getVariant().getProduct() != null) {
+                    item.getVariant().getProduct().getId(); // Force load Variant.Product
+                }
+            }
+        }
+        
         return new CartWithItemsDTO(cart, items);
     }
     
