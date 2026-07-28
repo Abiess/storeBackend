@@ -16,12 +16,14 @@ public interface CartRepository extends JpaRepository<Cart, Long> {
     Optional<Cart> findBySessionId(String sessionId);
     Optional<Cart> findByUserId(Long userId);
     
-    // ✅ EAGER laden von Store + Items für Cart-Anzeige (verhindert LazyInitializationException)
-    @EntityGraph(attributePaths = {"store", "items", "items.product", "items.variant", "items.variant.product"})
+    // ✅ EAGER laden von Store für Cart-Anzeige
+    // WICHTIG: Cart hat KEINE @OneToMany-Collection von CartItems!
+    // Items werden separat über CartItemRepository geladen.
+    @EntityGraph(attributePaths = {"store"})
     @Query("SELECT c FROM Cart c WHERE c.sessionId = :sessionId")
     Optional<Cart> findBySessionIdWithDetails(@Param("sessionId") String sessionId);
     
-    @EntityGraph(attributePaths = {"store", "items", "items.product", "items.variant", "items.variant.product"})
+    @EntityGraph(attributePaths = {"store"})
     @Query("SELECT c FROM Cart c WHERE c.user.id = :userId")
     Optional<Cart> findByUserIdWithDetails(@Param("userId") Long userId);
     List<Cart> findByExpiresAtBefore(LocalDateTime dateTime);

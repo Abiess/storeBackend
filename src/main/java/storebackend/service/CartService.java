@@ -66,13 +66,16 @@ public class CartService {
         if (userId != null) {
             cart = cartRepository.findByUserIdWithDetails(userId)
                     .orElseThrow(() -> new RuntimeException("Cart not found"));
+            log.info("🛒 Cart für userId {} gefunden: cartId={}, storeId={}", userId, cart.getId(), cart.getStore().getId());
         } else {
             cart = cartRepository.findBySessionIdWithDetails(sessionId)
                     .orElseThrow(() -> new RuntimeException("Cart not found"));
+            log.info("🛒 Cart für sessionId {} gefunden: cartId={}, storeId={}", sessionId, cart.getId(), cart.getStore().getId());
         }
         
-        // ✅ Items werden durch @EntityGraph bereits geladen
+        // Items separat laden (Cart hat keine @OneToMany-Collection)
         List<CartItem> items = cartItemRepository.findByCartId(cart.getId());
+        log.info("📦 {} CartItems geladen für cartId={}", items.size(), cart.getId());
         
         // ✅ WICHTIG: Zugriff auf lazy Properties INNERHALB der Transaktion
         // Damit Hibernate die Proxies VOLLSTÄNDIG auflöst BEVOR die Transaktion endet
