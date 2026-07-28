@@ -1,7 +1,9 @@
-﻿import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ProductService } from '@app/core/services/product.service';
 import { CategoryService } from '@app/core/services/category.service';
 import { MediaService } from '@app/core/services/media.service';
@@ -20,7 +22,7 @@ import { Subscription } from 'rxjs';
 @Component({
   selector: 'app-product-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, TranslatePipe, ProductVariantsManagerComponent, PageHeaderComponent, ImageUploadComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, MatSlideToggleModule, MatTooltipModule, TranslatePipe, ProductVariantsManagerComponent, PageHeaderComponent, ImageUploadComponent],
   template: `
     <!-- Fixed Top-Right Loading Indicator -->
     <div class="ai-loading-overlay" *ngIf="aiGenerating || uploadingImages">
@@ -179,15 +181,15 @@ import { Subscription } from 'rxjs';
           <div class="tier-pricing-section">
             <div class="tier-pricing-header">
               <h3>{{ 'product.tierPricing.title' | translate }}</h3>
-              <label class="tier-pricing-toggle">
-                <input 
-                  type="checkbox" 
-                  [(ngModel)]="tierPricingEnabled" 
-                  [ngModelOptions]="{standalone: true}"
-                  (change)="onTierPricingToggle()"
-                />
-                <span>{{ 'product.tierPricing.enable' | translate }}</span>
-              </label>
+              <mat-slide-toggle
+                [(ngModel)]="tierPricingEnabled"
+                [ngModelOptions]="{standalone: true}"
+                (change)="onTierPricingToggle()"
+                color="primary"
+                [attr.aria-label]="'product.tierPricing.enable' | translate"
+              >
+                {{ 'product.tierPricing.enable' | translate }}
+              </mat-slide-toggle>
             </div>
 
             <div class="tier-pricing-content" *ngIf="tierPricingEnabled">
@@ -222,7 +224,8 @@ import { Subscription } from 'rxjs';
                         min="0"
                         step="0.01"
                         placeholder="3.49"
-                        (blur)="validateTierPrice(tier, i)"
+                        (blur)="normalizeTierPrice(tier)"
+                        (input)="validateTierPrice(tier, i)"
                         [class.error]="tier.error"
                       />
                     </div>
@@ -238,26 +241,30 @@ import { Subscription } from 'rxjs';
                       />
                     </div>
 
-                    <div class="form-group tier-active">
+                    <div class="form-group tier-active-toggle">
                       <label>{{ 'product.tierPricing.active' | translate }}</label>
-                      <input 
-                        type="checkbox" 
+                      <mat-slide-toggle
                         [(ngModel)]="tier.active"
                         [ngModelOptions]="{standalone: true}"
                         [disabled]="!tierPricingEnabled"
-                        class="tier-checkbox"
-                        [title]="!tierPricingEnabled ? ('product.tierPricing.enableFirst' | translate) : ''"
-                      />
+                        color="primary"
+                        [matTooltip]="!tierPricingEnabled ? ('product.tierPricing.enableFirst' | translate) : ''"
+                        [attr.aria-label]="'product.tierPricing.active' | translate"
+                      >
+                      </mat-slide-toggle>
                     </div>
 
-                    <button 
-                      type="button" 
-                      class="btn-remove-tier" 
-                      (click)="removeTierPrice(i)"
-                      [title]="'product.tierPricing.remove' | translate"
-                    >
-                      🗑️
-                    </button>
+                    <div class="tier-actions">
+                      <button 
+                        type="button" 
+                        class="btn-remove-tier" 
+                        (click)="removeTierPrice(i)"
+                        [attr.aria-label]="'product.tierPricing.remove' | translate"
+                        [matTooltip]="'product.tierPricing.remove' | translate"
+                      >
+                        <span class="icon-delete">🗑️</span>
+                      </button>
+                    </div>
                   </div>
 
                   <div class="error-message" *ngIf="tier.error">
@@ -1743,6 +1750,8 @@ import { Subscription } from 'rxjs';
       justify-content: space-between;
       align-items: center;
       margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 1rem;
     }
 
     .tier-pricing-header h3 {
@@ -1752,24 +1761,21 @@ import { Subscription } from 'rxjs';
       font-weight: 600;
     }
 
-    .tier-pricing-toggle {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      cursor: pointer;
-      user-select: none;
+    /* Material Toggle Styles */
+    ::ng-deep .tier-pricing-header mat-slide-toggle,
+    ::ng-deep .tier-active-toggle mat-slide-toggle {
+      --mdc-switch-selected-track-color: #667eea;
+      --mdc-switch-selected-handle-color: #667eea;
+      --mdc-switch-selected-hover-track-color: #5568d3;
+      --mdc-switch-selected-hover-handle-color: #5568d3;
+      --mdc-switch-selected-pressed-track-color: #4451b8;
+      --mdc-switch-selected-pressed-handle-color: #4451b8;
     }
 
-    .tier-pricing-toggle input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      cursor: pointer;
-    }
-
-    .tier-pricing-toggle span {
-      font-size: 0.95rem;
-      color: #667eea;
+    ::ng-deep .tier-pricing-header mat-slide-toggle .mdc-label {
       font-weight: 600;
+      color: #667eea;
+      font-size: 0.95rem;
     }
 
     .tier-pricing-hint {
@@ -1795,16 +1801,23 @@ import { Subscription } from 'rxjs';
 
     .tier-price-item {
       background: white;
-      padding: 1rem;
+      padding: 1.25rem;
       border-radius: 10px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      border: 1px solid #e5e7eb;
     }
 
     .tier-price-row {
       display: grid;
-      grid-template-columns: 1fr 1fr 1.5fr auto auto;
-      gap: 0.75rem;
-      align-items: start;
+      grid-template-columns: minmax(110px, 0.8fr) minmax(140px, 1fr) minmax(180px, 1.4fr) minmax(80px, auto) 50px;
+      gap: 1rem;
+      align-items: end;
+    }
+
+    @media (max-width: 1024px) {
+      .tier-price-row {
+        grid-template-columns: 1fr 1fr 1.5fr minmax(80px, auto) 50px;
+      }
     }
 
     @media (max-width: 768px) {
@@ -1813,8 +1826,13 @@ import { Subscription } from 'rxjs';
         gap: 0.75rem;
       }
 
-      .btn-remove-tier {
+      .tier-actions {
+        grid-row: 5;
         justify-self: start;
+      }
+
+      .tier-active-toggle {
+        grid-row: 4;
       }
     }
 
@@ -1824,52 +1842,241 @@ import { Subscription } from 'rxjs';
 
     .tier-price-row label {
       font-size: 0.85rem;
-      margin-bottom: 0.25rem;
+      margin-bottom: 0.35rem;
+      display: block;
+      color: #374151;
+      font-weight: 500;
     }
 
     .tier-price-row input[type="number"],
     .tier-price-row input[type="text"] {
-      padding: 0.6rem 0.75rem;
+      padding: 0.65rem 0.75rem;
       font-size: 0.95rem;
+      height: 42px;
+      box-sizing: border-box;
     }
 
-    .tier-active {
+    .tier-active-toggle {
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
-      padding-top: 1.5rem;
     }
 
-    .tier-active label {
+    .tier-active-toggle label {
       font-size: 0.85rem;
-      margin-bottom: 0.25rem;
+      margin-bottom: 0.5rem;
+      color: #374151;
+      font-weight: 500;
     }
 
-    .tier-checkbox,
-    .tier-active input[type="checkbox"] {
-      width: 20px;
-      height: 20px;
-      cursor: pointer;
-      margin: 0;
-      accent-color: #667eea;
+    ::ng-deep .tier-active-toggle mat-slide-toggle {
+      margin-top: 0;
+    }
+
+    ::ng-deep .tier-active-toggle mat-slide-toggle .mdc-switch {
+      margin-right: 0;
+    }
+
+    .tier-actions {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
     }
 
     .btn-remove-tier {
-      background: #fee2e2;
-      color: #991b1b;
-      border: none;
+      background: #fef2f2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
       border-radius: 8px;
-      padding: 0.6rem 1rem;
+      padding: 0.65rem 0.85rem;
       cursor: pointer;
       font-size: 1.2rem;
       transition: all 0.2s;
-      align-self: flex-end;
-      margin-top: 1.5rem;
+      height: 42px;
+      min-width: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    .btn-remove-tier:hover {
-      background: #fecaca;
+    .btn-remove-tier:hover:not(:disabled) {
+      background: #fee2e2;
+      border-color: #fca5a5;
       transform: scale(1.05);
+    }
+
+    .btn-remove-tier:active {
+      transform: scale(0.95);
+    }
+
+    .btn-remove-tier .icon-delete {
+      line-height: 1;
+    }
+
+    .btn-add-tier {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 0.85rem 1.5rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
+      width: 100%;
+      max-width: 300px;
+    }
+
+    .btn-add-tier:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.35);
+    }
+
+    .btn-add-tier:active {
+      transform: translateY(0);
+    }
+
+    .btn-add-tier .icon {
+      font-size: 1.1rem;
+    }
+
+    .tier-pricing-hint {
+      background: #fff;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 1.5rem;
+      border-left: 4px solid #667eea;
+    }
+
+    .tier-pricing-content {
+      margin-top: 1rem;
+    }
+
+    .tier-price-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .tier-price-item {
+      background: white;
+      padding: 1.25rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      border: 1px solid #e5e7eb;
+    }
+
+    .tier-price-row {
+      display: grid;
+      grid-template-columns: minmax(110px, 0.8fr) minmax(140px, 1fr) minmax(180px, 1.4fr) minmax(80px, auto) 50px;
+      gap: 1rem;
+      align-items: end;
+    }
+
+    @media (max-width: 1024px) {
+      .tier-price-row {
+        grid-template-columns: 1fr 1fr 1.5fr minmax(80px, auto) 50px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .tier-price-row {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+      }
+
+      .tier-actions {
+        grid-row: 5;
+        justify-self: start;
+      }
+
+      .tier-active-toggle {
+        grid-row: 4;
+      }
+    }
+
+    .tier-price-row .form-group {
+      margin-bottom: 0;
+    }
+
+    .tier-price-row label {
+      font-size: 0.85rem;
+      margin-bottom: 0.35rem;
+      display: block;
+      color: #374151;
+      font-weight: 500;
+    }
+
+    .tier-price-row input[type="number"],
+    .tier-price-row input[type="text"] {
+      padding: 0.65rem 0.75rem;
+      font-size: 0.95rem;
+      height: 42px;
+      box-sizing: border-box;
+    }
+
+    .tier-active-toggle {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+
+    .tier-active-toggle label {
+      font-size: 0.85rem;
+      margin-bottom: 0.5rem;
+      color: #374151;
+      font-weight: 500;
+    }
+
+    ::ng-deep .tier-active-toggle mat-slide-toggle {
+      margin-top: 0;
+    }
+
+    ::ng-deep .tier-active-toggle mat-slide-toggle .mdc-switch {
+      margin-right: 0;
+    }
+
+    .tier-actions {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .btn-remove-tier {
+      background: #fef2f2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      padding: 0.65rem 0.85rem;
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: all 0.2s;
+      height: 42px;
+      min-width: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-remove-tier:hover:not(:disabled) {
+      background: #fee2e2;
+      border-color: #fca5a5;
+      transform: scale(1.05);
+    }
+
+    .btn-remove-tier:active {
+      transform: scale(0.95);
+    }
+
+    .btn-remove-tier .icon-delete {
+      line-height: 1;
     }
 
     .btn-add-tier {
@@ -2535,6 +2742,17 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     // Nach Menge sortieren
     this.tierPrices.sort((a, b) => a.minimumQuantity - b.minimumQuantity);
     this.tierPrices.forEach((tp, idx) => tp.sortOrder = idx);
+  }
+
+  /**
+   * Normalisiert Staffelpreis auf 2 Nachkommastellen
+   */
+  normalizeTierPrice(tier: any): void {
+    if (tier.unitPrice !== null && tier.unitPrice !== undefined && tier.unitPrice !== '') {
+      // Auf 2 Nachkommastellen runden
+      const normalized = Math.round(tier.unitPrice * 100) / 100;
+      tier.unitPrice = normalized;
+    }
   }
 
   /**
