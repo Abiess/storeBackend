@@ -3,6 +3,7 @@ package storebackend.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import storebackend.dto.CreateProductRequest;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ProductService {
 
     private final ProductRepository productRepository;
@@ -269,9 +271,9 @@ public class ProductService {
                         mediaDTO.setProductId(pm.getProduct().getId());
                         mediaDTO.setMediaId(pm.getMedia().getId());
 
-                        // Generiere permanente öffentliche URL über MinioService
+                        // ✅ WICHTIG: Presigned URL (60 Min) für MinIO objectName generieren
                         try {
-                            String url = minioService.getPublicUrl(pm.getMedia().getMinioObjectName());
+                            String url = minioService.resolveUrl(pm.getMedia().getMinioObjectName(), 60);
                             mediaDTO.setUrl(url);
                         } catch (Exception e) {
                             // Fallback: leere URL
@@ -473,19 +475,21 @@ public class ProductService {
                     .findFirst()
                     .orElse(mediaList.get(0));
                 
-                // Generiere permanente öffentliche MinIO-URL (kein Ablaufdatum)
-                String url = minioService.getPublicUrl(primaryMedia.getMedia().getMinioObjectName());
+                // ✅ WICHTIG: Presigned URL (60 Min) für MinIO objectName generieren
+                String url = minioService.resolveUrl(primaryMedia.getMedia().getMinioObjectName(), 60);
                 if (url != null && !url.isEmpty()) {
                     return url;
                 }
             }
         } catch (Exception e) {
             // Log und fahre mit Fallback fort
+            log.debug("Failed to resolve ProductMedia image URL for product {}: {}", product.getId(), e.getMessage());
         }
         
-        // 2. Fallback: product.getImageUrl() (z.B. WooCommerce-Import, externe URLs)
+        // 2. Fallback: product.getImageUrl() (MinIO objectName oder externe URL)
         if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
-            return product.getImageUrl();
+            // ✅ WICHTIG: resolveUrl verarbeitet objectNames UND externe URLs korrekt
+            return minioService.resolveUrl(product.getImageUrl(), 60);
         }
         
         // 3. Kein Bild verfügbar - Frontend zeigt Platzhalter

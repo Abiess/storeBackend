@@ -52,7 +52,16 @@ public class Product {
     private BigDecimal basePrice;
 
     /**
-     * Optionale direkte Bild-URL (z.B. Starter-Pack-Default-Asset).
+     * Optionaler Bildverweis – entweder MinIO objectName ODER externe URL.
+     * 
+     * Gültige Werte:
+     * - MinIO objectName: "stores/121/telegram/telegram_abc123.jpg"
+     * - Externe URL: "https://example.com/image.jpg"
+     * - Starter-Pack-Asset: "https://markt.ma/assets/starter/..."
+     * 
+     * WICHTIG: Niemals MinIO-URLs mit Query-Parametern (Presigned URLs) speichern!
+     * Diese laufen ab und führen zu 403 Access Denied Fehlern.
+     * 
      * Fallback, wenn keine product_media-Einträge vorhanden sind.
      * Bricht bestehende Bild-Logik (media/primaryImageUrl) nicht.
      */

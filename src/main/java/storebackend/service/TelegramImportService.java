@@ -181,7 +181,9 @@ public class TelegramImportService {
                             productMediaRepository.save(productMedia);
 
                             if (!imageUrlUpdated && (product.getImageUrl() == null || product.getImageUrl().isBlank())) {
-                                product.setImageUrl(minioService.getPublicUrl("store-assets", media.getMinioObjectName()));
+                                // ✅ KRITISCH: Nur objectName speichern, KEINE vollständige URL!
+                                // MinIO-URLs mit Query-Parametern (Presigned URLs) laufen ab!
+                                product.setImageUrl(media.getMinioObjectName());
                                 imageUrlUpdated = true;
                             }
                             sortOrder++;

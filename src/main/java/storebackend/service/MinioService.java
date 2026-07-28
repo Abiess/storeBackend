@@ -307,4 +307,79 @@ public class MinioService {
 
         return String.format("stores/%d/%s/%s%s", storeId, folder, uuid, extension);
     }
+
+    /**
+     * Extrahiert den objectName aus einer vollständigen MinIO-URL.
+     * 
+     * Beispiele:
+     * - "https://minio.markt.ma/store-assets/stores/121/telegram/file.jpg?X-Amz-..." → "stores/121/telegram/file.jpg"
+     * - "https://minio.markt.ma/store-assets/stores/121/telegram/file.jpg" → "stores/121/telegram/file.jpg"
+     * - "stores/121/telegram/file.jpg" → "stores/121/telegram/file.jpg" (bereits objectName)
+     * - "https://external.com/image.jpg" → null (externe URL)
+     * 
+     * @param url Vollständige URL oder objectName
+     * @return Bereinigter objectName oder null wenn externe URL
+     */
+    public String extractObjectNameFromUrl(String url) {
+        if (url == null || url.isBlank()) return null;
+        
+        // Bereits ein objectName (kein http/https)
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            return url;
+        }
+        
+        // Prüfe ob es eine MinIO-URL ist (interne oder öffentliche Endpoint)
+        String internalEndpoint = minioProperties.getEndpoint();
+        String publicEndpoint = minioProperties.getPublicEndpoint();
+        String bucket = minioProperties.getBucket();
+        
+        boolean isMinioUrl = false;
+        if (internalEndpoint != null && url.contains(internalEndpoint.replace("http://", "").replace("https://", ""))) {
+            isMinioUrl = true;
+        }
+        if (publicEndpoint != null && url.contains(publicEndpoint.replace("http://", "").replace("https://", ""))) {
+            isMinioUrl = true;
+        }
+        
+        if (!isMinioUrl) {
+            return null; // Externe URL
+        }
+        
+        // Entferne Query-Parameter (Presigned URL)
+        String urlWithoutQuery = url.split("\\?")[0];
+        
+        // Extrahiere objectName nach Bucket-Name
+        String searchPattern = "/" + bucket + "/";
+        int bucketIndex = urlWithoutQuery.indexOf(searchPattern);
+        if (bucketIndex >= 0) {
+            return urlWithoutQuery.substring(bucketIndex + searchPattern.length());
+        }
+        
+        return null;
+    }
+
+    /**
+     * Generiert entweder eine Presigned URL (für MinIO objectNames) oder gibt externe URLs unverändert zurück.
+     * Wird verwendet, um alte URLs zu migrieren und neue URLs on-demand zu erzeugen.
+     * 
+     * @param urlOrObjectName MinIO objectName, vollständige MinIO-URL, oder externe URL
+     * @param expiryMinutes Ablaufzeit in Minuten (nur für MinIO-URLs relevant)
+     * @return Gültige URL
+     */
+    public String resolveUrl(String urlOrObjectName, int expiryMinutes) {
+        if (urlOrObjectName == null || urlOrObjectName.isBlank()) return "";
+        
+        // Externe URL? Gib unverändert zurück
+        if (urlOrObjectName.startsWith("http://") || urlOrObjectName.startsWith("https://")) {
+            String objectName = extractObjectNameFromUrl(urlOrObjectName);
+            if (objectName == null) {
+                return urlOrObjectName; // Externe URL
+            }
+            // MinIO-URL → in objectName umwandeln und neue Presigned URL erstellen
+            return getPresignedUrl(objectName, expiryMinutes);
+        }
+        
+        // Bereits ein objectName → Presigned URL generieren
+        return getPresignedUrl(urlOrObjectName, expiryMinutes);
+    }
 }
