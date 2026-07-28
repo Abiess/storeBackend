@@ -98,13 +98,23 @@ public class ProductTierPriceController {
             log.warn("validateTierPriceBelongsToProduct: TierPrice {} not found", tierPriceId);
             return false;
         }
-        boolean belongsToProduct = tierPrice.getProduct().getId().equals(productId);
-        boolean belongsToStore = tierPrice.getProduct().getStore().getId().equals(storeId);
-        if (!belongsToProduct || !belongsToStore) {
-            log.warn("validateTierPriceBelongsToProduct: TierPrice {} does not belong to product {} or store {}", 
-                tierPriceId, productId, storeId);
+        // Verwende productId-Spalte statt Lazy-Proxy
+        boolean belongsToProduct = tierPrice.getProductId().equals(productId);
+        if (!belongsToProduct) {
+            log.warn("validateTierPriceBelongsToProduct: TierPrice {} does not belong to product {}", 
+                tierPriceId, productId);
+            return false;
         }
-        return belongsToProduct && belongsToStore;
+        
+        // Prüfe zusätzlich Store-Zugehörigkeit über Product
+        Product product = productRepository.findById(productId).orElse(null);
+        if (product == null || !product.getStore().getId().equals(storeId)) {
+            log.warn("validateTierPriceBelongsToProduct: Product {} does not belong to store {}", 
+                productId, storeId);
+            return false;
+        }
+        
+        return true;
     }
 
     /**

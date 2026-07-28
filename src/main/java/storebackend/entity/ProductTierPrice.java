@@ -40,6 +40,10 @@ public class ProductTierPrice {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
     
+    // Direkte Spalte für product_id (für Queries ohne Proxy-Zugriff)
+    @Column(name = "product_id", insertable = false, updatable = false)
+    private Long productId;
+    
     /**
      * Mindestmenge für diese Preisstufe.
      * Muss > 1 sein (1 = Standardpreis des Produkts).

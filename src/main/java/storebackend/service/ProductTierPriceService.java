@@ -183,7 +183,7 @@ public class ProductTierPriceService {
         // Wenn minimumQuantity geändert wird, prüfe auf Duplikate
         if (!tierPrice.getMinimumQuantity().equals(dto.getMinimumQuantity())) {
             boolean duplicateExists = tierPriceRepository.existsByProductIdAndMinimumQuantity(
-                    tierPrice.getProduct().getId(), dto.getMinimumQuantity());
+                    tierPrice.getProductId(), dto.getMinimumQuantity());
             if (duplicateExists) {
                 throw new IllegalStateException("Tier price with minimum quantity " + 
                     dto.getMinimumQuantity() + " already exists for this product");
