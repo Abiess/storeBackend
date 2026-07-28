@@ -75,16 +75,39 @@ public class CartService {
         List<CartItem> items = cartItemRepository.findByCartId(cart.getId());
         
         // ✅ WICHTIG: Zugriff auf lazy Properties INNERHALB der Transaktion
-        // Damit Hibernate die Proxies auflöst BEVOR die Transaktion endet
-        cart.getStore().getId(); // Force load Store
+        // Damit Hibernate die Proxies VOLLSTÄNDIG auflöst BEVOR die Transaktion endet
+        // NICHT nur .getId() - buildCartResponse() greift auf weitere Felder zu!
+        Store store = cart.getStore();
+        store.getId();
+        store.getPriceMode();
+        store.getVatEnabled();
+        store.getDefaultTaxRate();
+        
         for (CartItem item : items) {
-            if (item.getProduct() != null) {
-                item.getProduct().getId(); // Force load Product
+            Product product = item.getProduct();
+            if (product != null) {
+                product.getId();
+                product.getTitle();
+                product.getBasePrice();
+                product.getTaxCategory();
+                product.getTaxRate();
             }
-            if (item.getVariant() != null) {
-                item.getVariant().getId(); // Force load Variant
-                if (item.getVariant().getProduct() != null) {
-                    item.getVariant().getProduct().getId(); // Force load Variant.Product
+            
+            ProductVariant variant = item.getVariant();
+            if (variant != null) {
+                variant.getId();
+                variant.getSku();
+                variant.getPrice(); // ← KRITISCH: wird in buildCartResponse Zeile 357 gebraucht!
+                variant.getImageUrl();
+                
+                Product variantProduct = variant.getProduct();
+                if (variantProduct != null) {
+                    variantProduct.getId();
+                    variantProduct.getTitle();
+                    variantProduct.getDescription();
+                    variantProduct.getBasePrice();
+                    variantProduct.getTaxCategory();
+                    variantProduct.getTaxRate();
                 }
             }
         }
