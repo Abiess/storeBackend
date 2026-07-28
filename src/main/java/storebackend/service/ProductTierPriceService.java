@@ -103,23 +103,43 @@ public class ProductTierPriceService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found: " + productId));
 
-        // Validierung: Keine doppelten Mindestmengen
-        if (tierPriceRepository.existsByProductIdAndMinimumQuantity(productId, dto.getMinimumQuantity())) {
-            throw new RuntimeException("Tier price with minimum quantity " + 
+        // Validierung
+        if (dto.getMinimumQuantity() == null || dto.getMinimumQuantity() <= 1) {
+            throw new IllegalArgumentException("Minimum quantity must be greater than 1");
+        }
+        if (dto.getUnitPrice() == null) {
+            throw new IllegalArgumentException("Unit price is required");
+        }
+        if (dto.getUnitPrice().signum() < 0) {
+            throw new IllegalArgumentException("Unit price cannot be negative");
+        }
+        if (dto.getLabel() != null && dto.getLabel().length() > 100) {
+            throw new IllegalArgumentException("Label cannot exceed 100 characters");
+        }
+
+        // BigDecimal-Scale auf 2 Nachkommastellen normalisieren (DB ist NUMERIC(10,2))
+        BigDecimal normalizedPrice = dto.getUnitPrice().setScale(2, java.math.RoundingMode.HALF_UP);
+
+        // Prüfe auf Duplikate
+        boolean duplicateExists = tierPriceRepository.existsByProductIdAndMinimumQuantity(
+                productId, dto.getMinimumQuantity());
+        if (duplicateExists) {
+            throw new IllegalStateException("Tier price with minimum quantity " + 
                 dto.getMinimumQuantity() + " already exists for this product");
         }
 
         ProductTierPrice tierPrice = new ProductTierPrice();
         tierPrice.setProduct(product);
         tierPrice.setMinimumQuantity(dto.getMinimumQuantity());
-        tierPrice.setUnitPrice(dto.getUnitPrice());
+        tierPrice.setUnitPrice(normalizedPrice);
         tierPrice.setLabel(dto.getLabel());
         tierPrice.setActive(dto.getActive() != null ? dto.getActive() : true);
         tierPrice.setSortOrder(dto.getSortOrder() != null ? dto.getSortOrder() : dto.getMinimumQuantity());
 
         tierPrice = tierPriceRepository.save(tierPrice);
-        log.info("Tier price created: product={}, minQty={}, price={}", 
-            productId, tierPrice.getMinimumQuantity(), tierPrice.getUnitPrice());
+        log.info("✅ Tier price created: id={}, productId={}, minQty={}, price={} (normalized from {})", 
+            tierPrice.getId(), productId, tierPrice.getMinimumQuantity(), 
+            tierPrice.getUnitPrice(), dto.getUnitPrice());
 
         return toDTO(tierPrice);
     }
@@ -128,28 +148,58 @@ public class ProductTierPriceService {
      * Aktualisiert eine Preisstufe.
      */
     @Transactional
+    /**
+     * Aktualisiert eine bestehende Preisstufe.
+     * 
+     * @throws IllegalArgumentException bei ungültigen Daten (400)
+     * @throws IllegalStateException bei Duplikat (409)
+     * @throws RuntimeException bei nicht gefundener Entity (404)
+     */
     public ProductTierPriceDTO updateTierPrice(Long id, ProductTierPriceDTO dto) {
         ProductTierPrice tierPrice = tierPriceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Tier price not found: " + id));
 
+        // Validierung: minimumQuantity
+        if (dto.getMinimumQuantity() == null || dto.getMinimumQuantity() <= 1) {
+            throw new IllegalArgumentException("Minimum quantity must be greater than 1");
+        }
+
+        // Validierung: unitPrice
+        if (dto.getUnitPrice() == null) {
+            throw new IllegalArgumentException("Unit price is required");
+        }
+        if (dto.getUnitPrice().signum() < 0) {
+            throw new IllegalArgumentException("Unit price cannot be negative");
+        }
+
+        // BigDecimal-Scale auf 2 Nachkommastellen normalisieren (DB ist NUMERIC(10,2))
+        BigDecimal normalizedPrice = dto.getUnitPrice().setScale(2, java.math.RoundingMode.HALF_UP);
+        
+        // Validierung: label max 100 Zeichen
+        if (dto.getLabel() != null && dto.getLabel().length() > 100) {
+            throw new IllegalArgumentException("Label cannot exceed 100 characters");
+        }
+
         // Wenn minimumQuantity geändert wird, prüfe auf Duplikate
         if (!tierPrice.getMinimumQuantity().equals(dto.getMinimumQuantity())) {
-            if (tierPriceRepository.existsByProductIdAndMinimumQuantity(
-                    tierPrice.getProduct().getId(), dto.getMinimumQuantity())) {
-                throw new RuntimeException("Tier price with minimum quantity " + 
+            boolean duplicateExists = tierPriceRepository.existsByProductIdAndMinimumQuantity(
+                    tierPrice.getProduct().getId(), dto.getMinimumQuantity());
+            if (duplicateExists) {
+                throw new IllegalStateException("Tier price with minimum quantity " + 
                     dto.getMinimumQuantity() + " already exists for this product");
             }
         }
 
+        // Update nur erlaubte Felder - product, id, createdAt bleiben unverändert
         tierPrice.setMinimumQuantity(dto.getMinimumQuantity());
-        tierPrice.setUnitPrice(dto.getUnitPrice());
+        tierPrice.setUnitPrice(normalizedPrice);
         tierPrice.setLabel(dto.getLabel());
-        tierPrice.setActive(dto.getActive());
+        tierPrice.setActive(dto.getActive() != null ? dto.getActive() : true);
         tierPrice.setSortOrder(dto.getSortOrder() != null ? dto.getSortOrder() : dto.getMinimumQuantity());
 
         tierPrice = tierPriceRepository.save(tierPrice);
-        log.info("Tier price updated: id={}, minQty={}, price={}", 
-            id, tierPrice.getMinimumQuantity(), tierPrice.getUnitPrice());
+        log.info("✅ Tier price updated: id={}, minQty={}, price={} (normalized from {})", 
+            id, tierPrice.getMinimumQuantity(), tierPrice.getUnitPrice(), dto.getUnitPrice());
 
         return toDTO(tierPrice);
     }

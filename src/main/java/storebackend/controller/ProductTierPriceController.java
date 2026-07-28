@@ -136,13 +136,15 @@ public class ProductTierPriceController {
      * Erstellt eine neue Preisstufe.
      */
     @PostMapping
-    public ResponseEntity<ProductTierPriceDTO> createTierPrice(
+    public ResponseEntity<?> createTierPrice(
             @PathVariable Long storeId,
             @PathVariable Long productId,
             @RequestBody ProductTierPriceDTO dto,
             @AuthenticationPrincipal User user) {
         
-        log.info("POST /api/stores/{}/products/{}/tier-prices - User: {}", storeId, productId, user != null ? user.getId() : "null");
+        log.info("POST /api/stores/{}/products/{}/tier-prices - User: {}, Payload: minQty={}, price={}", 
+            storeId, productId, user != null ? user.getId() : "null", 
+            dto.getMinimumQuantity(), dto.getUnitPrice());
 
         if (!hasStoreAccess(storeId, user)) {
             log.warn("Access denied: User {} does not have access to store {}", user != null ? user.getId() : "null", storeId);
@@ -154,30 +156,54 @@ public class ProductTierPriceController {
             return ResponseEntity.status(404).build();
         }
 
-        // Validierung
+        // Validierung (zusätzlich zu Service-Layer)
         if (dto.getMinimumQuantity() == null || dto.getMinimumQuantity() <= 1) {
-            return ResponseEntity.badRequest().build();
+            log.warn("Validation failed: minimumQuantity must be > 1, received: {}", dto.getMinimumQuantity());
+            return ResponseEntity.badRequest().body("Minimum quantity must be greater than 1");
         }
         if (dto.getUnitPrice() == null || dto.getUnitPrice().signum() < 0) {
-            return ResponseEntity.badRequest().build();
+            log.warn("Validation failed: unitPrice invalid, received: {}", dto.getUnitPrice());
+            return ResponseEntity.badRequest().body("Unit price must be a non-negative number");
         }
 
-        ProductTierPriceDTO created = tierPriceService.createTierPrice(productId, dto);
-        return ResponseEntity.ok(created);
+        try {
+            ProductTierPriceDTO created = tierPriceService.createTierPrice(productId, dto);
+            log.info("✅ Tier price created successfully: id={}", created.getId());
+            return ResponseEntity.status(201).body(created);
+        } catch (IllegalArgumentException e) {
+            // Validierungsfehler → 400 Bad Request
+            log.warn("Validation error creating tier price: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (IllegalStateException e) {
+            // Duplikat → 409 Conflict
+            log.warn("Conflict creating tier price: {}", e.getMessage());
+            return ResponseEntity.status(409).body(e.getMessage());
+        } catch (RuntimeException e) {
+            // Product nicht gefunden → 404
+            if (e.getMessage() != null && e.getMessage().contains("not found")) {
+                log.warn("Product {} not found", productId);
+                return ResponseEntity.status(404).build();
+            }
+            // Andere RuntimeExceptions → 500 (mit Logging)
+            log.error("Unexpected error creating tier price: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body("Internal server error");
+        }
     }
 
     /**
      * Aktualisiert eine Preisstufe.
      */
     @PutMapping("/{id}")
-    public ResponseEntity<ProductTierPriceDTO> updateTierPrice(
+    public ResponseEntity<?> updateTierPrice(
             @PathVariable Long storeId,
             @PathVariable Long productId,
             @PathVariable Long id,
             @RequestBody ProductTierPriceDTO dto,
             @AuthenticationPrincipal User user) {
         
-        log.info("PUT /api/stores/{}/products/{}/tier-prices/{} - User: {}", storeId, productId, id, user != null ? user.getId() : "null");
+        log.info("PUT /api/stores/{}/products/{}/tier-prices/{} - User: {}, Payload: minQty={}, price={}", 
+            storeId, productId, id, user != null ? user.getId() : "null", 
+            dto.getMinimumQuantity(), dto.getUnitPrice());
 
         if (!hasStoreAccess(storeId, user)) {
             log.warn("Access denied: User {} does not have access to store {}", user != null ? user.getId() : "null", storeId);
@@ -194,16 +220,38 @@ public class ProductTierPriceController {
             return ResponseEntity.status(404).build();
         }
 
-        // Validierung
+        // Validierung (zusätzlich zu Service-Layer, für frühe 400-Responses)
         if (dto.getMinimumQuantity() == null || dto.getMinimumQuantity() <= 1) {
-            return ResponseEntity.badRequest().build();
+            log.warn("Validation failed: minimumQuantity must be > 1, received: {}", dto.getMinimumQuantity());
+            return ResponseEntity.badRequest().body("Minimum quantity must be greater than 1");
         }
         if (dto.getUnitPrice() == null || dto.getUnitPrice().signum() < 0) {
-            return ResponseEntity.badRequest().build();
+            log.warn("Validation failed: unitPrice invalid, received: {}", dto.getUnitPrice());
+            return ResponseEntity.badRequest().body("Unit price must be a non-negative number");
         }
 
-        ProductTierPriceDTO updated = tierPriceService.updateTierPrice(id, dto);
-        return ResponseEntity.ok(updated);
+        try {
+            ProductTierPriceDTO updated = tierPriceService.updateTierPrice(id, dto);
+            log.info("✅ Tier price updated successfully: id={}", id);
+            return ResponseEntity.ok(updated);
+        } catch (IllegalArgumentException e) {
+            // Validierungsfehler → 400 Bad Request
+            log.warn("Validation error updating tier price {}: {}", id, e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (IllegalStateException e) {
+            // Duplikat → 409 Conflict
+            log.warn("Conflict updating tier price {}: {}", id, e.getMessage());
+            return ResponseEntity.status(409).body(e.getMessage());
+        } catch (RuntimeException e) {
+            // Entity nicht gefunden → 404
+            if (e.getMessage() != null && e.getMessage().contains("not found")) {
+                log.warn("Tier price {} not found", id);
+                return ResponseEntity.status(404).build();
+            }
+            // Andere RuntimeExceptions → 500 (mit Logging)
+            log.error("Unexpected error updating tier price {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(500).body("Internal server error");
+        }
     }
 
     /**
