@@ -244,7 +244,9 @@ import { Subscription } from 'rxjs';
                         type="checkbox" 
                         [(ngModel)]="tier.active"
                         [ngModelOptions]="{standalone: true}"
+                        [disabled]="!tierPricingEnabled"
                         class="tier-checkbox"
+                        [title]="!tierPricingEnabled ? ('product.tierPricing.enableFirst' | translate) : ''"
                       />
                     </div>
 
@@ -2555,11 +2557,6 @@ export class ProductFormComponent implements OnInit, OnDestroy {
 
     // 2. Bestehende und neue Stufen verarbeiten
     this.tierPrices.forEach(tier => {
-      // Wenn deaktiviert, active auf false setzen
-      if (!this.tierPricingEnabled) {
-        tier.active = false;
-      }
-
       const tierData = {
         productId: productId,
         minimumQuantity: tier.minimumQuantity,

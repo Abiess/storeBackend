@@ -145,7 +145,8 @@
         "duplicateQuantity": "This minimum quantity already exists",
         "higherThanBase": "The tier price should not be higher than the standard price",
         "priceShouldDecrease": "The price should not increase with higher quantity"
-      }
+      },
+      "enableFirst": "Please enable 'Activate tier pricing' first"
     },
     "created": "Product successfully created!",
     "updated": "Product successfully updated!",

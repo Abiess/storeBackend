@@ -264,7 +264,8 @@
         "duplicateQuantity": "Diese Mindestmenge ist bereits vorhanden",
         "higherThanBase": "Der Mengenpreis sollte nicht höher als der Standardpreis sein",
         "priceShouldDecrease": "Der Preis sollte mit steigender Menge nicht steigen"
-      }
+      },
+      "enableFirst": "Bitte aktivieren Sie zuerst 'Mengenpreise aktivieren'"
     },
     "created": "Produkt erfolgreich erstellt!",
     "updated": "Produkt erfolgreich aktualisiert!",
@@ -2956,7 +2957,6 @@
       "UNMAPPED": "Nicht zugeordnet",
       "MAPPED": "Zugeordnet"
     },
-    "SEARCH_PLACEHOLDER": "Nach Artikelnummer oder Beschreibung suchen...",
     "TABLE": {
       "SELECT": "Auswahl",
       "POS": "Pos.",
@@ -3056,13 +3056,6 @@
     },
     "EMPTY": {
       "TITLE": "Keine Positionen gefunden"
-    },
-    "STATUS": {
-      "UNREVIEWED": "Noch nicht geprüft",
-      "REVIEW_REQUIRED": "Bitte prüfen",
-      "CONFIRMED": "Geprüft",
-      "MAPPED": "Produkt zugeordnet",
-      "POSITION_MAPPED": "Position zugeordnet"
     },
     "LEARNING": {
       "ORIGINALLY_DETECTED": "Ursprünglich erkannt",
