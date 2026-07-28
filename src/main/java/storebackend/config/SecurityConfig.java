@@ -73,6 +73,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/stores/public/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/stores/*").permitAll() // Allow public access to store details
                 .requestMatchers(HttpMethod.GET, "/api/stores/*/products").permitAll()
+                // WICHTIG: Tier Prices benötigen Authentifizierung (Management-Endpoint)
+                .requestMatchers("/api/stores/*/products/*/tier-prices").authenticated()
+                .requestMatchers("/api/stores/*/products/*/tier-prices/**").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/stores/*/products/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/stores/*/categories").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/stores/*/categories/**").permitAll()
