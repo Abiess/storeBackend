@@ -5,13 +5,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import storebackend.entity.*;
+import storebackend.enums.PriceMode;
+import storebackend.enums.TaxCategory;
 import storebackend.repository.*;
 import storebackend.service.CartService;
 import storebackend.service.ProductService;
 import storebackend.service.ProductTierPriceService;
+import storebackend.service.TaxCalculationService;
 import storebackend.security.JwtUtil;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +32,8 @@ public class CartController {
     private final ProductService productService; // ✅ Nutze zentrale Bildauflösung
     private final JwtUtil jwtUtil;
     private final ProductTierPriceService tierPriceService;
+    private final TaxCalculationService taxCalculationService;
+    private final ProductRepository productRepository;
 
     @GetMapping
     public ResponseEntity<Map<String, Object>> getCart(
@@ -302,11 +309,123 @@ public class CartController {
 
         response.put("items", itemDtos);
         response.put("itemCount", items.stream().mapToInt(CartItem::getQuantity).sum());
-        response.put("subtotal", items.stream()
-                .map(item -> item.getPriceSnapshot().multiply(BigDecimal.valueOf(item.getQuantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add));
+        
+        // ─── VOLLSTÄNDIGE STEUERBERECHNUNG (wie in OrderService) ─────────────────────
+        Store store = cart.getStore();
+        PriceMode priceMode = store.getPriceMode() != null ? store.getPriceMode() : PriceMode.GROSS;
+        boolean vatEnabled = Boolean.TRUE.equals(store.getVatEnabled());
+        
+        BigDecimal subtotalNet = BigDecimal.ZERO;
+        BigDecimal subtotalTax = BigDecimal.ZERO;
+        BigDecimal subtotalGross = BigDecimal.ZERO;
+        
+        // Tax breakdown per rate (für gemischte Steuersätze)
+        Map<BigDecimal, TaxBreakdownItem> taxBreakdownMap = new HashMap<>();
+        
+        for (CartItem item : items) {
+            // ✅ Produkt FRISCH laden für aktuelle Tax-Daten (wie in OrderService)
+            Product product = item.getVariant() != null && item.getVariant().getProduct() != null
+                ? item.getVariant().getProduct()
+                : item.getProduct();
+                
+            if (product == null) continue;
+            
+            Product freshProduct = productRepository.findById(product.getId())
+                .orElse(product); // Fallback zu lazy-loaded
+            
+            // Basispreis + Staffelpreis
+            BigDecimal basePrice = item.getVariant() != null && item.getVariant().getPrice() != null
+                ? item.getVariant().getPrice()
+                : freshProduct.getBasePrice();
+            
+            storebackend.dto.TierPriceCalculationResult tierCalc = tierPriceService.calculateWithDetails(
+                freshProduct, basePrice, item.getQuantity());
+            
+            BigDecimal unitPrice = tierCalc.getEffectiveUnitPrice();
+            
+            // Tax-Daten vom frischen Produkt
+            TaxCategory taxCategory = freshProduct.getTaxCategory() != null
+                ? freshProduct.getTaxCategory()
+                : TaxCategory.STANDARD;
+            
+            BigDecimal taxRate = freshProduct.getTaxRate() != null
+                ? freshProduct.getTaxRate()
+                : (store.getDefaultTaxRate() != null 
+                    ? store.getDefaultTaxRate() 
+                    : new BigDecimal("19.00"));
+            
+            if (!vatEnabled) {
+                taxCategory = TaxCategory.EXEMPT;
+                taxRate = BigDecimal.ZERO;
+            }
+            
+            // Berechne Steueraufteilung
+            TaxCalculationService.TaxBreakdown unitBreakdown = 
+                taxCalculationService.calculatePriceBreakdown(unitPrice, taxRate, priceMode);
+            
+            BigDecimal quantity = BigDecimal.valueOf(item.getQuantity());
+            BigDecimal lineNet = unitBreakdown.net().multiply(quantity).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal lineTax = unitBreakdown.tax().multiply(quantity).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal lineGross = unitBreakdown.gross().multiply(quantity).setScale(2, RoundingMode.HALF_UP);
+            
+            subtotalNet = subtotalNet.add(lineNet);
+            subtotalTax = subtotalTax.add(lineTax);
+            subtotalGross = subtotalGross.add(lineGross);
+            
+            // Akkumuliere Tax breakdown per rate
+            taxBreakdownMap.computeIfAbsent(taxRate, rate -> 
+                new TaxBreakdownItem(rate, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO))
+                .add(lineNet, lineTax, lineGross);
+        }
+        
+        // Legacy subtotal (für Abwärtskompatibilität - entspricht subtotalGross)
+        response.put("subtotal", subtotalGross);
+        
+        // ✅ Neue Felder für korrekte Steueranzeige
+        response.put("subtotalNet", subtotalNet);
+        response.put("subtotalTax", subtotalTax);
+        response.put("subtotalGross", subtotalGross);
+        response.put("priceMode", priceMode.name());
+        response.put("vatEnabled", vatEnabled);
+        
+        // Tax breakdown (sortiert nach Rate)
+        List<Map<String, Object>> taxBreakdownList = taxBreakdownMap.entrySet().stream()
+            .sorted(Map.Entry.comparingByKey())
+            .map(entry -> {
+                Map<String, Object> item = new HashMap<>();
+                item.put("taxRate", entry.getKey());
+                item.put("netAmount", entry.getValue().net);
+                item.put("taxAmount", entry.getValue().tax);
+                item.put("grossAmount", entry.getValue().gross);
+                return item;
+            })
+            .toList();
+        
+        response.put("taxBreakdown", taxBreakdownList);
+        
         response.put("expiresAt", cart.getExpiresAt());
         return response;
+    }
+    
+    // Helper class für Tax breakdown accumulation
+    private static class TaxBreakdownItem {
+        BigDecimal rate;
+        BigDecimal net;
+        BigDecimal tax;
+        BigDecimal gross;
+        
+        TaxBreakdownItem(BigDecimal rate, BigDecimal net, BigDecimal tax, BigDecimal gross) {
+            this.rate = rate;
+            this.net = net;
+            this.tax = tax;
+            this.gross = gross;
+        }
+        
+        void add(BigDecimal addNet, BigDecimal addTax, BigDecimal addGross) {
+            this.net = this.net.add(addNet);
+            this.tax = this.tax.add(addTax);
+            this.gross = this.gross.add(addGross);
+        }
     }
 
     /**

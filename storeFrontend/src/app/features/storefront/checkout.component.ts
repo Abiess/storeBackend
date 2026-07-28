@@ -580,7 +580,27 @@ import { environment } from '@env/environment';
               <span class="free-shipping">{{ 'checkout.free' | translate }}</span>
             </div>
 
-            <div class="summary-row tax">
+            <!-- ✅ Tax breakdown: Ein Steuersatz = eine Zeile, mehrere = je Zeile -->
+            <div class="summary-row tax" *ngIf="cart && cart.taxBreakdown && cart.taxBreakdown.length === 1">
+              <span>
+                {{ cart.priceMode === 'GROSS' ? ('checkout.taxIncluded' | translate) : ('checkout.tax' | translate) }}
+                ({{ cart.taxBreakdown[0].taxRate | number:'1.0-2' }}%)
+              </span>
+              <span>{{ cart.taxBreakdown[0].taxAmount | number:'1.2-2' }} €</span>
+            </div>
+            
+            <ng-container *ngIf="cart && cart.taxBreakdown && cart.taxBreakdown.length > 1">
+              <div class="summary-row tax" *ngFor="let taxItem of cart.taxBreakdown">
+                <span>
+                  {{ cart.priceMode === 'GROSS' ? ('checkout.taxIncluded' | translate) : ('checkout.tax' | translate) }}
+                  ({{ taxItem.taxRate | number:'1.0-2' }}%)
+                </span>
+                <span>{{ taxItem.taxAmount | number:'1.2-2' }} €</span>
+              </div>
+            </ng-container>
+            
+            <!-- Fallback für alte API-Version ohne taxBreakdown -->
+            <div class="summary-row tax" *ngIf="!cart || !cart.taxBreakdown || cart.taxBreakdown.length === 0">
               <span>{{ 'checkout.tax' | translate }}</span>
               <span>{{ getTax() | number:'1.2-2' }} €</span>
             </div>
@@ -2331,20 +2351,36 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         return window.location.hostname;
     }
 
+    /**
+     * Steuer aus Backend-Daten (kein hardcoded 0.19 mehr!)
+     */
     getTax(): number {
         if (!this.cart) return 0;
-        const discounted = Math.max(0, this.cart.subtotal - this.discountAmount);
-        return discounted * 0.19;
+        
+        // ✅ Verwende Backend-berechnete Steuer
+        if (this.cart.subtotalTax !== undefined) {
+            return this.cart.subtotalTax;
+        }
+        
+        // Fallback für alte API-Version (sollte nicht mehr vorkommen)
+        console.warn('⚠️ Cart hat keine subtotalTax - Backend-Update erforderlich');
+        return 0;
     }
 
     getFinalTotal(): number {
         if (!this.cart) return 0;
-        const subtotal = this.cart.subtotal;
-        // Liefergebühr: 0 bei PICKUP, sonst aus globaler Lieferoption
+        
+        // ✅ Verwende Backend-berechnete Bruttosumme
+        const subtotal = this.cart.subtotalGross !== undefined 
+            ? this.cart.subtotalGross 
+            : this.cart.subtotal;
+        
         const deliveryFee = this.selectedDeliveryType === 'PICKUP' ? 0 : (this.selectedGlobalDeliveryOption?.price ?? 0);
         const discounted = Math.max(0, subtotal - this.discountAmount);
-        const tax = discounted * 0.19;
-        return discounted + tax + deliveryFee;
+        
+        // ✅ Steuer ist bereits in subtotalGross enthalten (GROSS-Modus)
+        // oder wird separat addiert (NET-Modus) - Backend handled das
+        return discounted + deliveryFee;
     }
 
     loadDeliveryOptions(): void {

@@ -36,6 +36,8 @@ public class CartControllerMappingBehaviorTest {
     @Mock private ProductService productService;
     @Mock private JwtUtil jwtUtil;
     @Mock private ProductTierPriceService tierPriceService;
+    @Mock private storebackend.service.TaxCalculationService taxCalculationService;
+    @Mock private storebackend.repository.ProductRepository productRepository;
 
     private CartController cartController;
 
@@ -52,13 +54,17 @@ public class CartControllerMappingBehaviorTest {
             userRepository,
             productService,
             jwtUtil,
-            tierPriceService
+            tierPriceService,
+            taxCalculationService,
+            productRepository
         );
 
         // Store
         store = new Store();
         store.setId(1L);
         store.setName("Test Store");
+        store.setPriceMode(storebackend.enums.PriceMode.GROSS);
+        store.setVatEnabled(true);
 
         // Cart
         cart = new Cart();
@@ -71,6 +77,8 @@ public class CartControllerMappingBehaviorTest {
         product.setId(100L);
         product.setTitle("Test Product");
         product.setBasePrice(new BigDecimal("10.00"));
+        product.setTaxRate(new BigDecimal("19.00"));
+        product.setTaxCategory(storebackend.enums.TaxCategory.STANDARD);
 
         // CartItem
         cartItem = new CartItem();
@@ -79,6 +87,19 @@ public class CartControllerMappingBehaviorTest {
         cartItem.setProduct(product);
         cartItem.setQuantity(15);
         cartItem.setPriceSnapshot(new BigDecimal("10.00"));
+
+        // Mock ProductRepository: return fresh product
+        when(productRepository.findById(100L)).thenReturn(java.util.Optional.of(product));
+
+        // Mock TaxCalculationService: return valid breakdown
+        storebackend.service.TaxCalculationService.TaxBreakdown mockBreakdown = 
+            new storebackend.service.TaxCalculationService.TaxBreakdown(
+                new BigDecimal("8.40"),  // net
+                new BigDecimal("1.60"),  // tax
+                new BigDecimal("10.00")  // gross
+            );
+        when(taxCalculationService.calculatePriceBreakdown(any(BigDecimal.class), any(BigDecimal.class), any(storebackend.enums.PriceMode.class)))
+            .thenReturn(mockBreakdown);
     }
 
     @Test

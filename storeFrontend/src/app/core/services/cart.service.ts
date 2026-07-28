@@ -19,12 +19,26 @@ export interface CartItem {
   imageUrl?: string;
 }
 
+export interface TaxBreakdownItem {
+  taxRate: number;
+  netAmount: number;
+  taxAmount: number;
+  grossAmount: number;
+}
+
 export interface Cart {
   cartId: number;
   storeId: number;
   items: CartItem[];
   itemCount: number;
-  subtotal: number;
+  subtotal: number; // Legacy: entspricht subtotalGross
+  // ✅ Neue Felder für korrekte Steueranzeige
+  subtotalNet?: number;
+  subtotalTax?: number;
+  subtotalGross?: number;
+  priceMode?: string; // 'NET' | 'GROSS'
+  vatEnabled?: boolean;
+  taxBreakdown?: TaxBreakdownItem[];
 }
 
 export interface AddToCartRequest {
