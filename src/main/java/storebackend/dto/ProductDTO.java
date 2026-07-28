@@ -37,6 +37,10 @@ public class ProductDTO {
     // Varianten
     private List<ProductVariantDTO> variants;
 
+    // ─── Staffelpreise / Mengenpreise ────────────
+    /** Mengenpreise aufsteigend nach minimumQuantity sortiert */
+    private List<ProductTierPriceDTO> tierPrices;
+
     // ─── Steuern ─────────────────────────────────
     private TaxCategory taxCategory;
     private BigDecimal taxRate;

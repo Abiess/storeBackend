@@ -11,6 +11,7 @@ import storebackend.repository.CartRepository;
 import storebackend.repository.ProductRepository;
 import storebackend.repository.ProductVariantRepository;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -23,6 +24,7 @@ public class CartService {
     private final CartItemRepository cartItemRepository;
     private final ProductVariantRepository productVariantRepository;
     private final ProductRepository productRepository;
+    private final ProductTierPriceService tierPriceService;
 
     @Transactional
     public Cart getOrCreateCart(String sessionId, User user, Store store) {
@@ -84,7 +86,8 @@ public class CartService {
                 item.setVariant(variant);
                 item.setProduct(variant.getProduct());
                 item.setQuantity(quantity);
-                item.setPriceSnapshot(variant.getPrice());
+                // ✅ Staffelpreis berücksichtigen
+                item.setPriceSnapshot(calculateEffectivePrice(variant.getProduct(), variant.getPrice(), quantity));
                 return cartItemRepository.save(item);
             }
         } else {
@@ -106,7 +109,9 @@ public class CartService {
                 item.setProduct(product);
                 item.setVariant(defaultVariant);
                 item.setQuantity(quantity);
-                item.setPriceSnapshot(product.getBasePrice() != null ? product.getBasePrice() : defaultVariant.getPrice());
+                // ✅ Staffelpreis berücksichtigen
+                BigDecimal basePrice = product.getBasePrice() != null ? product.getBasePrice() : defaultVariant.getPrice();
+                item.setPriceSnapshot(calculateEffectivePrice(product, basePrice, quantity));
                 return cartItemRepository.save(item);
             }
         }
@@ -141,6 +146,16 @@ public class CartService {
         }
 
         item.setQuantity(quantity);
+        
+        // ✅ WICHTIG: Preis neu berechnen bei Mengenänderung (Staffelpreis!)
+        Product product = item.getProduct();
+        if (product != null) {
+            BigDecimal basePrice = item.getVariant() != null && item.getVariant().getPrice() != null 
+                ? item.getVariant().getPrice() 
+                : product.getBasePrice();
+            item.setPriceSnapshot(calculateEffectivePrice(product, basePrice, quantity));
+        }
+        
         return cartItemRepository.save(item);
     }
 
@@ -267,5 +282,37 @@ public class CartService {
         cart.setExpiresAt(LocalDateTime.now().plusDays(7));
         log.info("🆕 Erstelle neuen Cart - sessionId: {}, userId: {}, storeId: {}", sessionId, user != null ? user.getId() : null, store.getId());
         return cartRepository.save(cart);
+    }
+
+    /**
+     * Berechnet den wirksamen Preis unter Berücksichtigung von Staffelpreisen.
+     * 
+     * @param product Produkt
+     * @param basePrice Basispreis (product.basePrice oder variant.price)
+     * @param quantity Menge
+     * @return Wirksamer Stückpreis (kann günstiger sein als basePrice)
+     */
+    private java.math.BigDecimal calculateEffectivePrice(Product product, java.math.BigDecimal basePrice, int quantity) {
+        if (product == null || basePrice == null || quantity < 1) {
+            return basePrice != null ? basePrice : java.math.BigDecimal.ZERO;
+        }
+
+        try {
+            // Versuche Staffelpreis zu berechnen
+            java.math.BigDecimal tierPrice = tierPriceService.calculateEffectiveUnitPrice(product, quantity);
+            
+            // Wenn Staffelpreis günstiger ist, verwende diesen
+            if (tierPrice != null && tierPrice.compareTo(basePrice) < 0) {
+                log.debug("✅ Staffelpreis angewendet: product={}, qty={}, base={}, tier={}", 
+                    product.getId(), quantity, basePrice, tierPrice);
+                return tierPrice;
+            }
+        } catch (Exception e) {
+            log.warn("Fehler bei Staffelpreis-Berechnung für product {}: {}", 
+                product.getId(), e.getMessage());
+        }
+
+        // Fallback: Basispreis
+        return basePrice;
     }
 }

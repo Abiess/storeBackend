@@ -42,6 +42,7 @@ public class ProductService {
     private final ObjectMapper objectMapper;
     private final ProductVariantGenerationService variantGenerationService;
     private final TaxCalculationService taxCalculationService;
+    private final ProductTierPriceService tierPriceService;
 
     @Transactional(readOnly = true)
     public List<ProductDTO> getProductsByStore(Store store) {
@@ -307,6 +308,15 @@ public class ProductService {
         if ((dto.getPrimaryImageUrl() == null || dto.getPrimaryImageUrl().isEmpty())
                 && product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
             dto.setPrimaryImageUrl(product.getImageUrl());
+        }
+
+        // ─── Staffelpreise / Mengenpreise ────────────
+        try {
+            dto.setTierPrices(tierPriceService.getActiveTierPricesByProduct(product.getId()));
+        } catch (Exception e) {
+            log.warn("Failed to load tier prices for product {}: {}", product.getId(), e.getMessage());
+            // Nicht-kritisch - leere Liste setzen
+            dto.setTierPrices(List.of());
         }
 
         // ─── Steuern ─────────────────────────────────
