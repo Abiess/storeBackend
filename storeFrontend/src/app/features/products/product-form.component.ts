@@ -2442,6 +2442,8 @@ export class ProductFormComponent implements OnInit, OnDestroy {
       stock: formData.stock ?? 0,
       status: formData.status || 'DRAFT',
       categoryId: formData.categoryId || null,
+      taxCategory: formData.taxCategory,  // FIX: Steuerkategorie mitsenden
+      taxRate: formData.taxRate,          // FIX: Steuersatz mitsenden
       storeId: this.storeId
     };
 
