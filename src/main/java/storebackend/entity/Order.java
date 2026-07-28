@@ -155,6 +155,14 @@ public class Order {
     
     @Column(name = "discount_value_snapshot", precision = 15, scale = 2)
     private BigDecimal discountValueSnapshot;
+    
+    // ─── B2B Fields ────────────────────────────────────────────────
+    /**
+     * Customer Reference / PO Number
+     * Bestellnummer oder Referenz des Kunden (z.B. PO-2026-0042)
+     */
+    @Column(name = "customer_reference", length = 100)
+    private String customerReference;
 
     @Column(columnDefinition = "TEXT")
     private String notes;

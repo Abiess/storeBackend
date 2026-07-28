@@ -1,15 +1,19 @@
 package storebackend.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import storebackend.entity.*;
 import storebackend.enums.OrderStatus;
 import storebackend.repository.StoreRepository;
+import storebackend.service.DeliveryNoteService;
 import storebackend.service.OrderService;
 import storebackend.service.StoreService;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +25,7 @@ public class OrderController {
     private final OrderService orderService;
     private final StoreRepository storeRepository;
     private final StoreService storeService;
+    private final DeliveryNoteService deliveryNoteService;
 
     /**
      * Prüft, ob der Benutzer Zugriff auf den Store hat
@@ -222,6 +227,41 @@ public class OrderController {
             return ResponseEntity.ok(history);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+    
+    /**
+     * Download delivery note PDF for an order
+     * B2B-Feature: Generates delivery note from order snapshots
+     */
+    @GetMapping("/{orderId}/delivery-note")
+    public ResponseEntity<byte[]> getDeliveryNote(
+            @PathVariable Long storeId,
+            @PathVariable Long orderId,
+            @AuthenticationPrincipal User user) {
+        
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+        
+        if (!hasStoreAccess(storeId, user)) {
+            return ResponseEntity.status(403).build();
+        }
+        
+        try {
+            byte[] pdfBytes = deliveryNoteService.generateDeliveryNotePdf(orderId, storeId);
+            
+            Order order = orderService.getOrderById(orderId);
+            String filename = "lieferschein-" + order.getOrderNumber() + ".pdf";
+            
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                    .body(pdfBytes);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().build();
         }
     }
 }

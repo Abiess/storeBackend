@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Address {
+    private String company;      // B2B: Firmenname (optional)
     private String firstName;
     private String lastName;
     private String address1;
