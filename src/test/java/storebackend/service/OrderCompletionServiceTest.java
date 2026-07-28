@@ -113,7 +113,7 @@ class OrderCompletionServiceTest {
         when(orderRepository.findByIdForUpdate(100L)).thenReturn(Optional.of(testOrder));
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
         when(emailService.sendOrderConfirmationWithResult(
-            anyString(), anyString(), anyString(), anyDouble(), anyList(), anyString(), anyString()
+            anyString(), anyString(), anyString(), anyDouble(), anyList(), anyString(), anyString(), any(Address.class), anyString()
         )).thenReturn(EmailDeliveryResult.success());
         doNothing().when(inventoryService).adjustForOrder(any(Order.class));
         doNothing().when(emailService).sendNewOrderNotificationToOwner(
@@ -126,10 +126,7 @@ class OrderCompletionServiceTest {
         
         // Assert
         verify(inventoryService, times(1)).adjustForOrder(testOrder);
-        verify(emailService, times(1)).sendOrderConfirmationWithResult(
-            eq("customer@example.com"), eq("ORDER-100"), eq("Test Store"), 
-            eq(100.0), anyList(), eq("https://example.com/logo.png"), eq("en")
-        );
+        verify(emailService, times(1)).sendOrderConfirmationWithResult(eq("customer@example.com"), eq("ORDER-100"), eq("Test Store"), eq(100.0), anyList(), eq("https://example.com/logo.png"), eq("en"), any(Address.class), anyString());
         verify(emailService, times(1)).sendNewOrderNotificationToOwner(
             eq("owner@example.com"), eq("de"), eq("ORDER-100"), 
             eq("Test Store"), eq("https://example.com/logo.png"), eq(100.0),
@@ -151,7 +148,7 @@ class OrderCompletionServiceTest {
         when(orderRepository.findByIdForUpdate(100L)).thenReturn(Optional.of(testOrder));
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
         when(emailService.sendOrderConfirmationWithResult(
-            anyString(), anyString(), anyString(), anyDouble(), anyList(), anyString(), anyString()
+            anyString(), anyString(), anyString(), anyDouble(), anyList(), anyString(), anyString(), any(Address.class), anyString()
         )).thenReturn(EmailDeliveryResult.success());
         
         // Act
@@ -160,7 +157,7 @@ class OrderCompletionServiceTest {
         // Assert
         verify(inventoryService, never()).adjustForOrder(any(Order.class));  // Nicht erneut aufgerufen
         verify(emailService, times(1)).sendOrderConfirmationWithResult(anyString(), anyString(), anyString(), 
-            anyDouble(), anyList(), anyString(), anyString());
+            anyDouble(), anyList(), anyString(), anyString(), any(Address.class), anyString());
         assertTrue(testOrder.getConfirmationEmailSent());
     }
     
@@ -181,9 +178,7 @@ class OrderCompletionServiceTest {
         
         // Assert
         verify(inventoryService, times(1)).adjustForOrder(testOrder);
-        verify(emailService, never()).sendOrderConfirmationWithResult(
-            anyString(), anyString(), anyString(), anyDouble(), anyList(), anyString(), anyString()
-        );  // Nicht erneut aufgerufen
+        verify(emailService, never()).sendOrderConfirmationWithResult(anyString(), anyString(), anyString(), anyDouble(), anyList(), anyString(), anyString(), any(Address.class), anyString());  // Nicht erneut aufgerufen
         assertTrue(testOrder.getInventoryAdjusted());
     }
     
@@ -203,9 +198,7 @@ class OrderCompletionServiceTest {
         
         // Assert
         verify(inventoryService, never()).adjustForOrder(any(Order.class));
-        verify(emailService, never()).sendOrderConfirmationWithResult(
-            anyString(), anyString(), anyString(), anyDouble(), anyList(), anyString(), anyString()
-        );
+        verify(emailService, never()).sendOrderConfirmationWithResult(anyString(), anyString(), anyString(), anyDouble(), anyList(), anyString(), anyString(), any(Address.class), anyString());
         verify(orderRepository, never()).save(any(Order.class));
     }
     
@@ -222,7 +215,7 @@ class OrderCompletionServiceTest {
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
         doNothing().when(inventoryService).adjustForOrder(any(Order.class));
         when(emailService.sendOrderConfirmationWithResult(
-            anyString(), anyString(), anyString(), anyDouble(), anyList(), anyString(), anyString()
+            anyString(), anyString(), anyString(), anyDouble(), anyList(), anyString(), anyString(), any(Address.class), anyString()
         )).thenReturn(EmailDeliveryResult.permanentFailure("SMTP_ERROR", "SMTP connection failed"));
         
         // Act
@@ -231,7 +224,7 @@ class OrderCompletionServiceTest {
         // Assert
         verify(inventoryService, times(1)).adjustForOrder(testOrder);
         verify(emailService, times(1)).sendOrderConfirmationWithResult(
-            eq("customer@example.com"), anyString(), anyString(), anyDouble(), anyList(), anyString(), anyString()
+            eq("customer@example.com"), anyString(), anyString(), anyDouble(), anyList(), anyString(), anyString(), any(Address.class), anyString()
         );
         assertTrue(testOrder.getInventoryAdjusted());   // Bestand wurde reduziert
         assertFalse(testOrder.getConfirmationEmailSent());  // E-Mail-Flag bleibt false
@@ -256,9 +249,7 @@ class OrderCompletionServiceTest {
         
         assertEquals("Failed to adjust inventory for order ORDER-100", exception.getMessage());
         verify(inventoryService, times(1)).adjustForOrder(testOrder);
-        verify(emailService, never()).sendOrderConfirmationWithResult(
-            anyString(), anyString(), anyString(), anyDouble(), anyList(), anyString(), anyString()
-        );
+        verify(emailService, never()).sendOrderConfirmationWithResult(anyString(), anyString(), anyString(), anyDouble(), anyList(), anyString(), anyString(), any(Address.class), anyString());
         assertFalse(testOrder.getInventoryAdjusted());
         assertFalse(testOrder.getConfirmationEmailSent());
     }
@@ -278,9 +269,7 @@ class OrderCompletionServiceTest {
         
         // Assert
         verify(inventoryService, never()).adjustForOrder(any(Order.class));
-        verify(emailService, never()).sendOrderConfirmationWithResult(
-            anyString(), anyString(), anyString(), anyDouble(), anyList(), anyString(), anyString()
-        );
+        verify(emailService, never()).sendOrderConfirmationWithResult(anyString(), anyString(), anyString(), anyDouble(), anyList(), anyString(), anyString(), any(Address.class), anyString());
         assertFalse(testOrder.getInventoryAdjusted());
         assertFalse(testOrder.getConfirmationEmailSent());
     }
@@ -300,9 +289,7 @@ class OrderCompletionServiceTest {
         
         // Assert
         verify(inventoryService, never()).adjustForOrder(any(Order.class));
-        verify(emailService, never()).sendOrderConfirmationWithResult(
-            anyString(), anyString(), anyString(), anyDouble(), anyList(), anyString(), anyString()
-        );
+        verify(emailService, never()).sendOrderConfirmationWithResult(anyString(), anyString(), anyString(), anyDouble(), anyList(), anyString(), anyString(), any(Address.class), anyString());
         assertFalse(testOrder.getInventoryAdjusted());
         assertFalse(testOrder.getConfirmationEmailSent());
     }
@@ -324,3 +311,6 @@ class OrderCompletionServiceTest {
         assertEquals("Order not found: 999", exception.getMessage());
     }
 }
+
+
+

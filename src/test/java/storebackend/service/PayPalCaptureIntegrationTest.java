@@ -74,7 +74,7 @@ class PayPalCaptureIntegrationTest {
     void setUp() {
         // Mock E-Mail-Service (immer erfolgreich)
         when(emailService.sendOrderConfirmationWithResult(
-            anyString(), anyString(), anyString(), anyDouble(), anyList(), anyString(), anyString()
+            anyString(), anyString(), anyString(), anyDouble(), anyList(), anyString(), anyString(), any(Address.class), anyString()
         )).thenReturn(EmailDeliveryResult.success());
         
         doNothing().when(emailService).sendNewOrderNotificationToOwner(
@@ -195,7 +195,7 @@ class PayPalCaptureIntegrationTest {
         
         // Assert: E-Mails
         verify(emailService, times(1)).sendOrderConfirmationWithResult(
-            eq("customer@test.com"), anyString(), anyString(), anyDouble(), anyList(), isNull(), eq("en")
+            eq("customer@test.com"), anyString(), anyString(), anyDouble(), anyList(), isNull(), eq("en"), any(Address.class), anyString()
         );
         verify(emailService, times(1)).sendNewOrderNotificationToOwner(
             eq("owner@test.com"), eq("de"), anyString(), anyString(), isNull(), anyDouble(),
@@ -243,9 +243,7 @@ class PayPalCaptureIntegrationTest {
         assertEquals(98, refreshedVariant.getStockQuantity());  // 100 - 2 (nicht 100 - 4)
         
         // Assert: E-Mails nur EINMAL gesendet
-        verify(emailService, times(1)).sendOrderConfirmationWithResult(
-            anyString(), anyString(), anyString(), anyDouble(), anyList(), isNull(), anyString()
-        );
+        verify(emailService, times(1)).sendOrderConfirmationWithResult(anyString(), anyString(), anyString(), anyDouble(), anyList(), isNull(), anyString(), any(Address.class), anyString());
     }
     
     /**
@@ -287,9 +285,7 @@ class PayPalCaptureIntegrationTest {
         assertEquals(98, refreshedVariant.getStockQuantity());
         
         // Assert: E-Mails nur EINMAL gesendet
-        verify(emailService, times(1)).sendOrderConfirmationWithResult(
-            anyString(), anyString(), anyString(), anyDouble(), anyList(), isNull(), anyString()
-        );
+        verify(emailService, times(1)).sendOrderConfirmationWithResult(anyString(), anyString(), anyString(), anyDouble(), anyList(), isNull(), anyString(), any(Address.class), anyString());
     }
     
     /**
@@ -331,9 +327,7 @@ class PayPalCaptureIntegrationTest {
         assertEquals(100, refreshedVariant.getStockQuantity());  // Unverändert
         
         // Assert: Keine E-Mails
-        verify(emailService, never()).sendOrderConfirmationWithResult(
-            anyString(), anyString(), anyString(), anyDouble(), anyList(), isNull(), anyString()
-        );
+        verify(emailService, never()).sendOrderConfirmationWithResult(anyString(), anyString(), anyString(), anyDouble(), anyList(), isNull(), anyString(), any(Address.class), anyString());
     }
     
     /**
@@ -360,7 +354,7 @@ class PayPalCaptureIntegrationTest {
         
         // Mock: E-Mail-Fehler
         when(emailService.sendOrderConfirmationWithResult(
-            anyString(), anyString(), anyString(), anyDouble(), anyList(), isNull(), anyString()
+            anyString(), anyString(), anyString(), anyDouble(), anyList(), isNull(), anyString(), any(Address.class), anyString()
         )).thenReturn(EmailDeliveryResult.permanentFailure("SMTP_ERROR", "Connection timeout"));
         
         // Act: Capture durchführen
@@ -398,3 +392,6 @@ class PayPalCaptureIntegrationTest {
         return paymentTransactionRepository.save(payment);
     }
 }
+
+
+
