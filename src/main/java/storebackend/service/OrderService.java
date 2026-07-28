@@ -44,6 +44,10 @@ public class OrderService {
     private final RevenueShareService revenueShareService;
     private final StoreProductRepository storeProductRepository;
     private final PlatformSettingsService platformSettingsService;
+    
+    // ✅ STAFFELPREISE: Server-side checkout price validation
+    private final ProductTierPriceService tierPriceService;
+    private final ProductRepository productRepository;
 
     @Transactional(readOnly = true)
     public List<Order> getOrdersByStore(Long storeId) {
@@ -258,13 +262,28 @@ public class OrderService {
                 throw new RuntimeException("CartItem has neither variant nor product");
             }
 
-            // Determine unit price (variant overrides product)
-            // WICHTIG: priceSnapshot=0 bedeutet "nicht gesetzt", deshalb auf > 0 prüfen
-            BigDecimal unitPrice = variant != null && variant.getPrice() != null && variant.getPrice().compareTo(BigDecimal.ZERO) > 0
+            // ✅ KRITISCH: Preis serverseitig NEU BERECHNEN (Checkout-Absicherung)
+            // Produkt frisch aus DB laden für aktuelle Preisstufen
+            Product freshProduct = productRepository.findById(product.getId())
+                .orElseThrow(() -> new RuntimeException("Product not found during checkout: " + product.getId()));
+            
+            // Basispreis bestimmen (Variante überschreibt Produkt)
+            BigDecimal basePrice = variant != null && variant.getPrice() != null && variant.getPrice().compareTo(BigDecimal.ZERO) > 0
                 ? variant.getPrice()
-                : (cartItem.getPriceSnapshot() != null && cartItem.getPriceSnapshot().compareTo(BigDecimal.ZERO) > 0
-                    ? cartItem.getPriceSnapshot() 
-                    : product.getBasePrice());
+                : freshProduct.getBasePrice();
+            
+            // ✅ Staffelpreis neu berechnen - IGNORIERT cartItem.priceSnapshot
+            storebackend.dto.TierPriceCalculationResult priceCalc = tierPriceService.calculateWithDetails(
+                freshProduct, basePrice, cartItem.getQuantity());
+            
+            // ✅ WICHTIG: Neu berechneten effectiveUnitPrice verwenden
+            BigDecimal unitPrice = priceCalc.getEffectiveUnitPrice();
+            
+            if (priceCalc.getTierPriceApplied()) {
+                log.info("✅ Checkout: Staffelpreis angewendet - Product={}, Qty={}, Tier={}, Price={}", 
+                    freshProduct.getId(), cartItem.getQuantity(), 
+                    priceCalc.getAppliedTierMinimumQuantity(), unitPrice);
+            }
             
 
             // Determine tax category and rate

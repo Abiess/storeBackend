@@ -8,6 +8,7 @@ import storebackend.entity.*;
 import storebackend.repository.*;
 import storebackend.service.CartService;
 import storebackend.service.ProductService;
+import storebackend.service.ProductTierPriceService;
 import storebackend.security.JwtUtil;
 
 import java.math.BigDecimal;
@@ -25,6 +26,7 @@ public class CartController {
     private final UserRepository userRepository;
     private final ProductService productService; // ✅ Nutze zentrale Bildauflösung
     private final JwtUtil jwtUtil;
+    private final ProductTierPriceService tierPriceService;
 
     @GetMapping
     public ResponseEntity<Map<String, Object>> getCart(
@@ -268,6 +270,25 @@ public class CartController {
             dto.put("imageUrl", imageUrl); // null erlaubt - Frontend zeigt Platzhalter
             dto.put("productTitle", productTitle != null ? productTitle : "Unknown Product");
             dto.put("variantSku", variantSku != null ? variantSku : "");
+
+            // ✅ STAFFELPREIS-METADATEN FÜR FRONTEND
+            Product product = item.getVariant() != null && item.getVariant().getProduct() != null
+                ? item.getVariant().getProduct()
+                : item.getProduct();
+            
+            if (product != null) {
+                BigDecimal basePrice = item.getVariant() != null && item.getVariant().getPrice() != null
+                    ? item.getVariant().getPrice()
+                    : product.getBasePrice();
+                
+                storebackend.dto.TierPriceCalculationResult tierCalc = tierPriceService.calculateWithDetails(
+                    product, basePrice, item.getQuantity());
+                
+                dto.put("baseUnitPrice", tierCalc.getBaseUnitPrice());
+                dto.put("effectiveUnitPrice", tierCalc.getEffectiveUnitPrice());
+                dto.put("tierPriceApplied", tierCalc.getTierPriceApplied());
+                dto.put("appliedTierMinimumQuantity", tierCalc.getAppliedTierMinimumQuantity());
+            }
 
             return dto;
         }).toList();

@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,5 +18,11 @@ public class CartItemDTO {
     private Integer quantity;
     private List<Long> categoryIds = new ArrayList<>();
     private List<Long> collectionIds = new ArrayList<>();
+    
+    // ✅ Staffelpreis-Metadaten für Frontend-Anzeige
+    private BigDecimal baseUnitPrice;
+    private BigDecimal effectiveUnitPrice;
+    private Boolean tierPriceApplied;
+    private Integer appliedTierMinimumQuantity;
 }
 
