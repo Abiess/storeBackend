@@ -37,6 +37,21 @@ public class ProductTierPricePutBehaviorTest {
     @InjectMocks
     private ProductTierPriceService tierPriceService;
 
+    /**
+     * Helper-Methode: Setzt productId via Reflection.
+     * Notwendig weil productId in Entity insertable=false, updatable=false ist.
+     * In echter DB wird productId automatisch durch FK geladen.
+     */
+    private void setProductId(ProductTierPrice tierPrice, Long productId) {
+        try {
+            java.lang.reflect.Field field = ProductTierPrice.class.getDeclaredField("productId");
+            field.setAccessible(true);
+            field.set(tierPrice, productId);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to set productId via reflection", e);
+        }
+    }
+
     @Test
     void updateTierPrice_shouldNormalizeBigDecimalToTwoDecimals() {
         // Arrange
@@ -50,6 +65,7 @@ public class ProductTierPricePutBehaviorTest {
         ProductTierPrice existing = new ProductTierPrice();
         existing.setId(3L);
         existing.setProduct(product);
+        setProductId(existing, 645L); // Set productId via reflection
         existing.setMinimumQuantity(10);
         existing.setUnitPrice(new BigDecimal("10.00"));
         existing.setActive(true);
@@ -91,6 +107,7 @@ public class ProductTierPricePutBehaviorTest {
         ProductTierPrice existing = new ProductTierPrice();
         existing.setId(3L);
         existing.setProduct(product);
+        setProductId(existing, 645L); // Set productId via reflection
         existing.setMinimumQuantity(10);
         existing.setUnitPrice(new BigDecimal("10.00"));
         existing.setActive(true);
@@ -131,6 +148,7 @@ public class ProductTierPricePutBehaviorTest {
         ProductTierPrice existing = new ProductTierPrice();
         existing.setId(3L);
         existing.setProduct(product);
+        setProductId(existing, 645L); // Set productId via reflection
         existing.setMinimumQuantity(10);
         existing.setUnitPrice(new BigDecimal("10.00"));
         existing.setActive(true);
@@ -169,6 +187,7 @@ public class ProductTierPricePutBehaviorTest {
         ProductTierPrice existing = new ProductTierPrice();
         existing.setId(3L);
         existing.setProduct(product);
+        setProductId(existing, 645L); // Set productId via reflection
         existing.setMinimumQuantity(10);
         existing.setUnitPrice(new BigDecimal("10.00"));
 
@@ -200,6 +219,7 @@ public class ProductTierPricePutBehaviorTest {
         ProductTierPrice existing = new ProductTierPrice();
         existing.setId(3L);
         existing.setProduct(product);
+        setProductId(existing, 645L); // Set productId via reflection
         existing.setMinimumQuantity(10);
         existing.setUnitPrice(new BigDecimal("10.00"));
 
@@ -231,6 +251,16 @@ public class ProductTierPricePutBehaviorTest {
         ProductTierPrice existing = new ProductTierPrice();
         existing.setId(3L);
         existing.setProduct(product);
+        setProductId(existing, 645L); // Set productId via reflection
+        // productId muss manuell gesetzt werden, da insertable=false, updatable=false
+        // In echter DB wird es automatisch durch FK geladen
+        try {
+            java.lang.reflect.Field field = ProductTierPrice.class.getDeclaredField("productId");
+            field.setAccessible(true);
+            field.set(existing, 645L);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
         existing.setMinimumQuantity(10);
         existing.setUnitPrice(new BigDecimal("10.00"));
 
@@ -263,6 +293,7 @@ public class ProductTierPricePutBehaviorTest {
         ProductTierPrice existing = new ProductTierPrice();
         existing.setId(3L);
         existing.setProduct(product);
+        setProductId(existing, 645L); // Set productId via reflection
         existing.setMinimumQuantity(10);
         existing.setUnitPrice(new BigDecimal("10.00"));
 
