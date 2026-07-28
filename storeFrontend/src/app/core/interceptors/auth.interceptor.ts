@@ -71,7 +71,9 @@ export class AuthInterceptor implements HttpInterceptor {
     }
 
     // 3b. Öffentliche Store-Unterseiten (GET) → kein Token
+    // WICHTIG: Management-Endpoints wie /tier-prices explizit ausschließen
     if (method === 'GET' && url.includes('/api/stores/') &&
+        !url.includes('/tier-prices') &&
         publicStoreSubRoutes.some(p => url.includes(p))) {
       return next.handle(req);
     }
