@@ -153,8 +153,10 @@
       "applied": "Volume price applied",
       "showAll": "Show all volume prices",
       "hideAll": "Hide",
-      "regularPrice": "regular",
-      "total": "Total"
+      "regularPrice": "Regular price",
+      "perPiece": "per piece",
+      "total": "Total",
+      "totalForQuantity": "Total for {{quantity}} pieces: {{total}} €"
     },
     "created": "Product successfully created!",
     "updated": "Product successfully updated!",

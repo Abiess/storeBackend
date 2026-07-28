@@ -127,27 +127,49 @@ interface ProductTierPrice {
 
           <!-- Price -->
           <div class="price-section">
-            <!-- Ohne aktiven Staffelpreis -->
-            <span class="price" *ngIf="!currentTierPrice">
+            <!-- Ohne Staffelpreise -->
+            <span class="price" *ngIf="!product || !product.tierPrices || product.tierPrices.length === 0">
               <span *ngIf="showFromPrefix()" class="from-prefix">ab </span>{{ getCurrentPrice() | number:'1.2-2' }} €
             </span>
             
-            <!-- Mit aktivem Staffelpreis -->
-            <div class="tier-price-display" *ngIf="currentTierPrice">
-              <span class="regular-price">{{ getCurrentPrice() | number:'1.2-2' }} € {{ 'product.tierPricing.regularPrice' | translate }}</span>
-              <span class="tier-price-active">{{ currentTierPrice.unitPrice | number:'1.2-2' }} € / {{ 'product.tierPricing.piece' | translate }}</span>
-              <span class="tier-badge">✓ {{ 'product.tierPricing.applied' | translate }}</span>
-              <span class="total-price">{{ 'product.tierPricing.total' | translate }}: {{ getTotalPrice() | number:'1.2-2' }} €</span>
+            <!-- Mit Staffelpreisen: Staffel NICHT erreicht -->
+            <div class="tier-price-summary" *ngIf="product && product.tierPrices && product.tierPrices.length > 0 && !currentTierPrice">
+              <div class="main-price">
+                <span class="price">{{ getCurrentPrice() | number:'1.2-2' }} €</span>
+              </div>
+              <div class="tier-hint-prominent">
+                {{ 'product.tierPricing.fromQuantity' | translate:{quantity: product.tierPrices[0].minimumQuantity, price: (product.tierPrices[0].unitPrice | number:'1.2-2')} }}
+              </div>
             </div>
             
-            <!-- Staffelpreis-Hinweis (nur wenn Stufen vorhanden) -->
-            <div class="tier-prices-info" *ngIf="product && product.tierPrices && product.tierPrices.length > 0">
-              <p class="tier-hint" *ngIf="!currentTierPrice">
-                {{ 'product.tierPricing.fromQuantity' | translate:{quantity: product.tierPrices[0].minimumQuantity, price: (product.tierPrices[0].unitPrice | number:'1.2-2')} }}
-              </p>
+            <!-- Mit Staffelpreisen: Staffel ERREICHT -->
+            <div class="tier-price-summary tier-active" *ngIf="currentTierPrice">
+              <div class="regular-price-row">
+                <span class="label">{{ 'product.tierPricing.regularPrice' | translate }}:</span>
+                <span class="value strikethrough">{{ getCurrentPrice() | number:'1.2-2' }} €</span>
+              </div>
               
+              <div class="effective-price-row">
+                <span class="effective-price">{{ currentTierPrice.unitPrice | number:'1.2-2' }} €</span>
+                <span class="unit-label">{{ 'product.tierPricing.perPiece' | translate }}</span>
+              </div>
+              
+              <div class="tier-condition-chip">
+                {{ 'product.tierPricing.fromQuantityShort' | translate:{quantity: currentTierPrice.minimumQuantity} }}
+              </div>
+              
+              <div class="tier-badge">
+                ✓ {{ 'product.tierPricing.applied' | translate }}
+              </div>
+              
+              <div class="tier-total">
+                {{ 'product.tierPricing.totalForQuantity' | translate:{quantity: quantity, total: (getTotalPrice() | number:'1.2-2')} }}
+              </div>
+            </div>
+            
+            <!-- Alle Staffelpreise anzeigen (nur bei mehreren Stufen) -->
+            <div class="tier-prices-list-toggle" *ngIf="product && product.tierPrices && product.tierPrices.length > 1">
               <button 
-                *ngIf="product.tierPrices.length > 1" 
                 class="btn-show-tiers" 
                 (click)="showAllTierPrices = !showAllTierPrices"
                 type="button">
@@ -155,9 +177,12 @@ interface ProductTierPrice {
               </button>
               
               <div class="all-tier-prices" *ngIf="showAllTierPrices">
-                <div *ngFor="let tier of product.tierPrices" class="tier-row">
-                  {{ 'product.tierPricing.fromQuantityShort' | translate:{quantity: tier.minimumQuantity} }}: 
-                  {{ tier.unitPrice | number:'1.2-2' }} € / {{ 'product.tierPricing.piece' | translate }}
+                <div 
+                  *ngFor="let tier of product.tierPrices" 
+                  class="tier-row"
+                  [class.tier-row-active]="currentTierPrice && tier.minimumQuantity === currentTierPrice.minimumQuantity">
+                  <span class="tier-qty">{{ 'product.tierPricing.fromQuantityShort' | translate:{quantity: tier.minimumQuantity} }}</span>
+                  <span class="tier-price">{{ tier.unitPrice | number:'1.2-2' }} € / {{ 'product.tierPricing.piece' | translate }}</span>
                 </div>
               </div>
             </div>
@@ -645,26 +670,82 @@ interface ProductTierPrice {
       -webkit-text-fill-color: #666;
     }
 
-    /* Tier Pricing Display */
-    .tier-price-display {
+    /* Tier Pricing Summary */
+    .tier-price-summary {
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
     }
 
-    .regular-price {
-      font-size: 1rem;
-      color: #999;
-      text-decoration: line-through;
-    }
-
-    .tier-price-active {
+    .tier-price-summary .main-price .price {
       font-size: 2.5rem;
       font-weight: 700;
       background: linear-gradient(135deg, #667eea, #764ba2);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
+    }
+
+    .tier-hint-prominent {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #667eea;
+      margin-top: 0.5rem;
+    }
+
+    /* Tier Active State */
+    .regular-price-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      font-size: 0.95rem;
+      color: #666;
+    }
+
+    .regular-price-row .label {
+      font-weight: 500;
+    }
+
+    .regular-price-row .value {
+      font-weight: 600;
+    }
+
+    .regular-price-row .strikethrough {
+      text-decoration: line-through;
+    }
+
+    .effective-price-row {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      margin: 0.25rem 0;
+    }
+
+    .effective-price {
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .unit-label {
+      font-size: 0.95rem;
+      color: #666;
+      font-weight: 500;
+    }
+
+    .tier-condition-chip {
+      display: inline-block;
+      background: #f0f2ff;
+      color: #667eea;
+      padding: 0.3rem 0.7rem;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      width: fit-content;
+      border: 1px solid #d0d5f5;
     }
 
     .tier-badge {
@@ -678,25 +759,16 @@ interface ProductTierPrice {
       width: fit-content;
     }
 
-    .total-price {
-      font-size: 1.1rem;
+    .tier-total {
+      font-size: 1.05rem;
       font-weight: 600;
       color: #333;
+      margin-top: 0.25rem;
     }
 
-    .tier-prices-info {
-      margin-top: 0.75rem;
-      padding: 1rem;
-      background: #f8f9ff;
-      border-radius: 8px;
-      border-left: 3px solid #667eea;
-    }
-
-    .tier-hint {
-      margin: 0 0 0.75rem 0;
-      color: #667eea;
-      font-weight: 600;
-      font-size: 0.95rem;
+    /* Tier Prices List Toggle */
+    .tier-prices-list-toggle {
+      margin-top: 1rem;
     }
 
     .btn-show-tiers {
@@ -717,18 +789,37 @@ interface ProductTierPrice {
     }
 
     .all-tier-prices {
-      margin-top: 1rem;
+      margin-top: 0.75rem;
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
     }
 
     .tier-row {
-      padding: 0.65rem;
-      background: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.65rem 0.85rem;
+      background: #f8f9ff;
       border-radius: 6px;
       color: #333;
       font-size: 0.95rem;
+      border-left: 3px solid transparent;
+    }
+
+    .tier-row-active {
+      background: #e8ebff;
+      border-left-color: #667eea;
+      font-weight: 600;
+    }
+
+    .tier-row .tier-qty {
+      color: #667eea;
+      font-weight: 500;
+    }
+
+    .tier-row .tier-price {
+      font-weight: 600;
     }
 
     /* Quantity Selector */

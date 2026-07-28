@@ -272,8 +272,10 @@
       "applied": "Mengenpreis angewendet",
       "showAll": "Alle Mengenpreise anzeigen",
       "hideAll": "Ausblenden",
-      "regularPrice": "regulär",
-      "total": "Gesamt"
+      "regularPrice": "Regulärer Preis",
+      "perPiece": "pro Stück",
+      "total": "Gesamt",
+      "totalForQuantity": "Gesamt bei {{quantity}} Stück: {{total}} €"
     },
     "created": "Produkt erfolgreich erstellt!",
     "updated": "Produkt erfolgreich aktualisiert!",

@@ -117,8 +117,10 @@
       "applied": "تم تطبيق سعر الكمية",
       "showAll": "عرض جميع أسعار الكمية",
       "hideAll": "إخفاء",
-      "regularPrice": "عادي",
-      "total": "المجموع"
+      "regularPrice": "السعر العادي",
+      "perPiece": "للقطعة",
+      "total": "المجموع",
+      "totalForQuantity": "المجموع لـ {{quantity}} قطع: {{total}} €"
     },
     "created": "تم إنشاء المنتج بنجاح!",
     "updated": "تم تحديث المنتج بنجاح!",
