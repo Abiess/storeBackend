@@ -265,7 +265,15 @@
         "higherThanBase": "Der Mengenpreis sollte nicht höher als der Standardpreis sein",
         "priceShouldDecrease": "Der Preis sollte mit steigender Menge nicht steigen"
       },
-      "enableFirst": "Bitte aktivieren Sie zuerst 'Mengenpreise aktivieren'"
+      "enableFirst": "Bitte aktivieren Sie zuerst 'Mengenpreise aktivieren'",
+      "piece": "Stück",
+      "fromQuantity": "Ab {{quantity}} Stück nur {{price}} € pro Stück",
+      "fromQuantityShort": "Ab {{quantity}} Stück",
+      "applied": "Mengenpreis angewendet",
+      "showAll": "Alle Mengenpreise anzeigen",
+      "hideAll": "Ausblenden",
+      "regularPrice": "regulär",
+      "total": "Gesamt"
     },
     "created": "Produkt erfolgreich erstellt!",
     "updated": "Produkt erfolgreich aktualisiert!",

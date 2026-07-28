@@ -146,7 +146,15 @@
         "higherThanBase": "The tier price should not be higher than the standard price",
         "priceShouldDecrease": "The price should not increase with higher quantity"
       },
-      "enableFirst": "Please enable 'Activate tier pricing' first"
+      "enableFirst": "Please enable 'Activate tier pricing' first",
+      "piece": "piece",
+      "fromQuantity": "From {{quantity}} pieces only {{price}} € per piece",
+      "fromQuantityShort": "From {{quantity}} pieces",
+      "applied": "Volume price applied",
+      "showAll": "Show all volume prices",
+      "hideAll": "Hide",
+      "regularPrice": "regular",
+      "total": "Total"
     },
     "created": "Product successfully created!",
     "updated": "Product successfully updated!",

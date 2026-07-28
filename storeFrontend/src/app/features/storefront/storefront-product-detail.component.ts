@@ -26,6 +26,15 @@ interface Product {
   categoryName?: string;
   averageRating?: number;
   reviewCount?: number;
+  tierPrices?: ProductTierPrice[];
+}
+
+interface ProductTierPrice {
+  id?: number;
+  minimumQuantity: number;
+  unitPrice: number;
+  label?: string;
+  active?: boolean;
 }
 
 @Component({
@@ -118,9 +127,40 @@ interface Product {
 
           <!-- Price -->
           <div class="price-section">
-            <span class="price">
+            <!-- Ohne aktiven Staffelpreis -->
+            <span class="price" *ngIf="!currentTierPrice">
               <span *ngIf="showFromPrefix()" class="from-prefix">ab </span>{{ getCurrentPrice() | number:'1.2-2' }} €
             </span>
+            
+            <!-- Mit aktivem Staffelpreis -->
+            <div class="tier-price-display" *ngIf="currentTierPrice">
+              <span class="regular-price">{{ getCurrentPrice() | number:'1.2-2' }} € {{ 'product.tierPricing.regularPrice' | translate }}</span>
+              <span class="tier-price-active">{{ currentTierPrice.unitPrice | number:'1.2-2' }} € / {{ 'product.tierPricing.piece' | translate }}</span>
+              <span class="tier-badge">✓ {{ 'product.tierPricing.applied' | translate }}</span>
+              <span class="total-price">{{ 'product.tierPricing.total' | translate }}: {{ getTotalPrice() | number:'1.2-2' }} €</span>
+            </div>
+            
+            <!-- Staffelpreis-Hinweis (nur wenn Stufen vorhanden) -->
+            <div class="tier-prices-info" *ngIf="product && product.tierPrices && product.tierPrices.length > 0">
+              <p class="tier-hint" *ngIf="!currentTierPrice">
+                {{ 'product.tierPricing.fromQuantity' | translate:{quantity: product.tierPrices[0].minimumQuantity, price: (product.tierPrices[0].unitPrice | number:'1.2-2')} }}
+              </p>
+              
+              <button 
+                *ngIf="product.tierPrices.length > 1" 
+                class="btn-show-tiers" 
+                (click)="showAllTierPrices = !showAllTierPrices"
+                type="button">
+                {{ showAllTierPrices ? ('product.tierPricing.hideAll' | translate) : ('product.tierPricing.showAll' | translate) }}
+              </button>
+              
+              <div class="all-tier-prices" *ngIf="showAllTierPrices">
+                <div *ngFor="let tier of product.tierPrices" class="tier-row">
+                  {{ 'product.tierPricing.fromQuantityShort' | translate:{quantity: tier.minimumQuantity} }}: 
+                  {{ tier.unitPrice | number:'1.2-2' }} € / {{ 'product.tierPricing.piece' | translate }}
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Description – direkt nach dem Preis für bessere Lesbarkeit (vor Varianten/CTA) -->
@@ -605,6 +645,92 @@ interface Product {
       -webkit-text-fill-color: #666;
     }
 
+    /* Tier Pricing Display */
+    .tier-price-display {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .regular-price {
+      font-size: 1rem;
+      color: #999;
+      text-decoration: line-through;
+    }
+
+    .tier-price-active {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .tier-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 0.35rem 0.85rem;
+      border-radius: 16px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      width: fit-content;
+    }
+
+    .total-price {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .tier-prices-info {
+      margin-top: 0.75rem;
+      padding: 1rem;
+      background: #f8f9ff;
+      border-radius: 8px;
+      border-left: 3px solid #667eea;
+    }
+
+    .tier-hint {
+      margin: 0 0 0.75rem 0;
+      color: #667eea;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .btn-show-tiers {
+      background: white;
+      border: 1px solid #667eea;
+      color: #667eea;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+
+    .btn-show-tiers:hover {
+      background: #667eea;
+      color: white;
+    }
+
+    .all-tier-prices {
+      margin-top: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .tier-row {
+      padding: 0.65rem;
+      background: white;
+      border-radius: 6px;
+      color: #333;
+      font-size: 0.95rem;
+    }
+
     /* Quantity Selector */
     .quantity-section label {
       display: block;
@@ -954,6 +1080,10 @@ export class StorefrontProductDetailComponent implements OnInit, OnDestroy {
   loading = true;
   error = '';
   adding = false;
+  
+  // Tier Pricing
+  currentTierPrice: ProductTierPrice | null = null;
+  showAllTierPrices = false;
   showSuccess = false;
   hoveredImageVariant: any = null;
 
@@ -1153,6 +1283,9 @@ export class StorefrontProductDetailComponent implements OnInit, OnDestroy {
 
         // Track view
         this.productService.trackProductView(this.storeId, this.productId).subscribe();
+        
+        // Staffelpreis basierend auf initialer Menge berechnen
+        this.updateCurrentTierPrice();
       },
       error: (err) => {
         console.error('Error loading product:', err);
@@ -1442,6 +1575,45 @@ export class StorefrontProductDetailComponent implements OnInit, OnDestroy {
 
   onQuantityChange(newQuantity: number): void {
     this.quantity = newQuantity;
+    this.updateCurrentTierPrice();
+  }
+  
+  /**
+   * Aktualisiert den aktuell gültigen Staffelpreis basierend auf Menge
+   */
+  updateCurrentTierPrice(): void {
+    if (!this.product?.tierPrices || this.product.tierPrices.length === 0) {
+      this.currentTierPrice = null;
+      return;
+    }
+    
+    // Finde alle erreichten Preisstufen (minimumQuantity <= quantity)
+    const reached = this.product.tierPrices
+      .filter(tp => tp.minimumQuantity <= this.quantity)
+      .sort((a, b) => b.minimumQuantity - a.minimumQuantity); // Höchste zuerst
+    
+    // Wähle höchste erreichte Stufe
+    this.currentTierPrice = reached[0] || null;
+  }
+  
+  /**
+   * Gibt den wirksamen Stückpreis zurück (Staffelpreis oder Basispreis)
+   */
+  getEffectiveUnitPrice(): number {
+    if (this.currentTierPrice) {
+      return this.currentTierPrice.unitPrice;
+    }
+    return this.getCurrentPrice();
+  }
+  
+  /**
+   * Berechnet Gesamtpreis basierend auf Menge und wirksamem Staffelpreis
+   */
+  getTotalPrice(): number {
+    const unitPrice = this.getEffectiveUnitPrice();
+    const total = unitPrice * this.quantity;
+    // Auf 2 Nachkommastellen runden
+    return Math.round(total * 100) / 100;
   }
 
   canAddToCart(): boolean {

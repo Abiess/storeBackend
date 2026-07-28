@@ -110,7 +110,15 @@
         "higherThanBase": "سعر الجملة يجب ألا يكون أعلى من السعر الأساسي",
         "priceShouldDecrease": "السعر يجب ألا يرتفع مع زيادة الكمية"
       },
-      "enableFirst": "يرجى تفعيل 'تفعيل أسعار الكمية' أولاً"
+      "enableFirst": "يرجى تفعيل 'تفعيل أسعار الكمية' أولاً",
+      "piece": "قطعة",
+      "fromQuantity": "من {{quantity}} قطع فقط {{price}} € للقطعة",
+      "fromQuantityShort": "من {{quantity}} قطع",
+      "applied": "تم تطبيق سعر الكمية",
+      "showAll": "عرض جميع أسعار الكمية",
+      "hideAll": "إخفاء",
+      "regularPrice": "عادي",
+      "total": "المجموع"
     },
     "created": "تم إنشاء المنتج بنجاح!",
     "updated": "تم تحديث المنتج بنجاح!",
