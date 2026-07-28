@@ -245,6 +245,27 @@
       "stock": "Bitte geben Sie eine gültige Menge ein",
       "taxRate": "Bitte geben Sie einen gültigen Steuersatz ein"
     },
+    "tierPricing": {
+      "title": "Mengenpreise",
+      "enable": "Mengenpreise aktivieren",
+      "hint": "Legen Sie Staffelpreise fest, die ab einer bestimmten Mindestmenge gelten.",
+      "minQuantity": "Ab Menge",
+      "unitPrice": "Preis pro Stück",
+      "label": "Bezeichnung",
+      "labelPlaceholder": "z.B. Großhandel",
+      "active": "Aktiv",
+      "add": "Preisstufe hinzufügen",
+      "remove": "Entfernen",
+      "saved": "Staffelpreise erfolgreich gespeichert",
+      "saveError": "Fehler beim Speichern der Staffelpreise",
+      "error": {
+        "minQuantity": "Die Mindestmenge muss größer als 1 sein",
+        "negativePrice": "Der Preis darf nicht negativ sein",
+        "duplicateQuantity": "Diese Mindestmenge ist bereits vorhanden",
+        "higherThanBase": "Der Mengenpreis sollte nicht höher als der Standardpreis sein",
+        "priceShouldDecrease": "Der Preis sollte mit steigender Menge nicht steigen"
+      }
+    },
     "created": "Produkt erfolgreich erstellt!",
     "updated": "Produkt erfolgreich aktualisiert!",
     "error": {

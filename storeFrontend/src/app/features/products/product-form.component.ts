@@ -6,6 +6,7 @@ import { ProductService } from '@app/core/services/product.service';
 import { CategoryService } from '@app/core/services/category.service';
 import { MediaService } from '@app/core/services/media.service';
 import { ProductOptionService } from '@app/core/services/product-option.service';
+import { ProductTierPriceService } from '@app/core/services/product-tier-price.service';
 import { StoreContextService } from '@app/core/services/store-context.service';
 import { Category, ProductStatus, AiProductSuggestion, AiProductSuggestionV2 } from '@app/core/models';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
@@ -172,6 +173,109 @@ import { Subscription } from 'rxjs';
           <div class="tax-responsibility-hint">
             <span class="hint-icon">ℹ️</span>
             <span>{{ 'product.taxResponsibilityHint' | translate }}</span>
+          </div>
+
+          <!-- Mengenpreise / Tier Pricing -->
+          <div class="tier-pricing-section">
+            <div class="tier-pricing-header">
+              <h3>{{ 'product.tierPricing.title' | translate }}</h3>
+              <label class="tier-pricing-toggle">
+                <input 
+                  type="checkbox" 
+                  [(ngModel)]="tierPricingEnabled" 
+                  [ngModelOptions]="{standalone: true}"
+                  (change)="onTierPricingToggle()"
+                />
+                <span>{{ 'product.tierPricing.enable' | translate }}</span>
+              </label>
+            </div>
+
+            <div class="tier-pricing-content" *ngIf="tierPricingEnabled">
+              <p class="tier-pricing-hint">
+                {{ 'product.tierPricing.hint' | translate }}
+              </p>
+
+              <!-- Existing Tier Prices -->
+              <div class="tier-price-list" *ngIf="tierPrices.length > 0">
+                <div class="tier-price-item" *ngFor="let tier of tierPrices; let i = index">
+                  <div class="tier-price-row">
+                    <div class="form-group tier-quantity">
+                      <label>{{ 'product.tierPricing.minQuantity' | translate }} *</label>
+                      <input 
+                        type="number" 
+                        [(ngModel)]="tier.minimumQuantity"
+                        [ngModelOptions]="{standalone: true}"
+                        min="2"
+                        step="1"
+                        placeholder="12"
+                        (blur)="validateTierPrice(tier, i)"
+                        [class.error]="tier.error"
+                      />
+                    </div>
+
+                    <div class="form-group tier-price">
+                      <label>{{ 'product.tierPricing.unitPrice' | translate }} (€) *</label>
+                      <input 
+                        type="number" 
+                        [(ngModel)]="tier.unitPrice"
+                        [ngModelOptions]="{standalone: true}"
+                        min="0"
+                        step="0.01"
+                        placeholder="3.49"
+                        (blur)="validateTierPrice(tier, i)"
+                        [class.error]="tier.error"
+                      />
+                    </div>
+
+                    <div class="form-group tier-label">
+                      <label>{{ 'product.tierPricing.label' | translate }}</label>
+                      <input 
+                        type="text" 
+                        [(ngModel)]="tier.label"
+                        [ngModelOptions]="{standalone: true}"
+                        [placeholder]="'product.tierPricing.labelPlaceholder' | translate"
+                        maxlength="100"
+                      />
+                    </div>
+
+                    <div class="form-group tier-active">
+                      <label>{{ 'product.tierPricing.active' | translate }}</label>
+                      <label class="checkbox-inline">
+                        <input 
+                          type="checkbox" 
+                          [(ngModel)]="tier.active"
+                          [ngModelOptions]="{standalone: true}"
+                        />
+                        <span class="checkmark"></span>
+                      </label>
+                    </div>
+
+                    <button 
+                      type="button" 
+                      class="btn-remove-tier" 
+                      (click)="removeTierPrice(i)"
+                      [title]="'product.tierPricing.remove' | translate"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+
+                  <div class="error-message" *ngIf="tier.error">
+                    {{ tier.error }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Add Tier Price Button -->
+              <button 
+                type="button" 
+                class="btn-add-tier" 
+                (click)="addTierPrice()"
+              >
+                <span class="icon">➕</span>
+                {{ 'product.tierPricing.add' | translate }}
+              </button>
+            </div>
           </div>
 
           <div class="form-row">
@@ -1622,6 +1726,178 @@ import { Subscription } from 'rxjs';
     /* ============================================
        MULTI-IMAGE AI STYLES - REDUZIERT (nutzt jetzt image-upload.component)
        ============================================ */
+
+    /* ============================================
+       TIER PRICING SECTION
+       ============================================ */
+    .tier-pricing-section {
+      margin: 2rem 0;
+      padding: 1.5rem;
+      background: #f8f9ff;
+      border-radius: 12px;
+      border: 2px solid #e5e7eb;
+    }
+
+    .tier-pricing-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .tier-pricing-header h3 {
+      margin: 0;
+      font-size: 1.1rem;
+      color: #333;
+      font-weight: 600;
+    }
+
+    .tier-pricing-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .tier-pricing-toggle input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .tier-pricing-toggle span {
+      font-size: 0.95rem;
+      color: #667eea;
+      font-weight: 600;
+    }
+
+    .tier-pricing-hint {
+      background: #fff;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 1.5rem;
+      border-left: 4px solid #667eea;
+    }
+
+    .tier-pricing-content {
+      margin-top: 1rem;
+    }
+
+    .tier-price-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .tier-price-item {
+      background: white;
+      padding: 1rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+
+    .tier-price-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1.5fr auto auto;
+      gap: 0.75rem;
+      align-items: start;
+    }
+
+    @media (max-width: 768px) {
+      .tier-price-row {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+      }
+
+      .btn-remove-tier {
+        justify-self: start;
+      }
+    }
+
+    .tier-price-row .form-group {
+      margin-bottom: 0;
+    }
+
+    .tier-price-row label {
+      font-size: 0.85rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .tier-price-row input[type="number"],
+    .tier-price-row input[type="text"] {
+      padding: 0.6rem 0.75rem;
+      font-size: 0.95rem;
+    }
+
+    .tier-active {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      padding-top: 1.5rem;
+    }
+
+    .checkbox-inline {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .checkbox-inline input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .btn-remove-tier {
+      background: #fee2e2;
+      color: #991b1b;
+      border: none;
+      border-radius: 8px;
+      padding: 0.6rem 1rem;
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: all 0.2s;
+      align-self: flex-end;
+      margin-top: 1.5rem;
+    }
+
+    .btn-remove-tier:hover {
+      background: #fecaca;
+      transform: scale(1.05);
+    }
+
+    .btn-add-tier {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 0.85rem 1.5rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
+      width: 100%;
+      max-width: 300px;
+    }
+
+    .btn-add-tier:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.35);
+    }
+
+    .btn-add-tier .icon {
+      font-size: 1.1rem;
+    }
   `]
 })
 export class ProductFormComponent implements OnInit, OnDestroy {
@@ -1637,6 +1913,27 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   breadcrumbItems: BreadcrumbItem[] = [];
 
   uploadedImages: UploadedImage[] = [];
+
+  // Tier Pricing
+  tierPricingEnabled = false;
+  tierPrices: Array<{
+    id?: number;
+    minimumQuantity: number;
+    unitPrice: number;
+    label?: string | null;
+    active: boolean;
+    sortOrder: number;
+    error?: string;
+  }> = [];
+  originalTierPrices: Array<{
+    id?: number;
+    minimumQuantity: number;
+    unitPrice: number;
+    label?: string | null;
+    active: boolean;
+    sortOrder: number;
+  }> = [];
+  deletedTierPriceIds: number[] = [];
 
   // NEU: AI Images verwenden jetzt UploadedImage[] für Kompatibilität mit image-upload.component
   aiImages: UploadedImage[] = [];
@@ -1677,7 +1974,8 @@ export class ProductFormComponent implements OnInit, OnDestroy {
       private mediaService: MediaService,
       private translationService: TranslationService,
       private productOptionService: ProductOptionService,
-      private storeContext: StoreContextService
+      private storeContext: StoreContextService,
+      private tierPriceService: ProductTierPriceService
   ) {
     this.productForm = this.fb.group({
       title: ['', Validators.required],
@@ -1754,6 +2052,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     if (this.isEditMode && this.productId) {
       this.loadProduct(this.productId);
       this.loadProductImages(this.productId);
+      this.loadTierPrices();
     }
 
     // Kategorien neu laden, wenn die Seite wieder im Fokus ist
@@ -1893,15 +2192,27 @@ export class ProductFormComponent implements OnInit, OnDestroy {
       next: (product) => {
         console.log('✅ Produkt erstellt:', product);
 
-        // VerknÃ¼pfe Bilder mit Produkt
-        if (this.uploadedImages.length > 0) {
-          this.linkImagesToProduct(product.id);
-        } else {
+        // Staffelpreise speichern (falls vorhanden)
+        const saveTierPromise = (this.tierPricingEnabled && this.tierPrices.length > 0)
+          ? this.saveTierPrices(product.id)
+          : Promise.resolve();
+
+        saveTierPromise.then(() => {
+          // VerknÃ¼pfe Bilder mit Produkt
+          if (this.uploadedImages.length > 0) {
+            this.linkImagesToProduct(product.id);
+          } else {
+            this.saving = false;
+            this.uploadingImages = false;
+            this.successMessage = this.translationService.translate('product.created');
+            setTimeout(() => this.goBack(), 1500);
+          }
+        }).catch(error => {
+          console.error('❌ Fehler beim Speichern der Staffelpreise:', error);
+          this.errorMessage = 'Produkt erstellt, aber Fehler bei Staffelpreisen';
           this.saving = false;
           this.uploadingImages = false;
-          this.successMessage = this.translationService.translate('product.created');
-          setTimeout(() => this.goBack(), 1500);
-        }
+        });
       },
       error: (error) => {
         this.saving = false;
@@ -1933,16 +2244,24 @@ export class ProductFormComponent implements OnInit, OnDestroy {
       next: (product) => {
         console.log('✅ Produkt aktualisiert:', product);
 
-        // VerknÃ¼pfe neue Bilder (nur wenn welche hochgeladen wurden)
-        const newImages = this.uploadedImages.filter(img => img.file && img.mediaId > 0);
-        if (newImages.length > 0) {
-          this.linkImagesToProduct(product.id);
-        } else {
+        // Staffelpreise speichern
+        this.saveTierPrices(product.id).then(() => {
+          // VerknÃ¼pfe neue Bilder (nur wenn welche hochgeladen wurden)
+          const newImages = this.uploadedImages.filter(img => img.file && img.mediaId > 0);
+          if (newImages.length > 0) {
+            this.linkImagesToProduct(product.id);
+          } else {
+            this.saving = false;
+            this.uploadingImages = false;
+            this.successMessage = this.translationService.translate('product.updated');
+            setTimeout(() => this.goBack(), 1500);
+          }
+        }).catch(error => {
+          console.error('❌ Fehler beim Speichern der Staffelpreise:', error);
+          this.errorMessage = 'Produkt aktualisiert, aber Fehler bei Staffelpreisen';
           this.saving = false;
           this.uploadingImages = false;
-          this.successMessage = this.translationService.translate('product.updated');
-          setTimeout(() => this.goBack(), 1500);
-        }
+        });
       },
       error: (error) => {
         this.saving = false;
@@ -2087,6 +2406,213 @@ export class ProductFormComponent implements OnInit, OnDestroy {
 
   setActiveTab(tab: 'basic' | 'ai' | 'media' | 'variants'): void {
     this.activeTab = tab;
+  }
+
+
+  // ============================================
+  // TIER PRICING METHODS
+  // ============================================
+
+  /**
+   * Lädt Staffelpreise für ein Produkt im Edit-Modus
+   */
+  loadTierPrices(): void {
+    if (!this.isEditMode || !this.productId || this.storeId === null) return;
+
+    this.tierPriceService.getTierPrices(this.storeId, this.productId).subscribe({
+      next: (tierPrices) => {
+        if (tierPrices && tierPrices.length > 0) {
+          this.tierPrices = tierPrices.map(tp => ({
+            id: tp.id,
+            minimumQuantity: tp.minimumQuantity,
+            unitPrice: tp.unitPrice,
+            label: tp.label,
+            active: tp.active,
+            sortOrder: tp.sortOrder
+          }));
+          // Originalzustand für Change Detection speichern
+          this.originalTierPrices = JSON.parse(JSON.stringify(this.tierPrices));
+          this.tierPricingEnabled = tierPrices.some(tp => tp.active);
+          console.log('✅ Loaded tier prices:', this.tierPrices);
+        }
+      },
+      error: (error) => {
+        console.error('❌ Error loading tier prices:', error);
+      }
+    });
+  }
+
+  /**
+   * Toggle Staffelpreise aktivieren/deaktivieren
+   */
+  onTierPricingToggle(): void {
+    if (!this.tierPricingEnabled) {
+      // Deaktiviert: Alle Preisstufen auf inactive setzen
+      this.tierPrices.forEach(tp => tp.active = false);
+    } else {
+      // Aktiviert: Falls keine Stufen vorhanden, eine hinzufügen
+      if (this.tierPrices.length === 0) {
+        this.addTierPrice();
+      }
+    }
+  }
+
+  /**
+   * Fügt eine neue Staffelpreis-Stufe hinzu
+   */
+  addTierPrice(): void {
+    const basePrice = this.productForm.get('basePrice')?.value || 0;
+    this.tierPrices.push({
+      minimumQuantity: 2,
+      unitPrice: basePrice > 0 ? basePrice * 0.9 : 0,
+      label: null,
+      active: true,
+      sortOrder: this.tierPrices.length
+    });
+  }
+
+  /**
+   * Entfernt eine Staffelpreis-Stufe
+   */
+  removeTierPrice(index: number): void {
+    const removed = this.tierPrices[index];
+    if (removed.id) {
+      // Bestehende Stufe: ID für späteres Löschen merken
+      this.deletedTierPriceIds.push(removed.id);
+    }
+    this.tierPrices.splice(index, 1);
+    // Sortierung neu setzen
+    this.tierPrices.forEach((tp, idx) => tp.sortOrder = idx);
+  }
+
+  /**
+   * Validiert eine Staffelpreis-Stufe
+   */
+  validateTierPrice(tier: any, index: number): void {
+    const basePrice = this.productForm.get('basePrice')?.value || 0;
+    tier.error = '';
+
+    // Mindestmenge muss größer als 1 sein
+    if (tier.minimumQuantity <= 1) {
+      tier.error = this.translationService.translate('product.tierPricing.error.minQuantity');
+      return;
+    }
+
+    // Preis darf nicht negativ sein
+    if (tier.unitPrice < 0) {
+      tier.error = this.translationService.translate('product.tierPricing.error.negativePrice');
+      return;
+    }
+
+    // Doppelte Mindestmenge prüfen
+    const duplicate = this.tierPrices.find((t, i) => 
+      i !== index && t.minimumQuantity === tier.minimumQuantity
+    );
+    if (duplicate) {
+      tier.error = this.translationService.translate('product.tierPricing.error.duplicateQuantity');
+      return;
+    }
+
+    // Preis sollte nicht über dem Basispreis liegen
+    if (tier.unitPrice > basePrice && basePrice > 0) {
+      tier.error = this.translationService.translate('product.tierPricing.error.higherThanBase');
+      return;
+    }
+
+    // Preis sollte nicht steigen mit höherer Menge
+    const sortedTiers = [...this.tierPrices].sort((a, b) => a.minimumQuantity - b.minimumQuantity);
+    for (let i = 1; i < sortedTiers.length; i++) {
+      if (sortedTiers[i].minimumQuantity > sortedTiers[i-1].minimumQuantity && 
+          sortedTiers[i].unitPrice > sortedTiers[i-1].unitPrice) {
+        tier.error = this.translationService.translate('product.tierPricing.error.priceShouldDecrease');
+        return;
+      }
+    }
+
+    // Nach Menge sortieren
+    this.tierPrices.sort((a, b) => a.minimumQuantity - b.minimumQuantity);
+    this.tierPrices.forEach((tp, idx) => tp.sortOrder = idx);
+  }
+
+  /**
+   * Speichert Staffelpreise nach dem Produkt-Speichern mit Change Detection
+   */
+  saveTierPrices(productId: number): Promise<void> {
+    if (this.storeId === null) return Promise.reject('No store ID');
+
+    console.log('💰 Saving tier prices for product:', productId);
+
+    const operations: Promise<any>[] = [];
+
+    // 1. Gelöschte Stufen entfernen
+    this.deletedTierPriceIds.forEach(id => {
+      console.log(`🗑️ DELETE tier price ID: ${id}`);
+      operations.push(
+        this.tierPriceService.deleteTierPrice(this.storeId!, productId, id).toPromise()
+      );
+    });
+
+    // 2. Bestehende und neue Stufen verarbeiten
+    this.tierPrices.forEach(tier => {
+      // Wenn deaktiviert, active auf false setzen
+      if (!this.tierPricingEnabled) {
+        tier.active = false;
+      }
+
+      const tierData = {
+        productId: productId,
+        minimumQuantity: tier.minimumQuantity,
+        unitPrice: tier.unitPrice,
+        label: tier.label,
+        active: tier.active,
+        sortOrder: tier.sortOrder
+      };
+
+      if (tier.id) {
+        // Bestehende Stufe: Prüfen ob geändert
+        const original = this.originalTierPrices.find(o => o.id === tier.id);
+        if (original && this.tierPriceHasChanged(tier, original)) {
+          console.log(`✏️ PUT tier price ID: ${tier.id}`, tierData);
+          operations.push(
+            this.tierPriceService.updateTierPrice(this.storeId!, productId, tier.id, tierData).toPromise()
+          );
+        } else {
+          console.log(`⏭️ SKIP unchanged tier price ID: ${tier.id}`);
+        }
+      } else {
+        // Neue Stufe
+        console.log(`➕ POST new tier price`, tierData);
+        operations.push(
+          this.tierPriceService.createTierPrice(this.storeId!, productId, tierData).toPromise()
+        );
+      }
+    });
+
+    if (operations.length === 0) {
+      console.log('✅ No tier price changes');
+      return Promise.resolve();
+    }
+
+    return Promise.all(operations).then(() => {
+      console.log('✅ All tier price operations completed');
+      // Reset change tracking
+      this.deletedTierPriceIds = [];
+      this.originalTierPrices = JSON.parse(JSON.stringify(this.tierPrices));
+    }).catch(error => {
+      console.error('❌ Error saving tier prices:', error);
+      throw error;
+    });
+  }
+
+  /**
+   * Prüft ob eine Staffelpreis-Stufe geändert wurde
+   */
+  private tierPriceHasChanged(current: any, original: any): boolean {
+    return current.minimumQuantity !== original.minimumQuantity ||
+           current.unitPrice !== original.unitPrice ||
+           current.label !== original.label ||
+           current.active !== original.active ||
+           current.sortOrder !== original.sortOrder;
   }
 
 

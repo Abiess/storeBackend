@@ -126,6 +126,27 @@
       "stock": "Please enter a valid quantity",
       "taxRate": "Please enter a valid tax rate"
     },
+    "tierPricing": {
+      "title": "Volume Pricing",
+      "enable": "Enable volume pricing",
+      "hint": "Set tier prices that apply from a certain minimum quantity.",
+      "minQuantity": "From quantity",
+      "unitPrice": "Price per unit",
+      "label": "Label",
+      "labelPlaceholder": "e.g. Wholesale",
+      "active": "Active",
+      "add": "Add price tier",
+      "remove": "Remove",
+      "saved": "Tier prices successfully saved",
+      "saveError": "Error saving tier prices",
+      "error": {
+        "minQuantity": "The minimum quantity must be greater than 1",
+        "negativePrice": "The price cannot be negative",
+        "duplicateQuantity": "This minimum quantity already exists",
+        "higherThanBase": "The tier price should not be higher than the standard price",
+        "priceShouldDecrease": "The price should not increase with higher quantity"
+      }
+    },
     "created": "Product successfully created!",
     "updated": "Product successfully updated!",
     "error": {
