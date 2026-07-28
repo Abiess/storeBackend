@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import storebackend.dto.ProductTierPriceDTO;
+import storebackend.dto.TierPriceCalculationResult;
 import storebackend.entity.Product;
 import storebackend.entity.ProductTierPrice;
 import storebackend.repository.ProductRepository;
@@ -17,9 +18,10 @@ import java.util.stream.Collectors;
 /**
  * Service für Staffelpreise / Mengenpreise.
  * 
- * Zentrale Preisberechnung: effectiveUnitPrice(product, quantity)
+ * Zentrale Preisberechnung: calculateWithDetails(product, basePrice, quantity)
  * - Verwendet höchste erreichte Mindestmenge
- * - Fallback auf product.basePrice wenn keine Staffelung erreicht
+ * - Fallback auf basePrice wenn keine Staffelung erreicht
+ * - Gibt TierPriceCalculationResult mit allen Metadaten zurück
  */
 @Service
 @RequiredArgsConstructor
@@ -30,24 +32,22 @@ public class ProductTierPriceService {
     private final ProductRepository productRepository;
 
     /**
-     * Berechnet den wirksamen Stückpreis für eine bestimmte Menge.
+     * Berechnet den wirksamen Preis mit allen Details (ZENTRALE METHODE).
      * 
-     * Regel:
-     * 1. Finde alle aktiven Preisstufen für das Produkt
-     * 2. Filtere Stufen, deren minimumQuantity <= quantity
-     * 3. Wähle die höchste erreichte Stufe (= günstigster Preis)
-     * 4. Fallback: product.basePrice
-     * 
-     * Beispiel: quantity=25, Stufen [12→3.49, 24→2.99, 48→2.49]
-     * → Stufe 24 wird verwendet → 2.99 €
+     * Wird verwendet in:
+     * - CartService (addItem, updateQuantity)
+     * - OrderService (createOrderFromCart - Checkout-Absicherung)
+     * - CartItemDTO-Mapping
      * 
      * @param product Produkt
+     * @param basePrice Basispreis (product.basePrice oder variant.price)
      * @param quantity Bestellmenge
-     * @return Wirksamer Stückpreis
+     * @return TierPriceCalculationResult mit baseUnitPrice, effectiveUnitPrice, tierPriceApplied, appliedTierMinimumQuantity
      */
-    public BigDecimal calculateEffectiveUnitPrice(Product product, int quantity) {
-        if (product == null || quantity < 1) {
-            return BigDecimal.ZERO;
+    public TierPriceCalculationResult calculateWithDetails(Product product, BigDecimal basePrice, int quantity) {
+        if (product == null || basePrice == null || quantity < 1) {
+            return TierPriceCalculationResult.withoutTierPrice(
+                basePrice != null ? basePrice : BigDecimal.ZERO);
         }
 
         // Hole alle aktiven Preisstufen, aufsteigend sortiert
@@ -55,7 +55,7 @@ public class ProductTierPriceService {
                 .findByProductIdAndActiveTrueOrderByMinimumQuantityAsc(product.getId());
 
         if (tierPrices.isEmpty()) {
-            return product.getBasePrice(); // Keine Staffelung
+            return TierPriceCalculationResult.withoutTierPrice(basePrice);
         }
 
         // Finde höchste erreichte Stufe (rückwärts iterieren für Effizienz)
@@ -69,14 +69,30 @@ public class ProductTierPriceService {
         }
 
         if (applicableTier != null) {
-            log.debug("Tier price applied: product={}, quantity={}, tier={}, price={}", 
+            log.debug("✅ Staffelpreis angewendet: product={}, quantity={}, tier={}, price={}", 
                 product.getId(), quantity, applicableTier.getMinimumQuantity(), 
                 applicableTier.getUnitPrice());
-            return applicableTier.getUnitPrice();
+            
+            return TierPriceCalculationResult.withTierPrice(
+                basePrice,
+                applicableTier.getUnitPrice(),
+                applicableTier.getMinimumQuantity()
+            );
         }
 
-        // Keine Stufe erreicht → Standardpreis
-        return product.getBasePrice();
+        // Keine Stufe erreicht → Basispreis
+        return TierPriceCalculationResult.withoutTierPrice(basePrice);
+    }
+    
+    /**
+     * Legacy-Methode: Berechnet nur den effektiven Preis (ohne Metadaten).
+     * Wrapper um calculateWithDetails() für Rückwärtskompatibilität.
+     * 
+     * @deprecated Verwende calculateWithDetails() für vollständige Informationen
+     */
+    public BigDecimal calculateEffectiveUnitPrice(Product product, int quantity) {
+        TierPriceCalculationResult result = calculateWithDetails(product, product.getBasePrice(), quantity);
+        return result.getEffectiveUnitPrice();
     }
 
     /**
