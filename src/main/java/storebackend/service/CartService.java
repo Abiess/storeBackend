@@ -43,6 +43,53 @@ public class CartService {
         }
     }
 
+    @Transactional(readOnly = true)
+    public Cart getCartBySessionIdWithDetails(String sessionId) {
+        return cartRepository.findBySessionIdWithDetails(sessionId)
+                .orElseThrow(() -> new RuntimeException("Cart not found"));
+    }
+
+    @Transactional(readOnly = true)
+    public Cart getCartByUserIdWithDetails(Long userId) {
+        return cartRepository.findByUserIdWithDetails(userId)
+                .orElseThrow(() -> new RuntimeException("Cart not found"));
+    }
+    
+    /**
+     * ✅ Lade Cart MIT Items UND allen lazy Beziehungen für die Anzeige
+     * Verhindert LazyInitializationException durch vollständiges Laden in einer Transaktion
+     */
+    @Transactional(readOnly = true)
+    public CartWithItemsDTO loadCartWithItemsForDisplay(String sessionId, Long userId) {
+        Cart cart;
+        
+        if (userId != null) {
+            cart = cartRepository.findByUserIdWithDetails(userId)
+                    .orElseThrow(() -> new RuntimeException("Cart not found"));
+        } else {
+            cart = cartRepository.findBySessionIdWithDetails(sessionId)
+                    .orElseThrow(() -> new RuntimeException("Cart not found"));
+        }
+        
+        // ✅ Items werden durch @EntityGraph bereits geladen
+        List<CartItem> items = cartItemRepository.findByCartId(cart.getId());
+        
+        return new CartWithItemsDTO(cart, items);
+    }
+    
+    /**
+     * DTO um Cart + Items zusammen zurückzugeben
+     */
+    public static class CartWithItemsDTO {
+        public final Cart cart;
+        public final List<CartItem> items;
+        
+        public CartWithItemsDTO(Cart cart, List<CartItem> items) {
+            this.cart = cart;
+            this.items = items;
+        }
+    }
+
     @Transactional
     public Cart getCartBySessionId(String sessionId) {
         return cartRepository.findBySessionId(sessionId)

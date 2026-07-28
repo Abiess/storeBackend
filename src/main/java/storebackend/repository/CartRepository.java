@@ -1,5 +1,6 @@
 package storebackend.repository;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,6 +15,15 @@ import java.util.Optional;
 public interface CartRepository extends JpaRepository<Cart, Long> {
     Optional<Cart> findBySessionId(String sessionId);
     Optional<Cart> findByUserId(Long userId);
+    
+    // ✅ EAGER laden von Store + Items für Cart-Anzeige (verhindert LazyInitializationException)
+    @EntityGraph(attributePaths = {"store", "items", "items.product", "items.variant", "items.variant.product"})
+    @Query("SELECT c FROM Cart c WHERE c.sessionId = :sessionId")
+    Optional<Cart> findBySessionIdWithDetails(@Param("sessionId") String sessionId);
+    
+    @EntityGraph(attributePaths = {"store", "items", "items.product", "items.variant", "items.variant.product"})
+    @Query("SELECT c FROM Cart c WHERE c.user.id = :userId")
+    Optional<Cart> findByUserIdWithDetails(@Param("userId") Long userId);
     List<Cart> findByExpiresAtBefore(LocalDateTime dateTime);
     void deleteByExpiresAtBefore(LocalDateTime dateTime);
 

@@ -38,34 +38,54 @@ public class CartController {
     @GetMapping
     public ResponseEntity<Map<String, Object>> getCart(
             @RequestParam(required = false) String sessionId,
+            @RequestParam(required = false) Long storeId,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
         try {
             Cart cart;
+            List<CartItem> items;
+            Long userId = null;
 
             // Prüfe ob User eingeloggt ist (JWT vorhanden)
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 String token = authHeader.substring(7);
-                Long userId = extractUserIdFromToken(token);
+                userId = extractUserIdFromToken(token);
                 log.info("🛒 Lade Warenkorb für userId: {}", userId);
-
-                // Hole Cart per userId
-                cart = cartService.getCartByUser(userId);
             } else if (sessionId != null) {
                 // Fallback für Gast-Warenkörbe
                 log.info("🛒 Lade Warenkorb für sessionId: {}", sessionId);
-                cart = cartService.getCartBySessionId(sessionId);
             } else {
                 return ResponseEntity.badRequest()
                     .body(Map.of("error", "Either sessionId or Authorization required"));
             }
+            
+            // ✅ Lade Cart MIT Items UND allen lazy-Beziehungen in EINER Transaktion
+            CartService.CartWithItemsDTO cartData = cartService.loadCartWithItemsForDisplay(sessionId, userId);
+            cart = cartData.cart;
+            items = cartData.items;
+            
+            // ✅ Store-Filter: Wenn storeId angegeben, prüfe ob Cart zu diesem Store gehört
+            if (storeId != null && !cart.getStore().getId().equals(storeId)) {
+                log.warn("⚠️ Cart {} gehört zu Store {}, aber Request für Store {}", 
+                    cart.getId(), cart.getStore().getId(), storeId);
+                // Gebe leeren Cart zurück statt Fehler (Frontend-Kompatibilität)
+                return ResponseEntity.ok(Map.of("items", List.of(), "itemCount", 0, "subtotal", 0));
+            }
 
-            List<CartItem> items = cartService.getCartItems(cart.getId());
             return ResponseEntity.ok(buildCartResponse(cart, items));
 
         } catch (RuntimeException e) {
-            log.warn("Warenkorb nicht gefunden: {}", e.getMessage());
-            return ResponseEntity.ok(Map.of("items", List.of(), "itemCount", 0, "subtotal", 0));
+            // ✅ Differenzierte Fehlerbehandlung
+            if (e.getMessage().contains("LazyInitialization")) {
+                log.error("❌ LazyInitializationException beim Cart-Laden: {}", e.getMessage(), e);
+                return ResponseEntity.status(500).body(Map.of("error", "Internal server error loading cart"));
+            } else if (e.getMessage().contains("not found")) {
+                log.info("ℹ️ Warenkorb nicht gefunden, gebe leeren Cart zurück");
+                return ResponseEntity.ok(Map.of("items", List.of(), "itemCount", 0, "subtotal", 0));
+            } else {
+                log.error("❌ Fehler beim Cart-Laden: {}", e.getMessage(), e);
+                return ResponseEntity.status(500).body(Map.of("error", "Error loading cart"));
+            }
         }
     }
 
