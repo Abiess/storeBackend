@@ -97,7 +97,10 @@ describe('ProductTierPriceService', () => {
       id: tierPriceId,
       productId: productId,
       label: null,
-      ...updatedData as ProductTierPrice
+      minimumQuantity: 15,
+      unitPrice: 7.99,
+      active: true,
+      sortOrder: 0
     };
 
     service.updateTierPrice(storeId, productId, tierPriceId, updatedData).subscribe(tierPrice => {

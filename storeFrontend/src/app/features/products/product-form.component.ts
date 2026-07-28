@@ -246,7 +246,6 @@ import { Subscription } from 'rxjs';
                           [(ngModel)]="tier.active"
                           [ngModelOptions]="{standalone: true}"
                         />
-                        <span class="checkmark"></span>
                       </label>
                     </div>
 
@@ -2475,14 +2474,17 @@ export class ProductFormComponent implements OnInit, OnDestroy {
    * Entfernt eine Staffelpreis-Stufe
    */
   removeTierPrice(index: number): void {
+    console.log('🗑️ Remove tier price at index:', index, 'Tier:', this.tierPrices[index]);
     const removed = this.tierPrices[index];
     if (removed.id) {
       // Bestehende Stufe: ID für späteres Löschen merken
       this.deletedTierPriceIds.push(removed.id);
+      console.log('📝 Added to deleted IDs:', removed.id, 'Total deleted:', this.deletedTierPriceIds);
     }
     this.tierPrices.splice(index, 1);
     // Sortierung neu setzen
     this.tierPrices.forEach((tp, idx) => tp.sortOrder = idx);
+    console.log('✅ Tier price removed. Remaining:', this.tierPrices.length);
   }
 
   /**
