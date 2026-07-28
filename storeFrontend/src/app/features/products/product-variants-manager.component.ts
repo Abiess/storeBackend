@@ -270,8 +270,8 @@ interface ProductOption {
                 <div class="detail-field">
                   <label>{{ 'product.variants.active' | translate }}</label>
                   <select [(ngModel)]="variant.isActive" class="df-input">
-                    <option [value]="true">{{ 'common.yes' | translate }}</option>
-                    <option [value]="false">{{ 'common.no' | translate }}</option>
+                    <option [ngValue]="true">{{ 'common.yes' | translate }}</option>
+                    <option [ngValue]="false">{{ 'common.no' | translate }}</option>
                   </select>
                 </div>
               </div>
