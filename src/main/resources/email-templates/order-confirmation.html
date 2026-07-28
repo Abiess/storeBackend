@@ -55,6 +55,9 @@ table.items tr:last-child td { border-bottom:none; }
     <div class="order-meta">
       <div class="meta-row"><span class="key">{{labelOrderNumber}}</span><span class="val">#{{orderNumber}}</span></div>
       <div class="meta-row"><span class="key">{{labelStore}}</span><span class="val">{{storeName}}</span></div>
+      {{#hasCustomerReference}}
+      <div class="meta-row"><span class="key">{{labelCustomerReference}}</span><span class="val">{{customerReference}}</span></div>
+      {{/hasCustomerReference}}
       <div class="meta-row"><span class="key">{{labelTotal}}</span><span class="val">{{totalAmount}} {{currency}}</span></div>
     </div>
 
@@ -91,6 +94,7 @@ table.items tr:last-child td { border-bottom:none; }
     {{#hasShipping}}
     <p class="section-title">{{labelShipping}}</p>
     <div class="address-box">
+      {{#hasCompany}}<strong>{{shippingCompany}}</strong><br>{{/hasCompany}}
       {{shippingName}}<br>
       {{shippingAddress1}}{{#shippingAddress2}}, {{shippingAddress2}}{{/shippingAddress2}}<br>
       {{shippingPostalCode}} {{shippingCity}}<br>

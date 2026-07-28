@@ -8,6 +8,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import storebackend.dto.EmailDeliveryResult;
+import storebackend.entity.Address;
 import storebackend.entity.OrderItem;
 
 import java.util.ArrayList;
@@ -558,7 +559,8 @@ public class EmailService {
     public EmailDeliveryResult sendOrderConfirmationWithResult(
             String toEmail, String orderNumber, String storeName,
             Double totalAmount, List<OrderItem> items,
-            String storeLogo, String lang) {
+            String storeLogo, String lang,
+            Address shippingAddress, String customerReference) {
         
         if (!mailEnabled) {
             log.info("Mail disabled – order confirmation to masked recipient");
@@ -587,6 +589,14 @@ public class EmailService {
             vars.put("labelItemTotal",    t(lang, "orderConfirmation.labelItemTotal",   "Total"));
             vars.put("outro",             t(lang, "orderConfirmation.outro",            "You will be notified when shipped."));
             vars.put("btnViewOrder",      t(lang, "btnViewOrder",                       "View Order"));
+            
+            // B2B: customerReference
+            if (customerReference != null && !customerReference.isBlank()) {
+                vars.put("hasCustomerReference", true);
+                vars.put("customerReference", customerReference);
+                vars.put("labelCustomerReference", t(lang, "orderConfirmation.labelCustomerReference", "Customer Reference"));
+            }
+            
             addFooter(lang, vars);
 
             if (items != null && !items.isEmpty()) {
@@ -603,6 +613,29 @@ public class EmailService {
                     itemList.add(row);
                 }
                 vars.put("items", itemList);
+            }
+            
+            // B2B: Shipping Address mit company
+            if (shippingAddress != null) {
+                vars.put("hasShipping", true);
+                
+                // B2B: Company
+                boolean hasCompany = shippingAddress.getCompany() != null && !shippingAddress.getCompany().isBlank();
+                if (hasCompany) {
+                    vars.put("shippingCompany", shippingAddress.getCompany());
+                    vars.put("hasCompany", true);
+                }
+                
+                // Ansprechpartner
+                String firstName = shippingAddress.getFirstName() != null ? shippingAddress.getFirstName() : "";
+                String lastName = shippingAddress.getLastName() != null ? shippingAddress.getLastName() : "";
+                vars.put("shippingName", (firstName + " " + lastName).trim());
+                
+                vars.put("shippingAddress1", shippingAddress.getAddress1() != null ? shippingAddress.getAddress1() : "");
+                vars.put("shippingAddress2", shippingAddress.getAddress2());
+                vars.put("shippingPostalCode", shippingAddress.getPostalCode() != null ? shippingAddress.getPostalCode() : "");
+                vars.put("shippingCity", shippingAddress.getCity() != null ? shippingAddress.getCity() : "");
+                vars.put("shippingCountry", shippingAddress.getCountry() != null ? shippingAddress.getCountry() : "");
             }
 
             String subjectTpl = t(lang, "orderConfirmation.subject",
@@ -639,7 +672,7 @@ public class EmailService {
                                       Double totalAmount, List<OrderItem> items,
                                       String storeLogo, String lang) {
         EmailDeliveryResult result = sendOrderConfirmationWithResult(
-            toEmail, orderNumber, storeName, totalAmount, items, storeLogo, lang
+            toEmail, orderNumber, storeName, totalAmount, items, storeLogo, lang, null, null
         );
         if (!result.isSent()) {
             log.warn("Order confirmation delivery failed (deprecated method): order={}, errorCode={}", 

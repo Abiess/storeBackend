@@ -124,7 +124,9 @@ public class OrderStatusEventListener {
                 EmailDeliveryResult confirmationResult = emailService.sendOrderConfirmationWithResult(
                     customerEmail, orderNumber, storeName,
                     order.getTotalAmount().doubleValue(),
-                    items, storeLogo, lang
+                    items, storeLogo, lang,
+                    order.getShippingAddress(),  // B2B: Lieferadresse mit company
+                    order.getCustomerReference()  // B2B: Kundenreferenz
                 );
                 
                 if (!confirmationResult.isSent()) {

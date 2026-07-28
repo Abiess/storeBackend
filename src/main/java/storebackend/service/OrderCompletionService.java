@@ -132,7 +132,9 @@ public class OrderCompletionService {
                 order.getTotalAmount().doubleValue(),
                 items, 
                 storeLogo, 
-                customerLang
+                customerLang,
+                order.getShippingAddress(),  // B2B: Lieferadresse mit company
+                order.getCustomerReference()  // B2B: Kundenreferenz
             );
             
             if (result.isSent()) {
