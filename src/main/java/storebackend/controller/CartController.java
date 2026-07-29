@@ -350,8 +350,25 @@ public class CartController {
                 
             if (product == null) continue;
             
+            // ─── PRODUCTION DEBUG LOGGING ───────────────────────────────────────
+            log.info("🔍 CART TAX DEBUG - CartItem {}: directProductId={}, variantId={}, variantProductId={}", 
+                item.getId(),
+                item.getProduct() != null ? item.getProduct().getId() : "null",
+                item.getVariant() != null ? item.getVariant().getId() : "null",
+                item.getVariant() != null && item.getVariant().getProduct() != null ? item.getVariant().getProduct().getId() : "null"
+            );
+            
             Product freshProduct = productRepository.findById(product.getId())
                 .orElse(product); // Fallback zu lazy-loaded
+                
+            log.info("🔍 CART TAX DEBUG - Product {} FRESH: taxRate={}, taxCategory={}, storeDefaultTaxRate={}, priceMode={}, vatEnabled={}", 
+                freshProduct.getId(),
+                freshProduct.getTaxRate(),
+                freshProduct.getTaxCategory(),
+                store.getDefaultTaxRate(),
+                priceMode,
+                vatEnabled
+            );
             
             // Basispreis + Staffelpreis
             BigDecimal basePrice = item.getVariant() != null && item.getVariant().getPrice() != null

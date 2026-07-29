@@ -138,6 +138,11 @@ public class ProductService {
         Product product = productRepository.findByIdAndStoreWithCategory(productId, store)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
+        log.info("🔧 UPDATE Product {}: BEFORE - taxCategory={}, taxRate={}", 
+            productId, product.getTaxCategory(), product.getTaxRate());
+        log.info("🔧 UPDATE Product {}: REQUEST - taxCategory={}, taxRate={}", 
+            productId, request.getTaxCategory(), request.getTaxRate());
+
     product.setTitle(request.getTitle());
     product.setSku(request.getSku());
     product.setDescription(request.getDescription());
@@ -162,15 +167,33 @@ public class ProductService {
             try {
                 TaxCategory taxCategory = TaxCategory.valueOf(request.getTaxCategory().trim().toUpperCase());
                 product.setTaxCategory(taxCategory);
-                // Steuersatz automatisch aus Kategorie ableiten
-                BigDecimal taxRate = taxCalculationService.resolveTaxRate(taxCategory);
-                product.setTaxRate(taxRate);
+                
+                // ✅ FIX: Verwende explizit request.getTaxRate() wenn vorhanden, sonst ableiten
+                if (request.getTaxRate() != null) {
+                    log.info("🔧 UPDATE Product {}: Using explicit taxRate from request: {}", 
+                        productId, request.getTaxRate());
+                    product.setTaxRate(request.getTaxRate());
+                } else {
+                    // Steuersatz automatisch aus Kategorie ableiten
+                    BigDecimal taxRate = taxCalculationService.resolveTaxRate(taxCategory);
+                    log.info("🔧 UPDATE Product {}: Deriving taxRate from taxCategory {}: {}", 
+                        productId, taxCategory, taxRate);
+                    product.setTaxRate(taxRate);
+                }
             } catch (IllegalArgumentException ex) {
+                log.warn("🔧 UPDATE Product {}: Invalid taxCategory: {}", productId, request.getTaxCategory());
                 // Ignore – behalte vorhandene Werte
             }
         }
 
+        log.info("🔧 UPDATE Product {}: BEFORE SAVE - taxCategory={}, taxRate={}", 
+            productId, product.getTaxCategory(), product.getTaxRate());
+
         product = productRepository.save(product);
+        
+        log.info("✅ UPDATE Product {}: AFTER SAVE - taxCategory={}, taxRate={}", 
+            product.getId(), product.getTaxCategory(), product.getTaxRate());
+
         return toDTO(product);
     }
 
