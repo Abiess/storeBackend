@@ -3074,6 +3074,14 @@
     "instruction4": "بدلاً من ذلك: انقر على 'مسح باستخدام الكاميرا' لاستخدام كاميرا الجهاز اللوحي",
     "startCamera": "مسح باستخدام الكاميرا",
     "stopCamera": "إغلاق الكاميرا",
-    "cameraHint": "احتفظ بالباركود في الإطار"
+    "cameraHint": "احتفظ بالباركود في الإطار",
+    "searchingProduct": "البحث عن المنتج...",
+    "productFound": "تم العثور على المنتج",
+    "productNotFound": "لم يتم العثور على المنتج في Open Food Facts",
+    "productNotFoundHint": "هذا المنتج غير متوفر بعد في قاعدة بيانات Open Food Facts.",
+    "brand": "العلامة التجارية",
+    "quantity": "الكمية",
+    "barcode": "الباركود",
+    "scannedBarcode": "الباركود الممسوح"
   }
 }

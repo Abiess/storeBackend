@@ -3166,6 +3166,14 @@
     "instruction4": "Alternatively: Click 'Scan with Camera' to use the tablet camera",
     "startCamera": "Scan with Camera",
     "stopCamera": "Close Camera",
-    "cameraHint": "Hold barcode in frame"
+    "cameraHint": "Hold barcode in frame",
+    "searchingProduct": "Searching for product...",
+    "productFound": "Product Found",
+    "productNotFound": "Product not found in Open Food Facts",
+    "productNotFoundHint": "This product is not yet available in the Open Food Facts database.",
+    "brand": "Brand",
+    "quantity": "Quantity",
+    "barcode": "Barcode",
+    "scannedBarcode": "Scanned Barcode"
   }
 }

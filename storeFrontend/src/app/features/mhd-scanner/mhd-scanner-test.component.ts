@@ -2,9 +2,19 @@ import { Component, OnInit, ElementRef, ViewChild, AfterViewInit, OnDestroy } fr
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { PageHeaderComponent } from '@app/shared/components/page-header.component';
 import { BrowserMultiFormatReader, NotFoundException, Result } from '@zxing/library';
+
+interface OpenFoodFactsProduct {
+  code: string;
+  product_name?: string;
+  brands?: string;
+  quantity?: string;
+  image_url?: string;
+  image_front_url?: string;
+}
 
 @Component({
   selector: 'app-mhd-scanner-test',
@@ -58,6 +68,46 @@ import { BrowserMultiFormatReader, NotFoundException, Result } from '@zxing/libr
           <div class="camera-overlay">
             <div class="scan-frame"></div>
             <div class="scan-hint">{{ 'mhdScanner.cameraHint' | translate }}</div>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading-message" *ngIf="isLoadingProduct">
+          <div class="spinner"></div>
+          {{ 'mhdScanner.searchingProduct' | translate }}
+        </div>
+
+        <!-- Product Found -->
+        <div class="product-result" *ngIf="foundProduct && !isLoadingProduct">
+          <h3 class="product-result-title">✅ {{ 'mhdScanner.productFound' | translate }}</h3>
+          <div class="product-card">
+            <img 
+              *ngIf="foundProduct.image_url || foundProduct.image_front_url" 
+              [src]="foundProduct.image_url || foundProduct.image_front_url" 
+              [alt]="foundProduct.product_name"
+              class="product-image"
+              (error)="onImageError($event)">
+            <div class="product-info">
+              <h4 class="product-name">{{ foundProduct.product_name || 'Unbekannt' }}</h4>
+              <div class="product-detail" *ngIf="foundProduct.brands">
+                <strong>{{ 'mhdScanner.brand' | translate }}:</strong> {{ foundProduct.brands }}
+              </div>
+              <div class="product-detail" *ngIf="foundProduct.quantity">
+                <strong>{{ 'mhdScanner.quantity' | translate }}:</strong> {{ foundProduct.quantity }}
+              </div>
+              <div class="product-detail">
+                <strong>{{ 'mhdScanner.barcode' | translate }}:</strong> {{ foundProduct.code }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Product Not Found -->
+        <div class="product-not-found" *ngIf="productNotFound && !isLoadingProduct">
+          <h3 class="not-found-title">❌ {{ 'mhdScanner.productNotFound' | translate }}</h3>
+          <p>{{ 'mhdScanner.productNotFoundHint' | translate }}</p>
+          <div class="scanned-barcode">
+            <strong>{{ 'mhdScanner.scannedBarcode' | translate }}:</strong> {{ lastScannedBarcode }}
           </div>
         </div>
 
@@ -241,6 +291,126 @@ import { BrowserMultiFormatReader, NotFoundException, Result } from '@zxing/libr
       backdrop-filter: blur(4px);
     }
 
+    .loading-message {
+      text-align: center;
+      padding: 2rem;
+      background: linear-gradient(135deg, #667eea15, #764ba215);
+      border-radius: 12px;
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      font-size: 1.125rem;
+      color: #667eea;
+      font-weight: 600;
+    }
+
+    .spinner {
+      width: 24px;
+      height: 24px;
+      border: 3px solid #667eea40;
+      border-top-color: #667eea;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .product-result {
+      margin-bottom: 2rem;
+      animation: fadeIn 0.3s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .product-result-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #10b981;
+      margin-bottom: 1rem;
+    }
+
+    .product-card {
+      display: flex;
+      gap: 1.5rem;
+      background: white;
+      border: 2px solid #10b981;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);
+    }
+
+    .product-image {
+      width: 120px;
+      height: 120px;
+      object-fit: contain;
+      border-radius: 8px;
+      background: #f9fafb;
+      flex-shrink: 0;
+    }
+
+    .product-info {
+      flex: 1;
+    }
+
+    .product-name {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 0.75rem;
+    }
+
+    .product-detail {
+      margin-bottom: 0.5rem;
+      color: #4b5563;
+      line-height: 1.5;
+    }
+
+    .product-detail strong {
+      color: #667eea;
+    }
+
+    .product-not-found {
+      padding: 2rem;
+      background: #fef2f2;
+      border: 2px solid #ef4444;
+      border-radius: 12px;
+      margin-bottom: 2rem;
+      text-align: center;
+      animation: fadeIn 0.3s ease-in;
+    }
+
+    .not-found-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #ef4444;
+      margin-bottom: 1rem;
+    }
+
+    .product-not-found p {
+      color: #6b7280;
+      margin-bottom: 1rem;
+    }
+
+    .scanned-barcode {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      background: white;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      color: #1f2937;
+    }
+
+    .scanned-barcode strong {
+      color: #ef4444;
+    }
+
     .current-value,
     .last-scanned {
       background: #f3f4f6;
@@ -356,9 +526,15 @@ export class MhdScannerTestComponent implements OnInit, AfterViewInit, OnDestroy
   private codeReader: BrowserMultiFormatReader | null = null;
   private videoStream: MediaStream | null = null;
 
+  // Open Food Facts
+  isLoadingProduct = false;
+  foundProduct: OpenFoodFactsProduct | null = null;
+  productNotFound = false;
+
   constructor(
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private http: HttpClient
   ) {}
 
   ngOnInit(): void {
@@ -393,6 +569,10 @@ export class MhdScannerTestComponent implements OnInit, AfterViewInit, OnDestroy
     if (this.currentBarcode.trim()) {
       console.log('📦 Barcode gescannt:', this.currentBarcode);
       this.lastScannedBarcode = this.currentBarcode;
+      
+      // Open Food Facts Lookup
+      this.lookupProduct(this.currentBarcode);
+      
       this.currentBarcode = '';
       
       // Fokus zurück auf das Eingabefeld
@@ -400,6 +580,46 @@ export class MhdScannerTestComponent implements OnInit, AfterViewInit, OnDestroy
         this.barcodeInputElement?.nativeElement.focus();
       }, 50);
     }
+  }
+
+  lookupProduct(barcode: string): void {
+    // Reset previous results
+    this.foundProduct = null;
+    this.productNotFound = false;
+    this.isLoadingProduct = true;
+
+    const url = `https://world.openfoodfacts.org/api/v2/product/${barcode}.json`;
+    console.log('🔍 Suche Produkt bei Open Food Facts:', url);
+
+    this.http.get<{ status: number; product?: any }>(url).subscribe({
+      next: (response) => {
+        this.isLoadingProduct = false;
+        if (response.status === 1 && response.product) {
+          this.foundProduct = {
+            code: barcode,
+            product_name: response.product.product_name,
+            brands: response.product.brands,
+            quantity: response.product.quantity,
+            image_url: response.product.image_url,
+            image_front_url: response.product.image_front_url
+          };
+          console.log('✅ Produkt gefunden:', this.foundProduct);
+        } else {
+          this.productNotFound = true;
+          console.log('❌ Produkt nicht gefunden');
+        }
+      },
+      error: (error) => {
+        this.isLoadingProduct = false;
+        this.productNotFound = true;
+        console.error('❌ Fehler bei Open Food Facts Anfrage:', error);
+      }
+    });
+  }
+
+  onImageError(event: Event): void {
+    // Bild konnte nicht geladen werden - verstecken
+    (event.target as HTMLImageElement).style.display = 'none';
   }
 
   async startCameraScanning(): Promise<void> {
