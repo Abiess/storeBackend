@@ -242,6 +242,43 @@ public class DiagnosticsController {
         }
     }
 
+    /**
+     * MHD-Scheduler manuell triggern (TEST-ZWECKE).
+     * 
+     * POST /api/admin/diagnostics/test-expiry-scheduler
+     * 
+     * ACHTUNG: In Production nur für Admins freigeben!
+     */
+    @PostMapping("/test-expiry-scheduler")
+    public ResponseEntity<Map<String, Object>> triggerExpiryScheduler() {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            if (expiryNotificationScheduler == null) {
+                result.put("status", "UNAVAILABLE");
+                result.put("message", "ExpiryNotificationScheduler not available");
+                return ResponseEntity.status(503).body(result);
+            }
+            
+            log.info("🧪 [TEST] Manueller Trigger: MHD-Scheduler");
+            expiryNotificationScheduler.checkAndNotifyExpiringProducts();
+            
+            result.put("status", "SUCCESS");
+            result.put("message", "Expiry notification scheduler executed successfully");
+            result.put("timestamp", LocalDateTime.now().toString());
+            
+            return ResponseEntity.ok(result);
+            
+        } catch (Exception e) {
+            log.error("❌ [TEST] MHD-Scheduler-Test fehlgeschlagen", e);
+            result.put("status", "FAILED");
+            result.put("error", e.getClass().getSimpleName());
+            result.put("message", e.getMessage());
+            
+            return ResponseEntity.status(500).body(result);
+        }
+    }
+
     private String maskPassword(String url) {
         if (url.contains("password=")) {
             return url.replaceAll("password=[^&]+", "password=***");
