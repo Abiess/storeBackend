@@ -408,6 +408,26 @@ ALTER TABLE products ALTER COLUMN tax_rate SET NOT NULL;
 ALTER TABLE products ALTER COLUMN tax_category SET DEFAULT 'STANDARD';
 ALTER TABLE products ALTER COLUMN tax_rate SET DEFAULT 19.00;
 
+-- ═══════════════════════════════════════════════════════════════════════════
+-- MIGRATION: Product Barcode Support
+-- ═══════════════════════════════════════════════════════════════════════════
+
+ALTER TABLE products ADD COLUMN IF NOT EXISTS barcode VARCHAR(100);
+
+-- Index für schnelle Barcode-Suche (nullable, daher mit WHERE clause)
+CREATE INDEX IF NOT EXISTS idx_products_barcode 
+  ON products(barcode) 
+  WHERE barcode IS NOT NULL AND barcode <> '';
+
+-- Unique Constraint: Barcode eindeutig PRO Store (nicht global)
+-- Verschiedene Stores können dasselbe Produkt (z.B. Coca-Cola EAN) verkaufen
+-- Supplier-Katalog-Produkte (store_id = NULL) werden nicht eingeschränkt
+CREATE UNIQUE INDEX IF NOT EXISTS idx_products_barcode_per_store 
+  ON products(store_id, barcode) 
+  WHERE store_id IS NOT NULL 
+    AND barcode IS NOT NULL 
+    AND barcode <> '';
+
 -- Product Options
 CREATE TABLE IF NOT EXISTS product_options (
                                                id BIGSERIAL PRIMARY KEY,

@@ -77,11 +77,16 @@
     "discount": "-{{value}}%",
     "unitPrice": "({{price}} € / unit)",
     "sku": "SKU: {{sku}}",
+    "barcode": "Barcode / EAN",
     "quantity": "Quantity: {{count}}",
     "placeholder": {
       "name": "Enter product name",
       "description": "Enter product description",
-      "sku": "Enter SKU (optional)"
+      "sku": "Enter SKU (optional)",
+      "barcode": "Enter Barcode / EAN (e.g. 4006040076926)"
+    },
+    "hint": {
+      "barcode": "EAN-13, UPC or other barcode standard. Can be entered manually or scanned."
     },
     "variants": {
       "title": "Variants",

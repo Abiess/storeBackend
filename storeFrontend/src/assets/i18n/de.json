@@ -195,10 +195,15 @@
     "discount": "-{{value}}%",
     "unitPrice": "({{price}} € / Stk.)",
     "sku": "SKU: {{sku}}",
+    "barcode": "Barcode / EAN",
     "placeholder": {
       "name": "Produktname eingeben",
       "description": "Produktbeschreibung eingeben",
-      "sku": "SKU eingeben (optional)"
+      "sku": "SKU eingeben (optional)",
+      "barcode": "Barcode / EAN eingeben (z.B. 4006040076926)"
+    },
+    "hint": {
+      "barcode": "EAN-13, UPC oder anderer Barcode-Standard. Kann manuell eingegeben oder gescannt werden."
     },
     "variants": {
       "title": "Varianten",

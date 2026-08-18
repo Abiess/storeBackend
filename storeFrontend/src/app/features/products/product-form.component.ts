@@ -96,6 +96,19 @@ import { Subscription } from 'rxjs';
           </div>
 
           <div class="form-group">
+            <label for="barcode">{{ 'product.barcode' | translate }}</label>
+            <input 
+              id="barcode"
+              type="text" 
+              formControlName="barcode"
+              [placeholder]="'product.placeholder.barcode' | translate"
+            />
+            <div class="form-hint">
+              {{ 'product.hint.barcode' | translate }}
+            </div>
+          </div>
+
+          <div class="form-group">
             <label for="description">{{ 'product.description' | translate }} *</label>
             <textarea 
               id="description"
@@ -2187,6 +2200,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     this.productForm = this.fb.group({
       title: ['', Validators.required],
       sku: [''],
+      barcode: [''],
       description: ['', Validators.required],
       basePrice: [0, [Validators.required, Validators.min(0.01)]],
       stock: [0, [Validators.min(0)]],
@@ -2306,6 +2320,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
         this.productForm.patchValue({
           title: product.title,
           sku: product.sku,
+          barcode: product.barcode,
           description: product.description,
           basePrice: product.basePrice,
           stock: product.stock ?? 0,

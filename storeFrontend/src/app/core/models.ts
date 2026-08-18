@@ -354,6 +354,7 @@ export interface Product {
   name?: string;
   title: string;
   sku?: string;
+  barcode?: string;
   description?: string;
   price?: number;
   basePrice: number;
@@ -423,6 +424,8 @@ export interface CreateProductRequest {
   storeId: number;
   name?: string;
   title?: string;
+  sku?: string;
+  barcode?: string;
   description?: string;
   price?: number;
   basePrice?: number;

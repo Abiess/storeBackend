@@ -45,6 +45,9 @@ public class Product {
     @Column(name = "sku")
     private String sku;
 
+    @Column(name = "barcode", length = 100)
+    private String barcode;
+
     @Column(columnDefinition = "TEXT")
     private String description;
 

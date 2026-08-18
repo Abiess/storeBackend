@@ -525,6 +525,7 @@ export class MhdScannerTestComponent implements OnInit, AfterViewInit, OnDestroy
   isCameraActive = false;
   private codeReader: BrowserMultiFormatReader | null = null;
   private videoStream: MediaStream | null = null;
+  private preferredBackCameraId: string | null = null; // Gespeicherte Rückkamera-ID
 
   // Open Food Facts
   isLoadingProduct = false;
@@ -638,24 +639,46 @@ export class MhdScannerTestComponent implements OnInit, AfterViewInit, OnDestroy
       // Code-Reader initialisieren
       this.codeReader = new BrowserMultiFormatReader();
 
-      // Verfügbare Geräte abrufen
-      const videoInputDevices = await this.codeReader.listVideoInputDevices();
-      console.log('📷 Verfügbare Kameras:', videoInputDevices.length);
-
-      // Rückkamera bevorzugen (falls vorhanden)
       let selectedDeviceId: string | null = null;
-      const backCamera = videoInputDevices.find(device => 
-        device.label.toLowerCase().includes('back') || 
-        device.label.toLowerCase().includes('rear') ||
-        device.label.toLowerCase().includes('environment')
-      );
 
-      if (backCamera) {
-        selectedDeviceId = backCamera.deviceId;
-        console.log('✅ Rückkamera gefunden:', backCamera.label);
-      } else if (videoInputDevices.length > 0) {
-        selectedDeviceId = videoInputDevices[0].deviceId;
-        console.log('✅ Erste verfügbare Kamera:', videoInputDevices[0].label);
+      // Prüfen, ob bereits eine Rückkamera-ID gespeichert ist
+      if (this.preferredBackCameraId) {
+        // Verfügbare Geräte abrufen
+        const videoInputDevices = await this.codeReader.listVideoInputDevices();
+        
+        // Prüfen, ob die gespeicherte Kamera noch verfügbar ist
+        const savedCamera = videoInputDevices.find(device => device.deviceId === this.preferredBackCameraId);
+        
+        if (savedCamera) {
+          selectedDeviceId = this.preferredBackCameraId;
+          console.log('✅ Gespeicherte Rückkamera wiederverwendet:', savedCamera.label);
+        } else {
+          console.log('⚠️ Gespeicherte Kamera nicht mehr verfügbar, neue Suche...');
+          this.preferredBackCameraId = null; // Zurücksetzen
+        }
+      }
+
+      // Falls keine gespeicherte Kamera: neue Suche
+      if (!selectedDeviceId) {
+        const videoInputDevices = await this.codeReader.listVideoInputDevices();
+        console.log('📷 Verfügbare Kameras:', videoInputDevices.length);
+
+        // Rückkamera bevorzugen (falls vorhanden)
+        const backCamera = videoInputDevices.find(device => 
+          device.label.toLowerCase().includes('back') || 
+          device.label.toLowerCase().includes('rear') ||
+          device.label.toLowerCase().includes('environment')
+        );
+
+        if (backCamera) {
+          selectedDeviceId = backCamera.deviceId;
+          this.preferredBackCameraId = backCamera.deviceId; // Speichern für nächstes Mal
+          console.log('✅ Rückkamera gefunden und gespeichert:', backCamera.label);
+        } else if (videoInputDevices.length > 0) {
+          selectedDeviceId = videoInputDevices[0].deviceId;
+          this.preferredBackCameraId = videoInputDevices[0].deviceId; // Erste Kamera speichern
+          console.log('✅ Erste verfügbare Kamera gespeichert:', videoInputDevices[0].label);
+        }
       }
 
       // Kamera starten

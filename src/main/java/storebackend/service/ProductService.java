@@ -89,6 +89,7 @@ public class ProductService {
         product.setStore(store);
         product.setTitle(request.getTitle());
         product.setSku(request.getSku());
+        product.setBarcode(request.getBarcode());
         product.setDescription(request.getDescription());
         product.setBasePrice(request.getBasePrice());
         product.setStock(request.getStock() != null ? request.getStock() : 0);
@@ -145,6 +146,7 @@ public class ProductService {
 
     product.setTitle(request.getTitle());
     product.setSku(request.getSku());
+    product.setBarcode(request.getBarcode());
     product.setDescription(request.getDescription());
     product.setBasePrice(request.getBasePrice());
     product.setStock(request.getStock() != null ? request.getStock() : 0);
@@ -262,6 +264,7 @@ public class ProductService {
         dto.setId(product.getId());
         dto.setTitle(product.getTitle());
         dto.setSku(product.getSku());
+        dto.setBarcode(product.getBarcode());
         dto.setDescription(product.getDescription());
         dto.setBasePrice(product.getBasePrice());
         dto.setStock(product.getStock() != null ? product.getStock() : 0);

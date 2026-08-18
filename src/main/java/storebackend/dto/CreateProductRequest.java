@@ -18,6 +18,8 @@ public class CreateProductRequest {
 
     private String sku;
 
+    private String barcode;
+
     private String description;
 
     @NotNull

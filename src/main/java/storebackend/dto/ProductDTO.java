@@ -13,6 +13,7 @@ public class ProductDTO {
     private Long id;
     private String title;
     private String sku;
+    private String barcode;
     private String description;
     private BigDecimal basePrice;
     private Integer stock;
