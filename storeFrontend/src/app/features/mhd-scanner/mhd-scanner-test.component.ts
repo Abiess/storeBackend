@@ -423,7 +423,7 @@ export class MhdScannerTestComponent implements OnInit, AfterViewInit, OnDestroy
       console.log('📷 Verfügbare Kameras:', videoInputDevices.length);
 
       // Rückkamera bevorzugen (falls vorhanden)
-      let selectedDeviceId: string | undefined;
+      let selectedDeviceId: string | null = null;
       const backCamera = videoInputDevices.find(device => 
         device.label.toLowerCase().includes('back') || 
         device.label.toLowerCase().includes('rear') ||
