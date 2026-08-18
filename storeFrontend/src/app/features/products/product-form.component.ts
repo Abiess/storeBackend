@@ -17,12 +17,13 @@ import { ProductVariantsManagerComponent } from './product-variants-manager.comp
 import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
 import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
 import { ImageUploadComponent, UploadedImage } from '@app/shared/components/image-upload/image-upload.component';
+import { BarcodeInputComponent } from '@app/shared/components/barcode-input/barcode-input.component';
 import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-product-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, MatSlideToggleModule, MatTooltipModule, TranslatePipe, ProductVariantsManagerComponent, PageHeaderComponent, ImageUploadComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, MatSlideToggleModule, MatTooltipModule, TranslatePipe, ProductVariantsManagerComponent, PageHeaderComponent, ImageUploadComponent, BarcodeInputComponent],
   template: `
     <!-- Fixed Top-Right Loading Indicator -->
     <div class="ai-loading-overlay" *ngIf="aiGenerating || uploadingImages">
@@ -97,12 +98,7 @@ import { Subscription } from 'rxjs';
 
           <div class="form-group">
             <label for="barcode">{{ 'product.barcode' | translate }}</label>
-            <input 
-              id="barcode"
-              type="text" 
-              formControlName="barcode"
-              [placeholder]="'product.placeholder.barcode' | translate"
-            />
+            <app-barcode-input formControlName="barcode"></app-barcode-input>
             <div class="form-hint">
               {{ 'product.hint.barcode' | translate }}
             </div>

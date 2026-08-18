@@ -196,6 +196,9 @@
     "unitPrice": "({{price}} € / Stk.)",
     "sku": "SKU: {{sku}}",
     "barcode": "Barcode / EAN",
+    "scanWithCamera": "Mit Kamera scannen",
+    "stopCamera": "Kamera schließen",
+    "cameraHint": "Barcode vor der Kamera positionieren",
     "placeholder": {
       "name": "Produktname eingeben",
       "description": "Produktbeschreibung eingeben",

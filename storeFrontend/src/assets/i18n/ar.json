@@ -77,6 +77,9 @@
     "unitPrice": "({{price}} € / قطعة)",
     "sku": "رمز المنتج: {{sku}}",
     "barcode": "الباركود / EAN",
+    "scanWithCamera": "مسح بالكاميرا",
+    "stopCamera": "إغلاق الكاميرا",
+    "cameraHint": "ضع الباركود أمام الكاميرا",
     "quantity": "الكمية: {{count}}",
     "placeholder": {
       "name": "أدخل اسم المنتج",

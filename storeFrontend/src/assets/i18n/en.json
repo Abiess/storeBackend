@@ -78,6 +78,9 @@
     "unitPrice": "({{price}} € / unit)",
     "sku": "SKU: {{sku}}",
     "barcode": "Barcode / EAN",
+    "scanWithCamera": "Scan with camera",
+    "stopCamera": "Close camera",
+    "cameraHint": "Position barcode in front of camera",
     "quantity": "Quantity: {{count}}",
     "placeholder": {
       "name": "Enter product name",
