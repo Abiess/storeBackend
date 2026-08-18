@@ -355,6 +355,7 @@ export interface Product {
   title: string;
   sku?: string;
   barcode?: string;
+  expiryDate?: string; // ISO 8601 Date String: "2026-08-25"
   description?: string;
   price?: number;
   basePrice: number;
@@ -426,6 +427,7 @@ export interface CreateProductRequest {
   title?: string;
   sku?: string;
   barcode?: string;
+  expiryDate?: string; // ISO 8601 Date String: "2026-08-25"
   description?: string;
   price?: number;
   basePrice?: number;
@@ -781,6 +783,7 @@ export interface Store {
   greetingMessage?: string;
   /** Kunden automatisch per WhatsApp bei Bestellungen benachrichtigen */
   whatsappNotificationsEnabled?: boolean;
+  expiryNotificationDays?: number; // Tage vor Ablauf für MHD-Warnung (1-365, Default: 7)
   // ─── Social Media & Kontakt ───────────────────────────────────
   contactEmail?: string;
   contactPhone?: string;

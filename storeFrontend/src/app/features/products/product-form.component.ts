@@ -105,6 +105,19 @@ import { Subscription } from 'rxjs';
           </div>
 
           <div class="form-group">
+            <label for="expiryDate">{{ 'product.expiryDate' | translate }}</label>
+            <input 
+              type="date"
+              id="expiryDate"
+              formControlName="expiryDate"
+              [placeholder]="'product.placeholder.expiryDate' | translate"
+            />
+            <div class="form-hint">
+              {{ 'product.hint.expiryDate' | translate }}
+            </div>
+          </div>
+
+          <div class="form-group">
             <label for="description">{{ 'product.description' | translate }} *</label>
             <textarea 
               id="description"
@@ -2197,6 +2210,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
       title: ['', Validators.required],
       sku: [''],
       barcode: [''],
+      expiryDate: [''],
       description: ['', Validators.required],
       basePrice: [0, [Validators.required, Validators.min(0.01)]],
       stock: [0, [Validators.min(0)]],
@@ -2317,6 +2331,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
           title: product.title,
           sku: product.sku,
           barcode: product.barcode,
+          expiryDate: product.expiryDate,
           description: product.description,
           basePrice: product.basePrice,
           stock: product.stock ?? 0,
@@ -2449,6 +2464,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
       title: formData.title,
       sku: formData.sku || null,
       barcode: formData.barcode?.trim() || null,
+      expiryDate: formData.expiryDate || null,
       description: formData.description,
       basePrice: formData.basePrice,
       stock: formData.stock ?? 0,

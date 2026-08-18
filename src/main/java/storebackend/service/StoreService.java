@@ -284,6 +284,15 @@ public class StoreService {
             store.setWhatsappNotificationsEnabled(request.getWhatsappNotificationsEnabled());
         }
 
+        // MHD-Benachrichtigung: Tage vor Ablauf (1-365, Default 7)
+        if (request.getExpiryNotificationDays() != null) {
+            int days = request.getExpiryNotificationDays();
+            if (days < 1 || days > 365) {
+                throw new RuntimeException("Expiry notification days must be between 1 and 365");
+            }
+            store.setExpiryNotificationDays(days);
+        }
+
         if (request.getGreetingMessage() != null) {
             store.setGreetingMessage(request.getGreetingMessage().isBlank() ? null : request.getGreetingMessage().trim());
         }
@@ -786,6 +795,7 @@ public class StoreService {
         dto.setCreatedAt(store.getCreatedAt());
         dto.setWhatsappNumber(store.getWhatsappNumber());
         dto.setWhatsappNotificationsEnabled(store.isWhatsappNotificationsEnabled());
+        dto.setExpiryNotificationDays(store.getExpiryNotificationDays());
         dto.setGreetingMessage(store.getGreetingMessage());
         // ─── Social Media & Kontakt-Links ─────────────────────────────
         dto.setContactEmail(store.getContactEmail());

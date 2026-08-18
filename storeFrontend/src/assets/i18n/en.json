@@ -78,6 +78,7 @@
     "unitPrice": "({{price}} € / unit)",
     "sku": "SKU: {{sku}}",
     "barcode": "Barcode / EAN",
+    "expiryDate": "Best Before Date / Expiry Date",
     "scanWithCamera": "Scan with camera",
     "stopCamera": "Close camera",
     "cameraHint": "Position barcode in front of camera",
@@ -86,10 +87,12 @@
       "name": "Enter product name",
       "description": "Enter product description",
       "sku": "Enter SKU (optional)",
-      "barcode": "Enter Barcode / EAN (e.g. 4006040076926)"
+      "barcode": "Enter Barcode / EAN (e.g. 4006040076926)",
+      "expiryDate": "Best Before Date / Expiry Date (e.g. 08/25/2026)"
     },
     "hint": {
-      "barcode": "EAN-13, UPC or other barcode standard. Can be entered manually or scanned."
+      "barcode": "EAN-13, UPC or other barcode standard. Can be entered manually or scanned.",
+      "expiryDate": "Optional: Current best-before date of product in stock. Can be updated when new stock arrives."
     },
     "variants": {
       "title": "Variants",
@@ -485,7 +488,9 @@
       "greetingMessageHint": "This message appears pre-filled in the WhatsApp chat",
       "saveSuccess": "WhatsApp settings saved!",
       "notificationsEnabled": "Notify customers via WhatsApp",
-      "notificationsHint": "Customers automatically receive WhatsApp messages for orders & status updates (phone from shipping address is used)"
+      "notificationsHint": "Customers automatically receive WhatsApp messages for orders & status updates (phone from shipping address is used)",
+      "expiryNotificationDays": "Expiry Warning",
+      "expiryNotificationDaysHint": "How many days before the expiry date do you want to be notified? You will receive a WhatsApp message to the number above."
     },
     "business": {
       "title": "Business type",

@@ -428,6 +428,29 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_products_barcode_per_store
     AND barcode IS NOT NULL 
     AND barcode <> '';
 
+-- ═══════════════════════════════════════════════════════════════════════════
+-- MIGRATION: Product Expiry Date (MHD / Best Before Date)
+-- ═══════════════════════════════════════════════════════════════════════════
+
+ALTER TABLE products ADD COLUMN IF NOT EXISTS expiry_date DATE;
+
+-- Index für schnelle Suche nach ablaufenden Produkten (für Notifications)
+CREATE INDEX IF NOT EXISTS idx_products_expiry_date 
+  ON products(expiry_date) 
+  WHERE expiry_date IS NOT NULL;
+
+-- Idempotenz: Track welches expiryDate bereits per WhatsApp gemeldet wurde
+-- Verhindert tägliche Duplikate für dasselbe Ablaufdatum
+-- Wird auf null gesetzt, wenn expiryDate geändert wird → erneute Benachrichtigung möglich
+ALTER TABLE products ADD COLUMN IF NOT EXISTS last_expiry_notification_date DATE;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- MIGRATION: Store Expiry Notification Settings
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- Store-Manager kann einstellen, wie viele Tage vor MHD-Ablauf eine Warnung erfolgen soll
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS expiry_notification_days INTEGER DEFAULT 7;
+
 -- Product Options
 CREATE TABLE IF NOT EXISTS product_options (
                                                id BIGSERIAL PRIMARY KEY,

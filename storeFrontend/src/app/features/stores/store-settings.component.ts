@@ -125,6 +125,21 @@ export interface SettingsTab {
                 </label>
                 <small class="form-text">{{ 'settings.whatsapp.notificationsHint' | translate }}</small>
               </div>
+
+              <!-- MHD-Benachrichtigung -->
+              <div class="form-group">
+                <label for="expiryNotificationDays">{{ 'settings.whatsapp.expiryNotificationDays' | translate }}</label>
+                <input
+                  type="number"
+                  id="expiryNotificationDays"
+                  formControlName="expiryNotificationDays"
+                  class="form-control"
+                  min="1"
+                  max="365"
+                  placeholder="7"
+                />
+                <small class="form-text">{{ 'settings.whatsapp.expiryNotificationDaysHint' | translate }}</small>
+              </div>
             </div>
 
             <!-- ─── Business-Typ & Restaurant/Riad ─── -->
@@ -2021,6 +2036,7 @@ export class StoreSettingsComponent implements OnInit {
       whatsappNumber: ['', [Validators.maxLength(20)]],
       greetingMessage: ['', [Validators.maxLength(500)]],
       whatsappNotificationsEnabled: [false],
+      expiryNotificationDays: [7, [Validators.required, Validators.min(1), Validators.max(365)]],
       // ─── Social & Kontakt ──────────────────────────────────────
       contactEmail: ['', [Validators.email]],
       contactPhone: [''],
@@ -2117,6 +2133,7 @@ export class StoreSettingsComponent implements OnInit {
           whatsappNumber: store.whatsappNumber ?? '',
           greetingMessage: store.greetingMessage ?? '',
           whatsappNotificationsEnabled: store.whatsappNotificationsEnabled ?? false,
+          expiryNotificationDays:       store.expiryNotificationDays      ?? 7,
           contactEmail:  store.contactEmail  ?? '',
           contactPhone:  store.contactPhone  ?? '',
           telegramUrl:   store.telegramUrl   ?? '',

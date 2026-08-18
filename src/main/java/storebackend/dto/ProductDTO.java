@@ -5,6 +5,7 @@ import storebackend.enums.ProductStatus;
 import storebackend.enums.TaxCategory;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -14,6 +15,7 @@ public class ProductDTO {
     private String title;
     private String sku;
     private String barcode;
+    private LocalDate expiryDate;
     private String description;
     private BigDecimal basePrice;
     private Integer stock;

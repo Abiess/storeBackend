@@ -90,6 +90,7 @@ public class ProductService {
         product.setTitle(request.getTitle());
         product.setSku(request.getSku());
         product.setBarcode(request.getBarcode());
+        product.setExpiryDate(request.getExpiryDate());
         product.setDescription(request.getDescription());
         product.setBasePrice(request.getBasePrice());
         product.setStock(request.getStock() != null ? request.getStock() : 0);
@@ -147,6 +148,14 @@ public class ProductService {
     product.setTitle(request.getTitle());
     product.setSku(request.getSku());
     product.setBarcode(request.getBarcode());
+    
+    // IMPORTANT: Wenn expiryDate geändert wird, Notification-Flag zurücksetzen
+    // → neue Benachrichtigung wird möglich
+    if (request.getExpiryDate() != null && !request.getExpiryDate().equals(product.getExpiryDate())) {
+        product.setLastExpiryNotificationDate(null);
+    }
+    product.setExpiryDate(request.getExpiryDate());
+    
     product.setDescription(request.getDescription());
     product.setBasePrice(request.getBasePrice());
     product.setStock(request.getStock() != null ? request.getStock() : 0);
@@ -265,6 +274,7 @@ public class ProductService {
         dto.setTitle(product.getTitle());
         dto.setSku(product.getSku());
         dto.setBarcode(product.getBarcode());
+        dto.setExpiryDate(product.getExpiryDate());
         dto.setDescription(product.getDescription());
         dto.setBasePrice(product.getBasePrice());
         dto.setStock(product.getStock() != null ? product.getStock() : 0);

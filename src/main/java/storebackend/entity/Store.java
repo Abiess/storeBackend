@@ -60,6 +60,16 @@ public class Store {
     @Column(name = "whatsapp_notifications_enabled", nullable = false)
     private boolean whatsappNotificationsEnabled = false;
 
+    /**
+     * MHD-Benachrichtigung: Wie viele Tage vor Ablauf soll der Store-Manager gewarnt werden?
+     * Default: 7 Tage
+     * Range: 1-365 Tage
+     * Beispiel: Bei expiryNotificationDays=7 und Product.expiryDate=2026-08-25
+     *           erfolgt die Warnung ab 2026-08-18
+     */
+    @Column(name = "expiry_notification_days")
+    private Integer expiryNotificationDays = 7;
+
     // ─── Social Media & Kontakt-Links ────────────────────────
     @Column(name = "contact_email")
     private String contactEmail;

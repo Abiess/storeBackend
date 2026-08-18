@@ -10,6 +10,7 @@ import storebackend.entity.SecurityEvent;
 import storebackend.enums.EventType;
 import storebackend.enums.BlockReason;
 import storebackend.repository.SecurityEventRepository;
+import storebackend.scheduler.ExpiryNotificationScheduler;
 import storebackend.service.SecurityEventService;
 
 import javax.sql.DataSource;
@@ -35,6 +36,9 @@ public class DiagnosticsController {
     private final DataSource dataSource;
     private final SecurityEventRepository securityEventRepository;
     private final SecurityEventService securityEventService;
+    
+    @Autowired(required = false)
+    private ExpiryNotificationScheduler expiryNotificationScheduler;
 
     /**
      * System-Info: Build, DB-Connection, Active Profiles

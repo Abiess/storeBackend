@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import storebackend.enums.ProductStatus;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,6 +20,8 @@ public class CreateProductRequest {
     private String sku;
 
     private String barcode;
+
+    private LocalDate expiryDate;
 
     private String description;
 

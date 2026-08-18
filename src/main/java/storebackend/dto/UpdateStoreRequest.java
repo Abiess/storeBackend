@@ -25,6 +25,7 @@ public class UpdateStoreRequest {
     // WhatsApp-Kontaktdaten – optional, null = nicht ändern
     private String whatsappNumber;
     private Boolean whatsappNotificationsEnabled;
+    private Integer expiryNotificationDays; // Tage vor Ablauf für MHD-Warnung (1-365)
     private String greetingMessage;
 
     // ─── Social Media & Kontakt-Links ─────────────────────

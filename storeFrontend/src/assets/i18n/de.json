@@ -196,6 +196,7 @@
     "unitPrice": "({{price}} € / Stk.)",
     "sku": "SKU: {{sku}}",
     "barcode": "Barcode / EAN",
+    "expiryDate": "MHD / Ablaufdatum",
     "scanWithCamera": "Mit Kamera scannen",
     "stopCamera": "Kamera schließen",
     "cameraHint": "Barcode vor der Kamera positionieren",
@@ -203,10 +204,12 @@
       "name": "Produktname eingeben",
       "description": "Produktbeschreibung eingeben",
       "sku": "SKU eingeben (optional)",
-      "barcode": "Barcode / EAN eingeben (z.B. 4006040076926)"
+      "barcode": "Barcode / EAN eingeben (z.B. 4006040076926)",
+      "expiryDate": "Ablaufdatum / Mindesthaltbarkeitsdatum (z.B. 25.08.2026)"
     },
     "hint": {
-      "barcode": "EAN-13, UPC oder anderer Barcode-Standard. Kann manuell eingegeben oder gescannt werden."
+      "barcode": "EAN-13, UPC oder anderer Barcode-Standard. Kann manuell eingegeben oder gescannt werden.",
+      "expiryDate": "Optional: Aktuelles MHD des Produkts im Lager. Bei neuer Ware kann das Datum aktualisiert werden."
     },
     "variants": {
       "title": "Varianten",
@@ -604,7 +607,9 @@
       "greetingMessageHint": "Diese Nachricht erscheint vorausgefüllt im WhatsApp-Chat",
       "saveSuccess": "WhatsApp-Einstellungen gespeichert!",
       "notificationsEnabled": "Kunden per WhatsApp benachrichtigen",
-      "notificationsHint": "Bei neuen Bestellungen & Status-�nderungen erhalten Kunden automatisch eine WhatsApp-Nachricht (Kundennummer aus Lieferadresse wird verwendet)"
+      "notificationsHint": "Bei neuen Bestellungen & Status-Änderungen erhalten Kunden automatisch eine WhatsApp-Nachricht (Kundennummer aus Lieferadresse wird verwendet)",
+      "expiryNotificationDays": "MHD-Warnung",
+      "expiryNotificationDaysHint": "Wie viele Tage vor dem Ablaufdatum möchten Sie benachrichtigt werden? Sie erhalten eine WhatsApp-Nachricht an die oben eingetragene Nummer."
     },
     "business": {
       "title": "Geschäftstyp",

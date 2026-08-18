@@ -25,4 +25,11 @@ public interface StoreRepository extends JpaRepository<Store, Long> {
 
     @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END FROM Store s WHERE s.id = :storeId AND s.owner.id = :userId")
     boolean isStoreOwnedByUser(@Param("storeId") Long storeId, @Param("userId") Long userId);
+
+    /**
+     * MHD-Benachrichtigungen: Alle Stores mit konfigurierter WhatsApp-Nummer.
+     * Nur diese Stores können Ablauf-Benachrichtigungen empfangen.
+     */
+    @Query("SELECT s FROM Store s WHERE s.whatsappNumber IS NOT NULL AND s.whatsappNumber != ''")
+    List<Store> findAllWithWhatsAppNumber();
 }

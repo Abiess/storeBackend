@@ -8,6 +8,7 @@ import storebackend.entity.Product;
 import storebackend.entity.Store;
 import storebackend.enums.ProductStatus;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -66,6 +67,29 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     /** Anzahl aller Produkte über alle Stores eines Owners. */
     @Query("SELECT COUNT(p) FROM Product p WHERE p.store.owner.id = :ownerId")
     long countByOwnerId(@Param("ownerId") Long ownerId);
+
+    /**
+     * MHD-Benachrichtigungen: Finde alle Produkte eines Stores, die bald ablaufen.
+     * 
+     * Bedingungen:
+     * - expiryDate ist gesetzt (nicht null)
+     * - expiryDate liegt zwischen today und warningDate (inklusiv)
+     * - Noch keine Benachrichtigung für dieses expiryDate gesendet
+     *   (lastExpiryNotificationDate ist null ODER unterscheidet sich von expiryDate)
+     * 
+     * Multi-Tenant: Query filtert automatisch auf storeId.
+     */
+    @Query("SELECT p FROM Product p WHERE p.store.id = :storeId " +
+           "AND p.expiryDate IS NOT NULL " +
+           "AND p.expiryDate >= :today " +
+           "AND p.expiryDate <= :warningDate " +
+           "AND (p.lastExpiryNotificationDate IS NULL OR p.lastExpiryNotificationDate != p.expiryDate) " +
+           "ORDER BY p.expiryDate ASC")
+    List<Product> findExpiringProductsForNotification(
+        @Param("storeId") Long storeId,
+        @Param("today") LocalDate today,
+        @Param("warningDate") LocalDate warningDate
+    );
 
     // ── Supplier Catalog Methoden (ersetzen findAll() in SupplierProductService) ──
 

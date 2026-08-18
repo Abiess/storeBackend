@@ -8,6 +8,7 @@ import storebackend.enums.ProductStatus;
 import storebackend.enums.TaxCategory;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -47,6 +48,18 @@ public class Product {
 
     @Column(name = "barcode", length = 100)
     private String barcode;
+
+    @Column(name = "expiry_date")
+    private LocalDate expiryDate;
+
+    /**
+     * Idempotenz für MHD-Benachrichtigungen:
+     * Welches expiryDate wurde bereits per WhatsApp gemeldet?
+     * Verhindert tägliche Duplikate für dasselbe Ablaufdatum.
+     * Wird auf null gesetzt, wenn expiryDate geändert wird → erneute Benachrichtigung möglich.
+     */
+    @Column(name = "last_expiry_notification_date")
+    private LocalDate lastExpiryNotificationDate;
 
     @Column(columnDefinition = "TEXT")
     private String description;
