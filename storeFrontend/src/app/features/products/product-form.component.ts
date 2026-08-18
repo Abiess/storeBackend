@@ -2452,6 +2452,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     const updateData = {
       title: formData.title,
       sku: formData.sku || null,
+      barcode: formData.barcode?.trim() || null,
       description: formData.description,
       basePrice: formData.basePrice,
       stock: formData.stock ?? 0,
