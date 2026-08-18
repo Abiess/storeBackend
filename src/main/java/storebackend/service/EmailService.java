@@ -479,19 +479,20 @@ public class EmailService {
      * @param customerName   Name des Kunden (optional)
      * @param paymentMethod  Zahlungsmethode (optional)
      * @param items          Bestellte Artikel
+     * @return true wenn erfolgreich gesendet
      */
-    public void sendNewOrderNotificationToOwner(String ownerEmail, String ownerLang,
+    public boolean sendNewOrderNotificationToOwner(String ownerEmail, String ownerLang,
                                                 String orderNumber, String storeName,
                                                 String storeLogo, Double totalAmount,
                                                 String customerEmail, String customerName,
                                                 String paymentMethod, List<OrderItem> items) {
         if (!mailEnabled) {
             log.info("Mail disabled – new order notification to owner: {} order: {}", ownerEmail, orderNumber);
-            return;
+            return false;
         }
         if (ownerEmail == null || ownerEmail.isBlank()) {
             log.warn("Cannot send owner notification – owner email is null for order: {}", orderNumber);
-            return;
+            return false;
         }
         try {
             String lang = ownerLang != null ? ownerLang : "en";
@@ -543,8 +544,10 @@ public class EmailService {
             sendHtml(ownerEmail, templateService.renderSubject(subjectTpl, vars),
                      templateService.render("new-order-notification.html", lang, vars));
             log.info("New order notification (HTML/{}) sent to owner: {} order: {}", lang, ownerEmail, orderNumber);
+            return true;
         } catch (Exception e) {
             log.error("Failed to send new order notification to owner: {}", ownerEmail, e);
+            return false;
         }
     }
 

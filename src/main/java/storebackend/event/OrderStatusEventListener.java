@@ -138,40 +138,63 @@ public class OrderStatusEventListener {
                 
                 // 2) WhatsApp-Bestätigung an den Kunden (wenn aktiviert + Nummer vorhanden)
                 if (waEnabled && customerPhone != null && !customerPhone.isBlank()) {
-                    whatsAppService.sendOrderConfirmation(
+                    boolean waCustomerSuccess = whatsAppService.sendOrderConfirmation(
                         customerPhone, orderNumber, storeName,
                         order.getTotalAmount().doubleValue(), lang);
-                    log.info("[WA] Order confirmation sent to customer {}", customerPhone);
+                    if (waCustomerSuccess) {
+                        log.info("[WA] Order confirmation sent to customer {}", customerPhone);
+                    } else {
+                        log.warn("[WA] Order confirmation FAILED for customer {}", customerPhone);
+                    }
                 }
                 
                 // 3) Neue-Bestellung-Benachrichtigung an den Store-Owner (E-Mail)
                 String customerName   = order.getCustomer() != null ? order.getCustomer().getName()  : null;
                 String paymentMethod  = order.getPaymentMethod() != null ? order.getPaymentMethod().name() : null;
-                emailService.sendNewOrderNotificationToOwner(
+                boolean ownerEmailSuccess = emailService.sendNewOrderNotificationToOwner(
                     ownerEmail, ownerLang,
                     orderNumber, storeName, storeLogo,
                     order.getTotalAmount().doubleValue(),
                     customerEmail, customerName, paymentMethod, items
                 );
+                if (ownerEmailSuccess) {
+                    log.info("[Email] New order notification sent to owner {}", ownerEmail);
+                } else {
+                    log.warn("[Email] New order notification FAILED for owner {}", ownerEmail);
+                }
                 
                 // 4) Neue-Bestellung-Benachrichtigung an Owner via WhatsApp
                 if (ownerWhatsapp != null && !ownerWhatsapp.isBlank()) {
-                    whatsAppService.sendNewOrderToOwner(
+                    boolean waOwnerSuccess = whatsAppService.sendNewOrderToOwner(
                         ownerWhatsapp, orderNumber, storeName,
                         order.getTotalAmount().doubleValue(), customerEmail, ownerLang);
-                    log.info("[WA] New order notification sent to owner {}", ownerWhatsapp);
+                    if (waOwnerSuccess) {
+                        log.info("[WA] New order notification sent to owner {}", ownerWhatsapp);
+                    } else {
+                        log.warn("[WA] New order notification FAILED for owner {}", ownerWhatsapp);
+                    }
                 }
                 
                 // 5) Neue-Bestellung-Benachrichtigung an Owner via Telegram Bot
                 if (telegramCfg != null && telegramBotService.isConfigured(telegramCfg)) {
-                    telegramBotService.sendNewOrderNotification(telegramCfg, order);
-                    log.info("[Telegram] New order notification sent via Bot for store {}", store.getId());
+                    boolean tgSuccess = telegramBotService.sendNewOrderNotification(telegramCfg, order);
+                    if (tgSuccess) {
+                        log.info("[Telegram] New order notification sent via Bot for store {}", store.getId());
+                    } else {
+                        log.warn("[Telegram] New order notification FAILED for store {}", store.getId());
+                    }
                 }
                 
                 // ═══ IDEMPOTENZ-FLAG SETZEN ═══
-                order.setConfirmationEmailSent(true);
-                orderRepository.save(order);
-                log.info("Confirmation email sent and flagged for order {}", orderNumber);
+                // NUR bei erfolgreichem E-Mail-Versand an Kunden!
+                if (confirmationResult.isSent()) {
+                    order.setConfirmationEmailSent(true);
+                    orderRepository.save(order);
+                    log.info("✅ Confirmation email sent and flagged for order {}", orderNumber);
+                } else {
+                    log.warn("⚠️ Confirmation email FAILED - order NOT flagged, retry remains possible: order={}, errorCode={}", 
+                        orderNumber, confirmationResult.errorCode());
+                }
                 
                 break;
 
