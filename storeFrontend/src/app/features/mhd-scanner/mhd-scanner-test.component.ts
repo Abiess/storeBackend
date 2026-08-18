@@ -641,45 +641,101 @@ export class MhdScannerTestComponent implements OnInit, AfterViewInit, OnDestroy
 
       let selectedDeviceId: string | null = null;
 
-      // Prüfen, ob bereits eine Rückkamera-ID gespeichert ist
+      // Strategie 1: Bereits gespeicherte und bestätigte Rückkamera verwenden
       if (this.preferredBackCameraId) {
-        // Verfügbare Geräte abrufen
         const videoInputDevices = await this.codeReader.listVideoInputDevices();
-        
-        // Prüfen, ob die gespeicherte Kamera noch verfügbar ist
         const savedCamera = videoInputDevices.find(device => device.deviceId === this.preferredBackCameraId);
         
         if (savedCamera) {
           selectedDeviceId = this.preferredBackCameraId;
-          console.log('✅ Gespeicherte Rückkamera wiederverwendet:', savedCamera.label);
+          console.log('✅ [Strategy 1] Gespeicherte Rückkamera wiederverwendet');
+          console.log('   Device ID:', savedCamera.deviceId);
+          console.log('   Label:', savedCamera.label);
         } else {
-          console.log('⚠️ Gespeicherte Kamera nicht mehr verfügbar, neue Suche...');
-          this.preferredBackCameraId = null; // Zurücksetzen
+          console.log('⚠️ Gespeicherte Kamera nicht mehr verfügbar, neue Auswahl...');
+          this.preferredBackCameraId = null;
         }
       }
 
-      // Falls keine gespeicherte Kamera: neue Suche
+      // Strategie 2: facingMode: environment direkt nutzen
       if (!selectedDeviceId) {
-        const videoInputDevices = await this.codeReader.listVideoInputDevices();
-        console.log('📷 Verfügbare Kameras:', videoInputDevices.length);
+        console.log('🔍 [Strategy 2] Versuche facingMode: environment...');
+        
+        try {
+          // Erst mit getUserMedia die Rückkamera anfordern
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { 
+              facingMode: { ideal: 'environment' }
+            }
+          });
 
-        // Rückkamera bevorzugen (falls vorhanden)
-        const backCamera = videoInputDevices.find(device => 
-          device.label.toLowerCase().includes('back') || 
-          device.label.toLowerCase().includes('rear') ||
-          device.label.toLowerCase().includes('environment')
-        );
+          // deviceId aus dem Stream extrahieren
+          const track = stream.getVideoTracks()[0];
+          const settings = track.getSettings();
+          
+          console.log('📷 getUserMedia erfolgreich:');
+          console.log('   Device ID:', settings.deviceId);
+          console.log('   Label:', track.label);
+          console.log('   Facing Mode:', settings.facingMode);
+          
+          if (settings.deviceId) {
+            selectedDeviceId = settings.deviceId;
+            this.preferredBackCameraId = settings.deviceId; // Für nächste Scans speichern
+            console.log('✅ Rückkamera via facingMode gefunden und gespeichert');
+          }
+          
+          // Stream sofort stoppen, da ZXing eigenen Stream öffnet
+          stream.getTracks().forEach(track => track.stop());
+          
+        } catch (envError) {
+          console.warn('⚠️ facingMode: environment nicht verfügbar:', envError);
+        }
+      }
+
+      // Strategie 3: Label-basierte Suche (Fallback für ältere Browser)
+      if (!selectedDeviceId) {
+        console.log('🔍 [Strategy 3] Label-basierte Kamerasuche...');
+        
+        const videoInputDevices = await this.codeReader.listVideoInputDevices();
+        console.log(`📷 Verfügbare Kameras (${videoInputDevices.length}):`);
+        videoInputDevices.forEach((device, index) => {
+          console.log(`   [${index}] ${device.label} (${device.deviceId})`);
+        });
+
+        // Rückkamera via Label finden
+        const backCamera = videoInputDevices.find(device => {
+          const label = device.label.toLowerCase();
+          return label.includes('back') || 
+                 label.includes('rear') || 
+                 label.includes('environment') ||
+                 label.includes('rück'); // Deutsch
+        });
 
         if (backCamera) {
           selectedDeviceId = backCamera.deviceId;
-          this.preferredBackCameraId = backCamera.deviceId; // Speichern für nächstes Mal
-          console.log('✅ Rückkamera gefunden und gespeichert:', backCamera.label);
-        } else if (videoInputDevices.length > 0) {
-          selectedDeviceId = videoInputDevices[0].deviceId;
-          this.preferredBackCameraId = videoInputDevices[0].deviceId; // Erste Kamera speichern
-          console.log('✅ Erste verfügbare Kamera gespeichert:', videoInputDevices[0].label);
+          this.preferredBackCameraId = backCamera.deviceId;
+          console.log('✅ Rückkamera via Label gefunden:', backCamera.label);
+        } else {
+          console.warn('⚠️ Keine Rückkamera via Label gefunden');
         }
       }
+
+      // Strategie 4: Letzte Option - erste Kamera (NUR wenn wirklich keine andere Wahl)
+      if (!selectedDeviceId) {
+        const videoInputDevices = await this.codeReader.listVideoInputDevices();
+        if (videoInputDevices.length > 0) {
+          selectedDeviceId = videoInputDevices[0].deviceId;
+          console.warn('⚠️ [Strategy 4 - Fallback] Erste verfügbare Kamera:', videoInputDevices[0].label);
+          console.warn('   ⚠️ WARNUNG: Dies könnte die Frontkamera sein!');
+          // Bewusst NICHT als preferredBackCameraId speichern!
+        }
+      }
+
+      if (!selectedDeviceId) {
+        throw new Error('Keine Kamera verfügbar');
+      }
+
+      console.log('🎥 Starte ZXing mit Device ID:', selectedDeviceId);
 
       // Kamera starten
       const videoElement = this.videoElement.nativeElement;
