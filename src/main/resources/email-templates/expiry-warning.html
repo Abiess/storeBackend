@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="{{lang}}" dir="{{dir}}">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>{{title}}</title>
+<style>
+* { margin:0;padding:0;box-sizing:border-box; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#f4f6f9;color:#333; }
+.wrapper { max-width:620px;margin:30px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08); }
+.header { background:linear-gradient(135deg,#f59e0b 0%,#dc2626 100%);padding:36px 40px;text-align:center; }
+.header img.logo { max-height:48px;margin-bottom:12px; }
+.header h1 { color:#fff;font-size:22px;font-weight:700; }
+.header-logo { width:78px;height:78px;border-radius:14px;margin:0 auto 14px;display:block;background:#fff; }
+.badge { display:inline-block;background:rgba(255,255,255,0.25);color:#fff;font-size:12px;font-weight:700;padding:4px 12px;border-radius:999px;text-transform:uppercase;letter-spacing:0.5px;margin-top:8px; }
+.warning-icon { font-size:48px;margin-bottom:8px; }
+.body { padding:36px 40px; }
+.greeting { font-size:16px;color:#555;margin-bottom:18px; }
+.intro { font-size:15px;color:#444;line-height:1.7;margin-bottom:24px; }
+.warning-box { background:#fef3c7;border:2px solid #f59e0b;border-radius:8px;padding:20px 24px;margin:20px 0; }
+.warning-box strong { color:#dc2626; }
+.section-title { font-size:12px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:0.5px;margin:24px 0 10px; }
+table.products { width:100%;border-collapse:collapse;font-size:14px;margin-top:12px; }
+table.products th { background:#fee2e2;color:#dc2626;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;padding:10px 12px;text-align:left; }
+table.products td { padding:12px;border-bottom:1px solid #f5f5f5;color:#444;vertical-align:top; }
+table.products tr:last-child td { border-bottom:none; }
+.product-name { font-weight:600;color:#333; }
+.expiry-date { color:#666;font-size:13px; }
+.days-remaining { font-weight:700; }
+.days-urgent { color:#dc2626; }
+.days-warning { color:#f59e0b; }
+.days-ok { color:#10b981; }
+.outro { font-size:14px;color:#666;line-height:1.7;margin-top:20px; }
+.btn-wrap { text-align:center;margin:24px 0; }
+.btn { display:inline-block;background:linear-gradient(135deg,#f59e0b 0%,#dc2626 100%);color:#fff!important;text-decoration:none;padding:13px 30px;border-radius:8px;font-size:14px;font-weight:600; }
+.footer { background:#f8f9ff;border-top:1px solid #eee;padding:24px 40px;text-align:center; }
+.footer p { font-size:13px;color:#888;line-height:1.8; }
+.footer a { color:#667eea;text-decoration:none; }
+[dir="rtl"] table.products th { text-align:right; }
+@media(max-width:480px){
+  .body,.header,.footer{padding:20px;}
+  table.products th,table.products td{padding:8px;font-size:13px;}
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    {{#storeLogo}}<img class="logo" src="{{storeLogo}}" alt="{{storeName}}">{{/storeLogo}}
+    <div class="warning-icon">⚠️</div>
+    <h1>{{title}}</h1>
+    <span class="badge">{{storeName}}</span>
+  </div>
+  <div class="body">
+    <p class="greeting">{{greeting}}</p>
+    <p class="intro">{{intro}}</p>
+
+    <!-- Warning Summary -->
+    <div class="warning-box">
+      <strong>{{productCount}}</strong> {{productLabel}}
+    </div>
+
+    <!-- Products Table -->
+    {{#hasProducts}}
+    <p class="section-title">{{labelProducts}}</p>
+    <table class="products">
+      <thead>
+        <tr>
+          <th>{{labelProduct}}</th>
+          <th>{{labelExpiryDate}}</th>
+          <th>{{labelDaysRemaining}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#products}}
+        <tr>
+          <td><span class="product-name">{{name}}</span></td>
+          <td><span class="expiry-date">{{expiryDate}}</span></td>
+          <td><span class="days-remaining {{urgencyClass}}">{{daysRemaining}}</span></td>
+        </tr>
+        {{/products}}
+      </tbody>
+    </table>
+    {{/hasProducts}}
+
+    <p class="outro">{{outro}}</p>
+
+    <div class="btn-wrap">
+      <a class="btn" href="{{manageUrl}}">{{btnManage}}</a>
+    </div>
+  </div>
+  <div class="footer">
+    <p>{{footerTeam}}</p>
+    <p><a href="mailto:support@markt.ma">{{footerSupport}}</a></p>
+    <p>{{footerUnsubscribe}}</p>
+  </div>
+</div>
+</body>
+</html>

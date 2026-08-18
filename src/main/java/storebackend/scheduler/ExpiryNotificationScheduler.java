@@ -12,7 +12,10 @@ import storebackend.service.WhatsAppService;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Täglicher Scheduler für MHD-Benachrichtigungen.
@@ -33,6 +36,7 @@ public class ExpiryNotificationScheduler {
     private final StoreRepository storeRepository;
     private final ProductRepository productRepository;
     private final WhatsAppService whatsAppService;
+    private final storebackend.service.EmailService emailService;
 
     /**
      * Täglich 09:00 — MHD-Warnung für ablaufende Produkte.
@@ -85,7 +89,10 @@ public class ExpiryNotificationScheduler {
     /**
      * Prüft Produkte eines einzelnen Stores und sendet Benachrichtigung falls nötig.
      * 
-     * @return true wenn Benachrichtigung gesendet wurde
+     * Sendet über beide Kanäle (E-Mail + WhatsApp). Mindestens ein ECHTER Kanal
+     * muss erfolgreich sein, damit Produkte als benachrichtigt markiert werden.
+     * 
+     * @return true wenn mindestens eine echte Benachrichtigung gesendet wurde
      */
     private boolean checkStoreProducts(Store store, LocalDate today) {
         // Berechne Warnungsdatum basierend auf Store-Einstellung
@@ -110,30 +117,78 @@ public class ExpiryNotificationScheduler {
         log.info("⚠️ [MHD] Store {}: {} Produkte laufen bald ab", 
             store.getId(), expiringProducts.size());
 
-        // Sammelnachricht bauen
-        String message = buildExpiryMessage(store, expiringProducts, today);
-
-        // WhatsApp senden
-        String ownerPhone = store.getWhatsappNumber();
-        boolean success = whatsAppService.sendMessage(ownerPhone, message);
-
-        if (success) {
-            // WICHTIG: Im DEV Mode (whatsapp.enabled=false) gibt simulateSend() auch true zurück.
-            // Um Tests wiederholbar zu machen, prüfen wir ob WhatsApp wirklich aktiviert ist.
-            if (!whatsAppService.isEnabled()) {
-                log.warn("⚠️ [MHD/DEV] Nachricht simuliert - Produkte werden NICHT als benachrichtigt markiert");
-                log.warn("⚠️ [MHD/DEV] Für echte Benachrichtigungen: whatsapp.enabled=true setzen");
-                return false; // Produkte bleiben testbar
+        // ═══════════════════════════════════════════════════════════════════════
+        // KANAL 1: E-MAIL (unabhängig)
+        // ═══════════════════════════════════════════════════════════════════════
+        boolean emailSuccess = false;
+        try {
+            String ownerEmail = store.getOwner() != null ? store.getOwner().getEmail() : null;
+            String ownerLang = store.getOwner() != null ? store.getOwner().getPreferredLanguage() : "en";
+            
+            if (ownerEmail != null && !ownerEmail.isBlank()) {
+                // Produkt-Liste für E-Mail vorbereiten
+                List<Map<String, Object>> emailProducts = buildEmailProductList(expiringProducts, today);
+                
+                emailSuccess = emailService.sendExpiryWarning(
+                    ownerEmail,
+                    ownerLang,
+                    store.getName(),
+                    null, // storeLogo (optional)
+                    emailProducts,
+                    null  // manageUrl (default)
+                );
+                
+                if (emailSuccess) {
+                    log.info("✅ [MHD/Email] Benachrichtigung gesendet an {}", ownerEmail);
+                } else {
+                    log.warn("⚠️ [MHD/Email] Versand fehlgeschlagen oder DEV Mode für {}", ownerEmail);
+                }
+            } else {
+                log.debug("ℹ️ [MHD/Email] Store {} hat keine Owner-E-Mail", store.getId());
             }
-            
-            log.info("✅ [MHD] Benachrichtigung gesendet an Store {} ({})", 
-                store.getId(), ownerPhone);
-            
-            // Nur bei echtem Erfolg als benachrichtigt markieren
+        } catch (Exception e) {
+            log.error("❌ [MHD/Email] Fehler beim E-Mail-Versand für Store {}", store.getId(), e);
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // KANAL 2: WHATSAPP (unabhängig)
+        // ═══════════════════════════════════════════════════════════════════════
+        boolean whatsappRealSuccess = false;
+        try {
+            String ownerPhone = store.getWhatsappNumber();
+            if (ownerPhone != null && !ownerPhone.isBlank()) {
+                // WhatsApp-Nachricht bauen
+                String message = buildExpiryMessage(store, expiringProducts, today);
+                
+                boolean wapiSuccess = whatsAppService.sendMessage(ownerPhone, message);
+                
+                // Prüfen ob ECHTE Zustellung (nicht nur DEV-Simulation)
+                if (wapiSuccess && whatsAppService.isEnabled()) {
+                    whatsappRealSuccess = true;
+                    log.info("✅ [MHD/WhatsApp] Benachrichtigung gesendet an {}", ownerPhone);
+                } else if (wapiSuccess && !whatsAppService.isEnabled()) {
+                    log.warn("⚠️ [MHD/WhatsApp] DEV Mode - Nachricht nur simuliert");
+                } else {
+                    log.error("❌ [MHD/WhatsApp] Versand fehlgeschlagen für {}", ownerPhone);
+                }
+            } else {
+                log.debug("ℹ️ [MHD/WhatsApp] Store {} hat keine WhatsApp-Nummer", store.getId());
+            }
+        } catch (Exception e) {
+            log.error("❌ [MHD/WhatsApp] Fehler beim WhatsApp-Versand für Store {}", store.getId(), e);
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // IDEMPOTENZ: Mindestens 1 ECHTER Kanal erfolgreich?
+        // ═══════════════════════════════════════════════════════════════════════
+        if (emailSuccess || whatsappRealSuccess) {
+            log.info("✅ [MHD] Store {}: Mindestens 1 Kanal erfolgreich (E-Mail: {}, WhatsApp: {}) - Produkte werden markiert",
+                store.getId(), emailSuccess, whatsappRealSuccess);
             markProductsAsNotified(expiringProducts);
             return true;
         } else {
-            log.error("❌ [MHD] WhatsApp-Versand fehlgeschlagen für Store {}", store.getId());
+            log.warn("⚠️ [MHD] Store {}: ALLE Kanäle fehlgeschlagen oder DEV Mode - Produkte bleiben unmarkiert (Retry möglich)",
+                store.getId());
             return false;
         }
     }
@@ -222,6 +277,53 @@ public class ExpiryNotificationScheduler {
             date.getMonthValue(), 
             date.getYear()
         );
+    }
+
+    /**
+     * Baut die Produktliste für E-Mail-Template.
+     * 
+     * Jedes Produkt wird als Map mit folgenden Keys zurückgegeben:
+     * - name: Produktname
+     * - expiryDate: Formatiertes Datum (dd.MM.yyyy)
+     * - daysRemaining: Text mit verbleibenden Tagen
+     * - urgencyClass: CSS-Klasse (days-urgent / days-warning / days-ok)
+     */
+    private List<Map<String, Object>> buildEmailProductList(List<Product> products, LocalDate today) {
+        List<Map<String, Object>> result = new ArrayList<>();
+        
+        for (Product product : products) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("name", product.getTitle());
+            item.put("expiryDate", formatDate(product.getExpiryDate()));
+            
+            long daysRemaining = ChronoUnit.DAYS.between(today, product.getExpiryDate());
+            
+            // Days Remaining Text
+            String daysText;
+            if (daysRemaining == 0) {
+                daysText = "Expires today!";
+            } else if (daysRemaining == 1) {
+                daysText = "1 day left";
+            } else {
+                daysText = daysRemaining + " days left";
+            }
+            item.put("daysRemaining", daysText);
+            
+            // Urgency CSS Class
+            String urgencyClass;
+            if (daysRemaining <= 2) {
+                urgencyClass = "days-urgent";  // Red
+            } else if (daysRemaining <= 5) {
+                urgencyClass = "days-warning"; // Orange
+            } else {
+                urgencyClass = "days-ok";      // Green
+            }
+            item.put("urgencyClass", urgencyClass);
+            
+            result.add(item);
+        }
+        
+        return result;
     }
 
     /**

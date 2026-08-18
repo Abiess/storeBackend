@@ -548,6 +548,91 @@ public class EmailService {
         }
     }
 
+    /**
+     * MHD-Warnung an Store Owner: Produkte laufen bald ab.
+     * 
+     * @param ownerEmail E-Mail des Store Owners
+     * @param ownerLang Sprache des Owners (de/en/ar)
+     * @param storeName Name des Stores
+     * @param storeLogo Logo-URL (optional)
+     * @param products Liste der ablaufenden Produkte mit Name, ExpiryDate, DaysRemaining
+     * @param manageUrl URL zum Store-Management
+     * @return true wenn erfolgreich gesendet (ECHT, nicht simuliert)
+     */
+    public boolean sendExpiryWarning(String ownerEmail, String ownerLang,
+                                      String storeName, String storeLogo,
+                                      List<Map<String, Object>> products,
+                                      String manageUrl) {
+        if (!mailEnabled) {
+            log.info("[Email/DEV] SIMULATED: Expiry warning to {} ({} products)", 
+                    ownerEmail, products.size());
+            return false; // ← DEV = kein echter Erfolg
+        }
+        
+        if (ownerEmail == null || ownerEmail.isBlank()) {
+            log.warn("Cannot send expiry warning – owner email is null/empty");
+            return false;
+        }
+        
+        if (products == null || products.isEmpty()) {
+            log.warn("Cannot send expiry warning – no products provided");
+            return false;
+        }
+        
+        try {
+            String lang = ownerLang != null ? ownerLang : "en";
+            Map<String, Object> vars = new HashMap<>();
+            
+            // Store Info
+            vars.put("storeName",     storeName);
+            vars.put("storeLogo",     storeLogo);
+            vars.put("productCount",  products.size());
+            vars.put("manageUrl",     manageUrl != null ? manageUrl : (baseUrl + "/stores"));
+            
+            // Greeting & Content
+            vars.put("greeting",      buildGreeting(lang, null));
+            vars.put("title",         t(lang, "expiryWarning.title",         "⚠️ Expiry Warning"));
+            vars.put("intro",         t(lang, "expiryWarning.intro",         "The following products in your store are approaching their expiry date."));
+            vars.put("productLabel",  products.size() == 1 
+                ? t(lang, "expiryWarning.productSingular", "product expires soon")
+                : t(lang, "expiryWarning.productPlural",   "products expire soon"));
+            
+            // Table Labels
+            vars.put("labelProducts",       t(lang, "expiryWarning.labelProducts",       "Expiring Products"));
+            vars.put("labelProduct",        t(lang, "expiryWarning.labelProduct",        "Product"));
+            vars.put("labelExpiryDate",     t(lang, "expiryWarning.labelExpiryDate",     "Expiry Date"));
+            vars.put("labelDaysRemaining",  t(lang, "expiryWarning.labelDaysRemaining",  "Days Left"));
+            
+            // Action
+            vars.put("outro",         t(lang, "expiryWarning.outro",         "Please check your inventory and take appropriate action."));
+            vars.put("btnManage",     t(lang, "expiryWarning.btnManage",     "Manage Inventory"));
+            
+            // Footer
+            addFooter(lang, vars);
+            
+            // Products List
+            vars.put("hasProducts", true);
+            vars.put("products", products);
+            
+            // Subject
+            String subjectTpl = t(lang, "expiryWarning.subject",
+                    "⚠️ MHD Warning – {{productCount}} products expire soon – {{storeName}}");
+            
+            // Render & Send
+            sendHtml(ownerEmail, 
+                    templateService.renderSubject(subjectTpl, vars),
+                    templateService.render("expiry-warning.html", lang, vars));
+            
+            log.info("✅ Expiry warning (HTML/{}) sent to owner: {} ({} products)", 
+                    lang, ownerEmail, products.size());
+            return true; // ← Echter Erfolg
+            
+        } catch (Exception e) {
+            log.error("❌ Failed to send expiry warning to owner: {}", ownerEmail, e);
+            return false;
+        }
+    }
+
     // ==================================================================================
     // ORDER E-MAILS
     // ==================================================================================
