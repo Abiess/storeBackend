@@ -1004,7 +1004,8 @@
       "teamRoles": "Team & Rollen",
       "telegram": "Telegram",
       "platformDelivery": "🚚 Lieferoptionen",
-      "supplierInvoices": "Lieferantenrechnungen"
+      "supplierInvoices": "Lieferantenrechnungen",
+      "mhdScannerTest": "MHD Scanner Test"
     },
     "noStore": {
       "hint": "Kein Store ausgewählt",
@@ -3187,5 +3188,15 @@
       "IMPORT_BUTTON": "Import durchführen",
       "COMING_NEXT": "Der eigentliche Import folgt im nächsten Schritt"
     }
+  },
+  "mhdScanner": {
+    "barcodeInputLabel": "Barcode-Eingabe",
+    "barcodeInputPlaceholder": "Barcode hier eingeben oder scannen...",
+    "currentValue": "Aktuelle Eingabe",
+    "lastScanned": "Zuletzt gescannt",
+    "instructionsTitle": "Anleitung",
+    "instruction1": "Klicken Sie in das Eingabefeld oder warten Sie auf den automatischen Fokus",
+    "instruction2": "Scannen Sie einen Barcode mit Ihrem Scanner (wird als Tastatureingabe erkannt)",
+    "instruction3": "Nach dem Scannen (Enter) wird der Barcode in der Konsole ausgegeben und das Feld wird geleert"
   }
 }

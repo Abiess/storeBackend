@@ -1646,7 +1646,8 @@
       "telegram": "Telegram",
       "woocommerce": "WooCommerce Import",
       "platformDelivery": "🚚 Delivery Options",
-      "supplierInvoices": "Supplier Invoices"
+      "supplierInvoices": "Supplier Invoices",
+      "mhdScannerTest": "Best Before Date Scanner Test"
     },
     "noStore": {
       "hint": "No store selected",
@@ -3152,5 +3153,15 @@
       "IMPORT_BUTTON": "Execute Import",
       "COMING_NEXT": "Actual import will follow in next step"
     }
+  },
+  "mhdScanner": {
+    "barcodeInputLabel": "Barcode Input",
+    "barcodeInputPlaceholder": "Enter or scan barcode here...",
+    "currentValue": "Current Input",
+    "lastScanned": "Last Scanned",
+    "instructionsTitle": "Instructions",
+    "instruction1": "Click in the input field or wait for automatic focus",
+    "instruction2": "Scan a barcode with your scanner (detected as keyboard input)",
+    "instruction3": "After scanning (Enter), the barcode is logged to console and the field is cleared"
   }
 }

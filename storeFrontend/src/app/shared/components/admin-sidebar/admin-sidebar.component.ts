@@ -156,6 +156,12 @@ export class AdminSidebarComponent implements OnInit {
                         icon: 'file-text',
                         route: `${baseRoute}/supplier-invoices`,
                         requiresStore: true
+                    },
+                    {
+                        labelKey: 'sidebarAdmin.items.mhdScannerTest',
+                        icon: 'scan-barcode',
+                        route: `${baseRoute}/mhd-scanner-test`,
+                        requiresStore: true
                     }
                 ]
             },
