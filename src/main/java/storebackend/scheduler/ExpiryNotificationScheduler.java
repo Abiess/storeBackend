@@ -6,8 +6,11 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import storebackend.entity.Product;
 import storebackend.entity.Store;
+import storebackend.entity.TelegramStoreConfig;
 import storebackend.repository.ProductRepository;
 import storebackend.repository.StoreRepository;
+import storebackend.repository.TelegramStoreConfigRepository;
+import storebackend.service.TelegramBotService;
 import storebackend.service.WhatsAppService;
 
 import java.time.LocalDate;
@@ -21,7 +24,7 @@ import java.util.Map;
  * Täglicher Scheduler für MHD-Benachrichtigungen.
  * 
  * Prüft für jeden Store, welche Produkte bald ablaufen und sendet
- * eine Sammelnachricht per WhatsApp an den Store Manager.
+ * eine Sammelnachricht per E-Mail, WhatsApp und/oder Telegram an den Store Manager.
  * 
  * Aktiviert über @EnableScheduling in {@link storebackend.StoreBackendApplication}.
  * 
@@ -37,6 +40,8 @@ public class ExpiryNotificationScheduler {
     private final ProductRepository productRepository;
     private final WhatsAppService whatsAppService;
     private final storebackend.service.EmailService emailService;
+    private final TelegramBotService telegramBotService;
+    private final TelegramStoreConfigRepository telegramStoreConfigRepository;
 
     /**
      * Täglich 09:00 — MHD-Warnung für ablaufende Produkte.
@@ -89,7 +94,7 @@ public class ExpiryNotificationScheduler {
     /**
      * Prüft Produkte eines einzelnen Stores und sendet Benachrichtigung falls nötig.
      * 
-     * Sendet über beide Kanäle (E-Mail + WhatsApp). Mindestens ein ECHTER Kanal
+     * Sendet über drei Kanäle (E-Mail + WhatsApp + Telegram). Mindestens ein ECHTER Kanal
      * muss erfolgreich sein, damit Produkte als benachrichtigt markiert werden.
      * 
      * @return true wenn mindestens eine echte Benachrichtigung gesendet wurde
@@ -179,11 +184,41 @@ public class ExpiryNotificationScheduler {
         }
 
         // ═══════════════════════════════════════════════════════════════════════
+        // KANAL 3: TELEGRAM (unabhängig)
+        // ═══════════════════════════════════════════════════════════════════════
+        boolean telegramRealSuccess = false;
+        try {
+            TelegramStoreConfig telegramCfg = telegramStoreConfigRepository
+                .findByStoreId(store.getId())
+                .orElse(null);
+            
+            if (telegramCfg != null && telegramBotService.isConfigured(telegramCfg)) {
+                String ownerLang = store.getOwner() != null ? store.getOwner().getPreferredLanguage() : "en";
+                
+                boolean tgSuccess = telegramBotService.sendExpiryWarning(telegramCfg, expiringProducts, ownerLang);
+                
+                // Prüfen ob ECHTE Zustellung (nicht nur DEV-Simulation)
+                if (tgSuccess && telegramBotService.isEnabled()) {
+                    telegramRealSuccess = true;
+                    log.info("✅ [MHD/Telegram] Benachrichtigung gesendet an Channel {}", telegramCfg.getChannelId());
+                } else if (tgSuccess && !telegramBotService.isEnabled()) {
+                    log.warn("⚠️ [MHD/Telegram] DEV Mode - Nachricht nur simuliert");
+                } else {
+                    log.error("❌ [MHD/Telegram] Versand fehlgeschlagen für Channel {}", telegramCfg.getChannelId());
+                }
+            } else {
+                log.debug("ℹ️ [MHD/Telegram] Store {} hat keine Telegram-Konfiguration", store.getId());
+            }
+        } catch (Exception e) {
+            log.error("❌ [MHD/Telegram] Fehler beim Telegram-Versand für Store {}", store.getId(), e);
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
         // IDEMPOTENZ: Mindestens 1 ECHTER Kanal erfolgreich?
         // ═══════════════════════════════════════════════════════════════════════
-        if (emailSuccess || whatsappRealSuccess) {
-            log.info("✅ [MHD] Store {}: Mindestens 1 Kanal erfolgreich (E-Mail: {}, WhatsApp: {}) - Produkte werden markiert",
-                store.getId(), emailSuccess, whatsappRealSuccess);
+        if (emailSuccess || whatsappRealSuccess || telegramRealSuccess) {
+            log.info("✅ [MHD] Store {}: Mindestens 1 Kanal erfolgreich (E-Mail: {}, WhatsApp: {}, Telegram: {}) - Produkte werden markiert",
+                store.getId(), emailSuccess, whatsappRealSuccess, telegramRealSuccess);
             markProductsAsNotified(expiringProducts);
             return true;
         } else {

@@ -138,6 +138,14 @@ public class TelegramBotService {
         return sendMessage(cfg.getChannelId(), caption, cfg.getBotToken());
     }
 
+    /** MHD-Warnung für ablaufende Produkte */
+    public boolean sendExpiryWarning(TelegramStoreConfig cfg, List<Product> products, String lang) {
+        if (!isConfigured(cfg) || products == null || products.isEmpty()) return false;
+
+        String text = buildExpiryMessage(lang, products);
+        return sendMessage(cfg.getChannelId(), text, cfg.getBotToken());
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // Channel-Verlauf abrufen (Polling / Import)
     // ─────────────────────────────────────────────────────────────────────────
@@ -314,6 +322,62 @@ public class TelegramBotService {
             default   -> en;
         };
         return String.format(tpl, orderNumber, storeName, total, customer);
+    }
+
+    private String buildExpiryMessage(String lang, List<Product> products) {
+        StringBuilder sb = new StringBuilder();
+        
+        // Header (multilingual)
+        String header = switch (lang != null ? lang : "en") {
+            case "de" -> "⚠️ <b>MHD-Warnung</b>\n\n";
+            case "ar" -> "⚠️ <b>تحذير من انتهاء الصلاحية</b>\n\n";
+            default   -> "⚠️ <b>Expiry Warning</b>\n\n";
+        };
+        sb.append(header);
+        
+        String intro = switch (lang != null ? lang : "en") {
+            case "de" -> products.size() == 1 
+                ? "1 Produkt läuft bald ab:\n\n"
+                : products.size() + " Produkte laufen bald ab:\n\n";
+            case "ar" -> products.size() == 1
+                ? "منتج واحد ينتهي قريباً:\n\n"
+                : products.size() + " منتجات تنتهي قريباً:\n\n";
+            default -> products.size() == 1
+                ? "1 product expires soon:\n\n"
+                : products.size() + " products expire soon:\n\n";
+        };
+        sb.append(intro);
+        
+        // Produkt-Liste
+        java.time.LocalDate today = java.time.LocalDate.now();
+        for (Product p : products) {
+            if (p.getExpiryDate() == null) continue;
+            
+            long daysLeft = java.time.temporal.ChronoUnit.DAYS.between(today, p.getExpiryDate());
+            String daysText = switch (lang != null ? lang : "en") {
+                case "de" -> daysLeft == 1 ? "noch 1 Tag" : "noch " + daysLeft + " Tage";
+                case "ar" -> daysLeft == 1 ? "يوم واحد متبقي" : daysLeft + " أيام متبقية";
+                default   -> daysLeft == 1 ? "1 day left" : daysLeft + " days left";
+            };
+            
+            String mhdLabel = switch (lang != null ? lang : "en") {
+                case "de" -> "MHD";
+                case "ar" -> "الصلاحية";
+                default   -> "Expiry";
+            };
+            
+            sb.append("• <b>").append(escapeHtml(p.getTitle())).append("</b>\n");
+            sb.append("  ").append(mhdLabel).append(": ").append(p.getExpiryDate()).append(" – ").append(daysText).append("\n\n");
+        }
+        
+        return sb.toString();
+    }
+    
+    private String escapeHtml(String text) {
+        if (text == null) return "";
+        return text.replace("&", "&amp;")
+                   .replace("<", "&lt;")
+                   .replace(">", "&gt;");
     }
 }
 
