@@ -3197,6 +3197,10 @@
     "instructionsTitle": "Anleitung",
     "instruction1": "Klicken Sie in das Eingabefeld oder warten Sie auf den automatischen Fokus",
     "instruction2": "Scannen Sie einen Barcode mit Ihrem Scanner (wird als Tastatureingabe erkannt)",
-    "instruction3": "Nach dem Scannen (Enter) wird der Barcode in der Konsole ausgegeben und das Feld wird geleert"
+    "instruction3": "Nach dem Scannen (Enter) wird der Barcode in der Konsole ausgegeben und das Feld wird geleert",
+    "instruction4": "Alternativ: Klicken Sie auf 'Mit Kamera scannen' um die Tablet-Kamera zu verwenden",
+    "startCamera": "Mit Kamera scannen",
+    "stopCamera": "Kamera schließen",
+    "cameraHint": "Barcode in den Rahmen halten"
   }
 }
