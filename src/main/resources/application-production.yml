@@ -46,7 +46,7 @@ spring:
     host: ${SMTP_HOST:smtp.gmail.com}
     port: ${SMTP_PORT:587}
     username: ${SMTP_USER:markt.ma.noreply@gmail.com}
-    password: ${SMTP_PASS:fefz phln uprt eikh}
+    password: ${SMTP_PASS:gpyg clwa icva gteq}
     from: ${MAIL_FROM:noreply@markt.ma}
     properties:
       mail:
