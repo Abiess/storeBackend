@@ -295,6 +295,7 @@ public class WooCommerceController {
             WooCommerceImportResponse errorResponse = WooCommerceImportResponse.builder()
                     .status("FAILED")
                     .importedCount(0)
+                    .updatedCount(0)
                     .skippedCount(0)
                     .failedCount(0)
                     .messageKey("woocommerce.import.failed")

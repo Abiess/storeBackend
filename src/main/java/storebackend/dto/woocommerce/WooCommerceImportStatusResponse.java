@@ -21,6 +21,7 @@ public class WooCommerceImportStatusResponse {
     private Integer progress;         // 0-100
     private Integer totalProducts;
     private Integer importedProducts;
+    private Integer updatedProducts;
     private Integer skippedProducts;
     private Integer failedProducts;
     private Integer totalCategories;
