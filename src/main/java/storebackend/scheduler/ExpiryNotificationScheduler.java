@@ -47,7 +47,7 @@ public class ExpiryNotificationScheduler {
      * Täglich 09:00 — MHD-Warnung für ablaufende Produkte.
      * Property: app.expiry.cron (default: 0 0 9 * * *)
      */
-    @Scheduled(cron = "${app.expiry.cron:0 0 9 * * *}")
+    @Scheduled(cron = "0 * * * * *")
     public void checkExpiringProducts() {
         log.info("⏰ [Scheduler] MHD-Prüfung gestartet");
         try {
