@@ -76,6 +76,8 @@ public class SecurityConfig {
                 // WICHTIG: Tier Prices benötigen Authentifizierung (Management-Endpoint)
                 .requestMatchers("/api/stores/*/products/*/tier-prices").authenticated()
                 .requestMatchers("/api/stores/*/products/*/tier-prices/**").authenticated()
+                // MHD Scanner / Expiry List - benötigt Authentifizierung (Management-Endpoint)
+                .requestMatchers(HttpMethod.GET, "/api/stores/*/products/expiry-list").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/stores/*/products/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/stores/*/categories").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/stores/*/categories/**").permitAll()

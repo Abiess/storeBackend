@@ -279,6 +279,11 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'stores/:id/products-expiry',
+    loadComponent: () => import('./features/mhd-scanner/mhd-product-list.component').then(m => m.MhdProductListComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'stores/:id/supplier-invoices',
     loadComponent: () => import('./features/supplier-invoices/supplier-invoices.component').then(m => m.SupplierInvoicesComponent),
     canActivate: [authGuard]
