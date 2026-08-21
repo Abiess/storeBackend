@@ -1660,7 +1660,7 @@
       "woocommerce": "WooCommerce Import",
       "platformDelivery": "🚚 Delivery Options",
       "supplierInvoices": "Supplier Invoices",
-      "mhdScannerTest": "Best Before Date Scanner Test"
+      "productsExpiry": "Products with Expiry Date"
     },
     "noStore": {
       "hint": "No store selected",

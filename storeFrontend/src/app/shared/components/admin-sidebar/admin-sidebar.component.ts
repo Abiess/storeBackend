@@ -158,9 +158,9 @@ export class AdminSidebarComponent implements OnInit {
                         requiresStore: true
                     },
                     {
-                        labelKey: 'sidebarAdmin.items.mhdScannerTest',
-                        icon: 'scan-barcode',
-                        route: `${baseRoute}/mhd-scanner-test`,
+                        labelKey: 'sidebarAdmin.items.productsExpiry',
+                        icon: 'calendar',
+                        route: `${baseRoute}/products-expiry`,
                         requiresStore: true
                     }
                 ]

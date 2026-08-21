@@ -1275,7 +1275,7 @@
       "woocommerce": "استيراد WooCommerce",
       "platformDelivery": "🚚 خيارات التوصيل",
       "supplierInvoices": "فواتير الموردين",
-      "mhdScannerTest": "اختبار ماسح تاريخ الانتهاء"
+      "productsExpiry": "المنتجات مع تاريخ الانتهاء"
     },
     "noStore": {
       "hint": "لم يتم اختيار متجر",

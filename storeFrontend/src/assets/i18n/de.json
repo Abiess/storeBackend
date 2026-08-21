@@ -1018,7 +1018,7 @@
       "telegram": "Telegram",
       "platformDelivery": "🚚 Lieferoptionen",
       "supplierInvoices": "Lieferantenrechnungen",
-      "mhdScannerTest": "MHD Scanner Test"
+      "productsExpiry": "Produkte mit Ablaufdatum"
     },
     "noStore": {
       "hint": "Kein Store ausgewählt",
