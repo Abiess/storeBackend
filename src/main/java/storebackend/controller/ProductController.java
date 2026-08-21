@@ -519,14 +519,13 @@ public class ProductController {
     }
 
     /**
-     * MHD-Produktliste: Paginiert mit Suche.
+     * MHD-Produktliste: Paginiert mit Suche (öffentlich).
      * GET /api/stores/{storeId}/products/expiry-list?page=0&size=20&search=...
      * 
      * @param storeId Store ID
      * @param search Suchbegriff (optional)
      * @param page Seite (0-based, default: 0)
      * @param size Anzahl pro Seite (default: 20)
-     * @param user Authentifizierter User
      * @return Page mit ExpiryProductDTO
      */
     @GetMapping("/expiry-list")
@@ -535,16 +534,10 @@ public class ProductController {
             @Parameter(description = "Store ID") @PathVariable Long storeId,
             @Parameter(description = "Search term (optional)") @RequestParam(required = false) String search,
             @Parameter(description = "Page number (0-based)") @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Page size") @RequestParam(defaultValue = "20") int size,
-            @AuthenticationPrincipal User user) {
+            @Parameter(description = "Page size") @RequestParam(defaultValue = "20") int size) {
 
         log.info("GET /api/stores/{}/products/expiry-list - page={}, size={}, search='{}'", 
             storeId, page, size, search);
-
-        // Access check
-        if (!hasStoreAccess(storeId, user)) {
-            return ResponseEntity.status(403).build();
-        }
 
         // Create Pageable
         org.springframework.data.domain.Pageable pageable = 
