@@ -6,6 +6,9 @@ import { HttpClient } from '@angular/common/http';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { PageHeaderComponent } from '@app/shared/components/page-header.component';
 import { BrowserMultiFormatReader, NotFoundException, Result } from '@zxing/library';
+import { ProductService } from '@app/core/services/product.service';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 interface OpenFoodFactsProduct {
   code: string;
@@ -129,6 +132,74 @@ interface OpenFoodFactsProduct {
             <li>{{ 'mhdScanner.instruction3' | translate }}</li>
             <li>{{ 'mhdScanner.instruction4' | translate }}</li>
           </ol>
+        </div>
+
+        <!-- Product List Section -->
+        <div class="product-list-section">
+          <h3>Produkte mit Ablaufdatum</h3>
+          
+          <!-- Search -->
+          <div class="product-search">
+            <input 
+              type="text" 
+              class="search-input"
+              placeholder="Produkte suchen..."
+              [(ngModel)]="searchTerm"
+              (input)="onSearchChange()"
+            />
+          </div>
+
+          <!-- Loading -->
+          <div *ngIf="isLoadingProducts" class="loading-spinner">
+            Lade Produkte...
+          </div>
+
+          <!-- Product List -->
+          <div *ngIf="!isLoadingProducts && products.length > 0" class="product-list">
+            <div 
+              *ngFor="let product of products" 
+              class="product-item"
+              [class.expired]="isExpired(product)"
+            >
+              <div class="product-name">{{ product.title }}</div>
+              <div class="product-expiry">
+                <span class="label">Ablauf:</span>
+                <span class="value">{{ formatExpiryDate(product.expiryDate) }}</span>
+              </div>
+              <div class="product-remaining">
+                <span class="label">Restzeit:</span>
+                <span class="value" [class.expired-text]="isExpired(product)">
+                  {{ formatRemainingTime(product.expiryDate) }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div *ngIf="!isLoadingProducts && products.length === 0" class="empty-state">
+            Keine Produkte gefunden.
+          </div>
+
+          <!-- Pagination -->
+          <div *ngIf="!isLoadingProducts && totalPages > 1" class="pagination">
+            <button 
+              class="pagination-btn"
+              [disabled]="currentPage === 0"
+              (click)="previousPage()"
+            >
+              Zurück
+            </button>
+            <span class="page-info">
+              Seite {{ currentPage + 1 }} von {{ totalPages }}
+            </span>
+            <button 
+              class="pagination-btn"
+              [disabled]="currentPage >= totalPages - 1"
+              (click)="nextPage()"
+            >
+              Weiter
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -511,6 +582,138 @@ interface OpenFoodFactsProduct {
         font-size: 0.875rem;
       }
     }
+
+    /* Product List Styles */
+    .product-list-section {
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 2px solid #e5e7eb;
+    }
+
+    .product-list-section h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 1.5rem;
+    }
+
+    .product-search {
+      margin-bottom: 1.5rem;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.2s;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .loading-spinner {
+      text-align: center;
+      padding: 2rem;
+      color: #6b7280;
+      font-style: italic;
+    }
+
+    .product-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .product-item {
+      background: white;
+      padding: 1rem;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .product-item.expired {
+      border-left-color: #ef4444;
+      background: #fef2f2;
+    }
+
+    .product-name {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 0.5rem;
+    }
+
+    .product-expiry,
+    .product-remaining {
+      font-size: 0.875rem;
+      color: #6b7280;
+      margin-top: 0.25rem;
+    }
+
+    .product-expiry .label,
+    .product-remaining .label {
+      font-weight: 500;
+      margin-right: 0.5rem;
+    }
+
+    .product-expiry .value,
+    .product-remaining .value {
+      font-weight: 600;
+      color: #1f2937;
+    }
+
+    .expired-text {
+      color: #ef4444 !important;
+      font-weight: 700 !important;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: #9ca3af;
+      font-style: italic;
+    }
+
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 1.5rem;
+      padding: 1rem;
+    }
+
+    .pagination-btn {
+      padding: 0.5rem 1rem;
+      background: white;
+      border: 2px solid #667eea;
+      color: #667eea;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .pagination-btn:hover:not(:disabled) {
+      background: #667eea;
+      color: white;
+    }
+
+    .pagination-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .page-info {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #4b5563;
+    }
   `]
 })
 export class MhdScannerTestComponent implements OnInit, AfterViewInit, OnDestroy {
@@ -532,11 +735,31 @@ export class MhdScannerTestComponent implements OnInit, AfterViewInit, OnDestroy
   foundProduct: OpenFoodFactsProduct | null = null;
   productNotFound = false;
 
+  // Product List
+  products: any[] = [];
+  isLoadingProducts = false;
+  currentPage = 0;
+  pageSize = 20;
+  totalPages = 0;
+  totalElements = 0;
+  searchTerm = '';
+  private searchSubject = new Subject<string>();
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private http: HttpClient
-  ) {}
+    private http: HttpClient,
+    private productService: ProductService
+  ) {
+    // Debounce Search
+    this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    ).subscribe(search => {
+      this.currentPage = 0;
+      this.loadProducts();
+    });
+  }
 
   ngOnInit(): void {
     // 3-stufige Store-ID Extraktion (wie im Custom Instruction vorgegeben)
@@ -552,6 +775,11 @@ export class MhdScannerTestComponent implements OnInit, AfterViewInit, OnDestroy
     }
     this.storeId = id ? +id : null;
     console.log('✅ MHD Scanner Test - Store ID:', this.storeId);
+    
+    // Load initial products
+    if (this.storeId) {
+      this.loadProducts();
+    }
   }
 
   ngAfterViewInit(): void {
@@ -789,5 +1017,99 @@ export class MhdScannerTestComponent implements OnInit, AfterViewInit, OnDestroy
 
     this.isCameraActive = false;
     console.log('✅ Kamera gestoppt');
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Product List Methods
+  // ─────────────────────────────────────────────────────────────────────────
+
+  onSearchChange(): void {
+    this.searchSubject.next(this.searchTerm);
+  }
+
+  loadProducts(): void {
+    if (!this.storeId) return;
+    
+    this.isLoadingProducts = true;
+    this.productService.getProductsForExpiryList(
+      this.storeId,
+      this.currentPage,
+      this.pageSize,
+      this.searchTerm
+    ).subscribe({
+      next: (response) => {
+        this.products = response.content || [];
+        this.totalPages = response.page?.totalPages || response.totalPages || 0;
+        this.totalElements = response.page?.totalElements || response.totalElements || 0;
+        this.isLoadingProducts = false;
+        console.log('✅ Products loaded:', this.products.length);
+      },
+      error: (error) => {
+        console.error('❌ Error loading products:', error);
+        this.isLoadingProducts = false;
+      }
+    });
+  }
+
+  previousPage(): void {
+    if (this.currentPage > 0) {
+      this.currentPage--;
+      this.loadProducts();
+    }
+  }
+
+  nextPage(): void {
+    if (this.currentPage < this.totalPages - 1) {
+      this.currentPage++;
+      this.loadProducts();
+    }
+  }
+
+  formatExpiryDate(expiryDate: string | null): string {
+    if (!expiryDate) return '--';
+    
+    const [year, month, day] = expiryDate.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    
+    return date.toLocaleDateString('de-DE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  }
+
+  formatRemainingTime(expiryDate: string | null): string {
+    if (!expiryDate) return '--';
+    
+    const [year, month, day] = expiryDate.split('-').map(Number);
+    const expiry = new Date(year, month - 1, day);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const diffMs = expiry.getTime() - today.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) {
+      const absDays = Math.abs(diffDays);
+      return absDays === 1 ? 'Seit 1 Tag abgelaufen' : `Seit ${absDays} Tagen abgelaufen`;
+    }
+    
+    if (diffDays === 0) return 'Heute fällig';
+    if (diffDays === 1) return 'Noch 1 Tag';
+    if (diffDays < 60) return `Noch ${diffDays} Tage`;
+    
+    const months = Math.floor(diffDays / 30);
+    return months === 1 ? 'Noch 1 Monat' : `Noch ${months} Monate`;
+  }
+
+  isExpired(product: any): boolean {
+    if (!product.expiryDate) return false;
+    
+    const [year, month, day] = product.expiryDate.split('-').map(Number);
+    const expiry = new Date(year, month - 1, day);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return expiry < today;
   }
 }
