@@ -90,17 +90,10 @@ public class WooCommerceImportService {
             Map<Long, Category> categoryMap = importCategories(config, store, jobId);
             logInfo(jobId, String.format("Imported %d categories", categoryMap.size()));
 
-            // Fetch products from WooCommerce
+            // Fetch products from WooCommerce (all pages)
             List<WooProductDto> wooProducts = fetchProductsToImport(config, request);
             
-            // Limit to MAX_IMPORT_SIZE
-            if (wooProducts.size() > MAX_IMPORT_SIZE) {
-                logWarning(jobId, String.format(
-                    "Import limited to %d products (requested: %d). Please import in batches.",
-                    MAX_IMPORT_SIZE, wooProducts.size()
-                ));
-                wooProducts = wooProducts.subList(0, MAX_IMPORT_SIZE);
-            }
+            log.info("📦 Total WooCommerce products fetched: {}", wooProducts.size());
 
             // Import products
             ImportResult result = importProducts(
@@ -139,13 +132,14 @@ public class WooCommerceImportService {
             job.setCompletedAt(LocalDateTime.now());
             job.setTotalProducts(wooProducts.size());
             job.setImportedProducts(result.imported);
+            job.setUpdatedProducts(result.updated);
             job.setSkippedProducts(result.skipped);
             job.setFailedProducts(result.failed);
             importJobRepository.save(job);
 
             logSuccess(jobId, String.format(
-                "Import completed: %d imported, %d skipped, %d failed",
-                result.imported, result.skipped, result.failed
+                "Import completed: %d imported, %d updated, %d skipped, %d failed",
+                result.imported, result.updated, result.skipped, result.failed
             ));
             
             if (request.isImportCustomers()) {
@@ -160,6 +154,7 @@ public class WooCommerceImportService {
                     .jobId(jobId)
                     .status("COMPLETED")
                     .importedCount(result.imported)
+                    .updatedCount(result.updated)
                     .skippedCount(result.skipped)
                     .failedCount(result.failed)
                     .warnings(result.warnings)
@@ -277,7 +272,7 @@ public class WooCommerceImportService {
                     ));
                 }
 
-                // Check duplicate by externalSource + externalId
+                // Check if product already exists by externalSource + externalId (PRIMARY)
                 var existingById = productRepository.findByStoreIdAndExternalSourceAndExternalId(
                     store.getId(),
                     EXTERNAL_SOURCE,
@@ -285,13 +280,18 @@ public class WooCommerceImportService {
                 );
 
                 if (existingById.isPresent()) {
-                    result.skipped++;
-                    log.info("⏭️ Skipping product '{}' (WC-ID: {}, SKU: {}) - already exists by externalId (markt.ma ID: {})",
-                        wooProduct.getName(), wooProduct.getId(), wooProduct.getSku(), existingById.get().getId());
+                    // UPDATE existing product
+                    Product existingProduct = existingById.get();
+                    updateProductFromWooCommerce(existingProduct, wooProduct, categoryMap, importImages, store, jobId);
+                    productRepository.save(existingProduct);
+                    result.updated++;
+                    
+                    log.info("🔄 Product updated: '{}' (markt.ma ID: {}, WC-ID: {})", 
+                        existingProduct.getTitle(), existingProduct.getId(), wooProduct.getId());
                     continue;
                 }
 
-                // Check duplicate by SKU
+                // Check duplicate by SKU (SECONDARY - only if no externalId match)
                 if (wooProduct.getSku() != null && !wooProduct.getSku().isEmpty()) {
                     var existingBySku = productRepository.findByStoreIdAndSku(
                         store.getId(),
@@ -299,17 +299,60 @@ public class WooCommerceImportService {
                     );
 
                     if (existingBySku.isPresent()) {
+                        Product existingProduct = existingBySku.get();
+                        
+                        // Check if this is a WooCommerce product with a DIFFERENT externalId
+                        if (EXTERNAL_SOURCE.equals(existingProduct.getExternalSource()) && 
+                            existingProduct.getExternalId() != null &&
+                            !wooProduct.getId().toString().equals(existingProduct.getExternalId())) {
+                            // CONFLICT: Different WooCommerce product with same SKU - SKIP
+                            result.skipped++;
+                            log.warn("⚠️ SKU conflict: Product '{}' (WC-ID: {}, SKU: {}) has same SKU as existing WooCommerce product (markt.ma ID: {}, WC-ID: {})",
+                                wooProduct.getName(), wooProduct.getId(), wooProduct.getSku(), 
+                                existingProduct.getId(), existingProduct.getExternalId());
+                            result.warnings.add(String.format(
+                                "SKU conflict: Product '%s' skipped (SKU '%s' already used by different WooCommerce product)",
+                                wooProduct.getName(), wooProduct.getSku()
+                            ));
+                            continue;
+                        }
+                        
+                        // Product exists but NOT linked to WooCommerce yet → Link it
+                        if (existingProduct.getExternalSource() == null || existingProduct.getExternalId() == null) {
+                            log.info("🔗 Linking existing product '{}' (markt.ma ID: {}, SKU: {}) to WooCommerce (WC-ID: {})",
+                                existingProduct.getTitle(), existingProduct.getId(), wooProduct.getSku(), wooProduct.getId());
+                            
+                            // Link to WooCommerce
+                            existingProduct.setExternalSource(EXTERNAL_SOURCE);
+                            existingProduct.setExternalId(wooProduct.getId().toString());
+                            
+                            // Update product data
+                            updateProductFromWooCommerce(existingProduct, wooProduct, categoryMap, importImages, store, jobId);
+                            productRepository.save(existingProduct);
+                            result.updated++;
+                            
+                            log.info("✅ Product linked and updated: '{}' (markt.ma ID: {}, WC-ID: {})", 
+                                existingProduct.getTitle(), existingProduct.getId(), wooProduct.getId());
+                            continue;
+                        }
+                        
+                        // Existing product with same SKU but from OTHER source → SKIP
                         result.skipped++;
-                        log.info("⏭️ Skipping product '{}' (WC-ID: {}, SKU: {}) - already exists by SKU (markt.ma ID: {})",
-                            wooProduct.getName(), wooProduct.getId(), wooProduct.getSku(), existingBySku.get().getId());
+                        log.warn("⚠️ SKU conflict: Product '{}' (WC-ID: {}, SKU: {}) has same SKU as existing product from source '{}' (markt.ma ID: {})",
+                            wooProduct.getName(), wooProduct.getId(), wooProduct.getSku(), 
+                            existingProduct.getExternalSource(), existingProduct.getId());
+                        result.warnings.add(String.format(
+                            "SKU conflict: Product '%s' skipped (SKU '%s' already used by product from '%s')",
+                            wooProduct.getName(), wooProduct.getSku(), existingProduct.getExternalSource()
+                        ));
                         continue;
                     }
                 }
 
-                // Import product
+                // NEW PRODUCT - Import
                 Product product = createProductFromWooCommerce(wooProduct, store, categoryMap);
                 
-                // Import image (optional)
+                // Import image (optional) - only for NEW products
                 if (importImages && wooProduct.getImages() != null && !wooProduct.getImages().isEmpty()) {
                     String imageUrl = wooProduct.getImages().get(0).getSrc();
                     boolean imageImported = imageService.importProductImage(product, imageUrl, store, jobId);
@@ -326,7 +369,8 @@ public class WooCommerceImportService {
                 product = productRepository.save(product);
                 result.imported++;
                 
-                log.info("✅ Product imported: {} (ID: {})", product.getTitle(), product.getId());
+                log.info("✅ Product imported: {} (markt.ma ID: {}, WC-ID: {})", 
+                    product.getTitle(), product.getId(), wooProduct.getId());
 
             } catch (Exception e) {
                 result.failed++;
@@ -388,6 +432,90 @@ public class WooCommerceImportService {
         product.setLastImportedAt(LocalDateTime.now());
         
         return product;
+    }
+
+    /**
+     * Update existing Product from WooCommerce DTO.
+     * 
+     * WICHTIG: Nur WooCommerce-Felder aktualisieren, markt.ma-spezifische Daten NICHT überschreiben!
+     * 
+     * Updated fields:
+     * - title, description, sku, basePrice, status, stock, category
+     * - externalSku, lastImportedAt
+     * 
+     * NOT updated (markt.ma-specific):
+     * - id, store, createdAt, updatedAt (auto)
+     * - viewCount, salesCount, averageRating, reviewCount
+     * - isFeatured, featuredOrder, taxCategory, taxRate
+     * - supplier, isSupplierCatalog, wholesalePrice
+     * - barcode, expiryDate, telegramSource, telegramMsgId
+     * - externalSource, externalId (identity fields)
+     */
+    private void updateProductFromWooCommerce(
+            Product product,
+            WooProductDto wooProduct,
+            Map<Long, Category> categoryMap,
+            boolean importImages,
+            Store store,
+            Long jobId
+    ) {
+        // Title (always update if not empty)
+        if (wooProduct.getName() != null && !wooProduct.getName().isBlank()) {
+            product.setTitle(wooProduct.getName());
+        }
+        
+        // Description (only update if WooCommerce provides one)
+        String newDescription = buildDescription(wooProduct);
+        if (newDescription != null && !newDescription.isBlank()) {
+            product.setDescription(newDescription);
+        }
+        
+        // SKU (only update if WooCommerce provides one)
+        if (wooProduct.getSku() != null && !wooProduct.getSku().isBlank()) {
+            product.setSku(wooProduct.getSku());
+            product.setExternalSku(wooProduct.getSku());
+        }
+        
+        // Price (only update if WooCommerce provides one)
+        BigDecimal price = parsePrice(
+            wooProduct.getRegularPrice() != null ? wooProduct.getRegularPrice() : wooProduct.getPrice()
+        );
+        if (price != null && price.compareTo(BigDecimal.ZERO) > 0) {
+            product.setBasePrice(price);
+        }
+        
+        // Status (always sync)
+        product.setStatus(mapStatus(wooProduct.getStatus()));
+        
+        // Stock (only update if WooCommerce provides stockQuantity)
+        if (wooProduct.getStockQuantity() != null) {
+            product.setStock(wooProduct.getStockQuantity());
+        }
+        
+        // Category (only update if WooCommerce provides categories)
+        if (wooProduct.getCategories() != null && !wooProduct.getCategories().isEmpty()) {
+            Long wooCategoryId = wooProduct.getCategories().get(0).getId();
+            Category category = categoryMap.get(wooCategoryId);
+            if (category != null) {
+                product.setCategory(category);
+            }
+        }
+        
+        // Update timestamp
+        product.setLastImportedAt(LocalDateTime.now());
+        
+        // Image update (CAREFUL: Only if no image exists OR explicitly requested)
+        // For now: Skip image update to avoid duplicates
+        // TODO: Implement smart image comparison (URL hash or Media deduplication)
+        if (importImages && product.getImageUrl() == null && 
+            wooProduct.getImages() != null && !wooProduct.getImages().isEmpty()) {
+            String imageUrl = wooProduct.getImages().get(0).getSrc();
+            boolean imageImported = imageService.importProductImage(product, imageUrl, store, jobId);
+            
+            if (!imageImported) {
+                log.debug("⚠️ Image import failed during update for product '{}'", product.getTitle());
+            }
+        }
     }
 
     /**
@@ -463,18 +591,41 @@ public class WooCommerceImportService {
     }
 
     /**
-     * Fetch products to import based on request.
+     * Fetch ALL products from WooCommerce (paginated).
+     * Continues fetching until no more products are returned.
      */
     private List<WooProductDto> fetchProductsToImport(
             WooCommerceConfig config,
             WooCommerceImportRequest request
     ) {
-        // If specific product IDs requested, fetch those
-        // For MVP: Just fetch first page (already done in preview)
-        // In production, we'd fetch by IDs
+        List<WooProductDto> allProducts = new ArrayList<>();
+        int page = 1;
+        int perPage = 100; // Max per request
         
-        // For now: Fetch first 50 products
-        return apiClient.getProducts(config, 1, MAX_IMPORT_SIZE);
+        log.info("🔄 Starting paginated product fetch from WooCommerce...");
+        
+        while (true) {
+            List<WooProductDto> pageProducts = apiClient.getProducts(config, page, perPage);
+            
+            if (pageProducts.isEmpty()) {
+                log.info("✅ No more products on page {}. Fetch complete.", page);
+                break;
+            }
+            
+            allProducts.addAll(pageProducts);
+            log.info("📦 Fetched page {}: {} products (total so far: {})", page, pageProducts.size(), allProducts.size());
+            
+            // Stop if page returned less than perPage (last page)
+            if (pageProducts.size() < perPage) {
+                log.info("✅ Last page reached (page {} returned {} products)", page, pageProducts.size());
+                break;
+            }
+            
+            page++;
+        }
+        
+        log.info("✅ Total products fetched from WooCommerce: {}", allProducts.size());
+        return allProducts;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -537,6 +688,7 @@ public class WooCommerceImportService {
 
     private static class ImportResult {
         int imported = 0;
+        int updated = 0;
         int skipped = 0;
         int failed = 0;
         List<String> warnings = new ArrayList<>();

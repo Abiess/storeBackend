@@ -56,6 +56,9 @@ public class WooCommerceImportJob {
     @Column(name = "imported_products", nullable = false)
     private Integer importedProducts = 0;
 
+    @Column(name = "updated_products", nullable = false)
+    private Integer updatedProducts = 0;
+
     @Column(name = "skipped_products", nullable = false)
     private Integer skippedProducts = 0;
 

@@ -21,6 +21,7 @@ public class WooCommerceImportResponse {
     
     // Counts
     private Integer importedCount;
+    private Integer updatedCount;
     private Integer skippedCount;
     private Integer failedCount;
     
