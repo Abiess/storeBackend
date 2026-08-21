@@ -541,4 +541,31 @@ public class ProductService {
         // 3. Kein Bild verfügbar - Frontend zeigt Platzhalter
         return null;
     }
+
+    /**
+     * MHD-Produktliste: Paginiert mit Suche.
+     * 
+     * @param storeId Store ID
+     * @param search Suchbegriff (optional)
+     * @param pageable Pagination
+     * @return Page mit ExpiryProductDTO
+     */
+    public org.springframework.data.domain.Page<storebackend.dto.ExpiryProductDTO> getProductsForExpiryList(
+            Long storeId,
+            String search,
+            org.springframework.data.domain.Pageable pageable
+    ) {
+        log.debug("Fetching expiry product list for store {}, search: '{}', page: {}", 
+            storeId, search, pageable.getPageNumber());
+        
+        org.springframework.data.domain.Page<Product> productsPage = 
+            productRepository.findForExpiryList(storeId, search, pageable);
+        
+        // Map to ExpiryProductDTO
+        return productsPage.map(product -> new storebackend.dto.ExpiryProductDTO(
+            product.getId(),
+            product.getTitle(),
+            product.getExpiryDate()
+        ));
+    }
 }

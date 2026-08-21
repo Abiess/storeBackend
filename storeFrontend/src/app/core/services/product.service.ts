@@ -261,4 +261,23 @@ export class ProductService {
       }).slice(0, 20)) // Limit to 20 results
     );
   }
+
+  /**
+   * Get paginated product list for expiry date tracking.
+   * @param storeId Store ID
+   * @param page Page number (0-based)
+   * @param size Page size
+   * @param search Optional search term
+   */
+  getProductsForExpiryList(storeId: number, page: number, size: number, search?: string): Observable<any> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+    
+    if (search && search.trim()) {
+      params = params.set('search', search.trim());
+    }
+    
+    return this.http.get<any>(`${environment.apiUrl}/stores/${storeId}/products/expiry-list`, { params });
+  }
 }

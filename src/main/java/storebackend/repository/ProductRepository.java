@@ -106,4 +106,18 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
      * supplier ist @ManyToOne → Spring Data navigiert via Unterstrich: supplier.id
      */
     List<Product> findBySupplier_Id(Long supplierId);
+
+    /**
+     * MHD-Produktliste: Paginiert mit Suche.
+     * Sortierung: expiryDate ASC NULLS LAST (nächstes Ablaufdatum zuerst)
+     * Suche: LOWER(title) LIKE %search%
+     */
+    @Query("SELECT p FROM Product p WHERE p.store.id = :storeId " +
+           "AND (:search IS NULL OR :search = '' OR LOWER(p.title) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+           "ORDER BY p.expiryDate ASC NULLS LAST, p.id ASC")
+    org.springframework.data.domain.Page<Product> findForExpiryList(
+        @Param("storeId") Long storeId,
+        @Param("search") String search,
+        org.springframework.data.domain.Pageable pageable
+    );
 }
