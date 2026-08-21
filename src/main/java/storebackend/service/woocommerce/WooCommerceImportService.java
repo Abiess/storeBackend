@@ -21,15 +21,15 @@ import java.util.*;
  * MVP Scope:
  * - Import categories (flat, no hierarchy)
  * - Import simple products (type=simple)
+ * - Import variable products as base product (variants not yet supported)
  * - Import customers (with address)
- * - Skip variable products (type=variable) with warning
  * - Import images via WooCommerceImageService
  * - Skip duplicates (externalSource + externalId + SKU)
  * - Write import logs
  * - Create import job
  * 
  * NOT in MVP:
- * - Product variants
+ * - Product variants (variable products imported without variants)
  * - Category hierarchy
  * - Update existing products
  * - Progress polling
@@ -267,19 +267,14 @@ public class WooCommerceImportService {
 
         for (WooProductDto wooProduct : wooProducts) {
             try {
-                // Skip variable products (MVP)
+                // Log variable products (import as base product, variants not yet supported)
                 if ("variable".equalsIgnoreCase(wooProduct.getType())) {
-                    result.skipped++;
+                    log.info("⚠️ Variable product detected: '{}' (ID: {}) - will import as base product without variants",
+                        wooProduct.getName(), wooProduct.getId());
                     result.warnings.add(String.format(
-                        "Variable product '%s' skipped (variants not supported in MVP)",
+                        "Variable product '%s' imported as base product (variants not yet supported)",
                         wooProduct.getName()
                     ));
-                    logWarning(jobId, String.format(
-                        "Skipped variable product: %s (ID: %d)",
-                        wooProduct.getName(),
-                        wooProduct.getId()
-                    ));
-                    continue;
                 }
 
                 // Check duplicate by externalSource + externalId
@@ -291,7 +286,8 @@ public class WooCommerceImportService {
 
                 if (existingById.isPresent()) {
                     result.skipped++;
-                    log.debug("Product already imported (by ID): {}", wooProduct.getName());
+                    log.info("⏭️ Skipping product '{}' (WC-ID: {}, SKU: {}) - already exists by externalId (markt.ma ID: {})",
+                        wooProduct.getName(), wooProduct.getId(), wooProduct.getSku(), existingById.get().getId());
                     continue;
                 }
 
@@ -304,7 +300,8 @@ public class WooCommerceImportService {
 
                     if (existingBySku.isPresent()) {
                         result.skipped++;
-                        log.debug("Product already imported (by SKU): {}", wooProduct.getName());
+                        log.info("⏭️ Skipping product '{}' (WC-ID: {}, SKU: {}) - already exists by SKU (markt.ma ID: {})",
+                            wooProduct.getName(), wooProduct.getId(), wooProduct.getSku(), existingBySku.get().getId());
                         continue;
                     }
                 }
