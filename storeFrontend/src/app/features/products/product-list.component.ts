@@ -8,12 +8,13 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { TranslationService } from '@app/core/services/translation.service';
 import { ResponsiveDataListComponent, ColumnConfig, ActionConfig, BulkActionConfig } from '@app/shared/components/responsive-data-list/responsive-data-list.component';
 import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
+import { FilterBarComponent, FilterChip } from '@app/shared/components/filter-bar/filter-bar.component';
 import { FabService } from '@app/core/services/fab.service';
 
 @Component({
   selector: 'app-product-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, StoreNavigationComponent, TranslatePipe, ResponsiveDataListComponent, PageHeaderComponent],
+  imports: [CommonModule, RouterModule, StoreNavigationComponent, TranslatePipe, ResponsiveDataListComponent, PageHeaderComponent, FilterBarComponent],
   template: `
     <div class="product-list-container">
       <!-- Einheitliche Navigation -->
@@ -27,32 +28,12 @@ import { FabService } from '@app/core/services/fab.service';
         [actions]="headerActions">
       </app-page-header>
 
-      <!-- Filter-Leiste: Status-Filter (immer sichtbar) + Telegram-Filter (wenn vorhanden) -->
-      <div class="filter-bar">
-        <!-- Status-Filter -->
-        <button class="filter-btn" [class.active]="statusFilter === 'ALL'" (click)="setStatusFilter('ALL')">
-          📦 {{ 'productList.filterAll' | translate }} ({{ products.length }})
-        </button>
-        <button class="filter-btn filter-btn--active" [class.active]="statusFilter === 'ACTIVE'" (click)="setStatusFilter('ACTIVE')">
-          🟢 {{ 'productList.filterActive' | translate }} ({{ countByStatus('ACTIVE') }})
-        </button>
-        <button class="filter-btn filter-btn--draft" [class.active]="statusFilter === 'DRAFT'" (click)="setStatusFilter('DRAFT')">
-          📝 {{ 'productList.filterDraft' | translate }} ({{ countByStatus('DRAFT') }})
-        </button>
-        <button class="filter-btn filter-btn--archived" [class.active]="statusFilter === 'ARCHIVED'" (click)="setStatusFilter('ARCHIVED')">
-          🗄️ {{ 'productList.filterArchived' | translate }} ({{ countByStatus('ARCHIVED') }})
-        </button>
-        <!-- Telegram-Filter (nur wenn vorhanden) -->
-        <button *ngIf="hasTelegramProducts" class="filter-btn filter-btn--telegram"
-                [class.active]="statusFilter === 'TELEGRAM'" (click)="setStatusFilter('TELEGRAM')">
-          📡 {{ 'productList.filterTelegram' | translate }} ({{ telegramCount }})
-        </button>
-        <!-- Preis-Review-Filter -->
-        <button *ngIf="priceReviewCount > 0" class="filter-btn filter-btn--review"
-                [class.active]="statusFilter === 'REVIEW'" (click)="setStatusFilter('REVIEW')">
-          ⚠️ {{ 'productList.filterPriceReview' | translate }} ({{ priceReviewCount }})
-        </button>
-      </div>
+      <!-- Filter-Leiste (Shared Component) -->
+      <app-filter-bar
+        [chips]="filterChips"
+        [activeValue]="statusFilter"
+        (filterChange)="setStatusFilter($event)">
+      </app-filter-bar>
 
       <!-- Responsive Data List -->
       <app-responsive-data-list
@@ -145,83 +126,6 @@ import { FabService } from '@app/core/services/fab.service';
       from { opacity: 0; transform: translateX(-50%) translateY(12px); }
       to   { opacity: 1; transform: translateX(-50%) translateY(0); }
     }
-
-    /* Filter Bar – modernisiert mit Design-Tokens */
-    .filter-bar {
-      display: flex;
-      gap: var(--space-2, 8px);
-      flex-wrap: wrap;
-      margin-bottom: var(--space-6, 1.5rem);
-    }
-    .filter-btn {
-      padding: var(--space-2, 6px) var(--space-4, 14px);
-      border-radius: var(--radius-full, 20px);
-      border: 1px solid var(--theme-border, #e1e3e5);
-      background: var(--theme-surface, white);
-      color: var(--theme-text-subdued, #6b7280);
-      font-size: var(--theme-font-size-sm, 0.8125rem);
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      box-shadow: var(--shadow-xs);
-    }
-    .filter-btn:hover {
-      border-color: var(--theme-primary, #667eea);
-      color: var(--theme-primary, #667eea);
-      background: var(--theme-surface-hovered, #fafbfb);
-    }
-    .filter-btn.active {
-      background: var(--theme-primary, #667eea);
-      color: var(--theme-primary-contrast, white);
-      border-color: var(--theme-primary, #667eea);
-      box-shadow: var(--shadow-sm);
-    }
-    /* Status-spezifische Farben */
-    .filter-btn--active {
-      border-color: var(--theme-success, #16a34a);
-      color: var(--theme-success, #16a34a);
-    }
-    .filter-btn--active.active {
-      background: var(--theme-success, #16a34a);
-      color: var(--theme-success-contrast, white);
-      border-color: var(--theme-success, #16a34a);
-    }
-    .filter-btn--draft {
-      border-color: var(--theme-border-subdued, #9ca3af);
-      color: var(--theme-text-subdued, #6b7280);
-    }
-    .filter-btn--draft.active {
-      background: var(--theme-text-subdued, #6b7280);
-      color: white;
-      border-color: var(--theme-text-subdued, #6b7280);
-    }
-    .filter-btn--archived {
-      border-color: var(--theme-warning, #d97706);
-      color: var(--theme-warning, #d97706);
-    }
-    .filter-btn--archived.active {
-      background: var(--theme-warning, #d97706);
-      color: var(--theme-warning-contrast, white);
-      border-color: var(--theme-warning, #d97706);
-    }
-    .filter-btn--telegram {
-      border-color: #2481cc;
-      color: #2481cc;
-    }
-    .filter-btn--telegram.active {
-      background: #2481cc;
-      color: white;
-      border-color: #2481cc;
-    }
-    .filter-btn--review {
-      border-color: var(--theme-warning, #d97706);
-      color: var(--theme-warning, #d97706);
-    }
-    .filter-btn--review.active {
-      background: var(--theme-warning, #d97706);
-      color: var(--theme-warning-contrast, white);
-      border-color: var(--theme-warning, #d97706);
-    }
   `]
 })
 export class ProductListComponent implements OnInit, OnDestroy {
@@ -232,6 +136,55 @@ export class ProductListComponent implements OnInit, OnDestroy {
   /** Aktiver Filter: Status oder spezielle Filter-Modi */
   statusFilter: 'ALL' | 'ACTIVE' | 'DRAFT' | 'ARCHIVED' | 'INACTIVE' | 'TELEGRAM' | 'REVIEW' = 'ALL';
   headerActions: HeaderAction[] = [];
+
+  /** Filter-Chips für FilterBarComponent (reaktiv) */
+  get filterChips(): FilterChip[] {
+    return [
+      {
+        value: 'ALL',
+        label: this.t('productList.filterAll'),
+        icon: '📦',
+        count: this.products.length
+      },
+      {
+        value: 'ACTIVE',
+        label: this.t('productList.filterActive'),
+        icon: '🟢',
+        count: this.countByStatus('ACTIVE'),
+        variant: 'filter-chip--variant-success'
+      },
+      {
+        value: 'DRAFT',
+        label: this.t('productList.filterDraft'),
+        icon: '📝',
+        count: this.countByStatus('DRAFT'),
+        variant: 'filter-chip--variant-subdued'
+      },
+      {
+        value: 'ARCHIVED',
+        label: this.t('productList.filterArchived'),
+        icon: '🗄️',
+        count: this.countByStatus('ARCHIVED'),
+        variant: 'filter-chip--variant-warning'
+      },
+      {
+        value: 'TELEGRAM',
+        label: this.t('productList.filterTelegram'),
+        icon: '📡',
+        count: this.telegramCount,
+        variant: 'filter-chip--variant-info',
+        visible: this.hasTelegramProducts
+      },
+      {
+        value: 'REVIEW',
+        label: this.t('productList.filterPriceReview'),
+        icon: '⚠️',
+        count: this.priceReviewCount,
+        variant: 'filter-chip--variant-warning',
+        visible: this.priceReviewCount > 0
+      }
+    ];
+  }
 
 
   get hasTelegramProducts(): boolean {
@@ -248,8 +201,8 @@ export class ProductListComponent implements OnInit, OnDestroy {
     return this.products.filter(p => p.status === status).length;
   }
 
-  setStatusFilter(mode: typeof this.statusFilter): void {
-    this.statusFilter = mode;
+  setStatusFilter(mode: string): void {
+    this.statusFilter = mode as typeof this.statusFilter;
     this.applyFilter();
   }
 
