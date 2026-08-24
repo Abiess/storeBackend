@@ -3,10 +3,9 @@ import { CommonModule } from '@angular/common';
 import { TranslationService, SupportedLanguage } from '../../../core/services/translation.service';
 
 @Component({
-  selector: 'app-top-bar',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-top-bar',
+    imports: [CommonModule],
+    template: `
     <div class="top-bar">
       <div class="container">
         <div class="top-bar-content">
@@ -54,7 +53,7 @@ import { TranslationService, SupportedLanguage } from '../../../core/services/tr
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     /* ==================== TOP BAR - Inspired by Amazon/Zalando ==================== */
     .top-bar {
       background: #232f3e;

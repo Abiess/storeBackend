@@ -38,10 +38,9 @@ const COUNTRIES: Country[] = [
 ];
 
 @Component({
-  selector: 'app-quick-start',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
-  template: `
+    selector: 'app-quick-start',
+    imports: [CommonModule, ReactiveFormsModule, RouterLink],
+    template: `
     <div class="qs-wrapper">
 
       <!-- Top-Bar -->
@@ -310,7 +309,7 @@ const COUNTRIES: Country[] = [
 
     </div>
   `,
-  styles: [`
+    styles: [`
     .qs-wrapper {
       min-height: 100vh;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

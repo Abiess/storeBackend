@@ -11,20 +11,19 @@ import { MatIconModule } from '@angular/material/icon';
 import { DeliveryZone, CreateDeliveryZoneRequest } from '../../../core/models/delivery.model';
 
 @Component({
-  selector: 'app-delivery-zone-dialog',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatCheckboxModule,
-    MatButtonModule,
-    MatChipsModule,
-    MatIconModule
-  ],
-  template: `
+    selector: 'app-delivery-zone-dialog',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        MatDialogModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatCheckboxModule,
+        MatButtonModule,
+        MatChipsModule,
+        MatIconModule
+    ],
+    template: `
     <h2 mat-dialog-title>{{ data ? 'Versandzone bearbeiten' : 'Neue Versandzone' }}</h2>
     
     <mat-dialog-content>
@@ -133,7 +132,7 @@ import { DeliveryZone, CreateDeliveryZoneRequest } from '../../../core/models/de
       </button>
     </mat-dialog-actions>
   `,
-  styles: [`
+    styles: [`
     mat-dialog-content {
       min-width: 550px;
       padding: 20px 24px;

@@ -16,10 +16,9 @@ import { ThemePreset } from '@app/core/models';
  * Demo-Daten in einem Rutsch in die DB schreibt.
  */
 @Component({
-  selector: 'app-store-onboarding',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-store-onboarding',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="onboarding">
       <header class="onboarding__head">
         <h1>🎨 Wähle ein Template für deinen Shop</h1>
@@ -78,7 +77,7 @@ import { ThemePreset } from '@app/core/models';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .onboarding {
       max-width: 1200px;
       margin: 0 auto;

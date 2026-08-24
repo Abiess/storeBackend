@@ -24,10 +24,9 @@ import { AuthService } from '../../core/services/auth.service';
  * ```
  */
 @Component({
-  selector: 'app-registration-success',
-  standalone: true,
-  imports: [CommonModule, TranslatePipe],
-  template: `
+    selector: 'app-registration-success',
+    imports: [CommonModule, TranslatePipe],
+    template: `
     <!-- EMAIL_SENT: Posteingang prüfen -->
     <div *ngIf="emailSent" class="success-panel" role="status" aria-live="polite">
       <div class="success-icon">📧</div>
@@ -83,7 +82,7 @@ import { AuthService } from '../../core/services/auth.service';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .success-panel {
       text-align: center;
       animation: fadeIn 0.4s ease;

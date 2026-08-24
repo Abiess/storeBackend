@@ -31,7 +31,6 @@ export interface NavGroup {
 
 @Component({
     selector: 'app-admin-sidebar',
-    standalone: true,
     imports: [CommonModule, RouterModule, TranslatePipe, LucideAngularModule],
     templateUrl: './admin-sidebar.component.html',
     styleUrls: ['./admin-sidebar.component.scss']

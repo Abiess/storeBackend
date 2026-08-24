@@ -5,10 +5,9 @@ import { CustomerProfileService, CustomerProfile, Address } from '../../core/ser
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 @Component({
-  selector: 'app-customer-addresses',
-  standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe],
-  template: `
+    selector: 'app-customer-addresses',
+    imports: [CommonModule, FormsModule, TranslatePipe],
+    template: `
     <div class="addresses-container">
       <h2>{{ 'profile.myAddresses' | translate }}</h2>
       <p class="description">{{ 'profile.addressDescription' | translate }}</p>
@@ -240,7 +239,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .addresses-container {
       max-width: 800px;
     }

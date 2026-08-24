@@ -16,10 +16,9 @@ import { Product, Category } from '@app/core/models';
  * Eigenständig (keine Breaking Changes für bestehende Shop-Templates).
  */
 @Component({
-  selector: 'app-restaurant-warm-layout',
-  standalone: true,
-  imports: [CommonModule, TranslatePipe],
-  template: `
+    selector: 'app-restaurant-warm-layout',
+    imports: [CommonModule, TranslatePipe],
+    template: `
   <div class="rw">
 
     <!-- ════ 1) HERO ════ -->
@@ -137,7 +136,7 @@ import { Product, Category } from '@app/core/models';
 
   </div>
   `,
-  styles: [`
+    styles: [`
     :host { display: block; }
 
     .rw {

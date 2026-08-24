@@ -36,10 +36,9 @@ interface SettingsSection {
 }
 
 @Component({
-  selector: 'app-settings',
-  standalone: true,
-  imports: [CommonModule, FormsModule, UserRolesComponent, RoleManagementComponent, AuditLogComponent, PageHeaderComponent, TranslatePipe, PaymentSettingsComponent],
-  template: `
+    selector: 'app-settings',
+    imports: [CommonModule, FormsModule, UserRolesComponent, RoleManagementComponent, AuditLogComponent, PageHeaderComponent, TranslatePipe, PaymentSettingsComponent],
+    template: `
     <div class="settings-container">
       <app-page-header
         [title]="'settings.title'"
@@ -357,7 +356,7 @@ interface SettingsSection {
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .settings-container { padding: 1.5rem 2rem; max-width: 1200px; margin: 0 auto; }
 
     /* ─── Account Banner ─── */

@@ -5,17 +5,16 @@ import { BrowserMultiFormatReader, NotFoundException, Result } from '@zxing/libr
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 @Component({
-  selector: 'app-barcode-input',
-  standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => BarcodeInputComponent),
-      multi: true
-    }
-  ],
-  template: `
+    selector: 'app-barcode-input',
+    imports: [CommonModule, FormsModule, TranslatePipe],
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => BarcodeInputComponent),
+            multi: true
+        }
+    ],
+    template: `
     <div class="barcode-input-container">
       <!-- Manual/Hardware Scanner Input -->
       <input
@@ -56,7 +55,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .barcode-input-container {
       display: flex;
       flex-direction: column;

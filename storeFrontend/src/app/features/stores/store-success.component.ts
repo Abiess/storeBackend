@@ -4,10 +4,9 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { OnboardingService, ChecklistItem } from '@app/core/services/onboarding.service';
 
 @Component({
-  selector: 'app-store-success',
-  standalone: true,
-  imports: [CommonModule, RouterLink],
-  template: `
+    selector: 'app-store-success',
+    imports: [CommonModule, RouterLink],
+    template: `
     <div class="success-container">
       
       <!-- Success Animation -->
@@ -127,7 +126,7 @@ import { OnboardingService, ChecklistItem } from '@app/core/services/onboarding.
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     /* ==================== Container ==================== */
     .success-container {
       min-height: 100vh;

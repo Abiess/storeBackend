@@ -19,17 +19,16 @@ import { CategoryService } from '@app/core/services/category.service';
 import { SupplierInvoiceService } from '@app/core/services/supplier-invoice.service';
 
 @Component({
-  selector: 'app-import-preview-page',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    RouterLink,
-    TranslateModule,
-    LucideAngularModule
-  ],
-  templateUrl: './import-preview-page.component.html',
-  styleUrls: ['./import-preview-page.component.scss']
+    selector: 'app-import-preview-page',
+    imports: [
+        CommonModule,
+        FormsModule,
+        RouterLink,
+        TranslateModule,
+        LucideAngularModule
+    ],
+    templateUrl: './import-preview-page.component.html',
+    styleUrls: ['./import-preview-page.component.scss']
 })
 export class ImportPreviewPageComponent implements OnInit {
   storeId = 0;

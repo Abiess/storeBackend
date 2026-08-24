@@ -9,10 +9,9 @@ import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 @Component({
-  selector: 'app-mhd-product-list',
-  standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe, PageHeaderComponent],
-  template: `
+    selector: 'app-mhd-product-list',
+    imports: [CommonModule, FormsModule, TranslatePipe, PageHeaderComponent],
+    template: `
     <div class="mhd-product-list-container">
       <app-page-header
         title="Produkte mit Ablaufdatum"
@@ -100,7 +99,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .mhd-product-list-container {
       min-height: 100vh;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

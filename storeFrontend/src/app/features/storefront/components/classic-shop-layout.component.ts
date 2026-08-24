@@ -12,10 +12,9 @@ import { CommonModule } from '@angular/common';
  * Damit kann der Storefront ohne Logikänderung zwischen Layouts switchen.
  */
 @Component({
-  selector: 'app-classic-shop-layout',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-classic-shop-layout',
+    imports: [CommonModule],
+    template: `
     <!-- Optionaler Hero-/Top-Bereich (z.B. Slider) -->
     <section class="classic-hero" *ngIf="showHero">
       <div class="classic-hero__inner">
@@ -34,7 +33,7 @@ import { CommonModule } from '@angular/common';
       </main>
     </div>
   `,
-  styles: [`
+    styles: [`
     :host { display: block; }
 
     .classic-hero {

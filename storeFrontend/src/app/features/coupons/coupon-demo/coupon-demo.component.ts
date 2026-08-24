@@ -7,16 +7,15 @@ import { MatChipsModule } from '@angular/material/chips';
 import { CouponService, ValidateCouponsRequest } from '../../../core/services/coupon.service';
 
 @Component({
-  selector: 'app-coupon-demo',
-  standalone: true,
-  imports: [
-    CommonModule,
-    MatCardModule,
-    MatButtonModule,
-    MatIconModule,
-    MatChipsModule
-  ],
-  template: `
+    selector: 'app-coupon-demo',
+    imports: [
+        CommonModule,
+        MatCardModule,
+        MatButtonModule,
+        MatIconModule,
+        MatChipsModule
+    ],
+    template: `
     <div class="demo-container">
       <mat-card>
         <mat-card-header>
@@ -94,7 +93,7 @@ import { CouponService, ValidateCouponsRequest } from '../../../core/services/co
       </mat-card>
     </div>
   `,
-  styles: [`
+    styles: [`
     .demo-container {
       padding: 24px;
       max-width: 1200px;

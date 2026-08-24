@@ -8,10 +8,9 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
  * Displays categories with modern idealo-style design
  */
 @Component({
-  selector: 'app-store-sidebar',
-  standalone: true,
-  imports: [CommonModule, TranslatePipe],
-  template: `
+    selector: 'app-store-sidebar',
+    imports: [CommonModule, TranslatePipe],
+    template: `
     <div class="store-sidebar-content">
       <!-- Header -->
       <div class="sidebar-header">
@@ -69,7 +68,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     /* ============================================
        Sidebar Content
        ============================================ */

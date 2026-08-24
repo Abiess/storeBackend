@@ -3,10 +3,9 @@ import { CommonModule } from '@angular/common';
 import { StoreSliderService, StoreSliderImage, StoreSliderSettings } from '../../../core/services/store-slider.service';
 
 @Component({
-  selector: 'app-store-slider-viewer',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-store-slider-viewer',
+    imports: [CommonModule],
+    template: `
     <div class="slider-container" *ngIf="images.length > 0">
       <div class="slider-wrapper">
         <!-- Slides -->
@@ -49,7 +48,7 @@ import { StoreSliderService, StoreSliderImage, StoreSliderSettings } from '../..
       <p>Keine Slider-Bilder verfügbar</p>
     </div>
   `,
-  styles: [`
+    styles: [`
     .slider-container {
       width: 100%;
       max-width: 1200px;

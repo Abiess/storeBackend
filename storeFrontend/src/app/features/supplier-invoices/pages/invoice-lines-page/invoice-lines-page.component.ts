@@ -20,26 +20,25 @@ import { InvoiceLineStatusBadgeComponent } from '../../components/invoice-lines/
 type FilterType = 'ALL' | 'REVIEW' | 'UNMAPPED' | 'MAPPED';
 
 @Component({
-  selector: 'app-invoice-lines-page',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    RouterLink,
-    TranslateModule,
-    MatButtonModule,
-    MatIconModule,
-    MatMenuModule,
-    MatCheckboxModule,
-    MatDialogModule,
-    MatSnackBarModule,
-    MatTooltipModule,
-    MatDividerModule,
-    LucideAngularModule,
-    InvoiceLineStatusBadgeComponent
-  ],
-  templateUrl: './invoice-lines-page.component.html',
-  styleUrls: ['./invoice-lines-page.component.scss']
+    selector: 'app-invoice-lines-page',
+    imports: [
+        CommonModule,
+        FormsModule,
+        RouterLink,
+        TranslateModule,
+        MatButtonModule,
+        MatIconModule,
+        MatMenuModule,
+        MatCheckboxModule,
+        MatDialogModule,
+        MatSnackBarModule,
+        MatTooltipModule,
+        MatDividerModule,
+        LucideAngularModule,
+        InvoiceLineStatusBadgeComponent
+    ],
+    templateUrl: './invoice-lines-page.component.html',
+    styleUrls: ['./invoice-lines-page.component.scss']
 })
 export class InvoiceLinesPageComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();

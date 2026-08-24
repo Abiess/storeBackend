@@ -14,11 +14,10 @@ import {
 } from '@app/core/models';
 
 @Component({
-  selector: 'app-theme-customizer',
-  standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, LucideAngularModule],
-  templateUrl: './theme-customizer.component.html',
-  styleUrls: ['./theme-customizer.component.scss']
+    selector: 'app-theme-customizer',
+    imports: [CommonModule, FormsModule, TranslateModule, LucideAngularModule],
+    templateUrl: './theme-customizer.component.html',
+    styleUrls: ['./theme-customizer.component.scss']
 })
 export class ThemeCustomizerComponent implements OnInit {
   storeId!: number;

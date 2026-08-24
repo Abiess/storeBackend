@@ -10,10 +10,9 @@ import { SeoApiService } from '../../core/services/seo-api.service';
  * Demonstrates title, meta, OG, Twitter, canonical, and JSON-LD injection.
  */
 @Component({
-  selector: 'app-product-detail',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-product-detail',
+    imports: [CommonModule],
+    template: `
     <div class="product-detail" *ngIf="product">
       <div class="product-image">
         <img [src]="product.imageUrl" [alt]="product.title">
@@ -26,7 +25,7 @@ import { SeoApiService } from '../../core/services/seo-api.service';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .product-detail {
       display: grid;
       grid-template-columns: 1fr 1fr;

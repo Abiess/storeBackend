@@ -26,10 +26,9 @@ interface RecentOrder {
 }
 
 @Component({
-  selector: 'app-customer-dashboard',
-  standalone: true,
-  imports: [CommonModule, RouterModule],
-  template: `
+    selector: 'app-customer-dashboard',
+    imports: [CommonModule, RouterModule],
+    template: `
     <div class="customer-page">
       <!-- Header -->
       <div class="page-header">
@@ -116,7 +115,7 @@ interface RecentOrder {
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .customer-page {
       min-height: 100vh;
       background: #f8fafc;

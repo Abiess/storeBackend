@@ -8,15 +8,14 @@ import { RedirectDialogComponent } from './redirect-dialog.component';
 import { ResponsiveDataListComponent, ColumnConfig, ActionConfig } from '@app/shared/components/responsive-data-list/responsive-data-list.component';
 
 @Component({
-  selector: 'app-redirects-page',
-  standalone: true,
-  imports: [
-    CommonModule,
-    MatSnackBarModule,
-    MatDialogModule,
-    ResponsiveDataListComponent
-  ],
-  template: `
+    selector: 'app-redirects-page',
+    imports: [
+        CommonModule,
+        MatSnackBarModule,
+        MatDialogModule,
+        ResponsiveDataListComponent
+    ],
+    template: `
     <div class="redirects-container">
       <div class="redirects-header">
         <div class="redirects-header__left">
@@ -47,7 +46,7 @@ import { ResponsiveDataListComponent, ColumnConfig, ActionConfig } from '@app/sh
       </app-responsive-data-list>
     </div>
   `,
-  styles: [`
+    styles: [`
     .redirects-container { padding: 1.5rem 0; }
     .redirects-header {
       display: flex;

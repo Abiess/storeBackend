@@ -11,10 +11,9 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
  * - Standard product cards
  */
 @Component({
-  selector: 'app-product-grid-classic',
-  standalone: true,
-  imports: [CommonModule, ProductCardComponent, TranslatePipe],
-  template: `
+    selector: 'app-product-grid-classic',
+    imports: [CommonModule, ProductCardComponent, TranslatePipe],
+    template: `
     <div class="classic-layout">
 
       <!-- ── LEFT SIDEBAR ── -->
@@ -107,7 +106,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     :host { display: block; }
 
     /* ── LAYOUT ── */

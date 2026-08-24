@@ -21,10 +21,9 @@ import { BarcodeInputComponent } from '@app/shared/components/barcode-input/barc
 import { Subscription } from 'rxjs';
 
 @Component({
-  selector: 'app-product-form',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, MatSlideToggleModule, MatTooltipModule, TranslatePipe, ProductVariantsManagerComponent, PageHeaderComponent, ImageUploadComponent, BarcodeInputComponent],
-  template: `
+    selector: 'app-product-form',
+    imports: [CommonModule, ReactiveFormsModule, FormsModule, MatSlideToggleModule, MatTooltipModule, TranslatePipe, ProductVariantsManagerComponent, PageHeaderComponent, ImageUploadComponent, BarcodeInputComponent],
+    template: `
     <!-- Fixed Top-Right Loading Indicator -->
     <div class="ai-loading-overlay" *ngIf="aiGenerating || uploadingImages">
       <span class="spinner-pulse"></span>
@@ -515,7 +514,7 @@ import { Subscription } from 'rxjs';
       </form>
     </div>
   `,
-  styles: [`
+    styles: [`
     .product-form-container {
       max-width: 1200px;
       margin: 0 auto;

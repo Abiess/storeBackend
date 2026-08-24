@@ -3,11 +3,10 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 
 @Component({
-  selector: 'app-store-creation-shell',
-  standalone: true,
-  imports: [CommonModule, RouterLink],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
+    selector: 'app-store-creation-shell',
+    imports: [CommonModule, RouterLink],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    template: `
     <div class="sc-shell">
       <header class="sc-header">
         <a routerLink="/" class="sc-logo">
@@ -20,7 +19,7 @@ import { RouterLink } from '@angular/router';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .sc-shell {
       min-height: 100vh;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

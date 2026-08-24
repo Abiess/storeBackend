@@ -15,26 +15,25 @@ import { SeoApiService, SeoSettingsDTO } from '../../../core/services/seo-api.se
 import { StoreNavigationComponent } from '@app/shared/components/store-navigation.component';
 
 @Component({
-  selector: 'app-seo-settings-page',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    FormsModule,
-    RouterModule,
-    MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-    MatIconModule,
-    MatProgressSpinnerModule,
-    MatSnackBarModule,
-    MatSlideToggleModule,
-    MatTooltipModule,
-    StoreNavigationComponent
-  ],
-  templateUrl: './seo-settings-page.component.html',
-  styleUrls: ['./seo-settings-page.component.scss']
+    selector: 'app-seo-settings-page',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        FormsModule,
+        RouterModule,
+        MatCardModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatButtonModule,
+        MatIconModule,
+        MatProgressSpinnerModule,
+        MatSnackBarModule,
+        MatSlideToggleModule,
+        MatTooltipModule,
+        StoreNavigationComponent
+    ],
+    templateUrl: './seo-settings-page.component.html',
+    styleUrls: ['./seo-settings-page.component.scss']
 })
 export class SeoSettingsPageComponent implements OnInit {
   storeId!: number;

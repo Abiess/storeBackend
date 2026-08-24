@@ -4,10 +4,9 @@ import { LanguageService } from '../../../core/services/language.service';
 import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
-  selector: 'app-language-switcher',
-  standalone: true,
-  imports: [CommonModule, TranslateModule],
-  template: `
+    selector: 'app-language-switcher',
+    imports: [CommonModule, TranslateModule],
+    template: `
     <div class="language-switcher">
       <button 
         class="language-button"
@@ -36,7 +35,7 @@ import { TranslateModule } from '@ngx-translate/core';
     <!-- Overlay zum Schließen -->
     <div class="dropdown-overlay" *ngIf="isOpen" (click)="closeDropdown()"></div>
   `,
-  styles: [`
+    styles: [`
     .language-switcher {
       position: relative;
       z-index: 100;

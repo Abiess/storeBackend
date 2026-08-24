@@ -10,10 +10,9 @@ import { CJConnectionRequest, CJConnectionStatus } from '../../core/models/drops
  * Minimal UI für CJ Account Verbindung
  */
 @Component({
-  selector: 'app-cj-connect',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-cj-connect',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="cj-connect-container">
       <div class="card">
         <div class="card-header">
@@ -80,7 +79,7 @@ import { CJConnectionRequest, CJConnectionStatus } from '../../core/models/drops
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .cj-connect-container {
       max-width: 600px;
       margin: 2rem auto;

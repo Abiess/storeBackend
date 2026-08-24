@@ -5,10 +5,9 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { LegalBaseComponent } from './legal-base.component';
 
 @Component({
-  selector: 'app-impressum-store',
-  standalone: true,
-  imports: [CommonModule, TranslatePipe, RouterModule],
-  template: `
+    selector: 'app-impressum-store',
+    imports: [CommonModule, TranslatePipe, RouterModule],
+    template: `
     <div class="legal-page">
       <div class="legal-container">
         <h1 class="legal-title">{{ 'legal.impressum.title' | translate }}</h1>
@@ -85,7 +84,7 @@ import { LegalBaseComponent } from './legal-base.component';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .legal-page {
       min-height: calc(100vh - 200px);
       padding: 2rem 1rem;

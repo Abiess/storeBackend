@@ -11,10 +11,9 @@ import { CommonModule } from '@angular/common';
  * - Responsive design
  */
 @Component({
-  selector: 'app-product-image-gallery',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-product-image-gallery',
+    imports: [CommonModule],
+    template: `
     <div class="product-gallery">
       <!-- Main Image Display -->
       <div class="main-image-container">
@@ -107,7 +106,7 @@ import { CommonModule } from '@angular/common';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .product-gallery { width: 100%; }
 
     .main-image-container {

@@ -6,10 +6,9 @@ import { environment } from '@env/environment';
 import { catchError, of } from 'rxjs';
 
 @Component({
-  selector: 'app-email-verification',
-  standalone: true,
-  imports: [CommonModule, RouterModule],
-  template: `
+    selector: 'app-email-verification',
+    imports: [CommonModule, RouterModule],
+    template: `
     <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div class="max-w-md w-full space-y-8">
         <!-- Loading State -->
@@ -80,7 +79,7 @@ import { catchError, of } from 'rxjs';
       </div>
     </div>
   `,
-  styles: []
+    styles: []
 })
 export class EmailVerificationComponent implements OnInit {
   status: 'loading' | 'success' | 'error' = 'loading';

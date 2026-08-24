@@ -8,10 +8,9 @@ import { FulfillmentTrackerComponent } from './fulfillment-tracker.component';
  * Zeigt Order-Info + Dropshipping Fulfillment-Tracker
  */
 @Component({
-  selector: 'app-order-detail-admin',
-  standalone: true,
-  imports: [CommonModule, FulfillmentTrackerComponent],
-  template: `
+    selector: 'app-order-detail-admin',
+    imports: [CommonModule, FulfillmentTrackerComponent],
+    template: `
     <div class="order-detail-container">
       <div class="order-header">
         <h1>📦 Order #{{ orderId }}</h1>
@@ -33,7 +32,7 @@ import { FulfillmentTrackerComponent } from './fulfillment-tracker.component';
       ></app-fulfillment-tracker>
     </div>
   `,
-  styles: [`
+    styles: [`
     .order-detail-container {
       max-width: 1200px;
       margin: 2rem auto;

@@ -23,10 +23,9 @@ interface Category {
 }
 
 @Component({
-  selector: 'app-category-list',
-  standalone: true,
-  imports: [CommonModule, RouterModule, TranslatePipe, StoreNavigationComponent, ResponsiveDataListComponent, PageHeaderComponent],
-  template: `
+    selector: 'app-category-list',
+    imports: [CommonModule, RouterModule, TranslatePipe, StoreNavigationComponent, ResponsiveDataListComponent, PageHeaderComponent],
+    template: `
     <div class="category-list-container">
       <app-store-navigation [currentPage]="'navigation.categories' | translate"></app-store-navigation>
 
@@ -52,7 +51,7 @@ interface Category {
       <div *ngIf="error" class="error-message">{{ error }}</div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .category-list-container { padding: 2rem; max-width: 1400px; margin: 0 auto; }
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
     .header h1 { margin: 0; font-size: 1.875rem; font-weight: 700; color: #1e293b; }

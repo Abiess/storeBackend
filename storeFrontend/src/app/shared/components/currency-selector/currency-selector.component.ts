@@ -3,10 +3,9 @@ import { CommonModule } from '@angular/common';
 import { TranslatePipe } from '../../../core/pipes/translate.pipe';
 
 @Component({
-  selector: 'app-currency-selector',
-  standalone: true,
-  imports: [CommonModule, TranslatePipe],
-  template: `
+    selector: 'app-currency-selector',
+    imports: [CommonModule, TranslatePipe],
+    template: `
     <div class="selector-dropdown" [class.open]="isOpen">
       <button 
         class="selector-button"
@@ -32,7 +31,7 @@ import { TranslatePipe } from '../../../core/pipes/translate.pipe';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .selector-dropdown {
       position: relative;
       display: inline-block;

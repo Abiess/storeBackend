@@ -13,10 +13,9 @@ import { QuantityStepperComponent } from '@app/shared/ui/quantity-stepper/quanti
  * Zeigt Produktdetails in einem Modal ohne Navigation zur Detail-Seite
  */
 @Component({
-  selector: 'app-product-quick-view',
-  standalone: true,
-  imports: [CommonModule, FormsModule, ProductImageGalleryComponent, ProductReviewsComponent, TranslatePipe, QuantityStepperComponent],
-  template: `
+    selector: 'app-product-quick-view',
+    imports: [CommonModule, FormsModule, ProductImageGalleryComponent, ProductReviewsComponent, TranslatePipe, QuantityStepperComponent],
+    template: `
     <div *ngIf="isOpen" class="quick-view-overlay" (click)="closeModal()">
       <div class="quick-view-modal" (click)="$event.stopPropagation()">
         <!-- Close Button -->
@@ -214,7 +213,7 @@ import { QuantityStepperComponent } from '@app/shared/ui/quantity-stepper/quanti
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .quick-view-overlay {
       position: fixed;
       top: 0;

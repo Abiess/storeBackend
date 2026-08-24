@@ -11,21 +11,20 @@ import { CouponService, ValidateCouponsRequest, ValidateCouponsResponse, ValidCo
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 @Component({
-  selector: 'app-coupon-input',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-    MatIconModule,
-    MatChipsModule,
-    MatProgressSpinnerModule,
-    TranslatePipe
-  ],
-  templateUrl: './coupon-input.component.html',
-  styleUrls: ['./coupon-input.component.scss']
+    selector: 'app-coupon-input',
+    imports: [
+        CommonModule,
+        FormsModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatButtonModule,
+        MatIconModule,
+        MatChipsModule,
+        MatProgressSpinnerModule,
+        TranslatePipe
+    ],
+    templateUrl: './coupon-input.component.html',
+    styleUrls: ['./coupon-input.component.scss']
 })
 export class CouponInputComponent implements OnInit {
   @Input() storeId!: number;

@@ -21,10 +21,9 @@ import { toDate } from '@app/core/utils/date.utils';
 import { LucideAngularModule, Palette, Layout, Grid3x3, Eye, Save, ArrowLeft, RotateCcw, Sparkles } from 'lucide-angular';
 
 @Component({
-  selector: 'app-store-theme',
-  standalone: true,
-  imports: [CommonModule, FormsModule, PageHeaderComponent, TranslateModule, LucideAngularModule],
-  template: `
+    selector: 'app-store-theme',
+    imports: [CommonModule, FormsModule, PageHeaderComponent, TranslateModule, LucideAngularModule],
+    template: `
     <div class="theme-container">
       <app-page-header
         [title]="'storeTheme.management' | translate"
@@ -378,7 +377,7 @@ import { LucideAngularModule, Palette, Layout, Grid3x3, Eye, Save, ArrowLeft, Ro
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .theme-container {
       padding: 2rem;
       max-width: 1400px;

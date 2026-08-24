@@ -17,10 +17,9 @@ import { BreadcrumbComponent, BreadcrumbItem } from './breadcrumb.component';
  * </app-page-header>
  */
 @Component({
-  selector: 'app-page-header',
-  standalone: true,
-  imports: [CommonModule, TranslatePipe, BreadcrumbComponent],
-  template: `
+    selector: 'app-page-header',
+    imports: [CommonModule, TranslatePipe, BreadcrumbComponent],
+    template: `
     <!-- Breadcrumbs -->
     <app-breadcrumb *ngIf="breadcrumbs && breadcrumbs.length > 0" [items]="breadcrumbs"></app-breadcrumb>
 
@@ -61,7 +60,7 @@ import { BreadcrumbComponent, BreadcrumbItem } from './breadcrumb.component';
       <div class="page-header-accent"></div>
     </div>
   `,
-  styles: [`
+    styles: [`
     /* ── Wrapper ─────────────────────────────────────────────── */
     .page-header {
       position: relative;

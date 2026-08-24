@@ -23,10 +23,9 @@ export interface SettingsTab {
 }
 
 @Component({
-  selector: 'app-store-settings',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, StoreNavigationComponent, TranslatePipe, StoreSliderEditorComponent, PaymentSettingsComponent],
-  template: `
+    selector: 'app-store-settings',
+    imports: [CommonModule, ReactiveFormsModule, FormsModule, StoreNavigationComponent, TranslatePipe, StoreSliderEditorComponent, PaymentSettingsComponent],
+    template: `
     <div class="store-settings-container">
       <!-- Einheitliche Navigation -->
       <app-store-navigation 
@@ -956,7 +955,7 @@ export interface SettingsTab {
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .store-settings-container {
       padding: 2rem;
       max-width: 1200px;

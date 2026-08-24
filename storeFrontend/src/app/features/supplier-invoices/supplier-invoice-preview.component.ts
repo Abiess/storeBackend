@@ -28,27 +28,26 @@ interface DialogData {
 }
 
 @Component({
-  selector: 'app-supplier-invoice-preview',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatButtonModule,
-    MatIconModule,
-    MatProgressSpinnerModule,
-    MatSnackBarModule,
-    MatToolbarModule,
-    MatTooltipModule,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatExpansionModule,
-    MatCheckboxModule,
-    TranslateModule,
-    LucideAngularModule
-  ],
-  templateUrl: './supplier-invoice-preview.component.html',
-  styleUrls: ['./supplier-invoice-preview.component.scss']
+    selector: 'app-supplier-invoice-preview',
+    imports: [
+        CommonModule,
+        FormsModule,
+        MatButtonModule,
+        MatIconModule,
+        MatProgressSpinnerModule,
+        MatSnackBarModule,
+        MatToolbarModule,
+        MatTooltipModule,
+        MatDialogModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatExpansionModule,
+        MatCheckboxModule,
+        TranslateModule,
+        LucideAngularModule
+    ],
+    templateUrl: './supplier-invoice-preview.component.html',
+    styleUrls: ['./supplier-invoice-preview.component.scss']
 })
 export class SupplierInvoicePreviewComponent implements OnInit, OnDestroy {
   loading = true;

@@ -24,10 +24,9 @@ export interface AiImageData {
  * - Vollständige Mehrsprachigkeit
  */
 @Component({
-  selector: 'app-ai-product-image-generator',
-  standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe],
-  template: `
+    selector: 'app-ai-product-image-generator',
+    imports: [CommonModule, FormsModule, TranslatePipe],
+    template: `
     <div class="ai-generator-container">
       <!-- Einführung -->
       <div class="ai-intro">
@@ -212,7 +211,7 @@ export interface AiImageData {
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .ai-generator-container {
       width: 100%;
     }

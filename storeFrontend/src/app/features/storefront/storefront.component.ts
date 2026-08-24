@@ -29,29 +29,28 @@ import { TranslationService } from '@app/core/services/translation.service';
 import { Subscription } from 'rxjs';
 
 @Component({
-  selector: 'app-storefront',
-  standalone: true,
-  imports: [
-    CommonModule,
-    RouterModule,
-    ProductQuickViewComponent,
-    FeaturedProductsComponent,
-    TopBarComponent,
-    StoreSliderViewerComponent,
-    // NEW: Moderne Layout-Komponenten
-    StoreLayoutComponent,
-    ClassicShopLayoutComponent,
-    ElectronicsProLayoutComponent,
-    FashionEditorialLayoutComponent,
-    StoreSidebarComponent,
-    ProductGridComponent,
-    ModernProductCardComponent,
-    ModernStoreHeaderComponent,
-    HomepageSectionRendererComponent,
-    TranslatePipe
-  ],
-  templateUrl: './storefront.component.html',
-  styleUrls: ['./storefront.component.scss']
+    selector: 'app-storefront',
+    imports: [
+        CommonModule,
+        RouterModule,
+        ProductQuickViewComponent,
+        FeaturedProductsComponent,
+        TopBarComponent,
+        StoreSliderViewerComponent,
+        // NEW: Moderne Layout-Komponenten
+        StoreLayoutComponent,
+        ClassicShopLayoutComponent,
+        ElectronicsProLayoutComponent,
+        FashionEditorialLayoutComponent,
+        StoreSidebarComponent,
+        ProductGridComponent,
+        ModernProductCardComponent,
+        ModernStoreHeaderComponent,
+        HomepageSectionRendererComponent,
+        TranslatePipe
+    ],
+    templateUrl: './storefront.component.html',
+    styleUrls: ['./storefront.component.scss']
 })
 export class StorefrontComponent implements OnInit, OnDestroy {
   storeId!: number;

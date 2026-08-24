@@ -5,10 +5,9 @@ import { RoleService } from '@app/core/services/role.service';
 import { User, StoreRole } from '@app/core/models';
 
 @Component({
-  selector: 'app-user-roles',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-user-roles',
+    imports: [CommonModule],
+    template: `
     <div class="user-roles-section">
       <div class="info-card">
         <h3>👤 Benutzerinformationen</h3>
@@ -124,7 +123,7 @@ import { User, StoreRole } from '@app/core/models';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .user-roles-section { display: flex; flex-direction: column; gap: 24px; }
     .info-card { background: white; border-radius: 8px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e0e0e0; }
     .info-card h3 { margin: 0 0 20px 0; color: #333; font-size: 18px; border-bottom: 2px solid #667eea; padding-bottom: 10px; }

@@ -11,14 +11,13 @@ import {
 } from 'lucide-angular';
 
 @Component({
-  selector: 'app-admin-layout',
-  standalone: true,
-  imports: [
-    CommonModule, RouterModule, AdminSidebarComponent, LanguageSwitcherComponent,
-    LucideAngularModule
-  ],
-  templateUrl: './admin-layout.component.html',
-  styleUrls: ['./admin-layout.component.scss']
+    selector: 'app-admin-layout',
+    imports: [
+        CommonModule, RouterModule, AdminSidebarComponent, LanguageSwitcherComponent,
+        LucideAngularModule
+    ],
+    templateUrl: './admin-layout.component.html',
+    styleUrls: ['./admin-layout.component.scss']
 })
 export class AdminLayoutComponent implements OnInit {
   storeId?: number;

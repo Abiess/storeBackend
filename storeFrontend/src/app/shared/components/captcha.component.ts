@@ -14,10 +14,9 @@ import { environment } from '../../../environments/environment';
  * ```
  */
 @Component({
-  selector: 'app-captcha',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-captcha',
+    imports: [CommonModule],
+    template: `
     @if (captchaEnabled && !captchaToken && !captchaConfigurationError) {
       <div #captchaContainer class="captcha-wrapper"></div>
     }
@@ -28,7 +27,7 @@ import { environment } from '../../../environments/environment';
       <div class="captcha-error">⚠️ Sicherheitsprüfung konnte nicht geladen werden</div>
     }
   `,
-  styles: [`
+    styles: [`
     .captcha-wrapper { margin: 16px 0; min-height: 78px; }
     .captcha-success {
       color: #10b981; font-size: 14px; margin: 8px 0;

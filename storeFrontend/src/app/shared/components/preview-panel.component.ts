@@ -17,10 +17,9 @@ import { PreviewPanelService, PreviewMiniData } from '../../core/services/previe
  *  - Mobile: Panel full-width, FAB als Kreis
  */
 @Component({
-  selector: 'app-preview-panel',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-preview-panel',
+    imports: [CommonModule],
+    template: `
     @if (svc.config()) {
       <!-- ─── FAB ──────────────────────────────────────── -->
       <button class="pp-fab"
@@ -130,7 +129,7 @@ import { PreviewPanelService, PreviewMiniData } from '../../core/services/previe
       }
     }
   `,
-  styles: [`
+    styles: [`
     /* ═══ FAB ══════════════════════════════════════════════ */
     .pp-fab {
       position: fixed;

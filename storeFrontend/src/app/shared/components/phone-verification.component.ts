@@ -15,10 +15,9 @@ import { environment } from '@env/environment';
  * - Auto-Focus auf Code-Input
  */
 @Component({
-  selector: 'app-phone-verification',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-phone-verification',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="phone-verification-container">
       <!-- Step 1: Telefonnummer eingeben -->
       <div *ngIf="step === 'phone'" class="verification-step">
@@ -144,7 +143,7 @@ import { environment } from '@env/environment';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     /* ==================== CONTAINER ==================== */
     .phone-verification-container {
       max-width: 500px;

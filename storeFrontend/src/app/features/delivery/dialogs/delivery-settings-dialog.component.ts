@@ -9,18 +9,17 @@ import { MatButtonModule } from '@angular/material/button';
 import { DeliverySettings, CreateDeliverySettingsRequest } from '../../../core/models/delivery.model';
 
 @Component({
-  selector: 'app-delivery-settings-dialog',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatCheckboxModule,
-    MatButtonModule
-  ],
-  template: `
+    selector: 'app-delivery-settings-dialog',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        MatDialogModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatCheckboxModule,
+        MatButtonModule
+    ],
+    template: `
     <h2 mat-dialog-title>Liefereinstellungen {{ data ? 'bearbeiten' : 'erstellen' }}</h2>
     
     <mat-dialog-content>
@@ -84,7 +83,7 @@ import { DeliverySettings, CreateDeliverySettingsRequest } from '../../../core/m
       </button>
     </mat-dialog-actions>
   `,
-  styles: [`
+    styles: [`
     mat-dialog-content {
       min-width: 500px;
       padding: 20px 24px;

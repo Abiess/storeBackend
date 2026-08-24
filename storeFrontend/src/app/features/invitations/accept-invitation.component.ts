@@ -6,10 +6,9 @@ import { AuthService } from '@app/core/services/auth.service';
 import { StoreService } from '@app/core/services/store.service';
 
 @Component({
-  selector: 'app-accept-invitation',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-accept-invitation',
+    imports: [CommonModule],
+    template: `
     <div class="accept-invitation-container">
       <div class="card">
         <div class="card-header" *ngIf="!loading && !error && !success">
@@ -66,7 +65,7 @@ import { StoreService } from '@app/core/services/store.service';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .accept-invitation-container {
       display: flex;
       justify-content: center;

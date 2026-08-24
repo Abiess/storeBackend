@@ -20,10 +20,9 @@ import { ToastService } from '@app/core/services/toast.service';
  * – Live-Vorschau
  */
 @Component({
-  selector: 'app-banner-settings',
-  standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe],
-  template: `
+    selector: 'app-banner-settings',
+    imports: [CommonModule, FormsModule, TranslatePipe],
+    template: `
     <div class="banner-settings-page">
 
       <!-- Header -->
@@ -181,7 +180,7 @@ import { ToastService } from '@app/core/services/toast.service';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .banner-settings-page { max-width: 860px; margin: 0 auto; padding: 24px 16px; }
 
     /* Header */

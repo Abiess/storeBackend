@@ -8,10 +8,9 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
  * Responsive grid layout for products (inspired by idealo.de)
  */
 @Component({
-  selector: 'app-product-grid',
-  standalone: true,
-  imports: [CommonModule, TranslatePipe],
-  template: `
+    selector: 'app-product-grid',
+    imports: [CommonModule, TranslatePipe],
+    template: `
     <div class="product-grid-wrapper">
       <!-- Section Header -->
       <div class="grid-header" *ngIf="title">
@@ -51,7 +50,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     /* ============================================
        Grid Wrapper
        ============================================ */

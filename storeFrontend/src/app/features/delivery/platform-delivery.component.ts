@@ -13,16 +13,15 @@ import {
 } from '@app/core/services/platform-delivery.service';
 
 @Component({
-  selector: 'app-platform-delivery',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    AdminSidebarComponent,
-    PageHeaderComponent,
-    TranslatePipe
-  ],
-  template: `
+    selector: 'app-platform-delivery',
+    imports: [
+        CommonModule,
+        FormsModule,
+        AdminSidebarComponent,
+        PageHeaderComponent,
+        TranslatePipe
+    ],
+    template: `
     <app-admin-sidebar></app-admin-sidebar>
 
     <div class="pd-page">
@@ -276,7 +275,7 @@ import {
 
     </div>
   `,
-  styles: [`
+    styles: [`
     /* ── Layout ───────────────────────────────────────────────── */
     .pd-page {
       margin-inline-start: 260px;   /* RTL-safe (LTR: left | RTL: right) */

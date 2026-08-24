@@ -19,10 +19,9 @@ import { TranslatePipe } from '../../core/pipes/translate.pipe';
  * ```
  */
 @Component({
-  selector: 'app-password-requirements',
-  standalone: true,
-  imports: [CommonModule, TranslatePipe],
-  template: `
+    selector: 'app-password-requirements',
+    imports: [CommonModule, TranslatePipe],
+    template: `
     <div class="password-requirements" *ngIf="passwordControl">
       <div class="requirement" [class.met]="hasMinLength" [class.unmet]="!hasMinLength && isTouched">
         <span class="icon">{{ hasMinLength ? '✓' : '○' }}</span>
@@ -38,7 +37,7 @@ import { TranslatePipe } from '../../core/pipes/translate.pipe';
       -->
     </div>
   `,
-  styles: [`
+    styles: [`
     .password-requirements {
       margin-top: 8px;
       padding: 12px;

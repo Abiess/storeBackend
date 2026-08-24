@@ -8,10 +8,9 @@ export interface SliderImage {
 }
 
 @Component({
-  selector: 'app-image-slider',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-image-slider',
+    imports: [CommonModule],
+    template: `
     <div class="slider-container" *ngIf="images && images.length > 0">
       <div class="slider-wrapper">
         <!-- Slides -->
@@ -42,7 +41,7 @@ export interface SliderImage {
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .slider-container {
       width: 100%;
       position: relative;

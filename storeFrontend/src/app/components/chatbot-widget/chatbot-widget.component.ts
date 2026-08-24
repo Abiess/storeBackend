@@ -5,11 +5,10 @@ import { Subscription } from 'rxjs';
 import { ChatbotService, ChatbotSession, ChatbotMessage } from '../../services/chatbot.service';
 
 @Component({
-  selector: 'app-chatbot-widget',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './chatbot-widget.component.html',
-  styleUrls: ['./chatbot-widget.component.scss']
+    selector: 'app-chatbot-widget',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './chatbot-widget.component.html',
+    styleUrls: ['./chatbot-widget.component.scss']
 })
 export class ChatbotWidgetComponent implements OnInit, OnDestroy {
   @ViewChild('messagesContainer') private messagesContainer!: ElementRef;

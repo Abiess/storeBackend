@@ -4,11 +4,10 @@ import { Router } from '@angular/router';
 import { AuthService } from '@app/core/services/auth.service';
 
 @Component({
-  selector: 'app-choose-path',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './choose-path.component.html',
-  styleUrls: ['./choose-path.component.scss']
+    selector: 'app-choose-path',
+    imports: [CommonModule],
+    templateUrl: './choose-path.component.html',
+    styleUrls: ['./choose-path.component.scss']
 })
 export class ChoosePathComponent implements OnInit {
   userEmail = '';

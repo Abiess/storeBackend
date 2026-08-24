@@ -38,10 +38,9 @@ interface ProductTierPrice {
 }
 
 @Component({
-  selector: 'app-storefront-product-detail',
-  standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe, ProductVariantPickerComponent, QuantityStepperComponent],
-  template: `
+    selector: 'app-storefront-product-detail',
+    imports: [CommonModule, FormsModule, TranslatePipe, ProductVariantPickerComponent, QuantityStepperComponent],
+    template: `
     <div class="product-detail-page" *ngIf="product">
       <div class="breadcrumb">
         <button class="btn-back" (click)="goBack()">
@@ -323,7 +322,7 @@ interface ProductTierPrice {
       <button (click)="goBack()">{{ 'common.back' | translate }}</button>
     </div>
   `,
-  styles: [`
+    styles: [`
     .product-detail-page {
       max-width: 1200px;
       margin: 0 auto;

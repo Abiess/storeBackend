@@ -10,10 +10,9 @@ interface ProductOption {
 }
 
 @Component({
-  selector: 'app-product-variant-picker',
-  standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe],
-  template: `
+    selector: 'app-product-variant-picker',
+    imports: [CommonModule, FormsModule, TranslatePipe],
+    template: `
     <div class="vp-wrapper" *ngIf="variants && variants.length > 0">
 
       <!-- ── Option-Gruppen ── -->
@@ -115,7 +114,7 @@ interface ProductOption {
 
     </div>
   `,
-  styles: [`
+    styles: [`
     /* ──────────────────────────────────────────
        WRAPPER
     ────────────────────────────────────────── */

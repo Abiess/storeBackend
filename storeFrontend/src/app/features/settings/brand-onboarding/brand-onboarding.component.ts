@@ -19,7 +19,6 @@ import { ProductnavigationBarComponent } from '@app/features/productnavigation-b
 
 @Component({
     selector: 'app-brand-onboarding',
-    standalone: true,
     imports: [
         CommonModule,
         ReactiveFormsModule,

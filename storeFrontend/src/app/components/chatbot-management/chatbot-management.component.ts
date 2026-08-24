@@ -9,11 +9,10 @@ import {StoreNavigationComponent} from "@app/shared/components/store-navigation.
 import {TranslatePipe} from "@app/core/pipes/translate.pipe";
 
 @Component({
-  selector: 'app-chatbot-management',
-  standalone: true,
+    selector: 'app-chatbot-management',
     imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent, StoreNavigationComponent, TranslatePipe],
-  templateUrl: './chatbot-management.component.html',
-  styleUrls: ['./chatbot-management.component.scss']
+    templateUrl: './chatbot-management.component.html',
+    styleUrls: ['./chatbot-management.component.scss']
 })
 export class ChatbotManagementComponent implements OnInit {
   storeId!: number;

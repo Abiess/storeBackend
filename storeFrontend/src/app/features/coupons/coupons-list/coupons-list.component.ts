@@ -11,17 +11,16 @@ import { ResponsiveDataListComponent, ColumnConfig, ActionConfig } from '@app/sh
 import { FilterBarComponent, FilterChip } from '@app/shared/components/filter-bar/filter-bar.component';
 
 @Component({
-  selector: 'app-coupons-list',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatSnackBarModule,
-    PageHeaderComponent,
-    ResponsiveDataListComponent,
-    FilterBarComponent
-  ],
-  template: `
+    selector: 'app-coupons-list',
+    imports: [
+        CommonModule,
+        FormsModule,
+        MatSnackBarModule,
+        PageHeaderComponent,
+        ResponsiveDataListComponent,
+        FilterBarComponent
+    ],
+    template: `
     <div class="coupons-container">
       <app-page-header
         [title]="'Gutscheine & Rabatte'"
@@ -51,7 +50,7 @@ import { FilterBarComponent, FilterChip } from '@app/shared/components/filter-ba
       </app-responsive-data-list>
     </div>
   `,
-  styles: [`
+    styles: [`
     .coupons-container { padding: 2rem; max-width: 1400px; margin: 0 auto; }
     @media (max-width: 768px) { .coupons-container { padding: 1rem; } }
   `]

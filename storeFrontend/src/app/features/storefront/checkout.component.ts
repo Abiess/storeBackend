@@ -27,7 +27,6 @@ import { environment } from '@env/environment';
 
 @Component({
     selector: 'app-checkout',
-    standalone: true,
     imports: [
         CommonModule,
         ReactiveFormsModule,

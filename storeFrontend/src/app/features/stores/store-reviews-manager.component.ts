@@ -13,10 +13,9 @@ import {StoreNavigationComponent} from "@app/shared/components/store-navigation.
 import { toDate } from '@app/core/utils/date.utils';
 
 @Component({
-  selector: 'app-store-reviews-manager',
-  standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe, ProductnavigationBarComponent, PageHeaderComponent, StoreNavigationComponent],
-  template: `
+    selector: 'app-store-reviews-manager',
+    imports: [CommonModule, FormsModule, TranslatePipe, ProductnavigationBarComponent, PageHeaderComponent, StoreNavigationComponent],
+    template: `
     
 
     <div class="reviews-page">
@@ -199,7 +198,7 @@ import { toDate } from '@app/core/utils/date.utils';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .reviews-page { 
       padding: 2rem;
       max-width: 1400px;

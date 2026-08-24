@@ -13,10 +13,9 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '@env/environment';
 
 @Component({
-  selector: 'app-store-orders',
-  standalone: true,
-  imports: [CommonModule, FormsModule, StoreNavigationComponent, TranslatePipe, ResponsiveDataListComponent, PageHeaderComponent],
-  template: `
+    selector: 'app-store-orders',
+    imports: [CommonModule, FormsModule, StoreNavigationComponent, TranslatePipe, ResponsiveDataListComponent, PageHeaderComponent],
+    template: `
     <div class="store-orders-container">
       <app-store-navigation
         [currentPage]="'navigation.orders' | translate">
@@ -158,7 +157,7 @@ import { environment } from '@env/environment';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .store-orders-container { padding: 2rem; max-width: 1400px; margin: 0 auto; }
     .header-content { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
     h1 { font-size: 2rem; margin: 0; }

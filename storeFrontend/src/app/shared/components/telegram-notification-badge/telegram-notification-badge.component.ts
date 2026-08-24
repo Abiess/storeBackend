@@ -16,10 +16,9 @@ import { TelegramService, TelegramSyncNotification } from '@app/core/services/te
  *   </app-telegram-notification-badge>
  */
 @Component({
-  selector: 'app-telegram-notification-badge',
-  standalone: true,
-  imports: [ CommonModule],
-  template: `
+    selector: 'app-telegram-notification-badge',
+    imports: [CommonModule],
+    template: `
     <div class="tg-notif-wrapper" *ngIf="unreadCount > 0 || panelOpen">
 
       <!-- Badge-Button -->
@@ -72,7 +71,7 @@ import { TelegramService, TelegramSyncNotification } from '@app/core/services/te
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .tg-notif-wrapper { position: relative; display: inline-block; }
 
     .tg-badge-btn {

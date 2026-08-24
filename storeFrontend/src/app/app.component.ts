@@ -16,10 +16,9 @@ import { FabHostComponent } from './shared/components/fab-host.component';
 import { PreviewPanelComponent } from './shared/components/preview-panel.component';
 
 @Component({
-  selector: 'app-root',
-  standalone: true,
-  imports: [CommonModule, RouterOutlet, ChatbotWidgetComponent, WhatsappWidgetComponent, AdminSidebarComponent, FabHostComponent, PreviewPanelComponent],
-  template: `
+    selector: 'app-root',
+    imports: [CommonModule, RouterOutlet, ChatbotWidgetComponent, WhatsappWidgetComponent, AdminSidebarComponent, FabHostComponent, PreviewPanelComponent],
+    template: `
     <ng-container *ngIf="showAdminShell; else publicShell">
       <div class="app-admin-shell">
         <app-admin-sidebar></app-admin-sidebar>
@@ -38,7 +37,7 @@ import { PreviewPanelComponent } from './shared/components/preview-panel.compone
     <app-fab-host></app-fab-host>
     <app-preview-panel></app-preview-panel>
   `,
-  styles: [`
+    styles: [`
     .app-admin-shell {
       display: flex;
       min-height: 100vh;

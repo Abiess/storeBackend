@@ -22,10 +22,9 @@ interface ProductOption {
 
 
 @Component({
-  selector: 'app-product-variants-manager',
-  standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe, MatDialogModule, ImageUploadComponent],
-  template: `
+    selector: 'app-product-variants-manager',
+    imports: [CommonModule, FormsModule, TranslatePipe, MatDialogModule, ImageUploadComponent],
+    template: `
     <div class="vm-root">
 
       <!-- HEADER -->
@@ -317,7 +316,7 @@ interface ProductOption {
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .vm-root { display: flex; flex-direction: column; gap: 1.5rem; }
 
     /* Header */

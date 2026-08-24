@@ -12,10 +12,9 @@ import { CaptchaComponent } from '@app/shared/components/captcha.component';
 import { environment } from '@env/environment';
 
 @Component({
-  selector: 'app-login',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, LanguageSwitcherComponent, TranslatePipe, CaptchaComponent],
-  template: `
+    selector: 'app-login',
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, LanguageSwitcherComponent, TranslatePipe, CaptchaComponent],
+    template: `
     <div class="auth-container">
       <div class="language-switcher-wrapper">
         <app-language-switcher></app-language-switcher>
@@ -95,7 +94,7 @@ import { environment } from '@env/environment';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .auth-container {
       min-height: 100vh;
       display: flex;

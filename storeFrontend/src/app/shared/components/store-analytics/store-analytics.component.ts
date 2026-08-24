@@ -17,23 +17,22 @@ import { RevenueSummary, TopProduct, OrderStats } from '@app/core/models/analyti
 import { ResponsiveDataListComponent, ColumnConfig } from '@app/shared/components/responsive-data-list/responsive-data-list.component';
 
 @Component({
-  selector: 'app-store-analytics',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatCardModule,
-    MatButtonModule,
-    MatSelectModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatProgressSpinnerModule,
-    MatIconModule,
-    TranslateModule,
-    ResponsiveDataListComponent
-  ],
-  templateUrl: './store-analytics.component.html',
-  styleUrls: ['./store-analytics.component.scss']
+    selector: 'app-store-analytics',
+    imports: [
+        CommonModule,
+        FormsModule,
+        MatCardModule,
+        MatButtonModule,
+        MatSelectModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatProgressSpinnerModule,
+        MatIconModule,
+        TranslateModule,
+        ResponsiveDataListComponent
+    ],
+    templateUrl: './store-analytics.component.html',
+    styleUrls: ['./store-analytics.component.scss']
 })
 export class StoreAnalyticsComponent implements OnInit {
   @Input() storeId!: number;

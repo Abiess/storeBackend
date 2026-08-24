@@ -33,11 +33,10 @@ import {
  * - Leer lassen = bestehendes Secret behalten
  */
 @Component({
-  selector: 'app-woocommerce-import',
-  standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe],
-  templateUrl: './woocommerce-import.component.html',
-  styleUrls: ['./woocommerce-import.component.scss']
+    selector: 'app-woocommerce-import',
+    imports: [CommonModule, FormsModule, TranslatePipe],
+    templateUrl: './woocommerce-import.component.html',
+    styleUrls: ['./woocommerce-import.component.scss']
 })
 export class WooCommerceImportComponent implements OnInit {
   storeId!: number;

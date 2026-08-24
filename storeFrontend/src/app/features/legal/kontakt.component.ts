@@ -4,10 +4,9 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
 
 @Component({
-  selector: 'app-kontakt',
-  standalone: true,
-  imports: [CommonModule, TranslatePipe, FormsModule],
-  template: `
+    selector: 'app-kontakt',
+    imports: [CommonModule, TranslatePipe, FormsModule],
+    template: `
     <div class="legal-page">
       <div class="legal-container">
         <h1 class="legal-title">{{ 'legal.contact.title' | translate }}</h1>
@@ -100,7 +99,7 @@ import { FormsModule } from '@angular/forms';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .legal-page {
       min-height: 100vh;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

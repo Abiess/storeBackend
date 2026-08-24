@@ -11,10 +11,9 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
  * - Suited for electronics / large catalogues
  */
 @Component({
-  selector: 'app-product-grid-compact',
-  standalone: true,
-  imports: [CommonModule, ProductCardComponent, TranslatePipe],
-  template: `
+    selector: 'app-product-grid-compact',
+    imports: [CommonModule, ProductCardComponent, TranslatePipe],
+    template: `
     <div class="compact-wrapper">
 
       <!-- ── INLINE FILTER BAR (always visible) ── -->
@@ -71,7 +70,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     :host { display: block; }
 
     .compact-wrapper {

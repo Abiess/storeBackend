@@ -3,15 +3,14 @@ import { CommonModule } from '@angular/common';
 import { LineStatus } from '@app/core/models/invoice-line.model';
 
 @Component({
-  selector: 'app-invoice-line-status-badge',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-invoice-line-status-badge',
+    imports: [CommonModule],
+    template: `
     <span [class]="'status-badge ' + badgeClass">
       {{ statusLabel }}
     </span>
   `,
-  styles: [`
+    styles: [`
     .status-badge {
       display: inline-block;
       padding: 0.25rem 0.75rem;

@@ -6,10 +6,9 @@ import { CouponInputComponent } from '../shared/components/coupon-input/coupon-i
 import { CouponService, ValidateCouponsResponse } from '../core/services/coupon.service';
 
 @Component({
-  selector: 'app-checkout-example',
-  standalone: true,
-  imports: [CommonModule, CouponInputComponent],
-  template: `
+    selector: 'app-checkout-example',
+    imports: [CommonModule, CouponInputComponent],
+    template: `
     <div class="checkout-container">
       <h2>Warenkorb</h2>
       

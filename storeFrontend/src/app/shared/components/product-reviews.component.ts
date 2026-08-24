@@ -7,10 +7,9 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { toDate } from '@app/core/utils/date.utils';
 
 @Component({
-  selector: 'app-product-reviews',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TranslatePipe],
-  template: `
+    selector: 'app-product-reviews',
+    imports: [CommonModule, ReactiveFormsModule, TranslatePipe],
+    template: `
     <div class="reviews-container">
       <!-- Rating Summary -->
       <div class="rating-summary" *ngIf="stats">
@@ -146,7 +145,7 @@ import { toDate } from '@app/core/utils/date.utils';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .reviews-container {
       padding: 2rem;
       max-width: 1400px;

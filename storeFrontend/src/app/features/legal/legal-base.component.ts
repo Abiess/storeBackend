@@ -14,9 +14,8 @@ import { firstValueFrom } from 'rxjs';
  * Provides common functionality for loading store data and checking ownership.
  */
 @Component({
-  standalone: true,
-  imports: [CommonModule, TranslatePipe, RouterModule],
-  template: ''
+    imports: [CommonModule, TranslatePipe, RouterModule],
+    template: ''
 })
 export abstract class LegalBaseComponent implements OnInit {
   store: PublicStore | null = null;

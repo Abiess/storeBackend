@@ -7,10 +7,9 @@ import { ResponsiveDataListComponent, ColumnConfig } from '@app/shared/component
  * Import-Protokoll: Tabelle aller bisherigen Telegram-Imports pro Store.
  */
 @Component({
-  selector: 'app-telegram-import-log',
-  standalone: true,
-  imports: [CommonModule, ResponsiveDataListComponent],
-  template: `
+    selector: 'app-telegram-import-log',
+    imports: [CommonModule, ResponsiveDataListComponent],
+    template: `
     <div class="telegram-log">
       <div class="log-header">
         <h3>📋 Import-Protokoll</h3>
@@ -30,7 +29,7 @@ import { ResponsiveDataListComponent, ColumnConfig } from '@app/shared/component
       </app-responsive-data-list>
     </div>
   `,
-  styles: [`
+    styles: [`
     .telegram-log { }
     .log-header {
       display: flex; align-items: center; justify-content: space-between;

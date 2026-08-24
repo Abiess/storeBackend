@@ -23,10 +23,9 @@ import {
 } from '../../core/models/delivery.model';
 
 @Component({
-  selector: 'app-delivery-management',
-  standalone: true,
-  imports: [CommonModule, FormsModule, StoreNavigationComponent, TranslatePipe, PageHeaderComponent],
-  template: `
+    selector: 'app-delivery-management',
+    imports: [CommonModule, FormsModule, StoreNavigationComponent, TranslatePipe, PageHeaderComponent],
+    template: `
     <div class="delivery-page">
       <app-store-navigation currentPage="Lieferung"></app-store-navigation>
 
@@ -777,7 +776,7 @@ import {
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .delivery-page { padding: 1.5rem 2rem; max-width: 1300px; margin: 0 auto; }
 
     /* ─── Tabs ─── */

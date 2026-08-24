@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 
 @Component({
     selector: 'app-video-player',
-    standalone: true,
     imports: [CommonModule],
     template: `
     <div class="video-player" [class.large]="size === 'large'">

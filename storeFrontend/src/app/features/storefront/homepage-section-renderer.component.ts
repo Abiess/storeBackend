@@ -6,10 +6,9 @@ import { FeaturedProductsComponent } from '@app/shared/components/featured-produ
 import { StoreSliderViewerComponent } from './components/store-slider-viewer.component';
 
 @Component({
-  selector: 'app-homepage-section-renderer',
-  standalone: true,
-  imports: [CommonModule, FormsModule, FeaturedProductsComponent, StoreSliderViewerComponent],
-  template: `
+    selector: 'app-homepage-section-renderer',
+    imports: [CommonModule, FormsModule, FeaturedProductsComponent, StoreSliderViewerComponent],
+    template: `
     <div class="homepage-sections">
       <ng-container *ngFor="let section of sections">
         <!-- Hero / Slider Section -->
@@ -87,7 +86,7 @@ import { StoreSliderViewerComponent } from './components/store-slider-viewer.com
       </ng-container>
     </div>
   `,
-  styles: [`
+    styles: [`
     .homepage-sections {
       display: flex;
       flex-direction: column;

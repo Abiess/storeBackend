@@ -16,10 +16,9 @@ import { CommonModule } from '@angular/common';
  * sodass Stores, die dieses Layout nutzen, lizenzkonform sind.
  */
 @Component({
-  selector: 'app-fashion-editorial-layout',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-fashion-editorial-layout',
+    imports: [CommonModule],
+    template: `
     <section class="ed-cover" *ngIf="showHero">
       <div class="ed-cover__inner">
         <ng-content select="[top]"></ng-content>
@@ -41,7 +40,7 @@ import { CommonModule } from '@angular/common';
       (CC&nbsp;BY&nbsp;3.0)
     </div>
   `,
-  styles: [`
+    styles: [`
     :host { display: block; }
 
     .ed-cover {

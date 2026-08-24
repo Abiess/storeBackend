@@ -18,10 +18,9 @@ import { StoreAnalyticsComponent } from '@app/shared/components/store-analytics/
 import { environment } from '@env/environment';
 
 @Component({
-  selector: 'app-store-detail',
-  standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, TranslatePipe, OnboardingChecklistComponent, TelegramNotificationBadgeComponent, StoreAnalyticsComponent],
-  template: `
+    selector: 'app-store-detail',
+    imports: [CommonModule, RouterModule, FormsModule, TranslatePipe, OnboardingChecklistComponent, TelegramNotificationBadgeComponent, StoreAnalyticsComponent],
+    template: `
     <div class="store-detail-page">
       <div class="content">
 
@@ -291,7 +290,7 @@ import { environment } from '@env/environment';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     /* ── Anonymous Banner ─────────────────────────────────────── */
     .anon-banner {
       position: relative; overflow: hidden;

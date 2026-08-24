@@ -31,10 +31,9 @@ export interface BulkActionConfig {
 }
 
 @Component({
-  selector: 'app-responsive-data-list',
-  standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe],
-  template: `
+    selector: 'app-responsive-data-list',
+    imports: [CommonModule, FormsModule, TranslatePipe],
+    template: `
     <!-- ─── Bulk-Action Bar (erscheint wenn Einträge ausgewählt) ─── -->
     <div class="rdl-bulk-bar" *ngIf="selectable && selectedIds.size > 0">
       <div class="rdl-bulk-bar__info">
@@ -272,7 +271,7 @@ export interface BulkActionConfig {
       </div>
     </div>
   `,
-  styleUrls: ['./responsive-data-list.component.scss']
+    styleUrls: ['./responsive-data-list.component.scss']
 })
 export class ResponsiveDataListComponent implements OnChanges {
   @Input() items: any[] = [];

@@ -12,10 +12,9 @@ import { CurrencySelectorComponent } from '../../shared/components/currency-sele
 import { PromoBannerComponent } from '../../shared/components/promo-banner/promo-banner.component';
 
 @Component({
-  selector: 'app-storefront-header',
-  standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, StorefrontAuthDialogComponent, TranslatePipe, LanguageSelectorComponent, CurrencySelectorComponent, PromoBannerComponent],
-  template: `
+    selector: 'app-storefront-header',
+    imports: [CommonModule, RouterModule, FormsModule, StorefrontAuthDialogComponent, TranslatePipe, LanguageSelectorComponent, CurrencySelectorComponent, PromoBannerComponent],
+    template: `
     <!-- Promo Banner mit besserer Logik -->
     <app-promo-banner [storeId]="storeId"></app-promo-banner>
 
@@ -160,7 +159,7 @@ import { PromoBannerComponent } from '../../shared/components/promo-banner/promo
       (success)="onAuthSuccess()">
     </app-storefront-auth-dialog>
   `,
-  styles: [`
+    styles: [`
     /* ════════════════════════════════════════
        PROMO STRIP
        ════════════════════════════════════════ */

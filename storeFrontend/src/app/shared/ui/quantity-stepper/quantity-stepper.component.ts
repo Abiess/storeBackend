@@ -20,10 +20,9 @@ import { FormsModule } from '@angular/forms';
  * ```
  */
 @Component({
-  selector: 'app-quantity-stepper',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-quantity-stepper',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div 
       class="quantity-stepper"
       [class.quantity-stepper--compact]="compact"
@@ -87,7 +86,7 @@ import { FormsModule } from '@angular/forms';
       </button>
     </div>
   `,
-  styleUrls: ['./quantity-stepper.component.scss']
+    styleUrls: ['./quantity-stepper.component.scss']
 })
 export class QuantityStepperComponent implements OnChanges {
   @Input() value: number = 1;

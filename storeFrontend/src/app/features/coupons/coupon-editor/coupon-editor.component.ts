@@ -17,26 +17,25 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CouponService, CouponDTO } from '../../../core/services/coupon.service';
 
 @Component({
-  selector: 'app-coupon-editor',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-    MatIconModule,
-    MatSelectModule,
-    MatDatepickerModule,
-    MatNativeDateModule,
-    MatCheckboxModule,
-    MatChipsModule,
-    MatSnackBarModule,
-    MatProgressSpinnerModule
-  ],
-  templateUrl: './coupon-editor.component.html',
-  styleUrls: ['./coupon-editor.component.scss']
+    selector: 'app-coupon-editor',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        MatCardModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatButtonModule,
+        MatIconModule,
+        MatSelectModule,
+        MatDatepickerModule,
+        MatNativeDateModule,
+        MatCheckboxModule,
+        MatChipsModule,
+        MatSnackBarModule,
+        MatProgressSpinnerModule
+    ],
+    templateUrl: './coupon-editor.component.html',
+    styleUrls: ['./coupon-editor.component.scss']
 })
 export class CouponEditorComponent implements OnInit {
   storeId!: number;

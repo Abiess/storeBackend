@@ -9,18 +9,17 @@ import { CouponInputComponent } from '../../../shared/components/coupon-input/co
 import { ValidateCouponsResponse } from '../../../core/services/coupon.service';
 
 @Component({
-  selector: 'app-checkout-demo',
-  standalone: true,
-  imports: [
-    CommonModule,
-    MatCardModule,
-    MatButtonModule,
-    MatIconModule,
-    MatDividerModule,
-    MatListModule,
-    CouponInputComponent
-  ],
-  template: `
+    selector: 'app-checkout-demo',
+    imports: [
+        CommonModule,
+        MatCardModule,
+        MatButtonModule,
+        MatIconModule,
+        MatDividerModule,
+        MatListModule,
+        CouponInputComponent
+    ],
+    template: `
     <div class="checkout-container">
       <div class="checkout-header">
         <h1>
@@ -200,7 +199,7 @@ import { ValidateCouponsResponse } from '../../../core/services/coupon.service';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .checkout-container {
       min-height: 100vh;
       background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);

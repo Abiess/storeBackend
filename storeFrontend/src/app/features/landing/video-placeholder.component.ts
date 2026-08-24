@@ -3,11 +3,10 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 
 @Component({
-  selector: 'app-video-placeholder',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './video-placeholder.component.html',
-  styleUrls: ['./video-placeholder.component.scss']
+    selector: 'app-video-placeholder',
+    imports: [CommonModule],
+    templateUrl: './video-placeholder.component.html',
+    styleUrls: ['./video-placeholder.component.scss']
 })
 export class VideoPlaceholderComponent {
   @Input() title: string = 'DEMO';

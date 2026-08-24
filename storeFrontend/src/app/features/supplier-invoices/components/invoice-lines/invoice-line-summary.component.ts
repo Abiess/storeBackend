@@ -4,10 +4,9 @@ import { TranslateModule } from '@ngx-translate/core';
 import { LineSummary } from '@app/core/models/invoice-line.model';
 
 @Component({
-  selector: 'app-invoice-line-summary',
-  standalone: true,
-  imports: [CommonModule, TranslateModule],
-  template: `
+    selector: 'app-invoice-line-summary',
+    imports: [CommonModule, TranslateModule],
+    template: `
     <div class="line-summary">
       <div class="summary-stats">
         <div class="stat">
@@ -39,7 +38,7 @@ import { LineSummary } from '@app/core/models/invoice-line.model';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .line-summary {
       background: white;
       border-radius: 0.5rem;

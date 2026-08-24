@@ -34,30 +34,29 @@ import { RestaurantWarmLayoutComponent } from './components/restaurant-warm-layo
  * Diese Komponente wird automatisch geladen wenn ein User eine Store-Subdomain aufruft
  */
 @Component({
-  selector: 'app-storefront-landing',
-  standalone: true,
-  imports: [
-    CommonModule,
-    RouterModule,
-    TranslatePipe,
-    StorefrontHeaderComponent,
-    StorefrontBottomNavComponent,
-    ProductCardComponent,
-    StoreNotFoundComponent,
-    ProductQuickViewComponent,
-    ImageSliderComponent,
-    ClassicShopLayoutComponent,
-    ElectronicsProLayoutComponent,
-    FashionEditorialLayoutComponent,
-    PromoBannerComponent,
-    ProductGridClassicComponent,
-    ProductGridFashionComponent,
-    ProductGridCompactComponent,
-    ProductGridMarketplaceComponent,
-    RestaurantWarmLayoutComponent
-  ],
-  templateUrl: './storefront-landing.component.html',
-  styleUrls: ['./storefront-landing.component.scss']
+    selector: 'app-storefront-landing',
+    imports: [
+        CommonModule,
+        RouterModule,
+        TranslatePipe,
+        StorefrontHeaderComponent,
+        StorefrontBottomNavComponent,
+        ProductCardComponent,
+        StoreNotFoundComponent,
+        ProductQuickViewComponent,
+        ImageSliderComponent,
+        ClassicShopLayoutComponent,
+        ElectronicsProLayoutComponent,
+        FashionEditorialLayoutComponent,
+        PromoBannerComponent,
+        ProductGridClassicComponent,
+        ProductGridFashionComponent,
+        ProductGridCompactComponent,
+        ProductGridMarketplaceComponent,
+        RestaurantWarmLayoutComponent
+    ],
+    templateUrl: './storefront-landing.component.html',
+    styleUrls: ['./storefront-landing.component.scss']
 })
 export class StorefrontLandingComponent implements OnInit {
   storeId: number | null = null;

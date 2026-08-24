@@ -11,10 +11,9 @@ import { FabService } from '@app/core/services/fab.service';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 @Component({
-  selector: 'app-homepage-builder',
-  standalone: true,
+    selector: 'app-homepage-builder',
     imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent, StoreNavigationComponent, TranslatePipe],
-  template: `
+    template: `
     <div class="homepage-builder">
      
         <app-store-navigation currentPage="HomBuilder
@@ -225,7 +224,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .homepage-builder {
       padding: 2rem;
       max-width: 1200px;

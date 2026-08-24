@@ -13,10 +13,9 @@ import {
 } from '@app/shared/components/responsive-data-list/responsive-data-list.component';
 
 @Component({
-  selector: 'app-role-management',
-  standalone: true,
-  imports: [CommonModule, FormsModule, AdminLayoutComponent, PageHeaderComponent, ResponsiveDataListComponent],
-  template: `
+    selector: 'app-role-management',
+    imports: [CommonModule, FormsModule, AdminLayoutComponent, PageHeaderComponent, ResponsiveDataListComponent],
+    template: `
     <app-admin-layout>
       <div class="role-management-container">
         <app-page-header
@@ -201,7 +200,7 @@ import {
       </div>
     </app-admin-layout>
   `,
-  styles: [`
+    styles: [`
     .role-management-container { padding: 2rem; max-width: 1200px; margin: 0 auto; }
     .content { display: flex; flex-direction: column; gap: 2rem; }
     .section { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }

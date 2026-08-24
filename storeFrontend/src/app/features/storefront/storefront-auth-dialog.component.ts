@@ -14,17 +14,16 @@ import { RegistrationSuccessComponent } from '../../shared/auth/registration-suc
 import { environment } from '../../../environments/environment';
 
 @Component({
-  selector: 'app-storefront-auth-dialog',
-  standalone: true,
-  imports: [
-    CommonModule, 
-    ReactiveFormsModule, 
-    TranslatePipe, 
-    CaptchaComponent,
-    PasswordRequirementsComponent,
-    RegistrationSuccessComponent
-  ],
-  template: `
+    selector: 'app-storefront-auth-dialog',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        TranslatePipe,
+        CaptchaComponent,
+        PasswordRequirementsComponent,
+        RegistrationSuccessComponent
+    ],
+    template: `
     <div class="dialog-overlay" (click)="close.emit()">
       <div class="dialog-content" (click)="$event.stopPropagation()">
         <button class="btn-close" (click)="close.emit()">✕</button>
@@ -131,7 +130,7 @@ import { environment } from '../../../environments/environment';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .dialog-overlay {
       position: fixed;
       top: 0;

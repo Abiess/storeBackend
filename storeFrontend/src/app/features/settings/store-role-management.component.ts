@@ -23,16 +23,15 @@ interface TeamMemberForm {
 }
 
 @Component({
-  selector: 'app-store-role-management',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    TranslateModule,
-    PageHeaderComponent,
-    ResponsiveDataListComponent
-  ],
-  template: `
+    selector: 'app-store-role-management',
+    imports: [
+        CommonModule,
+        FormsModule,
+        TranslateModule,
+        PageHeaderComponent,
+        ResponsiveDataListComponent
+    ],
+    template: `
     <div class="role-page">
         <app-page-header
           [title]="'roles.teamAndRoles' | translate"
@@ -261,7 +260,7 @@ interface TeamMemberForm {
         </div>
       </div>
   `,
-  styles: [`
+    styles: [`
     .role-page { padding: 2rem; max-width: 1200px; margin: 0 auto; min-height: 100vh; background: #f6f6f7; }
 
     /* Rollen-Übersicht */

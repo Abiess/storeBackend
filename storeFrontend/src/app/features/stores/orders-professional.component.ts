@@ -10,11 +10,10 @@ import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-h
 import { toDate } from '@app/core/utils/date.utils';
 
 @Component({
-  selector: 'app-orders-professional',
-  standalone: true,
-  imports: [CommonModule, FormsModule, StoreNavigationComponent, ResponsiveDataListComponent, PageHeaderComponent],
-  templateUrl: './orders-professional.component.html',
-  styleUrls: ['./orders-professional.component.scss']
+    selector: 'app-orders-professional',
+    imports: [CommonModule, FormsModule, StoreNavigationComponent, ResponsiveDataListComponent, PageHeaderComponent],
+    templateUrl: './orders-professional.component.html',
+    styleUrls: ['./orders-professional.component.scss']
 })
 export class OrdersProfessionalComponent implements OnInit {
   storeId!: number;

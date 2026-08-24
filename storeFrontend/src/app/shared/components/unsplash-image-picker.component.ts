@@ -26,10 +26,9 @@ import { UnsplashService, UnsplashImage } from '@app/core/services/unsplash.serv
  * @Input category - Optional: z.B. 'fashion', 'electronics', 'food' (verfeinert die Suche)
  */
 @Component({
-  selector: 'app-unsplash-image-picker',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-unsplash-image-picker',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="unsplash-picker">
 
       <!-- Nicht konfiguriert / nicht verfügbar -->
@@ -131,7 +130,7 @@ import { UnsplashService, UnsplashImage } from '@app/core/services/unsplash.serv
       }
     </div>
   `,
-  styles: [`
+    styles: [`
     .unsplash-picker {
       margin-top: 1.25rem;
     }

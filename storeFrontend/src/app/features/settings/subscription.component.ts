@@ -19,11 +19,10 @@ import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
 import { UsageWidgetComponent } from '@app/shared/components/usage-widget.component';
 
 @Component({
-  selector: 'app-subscription',
-  standalone: true,
-  imports: [CommonModule, FormsModule, PageHeaderComponent, UsageWidgetComponent],
-  templateUrl: './subscription.component.html',
-  styleUrls: ['./subscription.component.scss']
+    selector: 'app-subscription',
+    imports: [CommonModule, FormsModule, PageHeaderComponent, UsageWidgetComponent],
+    templateUrl: './subscription.component.html',
+    styleUrls: ['./subscription.component.scss']
 })
 export class SubscriptionComponent implements OnInit {
   currentSubscription: Subscription | null = null;

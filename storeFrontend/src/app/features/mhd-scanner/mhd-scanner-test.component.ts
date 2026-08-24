@@ -20,10 +20,9 @@ interface OpenFoodFactsProduct {
 }
 
 @Component({
-  selector: 'app-mhd-scanner-test',
-  standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe, PageHeaderComponent],
-  template: `
+    selector: 'app-mhd-scanner-test',
+    imports: [CommonModule, FormsModule, TranslatePipe, PageHeaderComponent],
+    template: `
     <div class="mhd-scanner-test-container">
       <app-page-header
         [title]="'sidebarAdmin.items.mhdScannerTest' | translate"
@@ -204,7 +203,7 @@ interface OpenFoodFactsProduct {
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .mhd-scanner-test-container {
       min-height: 100vh;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

@@ -11,10 +11,9 @@ import { TranslationService } from '@app/core/services/translation.service';
 import {TranslateService} from "@ngx-translate/core";
 
 @Component({
-  selector: 'app-dashboard',
-  standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, LanguageSwitcherComponent, TranslatePipe],
-  template: `
+    selector: 'app-dashboard',
+    imports: [CommonModule, RouterModule, FormsModule, LanguageSwitcherComponent, TranslatePipe],
+    template: `
     <div class="dashboard">
       <nav class="navbar">
         <div class="container nav-container">
@@ -288,7 +287,7 @@ import {TranslateService} from "@ngx-translate/core";
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     * {
       box-sizing: border-box;
     }

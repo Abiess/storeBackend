@@ -28,10 +28,9 @@ interface StoreCategory {
 }
 
 @Component({
-  selector: 'app-store-create-simple',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, TranslatePipe, UnsplashImagePickerComponent],
-  template: `
+    selector: 'app-store-create-simple',
+    imports: [CommonModule, ReactiveFormsModule, RouterLink, TranslatePipe, UnsplashImagePickerComponent],
+    template: `
     <div class="create-store-container">
       <!-- Clean, minimal header -->
       <div class="header">
@@ -235,7 +234,7 @@ interface StoreCategory {
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     /* ==================== Base Layout ==================== */
     .create-store-container {
       min-height: 100vh;

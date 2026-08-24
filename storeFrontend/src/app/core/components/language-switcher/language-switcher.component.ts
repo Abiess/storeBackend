@@ -6,10 +6,9 @@ import { LanguageService } from '../../services/language.service';
 type AppLanguage = 'de' | 'en' | 'ar';
 
 @Component({
-  selector: 'app-language-switcher',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-language-switcher',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="language-switcher">
       <select
         class="lang-select"
@@ -22,7 +21,7 @@ type AppLanguage = 'de' | 'en' | 'ar';
       </select>
     </div>
   `,
-  styles: [`
+    styles: [`
     .language-switcher {
       display: inline-flex;
       align-items: center;

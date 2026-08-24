@@ -12,10 +12,9 @@ import { FilterBarComponent, FilterChip } from '@app/shared/components/filter-ba
 import { FabService } from '@app/core/services/fab.service';
 
 @Component({
-  selector: 'app-product-list',
-  standalone: true,
-  imports: [CommonModule, RouterModule, StoreNavigationComponent, TranslatePipe, ResponsiveDataListComponent, PageHeaderComponent, FilterBarComponent],
-  template: `
+    selector: 'app-product-list',
+    imports: [CommonModule, RouterModule, StoreNavigationComponent, TranslatePipe, ResponsiveDataListComponent, PageHeaderComponent, FilterBarComponent],
+    template: `
     <div class="product-list-container">
       <!-- Einheitliche Navigation -->
       <app-store-navigation 
@@ -58,7 +57,7 @@ import { FabService } from '@app/core/services/fab.service';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .product-list-container {
       padding: var(--space-8, 2rem);
       max-width: 1400px;

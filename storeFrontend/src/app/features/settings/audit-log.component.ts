@@ -5,11 +5,10 @@ import { AuditLogService } from '@app/core/services/audit-log.service';
 import { AuditLog, AuditAction, AuditEntityType, AuditLogFilter, Role } from '@app/core/models';
 
 @Component({
-  selector: 'app-audit-log',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './audit-log.component.html',
-  styleUrls: ['./audit-log.component.scss']
+    selector: 'app-audit-log',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './audit-log.component.html',
+    styleUrls: ['./audit-log.component.scss']
 })
 export class AuditLogComponent implements OnInit {
   @Input() storeId!: number | null; // FIXED: Kann null sein

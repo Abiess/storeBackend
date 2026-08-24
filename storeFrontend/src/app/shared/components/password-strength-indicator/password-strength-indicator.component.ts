@@ -11,10 +11,9 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
  *   </app-password-strength-indicator>
  */
 @Component({
-  selector: 'app-password-strength-indicator',
-  standalone: true,
-  imports: [CommonModule, TranslatePipe],
-  template: `
+    selector: 'app-password-strength-indicator',
+    imports: [CommonModule, TranslatePipe],
+    template: `
     <ng-container *ngIf="password">
 
       <!-- ── Stärke-Balken ── -->
@@ -52,7 +51,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
     </ng-container>
   `,
-  styles: [`
+    styles: [`
     /* ── Stärke-Balken ── */
     .strength-wrap {
       display: flex;

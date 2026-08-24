@@ -9,18 +9,17 @@ import { MatButtonModule } from '@angular/material/button';
 import { DeliveryProvider, CreateDeliveryProviderRequest } from '../../../core/models/delivery.model';
 
 @Component({
-  selector: 'app-delivery-provider-dialog',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatCheckboxModule,
-    MatButtonModule
-  ],
-  template: `
+    selector: 'app-delivery-provider-dialog',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        MatDialogModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatCheckboxModule,
+        MatButtonModule
+    ],
+    template: `
     <h2 mat-dialog-title>{{ data ? 'Lieferanbieter bearbeiten' : 'Neuer Lieferanbieter' }}</h2>
     
     <mat-dialog-content>
@@ -89,7 +88,7 @@ import { DeliveryProvider, CreateDeliveryProviderRequest } from '../../../core/m
       </button>
     </mat-dialog-actions>
   `,
-  styles: [`
+    styles: [`
     mat-dialog-content {
       min-width: 500px;
       padding: 20px 24px;

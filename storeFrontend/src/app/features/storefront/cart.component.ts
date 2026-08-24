@@ -11,10 +11,9 @@ import { QuantityStepperComponent } from '@app/shared/ui/quantity-stepper/quanti
 import { Subscription } from 'rxjs';
 
 @Component({
-  selector: 'app-cart',
-  standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe, QuantityStepperComponent],
-  template: `
+    selector: 'app-cart',
+    imports: [CommonModule, FormsModule, TranslatePipe, QuantityStepperComponent],
+    template: `
     <div class="cart-page">
 
       <!-- ── Sticky Header ───────────────────────── -->
@@ -228,7 +227,7 @@ import { Subscription } from 'rxjs';
       <div *ngIf="toast" class="toast" [class.toast-show]="toast">{{ toast }}</div>
     </div>
   `,
-  styles: [`
+    styles: [`
     /* ── CSS Reset & Base ──────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; }
 

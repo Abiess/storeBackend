@@ -18,17 +18,16 @@ import { StoreNavigationComponent } from '@app/shared/components/store-navigatio
  *   📋 Protokoll         → Import-Historie
  */
 @Component({
-  selector: 'app-telegram-page',
-  standalone: true,
-  imports: [
-    CommonModule,
-    TelegramSettingsComponent,
-    TelegramImportComponent,
-    TelegramImportLogComponent,
-    TelegramMtprotoComponent,
-    StoreNavigationComponent
-  ],
-  template: `
+    selector: 'app-telegram-page',
+    imports: [
+        CommonModule,
+        TelegramSettingsComponent,
+        TelegramImportComponent,
+        TelegramImportLogComponent,
+        TelegramMtprotoComponent,
+        StoreNavigationComponent
+    ],
+    template: `
     <div class="telegram-page">
 
       <app-store-navigation [currentPage]="'Telegram'"></app-store-navigation>
@@ -113,7 +112,7 @@ import { StoreNavigationComponent } from '@app/shared/components/store-navigatio
 
     </div>
   `,
-  styles: [`
+    styles: [`
     .telegram-page { max-width: 960px; margin: 0 auto; padding: 0 16px 48px; }
 
     /* ── Hero ─────────────────────────────────────────────────── */

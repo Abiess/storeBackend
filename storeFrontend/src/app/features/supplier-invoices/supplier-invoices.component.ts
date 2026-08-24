@@ -15,18 +15,17 @@ import { toDate, getLocaleForLanguage } from '../../core/utils/date.utils';
 import { LanguageService } from '../../core/services/language.service';
 
 @Component({
-  selector: 'app-supplier-invoices',
-  standalone: true,
-  imports: [
-    CommonModule,
-    MatButtonModule,
-    MatDialogModule,
-    MatSnackBarModule,
-    TranslateModule,
-    LucideAngularModule,
-    ResponsiveDataListComponent
-  ],
-  template: `
+    selector: 'app-supplier-invoices',
+    imports: [
+        CommonModule,
+        MatButtonModule,
+        MatDialogModule,
+        MatSnackBarModule,
+        TranslateModule,
+        LucideAngularModule,
+        ResponsiveDataListComponent
+    ],
+    template: `
     <div class="page-container">
       <!-- Page Header -->
       <div class="page-header">
@@ -55,7 +54,7 @@ import { LanguageService } from '../../core/services/language.service';
       </app-responsive-data-list>
     </div>
   `,
-  styles: [`
+    styles: [`
     .page-container {
       padding: 24px;
       max-width: 1400px;

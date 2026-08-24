@@ -18,10 +18,9 @@ import { LucideAngularModule } from 'lucide-angular';
  *   <app-onboarding-checklist [storeId]="storeId"></app-onboarding-checklist>
  */
 @Component({
-  selector: 'app-onboarding-checklist',
-  standalone: true,
-  imports: [CommonModule, TranslatePipe, LucideAngularModule],
-  template: `
+    selector: 'app-onboarding-checklist',
+    imports: [CommonModule, TranslatePipe, LucideAngularModule],
+    template: `
     @if (show && progress) {
       <div class="oc-card">
         <!-- Header mit Progress-Balken -->
@@ -95,7 +94,7 @@ import { LucideAngularModule } from 'lucide-angular';
       </div>
     }
   `,
-  styles: [`
+    styles: [`
     .oc-card {
       background: #fff;
       border-radius: 16px;

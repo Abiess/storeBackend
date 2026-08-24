@@ -4,10 +4,9 @@ import { RouterModule } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
-  selector: 'app-impressum',
-  standalone: true,
-  imports: [CommonModule, TranslatePipe, RouterModule],
-  template: `
+    selector: 'app-impressum',
+    imports: [CommonModule, TranslatePipe, RouterModule],
+    template: `
     <div class="legal-page">
       <div class="legal-hero">
         <div class="legal-hero-content">
@@ -45,7 +44,7 @@ import { TranslatePipe } from '@ngx-translate/core';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .legal-page {
       min-height: 100vh;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

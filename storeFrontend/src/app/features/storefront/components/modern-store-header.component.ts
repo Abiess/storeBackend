@@ -9,10 +9,9 @@ import { TranslationService } from '@app/core/services/translation.service';
  * Clean, minimalist header with search and cart
  */
 @Component({
-  selector: 'app-modern-store-header',
-  standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe],
-  template: `
+    selector: 'app-modern-store-header',
+    imports: [CommonModule, FormsModule, TranslatePipe],
+    template: `
     <header class="modern-store-header">
       <div class="header-container">
         <!-- Logo / Store Name -->
@@ -98,7 +97,7 @@ import { TranslationService } from '@app/core/services/translation.service';
       </div>
     </header>
   `,
-  styles: [`
+    styles: [`
     /* ============================================
        Modern Store Header
        ============================================ */

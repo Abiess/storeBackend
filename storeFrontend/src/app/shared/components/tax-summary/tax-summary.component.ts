@@ -13,10 +13,9 @@ export interface TaxSummaryItem {
 }
 
 @Component({
-  selector: 'app-tax-summary',
-  standalone: true,
-  imports: [CommonModule, StoreCurrencyPipe, TranslatePipe],
-  template: `
+    selector: 'app-tax-summary',
+    imports: [CommonModule, StoreCurrencyPipe, TranslatePipe],
+    template: `
     <div class="tax-summary">
       <div class="tax-summary-header">
         <h3>{{ 'checkout.orderSummary' | translate }}</h3>
@@ -81,7 +80,7 @@ export interface TaxSummaryItem {
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .tax-summary {
       background: #fff;
       border-radius: 8px;

@@ -9,10 +9,9 @@ import { StoreTheme, ThemeColors } from '../../core/models';
 import { Subscription } from 'rxjs';
 
 @Component({
-  selector: 'app-branding-editor',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TranslateModule],
-  template: `
+    selector: 'app-branding-editor',
+    imports: [CommonModule, ReactiveFormsModule, TranslateModule],
+    template: `
     <div class="branding-editor">
       <div class="editor-layout">
         <!-- Left: Settings -->
@@ -263,7 +262,7 @@ import { Subscription } from 'rxjs';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .branding-editor {
       background: #f8f9fa;
       min-height: 100vh;

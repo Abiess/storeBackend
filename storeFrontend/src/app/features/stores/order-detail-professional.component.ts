@@ -13,11 +13,10 @@ import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { toDate } from '../../core/utils/date.utils';
 
 @Component({
-  selector: 'app-order-detail-professional',
-  standalone: true,
-  imports: [CommonModule, FormsModule, StoreNavigationComponent, TranslatePipe],
-  templateUrl: './order-detail-professional.component.html',
-  styleUrls: ['./order-detail-professional.component.scss']
+    selector: 'app-order-detail-professional',
+    imports: [CommonModule, FormsModule, StoreNavigationComponent, TranslatePipe],
+    templateUrl: './order-detail-professional.component.html',
+    styleUrls: ['./order-detail-professional.component.scss']
 })
 export class OrderDetailProfessionalComponent implements OnInit {
   storeId!: number;

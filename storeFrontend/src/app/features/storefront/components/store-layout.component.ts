@@ -7,10 +7,9 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
  * Provides the overall structure for the storefront (inspired by idealo.de)
  */
 @Component({
-  selector: 'app-store-layout',
-  standalone: true,
-  imports: [CommonModule, TranslatePipe],
-  template: `
+    selector: 'app-store-layout',
+    imports: [CommonModule, TranslatePipe],
+    template: `
     <div class="store-layout" [class.sidebar-open]="sidebarOpen">
       <!-- Mobile Overlay -->
       <div 
@@ -55,7 +54,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       </button>
     </div>
   `,
-  styles: [`
+    styles: [`
     /* ============================================
        Store Layout - Main Structure
        ============================================ */

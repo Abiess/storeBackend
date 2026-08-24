@@ -12,10 +12,9 @@ import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
 import { Subscription } from 'rxjs';
 
 @Component({
-  selector: 'app-category-form',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TranslatePipe, PageHeaderComponent],
-  template: `
+    selector: 'app-category-form',
+    imports: [CommonModule, ReactiveFormsModule, TranslatePipe, PageHeaderComponent],
+    template: `
     <div class="category-form-container">
       <app-page-header
         [title]="isEditMode ? 'category.edit' : 'category.new'"
@@ -114,7 +113,7 @@ import { Subscription } from 'rxjs';
       </form>
     </div>
   `,
-  styles: [`
+    styles: [`
     /* ═══════════════════════════════════════════════════════════
        COMPONENT-SPECIFIC STYLES
        Forms.scss (.admin-form) provides base form styling

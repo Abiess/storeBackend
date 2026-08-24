@@ -11,20 +11,19 @@ import { ActivatedRoute } from '@angular/router';
 import { SeoApiService, StructuredDataTemplateDTO } from '../../../core/services/seo-api.service';
 
 @Component({
-  selector: 'app-structured-data-page',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatTabsModule,
-    MatCardModule,
-    MatButtonModule,
-    MatIconModule,
-    MatSnackBarModule,
-    MatExpansionModule
-  ],
-  templateUrl: './structured-data-page.component.html',
-  styleUrls: ['./structured-data-page.component.scss']
+    selector: 'app-structured-data-page',
+    imports: [
+        CommonModule,
+        FormsModule,
+        MatTabsModule,
+        MatCardModule,
+        MatButtonModule,
+        MatIconModule,
+        MatSnackBarModule,
+        MatExpansionModule
+    ],
+    templateUrl: './structured-data-page.component.html',
+    styleUrls: ['./structured-data-page.component.scss']
 })
 export class StructuredDataPageComponent implements OnInit {
   storeId!: number;

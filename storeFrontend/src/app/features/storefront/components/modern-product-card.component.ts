@@ -9,10 +9,9 @@ import { TranslationService } from '@app/core/services/translation.service';
  * Glassmorphism Quick View, Gradient Buttons, Spring Animations
  */
 @Component({
-  selector: 'app-modern-product-card',
-  standalone: true,
-  imports: [CommonModule, TranslatePipe],
-  template: `
+    selector: 'app-modern-product-card',
+    imports: [CommonModule, TranslatePipe],
+    template: `
     <div class="product-card" [class.out-of-stock]="product.status !== ProductStatus.ACTIVE">
 
       <!-- Product Image -->
@@ -93,7 +92,7 @@ import { TranslationService } from '@app/core/services/translation.service';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     /* ════════════════════════════════════════
        PRODUCT CARD – VIBRANT REDESIGN
        ════════════════════════════════════════ */

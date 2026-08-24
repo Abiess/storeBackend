@@ -10,18 +10,17 @@ import { DropshippingService } from '@app/core/services/dropshipping.service';
 import { DropshippingSource, calculateMargin, formatMargin } from '@app/core/models/dropshipping.model';
 
 @Component({
-  selector: 'app-supplier-link-form',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-    MatSnackBarModule
-  ],
-  template: `
+    selector: 'app-supplier-link-form',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        MatDialogModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatButtonModule,
+        MatSnackBarModule
+    ],
+    template: `
     <h2 mat-dialog-title>
       {{ isEdit ? '🔗 Supplier-Link bearbeiten' : '🔗 Supplier-Link hinzufügen' }}
     </h2>
@@ -162,7 +161,7 @@ import { DropshippingSource, calculateMargin, formatMargin } from '@app/core/mod
       </button>
     </mat-dialog-actions>
   `,
-  styles: [`
+    styles: [`
     .supplier-form {
       padding: 1rem 0;
       min-width: 500px;

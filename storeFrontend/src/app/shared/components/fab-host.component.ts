@@ -3,10 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FabService, SpeedDialItem } from '../../core/services/fab.service';
 
 @Component({
-  selector: 'app-fab-host',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-fab-host',
+    imports: [CommonModule],
+    template: `
     @if (fab()) {
       <!-- Speed-Dial Overlay -->
       @if (speedDialOpen() && fab()!.speedDial?.length) {
@@ -34,7 +33,7 @@ import { FabService, SpeedDialItem } from '../../core/services/fab.service';
       </button>
     }
   `,
-  styles: [`
+    styles: [`
     /* ═══════════════════════════════════════════
        GLOBALER FAB HOST
        ═══════════════════════════════════════════ */

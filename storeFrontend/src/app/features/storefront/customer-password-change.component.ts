@@ -8,16 +8,15 @@ import { PasswordRequirementsComponent } from '@app/shared/auth/password-require
 import { passwordMatchValidator, PASSWORD_MIN_LENGTH } from '@app/shared/validators/password.validators';
 
 @Component({
-  selector: 'app-customer-password-change',
-  standalone: true,
-  imports: [
-    CommonModule, 
-    ReactiveFormsModule, 
-    TranslatePipe, 
-    PasswordStrengthIndicatorComponent,
-    PasswordRequirementsComponent
-  ],
-  template: `
+    selector: 'app-customer-password-change',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        TranslatePipe,
+        PasswordStrengthIndicatorComponent,
+        PasswordRequirementsComponent
+    ],
+    template: `
     <div class="pw-change-wrap">
 
       <div class="form-head">
@@ -139,7 +138,7 @@ import { passwordMatchValidator, PASSWORD_MIN_LENGTH } from '@app/shared/validat
 
     </div>
   `,
-  styles: [`
+    styles: [`
     .pw-change-wrap { max-width: 520px; }
 
     /* ── Form Head ── */

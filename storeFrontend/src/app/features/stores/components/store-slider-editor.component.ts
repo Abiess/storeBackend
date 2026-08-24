@@ -8,11 +8,10 @@ import { Subscription } from 'rxjs';
 import { FabService } from '@app/core/services/fab.service';
 
 @Component({
-  selector: 'app-store-slider-editor',
-  standalone: true,
-  imports: [CommonModule, FormsModule, DragDropModule],
-  templateUrl: './store-slider-editor.component.html',
-  styleUrls: ['./store-slider-editor.component.scss'],
+    selector: 'app-store-slider-editor',
+    imports: [CommonModule, FormsModule, DragDropModule],
+    templateUrl: './store-slider-editor.component.html',
+    styleUrls: ['./store-slider-editor.component.scss']
 })
 export class StoreSliderEditorComponent implements OnInit, OnDestroy {
   settings: StoreSliderSettings = {

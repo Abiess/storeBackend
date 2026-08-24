@@ -21,11 +21,10 @@ interface WizardStep {
 }
 
 @Component({
-  selector: 'app-store-wizard',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TranslatePipe, AiProductImageGeneratorComponent, StoreCreationShellComponent],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
+    selector: 'app-store-wizard',
+    imports: [CommonModule, ReactiveFormsModule, TranslatePipe, AiProductImageGeneratorComponent, StoreCreationShellComponent],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    template: `
     <app-store-creation-shell>
       @if (!hasStore()) {
         <button type="button" slot="header-right" class="sc-header-btn" (click)="skip()">
@@ -432,7 +431,7 @@ interface WizardStep {
       </div>
     </app-store-creation-shell>
   `,
-  styles: [`
+    styles: [`
     .sc-header-btn {
       background: rgba(255,255,255,.16);
       border: 1px solid rgba(255,255,255,.28);

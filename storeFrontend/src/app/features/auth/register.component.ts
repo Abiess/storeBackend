@@ -15,18 +15,17 @@ import { RegistrationSuccessComponent } from '../../shared/auth/registration-suc
 import { environment } from '../../../environments/environment';
 
 @Component({
-  selector: 'app-register',
-  standalone: true,
-  imports: [
-    CommonModule, 
-    ReactiveFormsModule, 
-    RouterModule, 
-    TranslatePipe, 
-    CaptchaComponent,
-    PasswordRequirementsComponent,
-    RegistrationSuccessComponent
-  ],
-  template: `
+    selector: 'app-register',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        RouterModule,
+        TranslatePipe,
+        CaptchaComponent,
+        PasswordRequirementsComponent,
+        RegistrationSuccessComponent
+    ],
+    template: `
     <!-- ── Redirect-Toast (oben rechts, prominente Animation) ── -->
     <div class="redirect-toast" *ngIf="redirectCountdown > 0" role="alert" aria-live="assertive">
       <div class="toast-icon">🔔</div>
@@ -156,7 +155,7 @@ import { environment } from '../../../environments/environment';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .auth-container {
       min-height: 100vh;
       display: flex;

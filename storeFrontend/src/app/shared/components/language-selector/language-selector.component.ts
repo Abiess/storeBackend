@@ -3,10 +3,9 @@ import { CommonModule } from '@angular/common';
 import { TranslationService, SupportedLanguage } from '../../../core/services/translation.service';
 
 @Component({
-  selector: 'app-language-selector',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-language-selector',
+    imports: [CommonModule],
+    template: `
     <div class="selector-dropdown" [class.open]="isOpen">
       <button 
         class="selector-button"
@@ -34,7 +33,7 @@ import { TranslationService, SupportedLanguage } from '../../../core/services/tr
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .selector-dropdown {
       position: relative;
       display: inline-block;

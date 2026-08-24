@@ -17,10 +17,9 @@ import { Subscription } from 'rxjs';
  *  – Storefront     : store.whatsappNumber aus Store-Settings
  */
 @Component({
-  selector: 'app-whatsapp-widget',
-  standalone: true,
-  imports: [CommonModule, TranslatePipe],
-  template: `
+    selector: 'app-whatsapp-widget',
+    imports: [CommonModule, TranslatePipe],
+    template: `
     @if (phoneNumber) {
       <div class="wa-widget">
 
@@ -88,7 +87,7 @@ import { Subscription } from 'rxjs';
       </div>
     }
   `,
-  styles: [`
+    styles: [`
     /* ── Host: fixer Button rechts unten (Standard-WhatsApp-Position) ── */
     :host {
       position: fixed;

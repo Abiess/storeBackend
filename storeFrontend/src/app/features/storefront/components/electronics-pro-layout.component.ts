@@ -13,10 +13,9 @@ import { CommonModule } from '@angular/common';
  * Quelle/Inspiration: https://startbootstrap.com/  (MIT — keine Attribution-Pflicht)
  */
 @Component({
-  selector: 'app-electronics-pro-layout',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-electronics-pro-layout',
+    imports: [CommonModule],
+    template: `
     <section class="elec-hero" *ngIf="showHero">
       <div class="elec-hero__inner">
         <ng-content select="[top]"></ng-content>
@@ -32,7 +31,7 @@ import { CommonModule } from '@angular/common';
       </main>
     </div>
   `,
-  styles: [`
+    styles: [`
     :host { display: block; }
 
     .elec-hero {

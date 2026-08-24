@@ -17,10 +17,9 @@ interface UsageRow {
  * Responsive Grid (1/2/3 Spalten je nach Breite), RTL-fähig (Arabisch).
  */
 @Component({
-  selector: 'app-usage-widget',
-  standalone: true,
-  imports: [CommonModule, TranslatePipe],
-  template: `
+    selector: 'app-usage-widget',
+    imports: [CommonModule, TranslatePipe],
+    template: `
     <section class="usage-widget" *ngIf="!loading && stats">
       <header class="usage-header">
         <h3>{{ 'usage.title' | translate }}</h3>
@@ -67,7 +66,7 @@ interface UsageRow {
       <button type="button" class="btn-retry" (click)="load()">{{ 'common.retry' | translate }}</button>
     </div>
   `,
-  styles: [`
+    styles: [`
     :host { display: block; }
     .usage-widget {
       background: #fff;

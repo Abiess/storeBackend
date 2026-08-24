@@ -27,11 +27,10 @@ interface CreateStoreResponse {
 }
 
 @Component({
-  selector: 'app-create-store-public',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, TranslatePipe, StoreCreationShellComponent, LucideAngularModule],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
+    selector: 'app-create-store-public',
+    imports: [CommonModule, ReactiveFormsModule, RouterLink, TranslatePipe, StoreCreationShellComponent, LucideAngularModule],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    template: `
     <app-store-creation-shell>
       <a routerLink="/login" slot="header-right" class="sc-login-link">{{ 'auth.alreadyRegistered' | translate }}</a>
 
@@ -175,7 +174,7 @@ interface CreateStoreResponse {
       }
     </app-store-creation-shell>
   `,
-  styles: [`
+    styles: [`
     .sc-login-link { color: rgba(255,255,255,.85); font-size: .82rem; text-decoration: none; }
     .sc-login-link:hover { color: #fff; text-decoration: underline; }
 

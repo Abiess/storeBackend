@@ -9,11 +9,10 @@ import { take } from 'rxjs/operators';
 import { toDate } from '../../core/utils/date.utils';
 
 @Component({
-  selector: 'app-saved-carts',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, TranslatePipe],
-  templateUrl: './saved-carts.component.html',
-  styleUrls: ['./saved-carts.component.scss']
+    selector: 'app-saved-carts',
+    imports: [CommonModule, FormsModule, RouterModule, TranslatePipe],
+    templateUrl: './saved-carts.component.html',
+    styleUrls: ['./saved-carts.component.scss']
 })
 export class SavedCartsComponent implements OnInit {
   savedCarts: SavedCart[] = [];

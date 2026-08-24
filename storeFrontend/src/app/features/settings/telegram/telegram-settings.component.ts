@@ -11,10 +11,9 @@ import { TelegramService, TelegramConfig } from '@app/core/services/telegram.ser
  * - Import auslösen (delegiert an TelegramImportComponent)
  */
 @Component({
-  selector: 'app-telegram-settings',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-telegram-settings',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="telegram-settings">
 
       <!-- Header -->
@@ -160,7 +159,7 @@ import { TelegramService, TelegramConfig } from '@app/core/services/telegram.ser
       </form>
     </div>
   `,
-  styles: [`
+    styles: [`
     .telegram-settings {
       max-width: 680px;
     }

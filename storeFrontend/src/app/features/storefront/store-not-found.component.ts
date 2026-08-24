@@ -6,10 +6,9 @@ import { AuthService } from '@app/core/services/auth.service';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 @Component({
-  selector: 'app-store-not-found',
-  standalone: true,
-  imports: [CommonModule, TranslatePipe],
-  template: `
+    selector: 'app-store-not-found',
+    imports: [CommonModule, TranslatePipe],
+    template: `
     <div class="store-not-found-container">
       <div class="content-card">
         <!-- Icon -->
@@ -91,7 +90,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .store-not-found-container {
       min-height: 100vh;
       display: flex;

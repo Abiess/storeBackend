@@ -11,10 +11,9 @@ import { TranslationService } from '@app/core/services/translation.service';
  * Zeigt hervorgehobene/empfohlene Produkte
  */
 @Component({
-  selector: 'app-featured-products',
-  standalone: true,
-  imports: [CommonModule, ProductCardComponent, TranslatePipe],
-  template: `
+    selector: 'app-featured-products',
+    imports: [CommonModule, ProductCardComponent, TranslatePipe],
+    template: `
     <section class="featured-products" *ngIf="products.length > 0">
       <div class="section-header">
         <h2 class="section-title">
@@ -42,7 +41,7 @@ import { TranslationService } from '@app/core/services/translation.service';
       </div>
     </section>
   `,
-  styles: [`
+    styles: [`
     .featured-products {
       padding: 3rem 0;
       background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);

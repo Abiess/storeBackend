@@ -5,10 +5,9 @@ import { CustomerProfileService, CustomerProfile } from '../../core/services/cus
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 @Component({
-  selector: 'app-customer-profile-edit',
-  standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe],
-  template: `
+    selector: 'app-customer-profile-edit',
+    imports: [CommonModule, FormsModule, TranslatePipe],
+    template: `
     <div class="profile-edit">
       <h2>{{ 'profile.profileData' | translate }}</h2>
       <p class="description">{{ 'profile.managePersonalInfo' | translate }}</p>
@@ -82,7 +81,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       </form>
     </div>
   `,
-  styles: [`
+    styles: [`
     .profile-edit {
       max-width: 600px;
     }

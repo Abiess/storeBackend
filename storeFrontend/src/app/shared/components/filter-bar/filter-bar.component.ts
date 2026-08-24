@@ -34,10 +34,9 @@ export interface FilterChip {
  * ```
  */
 @Component({
-  selector: 'app-filter-bar',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-filter-bar',
+    imports: [CommonModule],
+    template: `
     <div class="filter-bar" *ngIf="visibleChips.length > 0">
       <button
         *ngFor="let chip of visibleChips"
@@ -53,7 +52,7 @@ export interface FilterChip {
       </button>
     </div>
   `,
-  styleUrls: ['./filter-bar.component.scss']
+    styleUrls: ['./filter-bar.component.scss']
 })
 export class FilterBarComponent {
   /** Array von Filter-Chips */

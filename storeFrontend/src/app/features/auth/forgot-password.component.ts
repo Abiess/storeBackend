@@ -11,10 +11,9 @@ import { HCaptchaService } from '@app/core/services/hcaptcha.service';
 declare const hcaptcha: any; // hCaptcha global API
 
 @Component({
-  selector: 'app-forgot-password',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, TranslatePipe],
-  template: `
+    selector: 'app-forgot-password',
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, TranslatePipe],
+    template: `
     <div class="auth-container">
       <div class="auth-card">
 
@@ -83,7 +82,7 @@ declare const hcaptcha: any; // hCaptcha global API
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .auth-container {
       min-height: 100vh;
       display: flex;

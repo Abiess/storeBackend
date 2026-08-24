@@ -11,17 +11,16 @@ import { PasswordRequirementsComponent } from '@app/shared/auth/password-require
 import { passwordMatchValidator, PASSWORD_MIN_LENGTH } from '@app/shared/validators/password.validators';
 
 @Component({
-  selector: 'app-reset-password',
-  standalone: true,
-  imports: [
-    CommonModule, 
-    ReactiveFormsModule, 
-    RouterModule, 
-    TranslatePipe, 
-    PasswordStrengthIndicatorComponent,
-    PasswordRequirementsComponent
-  ],
-  template: `
+    selector: 'app-reset-password',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        RouterModule,
+        TranslatePipe,
+        PasswordStrengthIndicatorComponent,
+        PasswordRequirementsComponent
+    ],
+    template: `
     <div class="page">
 
       <!-- ═══ LINKE BRAND-SEITE (nur Desktop) ═══ -->
@@ -160,7 +159,7 @@ import { passwordMatchValidator, PASSWORD_MIN_LENGTH } from '@app/shared/validat
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .page { min-height: 100vh; display: flex; flex-direction: row; }
 
     .brand-panel {

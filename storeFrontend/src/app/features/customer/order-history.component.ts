@@ -14,10 +14,9 @@ import {
 } from '@app/shared/components/responsive-data-list/responsive-data-list.component';
 
 @Component({
-  selector: 'app-order-history',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ResponsiveDataListComponent],
-  template: `
+    selector: 'app-order-history',
+    imports: [CommonModule, FormsModule, RouterModule, ResponsiveDataListComponent],
+    template: `
     <div class="order-history-page">
       <!-- Page Header -->
       <div class="page-top">
@@ -173,7 +172,7 @@ import {
       }
     </div>
   `,
-  styles: [`
+    styles: [`
     .order-history-page { padding: 2rem; max-width: 1100px; margin: 0 auto; }
 
     .page-top { margin-bottom: 2rem; }

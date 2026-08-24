@@ -10,11 +10,10 @@ import { AuthService } from '@app/core/services/auth.service';
 type BusinessType = 'SHOP' | 'RESTAURANT' | 'RIAD';
 
 @Component({
-  selector: 'app-landing',
-  standalone: true,
-  imports: [CommonModule, TranslatePipe, VideoPlayerComponent, LucideAngularModule, RouterModule],
-  templateUrl: './landing.component.html',
-  styleUrls: ['./landing.component.scss']
+    selector: 'app-landing',
+    imports: [CommonModule, TranslatePipe, VideoPlayerComponent, LucideAngularModule, RouterModule],
+    templateUrl: './landing.component.html',
+    styleUrls: ['./landing.component.scss']
 })
 export class LandingComponent implements OnInit, OnDestroy {
   // State

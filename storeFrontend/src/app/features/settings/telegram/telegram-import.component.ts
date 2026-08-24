@@ -7,10 +7,9 @@ import { TelegramService, TelegramImportResult } from '@app/core/services/telegr
  * Löst den Import der letzten Channel-Posts aus und zeigt das Ergebnis.
  */
 @Component({
-  selector: 'app-telegram-import',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-telegram-import',
+    imports: [CommonModule],
+    template: `
     <div class="telegram-import">
 
       <div class="section-header">
@@ -74,7 +73,7 @@ import { TelegramService, TelegramImportResult } from '@app/core/services/telegr
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .telegram-import { max-width: 680px; }
     .section-header { margin-bottom: 20px; }
     .section-header h3 { font-size: 16px; font-weight: 700; color: #111827; margin: 0 0 6px; }

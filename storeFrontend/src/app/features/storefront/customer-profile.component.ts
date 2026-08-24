@@ -31,7 +31,6 @@ interface OrderHistoryVM {
 
 @Component({
     selector: 'app-customer-profile',
-    standalone: true,
     imports: [
         CommonModule,
         RouterModule,
@@ -618,7 +617,6 @@ interface OrderHistoryVM {
         .profile-main    { padding: 2rem; }
       }
     `]
-
 })
 export class CustomerProfileComponent implements OnInit {
     activeTab: CustomerTab = 'overview';

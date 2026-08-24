@@ -11,10 +11,9 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
  * - First product featured as large hero card (spans 2 rows)
  */
 @Component({
-  selector: 'app-product-grid-fashion',
-  standalone: true,
-  imports: [CommonModule, ProductCardComponent, TranslatePipe],
-  template: `
+    selector: 'app-product-grid-fashion',
+    imports: [CommonModule, ProductCardComponent, TranslatePipe],
+    template: `
     <div class="fashion-wrapper">
 
       <!-- â”€â”€ CHIP FILTER BAR (always visible) â”€â”€ -->
@@ -96,7 +95,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     :host { display: block; }
 
     .fashion-wrapper {

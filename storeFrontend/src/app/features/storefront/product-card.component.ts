@@ -7,10 +7,9 @@ import { AuthService } from '../../core/services/auth.service';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 @Component({
-  selector: 'app-product-card',
-  standalone: true,
-  imports: [CommonModule, RouterModule, TranslatePipe],
-  template: `
+    selector: 'app-product-card',
+    imports: [CommonModule, RouterModule, TranslatePipe],
+    template: `
     <article class="product-card" [class.adding]="isAddingToCart">
 
       <!-- ── WISHLIST BUTTON ── -->
@@ -123,7 +122,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       </div>
     </article>
   `,
-  styles: [`
+    styles: [`
     /* ════════════════════════════════════════
        PRODUCT CARD
        ════════════════════════════════════════ */

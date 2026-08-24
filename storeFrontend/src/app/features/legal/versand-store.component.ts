@@ -5,10 +5,9 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { LegalBaseComponent } from './legal-base.component';
 
 @Component({
-  selector: 'app-versand-store',
-  standalone: true,
-  imports: [CommonModule, TranslatePipe, RouterModule],
-  template: `
+    selector: 'app-versand-store',
+    imports: [CommonModule, TranslatePipe, RouterModule],
+    template: `
     <div class="legal-page">
       <div class="legal-container">
         <h1 class="legal-title">{{ 'legal.shipping.title' | translate }}</h1>
@@ -40,7 +39,7 @@ import { LegalBaseComponent } from './legal-base.component';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .legal-page {
       min-height: 100vh;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

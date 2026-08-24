@@ -7,10 +7,9 @@ import { finalize } from 'rxjs/operators';
 declare const paypal: any;
 
 @Component({
-  selector: 'app-paypal-button',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-paypal-button',
+    imports: [CommonModule],
+    template: `
     <div class="paypal-button-container">
       <div #paypalButtonContainer></div>
       <div *ngIf="loading" class="paypal-loading">
@@ -23,7 +22,7 @@ declare const paypal: any;
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .paypal-button-container { min-height: 150px; position: relative; }
     .paypal-loading { display: flex; flex-direction: column; align-items: center; padding: 2rem; gap: 1rem; }
     .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite; }

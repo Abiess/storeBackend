@@ -15,10 +15,9 @@ interface TestResult {
 }
 
 @Component({
-  selector: 'app-test-dashboard',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-test-dashboard',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="test-dashboard">
       <header class="dashboard-header">
         <h1>🧪 Test-Dashboard</h1>
@@ -227,7 +226,7 @@ interface TestResult {
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .test-dashboard {
       max-width: 1400px;
       margin: 0 auto;

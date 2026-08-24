@@ -28,11 +28,10 @@ export interface UploadedImage {
 }
 
 @Component({
-  selector: 'app-image-upload',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './image-upload.component.html',
-  styleUrls: ['./image-upload.component.scss'],
+    selector: 'app-image-upload',
+    imports: [CommonModule],
+    templateUrl: './image-upload.component.html',
+    styleUrls: ['./image-upload.component.scss']
 })
 export class ImageUploadComponent implements OnInit, OnDestroy {
   /** Medien-Typ, der an den Server übergeben wird */

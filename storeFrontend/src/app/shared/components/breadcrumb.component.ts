@@ -16,10 +16,9 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
  * ];
  */
 @Component({
-  selector: 'app-breadcrumb',
-  standalone: true,
-  imports: [CommonModule, RouterModule, TranslatePipe],
-  template: `
+    selector: 'app-breadcrumb',
+    imports: [CommonModule, RouterModule, TranslatePipe],
+    template: `
     <nav class="breadcrumb" *ngIf="items && items.length > 0" aria-label="Breadcrumb">
       <ol class="breadcrumb-list">
         <li 
@@ -56,7 +55,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       </ol>
     </nav>
   `,
-  styles: [`
+    styles: [`
     .breadcrumb {
       background: var(--theme-background, #ffffff);
       padding: 0.75rem 0;

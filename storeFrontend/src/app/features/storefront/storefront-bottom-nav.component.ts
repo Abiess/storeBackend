@@ -10,10 +10,9 @@ import { AuthService } from '@app/core/services/auth.service';
  * Floating cart button as center focus action
  */
 @Component({
-  selector: 'app-storefront-bottom-nav',
-  standalone: true,
-  imports: [CommonModule, RouterModule, TranslatePipe],
-  template: `
+    selector: 'app-storefront-bottom-nav',
+    imports: [CommonModule, RouterModule, TranslatePipe],
+    template: `
     <nav class="bottom-nav" [class.rtl]="isRtl" role="navigation" aria-label="Hauptnavigation">
 
       <!-- Home -->
@@ -97,7 +96,7 @@ import { AuthService } from '@app/core/services/auth.service';
 
     </nav>
   `,
-  styles: [`
+    styles: [`
     /* Only on Mobile */
     .bottom-nav { display: none; }
 

@@ -11,10 +11,9 @@ import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-h
 import { toDate } from '../../core/utils/date.utils';
 
 @Component({
-  selector: 'app-order-verification-center',
-  standalone: true,
-  imports: [CommonModule, FormsModule, StoreNavigationComponent, PageHeaderComponent],
-  template: `
+    selector: 'app-order-verification-center',
+    imports: [CommonModule, FormsModule, StoreNavigationComponent, PageHeaderComponent],
+    template: `
 
       <div class="verification-center">
           <app-store-navigation currentPage="COD Verifizierung">
@@ -252,7 +251,7 @@ import { toDate } from '../../core/utils/date.utils';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .verification-center {
       max-width: 1400px;
       margin: 0 auto;

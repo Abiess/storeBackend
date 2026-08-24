@@ -10,10 +10,9 @@ import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
 import { QuantityStepperComponent } from '@app/shared/ui/quantity-stepper/quantity-stepper.component';
 
 @Component({
-  selector: 'app-product-detail',
-  standalone: true,
-  imports: [CommonModule, FormsModule, ProductImageGalleryComponent, PageHeaderComponent, QuantityStepperComponent],
-  template: `
+    selector: 'app-product-detail',
+    imports: [CommonModule, FormsModule, ProductImageGalleryComponent, PageHeaderComponent, QuantityStepperComponent],
+    template: `
     <div class="product-detail-page" *ngIf="product">
       <!-- Page Header mit Breadcrumbs -->
       <app-page-header
@@ -134,7 +133,7 @@ import { QuantityStepperComponent } from '@app/shared/ui/quantity-stepper/quanti
       <button class="btn-primary" (click)="goBack()">Zurück</button>
     </div>
   `,
-  styles: [`
+    styles: [`
     .product-detail-page {
       padding: 2rem 0;
       min-height: calc(100vh - 200px);

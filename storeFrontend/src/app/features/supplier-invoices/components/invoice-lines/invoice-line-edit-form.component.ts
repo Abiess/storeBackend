@@ -5,10 +5,9 @@ import { InvoiceLine, UpdateLineRequest } from '@app/core/models/invoice-line.mo
 import { SupplierInvoiceService } from '@app/core/services/supplier-invoice.service';
 
 @Component({
-  selector: 'app-invoice-line-edit-form',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
-  template: `
+    selector: 'app-invoice-line-edit-form',
+    imports: [CommonModule, ReactiveFormsModule],
+    template: `
     <div class="edit-form" *ngIf="editForm">
       <form [formGroup]="editForm" (ngSubmit)="onSave()">
         <div class="form-row">
@@ -71,7 +70,7 @@ import { SupplierInvoiceService } from '@app/core/services/supplier-invoice.serv
       </form>
     </div>
   `,
-  styles: [`
+    styles: [`
     .edit-form { padding: 1rem; background: #f5f5f5; border-radius: 0.5rem; margin-top: 0.5rem; }
     .form-row { display: flex; gap: 1rem; margin-bottom: 1rem; }
     .form-field { flex: 1; }

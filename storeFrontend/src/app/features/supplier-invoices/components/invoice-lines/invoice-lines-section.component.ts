@@ -20,17 +20,16 @@ interface ProductSummary {
 type FilterType = 'ALL' | 'REVIEW' | 'UNMAPPED' | 'MAPPED';
 
 @Component({
-  selector: 'app-invoice-lines-section',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    TranslateModule,
-    InvoiceLineStatusBadgeComponent,
-    InvoiceLineSummaryComponent,
-    InvoiceLineEditFormComponent
-  ],
-  template: `
+    selector: 'app-invoice-lines-section',
+    imports: [
+        CommonModule,
+        FormsModule,
+        TranslateModule,
+        InvoiceLineStatusBadgeComponent,
+        InvoiceLineSummaryComponent,
+        InvoiceLineEditFormComponent
+    ],
+    template: `
     <div class="invoice-lines-section" *ngIf="lines.length > 0">
       <h3>Erkannte Positionen ({{ lines.length }})</h3>
       
@@ -378,7 +377,7 @@ type FilterType = 'ALL' | 'REVIEW' | 'UNMAPPED' | 'MAPPED';
       </div>
     </div>
   `,
-  styleUrls: ['./invoice-lines-section.component.scss']
+    styleUrls: ['./invoice-lines-section.component.scss']
 })
 export class InvoiceLinesSectionComponent implements OnInit, OnChanges {
   @Input() storeId!: number;

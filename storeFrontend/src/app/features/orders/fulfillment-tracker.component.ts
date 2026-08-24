@@ -11,13 +11,12 @@ import {
 } from '@app/core/models/dropshipping.model';
 
 @Component({
-  selector: 'app-fulfillment-tracker',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule
-  ],
-  template: `
+    selector: 'app-fulfillment-tracker',
+    imports: [
+        CommonModule,
+        FormsModule
+    ],
+    template: `
     <div class="fulfillment-tracker" *ngIf="items.length > 0">
       <h3>📦 Dropshipping Fulfillment</h3>
       
@@ -191,7 +190,7 @@ import {
       </div>
     }
   `,
-  styles: [`
+    styles: [`
     .fulfillment-tracker {
       background: white;
       border-radius: 12px;

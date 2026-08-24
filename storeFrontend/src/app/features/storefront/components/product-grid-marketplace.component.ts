@@ -15,10 +15,9 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
  * - RTL-Support via [dir] Attribut
  */
 @Component({
-  selector: 'app-product-grid-marketplace',
-  standalone: true,
-  imports: [CommonModule, FormsModule, ProductCardComponent, TranslatePipe],
-  template: `
+    selector: 'app-product-grid-marketplace',
+    imports: [CommonModule, FormsModule, ProductCardComponent, TranslatePipe],
+    template: `
     <div class="mp-wrapper">
 
       <!-- ── SEARCH BAR ── -->
@@ -197,7 +196,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     :host { display: block; }
 
     .mp-wrapper {

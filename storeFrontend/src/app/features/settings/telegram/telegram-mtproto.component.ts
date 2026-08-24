@@ -7,10 +7,9 @@ import { TelegramService, MtprotoStatus, ChannelInfo, TelegramSyncSettings } fro
 type Step = 'credentials' | 'verify-code' | 'channels' | 'import';
 
 @Component({
-  selector: 'app-telegram-mtproto',
-  standalone: true,
-  imports: [CommonModule, FormsModule, SlicePipe],
-  template: `
+    selector: 'app-telegram-mtproto',
+    imports: [CommonModule, FormsModule, SlicePipe],
+    template: `
     <div class="mtproto-container">
 
       <!-- HEADER -->
@@ -376,7 +375,7 @@ type Step = 'credentials' | 'verify-code' | 'channels' | 'import';
 
     </div>
   `,
-  styles: [`
+    styles: [`
     .mtproto-container { max-width: 720px; }
     .mtproto-header { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
     .header-icon { font-size: 36px; line-height: 1; }

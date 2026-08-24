@@ -6,10 +6,9 @@ import { AddressBookService, CustomerAddress } from '@app/core/services/address-
 import { catchError, of } from 'rxjs';
 
 @Component({
-  selector: 'app-address-book',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
-  template: `
+    selector: 'app-address-book',
+    imports: [CommonModule, FormsModule, RouterModule],
+    template: `
     <div class="address-page">
       <!-- Header -->
       <div class="page-top">
@@ -215,7 +214,7 @@ import { catchError, of } from 'rxjs';
       }
     </div>
   `,
-  styles: [`
+    styles: [`
     .address-page { padding: 2rem; max-width: 1000px; margin: 0 auto; min-height: 100vh; }
 
     .page-top { margin-bottom: 1.5rem; }

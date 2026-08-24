@@ -14,18 +14,17 @@ interface DialogData {
 }
 
 @Component({
-  selector: 'app-supplier-invoice-upload-dialog',
-  standalone: true,
-  imports: [
-    CommonModule,
-    MatButtonModule,
-    MatProgressBarModule,
-    MatIconModule,
-    MatDialogModule,
-    TranslateModule,
-    LucideAngularModule
-  ],
-  template: `
+    selector: 'app-supplier-invoice-upload-dialog',
+    imports: [
+        CommonModule,
+        MatButtonModule,
+        MatProgressBarModule,
+        MatIconModule,
+        MatDialogModule,
+        TranslateModule,
+        LucideAngularModule
+    ],
+    template: `
     <div class="upload-dialog">
       <h2 mat-dialog-title>
         <lucide-icon name="upload" [size]="20"></lucide-icon>
@@ -80,7 +79,7 @@ interface DialogData {
       </mat-dialog-actions>
     </div>
   `,
-  styles: [`
+    styles: [`
     .upload-dialog {
       h2 {
         display: flex;

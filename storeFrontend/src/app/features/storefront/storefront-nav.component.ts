@@ -4,10 +4,9 @@ import { Category } from '@app/core/models';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 @Component({
-  selector: 'app-storefront-nav',
-  standalone: true,
-  imports: [CommonModule, TranslatePipe],
-  template: `
+    selector: 'app-storefront-nav',
+    imports: [CommonModule, TranslatePipe],
+    template: `
     <nav class="category-nav">
       <div class="container">
         <!-- Mobile Filter Toggle -->
@@ -82,7 +81,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       </div>
     </nav>
   `,
-  styles: [`
+    styles: [`
     /* ==================== MODERN CATEGORY NAVIGATION ==================== */
     .category-nav {
       background: white;

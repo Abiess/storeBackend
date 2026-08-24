@@ -23,11 +23,10 @@ import { DOCUMENT } from '@angular/common';
  *  – RTL-Support, responsive, fixed top/bottom, sticky über Header
  */
 @Component({
-  selector: 'app-promo-banner',
-  standalone: true,
-  imports: [CommonModule],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
+    selector: 'app-promo-banner',
+    imports: [CommonModule],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    template: `
     <!-- Banner nur versteckt wenn: admin disabled ODER user hat geschlossen -->
     <div
       *ngIf="visible && settings.enabled"
@@ -66,7 +65,7 @@ import { DOCUMENT } from '@angular/common';
       </button>
     </div>
   `,
-  styles: [`
+    styles: [`
     /* Host nimmt keinen Platz weg wenn Banner ausgeblendet */
     :host { display: block; }
 

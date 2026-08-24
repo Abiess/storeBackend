@@ -7,10 +7,9 @@ import { TranslationService } from '../../core/services/translation.service';
 import { toDate } from '../../core/utils/date.utils';
 
 @Component({
-  selector: 'app-order-confirmation',
-  standalone: true,
-  imports: [CommonModule, TranslatePipe],
-  template: `
+    selector: 'app-order-confirmation',
+    imports: [CommonModule, TranslatePipe],
+    template: `
     <div class="confirmation-container">
       <div *ngIf="loading" class="loading">
         <div class="spinner"></div>
@@ -124,7 +123,7 @@ import { toDate } from '../../core/utils/date.utils';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .confirmation-container {
       max-width: 900px;
       margin: 0 auto;

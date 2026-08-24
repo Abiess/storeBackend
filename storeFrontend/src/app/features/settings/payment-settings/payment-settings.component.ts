@@ -10,10 +10,9 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { Subscription } from 'rxjs';
 
 @Component({
-  selector: 'app-payment-settings',
-  standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe],
-  template: `
+    selector: 'app-payment-settings',
+    imports: [CommonModule, FormsModule, TranslatePipe],
+    template: `
     <div class="payment-settings">
       <!-- FEHLER: Keine Stores vorhanden (nur wenn kein storeIdOverride gesetzt ist) -->
       <div class="error-state" *ngIf="!storeIdOverride && !loadingStores && stores.length === 0">
@@ -126,7 +125,7 @@ import { Subscription } from 'rxjs';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .payment-settings { padding: 0; }
     .section-header { display: flex; align-items: center; gap: 16px; margin-bottom: 32px; }
     .header-icon { font-size: 32px; }

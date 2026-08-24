@@ -9,7 +9,6 @@ import {ProductnavigationBarComponent} from "@app/features/productnavigation-bar
 
 @Component({
     selector: 'app-store-navigation',
-    standalone: true,
     imports: [CommonModule, RouterModule, TranslatePipe, ProductnavigationBarComponent],
     template: `
     <div class="store-navigation" *ngIf="storeId$ | async as storeId">

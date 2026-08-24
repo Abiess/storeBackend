@@ -11,20 +11,19 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { SeoApiService, RedirectRuleDTO } from '../../../core/services/seo-api.service';
 
 @Component({
-  selector: 'app-redirect-dialog',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    FormsModule,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-    MatSelectModule,
-    MatCheckboxModule
-  ],
-  template: `
+    selector: 'app-redirect-dialog',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        FormsModule,
+        MatDialogModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatButtonModule,
+        MatSelectModule,
+        MatCheckboxModule
+    ],
+    template: `
     <h2 mat-dialog-title>{{ isEdit ? 'Redirect bearbeiten' : 'Neuer Redirect' }}</h2>
     
     <mat-dialog-content>
@@ -105,7 +104,7 @@ import { SeoApiService, RedirectRuleDTO } from '../../../core/services/seo-api.s
       </button>
     </mat-dialog-actions>
   `,
-  styles: [`
+    styles: [`
     .full-width {
       width: 100%;
       margin-bottom: 16px;

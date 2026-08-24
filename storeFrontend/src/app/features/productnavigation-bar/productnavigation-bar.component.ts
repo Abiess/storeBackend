@@ -26,7 +26,6 @@ export interface NavTab {
 
 @Component({
     selector: 'app-productnavigation-bar',
-    standalone: true,
     imports: [
         CommonModule,
         RouterModule,
