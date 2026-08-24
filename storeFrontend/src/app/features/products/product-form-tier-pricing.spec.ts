@@ -1,10 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ProductFormComponent } from './product-form.component';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { TranslateModule } from '@ngx-translate/core';
 import { of } from 'rxjs';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 
 describe('ProductFormComponent - Tier Pricing UI', () => {
   let component: ProductFormComponent;
@@ -12,22 +13,21 @@ describe('ProductFormComponent - Tier Pricing UI', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [
-        ProductFormComponent,
-        HttpClientTestingModule,
+    imports: [ProductFormComponent,
         RouterTestingModule,
-        TranslateModule.forRoot()
-      ],
-      providers: [
+        TranslateModule.forRoot()],
+    providers: [
         {
-          provide: ActivatedRoute,
-          useValue: {
-            snapshot: { paramMap: new Map([['id', '121']]) },
-            params: of({ id: '121' })
-          }
-        }
-      ]
-    }).compileComponents();
+            provide: ActivatedRoute,
+            useValue: {
+                snapshot: { paramMap: new Map([['id', '121']]) },
+                params: of({ id: '121' })
+            }
+        },
+        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClientTesting()
+    ]
+}).compileComponents();
 
     fixture = TestBed.createComponent(ProductFormComponent);
     component = fixture.componentInstance;

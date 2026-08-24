@@ -1,9 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { StorefrontProductDetailComponent } from './storefront-product-detail.component';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { of } from 'rxjs';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 
 describe('StorefrontProductDetailComponent - Tier Pricing', () => {
   let component: StorefrontProductDetailComponent;
@@ -25,21 +26,20 @@ describe('StorefrontProductDetailComponent - Tier Pricing', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [
-        StorefrontProductDetailComponent,
-        HttpClientTestingModule,
-        TranslateModule.forRoot()
-      ],
-      providers: [
+    imports: [StorefrontProductDetailComponent,
+        TranslateModule.forRoot()],
+    providers: [
         {
-          provide: ActivatedRoute,
-          useValue: {
-            snapshot: { paramMap: { get: () => '634' } },
-            queryParams: of({ variant: '58' })
-          }
-        }
-      ]
-    }).compileComponents();
+            provide: ActivatedRoute,
+            useValue: {
+                snapshot: { paramMap: { get: () => '634' } },
+                queryParams: of({ variant: '58' })
+            }
+        },
+        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClientTesting()
+    ]
+}).compileComponents();
 
     fixture = TestBed.createComponent(StorefrontProductDetailComponent);
     component = fixture.componentInstance;

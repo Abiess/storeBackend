@@ -1,7 +1,8 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ProductTierPriceService, ProductTierPrice } from './product-tier-price.service';
 import { environment } from '../../../environments/environment';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 
 describe('ProductTierPriceService', () => {
   let service: ProductTierPriceService;
@@ -12,9 +13,9 @@ describe('ProductTierPriceService', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
-      providers: [ProductTierPriceService]
-    });
+    imports: [],
+    providers: [ProductTierPriceService, provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()]
+});
     service = TestBed.inject(ProductTierPriceService);
     httpMock = TestBed.inject(HttpTestingController);
   });
