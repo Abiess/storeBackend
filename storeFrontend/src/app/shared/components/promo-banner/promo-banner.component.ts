@@ -1,7 +1,8 @@
 import {
   Component, Input, OnInit, OnDestroy,
   ChangeDetectionStrategy, ChangeDetectorRef,
-  effect, Injector
+  effect, Injector,
+  DOCUMENT
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BannerService, BannerSettings } from '@app/core/services/banner.service';
@@ -10,7 +11,7 @@ import { Subscription } from 'rxjs';
 
 // Renderer2 + DOCUMENT für SSR-sicheres Body-Class-Management
 import { Renderer2, Inject } from '@angular/core';
-import { DOCUMENT } from '@angular/common';
+
 
 /**
  * Promo-Banner-Komponente für den Storefront.

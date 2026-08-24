@@ -1,6 +1,6 @@
-﻿import { Injectable, Renderer2, RendererFactory2, Inject } from '@angular/core';
+﻿import { Injectable, Renderer2, RendererFactory2, Inject, DOCUMENT } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
-import { DOCUMENT } from '@angular/common';
+
 
 export interface PageMeta {
   title?: string;

@@ -1959,12 +1959,12 @@ import { Subscription } from 'rxjs';
     /* Material Toggle Styles */
     ::ng-deep .tier-pricing-header mat-slide-toggle,
     ::ng-deep .tier-active-toggle mat-slide-toggle {
-      --mdc-switch-selected-track-color: #667eea;
-      --mdc-switch-selected-handle-color: #667eea;
-      --mdc-switch-selected-hover-track-color: #5568d3;
-      --mdc-switch-selected-hover-handle-color: #5568d3;
-      --mdc-switch-selected-pressed-track-color: #4451b8;
-      --mdc-switch-selected-pressed-handle-color: #4451b8;
+      --mat-slide-toggle-selected-track-color: #667eea;
+      --mat-slide-toggle-selected-handle-color: #667eea;
+      --mat-slide-toggle-selected-hover-track-color: #5568d3;
+      --mat-slide-toggle-selected-hover-handle-color: #5568d3;
+      --mat-slide-toggle-selected-pressed-track-color: #4451b8;
+      --mat-slide-toggle-selected-pressed-handle-color: #4451b8;
     }
 
     ::ng-deep .tier-pricing-header mat-slide-toggle .mdc-label {
