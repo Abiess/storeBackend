@@ -1147,52 +1147,7 @@ export interface SettingsTab {
       gap: 1rem;
     }
 
-    .btn {
-      padding: 0.75rem 1.5rem;
-      border: none;
-      border-radius: 8px;
-      font-size: 0.9375rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
-    }
-
-    .btn-primary:hover:not(:disabled) {
-      box-shadow: 0 4px 16px rgba(102, 126, 234, 0.45);
-      transform: translateY(-1px);
-    }
-
-    .btn-secondary {
-      background: #f1f5f9;
-      color: #475569;
-      border: 1px solid #e2e8f0;
-    }
-
-    .btn-secondary:hover {
-      background: #e2e8f0;
-    }
-
-    .btn-danger {
-      background: #ef4444;
-      color: white;
-      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
-    }
-
-    .btn-danger:hover:not(:disabled) {
-      background: #dc2626;
-      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
-    }
+    /* Button styles now from global styles.scss */
 
     .domain-info {
       text-align: center;

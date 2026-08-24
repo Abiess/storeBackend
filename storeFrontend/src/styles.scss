@@ -65,6 +65,9 @@ body.promo-banner-active {
 /* Import Tabler-inspired Admin Polish (only applies inside .app-admin-shell) */
 @import './styles/admin-polish.scss';
 
+/* Import Global Form Foundation (opt-in via .admin-form) */
+@import './styles/forms.scss';
+
 /* ==================== Theme CSS Variables ==================== */
 /* Shopify / WooCommerce inspired design tokens */
 :root {
@@ -246,12 +249,18 @@ h1, h2, h3, h4, h5, h6 {
               box-shadow var(--transition-fast), color var(--transition-fast);
   text-align: center;
   white-space: nowrap;
-  min-height: 36px;
+  min-height: 44px; /* Touch-Target (mobile-optimized) */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .btn:focus-visible {
   outline: none;
   box-shadow: var(--shadow-focus);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
 }
 
 .btn:disabled {
@@ -280,6 +289,28 @@ h1, h2, h3, h4, h5, h6 {
 .btn-secondary:hover:not(:disabled) {
   background: var(--theme-surface-subdued);
   border-color: var(--theme-text-secondary);
+}
+
+.btn-danger {
+  background: var(--theme-error);
+  color: #fff;
+  border-color: var(--theme-error);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #c82333; /* Darker red for hover */
+  border-color: #bd2130;
+}
+
+.btn-info {
+  background: var(--theme-info);
+  color: #fff;
+  border-color: var(--theme-info);
+}
+
+.btn-info:hover:not(:disabled) {
+  background: #1e5ba8;
+  border-color: #1e5ba8;
 }
 
 .btn-accent {

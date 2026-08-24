@@ -24,7 +24,7 @@ import { Subscription } from 'rxjs';
         [actions]="headerActions"
       ></app-page-header>
 
-      <form [formGroup]="categoryForm" (ngSubmit)="onSubmit()" class="category-form">
+      <form [formGroup]="categoryForm" (ngSubmit)="onSubmit()" class="category-form admin-form">
         <div class="form-card">
           <h2>{{ 'category.info' | translate }}</h2>
           
@@ -51,7 +51,7 @@ import { Subscription } from 'rxjs';
               [placeholder]="'category.placeholder.slug' | translate"
               [class.error]="categoryForm.get('slug')?.invalid && categoryForm.get('slug')?.touched"
             />
-            <p class="hint">{{ 'category.hint.slug' | translate }}</p>
+            <p class="form-hint">{{ 'category.hint.slug' | translate }}</p>
             <div class="error-message" *ngIf="categoryForm.get('slug')?.invalid && categoryForm.get('slug')?.touched">
               {{ 'category.required.slug' | translate }}
             </div>
@@ -87,7 +87,7 @@ import { Subscription } from 'rxjs';
                 min="0"
                 placeholder="0"
               />
-              <p class="hint">{{ 'category.hint.sortorder' | translate }}</p>
+              <p class="form-hint">{{ 'category.hint.sortorder' | translate }}</p>
             </div>
           </div>
         </div>
@@ -115,177 +115,30 @@ import { Subscription } from 'rxjs';
     </div>
   `,
   styles: [`
+    /* ═══════════════════════════════════════════════════════════
+       COMPONENT-SPECIFIC STYLES
+       Forms.scss (.admin-form) provides base form styling
+       Global buttons (.btn-primary, .btn-secondary) from styles.scss
+       ═══════════════════════════════════════════════════════════ */
+    
+    /* Container Layout (category-specific) */
     .category-form-container {
       max-width: 800px;
       margin: 0 auto;
       padding: 2rem 1rem;
     }
 
-    /* Page header styles are now in PageHeaderComponent */
-
+    /* Form Vertical Gap (category-specific) */
     .category-form {
       display: flex;
       flex-direction: column;
       gap: 1.5rem;
     }
 
-    .form-card {
-      background: white;
-      border-radius: 12px;
-      padding: 2rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
-    .form-card h2 {
-      margin: 0 0 1.5rem;
-      font-size: 1.25rem;
-      color: #333;
-      padding-bottom: 0.75rem;
-      border-bottom: 2px solid #f0f0f0;
-    }
-
-    .form-group {
-      margin-bottom: 1.5rem;
-    }
-
-    .form-group label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-weight: 600;
-      color: #333;
-      font-size: 0.9375rem;
-    }
-
-    .form-group input,
-    .form-group textarea,
-    .form-group select {
-      width: 100%;
-      padding: 0.75rem;
-      border: 2px solid #e0e0e0;
-      border-radius: 8px;
-      font-size: 1rem;
-      transition: all 0.3s;
-      font-family: inherit;
-    }
-
-    .form-group input:focus,
-    .form-group textarea:focus,
-    .form-group select:focus {
-      outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    }
-
-    .form-group input.error,
-    .form-group textarea.error {
-      border-color: #dc3545;
-    }
-
-    .form-group textarea {
-      resize: vertical;
-      min-height: 80px;
-    }
-
-    .form-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-    }
-
-    .error-message {
-      color: #dc3545;
-      font-size: 0.875rem;
-      margin-top: 0.25rem;
-    }
-
-    .hint {
-      color: #666;
-      font-size: 0.875rem;
-      margin: 0.25rem 0 0;
-      font-style: italic;
-    }
-
-    .form-actions {
-      display: flex;
-      gap: 1rem;
-      justify-content: flex-end;
-      padding-top: 1rem;
-    }
-
-    .btn-primary,
-    .btn-secondary {
-      padding: 0.875rem 2rem;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s;
-      font-size: 1rem;
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-    }
-
-    .btn-primary:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-    }
-
-    .btn-primary:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-
-    .btn-secondary {
-      background: white;
-      color: #333;
-      border: 2px solid #e0e0e0;
-    }
-
-    .btn-secondary:hover {
-      background: #f8f9fa;
-      border-color: #667eea;
-      color: #667eea;
-    }
-
-    .success-message {
-      background: #d4edda;
-      color: #155724;
-      padding: 1rem;
-      border-radius: 8px;
-      margin-top: 1rem;
-      border: 1px solid #c3e6cb;
-    }
-
-    .error-banner {
-      background: #f8d7da;
-      color: #721c24;
-      padding: 1rem;
-      border-radius: 8px;
-      margin-top: 1rem;
-      border: 1px solid #f5c6cb;
-    }
-
+    /* Mobile Responsive (category-specific) */
     @media (max-width: 768px) {
-      .form-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-      }
-
-      .form-card {
-        padding: 1.5rem;
-      }
-
-      .form-actions {
-        flex-direction: column;
-      }
-
-      .btn-primary,
-      .btn-secondary {
-        width: 100%;
+      .category-form-container {
+        padding: 1rem;
       }
     }
   `]
