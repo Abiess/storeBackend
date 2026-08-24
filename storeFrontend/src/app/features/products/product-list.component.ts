@@ -79,7 +79,7 @@ import { FabService } from '@app/core/services/fab.service';
   `,
   styles: [`
     .product-list-container {
-      padding: 2rem;
+      padding: var(--space-8, 2rem);
       max-width: 1400px;
       margin: 0 auto;
     }
@@ -88,80 +88,140 @@ import { FabService } from '@app/core/services/fab.service';
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 2rem;
+      margin-bottom: var(--space-8, 2rem);
     }
 
     .header h1 {
       margin: 0;
-      color: #333;
-      font-size: 1.875rem;
+      color: var(--theme-text, #1e293b);
+      font-size: var(--theme-font-size-xxl, 1.875rem);
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
+      background: var(--theme-primary, #667eea);
+      color: var(--theme-primary-contrast, white);
       border: none;
-      padding: 0.75rem 1.5rem;
-      border-radius: 8px;
+      padding: var(--space-3, 0.75rem) var(--space-6, 1.5rem);
+      border-radius: var(--radius-md, 8px);
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.3s;
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow-sm);
     }
 
     .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+      opacity: 0.95;
     }
 
     @media (max-width: 768px) {
-      .product-list-container { padding: 1rem; }
-      .header { flex-direction: column; align-items: stretch; gap: 1rem; }
+      .product-list-container { padding: var(--space-4, 1rem); }
+      .header { flex-direction: column; align-items: stretch; gap: var(--space-4, 1rem); }
       .btn-primary { width: 100%; }
     }
 
     .bulk-toast {
       position: fixed;
-      bottom: 2rem;
+      bottom: var(--space-8, 2rem);
       left: 50%;
       transform: translateX(-50%);
-      background: #166534;
-      color: #fff;
-      padding: 12px 24px;
-      border-radius: 10px;
-      font-size: 14px;
+      background: var(--theme-success, #16a34a);
+      color: var(--theme-success-contrast, #fff);
+      padding: var(--space-3, 12px) var(--space-6, 24px);
+      border-radius: var(--radius-md, 8px);
+      font-size: var(--theme-font-size-sm, 0.875rem);
       font-weight: 600;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      box-shadow: var(--shadow-lg);
       z-index: 9999;
       animation: toast-in 0.2s ease;
+      border: 1px solid rgba(255, 255, 255, 0.2);
     }
-    .bulk-toast--error { background: #991b1b; }
+    .bulk-toast--error {
+      background: var(--theme-error, #dc2626);
+      color: var(--theme-error-contrast, #fff);
+    }
     @keyframes toast-in {
       from { opacity: 0; transform: translateX(-50%) translateY(12px); }
       to   { opacity: 1; transform: translateX(-50%) translateY(0); }
     }
 
-    /* Filter Bar – immer sichtbar */
+    /* Filter Bar – modernisiert mit Design-Tokens */
     .filter-bar {
-      display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem;
+      display: flex;
+      gap: var(--space-2, 8px);
+      flex-wrap: wrap;
+      margin-bottom: var(--space-6, 1.5rem);
     }
     .filter-btn {
-      padding: 6px 14px; border-radius: 20px; border: 1.5px solid #e5e7eb;
-      background: #f9fafb; color: #374151; font-size: 13px; font-weight: 500;
-      cursor: pointer; transition: all .15s ease;
+      padding: var(--space-2, 6px) var(--space-4, 14px);
+      border-radius: var(--radius-full, 20px);
+      border: 1px solid var(--theme-border, #e1e3e5);
+      background: var(--theme-surface, white);
+      color: var(--theme-text-subdued, #6b7280);
+      font-size: var(--theme-font-size-sm, 0.8125rem);
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      box-shadow: var(--shadow-xs);
     }
-    .filter-btn:hover { border-color: #667eea; color: #667eea; }
-    .filter-btn.active { background: linear-gradient(135deg,#667eea,#764ba2); color: #fff; border-color: transparent; }
-    /* Status-spezifische Farben im inaktiven Zustand */
-    .filter-btn--active  { border-color: #16a34a; color: #16a34a; }
-    .filter-btn--active.active  { background: linear-gradient(135deg,#22c55e,#16a34a); }
-    .filter-btn--draft   { border-color: #9ca3af; color: #6b7280; }
-    .filter-btn--draft.active   { background: linear-gradient(135deg,#9ca3af,#6b7280); }
-    .filter-btn--archived{ border-color: #d97706; color: #b45309; }
-    .filter-btn--archived.active{ background: linear-gradient(135deg,#f59e0b,#d97706); }
-    .filter-btn--telegram{ border-color: #2481cc; color: #2481cc; }
-    .filter-btn--telegram.active{ background: linear-gradient(135deg,#2481cc,#1a6db8); }
-    .filter-btn--review  { border-color: #d97706; color: #d97706; }
-    .filter-btn--review.active  { background: linear-gradient(135deg,#f59e0b,#d97706); }
+    .filter-btn:hover {
+      border-color: var(--theme-primary, #667eea);
+      color: var(--theme-primary, #667eea);
+      background: var(--theme-surface-hovered, #fafbfb);
+    }
+    .filter-btn.active {
+      background: var(--theme-primary, #667eea);
+      color: var(--theme-primary-contrast, white);
+      border-color: var(--theme-primary, #667eea);
+      box-shadow: var(--shadow-sm);
+    }
+    /* Status-spezifische Farben */
+    .filter-btn--active {
+      border-color: var(--theme-success, #16a34a);
+      color: var(--theme-success, #16a34a);
+    }
+    .filter-btn--active.active {
+      background: var(--theme-success, #16a34a);
+      color: var(--theme-success-contrast, white);
+      border-color: var(--theme-success, #16a34a);
+    }
+    .filter-btn--draft {
+      border-color: var(--theme-border-subdued, #9ca3af);
+      color: var(--theme-text-subdued, #6b7280);
+    }
+    .filter-btn--draft.active {
+      background: var(--theme-text-subdued, #6b7280);
+      color: white;
+      border-color: var(--theme-text-subdued, #6b7280);
+    }
+    .filter-btn--archived {
+      border-color: var(--theme-warning, #d97706);
+      color: var(--theme-warning, #d97706);
+    }
+    .filter-btn--archived.active {
+      background: var(--theme-warning, #d97706);
+      color: var(--theme-warning-contrast, white);
+      border-color: var(--theme-warning, #d97706);
+    }
+    .filter-btn--telegram {
+      border-color: #2481cc;
+      color: #2481cc;
+    }
+    .filter-btn--telegram.active {
+      background: #2481cc;
+      color: white;
+      border-color: #2481cc;
+    }
+    .filter-btn--review {
+      border-color: var(--theme-warning, #d97706);
+      color: var(--theme-warning, #d97706);
+    }
+    .filter-btn--review.active {
+      background: var(--theme-warning, #d97706);
+      color: var(--theme-warning-contrast, white);
+      border-color: var(--theme-warning, #d97706);
+    }
   `]
 })
 export class ProductListComponent implements OnInit, OnDestroy {
