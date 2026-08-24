@@ -8,6 +8,7 @@ import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-h
 import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
 import { FabService } from '@app/core/services/fab.service';
 import { ResponsiveDataListComponent, ColumnConfig, ActionConfig } from '@app/shared/components/responsive-data-list/responsive-data-list.component';
+import { FilterBarComponent, FilterChip } from '@app/shared/components/filter-bar/filter-bar.component';
 
 @Component({
   selector: 'app-coupons-list',
@@ -17,7 +18,8 @@ import { ResponsiveDataListComponent, ColumnConfig, ActionConfig } from '@app/sh
     FormsModule,
     MatSnackBarModule,
     PageHeaderComponent,
-    ResponsiveDataListComponent
+    ResponsiveDataListComponent,
+    FilterBarComponent
   ],
   template: `
     <div class="coupons-container">
@@ -29,15 +31,11 @@ import { ResponsiveDataListComponent, ColumnConfig, ActionConfig } from '@app/sh
       ></app-page-header>
 
       <!-- Status-Filter -->
-      <div class="filter-bar">
-        <span class="filter-label">Status:</span>
-        <div class="filter-pills">
-          <button class="filter-pill" [class.filter-pill--active]="statusFilter === ''"    (click)="onFilterChange('')">Alle</button>
-          <button class="filter-pill" [class.filter-pill--active]="statusFilter === 'ACTIVE'"   (click)="onFilterChange('ACTIVE')">✅ Aktiv</button>
-          <button class="filter-pill" [class.filter-pill--active]="statusFilter === 'PAUSED'"   (click)="onFilterChange('PAUSED')">⏸ Pausiert</button>
-          <button class="filter-pill" [class.filter-pill--active]="statusFilter === 'ARCHIVED'" (click)="onFilterChange('ARCHIVED')">📦 Archiviert</button>
-        </div>
-      </div>
+      <app-filter-bar
+        [chips]="filterChips"
+        [activeValue]="statusFilter"
+        (filterChange)="onFilterChange($event)">
+      </app-filter-bar>
 
       <app-responsive-data-list
         [items]="coupons"
@@ -55,34 +53,6 @@ import { ResponsiveDataListComponent, ColumnConfig, ActionConfig } from '@app/sh
   `,
   styles: [`
     .coupons-container { padding: 2rem; max-width: 1400px; margin: 0 auto; }
-
-    .filter-bar {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      margin-bottom: 1.25rem;
-      flex-wrap: wrap;
-    }
-    .filter-label { font-size: .85rem; font-weight: 600; color: #64748b; }
-    .filter-pills { display: flex; gap: .5rem; flex-wrap: wrap; }
-    .filter-pill {
-      padding: .4rem 1rem;
-      border: 1.5px solid #e2e8f0;
-      border-radius: 20px;
-      background: #fff;
-      font-size: .82rem;
-      font-weight: 500;
-      color: #475569;
-      cursor: pointer;
-      transition: all .2s;
-    }
-    .filter-pill:hover { border-color: #667eea; color: #667eea; }
-    .filter-pill--active {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      border-color: transparent;
-      color: #fff;
-      box-shadow: 0 2px 8px rgba(102,126,234,.3);
-    }
     @media (max-width: 768px) { .coupons-container { padding: 1rem; } }
   `]
 })
@@ -93,6 +63,34 @@ export class CouponsListComponent implements OnInit, OnDestroy {
   statusFilter = '';
   breadcrumbItems: BreadcrumbItem[] = [];
   headerActions: HeaderAction[] = [];
+
+  /** Filter-Chips für FilterBarComponent */
+  get filterChips(): FilterChip[] {
+    return [
+      {
+        value: '',
+        label: 'Alle'
+      },
+      {
+        value: 'ACTIVE',
+        label: 'Aktiv',
+        icon: '✅',
+        variant: 'filter-chip--variant-success'
+      },
+      {
+        value: 'PAUSED',
+        label: 'Pausiert',
+        icon: '⏸',
+        variant: 'filter-chip--variant-subdued'
+      },
+      {
+        value: 'ARCHIVED',
+        label: 'Archiviert',
+        icon: '📦',
+        variant: 'filter-chip--variant-warning'
+      }
+    ];
+  }
 
   columns: ColumnConfig[] = [
     {
