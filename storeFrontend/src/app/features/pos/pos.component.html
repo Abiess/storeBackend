@@ -29,6 +29,26 @@
             {{ 'pos.productNotFound' | translate }}
           </div>
         }
+
+        <!-- Categories -->
+        @if (categories.length > 0) {
+          <div class="category-filter">
+            <button
+              class="category-btn"
+              [class.active]="selectedCategoryId === null"
+              (click)="onCategorySelect(null)">
+              {{ 'pos.allCategories' | translate }}
+            </button>
+            @for (category of categories; track trackByCategoryId($index, category)) {
+              <button
+                class="category-btn"
+                [class.active]="selectedCategoryId === category.id"
+                (click)="onCategorySelect(category.id)">
+                {{ category.name }}
+              </button>
+            }
+          </div>
+        }
       </div>
 
       <!-- Loading -->
@@ -90,20 +110,29 @@
 
         @for (item of (cartItems$ | async); track item.product.id) {
           <div class="cart-item">
-            <div class="item-info">
+            <div class="item-header">
               <h4>{{ item.product.title }}</h4>
-              <p class="item-price">{{ item.product.basePrice | number:'1.2-2' }} €</p>
+              <div class="item-price">{{ item.product.basePrice | number:'1.2-2' }} €</div>
             </div>
             <div class="item-controls">
-              <button (click)="posCart.decrementQuantity(item.product.id)" class="btn-qty">
-                <lucide-icon name="minus" [size]="14"></lucide-icon>
+              <button
+                (click)="posCart.decrementQuantity(item.product.id)"
+                class="btn-qty"
+                aria-label="Menge verringern">
+                <lucide-icon name="minus" [size]="16"></lucide-icon>
               </button>
               <span class="item-qty">{{ item.quantity }}</span>
-              <button (click)="posCart.incrementQuantity(item.product.id)" class="btn-qty">
-                <lucide-icon name="plus" [size]="14"></lucide-icon>
+              <button
+                (click)="posCart.incrementQuantity(item.product.id)"
+                class="btn-qty"
+                aria-label="Menge erhöhen">
+                <lucide-icon name="plus" [size]="16"></lucide-icon>
               </button>
-              <button (click)="posCart.removeItem(item.product.id)" class="btn-remove">
-                <lucide-icon name="x" [size]="14"></lucide-icon>
+              <button
+                (click)="posCart.removeItem(item.product.id)"
+                class="btn-remove"
+                aria-label="Entfernen">
+                <lucide-icon name="trash-2" [size]="16"></lucide-icon>
               </button>
             </div>
             <div class="item-total">{{ item.lineTotal | number:'1.2-2' }} €</div>
@@ -151,15 +180,30 @@
         <!-- Same as desktop cart-items -->
         @for (item of (cartItems$ | async); track item.product.id) {
           <div class="cart-item">
-            <div class="item-info">
+            <div class="item-header">
               <h4>{{ item.product.title }}</h4>
-              <p>{{ item.product.basePrice | number:'1.2-2' }} €</p>
+              <div class="item-price">{{ item.product.basePrice | number:'1.2-2' }} €</div>
             </div>
             <div class="item-controls">
-              <button (click)="posCart.decrementQuantity(item.product.id)">-</button>
-              <span>{{ item.quantity }}</span>
-              <button (click)="posCart.incrementQuantity(item.product.id)">+</button>
-              <button (click)="posCart.removeItem(item.product.id)">×</button>
+              <button
+                (click)="posCart.decrementQuantity(item.product.id)"
+                class="btn-qty"
+                aria-label="Menge verringern">
+                <lucide-icon name="minus" [size]="16"></lucide-icon>
+              </button>
+              <span class="item-qty">{{ item.quantity }}</span>
+              <button
+                (click)="posCart.incrementQuantity(item.product.id)"
+                class="btn-qty"
+                aria-label="Menge erhöhen">
+                <lucide-icon name="plus" [size]="16"></lucide-icon>
+              </button>
+              <button
+                (click)="posCart.removeItem(item.product.id)"
+                class="btn-remove"
+                aria-label="Entfernen">
+                <lucide-icon name="trash-2" [size]="16"></lucide-icon>
+              </button>
             </div>
             <div class="item-total">{{ item.lineTotal | number:'1.2-2' }} €</div>
           </div>

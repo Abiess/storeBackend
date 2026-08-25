@@ -3132,6 +3132,7 @@
     "checkout": "الدفع",
     "search": "ابحث عن منتج...",
     "scanBarcode": "مسح الباركود",
-    "inStock": "متوفر"
+    "inStock": "متوفر",
+    "allCategories": "الكل"
   }
 }

@@ -3198,30 +3198,50 @@
     }
   },
   "sidebarAdmin": {
+    "aria": {
+      "mainNavigation": "Hauptnavigation",
+      "openNavigation": "Navigation öffnen",
+      "closeNavigation": "Navigation schließen"
+    },
     "groups": {
-      "commerce": "Commerce",
-      "purchasing": "Einkauf",
-      "customerService": "Kundenservice",
-      "system": null,
       "overview": "Übersicht",
-      "storeSetup": "Store Setup"
+      "commerce": "Commerce",
+      "customerService": "Kundenservice",
+      "storeSetup": "Store Setup",
+      "team": "Team & Rollen",
+      "account": "Account",
+      "platform": "Plattform-Admin",
+      "purchasing": "Einkauf"
     },
     "items": {
-      "team": null,
-      "notifications": null,
-      "chatbot": "Chatbot",
       "dashboard": "Dashboard",
       "products": "Produkte",
-      "pos": "Kasse",
-      "supplierInvoices": "Lieferantenrechnungen",
-      "designTheme": "Design & Theme",
-      "shipping": null,
-      "whatsapp": null,
-      "domain": null,
-      "productsExpiry": "Produkte mit Ablaufdatum",
+      "reviews": "Bewertungen",
+      "chatbot": "Chatbot",
       "storeSettings": "Store Einstellungen",
-      "reviews": "Bewertungen"
-    }
+      "designTheme": "Design & Theme",
+      "banner": "Promo-Banner",
+      "delivery": "Lieferung",
+      "seo": "SEO",
+      "brand": "Marke",
+      "woocommerce": "WooCommerce Import",
+      "myAccount": "Mein Account",
+      "subscription": "Abonnement",
+      "roles": "Rollen",
+      "teamRoles": "Team & Rollen",
+      "telegram": "Telegram",
+      "platformDelivery": "🚚 Lieferoptionen",
+      "supplierInvoices": "Lieferantenrechnungen",
+      "productsExpiry": "Produkte mit Ablaufdatum",
+      "pos": "Kasse"
+    },
+    "noStore": {
+      "hint": "Kein Store ausgewählt",
+      "cta": "Store erstellen",
+      "tooltip": "Bitte zuerst einen Store erstellen oder auswählen"
+    },
+    "collapse": "Sidebar einklappen",
+    "expand": "Sidebar aufklappen"
   },
   "pos": {
     "noProducts": "Keine Produkte gefunden",
@@ -3239,6 +3259,7 @@
     "empty": "Warenkorb ist leer",
     "total": "GESAMT",
     "inStock": "Auf Lager",
-    "remove": "Entfernen"
+    "remove": "Entfernen",
+    "allCategories": "Alle"
   }
 }

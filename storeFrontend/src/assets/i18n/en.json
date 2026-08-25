@@ -3224,6 +3224,7 @@
     "checkout": "Checkout",
     "search": "Search product...",
     "scanBarcode": "Scan barcode",
-    "inStock": "In stock"
+    "inStock": "In stock",
+    "allCategories": "All"
   }
 }

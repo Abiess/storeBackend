@@ -4,8 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import { ProductService } from '@app/core/services/product.service';
+import { CategoryService } from '@app/core/services/category.service';
 import { PosCartService } from '@app/core/services/pos-cart.service';
-import { Product } from '@app/core/models';
+import { Product, Category } from '@app/core/models';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { BarcodeInputComponent } from '@app/shared/components/barcode-input/barcode-input.component';
 import { LucideAngularModule } from 'lucide-angular';
@@ -20,6 +21,7 @@ import { LucideAngularModule } from 'lucide-angular';
 })
 export class PosComponent implements OnInit, OnDestroy {
   private productService = inject(ProductService);
+  private categoryService = inject(CategoryService);
   private route = inject(ActivatedRoute);
   public posCart = inject(PosCartService);
   private destroy$ = new Subject<void>();
@@ -28,6 +30,8 @@ export class PosComponent implements OnInit, OnDestroy {
   storeId!: number;
   allProducts: Product[] = [];
   filteredProducts: Product[] = [];
+  categories: Category[] = [];
+  selectedCategoryId: number | null = null;
   searchQuery = '';
   barcodeInput = '';
   loading = signal(false);
@@ -42,6 +46,7 @@ export class PosComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.extractStoreId();
     this.setupSearch();
+    this.loadCategories();
     this.loadProducts();
   }
 
@@ -57,7 +62,19 @@ export class PosComponent implements OnInit, OnDestroy {
 
   private setupSearch(): void {
     this.searchSubject.pipe(debounceTime(100), distinctUntilChanged(), takeUntil(this.destroy$))
-      .subscribe(query => this.filterProducts(query));
+      .subscribe(query => this.applyFilters());
+  }
+
+  private loadCategories(): void {
+    this.categoryService.getCategories(this.storeId).pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (categories) => {
+          this.categories = categories.filter(c => !c.parentId); // Only root categories
+        },
+        error: () => {
+          this.categories = [];
+        }
+      });
   }
 
   private loadProducts(): void {
@@ -66,7 +83,7 @@ export class PosComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (products) => {
           this.allProducts = products;
-          this.filteredProducts = products;
+          this.applyFilters();
           this.loading.set(false);
         },
         error: () => this.loading.set(false)
@@ -76,6 +93,31 @@ export class PosComponent implements OnInit, OnDestroy {
   onSearchChange(query: string): void {
     this.searchQuery = query;
     this.searchSubject.next(query);
+  }
+
+  onCategorySelect(categoryId: number | null): void {
+    this.selectedCategoryId = categoryId;
+    this.applyFilters();
+  }
+
+  private applyFilters(): void {
+    let products = [...this.allProducts];
+
+    // Category filter
+    if (this.selectedCategoryId !== null) {
+      products = products.filter(p => p.categoryId === this.selectedCategoryId);
+    }
+
+    // Search filter
+    if (this.searchQuery.trim()) {
+      const q = this.searchQuery.toLowerCase();
+      products = products.filter(p =>
+        p.title?.toLowerCase().includes(q) || p.name?.toLowerCase().includes(q) ||
+        p.sku?.toLowerCase().includes(q) || p.barcode?.toLowerCase().includes(q)
+      );
+    }
+
+    this.filteredProducts = products;
   }
 
   private filterProducts(query: string): void {
@@ -114,6 +156,10 @@ export class PosComponent implements OnInit, OnDestroy {
 
   trackByProductId(_: number, product: Product): number {
     return product.id;
+  }
+
+  trackByCategoryId(_: number, category: Category): number {
+    return category.id;
   }
 
   getProductImage(product: Product): string {
