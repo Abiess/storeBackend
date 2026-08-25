@@ -11,6 +11,7 @@ import storebackend.dto.CreateStoreRequest;
 import storebackend.dto.UpdateStoreRequest;
 import storebackend.dto.StoreDTO;
 import storebackend.entity.Store;
+import storebackend.entity.StoreRole;
 import storebackend.entity.User;
 import storebackend.enums.Role;
 import storebackend.enums.StoreStatus;
@@ -21,6 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +34,7 @@ public class StoreService {
 
     private final StoreRepository storeRepository;
     private final UserRepository userRepository;
+    private final StoreRoleRepository storeRoleRepository;
     private final MediaService mediaService;
     private final SaasProperties saasProperties;
     private final StorePostCreateService postCreateService;
@@ -66,8 +69,35 @@ public class StoreService {
         return RESERVED_SLUGS.contains(slug.toLowerCase());
     }
 
+    /**
+     * Gibt alle Stores zurück, auf die der User Zugriff hat:
+     * - Stores, bei denen der User Owner ist
+     * - Stores, bei denen der User ein Team-Mitglied ist (StoreRole)
+     * 
+     * MULTI-TENANT SECURITY: StoreRole wird per userId gefiltert
+     */
     public List<StoreDTO> getStoresByOwner(User owner) {
-        return storeRepository.findByOwner(owner).stream()
+        // 1. Stores wo User = Owner
+        List<Store> ownedStores = storeRepository.findByOwner(owner);
+        
+        // 2. Stores wo User = Team-Mitglied (via StoreRole)
+        List<StoreRole> userRoles = storeRoleRepository.findAll().stream()
+                .filter(sr -> sr.getUser().getId().equals(owner.getId()))
+                .toList();
+        
+        List<Store> teamStores = userRoles.stream()
+                .map(StoreRole::getStore)
+                .toList();
+        
+        // 3. Zusammenführen (Deduplizierung via Stream)
+        List<Store> allStores = Stream.concat(ownedStores.stream(), teamStores.stream())
+                .distinct()
+                .toList();
+        
+        log.info("User {} has access to {} stores ({} owned, {} via team)",
+                owner.getId(), allStores.size(), ownedStores.size(), teamStores.size());
+        
+        return allStores.stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }

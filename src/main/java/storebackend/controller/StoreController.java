@@ -67,7 +67,7 @@ class StoreManagementController {
     }
 
     @GetMapping("/{storeId}")
-    @PreAuthorize("@storeAccessChecker.isStoreAdmin(#storeId)")
+    @PreAuthorize("@storeAccessChecker.hasStoreAccess(#storeId)")
     public ResponseEntity<StoreDTO> getStoreById(
             @PathVariable Long storeId,
             @AuthenticationPrincipal User user) {

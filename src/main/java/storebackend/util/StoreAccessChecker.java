@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import storebackend.entity.Store;
 import storebackend.entity.User;
 import storebackend.repository.StoreRepository;
+import storebackend.repository.StoreRoleRepository;
 import storebackend.repository.UserRepository;
 
 import java.util.Objects;
@@ -24,6 +25,7 @@ public class StoreAccessChecker {
 
     private final StoreRepository storeRepository;
     private final UserRepository userRepository;
+    private final StoreRoleRepository storeRoleRepository;
 
     /**
      * Prüft, ob der aktuell eingeloggte User Admin-Rechte für einen Store hat
@@ -41,45 +43,15 @@ public class StoreAccessChecker {
      */
     public boolean isStoreAdmin(Long storeId) {
         try {
-            // 1. Authentication prüfen
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            // 1. User resolven
+            User currentUser = resolveCurrentUser();
             
-            if (authentication == null
-                || !authentication.isAuthenticated()
-                || authentication instanceof AnonymousAuthenticationToken) {
+            if (currentUser == null) {
                 log.warn("[ACCESS-DENIED] Not authenticated for storeId={}", storeId);
                 return false;
             }
 
-            // 2. User aus Principal laden - SECURITY FIX: Principal-Typ auswerten
-            User currentUser = null;
-            Object principal = authentication.getPrincipal();
-            
-            if (principal instanceof User authenticatedUser) {
-                // Principal ist bereits ein User-Entity-Objekt
-                currentUser = authenticatedUser;
-                log.debug("[PRINCIPAL] Type: User entity, userId={}", currentUser.getId());
-            } else if (principal instanceof UserDetails userDetails) {
-                // Principal ist UserDetails → Username als E-Mail verwenden
-                currentUser = userRepository
-                    .findByEmail(userDetails.getUsername())
-                    .orElse(null);
-                log.debug("[PRINCIPAL] Type: UserDetails, username={}", userDetails.getUsername());
-            } else {
-                // Fallback: authentication.getName() als E-Mail
-                String identifier = authentication.getName();
-                currentUser = userRepository
-                    .findByEmail(identifier)
-                    .orElse(null);
-                log.debug("[PRINCIPAL] Type: String/fallback, name={}", identifier);
-            }
-            
-            if (currentUser == null) {
-                log.warn("[ACCESS-DENIED] Authenticated user could not be resolved, storeId={}", storeId);
-                return false;
-            }
-
-            // 3. Store laden (MIT Owner wegen Lazy Loading!)
+            // 2. Store laden (MIT Owner wegen Lazy Loading!)
             Store store = storeRepository.findByIdWithOwner(storeId).orElse(null);
             
             if (store == null || store.getOwner() == null) {
@@ -88,12 +60,12 @@ public class StoreAccessChecker {
                 return false;
             }
 
-            // 4. Owner-Check (direkter Vergleich der IDs)
+            // 3. Owner-Check (direkter Vergleich der IDs)
             Long userId = currentUser.getId();
             Long ownerId = store.getOwner().getId();
             boolean isOwner = Objects.equals(userId, ownerId);
             
-            // 5. SECURITY: Nur IDs und notwendige Infos loggen - NIE den Principal oder User-Objekt!
+            // 4. SECURITY: Nur IDs und notwendige Infos loggen - NIE den Principal oder User-Objekt!
             log.info("[ACCESS-CHECK] storeId={}, currentUserId={}, ownerId={}, result={}",
                 storeId,
                 userId,
@@ -114,6 +86,92 @@ public class StoreAccessChecker {
             log.error("[ACCESS-ERROR] StoreAccessCheck failed for storeId={}: {}", 
                 storeId, e.getMessage(), e);
             return false;
+        }
+    }
+
+    /**
+     * Prüft, ob der aktuell eingeloggte User Zugriff auf einen Store hat.
+     * Zugriff = Owner ODER Team-Mitglied (hat StoreRole).
+     * 
+     * Für @PreAuthorize("@storeAccessChecker.hasStoreAccess(#storeId)")
+     * Verwendet für GET /api/stores/{storeId} und allgemeine Store-Reads.
+     * 
+     * @param storeId Store ID
+     * @return true wenn User Owner ODER Team-Mitglied ist, sonst false
+     */
+    public boolean hasStoreAccess(Long storeId) {
+        try {
+            // 1. User resolven (gleiche Logik wie isStoreAdmin)
+            User currentUser = resolveCurrentUser();
+            if (currentUser == null) {
+                log.warn("[ACCESS-DENIED] Not authenticated for storeId={}", storeId);
+                return false;
+            }
+            
+            Long userId = currentUser.getId();
+            
+            // 2. Store laden (MIT Owner wegen Lazy Loading!)
+            Store store = storeRepository.findByIdWithOwner(storeId).orElse(null);
+            
+            if (store == null) {
+                log.warn("[ACCESS-DENIED] Store not found: storeId={}, userId={}", storeId, userId);
+                return false;
+            }
+
+            // 3. Owner-Check (direkt)
+            boolean isOwner = store.getOwner() != null && 
+                              Objects.equals(userId, store.getOwner().getId());
+            
+            if (isOwner) {
+                log.info("[ACCESS-GRANTED] ✅ User is owner: userId={}, storeId={}", userId, storeId);
+                return true;
+            }
+            
+            // 4. StoreRole-Check (Team-Mitglied)
+            // MULTI-TENANT SECURITY: storeId ist WHERE-Bedingung!
+            boolean hasRole = storeRoleRepository.existsByStoreIdAndUserId(storeId, userId);
+            
+            if (hasRole) {
+                log.info("[ACCESS-GRANTED] ✅ User is team member: userId={}, storeId={}", userId, storeId);
+                return true;
+            }
+            
+            // 5. Kein Zugriff
+            log.warn("[ACCESS-DENIED] ❌ User is neither owner nor team member: userId={}, storeId={}", 
+                    userId, storeId);
+            return false;
+            
+        } catch (Exception e) {
+            log.error("[ACCESS-ERROR] hasStoreAccess failed for storeId={}: {}", 
+                    storeId, e.getMessage(), e);
+            return false;
+        }
+    }
+
+    /**
+     * Extrahiert den aktuell eingeloggten User aus dem SecurityContext.
+     * Wiederverwendbare Hilfsmethode für isStoreAdmin() und hasStoreAccess().
+     * 
+     * @return User-Entity oder null
+     */
+    private User resolveCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        
+        if (authentication == null
+            || !authentication.isAuthenticated()
+            || authentication instanceof AnonymousAuthenticationToken) {
+            return null;
+        }
+
+        Object principal = authentication.getPrincipal();
+        
+        if (principal instanceof User authenticatedUser) {
+            return authenticatedUser;
+        } else if (principal instanceof UserDetails userDetails) {
+            return userRepository.findByEmail(userDetails.getUsername()).orElse(null);
+        } else {
+            String identifier = authentication.getName();
+            return userRepository.findByEmail(identifier).orElse(null);
         }
     }
 
