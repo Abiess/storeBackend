@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ProductService } from '@app/core/services/product.service';
@@ -6,14 +6,17 @@ import { Product } from '@app/core/models';
 import { StoreNavigationComponent } from '@app/shared/components/store-navigation.component';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { TranslationService } from '@app/core/services/translation.service';
+import { LanguageService } from '@app/core/services/language.service';
 import { ResponsiveDataListComponent, ColumnConfig, ActionConfig, BulkActionConfig } from '@app/shared/components/responsive-data-list/responsive-data-list.component';
 import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
 import { FilterBarComponent, FilterChip } from '@app/shared/components/filter-bar/filter-bar.component';
 import { FabService } from '@app/core/services/fab.service';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
     selector: 'app-product-list',
     imports: [CommonModule, RouterModule, StoreNavigationComponent, TranslatePipe, ResponsiveDataListComponent, PageHeaderComponent, FilterBarComponent],
+    changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
     <div class="product-list-container">
       <!-- Einheitliche Navigation -->
@@ -139,6 +142,13 @@ export class ProductListComponent implements OnInit, OnDestroy {
   /** Filter-Chips für FilterBarComponent – normale Property (kein Getter) */
   filterChips: FilterChip[] = [];
 
+  /** ── Performance: Properties statt Getter für OnPush ── */
+  columns: ColumnConfig[] = [];
+  actions: ActionConfig[] = [];
+  bulkActions: BulkActionConfig[] = [];
+
+  private destroy$ = new Subject<void>();
+
   /**
    * Berechnet Filter-Chip-Counts in EINEM Durchlauf über alle Produkte.
    * Wird nur bei Produkt-Reload aufgerufen, NICHT bei jedem Change Detection Cycle.
@@ -248,9 +258,9 @@ export class ProductListComponent implements OnInit, OnDestroy {
     return this.translationService.translate(key);
   }
 
-  // Spalten-Konfiguration – als Getter für reaktive Übersetzungen
-  get columns(): ColumnConfig[] {
-    return [
+  // ── Performance: Builder-Methoden statt Getter ──
+  private buildColumns(): void {
+    this.columns = [
       { key: 'primaryImageUrl', label: this.t('productList.colImage'), type: 'image', width: '80px', hideOnMobile: true },
       {
         key: 'title', label: this.t('productList.colName'), type: 'text', mobileLabel: this.t('productList.colName'), sortable: true,
@@ -274,17 +284,15 @@ export class ProductListComponent implements OnInit, OnDestroy {
     ];
   }
 
-  // Einzel-Aktionen – als Getter für reaktive Übersetzungen
-  get actions(): ActionConfig[] {
-    return [
+  private buildActions(): void {
+    this.actions = [
       { icon: '✏️', label: this.t('productList.actionEdit'), handler: (p) => this.editProduct(p.id) },
       { icon: '🗑️', label: this.t('productList.actionDelete'), class: 'danger', handler: (p) => this.deleteProduct(p) }
     ];
   }
 
-  // Bulk-Aktionen – als Getter für reaktive Übersetzungen
-  get bulkActions(): BulkActionConfig[] {
-    return [
+  private buildBulkActions(): void {
+    this.bulkActions = [
       { icon: '🟢', label: this.t('productList.bulkActivate'), handler: (items) => this.bulkSetStatus(items, 'ACTIVE') },
       { icon: '📝', label: this.t('productList.bulkSetDraft'), handler: (items) => this.bulkSetStatus(items, 'DRAFT') },
       { icon: '🗄️', label: this.t('productList.bulkArchive'), handler: (items) => this.bulkSetStatus(items, 'ARCHIVED') },
@@ -297,15 +305,32 @@ export class ProductListComponent implements OnInit, OnDestroy {
     private router: Router,
     private productService: ProductService,
     private fabService: FabService,
-    private translationService: TranslationService
+    private translationService: TranslationService,
+    private languageService: LanguageService
   ) {}
 
   ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
     this.fabService.clear();
     if (this._bulkToastTimer) clearTimeout(this._bulkToastTimer);
   }
 
   ngOnInit(): void {
+    // ── Performance: Konfig initial aufbauen ──
+    this.buildColumns();
+    this.buildActions();
+    this.buildBulkActions();
+
+    // ── Performance: Bei Sprachwechsel neu aufbauen ──
+    this.languageService.currentLanguage$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.buildColumns();
+        this.buildActions();
+        this.buildBulkActions();
+      });
+
     // Mehrstufige StoreId Extraktion
     let storeIdParam = this.route.snapshot.paramMap.get('storeId') || this.route.snapshot.paramMap.get('id');
 

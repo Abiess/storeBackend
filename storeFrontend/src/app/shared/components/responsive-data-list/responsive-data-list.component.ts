@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, TemplateRef, ContentChild, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, TemplateRef, ContentChild, OnChanges, SimpleChanges, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
@@ -33,6 +33,7 @@ export interface BulkActionConfig {
 @Component({
     selector: 'app-responsive-data-list',
     imports: [CommonModule, FormsModule, TranslatePipe],
+    changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
     <!-- ─── Bulk-Action Bar (erscheint wenn Einträge ausgewählt) ─── -->
     <div class="rdl-bulk-bar" *ngIf="selectable && selectedIds.size > 0">
@@ -166,6 +167,7 @@ export interface BulkActionConfig {
               <!-- Image -->
               <div *ngIf="col.type === 'image'" class="rdl-img-cell">
                 <img *ngIf="getCellValue(item, col.key)" [src]="getCellValue(item, col.key)"
+                     loading="lazy"
                      [alt]="col.label" class="rdl-img" (error)="onImageError($event)">
                 <div *ngIf="!getCellValue(item, col.key)" class="rdl-img-placeholder">📷</div>
               </div>
@@ -231,7 +233,9 @@ export interface BulkActionConfig {
         </div>
         <!-- Card Image -->
         <div *ngIf="hasImageColumn()" class="rdl-card__img-wrap">
-          <img *ngIf="getImageUrl(item)" [src]="getImageUrl(item)" alt="Vorschaubild" class="rdl-card__img" (error)="onImageError($event)">
+          <img *ngIf="getImageUrl(item)" [src]="getImageUrl(item)" 
+               loading="lazy"
+               alt="Vorschaubild" class="rdl-card__img" (error)="onImageError($event)">
           <div *ngIf="!getImageUrl(item)" class="rdl-card__img-placeholder">📷</div>
         </div>
         <!-- Card Body -->
@@ -273,7 +277,7 @@ export interface BulkActionConfig {
   `,
     styleUrls: ['./responsive-data-list.component.scss']
 })
-export class ResponsiveDataListComponent implements OnChanges {
+export class ResponsiveDataListComponent implements OnInit, OnChanges {
   @Input() items: any[] = [];
   @Input() columns: ColumnConfig[] = [];
   @Input() actions: ActionConfig[] = [];
@@ -306,6 +310,10 @@ export class ResponsiveDataListComponent implements OnChanges {
   // Multiselect State – Set von IDs der ausgewählten Einträge
   selectedIds = new Set<any>();
 
+  // ── Performance: Gecachte Properties statt Getter ──
+  filteredItems: any[] = [];
+  sortedItems: any[] = [];
+
   ngOnChanges(changes: SimpleChanges): void {
     // Wenn items sich ändern (z.B. nach Reload), Auswahl bereinigen
     if (changes['items']) {
@@ -313,12 +321,18 @@ export class ResponsiveDataListComponent implements OnChanges {
       for (const id of this.selectedIds) {
         if (!newIds.has(id)) this.selectedIds.delete(id);
       }
+      // Neu berechnen bei Input-Änderung
+      this.updateFilteredItems();
+      this.updateSortedItems();
     }
   }
 
   ngOnInit() {
     this.viewMode = this.defaultView;
     if (window.innerWidth < 768) this.viewMode = 'cards';
+    // Initial berechnen
+    this.updateFilteredItems();
+    this.updateSortedItems();
   }
 
   /**
@@ -381,25 +395,32 @@ export class ResponsiveDataListComponent implements OnChanges {
     action.handler(this.getSelectedItems());
   }
 
-  get filteredItems(): any[] {
-    if (!this.searchQuery.trim()) return this.items;
-    const q = this.searchQuery.toLowerCase();
-    return this.items.filter(item =>
-      this.columns.some(col => {
-        const val = this.getCellValue(item, col.key);
-        return val && String(val).toLowerCase().includes(q);
-      })
-    );
+  // ── Performance: Methoden statt Getter ──
+  private updateFilteredItems(): void {
+    if (!this.searchQuery.trim()) {
+      this.filteredItems = this.items;
+    } else {
+      const q = this.searchQuery.toLowerCase();
+      this.filteredItems = this.items.filter(item =>
+        this.columns.some(col => {
+          const val = this.getCellValue(item, col.key);
+          return val && String(val).toLowerCase().includes(q);
+        })
+      );
+    }
   }
 
-  get sortedItems(): any[] {
-    if (!this.sortKey) return this.filteredItems;
-    return [...this.filteredItems].sort((a, b) => {
-      const va = this.getCellValue(a, this.sortKey);
-      const vb = this.getCellValue(b, this.sortKey);
-      const cmp = String(va ?? '').localeCompare(String(vb ?? ''), 'de', { numeric: true });
-      return this.sortDir === 'asc' ? cmp : -cmp;
-    });
+  private updateSortedItems(): void {
+    if (!this.sortKey) {
+      this.sortedItems = this.filteredItems;
+    } else {
+      this.sortedItems = [...this.filteredItems].sort((a, b) => {
+        const va = this.getCellValue(a, this.sortKey);
+        const vb = this.getCellValue(b, this.sortKey);
+        const cmp = String(va ?? '').localeCompare(String(vb ?? ''), 'de', { numeric: true });
+        return this.sortDir === 'asc' ? cmp : -cmp;
+      });
+    }
   }
 
   sort(key: string) {
@@ -409,14 +430,19 @@ export class ResponsiveDataListComponent implements OnChanges {
       this.sortKey = key;
       this.sortDir = 'asc';
     }
+    this.updateSortedItems();
   }
 
   onSearch(q: string) {
+    this.updateFilteredItems();
+    this.updateSortedItems();
     this.searchChange.emit(q);
   }
 
   clearSearch() {
     this.searchQuery = '';
+    this.updateFilteredItems();
+    this.updateSortedItems();
     this.searchChange.emit('');
   }
 
