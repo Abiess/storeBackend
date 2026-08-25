@@ -7,9 +7,11 @@ import org.springframework.stereotype.Component;
 import storebackend.entity.Product;
 import storebackend.entity.Store;
 import storebackend.entity.TelegramStoreConfig;
+import storebackend.entity.User;
 import storebackend.repository.ProductRepository;
 import storebackend.repository.StoreRepository;
 import storebackend.repository.TelegramStoreConfigRepository;
+import storebackend.service.NotificationRecipientService;
 import storebackend.service.TelegramBotService;
 import storebackend.service.WhatsAppService;
 
@@ -42,6 +44,7 @@ public class ExpiryNotificationScheduler {
     private final storebackend.service.EmailService emailService;
     private final TelegramBotService telegramBotService;
     private final TelegramStoreConfigRepository telegramStoreConfigRepository;
+    private final NotificationRecipientService notificationRecipientService;
 
     /**
      * Täglich 09:00 — MHD-Warnung für ablaufende Produkte.
@@ -123,33 +126,71 @@ public class ExpiryNotificationScheduler {
             store.getId(), expiringProducts.size());
 
         // ═══════════════════════════════════════════════════════════════════════
-        // KANAL 1: E-MAIL (unabhängig)
+        // KANAL 1: E-MAIL (Multi-User: Owner + Manager)
         // ═══════════════════════════════════════════════════════════════════════
         boolean emailSuccess = false;
         try {
-            String ownerEmail = store.getOwner() != null ? store.getOwner().getEmail() : null;
-            String ownerLang = store.getOwner() != null ? store.getOwner().getPreferredLanguage() : "en";
+            // Empfänger ermitteln (Owner + Manager, dedupliziert)
+            List<User> recipients = notificationRecipientService.getMhdRecipients(store);
             
-            if (ownerEmail != null && !ownerEmail.isBlank()) {
-                // Produkt-Liste für E-Mail vorbereiten
+            if (recipients.isEmpty()) {
+                log.warn("ℹ️ [MHD/Email] Store {} hat keine Empfänger (kein Owner/Manager)", store.getId());
+            } else {
+                log.info("📧 [MHD/Email] Store {}: {} Empfänger (Owner + Manager)", 
+                    store.getId(), recipients.size());
+                
+                // Produkt-Liste für E-Mail vorbereiten (einmalig)
                 List<Map<String, Object>> emailProducts = buildEmailProductList(expiringProducts, today);
                 
-                emailSuccess = emailService.sendExpiryWarning(
-                    ownerEmail,
-                    ownerLang,
-                    store.getName(),
-                    null, // storeLogo (optional)
-                    emailProducts,
-                    null  // manageUrl (default)
-                );
+                // E-Mail an jeden Empfänger einzeln versenden
+                int successCount = 0;
+                for (User recipient : recipients) {
+                    try {
+                        String recipientEmail = recipient.getEmail();
+                        String recipientLang = recipient.getPreferredLanguage() != null 
+                            ? recipient.getPreferredLanguage() 
+                            : "en";
+                        
+                        if (recipientEmail == null || recipientEmail.isBlank()) {
+                            log.warn("⚠️ [MHD/Email] Empfänger userId={} hat keine E-Mail-Adresse - überspringe", 
+                                recipient.getId());
+                            continue;
+                        }
+                        
+                        boolean sent = emailService.sendExpiryWarning(
+                            recipientEmail,
+                            recipientLang,
+                            store.getName(),
+                            null, // storeLogo (optional)
+                            emailProducts,
+                            null  // manageUrl (default)
+                        );
+                        
+                        if (sent) {
+                            successCount++;
+                            log.info("✅ [MHD/Email] Benachrichtigung gesendet an {} (userId={}, lang={})", 
+                                recipientEmail, recipient.getId(), recipientLang);
+                        } else {
+                            log.warn("⚠️ [MHD/Email] Versand fehlgeschlagen oder DEV Mode für {} (userId={})", 
+                                recipientEmail, recipient.getId());
+                        }
+                    } catch (Exception e) {
+                        log.error("❌ [MHD/Email] Fehler beim Versand an userId={}: {}", 
+                            recipient.getId(), e.getMessage(), e);
+                        // Fehler bei einem Empfänger stoppt nicht die anderen
+                    }
+                }
+                
+                // Erfolg wenn mindestens 1 E-Mail erfolgreich versendet wurde
+                emailSuccess = successCount > 0;
                 
                 if (emailSuccess) {
-                    log.info("✅ [MHD/Email] Benachrichtigung gesendet an {}", ownerEmail);
+                    log.info("✅ [MHD/Email] Store {}: {}/{} E-Mails erfolgreich versendet", 
+                        store.getId(), successCount, recipients.size());
                 } else {
-                    log.warn("⚠️ [MHD/Email] Versand fehlgeschlagen oder DEV Mode für {}", ownerEmail);
+                    log.warn("⚠️ [MHD/Email] Store {}: Keine der {} E-Mails konnte versendet werden", 
+                        store.getId(), recipients.size());
                 }
-            } else {
-                log.debug("ℹ️ [MHD/Email] Store {} hat keine Owner-E-Mail", store.getId());
             }
         } catch (Exception e) {
             log.error("❌ [MHD/Email] Fehler beim E-Mail-Versand für Store {}", store.getId(), e);
