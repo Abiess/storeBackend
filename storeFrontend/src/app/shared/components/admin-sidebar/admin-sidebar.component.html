@@ -91,6 +91,47 @@
             </div>
         </div>
 
+        <!-- PWA Install Card (Android/Chrome/Desktop) -->
+        <div class="sidebar-pwa-card" *ngIf="(pwaInstall.canInstall$ | async) && !isCollapsed">
+            <div class="pwa-card-inner">
+                <div class="pwa-card-header">
+                    <lucide-angular name="smartphone" [size]="22" class="pwa-icon" strokeWidth="1.5"></lucide-angular>
+                    <div>
+                        <div class="pwa-title">{{ 'pwa.install.title' | translate }}</div>
+                        <div class="pwa-sub">{{ 'pwa.install.subtitle' | translate }}</div>
+                    </div>
+                </div>
+                <div class="pwa-actions">
+                    <button class="pwa-btn-install" (click)="pwaInstall.install()">
+                        {{ 'pwa.install.button' | translate }}
+                        <lucide-angular name="download" [size]="16" strokeWidth="2"></lucide-angular>
+                    </button>
+                    <button class="pwa-btn-dismiss" (click)="pwaInstall.dismiss()" 
+                            [title]="'pwa.install.dismiss' | translate">
+                        <lucide-angular name="x" [size]="16" strokeWidth="2"></lucide-angular>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PWA Install Instructions (iOS/Safari) -->
+        <div class="sidebar-pwa-card pwa-card--ios" *ngIf="(pwaInstall.showIOSInstructions$ | async) && !isCollapsed">
+            <div class="pwa-card-inner">
+                <div class="pwa-card-header">
+                    <lucide-angular name="smartphone" [size]="22" class="pwa-icon" strokeWidth="1.5"></lucide-angular>
+                    <div>
+                        <div class="pwa-title">{{ 'pwa.install.title' | translate }}</div>
+                        <div class="pwa-sub pwa-sub--ios">
+                            {{ 'pwa.install.iosInstructions' | translate }}
+                        </div>
+                    </div>
+                </div>
+                <button class="pwa-btn-dismiss pwa-btn-dismiss--full" (click)="pwaInstall.dismiss()">
+                    {{ 'pwa.install.dismiss' | translate }}
+                </button>
+            </div>
+        </div>
+
         <!-- Footer -->
         <div class="sidebar-footer">
             <button class="btn-collapse" (click)="toggleCollapse()"

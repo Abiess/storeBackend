@@ -3188,5 +3188,23 @@
     "quantity": "Quantity",
     "barcode": "Barcode",
     "scannedBarcode": "Scanned Barcode"
+  },
+  "pwa": {
+    "install": {
+      "title": "Install as App",
+      "subtitle": "Faster access, without browser",
+      "button": "Install Now",
+      "dismiss": "Later",
+      "iosInstructions": "Tap Share (↑) → Add to Home Screen"
+    },
+    "update": {
+      "title": "New Version Available",
+      "subtitle": "Update now for the latest features",
+      "updateNow": "Update Now",
+      "later": "Later",
+      "ariaLabel": "New app version available",
+      "updateNowAriaLabel": "Install new version now",
+      "laterAriaLabel": "Update later"
+    }
   }
 }

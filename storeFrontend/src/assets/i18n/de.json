@@ -3223,5 +3223,23 @@
     "quantity": "Menge",
     "barcode": "Barcode",
     "scannedBarcode": "Gescannter Barcode"
+  },
+  "pwa": {
+    "install": {
+      "title": "Als App installieren",
+      "subtitle": "Schneller Zugriff, ohne Browser",
+      "button": "Jetzt installieren",
+      "dismiss": "Später",
+      "iosInstructions": "Tippe auf Teilen (↑) → Zum Home-Bildschirm"
+    },
+    "update": {
+      "title": "Neue Version verfügbar",
+      "subtitle": "Aktualisieren Sie jetzt für die neuesten Funktionen",
+      "updateNow": "Jetzt aktualisieren",
+      "later": "Später",
+      "ariaLabel": "Neue App-Version verfügbar",
+      "updateNowAriaLabel": "Neue Version jetzt installieren",
+      "laterAriaLabel": "Update später durchführen"
+    }
   }
 }

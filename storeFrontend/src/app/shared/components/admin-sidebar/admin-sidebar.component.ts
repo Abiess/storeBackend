@@ -5,6 +5,7 @@ import { filter } from 'rxjs/operators';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { LanguageService } from '@app/core/services/language.service';
 import { StoreService } from '@app/core/services/store.service';
+import { PwaInstallService } from '@app/core/services/pwa-install.service';
 import { LucideAngularModule } from 'lucide-angular';
 // Icons global registriert via LUCIDE_ICONS in app.config.ts
 
@@ -55,7 +56,8 @@ export class AdminSidebarComponent implements OnInit {
     constructor(
         private router: Router,
         public languageService: LanguageService,
-        private storeService: StoreService
+        private storeService: StoreService,
+        public pwaInstall: PwaInstallService
     ) {
         this.router.events
             .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))

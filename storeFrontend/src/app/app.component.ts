@@ -8,17 +8,22 @@ import { MetaPixelService } from './core/services/meta-pixel.service';
 import { ClarityService } from './core/services/clarity.service';
 import { WhatsappConfigService } from './core/services/whatsapp-config.service';
 import { TranslationService } from './core/services/translation.service';
+import { PwaUpdateService } from './core/services/pwa-update.service';
 import { environment } from '@env/environment';
 import { ChatbotWidgetComponent } from './components/chatbot-widget/chatbot-widget.component';
 import { WhatsappWidgetComponent } from './components/whatsapp-widget/whatsapp-widget.component';
 import { AdminSidebarComponent } from './shared/components/admin-sidebar/admin-sidebar.component';
 import { FabHostComponent } from './shared/components/fab-host.component';
 import { PreviewPanelComponent } from './shared/components/preview-panel.component';
+import { PwaUpdateBannerComponent } from './shared/components/pwa-update-banner/pwa-update-banner.component';
 
 @Component({
     selector: 'app-root',
-    imports: [CommonModule, RouterOutlet, ChatbotWidgetComponent, WhatsappWidgetComponent, AdminSidebarComponent, FabHostComponent, PreviewPanelComponent],
+    imports: [CommonModule, RouterOutlet, ChatbotWidgetComponent, WhatsappWidgetComponent, AdminSidebarComponent, FabHostComponent, PreviewPanelComponent, PwaUpdateBannerComponent],
     template: `
+    <!-- PWA Update Banner (global, erscheint wenn Update verfügbar) -->
+    <app-pwa-update-banner></app-pwa-update-banner>
+
     <ng-container *ngIf="showAdminShell; else publicShell">
       <div class="app-admin-shell">
         <app-admin-sidebar></app-admin-sidebar>
@@ -248,7 +253,8 @@ export class AppComponent implements OnInit {
     private clarity: ClarityService,
     private renderer: Renderer2,
     private whatsappConfig: WhatsappConfigService,
-    private translationService: TranslationService
+    private translationService: TranslationService,
+    private pwaUpdate: PwaUpdateService
   ) {
     // ✅ Effect: Bei Sprachwechsel WhatsApp-Nachricht aktualisieren
     effect(() => {
@@ -268,6 +274,9 @@ export class AppComponent implements OnInit {
 
     // Microsoft Clarity initialisieren (no-op in DEV oder wenn clarityId leer)
     this.clarity.init();
+
+    // PWA Update Management initialisieren (no-op in DEV, automatisch via constructor)
+    // Service ist bereits aktiv via providedIn: 'root' → überwacht automatisch Updates
 
     // Bereits eingeloggte User sofort in Clarity identifizieren
     this.authService.currentUser$.pipe(
