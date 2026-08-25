@@ -983,51 +983,6 @@
   "items": {
     "chatbot": "Chatbot"
   },
-  "sidebarAdmin": {
-    "aria": {
-      "mainNavigation": "Hauptnavigation",
-      "openNavigation": "Navigation öffnen",
-      "closeNavigation": "Navigation schließen"
-    },
-    "groups": {
-      "overview": "Übersicht",
-      "commerce": "Commerce",
-      "customerService": "Kundenservice",
-      "storeSetup": "Store Setup",
-      "team": "Team & Rollen",
-      "account": "Account",
-      "platform": "Plattform-Admin",
-      "purchasing": "Einkauf"
-    },
-    "items": {
-      "dashboard": "Dashboard",
-      "products": "Produkte",
-      "reviews": "Bewertungen",
-      "chatbot": "Chatbot",
-      "storeSettings": "Store Einstellungen",
-      "designTheme": "Design & Theme",
-      "banner": "Promo-Banner",
-      "delivery": "Lieferung",
-      "seo": "SEO",
-      "brand": "Marke",
-      "woocommerce": "WooCommerce Import",
-      "myAccount": "Mein Account",
-      "subscription": "Abonnement",
-      "roles": "Rollen",
-      "teamRoles": "Team & Rollen",
-      "telegram": "Telegram",
-      "platformDelivery": "🚚 Lieferoptionen",
-      "supplierInvoices": "Lieferantenrechnungen",
-      "productsExpiry": "Produkte mit Ablaufdatum"
-    },
-    "noStore": {
-      "hint": "Kein Store ausgewählt",
-      "cta": "Store erstellen",
-      "tooltip": "Bitte zuerst einen Store erstellen oder auswählen"
-    },
-    "collapse": "Sidebar einklappen",
-    "expand": "Sidebar aufklappen"
-  },
   "trust": {
     "freeShipping": "Kostenloser Versand",
     "freeShippingDesc": "Ab 50€ Bestellwert",
@@ -3241,5 +3196,49 @@
       "updateNowAriaLabel": "Neue Version jetzt installieren",
       "laterAriaLabel": "Update später durchführen"
     }
+  },
+  "sidebarAdmin": {
+    "groups": {
+      "commerce": "Commerce",
+      "purchasing": "Einkauf",
+      "customerService": "Kundenservice",
+      "system": null,
+      "overview": "Übersicht",
+      "storeSetup": "Store Setup"
+    },
+    "items": {
+      "team": null,
+      "notifications": null,
+      "chatbot": "Chatbot",
+      "dashboard": "Dashboard",
+      "products": "Produkte",
+      "pos": "Kasse",
+      "supplierInvoices": "Lieferantenrechnungen",
+      "designTheme": "Design & Theme",
+      "shipping": null,
+      "whatsapp": null,
+      "domain": null,
+      "productsExpiry": "Produkte mit Ablaufdatum",
+      "storeSettings": "Store Einstellungen",
+      "reviews": "Bewertungen"
+    }
+  },
+  "pos": {
+    "noProducts": "Keine Produkte gefunden",
+    "subtotal": "Zwischensumme",
+    "search": "Produkt suchen...",
+    "title": "Kasse",
+    "cart": "Warenkorb",
+    "productNotFound": "Kein Produkt mit diesem Barcode gefunden",
+    "items": "Artikel",
+    "clear": "Warenkorb leeren",
+    "scanBarcode": "Barcode scannen",
+    "checkout": "Bezahlen",
+    "quantity": "Menge",
+    "tax": "inkl. MwSt.",
+    "empty": "Warenkorb ist leer",
+    "total": "GESAMT",
+    "inStock": "Auf Lager",
+    "remove": "Entfernen"
   }
 }

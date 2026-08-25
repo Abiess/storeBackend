@@ -1275,7 +1275,8 @@
       "woocommerce": "استيراد WooCommerce",
       "platformDelivery": "🚚 خيارات التوصيل",
       "supplierInvoices": "فواتير الموردين",
-      "productsExpiry": "المنتجات مع تاريخ الانتهاء"
+      "productsExpiry": "المنتجات مع تاريخ الانتهاء",
+      "pos": "الكاشير"
     },
     "noStore": {
       "hint": "لم يتم اختيار متجر",
@@ -3114,5 +3115,23 @@
       "updateNowAriaLabel": "تثبيت الإصدار الجديد الآن",
       "laterAriaLabel": "التحديث لاحقاً"
     }
+  },
+  "pos": {
+    "items": "منتجات",
+    "productNotFound": "لم يتم العثور على منتج بهذا الباركود",
+    "clear": "تفريغ السلة",
+    "remove": "إزالة",
+    "subtotal": "المجموع الفرعي",
+    "noProducts": "لا توجد منتجات",
+    "tax": "شامل الضريبة",
+    "title": "نقطة البيع",
+    "cart": "السلة",
+    "total": "المجموع",
+    "empty": "السلة فارغة",
+    "quantity": "الكمية",
+    "checkout": "الدفع",
+    "search": "ابحث عن منتج...",
+    "scanBarcode": "مسح الباركود",
+    "inStock": "متوفر"
   }
 }

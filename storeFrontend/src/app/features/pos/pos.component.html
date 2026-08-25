@@ -1,0 +1,185 @@
+<div class="pos-container">
+  <!-- Desktop/Tablet: Split View -->
+  <div class="pos-content">
+    <!-- Produktbereich Links -->
+    <div class="pos-products">
+      <div class="pos-header">
+        <h1>{{ 'pos.title' | translate }}</h1>
+        
+        <!-- Suche + Scanner -->
+        <div class="pos-search-bar">
+          <input
+            type="text"
+            [(ngModel)]="searchQuery"
+            (ngModelChange)="onSearchChange($event)"
+            [placeholder]="'pos.search' | translate"
+            class="search-input"
+          />
+          <app-barcode-input
+            [(ngModel)]="barcodeInput"
+            (ngModelChange)="onBarcodeScanned($event)"
+            [placeholder]="'pos.scanBarcode' | translate"
+          ></app-barcode-input>
+        </div>
+
+        <!-- Barcode Error -->
+        @if (barcodeNotFound()) {
+          <div class="error-banner">
+            <lucide-icon name="alert-circle" [size]="16"></lucide-icon>
+            {{ 'pos.productNotFound' | translate }}
+          </div>
+        }
+      </div>
+
+      <!-- Loading -->
+      @if (loading()) {
+        <div class="loading-state">
+          <lucide-icon name="loader-2" [size]="32" class="spin"></lucide-icon>
+          <p>{{ 'common.loading' | translate }}</p>
+        </div>
+      }
+
+      <!-- Produktgrid -->
+      @if (!loading() && filteredProducts.length > 0) {
+        <div class="product-grid">
+          @for (product of filteredProducts; track trackByProductId($index, product)) {
+            <div class="product-card" (click)="onProductClick(product)">
+              <div class="product-image">
+                <img [src]="getProductImage(product)" [alt]="product.title" loading="lazy" />
+              </div>
+              <div class="product-info">
+                <h3 class="product-name">{{ product.title }}</h3>
+                <p class="product-price">{{ product.basePrice | number:'1.2-2' }} €</p>
+                @if (product.stock != null && product.stock > 0) {
+                  <p class="product-stock">
+                    <lucide-icon name="package" [size]="14"></lucide-icon>
+                    {{ product.stock }}
+                  </p>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Empty State -->
+      @if (!loading() && filteredProducts.length === 0) {
+        <div class="empty-state">
+          <lucide-icon name="package-x" [size]="48"></lucide-icon>
+          <p>{{ 'pos.noProducts' | translate }}</p>
+        </div>
+      }
+    </div>
+
+    <!-- Warenkorb Rechts (Desktop) -->
+    <aside class="pos-cart-sidebar">
+      <div class="cart-header">
+        <h2>
+          <lucide-icon name="shopping-cart" [size]="20"></lucide-icon>
+          {{ 'pos.cart' | translate }}
+        </h2>
+      </div>
+
+      <div class="cart-items">
+        @if ((cartItems$ | async)?.length === 0) {
+          <div class="cart-empty">
+            <lucide-icon name="shopping-bag" [size]="32"></lucide-icon>
+            <p>{{ 'pos.empty' | translate }}</p>
+          </div>
+        }
+
+        @for (item of (cartItems$ | async); track item.product.id) {
+          <div class="cart-item">
+            <div class="item-info">
+              <h4>{{ item.product.title }}</h4>
+              <p class="item-price">{{ item.product.basePrice | number:'1.2-2' }} €</p>
+            </div>
+            <div class="item-controls">
+              <button (click)="posCart.decrementQuantity(item.product.id)" class="btn-qty">
+                <lucide-icon name="minus" [size]="14"></lucide-icon>
+              </button>
+              <span class="item-qty">{{ item.quantity }}</span>
+              <button (click)="posCart.incrementQuantity(item.product.id)" class="btn-qty">
+                <lucide-icon name="plus" [size]="14"></lucide-icon>
+              </button>
+              <button (click)="posCart.removeItem(item.product.id)" class="btn-remove">
+                <lucide-icon name="x" [size]="14"></lucide-icon>
+              </button>
+            </div>
+            <div class="item-total">{{ item.lineTotal | number:'1.2-2' }} €</div>
+          </div>
+        }
+      </div>
+
+      <div class="cart-summary">
+        @if ((cartTaxTotal$ | async) != null) {
+          <div class="summary-line">
+            <span>{{ 'pos.tax' | translate }}</span>
+            <span>{{ (cartTaxTotal$ | async) | number:'1.2-2' }} €</span>
+          </div>
+        }
+        <div class="summary-total">
+          <span>{{ 'pos.total' | translate }}</span>
+          <span>{{ (cartTotal$ | async) | number:'1.2-2' }} €</span>
+        </div>
+        <button class="btn-checkout" [disabled]="(itemCount$ | async) === 0">
+          <lucide-icon name="credit-card" [size]="18"></lucide-icon>
+          {{ 'pos.checkout' | translate }}
+        </button>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Mobile: Bottom Cart CTA -->
+  <div class="mobile-cart-cta" (click)="toggleMobileCart()">
+    <lucide-icon name="shopping-cart" [size]="20"></lucide-icon>
+    <span>{{ (itemCount$ | async) }} {{ 'pos.items' | translate }} · {{ (cartTotal$ | async) | number:'1.2-2' }} €</span>
+    <lucide-icon name="chevron-up" [size]="20"></lucide-icon>
+  </div>
+
+  <!-- Mobile: Cart Sheet -->
+  @if (showMobileCart()) {
+    <div class="mobile-cart-overlay" (click)="toggleMobileCart()"></div>
+    <div class="mobile-cart-sheet">
+      <div class="sheet-header">
+        <h2>{{ 'pos.cart' | translate }}</h2>
+        <button (click)="toggleMobileCart()">
+          <lucide-icon name="x" [size]="24"></lucide-icon>
+        </button>
+      </div>
+      <div class="sheet-content">
+        <!-- Same as desktop cart-items -->
+        @for (item of (cartItems$ | async); track item.product.id) {
+          <div class="cart-item">
+            <div class="item-info">
+              <h4>{{ item.product.title }}</h4>
+              <p>{{ item.product.basePrice | number:'1.2-2' }} €</p>
+            </div>
+            <div class="item-controls">
+              <button (click)="posCart.decrementQuantity(item.product.id)">-</button>
+              <span>{{ item.quantity }}</span>
+              <button (click)="posCart.incrementQuantity(item.product.id)">+</button>
+              <button (click)="posCart.removeItem(item.product.id)">×</button>
+            </div>
+            <div class="item-total">{{ item.lineTotal | number:'1.2-2' }} €</div>
+          </div>
+        }
+      </div>
+      <div class="cart-summary">
+        @if ((cartTaxTotal$ | async) != null) {
+          <div class="summary-line">
+            <span>{{ 'pos.tax' | translate }}</span>
+            <span>{{ (cartTaxTotal$ | async) | number:'1.2-2' }} €</span>
+          </div>
+        }
+        <div class="summary-total">
+          <span>{{ 'pos.total' | translate }}</span>
+          <span>{{ (cartTotal$ | async) | number:'1.2-2' }} €</span>
+        </div>
+        <button class="btn-checkout" [disabled]="(itemCount$ | async) === 0">
+          {{ 'pos.checkout' | translate }}
+        </button>
+      </div>
+    </div>
+  }
+</div>

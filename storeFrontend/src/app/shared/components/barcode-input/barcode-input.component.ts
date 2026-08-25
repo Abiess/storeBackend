@@ -1,4 +1,4 @@
-import { Component, ViewChild, ElementRef, OnDestroy, forwardRef } from '@angular/core';
+import { Component, ViewChild, ElementRef, OnDestroy, forwardRef, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 import { BrowserMultiFormatReader, NotFoundException, Result } from '@zxing/library';
@@ -165,7 +165,7 @@ export class BarcodeInputComponent implements ControlValueAccessor, OnDestroy {
 
   value: string = '';
   disabled: boolean = false;
-  placeholder: string = '';
+  @Input() placeholder: string = '';
   
   isCameraActive = false;
   private codeReader: BrowserMultiFormatReader | null = null;

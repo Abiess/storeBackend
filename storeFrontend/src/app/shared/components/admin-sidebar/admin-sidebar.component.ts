@@ -142,6 +142,12 @@ export class AdminSidebarComponent implements OnInit {
                 titleKey: 'sidebarAdmin.groups.commerce',
                 items: [
                     {
+                        labelKey: 'sidebarAdmin.items.pos',
+                        icon: 'shopping-cart',
+                        route: `${baseRoute}/pos`,
+                        requiresStore: true
+                    },
+                    {
                         labelKey: 'sidebarAdmin.items.products',
                         icon: 'package',
                         route: `${baseRoute}/products`,

@@ -216,6 +216,16 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
 
+  // ==================== POS (Point of Sale) ====================
+  {
+    path: 'stores/:storeId/pos',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:storeId/pos');
+      return import('./features/pos/pos.component').then(m => m.PosComponent);
+    },
+    canActivate: [authGuard]
+  },
+
   // ==================== Category Management (Primary Routes) ====================
   // WICHTIG: Spezifische Routen (mit /new) müssen VOR allgemeinen Routen stehen!
   {

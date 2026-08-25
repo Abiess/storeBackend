@@ -1660,7 +1660,8 @@
       "woocommerce": "WooCommerce Import",
       "platformDelivery": "🚚 Delivery Options",
       "supplierInvoices": "Supplier Invoices",
-      "productsExpiry": "Products with Expiry Date"
+      "productsExpiry": "Products with Expiry Date",
+      "pos": "Cashier"
     },
     "noStore": {
       "hint": "No store selected",
@@ -3206,5 +3207,23 @@
       "updateNowAriaLabel": "Install new version now",
       "laterAriaLabel": "Update later"
     }
+  },
+  "pos": {
+    "items": "Items",
+    "productNotFound": "No product found with this barcode",
+    "clear": "Clear cart",
+    "remove": "Remove",
+    "subtotal": "Subtotal",
+    "noProducts": "No products found",
+    "tax": "incl. VAT",
+    "title": "Point of Sale",
+    "cart": "Cart",
+    "total": "TOTAL",
+    "empty": "Cart is empty",
+    "quantity": "Quantity",
+    "checkout": "Checkout",
+    "search": "Search product...",
+    "scanBarcode": "Scan barcode",
+    "inStock": "In stock"
   }
 }
