@@ -1,0 +1,125 @@
+<div class="receipt-overlay" *ngIf="visible" (click)="close()">
+  <div class="receipt-container" (click)="$event.stopPropagation()">
+    
+    <div class="receipt-loading" *ngIf="loading">
+      <lucide-icon name="loader-2" [size]="40" class="spin"></lucide-icon>
+      <p>{{ 'pos.receipt.loading' | translate }}</p>
+    </div>
+
+    <div class="receipt-error" *ngIf="error && !loading">
+      <p class="error-message">{{ error }}</p>
+      <button class="btn-close-error" (click)="close()">
+        {{ 'common.close' | translate }}
+      </button>
+    </div>
+
+    <div class="receipt-content" *ngIf="order && !loading && !error">
+      
+      <div class="receipt-actions no-print">
+        <button class="btn-print" (click)="print()">
+          <lucide-icon name="printer" [size]="20"></lucide-icon>
+          {{ 'pos.receipt.print' | translate }}
+        </button>
+        <button class="btn-close" (click)="close()">
+          <lucide-icon name="x" [size]="20"></lucide-icon>
+        </button>
+      </div>
+
+      <div class="receipt-paper">
+        
+        <div class="receipt-header">
+          <div class="store-name">markt.ma</div>
+          <div class="store-details">{{ order.store.name }}</div>
+        </div>
+
+        <div class="receipt-meta">
+          <div class="meta-row">
+            <span class="meta-label">{{ 'pos.receipt.orderNumber' | translate }}:</span>
+            <span class="meta-value">{{ order.orderNumber }}</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">{{ 'pos.receipt.date' | translate }}:</span>
+            <span class="meta-value">{{ formatDate(order.createdAt) }}</span>
+          </div>
+        </div>
+
+        <div class="receipt-divider"></div>
+
+        <div class="receipt-items">
+          <div class="item" *ngFor="let item of order.items">
+            <div class="item-header">
+              <span class="item-name">{{ item.productName }}</span>
+            </div>
+            <div class="item-details">
+              <span class="item-quantity">
+                {{ item.quantity }} × {{ formatCurrency(item.unitGrossPrice) }}
+              </span>
+              <span class="item-total">{{ formatCurrency(item.lineGrossTotal) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="receipt-divider"></div>
+
+        <div class="receipt-total">
+          <div class="total-row main-total">
+            <span class="total-label">{{ 'pos.receipt.total' | translate }}</span>
+            <span class="total-value">{{ formatCurrency(order.totalGross) }}</span>
+          </div>
+        </div>
+
+        <div class="receipt-divider-thin"></div>
+
+        <div class="receipt-payment">
+          <div class="payment-method">
+            <span class="payment-label">{{ 'pos.receipt.paymentMethod' | translate }}:</span>
+            <span class="payment-value">
+              <ng-container *ngIf="isCashPayment">{{ 'pos.receipt.cash' | translate }}</ng-container>
+              <ng-container *ngIf="isCardExternalPayment">{{ 'pos.receipt.cardExternal' | translate }}</ng-container>
+            </span>
+          </div>
+          
+          <div class="cash-details" *ngIf="isCashPayment && order.cashReceived">
+            <div class="cash-row">
+              <span class="cash-label">{{ 'pos.receipt.received' | translate }}:</span>
+              <span class="cash-value">{{ formatCurrency(order.cashReceived) }}</span>
+            </div>
+            <div class="cash-row change">
+              <span class="cash-label">{{ 'pos.receipt.change' | translate }}:</span>
+              <span class="cash-value">{{ formatCurrency(order.cashChange || 0) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="receipt-divider-thin"></div>
+
+        <div class="receipt-tax">
+          <div class="tax-header">{{ 'pos.receipt.taxIncluded' | translate }}</div>
+          <div class="tax-row" *ngFor="let tax of taxBreakdown">
+            <span class="tax-label">
+              {{ 'pos.receipt.vat' | translate }} {{ tax.rate }}%:
+            </span>
+            <span class="tax-breakdown">
+              {{ 'pos.receipt.net' | translate }} {{ formatCurrency(tax.net) }} +
+              {{ formatCurrency(tax.tax) }}
+            </span>
+          </div>
+          <div class="tax-summary">
+            <span>{{ 'pos.receipt.totalNet' | translate }}:</span>
+            <span>{{ formatCurrency(order.totalNet) }}</span>
+          </div>
+          <div class="tax-summary">
+            <span>{{ 'pos.receipt.totalTax' | translate }}:</span>
+            <span>{{ formatCurrency(order.taxTotal) }}</span>
+          </div>
+        </div>
+
+        <div class="receipt-footer">
+          <p>{{ 'pos.receipt.thankYou' | translate }}</p>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>

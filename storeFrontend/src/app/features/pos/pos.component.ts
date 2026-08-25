@@ -225,7 +225,7 @@ export class PosComponent implements OnInit, OnDestroy {
     const request: PosOrderRequest = {
       paymentMethod: this.paymentMethod!,
       cashReceived: this.paymentMethod === 'CASH' ? this.cashReceived : undefined,
-      items: this.posCart.items$.value.map(item => ({
+      items: this.posCart.getCurrentItems().map(item => ({
         productId: item.product.id!,
         quantity: item.quantity
       }))
@@ -294,15 +294,15 @@ export class PosComponent implements OnInit, OnDestroy {
   }
   
   viewReceipt(): void {
-    if (this.lastSaleResponse?.id) {
-      this.receiptOrderId = this.lastSaleResponse.id;
+    if (this.lastSaleResponse?.orderId) {
+      this.receiptOrderId = this.lastSaleResponse.orderId;
       this.showReceipt.set(true);
     }
   }
   
   printReceipt(): void {
-    if (this.lastSaleResponse?.id) {
-      this.receiptOrderId = this.lastSaleResponse.id;
+    if (this.lastSaleResponse?.orderId) {
+      this.receiptOrderId = this.lastSaleResponse.orderId;
       this.showReceipt.set(true);
       // Receipt Component ruft window.print() automatisch auf
       setTimeout(() => {

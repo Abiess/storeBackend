@@ -308,7 +308,7 @@
         @if (saleError()) {
           <div class="payment-error">
             <lucide-icon name="x-circle" [size]="48" class="error-icon"></lucide-icon>
-            <p>{{ saleError() | translate }}</p>
+            <p>{{ (saleError() || 'pos.sale.error') | translate }}</p>
             <button class="btn-retry" (click)="saleError.set(null)">
               {{ 'common.retry' | translate }}
             </button>

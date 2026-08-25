@@ -30,6 +30,11 @@ export class PosCartService {
 
   /** Warenkorb-Items */
   public readonly items$: Observable<PosCartItem[]> = this.itemsSubject.asObservable();
+  
+  /** Get current items synchronously (for POS checkout) */
+  public getCurrentItems(): PosCartItem[] {
+    return this.itemsSubject.getValue();
+  }
 
   /** Anzahl Artikel im Warenkorb */
   public readonly itemCount$: Observable<number> = this.items$.pipe(
