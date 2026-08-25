@@ -153,7 +153,7 @@ export interface BulkActionConfig {
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let item of sortedItems"
+          <tr *ngFor="let item of sortedItems; trackBy: trackByFn"
               [class.rdl-row--clickable]="rowClickable"
               [class.rdl-row--selected]="isSelected(item)"
               (click)="onRowClick(item)">
@@ -220,7 +220,7 @@ export interface BulkActionConfig {
 
     <!-- ─── CARDS VIEW ────────────────────────────────────────── -->
     <div *ngIf="!loading && filteredItems.length > 0 && viewMode === 'cards'" class="rdl-cards">
-      <div *ngFor="let item of sortedItems"
+      <div *ngFor="let item of sortedItems; trackBy: trackByFn"
            class="rdl-card"
            [class.rdl-card--clickable]="rowClickable"
            [class.rdl-card--selected]="isSelected(item)"
@@ -320,6 +320,14 @@ export class ResponsiveDataListComponent implements OnChanges {
     this.viewMode = this.defaultView;
     if (window.innerWidth < 768) this.viewMode = 'cards';
   }
+
+  /**
+   * TrackBy-Funktion für *ngFor – verwendet stabiles ID-Feld aus @Input trackBy.
+   * Verhindert unnötiges Re-Rendering von DOM-Zeilen bei Filterung/Sortierung.
+   */
+  trackByFn = (index: number, item: any): any => {
+    return item[this.trackBy] ?? index;
+  };
 
   // ── Multiselect ────────────────────────────────────────────────────────────
 

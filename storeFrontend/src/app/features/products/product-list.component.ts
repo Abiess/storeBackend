@@ -136,9 +136,40 @@ export class ProductListComponent implements OnInit, OnDestroy {
   statusFilter: 'ALL' | 'ACTIVE' | 'DRAFT' | 'ARCHIVED' | 'INACTIVE' | 'TELEGRAM' | 'REVIEW' = 'ALL';
   headerActions: HeaderAction[] = [];
 
-  /** Filter-Chips für FilterBarComponent (reaktiv) */
-  get filterChips(): FilterChip[] {
-    return [
+  /** Filter-Chips für FilterBarComponent – normale Property (kein Getter) */
+  filterChips: FilterChip[] = [];
+
+  /**
+   * Berechnet Filter-Chip-Counts in EINEM Durchlauf über alle Produkte.
+   * Wird nur bei Produkt-Reload aufgerufen, NICHT bei jedem Change Detection Cycle.
+   */
+  private rebuildFilterChips(): void {
+    // Zähler initialisieren
+    let active = 0;
+    let draft = 0;
+    let archived = 0;
+    let inactive = 0;
+    let telegram = 0;
+    let priceReview = 0;
+
+    // EINER Durchlauf über alle Produkte
+    for (const product of this.products) {
+      // Status-Counts
+      const status = product.status as string;
+      switch (status) {
+        case 'ACTIVE': active++; break;
+        case 'DRAFT': draft++; break;
+        case 'ARCHIVED': archived++; break;
+        case 'INACTIVE': inactive++; break;
+      }
+      // Telegram-Count
+      if (product.telegramSource) telegram++;
+      // Preis-Review-Count
+      if (product.priceNeedsReview) priceReview++;
+    }
+
+    // Filter-Chips aufbauen
+    this.filterChips = [
       {
         value: 'ALL',
         label: this.t('productList.filterAll'),
@@ -149,55 +180,40 @@ export class ProductListComponent implements OnInit, OnDestroy {
         value: 'ACTIVE',
         label: this.t('productList.filterActive'),
         icon: '🟢',
-        count: this.countByStatus('ACTIVE'),
+        count: active,
         variant: 'filter-chip--variant-success'
       },
       {
         value: 'DRAFT',
         label: this.t('productList.filterDraft'),
         icon: '📝',
-        count: this.countByStatus('DRAFT'),
+        count: draft,
         variant: 'filter-chip--variant-subdued'
       },
       {
         value: 'ARCHIVED',
         label: this.t('productList.filterArchived'),
         icon: '🗄️',
-        count: this.countByStatus('ARCHIVED'),
+        count: archived,
         variant: 'filter-chip--variant-warning'
       },
       {
         value: 'TELEGRAM',
         label: this.t('productList.filterTelegram'),
         icon: '📡',
-        count: this.telegramCount,
+        count: telegram,
         variant: 'filter-chip--variant-info',
-        visible: this.hasTelegramProducts
+        visible: telegram > 0
       },
       {
         value: 'REVIEW',
         label: this.t('productList.filterPriceReview'),
         icon: '⚠️',
-        count: this.priceReviewCount,
+        count: priceReview,
         variant: 'filter-chip--variant-warning',
-        visible: this.priceReviewCount > 0
+        visible: priceReview > 0
       }
     ];
-  }
-
-
-  get hasTelegramProducts(): boolean {
-    return this.products.some(p => !!p.telegramSource);
-  }
-  get telegramCount(): number {
-    return this.products.filter(p => !!p.telegramSource).length;
-  }
-  get priceReviewCount(): number {
-    return this.products.filter(p => p.priceNeedsReview).length;
-  }
-
-  countByStatus(status: string): number {
-    return this.products.filter(p => p.status === status).length;
   }
 
   setStatusFilter(mode: string): void {
@@ -375,6 +391,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
           ...p,
           primaryImageUrl: this.getProductImage(p) || undefined
         }));
+        this.rebuildFilterChips(); // Filter-Counts EINMALIG berechnen
         this.applyFilter();
         this.loading = false;
       },
