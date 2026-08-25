@@ -176,6 +176,90 @@ public class StoreAccessChecker {
     }
 
     /**
+     * Prüft, ob der aktuell eingeloggte User eine spezifische Permission für einen Store hat.
+     * 
+     * MULTI-TENANT SECURITY:
+     * - Owner hat implizit ALLE Permissions für seinen Store
+     * - Team-Mitglied braucht StoreRole mit exaktem (storeId, userId)
+     * - Permission muss in StoreRole.permissions enthalten sein
+     * - Wildcard "*" = alle Permissions
+     * 
+     * Für @PreAuthorize("@storeAccessChecker.hasPermission(#storeId, 'PRODUCT_UPDATE')")
+     * oder direkten Aufruf im Controller.
+     * 
+     * @param storeId Store ID
+     * @param permission Permission-String (z.B. "PRODUCT_UPDATE", "ORDER_READ")
+     * @return true wenn User Permission hat, sonst false
+     */
+    public boolean hasPermission(Long storeId, String permission) {
+        try {
+            // 1. User resolven
+            User currentUser = resolveCurrentUser();
+            if (currentUser == null) {
+                log.warn("[PERMISSION-DENIED] Not authenticated for storeId={}, permission={}", 
+                    storeId, permission);
+                return false;
+            }
+            
+            Long userId = currentUser.getId();
+            
+            // 2. Store laden (MIT Owner!)
+            Store store = storeRepository.findByIdWithOwner(storeId).orElse(null);
+            if (store == null || store.getOwner() == null) {
+                log.warn("[PERMISSION-DENIED] Store not found or has no owner: storeId={}, userId={}", 
+                    storeId, userId);
+                return false;
+            }
+            
+            // 3. Owner hat implizit ALLE Permissions
+            boolean isOwner = Objects.equals(userId, store.getOwner().getId());
+            if (isOwner) {
+                log.info("[PERMISSION-GRANTED] ✅ Owner has implicit permission: userId={}, storeId={}, permission={}", 
+                    userId, storeId, permission);
+                return true;
+            }
+            
+            // 4. Team-Mitglied: StoreRole mit Permission prüfen
+            // MULTI-TENANT SECURITY: storeId UND userId in WHERE-Bedingung!
+            var roleOpt = storeRoleRepository.findByStoreIdAndUserId(storeId, userId);
+            
+            if (roleOpt.isEmpty()) {
+                log.warn("[PERMISSION-DENIED] ❌ User is not a team member: userId={}, storeId={}, permission={}", 
+                    userId, storeId, permission);
+                return false;
+            }
+            
+            var role = roleOpt.get();
+            var permissions = role.getPermissionList();
+            
+            // 5. Wildcard "*" = alle Permissions
+            if (permissions.contains("*")) {
+                log.info("[PERMISSION-GRANTED] ✅ User has wildcard permission: userId={}, storeId={}, role={}, permission={}", 
+                    userId, storeId, role.getRole(), permission);
+                return true;
+            }
+            
+            // 6. Konkrete Permission prüfen
+            boolean hasPermission = permissions.contains(permission);
+            
+            if (hasPermission) {
+                log.info("[PERMISSION-GRANTED] ✅ User has specific permission: userId={}, storeId={}, role={}, permission={}", 
+                    userId, storeId, role.getRole(), permission);
+            } else {
+                log.warn("[PERMISSION-DENIED] ❌ User lacks permission: userId={}, storeId={}, role={}, availablePermissions={}, requiredPermission={}", 
+                    userId, storeId, role.getRole(), permissions, permission);
+            }
+            
+            return hasPermission;
+            
+        } catch (Exception e) {
+            log.error("[PERMISSION-ERROR] Permission check failed for storeId={}, permission={}: {}", 
+                storeId, permission, e.getMessage(), e);
+            return false;
+        }
+    }
+
+    /**
      * Statische Utility-Methode: Prüft, ob ein User der Owner eines Stores ist.
      * Behandelt null-Werte sicher.
      *

@@ -22,6 +22,7 @@ import storebackend.repository.StoreRepository;
 import storebackend.service.AiImageCaptioningService;
 import storebackend.service.ProductService;
 import storebackend.service.StoreService;
+import storebackend.util.StoreAccessChecker;
 
 import java.util.List;
 import java.util.Map;
@@ -39,50 +40,17 @@ public class ProductController {
     private final StoreRepository storeRepository;
     private final AiImageCaptioningService aiImageCaptioningService;
     private final storebackend.service.UsageService usageService;
+    private final StoreAccessChecker storeAccessChecker;
 
     public ProductController(ProductService productService, StoreService storeService, 
                             StoreRepository storeRepository, AiImageCaptioningService aiImageCaptioningService,
-                            storebackend.service.UsageService usageService) {
+                            storebackend.service.UsageService usageService, StoreAccessChecker storeAccessChecker) {
         this.productService = productService;
         this.storeService = storeService;
         this.storeRepository = storeRepository;
         this.aiImageCaptioningService = aiImageCaptioningService;
         this.usageService = usageService;
-    }
-
-    /**
-     * Prüft, ob der Benutzer Zugriff auf den Store hat
-     */
-    private boolean hasStoreAccess(Long storeId, User user) {
-        if (user == null) {
-            log.warn("hasStoreAccess: User is null");
-            return false;
-        }
-
-        Store store = storeRepository.findById(storeId).orElse(null);
-        if (store == null) {
-            log.warn("hasStoreAccess: Store {} not found", storeId);
-            return false;
-        }
-
-        // Owner hat immer Zugriff
-        boolean isOwner = store.getOwner().getId().equals(user.getId());
-        if (isOwner) {
-            log.info("hasStoreAccess: User {} is owner of store {}", user.getId(), storeId);
-            return true;
-        }
-
-        // Prüfe, ob der User über StoreService Zugriff hat
-        try {
-            List<Store> userStores = storeService.getStoresByUserId(user.getId());
-            boolean hasAccess = userStores.stream().anyMatch(s -> s.getId().equals(storeId));
-            log.info("hasStoreAccess: User {} has access via StoreService: {}", user.getId(), hasAccess);
-            return hasAccess;
-        } catch (Exception e) {
-            log.error("hasStoreAccess: Error checking access for user {} to store {}: {}",
-                user.getId(), storeId, e.getMessage());
-            return false;
-        }
+        this.storeAccessChecker = storeAccessChecker;
     }
 
     @Operation(summary = "Get all products", description = "Returns all products for a specific store (public access), optionally filtered by category")
@@ -158,25 +126,15 @@ public class ProductController {
             return ResponseEntity.status(401).build();
         }
 
-        if (!hasStoreAccess(storeId, user)) {
-            log.error("❌ ACCESS DENIED - User {} ({}) does not have access to Store {}",
+        // Permission-Check: PRODUCT_CREATE erforderlich
+        if (!storeAccessChecker.hasPermission(storeId, "PRODUCT_CREATE")) {
+            log.error("❌ PERMISSION DENIED - User {} ({}) lacks PRODUCT_CREATE for Store {}",
                 user.getId(), user.getEmail(), storeId);
-
-            // Debug: Zeige welche Stores der User hat
-            try {
-                List<Store> userStores = storeService.getStoresByUserId(user.getId());
-                log.error("User's stores: {}", userStores.stream()
-                    .map(s -> s.getId() + " (" + s.getName() + ")")
-                    .collect(java.util.stream.Collectors.joining(", ")));
-            } catch (Exception e) {
-                log.error("Could not fetch user's stores: {}", e.getMessage());
-            }
-
             return ResponseEntity.status(403).build();
         }
 
         Store store = storeService.getStoreById(storeId);
-        log.info("✅ Permission granted - creating product for store: {}", store.getName());
+        log.info("✅ Permission granted (PRODUCT_CREATE) - creating product for store: {}", store.getName());
         ProductDTO created = productService.createProduct(request, store, user);
         log.info("✅ Product created successfully: {} (ID: {})", created.getTitle(), created.getId());
         return ResponseEntity.ok(created);
@@ -194,7 +152,10 @@ public class ProductController {
             return ResponseEntity.status(401).build();
         }
 
-        if (!hasStoreAccess(storeId, user)) {
+        // Permission-Check: PRODUCT_UPDATE erforderlich
+        if (!storeAccessChecker.hasPermission(storeId, "PRODUCT_UPDATE")) {
+            log.warn("❌ PERMISSION DENIED - User {} lacks PRODUCT_UPDATE for Store {}", 
+                user.getId(), storeId);
             return ResponseEntity.status(403).build();
         }
 
@@ -214,7 +175,10 @@ public class ProductController {
             return ResponseEntity.status(401).build();
         }
 
-        if (!hasStoreAccess(storeId, user)) {
+        // Permission-Check: PRODUCT_UPDATE erforderlich
+        if (!storeAccessChecker.hasPermission(storeId, "PRODUCT_UPDATE")) {
+            log.warn("❌ PERMISSION DENIED - User {} lacks PRODUCT_UPDATE for Store {}", 
+                user.getId(), storeId);
             return ResponseEntity.status(403).build();
         }
 
@@ -222,7 +186,7 @@ public class ProductController {
         return ResponseEntity.ok(productService.patchProduct(productId, fields, store));
     }
 
-    @Operation(summary = "Delete product", description = "Deletes a product")
+    @Operation(summary = "Delete product", description = "Deletes a product (Owner only)")
     @DeleteMapping("/{productId}")
     public ResponseEntity<Void> deleteProduct(
             @Parameter(description = "Store ID") @PathVariable Long storeId,
@@ -233,7 +197,10 @@ public class ProductController {
             return ResponseEntity.status(401).build();
         }
 
-        if (!hasStoreAccess(storeId, user)) {
+        // DELETE ist Owner-only (keine PRODUCT_DELETE Permission vorhanden)
+        if (!storeAccessChecker.isStoreAdmin(storeId)) {
+            log.warn("❌ PERMISSION DENIED - Only store owner can delete products: userId={}, storeId={}", 
+                user.getId(), storeId);
             return ResponseEntity.status(403).build();
         }
 
@@ -254,7 +221,10 @@ public class ProductController {
             return ResponseEntity.status(401).build();
         }
 
-        if (!hasStoreAccess(storeId, user)) {
+        // Permission-Check: PRODUCT_UPDATE erforderlich (Featured-Status ändern)
+        if (!storeAccessChecker.hasPermission(storeId, "PRODUCT_UPDATE")) {
+            log.warn("❌ PERMISSION DENIED - User {} lacks PRODUCT_UPDATE for Store {}", 
+                user.getId(), storeId);
             return ResponseEntity.status(403).build();
         }
 
@@ -358,8 +328,10 @@ public class ProductController {
             return ResponseEntity.status(401).body(Map.of("error", "Authentication required"));
         }
 
-        if (!hasStoreAccess(storeId, user)) {
-            log.error("❌ ACCESS DENIED - User {} does not have access to Store {}", user.getId(), storeId);
+        // Permission-Check: PRODUCT_CREATE erforderlich (AI generiert neues Produkt)
+        if (!storeAccessChecker.hasPermission(storeId, "PRODUCT_CREATE")) {
+            log.error("❌ PERMISSION DENIED - User {} lacks PRODUCT_CREATE for Store {}", 
+                user.getId(), storeId);
             return ResponseEntity.status(403).body(Map.of("error", "Access denied"));
         }
 
@@ -441,8 +413,10 @@ public class ProductController {
             return ResponseEntity.status(401).body(Map.of("error", "Authentication required"));
         }
 
-        if (!hasStoreAccess(storeId, user)) {
-            log.error("❌ User {} does not have access to store {}", user.getId(), storeId);
+        // Permission-Check: PRODUCT_CREATE erforderlich (AI generiert neues Produkt)
+        if (!storeAccessChecker.hasPermission(storeId, "PRODUCT_CREATE")) {
+            log.error("❌ PERMISSION DENIED - User {} lacks PRODUCT_CREATE for Store {}", 
+                user.getId(), storeId);
             return ResponseEntity.status(403).body(Map.of("error", "Access denied"));
         }
 
@@ -508,7 +482,10 @@ public class ProductController {
             return ResponseEntity.status(401).body(Map.of("error", "Authentication required"));
         }
 
-        if (!hasStoreAccess(storeId, user)) {
+        // Permission-Check: PRODUCT_READ erforderlich (Status abfragen darf jeder mit Lesezugriff)
+        if (!storeAccessChecker.hasPermission(storeId, "PRODUCT_READ")) {
+            log.warn("❌ PERMISSION DENIED - User {} lacks PRODUCT_READ for Store {}", 
+                user.getId(), storeId);
             return ResponseEntity.status(403).body(Map.of("error", "Access denied"));
         }
 

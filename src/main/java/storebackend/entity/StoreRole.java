@@ -54,10 +54,13 @@ public class StoreRole {
         updatedAt = LocalDateTime.now();
     }
 
-    /** Hilfsmethode: Permissions als Liste zurückgeben */
+    /** Hilfsmethode: Permissions als Liste zurückgeben (trimmt Whitespace) */
     public List<String> getPermissionList() {
         if (permissions == null || permissions.isBlank()) return new ArrayList<>();
-        return List.of(permissions.split(","));
+        return List.of(permissions.split(",")).stream()
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .toList();
     }
 
     /** Hilfsmethode: Permissions aus Liste setzen */
