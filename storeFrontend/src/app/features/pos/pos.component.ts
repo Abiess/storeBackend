@@ -6,15 +6,17 @@ import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import { ProductService } from '@app/core/services/product.service';
 import { CategoryService } from '@app/core/services/category.service';
 import { PosCartService } from '@app/core/services/pos-cart.service';
+import { PosService, PosOrderRequest, PosOrderResponse } from '@app/core/services/pos.service';
 import { Product, Category } from '@app/core/models';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { BarcodeInputComponent } from '@app/shared/components/barcode-input/barcode-input.component';
+import { PosReceiptComponent } from './pos-receipt/pos-receipt.component';
 import { LucideAngularModule } from 'lucide-angular';
 
 @Component({
   selector: 'app-pos',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe, BarcodeInputComponent, LucideAngularModule],
+  imports: [CommonModule, FormsModule, TranslatePipe, BarcodeInputComponent, PosReceiptComponent, LucideAngularModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './pos.component.html',
   styleUrls: ['./pos.component.scss']
@@ -24,6 +26,7 @@ export class PosComponent implements OnInit, OnDestroy {
   private categoryService = inject(CategoryService);
   private route = inject(ActivatedRoute);
   public posCart = inject(PosCartService);
+  private posService = inject(PosService);
   private destroy$ = new Subject<void>();
   private searchSubject = new Subject<string>();
 
@@ -44,6 +47,16 @@ export class PosComponent implements OnInit, OnDestroy {
   cashReceived = 0;
   paymentTotal = 0;
   currentCartTotal = 0; // Track current cart total for checkout button
+  
+  // Sale Processing State
+  processingPayment = signal(false);
+  saleCompleted = signal(false);
+  saleError = signal<string | null>(null);
+  lastSaleResponse: PosOrderResponse | null = null;
+  
+  // Receipt State
+  showReceipt = signal(false);
+  receiptOrderId: number | null = null;
 
   cartItems$ = this.posCart.items$;
   cartTotal$ = this.posCart.cartTotal$;
@@ -201,28 +214,105 @@ export class PosComponent implements OnInit, OnDestroy {
   }
 
   completePayment(): void {
-    if (!this.canCompletePayment()) return;
+    if (!this.canCompletePayment() || this.processingPayment()) return;
     
-    // Phase 1B-1: Nur State-Management, KEINE DB
-    console.log('✅ Payment completed', {
-      method: this.paymentMethod,
-      total: this.paymentTotal,
-      cashReceived: this.cashReceived,
-      change: this.getChange()
-    });
+    // Reset error state
+    this.saleError.set(null);
+    this.saleCompleted.set(false);
+    this.processingPayment.set(true);
 
-    // Clear cart & close dialog
-    this.posCart.clearCart();
-    this.closePaymentDialog();
-    
-    // TODO Phase 1B-2: Save to DB, reduce stock, generate receipt
+    // Build POS Order Request
+    const request: PosOrderRequest = {
+      paymentMethod: this.paymentMethod!,
+      cashReceived: this.paymentMethod === 'CASH' ? this.cashReceived : undefined,
+      items: this.posCart.items$.value.map(item => ({
+        productId: item.product.id!,
+        quantity: item.quantity
+      }))
+    };
+
+    console.log('📤 Submitting POS order:', request);
+
+    // API Call
+    this.posService.createPosOrder(this.storeId, request).subscribe({
+      next: (response: PosOrderResponse) => {
+        console.log('✅ POS order created:', response);
+        this.lastSaleResponse = response;
+        this.saleCompleted.set(true);
+        this.processingPayment.set(false);
+        
+        // Clear cart ONLY after successful save
+        this.posCart.clearCart();
+        
+        // Keep payment dialog open to show success message
+        // Will be closed by user clicking on success screen
+      },
+      error: (error) => {
+        console.error('❌ POS order failed:', error);
+        this.processingPayment.set(false);
+        
+        // Extract error message
+        let errorMsg = 'pos.sale.error';
+        if (error.error && typeof error.error === 'string') {
+          if (error.error.includes('Insufficient stock')) {
+            errorMsg = 'pos.sale.insufficientStock';
+          } else if (error.error.includes('Access denied')) {
+            errorMsg = 'pos.sale.permissionDenied';
+          } else {
+            errorMsg = error.error;
+          }
+        } else if (error.status === 403) {
+          errorMsg = 'pos.sale.permissionDenied';
+        }
+        
+        this.saleError.set(errorMsg);
+        
+        // Do NOT clear cart on error - user might want to retry
+      }
+    });
   }
 
   closePaymentDialog(): void {
+    // Payment Dialog schließen, aber lastSaleResponse für Receipt behalten
     this.showPaymentDialog.set(false);
     this.paymentMethod = null;
     this.cashReceived = 0;
     this.paymentTotal = 0;
+    this.processingPayment.set(false);
+    // saleCompleted und lastSaleResponse bleiben für Receipt
+  }
+  
+  startNewSale(): void {
+    // Komplett neue Transaktion: alle States zurücksetzen
+    this.saleCompleted.set(false);
+    this.saleError.set(null);
+    this.lastSaleResponse = null;
+    this.showPaymentDialog.set(false);
+    this.paymentMethod = null;
+    this.cashReceived = 0;
+    this.paymentTotal = 0;
+  }
+  
+  viewReceipt(): void {
+    if (this.lastSaleResponse?.id) {
+      this.receiptOrderId = this.lastSaleResponse.id;
+      this.showReceipt.set(true);
+    }
+  }
+  
+  printReceipt(): void {
+    if (this.lastSaleResponse?.id) {
+      this.receiptOrderId = this.lastSaleResponse.id;
+      this.showReceipt.set(true);
+      // Receipt Component ruft window.print() automatisch auf
+      setTimeout(() => {
+        window.print();
+      }, 600);
+    }
+  }
+  
+  closeReceipt(): void {
+    this.showReceipt.set(false);
   }
 
   getQuickAmounts(): number[] {

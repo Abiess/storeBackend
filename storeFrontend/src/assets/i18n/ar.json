@@ -3145,6 +3145,35 @@
       "quickAmounts": "مبالغ سريعة",
       "cardExternalText": "إجراء الدفع على جهاز البطاقة الخارجي. ثم تأكيد.",
       "back": "رجوع"
+    },
+    "sale": {
+      "success": "تم إتمام البيع بنجاح",
+      "error": "فشل البيع",
+      "processing": "جارٍ معالجة البيع...",
+      "insufficientStock": "المخزون غير كافٍ",
+      "permissionDenied": "لا يوجد إذن للمبيعات",
+      "orderNumber": "رقم البيع",
+      "saleCompleted": "تم إتمام البيع"
+    },
+    "receipt": {
+      "newSale": "بيع جديد",
+      "viewReceipt": "عرض الإيصال",
+      "print": "طباعة",
+      "loading": "جاري تحميل الإيصال...",
+      "orderNumber": "رقم الإيصال",
+      "date": "التاريخ",
+      "total": "المجموع",
+      "paymentMethod": "طريقة الدفع",
+      "cash": "نقداً",
+      "cardExternal": "بطاقة (خارجية)",
+      "received": "المستلم",
+      "change": "الباقي",
+      "taxIncluded": "شامل الضريبة",
+      "vat": "ضريبة القيمة المضافة",
+      "net": "الصافي",
+      "totalNet": "المجموع الصافي",
+      "totalTax": "مجموع الضريبة",
+      "thankYou": "شكراً لك على الشراء!"
     }
   }
 }

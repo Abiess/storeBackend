@@ -121,5 +121,39 @@ public class StoreRoleController {
         storeRoleService.removeRole(storeId, userId);
         return ResponseEntity.noContent().build();
     }
+    
+    /**
+     * POST /api/stores/{storeId}/roles/migrate-manager-permissions
+     * 
+     * Migration: Bestehende STORE_MANAGER um ORDER_CREATE erweitern.
+     * Nur für Owner/Admin.
+     * 
+     * @return Anzahl aktualisierter Rollen
+     */
+    @PostMapping("/migrate-manager-permissions")
+    @Operation(summary = "Migration: STORE_MANAGER um ORDER_CREATE erweitern")
+    public ResponseEntity<?> migrateManagerPermissions(
+            @PathVariable Long storeId,
+            @AuthenticationPrincipal User user) {
+        
+        if (user == null) return ResponseEntity.status(401).body("Unauthorized");
+        
+        Store store = storeRepository.findById(storeId).orElse(null);
+        if (store == null) return ResponseEntity.notFound().build();
+        
+        if (!StoreAccessChecker.isOwner(store, user)) {
+            return ResponseEntity.status(403).body("Only store owner can migrate permissions");
+        }
+        
+        try {
+            int updated = storeRoleService.migrateStoreManagerPermissions();
+            return ResponseEntity.ok(java.util.Map.of(
+                "message", "Migration completed",
+                "updatedRoles", updated
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Migration failed: " + e.getMessage());
+        }
+    }
 }
 

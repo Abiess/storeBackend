@@ -279,8 +279,8 @@ public class TeamInvitationService {
         // TODO: Mit ROLE_PERMISSIONS_MAP im Backend synchronisieren
         return switch (role) {
             case "STORE_OWNER" -> List.of("*");  // Alle
-            case "STORE_ADMIN" -> List.of("PRODUCT_CREATE", "PRODUCT_READ", "PRODUCT_UPDATE", "ORDER_READ", "ORDER_UPDATE");
-            case "STORE_MANAGER" -> List.of("PRODUCT_READ", "PRODUCT_UPDATE", "ORDER_READ");
+            case "STORE_ADMIN" -> List.of("PRODUCT_CREATE", "PRODUCT_READ", "PRODUCT_UPDATE", "ORDER_READ", "ORDER_UPDATE", "ORDER_CREATE");
+            case "STORE_MANAGER" -> List.of("PRODUCT_READ", "PRODUCT_UPDATE", "ORDER_READ", "ORDER_CREATE"); // ✅ POS-fähig
             case "STORE_STAFF" -> List.of("PRODUCT_READ", "ORDER_READ");
             default -> List.of("PRODUCT_READ");
         };

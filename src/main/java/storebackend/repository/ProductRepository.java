@@ -1,6 +1,9 @@
 package storebackend.repository;
 
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -120,4 +123,36 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
         @Param("search") String search,
         org.springframework.data.domain.Pageable pageable
     );
+
+    // ── POS: Atomare Stock-Reduktion mit Pessimistic Lock ──────────────────────────
+
+    /**
+     * POS: Lädt Produkt mit Pessimistic Write Lock für atomare Stock-Reduktion.
+     * Verhindert Race Conditions bei gleichzeitigen Verkäufen.
+     * 
+     * SELECT ... FOR UPDATE sperrt die Zeile bis Transaktion abgeschlossen ist.
+     * Andere Threads warten, bis Lock freigegeben wird.
+     * 
+     * @param id Product ID
+     * @return Product mit aktivem Datenbank-Lock
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM Product p WHERE p.id = :id")
+    Optional<Product> findByIdForUpdate(@Param("id") Long id);
+
+    /**
+     * POS: Atomare Stock-Reduktion via UPDATE-Query.
+     * Performanter als findByIdForUpdate + save, aber keine Validierung.
+     * 
+     * Führt UPDATE nur aus, wenn genug Stock vorhanden.
+     * Rückgabe: Anzahl geänderter Zeilen (0 = nicht genug Stock, 1 = erfolgreich)
+     * 
+     * @param id Product ID
+     * @param quantity Menge die reduziert werden soll
+     * @return Anzahl geänderter Zeilen (0 oder 1)
+     */
+    @Modifying
+    @Query("UPDATE Product p SET p.stock = p.stock - :quantity " +
+           "WHERE p.id = :id AND p.stock >= :quantity")
+    int reduceStockAtomic(@Param("id") Long id, @Param("quantity") int quantity);
 }

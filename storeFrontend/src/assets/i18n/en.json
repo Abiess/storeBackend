@@ -3237,6 +3237,35 @@
       "quickAmounts": "Quick Amounts",
       "cardExternalText": "Process payment on external card terminal. Confirm afterwards.",
       "back": "Back"
+    },
+    "sale": {
+      "success": "Sale completed successfully",
+      "error": "Sale failed",
+      "processing": "Processing sale...",
+      "insufficientStock": "Insufficient stock available",
+      "permissionDenied": "No permission for sales",
+      "orderNumber": "Sale Number",
+      "saleCompleted": "Sale Completed"
+    },
+    "receipt": {
+      "newSale": "New Sale",
+      "viewReceipt": "View Receipt",
+      "print": "Print",
+      "loading": "Loading receipt...",
+      "orderNumber": "Receipt No",
+      "date": "Date",
+      "total": "Total",
+      "paymentMethod": "Payment Method",
+      "cash": "Cash",
+      "cardExternal": "Card (external)",
+      "received": "Received",
+      "change": "Change",
+      "taxIncluded": "incl. VAT",
+      "vat": "VAT",
+      "net": "Net",
+      "totalNet": "Total Net",
+      "totalTax": "Total VAT",
+      "thankYou": "Thank you for your purchase!"
     }
   }
 }

@@ -252,11 +252,67 @@
         @if (paymentMethod) {
           <button
             class="btn-complete-payment"
-            [disabled]="!canCompletePayment()"
+            [disabled]="!canCompletePayment() || processingPayment()"
             (click)="completePayment()">
-            <lucide-icon name="check-circle" [size]="20"></lucide-icon>
-            {{ 'pos.payment.complete' | translate }}
+            @if (processingPayment()) {
+              <lucide-icon name="loader-2" [size]="20" class="icon-spinning"></lucide-icon>
+              {{ 'pos.sale.processing' | translate }}
+            } @else {
+              <lucide-icon name="check-circle" [size]="20"></lucide-icon>
+              {{ 'pos.payment.complete' | translate }}
+            }
           </button>
+        }
+        
+        <!-- Success State -->
+        @if (saleCompleted() && lastSaleResponse) {
+          <div class="payment-success">
+            <lucide-icon name="check-circle" [size]="48" class="success-icon"></lucide-icon>
+            <h3>{{ 'pos.sale.saleCompleted' | translate }}</h3>
+            <div class="sale-details">
+              <div class="sale-detail">
+                <span>{{ 'pos.sale.orderNumber' | translate }}:</span>
+                <strong>{{ lastSaleResponse.orderNumber }}</strong>
+              </div>
+              <div class="sale-detail">
+                <span>{{ 'pos.total' | translate }}:</span>
+                <strong>{{ lastSaleResponse.totalGross | number:'1.2-2' }} €</strong>
+              </div>
+              @if (lastSaleResponse.cashChange && lastSaleResponse.cashChange > 0) {
+                <div class="sale-detail">
+                  <span>{{ 'pos.payment.change' | translate }}:</span>
+                  <strong class="change">{{ lastSaleResponse.cashChange | number:'1.2-2' }} €</strong>
+                </div>
+              }
+            </div>
+            
+            <!-- Receipt Actions -->
+            <div class="success-actions">
+              <button class="btn-new-sale" (click)="startNewSale()">
+                <lucide-icon name="shopping-cart" [size]="20"></lucide-icon>
+                {{ 'pos.receipt.newSale' | translate }}
+              </button>
+              <button class="btn-view-receipt" (click)="viewReceipt()">
+                <lucide-icon name="receipt" [size]="20"></lucide-icon>
+                {{ 'pos.receipt.viewReceipt' | translate }}
+              </button>
+              <button class="btn-print-receipt" (click)="printReceipt()">
+                <lucide-icon name="printer" [size]="20"></lucide-icon>
+                {{ 'pos.receipt.print' | translate }}
+              </button>
+            </div>
+          </div>
+        }
+        
+        <!-- Error State -->
+        @if (saleError()) {
+          <div class="payment-error">
+            <lucide-icon name="x-circle" [size]="48" class="error-icon"></lucide-icon>
+            <p>{{ saleError() | translate }}</p>
+            <button class="btn-retry" (click)="saleError.set(null)">
+              {{ 'common.retry' | translate }}
+            </button>
+          </div>
         }
       </div>
     </div>
@@ -333,3 +389,10 @@
     </div>
   }
 </div>
+
+<!-- Receipt Component -->
+<app-pos-receipt
+  [visible]="showReceipt()"
+  [orderId]="receiptOrderId!"
+  [orderNumber]="lastSaleResponse?.orderNumber">
+</app-pos-receipt>

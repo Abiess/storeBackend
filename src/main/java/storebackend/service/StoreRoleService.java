@@ -120,5 +120,42 @@ public class StoreRoleService {
         dto.updatedAt = r.getUpdatedAt();
         return dto;
     }
+
+    /**
+     * Migration: Bestehende STORE_MANAGER um ORDER_CREATE erweitern
+     * 
+     * Aufgerufen bei Startup oder manuell über Endpoint.
+     * Aktualisiert nur STORE_MANAGER, die ORDER_CREATE noch nicht haben.
+     * 
+     * @return Anzahl aktualisierter Rollen
+     */
+    @Transactional
+    public int migrateStoreManagerPermissions() {
+        List<StoreRole> managers = storeRoleRepository.findByRole("STORE_MANAGER");
+        int updated = 0;
+
+        for (StoreRole manager : managers) {
+            List<String> currentPermissions = manager.getPermissionList();
+            
+            // ORDER_CREATE bereits vorhanden?
+            if (currentPermissions.contains("ORDER_CREATE")) {
+                continue;
+            }
+
+            // ORDER_CREATE hinzufügen
+            List<String> newPermissions = List.of(
+                "PRODUCT_READ", 
+                "PRODUCT_UPDATE", 
+                "ORDER_READ", 
+                "ORDER_CREATE" // ✅ NEU für POS
+            );
+            
+            manager.setPermissionList(newPermissions);
+            storeRoleRepository.save(manager);
+            updated++;
+        }
+
+        return updated;
+    }
 }
 

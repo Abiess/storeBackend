@@ -15,6 +15,15 @@ public interface StoreRoleRepository extends JpaRepository<StoreRole, Long> {
     List<StoreRole> findByStoreId(Long storeId);
 
     Optional<StoreRole> findByStoreIdAndUserId(Long storeId, Long userId);
+    
+    /**
+     * Findet alle StoreRoles mit einer bestimmten Rolle (über alle Stores).
+     * Für Migration: STORE_MANAGER um ORDER_CREATE erweitern.
+     * 
+     * @param role Rolle (z.B. "STORE_MANAGER")
+     * @return Liste von StoreRoles (kann leer sein)
+     */
+    List<StoreRole> findByRole(String role);
 
     /**
      * Findet alle StoreRoles eines Stores mit einer bestimmten Rolle.

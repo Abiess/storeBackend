@@ -3272,6 +3272,35 @@
       "quickAmounts": "Schnellbeträge",
       "cardExternalText": "Zahlung am externen Kartenterminal durchführen. Danach bestätigen.",
       "back": "Zurück"
+    },
+    "sale": {
+      "success": "Verkauf erfolgreich abgeschlossen",
+      "error": "Verkauf fehlgeschlagen",
+      "processing": "Verkauf wird verarbeitet...",
+      "insufficientStock": "Nicht genügend Bestand verfügbar",
+      "permissionDenied": "Keine Berechtigung für Verkäufe",
+      "orderNumber": "Verkaufsnummer",
+      "saleCompleted": "Verkauf abgeschlossen"
+    },
+    "receipt": {
+      "newSale": "Neuer Verkauf",
+      "viewReceipt": "Beleg anzeigen",
+      "print": "Drucken",
+      "loading": "Beleg wird geladen...",
+      "orderNumber": "Beleg-Nr",
+      "date": "Datum",
+      "total": "Gesamt",
+      "paymentMethod": "Zahlungsart",
+      "cash": "Bar",
+      "cardExternal": "Karte (extern)",
+      "received": "Erhalten",
+      "change": "Rückgeld",
+      "taxIncluded": "inkl. MwSt.",
+      "vat": "MwSt",
+      "net": "Netto",
+      "totalNet": "Gesamt Netto",
+      "totalTax": "Gesamt MwSt",
+      "thankYou": "Vielen Dank für Ihren Einkauf!"
     }
   }
 }

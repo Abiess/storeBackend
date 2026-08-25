@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import storebackend.enums.OrderStatus;
+import storebackend.enums.OrderSource;
 import storebackend.enums.DeliveryType;
 import storebackend.enums.DeliveryMode;
 import storebackend.enums.PaymentMethod;
@@ -32,6 +33,17 @@ public class Order {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "store_id", nullable = false)
     private Store store;
+    
+    /**
+     * Herkunft der Bestellung (Verkaufskanal)
+     * ONLINE = Storefront Checkout (Default für bestehende Orders)
+     * POS = Point of Sale (Kassensystem vor Ort)
+     * B2B = B2B-Portal
+     * API = externe API/Webhook
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "order_source", length = 20)
+    private OrderSource orderSource = OrderSource.ONLINE;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id")
@@ -246,6 +258,24 @@ public class Order {
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_status", length = 30)
     private storebackend.enums.PaymentStatus paymentStatus;
+    
+    // ─── POS Cash Payment Details ──────────────────────────────────────────
+    /**
+     * POS Barzahlung: Erhaltener Betrag vom Kunden
+     * Nur bei paymentMethod = CASH relevant
+     * NULL bei anderen Zahlungsarten
+     */
+    @Column(name = "cash_received", precision = 10, scale = 2)
+    private BigDecimal cashReceived;
+    
+    /**
+     * POS Barzahlung: Rückgeld an Kunden
+     * Berechnet: cashReceived - totalGross
+     * Nur bei paymentMethod = CASH relevant
+     * NULL bei anderen Zahlungsarten
+     */
+    @Column(name = "cash_change", precision = 10, scale = 2)
+    private BigDecimal cashChange;
     
     /**
      * Checkout-Token für Gast-Checkout und PayPal-Zahlungen
