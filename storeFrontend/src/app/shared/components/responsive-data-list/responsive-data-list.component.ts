@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, TemplateRef, ContentChild, OnChanges, SimpleChanges, ChangeDetectionStrategy, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, TemplateRef, ContentChild, OnChanges, SimpleChanges, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
@@ -33,7 +33,8 @@ export interface BulkActionConfig {
 @Component({
     selector: 'app-responsive-data-list',
     imports: [CommonModule, FormsModule, TranslatePipe],
-    changeDetection: ChangeDetectionStrategy.OnPush,
+    // ChangeDetection: Default beibehalten für zuverlässiges Rendering
+    // OnPush verursachte Regression: Properties ändern sich, aber keine CD nach Events
     template: `
     <!-- ─── Bulk-Action Bar (erscheint wenn Einträge ausgewählt) ─── -->
     <div class="rdl-bulk-bar" *ngIf="selectable && selectedIds.size > 0">

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ProductService } from '@app/core/services/product.service';
@@ -16,7 +16,8 @@ import { Subject, takeUntil } from 'rxjs';
 @Component({
     selector: 'app-product-list',
     imports: [CommonModule, RouterModule, StoreNavigationComponent, TranslatePipe, ResponsiveDataListComponent, PageHeaderComponent, FilterBarComponent],
-    changeDetection: ChangeDetectionStrategy.OnPush,
+    // ChangeDetection: Default beibehalten für zuverlässiges Rendering
+    // OnPush verursachte Regression: Observable subscribe ändert Properties, aber keine CD
     template: `
     <div class="product-list-container">
       <!-- Einheitliche Navigation -->
