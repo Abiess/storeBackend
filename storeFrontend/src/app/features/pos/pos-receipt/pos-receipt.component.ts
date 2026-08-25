@@ -1,11 +1,13 @@
-import { Component, Input, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, SimpleChanges, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { LucideAngularModule } from 'lucide-angular';
+import { OrderService } from '@app/core/services/order.service';
 
 interface OrderDetails {
   id: number;
   orderNumber: string;
+  orderSource: string;
   createdAt: string;
   status: string;
   paymentMethod: string;
@@ -43,14 +45,16 @@ interface TaxBreakdown {
   selector: 'app-pos-receipt',
   standalone: true,
   imports: [CommonModule, TranslatePipe, LucideAngularModule],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './pos-receipt.component.html',
   styleUrls: ['./pos-receipt.component.scss']
 })
-export class PosReceiptComponent implements OnInit {
+export class PosReceiptComponent implements OnInit, OnChanges {
+  @Input() storeId!: number;
   @Input() orderId!: number;
-  @Input() orderNumber?: string;
   @Input() visible = false;
+
+  private orderService = inject(OrderService);
+  private cdr = inject(ChangeDetectorRef);
 
   order: OrderDetails | null = null;
   loading = false;
@@ -58,48 +62,72 @@ export class PosReceiptComponent implements OnInit {
   taxBreakdown: TaxBreakdown[] = [];
 
   ngOnInit(): void {
-    if (this.orderId) {
+    if (this.orderId && this.storeId) {
+      this.loadOrder();
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if ((changes['orderId'] || changes['visible']) && this.visible && this.orderId && this.storeId) {
       this.loadOrder();
     }
   }
 
   loadOrder(): void {
-    // TODO: OrderService integration
     this.loading = true;
+    this.error = null;
+    this.cdr.markForCheck();
     
-    setTimeout(() => {
-      this.order = {
-        id: this.orderId,
-        orderNumber: this.orderNumber || 'POS-20260826001234-A1B2',
-        createdAt: new Date().toISOString(),
-        status: 'CONFIRMED',
-        paymentMethod: 'CASH',
-        totalGross: 23.87,
-        totalNet: 20.06,
-        taxTotal: 3.81,
-        cashReceived: 30.00,
-        cashChange: 6.13,
-        store: {
-          id: 121,
-          name: 'Demo Store'
-        },
-        items: [
-          {
-            id: 1,
-            productName: 'Coca Cola 1L',
-            quantity: 2,
-            unitGrossPrice: 2.49,
-            lineGrossTotal: 4.98,
-            lineNetTotal: 4.18,
-            lineTaxAmount: 0.80,
-            taxRate: 19
-          }
-        ]
-      };
-      
-      this.calculateTaxBreakdown();
-      this.loading = false;
-    }, 300);
+    this.orderService.getOrder(this.storeId, this.orderId).subscribe({
+      next: (response: any) => {
+        const apiOrder = response.order;
+        const apiItems = response.items;
+        
+        this.order = {
+          id: apiOrder.id,
+          orderNumber: apiOrder.orderNumber,
+          orderSource: apiOrder.orderSource,
+          createdAt: apiOrder.createdAt,
+          status: apiOrder.status,
+          paymentMethod: apiOrder.paymentMethod,
+          totalGross: apiOrder.totalGross,
+          totalNet: apiOrder.totalNet,
+          taxTotal: apiOrder.taxTotal,
+          cashReceived: apiOrder.cashReceived,
+          cashChange: apiOrder.cashChange,
+          store: {
+            id: apiOrder.store.id,
+            name: apiOrder.store.name
+          },
+          items: apiItems.map((item: any) => ({
+            id: item.id,
+            productName: item.productName,
+            quantity: item.quantity,
+            unitGrossPrice: item.unitGrossPrice,
+            lineGrossTotal: item.lineGrossTotal,
+            lineNetTotal: item.lineNetTotal,
+            lineTaxAmount: item.lineTaxAmount,
+            taxRate: item.taxRate
+          }))
+        };
+        
+        this.calculateTaxBreakdown();
+        this.loading = false;
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        console.error('Failed to load order:', err);
+        if (err.status === 404) {
+          this.error = 'pos.receipt.notFound';
+        } else if (err.status === 403) {
+          this.error = 'pos.receipt.noAccess';
+        } else {
+          this.error = 'pos.receipt.loadError';
+        }
+        this.loading = false;
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   calculateTaxBreakdown(): void {
@@ -124,6 +152,10 @@ export class PosReceiptComponent implements OnInit {
 
     this.taxBreakdown = Array.from(grouped.values())
       .sort((a, b) => b.rate - a.rate);
+  }
+
+  retry(): void {
+    this.loadOrder();
   }
 
   print(): void {

@@ -7,7 +7,11 @@
     </div>
 
     <div class="receipt-error" *ngIf="error && !loading">
-      <p class="error-message">{{ error }}</p>
+      <lucide-icon name="alert-circle" [size]="48" class="error-icon"></lucide-icon>
+      <p class="error-message">{{ error | translate }}</p>
+      <button class="btn-retry" (click)="retry()">
+        {{ 'common.retry' | translate }}
+      </button>
       <button class="btn-close-error" (click)="close()">
         {{ 'common.close' | translate }}
       </button>

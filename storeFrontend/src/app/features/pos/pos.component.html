@@ -393,6 +393,7 @@
 <!-- Receipt Component -->
 <app-pos-receipt
   [visible]="showReceipt()"
+  [storeId]="storeId"
   [orderId]="receiptOrderId!"
-  [orderNumber]="lastSaleResponse?.orderNumber">
+  (visibleChange)="closeReceipt()">
 </app-pos-receipt>

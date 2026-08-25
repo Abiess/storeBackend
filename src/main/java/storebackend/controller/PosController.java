@@ -5,12 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import storebackend.dto.PosOrderRequest;
 import storebackend.dto.PosOrderResponse;
 import storebackend.entity.User;
-import storebackend.repository.UserRepository;
 import storebackend.util.StoreAccessChecker;
 import storebackend.service.PosOrderService;
 
@@ -34,7 +32,6 @@ import storebackend.service.PosOrderService;
 public class PosController {
     private final PosOrderService posOrderService;
     private final StoreAccessChecker storeAccessChecker;
-    private final UserRepository userRepository;
 
     /**
      * POST /api/stores/{storeId}/pos/sales
@@ -63,25 +60,28 @@ public class PosController {
      * 
      * @param storeId Store ID (Multi-Tenant)
      * @param request POS Order Request
-     * @param userDetails Authenticated User
+     * @param user Authenticated User (Custom Entity)
      * @return PosOrderResponse
      */
     @PostMapping("/sales")
     public ResponseEntity<?> createPosOrder(
         @PathVariable Long storeId,
         @RequestBody PosOrderRequest request,
-        @AuthenticationPrincipal UserDetails userDetails
+        @AuthenticationPrincipal User user
     ) {
         try {
-            // 1. User laden
-            User currentUser = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+            // 1. Authentication Check
+            if (user == null) {
+                log.warn("POS order creation denied: User not authenticated");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Authentication required");
+            }
 
             // 2. RBAC Permission Check
             // POS-Verkauf = Order erstellen → ORDER_CREATE Permission
             if (!storeAccessChecker.hasPermission(storeId, "ORDER_CREATE")) {
                 log.warn("POS order creation denied: user={}, store={}, missing ORDER_CREATE permission", 
-                    currentUser.getId(), storeId);
+                    user.getId(), storeId);
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body("Access denied: ORDER_CREATE permission required");
             }
@@ -96,7 +96,7 @@ public class PosController {
             PosOrderResponse response = posOrderService.createPosOrder(storeId, request);
 
             log.info("POS order created successfully: orderNumber={}, user={}, store={}", 
-                response.getOrderNumber(), currentUser.getId(), storeId);
+                response.getOrderNumber(), user.getId(), storeId);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
 

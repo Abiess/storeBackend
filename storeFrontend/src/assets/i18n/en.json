@@ -3265,7 +3265,10 @@
       "net": "Net",
       "totalNet": "Total Net",
       "totalTax": "Total VAT",
-      "thankYou": "Thank you for your purchase!"
+      "thankYou": "Thank you for your purchase!",
+      "notFound": "Receipt not found",
+      "noAccess": "No permission for this receipt",
+      "loadError": "Error loading receipt"
     }
   }
 }

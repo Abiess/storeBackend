@@ -12,6 +12,7 @@ import storebackend.repository.StoreRepository;
 import storebackend.service.DeliveryNoteService;
 import storebackend.service.OrderService;
 import storebackend.service.StoreService;
+import storebackend.util.StoreAccessChecker;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -26,6 +27,7 @@ public class OrderController {
     private final StoreRepository storeRepository;
     private final StoreService storeService;
     private final DeliveryNoteService deliveryNoteService;
+    private final StoreAccessChecker storeAccessChecker;
 
     /**
      * Prüft, ob der Benutzer Zugriff auf den Store hat
@@ -64,7 +66,8 @@ public class OrderController {
             return ResponseEntity.status(401).build();
         }
 
-        if (!hasStoreAccess(storeId, user)) {
+        // RBAC: ORDER_READ Permission prüfen
+        if (!storeAccessChecker.hasPermission(storeId, "ORDER_READ")) {
             return ResponseEntity.status(403).build();
         }
 
@@ -86,11 +89,23 @@ public class OrderController {
             return ResponseEntity.status(401).build();
         }
 
-        if (!hasStoreAccess(storeId, user)) {
+        // RBAC: ORDER_READ Permission prüfen
+        if (!storeAccessChecker.hasPermission(storeId, "ORDER_READ")) {
             return ResponseEntity.status(403).build();
         }
 
+        // SECURITY: Order laden und Store-Zugehörigkeit prüfen
         Order order = orderService.getOrderById(orderId);
+        
+        if (order == null) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        // CRITICAL: Order muss zu diesem Store gehören!
+        if (!order.getStore().getId().equals(storeId)) {
+            return ResponseEntity.status(403).build(); // Keine Order-Daten leaken
+        }
+        
         List<OrderItem> items = orderService.getOrderItems(orderId);
 
         Map<String, Object> response = new HashMap<>();

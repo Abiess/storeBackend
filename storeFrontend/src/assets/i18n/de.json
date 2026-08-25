@@ -3300,7 +3300,10 @@
       "net": "Netto",
       "totalNet": "Gesamt Netto",
       "totalTax": "Gesamt MwSt",
-      "thankYou": "Vielen Dank für Ihren Einkauf!"
+      "thankYou": "Vielen Dank für Ihren Einkauf!",
+      "notFound": "Beleg nicht gefunden",
+      "noAccess": "Keine Berechtigung für diesen Beleg",
+      "loadError": "Fehler beim Laden des Belegs"
     }
   }
 }
