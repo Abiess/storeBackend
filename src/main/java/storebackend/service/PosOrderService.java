@@ -152,17 +152,18 @@ public class PosOrderService {
             orderItem.setOrder(order);
             orderItem.setProduct(product);
             orderItem.setName(product.getTitle()); // Snapshot Name
+            orderItem.setProductName(product.getTitle()); // CRITICAL: DB has NOT NULL constraint
             orderItem.setSku(product.getSku());
             orderItem.setQuantity(itemRequest.getQuantity());
 
             // WICHTIG: basePrice vom Server verwenden!
             BigDecimal unitPrice = product.getBasePrice();
-            orderItem.setPrice(unitPrice);
+            orderItem.setPrice(unitPrice); // Legacy field
 
             // Zeilensumme
             BigDecimal lineTotal = unitPrice.multiply(new BigDecimal(itemRequest.getQuantity()))
                 .setScale(2, RoundingMode.HALF_UP);
-            orderItem.setTotal(lineTotal);
+            orderItem.setTotal(lineTotal); // Legacy field
 
             // Tax-Snapshot
             orderItem.setTaxRate(product.getTaxRate() != null ? product.getTaxRate() : BigDecimal.ZERO);
@@ -172,8 +173,20 @@ public class PosOrderService {
             // Netto = Brutto / (1 + taxRate/100)
             // Steuer = Brutto - Netto
             BigDecimal taxRateDecimal = orderItem.getTaxRate().divide(new BigDecimal("100"), 4, RoundingMode.HALF_UP);
-            BigDecimal lineNet = lineTotal.divide(BigDecimal.ONE.add(taxRateDecimal), 2, RoundingMode.HALF_UP);
-            BigDecimal lineTax = lineTotal.subtract(lineNet).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal unitNet = unitPrice.divide(BigDecimal.ONE.add(taxRateDecimal), 2, RoundingMode.HALF_UP);
+            BigDecimal unitTax = unitPrice.subtract(unitNet).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal lineNet = unitNet.multiply(new BigDecimal(itemRequest.getQuantity()))
+                .setScale(2, RoundingMode.HALF_UP);
+            BigDecimal lineTax = unitTax.multiply(new BigDecimal(itemRequest.getQuantity()))
+                .setScale(2, RoundingMode.HALF_UP);
+            BigDecimal lineGross = lineTotal; // Already calculated above
+
+            // CRITICAL: Set all NOT NULL fields required by DB schema
+            orderItem.setUnitPriceNet(unitNet);
+            orderItem.setUnitPriceGross(unitPrice);
+            orderItem.setLineNet(lineNet);
+            orderItem.setLineTax(lineTax);
+            orderItem.setLineGross(lineGross);
 
             subtotalNet = subtotalNet.add(lineNet);
             subtotalGross = subtotalGross.add(lineTotal);
