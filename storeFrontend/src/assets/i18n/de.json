@@ -3260,6 +3260,18 @@
     "total": "GESAMT",
     "inStock": "Auf Lager",
     "remove": "Entfernen",
-    "allCategories": "Alle"
+    "allCategories": "Alle",
+    "payment": {
+      "cash": "Bar",
+      "total": "Gesamt",
+      "cardExternal": "Karte extern",
+      "received": "Erhalten",
+      "complete": "Zahlung abschließen",
+      "title": "Zahlung",
+      "change": "Rückgeld",
+      "quickAmounts": "Schnellbeträge",
+      "cardExternalText": "Zahlung am externen Kartenterminal durchführen. Danach bestätigen.",
+      "back": "Zurück"
+    }
   }
 }

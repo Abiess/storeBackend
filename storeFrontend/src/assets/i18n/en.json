@@ -3225,6 +3225,18 @@
     "search": "Search product...",
     "scanBarcode": "Scan barcode",
     "inStock": "In stock",
-    "allCategories": "All"
+    "allCategories": "All",
+    "payment": {
+      "cash": "Cash",
+      "total": "Total",
+      "cardExternal": "Card (External)",
+      "received": "Received",
+      "complete": "Complete Payment",
+      "title": "Payment",
+      "change": "Change",
+      "quickAmounts": "Quick Amounts",
+      "cardExternalText": "Process payment on external card terminal. Confirm afterwards.",
+      "back": "Back"
+    }
   }
 }

@@ -151,13 +151,116 @@
           <span>{{ 'pos.total' | translate }}</span>
           <span>{{ (cartTotal$ | async) | number:'1.2-2' }} €</span>
         </div>
-        <button class="btn-checkout" [disabled]="(itemCount$ | async) === 0">
+        <button
+          class="btn-checkout"
+          [disabled]="(itemCount$ | async) === 0"
+          (click)="onCheckoutClick(currentCartTotal)">
           <lucide-icon name="credit-card" [size]="18"></lucide-icon>
           {{ 'pos.checkout' | translate }}
         </button>
       </div>
     </aside>
   </div>
+
+  <!-- ════════ PAYMENT DIALOG ════════ -->
+  @if (showPaymentDialog()) {
+    <div class="payment-overlay" (click)="closePaymentDialog()"></div>
+    <div class="payment-dialog">
+      <div class="payment-header">
+        <h2>{{ 'pos.payment.title' | translate }}</h2>
+        <button (click)="closePaymentDialog()" class="btn-close">
+          <lucide-icon name="x" [size]="24"></lucide-icon>
+        </button>
+      </div>
+
+      <div class="payment-content">
+        <div class="payment-total">
+          <span>{{ 'pos.payment.total' | translate }}</span>
+          <span class="total-amount">{{ paymentTotal | number:'1.2-2' }} €</span>
+        </div>
+
+        <!-- Payment Method Selection -->
+        @if (!paymentMethod) {
+          <div class="payment-methods">
+            <button class="payment-method-btn" (click)="selectPaymentMethod('CASH')">
+              <lucide-icon name="banknote" [size]="32"></lucide-icon>
+              <span>{{ 'pos.payment.cash' | translate }}</span>
+            </button>
+            <button class="payment-method-btn" (click)="selectPaymentMethod('CARD_EXTERNAL')">
+              <lucide-icon name="credit-card" [size]="32"></lucide-icon>
+              <span>{{ 'pos.payment.cardExternal' | translate }}</span>
+            </button>
+          </div>
+        }
+
+        <!-- CASH Payment Flow -->
+        @if (paymentMethod === 'CASH') {
+          <div class="payment-cash">
+            <button class="btn-back" (click)="paymentMethod = null">
+              <lucide-icon name="arrow-left" [size]="16"></lucide-icon>
+              {{ 'pos.payment.back' | translate }}
+            </button>
+
+            <div class="cash-input-group">
+              <label>{{ 'pos.payment.received' | translate }}</label>
+              <input
+                type="number"
+                [(ngModel)]="cashReceived"
+                (ngModelChange)="setCashReceived($event)"
+                [placeholder]="paymentTotal.toFixed(2)"
+                class="cash-input"
+                autofocus
+              />
+            </div>
+
+            <div class="quick-amounts">
+              <span class="quick-amounts-label">{{ 'pos.payment.quickAmounts' | translate }}</span>
+              <div class="quick-amounts-buttons">
+                @for (amount of getQuickAmounts(); track amount) {
+                  <button class="btn-quick-amount" (click)="setCashReceived(amount)">
+                    {{ amount | number:'1.2-2' }} €
+                  </button>
+                }
+              </div>
+            </div>
+
+            @if (cashReceived >= paymentTotal) {
+              <div class="change-display">
+                <span>{{ 'pos.payment.change' | translate }}</span>
+                <span class="change-amount">{{ getChange() | number:'1.2-2' }} €</span>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- CARD EXTERNAL Flow -->
+        @if (paymentMethod === 'CARD_EXTERNAL') {
+          <div class="payment-card">
+            <button class="btn-back" (click)="paymentMethod = null">
+              <lucide-icon name="arrow-left" [size]="16"></lucide-icon>
+              {{ 'pos.payment.back' | translate }}
+            </button>
+
+            <div class="card-external-info">
+              <lucide-icon name="credit-card" [size]="48"></lucide-icon>
+              <p>{{ 'pos.payment.cardExternalText' | translate }}</p>
+            </div>
+          </div>
+        }
+
+        <!-- Complete Payment Button -->
+        @if (paymentMethod) {
+          <button
+            class="btn-complete-payment"
+            [disabled]="!canCompletePayment()"
+            (click)="completePayment()">
+            <lucide-icon name="check-circle" [size]="20"></lucide-icon>
+            {{ 'pos.payment.complete' | translate }}
+          </button>
+        }
+      </div>
+    </div>
+  }
 
   <!-- Mobile: Bottom Cart CTA -->
   <div class="mobile-cart-cta" (click)="toggleMobileCart()">
@@ -220,7 +323,10 @@
           <span>{{ 'pos.total' | translate }}</span>
           <span>{{ (cartTotal$ | async) | number:'1.2-2' }} €</span>
         </div>
-        <button class="btn-checkout" [disabled]="(itemCount$ | async) === 0">
+        <button
+          class="btn-checkout"
+          [disabled]="(itemCount$ | async) === 0"
+          (click)="onCheckoutClick(currentCartTotal)">
           {{ 'pos.checkout' | translate }}
         </button>
       </div>

@@ -37,6 +37,13 @@ export class PosComponent implements OnInit, OnDestroy {
   loading = signal(false);
   showMobileCart = signal(false);
   barcodeNotFound = signal(false);
+  
+  // Payment State
+  showPaymentDialog = signal(false);
+  paymentMethod: 'CASH' | 'CARD_EXTERNAL' | null = null;
+  cashReceived = 0;
+  paymentTotal = 0;
+  currentCartTotal = 0; // Track current cart total for checkout button
 
   cartItems$ = this.posCart.items$;
   cartTotal$ = this.posCart.cartTotal$;
@@ -48,6 +55,11 @@ export class PosComponent implements OnInit, OnDestroy {
     this.setupSearch();
     this.loadCategories();
     this.loadProducts();
+    
+    // Track cart total for checkout
+    this.cartTotal$.pipe(takeUntil(this.destroy$)).subscribe(total => {
+      this.currentCartTotal = total;
+    });
   }
 
   ngOnDestroy(): void {
@@ -152,6 +164,75 @@ export class PosComponent implements OnInit, OnDestroy {
 
   toggleMobileCart(): void {
     this.showMobileCart.update(v => !v);
+  }
+
+  // ════════ PAYMENT METHODS ════════
+  
+  onCheckoutClick(total: number): void {
+    this.paymentTotal = total;
+    this.paymentMethod = null;
+    this.cashReceived = 0;
+    this.showPaymentDialog.set(true);
+  }
+
+  selectPaymentMethod(method: 'CASH' | 'CARD_EXTERNAL'): void {
+    this.paymentMethod = method;
+    if (method === 'CASH') {
+      this.cashReceived = 0;
+    }
+  }
+
+  setCashReceived(amount: number): void {
+    this.cashReceived = Math.round(amount * 100) / 100; // Avoid floating point errors
+  }
+
+  getChange(): number {
+    if (this.paymentMethod !== 'CASH') return 0;
+    const change = this.cashReceived - this.paymentTotal;
+    return change > 0 ? Math.round(change * 100) / 100 : 0;
+  }
+
+  canCompletePayment(): boolean {
+    if (!this.paymentMethod) return false;
+    if (this.paymentMethod === 'CASH') {
+      return this.cashReceived >= this.paymentTotal;
+    }
+    return true; // CARD_EXTERNAL: always ready
+  }
+
+  completePayment(): void {
+    if (!this.canCompletePayment()) return;
+    
+    // Phase 1B-1: Nur State-Management, KEINE DB
+    console.log('✅ Payment completed', {
+      method: this.paymentMethod,
+      total: this.paymentTotal,
+      cashReceived: this.cashReceived,
+      change: this.getChange()
+    });
+
+    // Clear cart & close dialog
+    this.posCart.clearCart();
+    this.closePaymentDialog();
+    
+    // TODO Phase 1B-2: Save to DB, reduce stock, generate receipt
+  }
+
+  closePaymentDialog(): void {
+    this.showPaymentDialog.set(false);
+    this.paymentMethod = null;
+    this.cashReceived = 0;
+    this.paymentTotal = 0;
+  }
+
+  getQuickAmounts(): number[] {
+    const total = this.paymentTotal;
+    return [
+      total,
+      Math.ceil(total / 5) * 5,  // Next 5€
+      Math.ceil(total / 10) * 10, // Next 10€
+      Math.ceil(total / 50) * 50  // Next 50€
+    ].filter((v, i, arr) => arr.indexOf(v) === i); // Remove duplicates
   }
 
   trackByProductId(_: number, product: Product): number {
