@@ -1,0 +1,200 @@
+<div class="dhl-visual-plan">
+  <!-- HEADER -->
+  <div class="plan-header">
+    <div class="header-left">
+      <h1>{{ 'dhl.plan.title' | translate }}</h1>
+      <span class="subtitle" *ngIf="!loading()">
+        {{ layouts().length }} {{ 'dhl.plan.slots' | translate }}
+        · {{ zones().length }} {{ 'dhl.plan.zones' | translate }}
+      </span>
+    </div>
+
+    <div class="header-actions">
+      <!-- Mode Toggle -->
+      <button 
+        class="btn btn-mode"
+        [class.active]="isOperationMode()"
+        (click)="toggleMode()"
+        [disabled]="loading() || saving()">
+        <lucide-icon 
+          [img]="isOperationMode() ? 'eye' : 'edit'"
+          [size]="20">
+        </lucide-icon>
+        <span>
+          {{ isOperationMode() 
+            ? ('dhl.plan.operationMode' | translate) 
+            : ('dhl.plan.expertMode' | translate) }}
+        </span>
+      </button>
+
+      <!-- Expert Actions -->
+      <ng-container *ngIf="isExpertMode()">
+        <button 
+          class="btn btn-secondary"
+          (click)="openZoneManager()"
+          [disabled]="loading() || saving()">
+          <lucide-icon img="layers" [size]="20"></lucide-icon>
+          {{ 'dhl.plan.zones' | translate }}
+        </button>
+
+        <button 
+          class="btn btn-success"
+          (click)="createNewSlot()"
+          [disabled]="loading() || saving()">
+          <lucide-icon img="plus" [size]="20"></lucide-icon>
+          {{ 'dhl.plan.newSlot' | translate }}
+        </button>
+      </ng-container>
+
+      <!-- Save/Discard -->
+      <ng-container *ngIf="isDirty()">
+        <button 
+          class="btn btn-primary"
+          (click)="saveChanges()"
+          [disabled]="saving()">
+          <lucide-icon img="save" [size]="20"></lucide-icon>
+          {{ 'dhl.plan.save' | translate }}
+          <span *ngIf="saving()" class="spinner"></span>
+        </button>
+
+        <button 
+          class="btn btn-ghost"
+          (click)="discardChanges()"
+          [disabled]="saving()">
+          <lucide-icon img="x" [size]="20"></lucide-icon>
+          {{ 'dhl.plan.discard' | translate }}
+        </button>
+      </ng-container>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div *ngIf="loading()" class="loading-state">
+    <div class="spinner-large"></div>
+    <p>{{ 'dhl.plan.loading' | translate }}</p>
+  </div>
+
+  <!-- ERROR -->
+  <div *ngIf="error()" class="error-state">
+    <lucide-icon img="alert-triangle" [size]="48" color="var(--error-color)"></lucide-icon>
+    <p>{{ error() }}</p>
+    <button class="btn btn-secondary" (click)="loadData()">
+      {{ 'dhl.plan.retry' | translate }}
+    </button>
+  </div>
+
+  <!-- CONTENT -->
+  <div *ngIf="!loading() && !error()" class="plan-content">
+    <!-- Dirty Warning -->
+    <div *ngIf="isDirty()" class="dirty-banner">
+      <lucide-icon img="alert-circle" [size]="20"></lucide-icon>
+      <span>{{ 'dhl.plan.unsavedChanges' | translate }}</span>
+    </div>
+
+    <!-- EMPTY STATE -->
+    <div *ngIf="layouts().length === 0" class="empty-state">
+      <lucide-icon img="warehouse" [size]="64" color="var(--text-secondary)"></lucide-icon>
+      <h3>{{ 'dhl.plan.empty.title' | translate }}</h3>
+      <p>{{ 'dhl.plan.empty.message' | translate }}</p>
+      <button 
+        class="btn btn-primary" 
+        (click)="createNewSlot()"
+        *ngIf="isExpertMode()">
+        <lucide-icon img="plus" [size]="20"></lucide-icon>
+        {{ 'dhl.plan.newSlot' | translate }}
+      </button>
+    </div>
+
+    <!-- GRID VIEW -->
+    <div *ngIf="layouts().length > 0" class="plan-grid-container">
+      <!-- By Zone -->
+      <div 
+        *ngFor="let group of layoutsByZone(); trackBy: trackByZoneName" 
+        class="zone-group">
+        
+        <div class="zone-header" [style.borderColor]="group.zoneColor || 'transparent'">
+          <h3>{{ group.name }}</h3>
+          <span class="zone-count">{{ group.layouts.length }}</span>
+        </div>
+
+        <!-- Grid -->
+        <div 
+          class="slot-grid"
+          [class.expert-mode]="isExpertMode()"
+          cdkDropList
+          [cdkDropListData]="group.layouts"
+          (cdkDropListDropped)="onDrop($event)"
+          [cdkDropListDisabled]="!isExpertMode()">
+          
+          <div
+            *ngFor="let layout of group.layouts; trackBy: trackBySlotId"
+            class="slot-card"
+            [class]="getStatusClass(layout)"
+            [attr.data-slot-id]="layout.slotId"
+            cdkDrag
+            [cdkDragData]="layout"
+            [cdkDragDisabled]="!isExpertMode()"
+            (click)="onSlotClick(layout)">
+            
+            <!-- Drag Handle (Expert Mode) -->
+            <div *ngIf="isExpertMode()" class="drag-handle" cdkDragHandle>
+              <lucide-icon img="grip-vertical" [size]="16"></lucide-icon>
+            </div>
+
+            <!-- Slot Content -->
+            <div class="slot-content">
+              <div class="slot-code">{{ layout.slotCode }}</div>
+              
+              <div class="slot-occupancy">
+                {{ layout.occupiedCount }} / {{ layout.slotCapacity }}
+              </div>
+              
+              <div class="slot-status-label">
+                <lucide-icon 
+                  [img]="getStatusIcon(layout)" 
+                  [size]="14">
+                </lucide-icon>
+                {{ getStatusLabel(layout) }}
+              </div>
+            </div>
+
+            <!-- Highlight Badge -->
+            <div *ngIf="isHighlighted(layout)" class="highlight-badge">
+              <lucide-icon img="map-pin" [size]="16"></lucide-icon>
+            </div>
+
+            <!-- Inactive Overlay -->
+            <div *ngIf="!layout.slotActive" class="inactive-overlay">
+              <lucide-icon img="x-circle" [size]="24"></lucide-icon>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FALLBACK: Slots without Layout -->
+    <div *ngIf="slotsWithoutLayout().length > 0" class="fallback-section">
+      <div class="fallback-header">
+        <lucide-icon img="list" [size]="20"></lucide-icon>
+        <h3>{{ 'dhl.plan.notInPlan' | translate }}</h3>
+        <span class="count">{{ slotsWithoutLayout().length }}</span>
+      </div>
+
+      <div class="fallback-list">
+        <div 
+          *ngFor="let slot of slotsWithoutLayout()" 
+          class="fallback-item">
+          <span class="code">{{ slot.code }}</span>
+          <span class="occupancy">{{ slot.occupiedCount }} / {{ slot.capacity }}</span>
+          <button 
+            *ngIf="isExpertMode()" 
+            class="btn btn-sm btn-ghost"
+            (click)="assignSlotToLayout(slot)">
+            <lucide-icon img="plus" [size]="16"></lucide-icon>
+            {{ 'dhl.plan.addToPlan' | translate }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
