@@ -1,7 +1,7 @@
 -- Phase 3B-1: Produktpositionen aus Rechnungen extrahieren
 -- Speichert erkannte Rechnungspositionen aus OCR-Parsing
 
-CREATE TABLE supplier_invoice_line (
+CREATE TABLE IF NOT EXISTS supplier_invoice_line (
     id BIGSERIAL PRIMARY KEY,
     store_id BIGINT NOT NULL,
     document_id BIGINT NOT NULL,
@@ -48,11 +48,11 @@ CREATE TABLE supplier_invoice_line (
 );
 
 -- Index for fast retrieval by document
-CREATE INDEX idx_supplier_invoice_line_document
+CREATE INDEX IF NOT EXISTS idx_supplier_invoice_line_document
 ON supplier_invoice_line (document_id, position_number);
 
 -- Index for article number lookups (future Phase 3B-2)
-CREATE INDEX idx_supplier_invoice_line_article
+CREATE INDEX IF NOT EXISTS idx_supplier_invoice_line_article
 ON supplier_invoice_line (store_id, supplier_article_number);
 
 COMMENT ON TABLE supplier_invoice_line IS 'Parsed invoice line items from OCR (Phase 3B-1)';

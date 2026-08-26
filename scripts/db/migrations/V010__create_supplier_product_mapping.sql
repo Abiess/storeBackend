@@ -1,7 +1,7 @@
 -- Supplier Product Mapping Table
 -- Stores learned associations between supplier article numbers and store products
 
-CREATE TABLE supplier_product_mapping (
+CREATE TABLE IF NOT EXISTS supplier_product_mapping (
     id BIGSERIAL PRIMARY KEY,
     store_id BIGINT NOT NULL,
     
@@ -41,28 +41,28 @@ CREATE TABLE supplier_product_mapping (
 );
 
 -- Indices for lookup performance
-CREATE INDEX idx_supplier_product_mapping_store 
+CREATE INDEX IF NOT EXISTS idx_supplier_product_mapping_store 
     ON supplier_product_mapping(store_id);
 
-CREATE INDEX idx_supplier_product_mapping_lookup 
+CREATE INDEX IF NOT EXISTS idx_supplier_product_mapping_lookup 
     ON supplier_product_mapping(store_id, normalized_supplier_name, supplier_article_number);
 
-CREATE INDEX idx_supplier_product_mapping_product 
+CREATE INDEX IF NOT EXISTS idx_supplier_product_mapping_product 
     ON supplier_product_mapping(product_id);
 
 -- Update line status enum
 ALTER TABLE supplier_invoice_line 
-    ADD COLUMN status VARCHAR(50) DEFAULT 'UNREVIEWED' NOT NULL;
+    ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'UNREVIEWED' NOT NULL;
 
 ALTER TABLE supplier_invoice_line 
-    ADD COLUMN mapping_source VARCHAR(50);
+    ADD COLUMN IF NOT EXISTS mapping_source VARCHAR(50);
 
 ALTER TABLE supplier_invoice_line 
-    ADD COLUMN suggested_product_id BIGINT;
+    ADD COLUMN IF NOT EXISTS suggested_product_id BIGINT;
 
 ALTER TABLE supplier_invoice_line 
-    ADD COLUMN user_corrected BOOLEAN DEFAULT FALSE NOT NULL;
+    ADD COLUMN IF NOT EXISTS user_corrected BOOLEAN DEFAULT FALSE NOT NULL;
 
 -- Index for status filtering
-CREATE INDEX idx_supplier_invoice_line_status 
+CREATE INDEX IF NOT EXISTS idx_supplier_invoice_line_status
     ON supplier_invoice_line(document_id, status);

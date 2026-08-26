@@ -5,7 +5,7 @@
 -- When OCR/parser gets supplier name wrong and user corrects it,
 -- store the mapping for future invoices.
 
-CREATE TABLE supplier_field_correction (
+CREATE TABLE IF NOT EXISTS supplier_field_correction (
     id BIGSERIAL PRIMARY KEY,
     store_id BIGINT NOT NULL,
     supplier_id BIGINT NULL,
@@ -31,7 +31,7 @@ CREATE TABLE supplier_field_correction (
 );
 
 -- Index for fast lookup during parsing
-CREATE INDEX idx_supplier_field_correction_lookup
+CREATE INDEX IF NOT EXISTS idx_supplier_field_correction_lookup
 ON supplier_field_correction (
     store_id,
     field_type,
@@ -41,7 +41,7 @@ ON supplier_field_correction (
 
 -- Add source tracking to parse results
 ALTER TABLE supplier_invoice_parse_result
-ADD COLUMN supplier_name_source VARCHAR(50) NULL;
+ADD COLUMN IF NOT EXISTS supplier_name_source VARCHAR(50) NULL;
 
 COMMENT ON TABLE supplier_field_correction IS 'Learned corrections for supplier invoice fields (Phase 3A: supplier names only)';
 COMMENT ON COLUMN supplier_field_correction.field_type IS 'Field type (SUPPLIER_NAME, later: INVOICE_NUMBER, etc.)';
