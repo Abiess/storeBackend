@@ -53,12 +53,27 @@ public class DhlController {
     /**
      * POST /api/stores/{storeId}/dhl/parcels/store
      * 
-     * Lagert Paket ein
+     * Lagert Paket ein (Phase 1 + Phase 2)
      * 
-     * Request:
+     * Phase 1 Request:
      * {
      *   "trackingCode": "jvgl 0605 3797 0051 8040",
      *   "shelfLocation": "Regal B-12",
+     *   "notes": "Optional"
+     * }
+     * 
+     * Phase 2 Request (AUTO):
+     * {
+     *   "trackingCode": "JVGL0605379700518040",
+     *   "mode": "auto",
+     *   "notes": "Optional"
+     * }
+     * 
+     * Phase 2 Request (MANUAL):
+     * {
+     *   "trackingCode": "JVGL0605379700518040",
+     *   "mode": "manual",
+     *   "slotCode": "A3",
      *   "notes": "Optional"
      * }
      * 
@@ -67,7 +82,7 @@ public class DhlController {
      *   "id": 1,
      *   "storeId": 5,
      *   "trackingCode": "JVGL0605379700518040",
-     *   "shelfLocation": "Regal B-12",
+     *   "shelfLocation": "A3",
      *   "receivedAt": "2026-08-26T14:30:00",
      *   "status": "STORED",
      *   ...
@@ -81,7 +96,7 @@ public class DhlController {
     @PostMapping("/parcels/store")
     public ResponseEntity<?> storeParcel(
         @PathVariable Long storeId,
-        @RequestBody DhlStoreParcelRequest request,
+        @RequestBody java.util.Map<String, Object> rawRequest,
         @AuthenticationPrincipal User user
     ) {
         try {
@@ -100,28 +115,75 @@ public class DhlController {
                     .body("Access denied to store");
             }
 
-            // 3. Validation
-            if (request.getTrackingCode() == null || request.getTrackingCode().isBlank()) {
+            // 3. Extract common fields
+            String trackingCode = (String) rawRequest.get("trackingCode");
+            String notes = (String) rawRequest.get("notes");
+            
+            if (trackingCode == null || trackingCode.isBlank()) {
                 return ResponseEntity.badRequest().body("Tracking code is required");
             }
-            if (request.getShelfLocation() == null || request.getShelfLocation().isBlank()) {
-                return ResponseEntity.badRequest().body("Shelf location is required");
+
+            // 4. Determine request type and validate accordingly
+            String mode = (String) rawRequest.get("mode");
+            DhlParcel parcel;
+            
+            if (mode != null) {
+                // Phase 2: Mode-based request
+                if ("auto".equalsIgnoreCase(mode)) {
+                    // AUTO: Backend allocates slot
+                    parcel = parcelService.storeParcel(
+                        storeId,
+                        trackingCode,
+                        "auto",
+                        null,
+                        null, // shelfLocation not needed
+                        notes
+                    );
+                    log.info("✅ DHL parcel stored (AUTO): user={}, store={}, tracking={}, slot={}", 
+                        user.getId(), storeId, parcel.getTrackingCode(), parcel.getShelfLocation());
+                    
+                } else if ("manual".equalsIgnoreCase(mode)) {
+                    // MANUAL: User selects slot
+                    String slotCode = (String) rawRequest.get("slotCode");
+                    if (slotCode == null || slotCode.isBlank()) {
+                        return ResponseEntity.badRequest().body("Slot code is required for manual mode");
+                    }
+                    
+                    parcel = parcelService.storeParcel(
+                        storeId,
+                        trackingCode,
+                        "manual",
+                        slotCode,
+                        null, // shelfLocation derived from slot
+                        notes
+                    );
+                    log.info("✅ DHL parcel stored (MANUAL): user={}, store={}, tracking={}, slot={}", 
+                        user.getId(), storeId, parcel.getTrackingCode(), slotCode);
+                    
+                } else {
+                    return ResponseEntity.badRequest().body("Invalid mode: " + mode + ". Use 'auto' or 'manual'");
+                }
+                
+            } else {
+                // Phase 1: Legacy request with shelfLocation
+                String shelfLocation = (String) rawRequest.get("shelfLocation");
+                if (shelfLocation == null || shelfLocation.isBlank()) {
+                    return ResponseEntity.badRequest().body("Shelf location is required for legacy mode");
+                }
+                
+                parcel = parcelService.storeParcel(
+                    storeId,
+                    trackingCode,
+                    null,
+                    null,
+                    shelfLocation,
+                    notes
+                );
+                log.info("✅ DHL parcel stored (LEGACY): user={}, store={}, tracking={}, location={}", 
+                    user.getId(), storeId, parcel.getTrackingCode(), shelfLocation);
             }
 
-            // 4. Store Parcel (Phase 2: mit Mode-Support)
-            DhlParcel parcel = parcelService.storeParcel(
-                storeId,
-                request.getTrackingCode(),
-                null, // mode
-                null, // slotCode
-                request.getShelfLocation(), // legacy
-                request.getNotes()
-            );
-
             DhlParcelResponse response = DhlParcelResponse.fromEntity(parcel);
-            log.info("✅ DHL parcel stored: user={}, store={}, tracking={}", 
-                user.getId(), storeId, response.getTrackingCode());
-
             return ResponseEntity.ok(response);
 
         } catch (IllegalArgumentException e) {

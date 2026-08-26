@@ -1010,7 +1010,8 @@
     "next": "التالي",
     "previous": "السابق",
     "submitting": "جاري الإرسال...",
-    "refresh": "تحديث"
+    "refresh": "تحديث",
+    "optional": "اختياري"
   },
   "loading": {
     "orders": "جاري تحميل الطلبات..."

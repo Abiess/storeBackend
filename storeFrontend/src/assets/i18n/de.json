@@ -526,7 +526,8 @@
     "previous": "Zurück",
     "remove": "Entfernen",
     "submitting": "Wird übermittelt...",
-    "refresh": "Aktualisieren"
+    "refresh": "Aktualisieren",
+    "optional": "optional"
   },
   "loading": {
     "orders": "Bestellungen werden geladen..."

@@ -407,7 +407,8 @@
     "previous": "Previous",
     "remove": "Remove",
     "submitting": "Submitting...",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "optional": "optional"
   },
   "loading": {
     "orders": "Loading orders..."
