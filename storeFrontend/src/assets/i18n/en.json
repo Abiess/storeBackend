@@ -1661,7 +1661,8 @@
       "platformDelivery": "🚚 Delivery Options",
       "supplierInvoices": "Supplier Invoices",
       "productsExpiry": "Products with Expiry Date",
-      "pos": "Cashier"
+      "pos": "Cashier",
+      "dhl": "DHL"
     },
     "noStore": {
       "hint": "No store selected",
@@ -3269,6 +3270,49 @@
       "notFound": "Receipt not found",
       "noAccess": "No permission for this receipt",
       "loadError": "Error loading receipt"
+    }
+  },
+  "dhl": {
+    "main": {
+      "hint": "Use a barcode scanner or camera for quick scanning",
+      "pickupDescription": "Prepare parcel for customer pickup",
+      "storeParcel": "Store Parcel",
+      "storeDescription": "Store new DHL parcel in shop",
+      "subtitle": "Manage parcel reception and pickup",
+      "pickupParcel": "Pickup Parcel"
+    },
+    "pickupParcel": {
+      "notes": "Notes",
+      "success": "Parcel picked up successfully!",
+      "locationTitle": "Parcel is located at:",
+      "title": "Pickup Parcel",
+      "scanTracking": "Scan tracking code from pickup slip",
+      "pickupAnother": "Pickup another parcel",
+      "search": "Find Parcel",
+      "confirmPickup": "Confirm Pickup",
+      "trackingPlaceholder": "JVGL0605379700518040"
+    },
+    "errors": {
+      "duplicate": "This parcel is already stored",
+      "pickupFailed": "Error picking up parcel",
+      "findFailed": "Error finding parcel",
+      "notFound": "Parcel not found",
+      "alreadyPickedUp": "This parcel has already been picked up",
+      "storeFailed": "Error storing parcel"
+    },
+    "storeParcel": {
+      "trackingHint": "Scan the code from the DHL label or enter manually",
+      "shelfPlaceholder": "e.g. Shelf B-12",
+      "notesPlaceholder": "Optional: Special remarks or notes",
+      "shelfLocation": "Shelf location",
+      "title": "Store Parcel",
+      "scanTracking": "Scan tracking code",
+      "notes": "Notes",
+      "shelfHint": "Where is the parcel stored?",
+      "storeAnother": "Store another parcel",
+      "submit": "Store Parcel",
+      "success": "Parcel stored!",
+      "trackingPlaceholder": "JVGL0605379700518040"
     }
   }
 }

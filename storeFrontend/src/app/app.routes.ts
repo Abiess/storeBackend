@@ -226,6 +226,32 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
 
+  // ==================== DHL Parcel Management ====================
+  {
+    path: 'stores/:storeId/dhl',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:storeId/dhl');
+      return import('./features/dhl/dhl.component').then(m => m.DhlComponent);
+    },
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:storeId/dhl/store',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:storeId/dhl/store');
+      return import('./features/dhl/dhl-store-parcel.component').then(m => m.DhlStoreParcelComponent);
+    },
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:storeId/dhl/pickup',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:storeId/dhl/pickup');
+      return import('./features/dhl/dhl-pickup-parcel.component').then(m => m.DhlPickupParcelComponent);
+    },
+    canActivate: [authGuard]
+  },
+
   // ==================== Category Management (Primary Routes) ====================
   // WICHTIG: Spezifische Routen (mit /new) müssen VOR allgemeinen Routen stehen!
   {

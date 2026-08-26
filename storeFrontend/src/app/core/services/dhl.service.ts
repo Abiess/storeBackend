@@ -41,6 +41,54 @@ export interface DhlLabelResponse {
   dhlDetail?: string;
 }
 
+// ════════════════════════════════════════════════════════════════════════
+// DHL PARCEL MANAGEMENT (Phase 1 - Paketannahme/Abholung im Shop)
+// ════════════════════════════════════════════════════════════════════════
+
+/**
+ * DHL Parcel Status
+ */
+export type DhlParcelStatus = 'STORED' | 'PICKED_UP';
+
+/**
+ * DHL Parcel Response
+ */
+export interface DhlParcel {
+  id: number;
+  storeId: number;
+  trackingCode: string;
+  shelfLocation: string;
+  receivedAt: string;
+  pickedUpAt?: string;
+  status: DhlParcelStatus;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Request: Paket einlagern
+ */
+export interface DhlStoreParcelRequest {
+  trackingCode: string;
+  shelfLocation: string;
+  notes?: string;
+}
+
+/**
+ * Request: Paket suchen
+ */
+export interface DhlFindParcelRequest {
+  trackingCode: string;
+}
+
+/**
+ * Request: Paket abholen
+ */
+export interface DhlPickupParcelRequest {
+  trackingCode: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -63,5 +111,125 @@ export class DhlService {
   createLabel(storeId: number, orderId: number, request?: DhlValidateRequest): Observable<DhlLabelResponse> {
     const url = `${this.baseUrl}/admin/orders/${orderId}/dhl/label`;
     return this.http.post<DhlLabelResponse>(url, request || {});
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  // DHL PARCEL MANAGEMENT METHODS
+  // ════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Normalisiert DHL Tracking-Code (clientseitig)
+   * 
+   * Input-Varianten:
+   * - (J)VGL0605379700518040
+   * - JVGL 0605 3797 0051 8040
+   * - jvgl0605379700518040
+   * 
+   * Output:
+   * - JVGL0605379700518040
+   * 
+   * Regeln:
+   * 1. trim()
+   * 2. uppercase
+   * 3. Leerzeichen entfernen
+   * 4. führendes (J) entfernen falls vorhanden
+   * 5. nur alphanumerische Zeichen behalten
+   * 
+   * @param rawCode Roher Tracking-Code vom Scanner/Input
+   * @return Normalisierter Code
+   */
+  normalizeTrackingCode(rawCode: string): string {
+    if (!rawCode || !rawCode.trim()) {
+      throw new Error('Tracking code cannot be empty');
+    }
+    
+    // 1. trim + uppercase
+    let normalized = rawCode.trim().toUpperCase();
+    
+    // 2. Leerzeichen entfernen
+    normalized = normalized.replace(/\s+/g, '');
+    
+    // 3. Führendes (J) entfernen falls vorhanden
+    if (normalized.startsWith('(J)')) {
+      normalized = 'J' + normalized.substring(3);
+    }
+    
+    // 4. Nur alphanumerische Zeichen behalten
+    normalized = normalized.replace(/[^A-Z0-9]/g, '');
+    
+    if (normalized.length < 10) {
+      throw new Error('Invalid tracking code format: too short');
+    }
+    
+    return normalized;
+  }
+
+  /**
+   * POST /api/stores/{storeId}/dhl/parcels/store
+   * 
+   * Lagert Paket ein
+   */
+  storeParcel(storeId: number, request: DhlStoreParcelRequest): Observable<DhlParcel> {
+    return this.http.post<DhlParcel>(
+      `${this.baseUrl}/stores/${storeId}/dhl/parcels/store`,
+      request
+    );
+  }
+
+  /**
+   * POST /api/stores/{storeId}/dhl/parcels/find
+   * 
+   * Sucht Paket anhand Tracking-Code
+   */
+  findParcel(storeId: number, request: DhlFindParcelRequest): Observable<DhlParcel> {
+    return this.http.post<DhlParcel>(
+      `${this.baseUrl}/stores/${storeId}/dhl/parcels/find`,
+      request
+    );
+  }
+
+  /**
+   * POST /api/stores/{storeId}/dhl/parcels/pickup
+   * 
+   * Holt Paket ab (markiert als PICKED_UP)
+   */
+  pickupParcel(storeId: number, request: DhlPickupParcelRequest): Observable<DhlParcel> {
+    return this.http.post<DhlParcel>(
+      `${this.baseUrl}/stores/${storeId}/dhl/parcels/pickup`,
+      request
+    );
+  }
+
+  /**
+   * GET /api/stores/{storeId}/dhl/parcels
+   * 
+   * Listet alle Pakete (alle Status)
+   */
+  listAllParcels(storeId: number): Observable<DhlParcel[]> {
+    return this.http.get<DhlParcel[]>(
+      `${this.baseUrl}/stores/${storeId}/dhl/parcels`
+    );
+  }
+
+  /**
+   * GET /api/stores/{storeId}/dhl/parcels/stored
+   * 
+   * Listet nur eingelagerte Pakete (status = STORED)
+   */
+  listStoredParcels(storeId: number): Observable<DhlParcel[]> {
+    return this.http.get<DhlParcel[]>(
+      `${this.baseUrl}/stores/${storeId}/dhl/parcels/stored`
+    );
+  }
+
+  /**
+   * GET /api/stores/{storeId}/dhl/parcels/count
+   * 
+   * Zählt eingelagerte Pakete (status = STORED)
+   */
+  countStoredParcels(storeId: number): Observable<{count: number}> {
+    return this.http.get<{count: number}>(
+      `${this.baseUrl}/stores/${storeId}/dhl/parcels/count`
+    );
   }
 }

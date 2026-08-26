@@ -3233,7 +3233,8 @@
       "platformDelivery": "🚚 Lieferoptionen",
       "supplierInvoices": "Lieferantenrechnungen",
       "productsExpiry": "Produkte mit Ablaufdatum",
-      "pos": "Kasse"
+      "pos": "Kasse",
+      "dhl": "DHL"
     },
     "noStore": {
       "hint": "Kein Store ausgewählt",
@@ -3304,6 +3305,49 @@
       "notFound": "Beleg nicht gefunden",
       "noAccess": "Keine Berechtigung für diesen Beleg",
       "loadError": "Fehler beim Laden des Belegs"
+    }
+  },
+  "dhl": {
+    "pickupParcel": {
+      "pickupAnother": "Weiteres Paket abholen",
+      "success": "Paket erfolgreich abgeholt!",
+      "trackingPlaceholder": "JVGL0605379700518040",
+      "confirmPickup": "Abholung bestätigen",
+      "locationTitle": "Paket befindet sich in:",
+      "scanTracking": "Tracking-Code vom Abholschein scannen",
+      "search": "Paket suchen",
+      "title": "Paket abholen",
+      "notes": "Hinweise"
+    },
+    "storeParcel": {
+      "trackingHint": "Scannen Sie den Code vom DHL-Etikett oder geben Sie ihn manuell ein",
+      "submit": "Paket einlagern",
+      "shelfPlaceholder": "z.B. Regal B-12",
+      "success": "Paket eingelagert!",
+      "trackingPlaceholder": "JVGL0605379700518040",
+      "storeAnother": "Weiteres Paket einlagern",
+      "shelfLocation": "Lagerplatz",
+      "shelfHint": "Wo befindet sich das Paket im Lager?",
+      "scanTracking": "Tracking-Code scannen",
+      "notes": "Notizen",
+      "title": "Paket einlagern",
+      "notesPlaceholder": "Optional: Besonderheiten oder Hinweise"
+    },
+    "main": {
+      "pickupParcel": "Paket abholen",
+      "hint": "Verwenden Sie einen Barcode-Scanner oder die Kamera für schnelles Scannen",
+      "subtitle": "Paketannahme und Abholung verwalten",
+      "pickupDescription": "Paket für Kunden zur Abholung bereitstellen",
+      "storeDescription": "Neues DHL-Paket im Shop einlagern",
+      "storeParcel": "Paket einlagern"
+    },
+    "errors": {
+      "notFound": "Paket nicht gefunden",
+      "pickupFailed": "Fehler beim Abholen des Pakets",
+      "duplicate": "Dieses Paket ist bereits eingelagert",
+      "findFailed": "Fehler beim Suchen des Pakets",
+      "storeFailed": "Fehler beim Einlagern des Pakets",
+      "alreadyPickedUp": "Dieses Paket wurde bereits abgeholt"
     }
   }
 }

@@ -1276,7 +1276,8 @@
       "platformDelivery": "🚚 خيارات التوصيل",
       "supplierInvoices": "فواتير الموردين",
       "productsExpiry": "المنتجات مع تاريخ الانتهاء",
-      "pos": "الكاشير"
+      "pos": "الكاشير",
+      "dhl": "DHL"
     },
     "noStore": {
       "hint": "لم يتم اختيار متجر",
@@ -3177,6 +3178,49 @@
       "notFound": "لم يتم العثور على الإيصال",
       "noAccess": "لا يوجد إذن لهذا الإيصال",
       "loadError": "خطأ في تحميل الإيصال"
+    }
+  },
+  "dhl": {
+    "errors": {
+      "findFailed": "خطأ في البحث عن الطرد",
+      "alreadyPickedUp": "تم استلام هذا الطرد بالفعل",
+      "notFound": "الطرد غير موجود",
+      "storeFailed": "خطأ في تخزين الطرد",
+      "duplicate": "هذا الطرد مخزن بالفعل",
+      "pickupFailed": "خطأ في استلام الطرد"
+    },
+    "storeParcel": {
+      "title": "تخزين الطرد",
+      "scanTracking": "مسح رمز التتبع",
+      "trackingHint": "امسح الرمز من ملصق DHL أو أدخله يدويًا",
+      "notes": "ملاحظات",
+      "notesPlaceholder": "اختياري: ملاحظات خاصة",
+      "storeAnother": "تخزين طرد آخر",
+      "shelfPlaceholder": "مثال: رف B-12",
+      "trackingPlaceholder": "JVGL0605379700518040",
+      "success": "تم تخزين الطرد!",
+      "shelfHint": "أين يتم تخزين الطرد؟",
+      "shelfLocation": "موقع التخزين",
+      "submit": "تخزين الطرد"
+    },
+    "pickupParcel": {
+      "title": "استلام الطرد",
+      "scanTracking": "مسح رمز التتبع من قسيمة الاستلام",
+      "success": "تم استلام الطرد بنجاح!",
+      "locationTitle": "الطرد موجود في:",
+      "pickupAnother": "استلام طرد آخر",
+      "trackingPlaceholder": "JVGL0605379700518040",
+      "search": "البحث عن الطرد",
+      "notes": "ملاحظات",
+      "confirmPickup": "تأكيد الاستلام"
+    },
+    "main": {
+      "hint": "استخدم ماسح الباركود أو الكاميرا للمسح السريع",
+      "pickupDescription": "تجهيز الطرد لاستلام العميل",
+      "storeDescription": "تخزين طرد DHL جديد في المتجر",
+      "subtitle": "إدارة استلام وتسليم الطرود",
+      "storeParcel": "تخزين الطرد",
+      "pickupParcel": "استلام الطرد"
     }
   }
 }

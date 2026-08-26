@@ -106,6 +106,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/assets/**").authenticated()
                 // Product Variants - Authenticated users can manage their own store's variants (checked in controller)
                 .requestMatchers("/api/stores/*/products/*/variants/**").authenticated()
+                // DHL Parcel Management - requires authentication (checked in controller)
+                .requestMatchers("/api/stores/*/dhl/**").authenticated()
                 // Cart and Checkout - können öffentlich sein (verwenden Session)
                 .requestMatchers("/api/cart/**").permitAll()
                 .requestMatchers("/api/checkout/**").permitAll()
