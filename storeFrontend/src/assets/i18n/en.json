@@ -3293,19 +3293,25 @@
       "slotOverview": "Slot Overview",
       "noSlots": "No storage slots configured yet",
       "noSlotsHint": "Initialize the default storage slots A1-C7",
-      "initSlots": "Create Default Slots A1-C7"
+      "initSlots": "Create Default Slots A1-C7",
+      "occupied": "Occupied Slots"
     },
     "grid": {
       "free": "Free",
       "occupied": "Occupied"
     },
     "main": {
-      "hint": "Use a barcode scanner or camera for quick scanning",
       "pickupDescription": "Prepare parcel for customer pickup",
       "storeParcel": "Store Parcel",
       "storeDescription": "Store new DHL parcel in shop",
-      "subtitle": "Manage parcel reception and pickup",
-      "pickupParcel": "Pickup Parcel"
+      "pickupParcel": "Pickup Parcel",
+      "store": "Store Parcel",
+      "storeHint": "Store new DHL parcel in shop",
+      "pickup": "Pickup Parcel",
+      "pickupHint": "Prepare parcel for customer pickup",
+      "title": "DHL Parcel Service",
+      "subtitle": "Manage parcel receipt and pickup",
+      "hint": "Use a barcode scanner or camera for quick scanning"
     },
     "pickupParcel": {
       "notes": "Notes",

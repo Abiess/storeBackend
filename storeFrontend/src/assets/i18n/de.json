@@ -3328,7 +3328,8 @@
       "slotOverview": "Lagerplatz-Übersicht",
       "noSlots": "Noch keine Lagerplätze eingerichtet",
       "noSlotsHint": "Initialisieren Sie die Standard-Lagerplätze A1-C7",
-      "initSlots": "Standardplätze A1-C7 anlegen"
+      "initSlots": "Standardplätze A1-C7 anlegen",
+      "occupied": "Belegte Plätze"
     },
     "grid": {
       "free": "Frei",
@@ -3361,11 +3362,16 @@
     },
     "main": {
       "pickupParcel": "Paket abholen",
-      "hint": "Verwenden Sie einen Barcode-Scanner oder die Kamera für schnelles Scannen",
-      "subtitle": "Paketannahme und Abholung verwalten",
       "pickupDescription": "Paket für Kunden zur Abholung bereitstellen",
       "storeDescription": "Neues DHL-Paket im Shop einlagern",
-      "storeParcel": "Paket einlagern"
+      "storeParcel": "Paket einlagern",
+      "store": "Paket einlagern",
+      "storeHint": "Neues DHL-Paket im Shop einlagern",
+      "pickup": "Paket abholen",
+      "pickupHint": "Paket für Kunden zur Abholung bereitstellen",
+      "title": "DHL Paketservice",
+      "subtitle": "Paketannahme und Abholung verwalten",
+      "hint": "Verwenden Sie einen Barcode-Scanner oder die Kamera für schnelles Scannen"
     },
     "errors": {
       "notFound": "Paket nicht gefunden",
