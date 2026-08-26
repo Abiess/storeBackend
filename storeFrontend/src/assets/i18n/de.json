@@ -3329,11 +3329,17 @@
       "noSlots": "Noch keine Lagerplätze eingerichtet",
       "noSlotsHint": "Initialisieren Sie die Standard-Lagerplätze A1-C7",
       "initSlots": "Standardplätze A1-C7 anlegen",
-      "occupied": "Belegte Plätze"
+      "occupied": "Belegte Plätze",
+      "storedParcels": "Eingelagerte Pakete",
+      "totalSlots": "Lagerfächer",
+      "totalCapacity": "Gesamtkapazität",
+      "freeCapacity": "Freie Paketplätze"
     },
     "grid": {
       "free": "Frei",
-      "occupied": "Belegt"
+      "occupied": "Belegt",
+      "partial": "Teilbelegt",
+      "full": "Voll"
     },
     "pickupParcel": {
       "pickupAnother": "Weiteres Paket abholen",
@@ -3358,7 +3364,9 @@
       "scanTracking": "Tracking-Code scannen",
       "notes": "Notizen",
       "title": "Paket einlagern",
-      "notesPlaceholder": "Optional: Besonderheiten oder Hinweise"
+      "notesPlaceholder": "Optional: Besonderheiten oder Hinweise",
+      "storing": "Wird eingelagert...",
+      "nextParcel": "Nächstes Paket"
     },
     "main": {
       "pickupParcel": "Paket abholen",
@@ -3381,7 +3389,8 @@
       "storeFailed": "Fehler beim Einlagern des Pakets",
       "alreadyPickedUp": "Dieses Paket wurde bereits abgeholt",
       "noFreeSlot": "Kein freier Lagerplatz verfügbar",
-      "slotOccupied": "Dieser Lagerplatz ist bereits belegt"
+      "slotOccupied": "Dieser Lagerplatz ist bereits belegt",
+      "noCapacity": "Keine freie Lagerkapazität verfügbar"
     },
     "modes": {
       "manualSlot": "Manuell wählen",

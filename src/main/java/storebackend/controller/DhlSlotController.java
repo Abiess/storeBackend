@@ -64,23 +64,25 @@ public class DhlSlotController {
             // 1. Alle Slots laden
             List<DhlShelfSlot> slots = slotService.listAllSlots(storeId);
             
-            // 2. Belegte Slot-IDs ermitteln (keine N+1 Query)
+            // 2. Belegte Paketanzahl pro Slot-ID ermitteln (keine N+1 Query)
             List<Long> slotIds = slots.stream()
                 .map(DhlShelfSlot::getId)
                 .collect(Collectors.toList());
             
-            Set<Long> occupiedSlotIds = parcelRepository.findAll().stream()
+            Map<Long, Long> occupiedCountBySlotId = parcelRepository.findAll().stream()
                 .filter(p -> p.getShelfSlot() != null 
                     && p.getStatus() == DhlParcelStatus.STORED
                     && slotIds.contains(p.getShelfSlot().getId()))
-                .map(p -> p.getShelfSlot().getId())
-                .collect(Collectors.toSet());
+                .collect(Collectors.groupingBy(
+                    p -> p.getShelfSlot().getId(),
+                    Collectors.counting()
+                ));
             
-            // 3. DTOs erstellen
+            // 3. DTOs erstellen mit occupiedCount
             List<DhlSlotResponse> response = slots.stream()
                 .map(slot -> DhlSlotResponse.fromEntity(
                     slot, 
-                    occupiedSlotIds.contains(slot.getId())
+                    occupiedCountBySlotId.getOrDefault(slot.getId(), 0L).intValue()
                 ))
                 .collect(Collectors.toList());
 
@@ -159,7 +161,7 @@ public class DhlSlotController {
             }
 
             DhlShelfSlot slot = slotService.allocateNextFreeSlot(storeId);
-            DhlSlotResponse response = DhlSlotResponse.fromEntity(slot, false);
+            DhlSlotResponse response = DhlSlotResponse.fromEntity(slot, 0); // occupiedCount=0 (gerade allokiert)
             
             log.info("✅ Slot allocated: user={}, store={}, slot={}", 
                 user.getId(), storeId, slot.getCode());
@@ -204,7 +206,7 @@ public class DhlSlotController {
 
             slotService.initializeDefaultSlots(storeId);
             
-            long count = slotService.getStats(storeId).totalActive();
+            long count = slotService.getStats(storeId).totalSlots();
             
             log.info("✅ Slots initialized: user={}, store={}, count={}", 
                 user.getId(), storeId, count);

@@ -35,20 +35,20 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
         <h3>{{ 'dhl.dashboard.title' | translate }}</h3>
         <div class="stats-grid">
           <div class="stat-card">
-            <div class="stat-value">{{ stats()?.storedParcels || 0 }}</div>
-            <div class="stat-label">{{ 'dhl.dashboard.stored' | translate }}</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value">{{ stats()?.freeSlots || 0 }}</div>
-            <div class="stat-label">{{ 'dhl.dashboard.free' | translate }}</div>
-          </div>
-          <div class="stat-card">
             <div class="stat-value">{{ stats()?.occupiedSlots || 0 }}</div>
-            <div class="stat-label">{{ 'dhl.dashboard.occupied' | translate }}</div>
+            <div class="stat-label">{{ 'dhl.dashboard.storedParcels' | translate }}</div>
           </div>
           <div class="stat-card">
             <div class="stat-value">{{ stats()?.totalSlots || 0 }}</div>
-            <div class="stat-label">{{ 'dhl.dashboard.total' | translate }}</div>
+            <div class="stat-label">{{ 'dhl.dashboard.totalSlots' | translate }}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">{{ stats()?.totalCapacity || 0 }}</div>
+            <div class="stat-label">{{ 'dhl.dashboard.totalCapacity' | translate }}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">{{ stats()?.freeCapacity || 0 }}</div>
+            <div class="stat-label">{{ 'dhl.dashboard.freeCapacity' | translate }}</div>
           </div>
         </div>
         <div class="occupancy-bar">

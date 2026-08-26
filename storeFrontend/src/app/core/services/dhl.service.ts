@@ -291,14 +291,17 @@ export interface DhlSlot {
   sortOrder: number;
   active: boolean;
   description?: string;
-  occupied: boolean;
+  capacity: number;        // Phase 2.1: Maximale Anzahl Pakete
+  occupiedCount: number;   // Phase 2.1: Aktuell eingelagerte Pakete
+  occupied: boolean;       // true wenn voll (occupiedCount >= capacity)
 }
 
 export interface DhlSlotStats {
-  totalSlots: number;
-  freeSlots: number;
-  occupiedSlots: number;
-  storedParcels: number;
+  totalSlots: number;         // Anzahl Regalfächer
+  totalCapacity: number;      // Gesamtkapazität (Paketplätze)
+  slotsWithCapacity: number;  // Fächer mit Platz
+  freeCapacity: number;       // Freie Paketplätze
+  occupiedSlots: number;      // Belegte Paketplätze (=Parcels) - Backend field name
   occupancyPercentage: number;
 }
 

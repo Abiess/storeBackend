@@ -23,31 +23,37 @@ import java.util.Optional;
 public interface DhlShelfSlotRepository extends JpaRepository<DhlShelfSlot, Long> {
     
     /**
-     * Findet nächsten freien Slot für automatische Zuweisung (RACE-CONDITION-SAFE)
+     * Findet nächsten Slot mit freier Kapazität für automatische Zuweisung (RACE-CONDITION-SAFE)
+     * 
+     * Phase 2.1: Capacity-based allocation
      * 
      * PESSIMISTIC_WRITE Lock:
      * - Sperrt den gefundenen Slot während der Transaction
      * - Zweite parallele Transaction wartet
-     * - Garantiert: Jede Transaction bekommt unterschiedlichen Slot
+     * - Garantiert: Parallel-Requests überschreiten niemals capacity
      * 
      * Query-Logik:
      * - Nur aktive Slots
-     * - Slot ist frei wenn KEIN Paket mit status=STORED existiert
+     * - Slot hat freie Kapazität wenn: COUNT(STORED parcels) < capacity
      * - Sortiert nach sortOrder (nicht String!)
      * 
+     * Beispiel:
+     * A1 capacity=3, occupied=2 → bekommt nächstes Paket
+     * A1 capacity=3, occupied=3 → übersprungen, nächster Slot
+     * 
      * @param storeId Store ID (Multi-Tenant)
-     * @return Optional<DhlShelfSlot> oder empty wenn alle belegt
+     * @return Optional<DhlShelfSlot> oder empty wenn alle voll
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
         SELECT s FROM DhlShelfSlot s 
         WHERE s.store.id = :storeId 
         AND s.active = true
-        AND NOT EXISTS (
-            SELECT 1 FROM DhlParcel p 
+        AND (
+            SELECT COUNT(p) FROM DhlParcel p 
             WHERE p.shelfSlot.id = s.id 
             AND p.status = 'STORED'
-        )
+        ) < s.capacity
         ORDER BY s.sortOrder ASC
         LIMIT 1
         """)
@@ -76,7 +82,29 @@ public interface DhlShelfSlotRepository extends JpaRepository<DhlShelfSlot, Long
     );
     
     /**
-     * Zählt aktive Slots
+     * Berechnet Gesamtkapazität aller aktiven Slots
+     * 
+     * Phase 2.1: Summe aller capacity-Werte
+     * 
+     * @param storeId Store ID
+     * @return Gesamtanzahl Paketplätze
+     */
+    @Query("SELECT COALESCE(SUM(s.capacity), 0) FROM DhlShelfSlot s WHERE s.store.id = :storeId AND s.active = true")
+    long sumTotalCapacity(@Param("storeId") Long storeId);
+    
+    /**
+     * Zählt belegte Paketplätze
+     * 
+     * Phase 2.1: Nicht Anzahl voller Slots, sondern Anzahl eingelagerter Pakete
+     * 
+     * @param storeId Store ID
+     * @return Anzahl eingelagerter Pakete
+     */
+    @Query("SELECT COUNT(p) FROM DhlParcel p WHERE p.store.id = :storeId AND p.status = 'STORED'")
+    long countOccupiedParcels(@Param("storeId") Long storeId);
+    
+    /**
+     * Zählt aktive Slots (unverändert)
      * 
      * @param storeId Store ID
      * @return Anzahl aktiver Slots
@@ -85,22 +113,24 @@ public interface DhlShelfSlotRepository extends JpaRepository<DhlShelfSlot, Long
     long countActiveSlots(@Param("storeId") Long storeId);
     
     /**
-     * Zählt freie Slots
+     * Zählt Slots mit freier Kapazität
+     * 
+     * Phase 2.1: Slot zählt als "frei" wenn occupiedCount < capacity
      * 
      * @param storeId Store ID
-     * @return Anzahl freier Slots
+     * @return Anzahl Slots mit Platz
      */
     @Query("""
         SELECT COUNT(s) FROM DhlShelfSlot s 
         WHERE s.store.id = :storeId 
         AND s.active = true
-        AND NOT EXISTS (
-            SELECT 1 FROM DhlParcel p 
+        AND (
+            SELECT COUNT(p) FROM DhlParcel p 
             WHERE p.shelfSlot.id = s.id 
             AND p.status = 'STORED'
-        )
+        ) < s.capacity
         """)
-    long countFreeSlots(@Param("storeId") Long storeId);
+    long countSlotsWithCapacity(@Param("storeId") Long storeId);
     
     /**
      * Prüft ob Store bereits Slots hat

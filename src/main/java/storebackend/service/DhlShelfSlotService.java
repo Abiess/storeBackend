@@ -92,22 +92,32 @@ public class DhlShelfSlotService {
     }
 
     /**
-     * Statistiken für Dashboard
+     * Statistiken für Dashboard (Phase 2.1: Capacity-based)
      * 
      * @param storeId Store ID
-     * @return SlotStats
+     * @return SlotStats mit Gesamtkapazität und belegten Paketplätzen
      */
     @Transactional(readOnly = true)
     public SlotStats getStats(Long storeId) {
-        long totalActive = slotRepository.countActiveSlots(storeId);
-        long freeSlots = slotRepository.countFreeSlots(storeId);
-        long occupiedSlots = totalActive - freeSlots;
+        long totalCapacity = slotRepository.sumTotalCapacity(storeId);
+        long occupiedParcels = slotRepository.countOccupiedParcels(storeId);
+        long totalSlots = slotRepository.countActiveSlots(storeId);
+        long slotsWithCapacity = slotRepository.countSlotsWithCapacity(storeId);
         
-        double occupancy = totalActive > 0 
-            ? (double) occupiedSlots / totalActive * 100 
+        long freeCapacity = totalCapacity - occupiedParcels;
+        
+        double occupancy = totalCapacity > 0 
+            ? (double) occupiedParcels / totalCapacity * 100 
             : 0.0;
         
-        return new SlotStats(totalActive, freeSlots, occupiedSlots, occupancy);
+        return new SlotStats(
+            totalSlots,          // Anzahl Slots
+            totalCapacity,       // Gesamtkapazität (Paketplätze)
+            slotsWithCapacity,   // Slots mit Platz
+            freeCapacity,        // Freie Paketplätze
+            occupiedParcels,     // Belegte Paketplätze
+            occupancy            // Auslastung %
+        );
     }
 
     /**
@@ -157,16 +167,22 @@ public class DhlShelfSlotService {
         slot.setCode(code);
         slot.setSortOrder(sortOrder);
         slot.setActive(true);
+        slot.setCapacity(1); // Phase 2.1: Default capacity
         return slot;
     }
 
     /**
      * Stats DTO
      */
+    /**
+     * Phase 2.1: Stats mit Gesamtkapazität
+     */
     public record SlotStats(
-        long totalActive,
-        long freeSlots,
-        long occupiedSlots,
-        double occupancyPercent
+        long totalSlots,       // Anzahl Slots
+        long totalCapacity,    // Gesamtkapazität (Paketplätze)
+        long slotsWithCapacity,// Slots mit freier Kapazität
+        long freeCapacity,     // Freie Paketplätze
+        long occupiedSlots,    // Belegte Paketplätze (=Parcels)
+        double occupancyPercentage // Auslastung %
     ) {}
 }

@@ -3202,11 +3202,17 @@
       "noSlots": "لم يتم تكوين أماكن التخزين بعد",
       "noSlotsHint": "تهيئة أماكن التخزين الافتراضية A1-C7",
       "initSlots": "إنشاء الأماكن الافتراضية A1-C7",
-      "occupied": "أماكن مشغولة"
+      "occupied": "أماكن مشغولة",
+      "storedParcels": "الطرود المخزنة",
+      "totalSlots": "أماكن التخزين",
+      "totalCapacity": "السعة الإجمالية",
+      "freeCapacity": "أماكن الطرود الفارغة"
     },
     "grid": {
       "free": "فارغ",
-      "occupied": "مشغول"
+      "occupied": "مشغول",
+      "partial": "جزئي",
+      "full": "ممتلئ"
     },
     "errors": {
       "findFailed": "خطأ في البحث عن الطرد",
@@ -3216,7 +3222,8 @@
       "duplicate": "هذا الطرد مخزن بالفعل",
       "pickupFailed": "خطأ في استلام الطرد",
       "noFreeSlot": "لا توجد أماكن تخزين متاحة",
-      "slotOccupied": "هذا المكان مشغول بالفعل"
+      "slotOccupied": "هذا المكان مشغول بالفعل",
+      "noCapacity": "لا توجد سعة تخزين متاحة"
     },
     "storeParcel": {
       "title": "تخزين الطرد",
@@ -3230,7 +3237,9 @@
       "success": "تم تخزين الطرد!",
       "shelfHint": "أين يتم تخزين الطرد؟",
       "shelfLocation": "موقع التخزين",
-      "submit": "تخزين الطرد"
+      "submit": "تخزين الطرد",
+      "storing": "جاري التخزين...",
+      "nextParcel": "الطرد التالي"
     },
     "pickupParcel": {
       "title": "استلام الطرد",

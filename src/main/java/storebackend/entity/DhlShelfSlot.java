@@ -90,6 +90,26 @@ public class DhlShelfSlot {
     private Boolean active = true;
 
     /**
+     * Kapazität: Wie viele Pakete passen in diesen Slot?
+     * 
+     * Phase 2.1: Mehrere Pakete pro Lagerplatz
+     * 
+     * Beispiele:
+     * - capacity = 1: Nur 1 Paket (Standard)
+     * - capacity = 3: Bis zu 3 Pakete
+     * - capacity = 5: Großes Fach für 5 Pakete
+     * 
+     * Status:
+     * - occupiedCount = 0            → FREE (grün)
+     * - 0 < occupiedCount < capacity → PARTIAL (gelb)
+     * - occupiedCount >= capacity    → FULL (rot)
+     * 
+     * Default: 1 (für Kompatibilität mit Phase 2.0)
+     */
+    @Column(name = "capacity", nullable = false)
+    private Integer capacity = 1;
+
+    /**
      * Optionale Beschreibung
      * z.B. "Regal links oben", "Backoffice Schrank"
      */
@@ -109,6 +129,10 @@ public class DhlShelfSlot {
         
         if (this.active == null) {
             this.active = true;
+        }
+        
+        if (this.capacity == null) {
+            this.capacity = 1; // Default für Kompatibilität
         }
     }
 

@@ -20,15 +20,18 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
           <button
             *ngFor="let slot of row.slots"
             class="slot"
-            [class.occupied]="slot.occupied"
-            [class.free]="!slot.occupied"
-            [class.selectable]="selectable && !slot.occupied"
-            [disabled]="slot.occupied || !slot.active || !selectable"
+            [class.free]="getSlotStatus(slot) === 'free'"
+            [class.partial]="getSlotStatus(slot) === 'partial'"
+            [class.full]="getSlotStatus(slot) === 'full'"
+            [class.selectable]="selectable && isSlotSelectable(slot)"
+            [disabled]="!isSlotSelectable(slot) || !slot.active || !selectable"
             (click)="onSlotClick(slot)">
             <div class="slot-code">{{ slot.code }}</div>
+            <div class="slot-occupancy">{{ slot.occupiedCount }} / {{ slot.capacity }}</div>
             <div class="slot-status">
-              <span *ngIf="slot.occupied">● {{ 'dhl.grid.occupied' | translate }}</span>
-              <span *ngIf="!slot.occupied">✓ {{ 'dhl.grid.free' | translate }}</span>
+              <span *ngIf="getSlotStatus(slot) === 'free'">✓ {{ 'dhl.grid.free' | translate }}</span>
+              <span *ngIf="getSlotStatus(slot) === 'partial'">◐ {{ 'dhl.grid.partial' | translate }}</span>
+              <span *ngIf="getSlotStatus(slot) === 'full'">● {{ 'dhl.grid.full' | translate }}</span>
             </div>
           </button>
         </div>
@@ -81,13 +84,18 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       background: #d4edda;
     }
 
-    .slot.occupied {
+    .slot.partial {
+      border-color: #ffc107;
+      background: #fff3cd;
+    }
+
+    .slot.full {
       border-color: #dc3545;
       background: #f8d7da;
       cursor: not-allowed;
     }
 
-    .slot.selectable:not(.occupied):hover {
+    .slot.selectable:not(.full):hover {
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
     }
@@ -100,6 +108,13 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
     .slot-code {
       font-size: 1.25rem;
       font-weight: bold;
+      margin-bottom: 0.25rem;
+    }
+
+    .slot-occupancy {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #333;
       margin-bottom: 0.25rem;
     }
 
@@ -146,8 +161,18 @@ export class DhlSlotGridComponent {
     }));
   }
 
+  getSlotStatus(slot: DhlSlot): 'free' | 'partial' | 'full' {
+    if (slot.occupiedCount === 0) return 'free';
+    if (slot.occupiedCount >= slot.capacity) return 'full';
+    return 'partial';
+  }
+
+  isSlotSelectable(slot: DhlSlot): boolean {
+    return slot.active && slot.occupiedCount < slot.capacity;
+  }
+
   onSlotClick(slot: DhlSlot): void {
-    if (this.selectable && !slot.occupied && slot.active) {
+    if (this.selectable && this.isSlotSelectable(slot)) {
       this.slotSelected.emit(slot);
     }
   }

@@ -3294,11 +3294,17 @@
       "noSlots": "No storage slots configured yet",
       "noSlotsHint": "Initialize the default storage slots A1-C7",
       "initSlots": "Create Default Slots A1-C7",
-      "occupied": "Occupied Slots"
+      "occupied": "Occupied Slots",
+      "storedParcels": "Stored Parcels",
+      "totalSlots": "Storage Slots",
+      "totalCapacity": "Total Capacity",
+      "freeCapacity": "Free Parcel Spaces"
     },
     "grid": {
       "free": "Free",
-      "occupied": "Occupied"
+      "occupied": "Occupied",
+      "partial": "Partial",
+      "full": "Full"
     },
     "main": {
       "pickupDescription": "Prepare parcel for customer pickup",
@@ -3332,7 +3338,8 @@
       "alreadyPickedUp": "This parcel has already been picked up",
       "storeFailed": "Error storing parcel",
       "noFreeSlot": "No free storage slot available",
-      "slotOccupied": "This storage slot is already occupied"
+      "slotOccupied": "This storage slot is already occupied",
+      "noCapacity": "No free storage capacity available"
     },
     "storeParcel": {
       "trackingHint": "Scan the code from the DHL label or enter manually",
@@ -3346,7 +3353,9 @@
       "storeAnother": "Store another parcel",
       "submit": "Store Parcel",
       "success": "Parcel stored!",
-      "trackingPlaceholder": "JVGL0605379700518040"
+      "trackingPlaceholder": "JVGL0605379700518040",
+      "storing": "Storing...",
+      "nextParcel": "Next Parcel"
     },
     "modes": {
       "scanner": "Scanner",
