@@ -140,4 +140,28 @@ public interface DhlShelfSlotRepository extends JpaRepository<DhlShelfSlot, Long
      */
     @Query("SELECT COUNT(s) > 0 FROM DhlShelfSlot s WHERE s.store.id = :storeId")
     boolean existsByStoreId(@Param("storeId") Long storeId);
+    
+    /**
+     * Findet maximale sortOrder für Store (Phase 3A)
+     * 
+     * Für neue Slots: maxSortOrder + 1
+     * 
+     * @param storeId Store ID
+     * @return max sort_order oder null
+     */
+    @Query("SELECT MAX(s.sortOrder) FROM DhlShelfSlot s WHERE s.store.id = :storeId")
+    Integer findMaxSortOrderByStoreId(@Param("storeId") Long storeId);
+    
+    /**
+     * Prüft ob Slot-Code bereits existiert (Phase 3A)
+     * 
+     * @param storeId Store ID
+     * @param code Slot-Code
+     * @return true wenn Code bereits verwendet
+     */
+    @Query("SELECT COUNT(s) > 0 FROM DhlShelfSlot s WHERE s.store.id = :storeId AND s.code = :code")
+    boolean existsByStoreIdAndCode(
+        @Param("storeId") Long storeId,
+        @Param("code") String code
+    );
 }

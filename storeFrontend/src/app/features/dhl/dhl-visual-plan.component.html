@@ -17,7 +17,7 @@
         (click)="toggleMode()"
         [disabled]="loading() || saving()">
         <lucide-icon 
-          [img]="isOperationMode() ? 'eye' : 'edit'"
+          name="isOperationMode() ? 'eye' : 'edit'"
           [size]="20">
         </lucide-icon>
         <span>
@@ -33,7 +33,7 @@
           class="btn btn-secondary"
           (click)="openZoneManager()"
           [disabled]="loading() || saving()">
-          <lucide-icon img="layers" [size]="20"></lucide-icon>
+          <lucide-icon name="layers" [size]="20"></lucide-icon>
           {{ 'dhl.plan.zones' | translate }}
         </button>
 
@@ -41,7 +41,7 @@
           class="btn btn-success"
           (click)="createNewSlot()"
           [disabled]="loading() || saving()">
-          <lucide-icon img="plus" [size]="20"></lucide-icon>
+          <lucide-icon name="plus" [size]="20"></lucide-icon>
           {{ 'dhl.plan.newSlot' | translate }}
         </button>
       </ng-container>
@@ -52,7 +52,7 @@
           class="btn btn-primary"
           (click)="saveChanges()"
           [disabled]="saving()">
-          <lucide-icon img="save" [size]="20"></lucide-icon>
+          <lucide-icon name="save" [size]="20"></lucide-icon>
           {{ 'dhl.plan.save' | translate }}
           <span *ngIf="saving()" class="spinner"></span>
         </button>
@@ -61,7 +61,7 @@
           class="btn btn-ghost"
           (click)="discardChanges()"
           [disabled]="saving()">
-          <lucide-icon img="x" [size]="20"></lucide-icon>
+          <lucide-icon name="x" [size]="20"></lucide-icon>
           {{ 'dhl.plan.discard' | translate }}
         </button>
       </ng-container>
@@ -76,7 +76,7 @@
 
   <!-- ERROR -->
   <div *ngIf="error()" class="error-state">
-    <lucide-icon img="alert-triangle" [size]="48" color="var(--error-color)"></lucide-icon>
+    <lucide-icon name="alert-triangle" [size]="48" color="var(--error-color)"></lucide-icon>
     <p>{{ error() }}</p>
     <button class="btn btn-secondary" (click)="loadData()">
       {{ 'dhl.plan.retry' | translate }}
@@ -87,20 +87,20 @@
   <div *ngIf="!loading() && !error()" class="plan-content">
     <!-- Dirty Warning -->
     <div *ngIf="isDirty()" class="dirty-banner">
-      <lucide-icon img="alert-circle" [size]="20"></lucide-icon>
+      <lucide-icon name="alert-circle" [size]="20"></lucide-icon>
       <span>{{ 'dhl.plan.unsavedChanges' | translate }}</span>
     </div>
 
     <!-- EMPTY STATE -->
     <div *ngIf="layouts().length === 0" class="empty-state">
-      <lucide-icon img="warehouse" [size]="64" color="var(--text-secondary)"></lucide-icon>
+      <lucide-icon name="warehouse" [size]="64" color="var(--text-secondary)"></lucide-icon>
       <h3>{{ 'dhl.plan.empty.title' | translate }}</h3>
       <p>{{ 'dhl.plan.empty.message' | translate }}</p>
       <button 
         class="btn btn-primary" 
         (click)="createNewSlot()"
         *ngIf="isExpertMode()">
-        <lucide-icon img="plus" [size]="20"></lucide-icon>
+        <lucide-icon name="plus" [size]="20"></lucide-icon>
         {{ 'dhl.plan.newSlot' | translate }}
       </button>
     </div>
@@ -138,7 +138,7 @@
             
             <!-- Drag Handle (Expert Mode) -->
             <div *ngIf="isExpertMode()" class="drag-handle" cdkDragHandle>
-              <lucide-icon img="grip-vertical" [size]="16"></lucide-icon>
+              <lucide-icon name="grip-vertical" [size]="16"></lucide-icon>
             </div>
 
             <!-- Slot Content -->
@@ -151,7 +151,7 @@
               
               <div class="slot-status-label">
                 <lucide-icon 
-                  [img]="getStatusIcon(layout)" 
+                  name="getStatusIcon(layout)" 
                   [size]="14">
                 </lucide-icon>
                 {{ getStatusLabel(layout) }}
@@ -160,12 +160,12 @@
 
             <!-- Highlight Badge -->
             <div *ngIf="isHighlighted(layout)" class="highlight-badge">
-              <lucide-icon img="map-pin" [size]="16"></lucide-icon>
+              <lucide-icon name="map-pin" [size]="16"></lucide-icon>
             </div>
 
             <!-- Inactive Overlay -->
             <div *ngIf="!layout.slotActive" class="inactive-overlay">
-              <lucide-icon img="x-circle" [size]="24"></lucide-icon>
+              <lucide-icon name="x-circle" [size]="24"></lucide-icon>
             </div>
           </div>
         </div>
@@ -175,7 +175,7 @@
     <!-- FALLBACK: Slots without Layout -->
     <div *ngIf="slotsWithoutLayout().length > 0" class="fallback-section">
       <div class="fallback-header">
-        <lucide-icon img="list" [size]="20"></lucide-icon>
+        <lucide-icon name="list" [size]="20"></lucide-icon>
         <h3>{{ 'dhl.plan.notInPlan' | translate }}</h3>
         <span class="count">{{ slotsWithoutLayout().length }}</span>
       </div>
@@ -190,7 +190,7 @@
             *ngIf="isExpertMode()" 
             class="btn btn-sm btn-ghost"
             (click)="assignSlotToLayout(slot)">
-            <lucide-icon img="plus" [size]="16"></lucide-icon>
+            <lucide-icon name="plus" [size]="16"></lucide-icon>
             {{ 'dhl.plan.addToPlan' | translate }}
           </button>
         </div>
@@ -198,3 +198,4 @@
     </div>
   </div>
 </div>
+

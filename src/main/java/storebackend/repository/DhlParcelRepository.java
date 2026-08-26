@@ -69,4 +69,25 @@ public interface DhlParcelRepository extends JpaRepository<DhlParcel, Long> {
      */
     @Query("SELECT p FROM DhlParcel p WHERE p.store.id = :storeId ORDER BY p.receivedAt DESC")
     List<DhlParcel> findByStoreId(@Param("storeId") Long storeId);
+    
+    /**
+     * Zählt belegte Pakete gruppiert nach Slot (Phase 3A)
+     * 
+     * Für Batch-Loading von occupiedCounts (N+1 vermeiden)
+     * 
+     * @param storeId Store ID
+     * @param status Status (typisch STORED)
+     * @param slotIds Liste von Slot-IDs
+     * @return List<Object[]> mit [slotId, count]
+     */
+    @Query("SELECT p.shelfSlot.id, COUNT(p) FROM DhlParcel p " +
+           "WHERE p.store.id = :storeId " +
+           "AND p.status = :status " +
+           "AND p.shelfSlot.id IN :slotIds " +
+           "GROUP BY p.shelfSlot.id")
+    List<Object[]> countByStoreIdAndStatusGroupedBySlot(
+        @Param("storeId") Long storeId,
+        @Param("status") DhlParcelStatus status,
+        @Param("slotIds") List<Long> slotIds
+    );
 }

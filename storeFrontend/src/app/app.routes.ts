@@ -251,6 +251,14 @@ export const routes: Routes = [
     },
     canActivate: [authGuard]
   },
+  {
+    path: 'stores/:storeId/dhl/plan',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:storeId/dhl/plan');
+      return import('./features/dhl/dhl-visual-plan.component').then(m => m.DhlVisualPlanComponent);
+    },
+    canActivate: [authGuard]
+  },
 
   // ==================== Category Management (Primary Routes) ====================
   // WICHTIG: Spezifische Routen (mit /new) müssen VOR allgemeinen Routen stehen!

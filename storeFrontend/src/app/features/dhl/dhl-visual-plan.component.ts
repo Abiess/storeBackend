@@ -376,6 +376,17 @@ export class DhlVisualPlanComponent implements OnInit, OnDestroy {
     }
   }
 
+  getStatusIcon(layout: DhlShelfSlotLayout): string {
+    const status = this.getStatus(layout);
+    
+    switch (status) {
+      case SlotStatus.FREE: return 'circle-check';
+      case SlotStatus.PARTIAL: return 'circle-alert';
+      case SlotStatus.FULL: return 'circle-x';
+      case SlotStatus.INACTIVE: return 'circle-minus';
+    }
+  }
+
   // ========== ZONE ACTIONS ==========
 
   openZoneManager(): void {
@@ -386,6 +397,11 @@ export class DhlVisualPlanComponent implements OnInit, OnDestroy {
   createNewSlot(): void {
     // TODO: Open new slot dialog
     console.log('Create new slot');
+  }
+
+  assignSlotToLayout(slot: any): void {
+    // TODO: Add slot to visual plan
+    console.log('Assign slot to layout:', slot.code);
   }
 
   // ========== TRACKING ==========

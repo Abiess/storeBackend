@@ -3367,6 +3367,29 @@
       "auto": "Automatic",
       "manualSlot": "Manual Selection",
       "selectSlot": "Select a free storage slot:"
+    },
+    "plan": {
+      "title": "Warehouse Plan",
+      "slots": "Slots",
+      "zones": "Zones",
+      "operationMode": "Operation Mode",
+      "expertMode": "Expert Mode",
+      "newSlot": "New Slot",
+      "save": "Save",
+      "discard": "Discard",
+      "loading": "Loading...",
+      "retry": "Retry",
+      "unsavedChanges": "You have unsaved changes",
+      "empty": {
+        "title": "No Warehouse Plan",
+        "message": "Create your first storage slots and design your visual warehouse plan."
+      },
+      "notInPlan": "Not placed in plan",
+      "addToPlan": "Add to plan",
+      "free": "Free",
+      "partial": "Partially filled",
+      "full": "Full",
+      "inactive": "Inactive"
     }
   }
 }

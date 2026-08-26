@@ -6,7 +6,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import storebackend.dto.*;
-import storebackend.dto.DhlLayoutRequests.*;
 import storebackend.entity.User;
 import storebackend.service.DhlLayoutService;
 import storebackend.util.StoreAccessChecker;
@@ -47,7 +46,12 @@ public class DhlLayoutController {
         @AuthenticationPrincipal User user
     ) {
         log.debug("GET /zones for store {}", storeId);
-        storeAccessChecker.checkStoreAccess(user, storeId);
+        
+        // Multi-Tenant Security: User muss Zugriff auf Store haben
+        if (!storeAccessChecker.hasStoreAccess(storeId)) {
+            log.warn("Access denied for user {} to store {}", user.getId(), storeId);
+            return ResponseEntity.status(403).build();
+        }
         
         List<DhlZoneDto> zones = layoutService.getZones(storeId);
         return ResponseEntity.ok(zones);
@@ -65,7 +69,12 @@ public class DhlLayoutController {
         @AuthenticationPrincipal User user
     ) {
         log.info("POST /zones for store {}: {}", storeId, request.getName());
-        storeAccessChecker.checkStoreAccess(user, storeId);
+        
+        // Multi-Tenant Security
+        if (!storeAccessChecker.hasStoreAccess(storeId)) {
+            log.warn("Access denied for user {} to store {}", user.getId(), storeId);
+            return ResponseEntity.status(403).build();
+        }
         
         DhlZoneDto zone = layoutService.createZone(storeId, request);
         return ResponseEntity.ok(zone);
@@ -84,7 +93,11 @@ public class DhlLayoutController {
         @AuthenticationPrincipal User user
     ) {
         log.info("PUT /zones/{} for store {}", zoneId, storeId);
-        storeAccessChecker.checkStoreAccess(user, storeId);
+        
+        if (!storeAccessChecker.hasStoreAccess(storeId)) {
+            log.warn("Access denied for user {} to store {}", user.getId(), storeId);
+            return ResponseEntity.status(403).build();
+        }
         
         DhlZoneDto zone = layoutService.updateZone(storeId, zoneId, request);
         return ResponseEntity.ok(zone);
@@ -102,7 +115,11 @@ public class DhlLayoutController {
         @AuthenticationPrincipal User user
     ) {
         log.info("DELETE /zones/{} for store {}", zoneId, storeId);
-        storeAccessChecker.checkStoreAccess(user, storeId);
+        
+        if (!storeAccessChecker.hasStoreAccess(storeId)) {
+            log.warn("Access denied for user {} to store {}", user.getId(), storeId);
+            return ResponseEntity.status(403).build();
+        }
         
         layoutService.deleteZone(storeId, zoneId);
         return ResponseEntity.noContent().build();
@@ -123,7 +140,11 @@ public class DhlLayoutController {
         @AuthenticationPrincipal User user
     ) {
         log.debug("GET /layout for store {}", storeId);
-        storeAccessChecker.checkStoreAccess(user, storeId);
+        
+        if (!storeAccessChecker.hasStoreAccess(storeId)) {
+            log.warn("Access denied for user {} to store {}", user.getId(), storeId);
+            return ResponseEntity.status(403).build();
+        }
         
         List<DhlShelfSlotLayoutDto> layout = layoutService.getLayout(storeId);
         return ResponseEntity.ok(layout);
@@ -149,7 +170,11 @@ public class DhlLayoutController {
         @AuthenticationPrincipal User user
     ) {
         log.info("PUT /layout for store {} with {} updates", storeId, request.getUpdates().size());
-        storeAccessChecker.checkStoreAccess(user, storeId);
+        
+        if (!storeAccessChecker.hasStoreAccess(storeId)) {
+            log.warn("Access denied for user {} to store {}", user.getId(), storeId);
+            return ResponseEntity.status(403).build();
+        }
         
         layoutService.updateLayoutBatch(storeId, request);
         return ResponseEntity.noContent().build();
@@ -169,7 +194,11 @@ public class DhlLayoutController {
         @AuthenticationPrincipal User user
     ) {
         log.info("POST /layout/slots for store {}: code={}", storeId, request.getCode());
-        storeAccessChecker.checkStoreAccess(user, storeId);
+        
+        if (!storeAccessChecker.hasStoreAccess(storeId)) {
+            log.warn("Access denied for user {} to store {}", user.getId(), storeId);
+            return ResponseEntity.status(403).build();
+        }
         
         DhlShelfSlotLayoutDto slot = layoutService.createSlotWithLayout(storeId, request);
         return ResponseEntity.ok(slot);

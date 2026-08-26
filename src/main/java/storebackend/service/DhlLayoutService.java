@@ -4,10 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import storebackend.dto.DhlLayoutRequests.*;
-import storebackend.dto.DhlShelfSlotLayoutDto;
-import storebackend.dto.DhlZoneDto;
-import storebackend.dto.DhlZoneRequest;
+import storebackend.dto.*;
 import storebackend.entity.*;
 import storebackend.enums.DhlParcelStatus;
 import storebackend.repository.*;
@@ -193,7 +190,7 @@ public class DhlLayoutService {
     public void updateLayoutBatch(Long storeId, DhlLayoutUpdateRequest request) {
         log.info("Batch-updating {} layouts for store {}", request.getUpdates().size(), storeId);
         
-        for (LayoutPositionUpdate update : request.getUpdates()) {
+        for (DhlLayoutUpdateRequest.LayoutPositionUpdate update : request.getUpdates()) {
             // Find existing layout
             DhlShelfSlotLayout layout = layoutRepository.findByStoreIdAndSlotId(storeId, update.getSlotId())
                 .orElseThrow(() -> new IllegalArgumentException(

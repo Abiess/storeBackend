@@ -3402,6 +3402,29 @@
       "manual": "Manuell eingeben",
       "scanner": "Scanner",
       "tracking": "Tracking-Erfassung"
+    },
+    "plan": {
+      "title": "Lagerplan",
+      "slots": "Lagerfächer",
+      "zones": "Bereiche",
+      "operationMode": "Betriebsmodus",
+      "expertMode": "Expertenmodus",
+      "newSlot": "Neues Fach",
+      "save": "Speichern",
+      "discard": "Verwerfen",
+      "loading": "Wird geladen...",
+      "retry": "Erneut versuchen",
+      "unsavedChanges": "Sie haben ungespeicherte Änderungen",
+      "empty": {
+        "title": "Kein Lagerplan vorhanden",
+        "message": "Erstellen Sie Ihre ersten Lagerfächer und gestalten Sie Ihren visuellen Lagerplan."
+      },
+      "notInPlan": "Nicht im Lagerplan platziert",
+      "addToPlan": "Zum Plan hinzufügen",
+      "free": "Frei",
+      "partial": "Teilbelegt",
+      "full": "Voll",
+      "inactive": "Inaktiv"
     }
   }
 }
