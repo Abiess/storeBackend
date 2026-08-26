@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS dhl_zones (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
     CONSTRAINT fk_dhl_zone_store
-        FOREIGN KEY (store_id) REFERENCES store(id) ON DELETE CASCADE,
+        FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE,
     
     CONSTRAINT uq_dhl_zone_store_name
         UNIQUE (store_id, name)
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS dhl_shelf_slot_layouts (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
     CONSTRAINT fk_dhl_layout_store
-        FOREIGN KEY (store_id) REFERENCES store(id) ON DELETE CASCADE,
+        FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE,
     
     CONSTRAINT fk_dhl_layout_slot
         FOREIGN KEY (shelf_slot_id) REFERENCES dhl_shelf_slots(id) ON DELETE CASCADE,
