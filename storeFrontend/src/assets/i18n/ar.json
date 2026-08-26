@@ -3206,7 +3206,8 @@
       "storedParcels": "الطرود المخزنة",
       "totalSlots": "أماكن التخزين",
       "totalCapacity": "السعة الإجمالية",
-      "freeCapacity": "أماكن الطرود الفارغة"
+      "freeCapacity": "أماكن الطرود الفارغة",
+      "title": "نظرة عامة على المخزن"
     },
     "grid": {
       "free": "فارغ",

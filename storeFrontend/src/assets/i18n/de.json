@@ -3333,7 +3333,8 @@
       "storedParcels": "Eingelagerte Pakete",
       "totalSlots": "Lagerfächer",
       "totalCapacity": "Gesamtkapazität",
-      "freeCapacity": "Freie Paketplätze"
+      "freeCapacity": "Freie Paketplätze",
+      "title": "Lagerübersicht"
     },
     "grid": {
       "free": "Frei",

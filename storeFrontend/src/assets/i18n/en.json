@@ -3298,7 +3298,8 @@
       "storedParcels": "Stored Parcels",
       "totalSlots": "Storage Slots",
       "totalCapacity": "Total Capacity",
-      "freeCapacity": "Free Parcel Spaces"
+      "freeCapacity": "Free Parcel Spaces",
+      "title": "Storage Overview"
     },
     "grid": {
       "free": "Free",
