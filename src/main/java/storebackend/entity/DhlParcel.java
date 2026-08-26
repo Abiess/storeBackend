@@ -55,11 +55,28 @@ public class DhlParcel {
     private String trackingCode;
 
     /**
-     * Lagerplatz im Shop
+     * Lagerplatz im Shop (LEGACY - Phase 1)
      * Beispiel: "Regal B-12", "Fach 3", "Backoffice Schrank 2"
+     * 
+     * KOMPATIBILITÄT:
+     * - Phase 1 Parcels: shelfLocation gefüllt, shelfSlotId = null
+     * - Phase 2 Parcels: shelfLocation = slot.code, shelfSlotId gesetzt
+     * - Beide Felder parallel für Übergang
      */
     @Column(name = "shelf_location", nullable = false, length = 100)
     private String shelfLocation;
+
+    /**
+     * Strukturierter Lagerplatz (Phase 2)
+     * 
+     * Optional: Kann null sein für Phase 1 Parcels
+     * Phase 2: Relation zu DhlShelfSlot
+     * 
+     * Wenn gesetzt: shelfLocation wird automatisch auf slot.code gesetzt
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "shelf_slot_id")
+    private DhlShelfSlot shelfSlot;
 
     /**
      * Zeitpunkt der Einlagerung

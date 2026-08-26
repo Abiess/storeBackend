@@ -2,24 +2,24 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { DhlService, DhlStoreParcelRequest, DhlParcel } from '@app/core/services/dhl.service';
+import { DhlService, DhlStoreParcelRequestV2, DhlParcel, DhlSlot } from '@app/core/services/dhl.service';
 import { BarcodeInputComponent } from '@app/shared/components/barcode-input/barcode-input.component';
+import { DhlSlotGridComponent } from './dhl-slot-grid.component';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 /**
- * DHL Store Parcel Component
+ * DHL Store Parcel Component (Phase 2)
  * 
- * Flow: Paket einlagern
- * 1. Tracking-Code scannen/eingeben
- * 2. Lagerplatz eingeben
- * 3. Optional: Notizen
- * 4. Speichern
- * 5. Erfolg: Lagerplatz groß anzeigen
+ * Flow: Paket einlagern mit Mode-Selection
+ * 1. Tracking: [Scanner] [Manuell]
+ * 2. Lagerplatz: [Automatisch] [Manuell]
+ * 3. Speichern
+ * 4. Erfolg: Lagerplatz groß anzeigen
  */
 @Component({
   selector: 'app-dhl-store-parcel',
   standalone: true,
-  imports: [CommonModule, FormsModule, BarcodeInputComponent, TranslatePipe],
+  imports: [CommonModule, FormsModule, BarcodeInputComponent, DhlSlotGridComponent, TranslatePipe],
   template: `
     <div class="dhl-store-container">
       <div class="dhl-header">
@@ -44,31 +44,87 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
       <!-- Input Form -->
       <div *ngIf="!success()" class="input-form">
-        <!-- Step 1: Tracking Code -->
+        <!-- Mode 1: Tracking-Erfassung -->
+        <div class="mode-section">
+          <label class="mode-label">{{ 'dhl.modes.tracking' | translate }}</label>
+          <div class="mode-buttons">
+            <button
+              class="mode-btn"
+              [class.active]="trackingMode() === 'scanner'"
+              (click)="setTrackingMode('scanner')"
+              [disabled]="loading()">
+              📷 {{ 'dhl.modes.scanner' | translate }}
+            </button>
+            <button
+              class="mode-btn"
+              [class.active]="trackingMode() === 'manual'"
+              (click)="setTrackingMode('manual')"
+              [disabled]="loading()">
+              ⌨️ {{ 'dhl.modes.manual' | translate }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Tracking Input -->
         <div class="form-section">
           <label>{{ 'dhl.storeParcel.scanTracking' | translate }}</label>
           <app-barcode-input
+            *ngIf="trackingMode() === 'scanner'"
             [(ngModel)]="trackingCode"
             [placeholder]="'dhl.storeParcel.trackingPlaceholder' | translate"
             [disabled]="loading()">
           </app-barcode-input>
+          <input
+            *ngIf="trackingMode() === 'manual'"
+            type="text"
+            [(ngModel)]="trackingCode"
+            [placeholder]="'dhl.storeParcel.trackingPlaceholder' | translate"
+            [disabled]="loading()"
+            class="input-field"
+            (input)="trackingCode = trackingCode.toUpperCase()"
+          />
           <p class="hint">{{ 'dhl.storeParcel.trackingHint' | translate }}</p>
         </div>
 
-        <!-- Step 2: Shelf Location -->
-        <div class="form-section">
-          <label>{{ 'dhl.storeParcel.shelfLocation' | translate }}</label>
-          <input
-            type="text"
-            [(ngModel)]="shelfLocation"
-            [placeholder]="'dhl.storeParcel.shelfPlaceholder' | translate"
-            [disabled]="loading()"
-            class="input-field input-field-large"
-          />
-          <p class="hint">{{ 'dhl.storeParcel.shelfHint' | translate }}</p>
+        <!-- Mode 2: Lagerplatz-Zuweisung -->
+        <div class="mode-section">
+          <label class="mode-label">{{ 'dhl.modes.storage' | translate }}</label>
+          <div class="mode-buttons">
+            <button
+              class="mode-btn"
+              [class.active]="slotMode() === 'auto'"
+              (click)="setSlotMode('auto')"
+              [disabled]="loading()">
+              🤖 {{ 'dhl.modes.auto' | translate }}
+            </button>
+            <button
+              class="mode-btn"
+              [class.active]="slotMode() === 'manual'"
+              (click)="setSlotMode('manual')"
+              [disabled]="loading()">
+              👆 {{ 'dhl.modes.manualSlot' | translate }}
+            </button>
+          </div>
         </div>
 
-        <!-- Step 3: Notes (Optional) -->
+        <!-- Manual Slot Selection -->
+        <div *ngIf="slotMode() === 'manual'" class="slot-selection">
+          <p class="info-text">{{ 'dhl.modes.selectSlot' | translate }}</p>
+          <div *ngIf="loadingSlots()" class="loading-text">
+            {{ 'common.loading' | translate }}...
+          </div>
+          <app-dhl-slot-grid
+            *ngIf="!loadingSlots()"
+            [slots]="slots()"
+            [selectable]="true"
+            (slotSelected)="onSlotSelected($event)">
+          </app-dhl-slot-grid>
+          <div *ngIf="selectedSlot()" class="selected-slot-badge">
+            ✓ {{ 'dhl.modes.selected' | translate }}: <strong>{{ selectedSlot()?.code }}</strong>
+          </div>
+        </div>
+
+        <!-- Notes (Optional) -->
         <div class="form-section">
           <label>{{ 'dhl.storeParcel.notes' | translate }} ({{ 'common.optional' | translate }})</label>
           <textarea
@@ -76,7 +132,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
             [placeholder]="'dhl.storeParcel.notesPlaceholder' | translate"
             [disabled]="loading()"
             class="input-field"
-            rows="3">
+            rows="2">
           </textarea>
         </div>
 
@@ -98,7 +154,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
   `,
   styles: [`
     .dhl-store-container {
-      max-width: 600px;
+      max-width: 800px;
       margin: 0 auto;
       padding: 1rem;
     }
@@ -161,6 +217,51 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       gap: 1.5rem;
     }
 
+    .mode-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .mode-label {
+      font-weight: 600;
+      color: #333;
+      font-size: 1.1rem;
+    }
+
+    .mode-buttons {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .mode-btn {
+      flex: 1;
+      padding: 1rem;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      background: white;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .mode-btn:hover:not(:disabled) {
+      border-color: #667eea;
+      background: rgba(102, 126, 234, 0.05);
+    }
+
+    .mode-btn.active {
+      border-color: #667eea;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+      color: #667eea;
+    }
+
+    .mode-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     .form-section {
       display: flex;
       flex-direction: column;
@@ -181,13 +282,6 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       transition: border-color 0.2s;
     }
 
-    .input-field-large {
-      font-size: 1.5rem;
-      padding: 1rem;
-      font-weight: 600;
-      text-align: center;
-    }
-
     .input-field:focus {
       outline: none;
       border-color: #667eea;
@@ -202,6 +296,35 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       font-size: 0.875rem;
       color: #666;
       margin: 0;
+    }
+
+    .slot-selection {
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
+
+    .info-text {
+      font-size: 0.95rem;
+      color: #666;
+      margin: 0 0 1rem 0;
+    }
+
+    .loading-text {
+      text-align: center;
+      padding: 2rem;
+      color: #666;
+    }
+
+    .selected-slot-badge {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      background: #d4edda;
+      border: 2px solid #28a745;
+      border-radius: 8px;
+      color: #155724;
+      font-weight: 600;
+      text-align: center;
     }
 
     .error-box {
@@ -258,6 +381,10 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
         font-size: 2rem;
         padding: 1.5rem;
       }
+      
+      .mode-buttons {
+        flex-direction: column;
+      }
     }
   `]
 })
@@ -268,9 +395,15 @@ export class DhlStoreParcelComponent implements OnInit {
 
   storeId!: number;
   trackingCode = '';
-  shelfLocation = '';
   notes = '';
 
+  trackingMode = signal<'scanner' | 'manual'>('scanner');
+  slotMode = signal<'auto' | 'manual'>('auto');
+  
+  slots = signal<DhlSlot[]>([]);
+  selectedSlot = signal<DhlSlot | null>(null);
+  loadingSlots = signal(false);
+  
   loading = signal(false);
   error = signal<string | null>(null);
   success = signal(false);
@@ -278,6 +411,7 @@ export class DhlStoreParcelComponent implements OnInit {
 
   ngOnInit(): void {
     this.extractStoreId();
+    this.loadSlots();
   }
 
   private extractStoreId(): void {
@@ -292,8 +426,42 @@ export class DhlStoreParcelComponent implements OnInit {
     this.storeId = id ? parseInt(id, 10) : 0;
   }
 
+  private loadSlots(): void {
+    this.loadingSlots.set(true);
+    this.dhlService.getSlots(this.storeId).subscribe({
+      next: (slots) => {
+        this.slots.set(slots);
+        this.loadingSlots.set(false);
+      },
+      error: (err) => {
+        console.error('Failed to load slots:', err);
+        this.loadingSlots.set(false);
+      }
+    });
+  }
+
+  setTrackingMode(mode: 'scanner' | 'manual'): void {
+    this.trackingMode.set(mode);
+    this.error.set(null);
+  }
+
+  setSlotMode(mode: 'auto' | 'manual'): void {
+    this.slotMode.set(mode);
+    this.selectedSlot.set(null);
+    this.error.set(null);
+  }
+
+  onSlotSelected(slot: DhlSlot): void {
+    this.selectedSlot.set(slot);
+    this.error.set(null);
+  }
+
   canSubmit(): boolean {
-    return this.trackingCode.trim().length >= 10 && this.shelfLocation.trim().length > 0;
+    const hasTracking = this.trackingCode.trim().length >= 10;
+    if (this.slotMode() === 'manual') {
+      return hasTracking && this.selectedSlot() !== null;
+    }
+    return hasTracking;
   }
 
   storeParcel(): void {
@@ -302,30 +470,35 @@ export class DhlStoreParcelComponent implements OnInit {
     this.loading.set(true);
     this.error.set(null);
 
-    const request: DhlStoreParcelRequest = {
+    const request: DhlStoreParcelRequestV2 = {
       trackingCode: this.trackingCode.trim(),
-      shelfLocation: this.shelfLocation.trim(),
+      mode: this.slotMode(),
+      slotCode: this.slotMode() === 'manual' ? this.selectedSlot()?.code : undefined,
       notes: this.notes.trim() || undefined
     };
 
-    this.dhlService.storeParcel(this.storeId, request).subscribe({
+    this.dhlService.storeParcelV2(this.storeId, request).subscribe({
       next: (parcel) => {
         console.log('✅ Parcel stored:', parcel);
         this.storedParcel.set(parcel);
         this.success.set(true);
         this.loading.set(false);
+        // Refresh slots for grid
+        this.loadSlots();
       },
       error: (err) => {
         console.error('❌ Store parcel failed:', err);
         this.loading.set(false);
         
         let errorMsg = 'dhl.errors.storeFailed';
-        if (typeof err.error === 'string') {
-          if (err.error.includes('already exists')) {
-            errorMsg = 'dhl.errors.duplicate';
-          } else {
-            errorMsg = err.error;
-          }
+        if (err.status === 404 && err.error?.includes('No free slot')) {
+          errorMsg = 'dhl.errors.noFreeSlot';
+        } else if (err.error?.includes('already exists')) {
+          errorMsg = 'dhl.errors.duplicate';
+        } else if (err.error?.includes('occupied')) {
+          errorMsg = 'dhl.errors.slotOccupied';
+        } else if (typeof err.error === 'string') {
+          errorMsg = err.error;
         }
         this.error.set(errorMsg);
       }
@@ -334,11 +507,14 @@ export class DhlStoreParcelComponent implements OnInit {
 
   reset(): void {
     this.trackingCode = '';
-    this.shelfLocation = '';
     this.notes = '';
+    this.selectedSlot.set(null);
     this.error.set(null);
     this.success.set(false);
     this.storedParcel.set(null);
+    this.trackingMode.set('scanner');
+    this.slotMode.set('auto');
+    this.loadSlots();
   }
 
   goBack(): void {

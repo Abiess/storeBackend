@@ -8,6 +8,9 @@ import storebackend.entity.DhlParcel;
 import storebackend.entity.Store;
 import storebackend.enums.DhlParcelStatus;
 import storebackend.repository.DhlParcelRepository;
+import storebackend.repository.DhlShelfSlotRepository;
+import storebackend.entity.DhlShelfSlot;
+import storebackend.exception.NoFreeSlotException;
 import storebackend.repository.StoreRepository;
 
 import java.time.LocalDateTime;
@@ -35,6 +38,7 @@ import java.util.Optional;
 public class DhlParcelService {
     
     private final DhlParcelRepository parcelRepository;
+    private final DhlShelfSlotRepository slotRepository;
     private final StoreRepository storeRepository;
 
     /**
@@ -87,24 +91,27 @@ public class DhlParcelService {
     }
 
     /**
-     * Lagert Paket ein
+     * Lagert Paket ein (Phase 2: mit Slot-Support)
      * 
-     * Validiert:
-     * - Store existiert
-     * - Tracking-Code normalisiert
-     * - Keine Dublette vorhanden (store + trackingCode unique)
+     * Modi:
+     * - AUTO: Backend weist nächsten freien Slot zu
+     * - MANUAL: slotCode wird validiert und verwendet
+     * - LEGACY: shelfLocation als Freitext (Phase 1 kompatibel)
      * 
      * @param storeId Store ID
      * @param rawTrackingCode Roher Tracking-Code vom Scanner
-     * @param shelfLocation Lagerplatz (z.B. "Regal B-12")
+     * @param mode "auto", "manual" oder null (legacy)
+     * @param slotCode Slot-Code bei mode=manual (z.B. "A3")
+     * @param shelfLocation Freitext-Location bei legacy mode
      * @param notes Optionale Notizen
      * @return Gespeichertes DhlParcel
-     * @throws IllegalArgumentException wenn Store nicht existiert oder Dublette
      */
     @Transactional
     public DhlParcel storeParcel(
         Long storeId,
         String rawTrackingCode,
+        String mode,
+        String slotCode,
         String shelfLocation,
         String notes
     ) {
@@ -126,18 +133,64 @@ public class DhlParcelService {
             );
         }
         
-        // 4. Neues Paket erstellen
+        // 4. Paket erstellen
         DhlParcel parcel = new DhlParcel();
         parcel.setStore(store);
         parcel.setTrackingCode(normalizedCode);
-        parcel.setShelfLocation(shelfLocation.trim());
         parcel.setNotes(notes != null ? notes.trim() : null);
-        parcel.setReceivedAt(LocalDateTime.now());
+        parcel.setReceivedAt(java.time.LocalDateTime.now());
         parcel.setStatus(DhlParcelStatus.STORED);
+        
+        // 5. Slot-Zuweisung basierend auf Modus
+        if ("auto".equalsIgnoreCase(mode)) {
+            // AUTO: Backend weist zu (race-condition-safe)
+            DhlShelfSlot allocatedSlot = slotRepository.findNextFreeSlotForUpdate(storeId)
+                .orElseThrow(() -> new storebackend.exception.NoFreeSlotException(storeId));
+            
+            parcel.setShelfSlot(allocatedSlot);
+            parcel.setShelfLocation(allocatedSlot.getCode());
+            
+            log.info("✅ AUTO slot allocated: store={}, tracking={}, slot={}", 
+                storeId, normalizedCode, allocatedSlot.getCode());
+            
+        } else if ("manual".equalsIgnoreCase(mode) && slotCode != null && !slotCode.isBlank()) {
+            // MANUAL: Slot-Code validieren
+            DhlShelfSlot selectedSlot = slotRepository.findByStoreIdAndCode(storeId, slotCode.trim())
+                .orElseThrow(() -> new IllegalArgumentException("Slot not found: " + slotCode));
+            
+            if (!selectedSlot.getActive()) {
+                throw new IllegalArgumentException("Slot is not active: " + slotCode);
+            }
+            
+            // Prüfen ob Slot frei ist
+            boolean occupied = parcelRepository.findByStoreIdAndStatus(storeId, DhlParcelStatus.STORED).stream()
+                .anyMatch(p -> p.getShelfSlot() != null && p.getShelfSlot().getId().equals(selectedSlot.getId()));
+            
+            if (occupied) {
+                throw new IllegalArgumentException("Slot is already occupied: " + slotCode);
+            }
+            
+            parcel.setShelfSlot(selectedSlot);
+            parcel.setShelfLocation(selectedSlot.getCode());
+            
+            log.info("✅ MANUAL slot selected: store={}, tracking={}, slot={}", 
+                storeId, normalizedCode, slotCode);
+            
+        } else {
+            // LEGACY: Freitext (Phase 1 kompatibel)
+            if (shelfLocation == null || shelfLocation.isBlank()) {
+                throw new IllegalArgumentException("Shelf location is required");
+            }
+            parcel.setShelfLocation(shelfLocation.trim());
+            parcel.setShelfSlot(null);
+            
+            log.info("✅ LEGACY shelf location: store={}, tracking={}, location={}", 
+                storeId, normalizedCode, shelfLocation);
+        }
         
         DhlParcel saved = parcelRepository.save(parcel);
         log.info("✅ Parcel stored: id={}, store={}, tracking={}, location={}", 
-            saved.getId(), storeId, normalizedCode, shelfLocation);
+            saved.getId(), storeId, normalizedCode, saved.getShelfLocation());
         
         return saved;
     }
@@ -227,3 +280,4 @@ public class DhlParcelService {
         return parcelRepository.countByStoreIdAndStatus(storeId, DhlParcelStatus.STORED);
     }
 }
+

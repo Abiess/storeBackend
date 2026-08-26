@@ -165,11 +165,23 @@ export class DhlService {
   }
 
   /**
-   * POST /api/stores/{storeId}/dhl/parcels/store
+   * POST /api/stores/{storeId}/dhl/parcels/store (Phase 1)
    * 
    * Lagert Paket ein
    */
   storeParcel(storeId: number, request: DhlStoreParcelRequest): Observable<DhlParcel> {
+    return this.http.post<DhlParcel>(
+      `${this.baseUrl}/stores/${storeId}/dhl/parcels/store`,
+      request
+    );
+  }
+
+  /**
+   * POST /api/stores/{storeId}/dhl/parcels/store (Phase 2 - mit Mode)
+   * 
+   * Lagert Paket ein mit auto/manual Mode
+   */
+  storeParcelV2(storeId: number, request: DhlStoreParcelRequestV2): Observable<DhlParcel> {
     return this.http.post<DhlParcel>(
       `${this.baseUrl}/stores/${storeId}/dhl/parcels/store`,
       request
@@ -223,13 +235,76 @@ export class DhlService {
   }
 
   /**
-   * GET /api/stores/{storeId}/dhl/parcels/count
+   * GET /api/stores/{storeId}/dhl/slots
    * 
-   * Zählt eingelagerte Pakete (status = STORED)
+   * Listet alle Slots mit Belegungsstatus
    */
-  countStoredParcels(storeId: number): Observable<{count: number}> {
-    return this.http.get<{count: number}>(
-      `${this.baseUrl}/stores/${storeId}/dhl/parcels/count`
+  getSlots(storeId: number): Observable<DhlSlot[]> {
+    return this.http.get<DhlSlot[]>(
+      `${this.baseUrl}/stores/${storeId}/dhl/slots`
     );
   }
+
+  /**
+   * GET /api/stores/{storeId}/dhl/slots/stats
+   * 
+   * Statistiken für Dashboard
+   */
+  getSlotStats(storeId: number): Observable<DhlSlotStats> {
+    return this.http.get<DhlSlotStats>(
+      `${this.baseUrl}/stores/${storeId}/dhl/slots/stats`
+    );
+  }
+
+  /**
+   * POST /api/stores/{storeId}/dhl/slots/allocate
+   * 
+   * Weist nächsten freien Slot zu (AUTO-Modus)
+   */
+  allocateSlot(storeId: number): Observable<DhlSlot> {
+    return this.http.post<DhlSlot>(
+      `${this.baseUrl}/stores/${storeId}/dhl/slots/allocate`,
+      {}
+    );
+  }
+
+  /**
+   * POST /api/stores/{storeId}/dhl/slots/initialize-default
+   * 
+   * Initialisiert Default-Slots (A1-C7)
+   */
+  initializeDefaultSlots(storeId: number): Observable<{initialized: boolean, count: number}> {
+    return this.http.post<{initialized: boolean, count: number}>(
+      `${this.baseUrl}/stores/${storeId}/dhl/slots/initialize-default`,
+      {}
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// Phase 2 Types
+// ════════════════════════════════════════════════════════════════════════
+
+export interface DhlSlot {
+  id: number;
+  code: string;
+  sortOrder: number;
+  active: boolean;
+  description?: string;
+  occupied: boolean;
+}
+
+export interface DhlSlotStats {
+  totalSlots: number;
+  freeSlots: number;
+  occupiedSlots: number;
+  storedParcels: number;
+  occupancyPercentage: number;
+}
+
+export interface DhlStoreParcelRequestV2 {
+  trackingCode: string;
+  mode: 'auto' | 'manual';
+  slotCode?: string;
+  notes?: string;
 }

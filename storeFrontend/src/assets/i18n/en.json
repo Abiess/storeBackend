@@ -390,7 +390,6 @@
     "logout": "Logout",
     "search": "Search",
     "filter": "Filter",
-    "refresh": "Refresh",
     "retry": "Retry",
     "all": "All",
     "showAll": "Show all",
@@ -407,7 +406,8 @@
     "next": "Next",
     "previous": "Previous",
     "remove": "Remove",
-    "submitting": "Submitting..."
+    "submitting": "Submitting...",
+    "refresh": "Refresh"
   },
   "loading": {
     "orders": "Loading orders..."
@@ -1086,6 +1086,17 @@
   },
   "shipping": {
     "dhl": {
+      "dashboard": {
+        "stored": "Stored",
+        "free": "Free Slots",
+        "total": "Total",
+        "occupancy": "Occupancy",
+        "slotOverview": "Slot Overview"
+      },
+      "grid": {
+        "free": "Free",
+        "occupied": "Occupied"
+      },
       "title": "DHL Shipping",
       "enabled": "Enable DHL",
       "environment": "Environment",
@@ -3273,6 +3284,20 @@
     }
   },
   "dhl": {
+    "dashboard": {
+      "stored": "Stored",
+      "free": "Free Slots",
+      "total": "Total",
+      "occupancy": "Occupancy",
+      "slotOverview": "Slot Overview",
+      "noSlots": "No storage slots configured yet",
+      "noSlotsHint": "Initialize the default storage slots A1-C7",
+      "initSlots": "Create Default Slots A1-C7"
+    },
+    "grid": {
+      "free": "Free",
+      "occupied": "Occupied"
+    },
     "main": {
       "hint": "Use a barcode scanner or camera for quick scanning",
       "pickupDescription": "Prepare parcel for customer pickup",
@@ -3298,7 +3323,9 @@
       "findFailed": "Error finding parcel",
       "notFound": "Parcel not found",
       "alreadyPickedUp": "This parcel has already been picked up",
-      "storeFailed": "Error storing parcel"
+      "storeFailed": "Error storing parcel",
+      "noFreeSlot": "No free storage slot available",
+      "slotOccupied": "This storage slot is already occupied"
     },
     "storeParcel": {
       "trackingHint": "Scan the code from the DHL label or enter manually",
@@ -3313,6 +3340,16 @@
       "submit": "Store Parcel",
       "success": "Parcel stored!",
       "trackingPlaceholder": "JVGL0605379700518040"
+    },
+    "modes": {
+      "scanner": "Scanner",
+      "tracking": "Tracking Code Entry",
+      "manual": "Manual Entry",
+      "storage": "Slot Assignment",
+      "selected": "Selected",
+      "auto": "Automatic",
+      "manualSlot": "Manual Selection",
+      "selectSlot": "Select a free storage slot:"
     }
   }
 }

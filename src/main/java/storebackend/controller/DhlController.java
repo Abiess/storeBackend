@@ -108,11 +108,13 @@ public class DhlController {
                 return ResponseEntity.badRequest().body("Shelf location is required");
             }
 
-            // 4. Store Parcel
+            // 4. Store Parcel (Phase 2: mit Mode-Support)
             DhlParcel parcel = parcelService.storeParcel(
                 storeId,
                 request.getTrackingCode(),
-                request.getShelfLocation(),
+                null, // mode
+                null, // slotCode
+                request.getShelfLocation(), // legacy
                 request.getNotes()
             );
 

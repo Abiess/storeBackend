@@ -32,14 +32,45 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
       <!-- Step 1: Scan Tracking Code -->
       <div *ngIf="step() === 'scan'" class="step-scan">
+        <!-- Tracking Mode Selection -->
+        <div class="mode-section">
+          <label class="mode-label">{{ 'dhl.modes.tracking' | translate }}</label>
+          <div class="mode-buttons">
+            <button
+              class="mode-btn"
+              [class.active]="trackingMode() === 'scanner'"
+              (click)="setTrackingMode('scanner')"
+              [disabled]="loading()">
+              📷 {{ 'dhl.modes.scanner' | translate }}
+            </button>
+            <button
+              class="mode-btn"
+              [class.active]="trackingMode() === 'manual'"
+              (click)="setTrackingMode('manual')"
+              [disabled]="loading()">
+              ⌨️ {{ 'dhl.modes.manual' | translate }}
+            </button>
+          </div>
+        </div>
+
         <div class="form-section">
           <label>{{ 'dhl.pickupParcel.scanTracking' | translate }}</label>
           <app-barcode-input
+            *ngIf="trackingMode() === 'scanner'"
             [(ngModel)]="trackingCode"
             [placeholder]="'dhl.pickupParcel.trackingPlaceholder' | translate"
             [disabled]="loading()"
             (ngModelChange)="onTrackingCodeChange()">
           </app-barcode-input>
+          <input
+            *ngIf="trackingMode() === 'manual'"
+            type="text"
+            [(ngModel)]="trackingCode"
+            [placeholder]="'dhl.pickupParcel.trackingPlaceholder' | translate"
+            [disabled]="loading()"
+            class="input-field"
+            (input)="trackingCode = trackingCode.toUpperCase(); onTrackingCodeChange()"
+          />
         </div>
 
         <button
@@ -122,6 +153,51 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       gap: 1.5rem;
     }
 
+    .mode-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .mode-label {
+      font-weight: 600;
+      color: #333;
+      font-size: 1.1rem;
+    }
+
+    .mode-buttons {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .mode-btn {
+      flex: 1;
+      padding: 1rem;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      background: white;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .mode-btn:hover:not(:disabled) {
+      border-color: #667eea;
+      background: rgba(102, 126, 234, 0.05);
+    }
+
+    .mode-btn.active {
+      border-color: #667eea;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+      color: #667eea;
+    }
+
+    .mode-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     .form-section {
       display: flex;
       flex-direction: column;
@@ -131,6 +207,25 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
     .form-section label {
       font-weight: 600;
       color: #333;
+    }
+
+    .input-field {
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.2s;
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .input-field:disabled {
+      background: #f5f5f5;
+      cursor: not-allowed;
     }
 
     .step-location {
@@ -251,6 +346,10 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
         font-size: 2.5rem;
         padding: 1.5rem;
       }
+
+      .mode-buttons {
+        flex-direction: column;
+      }
     }
   `]
 })
@@ -261,6 +360,7 @@ export class DhlPickupParcelComponent implements OnInit {
 
   storeId!: number;
   trackingCode = '';
+  trackingMode = signal<'scanner' | 'manual'>('scanner');
 
   step = signal<'scan' | 'show-location' | 'success'>('scan');
   loading = signal(false);
@@ -282,6 +382,11 @@ export class DhlPickupParcelComponent implements OnInit {
       if (match) id = match[1];
     }
     this.storeId = id ? parseInt(id, 10) : 0;
+  }
+
+  setTrackingMode(mode: 'scanner' | 'manual'): void {
+    this.trackingMode.set(mode);
+    this.error.set(null);
   }
 
   onTrackingCodeChange(): void {

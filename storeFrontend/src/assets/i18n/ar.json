@@ -996,7 +996,6 @@
     "reset": "إعادة تعيين",
     "saving": "جاري الحفظ...",
     "generating": "جاري التوليد...",
-    "refresh": "تحديث",
     "retry": "إعادة المحاولة",
     "all": "الكل",
     "addAddress": "إضافة عنوان",
@@ -1010,7 +1009,8 @@
     "remove": "إزالة",
     "next": "التالي",
     "previous": "السابق",
-    "submitting": "جاري الإرسال..."
+    "submitting": "جاري الإرسال...",
+    "refresh": "تحديث"
   },
   "loading": {
     "orders": "جاري تحميل الطلبات..."
@@ -1021,6 +1021,17 @@
     "express": "شحن سريع",
     "expressHint": "التسليم خلال 1-2 يوم عمل",
     "dhl": {
+      "dashboard": {
+        "stored": "مخزن",
+        "free": "أماكن فارغة",
+        "total": "المجموع",
+        "occupancy": "الإشغال",
+        "slotOverview": "نظرة عامة"
+      },
+      "grid": {
+        "free": "فارغ",
+        "occupied": "مشغول"
+      },
       "title": "شحن DHL",
       "enabled": "تفعيل DHL",
       "environment": "البيئة",
@@ -3181,13 +3192,29 @@
     }
   },
   "dhl": {
+    "dashboard": {
+      "stored": "مخزن",
+      "free": "أماكن فارغة",
+      "total": "المجموع",
+      "occupancy": "الإشغال",
+      "slotOverview": "نظرة عامة على الأماكن",
+      "noSlots": "لم يتم تكوين أماكن التخزين بعد",
+      "noSlotsHint": "تهيئة أماكن التخزين الافتراضية A1-C7",
+      "initSlots": "إنشاء الأماكن الافتراضية A1-C7"
+    },
+    "grid": {
+      "free": "فارغ",
+      "occupied": "مشغول"
+    },
     "errors": {
       "findFailed": "خطأ في البحث عن الطرد",
       "alreadyPickedUp": "تم استلام هذا الطرد بالفعل",
       "notFound": "الطرد غير موجود",
       "storeFailed": "خطأ في تخزين الطرد",
       "duplicate": "هذا الطرد مخزن بالفعل",
-      "pickupFailed": "خطأ في استلام الطرد"
+      "pickupFailed": "خطأ في استلام الطرد",
+      "noFreeSlot": "لا توجد أماكن تخزين متاحة",
+      "slotOccupied": "هذا المكان مشغول بالفعل"
     },
     "storeParcel": {
       "title": "تخزين الطرد",
@@ -3221,6 +3248,16 @@
       "subtitle": "إدارة استلام وتسليم الطرود",
       "storeParcel": "تخزين الطرد",
       "pickupParcel": "استلام الطرد"
+    },
+    "modes": {
+      "storage": "تعيين المكان",
+      "manualSlot": "اختيار يدوي",
+      "selectSlot": "اختر مكان تخزين فارغ:",
+      "scanner": "الماسح الضوئي",
+      "auto": "تلقائي",
+      "manual": "إدخال يدوي",
+      "selected": "المحدد",
+      "tracking": "إدخال رمز التتبع"
     }
   }
 }

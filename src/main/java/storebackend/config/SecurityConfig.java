@@ -108,6 +108,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/stores/*/products/*/variants/**").authenticated()
                 // DHL Parcel Management - requires authentication (checked in controller)
                 .requestMatchers("/api/stores/*/dhl/**").authenticated()
+                // DHL Slot Management (Phase 2) - requires authentication
+                .requestMatchers("/api/stores/*/dhl/slots/**").authenticated()
                 // Cart and Checkout - können öffentlich sein (verwenden Session)
                 .requestMatchers("/api/cart/**").permitAll()
                 .requestMatchers("/api/checkout/**").permitAll()

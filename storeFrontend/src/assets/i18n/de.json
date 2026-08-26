@@ -509,7 +509,6 @@
     "logout": "Abmelden",
     "search": "Suchen",
     "filter": "Filtern",
-    "refresh": "Aktualisieren",
     "retry": "Erneut versuchen",
     "all": "Alle",
     "showAll": "Alle anzeigen",
@@ -526,7 +525,8 @@
     "next": "Weiter",
     "previous": "Zurück",
     "remove": "Entfernen",
-    "submitting": "Wird übermittelt..."
+    "submitting": "Wird übermittelt...",
+    "refresh": "Aktualisieren"
   },
   "loading": {
     "orders": "Bestellungen werden geladen..."
@@ -1276,6 +1276,17 @@
   },
   "shipping": {
     "dhl": {
+      "dashboard": {
+        "stored": "Eingelagert",
+        "free": "Freie Plätze",
+        "total": "Gesamt",
+        "occupancy": "Auslastung",
+        "slotOverview": "Lagerplatzübersicht"
+      },
+      "grid": {
+        "free": "Frei",
+        "occupied": "Belegt"
+      },
       "title": "DHL Versand",
       "enabled": "DHL aktivieren",
       "environment": "Umgebung",
@@ -3308,6 +3319,20 @@
     }
   },
   "dhl": {
+    "dashboard": {
+      "stored": "Eingelagert",
+      "free": "Freie Plätze",
+      "total": "Gesamt",
+      "occupancy": "Auslastung",
+      "slotOverview": "Lagerplatz-Übersicht",
+      "noSlots": "Noch keine Lagerplätze eingerichtet",
+      "noSlotsHint": "Initialisieren Sie die Standard-Lagerplätze A1-C7",
+      "initSlots": "Standardplätze A1-C7 anlegen"
+    },
+    "grid": {
+      "free": "Frei",
+      "occupied": "Belegt"
+    },
     "pickupParcel": {
       "pickupAnother": "Weiteres Paket abholen",
       "success": "Paket erfolgreich abgeholt!",
@@ -3347,7 +3372,19 @@
       "duplicate": "Dieses Paket ist bereits eingelagert",
       "findFailed": "Fehler beim Suchen des Pakets",
       "storeFailed": "Fehler beim Einlagern des Pakets",
-      "alreadyPickedUp": "Dieses Paket wurde bereits abgeholt"
+      "alreadyPickedUp": "Dieses Paket wurde bereits abgeholt",
+      "noFreeSlot": "Kein freier Lagerplatz verfügbar",
+      "slotOccupied": "Dieser Lagerplatz ist bereits belegt"
+    },
+    "modes": {
+      "manualSlot": "Manuell wählen",
+      "selected": "Ausgewählt",
+      "auto": "Automatisch",
+      "selectSlot": "Wählen Sie einen freien Lagerplatz aus:",
+      "storage": "Lagerplatz-Zuweisung",
+      "manual": "Manuell eingeben",
+      "scanner": "Scanner",
+      "tracking": "Tracking-Erfassung"
     }
   }
 }
