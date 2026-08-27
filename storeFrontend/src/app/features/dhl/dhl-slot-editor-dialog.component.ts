@@ -2,7 +2,7 @@ import { Component, OnInit, inject, signal, computed, input } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DhlLayoutService } from '@app/core/services/dhl-layout.service';
-import { DhlShelfSlotLayout, DhlZone, SlotSize } from '@app/core/models/dhl.model';
+import { DhlShelfSlotLayout, DhlZone, SlotSize, DhlLayoutUpdateRequest } from '@app/core/models/dhl.model';
 import { DhlService } from '@app/core/services/dhl.service';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
@@ -403,11 +403,11 @@ export class DhlSlotEditorDialogComponent implements OnInit {
   
   // Form fields
   formCapacity = 3;
-  formSize: SlotSize = 'M';
+  formSize: SlotSize = SlotSize.M;
   formZoneId: number | null = null;
   formActive = true;
 
-  sizeOptions: SlotSize[] = ['S', 'M', 'L', 'XL'];
+  sizeOptions: SlotSize[] = [SlotSize.S, SlotSize.M, SlotSize.L, SlotSize.XL];
 
   capacityError = computed(() => {
     const currentSlot = this.slot();
@@ -448,11 +448,11 @@ export class DhlSlotEditorDialogComponent implements OnInit {
   }
 
   private getSizeFromDimensions(width: number, height: number): SlotSize {
-    if (width === 1 && height === 1) return 'S';
-    if (width === 2 && height === 1) return 'M';
-    if (width === 2 && height === 2) return 'L';
-    if (width >= 3) return 'XL';
-    return 'M';
+    if (width === 1 && height === 1) return SlotSize.S;
+    if (width === 2 && height === 1) return SlotSize.M;
+    if (width === 2 && height === 2) return SlotSize.L;
+    if (width >= 3) return SlotSize.XL;
+    return SlotSize.M;
   }
 
   save(): void {
@@ -464,26 +464,11 @@ export class DhlSlotEditorDialogComponent implements OnInit {
     this.loading.set(true);
     this.error.set(null);
 
-    // Update capacity via DhlService
-    if (this.formCapacity !== currentSlot.slotCapacity) {
-      this.dhlService.updateSlotCapacity(
-        this.storeId(),
-        currentSlot.slotId,
-        this.formCapacity
-      ).subscribe({
-        next: () => {
-          console.log('✅ Capacity updated');
-          this.updateLayoutProperties();
-        },
-        error: (err) => {
-          console.error('❌ Failed to update capacity:', err);
-          this.error.set(err.error?.message || 'Fehler beim Aktualisieren der Kapazität');
-          this.loading.set(false);
-        }
-      });
-    } else {
-      this.updateLayoutProperties();
-    }
+    // TODO Phase 3A.2: Capacity update via DhlService
+    // For now, only update layout properties (zone, size)
+    // Backend support for capacity update needs to be added
+    
+    this.updateLayoutProperties();
   }
 
   private updateLayoutProperties(): void {
@@ -497,22 +482,24 @@ export class DhlSlotEditorDialogComponent implements OnInit {
     const { width, height } = this.getDimensionsFromSize(this.formSize);
 
     // Update layout (zone, size)
-    const request = {
-      slotId: currentSlot.slotId,
-      gridX: currentSlot.gridX,
-      gridY: currentSlot.gridY,
-      gridWidth: width,
-      gridHeight: height,
-      zoneId: this.formZoneId
+    const request: DhlLayoutUpdateRequest = {
+      updates: [{
+        slotId: currentSlot.slotId,
+        gridX: currentSlot.gridX,
+        gridY: currentSlot.gridY,
+        gridWidth: width,
+        gridHeight: height,
+        zoneId: this.formZoneId
+      }]
     };
 
-    this.layoutService.updateLayout(this.storeId(), [request]).subscribe({
+    this.layoutService.updateLayoutBatch(this.storeId(), request).subscribe({
       next: () => {
         console.log('✅ Layout updated');
         this.loading.set(false);
         this.close();
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('❌ Failed to update layout:', err);
         this.error.set(err.error?.message || 'Fehler beim Aktualisieren des Layouts');
         this.loading.set(false);

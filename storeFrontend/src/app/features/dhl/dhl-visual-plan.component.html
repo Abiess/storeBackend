@@ -121,9 +121,6 @@
         <div 
           class="slot-grid"
           [class.expert-mode]="isExpertMode()"
-          cdkDropList
-          [cdkDropListData]="group.layouts"
-          (cdkDropListDropped)="onDrop($event)"
           [cdkDropListDisabled]="!isExpertMode()">
           
           <div
@@ -174,7 +171,7 @@
     </div>
 
     <!-- FALLBACK: Slots without Layout -->
-    <div *ngIf="slotsWithoutLayout().length > 0" class="fallback-section">
+    <div *ngIf="unplacedSlots().length > 0" class="fallback-section">
       <div class="fallback-header">
         <lucide-icon name="list" [size]="20"></lucide-icon>
         <h3>{{ 'dhl.plan.notInPlan' | translate }}</h3>
