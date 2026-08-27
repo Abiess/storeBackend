@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { TranslationService } from '@app/core/services/translation.service';
 import { ToastService } from '@app/core/services/toast.service';
 
 /**
@@ -42,7 +42,7 @@ export interface DhlErrorResponse {
   providedIn: 'root'
 })
 export class DhlErrorService {
-  private translate = inject(TranslatePipe);
+  private translationService = inject(TranslationService);
   private toast = inject(ToastService);
 
   /**
@@ -145,44 +145,44 @@ export class DhlErrorService {
   // ════════════════════════════════════════════════════════════════════════
 
   private showAlreadyPickedUp(details?: DhlErrorResponse['details']): void {
-    const title = this.translate.transform('dhl.error.alreadyPickedUp');
-    let message = this.translate.transform('dhl.error.alreadyPickedUpDesc');
+    const title = this.translationService.translate('dhl.error.alreadyPickedUp');
+    let message = this.translationService.translate('dhl.error.alreadyPickedUpDesc');
 
     if (details?.slot) {
-      message += `\n${this.translate.transform('dhl.activityLog.slot')}: ${details.slot}`;
+      message += `\n${this.translationService.translate('dhl.activityLog.slot')}: ${details.slot}`;
     }
     if (details?.pickedUpAt) {
       const date = new Date(details.pickedUpAt).toLocaleString('de-DE');
-      message += `\n${this.translate.transform('dhl.error.pickedUpAt')}: ${date}`;
+      message += `\n${this.translationService.translate('dhl.error.pickedUpAt')}: ${date}`;
     }
 
     this.toast.warning(`${title}\n\n${message}`, 5000);
   }
 
   private showAlreadyStored(details?: DhlErrorResponse['details']): void {
-    const title = this.translate.transform('dhl.error.alreadyStored');
-    let message = this.translate.transform('dhl.error.alreadyStoredDesc');
+    const title = this.translationService.translate('dhl.error.alreadyStored');
+    let message = this.translationService.translate('dhl.error.alreadyStoredDesc');
 
     if (details?.slot) {
-      message += `\n${this.translate.transform('dhl.activityLog.slot')}: ${details.slot}`;
+      message += `\n${this.translationService.translate('dhl.activityLog.slot')}: ${details.slot}`;
     }
     if (details?.storedAt) {
       const date = new Date(details.storedAt).toLocaleString('de-DE');
-      message += `\n${this.translate.transform('dhl.error.storedAt')}: ${date}`;
+      message += `\n${this.translationService.translate('dhl.error.storedAt')}: ${date}`;
     }
 
     this.toast.warning(`${title}\n\n${message}`, 5000);
   }
 
   private showNotFound(details?: DhlErrorResponse['details']): void {
-    const title = this.translate.transform('dhl.error.notFound');
-    const message = this.translate.transform('dhl.error.notFoundDesc');
+    const title = this.translationService.translate('dhl.error.notFound');
+    const message = this.translationService.translate('dhl.error.notFoundDesc');
     this.toast.error(`${title}\n\n${message}`, 4000);
   }
 
   private showInvalidTrackingCode(details?: DhlErrorResponse['details']): void {
-    const title = this.translate.transform('dhl.error.invalidCode');
-    let message = this.translate.transform('dhl.error.invalidCodeDesc');
+    const title = this.translationService.translate('dhl.error.invalidCode');
+    let message = this.translationService.translate('dhl.error.invalidCodeDesc');
 
     if (details?.reason) {
       message += `\n${details.reason}`;
@@ -192,22 +192,22 @@ export class DhlErrorService {
   }
 
   private showSlotFull(details?: DhlErrorResponse['details']): void {
-    const title = this.translate.transform('dhl.error.slotFull');
-    let message = this.translate.transform('dhl.error.slotFullDesc');
+    const title = this.translationService.translate('dhl.error.slotFull');
+    let message = this.translationService.translate('dhl.error.slotFullDesc');
 
     if (details?.slotCode) {
       message = message.replace('{slot}', details.slotCode);
     }
     if (details?.capacity && details?.occupied) {
-      message += `\n(${details.occupied}/${details.capacity} ${this.translate.transform('dhl.error.occupied')})`;
+      message += `\n(${details.occupied}/${details.capacity} ${this.translationService.translate('dhl.error.occupied')})`;
     }
 
     this.toast.warning(`${title}\n\n${message}`, 5000);
   }
 
   private showNoFreeSlot(): void {
-    const title = this.translate.transform('dhl.error.noFreeSlot');
-    const message = this.translate.transform('dhl.error.noFreeSlotDesc');
+    const title = this.translationService.translate('dhl.error.noFreeSlot');
+    const message = this.translationService.translate('dhl.error.noFreeSlotDesc');
     this.toast.error(`${title}\n\n${message}`, 5000);
   }
 
@@ -216,8 +216,8 @@ export class DhlErrorService {
   // ════════════════════════════════════════════════════════════════════════
 
   private showSlotCodeAlreadyExists(details?: DhlErrorResponse['details']): void {
-    const title = this.translate.transform('dhl.slotError.codeExists');
-    let message = this.translate.transform('dhl.slotError.codeExistsDesc');
+    const title = this.translationService.translate('dhl.slotError.codeExists');
+    let message = this.translationService.translate('dhl.slotError.codeExistsDesc');
 
     if (details?.code) {
       message += `\n\nCode: ${details.code}`;
@@ -227,48 +227,48 @@ export class DhlErrorService {
   }
 
   private showInvalidSlotCapacity(details?: DhlErrorResponse['details']): void {
-    const title = this.translate.transform('dhl.slotError.invalidCapacity');
-    const message = this.translate.transform('dhl.slotError.invalidCapacityDesc');
+    const title = this.translationService.translate('dhl.slotError.invalidCapacity');
+    const message = this.translationService.translate('dhl.slotError.invalidCapacityDesc');
     this.toast.error(`${title}\n\n${message}`, 4000);
   }
 
   private showInvalidBatchCount(details?: DhlErrorResponse['details']): void {
-    const title = this.translate.transform('dhl.slotError.invalidBatchCount');
-    let message = this.translate.transform('dhl.slotError.invalidBatchCountDesc');
+    const title = this.translationService.translate('dhl.slotError.invalidBatchCount');
+    let message = this.translationService.translate('dhl.slotError.invalidBatchCountDesc');
 
     if (details?.count) {
-      message += `\n\n${this.translate.transform('dhl.slotError.providedCount')}: ${details.count}`;
+      message += `\n\n${this.translationService.translate('dhl.slotError.providedCount')}: ${details.count}`;
     }
 
     this.toast.error(`${title}\n\n${message}`, 4000);
   }
 
   private showCapacityBelowOccupied(details?: DhlErrorResponse['details']): void {
-    const title = this.translate.transform('dhl.slotError.capacityBelowOccupied');
-    let message = this.translate.transform('dhl.slotError.capacityBelowOccupiedDesc');
+    const title = this.translationService.translate('dhl.slotError.capacityBelowOccupied');
+    let message = this.translationService.translate('dhl.slotError.capacityBelowOccupiedDesc');
 
     if (details?.occupiedCount && details?.requestedCapacity) {
-      message += `\n\n${this.translate.transform('dhl.slotError.occupied')}: ${details.occupiedCount}`;
-      message += `\n${this.translate.transform('dhl.slotError.requestedCapacity')}: ${details.requestedCapacity}`;
+      message += `\n\n${this.translationService.translate('dhl.slotError.occupied')}: ${details.occupiedCount}`;
+      message += `\n${this.translationService.translate('dhl.slotError.requestedCapacity')}: ${details.requestedCapacity}`;
     }
 
     this.toast.warning(`${title}\n\n${message}`, 5000);
   }
 
   private showCannotDeactivateOccupied(details?: DhlErrorResponse['details']): void {
-    const title = this.translate.transform('dhl.slotError.cannotDeactivate');
-    let message = this.translate.transform('dhl.slotError.cannotDeactivateDesc');
+    const title = this.translationService.translate('dhl.slotError.cannotDeactivate');
+    let message = this.translationService.translate('dhl.slotError.cannotDeactivateDesc');
 
     if (details?.occupiedCount) {
-      message += `\n\n${this.translate.transform('dhl.slotError.currentlyOccupied')}: ${details.occupiedCount}`;
+      message += `\n\n${this.translationService.translate('dhl.slotError.currentlyOccupied')}: ${details.occupiedCount}`;
     }
 
     this.toast.warning(`${title}\n\n${message}`, 5000);
   }
 
   private showSlotNotFound(): void {
-    const title = this.translate.transform('dhl.slotError.notFound');
-    const message = this.translate.transform('dhl.slotError.notFoundDesc');
+    const title = this.translationService.translate('dhl.slotError.notFound');
+    const message = this.translationService.translate('dhl.slotError.notFoundDesc');
     this.toast.error(`${title}\n\n${message}`, 4000);
   }
 
@@ -277,26 +277,26 @@ export class DhlErrorService {
   // ════════════════════════════════════════════════════════════════════════
 
   private showUnauthorized(): void {
-    const title = this.translate.transform('dhl.error.unauthorized');
-    const message = this.translate.transform('dhl.error.unauthorizedDesc');
+    const title = this.translationService.translate('dhl.error.unauthorized');
+    const message = this.translationService.translate('dhl.error.unauthorizedDesc');
     this.toast.error(`${title}\n\n${message}`, 5000);
   }
 
   private showForbidden(): void {
-    const title = this.translate.transform('dhl.error.forbidden');
-    const message = this.translate.transform('dhl.error.forbiddenDesc');
+    const title = this.translationService.translate('dhl.error.forbidden');
+    const message = this.translationService.translate('dhl.error.forbiddenDesc');
     this.toast.error(`${title}\n\n${message}`, 5000);
   }
 
   private showServerError(): void {
-    const title = this.translate.transform('dhl.error.serverError');
-    const message = this.translate.transform('dhl.error.serverErrorDesc');
+    const title = this.translationService.translate('dhl.error.serverError');
+    const message = this.translationService.translate('dhl.error.serverErrorDesc');
     this.toast.error(`${title}\n\n${message}`, 5000);
   }
 
   private showGenericError(): void {
-    const title = this.translate.transform('dhl.error.generic');
-    const message = this.translate.transform('dhl.error.genericDesc');
+    const title = this.translationService.translate('dhl.error.generic');
+    const message = this.translationService.translate('dhl.error.genericDesc');
     this.toast.error(`${title}\n\n${message}`, 4000);
   }
 }

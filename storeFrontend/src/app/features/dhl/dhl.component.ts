@@ -98,6 +98,7 @@ import { DhlSlotManagementComponent } from '@app/shared/components/dhl-slot-mana
         <p>ℹ️ {{ 'dhl.main.hint' | translate }}</p>
       </div>
 
+      <!-- Slot Management Section (Phase 3A.5) -->
       <app-dhl-slot-management [storeId]="storeId"></app-dhl-slot-management>
 
       <!-- Activity Log -->
