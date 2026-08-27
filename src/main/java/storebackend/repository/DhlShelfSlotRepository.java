@@ -164,4 +164,12 @@ public interface DhlShelfSlotRepository extends JpaRepository<DhlShelfSlot, Long
         @Param("storeId") Long storeId,
         @Param("code") String code
     );
+    
+    /**
+     * Phase 3A.5 - Listet alle Slots eines Stores sortiert nach sortOrder
+     * 
+     * @param storeId Store ID
+     * @return Liste von Slots
+     */
+    List<DhlShelfSlot> findAllByStoreIdOrderBySortOrder(Long storeId);
 }

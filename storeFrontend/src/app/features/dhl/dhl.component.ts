@@ -5,11 +5,12 @@ import { DhlService, DhlSlotStats, DhlSlot } from '@app/core/services/dhl.servic
 import { DhlSlotGridComponent } from './dhl-slot-grid.component';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { DhlActivityLogComponent } from '@app/shared/components/dhl-activity-log/dhl-activity-log.component';
+import { DhlSlotManagementComponent } from '@app/shared/components/dhl-slot-management/dhl-slot-management.component';
 
 @Component({
   selector: 'app-dhl',
   standalone: true,
-  imports: [CommonModule, RouterModule, DhlSlotGridComponent, TranslatePipe, DhlActivityLogComponent],
+  imports: [CommonModule, RouterModule, DhlSlotGridComponent, TranslatePipe, DhlActivityLogComponent, DhlSlotManagementComponent],
   template: `
     <div class="dhl-container">
       <div class="dhl-header">
@@ -96,6 +97,8 @@ import { DhlActivityLogComponent } from '@app/shared/components/dhl-activity-log
       <div class="info-box">
         <p>ℹ️ {{ 'dhl.main.hint' | translate }}</p>
       </div>
+
+      <app-dhl-slot-management [storeId]="storeId"></app-dhl-slot-management>
 
       <!-- Activity Log -->
       <app-dhl-activity-log [storeId]="storeId"></app-dhl-activity-log>

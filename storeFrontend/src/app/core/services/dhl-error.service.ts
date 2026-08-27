@@ -20,6 +20,11 @@ export interface DhlErrorResponse {
     capacity?: number;
     occupied?: number;
     reason?: string;
+    // Phase 3A.5 - Slot Management
+    code?: string;
+    count?: number;
+    requestedCapacity?: number;
+    occupiedCount?: number;
   };
 }
 
@@ -81,6 +86,31 @@ export class DhlErrorService {
 
       case 'NO_FREE_SLOT':
         this.showNoFreeSlot();
+        return true;
+
+      // Phase 3A.5 - Slot Management Fehler
+      case 'SLOT_CODE_ALREADY_EXISTS':
+        this.showSlotCodeAlreadyExists(errorBody.details);
+        return true;
+
+      case 'INVALID_SLOT_CAPACITY':
+        this.showInvalidSlotCapacity(errorBody.details);
+        return true;
+
+      case 'INVALID_BATCH_COUNT':
+        this.showInvalidBatchCount(errorBody.details);
+        return true;
+
+      case 'CAPACITY_BELOW_OCCUPIED':
+        this.showCapacityBelowOccupied(errorBody.details);
+        return true;
+
+      case 'CANNOT_DEACTIVATE_OCCUPIED_SLOT':
+        this.showCannotDeactivateOccupied(errorBody.details);
+        return true;
+
+      case 'SLOT_NOT_FOUND':
+        this.showSlotNotFound();
         return true;
 
       // Security-Fehler
@@ -179,6 +209,67 @@ export class DhlErrorService {
     const title = this.translate.transform('dhl.error.noFreeSlot');
     const message = this.translate.transform('dhl.error.noFreeSlotDesc');
     this.toast.error(`${title}\n\n${message}`, 5000);
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  // PHASE 3A.5 - SLOT MANAGEMENT ERRORS
+  // ════════════════════════════════════════════════════════════════════════
+
+  private showSlotCodeAlreadyExists(details?: DhlErrorResponse['details']): void {
+    const title = this.translate.transform('dhl.slotError.codeExists');
+    let message = this.translate.transform('dhl.slotError.codeExistsDesc');
+
+    if (details?.code) {
+      message += `\n\nCode: ${details.code}`;
+    }
+
+    this.toast.error(`${title}\n\n${message}`, 5000);
+  }
+
+  private showInvalidSlotCapacity(details?: DhlErrorResponse['details']): void {
+    const title = this.translate.transform('dhl.slotError.invalidCapacity');
+    const message = this.translate.transform('dhl.slotError.invalidCapacityDesc');
+    this.toast.error(`${title}\n\n${message}`, 4000);
+  }
+
+  private showInvalidBatchCount(details?: DhlErrorResponse['details']): void {
+    const title = this.translate.transform('dhl.slotError.invalidBatchCount');
+    let message = this.translate.transform('dhl.slotError.invalidBatchCountDesc');
+
+    if (details?.count) {
+      message += `\n\n${this.translate.transform('dhl.slotError.providedCount')}: ${details.count}`;
+    }
+
+    this.toast.error(`${title}\n\n${message}`, 4000);
+  }
+
+  private showCapacityBelowOccupied(details?: DhlErrorResponse['details']): void {
+    const title = this.translate.transform('dhl.slotError.capacityBelowOccupied');
+    let message = this.translate.transform('dhl.slotError.capacityBelowOccupiedDesc');
+
+    if (details?.occupiedCount && details?.requestedCapacity) {
+      message += `\n\n${this.translate.transform('dhl.slotError.occupied')}: ${details.occupiedCount}`;
+      message += `\n${this.translate.transform('dhl.slotError.requestedCapacity')}: ${details.requestedCapacity}`;
+    }
+
+    this.toast.warning(`${title}\n\n${message}`, 5000);
+  }
+
+  private showCannotDeactivateOccupied(details?: DhlErrorResponse['details']): void {
+    const title = this.translate.transform('dhl.slotError.cannotDeactivate');
+    let message = this.translate.transform('dhl.slotError.cannotDeactivateDesc');
+
+    if (details?.occupiedCount) {
+      message += `\n\n${this.translate.transform('dhl.slotError.currentlyOccupied')}: ${details.occupiedCount}`;
+    }
+
+    this.toast.warning(`${title}\n\n${message}`, 5000);
+  }
+
+  private showSlotNotFound(): void {
+    const title = this.translate.transform('dhl.slotError.notFound');
+    const message = this.translate.transform('dhl.slotError.notFoundDesc');
+    this.toast.error(`${title}\n\n${message}`, 4000);
   }
 
   // ════════════════════════════════════════════════════════════════════════

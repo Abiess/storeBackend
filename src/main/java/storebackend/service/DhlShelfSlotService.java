@@ -2,7 +2,6 @@ package storebackend.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -386,7 +385,9 @@ public class DhlShelfSlotService {
         if (!slot.getStore().getId().equals(storeId)) {
             log.warn("⚠️ Security: User tried to update slot from different store: slotId={}, actualStore={}, requestedStore={}", 
                 slotId, slot.getStore().getId(), storeId);
-            throw new AccessDeniedException("Access denied to slot from different store");
+            throw new DhlSlotException("SLOT_NOT_FOUND", // nicht "ACCESS_DENIED" → 404 statt 403
+                "Slot not found",
+                Map.of("slotId", slotId));
         }
         
         // Occupied Count berechnen
@@ -451,3 +452,4 @@ public class DhlShelfSlotService {
         return code.trim().toUpperCase();
     }
 }
+

@@ -371,5 +371,18 @@ public class DhlParcelService {
     public long countStoredParcels(Long storeId) {
         return parcelRepository.countByStoreIdAndStatus(storeId, DhlParcelStatus.STORED);
     }
-}
+    
+        /**
+         * Phase 3A.5 - Zählt belegte Pakete in einem Fach
+         * 
+         * Für Fachverwaltung: Kapazität vs. occupiedCount
+         */
+        public long countStoredParcelsInSlot(Long storeId, Long slotId) {
+            return parcelRepository.countByStoreIdAndShelfSlotIdAndStatus(
+                storeId,
+                slotId,
+                DhlParcelStatus.STORED
+            );
+        }
+    }
 
