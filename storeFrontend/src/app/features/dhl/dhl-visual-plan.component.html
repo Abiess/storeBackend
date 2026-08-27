@@ -120,8 +120,7 @@
         <!-- Grid -->
         <div 
           class="slot-grid"
-          [class.expert-mode]="isExpertMode()"
-          [cdkDropListDisabled]="!isExpertMode()">
+          [class.expert-mode]="isExpertMode()">
           
           <div
             *ngFor="let layout of group.layouts; trackBy: trackBySlotId"
