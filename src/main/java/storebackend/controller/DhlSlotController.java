@@ -6,7 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import storebackend.dto.DhlSlotResponse;
+import storebackend.dto.*;
 import storebackend.entity.DhlParcel;
 import storebackend.entity.DhlShelfSlot;
 import storebackend.entity.User;
@@ -14,6 +14,7 @@ import storebackend.enums.DhlParcelStatus;
 import storebackend.repository.DhlParcelRepository;
 import storebackend.service.DhlShelfSlotService;
 import storebackend.service.DhlShelfSlotService.SlotStats;
+import storebackend.service.DhlParcelService;
 import storebackend.util.StoreAccessChecker;
 
 import java.util.List;
@@ -22,7 +23,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * DHL Shelf Slot Controller (Phase 2)
+ * DHL Shelf Slot Controller
+ * 
+ * Phase 2: Basic Slot Operations (Grid, Stats, Allocate, Initialize)
+ * Phase 3A.5: Slot Management (CRUD für Fachverwaltung)
  * 
  * REST API für Lagerplatz-Verwaltung
  */
@@ -34,65 +38,204 @@ public class DhlSlotController {
     
     private final DhlShelfSlotService slotService;
     private final DhlParcelRepository parcelRepository;
+    private final DhlParcelService parcelService;
     private final StoreAccessChecker storeAccessChecker;
+
+    // ════════════════════════════════════════════════════════════════════════
+    // PHASE 3A.5 - SLOT MANAGEMENT (CRUD)
+    // ════════════════════════════════════════════════════════════════════════
 
     /**
      * GET /api/stores/{storeId}/dhl/slots
      * 
-     * Listet alle Slots mit Belegungsstatus (für Grid-Visualisierung)
+     * Listet alle Fächer eines Stores mit occupiedCount
      * 
-     * Response:
+     * Phase 3A.5: Slot Management Frontend
+     * 
+     * Response: Array von DhlShelfSlotDto
      * [
-     *   { "id": 1, "code": "A1", "sortOrder": 1, "active": true, "occupied": false },
-     *   { "id": 2, "code": "A2", "sortOrder": 2, "active": true, "occupied": true }
+     *   {
+     *     "id": 123,
+     *     "storeId": 121,
+     *     "code": "A1",
+     *     "capacity": 5,
+     *     "sortOrder": 1,
+     *     "active": true,
+     *     "occupiedCount": 3
+     *   }
      * ]
      */
     @GetMapping
-    public ResponseEntity<?> getSlots(
+    public ResponseEntity<List<DhlShelfSlotDto>> getSlots(
         @PathVariable Long storeId,
         @AuthenticationPrincipal User user
     ) {
-        try {
-            if (user == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-            }
-
-            if (!storeAccessChecker.hasStoreAccess(storeId)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-            }
-
-            // 1. Alle Slots laden
-            List<DhlShelfSlot> slots = slotService.listAllSlots(storeId);
-            
-            // 2. Belegte Paketanzahl pro Slot-ID ermitteln (keine N+1 Query)
-            List<Long> slotIds = slots.stream()
-                .map(DhlShelfSlot::getId)
-                .collect(Collectors.toList());
-            
-            Map<Long, Long> occupiedCountBySlotId = parcelRepository.findAll().stream()
-                .filter(p -> p.getShelfSlot() != null 
-                    && p.getStatus() == DhlParcelStatus.STORED
-                    && slotIds.contains(p.getShelfSlot().getId()))
-                .collect(Collectors.groupingBy(
-                    p -> p.getShelfSlot().getId(),
-                    Collectors.counting()
-                ));
-            
-            // 3. DTOs erstellen mit occupiedCount
-            List<DhlSlotResponse> response = slots.stream()
-                .map(slot -> DhlSlotResponse.fromEntity(
-                    slot, 
-                    occupiedCountBySlotId.getOrDefault(slot.getId(), 0L).intValue()
-                ))
-                .collect(Collectors.toList());
-
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            log.error("Get slots error", e);
-            return ResponseEntity.internalServerError().build();
+        log.debug("GET /slots for store={}", storeId);
+        
+        // Multi-Tenant Security
+        if (!storeAccessChecker.hasStoreAccess(storeId)) {
+            log.warn("Access denied for user {} to store {}", user.getId(), storeId);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
+        
+        List<DhlShelfSlot> slots = slotService.listAllSlots(storeId);
+        
+        // Map to DTO with occupiedCount
+        List<DhlShelfSlotDto> dtos = slots.stream()
+            .map(slot -> {
+                DhlShelfSlotDto dto = new DhlShelfSlotDto();
+                dto.setId(slot.getId());
+                dto.setStoreId(slot.getStore().getId());
+                dto.setCode(slot.getCode());
+                dto.setCapacity(slot.getCapacity());
+                dto.setSortOrder(slot.getSortOrder());
+                dto.setActive(slot.getActive());
+                dto.setDescription(slot.getDescription());
+                dto.setCreatedAt(slot.getCreatedAt());
+                dto.setUpdatedAt(slot.getUpdatedAt());
+                
+                // Occupied Count
+                long occupiedCount = parcelService.countStoredParcelsInSlot(storeId, slot.getId());
+                dto.setOccupiedCount(occupiedCount);
+                
+                return dto;
+            })
+            .collect(Collectors.toList());
+        
+        return ResponseEntity.ok(dtos);
     }
+    
+    /**
+     * POST /api/stores/{storeId}/dhl/slots
+     * 
+     * Erstellt einzelnes Fach
+     * 
+     * Request:
+     * {
+     *   "code": "A7",
+     *   "capacity": 5,
+     *   "description": "Regal links oben"
+     * }
+     * 
+     * Response: DhlShelfSlot
+     */
+    @PostMapping
+    public ResponseEntity<DhlShelfSlot> createSlot(
+        @PathVariable Long storeId,
+        @RequestBody DhlCreateSlotRequest request,
+        @AuthenticationPrincipal User user
+    ) {
+        log.info("POST /slots for store={}: code={}", storeId, request.getCode());
+        
+        // Multi-Tenant Security
+        if (!storeAccessChecker.hasStoreAccess(storeId)) {
+            log.warn("Access denied for user {} to store {}", user.getId(), storeId);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        
+        DhlShelfSlot slot = slotService.createSingleSlot(
+            storeId,
+            request.getCode(),
+            request.getCapacity(),
+            request.getDescription()
+        );
+        
+        return ResponseEntity.status(HttpStatus.CREATED).body(slot);
+    }
+    
+    /**
+     * POST /api/stores/{storeId}/dhl/slots/batch
+     * 
+     * Erstellt mehrere Fächer atomar
+     * 
+     * Request:
+     * {
+     *   "prefix": "A",
+     *   "startNumber": 1,
+     *   "count": 10,
+     *   "capacity": 5,
+     *   "description": "Regal links"
+     * }
+     * 
+     * Response: Array von DhlShelfSlot
+     * 
+     * ATOMICITY:
+     * - ALLE Codes werden vor Insert validiert
+     * - Bei einem Duplicate: KEINE Fächer werden erstellt
+     */
+    @PostMapping("/batch")
+    public ResponseEntity<List<DhlShelfSlot>> createBulkSlots(
+        @PathVariable Long storeId,
+        @RequestBody DhlBulkCreateSlotsRequest request,
+        @AuthenticationPrincipal User user
+    ) {
+        log.info("POST /slots/batch for store={}: prefix={}, start={}, count={}", 
+            storeId, request.getPrefix(), request.getStartNumber(), request.getCount());
+        
+        // Multi-Tenant Security
+        if (!storeAccessChecker.hasStoreAccess(storeId)) {
+            log.warn("Access denied for user {} to store {}", user.getId(), storeId);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        
+        List<DhlShelfSlot> slots = slotService.createBulkSlots(
+            storeId,
+            request.getPrefix(),
+            request.getStartNumber(),
+            request.getCount(),
+            request.getCapacity(),
+            request.getDescription()
+        );
+        
+        return ResponseEntity.status(HttpStatus.CREATED).body(slots);
+    }
+    
+    /**
+     * PUT /api/stores/{storeId}/dhl/slots/{slotId}
+     * 
+     * Aktualisiert Fach
+     * 
+     * Request:
+     * {
+     *   "capacity": 10,
+     *   "active": false,
+     *   "description": "Regal rechts oben"
+     * }
+     * 
+     * VALIDIERUNGEN:
+     * - Capacity darf nicht unter occupiedCount reduziert werden
+     * - Belegtes Fach darf nicht deaktiviert werden
+     */
+    @PutMapping("/{slotId}")
+    public ResponseEntity<DhlShelfSlot> updateSlot(
+        @PathVariable Long storeId,
+        @PathVariable Long slotId,
+        @RequestBody DhlUpdateSlotRequest request,
+        @AuthenticationPrincipal User user
+    ) {
+        log.info("PUT /slots/{} for store={}: capacity={}, active={}", 
+            slotId, storeId, request.getCapacity(), request.getActive());
+        
+        // Multi-Tenant Security
+        if (!storeAccessChecker.hasStoreAccess(storeId)) {
+            log.warn("Access denied for user {} to store {}", user.getId(), storeId);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        
+        DhlShelfSlot slot = slotService.updateSlot(
+            storeId,
+            slotId,
+            request.getCapacity(),
+            request.getActive(),
+            request.getDescription()
+        );
+        
+        return ResponseEntity.ok(slot);
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // PHASE 2 - ORIGINAL SLOT OPERATIONS
+    // ════════════════════════════════════════════════════════════════════════
 
     /**
      * GET /api/stores/{storeId}/dhl/slots/stats
