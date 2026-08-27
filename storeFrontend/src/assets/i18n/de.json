@@ -494,7 +494,8 @@
     "next": "Weiter",
     "page": "Seite",
     "of": "von",
-    "optional": "optional"
+    "optional": "optional",
+    "refresh": "Aktualisieren"
   },
   "loading": {
     "orders": "Bestellungen werden geladen..."

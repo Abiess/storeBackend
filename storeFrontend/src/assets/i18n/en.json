@@ -375,7 +375,8 @@
     "next": "Next",
     "page": "Page",
     "of": "of",
-    "optional": "optional"
+    "optional": "optional",
+    "refresh": "Refresh"
   },
   "loading": {
     "orders": "Loading orders..."
