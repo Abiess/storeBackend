@@ -3470,6 +3470,33 @@
       "capacityError": "Neue Kapazität ist kleiner als aktuell belegte Plätze",
       "save": "Speichern",
       "cancel": "Abbrechen"
+    },
+    "activityLog": {
+      "title": "Letzte Aktivitäten",
+      "time": "Zeit",
+      "action": "Aktion",
+      "tracking": "Tracking-Code",
+      "slot": "Lagerplatz",
+      "employee": "Mitarbeiter",
+      "duration": "Dauer",
+      "filterToday": "Nur heute",
+      "allActions": "Alle Aktionen",
+      "allEmployees": "Alle Mitarbeiter",
+      "noActivities": "Keine Aktivitäten vorhanden"
+    },
+    "action": {
+      "stored": "Eingelagert",
+      "found": "Gefunden",
+      "pickedUp": "Abgeholt",
+      "scanFailed": "Scan fehlgeschlagen",
+      "manualSearch": "Manuelle Suche"
     }
+  },
+  "common": {
+    "loading": "Lädt...",
+    "previous": "Zurück",
+    "next": "Weiter",
+    "page": "Seite",
+    "of": "von"
   }
 }

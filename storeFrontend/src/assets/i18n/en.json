@@ -3435,6 +3435,26 @@
       "capacityError": "New capacity is less than currently occupied slots",
       "save": "Save",
       "cancel": "Cancel"
+    },
+    "activityLog": {
+      "title": "Recent Activities",
+      "time": "Time",
+      "action": "Action",
+      "tracking": "Tracking Code",
+      "slot": "Storage Slot",
+      "employee": "Employee",
+      "duration": "Duration",
+      "filterToday": "Today only",
+      "allActions": "All Actions",
+      "allEmployees": "All Employees",
+      "noActivities": "No activities found"
+    },
+    "action": {
+      "stored": "Stored",
+      "found": "Found",
+      "pickedUp": "Picked Up",
+      "scanFailed": "Scan Failed",
+      "manualSearch": "Manual Search"
     }
   }
 }

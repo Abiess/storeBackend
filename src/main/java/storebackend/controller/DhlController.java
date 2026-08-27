@@ -12,10 +12,13 @@ import storebackend.dto.*;
 import storebackend.entity.DhlParcel;
 import storebackend.entity.User;
 import storebackend.service.DhlParcelService;
+import storebackend.service.DhlActivityLogService;
 import storebackend.util.StoreAccessChecker;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import org.springframework.http.HttpStatus;
 
 /**
  * DHL Parcel Controller
@@ -48,6 +51,7 @@ import java.util.stream.Collectors;
 public class DhlController {
     
     private final DhlParcelService parcelService;
+    private final DhlActivityLogService activityLogService;
     private final StoreAccessChecker storeAccessChecker;
 
     /**
@@ -184,10 +188,33 @@ public class DhlController {
             }
 
             DhlParcelResponse response = DhlParcelResponse.fromEntity(parcel);
+            
+            // 6. AUDIT LOG: Successful storage
+            activityLogService.logStored(
+                storeId, 
+                user, 
+                parcel.getTrackingCode(), 
+                parcel.getId(), 
+                parcel.getShelfLocation(), 
+                null // duration not tracked in Phase 3A.2
+            );
+            
             return ResponseEntity.ok(response);
 
         } catch (IllegalArgumentException e) {
             log.warn("DHL store parcel failed: {}", e.getMessage());
+            
+            // AUDIT LOG: Failed scan (if tracking code was parsed)
+            String trackingCode = (String) rawRequest.get("trackingCode");
+            if (trackingCode != null && !trackingCode.isBlank() && user != null) {
+                try {
+                    String normalized = parcelService.normalizeTrackingCode(trackingCode);
+                    activityLogService.logScanFailed(storeId, user, normalized);
+                } catch (Exception logEx) {
+                    log.debug("Could not log scan failure: {}", logEx.getMessage());
+                }
+            }
+            
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             log.error("DHL store parcel error", e);
@@ -234,11 +261,41 @@ public class DhlController {
             }
 
             // 4. Find Parcel
-            return parcelService.findParcel(storeId, request.getTrackingCode())
-                .map(parcel -> ResponseEntity.ok(DhlParcelResponse.fromEntity(parcel)))
-                .orElse(ResponseEntity.notFound().build());
+            Optional<DhlParcel> parcelOpt = parcelService.findParcel(storeId, request.getTrackingCode());
+            
+            if (parcelOpt.isPresent()) {
+                DhlParcel parcel = parcelOpt.get();
+                
+                // AUDIT LOG: Successful find
+                activityLogService.logFound(
+                    storeId, 
+                    user, 
+                    parcel.getTrackingCode(), 
+                    parcel.getId(), 
+                    parcel.getShelfLocation(), 
+                    null
+                );
+                
+                return ResponseEntity.ok(DhlParcelResponse.fromEntity(parcel));
+            } else {
+                // AUDIT LOG: Manual search (not found)
+                String normalized = parcelService.normalizeTrackingCode(request.getTrackingCode());
+                activityLogService.logManualSearch(storeId, user, normalized, null);
+                
+                return ResponseEntity.notFound().build();
+            }
 
         } catch (IllegalArgumentException e) {
+            // AUDIT LOG: Failed scan
+            if (request.getTrackingCode() != null && !request.getTrackingCode().isBlank() && user != null) {
+                try {
+                    String normalized = parcelService.normalizeTrackingCode(request.getTrackingCode());
+                    activityLogService.logScanFailed(storeId, user, normalized);
+                } catch (Exception logEx) {
+                    log.debug("Could not log scan failure: {}", logEx.getMessage());
+                }
+            }
+            
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             log.error("DHL find parcel error", e);
@@ -291,11 +348,32 @@ public class DhlController {
 
             log.info("✅ DHL parcel picked up: user={}, store={}, tracking={}", 
                 user.getId(), storeId, response.getTrackingCode());
+            
+            // AUDIT LOG: Successful pickup
+            activityLogService.logPickedUp(
+                storeId, 
+                user, 
+                parcel.getTrackingCode(), 
+                parcel.getId(), 
+                parcel.getShelfLocation(), 
+                null
+            );
 
             return ResponseEntity.ok(response);
 
         } catch (IllegalArgumentException e) {
             log.warn("DHL pickup parcel failed: {}", e.getMessage());
+            
+            // AUDIT LOG: Failed scan
+            if (request.getTrackingCode() != null && !request.getTrackingCode().isBlank() && user != null) {
+                try {
+                    String normalized = parcelService.normalizeTrackingCode(request.getTrackingCode());
+                    activityLogService.logScanFailed(storeId, user, normalized);
+                } catch (Exception logEx) {
+                    log.debug("Could not log scan failure: {}", logEx.getMessage());
+                }
+            }
+            
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             log.error("DHL pickup parcel error", e);
@@ -417,6 +495,81 @@ public class DhlController {
     @AllArgsConstructor
     private static class CountResponse {
         private long count;
+    }
+    
+    /**
+     * GET /api/stores/{storeId}/dhl/activity-log
+     * 
+     * Listet DHL-Aktivitäten mit optionalen Filtern
+     * 
+     * Query-Parameter:
+     * - today: boolean (nur heute, default=false)
+     * - action: DhlActivityAction (optional)
+     * - userId: Long (optional)
+     * - page: int (default=0)
+     * - size: int (default=20, max=100)
+     * 
+     * Response:
+     * {
+     *   "content": [ { "id": 1, "action": "STORED", ... } ],
+     *   "totalElements": 42,
+     *   "totalPages": 3,
+     *   "number": 0,
+     *   "size": 20
+     * }
+     * 
+     * Für Dashboard-Widget: Filter auf heute + limit 10
+     */
+    @GetMapping("/activity-log")
+    public ResponseEntity<?> getActivityLog(
+        @PathVariable Long storeId,
+        @RequestParam(required = false) Boolean today,
+        @RequestParam(required = false) storebackend.enums.DhlActivityAction action,
+        @RequestParam(required = false) Long userId,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "20") int size,
+        @AuthenticationPrincipal User user
+    ) {
+        try {
+            // 1. Authentication Check
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            // 2. Store Access Check
+            if (!storeAccessChecker.hasStoreAccess(storeId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+
+            // 3. Size Limit
+            if (size > 100) {
+                size = 100;
+            }
+
+            // 4. Zeitraum-Filter
+            java.time.LocalDateTime fromDate = null;
+            if (today != null && today) {
+                fromDate = java.time.LocalDateTime.now().toLocalDate().atStartOfDay();
+            }
+
+            // 5. Pagination
+            org.springframework.data.domain.Pageable pageable = 
+                org.springframework.data.domain.PageRequest.of(page, size);
+
+            // 6. Query mit Filtern
+            org.springframework.data.domain.Page<storebackend.entity.DhlActivityLog> activityPage = 
+                activityLogService.findWithFilters(storeId, action, userId, fromDate, pageable);
+
+            // 7. DTO Mapping
+            org.springframework.data.domain.Page<DhlActivityLogResponse> responsePage = 
+                activityPage.map(DhlActivityLogResponse::fromEntity);
+
+            return ResponseEntity.ok(responsePage);
+
+        } catch (Exception e) {
+            log.error("DHL activity log error", e);
+            return ResponseEntity.internalServerError().build();
+        }
     }
 }
 

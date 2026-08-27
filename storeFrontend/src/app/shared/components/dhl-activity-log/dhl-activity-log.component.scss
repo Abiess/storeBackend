@@ -1,0 +1,284 @@
+/* DHL Activity Log Component - SCSS Styles */
+/* Place in: src/app/shared/components/dhl-activity-log/dhl-activity-log.component.scss */
+
+.dhl-activity-log {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-top: 2rem;
+}
+
+.activity-log-title {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.activity-log-filters {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.filter-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+
+  input[type="checkbox"] {
+    cursor: pointer;
+  }
+}
+
+.filter-select {
+  padding: 0.5rem 1rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  background: white;
+  font-size: 0.875rem;
+  cursor: pointer;
+  min-width: 150px;
+  transition: border-color 0.2s;
+
+  &:hover {
+    border-color: #667eea;
+  }
+}
+
+.loading-state,
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #718096;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 1rem;
+  border: 3px solid #e2e8f0;
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+/* Desktop Table */
+.desktop-view {
+  display: block;
+}
+
+.mobile-view {
+  display: none;
+}
+
+.activity-table-container {
+  overflow-x: auto;
+}
+
+.activity-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+
+  th {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    background: #f7fafc;
+    border-bottom: 2px solid #e2e8f0;
+    font-weight: 600;
+    color: #4a5568;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    color: #2d3748;
+  }
+}
+
+.activity-row:hover {
+  background: #f7fafc;
+}
+
+.time-cell {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.tracking-cell {
+  font-family: 'Courier New', monospace;
+  font-size: 0.813rem;
+}
+
+/* Action Badges */
+.action-cell span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.813rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.badge-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* Badge Colors */
+.status-active {
+  background: #c6f6d5;
+  color: #22543d;
+}
+
+.status-processing {
+  background: #bee3f8;
+  color: #2c5282;
+}
+
+.status-shipped {
+  background: #e9d8fd;
+  color: #44337a;
+}
+
+.status-archived {
+  background: #fed7d7;
+  color: #742a2a;
+}
+
+.status-draft {
+  background: #e2e8f0;
+  color: #2d3748;
+}
+
+/* Mobile Cards */
+@media (max-width: 768px) {
+  .dhl-activity-log {
+    padding: 1rem;
+    margin-top: 1rem;
+  }
+
+  .desktop-view {
+    display: none;
+  }
+
+  .mobile-view {
+    display: block;
+  }
+
+  .activity-log-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-select {
+    width: 100%;
+  }
+
+  .activity-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .activity-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem;
+    background: white;
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .card-time {
+    font-size: 0.813rem;
+    color: #718096;
+  }
+
+  .card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .card-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.875rem;
+  }
+
+  .card-label {
+    color: #718096;
+    font-weight: 500;
+  }
+
+  .card-value {
+    color: #2d3748;
+    text-align: right;
+    word-break: break-all;
+  }
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.pagination-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  background: white;
+  color: #4a5568;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover:not(:disabled) {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.pagination-info {
+  font-size: 0.875rem;
+  color: #718096;
+}

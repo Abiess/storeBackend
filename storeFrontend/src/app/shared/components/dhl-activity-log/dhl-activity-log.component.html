@@ -1,0 +1,121 @@
+<!-- DHL Activity Log Component - HTML Template -->
+<!-- Place in: src/app/shared/components/dhl-activity-log/dhl-activity-log.component.html -->
+
+<div class="dhl-activity-log">
+  <h3 class="activity-log-title">
+    {{ 'dhl.activityLog.title' | translate }}
+  </h3>
+  
+  <!-- Filters -->
+  <div class="activity-log-filters">
+    <label class="filter-checkbox">
+      <input type="checkbox" [(ngModel)]="filterToday" (change)="onFilterChange()">
+      <span>{{ 'dhl.activityLog.filterToday' | translate }}</span>
+    </label>
+    
+    <select class="filter-select" [(ngModel)]="filterAction" (change)="onFilterChange()">
+      <option value="">{{ 'dhl.activityLog.allActions' | translate }}</option>
+      <option value="STORED">{{ 'dhl.action.stored' | translate }}</option>
+      <option value="FOUND">{{ 'dhl.action.found' | translate }}</option>
+      <option value="PICKED_UP">{{ 'dhl.action.pickedUp' | translate }}</option>
+      <option value="SCAN_FAILED">{{ 'dhl.action.scanFailed' | translate }}</option>
+      <option value="MANUAL_SEARCH">{{ 'dhl.action.manualSearch' | translate }}</option>
+    </select>
+    
+    <select *ngIf="availableUsers.length > 0" class="filter-select" [(ngModel)]="filterUserId" (change)="onFilterChange()">
+      <option [value]="null">{{ 'dhl.activityLog.allEmployees' | translate }}</option>
+      <option *ngFor="let user of availableUsers" [value]="user.userId">{{ user.email }}</option>
+    </select>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading && activities.length === 0" class="loading-state">
+    <div class="spinner"></div>
+    <p>{{ 'common.loading' | translate }}</p>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && activities.length === 0" class="empty-state">
+    <div class="empty-icon">📋</div>
+    <p>{{ 'dhl.activityLog.noActivities' | translate }}</p>
+  </div>
+
+  <!-- Desktop Table -->
+  <div *ngIf="activities.length > 0" class="activity-table-container desktop-view">
+    <table class="activity-table">
+      <thead>
+        <tr>
+          <th>{{ 'dhl.activityLog.time' | translate }}</th>
+          <th>{{ 'dhl.activityLog.action' | translate }}</th>
+          <th>{{ 'dhl.activityLog.tracking' | translate }}</th>
+          <th>{{ 'dhl.activityLog.slot' | translate }}</th>
+          <th>{{ 'dhl.activityLog.employee' | translate }}</th>
+          <th>{{ 'dhl.activityLog.duration' | translate }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let activity of activities" class="activity-row">
+          <td class="time-cell">{{ formatTime(activity.createdAt) }}</td>
+          <td class="action-cell">
+            <span [class]="getActionBadgeClass(activity.action)">
+              <span class="badge-icon">{{ getActionIcon(activity.action) }}</span>
+              <span class="badge-text">{{ getActionLabel(activity.action) | translate }}</span>
+            </span>
+          </td>
+          <td class="tracking-cell" [title]="activity.trackingCode">
+            {{ formatTrackingCode(activity.trackingCode) }}
+          </td>
+          <td class="slot-cell">{{ activity.slotSnapshot || '—' }}</td>
+          <td class="employee-cell">{{ activity.userEmailSnapshot }}</td>
+          <td class="duration-cell">{{ formatDuration(activity.durationMs) }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile Cards -->
+  <div *ngIf="activities.length > 0" class="activity-cards mobile-view">
+    <div *ngFor="let activity of activities" class="activity-card">
+      <div class="card-header">
+        <span [class]="getActionBadgeClass(activity.action)">
+          <span class="badge-icon">{{ getActionIcon(activity.action) }}</span>
+          <span class="badge-text">{{ getActionLabel(activity.action) | translate }}</span>
+        </span>
+        <span class="card-time">{{ formatTime(activity.createdAt) }}</span>
+      </div>
+      <div class="card-body">
+        <div class="card-row">
+          <span class="card-label">{{ 'dhl.activityLog.tracking' | translate }}:</span>
+          <span class="card-value" [title]="activity.trackingCode">
+            {{ formatTrackingCode(activity.trackingCode) }}
+          </span>
+        </div>
+        <div class="card-row" *ngIf="activity.slotSnapshot">
+          <span class="card-label">{{ 'dhl.activityLog.slot' | translate }}:</span>
+          <span class="card-value">{{ activity.slotSnapshot }}</span>
+        </div>
+        <div class="card-row">
+          <span class="card-label">{{ 'dhl.activityLog.employee' | translate }}:</span>
+          <span class="card-value">{{ activity.userEmailSnapshot }}</span>
+        </div>
+        <div class="card-row" *ngIf="activity.durationMs">
+          <span class="card-label">{{ 'dhl.activityLog.duration' | translate }}:</span>
+          <span class="card-value">{{ formatDuration(activity.durationMs) }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div *ngIf="totalPages > 1" class="pagination">
+    <button class="pagination-btn" [disabled]="currentPage === 0" (click)="previousPage()">
+      ‹ {{ 'common.previous' | translate }}
+    </button>
+    <span class="pagination-info">
+      {{ 'common.page' | translate }} {{ currentPage + 1 }} {{ 'common.of' | translate }} {{ totalPages }}
+    </span>
+    <button class="pagination-btn" [disabled]="currentPage >= totalPages - 1" (click)="nextPage()">
+      {{ 'common.next' | translate }} ›
+    </button>
+  </div>
+</div>

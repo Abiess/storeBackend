@@ -3343,6 +3343,26 @@
       "capacityError": "السعة الجديدة أقل من الأماكن المشغولة حاليًا",
       "save": "حفظ",
       "cancel": "إلغاء"
+    },
+    "activityLog": {
+      "title": "الأنشطة الأخيرة",
+      "time": "الوقت",
+      "action": "الإجراء",
+      "tracking": "رمز التتبع",
+      "slot": "موقع التخزين",
+      "employee": "الموظف",
+      "duration": "المدة",
+      "filterToday": "اليوم فقط",
+      "allActions": "جميع الإجراءات",
+      "allEmployees": "جميع الموظفين",
+      "noActivities": "لا توجد أنشطة"
+    },
+    "action": {
+      "stored": "تم التخزين",
+      "found": "تم العثور",
+      "pickedUp": "تم الاستلام",
+      "scanFailed": "فشل المسح",
+      "manualSearch": "بحث يدوي"
     }
   }
 }

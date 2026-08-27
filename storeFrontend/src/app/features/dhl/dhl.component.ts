@@ -4,11 +4,12 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { DhlService, DhlSlotStats, DhlSlot } from '@app/core/services/dhl.service';
 import { DhlSlotGridComponent } from './dhl-slot-grid.component';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { DhlActivityLogComponent } from '@app/shared/components/dhl-activity-log/dhl-activity-log.component';
 
 @Component({
   selector: 'app-dhl',
   standalone: true,
-  imports: [CommonModule, RouterModule, DhlSlotGridComponent, TranslatePipe],
+  imports: [CommonModule, RouterModule, DhlSlotGridComponent, TranslatePipe, DhlActivityLogComponent],
   template: `
     <div class="dhl-container">
       <div class="dhl-header">
@@ -95,6 +96,9 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       <div class="info-box">
         <p>ℹ️ {{ 'dhl.main.hint' | translate }}</p>
       </div>
+
+      <!-- Activity Log -->
+      <app-dhl-activity-log [storeId]="storeId"></app-dhl-activity-log>
     </div>
   `,
   styles: [`
