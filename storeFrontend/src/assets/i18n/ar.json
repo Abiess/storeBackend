@@ -3364,5 +3364,13 @@
       "scanFailed": "فشل المسح",
       "manualSearch": "بحث يدوي"
     }
+  },
+  "common": {
+    "loading": "جاري التحميل...",
+    "previous": "السابق",
+    "next": "التالي",
+    "page": "صفحة",
+    "of": "من",
+    "optional": "اختياري"
   }
 }

@@ -3456,5 +3456,13 @@
       "scanFailed": "Scan Failed",
       "manualSearch": "Manual Search"
     }
+  },
+  "common": {
+    "loading": "Loading...",
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page",
+    "of": "of",
+    "optional": "optional"
   }
 }

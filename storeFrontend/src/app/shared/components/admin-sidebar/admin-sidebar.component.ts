@@ -149,7 +149,7 @@ export class AdminSidebarComponent implements OnInit {
                     },
                     {
                         labelKey: 'sidebarAdmin.items.dhl',
-                        icon: 'local_shipping',
+                        icon: 'truck',
                         route: `${baseRoute}/dhl`,
                         requiresStore: true
                     },

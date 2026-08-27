@@ -55,7 +55,7 @@ export class DhlActivityLogService {
     }
 
     return this.http.get<DhlActivityLogPage>(
-      `${this.apiUrl}/api/stores/${storeId}/dhl/activity-log`,
+      `${this.apiUrl}/stores/${storeId}/dhl/activity-log`,
       { params }
     );
   }

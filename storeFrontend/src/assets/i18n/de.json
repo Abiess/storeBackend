@@ -3497,6 +3497,7 @@
     "previous": "Zurück",
     "next": "Weiter",
     "page": "Seite",
-    "of": "von"
+    "of": "von",
+    "optional": "optional"
   }
 }
