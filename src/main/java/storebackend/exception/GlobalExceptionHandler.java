@@ -108,6 +108,44 @@ public class GlobalExceptionHandler {
             .status(HttpStatus.CONFLICT)
             .body(ex.toErrorResponse(HttpStatus.CONFLICT.value()));
     }
+    
+    /**
+     * Phase 3A.5 - Fachverwaltung Exceptions
+     */
+    
+    @ExceptionHandler(DhlSlotException.class)
+    public ResponseEntity<Map<String, Object>> handleDhlSlotException(DhlSlotException ex) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now().toString());
+        
+        // Map error codes to HTTP status codes
+        HttpStatus status;
+        switch (ex.getCode()) {
+            case "SLOT_CODE_ALREADY_EXISTS":
+            case "CAPACITY_BELOW_OCCUPIED":
+            case "CANNOT_DEACTIVATE_OCCUPIED_SLOT":
+                status = HttpStatus.CONFLICT;
+                break;
+            case "SLOT_NOT_FOUND":
+                status = HttpStatus.NOT_FOUND;
+                break;
+            case "INVALID_SLOT_CAPACITY":
+            case "INVALID_BATCH_COUNT":
+                status = HttpStatus.BAD_REQUEST;
+                break;
+            default:
+                status = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+        
+        errorResponse.put("status", status.value());
+        errorResponse.put("code", ex.getCode());
+        errorResponse.put("message", ex.getMessage());
+        errorResponse.put("details", ex.getDetails());
+        
+        return ResponseEntity
+            .status(status)
+            .body(errorResponse);
+    }
 
     // ════════════════════════════════════════════════════════════════════════
     // SECURITY EXCEPTIONS

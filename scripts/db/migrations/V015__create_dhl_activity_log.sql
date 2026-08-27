@@ -1,7 +1,10 @@
 -- V015: DHL Activity Log
 -- Phase 3A.2 - Multi-Tenant-sicheres Audit-Log für DHL-Paket-Aktionen
+--
+-- IDEMPOTENT: Kann mehrfach ausgeführt werden
 
-CREATE TABLE dhl_activity_log (
+-- Tabelle nur erstellen falls nicht vorhanden
+CREATE TABLE IF NOT EXISTS dhl_activity_log (
     id BIGSERIAL PRIMARY KEY,
     store_id BIGINT NOT NULL,
     parcel_id BIGINT,
@@ -20,18 +23,20 @@ CREATE TABLE dhl_activity_log (
 );
 
 -- Indices für Multi-Tenant Queries (WICHTIG für Performance)
-CREATE INDEX idx_dhl_activity_store ON dhl_activity_log(store_id);
-CREATE INDEX idx_dhl_activity_store_created ON dhl_activity_log(store_id, created_at DESC);
-CREATE INDEX idx_dhl_activity_action ON dhl_activity_log(store_id, action);
-CREATE INDEX idx_dhl_activity_user ON dhl_activity_log(store_id, user_id);
+-- IF NOT EXISTS seit PostgreSQL 9.5
+CREATE INDEX IF NOT EXISTS idx_dhl_activity_store ON dhl_activity_log(store_id);
+CREATE INDEX IF NOT EXISTS idx_dhl_activity_store_created ON dhl_activity_log(store_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_dhl_activity_action ON dhl_activity_log(store_id, action);
+CREATE INDEX IF NOT EXISTS idx_dhl_activity_user ON dhl_activity_log(store_id, user_id);
 
 -- Composite Index für gefilterte Dashboard-Abfragen
-CREATE INDEX idx_dhl_activity_filters ON dhl_activity_log(store_id, action, user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_dhl_activity_filters ON dhl_activity_log(store_id, action, user_id, created_at DESC);
 
 -- Optional: Index auf tracking_code für Lookup
-CREATE INDEX idx_dhl_activity_tracking ON dhl_activity_log(tracking_code);
+CREATE INDEX IF NOT EXISTS idx_dhl_activity_tracking ON dhl_activity_log(tracking_code);
 
 -- COMMENT für Dokumentation
+-- COMMENTs sind immer idempotent (überschreiben vorherige)
 COMMENT ON TABLE dhl_activity_log IS 'Phase 3A.2: Audit-Log für alle DHL-Paket-Aktionen. Multi-Tenant-sicher via store_id. User-Identität aus Spring Security Context.';
 COMMENT ON COLUMN dhl_activity_log.store_id IS 'Multi-Tenant: Store ID - MUSS in allen Queries verwendet werden';
 COMMENT ON COLUMN dhl_activity_log.parcel_id IS 'Optional: Referenz auf dhl_parcels, kann NULL sein bei SCAN_FAILED/MANUAL_SEARCH';
