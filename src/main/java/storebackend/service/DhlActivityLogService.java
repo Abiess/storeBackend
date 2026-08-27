@@ -197,10 +197,11 @@ public class DhlActivityLogService {
     public void logScanFailed(
         Long storeId,
         User authenticatedUser,
-        String trackingCode
+        String trackingCode,
+        Long durationMs
     ) {
         logActivity(storeId, authenticatedUser, DhlActivityAction.SCAN_FAILED, 
-            trackingCode, null, null, null, null);
+            trackingCode, null, null, durationMs, null);
     }
     
     /**
@@ -211,15 +212,17 @@ public class DhlActivityLogService {
      * @param authenticatedUser Authentifizierter User
      * @param trackingCode Versuchter Tracking-Code
      * @param failureReason Fehlergrund (z.B. PARCEL_ALREADY_PICKED_UP)
+     * @param durationMs Request-Dauer (optional)
      */
     public void logScanFailedWithReason(
         Long storeId,
         User authenticatedUser,
         String trackingCode,
-        String failureReason
+        String failureReason,
+        Long durationMs
     ) {
         logActivity(storeId, authenticatedUser, DhlActivityAction.SCAN_FAILED, 
-            trackingCode, null, null, null, failureReason);
+            trackingCode, null, null, durationMs, failureReason);
     }
     
     /**
@@ -251,6 +254,7 @@ public class DhlActivityLogService {
      * @param userEmail User E-Mail
      * @param cancellationReason Grund (WRONG_SCAN, etc.)
      * @param cancellationNote Optionale Notiz
+     * @param durationMs Request-Dauer (optional)
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void logStorageCancelled(
@@ -261,7 +265,8 @@ public class DhlActivityLogService {
         Long userId,
         String userEmail,
         String cancellationReason,
-        String cancellationNote
+        String cancellationNote,
+        Long durationMs
     ) {
         try {
             DhlActivityLog activityLog = new DhlActivityLog();
@@ -274,12 +279,12 @@ public class DhlActivityLogService {
             activityLog.setUserEmail(userEmail);
             activityLog.setCancellationReason(cancellationReason);
             activityLog.setCancellationNote(cancellationNote);
-            // durationMs bleibt null (keine Bearbeitungszeit bei Storno)
+            activityLog.setDurationMs(durationMs);
             
             activityLogRepository.save(activityLog);
             
-            log.info("✅ Storage cancellation logged: storeId={}, tracking={}, reason={}, user={}", 
-                storeId, trackingCode, cancellationReason, userEmail);
+            log.info("✅ Storage cancellation logged: storeId={}, tracking={}, reason={}, user={}, duration={}ms", 
+                storeId, trackingCode, cancellationReason, userEmail, durationMs);
                 
         } catch (Exception e) {
             // NICHT den Cancel-Vorgang blockieren, wenn Audit-Log fehlschlägt

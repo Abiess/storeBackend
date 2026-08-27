@@ -19,6 +19,7 @@ import storebackend.exception.*;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * DHL Parcel Controller
@@ -103,6 +104,9 @@ public class DhlController {
         @RequestBody java.util.Map<String, Object> rawRequest,
         @AuthenticationPrincipal User user
     ) {
+        // Start duration tracking
+        long startNanos = System.nanoTime();
+        
         try {
             // 1. Authentication Check
             if (user == null) {
@@ -190,25 +194,28 @@ public class DhlController {
             DhlParcelResponse response = DhlParcelResponse.fromEntity(parcel);
             
             // 6. AUDIT LOG: Successful storage
+            long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
             activityLogService.logStored(
                 storeId, 
                 user, 
                 parcel.getTrackingCode(), 
                 parcel.getId(), 
                 parcel.getShelfLocation(), 
-                null // duration not tracked in Phase 3A.2
+                durationMs
             );
             
             return ResponseEntity.ok(response);
 
         } catch (ParcelAlreadyStoredException | InvalidTrackingCodeException | SlotFullException | NoFreeSlotException e) {
             // Fachliche Fehler mit Audit-Logging (Phase 3A.3)
+            long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
             String trackingCode = (String) rawRequest.get("trackingCode");
             if (trackingCode != null && !trackingCode.isBlank() && user != null) {
                 try {
                     String normalized = parcelService.normalizeTrackingCode(trackingCode);
                     activityLogService.logScanFailedWithReason(storeId, user, normalized, 
-                        e instanceof DhlParcelException ? ((DhlParcelException) e).getCode() : "UNKNOWN");
+                        e instanceof DhlParcelException ? ((DhlParcelException) e).getCode() : "UNKNOWN",
+                        durationMs);
                 } catch (Exception logEx) {
                     log.debug("Could not log scan failure: {}", logEx.getMessage());
                 }
@@ -220,11 +227,12 @@ public class DhlController {
             log.warn("DHL store parcel failed: {}", e.getMessage());
             
             // Legacy: Allgemeine Validierungsfehler
+            long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
             String trackingCode = (String) rawRequest.get("trackingCode");
             if (trackingCode != null && !trackingCode.isBlank() && user != null) {
                 try {
                     String normalized = parcelService.normalizeTrackingCode(trackingCode);
-                    activityLogService.logScanFailed(storeId, user, normalized);
+                    activityLogService.logScanFailed(storeId, user, normalized, durationMs);
                 } catch (Exception logEx) {
                     log.debug("Could not log scan failure: {}", logEx.getMessage());
                 }
@@ -257,6 +265,9 @@ public class DhlController {
         @RequestBody DhlFindParcelRequest request,
         @AuthenticationPrincipal User user
     ) {
+        // Start duration tracking
+        long startNanos = System.nanoTime();
+        
         try {
             // 1. Authentication Check
             if (user == null) {
@@ -282,30 +293,33 @@ public class DhlController {
                 DhlParcel parcel = parcelOpt.get();
                 
                 // AUDIT LOG: Successful find
+                long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
                 activityLogService.logFound(
                     storeId, 
                     user, 
                     parcel.getTrackingCode(), 
                     parcel.getId(), 
                     parcel.getShelfLocation(), 
-                    null
+                    durationMs
                 );
                 
                 return ResponseEntity.ok(DhlParcelResponse.fromEntity(parcel));
             } else {
                 // AUDIT LOG: Manual search (not found)
+                long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
                 String normalized = parcelService.normalizeTrackingCode(request.getTrackingCode());
-                activityLogService.logManualSearch(storeId, user, normalized, null);
+                activityLogService.logManualSearch(storeId, user, normalized, durationMs);
                 
                 return ResponseEntity.notFound().build();
             }
 
         } catch (IllegalArgumentException e) {
             // AUDIT LOG: Failed scan
+            long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
             if (request.getTrackingCode() != null && !request.getTrackingCode().isBlank() && user != null) {
                 try {
                     String normalized = parcelService.normalizeTrackingCode(request.getTrackingCode());
-                    activityLogService.logScanFailed(storeId, user, normalized);
+                    activityLogService.logScanFailed(storeId, user, normalized, durationMs);
                 } catch (Exception logEx) {
                     log.debug("Could not log scan failure: {}", logEx.getMessage());
                 }
@@ -339,6 +353,9 @@ public class DhlController {
         @RequestBody DhlPickupParcelRequest request,
         @AuthenticationPrincipal User user
     ) {
+        // Start duration tracking
+        long startNanos = System.nanoTime();
+        
         try {
             // 1. Authentication Check
             if (user == null) {
@@ -365,24 +382,27 @@ public class DhlController {
                 user.getId(), storeId, response.getTrackingCode());
             
             // 5. AUDIT LOG: Successful pickup
+            long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
             activityLogService.logPickedUp(
                 storeId, 
                 user, 
                 parcel.getTrackingCode(), 
                 parcel.getId(), 
                 parcel.getShelfLocation(), 
-                null
+                durationMs
             );
             
             return ResponseEntity.ok(response);
 
         } catch (ParcelNotFoundException | ParcelAlreadyPickedUpException | InvalidTrackingCodeException e) {
             // Fachliche Fehler mit Audit-Logging (Phase 3A.3)
+            long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
             if (request.getTrackingCode() != null && !request.getTrackingCode().isBlank() && user != null) {
                 try {
                     String normalized = parcelService.normalizeTrackingCode(request.getTrackingCode());
                     activityLogService.logScanFailedWithReason(storeId, user, normalized, 
-                        e instanceof DhlParcelException ? ((DhlParcelException) e).getCode() : "UNKNOWN");
+                        e instanceof DhlParcelException ? ((DhlParcelException) e).getCode() : "UNKNOWN",
+                        durationMs);
                 } catch (Exception logEx) {
                     log.debug("Could not log scan failure: {}", logEx.getMessage());
                 }
@@ -394,10 +414,11 @@ public class DhlController {
             log.warn("DHL pickup failed: {}", e.getMessage());
             
             // Legacy: Allgemeine Validierungsfehler
+            long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
             if (request.getTrackingCode() != null && !request.getTrackingCode().isBlank() && user != null) {
                 try {
                     String normalized = parcelService.normalizeTrackingCode(request.getTrackingCode());
-                    activityLogService.logScanFailed(storeId, user, normalized);
+                    activityLogService.logScanFailed(storeId, user, normalized, durationMs);
                 } catch (Exception logEx) {
                     log.debug("Could not log scan failure: {}", logEx.getMessage());
                 }
@@ -636,6 +657,9 @@ public class DhlController {
         @RequestBody CancelParcelRequest request,
         @AuthenticationPrincipal User user
     ) {
+        // Start duration tracking
+        long startNanos = System.nanoTime();
+        
         log.info("📋 Cancel parcel request: storeId={}, parcelId={}, reason={}, user={}", 
             storeId, parcelId, request.getReason(), user != null ? user.getEmail() : "null");
         
@@ -672,6 +696,7 @@ public class DhlController {
             );
             
             // 5. Activity Log: STORAGE_CANCELLED
+            long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
             activityLogService.logStorageCancelled(
                 storeId,
                 cancelledParcel.getId(),
@@ -680,7 +705,8 @@ public class DhlController {
                 userId,
                 userEmail,
                 request.getReason().name(),
-                request.getNote()
+                request.getNote(),
+                durationMs
             );
             
             log.info("✅ Parcel cancellation successful: id={}, tracking={}, user={}", 
