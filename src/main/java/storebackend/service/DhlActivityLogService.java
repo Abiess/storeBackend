@@ -241,6 +241,54 @@ public class DhlActivityLogService {
     }
     
     /**
+     * Protokolliert eine Paket-Stornierung (Phase 3A.4)
+     * 
+     * @param storeId Store ID
+     * @param parcelId Parcel ID
+     * @param trackingCode Tracking-Code
+     * @param slotSnapshot Lagerplatz
+     * @param userId User ID aus Spring Security
+     * @param userEmail User E-Mail
+     * @param cancellationReason Grund (WRONG_SCAN, etc.)
+     * @param cancellationNote Optionale Notiz
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void logStorageCancelled(
+        Long storeId,
+        Long parcelId,
+        String trackingCode,
+        String slotSnapshot,
+        Long userId,
+        String userEmail,
+        String cancellationReason,
+        String cancellationNote
+    ) {
+        try {
+            DhlActivityLog activityLog = new DhlActivityLog();
+            activityLog.setStoreId(storeId);
+            activityLog.setParcelId(parcelId);
+            activityLog.setTrackingCode(trackingCode);
+            activityLog.setAction(DhlActivityAction.STORAGE_CANCELLED);
+            activityLog.setSlotSnapshot(slotSnapshot);
+            activityLog.setUserId(userId);
+            activityLog.setUserEmail(userEmail);
+            activityLog.setCancellationReason(cancellationReason);
+            activityLog.setCancellationNote(cancellationNote);
+            // durationMs bleibt null (keine Bearbeitungszeit bei Storno)
+            
+            activityLogRepository.save(activityLog);
+            
+            log.info("✅ Storage cancellation logged: storeId={}, tracking={}, reason={}, user={}", 
+                storeId, trackingCode, cancellationReason, userEmail);
+                
+        } catch (Exception e) {
+            // NICHT den Cancel-Vorgang blockieren, wenn Audit-Log fehlschlägt
+            log.error("❌ Failed to log storage cancellation: storeId={}, tracking={}, error={}", 
+                storeId, trackingCode, e.getMessage(), e);
+        }
+    }
+    
+    /**
      * Findet Aktivitäten mit Filtern (für Dashboard)
      * 
      * Phase 3A.3 Fix - Dynamic Queries mit JPA Specifications

@@ -151,4 +151,23 @@ export class DhlActivityLogComponent implements OnInit, OnDestroy {
   getActionLabel(action: string): string {
     return `dhl.action.${action.toLowerCase().replace('_', '')}`;
   }
+  
+  /**
+   * Mappt failureReason zu i18n-Key
+   * Verwendet DhlErrorService-Mapping
+   */
+  getFailureReasonLabel(failureReason: string): string {
+    // Mapping entsprechend DhlErrorService
+    const reasonMap: { [key: string]: string } = {
+      'PARCEL_ALREADY_PICKED_UP': 'dhl.errors.parcelAlreadyPickedUp',
+      'PARCEL_ALREADY_STORED': 'dhl.errors.parcelAlreadyStored',
+      'PARCEL_NOT_FOUND': 'dhl.errors.parcelNotFound',
+      'INVALID_TRACKING_CODE': 'dhl.errors.invalidTrackingCode',
+      'SLOT_FULL': 'dhl.errors.slotFull',
+      'NO_FREE_SLOT': 'dhl.errors.noFreeSlot',
+      'UNAUTHORIZED': 'dhl.errors.unauthorized',
+      'FORBIDDEN': 'dhl.errors.forbidden'
+    };
+    return reasonMap[failureReason] || failureReason;
+  }
 }

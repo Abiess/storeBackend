@@ -128,6 +128,30 @@ public class DhlActivityLog {
      */
     @Column(name = "failure_reason", length = 50)
     private String failureReason;
+    
+    /**
+     * Stornierungsgrund bei STORAGE_CANCELLED (Phase 3A.4)
+     * 
+     * Enum CancellationReason als String:
+     * - WRONG_SCAN
+     * - WRONG_PARCEL
+     * - TEST_SCAN
+     * - DUPLICATE_ENTRY
+     * - OTHER
+     * 
+     * NULL bei allen anderen Actions
+     */
+    @Column(name = "cancellation_reason", length = 50)
+    private String cancellationReason;
+    
+    /**
+     * Optionale Notiz bei STORAGE_CANCELLED (Phase 3A.4)
+     * 
+     * Freitext-Begründung des Mitarbeiters
+     * NULL bei allen anderen Actions oder wenn keine Notiz angegeben
+     */
+    @Column(name = "cancellation_note", length = 500)
+    private String cancellationNote;
 
     @PrePersist
     protected void onCreate() {

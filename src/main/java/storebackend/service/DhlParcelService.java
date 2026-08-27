@@ -290,6 +290,76 @@ public class DhlParcelService {
     public List<DhlParcel> listAllParcels(Long storeId) {
         return parcelRepository.findByStoreId(storeId);
     }
+    
+    /**
+     * Storniert eine fehlerhafte Paket-Einlagerung
+     * 
+     * Phase 3A.4 - Paket-Korrektur
+     * 
+     * Setzt Status auf CANCELLED, sodass:
+     * - Paket nicht mehr im aktiven Lagerbestand
+     * - Lagerplatz-Kapazität wieder frei
+     * - Tracking-Code kann neu verwendet werden (Partial Unique Constraint)
+     * - Audit-Historie bleibt erhalten
+     * 
+     * VALIDIERUNG:
+     * - Paket muss STORED sein
+     * - Multi-Tenant: nur Pakete des eigenen Stores
+     * 
+     * @param storeId Store ID (Multi-Tenant)
+     * @param parcelId Parcel ID
+     * @param cancellationReason Enum CancellationReason als String
+     * @param cancellationNote Optionale Notiz
+     * @param userId User ID aus Spring Security
+     * @param userEmail User E-Mail aus Spring Security
+     * @return DhlParcel mit Status CANCELLED
+     * @throws ParcelNotFoundException wenn Paket nicht existiert
+     * @throws ParcelNotStoredException wenn Paket nicht STORED ist
+     * @throws ParcelAlreadyCancelledException wenn bereits CANCELLED
+     */
+    @Transactional
+    public DhlParcel cancelParcel(
+        Long storeId, 
+        Long parcelId,
+        String cancellationReason,
+        String cancellationNote,
+        Long userId,
+        String userEmail
+    ) {
+        log.info("📋 Cancelling parcel: storeId={}, parcelId={}, reason={}, user={}", 
+            storeId, parcelId, cancellationReason, userEmail);
+        
+        // 1. Multi-Tenant Security: Paket über storeId + parcelId laden
+        DhlParcel parcel = parcelRepository.findByStoreIdAndId(storeId, parcelId)
+            .orElseThrow(() -> new ParcelNotFoundException(String.valueOf(parcelId)));
+        
+        // 2. Fachliche Validierung: Nur STORED Pakete dürfen storniert werden
+        if (parcel.getStatus() == DhlParcelStatus.CANCELLED) {
+            throw new ParcelAlreadyCancelledException(parcel.getTrackingCode());
+        }
+        
+        if (parcel.getStatus() != DhlParcelStatus.STORED) {
+            throw new ParcelNotStoredException(
+                parcel.getTrackingCode(),
+                parcel.getStatus().name()
+            );
+        }
+        
+        // 3. Status ändern + Cancel-Metadaten speichern
+        parcel.setStatus(DhlParcelStatus.CANCELLED);
+        parcel.setCancelledAt(LocalDateTime.now());
+        parcel.setCancellationReason(cancellationReason);
+        parcel.setCancellationNote(cancellationNote);
+        parcel.setCancelledByUserId(userId);
+        parcel.setCancelledByEmail(userEmail);
+        
+        parcel = parcelRepository.save(parcel);
+        
+        log.info("✅ Parcel cancelled: id={}, tracking={}, slot={}, store={}", 
+            parcel.getId(), parcel.getTrackingCode(), parcel.getShelfLocation(), storeId);
+        
+        return parcel;
+    }
 
     /**
      * Zählt aktive Pakete

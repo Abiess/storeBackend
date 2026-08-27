@@ -8,12 +8,15 @@ export interface DhlActivityLog {
   storeId: number;
   parcelId: number | null;
   trackingCode: string;
-  action: 'STORED' | 'FOUND' | 'PICKED_UP' | 'SCAN_FAILED' | 'MANUAL_SEARCH';
+  action: 'STORED' | 'FOUND' | 'PICKED_UP' | 'SCAN_FAILED' | 'MANUAL_SEARCH' | 'STORAGE_CANCELLED';
   slotSnapshot: string | null;
   userId: number;
   userEmail: string;  // Backend sendet userEmail, nicht userEmailSnapshot!
   durationMs: number | null;
   createdAt: string;
+  failureReason?: string | null;  // Phase 3A.3
+  cancellationReason?: string | null;  // Phase 3A.4
+  cancellationNote?: string | null;    // Phase 3A.4
 }
 
 export interface DhlActivityLogPage {

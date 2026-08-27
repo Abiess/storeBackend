@@ -600,5 +600,99 @@ public class DhlController {
             return ResponseEntity.internalServerError().build();
         }
     }
+    
+    /**
+     * Storniert eine fehlerhafte Paket-Einlagerung
+     * 
+     * Phase 3A.4 - Paket-Korrektur
+     * 
+     * POST /api/stores/{storeId}/dhl/parcels/{parcelId}/cancel
+     * 
+     * Request Body:
+     * {
+     *   "reason": "TEST_SCAN",
+     *   "note": "optional"
+     * }
+     * 
+     * SECURITY:
+     * - StoreAccessChecker validiert Zugriff
+     * - Multi-Tenant: parcelRepository.findByStoreIdAndId()
+     * - User aus @AuthenticationPrincipal
+     * 
+     * VALIDIERUNG:
+     * - Paket muss STORED sein
+     * - reason ist required
+     * 
+     * @param storeId Store ID (Multi-Tenant)
+     * @param parcelId Parcel ID
+     * @param request CancelParcelRequest mit reason + note
+     * @param user Authentifizierter User aus Spring Security Context
+     * @return DhlParcel mit Status CANCELLED
+     */
+    @PostMapping("/parcels/{parcelId}/cancel")
+    public ResponseEntity<DhlParcel> cancelParcel(
+        @PathVariable Long storeId,
+        @PathVariable Long parcelId,
+        @RequestBody CancelParcelRequest request,
+        @AuthenticationPrincipal User user
+    ) {
+        log.info("📋 Cancel parcel request: storeId={}, parcelId={}, reason={}, user={}", 
+            storeId, parcelId, request.getReason(), user != null ? user.getEmail() : "null");
+        
+        try {
+            // 1. Store Access Check
+            if (!storeAccessChecker.hasStoreAccess(storeId)) {
+                log.warn("⚠️ Access denied: user={}, storeId={}", 
+                    user != null ? user.getEmail() : "null", storeId);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+            
+            // 2. Validierung: reason required
+            if (request.getReason() == null) {
+                throw new IllegalArgumentException("Cancellation reason is required");
+            }
+            
+            // 3. User-Identität aus Security Context
+            Long userId = user != null ? user.getId() : null;
+            String userEmail = user != null ? user.getEmail() : "unknown";
+            
+            if (userId == null) {
+                log.error("❌ User ID is null - authentication issue");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+            
+            // 4. Parcel stornieren (Service prüft Multi-Tenant + Status)
+            DhlParcel cancelledParcel = parcelService.cancelParcel(
+                storeId, 
+                parcelId,
+                request.getReason().name(),
+                request.getNote(),
+                userId,
+                userEmail
+            );
+            
+            // 5. Activity Log: STORAGE_CANCELLED
+            activityLogService.logStorageCancelled(
+                storeId,
+                cancelledParcel.getId(),
+                cancelledParcel.getTrackingCode(),
+                cancelledParcel.getShelfLocation(),
+                userId,
+                userEmail,
+                request.getReason().name(),
+                request.getNote()
+            );
+            
+            log.info("✅ Parcel cancellation successful: id={}, tracking={}, user={}", 
+                cancelledParcel.getId(), cancelledParcel.getTrackingCode(), userEmail);
+            
+            return ResponseEntity.ok(cancelledParcel);
+            
+        } catch (ParcelNotFoundException | ParcelNotStoredException | ParcelAlreadyCancelledException e) {
+            log.warn("⚠️ Parcel cancellation failed: storeId={}, parcelId={}, error={}", 
+                storeId, parcelId, e.getMessage());
+            throw e;
+        }
+    }
 }
 

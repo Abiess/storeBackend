@@ -33,5 +33,19 @@ public enum DhlActivityAction {
      * Manuelle Suche durchgeführt
      * (z.B. User hat im System nach Tracking-Code gesucht)
      */
-    MANUAL_SEARCH
+    MANUAL_SEARCH,
+    
+    /**
+     * Einlagerung storniert (Phase 3A.4 - Paket-Korrektur)
+     * 
+     * Verwendet wenn ein fehlerhaft eingelagertes Paket korrigiert wird:
+     * - Fehlscan
+     * - Falsches Paket
+     * - Testscan
+     * - Doppelte Erfassung
+     * 
+     * Die ursprüngliche STORED-Aktion bleibt erhalten,
+     * STORAGE_CANCELLED wird zusätzlich protokolliert
+     */
+    STORAGE_CANCELLED
 }

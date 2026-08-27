@@ -88,6 +88,23 @@ public interface DhlParcelRepository extends JpaRepository<DhlParcel, Long> {
     List<DhlParcel> findByStoreId(@Param("storeId") Long storeId);
     
     /**
+     * Findet Paket anhand Store + Parcel ID (Phase 3A.4 - Paket-Korrektur)
+     * 
+     * MULTI-TENANT SECURITY:
+     * - IMMER storeId + parcelId verwenden
+     * - NIE nur findById(parcelId)
+     * 
+     * @param storeId Store ID (Multi-Tenant)
+     * @param parcelId Parcel ID
+     * @return Optional<DhlParcel>
+     */
+    @Query("SELECT p FROM DhlParcel p WHERE p.store.id = :storeId AND p.id = :parcelId")
+    Optional<DhlParcel> findByStoreIdAndId(
+        @Param("storeId") Long storeId,
+        @Param("parcelId") Long parcelId
+    );
+    
+    /**
      * Zählt belegte Pakete gruppiert nach Slot (Phase 3A)
      * 
      * Für Batch-Loading von occupiedCounts (N+1 vermeiden)

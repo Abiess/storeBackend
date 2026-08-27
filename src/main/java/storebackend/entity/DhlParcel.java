@@ -94,10 +94,47 @@ public class DhlParcel {
      * Status des Pakets
      * STORED = eingelagert, wartet auf Abholung
      * PICKED_UP = abgeholt
+     * CANCELLED = storniert (Phase 3A.4)
      */
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private DhlParcelStatus status = DhlParcelStatus.STORED;
+    
+    /**
+     * Zeitpunkt der Stornierung (Phase 3A.4 - Paket-Korrektur)
+     * NULL = nicht storniert
+     */
+    @Column(name = "cancelled_at")
+    private LocalDateTime cancelledAt;
+    
+    /**
+     * Stornierungsgrund (Phase 3A.4)
+     * Enum CancellationReason als String
+     * NULL = nicht storniert
+     */
+    @Column(name = "cancellation_reason", length = 50)
+    private String cancellationReason;
+    
+    /**
+     * Optionale Notiz zur Stornierung (Phase 3A.4)
+     * NULL = keine Notiz oder nicht storniert
+     */
+    @Column(name = "cancellation_note", length = 500)
+    private String cancellationNote;
+    
+    /**
+     * User ID des Mitarbeiters, der storniert hat (Phase 3A.4)
+     * NULL = nicht storniert
+     */
+    @Column(name = "cancelled_by_user_id")
+    private Long cancelledByUserId;
+    
+    /**
+     * E-Mail-Snapshot des Mitarbeiters, der storniert hat (Phase 3A.4)
+     * NULL = nicht storniert
+     */
+    @Column(name = "cancelled_by_email", length = 255)
+    private String cancelledByEmail;
 
     /**
      * Notizen (optional)

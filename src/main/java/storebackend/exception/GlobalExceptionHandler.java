@@ -90,6 +90,24 @@ public class GlobalExceptionHandler {
             .status(HttpStatus.CONFLICT)
             .body(errorResponse);
     }
+    
+    /**
+     * Phase 3A.4 - Paket-Korrektur Exceptions
+     */
+    
+    @ExceptionHandler(ParcelNotStoredException.class)
+    public ResponseEntity<Map<String, Object>> handleParcelNotStored(ParcelNotStoredException ex) {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(ex.toErrorResponse(HttpStatus.CONFLICT.value()));
+    }
+    
+    @ExceptionHandler(ParcelAlreadyCancelledException.class)
+    public ResponseEntity<Map<String, Object>> handleParcelAlreadyCancelled(ParcelAlreadyCancelledException ex) {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(ex.toErrorResponse(HttpStatus.CONFLICT.value()));
+    }
 
     // ════════════════════════════════════════════════════════════════════════
     // SECURITY EXCEPTIONS
