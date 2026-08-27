@@ -3278,6 +3278,16 @@
     },
     "plan": {
       "title": "خطة المستودع",
+      "layoutMode": "نوع الخطة",
+      "standardLayout": "خطة الرفوف القياسية",
+      "standardLayoutHint": "عرض تلقائي على شكل سينما (A1-A6، B1-B7، C1-C7)",
+      "customLayout": "خطة مستودع مخصصة",
+      "customLayoutHint": "خطة مرئية مع السحب والإفلات والمناطق المخصصة",
+      "createCustomLayout": "إنشاء خطة مستودع مخصصة",
+      "backToStandard": "العودة إلى الخطة القياسية",
+      "backToStandardHint": "ستظل خطة المستودع المخصصة محفوظة ويمكن تفعيلها مرة أخرى في أي وقت",
+      "standardLayoutTitle": "خطة المستودع القياسية (عرض السينما)",
+      "standardLayoutDescription": "تخطيط A/B/C تلقائي. يعمل فورًا بدون تكوين. التخزين التلقائي والاستلام متاحان دائمًا.",
       "slots": "الأرفف",
       "zones": "المناطق",
       "operationMode": "وضع التشغيل",
@@ -3298,6 +3308,41 @@
       "partial": "ممتلئ جزئيًا",
       "full": "ممتلئ",
       "inactive": "غير نشط"
+    },
+    "zones": {
+      "title": "إدارة المناطق",
+      "create": "منطقة جديدة",
+      "edit": "تعديل المنطقة",
+      "name": "الاسم",
+      "namePlaceholder": "مثال: الرف الأيسر",
+      "color": "اللون",
+      "sortOrder": "الترتيب",
+      "empty": "لم يتم تحديد مناطق بعد",
+      "delete": "حذف",
+      "save": "حفظ",
+      "cancel": "إلغاء",
+      "deleteConfirm": "هل تريد حقًا حذف المنطقة؟"
+    },
+    "slotEditor": {
+      "title": "تعديل الرف",
+      "createTitle": "إنشاء رف جديد",
+      "code": "رمز الرف",
+      "codePlaceholder": "مثال: A4",
+      "capacity": "السعة",
+      "occupied": "مشغول",
+      "free": "فارغ",
+      "size": "الحجم",
+      "sizeSmall": "S - صغير",
+      "sizeMedium": "M - متوسط",
+      "sizeLarge": "L - كبير",
+      "sizeExtraLarge": "XL - كبير جدًا",
+      "zone": "المنطقة",
+      "noZone": "بدون منطقة",
+      "active": "نشط",
+      "cannotDeactivate": "لا يمكن إلغاء تنشيط الرف الذي يحتوي على طرود مشغولة",
+      "capacityError": "السعة الجديدة أقل من الأماكن المشغولة حاليًا",
+      "save": "حفظ",
+      "cancel": "إلغاء"
     }
   }
 }

@@ -276,4 +276,52 @@ public class DhlLayoutService {
         
         return DhlShelfSlotLayoutDto.fromEntity(layout, 0);
     }
+    
+    /**
+     * Erstellt Layout für einen bereits existierenden Slot
+     * (Für unplatzierte Slots die zum Plan hinzugefügt werden)
+     */
+    @Transactional
+    public void addSlotToLayout(Long storeId, DhlAddSlotToLayoutRequest request) {
+        log.info("Adding slot {} to layout for store {}", request.getSlotId(), storeId);
+        
+        // Validate
+        if (request.getSlotId() == null) {
+            throw new IllegalArgumentException("slotId is required");
+        }
+        
+        // Check if slot exists and belongs to store
+        DhlShelfSlot slot = slotRepository.findById(request.getSlotId())
+            .orElseThrow(() -> new IllegalArgumentException("Slot not found"));
+        
+        if (!slot.getStore().getId().equals(storeId)) {
+            throw new IllegalArgumentException("Slot does not belong to this store");
+        }
+        
+        // Check if layout already exists
+        if (layoutRepository.findByStoreIdAndSlotId(storeId, request.getSlotId()).isPresent()) {
+            throw new IllegalArgumentException("Layout for this slot already exists");
+        }
+        
+        Store store = storeRepository.findById(storeId)
+            .orElseThrow(() -> new IllegalArgumentException("Store not found"));
+        
+        // Create new layout
+        DhlShelfSlotLayout layout = new DhlShelfSlotLayout();
+        layout.setStore(store);
+        layout.setShelfSlot(slot);
+        layout.setGridX(request.getGridX() != null ? request.getGridX() : 0);
+        layout.setGridY(request.getGridY() != null ? request.getGridY() : 0);
+        layout.setGridWidth(request.getGridWidth() != null ? request.getGridWidth() : 2);
+        layout.setGridHeight(request.getGridHeight() != null ? request.getGridHeight() : 1);
+        
+        if (request.getZoneId() != null) {
+            DhlZone zone = zoneRepository.findByStoreIdAndId(storeId, request.getZoneId())
+                .orElseThrow(() -> new IllegalArgumentException("Zone not found"));
+            layout.setZone(zone);
+        }
+        
+        layoutRepository.save(layout);
+        log.info("Successfully added slot {} to layout", request.getSlotId());
+    }
 }

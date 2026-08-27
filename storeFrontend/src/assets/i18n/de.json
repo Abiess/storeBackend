@@ -3405,6 +3405,16 @@
     },
     "plan": {
       "title": "Lagerplan",
+      "layoutMode": "Lagerplan-Art",
+      "standardLayout": "Standard-Regalplan",
+      "standardLayoutHint": "Automatische Kino-/Stadion-Darstellung (A1-A6, B1-B7, C1-C7)",
+      "customLayout": "Eigener Regalplan",
+      "customLayoutHint": "Visueller Plan mit Drag & Drop und eigenen Bereichen",
+      "createCustomLayout": "Eigenen Regalplan erstellen",
+      "backToStandard": "Zurück zum Standard-Regalplan",
+      "backToStandardHint": "Ihr eigener Lagerplan bleibt gespeichert und kann jederzeit wieder aktiviert werden",
+      "standardLayoutTitle": "Standard-Regalplan (Kino-Ansicht)",
+      "standardLayoutDescription": "Automatisch generiertes A/B/C-Layout. Funktioniert sofort ohne Konfiguration. AUTO-Einlagern und Abholung sind immer verfügbar.",
       "slots": "Lagerfächer",
       "zones": "Bereiche",
       "operationMode": "Betriebsmodus",
@@ -3425,6 +3435,41 @@
       "partial": "Teilbelegt",
       "full": "Voll",
       "inactive": "Inaktiv"
+    },
+    "zones": {
+      "title": "Bereiche verwalten",
+      "create": "Neuer Bereich",
+      "edit": "Bereich bearbeiten",
+      "name": "Name",
+      "namePlaceholder": "z.B. Regal links",
+      "color": "Farbe",
+      "sortOrder": "Reihenfolge",
+      "empty": "Noch keine Bereiche definiert",
+      "delete": "Löschen",
+      "save": "Speichern",
+      "cancel": "Abbrechen",
+      "deleteConfirm": "Bereich wirklich löschen?"
+    },
+    "slotEditor": {
+      "title": "Fach bearbeiten",
+      "createTitle": "Neues Fach erstellen",
+      "code": "Fachcode",
+      "codePlaceholder": "z.B. A4",
+      "capacity": "Kapazität",
+      "occupied": "Belegt",
+      "free": "Frei",
+      "size": "Größe",
+      "sizeSmall": "S - Klein",
+      "sizeMedium": "M - Mittel",
+      "sizeLarge": "L - Groß",
+      "sizeExtraLarge": "XL - Extra groß",
+      "zone": "Bereich",
+      "noZone": "Kein Bereich",
+      "active": "Aktiv",
+      "cannotDeactivate": "Fach kann nicht deaktiviert werden, da es belegte Pakete enthält",
+      "capacityError": "Neue Kapazität ist kleiner als aktuell belegte Plätze",
+      "save": "Speichern",
+      "cancel": "Abbrechen"
     }
   }
 }

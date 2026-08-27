@@ -10,7 +10,6 @@ import {
   DhlZone,
   DhlLayoutUpdateRequest,
   DhlLayoutPositionUpdate,
-  DhlAddSlotToLayoutRequest,
   SlotStatus,
   getSlotStatus,
   getSizeFromGrid,
@@ -19,9 +18,6 @@ import {
 } from '@app/core/models/dhl.model';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { LucideAngularModule } from 'lucide-angular';
-import { DhlZoneManagerDialogComponent } from './dhl-zone-manager-dialog.component';
-import { DhlSlotEditorDialogComponent } from './dhl-slot-editor-dialog.component';
-import { DhlService, DhlSlot } from '@app/core/services/dhl.service';
 
 /**
  * DHL Phase 3A – Visual Warehouse Plan
@@ -40,22 +36,13 @@ import { DhlService, DhlSlot } from '@app/core/services/dhl.service';
 @Component({
   selector: 'app-dhl-visual-plan',
   standalone: true,
-  imports: [
-    CommonModule, 
-    FormsModule, 
-    DragDropModule, 
-    TranslatePipe, 
-    LucideAngularModule,
-    DhlZoneManagerDialogComponent,
-    DhlSlotEditorDialogComponent
-  ],
+  imports: [CommonModule, FormsModule, DragDropModule, TranslatePipe, LucideAngularModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './dhl-visual-plan.component.html',
   styleUrls: ['./dhl-visual-plan.component.scss']
 })
 export class DhlVisualPlanComponent implements OnInit, OnDestroy {
   private layoutService = inject(DhlLayoutService);
-  private dhlService = inject(DhlService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private destroy$ = new Subject<void>();
@@ -67,19 +54,12 @@ export class DhlVisualPlanComponent implements OnInit, OnDestroy {
   // Data
   layouts = signal<DhlShelfSlotLayout[]>([]);
   zones = signal<DhlZone[]>([]);
-  allSlots = signal<DhlSlot[]>([]); // All slots from backend
   
   // UI State
   mode = signal<'operation' | 'expert'>('operation');
   loading = signal(false);
   saving = signal(false);
   error = signal<string | null>(null);
-  notice = signal<string | null>(null); // For inline notices
-  
-  // Dialog State
-  showZoneDialog = signal(false);
-  showSlotEditorDialog = signal(false);
-  selectedSlot = signal<DhlShelfSlotLayout | null>(null);
   
   // Dirty Tracking
   isDirty = signal(false);
@@ -127,34 +107,12 @@ export class DhlVisualPlanComponent implements OnInit, OnDestroy {
     }));
   });
   
-  // Unplaced Slots (existing slots without layout)
-  unplacedSlots = computed(() => {
-    const allSlotIds = new Set(this.allSlots().map(s => s.id));
-    const placedSlotIds = new Set(this.layouts().map(l => l.slotId));
-    return this.allSlots().filter(s => !placedSlotIds.has(s.id));
-  });
+  // Slots ohne Layout (Fallback)
+  slotsWithoutLayout = signal<any[]>([]);
   
   // Enums for template
   SlotStatus = SlotStatus;
   SlotSize = SlotSize;
-  
-  // Constants
-  private readonly CELL_SIZE = 120; // Match CSS grid cell size
-  
-  // Stable event handler for highlight
-  private readonly highlightHandler = (event: Event) => {
-    const customEvent = event as CustomEvent;
-    const slotCode = customEvent.detail?.slotCode;
-    if (slotCode) {
-      const slot = this.layouts().find(l => l.slotCode === slotCode);
-      if (slot) {
-        this.highlightedSlotId.set(slot.id);
-        setTimeout(() => this.highlightedSlotId.set(null), 5000);
-      } else {
-        this.showNotice(`Lagerplatz ${slotCode} ist noch nicht im eigenen Lagerplan platziert.`);
-      }
-    }
-  };
 
   constructor() {
     // Effect: Warn before leaving with unsaved changes
@@ -188,16 +146,10 @@ export class DhlVisualPlanComponent implements OnInit, OnDestroy {
     this.storeId = parseInt(id, 10);
     console.log('✅ StoreId extracted for DHL Visual Plan:', this.storeId);
     
-    // Register highlight event listener
-    window.addEventListener('dhl-highlight-slot', this.highlightHandler);
-    
     this.loadData();
-    this.loadAllSlots();
   }
 
   ngOnDestroy(): void {
-    // Clean up event listener
-    window.removeEventListener('dhl-highlight-slot', this.highlightHandler);
     window.onbeforeunload = null;
     this.destroy$.next();
     this.destroy$.complete();
@@ -237,19 +189,6 @@ export class DhlVisualPlanComponent implements OnInit, OnDestroy {
       this.loading.set(false);
     });
   }
-  
-  loadAllSlots(): void {
-    this.dhlService.getSlots(this.storeId).subscribe({
-      next: (slots) => {
-        this.allSlots.set(slots);
-        console.log(`✅ Loaded ${slots.length} total slots`);
-      },
-      error: (err) => {
-        console.error('Failed to load all slots:', err);
-        // Non-critical, continue anyway
-      }
-    });
-  }
 
   // ========== MODE SWITCHING ==========
 
@@ -276,49 +215,28 @@ export class DhlVisualPlanComponent implements OnInit, OnDestroy {
 
   // ========== DRAG & DROP (Expert Mode) ==========
 
-  onDragEnd(event: any, slot: DhlShelfSlotLayout): void {
+  onDrop(event: CdkDragDrop<DhlShelfSlotLayout[]>): void {
     if (!this.isExpertMode()) return;
     
-    const delta = event.distance;
-    const newGridX = Math.max(0, Math.round(slot.gridX + delta.x / this.CELL_SIZE));
-    const newGridY = Math.max(0, Math.round(slot.gridY + delta.y / this.CELL_SIZE));
+    const slotLayout = event.item.data as DhlShelfSlotLayout;
     
-    // Check collision
-    if (this.hasCollision(newGridX, newGridY, slot.gridWidth, slot.gridHeight, slot.id)) {
-      this.showNotice('Position bereits belegt');
-      // Reset will happen automatically via cdkDrag
-      return;
-    }
+    // TODO: Calculate new grid position from drop coordinates
+    // Placeholder: Move in array
+    const currentLayouts = this.layouts();
+    moveItemInArray(currentLayouts, event.previousIndex, event.currentIndex);
+    this.layouts.set([...currentLayouts]);
     
-    // Update local state (immutable)
-    const updated = { ...slot, gridX: newGridX, gridY: newGridY };
-    const layouts = [...this.layouts()];
-    const index = layouts.findIndex(l => l.id === slot.id);
-    if (index >= 0) {
-      layouts[index] = updated;
-      this.layouts.set(layouts);
-    }
-    
-    // Track change
-    this.markSlotChanged(slot.slotId, {
-      slotId: slot.slotId,
-      gridX: newGridX,
-      gridY: newGridY,
-      gridWidth: slot.gridWidth,
-      gridHeight: slot.gridHeight,
-      zoneId: slot.zoneId
+    // Mark as changed
+    this.markSlotChanged(slotLayout.slotId, {
+      slotId: slotLayout.slotId,
+      gridX: slotLayout.gridX,
+      gridY: slotLayout.gridY,
+      gridWidth: slotLayout.gridWidth,
+      gridHeight: slotLayout.gridHeight,
+      zoneId: slotLayout.zoneId
     });
     
-    console.log(`Slot ${slot.slotCode} moved to (${newGridX}, ${newGridY})`);
-  }
-  
-  private hasCollision(x: number, y: number, w: number, h: number, excludeId?: number): boolean {
-    return this.layouts().some(l => {
-      if (l.id === excludeId) return false;
-      // Check overlap
-      return !(x + w <= l.gridX || x >= l.gridX + l.gridWidth ||
-               y + h <= l.gridY || y >= l.gridY + l.gridHeight);
-    });
+    console.log(`Slot ${slotLayout.slotCode} dropped`);
   }
 
   markSlotChanged(slotId: number, update: DhlLayoutPositionUpdate): void {
@@ -341,7 +259,6 @@ export class DhlVisualPlanComponent implements OnInit, OnDestroy {
     }
     
     this.saving.set(true);
-    this.error.set(null);
     
     const request: DhlLayoutUpdateRequest = { updates: changes };
     
@@ -353,30 +270,20 @@ export class DhlVisualPlanComponent implements OnInit, OnDestroy {
         console.log(`✅ Saved ${changes.length} layout changes`);
         this.isDirty.set(false);
         this.pendingChanges.set(new Map());
-        this.showNotice('Änderungen gespeichert');
-        // Reload to ensure consistency
-        this.loadData();
+        this.loadData(); // Reload für korrekte Daten
       },
-      error: (err: any) => {
+      error: (err) => {
         console.error('Save error:', err);
-        this.error.set(err.error?.message || 'Fehler beim Speichern');
+        this.error.set('Fehler beim Speichern');
       }
     });
   }
 
   discardChanges(): void {
-    if (!confirm('Alle Änderungen verwerfen?')) return;
-    
     this.layouts.set(JSON.parse(JSON.stringify(this.originalLayouts)));
     this.pendingChanges.set(new Map());
     this.isDirty.set(false);
-    this.showNotice('Änderungen verworfen');
     console.log('Changes discarded');
-  }
-  
-  private showNotice(message: string): void {
-    this.notice.set(message);
-    setTimeout(() => this.notice.set(null), 5000);
   }
 
   // ========== SLOT ACTIONS ==========
@@ -392,36 +299,13 @@ export class DhlVisualPlanComponent implements OnInit, OnDestroy {
   }
 
   showSlotDetails(layout: DhlShelfSlotLayout): void {
-    // TODO: Implement slot details modal (shows parcels in slot)
-    // For now, just show info
-    console.log('Show details for:', layout.slotCode, `(${layout.occupiedCount}/${layout.slotCapacity})`);
-    this.showNotice(`${layout.slotCode}: ${layout.occupiedCount} von ${layout.slotCapacity} belegt`);
+    // TODO: Open slot details dialog
+    console.log('Show details for:', layout.slotCode);
   }
 
   selectSlot(layout: DhlShelfSlotLayout): void {
-    this.openSlotEditor(layout);
-  }
-  
-  // ========== DIALOG METHODS ==========
-  
-  openZoneManager(): void {
-    this.showZoneDialog.set(true);
-  }
-
-  closeZoneDialog(): void {
-    this.showZoneDialog.set(false);
-    this.loadData(); // Refresh zones
-  }
-
-  openSlotEditor(slot: DhlShelfSlotLayout): void {
-    this.selectedSlot.set(slot);
-    this.showSlotEditorDialog.set(true);
-  }
-
-  closeSlotEditor(): void {
-    this.showSlotEditorDialog.set(false);
-    this.selectedSlot.set(null);
-    this.loadData(); // Refresh after edit
+    // TODO: Open slot editor dialog
+    console.log('Edit slot:', layout.slotCode);
   }
 
   // ========== HIGHLIGHTING ==========
@@ -503,37 +387,21 @@ export class DhlVisualPlanComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ========== SLOT MANAGEMENT ==========
+  // ========== ZONE ACTIONS ==========
 
-  createNewSlot(): void {
-    // TODO: Could open a create dialog, for now log
-    console.log('Create new slot - dialog needed');
-    this.showNotice('Neues Fach-Dialog noch nicht implementiert');
+  openZoneManager(): void {
+    // TODO: Open zone manager dialog
+    console.log('Open zone manager');
   }
 
-  addSlotToPlan(slot: DhlSlot): void {
-    if (this.saving()) return;
-    
-    // Create layout for existing unplaced slot
-    const request: DhlAddSlotToLayoutRequest = {
-      slotId: slot.id,
-      gridX: 0,
-      gridY: 0,
-      gridWidth: 2,
-      gridHeight: 1,
-      zoneId: null
-    };
-    
-    this.layoutService.addSlotToLayout(this.storeId, request).subscribe({
-      next: () => {
-        this.loadData();
-        this.showNotice(`${slot.code} zum Plan hinzugefügt`);
-      },
-      error: (err) => {
-        console.error('Failed to add slot to plan:', err);
-        this.error.set('Fehler beim Hinzufügen des Fachs');
-      }
-    });
+  createNewSlot(): void {
+    // TODO: Open new slot dialog
+    console.log('Create new slot');
+  }
+
+  assignSlotToLayout(slot: any): void {
+    // TODO: Add slot to visual plan
+    console.log('Assign slot to layout:', slot.code);
   }
 
   // ========== TRACKING ==========

@@ -483,6 +483,14 @@ export class DhlStoreParcelComponent implements OnInit {
         this.storedParcel.set(parcel);
         this.success.set(true);
         this.loading.set(false);
+        
+        // Dispatch highlight event for warehouse plan
+        if (parcel.shelfLocation) {
+          window.dispatchEvent(new CustomEvent('dhl-highlight-slot', {
+            detail: { slotCode: parcel.shelfLocation }
+          }));
+        }
+        
         // Refresh slots for grid
         this.loadSlots();
       },

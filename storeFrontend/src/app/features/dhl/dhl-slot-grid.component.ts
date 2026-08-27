@@ -23,6 +23,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
             [class.free]="getSlotStatus(slot) === 'free'"
             [class.partial]="getSlotStatus(slot) === 'partial'"
             [class.full]="getSlotStatus(slot) === 'full'"
+            [class.highlighted]="slot.code === highlightedSlot"
             [class.selectable]="selectable && isSlotSelectable(slot)"
             [disabled]="!isSlotSelectable(slot) || !slot.active || !selectable"
             (click)="onSlotClick(slot)">
@@ -105,6 +106,22 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       cursor: not-allowed;
     }
 
+    .slot.highlighted {
+      border-color: #2196f3 !important;
+      background: linear-gradient(135deg, rgba(33, 150, 243, 0.2) 0%, rgba(33, 150, 243, 0.3) 100%) !important;
+      animation: pulse-glow 1.5s ease-in-out infinite;
+      box-shadow: 0 0 20px rgba(33, 150, 243, 0.5);
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% {
+        box-shadow: 0 0 20px rgba(33, 150, 243, 0.5);
+      }
+      50% {
+        box-shadow: 0 0 30px rgba(33, 150, 243, 0.8);
+      }
+    }
+
     .slot-code {
       font-size: 1.25rem;
       font-weight: bold;
@@ -142,6 +159,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 export class DhlSlotGridComponent {
   @Input() slots: DhlSlot[] = [];
   @Input() selectable = false;
+  @Input() highlightedSlot: string | null = null;
   @Output() slotSelected = new EventEmitter<DhlSlot>();
 
   get rows() {

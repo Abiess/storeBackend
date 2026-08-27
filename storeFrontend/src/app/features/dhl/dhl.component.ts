@@ -28,6 +28,11 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
           <h2>{{ 'dhl.main.pickup' | translate }}</h2>
           <p>{{ 'dhl.main.pickupHint' | translate }}</p>
         </button>
+        <button class="action-card action-plan" (click)="navigateToPlan()">
+          <div class="action-icon">📋</div>
+          <h2>{{ 'dhl.plan.title' | translate }}</h2>
+          <p>Lagerplatz-Ansicht und Konfiguration</p>
+        </button>
       </div>
 
       <!-- Stats Section -->
@@ -152,6 +157,14 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
     .action-pickup:hover {
       background: linear-gradient(135deg, rgba(40, 167, 69, 0.05) 0%, rgba(34, 139, 58, 0.05) 100%);
+    }
+
+    .action-plan {
+      border-color: #17a2b8;
+    }
+
+    .action-plan:hover {
+      background: linear-gradient(135deg, rgba(23, 162, 184, 0.05) 0%, rgba(16, 135, 153, 0.05) 100%);
     }
 
     .action-icon {
@@ -439,5 +452,9 @@ export class DhlComponent implements OnInit {
 
   navigateToPickup(): void {
     this.router.navigate(['/stores', this.storeId, 'dhl', 'pickup']);
+  }
+
+  navigateToPlan(): void {
+    this.router.navigate(['/stores', this.storeId, 'dhl', 'plan']);
   }
 }

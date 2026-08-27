@@ -413,6 +413,13 @@ export class DhlPickupParcelComponent implements OnInit {
         this.foundParcel.set(parcel);
         this.step.set('show-location');
         this.loading.set(false);
+        
+        // Dispatch highlight event for warehouse plan
+        if (parcel.shelfLocation) {
+          window.dispatchEvent(new CustomEvent('dhl-highlight-slot', {
+            detail: { slotCode: parcel.shelfLocation }
+          }));
+        }
       },
       error: (err) => {
         console.error('❌ Find parcel failed:', err);

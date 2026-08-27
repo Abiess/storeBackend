@@ -255,7 +255,7 @@ export const routes: Routes = [
     path: 'stores/:storeId/dhl/plan',
     loadComponent: () => {
       console.log('✅ Route matched: stores/:storeId/dhl/plan');
-      return import('./features/dhl/dhl-visual-plan.component').then(m => m.DhlVisualPlanComponent);
+      return import('./features/dhl/dhl-warehouse-plan.component').then(m => m.DhlWarehousePlanComponent);
     },
     canActivate: [authGuard]
   },

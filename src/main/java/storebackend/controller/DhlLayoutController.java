@@ -181,6 +181,29 @@ public class DhlLayoutController {
     }
     
     /**
+     * POST /api/stores/{storeId}/dhl/layout/add-slot
+     * 
+     * Erstellt Layout für einen bereits existierenden Slot
+     * (Slot ohne Layout → Layout hinzufügen)
+     */
+    @PostMapping("/layout/add-slot")
+    public ResponseEntity<Void> addSlotToLayout(
+        @PathVariable Long storeId,
+        @RequestBody DhlAddSlotToLayoutRequest request,
+        @AuthenticationPrincipal User user
+    ) {
+        log.info("POST /layout/add-slot for store {}: slotId={}", storeId, request.getSlotId());
+        
+        if (!storeAccessChecker.hasStoreAccess(storeId)) {
+            log.warn("Access denied for user {} to store {}", user.getId(), storeId);
+            return ResponseEntity.status(403).build();
+        }
+        
+        layoutService.addSlotToLayout(storeId, request);
+        return ResponseEntity.noContent().build();
+    }
+    
+    /**
      * POST /api/stores/{storeId}/dhl/layout/slots
      * 
      * Erstellt neuen Slot MIT Layout

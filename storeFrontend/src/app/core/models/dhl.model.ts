@@ -68,6 +68,15 @@ export interface DhlCreateSlotWithLayoutRequest {
   zoneId?: number | null;
 }
 
+export interface DhlAddSlotToLayoutRequest {
+  slotId: number;
+  gridX: number;
+  gridY: number;
+  gridWidth: number;
+  gridHeight: number;
+  zoneId?: number | null;
+}
+
 // ========== SLOT SIZES ==========
 
 export enum SlotSize {

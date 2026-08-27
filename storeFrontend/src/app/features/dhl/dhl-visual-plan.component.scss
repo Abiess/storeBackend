@@ -545,3 +545,63 @@
     margin-right: auto;
   }
 }
+
+// ========== NOTICE BAR ==========
+
+.notice-bar {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  left: 2rem;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  z-index: 9999;
+  animation: slideUp 0.3s ease-out;
+
+  lucide-icon {
+    flex-shrink: 0;
+  }
+
+  span {
+    flex: 1;
+    font-size: 0.938rem;
+    font-weight: 500;
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (max-width: 768px) {
+    right: 1rem;
+    left: 1rem;
+    bottom: 1rem;
+  }
+}
+
+[dir="rtl"] {
+  .notice-bar {
+    right: 2rem;
+    left: 2rem;
+
+    @media (max-width: 768px) {
+      right: 1rem;
+      left: 1rem;
+    }
+  }
+}

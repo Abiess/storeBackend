@@ -3370,6 +3370,16 @@
     },
     "plan": {
       "title": "Warehouse Plan",
+      "layoutMode": "Layout Mode",
+      "standardLayout": "Standard Warehouse Plan",
+      "standardLayoutHint": "Automatic cinema/stadium view (A1-A6, B1-B7, C1-C7)",
+      "customLayout": "Custom Warehouse Plan",
+      "customLayoutHint": "Visual plan with drag & drop and custom zones",
+      "createCustomLayout": "Create Custom Warehouse Plan",
+      "backToStandard": "Back to Standard Plan",
+      "backToStandardHint": "Your custom warehouse plan remains saved and can be activated again anytime",
+      "standardLayoutTitle": "Standard Warehouse Plan (Cinema View)",
+      "standardLayoutDescription": "Auto-generated A/B/C layout. Works immediately without configuration. AUTO storage and pickup are always available.",
       "slots": "Slots",
       "zones": "Zones",
       "operationMode": "Operation Mode",
@@ -3390,6 +3400,41 @@
       "partial": "Partially filled",
       "full": "Full",
       "inactive": "Inactive"
+    },
+    "zones": {
+      "title": "Manage Zones",
+      "create": "New Zone",
+      "edit": "Edit Zone",
+      "name": "Name",
+      "namePlaceholder": "e.g. Left shelf",
+      "color": "Color",
+      "sortOrder": "Sort Order",
+      "empty": "No zones defined yet",
+      "delete": "Delete",
+      "save": "Save",
+      "cancel": "Cancel",
+      "deleteConfirm": "Really delete zone?"
+    },
+    "slotEditor": {
+      "title": "Edit Slot",
+      "createTitle": "Create New Slot",
+      "code": "Slot Code",
+      "codePlaceholder": "e.g. A4",
+      "capacity": "Capacity",
+      "occupied": "Occupied",
+      "free": "Free",
+      "size": "Size",
+      "sizeSmall": "S - Small",
+      "sizeMedium": "M - Medium",
+      "sizeLarge": "L - Large",
+      "sizeExtraLarge": "XL - Extra Large",
+      "zone": "Zone",
+      "noZone": "No Zone",
+      "active": "Active",
+      "cannotDeactivate": "Cannot deactivate slot with occupied parcels",
+      "capacityError": "New capacity is less than currently occupied slots",
+      "save": "Save",
+      "cancel": "Cancel"
     }
   }
 }

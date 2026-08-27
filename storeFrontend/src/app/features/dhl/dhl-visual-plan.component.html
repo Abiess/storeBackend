@@ -134,6 +134,7 @@
             cdkDrag
             [cdkDragData]="layout"
             [cdkDragDisabled]="!isExpertMode()"
+            (cdkDragEnded)="onDragEnd($event, layout)"
             (click)="onSlotClick(layout)">
             
             <!-- Drag Handle (Expert Mode) -->
@@ -177,19 +178,19 @@
       <div class="fallback-header">
         <lucide-icon name="list" [size]="20"></lucide-icon>
         <h3>{{ 'dhl.plan.notInPlan' | translate }}</h3>
-        <span class="count">{{ slotsWithoutLayout().length }}</span>
+        <span class="count">{{ unplacedSlots().length }}</span>
       </div>
 
       <div class="fallback-list">
         <div 
-          *ngFor="let slot of slotsWithoutLayout()" 
+          *ngFor="let slot of unplacedSlots()" 
           class="fallback-item">
           <span class="code">{{ slot.code }}</span>
           <span class="occupancy">{{ slot.occupiedCount }} / {{ slot.capacity }}</span>
           <button 
             *ngIf="isExpertMode()" 
             class="btn btn-sm btn-ghost"
-            (click)="assignSlotToLayout(slot)">
+            (click)="addSlotToPlan(slot)">
             <lucide-icon name="plus" [size]="16"></lucide-icon>
             {{ 'dhl.plan.addToPlan' | translate }}
           </button>
@@ -198,4 +199,28 @@
     </div>
   </div>
 </div>
+
+<!-- ========== DIALOGS ========== -->
+
+<!-- Zone Manager Dialog -->
+<app-dhl-zone-manager-dialog
+  *ngIf="showZoneDialog()"
+  [storeId]="storeId"
+  (close)="closeZoneDialog()">
+</app-dhl-zone-manager-dialog>
+
+<!-- Slot Editor Dialog -->
+<app-dhl-slot-editor-dialog
+  *ngIf="showSlotEditorDialog() && selectedSlot()"
+  [storeId]="storeId"
+  [slot]="selectedSlot()!"
+  (close)="closeSlotEditor()">
+</app-dhl-slot-editor-dialog>
+
+<!-- ========== NOTICE BAR ========== -->
+<div *ngIf="notice()" class="notice-bar">
+  <lucide-icon name="info" [size]="20"></lucide-icon>
+  <span>{{ notice() }}</span>
+</div>
+
 

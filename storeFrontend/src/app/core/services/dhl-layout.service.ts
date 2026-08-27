@@ -7,7 +7,8 @@ import {
   DhlZoneRequest,
   DhlShelfSlotLayout,
   DhlLayoutUpdateRequest,
-  DhlCreateSlotWithLayoutRequest
+  DhlCreateSlotWithLayoutRequest,
+  DhlAddSlotToLayoutRequest
 } from '@app/core/models/dhl.model';
 
 /**
@@ -108,6 +109,16 @@ export class DhlLayoutService {
    */
   createSlotWithLayout(storeId: number, request: DhlCreateSlotWithLayoutRequest): Observable<DhlShelfSlotLayout> {
     return this.http.post<DhlShelfSlotLayout>(`${this.baseUrl}/${storeId}/dhl/layout/slots`, request);
+  }
+
+  /**
+   * POST /api/stores/{storeId}/dhl/layout/add-slot
+   * 
+   * Erstellt Layout für einen bereits existierenden Slot
+   * (für unplatzierte Slots die zum Plan hinzugefügt werden)
+   */
+  addSlotToLayout(storeId: number, request: DhlAddSlotToLayoutRequest): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/${storeId}/dhl/layout/add-slot`, request);
   }
 
   // ========== HELPER METHODS ==========
