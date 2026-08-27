@@ -149,7 +149,13 @@ export class DhlActivityLogComponent implements OnInit, OnDestroy {
   }
 
   getActionLabel(action: string): string {
-    return `dhl.action.${action.toLowerCase().replace('_', '')}`;
+    // Convert SNAKE_CASE to camelCase
+    // SCAN_FAILED → scanFailed, MANUAL_SEARCH → manualSearch
+    const camelCaseAction = action
+      .toLowerCase()
+      .replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+    
+    return `dhl.action.${camelCaseAction}`;
   }
   
   /**
