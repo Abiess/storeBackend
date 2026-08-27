@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,6 +12,7 @@ import storebackend.entity.DhlActivityLog;
 import storebackend.entity.User;
 import storebackend.enums.DhlActivityAction;
 import storebackend.repository.DhlActivityLogRepository;
+import storebackend.specification.DhlActivityLogSpecification;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -241,8 +243,15 @@ public class DhlActivityLogService {
     /**
      * Findet Aktivitäten mit Filtern (für Dashboard)
      * 
+     * Phase 3A.3 Fix - Dynamic Queries mit JPA Specifications
+     * 
      * MULTI-TENANT: storeId ist REQUIRED
      * Filter sind optional (null = ignoriert)
+     * 
+     * Vorher: Statische JPQL mit (:param IS NULL OR field = :param)
+     * Problem: PostgreSQL kann Typ von nullable Parametern nicht bestimmen
+     * 
+     * Jetzt: Dynamische Specification - nur aktive Filter werden hinzugefügt
      * 
      * @param storeId Store ID (REQUIRED)
      * @param action Action-Filter (optional)
@@ -263,9 +272,15 @@ public class DhlActivityLogService {
             throw new IllegalArgumentException("storeId is required");
         }
         
-        return activityLogRepository.findByStoreIdWithFilters(
-            storeId, action, userId, fromDate, pageable
+        // Dynamische Specification basierend auf aktiven Filtern
+        Specification<DhlActivityLog> spec = DhlActivityLogSpecification.buildSpecification(
+            storeId, action, userId, fromDate
         );
+        
+        log.debug("🔍 Activity Log query: storeId={}, action={}, userId={}, fromDate={}", 
+            storeId, action, userId, fromDate);
+        
+        return activityLogRepository.findAll(spec, pageable);
     }
     
     /**

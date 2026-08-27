@@ -3,8 +3,7 @@ package storebackend.repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 import storebackend.entity.DhlActivityLog;
 import storebackend.enums.DhlActivityAction;
@@ -20,9 +19,10 @@ import java.util.List;
  * - Keine Query ohne storeId-Filter
  * 
  * Phase 3A.2 - Audit Log
+ * Phase 3A.3 Fix - JpaSpecificationExecutor für dynamische Queries
  */
 @Repository
-public interface DhlActivityLogRepository extends JpaRepository<DhlActivityLog, Long> {
+public interface DhlActivityLogRepository extends JpaRepository<DhlActivityLog, Long>, JpaSpecificationExecutor<DhlActivityLog> {
     
     /**
      * Findet alle Aktivitäten für einen Store (mit Pagination)
@@ -72,36 +72,6 @@ public interface DhlActivityLogRepository extends JpaRepository<DhlActivityLog, 
     Page<DhlActivityLog> findByStoreIdAndCreatedAtGreaterThanEqualOrderByCreatedAtDesc(
         Long storeId, 
         LocalDateTime fromDate, 
-        Pageable pageable
-    );
-    
-    /**
-     * Komplexe Filterung: Action + User + Zeitraum (mit Pagination)
-     * 
-     * Für Dashboard-Filter:
-     * - Heute + bestimmte Action + bestimmter User
-     * 
-     * MULTI-TENANT: storeId ist IMMER gesetzt
-     * Optionale Filter: action, userId, fromDate können null sein
-     * 
-     * @param storeId Store ID (Multi-Tenant, REQUIRED)
-     * @param action Action (optional, null = alle)
-     * @param userId User ID (optional, null = alle)
-     * @param fromDate Ab Datum (optional, null = alle)
-     * @param pageable Pagination
-     * @return Seite mit gefilterten Aktivitäten
-     */
-    @Query("SELECT a FROM DhlActivityLog a " +
-           "WHERE a.storeId = :storeId " +
-           "AND (:action IS NULL OR a.action = :action) " +
-           "AND (:userId IS NULL OR a.userId = :userId) " +
-           "AND (:fromDate IS NULL OR a.createdAt >= :fromDate) " +
-           "ORDER BY a.createdAt DESC")
-    Page<DhlActivityLog> findByStoreIdWithFilters(
-        @Param("storeId") Long storeId,
-        @Param("action") DhlActivityAction action,
-        @Param("userId") Long userId,
-        @Param("fromDate") LocalDateTime fromDate,
         Pageable pageable
     );
     
