@@ -3490,6 +3490,29 @@
       "pickedUp": "Abgeholt",
       "scanFailed": "Scan fehlgeschlagen",
       "manualSearch": "Manuelle Suche"
+    },
+    "errors": {
+      "parcelAlreadyPickedUp": "Bereits abgeholt",
+      "parcelAlreadyPickedUpDetails": "Dieses Paket wurde bereits abgeholt.",
+      "parcelAlreadyStored": "Bereits eingelagert",
+      "parcelAlreadyStoredDetails": "Dieses Paket ist bereits eingelagert.",
+      "parcelNotFound": "Paket nicht gefunden",
+      "parcelNotFoundDetails": "Kein Paket mit diesem Tracking-Code gefunden.",
+      "invalidTrackingCode": "Ungültiger Tracking-Code",
+      "invalidTrackingCodeDetails": "Bitte erneut scannen oder manuell eingeben.",
+      "slotFull": "Lagerplatz voll",
+      "slotFullDetails": "Dieser Lagerplatz ist inzwischen voll. Bitte wählen Sie einen anderen.",
+      "noFreeSlot": "Keine Kapazität",
+      "noFreeSlotDetails": "Keine freie Lagerkapazität verfügbar.",
+      "unauthorized": "Nicht angemeldet",
+      "unauthorizedDetails": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
+      "forbidden": "Keine Berechtigung",
+      "forbiddenDetails": "Sie haben keine Berechtigung für diese DHL-Aktion.",
+      "pickedUpAt": "Abgeholt am",
+      "storedAt": "Eingelagert am",
+      "lastSlot": "Letzter Lagerplatz",
+      "currentSlot": "Aktueller Lagerplatz",
+      "nextParcel": "Nächstes Paket"
     }
   },
   "common": {

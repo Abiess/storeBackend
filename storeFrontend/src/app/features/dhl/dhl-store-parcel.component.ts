@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DhlService, DhlStoreParcelRequestV2, DhlParcel, DhlSlot } from '@app/core/services/dhl.service';
+import { DhlErrorService } from '@app/core/services/dhl-error.service';
 import { BarcodeInputComponent } from '@app/shared/components/barcode-input/barcode-input.component';
 import { DhlSlotGridComponent } from './dhl-slot-grid.component';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
@@ -392,6 +393,7 @@ export class DhlStoreParcelComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private dhlService = inject(DhlService);
+  private dhlErrorService = inject(DhlErrorService);
 
   storeId!: number;
   trackingCode = '';
@@ -436,6 +438,7 @@ export class DhlStoreParcelComponent implements OnInit {
       error: (err) => {
         console.error('Failed to load slots:', err);
         this.loadingSlots.set(false);
+        this.dhlErrorService.handleError(err);
       }
     });
   }
@@ -497,18 +500,7 @@ export class DhlStoreParcelComponent implements OnInit {
       error: (err) => {
         console.error('❌ Store parcel failed:', err);
         this.loading.set(false);
-        
-        let errorMsg = 'dhl.errors.storeFailed';
-        if (err.status === 404 && err.error?.includes('No free slot')) {
-          errorMsg = 'dhl.errors.noFreeSlot';
-        } else if (err.error?.includes('already exists')) {
-          errorMsg = 'dhl.errors.duplicate';
-        } else if (err.error?.includes('occupied')) {
-          errorMsg = 'dhl.errors.slotOccupied';
-        } else if (typeof err.error === 'string') {
-          errorMsg = err.error;
-        }
-        this.error.set(errorMsg);
+        this.dhlErrorService.handleError(err); // Auto-refreshes grid on SLOT_FULL
       }
     });
   }

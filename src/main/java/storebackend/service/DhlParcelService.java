@@ -10,7 +10,7 @@ import storebackend.enums.DhlParcelStatus;
 import storebackend.repository.DhlParcelRepository;
 import storebackend.repository.DhlShelfSlotRepository;
 import storebackend.entity.DhlShelfSlot;
-import storebackend.exception.NoFreeSlotException;
+import storebackend.exception.*;
 import storebackend.repository.StoreRepository;
 
 import java.time.LocalDateTime;
@@ -61,10 +61,11 @@ public class DhlParcelService {
      * 
      * @param rawCode Roher Tracking-Code vom Scanner/Input
      * @return Normalisierter Code
+     * @throws InvalidTrackingCodeException wenn Code ungültig
      */
     public String normalizeTrackingCode(String rawCode) {
         if (rawCode == null || rawCode.isBlank()) {
-            throw new IllegalArgumentException("Tracking code cannot be empty");
+            throw new InvalidTrackingCodeException(rawCode, "Tracking code cannot be empty");
         }
         
         // 1. trim + uppercase
@@ -84,7 +85,7 @@ public class DhlParcelService {
         log.debug("Tracking code normalized: '{}' -> '{}'", rawCode, normalized);
         
         if (normalized.length() < 10) {
-            throw new IllegalArgumentException("Invalid tracking code format: too short");
+            throw new InvalidTrackingCodeException(rawCode, "Too short (minimum 10 characters)");
         }
         
         return normalized;
@@ -126,11 +127,27 @@ public class DhlParcelService {
         Optional<DhlParcel> existing = parcelRepository.findByStoreIdAndTrackingCode(storeId, normalizedCode);
         if (existing.isPresent()) {
             DhlParcel existingParcel = existing.get();
-            log.warn("Parcel already exists: store={}, trackingCode={}, status={}", 
-                storeId, normalizedCode, existingParcel.getStatus());
-            throw new IllegalArgumentException(
-                "Parcel already exists with status: " + existingParcel.getStatus()
-            );
+            
+            // Fachliche Unterscheidung nach Status
+            if (existingParcel.getStatus() == DhlParcelStatus.STORED) {
+                log.warn("Parcel already stored: store={}, trackingCode={}, slot={}", 
+                    storeId, normalizedCode, existingParcel.getShelfLocation());
+                throw new ParcelAlreadyStoredException(
+                    normalizedCode,
+                    existingParcel.getShelfLocation(),
+                    existingParcel.getReceivedAt()
+                );
+            } else if (existingParcel.getStatus() == DhlParcelStatus.PICKED_UP) {
+                // Bereits abgeholt - könnte theoretisch wiederverwendet werden,
+                // aber vorerst verbieten wir das (siehe Requirements)
+                log.warn("Tracking code already used (picked up): store={}, trackingCode={}, pickedUpAt={}", 
+                    storeId, normalizedCode, existingParcel.getPickedUpAt());
+                throw new ParcelAlreadyStoredException(
+                    normalizedCode,
+                    existingParcel.getShelfLocation(),
+                    existingParcel.getReceivedAt()
+                );
+            }
         }
         
         // 4. Paket erstellen
@@ -145,7 +162,7 @@ public class DhlParcelService {
         if ("auto".equalsIgnoreCase(mode)) {
             // AUTO: Backend weist zu (race-condition-safe)
             DhlShelfSlot allocatedSlot = slotRepository.findNextFreeSlotForUpdate(storeId)
-                .orElseThrow(() -> new storebackend.exception.NoFreeSlotException(storeId));
+                .orElseThrow(() -> new NoFreeSlotException(storeId));
             
             parcel.setShelfSlot(allocatedSlot);
             parcel.setShelfLocation(allocatedSlot.getCode());
@@ -162,12 +179,16 @@ public class DhlParcelService {
                 throw new IllegalArgumentException("Slot is not active: " + slotCode);
             }
             
-            // Prüfen ob Slot frei ist
-            boolean occupied = parcelRepository.findByStoreIdAndStatus(storeId, DhlParcelStatus.STORED).stream()
-                .anyMatch(p -> p.getShelfSlot() != null && p.getShelfSlot().getId().equals(selectedSlot.getId()));
+            // Prüfen ob Slot Kapazität hat (race-condition check)
+            long occupiedCount = parcelRepository.countByStoreIdAndShelfSlotIdAndStatus(
+                storeId, selectedSlot.getId(), DhlParcelStatus.STORED);
             
-            if (occupied) {
-                throw new IllegalArgumentException("Slot is already occupied: " + slotCode);
+            if (occupiedCount >= selectedSlot.getCapacity()) {
+                throw new SlotFullException(
+                    slotCode, 
+                    selectedSlot.getCapacity(), 
+                    (int) occupiedCount
+                );
             }
             
             parcel.setShelfSlot(selectedSlot);
@@ -218,22 +239,23 @@ public class DhlParcelService {
      * @param storeId Store ID (Multi-Tenant Validierung)
      * @param rawTrackingCode Roher Tracking-Code
      * @return Updated DhlParcel
-     * @throws IllegalArgumentException wenn Paket nicht gefunden oder bereits abgeholt
+     * @throws ParcelNotFoundException wenn Paket nicht gefunden
+     * @throws ParcelAlreadyPickedUpException wenn bereits abgeholt
      */
     @Transactional
     public DhlParcel pickupParcel(Long storeId, String rawTrackingCode) {
         String normalizedCode = normalizeTrackingCode(rawTrackingCode);
         
         DhlParcel parcel = parcelRepository.findByStoreIdAndTrackingCode(storeId, normalizedCode)
-            .orElseThrow(() -> new IllegalArgumentException(
-                "Parcel not found: " + normalizedCode
-            ));
+            .orElseThrow(() -> new ParcelNotFoundException(normalizedCode));
         
         if (parcel.getStatus() == DhlParcelStatus.PICKED_UP) {
             log.warn("Parcel already picked up: store={}, tracking={}, pickedUpAt={}", 
                 storeId, normalizedCode, parcel.getPickedUpAt());
-            throw new IllegalArgumentException(
-                "Parcel already picked up on: " + parcel.getPickedUpAt()
+            throw new ParcelAlreadyPickedUpException(
+                normalizedCode,
+                parcel.getShelfLocation(),
+                parcel.getPickedUpAt()
             );
         }
         

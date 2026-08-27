@@ -3358,11 +3358,34 @@
       "noActivities": "لا توجد أنشطة"
     },
     "action": {
-      "stored": "تم التخزين",
-      "found": "تم العثور",
+      "stored": "مُخزَّن",
+      "found": "موجود",
       "pickedUp": "تم الاستلام",
       "scanFailed": "فشل المسح",
       "manualSearch": "بحث يدوي"
+    },
+    "errors": {
+      "parcelAlreadyPickedUp": "تم الاستلام بالفعل",
+      "parcelAlreadyPickedUpDetails": "تم استلام هذه الطرد بالفعل.",
+      "parcelAlreadyStored": "مُخزَّن بالفعل",
+      "parcelAlreadyStoredDetails": "هذه الطرد مُخزَّنة بالفعل.",
+      "parcelNotFound": "الطرد غير موجود",
+      "parcelNotFoundDetails": "لم يتم العثور على طرد بهذا رمز التتبع.",
+      "invalidTrackingCode": "رمز تتبع غير صالح",
+      "invalidTrackingCodeDetails": "يرجى المسح مرة أخرى أو الإدخال يدويًا.",
+      "slotFull": "الموقع ممتلئ",
+      "slotFullDetails": "هذا الموقع ممتلئ الآن. يرجى اختيار آخر.",
+      "noFreeSlot": "لا توجد سعة",
+      "noFreeSlotDetails": "لا توجد سعة تخزين متاحة.",
+      "unauthorized": "غير مسجل الدخول",
+      "unauthorizedDetails": "انتهت جلستك. يرجى تسجيل الدخول مرة أخرى.",
+      "forbidden": "لا يوجد إذن",
+      "forbiddenDetails": "ليس لديك إذن لهذا الإجراء DHL.",
+      "pickedUpAt": "تم الاستلام في",
+      "storedAt": "تم التخزين في",
+      "lastSlot": "آخر موقع",
+      "currentSlot": "الموقع الحالي",
+      "nextParcel": "الطرد التالي"
     }
   },
   "common": {

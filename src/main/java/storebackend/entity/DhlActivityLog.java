@@ -120,11 +120,17 @@ public class DhlActivityLog {
      */
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+    
+    /**
+     * Fehlergrund bei fehlgeschlagenen Aktionen (Phase 3A.3)
+     * Beispiel: "PARCEL_ALREADY_PICKED_UP", "SLOT_FULL", etc.
+     * NULL bei erfolgreichen Aktionen
+     */
+    @Column(name = "failure_reason", length = 50)
+    private String failureReason;
 
     @PrePersist
     protected void onCreate() {
-        if (this.createdAt == null) {
-            this.createdAt = LocalDateTime.now();
-        }
+        createdAt = LocalDateTime.now();
     }
 }

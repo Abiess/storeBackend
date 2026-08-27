@@ -3455,6 +3455,29 @@
       "pickedUp": "Picked Up",
       "scanFailed": "Scan Failed",
       "manualSearch": "Manual Search"
+    },
+    "errors": {
+      "parcelAlreadyPickedUp": "Already Picked Up",
+      "parcelAlreadyPickedUpDetails": "This parcel has already been picked up.",
+      "parcelAlreadyStored": "Already Stored",
+      "parcelAlreadyStoredDetails": "This parcel is already stored.",
+      "parcelNotFound": "Parcel Not Found",
+      "parcelNotFoundDetails": "No parcel found with this tracking code.",
+      "invalidTrackingCode": "Invalid Tracking Code",
+      "invalidTrackingCodeDetails": "Please scan again or enter manually.",
+      "slotFull": "Slot Full",
+      "slotFullDetails": "This slot is now full. Please select another one.",
+      "noFreeSlot": "No Capacity",
+      "noFreeSlotDetails": "No free storage capacity available.",
+      "unauthorized": "Not Logged In",
+      "unauthorizedDetails": "Your session has expired. Please log in again.",
+      "forbidden": "No Permission",
+      "forbiddenDetails": "You don't have permission for this DHL action.",
+      "pickedUpAt": "Picked up at",
+      "storedAt": "Stored at",
+      "lastSlot": "Last slot",
+      "currentSlot": "Current slot",
+      "nextParcel": "Next Parcel"
     }
   },
   "common": {

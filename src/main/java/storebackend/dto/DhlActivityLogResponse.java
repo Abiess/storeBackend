@@ -27,6 +27,7 @@ public class DhlActivityLogResponse {
     private String userEmail;
     private Long durationMs;
     private LocalDateTime createdAt;
+    private String failureReason;
     
     /**
      * Factory: Entity -> DTO
@@ -43,6 +44,7 @@ public class DhlActivityLogResponse {
         dto.setUserEmail(entity.getUserEmail());
         dto.setDurationMs(entity.getDurationMs());
         dto.setCreatedAt(entity.getCreatedAt());
+        dto.setFailureReason(entity.getFailureReason());
         return dto;
     }
 }

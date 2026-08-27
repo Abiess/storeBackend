@@ -62,6 +62,23 @@ public interface DhlParcelRepository extends JpaRepository<DhlParcel, Long> {
     );
     
     /**
+     * Zählt Pakete in einem bestimmten Slot mit Status
+     * 
+     * Für Kapazitätsprüfung bei manueller Slot-Auswahl (Phase 3A.3)
+     * 
+     * @param storeId Store ID
+     * @param slotId Slot ID
+     * @param status Status (typisch STORED)
+     * @return Anzahl belegter Plätze
+     */
+    @Query("SELECT COUNT(p) FROM DhlParcel p WHERE p.store.id = :storeId AND p.shelfSlot.id = :slotId AND p.status = :status")
+    long countByStoreIdAndShelfSlotIdAndStatus(
+        @Param("storeId") Long storeId,
+        @Param("slotId") Long slotId,
+        @Param("status") DhlParcelStatus status
+    );
+    
+    /**
      * Listet alle Pakete eines Stores (alle Status)
      * 
      * @param storeId Store ID

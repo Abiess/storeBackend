@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DhlService, DhlFindParcelRequest, DhlPickupParcelRequest, DhlParcel } from '@app/core/services/dhl.service';
+import { DhlErrorService } from '@app/core/services/dhl-error.service';
 import { BarcodeInputComponent } from '@app/shared/components/barcode-input/barcode-input.component';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
@@ -357,6 +358,7 @@ export class DhlPickupParcelComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private dhlService = inject(DhlService);
+  private dhlErrorService = inject(DhlErrorService);
 
   storeId!: number;
   trackingCode = '';
@@ -424,14 +426,7 @@ export class DhlPickupParcelComponent implements OnInit {
       error: (err) => {
         console.error('❌ Find parcel failed:', err);
         this.loading.set(false);
-        
-        if (err.status === 404) {
-          this.error.set('dhl.errors.notFound');
-        } else if (typeof err.error === 'string') {
-          this.error.set(err.error);
-        } else {
-          this.error.set('dhl.errors.findFailed');
-        }
+        this.dhlErrorService.handleError(err);
       }
     });
   }
@@ -457,16 +452,7 @@ export class DhlPickupParcelComponent implements OnInit {
       error: (err) => {
         console.error('❌ Pickup parcel failed:', err);
         this.loading.set(false);
-        
-        let errorMsg = 'dhl.errors.pickupFailed';
-        if (typeof err.error === 'string') {
-          if (err.error.includes('already picked up')) {
-            errorMsg = 'dhl.errors.alreadyPickedUp';
-          } else {
-            errorMsg = err.error;
-          }
-        }
-        this.error.set(errorMsg);
+        this.dhlErrorService.handleError(err);
       }
     });
   }

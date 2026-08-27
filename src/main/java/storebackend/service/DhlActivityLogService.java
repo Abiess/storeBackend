@@ -53,6 +53,7 @@ public class DhlActivityLogService {
      * @param parcelId Paket ID (optional, null bei SCAN_FAILED/MANUAL_SEARCH)
      * @param slotSnapshot Lagerplatz-Snapshot (optional)
      * @param durationMs Bearbeitungsdauer in ms (optional)
+     * @param failureReason Fehlergrund bei fehlgeschlagenen Aktionen (optional)
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void logActivity(
@@ -62,7 +63,8 @@ public class DhlActivityLogService {
         String trackingCode,
         Long parcelId,
         String slotSnapshot,
-        Long durationMs
+        Long durationMs,
+        String failureReason
     ) {
         try {
             // 1. Validierung
@@ -92,22 +94,23 @@ public class DhlActivityLogService {
             }
             
             // 3. Activity Log erstellen
-            DhlActivityLog log = new DhlActivityLog();
-            log.setStoreId(storeId);
-            log.setParcelId(parcelId);
-            log.setTrackingCode(trackingCode);
-            log.setAction(action);
-            log.setSlotSnapshot(slotSnapshot);
-            log.setUserId(userId);
-            log.setUserEmail(userEmail != null ? userEmail : "unknown");
-            log.setDurationMs(durationMs);
-            log.setCreatedAt(LocalDateTime.now());
+            DhlActivityLog activityLog = new DhlActivityLog();
+            activityLog.setStoreId(storeId);
+            activityLog.setParcelId(parcelId);
+            activityLog.setTrackingCode(trackingCode);
+            activityLog.setAction(action);
+            activityLog.setSlotSnapshot(slotSnapshot);
+            activityLog.setUserId(userId);
+            activityLog.setUserEmail(userEmail != null ? userEmail : "unknown");
+            activityLog.setDurationMs(durationMs);
+            activityLog.setFailureReason(failureReason);
+            activityLog.setCreatedAt(LocalDateTime.now());
             
             // 4. Speichern
-            activityLogRepository.save(log);
+            activityLogRepository.save(activityLog);
             
-            this.log.debug("✅ DHL activity logged: storeId={}, userId={}, action={}, tracking={}, slot={}, duration={}ms",
-                storeId, userId, action, trackingCode, slotSnapshot, durationMs);
+            this.log.debug("✅ DHL activity logged: storeId={}, userId={}, action={}, tracking={}, slot={}, duration={}ms, failureReason={}",
+                storeId, userId, action, trackingCode, slotSnapshot, durationMs, failureReason);
             
         } catch (Exception e) {
             // Silent failure: Log-Fehler dürfen Hauptoperation nicht blockieren
@@ -135,7 +138,7 @@ public class DhlActivityLogService {
         Long durationMs
     ) {
         logActivity(storeId, authenticatedUser, DhlActivityAction.STORED, 
-            trackingCode, parcelId, slotSnapshot, durationMs);
+            trackingCode, parcelId, slotSnapshot, durationMs, null);
     }
     
     /**
@@ -157,7 +160,7 @@ public class DhlActivityLogService {
         Long durationMs
     ) {
         logActivity(storeId, authenticatedUser, DhlActivityAction.FOUND, 
-            trackingCode, parcelId, slotSnapshot, durationMs);
+            trackingCode, parcelId, slotSnapshot, durationMs, null);
     }
     
     /**
@@ -179,7 +182,7 @@ public class DhlActivityLogService {
         Long durationMs
     ) {
         logActivity(storeId, authenticatedUser, DhlActivityAction.PICKED_UP, 
-            trackingCode, parcelId, slotSnapshot, durationMs);
+            trackingCode, parcelId, slotSnapshot, durationMs, null);
     }
     
     /**
@@ -195,7 +198,26 @@ public class DhlActivityLogService {
         String trackingCode
     ) {
         logActivity(storeId, authenticatedUser, DhlActivityAction.SCAN_FAILED, 
-            trackingCode, null, null, null);
+            trackingCode, null, null, null, null);
+    }
+    
+    /**
+     * Protokolliert fehlgeschlagenen Scan mit Fehlergrund (SCAN_FAILED)
+     * Phase 3A.3 - Detaillierte Fehlerauditierung
+     * 
+     * @param storeId Store ID
+     * @param authenticatedUser Authentifizierter User
+     * @param trackingCode Versuchter Tracking-Code
+     * @param failureReason Fehlergrund (z.B. PARCEL_ALREADY_PICKED_UP)
+     */
+    public void logScanFailedWithReason(
+        Long storeId,
+        User authenticatedUser,
+        String trackingCode,
+        String failureReason
+    ) {
+        logActivity(storeId, authenticatedUser, DhlActivityAction.SCAN_FAILED, 
+            trackingCode, null, null, null, failureReason);
     }
     
     /**
@@ -213,7 +235,7 @@ public class DhlActivityLogService {
         Long durationMs
     ) {
         logActivity(storeId, authenticatedUser, DhlActivityAction.MANUAL_SEARCH, 
-            trackingCode, null, null, durationMs);
+            trackingCode, null, null, durationMs, null);
     }
     
     /**

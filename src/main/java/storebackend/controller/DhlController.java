@@ -14,11 +14,11 @@ import storebackend.entity.User;
 import storebackend.service.DhlParcelService;
 import storebackend.service.DhlActivityLogService;
 import storebackend.util.StoreAccessChecker;
+import storebackend.exception.*;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.springframework.http.HttpStatus;
 
 /**
  * DHL Parcel Controller
@@ -201,10 +201,25 @@ public class DhlController {
             
             return ResponseEntity.ok(response);
 
+        } catch (ParcelAlreadyStoredException | InvalidTrackingCodeException | SlotFullException | NoFreeSlotException e) {
+            // Fachliche Fehler mit Audit-Logging (Phase 3A.3)
+            String trackingCode = (String) rawRequest.get("trackingCode");
+            if (trackingCode != null && !trackingCode.isBlank() && user != null) {
+                try {
+                    String normalized = parcelService.normalizeTrackingCode(trackingCode);
+                    activityLogService.logScanFailedWithReason(storeId, user, normalized, 
+                        e instanceof DhlParcelException ? ((DhlParcelException) e).getCode() : "UNKNOWN");
+                } catch (Exception logEx) {
+                    log.debug("Could not log scan failure: {}", logEx.getMessage());
+                }
+            }
+            // GlobalExceptionHandler behandelt die Response
+            throw e;
+            
         } catch (IllegalArgumentException e) {
             log.warn("DHL store parcel failed: {}", e.getMessage());
             
-            // AUDIT LOG: Failed scan (if tracking code was parsed)
+            // Legacy: Allgemeine Validierungsfehler
             String trackingCode = (String) rawRequest.get("trackingCode");
             if (trackingCode != null && !trackingCode.isBlank() && user != null) {
                 try {
@@ -349,7 +364,7 @@ public class DhlController {
             log.info("✅ DHL parcel picked up: user={}, store={}, tracking={}", 
                 user.getId(), storeId, response.getTrackingCode());
             
-            // AUDIT LOG: Successful pickup
+            // 5. AUDIT LOG: Successful pickup
             activityLogService.logPickedUp(
                 storeId, 
                 user, 
@@ -358,13 +373,27 @@ public class DhlController {
                 parcel.getShelfLocation(), 
                 null
             );
-
+            
             return ResponseEntity.ok(response);
 
-        } catch (IllegalArgumentException e) {
-            log.warn("DHL pickup parcel failed: {}", e.getMessage());
+        } catch (ParcelNotFoundException | ParcelAlreadyPickedUpException | InvalidTrackingCodeException e) {
+            // Fachliche Fehler mit Audit-Logging (Phase 3A.3)
+            if (request.getTrackingCode() != null && !request.getTrackingCode().isBlank() && user != null) {
+                try {
+                    String normalized = parcelService.normalizeTrackingCode(request.getTrackingCode());
+                    activityLogService.logScanFailedWithReason(storeId, user, normalized, 
+                        e instanceof DhlParcelException ? ((DhlParcelException) e).getCode() : "UNKNOWN");
+                } catch (Exception logEx) {
+                    log.debug("Could not log scan failure: {}", logEx.getMessage());
+                }
+            }
+            // GlobalExceptionHandler behandelt die Response
+            throw e;
             
-            // AUDIT LOG: Failed scan
+        } catch (IllegalArgumentException e) {
+            log.warn("DHL pickup failed: {}", e.getMessage());
+            
+            // Legacy: Allgemeine Validierungsfehler
             if (request.getTrackingCode() != null && !request.getTrackingCode().isBlank() && user != null) {
                 try {
                     String normalized = parcelService.normalizeTrackingCode(request.getTrackingCode());
