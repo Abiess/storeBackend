@@ -81,7 +81,7 @@ export class DhlActivityLogComponent implements OnInit, OnDestroy {
     const userMap = new Map<number, string>();
     this.activities.forEach(activity => {
       if (!userMap.has(activity.userId)) {
-        userMap.set(activity.userId, activity.userEmailSnapshot);
+        userMap.set(activity.userId, activity.userEmail);
       }
     });
     this.availableUsers = Array.from(userMap.entries())

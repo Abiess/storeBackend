@@ -11,7 +11,7 @@ export interface DhlActivityLog {
   action: 'STORED' | 'FOUND' | 'PICKED_UP' | 'SCAN_FAILED' | 'MANUAL_SEARCH';
   slotSnapshot: string | null;
   userId: number;
-  userEmailSnapshot: string;
+  userEmail: string;  // Backend sendet userEmail, nicht userEmailSnapshot!
   durationMs: number | null;
   createdAt: string;
 }

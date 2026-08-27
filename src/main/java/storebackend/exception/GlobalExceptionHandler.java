@@ -21,6 +21,80 @@ import java.util.Map;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
+    // ════════════════════════════════════════════════════════════════════════
+    // DHL-SPEZIFISCHE EXCEPTIONS (Phase 3A.3)
+    // ════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Behandelt ParcelAlreadyPickedUpException → HTTP 409 Conflict.
+     */
+    @ExceptionHandler(ParcelAlreadyPickedUpException.class)
+    public ResponseEntity<Map<String, Object>> handleParcelAlreadyPickedUp(ParcelAlreadyPickedUpException ex) {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(ex.toErrorResponse(HttpStatus.CONFLICT.value()));
+    }
+
+    /**
+     * Behandelt ParcelAlreadyStoredException → HTTP 409 Conflict.
+     */
+    @ExceptionHandler(ParcelAlreadyStoredException.class)
+    public ResponseEntity<Map<String, Object>> handleParcelAlreadyStored(ParcelAlreadyStoredException ex) {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(ex.toErrorResponse(HttpStatus.CONFLICT.value()));
+    }
+
+    /**
+     * Behandelt ParcelNotFoundException → HTTP 404 Not Found.
+     */
+    @ExceptionHandler(ParcelNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleParcelNotFound(ParcelNotFoundException ex) {
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(ex.toErrorResponse(HttpStatus.NOT_FOUND.value()));
+    }
+
+    /**
+     * Behandelt SlotFullException → HTTP 409 Conflict.
+     */
+    @ExceptionHandler(SlotFullException.class)
+    public ResponseEntity<Map<String, Object>> handleSlotFull(SlotFullException ex) {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(ex.toErrorResponse(HttpStatus.CONFLICT.value()));
+    }
+
+    /**
+     * Behandelt InvalidTrackingCodeException → HTTP 400 Bad Request.
+     */
+    @ExceptionHandler(InvalidTrackingCodeException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidTrackingCode(InvalidTrackingCodeException ex) {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ex.toErrorResponse(HttpStatus.BAD_REQUEST.value()));
+    }
+
+    /**
+     * Behandelt NoFreeSlotException → HTTP 409 Conflict.
+     */
+    @ExceptionHandler(NoFreeSlotException.class)
+    public ResponseEntity<Map<String, Object>> handleNoFreeSlot(NoFreeSlotException ex) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now().toString());
+        errorResponse.put("status", HttpStatus.CONFLICT.value());
+        errorResponse.put("code", "NO_FREE_SLOT");
+        errorResponse.put("message", ex.getMessage());
+
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(errorResponse);
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // SECURITY EXCEPTIONS
+    // ════════════════════════════════════════════════════════════════════════
+
     /**
      * Behandelt AccessDeniedException (403 Forbidden) – z.B. durch @PreAuthorize.
      * MUSS vor handleGeneralException stehen!
@@ -31,6 +105,7 @@ public class GlobalExceptionHandler {
         errorResponse.put("timestamp", LocalDateTime.now().toString());
         errorResponse.put("status", HttpStatus.FORBIDDEN.value());
         errorResponse.put("error", "Forbidden");
+        errorResponse.put("code", "FORBIDDEN");
         errorResponse.put("message", "Zugriff verweigert: " + ex.getMessage());
 
         return ResponseEntity
@@ -48,12 +123,17 @@ public class GlobalExceptionHandler {
         errorResponse.put("timestamp", LocalDateTime.now().toString());
         errorResponse.put("status", HttpStatus.UNAUTHORIZED.value());
         errorResponse.put("error", "Unauthorized");
+        errorResponse.put("code", "UNAUTHORIZED");
         errorResponse.put("message", "Authentifizierung erforderlich: " + ex.getMessage());
 
         return ResponseEntity
             .status(HttpStatus.UNAUTHORIZED)
             .body(errorResponse);
     }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // GENERAL EXCEPTIONS
+    // ════════════════════════════════════════════════════════════════════════
 
     /**
      * Behandelt NoResourceFoundException (wenn kein Handler gefunden wird) → HTTP 404.
