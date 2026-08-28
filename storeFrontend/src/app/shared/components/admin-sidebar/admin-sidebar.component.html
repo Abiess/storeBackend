@@ -53,16 +53,16 @@
                             [class.nav-item-active]="isRouteActive(item.route)"
                             [class.nav-item-disabled]="item.requiresStore && !hasStore"
                             class="nav-item"
-                            [attr.aria-label]="item.labelKey | translate"
+                            [attr.aria-label]="getItemLabel(item) | translate"
                             [attr.aria-current]="isRouteActive(item.route) ? 'page' : null"
-                            [attr.title]="isCollapsed ? (item.labelKey | translate) : ((item.requiresStore && !hasStore) ? ('sidebarAdmin.noStore.tooltip' | translate) : null)"
+                            [attr.title]="isCollapsed ? (getItemLabel(item) | translate) : ((item.requiresStore && !hasStore) ? ('sidebarAdmin.noStore.tooltip' | translate) : null)"
                             [routerLink]="(item.requiresStore && !hasStore) ? null : item.route"
                             (click)="(item.requiresStore && !hasStore) ? onNoStoreClick() : closeSidebar()"
                     >
                         <span class="nav-icon">
                             <lucide-angular [name]="item.icon" [size]="17" strokeWidth="1.75"></lucide-angular>
                         </span>
-                        <span class="nav-label" *ngIf="!isCollapsed">{{ item.labelKey | translate }}</span>
+                        <span class="nav-label" *ngIf="!isCollapsed">{{ getItemLabel(item) | translate }}</span>
                         <span *ngIf="item.badge && !isCollapsed" [class]="'nav-badge ' + (item.badgeClass || 'badge-primary')">
                             {{ item.badge }}
                         </span>

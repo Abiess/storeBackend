@@ -2,19 +2,26 @@ import { Injectable } from '@angular/core';
 import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { filter } from 'rxjs/operators';
+import { BusinessType } from '@app/core/models';
 
 /**
  * Zentraler Service, der die aktuelle storeId aus der Route extrahiert.
  * Alle Komponenten können sich darauf abonnieren, anstatt storeId als @Input zu benötigen.
+ * 
+ * Seit Dashboard BusinessType UX: Stellt auch businessType$ bereit für UI-Anpassungen.
  */
 @Injectable({
   providedIn: 'root'
 })
 export class StoreContextService {
   private storeIdSubject = new BehaviorSubject<number | null>(null);
+  private businessTypeSubject = new BehaviorSubject<BusinessType | null>(null);
   
   /** Observable mit der aktuellen storeId aus der Route */
   public storeId$: Observable<number | null> = this.storeIdSubject.asObservable();
+  
+  /** Observable mit dem aktuellen businessType (für Dashboard UI-Anpassungen) */
+  public businessType$: Observable<BusinessType | null> = this.businessTypeSubject.asObservable();
 
   constructor(
     private router: Router,
@@ -106,6 +113,24 @@ export class StoreContextService {
       throw new Error('StoreContextService: storeId is required but not available in route');
     }
     return storeId;
+  }
+
+  /**
+   * Setzt den businessType des aktuellen Stores
+   * (wird von Komponenten aufgerufen, die Store-Daten laden)
+   */
+  setBusinessType(type: BusinessType | null): void {
+    if (type !== this.businessTypeSubject.value) {
+      console.log('🏪 StoreContext: businessType updated:', type);
+      this.businessTypeSubject.next(type);
+    }
+  }
+
+  /**
+   * Gibt den aktuellen businessType synchron zurück (oder null)
+   */
+  getCurrentBusinessType(): BusinessType | null {
+    return this.businessTypeSubject.value;
   }
 }
 

@@ -10,7 +10,7 @@ import { MediaService } from '@app/core/services/media.service';
 import { ProductOptionService } from '@app/core/services/product-option.service';
 import { ProductTierPriceService } from '@app/core/services/product-tier-price.service';
 import { StoreContextService } from '@app/core/services/store-context.service';
-import { Category, ProductStatus, AiProductSuggestion, AiProductSuggestionV2 } from '@app/core/models';
+import { Category, ProductStatus, AiProductSuggestion, AiProductSuggestionV2, BusinessType } from '@app/core/models';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { TranslationService } from '@app/core/services/translation.service';
 import { ProductVariantsManagerComponent } from './product-variants-manager.component';
@@ -81,7 +81,7 @@ import { Subscription } from 'rxjs';
             </div>
           </div>
 
-          <div class="form-group">
+          <div class="form-group" *ngIf="!isServiceMode">
             <label for="sku">{{ 'product.sku' | translate }}</label>
             <input 
               id="sku"
@@ -95,7 +95,7 @@ import { Subscription } from 'rxjs';
             </div>
           </div>
 
-          <div class="form-group">
+          <div class="form-group" *ngIf="!isServiceMode">
             <label for="barcode">{{ 'product.barcode' | translate }}</label>
             <app-barcode-input formControlName="barcode"></app-barcode-input>
             <div class="form-hint">
@@ -103,7 +103,7 @@ import { Subscription } from 'rxjs';
             </div>
           </div>
 
-          <div class="form-group">
+          <div class="form-group" *ngIf="!isServiceMode">
             <label for="expiryDate">{{ 'product.expiryDate' | translate }}</label>
             <input 
               type="date"
@@ -147,7 +147,7 @@ import { Subscription } from 'rxjs';
               </div>
             </div>
 
-            <div class="form-group">
+            <div class="form-group" *ngIf="!isServiceMode">
               <label for="stock">{{ 'product.stock' | translate }}</label>
               <input 
                 id="stock"
@@ -2357,6 +2357,9 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   // Multi-image AI settings
   selectedSuggestionIndex = 0;
   activeTab: 'basic' | 'ai' | 'media' | 'variants' = 'basic';
+  
+  /** BusinessType des aktuellen Stores – für UI-Anpassungen (SERVICE vs SHOP) */
+  isServiceMode = false;
 
   tabs: Array<{ id: 'basic' | 'ai' | 'media' | 'variants', label: string, icon: string, visible?: boolean }> = [
     { id: 'basic', label: 'product.tab.basic', icon: '📝' },
@@ -2426,6 +2429,11 @@ export class ProductFormComponent implements OnInit, OnDestroy {
         this.storeId = id;
         this.initializeComponent();
       }
+    });
+    
+    // BusinessType aus Context Service abonnieren (für UI-Anpassungen)
+    this.storeContext.businessType$.subscribe(type => {
+      this.isServiceMode = type === BusinessType.SERVICE;
     });
 
     // AI Modelle für den Auswahl-Input laden

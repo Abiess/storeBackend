@@ -6,6 +6,8 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { LanguageService } from '@app/core/services/language.service';
 import { StoreService } from '@app/core/services/store.service';
 import { PwaInstallService } from '@app/core/services/pwa-install.service';
+import { StoreContextService } from '@app/core/services/store-context.service';
+import { BusinessType } from '@app/core/models';
 import { LucideAngularModule } from 'lucide-angular';
 // Icons global registriert via LUCIDE_ICONS in app.config.ts
 
@@ -21,6 +23,10 @@ export interface NavItem {
     /** true = Dieses Item benötigt einen aktiven Store (storeId in URL).
      *  Ohne Store wird es deaktiviert dargestellt und leitet zum Dashboard. */
     requiresStore?: boolean;
+    /** Optional: Nur für bestimmte BusinessTypes sichtbar */
+    visibleForBusinessTypes?: BusinessType[];
+    /** Optional: Alternatives Label abhängig vom BusinessType */
+    labelKeyByBusinessType?: Partial<Record<BusinessType, string>>;
 }
 
 export interface NavGroup {
@@ -52,11 +58,15 @@ export class AdminSidebarComponent implements OnInit {
     private currentStoreSlug: string | null = null;
     /** Letzter Slug-geladener Store-ID – verhindert doppelte API-Calls */
     private slugLoadedForId: number | null = null;
+    
+    /** BusinessType des aktuellen Stores – für UI-Anpassungen */
+    currentBusinessType: BusinessType | null = null;
 
     constructor(
         private router: Router,
         public languageService: LanguageService,
         private storeService: StoreService,
+        private storeContext: StoreContextService,
         public pwaInstall: PwaInstallService
     ) {
         this.router.events
@@ -72,6 +82,14 @@ export class AdminSidebarComponent implements OnInit {
 
                 this.buildNavigation();
             });
+        
+        // BusinessType aus StoreContext laden
+        this.storeContext.businessType$.subscribe(type => {
+            if (type !== this.currentBusinessType) {
+                this.currentBusinessType = type;
+                this.buildNavigation();
+            }
+        });
     }
 
     ngOnInit(): void {
@@ -118,8 +136,17 @@ export class AdminSidebarComponent implements OnInit {
             this.slugLoadedForId = resolvedStoreId;
             this.currentStoreSlug = null; // zurücksetzen bis geladen
             this.storeService.getStoreById(resolvedStoreId).subscribe({
-                next: (store) => { this.currentStoreSlug = store?.slug ?? null; },
-                error: () => { this.currentStoreSlug = null; }
+                next: (store) => { 
+                    this.currentStoreSlug = store?.slug ?? null;
+                    // BusinessType in StoreContext setzen für andere Komponenten
+                    if (store?.businessType) {
+                        this.storeContext.setBusinessType(store.businessType as BusinessType);
+                    }
+                },
+                error: () => { 
+                    this.currentStoreSlug = null;
+                    this.storeContext.setBusinessType(null);
+                }
             });
         }
 
@@ -145,7 +172,8 @@ export class AdminSidebarComponent implements OnInit {
                         labelKey: 'sidebarAdmin.items.pos',
                         icon: 'shopping-cart',
                         route: `${baseRoute}/pos`,
-                        requiresStore: true
+                        requiresStore: true,
+                        visibleForBusinessTypes: [BusinessType.SHOP]  // POS nur für SHOP
                     },
                     {
                         labelKey: 'sidebarAdmin.items.dhl',
@@ -155,6 +183,7 @@ export class AdminSidebarComponent implements OnInit {
                     },
                     {
                         labelKey: 'sidebarAdmin.items.products',
+                        labelKeyByBusinessType: { [BusinessType.SERVICE]: 'sidebarAdmin.items.services' },
                         icon: 'package',
                         route: `${baseRoute}/products`,
                         requiresStore: true
@@ -168,13 +197,15 @@ export class AdminSidebarComponent implements OnInit {
                         labelKey: 'sidebarAdmin.items.supplierInvoices',
                         icon: 'file-text',
                         route: `${baseRoute}/supplier-invoices`,
-                        requiresStore: true
+                        requiresStore: true,
+                        visibleForBusinessTypes: [BusinessType.SHOP]  // Lieferantenrechnungen nur für SHOP
                     },
                     {
                         labelKey: 'sidebarAdmin.items.productsExpiry',
                         icon: 'calendar',
                         route: `${baseRoute}/products-expiry`,
-                        requiresStore: true
+                        requiresStore: true,
+                        visibleForBusinessTypes: [BusinessType.SHOP]  // Ablaufdatum nur für SHOP
                     }
                 ]
             },
@@ -239,7 +270,8 @@ export class AdminSidebarComponent implements OnInit {
                         labelKey: 'sidebarAdmin.items.woocommerce',
                         icon: 'shopping-bag',
                         route: `${baseRoute}/woocommerce`,
-                        requiresStore: true
+                        requiresStore: true,
+                        visibleForBusinessTypes: [BusinessType.SHOP]  // WooCommerce nur für SHOP
                     },
                     {
                         labelKey: 'sidebarAdmin.items.telegram',
@@ -331,9 +363,34 @@ export class AdminSidebarComponent implements OnInit {
         return this.navGroups.filter(g => g.visible !== false);
     }
 
-    /** Gibt nur sichtbare Items einer Gruppe zurück (visible !== false) */
+    /** Gibt nur sichtbare Items einer Gruppe zurück (visible !== false + businessType-Filter) */
     visibleItems(group: NavGroup): NavItem[] {
-        return group.items.filter(i => i.visible !== false);
+        return group.items.filter(item => {
+            // Grundlegende Sichtbarkeit
+            if (item.visible === false) return false;
+            
+            // BusinessType-Filter prüfen
+            if (item.visibleForBusinessTypes && this.currentBusinessType) {
+                if (!item.visibleForBusinessTypes.includes(this.currentBusinessType)) {
+                    return false;
+                }
+            }
+            
+            return true;
+        });
+    }
+    
+    /**
+     * Gibt das passende Label für ein Item zurück (berücksichtigt labelKeyByBusinessType)
+     */
+    getItemLabel(item: NavItem): string {
+        if (item.labelKeyByBusinessType && this.currentBusinessType) {
+            const specificLabel = item.labelKeyByBusinessType[this.currentBusinessType];
+            if (specificLabel) {
+                return specificLabel;
+            }
+        }
+        return item.labelKey;
     }
 
     toggleGroup(groupTitle: string): void {

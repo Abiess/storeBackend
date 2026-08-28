@@ -10,7 +10,7 @@
 
       <lucide-angular [name]="tab.icon" [size]="16" strokeWidth="1.75" aria-hidden="true" class="tab-icon"></lucide-angular>
 
-      <span class="tab-label">{{ tab.label | translate }}</span>
+      <span class="tab-label">{{ getTabLabel(tab) | translate }}</span>
 
       <!-- Beta Badge -->
       <span class="beta-badge" *ngIf="tab.beta">Beta</span>
