@@ -163,11 +163,6 @@ export class ServiceProfessionalLayoutComponent implements OnInit {
     return !!(this.contactPhone || this.contactEmail || this.whatsappNumber || this.address);
   }
 
-  // Social media helpers
-  get hasSocialLinks(): boolean {
-    return !!(this.facebookUrl || this.instagramUrl || this.tiktokUrl || this.telegramUrl);
-  }
-
   // Google Maps helper
   openGoogleMaps(): void {
     if (this.googleMapsUrl) {
