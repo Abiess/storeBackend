@@ -1377,9 +1377,9 @@
       "startFree": "Start for free"
     },
     "hero": {
-      "titleOptimized": "Your online store for Morocco ready in 60 seconds",
-      "subtitleOptimized": "Display products · WhatsApp orders · No experience needed",
-      "ctaPrimary": "🚀 Create free store now",
+      "titleOptimized": "Your online presence for Morocco ready in 60 seconds",
+      "subtitleOptimized": "Display offers · WhatsApp communication · No experience needed",
+      "ctaPrimary": "🚀 Start for free now",
       "ctaHint": "No credit card · No installation · 2 minute setup",
       "loginLink": "Already a customer? Login",
       "title": "Launch your online store <span class=\"gradient-text\">in minutes</span>",
@@ -1402,6 +1402,7 @@
     "businessTypes": {
       "shop": "Shops",
       "restaurant": "Restaurants",
+      "service": "Services",
       "riad": "Riads & Hotels"
     },
     "paths": {
@@ -1458,8 +1459,8 @@
       "support": "Support"
     },
     "features": {
-      "title": "Everything you need to sell successfully",
-      "subtitle": "Professional tools for your e-commerce success"
+      "title": "Everything you need to succeed",
+      "subtitle": "Professional tools for your success"
     },
     "featureItems": {
       "customDesign": {
@@ -1494,17 +1495,17 @@
     "tutorialItems": {
       "createAccount": {
         "title": "Create account",
-        "description": "Learn how to create your own store account in 2 minutes",
+        "description": "Learn how to create your account in 2 minutes",
         "duration": "2:00 min"
       },
       "createFirstProduct": {
-        "title": "Create your first product",
-        "description": "Step-by-step guide to adding your first product",
+        "title": "Add first offers",
+        "description": "Step-by-step guide to adding your first offers",
         "duration": "2:30 min"
       },
       "customizeStore": {
-        "title": "Customize store",
-        "description": "Personalize your store design and settings",
+        "title": "Customize presence",
+        "description": "Personalize your design and settings",
         "duration": "3:00 min"
       }
     },
@@ -1520,7 +1521,7 @@
         "description": "Perfect for new businesses",
         "cta": "Start for free",
         "features": [
-          "Up to 10 products",
+          "Up to 10 offers",
           "Custom domain",
           "SSL certificate",
           "Email support",
@@ -1533,7 +1534,7 @@
         "badge": "Popular",
         "cta": "Start now",
         "features": [
-          "Unlimited products",
+          "Unlimited offers",
           "Custom domain",
           "SSL certificate",
           "Priority support",
@@ -1558,9 +1559,9 @@
       }
     },
     "cta": {
-      "title": "Ready to launch your online store?",
-      "subtitle": "Join thousands of successful merchants",
-      "button": "🚀 Create store – no sign-up required",
+      "title": "Ready to get started?",
+      "subtitle": "Join successful businesses",
+      "button": "🚀 Start for free now",
       "note": "No credit card required • Cancel anytime"
     },
     "videoUnavailable": "Video not available",
@@ -1577,13 +1578,13 @@
     "demo": {
       "loading": "Loading video...",
       "title": "How to get started easily",
-      "subtitle": "Your online shop in just 3 simple steps",
-      "step1Title": "1. Enter store information",
+      "subtitle": "Your online presence in just 3 simple steps",
+      "step1Title": "1. Enter basic information",
       "step1Text": "Name, category & contact details – ready in 60 seconds.",
-      "step2Title": "2. Add products",
+      "step2Title": "2. Add offers",
       "step2Text": "Manually or AI-assisted – you decide.",
-      "step3Title": "3. Receive orders",
-      "step3Text": "Customers buy directly via WhatsApp or in the shop.",
+      "step3Title": "3. Receive inquiries",
+      "step3Text": "Customers contact you directly via WhatsApp or through your presence.",
       "watchVideo": "📹 Watch demo (2 min)",
       "ctaText": "Ready to get started?",
       "ctaButton": "Start for free now"
@@ -1592,7 +1593,7 @@
       "stickyCta": "🚀 Create free store"
     },
     "footer": {
-      "tagline": "The modern e-commerce platform",
+      "tagline": "The modern platform for Moroccan businesses",
       "product": "Product",
       "legal": "Legal",
       "imprint": "Imprint",

@@ -1512,9 +1512,9 @@
       "startFree": "Kostenlos starten"
     },
     "hero": {
-      "titleOptimized": "Dein Online-Shop für Marokko in 60 Sekunden fertig",
-      "subtitleOptimized": "Produkte zeigen · WhatsApp-Bestellungen · Keine Vorkenntnisse nötig",
-      "ctaPrimary": "🚀 Jetzt kostenlos Shop erstellen",
+      "titleOptimized": "Deine Online-Präsenz für Marokko in 60 Sekunden fertig",
+      "subtitleOptimized": "Angebote zeigen · WhatsApp-Kommunikation · Keine Vorkenntnisse nötig",
+      "ctaPrimary": "🚀 Jetzt kostenlos starten",
       "ctaHint": "Keine Kreditkarte · Keine Installation · 2 Minuten Setup",
       "loginLink": "Bereits Kunde? Anmelden",
       "title": "Starten Sie Ihren Online-Shop <span class=\"gradient-text\">in Minuten</span>",
@@ -1537,6 +1537,7 @@
     "businessTypes": {
       "shop": "Geschäfte",
       "restaurant": "Restaurants",
+      "service": "Dienstleistungen",
       "riad": "Riads & Hotels"
     },
     "paths": {
@@ -1593,8 +1594,8 @@
       "support": "Support"
     },
     "features": {
-      "title": "Alles was Sie brauchen, um erfolgreich zu verkaufen",
-      "subtitle": "Professionelle Tools für Ihren E-Commerce-Erfolg"
+      "title": "Alles was Sie brauchen, um erfolgreich zu sein",
+      "subtitle": "Professionelle Tools für Ihren Erfolg"
     },
     "featureItems": {
       "customDesign": {
@@ -1629,17 +1630,17 @@
     "tutorialItems": {
       "createAccount": {
         "title": "Account erstellen",
-        "description": "Lernen Sie, wie Sie in 2 Minuten Ihren eigenen Shop-Account anlegen",
+        "description": "Lernen Sie, wie Sie in 2 Minuten Ihren eigenen Account anlegen",
         "duration": "2:00 min"
       },
       "createFirstProduct": {
-        "title": "Erstes Produkt anlegen",
-        "description": "Schritt-für-Schritt Anleitung zum Hinzufügen Ihres ersten Produkts",
+        "title": "Erste Angebote hinzufügen",
+        "description": "Schritt-für-Schritt Anleitung zum Hinzufügen Ihrer ersten Angebote",
         "duration": "2:30 min"
       },
       "customizeStore": {
-        "title": "Shop anpassen",
-        "description": "Personalisieren Sie das Design und die Einstellungen Ihres Shops",
+        "title": "Präsenz anpassen",
+        "description": "Personalisieren Sie das Design und die Einstellungen",
         "duration": "3:00 min"
       }
     },
@@ -1655,7 +1656,7 @@
         "description": "Perfekt für neue Unternehmen",
         "cta": "Kostenlos starten",
         "features": [
-          "Bis zu 10 Produkte",
+          "Bis zu 10 Angebote",
           "Eigene Domain",
           "SSL-Zertifikat",
           "E-Mail-Support",
@@ -1668,7 +1669,7 @@
         "badge": "Beliebt",
         "cta": "Jetzt starten",
         "features": [
-          "Unbegrenzte Produkte",
+          "Unbegrenzte Angebote",
           "Eigene Domain",
           "SSL-Zertifikat",
           "Prioritäts-Support",
@@ -1693,9 +1694,9 @@
       }
     },
     "cta": {
-      "title": "Bereit, Ihren Online-Shop zu starten?",
-      "subtitle": "Schließen Sie sich tausenden erfolgreichen Händlern an",
-      "button": "🚀 Store erstellen – ohne Anmeldung",
+      "title": "Bereit anzufangen?",
+      "subtitle": "Schließen Sie sich erfolgreichen Unternehmen an",
+      "button": "🚀 Jetzt kostenlos starten",
       "note": "Keine Kreditkarte erforderlich • Jederzeit kündbar"
     },
     "videoUnavailable": "Video nicht verfügbar",
@@ -1712,13 +1713,13 @@
     "demo": {
       "loading": "Video wird geladen...",
       "title": "So einfach startest du",
-      "subtitle": "In nur 3 Schritten zum eigenen Online-Shop",
-      "step1Title": "1. Store-Info eingeben",
+      "subtitle": "In nur 3 Schritten zur eigenen Online-Präsenz",
+      "step1Title": "1. Basis-Info eingeben",
       "step1Text": "Name, Kategorie & Kontaktdaten – fertig in 60 Sekunden.",
-      "step2Title": "2. Produkte hinzufügen",
+      "step2Title": "2. Angebote hinzufügen",
       "step2Text": "Per Hand oder KI-unterstützt – du entscheidest.",
-      "step3Title": "3. Bestellungen empfangen",
-      "step3Text": "Kunden kaufen direkt per WhatsApp oder im Shop.",
+      "step3Title": "3. Anfragen empfangen",
+      "step3Text": "Kunden kontaktieren direkt per WhatsApp oder über Ihre Präsenz.",
       "watchVideo": "📹 Demo ansehen (2 Min)",
       "ctaText": "Bereit anzufangen?",
       "ctaButton": "Jetzt kostenlos starten"
@@ -1727,7 +1728,7 @@
       "stickyCta": "🚀 Kostenlosen Store erstellen"
     },
     "footer": {
-      "tagline": "Die moderne E-Commerce-Plattform",
+      "tagline": "Die moderne Plattform für marokkanische Unternehmen",
       "product": "Produkt",
       "legal": "Legal",
       "imprint": "Impressum",

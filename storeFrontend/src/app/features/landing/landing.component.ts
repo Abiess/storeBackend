@@ -7,7 +7,7 @@ import { LucideAngularModule } from 'lucide-angular';
 import { ClarityService } from '@app/core/services/clarity.service';
 import { AuthService } from '@app/core/services/auth.service';
 
-type BusinessType = 'SHOP' | 'RESTAURANT' | 'RIAD';
+type BusinessType = 'SHOP' | 'RESTAURANT' | 'SERVICE' | 'RIAD';
 
 @Component({
     selector: 'app-landing',
@@ -35,6 +35,7 @@ export class LandingComponent implements OnInit, OnDestroy {
   businessTypes = [
     { id: 'SHOP' as BusinessType, icon: '🏪', label: 'landing.businessTypes.shop' },
     { id: 'RESTAURANT' as BusinessType, icon: '🍽️', label: 'landing.businessTypes.restaurant' },
+    { id: 'SERVICE' as BusinessType, icon: '🔧', label: 'landing.businessTypes.service' },
     { id: 'RIAD' as BusinessType, icon: '🏨', label: 'landing.businessTypes.riad' }
   ];
 
