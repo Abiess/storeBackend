@@ -194,9 +194,9 @@
 
 </div><!-- End storefront-wrapper -->
 
-<!-- Mobile Bottom Navigation (nur auf < 768px sichtbar) -->
+<!-- Mobile Bottom Navigation (nur auf < 768px sichtbar, nicht bei SERVICE_PROFESSIONAL) -->
 <app-storefront-bottom-nav
-  *ngIf="!storeNotFound"
+  *ngIf="!storeNotFound && !isServiceMode"
   [cartCount]="cartItemCount"
   [categoryActive]="bottomNavCategoryActive"
   [searchActive]="bottomNavSearchActive"
