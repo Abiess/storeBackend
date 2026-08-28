@@ -3027,5 +3027,77 @@
       "DATE": "Date"
     },
     "SEARCH_PLACEHOLDER": "Rechercher des documents..."
+  },
+  "service": {
+    "layoutTitle": "Service Professional Layout",
+    "skeleton": {
+      "store": "Informations sur le magasin",
+      "name": "Nom",
+      "description": "Description",
+      "theme": "Template",
+      "services": "Services",
+      "categories": "Catégories",
+      "contact": "Contact",
+      "phone": "Téléphone",
+      "email": "E-mail"
+    },
+    "nav": {
+      "services": "Services",
+      "about": "À propos",
+      "gallery": "Galerie",
+      "contact": "Contact"
+    },
+    "header": {
+      "contact": "Contact"
+    },
+    "hero": {
+      "cta": {
+        "inquiry": "Faire une demande",
+        "services": "Voir les services"
+      }
+    },
+    "services": {
+      "title": "Nos Services",
+      "subtitle": "Services professionnels pour vos besoins",
+      "filter": {
+        "all": "Tous"
+      },
+      "badge": {
+        "featured": "Recommandé"
+      },
+      "price": {
+        "onRequest": "Sur demande"
+      },
+      "cta": {
+        "inquiry": "Demande"
+      }
+    },
+    "trust": {
+      "openingHours": "Horaires d'ouverture",
+      "location": "Emplacement",
+      "phone": "Téléphone"
+    },
+    "about": {
+      "title": "À propos de nous"
+    },
+    "gallery": {
+      "title": "Galerie",
+      "subtitle": "Aperçu de notre travail"
+    },
+    "contact": {
+      "title": "Contact",
+      "subtitle": "Nous sommes impatients de recevoir votre demande",
+      "phone": "Téléphone",
+      "email": "E-mail",
+      "whatsapp": "WhatsApp",
+      "address": "Adresse",
+      "openingHours": "Horaires d'ouverture",
+      "openInMaps": "Ouvrir dans Google Maps"
+    },
+    "footer": {
+      "contact": "Contact",
+      "social": "Réseaux sociaux",
+      "rights": "Tous droits réservés."
+    }
   }
 }
