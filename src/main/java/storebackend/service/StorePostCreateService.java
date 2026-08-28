@@ -35,6 +35,7 @@ public class StorePostCreateService {
     private final StoreSliderInitializer sliderInitializer;
     private final StoreHomepageInitializer homepageInitializer;
     private final StoreProductInitializer productInitializer;
+    private final StoreThemeInitializer themeInitializer;
 
     /**
      * Executes all post-create operations safely.
@@ -71,7 +72,13 @@ public class StorePostCreateService {
             log.warn("Product initialization failed for store {}, but store was created successfully", storeId);
         }
 
-        log.debug("Post-create operations completed for store {} (subdomain: {}, slider: {}, homepage: {}, products: {})",
-                storeId, subdomainCreated, sliderInitialized, homepageInitialized, productsInitialized);
+        // Initialize default theme based on BusinessType in separate transaction
+        boolean themeInitialized = themeInitializer.initializeDefaultTheme(storeId);
+        if (!themeInitialized) {
+            log.warn("Theme initialization failed for store {}, but store was created successfully", storeId);
+        }
+
+        log.debug("Post-create operations completed for store {} (subdomain: {}, slider: {}, homepage: {}, products: {}, theme: {})",
+                storeId, subdomainCreated, sliderInitialized, homepageInitialized, productsInitialized, themeInitialized);
     }
 }
