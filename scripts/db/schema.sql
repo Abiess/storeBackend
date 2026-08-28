@@ -154,6 +154,10 @@ ALTER TABLE stores ADD COLUMN IF NOT EXISTS google_maps_url TEXT;
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS bot_protection_enabled BOOLEAN NOT NULL DEFAULT TRUE;
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS bot_protection_mode VARCHAR(20) NOT NULL DEFAULT 'SUSPICIOUS_ONLY';
 
+-- Business Type Constraint (erlaubt: SHOP, RESTAURANT, RIAD, SERVICE)
+ALTER TABLE stores DROP CONSTRAINT IF EXISTS stores_business_type_check;
+ALTER TABLE stores ADD CONSTRAINT stores_business_type_check CHECK (business_type IN ('SHOP', 'RESTAURANT', 'RIAD', 'SERVICE'));
+
 -- Domains Tabelle
 CREATE TABLE IF NOT EXISTS domains (
                                        id BIGSERIAL PRIMARY KEY,
