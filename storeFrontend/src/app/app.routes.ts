@@ -100,11 +100,12 @@ export const routes: Routes = [
     // KEIN authGuard – Component prüft selbst und redirectet zu Login mit returnUrl
   },
   
-  // /create-store = öffentlich, kein Login erforderlich – nutzt das gemeinsame Store-Creation-UI
+  // /create-store = NUR für authentifizierte User (Auth-First-Flow)
+  // Nutzt bestehenden authenticated Endpoint POST /api/me/stores
   {
     path: 'create-store',
-    loadComponent: () => import('./features/stores/create-store-public.component').then(m => m.CreateStorePublicComponent)
-    // KEIN authGuard – funktioniert mit public Endpoint für nicht-eingeloggte User
+    loadComponent: () => import('./features/stores/create-store-public.component').then(m => m.CreateStorePublicComponent),
+    canActivate: [authGuard] // ✅ AUTH REQUIRED - redirects to /login?returnUrl=/create-store
   },
 
   // ==================== Store Creation Wizard (für eingeloggte User) ====================

@@ -6,6 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { AuthService } from '@app/core/services/auth.service';
+import { StoreService } from '@app/core/services/store.service';
 import { TranslationService } from '@app/core/services/translation.service';
 import { environment } from '@env/environment';
 import { UnsplashService, UnsplashImage } from '@app/core/services/unsplash.service';
@@ -588,6 +589,7 @@ export class CreateStorePublicComponent implements OnInit, OnDestroy {
     private http: HttpClient,
     private router: Router,
     private authService: AuthService,
+    private storeService: StoreService,
     private unsplashService: UnsplashService,
     private translationService: TranslationService
   ) {
@@ -680,30 +682,28 @@ export class CreateStorePublicComponent implements OnInit, OnDestroy {
       .replace(/[^a-z0-9-]/g, '')
       .substring(0, 30);
 
+    // ✅ NEW: Use authenticated endpoint POST /api/me/stores
     const payload = {
-      storeName: name,
-      storeSlug: slugBase,
-      category: this.selectedCategory() || 'other',
-      businessType: this.selectedBusinessType()
+      name: name,
+      slug: slugBase,
+      businessType: this.selectedBusinessType(),
+      description: `Category: ${this.selectedCategory() || 'other'}`,
+      seedSampleData: false
     };
 
-    this.http.post<CreateStoreResponse>(`${environment.apiUrl}/public/create-store`, payload).subscribe({
-      next: (res) => {
+    this.storeService.createStore(payload).subscribe({
+      next: (store) => {
         this.loading.set(false);
-        localStorage.setItem('auth_token', res.token);
-        localStorage.setItem('currentUser', JSON.stringify({
-          id: res.userId,
-          email: res.userEmail,
-          name,
-          role: 'USER',
-          roles: ['USER']
-        }));
-        this.authService.setAuthFromStorage();
-        this.createdStoreId = res.storeId;
+        this.createdStoreId = store.id;
         this.storeName.set(name);
-        this.storeSlug.set(res.storeSlug);
-        this.storeUrl.set(res.storeUrl ?? ('https://' + res.storeSlug + '.markt.ma'));
-        this.applyUnsplashImages(res.storeId).then(() => this.step.set('done'));
+        this.storeSlug.set(store.slug);
+        this.storeUrl.set(`https://${store.slug}.markt.ma`);
+        
+        // Apply Unsplash images if selected, then navigate to dashboard
+        this.applyUnsplashImages(store.id).then(() => {
+          // ✅ Navigate directly to new store dashboard (authenticated user)
+          this.router.navigate(['/stores', store.id, 'dashboard']);
+        });
       },
       error: (err) => {
         this.loading.set(false);
@@ -727,7 +727,7 @@ export class CreateStorePublicComponent implements OnInit, OnDestroy {
   }
 
   goToDashboard(): void {
-    this.router.navigate(['/stores', this.createdStoreId]);
+    this.router.navigate(['/stores', this.createdStoreId, 'dashboard']);
   }
 
   sendAccessEmail(): void {
