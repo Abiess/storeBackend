@@ -245,14 +245,16 @@ export class AdminSidebarComponent implements OnInit {
                         labelKey: 'sidebarAdmin.items.banner',
                         icon: 'megaphone',
                         route: `${baseRoute}/banner`,
-                        requiresStore: true
+                        requiresStore: true,
+                        visibleForBusinessTypes: [BusinessType.SHOP]  // Promo-Banner nur für SHOP
                     },
                     {
                         labelKey: 'sidebarAdmin.items.delivery',
                         icon: 'truck',
                         route: `${baseRoute}/delivery`,
                         requiresStore: true,
-                        visible: true   // DHL-Integration: Store-spezifische Liefereinstellungen wieder aktiviert
+                        visible: true,   // DHL-Integration: Store-spezifische Liefereinstellungen wieder aktiviert
+                        visibleForBusinessTypes: [BusinessType.SHOP]  // Lieferung nur für SHOP
                     },
                     {
                         labelKey: 'sidebarAdmin.items.seo',
@@ -264,7 +266,8 @@ export class AdminSidebarComponent implements OnInit {
                         labelKey: 'sidebarAdmin.items.brand',
                         icon: 'tag',
                         route: `${baseRoute}/brand`,
-                        requiresStore: true
+                        requiresStore: true,
+                        visibleForBusinessTypes: [BusinessType.SHOP]  // Marke nur für SHOP
                     },
                     {
                         labelKey: 'sidebarAdmin.items.woocommerce',
@@ -277,7 +280,8 @@ export class AdminSidebarComponent implements OnInit {
                         labelKey: 'sidebarAdmin.items.telegram',
                         icon: 'send',
                         route: `${baseRoute}/telegram`,
-                        requiresStore: true
+                        requiresStore: true,
+                        visibleForBusinessTypes: [BusinessType.SHOP]  // Telegram nur für SHOP
                     }
                 ]
             },

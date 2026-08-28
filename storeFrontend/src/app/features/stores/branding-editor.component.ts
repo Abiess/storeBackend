@@ -848,6 +848,7 @@ import { Subscription } from 'rxjs';
 export class BrandingEditorComponent implements OnInit, OnDestroy {
   private storeId: number | null = null;
   private storeIdSubscription?: Subscription;
+  private currentTheme: StoreTheme | null = null;  // Store existing theme
 
   brandingForm: FormGroup;
   logoPreview: string | null = null;
@@ -943,6 +944,9 @@ export class BrandingEditorComponent implements OnInit, OnDestroy {
     this.themeService.getActiveTheme(this.storeId).subscribe({
       next: (theme) => {
         if (theme) {
+          // Store existing theme (preserves template, type, etc.)
+          this.currentTheme = theme;
+
           this.brandingForm.patchValue({
             primaryColor: theme.colors.primary,
             secondaryColor: theme.colors.secondary,
@@ -1085,57 +1089,87 @@ export class BrandingEditorComponent implements OnInit, OnDestroy {
 
     this.saving = true;
 
-    // Create theme request
-    const themeRequest = {
-      storeId: this.storeId,
-      name: 'Custom Theme',
-      type: 'MODERN' as any,
-      template: 'CUSTOM' as any,
-      colors: {
-        primary: this.brandingForm.get('primaryColor')?.value,
-        secondary: this.brandingForm.get('secondaryColor')?.value,
-        accent: this.brandingForm.get('accentColor')?.value,
-        background: '#ffffff',
-        text: '#1a202c',
-        textSecondary: '#718096',
-        border: '#e2e8f0',
-        success: '#48bb78',
-        warning: '#ed8936',
-        error: '#f56565'
-      },
-      typography: {
-        fontFamily: this.brandingForm.get('fontFamily')?.value,
-        headingFontFamily: this.brandingForm.get('fontFamily')?.value,
-        fontSize: {
-          small: '0.875rem',
-          base: '1rem',
-          large: '1.125rem',
-          xl: '1.5rem',
-          xxl: '2.25rem'
-        }
-      },
-      layout: {
-        headerStyle: 'fixed' as any,
-        footerStyle: 'full' as any,
-        productGridColumns: 3 as any,
-        borderRadius: 'medium' as any,
-        spacing: 'normal' as any
-      },
-      logoUrl: this.uploadedLogoUrl || undefined
+    // Build updated colors/typography/logo
+    const updatedColors = {
+      primary: this.brandingForm.get('primaryColor')?.value,
+      secondary: this.brandingForm.get('secondaryColor')?.value,
+      accent: this.brandingForm.get('accentColor')?.value,
+      background: this.currentTheme?.colors.background || '#ffffff',
+      text: this.currentTheme?.colors.text || '#1a202c',
+      textSecondary: this.currentTheme?.colors.textSecondary || '#718096',
+      border: this.currentTheme?.colors.border || '#e2e8f0',
+      success: this.currentTheme?.colors.success || '#48bb78',
+      warning: this.currentTheme?.colors.warning || '#ed8936',
+      error: this.currentTheme?.colors.error || '#f56565'
     };
 
-    this.themeService.createTheme(themeRequest).subscribe({
-      next: (theme) => {
-        console.log('✅ Theme saved:', theme);
-        this.saving = false;
-        alert(this.translate.instant('brandingEditor.actions.saveSuccess'));
-      },
-      error: (err) => {
-        console.error('❌ Error saving theme:', err);
-        this.saving = false;
-        alert(this.translate.instant('brandingEditor.actions.saveError'));
+    const updatedTypography = {
+      fontFamily: this.brandingForm.get('fontFamily')?.value,
+      headingFontFamily: this.brandingForm.get('fontFamily')?.value,
+      fontSize: this.currentTheme?.typography.fontSize || {
+        small: '0.875rem',
+        base: '1rem',
+        large: '1.125rem',
+        xl: '1.5rem',
+        xxl: '2.25rem'
       }
-    });
+    };
+
+    if (this.currentTheme && this.currentTheme.id) {
+      // UPDATE existing theme - preserve template and type
+      const updates: Partial<StoreTheme> = {
+        colors: updatedColors,
+        typography: updatedTypography,
+        logoUrl: this.uploadedLogoUrl || this.currentTheme.logoUrl
+        // DO NOT SET template or type - preserve existing values
+      };
+
+      this.themeService.updateTheme(this.currentTheme.id, updates).subscribe({
+        next: (theme) => {
+          console.log('✅ Theme updated (template preserved):', theme);
+          this.currentTheme = theme;  // Update local copy
+          this.saving = false;
+          alert(this.translate.instant('brandingEditor.actions.saveSuccess'));
+        },
+        error: (err) => {
+          console.error('❌ Error updating theme:', err);
+          this.saving = false;
+          alert(this.translate.instant('brandingEditor.actions.saveError'));
+        }
+      });
+    } else {
+      // CREATE new theme (first time setup)
+      const themeRequest = {
+        storeId: this.storeId,
+        name: 'Custom Theme',
+        type: 'MODERN' as any,
+        template: 'CUSTOM' as any,  // Only set CUSTOM when creating new theme
+        colors: updatedColors,
+        typography: updatedTypography,
+        layout: {
+          headerStyle: 'fixed' as any,
+          footerStyle: 'full' as any,
+          productGridColumns: 3 as any,
+          borderRadius: 'medium' as any,
+          spacing: 'normal' as any
+        },
+        logoUrl: this.uploadedLogoUrl || undefined
+      };
+
+      this.themeService.createTheme(themeRequest).subscribe({
+        next: (theme) => {
+          console.log('✅ Theme created:', theme);
+          this.currentTheme = theme;  // Store new theme
+          this.saving = false;
+          alert(this.translate.instant('brandingEditor.actions.saveSuccess'));
+        },
+        error: (err) => {
+          console.error('❌ Error creating theme:', err);
+          this.saving = false;
+          alert(this.translate.instant('brandingEditor.actions.saveError'));
+        }
+      });
+    }
   }
 }
 
