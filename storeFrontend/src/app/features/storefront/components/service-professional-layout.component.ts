@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { StoreCurrencyPipe } from '@app/core/pipes/store-currency.pipe';
 import { ImageSliderComponent, SliderImage } from '@app/shared/components/image-slider.component';
+import { LanguageSelectorComponent } from '@app/shared/components/language-selector/language-selector.component';
 import { Product, Category, StoreTheme } from '@app/core/models';
 
 /**
@@ -20,7 +21,7 @@ import { Product, Category, StoreTheme } from '@app/core/models';
 @Component({
   selector: 'app-service-professional-layout',
   standalone: true,
-  imports: [CommonModule, TranslatePipe, StoreCurrencyPipe, ImageSliderComponent],
+  imports: [CommonModule, TranslatePipe, StoreCurrencyPipe, ImageSliderComponent, LanguageSelectorComponent],
   templateUrl: './service-professional-layout.component.html',
   styleUrls: ['./service-professional-layout.component.scss']
 })

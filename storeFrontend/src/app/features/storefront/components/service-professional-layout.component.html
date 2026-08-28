@@ -43,6 +43,11 @@
           <span class="sp-header__cta-text">{{ 'service.header.contact' | translate }}</span>
         </a>
 
+        <!-- Language Selector -->
+        <div class="sp-header__language">
+          <app-language-selector></app-language-selector>
+        </div>
+
         <!-- Mobile Menu Toggle -->
         <button class="sp-header__menu-btn" 
                 (click)="toggleMobileMenu()"
@@ -84,6 +89,11 @@
           </svg>
           {{ 'service.header.contact' | translate }}
         </a>
+        
+        <!-- Language Selector in Mobile Menu -->
+        <div class="sp-header__mobile-language">
+          <app-language-selector></app-language-selector>
+        </div>
       </nav>
     </div>
   </header>

@@ -6,7 +6,8 @@
 <!-- Normaler Store-Inhalt -->
 <div *ngIf="!storeNotFound" class="storefront-wrapper">
   <!-- Sticky Header mit Store-Name und Warenkorb -->
-  <div class="sticky-header">
+  <!-- ✅ Nur für normale Shop-Templates, NICHT für Full-Page-Templates (SERVICE_PROFESSIONAL) -->
+  <div class="sticky-header" *ngIf="!isServiceMode">
     <app-storefront-header
       [storeName]="storeName || 'Loading...'"
       [storeSlug]="storeName || ''"

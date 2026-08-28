@@ -189,6 +189,15 @@
     white-space: nowrap;
   }
 
+  // Language Selector (Desktop)
+  &__language {
+    display: none;
+    
+    @media (min-width: 1024px) {
+      display: block;
+    }
+  }
+
   // Mobile Menu Button
   &__menu-btn {
     display: flex;
@@ -282,6 +291,13 @@
     svg {
       flex-shrink: 0;
     }
+  }
+
+  // Language Selector in Mobile Menu
+  &__mobile-language {
+    padding: 1rem;
+    margin-top: 1rem;
+    border-top: 1px solid var(--sp-border);
   }
 }
 
