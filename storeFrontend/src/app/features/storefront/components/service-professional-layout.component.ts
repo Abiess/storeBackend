@@ -74,11 +74,11 @@ export class ServiceProfessionalLayoutComponent implements OnInit {
 
   // Theme helper methods
   get primaryColor(): string {
-    return this.theme?.colors?.primary || '#667eea';
+    return this.theme?.colors?.primary || '#2563eb'; // Professional blue
   }
 
   get secondaryColor(): string {
-    return this.theme?.colors?.secondary || '#764ba2';
+    return this.theme?.colors?.secondary || '#1e40af'; // Darker blue
   }
 
   get textColor(): string {
