@@ -38,7 +38,8 @@ public class UnsplashImageService {
     private static final Map<BusinessType, String> DEFAULT_QUERIES = Map.of(
         BusinessType.RIAD,       "riad moroccan patio architecture",
         BusinessType.RESTAURANT, "moroccan restaurant food tagine",
-        BusinessType.SHOP,       "boutique shop retail interior"
+        BusinessType.SHOP,       "boutique shop retail interior",
+        BusinessType.SERVICE,    "professional service business office team"
     );
 
     /** Kategorie-Mappings für präzisere Bildsuche (alle Open Source erlaubt) */

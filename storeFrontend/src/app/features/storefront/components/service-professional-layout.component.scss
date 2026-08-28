@@ -1,0 +1,447 @@
+// ═══════════════════════════════════════════════════════════════
+// SERVICE PROFESSIONAL LAYOUT – Professional Business Template
+// ═══════════════════════════════════════════════════════════════
+
+.sp {
+  // ─── Component-scoped CSS Variables (Theme Integration) ─────
+  --sp-primary: var(--theme-primary, #667eea);
+  --sp-secondary: var(--theme-secondary, #764ba2);
+  --sp-text: var(--theme-text, #1f2937);
+  --sp-text-light: var(--theme-text-secondary, #6b7280);
+  --sp-bg: var(--theme-background, #ffffff);
+  --sp-border: var(--theme-border, #e5e7eb);
+  
+  // WhatsApp brand color (override)
+  --sp-whatsapp: #25d366;
+  
+  // Layout
+  --sp-header-height: 70px;
+  --sp-container-max: 1200px;
+  --sp-section-padding: 5rem;
+  --sp-section-padding-mobile: 3rem;
+
+  min-height: 100vh;
+  background: var(--sp-bg);
+  color: var(--sp-text);
+}
+
+// ─────────────────────────────────────────────────────────────
+// CONTAINER – Responsive Width Container
+// ─────────────────────────────────────────────────────────────
+.sp-container {
+  max-width: var(--sp-container-max);
+  margin: 0 auto;
+  padding: 0 2rem;
+
+  @media (max-width: 768px) {
+    padding: 0 1rem;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HEADER – Professional Business Navigation
+// ═══════════════════════════════════════════════════════════════
+.sp-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--sp-bg);
+  border-bottom: 1px solid var(--sp-border);
+  backdrop-filter: blur(10px);
+  background-color: rgba(255, 255, 255, 0.95);
+
+  &__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: var(--sp-header-height);
+    gap: 2rem;
+  }
+
+  // Brand / Logo
+  &__brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    color: var(--sp-text);
+    font-weight: 700;
+    font-size: 1.25rem;
+    transition: opacity 0.2s;
+
+    &:hover {
+      opacity: 0.7;
+    }
+  }
+
+  &__logo {
+    height: 40px;
+    width: auto;
+    max-width: 150px;
+    object-fit: contain;
+  }
+
+  &__name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  // Desktop Navigation
+  &__nav {
+    display: none;
+    align-items: center;
+    gap: 2rem;
+    flex: 1;
+    justify-content: center;
+
+    @media (min-width: 1024px) {
+      display: flex;
+    }
+  }
+
+  &__link {
+    text-decoration: none;
+    color: var(--sp-text);
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: color 0.2s;
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--sp-primary);
+      transform: scaleX(0);
+      transition: transform 0.2s;
+    }
+
+    &:hover {
+      color: var(--sp-primary);
+      
+      &::after {
+        transform: scaleX(1);
+      }
+    }
+  }
+
+  // WhatsApp CTA Button
+  &__cta {
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    background: var(--sp-whatsapp);
+    color: white;
+    text-decoration: none;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 8px rgba(37, 211, 102, 0.3);
+
+    @media (min-width: 1024px) {
+      display: flex;
+    }
+
+    svg {
+      flex-shrink: 0;
+    }
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(37, 211, 102, 0.4);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
+  &__cta-text {
+    white-space: nowrap;
+  }
+
+  // Mobile Menu Button
+  &__menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: none;
+    border: none;
+    color: var(--sp-text);
+    cursor: pointer;
+    padding: 0;
+    border-radius: 8px;
+    transition: background 0.2s;
+
+    @media (min-width: 1024px) {
+      display: none;
+    }
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.05);
+    }
+
+    &:active {
+      background: rgba(0, 0, 0, 0.1);
+    }
+
+    svg {
+      display: block;
+    }
+  }
+
+  // Mobile Menu Overlay
+  &__mobile-menu {
+    position: fixed;
+    top: var(--sp-header-height);
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--sp-bg);
+    transform: translateX(100%);
+    transition: transform 0.3s ease-in-out;
+    overflow-y: auto;
+    z-index: 99;
+
+    @media (min-width: 1024px) {
+      display: none;
+    }
+
+    &--open {
+      transform: translateX(0);
+    }
+  }
+
+  &__mobile-nav {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    gap: 0.5rem;
+  }
+
+  &__mobile-link {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    color: var(--sp-text);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 1rem;
+    border-radius: 8px;
+    transition: background 0.2s;
+
+    &:hover, &:active {
+      background: rgba(0, 0, 0, 0.05);
+    }
+  }
+
+  &__mobile-cta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    margin-top: 1rem;
+    background: var(--sp-whatsapp);
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(37, 211, 102, 0.3);
+
+    svg {
+      flex-shrink: 0;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HERO – Professional Business Hero Section
+// ═══════════════════════════════════════════════════════════════
+.sp-hero {
+  position: relative;
+  min-height: 600px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 0;
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    min-height: 500px;
+    padding: 3rem 0;
+  }
+
+  // Background Image
+  &__bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: 1;
+  }
+
+  // Gradient Overlay (theme-based or default)
+  &__overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2;
+  }
+
+  // With image: dark overlay for readability
+  &--has-image &__overlay {
+    background: linear-gradient(
+      135deg,
+      rgba(0, 0, 0, 0.7) 0%,
+      rgba(0, 0, 0, 0.5) 100%
+    );
+  }
+
+  // Without image: theme gradient
+  &:not(&--has-image) &__overlay {
+    background: linear-gradient(
+      135deg,
+      var(--sp-primary) 0%,
+      var(--sp-secondary) 100%
+    );
+  }
+
+  // Content
+  &__content {
+    position: relative;
+    z-index: 3;
+    text-align: center;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  &__title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin: 0 0 1.5rem;
+    color: white;
+
+    @media (max-width: 768px) {
+      font-size: 2.25rem;
+      margin-bottom: 1rem;
+    }
+  }
+
+  &__subtitle {
+    font-size: 1.25rem;
+    line-height: 1.6;
+    margin: 0 0 2.5rem;
+    color: rgba(255, 255, 255, 0.95);
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+
+    @media (max-width: 768px) {
+      font-size: 1.05rem;
+      margin-bottom: 2rem;
+    }
+  }
+
+  // CTA Buttons
+  &__actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  &__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.875rem 2rem;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 1rem;
+    text-decoration: none;
+    transition: all 0.2s;
+    min-height: 48px;
+
+    svg {
+      flex-shrink: 0;
+    }
+
+    // Primary CTA (WhatsApp)
+    &--primary {
+      background: var(--sp-whatsapp);
+      color: white;
+      box-shadow: 0 4px 16px rgba(37, 211, 102, 0.4);
+
+      &:hover {
+        background: #22c55e;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(37, 211, 102, 0.5);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+    }
+
+    // Secondary CTA (Scroll to services)
+    &--secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      backdrop-filter: blur(4px);
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.6);
+        transform: translateY(-2px);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 768px) {
+      flex: 1 1 auto;
+      min-width: 200px;
+      justify-content: center;
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// RTL (Right-to-Left) Support
+// ─────────────────────────────────────────────────────────────
+[dir="rtl"] {
+  .sp-header {
+    &__brand {
+      flex-direction: row-reverse;
+    }
+
+    &__nav,
+    &__actions {
+      flex-direction: row-reverse;
+    }
+  }
+
+  .sp-hero {
+    &__actions {
+      flex-direction: row-reverse;
+    }
+  }
+}

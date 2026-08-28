@@ -507,7 +507,7 @@ export class CreateStorePublicComponent implements OnInit, OnDestroy {
   carouselImages = signal<UnsplashImage[]>([]);
   carouselLoading = signal(false);
   selectedBannerImage = signal<UnsplashImage | null>(null);
-  selectedBusinessType = signal<'SHOP' | 'RESTAURANT' | 'RIAD'>('SHOP');
+  selectedBusinessType = signal<'SHOP' | 'RESTAURANT' | 'RIAD' | 'SERVICE'>('SHOP');
   emailToSave = signal('');
   emailSaving = signal(false);
   emailSent = signal(false);
@@ -544,6 +544,16 @@ export class CreateStorePublicComponent implements OnInit, OnDestroy {
         { id: 'budget', icon: 'Wallet', name: 'createStorePublic.riadCategories.budget' },
         { id: 'family', icon: 'Users', name: 'createStorePublic.riadCategories.family' },
         { id: 'romantic', icon: 'Heart', name: 'createStorePublic.riadCategories.romantic' }
+      ];
+    }
+    
+    if (type === 'SERVICE') {
+      return [
+        { id: 'consulting', icon: 'Users', name: 'createStorePublic.serviceCategories.consulting' },
+        { id: 'creative', icon: 'Sparkles', name: 'createStorePublic.serviceCategories.creative' },
+        { id: 'technical', icon: 'Smartphone', name: 'createStorePublic.serviceCategories.technical' },
+        { id: 'professional', icon: 'Building', name: 'createStorePublic.serviceCategories.professional' },
+        { id: 'other', icon: 'Package', name: 'createStorePublic.serviceCategories.other' }
       ];
     }
     
@@ -590,7 +600,7 @@ export class CreateStorePublicComponent implements OnInit, OnDestroy {
     // BusinessType aus Landing-Page übernehmen (falls vorhanden)
     const preferredBusinessType = localStorage.getItem('preferredBusinessType');
     if (preferredBusinessType) {
-      this.selectedBusinessType.set(preferredBusinessType as 'SHOP' | 'RESTAURANT' | 'RIAD');
+      this.selectedBusinessType.set(preferredBusinessType as 'SHOP' | 'RESTAURANT' | 'RIAD' | 'SERVICE');
       console.log('✅ [CreateStore] preferredBusinessType geladen:', preferredBusinessType);
       localStorage.removeItem('preferredBusinessType'); // Cleanup nach Verwendung
     }

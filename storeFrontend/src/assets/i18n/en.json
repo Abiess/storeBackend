@@ -2257,6 +2257,13 @@
       "family": "Family",
       "romantic": "Romantic"
     },
+    "serviceCategories": {
+      "consulting": "Consulting",
+      "creative": "Creative",
+      "technical": "Technical",
+      "professional": "Professional",
+      "other": "Other"
+    },
     "bannerLabel": "📸 Choose banner image",
     "photoBy": "Photo by:",
     "unsplash": "Unsplash",
@@ -3487,6 +3494,35 @@
       "currentlyOccupied": "Currently occupied",
       "notFound": "Slot not found",
       "notFoundDesc": "The requested slot does not exist"
+    }
+  },
+  "service": {
+    "layoutTitle": "Service Professional Layout",
+    "skeleton": {
+      "store": "Store Information",
+      "name": "Name",
+      "description": "Description",
+      "theme": "Template",
+      "services": "Services",
+      "categories": "Categories",
+      "contact": "Contact",
+      "phone": "Phone",
+      "email": "Email"
+    },
+    "nav": {
+      "services": "Services",
+      "about": "About",
+      "gallery": "Gallery",
+      "contact": "Contact"
+    },
+    "header": {
+      "contact": "Contact"
+    },
+    "hero": {
+      "cta": {
+        "inquiry": "Request Inquiry",
+        "services": "View Services"
+      }
     }
   }
 }

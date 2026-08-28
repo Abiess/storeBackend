@@ -761,7 +761,8 @@ export interface InventoryLog {
 export enum BusinessType {
   SHOP = 'SHOP',
   RESTAURANT = 'RESTAURANT',
-  RIAD = 'RIAD'
+  RIAD = 'RIAD',
+  SERVICE = 'SERVICE'
 }
 
 export interface Store {

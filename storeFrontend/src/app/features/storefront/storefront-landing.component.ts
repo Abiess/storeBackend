@@ -28,6 +28,7 @@ import { ProductGridFashionComponent } from './components/product-grid-fashion.c
 import { ProductGridCompactComponent } from './components/product-grid-compact.component';
 import { ProductGridMarketplaceComponent } from './components/product-grid-marketplace.component';
 import { RestaurantWarmLayoutComponent } from './components/restaurant-warm-layout.component';
+import { ServiceProfessionalLayoutComponent } from './components/service-professional-layout.component';
 
 /**
  * Dedizierte Storefront-Landing-Page für Subdomains (abc.markt.ma)
@@ -53,7 +54,8 @@ import { RestaurantWarmLayoutComponent } from './components/restaurant-warm-layo
         ProductGridFashionComponent,
         ProductGridCompactComponent,
         ProductGridMarketplaceComponent,
-        RestaurantWarmLayoutComponent
+        RestaurantWarmLayoutComponent,
+        ServiceProfessionalLayoutComponent
     ],
     templateUrl: './storefront-landing.component.html',
     styleUrls: ['./storefront-landing.component.scss']
@@ -127,6 +129,14 @@ export class StorefrontLandingComponent implements OnInit {
     const bt = (this.storeBusinessType || '').toUpperCase();
     return this.activeTemplateCode === 'RESTAURANT_WARM'
       || bt === 'RESTAURANT' || bt === 'RIAD';
+  }
+
+  /**
+   * Service-Professional-Modus aktiv, wenn Theme SERVICE_PROFESSIONAL ist.
+   * WICHTIG: Nur template-basiert, KEINE businessType-Fallback-Logik.
+   */
+  get isServiceMode(): boolean {
+    return this.activeTemplateCode === 'SERVICE_PROFESSIONAL';
   }
 
   /** Erstes Slider-Bild als Hero-Hintergrund (oder null → Gradient-Fallback). */
@@ -247,7 +257,7 @@ export class StorefrontLandingComponent implements OnInit {
           this.themeService.applyTheme(theme);
           // ✅ Template-Code für Layout-Switch setzen
           const slug = (theme.template || '').toString().toUpperCase();
-          if (['MODERN_GRID', 'CLASSIC_BOOTSTRAP', 'ELECTRONICS_PRO', 'FASHION_EDITORIAL', 'MINIMAL_DARK', 'BEAUTY_SOFT', 'RESTAURANT_WARM'].includes(slug)) {
+          if (['MODERN_GRID', 'CLASSIC_BOOTSTRAP', 'ELECTRONICS_PRO', 'FASHION_EDITORIAL', 'MINIMAL_DARK', 'BEAUTY_SOFT', 'RESTAURANT_WARM', 'SERVICE_PROFESSIONAL'].includes(slug)) {
             this.activeTemplateCode = slug;
           } else {
             // Fallback-Mapping: ShopTemplate enum → Layout-Slug

@@ -2179,6 +2179,13 @@
       "family": "عائلي",
       "romantic": "رومانسي"
     },
+    "serviceCategories": {
+      "consulting": "استشارات",
+      "creative": "إبداعي",
+      "technical": "تقني",
+      "professional": "احترافي",
+      "other": "أخرى"
+    },
     "bannerLabel": "📸 اختر صورة العنوان",
     "photoBy": "الصورة من:",
     "unsplash": "Unsplash",
@@ -3395,6 +3402,35 @@
       "currentlyOccupied": "المشغول حاليًا",
       "notFound": "الخانة غير موجودة",
       "notFoundDesc": "الخانة المطلوبة غير موجودة"
+    }
+  },
+  "service": {
+    "layoutTitle": "تصميم احترافي للخدمات",
+    "skeleton": {
+      "store": "معلومات المتجر",
+      "name": "الاسم",
+      "description": "الوصف",
+      "theme": "القالب",
+      "services": "الخدمات",
+      "categories": "الفئات",
+      "contact": "التواصل",
+      "phone": "الهاتف",
+      "email": "البريد الإلكتروني"
+    },
+    "nav": {
+      "services": "الخدمات",
+      "about": "من نحن",
+      "gallery": "المعرض",
+      "contact": "اتصل بنا"
+    },
+    "header": {
+      "contact": "تواصل معنا"
+    },
+    "hero": {
+      "cta": {
+        "inquiry": "طلب استفسار",
+        "services": "عرض الخدمات"
+      }
     }
   }
 }

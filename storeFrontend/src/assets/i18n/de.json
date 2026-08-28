@@ -2270,6 +2270,13 @@
       "family": "Familie",
       "romantic": "Romantisch"
     },
+    "serviceCategories": {
+      "consulting": "Beratung",
+      "creative": "Kreativ",
+      "technical": "Technisch",
+      "professional": "Professional",
+      "other": "Sonstiges"
+    },
     "bannerLabel": "📸 Titelbild wählen",
     "photoBy": "Foto:",
     "unsplash": "Unsplash",
@@ -3522,6 +3529,35 @@
       "currentlyOccupied": "Aktuell belegt",
       "notFound": "Fach nicht gefunden",
       "notFoundDesc": "Das angeforderte Fach existiert nicht"
+    }
+  },
+  "service": {
+    "layoutTitle": "Service Professional Layout",
+    "skeleton": {
+      "store": "Store-Informationen",
+      "name": "Name",
+      "description": "Beschreibung",
+      "theme": "Template",
+      "services": "Leistungen",
+      "categories": "Kategorien",
+      "contact": "Kontakt",
+      "phone": "Telefon",
+      "email": "E-Mail"
+    },
+    "nav": {
+      "services": "Leistungen",
+      "about": "Über uns",
+      "gallery": "Galerie",
+      "contact": "Kontakt"
+    },
+    "header": {
+      "contact": "Kontakt"
+    },
+    "hero": {
+      "cta": {
+        "inquiry": "Anfrage stellen",
+        "services": "Leistungen ansehen"
+      }
     }
   }
 }

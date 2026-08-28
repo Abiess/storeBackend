@@ -76,10 +76,29 @@
   </app-restaurant-warm-layout>
 
   <!-- ═══════════════════════════════════════════════════════════════
+       SERVICE PROFESSIONAL MODE – dediziertes Service-Template
+       ═══════════════════════════════════════════════════════════════ -->
+  <app-service-professional-layout
+    *ngIf="!loading && isServiceMode"
+    [storeName]="storeName || ''"
+    [description]="storeDescription"
+    [logoUrl]="storeLogo"
+    [bannerImageUrl]="null"
+    [sliderImages]="sliderImages"
+    [products]="products"
+    [categories]="categories"
+    [whatsappNumber]="storeWhatsappNumber"
+    [contactPhone]="storeContactPhone"
+    [contactEmail]="storeContactEmail"
+    [theme]="null"
+    [currency]="storeCurrencyCode">
+  </app-service-professional-layout>
+
+  <!-- ═══════════════════════════════════════════════════════════════
        DYNAMIC LAYOUT SWITCH – basierend auf activeGridTemplate
        Hero bleibt immer gleich. Nur Produktgrid + Filter wechseln.
        ═══════════════════════════════════════════════════════════════ -->
-  <main class="storefront-main" *ngIf="!loading && !isRestaurantMode">
+  <main class="storefront-main" *ngIf="!loading && !isRestaurantMode && !isServiceMode">
 
     <!-- ── HERO / SLIDER – immer sichtbar, unabhängig vom Template ── -->
     <ng-container *ngTemplateOutlet="heroSection"></ng-container>
