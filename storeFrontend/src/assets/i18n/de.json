@@ -3558,6 +3558,49 @@
         "inquiry": "Anfrage stellen",
         "services": "Leistungen ansehen"
       }
+    },
+    "services": {
+      "title": "Unsere Leistungen",
+      "subtitle": "Professionelle Services für Ihre Anforderungen",
+      "filter": {
+        "all": "Alle"
+      },
+      "badge": {
+        "featured": "Empfohlen"
+      },
+      "price": {
+        "onRequest": "Auf Anfrage"
+      },
+      "cta": {
+        "inquiry": "Anfrage"
+      }
+    },
+    "trust": {
+      "openingHours": "Öffnungszeiten",
+      "location": "Standort",
+      "phone": "Telefon"
+    },
+    "about": {
+      "title": "Über uns"
+    },
+    "gallery": {
+      "title": "Galerie",
+      "subtitle": "Eindrücke unserer Arbeit"
+    },
+    "contact": {
+      "title": "Kontakt",
+      "subtitle": "Wir freuen uns auf Ihre Anfrage",
+      "phone": "Telefon",
+      "email": "E-Mail",
+      "whatsapp": "WhatsApp",
+      "address": "Adresse",
+      "openingHours": "Öffnungszeiten",
+      "openInMaps": "In Google Maps öffnen"
+    },
+    "footer": {
+      "contact": "Kontakt",
+      "social": "Social Media",
+      "rights": "Alle Rechte vorbehalten."
     }
   }
 }

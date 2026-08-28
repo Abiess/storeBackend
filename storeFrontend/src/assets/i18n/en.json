@@ -3523,6 +3523,49 @@
         "inquiry": "Request Inquiry",
         "services": "View Services"
       }
+    },
+    "services": {
+      "title": "Our Services",
+      "subtitle": "Professional services tailored to your needs",
+      "filter": {
+        "all": "All"
+      },
+      "badge": {
+        "featured": "Featured"
+      },
+      "price": {
+        "onRequest": "On Request"
+      },
+      "cta": {
+        "inquiry": "Inquiry"
+      }
+    },
+    "trust": {
+      "openingHours": "Opening Hours",
+      "location": "Location",
+      "phone": "Phone"
+    },
+    "about": {
+      "title": "About Us"
+    },
+    "gallery": {
+      "title": "Gallery",
+      "subtitle": "Impressions of our work"
+    },
+    "contact": {
+      "title": "Contact",
+      "subtitle": "We look forward to hearing from you",
+      "phone": "Phone",
+      "email": "Email",
+      "whatsapp": "WhatsApp",
+      "address": "Address",
+      "openingHours": "Opening Hours",
+      "openInMaps": "Open in Google Maps"
+    },
+    "footer": {
+      "contact": "Contact",
+      "social": "Social Media",
+      "rights": "All rights reserved."
     }
   }
 }

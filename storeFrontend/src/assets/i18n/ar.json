@@ -3431,6 +3431,49 @@
         "inquiry": "طلب استفسار",
         "services": "عرض الخدمات"
       }
+    },
+    "services": {
+      "title": "خدماتنا",
+      "subtitle": "خدمات احترافية مصممة خصيصاً لاحتياجاتك",
+      "filter": {
+        "all": "الكل"
+      },
+      "badge": {
+        "featured": "مميز"
+      },
+      "price": {
+        "onRequest": "حسب الطلب"
+      },
+      "cta": {
+        "inquiry": "استفسار"
+      }
+    },
+    "trust": {
+      "openingHours": "ساعات العمل",
+      "location": "الموقع",
+      "phone": "الهاتف"
+    },
+    "about": {
+      "title": "من نحن"
+    },
+    "gallery": {
+      "title": "معرض الصور",
+      "subtitle": "نماذج من أعمالنا"
+    },
+    "contact": {
+      "title": "اتصل بنا",
+      "subtitle": "يسعدنا تلقي استفساراتكم",
+      "phone": "الهاتف",
+      "email": "البريد الإلكتروني",
+      "whatsapp": "واتساب",
+      "address": "العنوان",
+      "openingHours": "ساعات العمل",
+      "openInMaps": "فتح في خرائط جوجل"
+    },
+    "footer": {
+      "contact": "التواصل",
+      "social": "وسائل التواصل الاجتماعي",
+      "rights": "جميع الحقوق محفوظة."
     }
   }
 }
