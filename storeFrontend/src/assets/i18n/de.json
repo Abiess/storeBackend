@@ -209,7 +209,8 @@
     },
     "hint": {
       "barcode": "EAN-13, UPC oder anderer Barcode-Standard. Kann manuell eingegeben oder gescannt werden.",
-      "expiryDate": "Optional: Aktuelles MHD des Produkts im Lager. Bei neuer Ware kann das Datum aktualisiert werden."
+      "expiryDate": "Optional: Aktuelles MHD des Produkts im Lager. Bei neuer Ware kann das Datum aktualisiert werden.",
+      "priceZeroForService": "0 = Auf Anfrage"
     },
     "variants": {
       "title": "Varianten",

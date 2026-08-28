@@ -138,10 +138,13 @@ import { Subscription } from 'rxjs';
                 type="number" 
                 formControlName="basePrice"
                 step="0.01"
-                min="0"
+                [min]="isServiceMode ? 0 : 0.01"
                 placeholder="0.00"
                 [class.error]="productForm.get('basePrice')?.invalid && productForm.get('basePrice')?.touched"
               />
+              <div class="form-hint" *ngIf="isServiceMode">
+                {{ 'product.hint.priceZeroForService' | translate }}
+              </div>
               <div class="error-message" *ngIf="productForm.get('basePrice')?.invalid && productForm.get('basePrice')?.touched">
                 {{ 'product.required.price' | translate }}
               </div>
@@ -2434,6 +2437,16 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     // BusinessType aus Context Service abonnieren (für UI-Anpassungen)
     this.storeContext.businessType$.subscribe(type => {
       this.isServiceMode = type === BusinessType.SERVICE;
+      
+      // SERVICE: Preis 0 erlauben (für "Auf Anfrage")
+      // SHOP/RESTAURANT/RIAD: Preis >= 0.01 erzwingen
+      const priceControl = this.productForm.get('basePrice');
+      if (this.isServiceMode) {
+        priceControl?.setValidators([Validators.required, Validators.min(0)]);
+      } else {
+        priceControl?.setValidators([Validators.required, Validators.min(0.01)]);
+      }
+      priceControl?.updateValueAndValidity();
     });
 
     // AI Modelle für den Auswahl-Input laden

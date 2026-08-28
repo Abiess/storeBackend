@@ -172,6 +172,9 @@
       "stock": "المخزون",
       "saveAll": "حفظ جميع المتغيرات"
     },
+    "hint": {
+      "priceZeroForService": "0 = عند الطلب"
+    },
     "taxCategory": "فئة الضريبة",
     "taxStandard": "قياسي (19%)",
     "taxReduced": "مخفض (7%)",

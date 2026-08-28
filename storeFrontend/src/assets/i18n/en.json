@@ -169,6 +169,9 @@
       "total": "Total",
       "totalForQuantity": "Total for {{quantity}} pieces: {{total}} €"
     },
+    "hint": {
+      "priceZeroForService": "0 = On Request"
+    },
     "created": "Product successfully created!",
     "updated": "Product successfully updated!",
     "error": {
