@@ -4,11 +4,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -150,6 +152,26 @@ public class GlobalExceptionHandler {
     // ════════════════════════════════════════════════════════════════════════
     // SECURITY EXCEPTIONS
     // ════════════════════════════════════════════════════════════════════════
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        Map<String, String> fieldErrors = new LinkedHashMap<>();
+
+        ex.getBindingResult().getFieldErrors().forEach(error ->
+            fieldErrors.putIfAbsent(error.getField(), error.getDefaultMessage())
+        );
+
+        errorResponse.put("timestamp", LocalDateTime.now().toString());
+        errorResponse.put("status", HttpStatus.BAD_REQUEST.value());
+        errorResponse.put("error", "Bad Request");
+        errorResponse.put("message", "Validierung fehlgeschlagen");
+        errorResponse.put("fieldErrors", fieldErrors);
+
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(errorResponse);
+    }
 
     /**
      * Behandelt AccessDeniedException (403 Forbidden) – z.B. durch @PreAuthorize.

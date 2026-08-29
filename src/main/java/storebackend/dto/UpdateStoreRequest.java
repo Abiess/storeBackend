@@ -1,6 +1,5 @@
 package storebackend.dto;
 
-import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 /**
@@ -10,7 +9,6 @@ import lombok.Data;
  */
 @Data
 public class UpdateStoreRequest {
-    @NotBlank(message = "Name darf nicht leer sein")
     private String name;
 
     // Slug ist optional beim Update - wird nur geändert wenn explizit gesetzt
@@ -86,6 +84,11 @@ public class UpdateStoreRequest {
     private String registerNumber;
     /** Umsatzsteuer-Identifikationsnummer (z.B. "DE123456789") */
     private String vatId;
+    private String shippingAddressStreet;
+    private String shippingAddressHouseNumber;
+    private String shippingAddressPostalCode;
+    private String shippingAddressCity;
+    private String shippingAddressCountry;
 
     // ─── Legal Consent (nur für Owner-Ansicht, nicht für Public) ──
     /** Zeitstempel: Wann Store-Owner rechtliche Verantwortung bestätigt hat */

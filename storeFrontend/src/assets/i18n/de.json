@@ -496,7 +496,9 @@
     "page": "Seite",
     "of": "von",
     "optional": "optional",
-    "refresh": "Aktualisieren"
+    "refresh": "Aktualisieren",
+    "save": "Speichern",
+    "characters": "Zeichen"
   },
   "loading": {
     "orders": "Bestellungen werden geladen..."
@@ -862,28 +864,46 @@
       "title": "Rechtliches",
       "imprint": {
         "title": "Impressum",
+        "hint": "Gesetzlich erforderliche Angaben für Ihren Online-Shop",
         "legalName": "Firmenname / Name",
+        "legalNamePlaceholder": "z.B. Müller GmbH",
         "legalForm": "Rechtsform",
         "authorizedRepresentative": "Vertretungsberechtigter",
         "commercialRegister": "Handelsregister",
+        "register": "Handelsregister",
+        "registerPlaceholder": "z.B. Amtsgericht Berlin-Charlottenburg",
         "registerNumber": "Registernummer",
+        "registerNumberPlaceholder": "z.B. HRB 123456 B",
         "vatId": "USt-IdNr.",
+        "email": "Kontakt-E-Mail",
         "contactEmail": "Kontakt-E-Mail",
         "contactPhone": "Kontakt-Telefon",
         "address": "Anschrift",
         "street": "Straße",
         "houseNumber": "Hausnummer",
+        "houseNumberPlaceholder": "Nr.",
         "postalCode": "PLZ",
+        "postalCodePlaceholder": "z.B. 10115",
         "city": "Stadt",
         "country": "Land",
         "save": "Impressumsdaten speichern"
       },
       "texts": {
         "title": "Rechtstexte",
+        "hint": "Erstellen Sie rechtlich erforderliche Texte für Ihren Shop",
         "terms": "AGB (Allgemeine Geschäftsbedingungen)",
-        "privacy": "Datenschutzerklärung",
-        "return": "Rückgabebedingungen",
-        "shipping": "Versandbedingungen",
+        "privacy": {
+          "title": "Datenschutzerklärung",
+          "placeholder": "Geben Sie hier Ihre Datenschutzerklärung ein..."
+        },
+        "return": {
+          "title": "Rückgabebedingungen",
+          "placeholder": "Geben Sie hier Ihre Rückgabebedingungen ein..."
+        },
+        "shipping": {
+          "title": "Versandbedingungen",
+          "placeholder": "Geben Sie hier Ihre Versandbedingungen ein..."
+        },
         "placeholder": "Geben Sie hier Ihren Rechtstext ein...",
         "charCount": "Zeichen",
         "maxLength": "Maximale Länge: 50.000 Zeichen"

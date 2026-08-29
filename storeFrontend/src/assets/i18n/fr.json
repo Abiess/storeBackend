@@ -360,7 +360,8 @@
     "next": "Suivant",
     "previous": "Précédent",
     "remove": "Retirer",
-    "submitting": "Envoi en cours..."
+    "submitting": "Envoi en cours...",
+    "characters": "caractères"
   },
   "loading": {
     "orders": "Chargement des commandes..."
@@ -709,13 +710,23 @@
     "legal": {
       "texts": {
         "terms": "Conditions générales de vente",
-        "privacy": "Politique de confidentialité",
-        "return": "Politique de retour",
+        "privacy": {
+          "title": "Politique de confidentialité",
+          "placeholder": "Saisissez ici votre politique de confidentialité..."
+        },
+        "return": {
+          "title": "Politique de retour",
+          "placeholder": "Saisissez ici votre politique de retour..."
+        },
         "charCount": "caractères",
         "placeholder": "Entrez votre texte juridique ici...",
         "title": "Textes juridiques",
-        "shipping": "Politique d'expédition",
-        "maxLength": "Longueur maximale : 50 000 caractères"
+        "shipping": {
+          "title": "Politique d'expédition",
+          "placeholder": "Saisissez ici votre politique d'expédition..."
+        },
+        "maxLength": "Longueur maximale : 50 000 caractères",
+        "hint": "Créez les textes légalement requis pour votre boutique"
       },
       "consent": {
         "truthful": "Mes informations sont complètes et véridiques.",
@@ -732,21 +743,29 @@
       },
       "imprint": {
         "commercialRegister": "Registre du commerce",
+        "register": "Registre du commerce",
+        "registerPlaceholder": "p. ex. Tribunal d'instance de Berlin-Charlottenburg",
         "registerNumber": "Numéro d'enregistrement",
+        "registerNumberPlaceholder": "p. ex. HRB 123456 B",
         "street": "Rue",
         "contactPhone": "Téléphone de contact",
         "vatId": "Numéro de TVA",
         "authorizedRepresentative": "Représentant autorisé",
         "legalName": "Nom de l'entreprise / Nom",
+        "legalNamePlaceholder": "p. ex. Müller GmbH",
         "save": "Enregistrer les mentions légales",
         "postalCode": "Code postal",
+        "postalCodePlaceholder": "p. ex. 10115",
         "houseNumber": "Numéro",
+        "houseNumberPlaceholder": "N°",
         "title": "Mentions légales",
+        "hint": "Informations légalement requises pour votre boutique en ligne",
         "address": "Adresse",
         "country": "Pays",
         "legalForm": "Forme juridique",
         "city": "Ville",
-        "contactEmail": "E-mail de contact"
+        "contactEmail": "E-mail de contact",
+        "email": "E-mail de contact"
       },
       "title": "Mentions légales",
       "actions": {

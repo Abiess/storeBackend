@@ -379,7 +379,9 @@
     "page": "Page",
     "of": "of",
     "optional": "optional",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "save": "Save",
+    "characters": "characters"
   },
   "loading": {
     "orders": "Loading orders..."
@@ -737,17 +739,25 @@
         "vatId": "VAT ID",
         "save": "Save Imprint Data",
         "registerNumber": "Register Number",
+        "registerNumberPlaceholder": "e.g. HRB 123456 B",
         "authorizedRepresentative": "Authorized Representative",
         "contactEmail": "Contact Email",
         "legalName": "Company Name / Name",
+        "legalNamePlaceholder": "e.g. Müller GmbH",
         "country": "Country",
         "contactPhone": "Contact Phone",
         "houseNumber": "House Number",
+        "houseNumberPlaceholder": "No.",
         "commercialRegister": "Commercial Register",
+        "register": "Commercial Register",
+        "registerPlaceholder": "e.g. District Court Berlin-Charlottenburg",
         "title": "Imprint",
+        "hint": "Legally required information for your online store",
         "legalForm": "Legal Form",
         "postalCode": "Postal Code",
-        "address": "Address"
+        "postalCodePlaceholder": "e.g. 10115",
+        "address": "Address",
+        "email": "Contact Email"
       },
       "status": {
         "draft": "Draft",
@@ -770,11 +780,21 @@
       },
       "texts": {
         "terms": "Terms and Conditions",
-        "return": "Return Policy",
+        "return": {
+          "title": "Return Policy",
+          "placeholder": "Enter your return policy here..."
+        },
         "placeholder": "Enter your legal text here...",
-        "privacy": "Privacy Policy",
-        "shipping": "Shipping Policy",
+        "privacy": {
+          "title": "Privacy Policy",
+          "placeholder": "Enter your privacy policy here..."
+        },
+        "shipping": {
+          "title": "Shipping Policy",
+          "placeholder": "Enter your shipping policy here..."
+        },
         "title": "Legal Texts",
+        "hint": "Create legally required texts for your store",
         "charCount": "characters",
         "maxLength": "Maximum length: 50,000 characters"
       }

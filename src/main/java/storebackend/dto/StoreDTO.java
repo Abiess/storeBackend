@@ -65,6 +65,11 @@ public class StoreDTO {
     private String commercialRegister;
     private String registerNumber;
     private String vatId;
+    private String shippingAddressStreet;
+    private String shippingAddressHouseNumber;
+    private String shippingAddressPostalCode;
+    private String shippingAddressCity;
+    private String shippingAddressCountry;
     private LocalDateTime legalResponsibilityAcceptedAt;
     private Long legalResponsibilityAcceptedByUserId;
     private String legalResponsibilityVersion;

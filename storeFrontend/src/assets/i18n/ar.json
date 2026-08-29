@@ -931,33 +931,51 @@
         "published": "منشور"
       },
       "texts": {
-        "privacy": "سياسة الخصوصية",
+        "privacy": {
+          "title": "سياسة الخصوصية",
+          "placeholder": "أدخل سياسة الخصوصية الخاصة بك هنا..."
+        },
         "title": "النصوص القانونية",
-        "return": "سياسة الإرجاع",
+        "return": {
+          "title": "سياسة الإرجاع",
+          "placeholder": "أدخل سياسة الإرجاع الخاصة بك هنا..."
+        },
         "terms": "الشروط والأحكام",
         "charCount": "أحرف",
         "placeholder": "أدخل النص القانوني هنا...",
         "maxLength": "الحد الأقصى للطول: 50,000 حرف",
-        "shipping": "سياسة الشحن"
+        "shipping": {
+          "title": "سياسة الشحن",
+          "placeholder": "أدخل سياسة الشحن الخاصة بك هنا..."
+        },
+        "hint": "أنشئ النصوص المطلوبة قانونياً لمتجرك"
       },
       "title": "القانونية",
       "imprint": {
+        "hint": "المعلومات المطلوبة قانونياً لمتجرك الإلكتروني",
         "country": "البلد",
         "authorizedRepresentative": "الممثل المفوض",
         "commercialRegister": "السجل التجاري",
+        "register": "السجل التجاري",
+        "registerPlaceholder": "مثال: المحكمة المحلية برلين-شارلوتنبورغ",
         "contactEmail": "البريد الإلكتروني للاتصال",
+        "email": "البريد الإلكتروني للاتصال",
         "save": "حفظ بيانات الناشر",
         "title": "بيانات الناشر",
         "address": "العنوان",
         "vatId": "الرقم الضريبي",
         "postalCode": "الرمز البريدي",
+        "postalCodePlaceholder": "مثال: 10115",
         "street": "الشارع",
         "contactPhone": "هاتف الاتصال",
         "city": "المدينة",
         "legalForm": "الشكل القانوني",
         "registerNumber": "رقم التسجيل",
+        "registerNumberPlaceholder": "مثال: HRB 123456 B",
         "legalName": "اسم الشركة / الاسم",
-        "houseNumber": "رقم المنزل"
+        "legalNamePlaceholder": "مثال: Müller GmbH",
+        "houseNumber": "رقم المنزل",
+        "houseNumberPlaceholder": "رقم"
       },
       "consent": {
         "responsible": "أنا مسؤول عن المنتجات والمحتوى والنصوص القانونية.",
@@ -982,7 +1000,9 @@
     "page": "صفحة",
     "of": "من",
     "optional": "اختياري",
-    "refresh": "تحديث"
+    "refresh": "تحديث",
+    "save": "حفظ",
+    "characters": "أحرف"
   },
   "loading": {
     "orders": "جاري تحميل الطلبات..."

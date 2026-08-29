@@ -282,9 +282,9 @@ public class StoreService {
             throw new RuntimeException("You are not authorized to update this store");
         }
 
-        // Update name if provided
-        if (request.getName() != null && !request.getName().isEmpty()) {
-            store.setName(request.getName());
+        // Update name nur wenn tatsächlich ein neuer Wert mitgeliefert wurde
+        if (request.getName() != null && !request.getName().isBlank()) {
+            store.setName(request.getName().trim());
         }
 
         // Update slug if provided (optional beim Update)
@@ -462,6 +462,21 @@ public class StoreService {
         }
         if (request.getVatId() != null) {
             store.setVatId(request.getVatId().isBlank() ? null : request.getVatId().trim());
+        }
+        if (request.getShippingAddressStreet() != null) {
+            store.setShippingAddressStreet(request.getShippingAddressStreet().isBlank() ? null : request.getShippingAddressStreet().trim());
+        }
+        if (request.getShippingAddressHouseNumber() != null) {
+            store.setShippingAddressHouseNumber(request.getShippingAddressHouseNumber().isBlank() ? null : request.getShippingAddressHouseNumber().trim());
+        }
+        if (request.getShippingAddressPostalCode() != null) {
+            store.setShippingAddressPostalCode(request.getShippingAddressPostalCode().isBlank() ? null : request.getShippingAddressPostalCode().trim());
+        }
+        if (request.getShippingAddressCity() != null) {
+            store.setShippingAddressCity(request.getShippingAddressCity().isBlank() ? null : request.getShippingAddressCity().trim());
+        }
+        if (request.getShippingAddressCountry() != null) {
+            store.setShippingAddressCountry(request.getShippingAddressCountry().isBlank() ? null : request.getShippingAddressCountry().trim().toUpperCase());
         }
 
         // ─── Legal Consent Tracking ─────────────────────────────────
@@ -895,6 +910,11 @@ public class StoreService {
         dto.setCommercialRegister(store.getCommercialRegister());
         dto.setRegisterNumber(store.getRegisterNumber());
         dto.setVatId(store.getVatId());
+        dto.setShippingAddressStreet(store.getShippingAddressStreet());
+        dto.setShippingAddressHouseNumber(store.getShippingAddressHouseNumber());
+        dto.setShippingAddressPostalCode(store.getShippingAddressPostalCode());
+        dto.setShippingAddressCity(store.getShippingAddressCity());
+        dto.setShippingAddressCountry(store.getShippingAddressCountry());
         dto.setLegalResponsibilityAcceptedAt(store.getLegalResponsibilityAcceptedAt());
         dto.setLegalResponsibilityAcceptedByUserId(store.getLegalResponsibilityAcceptedByUserId());
         dto.setLegalResponsibilityVersion(store.getLegalResponsibilityVersion());
