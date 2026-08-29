@@ -264,10 +264,11 @@ export class AdminSidebarComponent implements OnInit {
                     },
                     {
                         labelKey: 'sidebarAdmin.items.brand',
+                        labelKeyByBusinessType: { [BusinessType.SERVICE]: 'sidebarAdmin.items.brandingDesign' },
                         icon: 'tag',
                         route: `${baseRoute}/brand`,
-                        requiresStore: true,
-                        visibleForBusinessTypes: [BusinessType.SHOP]  // Marke nur für SHOP
+                        requiresStore: true
+                        // ✅ visibleForBusinessTypes entfernt - für SHOP und SERVICE sichtbar
                     },
                     {
                         labelKey: 'sidebarAdmin.items.woocommerce',
