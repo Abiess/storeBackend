@@ -3588,9 +3588,10 @@
         "featured": "Featured"
       },
       "price": {
-        "onRequest": "On Request"
+        "onRequest": "Price on request"
       },
       "cta": {
+        "sendInquiry": "Send inquiry",
         "inquiry": "Inquiry"
       }
     },

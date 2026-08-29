@@ -91,9 +91,9 @@ export class ServiceProfessionalLayoutComponent implements OnInit {
   buildWhatsAppLink(serviceName?: string): string {
     if (!this.whatsappNumber) return '#';
     const num = this.whatsappNumber.replace(/[^0-9]/g, '');
-    const text = serviceName 
-      ? `Anfrage zu "${serviceName}" – ${this.storeName}`
-      : `Anfrage – ${this.storeName}`;
+    const text = serviceName
+      ? `Hallo, ich interessiere mich für:\n"${serviceName}"\n\nKönnen Sie mir weitere Informationen dazu geben?`
+      : 'Hallo, ich interessiere mich für Ihre Dienstleistungen. Können Sie mir weitere Informationen geben?';
     return `https://wa.me/${num}?text=${encodeURIComponent(text)}`;
   }
 

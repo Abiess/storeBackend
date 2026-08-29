@@ -3496,9 +3496,10 @@
         "featured": "مميز"
       },
       "price": {
-        "onRequest": "حسب الطلب"
+        "onRequest": "السعر عند الطلب"
       },
       "cta": {
+        "sendInquiry": "إرسال استفسار",
         "inquiry": "استفسار"
       }
     },

@@ -3621,9 +3621,10 @@
         "featured": "Empfohlen"
       },
       "price": {
-        "onRequest": "Auf Anfrage"
+        "onRequest": "Preis auf Anfrage"
       },
       "cta": {
+        "sendInquiry": "Anfrage senden",
         "inquiry": "Anfrage"
       }
     },

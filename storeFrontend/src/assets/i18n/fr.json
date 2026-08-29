@@ -3112,9 +3112,10 @@
         "featured": "Recommandé"
       },
       "price": {
-        "onRequest": "Sur demande"
+        "onRequest": "Prix sur demande"
       },
       "cta": {
+        "sendInquiry": "Envoyer une demande",
         "inquiry": "Demande"
       }
     },
