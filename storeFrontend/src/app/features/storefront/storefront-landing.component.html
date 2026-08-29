@@ -211,7 +211,7 @@
 </app-storefront-bottom-nav>
 
 <!-- Footer -->
-<footer class="storefront-footer">
+<footer id="contact" class="storefront-footer">
   <div class="footer-container">
     <!-- Footer Grid: 4 Spalten Desktop → 2 Tablet → 1 Mobile -->
     <div class="footer-grid">
@@ -225,7 +225,7 @@
       </div>
 
       <!-- Spalte 2: Kontakt -->
-      <div class="footer-col" *ngIf="!isServiceBusinessType && (storeContactEmail || storeContactPhone || storeAddress || storeOpeningHours || storeWhatsappNumber)">
+      <div class="footer-col" *ngIf="storeContactEmail || storeContactPhone || storeAddress || storeOpeningHours || storeWhatsappNumber">
         <h4 class="footer-col-title">{{ 'footer.contactUs' | translate }}</h4>
         
         <a *ngIf="storeContactEmail" [href]="'mailto:' + storeContactEmail" class="footer-link" [attr.aria-label]="'E-Mail: ' + storeContactEmail">
