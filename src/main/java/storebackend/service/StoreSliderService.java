@@ -280,6 +280,13 @@ public class StoreSliderService {
     }
 
     @Transactional(readOnly = true)
+    public List<StoreSliderImageDTO> getGalleryImages(Long storeId) {
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+        return getGalleryImages(store);
+    }
+
+    @Transactional(readOnly = true)
     public List<StoreSliderImageDTO> getGalleryImages(Store store) {
         return imageRepository.findByStoreIdAndImageTypeOrderByDisplayOrderAsc(store.getId(), SliderImageType.GALLERY)
                 .stream()

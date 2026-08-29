@@ -138,7 +138,7 @@ export class ServiceProfessionalLayoutComponent implements OnInit {
   }
 
   getServiceImage(service: Product): string {
-    return service.imageUrl || service.primaryImageUrl || '/assets/img/placeholder-service.png';
+    return service.primaryImageUrl || service.imageUrl || '/assets/img/placeholder-service.png';
   }
 
   // Section visibility

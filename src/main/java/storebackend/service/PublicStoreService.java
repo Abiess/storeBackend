@@ -13,9 +13,11 @@ import storebackend.repository.DomainRepository;
 public class PublicStoreService {
 
     private final DomainRepository domainRepository;
+    private final MediaService mediaService;
 
-    public PublicStoreService(DomainRepository domainRepository) {
+    public PublicStoreService(DomainRepository domainRepository, MediaService mediaService) {
         this.domainRepository = domainRepository;
+        this.mediaService = mediaService;
     }
 
     public PublicStoreDTO resolveStoreByHost(String host) {
@@ -31,6 +33,14 @@ public class PublicStoreService {
         // NULL-safe mapping with intermediate variables
         CurrencyCode currency = store.getCurrencyCode();
         PriceMode priceMode = store.getPriceMode();
+        String aboutImageUrl = null;
+        if (store.getAboutImageMediaId() != null) {
+            try {
+                aboutImageUrl = mediaService.getMediaUrl(store.getAboutImageMediaId());
+            } catch (RuntimeException ignored) {
+                aboutImageUrl = null;
+            }
+        }
         
         return new PublicStoreDTO(
             store.getId(),
@@ -50,6 +60,10 @@ public class PublicStoreService {
             store.getInstagramUrl(),
             store.getTiktokUrl(),
             store.getFooterText(),
+            store.getAboutTitle(),
+            store.getAboutSubtitle(),
+            store.getAboutText(),
+            aboutImageUrl,
             store.getBusinessType() != null ? store.getBusinessType().name() : null,
             store.getOpeningHours(),
             store.getAddress(),
@@ -88,4 +102,3 @@ public class PublicStoreService {
         );
     }
 }
-

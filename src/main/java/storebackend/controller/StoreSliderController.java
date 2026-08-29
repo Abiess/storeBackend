@@ -52,20 +52,9 @@ public class StoreSliderController {
     }
 
     @GetMapping("/gallery")
-    @SecurityRequirement(name = "bearerAuth")
-    @Operation(summary = "Get gallery images for service website")
-    public ResponseEntity<List<StoreSliderImageDTO>> getGalleryImages(
-            @PathVariable Long storeId,
-            @AuthenticationPrincipal User user) {
-        if (user == null) {
-            return ResponseEntity.status(401).build();
-        }
-        Store store = storeRepository.findById(storeId)
-                .orElseThrow(() -> new RuntimeException("Store not found"));
-        if (!StoreAccessChecker.isOwner(store, user)) {
-            return ResponseEntity.status(403).build();
-        }
-        return ResponseEntity.ok(sliderService.getGalleryImages(store));
+    @Operation(summary = "Get gallery images for public service website")
+    public ResponseEntity<List<StoreSliderImageDTO>> getGalleryImages(@PathVariable Long storeId) {
+        return ResponseEntity.ok(sliderService.getGalleryImages(storeId));
     }
 
     @PostMapping("/gallery/{mediaId}")

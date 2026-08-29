@@ -31,6 +31,7 @@ public class DomainService {
     private final StoreRepository storeRepository;
     private final SaasProperties saasProperties;
     private final StoreDeliverySettingsRepository deliverySettingsRepository;
+    private final MediaService mediaService;
     private final SecureRandom secureRandom = new SecureRandom();
 
     public List<Domain> getDomainsForStore(Long storeId, User currentUser) {
@@ -170,6 +171,17 @@ public class DomainService {
                     dto.setInstagramUrl(store.getInstagramUrl());
                     dto.setTiktokUrl(store.getTiktokUrl());
                     dto.setFooterText(store.getFooterText());
+                    dto.setAboutTitle(store.getAboutTitle());
+                    dto.setAboutSubtitle(store.getAboutSubtitle());
+                    dto.setAboutText(store.getAboutText());
+                    if (store.getAboutImageMediaId() != null) {
+                        try {
+                            dto.setAboutImageUrl(mediaService.getMediaUrl(store.getAboutImageMediaId()));
+                        } catch (RuntimeException ex) {
+                            log.warn("About image {} for store {} could not be resolved: {}",
+                                    store.getAboutImageMediaId(), store.getId(), ex.getMessage());
+                        }
+                    }
                     dto.setBusinessType(store.getBusinessType() != null ? store.getBusinessType().name() : null);
                     dto.setOpeningHours(store.getOpeningHours());
                     dto.setAddress(store.getAddress());
@@ -236,6 +248,17 @@ public class DomainService {
                             dto.setInstagramUrl(store.getInstagramUrl());
                             dto.setTiktokUrl(store.getTiktokUrl());
                             dto.setFooterText(store.getFooterText());
+                            dto.setAboutTitle(store.getAboutTitle());
+                            dto.setAboutSubtitle(store.getAboutSubtitle());
+                            dto.setAboutText(store.getAboutText());
+                            if (store.getAboutImageMediaId() != null) {
+                                try {
+                                    dto.setAboutImageUrl(mediaService.getMediaUrl(store.getAboutImageMediaId()));
+                                } catch (RuntimeException ex) {
+                                    log.warn("About image {} for store {} could not be resolved: {}",
+                                            store.getAboutImageMediaId(), store.getId(), ex.getMessage());
+                                }
+                            }
                             dto.setBusinessType(store.getBusinessType() != null ? store.getBusinessType().name() : null);
                             dto.setOpeningHours(store.getOpeningHours());
                             dto.setAddress(store.getAddress());

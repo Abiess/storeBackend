@@ -145,6 +145,11 @@ export class StorefrontLandingComponent implements OnInit {
     return this.activeTemplateCode === 'SERVICE_PROFESSIONAL';
   }
 
+  get isServiceBusinessType(): boolean {
+    const bt = (this.storeBusinessType || '').toUpperCase();
+    return bt === 'SERVICE' || bt === 'SERVICE_PROFESSIONAL';
+  }
+
   /** Erstes Slider-Bild als Hero-Hintergrund (oder null → Gradient-Fallback). */
   get restaurantHeroImage(): string | null {
     return this.sliderImages?.[0]?.imageUrl ?? null;
@@ -843,7 +848,8 @@ export class StorefrontLandingComponent implements OnInit {
         this.storeFacebookUrl   = store.facebookUrl   ?? null;
         this.storeInstagramUrl  = store.instagramUrl  ?? null;
         this.storeTiktokUrl     = store.tiktokUrl     ?? null;
-        this.storeFooterText    = store.footerText    ?? null;
+        const footerText = store.footerText?.trim() ?? null;
+        this.storeFooterText    = footerText && footerText.toLowerCase() !== 'footer text' ? footerText : null;
         this.storeDescription   = store.description   ?? null;
         this.storeAboutTitle    = store.aboutTitle    ?? null;
         this.storeAboutSubtitle = store.aboutSubtitle ?? null;

@@ -225,7 +225,7 @@
       </div>
 
       <!-- Spalte 2: Kontakt -->
-      <div class="footer-col" *ngIf="storeContactEmail || storeContactPhone || storeAddress || storeOpeningHours || storeWhatsappNumber">
+      <div class="footer-col" *ngIf="!isServiceBusinessType && (storeContactEmail || storeContactPhone || storeAddress || storeOpeningHours || storeWhatsappNumber)">
         <h4 class="footer-col-title">{{ 'footer.contactUs' | translate }}</h4>
         
         <a *ngIf="storeContactEmail" [href]="'mailto:' + storeContactEmail" class="footer-link" [attr.aria-label]="'E-Mail: ' + storeContactEmail">
