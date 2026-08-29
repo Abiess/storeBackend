@@ -13,9 +13,11 @@ import org.springframework.web.multipart.MultipartFile;
 import storebackend.dto.StoreSliderDTO;
 import storebackend.dto.StoreSliderImageDTO;
 import storebackend.dto.StoreSliderSettingsDTO;
+import storebackend.entity.Media;
 import storebackend.entity.Store;
 import storebackend.entity.User;
 import storebackend.repository.StoreRepository;
+import storebackend.service.MediaService;
 import storebackend.service.StoreSliderService;
 import storebackend.util.StoreAccessChecker;
 
@@ -30,6 +32,7 @@ public class StoreSliderController {
 
     private final StoreSliderService sliderService;
     private final StoreRepository storeRepository;
+    private final MediaService mediaService;
 
     @GetMapping
     @Operation(summary = "Get complete slider (settings + images) for a store")
@@ -46,6 +49,103 @@ public class StoreSliderController {
                 .header("Pragma", "no-cache")
                 .header("Expires", "0")
                 .body(sliderService.getActiveSliderImages(storeId));
+    }
+
+    @GetMapping("/gallery")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Get gallery images for service website")
+    public ResponseEntity<List<StoreSliderImageDTO>> getGalleryImages(
+            @PathVariable Long storeId,
+            @AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+        if (!StoreAccessChecker.isOwner(store, user)) {
+            return ResponseEntity.status(403).build();
+        }
+        return ResponseEntity.ok(sliderService.getGalleryImages(store));
+    }
+
+    @PostMapping("/gallery/{mediaId}")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Add existing media to service website gallery")
+    public ResponseEntity<StoreSliderImageDTO> addToGallery(
+            @PathVariable Long storeId,
+            @PathVariable Long mediaId,
+            @RequestParam(required = false, defaultValue = "") String caption,
+            @AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+        if (!StoreAccessChecker.isOwner(store, user)) {
+            return ResponseEntity.status(403).build();
+        }
+        Media media = mediaService.getMediaById(mediaId);
+        if (!media.getStore().getId().equals(storeId)) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok(sliderService.addToGallery(store, media, caption));
+    }
+
+    @DeleteMapping("/gallery/{imageId}")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Remove image metadata from service website gallery")
+    public ResponseEntity<?> removeFromGallery(
+            @PathVariable Long storeId,
+            @PathVariable Long imageId,
+            @AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(401).body("Unauthorized");
+        }
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+        if (!StoreAccessChecker.isOwner(store, user)) {
+            return ResponseEntity.status(403).body("Not authorized");
+        }
+        sliderService.removeFromGallery(store, imageId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/gallery/{imageId}/caption")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Update gallery image caption")
+    public ResponseEntity<?> updateGalleryCaption(
+            @PathVariable Long storeId,
+            @PathVariable Long imageId,
+            @RequestParam(required = false, defaultValue = "") String caption,
+            @AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(401).body("Unauthorized");
+        }
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+        if (!StoreAccessChecker.isOwner(store, user)) {
+            return ResponseEntity.status(403).body("Not authorized");
+        }
+        return ResponseEntity.ok(sliderService.updateGalleryCaption(store, imageId, caption));
+    }
+
+    @PutMapping("/gallery/reorder")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Reorder gallery images")
+    public ResponseEntity<?> reorderGallery(
+            @PathVariable Long storeId,
+            @RequestBody Map<String, List<Long>> payload,
+            @AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(401).body("Unauthorized");
+        }
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+        if (!StoreAccessChecker.isOwner(store, user)) {
+            return ResponseEntity.status(403).body("Not authorized");
+        }
+        sliderService.reorderGallery(store, payload.get("imageIds"));
+        return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/settings")

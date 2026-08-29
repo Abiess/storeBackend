@@ -2054,7 +2054,7 @@
       "clickToUpload": "Click to upload logo",
       "hint": "PNG, JPG, SVG (max 2MB)",
       "errorImageOnly": "Please upload image files only (PNG, JPG, SVG)",
-      "errorTooLarge": "File too large ({{size}}MB). Maximum: 2MB",
+      "errorTooLarge": "The image must not exceed 4 MB.",
       "errorNoStore": "Error: Store context not available",
       "errorUpload": "Upload failed. Please try again."
     },
@@ -2073,6 +2073,32 @@
     },
     "presets": {
       "section": "⚡ Quick Presets"
+    },
+    "websiteContent": {
+      "title": "📄 Website Content",
+      "about": {
+        "title": "About Us",
+        "hint": "Design your about section with custom text and image.",
+        "titleLabel": "Title",
+        "subtitle": "Subtitle (optional)",
+        "text": "Description",
+        "image": "About image (optional)"
+      },
+      "gallery": {
+        "title": "Gallery",
+        "hint": "Show your work with an image gallery.",
+        "uploadButton": "Upload images",
+        "captionPlaceholder": "Image caption (optional)"
+      },
+      "contact": {
+        "title": "Contact Information",
+        "hint": "Contact details are taken from the store settings.",
+        "phone": "Phone",
+        "email": "Email",
+        "whatsapp": "WhatsApp",
+        "address": "Address",
+        "editLink": "Edit contact details"
+      }
     },
     "actions": {
       "reset": "Reset",

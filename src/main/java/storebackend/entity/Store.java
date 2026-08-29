@@ -117,6 +117,23 @@ public class Store {
     @Column(name = "reservation_whatsapp_text", columnDefinition = "TEXT")
     private String reservationWhatsappText;
 
+    // ─── Service-Website Content (About-Section) ──────────────────
+    /** Titel der Über-uns-Section (Service-Websites) */
+    @Column(name = "about_title", length = 200)
+    private String aboutTitle;
+
+    /** Langtext der Über-uns-Section */
+    @Column(name = "about_text", columnDefinition = "TEXT")
+    private String aboutText;
+
+    /** Untertitel der Über-uns-Section (optional) */
+    @Column(name = "about_subtitle", length = 300)
+    private String aboutSubtitle;
+
+    /** Media-ID des About-Bildes (referenziert Media-Entity) */
+    @Column(name = "about_image_media_id")
+    private Long aboutImageMediaId;
+
     // ─── DHL Shipping Address (strukturiert) ────────────────────
     /**
      * DHL Versand-Adresse (Absender bei Label-Erstellung).

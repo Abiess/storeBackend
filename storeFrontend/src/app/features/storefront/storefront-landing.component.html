@@ -83,9 +83,14 @@
     *ngIf="!loading && isServiceMode"
     [storeName]="storeName || ''"
     [description]="storeDescription"
+    [aboutTitle]="storeAboutTitle"
+    [aboutSubtitle]="storeAboutSubtitle"
+    [aboutText]="storeAboutText"
+    [aboutImageUrl]="storeAboutImageUrl"
     [logoUrl]="storeLogo"
     [bannerImageUrl]="null"
     [sliderImages]="sliderImages"
+    [galleryImages]="galleryImages"
     [products]="products"
     [categories]="categories"
     [whatsappNumber]="storeWhatsappNumber"
@@ -322,4 +327,3 @@
     </div>
   </div>
 </footer>
-

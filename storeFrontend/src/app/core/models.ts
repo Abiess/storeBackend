@@ -799,6 +799,12 @@ export interface Store {
   address?: string;
   googleMapsUrl?: string;
   reservationWhatsappText?: string;
+  // ─── Service-Website Content (About-Section) ────────────────────
+  aboutTitle?: string;
+  aboutText?: string;
+  aboutSubtitle?: string;
+  aboutImageMediaId?: number;
+  aboutImageUrl?: string;
   // ─── Bot-Schutz (nur für Admin-Bereich, NICHT öffentlich) ──────
   botProtectionEnabled?: boolean;
   botProtectionMode?: 'OFF' | 'SUSPICIOUS_ONLY' | 'ALWAYS_ON';
@@ -866,6 +872,11 @@ export interface PublicStore {
   address?: string;
   googleMapsUrl?: string;
   reservationWhatsappText?: string;
+  // ─── Service-Website Content (About-Section) ────────────────────
+  aboutTitle?: string;
+  aboutText?: string;
+  aboutSubtitle?: string;
+  aboutImageUrl?: string;
   // ─── DHL Shipping (Public Info Only - NO SECRETS) ────────────
   dhlShippingEnabled?: boolean;
   dhlShippingLabel?: string;

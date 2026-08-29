@@ -280,15 +280,16 @@
         
         <!-- Content Column -->
         <div class="sp-about__content">
-          <h2 class="sp-about__title">{{ 'service.about.title' | translate }}</h2>
-          <div class="sp-about__text" *ngIf="description">
-            <p>{{ description }}</p>
+          <h2 class="sp-about__title">{{ aboutTitle || ('service.about.title' | translate) }}</h2>
+          <p class="sp-about__subtitle" *ngIf="aboutSubtitle">{{ aboutSubtitle }}</p>
+          <div class="sp-about__text" *ngIf="aboutText || description">
+            <p>{{ aboutText || description }}</p>
           </div>
         </div>
 
         <!-- Image Column -->
-        <div class="sp-about__image-wrapper" *ngIf="aboutImage">
-          <img [src]="aboutImage" [alt]="storeName" class="sp-about__image">
+        <div class="sp-about__image-wrapper" *ngIf="aboutImageUrl">
+          <img [src]="aboutImageUrl" [alt]="storeName" class="sp-about__image">
         </div>
 
       </div>
@@ -311,7 +312,7 @@
 
       <!-- Image Slider -->
       <div class="sp-gallery__slider">
-        <app-image-slider [images]="sliderImages" [autoplay]="true" [interval]="5000"></app-image-slider>
+        <app-image-slider [images]="galleryImages" [autoplay]="true" [interval]="5000"></app-image-slider>
       </div>
 
     </div>

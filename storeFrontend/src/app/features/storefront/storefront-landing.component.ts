@@ -8,6 +8,7 @@ import { CategoryService } from '@app/core/services/category.service';
 import { CartService } from '@app/core/services/cart.service';
 import { ThemeService } from '@app/core/services/theme.service';
 import { SliderService, SliderImage } from '@app/core/services/slider.service';
+import { StoreSliderService } from '@app/core/services/store-slider.service';
 import { PublicApiService } from '@app/core/services/public-api.service';
 import { WhatsappConfigService } from '@app/core/services/whatsapp-config.service';
 import { SeoApiService } from '@app/core/services/seo-api.service';
@@ -89,6 +90,7 @@ export class StorefrontLandingComponent implements OnInit {
 
   // ✨ NEUE: Slider State
   sliderImages: SliderImage[] = [];
+  galleryImages: SliderImage[] = [];
 
   // ✅ Logo aus Store oder Theme
   storeLogo: string | null = null;
@@ -105,6 +107,10 @@ export class StorefrontLandingComponent implements OnInit {
   storeTiktokUrl: string | null = null;
   storeFooterText: string | null = null;
   storeDescription: string | null = null;
+  storeAboutTitle: string | null = null;
+  storeAboutSubtitle: string | null = null;
+  storeAboutText: string | null = null;
+  storeAboutImageUrl: string | null = null;
   readonly currentYear = new Date().getFullYear();
 
   // ─── Restaurant/Riad-Modus (MVP) ────────────────────────────────
@@ -165,6 +171,7 @@ export class StorefrontLandingComponent implements OnInit {
     private cartService: CartService,
     private themeService: ThemeService,
     private sliderService: SliderService,
+    private storeSliderService: StoreSliderService,
     private publicApiService: PublicApiService,
     private whatsappConfig: WhatsappConfigService,
     private seoApi: SeoApiService,
@@ -384,7 +391,8 @@ export class StorefrontLandingComponent implements OnInit {
       this.loadFeaturedProducts(),
       this.loadTopProducts(),
       this.loadNewArrivals(),
-      this.loadSliderImages()
+      this.loadSliderImages(),
+      this.loadGalleryImages()
     ])
       .then(() => {
         this.loading = false;
@@ -540,6 +548,36 @@ export class StorefrontLandingComponent implements OnInit {
         error: (error) => {
           console.error('❌ Fehler beim Laden der Slider-Bilder:', error);
           this.sliderImages = [];
+          resolve();
+        }
+      });
+    });
+  }
+
+  loadGalleryImages(): Promise<void> {
+    if (!this.storeId) {
+      return Promise.resolve();
+    }
+
+    return new Promise((resolve) => {
+      console.log('🖼️ Lade Galerie-Bilder für Store', this.storeId);
+      this.storeSliderService.getGalleryImages(this.storeId!).subscribe({
+        next: (images) => {
+          console.log('✅ Galerie-Bilder geladen:', images.length);
+          this.galleryImages = images.map((image) => ({
+            id: image.id ?? 0,
+            storeId: image.storeId,
+            imageUrl: image.imageUrl,
+            imageType: image.imageType,
+            displayOrder: image.displayOrder,
+            isActive: image.isActive,
+            altText: image.altText
+          }));
+          resolve();
+        },
+        error: (error) => {
+          console.error('❌ Fehler beim Laden der Galerie-Bilder:', error);
+          this.galleryImages = [];
           resolve();
         }
       });
@@ -807,6 +845,10 @@ export class StorefrontLandingComponent implements OnInit {
         this.storeTiktokUrl     = store.tiktokUrl     ?? null;
         this.storeFooterText    = store.footerText    ?? null;
         this.storeDescription   = store.description   ?? null;
+        this.storeAboutTitle    = store.aboutTitle    ?? null;
+        this.storeAboutSubtitle = store.aboutSubtitle ?? null;
+        this.storeAboutText     = store.aboutText     ?? null;
+        this.storeAboutImageUrl = store.aboutImageUrl ?? null;
         // ─── Currency & Tax ───────────────────────────────────────
         this.storeCurrencyCode  = (store.currencyCode ?? 'EUR') as string;
         // ─── Restaurant/Riad-Felder ───────────────────────────────

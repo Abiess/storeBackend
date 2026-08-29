@@ -1,16 +1,20 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
+import { Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ThemeService } from '../../core/services/theme.service';
 import { MediaService } from '../../core/services/media.service';
 import { StoreContextService } from '../../core/services/store-context.service';
-import { StoreTheme, ThemeColors } from '../../core/models';
+import { StoreService } from '../../core/services/store.service';
+import { StoreSliderImage, StoreSliderService } from '../../core/services/store-slider.service';
+import { BusinessType, Store, StoreTheme, ThemeColors } from '../../core/models';
 import { Subscription } from 'rxjs';
 
 @Component({
     selector: 'app-branding-editor',
-    imports: [CommonModule, ReactiveFormsModule, TranslateModule],
+    imports: [CommonModule, ReactiveFormsModule, TranslateModule, DragDropModule],
     template: `
     <div class="branding-editor">
       <div class="editor-layout">
@@ -30,7 +34,7 @@ import { Subscription } from 'rxjs';
                 <div class="upload-error" *ngIf="uploadError">
                   <span class="error-icon">⚠️</span>
                   <span>{{ uploadError }}</span>
-                  <button type="button" class="btn-retry" (click)="retryUpload()">
+                  <button type="button" class="btn-retry" (click)="retryUpload('logoUploadInput')">
                     {{ 'brandingEditor.logo.retry' | translate }}
                   </button>
                 </div>
@@ -39,6 +43,7 @@ import { Subscription } from 'rxjs';
                 <div class="upload-area" (click)="fileInput.click()" [class.uploading]="uploading">
                   <input
                     #fileInput
+                    id="logoUploadInput"
                     type="file"
                     accept="image/*"
                     (change)="onFileSelected($event, 'logo')"
@@ -166,6 +171,197 @@ import { Subscription } from 'rxjs';
               </button>
             </div>
           </form>
+
+          <div class="website-content-panel" *ngIf="isServiceStore">
+            <div class="panel-header">
+              <h2>{{ 'brandingEditor.websiteContent.title' | translate }}</h2>
+            </div>
+
+            <div class="website-tabs">
+              <button
+                type="button"
+                class="website-tab"
+                [class.active]="activeWebsiteSection === 'about'"
+                (click)="activeWebsiteSection = 'about'">
+                {{ 'brandingEditor.websiteContent.about.title' | translate }}
+              </button>
+              <button
+                type="button"
+                class="website-tab"
+                [class.active]="activeWebsiteSection === 'gallery'"
+                (click)="activeWebsiteSection = 'gallery'">
+                {{ 'brandingEditor.websiteContent.gallery.title' | translate }}
+              </button>
+              <button
+                type="button"
+                class="website-tab"
+                [class.active]="activeWebsiteSection === 'contact'"
+                (click)="activeWebsiteSection = 'contact'">
+                {{ 'brandingEditor.websiteContent.contact.title' | translate }}
+              </button>
+            </div>
+
+            <form [formGroup]="websiteContentForm" class="website-content-form">
+              <div class="website-section" *ngIf="activeWebsiteSection === 'about'">
+                <div class="form-section">
+                  <h3>{{ 'brandingEditor.websiteContent.about.title' | translate }}</h3>
+                  <p class="section-hint">{{ 'brandingEditor.websiteContent.about.hint' | translate }}</p>
+
+                  <div class="form-group">
+                    <label>{{ 'brandingEditor.websiteContent.about.titleLabel' | translate }}</label>
+                    <input type="text" class="form-control" formControlName="aboutTitle">
+                  </div>
+
+                  <div class="form-group">
+                    <label>{{ 'brandingEditor.websiteContent.about.subtitle' | translate }}</label>
+                    <input type="text" class="form-control" formControlName="aboutSubtitle">
+                  </div>
+
+                  <div class="form-group">
+                    <label>{{ 'brandingEditor.websiteContent.about.text' | translate }}</label>
+                    <textarea class="form-control textarea-control" formControlName="aboutText" rows="5"></textarea>
+                  </div>
+
+                  <div class="form-group">
+                    <label>{{ 'brandingEditor.websiteContent.about.image' | translate }}</label>
+
+                    <div class="upload-error" *ngIf="aboutImageUploadError">
+                      <span class="error-icon">⚠️</span>
+                      <span>{{ aboutImageUploadError }}</span>
+                      <button type="button" class="btn-retry" (click)="retryUpload('aboutImageUploadInput')">
+                        {{ 'brandingEditor.logo.retry' | translate }}
+                      </button>
+                    </div>
+
+                    <div class="upload-area" (click)="triggerFileInput('aboutImageUploadInput')" [class.uploading]="aboutImageUploading">
+                      <input
+                        id="aboutImageUploadInput"
+                        type="file"
+                        accept="image/*"
+                        (change)="onAboutImageSelected($event)"
+                        style="display: none">
+
+                      <div class="upload-progress" *ngIf="aboutImageUploading">
+                        <div class="progress-bar">
+                          <div class="progress-fill" [style.width.%]="aboutImageUploadProgress"></div>
+                        </div>
+                        <p>{{ 'brandingEditor.logo.uploading' | translate: { progress: aboutImageUploadProgress } }}</p>
+                      </div>
+
+                      <div class="upload-content" *ngIf="!aboutImagePreview && !aboutImageUploading">
+                        <span class="upload-icon">🖼️</span>
+                        <p>{{ 'brandingEditor.logo.clickToUpload' | translate }}</p>
+                        <small>{{ 'brandingEditor.logo.hint' | translate }}</small>
+                      </div>
+
+                      <div class="logo-preview content-image-preview" *ngIf="aboutImagePreview && !aboutImageUploading">
+                        <img [src]="aboutImagePreview" alt="About image">
+                        <button type="button" class="btn-remove" (click)="removeAboutImage($event)">✕</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="form-actions single-action">
+                    <button
+                      type="button"
+                      class="btn btn-primary"
+                      (click)="saveWebsiteContent()"
+                      [disabled]="websiteSaving || aboutImageUploading || galleryUploading">
+                      {{ websiteSaving ? ('brandingEditor.actions.saving' | translate) : ('brandingEditor.actions.save' | translate) }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="website-section" *ngIf="activeWebsiteSection === 'gallery'">
+                <div class="form-section">
+                  <h3>{{ 'brandingEditor.websiteContent.gallery.title' | translate }}</h3>
+                  <p class="section-hint">{{ 'brandingEditor.websiteContent.gallery.hint' | translate }}</p>
+
+                  <div class="gallery-toolbar">
+                    <input
+                      type="text"
+                      class="form-control"
+                      [value]="galleryUploadCaption"
+                      (input)="updateGalleryUploadCaption($event)"
+                      [placeholder]="'brandingEditor.websiteContent.gallery.captionPlaceholder' | translate">
+                    <button
+                      type="button"
+                      class="btn btn-primary add-gallery-button"
+                      (click)="triggerFileInput('galleryImageUploadInput')"
+                      [disabled]="galleryUploading">
+                      {{ 'brandingEditor.websiteContent.gallery.uploadButton' | translate }}
+                    </button>
+                    <input
+                      id="galleryImageUploadInput"
+                      type="file"
+                      accept="image/*"
+                      (change)="onGalleryImageSelected($event)"
+                      style="display: none">
+                  </div>
+
+                  <div class="upload-error" *ngIf="galleryUploadError">
+                    <span class="error-icon">⚠️</span>
+                    <span>{{ galleryUploadError }}</span>
+                    <button type="button" class="btn-retry" (click)="retryUpload('galleryImageUploadInput')">
+                      {{ 'brandingEditor.logo.retry' | translate }}
+                    </button>
+                  </div>
+
+                  <div class="upload-progress inline-progress" *ngIf="galleryUploading">
+                    <div class="progress-bar">
+                      <div class="progress-fill" [style.width.%]="galleryUploadProgress"></div>
+                    </div>
+                    <p>{{ 'brandingEditor.logo.uploading' | translate: { progress: galleryUploadProgress } }}</p>
+                  </div>
+
+                  <div class="gallery-empty" *ngIf="!galleryUploading && galleryImages.length === 0">
+                    {{ 'brandingEditor.websiteContent.gallery.hint' | translate }}
+                  </div>
+
+                  <div
+                    class="gallery-grid"
+                    *ngIf="galleryImages.length > 0"
+                    cdkDropList
+                    (cdkDropListDropped)="reorderGallery($event)">
+                    <div class="gallery-card" *ngFor="let image of galleryImages; trackBy: trackGalleryImage" cdkDrag>
+                      <div class="gallery-card-image">
+                        <img [src]="image.imageUrl" [alt]="getGalleryCaption(image) || 'Gallery image'">
+                      </div>
+                      <div class="gallery-card-body">
+                        <input
+                          type="text"
+                          class="form-control"
+                          [value]="getGalleryCaptionDraft(image)"
+                          (input)="setGalleryCaptionDraft(image, $event)"
+                          [placeholder]="'brandingEditor.websiteContent.gallery.captionPlaceholder' | translate">
+                        <div class="gallery-card-actions">
+                          <button type="button" class="btn btn-secondary gallery-action" (click)="updateGalleryCaption(image)">
+                            {{ 'brandingEditor.actions.save' | translate }}
+                          </button>
+                          <button type="button" class="btn btn-secondary gallery-action danger" (click)="removeGalleryImage(image)">
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="website-section" *ngIf="activeWebsiteSection === 'contact'">
+                <div class="form-section">
+                  <h3>{{ 'brandingEditor.websiteContent.contact.title' | translate }}</h3>
+                  <div class="contact-hint">
+                    <p>{{ 'brandingEditor.websiteContent.contact.hint' | translate }}</p>
+                    <button type="button" class="contact-link" (click)="navigateToStoreSettings()">
+                      {{ 'brandingEditor.websiteContent.contact.editLink' | translate }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
         </div>
 
         <!-- Right: Live Preview -->
@@ -585,6 +781,179 @@ import { Subscription } from 'rxjs';
       border-color: #667eea;
     }
 
+    .website-content-panel {
+      margin-top: 2rem;
+      padding-top: 2rem;
+      border-top: 1px solid #e0e0e0;
+    }
+
+    .panel-header h2 {
+      margin: 0 0 1rem;
+      font-size: 1.5rem;
+      color: #333;
+    }
+
+    .website-tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .website-tab {
+      border: 2px solid #e0e0e0;
+      background: white;
+      border-radius: 10px;
+      padding: 0.875rem 0.75rem;
+      font-weight: 600;
+      color: #333;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .website-tab.active,
+    .website-tab:hover {
+      border-color: #667eea;
+      background: #f5f7ff;
+      color: #667eea;
+    }
+
+    .website-content-form {
+      display: block;
+    }
+
+    .website-section .form-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .section-hint {
+      margin: 0 0 1rem;
+      color: #666;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+    }
+
+    .textarea-control {
+      min-height: 140px;
+      resize: vertical;
+    }
+
+    .content-image-preview img {
+      max-width: 100%;
+      width: 100%;
+      max-height: 220px;
+      object-fit: cover;
+    }
+
+    .single-action {
+      justify-content: flex-end;
+    }
+
+    .single-action .btn {
+      flex: 0 0 auto;
+      min-width: 180px;
+    }
+
+    .gallery-toolbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.75rem;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .add-gallery-button {
+      min-width: 180px;
+    }
+
+    .inline-progress {
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+
+    .gallery-empty {
+      border: 2px dashed #d7defa;
+      border-radius: 12px;
+      padding: 1rem;
+      background: #f8faff;
+      color: #667eea;
+      font-size: 0.9375rem;
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+
+    .gallery-card {
+      background: #fff;
+      border: 1px solid #e7e7e7;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .gallery-card-image {
+      background: #f5f5f5;
+      aspect-ratio: 4 / 3;
+      overflow: hidden;
+    }
+
+    .gallery-card-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .gallery-card-body {
+      padding: 0.875rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .gallery-card-actions {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: space-between;
+    }
+
+    .gallery-action {
+      flex: 1;
+      padding: 0.65rem 0.875rem;
+      font-size: 0.875rem;
+    }
+
+    .gallery-action.danger {
+      flex: 0 0 52px;
+      color: #dc3545;
+      border-color: #f1b8bf;
+    }
+
+    .contact-hint {
+      border: 1px solid #e0e7ff;
+      border-radius: 12px;
+      padding: 1rem;
+      background: #f8faff;
+    }
+
+    .contact-hint p {
+      margin: 0 0 0.75rem;
+      color: #4a5568;
+      line-height: 1.5;
+    }
+
+    .contact-link {
+      padding: 0;
+      background: transparent;
+      border: none;
+      color: #667eea;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
     /* Preview Panel */
     .preview-panel {
       background: white;
@@ -827,6 +1196,11 @@ import { Subscription } from 'rxjs';
         padding: 1.5rem;
       }
 
+      .website-tabs,
+      .gallery-toolbar {
+        grid-template-columns: 1fr;
+      }
+
       .preview-nav {
         display: none;
       }
@@ -850,14 +1224,29 @@ export class BrandingEditorComponent implements OnInit, OnDestroy {
   private storeIdSubscription?: Subscription;
   private currentTheme: StoreTheme | null = null;  // Store existing theme
 
+  currentStore: Store | null = null;
   brandingForm: FormGroup;
+  websiteContentForm: FormGroup;
   logoPreview: string | null = null;
   uploadedLogoUrl: string | null = null;
+  aboutImagePreview: string | null = null;
+  aboutImageUrl: string | null = null;
   previewDevice: 'desktop' | 'mobile' = 'desktop';
   saving = false;
   uploading = false;
   uploadProgress = 0;
   uploadError: string | null = null;
+  websiteSaving = false;
+  aboutImageUploading = false;
+  aboutImageUploadProgress = 0;
+  aboutImageUploadError: string | null = null;
+  galleryImages: StoreSliderImage[] = [];
+  galleryUploadCaption = '';
+  galleryUploading = false;
+  galleryUploadProgress = 0;
+  galleryUploadError: string | null = null;
+  activeWebsiteSection: 'about' | 'gallery' | 'contact' = 'about';
+  galleryCaptionDrafts: Record<number, string> = {};
 
   quickPresets = [
     {
@@ -899,6 +1288,9 @@ export class BrandingEditorComponent implements OnInit, OnDestroy {
     private themeService: ThemeService,
     private mediaService: MediaService,
     private storeContext: StoreContextService,
+    private storeService: StoreService,
+    private storeSliderService: StoreSliderService,
+    private router: Router,
     private translate: TranslateService
   ) {
     this.brandingForm = this.fb.group({
@@ -907,6 +1299,12 @@ export class BrandingEditorComponent implements OnInit, OnDestroy {
       accentColor: ['#f093fb', Validators.required],
       fontFamily: ["'Inter', sans-serif", Validators.required]
     });
+    this.websiteContentForm = this.fb.group({
+      aboutTitle: [''],
+      aboutSubtitle: [''],
+      aboutText: [''],
+      aboutImageMediaId: [null]
+    });
   }
 
   ngOnInit(): void {
@@ -914,6 +1312,7 @@ export class BrandingEditorComponent implements OnInit, OnDestroy {
       if (id !== null) {
         this.storeId = id;
         this.loadCurrentTheme();
+        this.loadCurrentStore();
       }
     });
   }
@@ -935,6 +1334,39 @@ export class BrandingEditorComponent implements OnInit, OnDestroy {
       '--preview-font': font,
       'font-family': font
     };
+  }
+
+  get isServiceStore(): boolean {
+    return (this.currentStore?.businessType ?? '').toString().toUpperCase() === BusinessType.SERVICE;
+  }
+
+  private loadCurrentStore(): void {
+    if (this.storeId === null) return;
+
+    this.storeService.getStoreById(this.storeId).subscribe({
+      next: (store) => {
+        this.currentStore = store;
+        this.storeContext.setBusinessType((store.businessType as BusinessType) ?? null);
+        this.websiteContentForm.patchValue({
+          aboutTitle: store.aboutTitle ?? '',
+          aboutSubtitle: store.aboutSubtitle ?? '',
+          aboutText: store.aboutText ?? '',
+          aboutImageMediaId: store.aboutImageMediaId ?? null
+        });
+        this.aboutImageUrl = store.aboutImageUrl ?? null;
+        this.aboutImagePreview = store.aboutImageUrl ?? null;
+
+        if (this.isServiceStore) {
+          this.loadGalleryImages();
+        } else {
+          this.galleryImages = [];
+          this.galleryCaptionDrafts = {};
+          this.aboutImageUrl = null;
+          this.aboutImagePreview = null;
+        }
+      },
+      error: (err) => console.error('Error loading store:', err)
+    });
   }
 
   loadCurrentTheme(): void {
@@ -972,27 +1404,14 @@ export class BrandingEditorComponent implements OnInit, OnDestroy {
     // Reset errors
     this.uploadError = null;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      this.uploadError = this.translate.instant('brandingEditor.logo.errorImageOnly');
-      return;
-    }
-
-    // Validate file size (2MB)
-    const maxSize = 2 * 1024 * 1024;
-    if (file.size > maxSize) {
-      this.uploadError = this.translate.instant('brandingEditor.logo.errorTooLarge', {
-        size: (file.size / 1024 / 1024).toFixed(2)
-      });
+    const validationError = this.validateImageFile(file);
+    if (validationError) {
+      this.uploadError = validationError;
       return;
     }
 
     // Show local preview immediately
-    const reader = new FileReader();
-    reader.onload = (e: any) => {
-      this.logoPreview = e.target.result;
-    };
-    reader.readAsDataURL(file);
+    this.setImagePreview(file, (preview) => this.logoPreview = preview);
 
     // Upload to server
     this.uploadLogo(file);
@@ -1032,12 +1451,13 @@ export class BrandingEditorComponent implements OnInit, OnDestroy {
     });
   }
 
-  retryUpload(): void {
-    // Trigger file input again
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-    if (fileInput) {
-      fileInput.click();
-    }
+  retryUpload(inputId: string = 'logoUploadInput'): void {
+    this.triggerFileInput(inputId);
+  }
+
+  triggerFileInput(inputId: string): void {
+    const fileInput = document.getElementById(inputId) as HTMLInputElement | null;
+    fileInput?.click();
   }
 
   removeLogo(event: Event): void {
@@ -1046,6 +1466,292 @@ export class BrandingEditorComponent implements OnInit, OnDestroy {
     this.uploadedLogoUrl = null;
     this.uploadError = null;
     this.uploadProgress = 0;
+  }
+
+  onAboutImageSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    this.aboutImageUploadError = null;
+    const validationError = this.validateImageFile(file);
+    if (validationError) {
+      this.aboutImageUploadError = validationError;
+      input.value = '';
+      return;
+    }
+
+    this.setImagePreview(file, (preview) => this.aboutImagePreview = preview);
+    this.uploadAboutImage(file);
+    input.value = '';
+  }
+
+  uploadAboutImage(file: File): void {
+    if (this.storeId === null) {
+      this.aboutImageUploadError = this.translate.instant('brandingEditor.logo.errorNoStore');
+      return;
+    }
+
+    this.aboutImageUploading = true;
+    this.aboutImageUploadProgress = 0;
+    this.aboutImageUploadError = null;
+
+    this.mediaService.uploadMediaWithProgress(this.storeId, file, 'IMAGE').subscribe({
+      next: (event) => {
+        if (event.progress !== undefined) {
+          this.aboutImageUploadProgress = event.progress;
+        }
+        if (event.response) {
+          this.aboutImageUploading = false;
+          this.aboutImageUploadProgress = 100;
+          this.aboutImageUrl = event.response.url;
+          this.aboutImagePreview = event.response.url;
+          this.websiteContentForm.patchValue({ aboutImageMediaId: event.response.mediaId });
+        }
+      },
+      error: (err) => {
+        console.error('❌ About image upload error:', err);
+        this.aboutImageUploading = false;
+        this.aboutImageUploadProgress = 0;
+        this.aboutImageUploadError = err.error?.message || this.translate.instant('brandingEditor.logo.errorUpload');
+        this.aboutImagePreview = this.aboutImageUrl;
+      }
+    });
+  }
+
+  removeAboutImage(event?: Event): void {
+    event?.stopPropagation();
+    this.aboutImagePreview = null;
+    this.aboutImageUrl = null;
+    this.aboutImageUploadError = null;
+    this.aboutImageUploadProgress = 0;
+    this.websiteContentForm.patchValue({ aboutImageMediaId: null });
+  }
+
+  onGalleryImageSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    this.galleryUploadError = null;
+    const validationError = this.validateImageFile(file);
+    if (validationError) {
+      this.galleryUploadError = validationError;
+      input.value = '';
+      return;
+    }
+
+    this.uploadGalleryImage(file);
+    input.value = '';
+  }
+
+  uploadGalleryImage(file: File): void {
+    if (this.storeId === null) {
+      this.galleryUploadError = this.translate.instant('brandingEditor.logo.errorNoStore');
+      return;
+    }
+
+    this.galleryUploading = true;
+    this.galleryUploadProgress = 0;
+    this.galleryUploadError = null;
+
+    this.mediaService.uploadMediaWithProgress(this.storeId, file, 'IMAGE').subscribe({
+      next: (event) => {
+        if (event.progress !== undefined) {
+          this.galleryUploadProgress = event.progress;
+        }
+        if (event.response) {
+          this.storeSliderService.addToGallery(this.storeId!, event.response.mediaId, this.galleryUploadCaption.trim()).subscribe({
+            next: (image) => {
+              this.galleryUploading = false;
+              this.galleryUploadProgress = 100;
+              this.galleryUploadCaption = '';
+              this.galleryImages = [...this.galleryImages, image].sort((a, b) => a.displayOrder - b.displayOrder);
+              if (image.id) {
+                this.galleryCaptionDrafts[image.id] = this.getGalleryCaption(image);
+              }
+            },
+            error: (err) => {
+              console.error('❌ Gallery add error:', err);
+              this.galleryUploading = false;
+              this.galleryUploadProgress = 0;
+              this.galleryUploadError = err.error?.message || this.translate.instant('brandingEditor.logo.errorUpload');
+            }
+          });
+        }
+      },
+      error: (err) => {
+        console.error('❌ Gallery upload error:', err);
+        this.galleryUploading = false;
+        this.galleryUploadProgress = 0;
+        this.galleryUploadError = err.error?.message || this.translate.instant('brandingEditor.logo.errorUpload');
+      }
+    });
+  }
+
+  private loadGalleryImages(): void {
+    if (this.storeId === null) return;
+
+    this.storeSliderService.getGalleryImages(this.storeId).subscribe({
+      next: (images) => {
+        this.galleryImages = [...images].sort((a, b) => a.displayOrder - b.displayOrder);
+        this.galleryCaptionDrafts = {};
+        this.galleryImages.forEach((image) => {
+          if (image.id) {
+            this.galleryCaptionDrafts[image.id] = this.getGalleryCaption(image);
+          }
+        });
+      },
+      error: (err) => {
+        console.error('Error loading gallery images:', err);
+        this.galleryUploadError = err.error?.message || this.translate.instant('brandingEditor.logo.errorUpload');
+      }
+    });
+  }
+
+  removeGalleryImage(image: StoreSliderImage): void {
+    if (!image.id || this.storeId === null) return;
+    if (!confirm('Möchten Sie dieses Bild wirklich löschen?')) return;
+
+    this.storeSliderService.removeFromGallery(this.storeId, image.id).subscribe({
+      next: () => {
+        this.galleryImages = this.galleryImages.filter(item => item.id !== image.id);
+        delete this.galleryCaptionDrafts[image.id!];
+      },
+      error: (err) => {
+        console.error('Error removing gallery image:', err);
+        this.galleryUploadError = err.error?.message || this.translate.instant('brandingEditor.logo.errorUpload');
+      }
+    });
+  }
+
+  updateGalleryCaption(image: StoreSliderImage): void {
+    if (!image.id || this.storeId === null) return;
+
+    const caption = (this.galleryCaptionDrafts[image.id] ?? '').trim();
+    if (caption === this.getGalleryCaption(image)) {
+      return;
+    }
+
+    this.storeSliderService.updateGalleryCaption(this.storeId, image.id, caption).subscribe({
+      next: () => {
+        (image as StoreSliderImage & { caption?: string }).altText = caption;
+        (image as StoreSliderImage & { caption?: string }).caption = caption;
+        this.galleryCaptionDrafts[image.id!] = caption;
+      },
+      error: (err) => {
+        console.error('Error updating gallery caption:', err);
+        this.galleryUploadError = err.error?.message || this.translate.instant('brandingEditor.logo.errorUpload');
+      }
+    });
+  }
+
+  reorderGallery(event: CdkDragDrop<StoreSliderImage[]>): void {
+    if (this.storeId === null || event.previousIndex === event.currentIndex) return;
+
+    moveItemInArray(this.galleryImages, event.previousIndex, event.currentIndex);
+    const imageIds = this.galleryImages.map(image => image.id).filter((id): id is number => typeof id === 'number');
+
+    this.storeSliderService.reorderGallery(this.storeId, imageIds).subscribe({
+      error: (err) => {
+        console.error('Error reordering gallery:', err);
+        this.galleryUploadError = err.error?.message || this.translate.instant('brandingEditor.logo.errorUpload');
+        this.loadGalleryImages();
+      }
+    });
+  }
+
+  saveWebsiteContent(): void {
+    if (this.storeId === null) {
+      alert(this.translate.instant('brandingEditor.actions.noStore'));
+      return;
+    }
+
+    if (this.aboutImageUploading || this.galleryUploading) {
+      alert(this.translate.instant('brandingEditor.actions.waitUpload'));
+      return;
+    }
+
+    this.websiteSaving = true;
+    const payload = {
+      aboutTitle: this.websiteContentForm.get('aboutTitle')?.value?.trim() || '',
+      aboutSubtitle: this.websiteContentForm.get('aboutSubtitle')?.value?.trim() || '',
+      aboutText: this.websiteContentForm.get('aboutText')?.value?.trim() || '',
+      aboutImageMediaId: this.websiteContentForm.get('aboutImageMediaId')?.value ?? null
+    };
+
+    this.storeService.updateStore(this.storeId, payload as any).subscribe({
+      next: (store) => {
+        this.websiteSaving = false;
+        this.currentStore = store;
+        this.aboutImageUrl = store.aboutImageUrl ?? this.aboutImageUrl;
+        this.aboutImagePreview = this.aboutImageUrl;
+        this.websiteContentForm.patchValue({
+          aboutTitle: store.aboutTitle ?? payload.aboutTitle,
+          aboutSubtitle: store.aboutSubtitle ?? payload.aboutSubtitle,
+          aboutText: store.aboutText ?? payload.aboutText,
+          aboutImageMediaId: store.aboutImageMediaId ?? payload.aboutImageMediaId
+        });
+        alert(this.translate.instant('brandingEditor.actions.saveSuccess'));
+      },
+      error: (err) => {
+        console.error('Error saving website content:', err);
+        this.websiteSaving = false;
+        alert(this.translate.instant('brandingEditor.actions.saveError'));
+      }
+    });
+  }
+
+  navigateToStoreSettings(): void {
+    if (this.storeId === null) return;
+    this.router.navigate(['/stores', this.storeId, 'settings']);
+  }
+
+  updateGalleryUploadCaption(event: Event): void {
+    this.galleryUploadCaption = (event.target as HTMLInputElement).value;
+  }
+
+  getGalleryCaption(image: StoreSliderImage): string {
+    return ((image as StoreSliderImage & { caption?: string }).caption ?? image.altText ?? '').trim();
+  }
+
+  getGalleryCaptionDraft(image: StoreSliderImage): string {
+    if (!image.id) {
+      return this.getGalleryCaption(image);
+    }
+    return this.galleryCaptionDrafts[image.id] ?? this.getGalleryCaption(image);
+  }
+
+  setGalleryCaptionDraft(image: StoreSliderImage, event: Event): void {
+    if (!image.id) return;
+    this.galleryCaptionDrafts[image.id] = (event.target as HTMLInputElement).value;
+  }
+
+  trackGalleryImage(index: number, image: StoreSliderImage): number | string {
+    return image.id ?? index;
+  }
+
+  private validateImageFile(file: File): string | null {
+    if (!file.type.startsWith('image/')) {
+      return this.translate.instant('brandingEditor.logo.errorImageOnly');
+    }
+
+    const maxSize = 4 * 1024 * 1024;
+    if (file.size > maxSize) {
+      return this.translate.instant('brandingEditor.logo.errorTooLarge', {
+        size: (file.size / 1024 / 1024).toFixed(2)
+      });
+    }
+
+    return null;
+  }
+
+  private setImagePreview(file: File, callback: (preview: string | null) => void): void {
+    const reader = new FileReader();
+    reader.onload = (loadEvent: ProgressEvent<FileReader>) => {
+      callback((loadEvent.target?.result as string) ?? null);
+    };
+    reader.readAsDataURL(file);
   }
 
   updateColor(control: string, event: any): void {
@@ -1172,4 +1878,3 @@ export class BrandingEditorComponent implements OnInit, OnDestroy {
     }
   }
 }
-

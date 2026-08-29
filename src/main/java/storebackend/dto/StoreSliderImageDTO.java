@@ -17,5 +17,5 @@ public class StoreSliderImageDTO {
     private Integer displayOrder;
     private Boolean isActive;
     private String altText;
+    private String caption;
 }
-

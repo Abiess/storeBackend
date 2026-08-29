@@ -36,6 +36,10 @@ public class UpdateStoreRequest {
     private String instagramUrl;
     private String tiktokUrl;
     private String footerText;
+    private String aboutTitle;
+    private String aboutText;
+    private String aboutSubtitle;
+    private Long aboutImageMediaId;
 
     // ─── Business-Typ & Restaurant/Riad-Felder – optional, null = nicht ändern ─
     /** SHOP | RESTAURANT | RIAD (als String, wird im Service zu Enum geparst) */

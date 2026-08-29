@@ -28,9 +28,14 @@ import { Product, Category, StoreTheme } from '@app/core/models';
 export class ServiceProfessionalLayoutComponent implements OnInit {
   @Input() storeName = '';
   @Input() description: string | null = null;
+  @Input() aboutTitle: string | null = null;
+  @Input() aboutSubtitle: string | null = null;
+  @Input() aboutText: string | null = null;
+  @Input() aboutImageUrl: string | null = null;
   @Input() logoUrl: string | null = null;
   @Input() bannerImageUrl: string | null = null;
   @Input() sliderImages: SliderImage[] = [];
+  @Input() galleryImages: SliderImage[] = [];
   @Input() products: Product[] = [];
   @Input() categories: Category[] = [];
   @Input() whatsappNumber: string | null = null;
@@ -58,21 +63,11 @@ export class ServiceProfessionalLayoutComponent implements OnInit {
   // Filtered services
   filteredServices: Product[] = [];
 
-  // About section image
-  aboutImage: string | null = null;
-
   ngOnInit(): void {
     // Determine hero image: bannerImageUrl > first slider image > null
     this.heroImage = this.bannerImageUrl 
       || (this.sliderImages && this.sliderImages.length > 0 ? this.sliderImages[0].imageUrl : null);
-    
-    // Determine about image: second slider image or first if only one
-    if (this.sliderImages && this.sliderImages.length > 0) {
-      this.aboutImage = this.sliderImages.length > 1 
-        ? this.sliderImages[1].imageUrl 
-        : this.sliderImages[0].imageUrl;
-    }
-    
+
     // Initialize filtered services
     this.updateFilteredServices();
   }
@@ -152,11 +147,11 @@ export class ServiceProfessionalLayoutComponent implements OnInit {
   }
 
   get showAboutSection(): boolean {
-    return !!(this.description || this.aboutImage);
+    return !!(this.aboutText || this.aboutTitle || this.aboutImageUrl || this.description);
   }
 
   get showGallerySection(): boolean {
-    return this.sliderImages && this.sliderImages.length > 0;
+    return this.galleryImages && this.galleryImages.length > 0;
   }
 
   get showContactSection(): boolean {

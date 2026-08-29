@@ -32,6 +32,11 @@ public class StoreDTO {
     private String instagramUrl;
     private String tiktokUrl;
     private String footerText;
+    private String aboutTitle;
+    private String aboutText;
+    private String aboutSubtitle;
+    private Long aboutImageMediaId;
+    private String aboutImageUrl;
     // ─── Business-Typ & Restaurant/Riad-Felder ─────────────
     private BusinessType businessType;
     private String openingHours;

@@ -10,6 +10,7 @@ import storebackend.config.SaasProperties;
 import storebackend.dto.CreateStoreRequest;
 import storebackend.dto.UpdateStoreRequest;
 import storebackend.dto.StoreDTO;
+import storebackend.entity.Media;
 import storebackend.entity.Store;
 import storebackend.entity.StoreRole;
 import storebackend.entity.User;
@@ -348,6 +349,26 @@ public class StoreService {
         }
         if (request.getFooterText() != null) {
             store.setFooterText(request.getFooterText().isBlank() ? null : request.getFooterText().trim());
+        }
+        if (request.getAboutTitle() != null) {
+            store.setAboutTitle(request.getAboutTitle().isBlank() ? null : request.getAboutTitle().trim());
+        }
+        if (request.getAboutText() != null) {
+            store.setAboutText(request.getAboutText().isBlank() ? null : request.getAboutText().trim());
+        }
+        if (request.getAboutSubtitle() != null) {
+            store.setAboutSubtitle(request.getAboutSubtitle().isBlank() ? null : request.getAboutSubtitle().trim());
+        }
+        if (request.getAboutImageMediaId() != null) {
+            if (request.getAboutImageMediaId() <= 0) {
+                store.setAboutImageMediaId(null);
+            } else {
+                Media aboutImage = mediaService.getMediaById(request.getAboutImageMediaId());
+                if (!aboutImage.getStore().getId().equals(store.getId())) {
+                    throw new RuntimeException("About image must belong to the store");
+                }
+                store.setAboutImageMediaId(aboutImage.getId());
+            }
         }
 
         // ─── Business-Typ & Restaurant/Riad-Felder ──────────────────────
@@ -837,6 +858,18 @@ public class StoreService {
         dto.setInstagramUrl(store.getInstagramUrl());
         dto.setTiktokUrl(store.getTiktokUrl());
         dto.setFooterText(store.getFooterText());
+        dto.setAboutTitle(store.getAboutTitle());
+        dto.setAboutText(store.getAboutText());
+        dto.setAboutSubtitle(store.getAboutSubtitle());
+        dto.setAboutImageMediaId(store.getAboutImageMediaId());
+        if (store.getAboutImageMediaId() != null) {
+            try {
+                dto.setAboutImageUrl(mediaService.getMediaUrl(store.getAboutImageMediaId()));
+            } catch (RuntimeException ex) {
+                log.warn("About image {} for store {} could not be resolved: {}",
+                        store.getAboutImageMediaId(), store.getId(), ex.getMessage());
+            }
+        }
         // ─── Business-Typ & Restaurant/Riad-Felder ─────────────────────
         dto.setBusinessType(store.getBusinessType());
         dto.setOpeningHours(store.getOpeningHours());

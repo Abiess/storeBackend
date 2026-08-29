@@ -2132,7 +2132,7 @@
       "clickToUpload": "Cliquez pour téléverser le logo",
       "hint": "PNG, JPG, SVG (max 2 Mo)",
       "errorImageOnly": "Veuillez téléverser uniquement des fichiers image (PNG, JPG, SVG)",
-      "errorTooLarge": "Fichier trop volumineux ({{size}} Mo). Maximum : 2 Mo",
+      "errorTooLarge": "L'image ne doit pas dépasser 4 Mo.",
       "errorNoStore": "Erreur : contexte de boutique indisponible",
       "errorUpload": "Échec du téléversement. Veuillez réessayer."
     },
@@ -2151,6 +2151,32 @@
     },
     "presets": {
       "section": "⚡ Préréglages rapides"
+    },
+    "websiteContent": {
+      "title": "📄 Contenu du site",
+      "about": {
+        "title": "À propos",
+        "hint": "Personnalisez votre section À propos avec un texte et une image.",
+        "titleLabel": "Titre",
+        "subtitle": "Sous-titre (optionnel)",
+        "text": "Description",
+        "image": "Image À propos (optionnelle)"
+      },
+      "gallery": {
+        "title": "Galerie",
+        "hint": "Présentez votre travail avec une galerie d'images.",
+        "uploadButton": "Téléverser des images",
+        "captionPlaceholder": "Légende de l'image (optionnelle)"
+      },
+      "contact": {
+        "title": "Informations de contact",
+        "hint": "Les coordonnées proviennent des paramètres de la boutique.",
+        "phone": "Téléphone",
+        "email": "E-mail",
+        "whatsapp": "WhatsApp",
+        "address": "Adresse",
+        "editLink": "Modifier les coordonnées"
+      }
     },
     "actions": {
       "reset": "Réinitialiser",

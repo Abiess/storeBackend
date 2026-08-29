@@ -71,4 +71,54 @@ export class StoreSliderService {
   deleteImage(storeId: number, imageId: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${storeId}/slider/images/${imageId}`);
   }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  GALLERY METHODS (Service-Website)
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * Get all gallery images for a store
+   */
+  getGalleryImages(storeId: number): Observable<StoreSliderImage[]> {
+    return this.http.get<StoreSliderImage[]>(`${this.apiUrl}/${storeId}/slider/gallery`);
+  }
+
+  /**
+   * Add existing media to gallery
+   * NOTE: Media must already be uploaded via MediaService!
+   */
+  addToGallery(storeId: number, mediaId: number, caption: string = ''): Observable<StoreSliderImage> {
+    return this.http.post<StoreSliderImage>(
+      `${this.apiUrl}/${storeId}/slider/gallery/${mediaId}`,
+      null,
+      { params: { caption } }
+    );
+  }
+
+  /**
+   * Remove image from gallery
+   */
+  removeFromGallery(storeId: number, imageId: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${storeId}/slider/gallery/${imageId}`);
+  }
+
+  /**
+   * Update caption for gallery image
+   */
+  updateGalleryCaption(storeId: number, imageId: number, caption: string): Observable<void> {
+    return this.http.put<void>(
+      `${this.apiUrl}/${storeId}/slider/gallery/${imageId}/caption`,
+      { caption }
+    );
+  }
+
+  /**
+   * Reorder gallery images
+   */
+  reorderGallery(storeId: number, imageIds: number[]): Observable<void> {
+    return this.http.put<void>(
+      `${this.apiUrl}/${storeId}/slider/gallery/reorder`,
+      imageIds
+    );
+  }
 }

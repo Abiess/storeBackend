@@ -2061,9 +2061,9 @@
       "retry": "Erneut versuchen",
       "uploading": "Uploading... {{progress}}%",
       "clickToUpload": "Zum Hochladen klicken",
-      "hint": "PNG, JPG, SVG (max 2MB)",
-      "errorImageOnly": "Bitte nur Bild-Dateien hochladen (PNG, JPG, SVG)",
-      "errorTooLarge": "Datei zu groß ({{size}}MB). Maximum: 2MB",
+      "hint": "PNG, JPG, WebP (max 4MB)",
+      "errorImageOnly": "Bitte nur Bild-Dateien hochladen (PNG, JPG, WebP)",
+      "errorTooLarge": "Das Bild darf maximal 4 MB groß sein.",
       "errorNoStore": "Fehler: Store-Kontext nicht verfügbar",
       "errorUpload": "Upload fehlgeschlagen. Bitte versuchen Sie es erneut."
     },
@@ -2082,6 +2082,32 @@
     },
     "presets": {
       "section": "⚡ Schnellvorlagen"
+    },
+    "websiteContent": {
+      "title": "📄 Website-Inhalte",
+      "about": {
+        "title": "Über uns",
+        "hint": "Gestalten Sie Ihre Über-uns-Section mit individuellem Text und Bild.",
+        "titleLabel": "Titel",
+        "subtitle": "Untertitel (optional)",
+        "text": "Beschreibung",
+        "image": "Über-uns-Bild (optional)"
+      },
+      "gallery": {
+        "title": "Galerie",
+        "hint": "Zeigen Sie Ihre Arbeit mit einer Bildergalerie.",
+        "uploadButton": "Bilder hochladen",
+        "captionPlaceholder": "Bildunterschrift (optional)"
+      },
+      "contact": {
+        "title": "Kontaktinformationen",
+        "hint": "Die Kontaktdaten werden aus den Store-Einstellungen übernommen.",
+        "phone": "Telefon",
+        "email": "E-Mail",
+        "whatsapp": "WhatsApp",
+        "address": "Adresse",
+        "editLink": "Kontaktdaten bearbeiten"
+      }
     },
     "actions": {
       "reset": "Zurücksetzen",

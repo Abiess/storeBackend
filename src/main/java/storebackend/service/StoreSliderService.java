@@ -15,6 +15,7 @@ import storebackend.repository.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -193,7 +194,7 @@ public class StoreSliderService {
             sliderImage.setMedia(media);
             sliderImage.setImageUrl(uploadResponse.getUrl());
             sliderImage.setImageType(SliderImageType.OWNER_UPLOAD);
-            sliderImage.setAltText(altText);
+            sliderImage.setAltText(normalizeCaption(altText));
             sliderImage.setIsActive(true);
 
             long ownerImageCount = imageRepository.countByStoreIdAndImageType(storeId, SliderImageType.OWNER_UPLOAD);
@@ -225,8 +226,10 @@ public class StoreSliderService {
         if (dto.getIsActive() != null) {
             image.setIsActive(dto.getIsActive());
         }
-        if (dto.getAltText() != null) {
-            image.setAltText(dto.getAltText());
+        if (dto.getCaption() != null) {
+            image.setAltText(normalizeCaption(dto.getCaption()));
+        } else if (dto.getAltText() != null) {
+            image.setAltText(normalizeCaption(dto.getAltText()));
         }
 
         image = imageRepository.save(image);
@@ -276,6 +279,74 @@ public class StoreSliderService {
         }
     }
 
+    @Transactional(readOnly = true)
+    public List<StoreSliderImageDTO> getGalleryImages(Store store) {
+        return imageRepository.findByStoreIdAndImageTypeOrderByDisplayOrderAsc(store.getId(), SliderImageType.GALLERY)
+                .stream()
+                .map(this::mapImageToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public StoreSliderImageDTO addToGallery(Store store, Media media, String caption) {
+        StoreSliderImage galleryImage = new StoreSliderImage();
+        galleryImage.setStore(store);
+        galleryImage.setMedia(media);
+        galleryImage.setImageUrl(mediaService.getMediaUrl(media.getId()));
+        galleryImage.setImageType(SliderImageType.GALLERY);
+        galleryImage.setDisplayOrder((int) imageRepository.countByStoreIdAndImageType(store.getId(), SliderImageType.GALLERY));
+        galleryImage.setIsActive(true);
+        galleryImage.setAltText(normalizeCaption(caption));
+
+        return mapImageToDTO(imageRepository.save(galleryImage));
+    }
+
+    @Transactional
+    public void removeFromGallery(Store store, Long imageId) {
+        StoreSliderImage galleryImage = requireStoreImage(store, imageId, SliderImageType.GALLERY);
+        imageRepository.deleteDirectById(galleryImage.getId());
+        imageRepository.flush();
+        normalizeImageOrder(store.getId(), SliderImageType.GALLERY);
+    }
+
+    @Transactional
+    public StoreSliderImageDTO updateGalleryCaption(Store store, Long imageId, String caption) {
+        StoreSliderImage galleryImage = requireStoreImage(store, imageId, SliderImageType.GALLERY);
+        galleryImage.setAltText(normalizeCaption(caption));
+        return mapImageToDTO(imageRepository.save(galleryImage));
+    }
+
+    @Transactional
+    public void reorderGallery(Store store, List<Long> imageIds) {
+        if (imageIds == null) {
+            throw new IllegalArgumentException("imageIds are required");
+        }
+
+        List<StoreSliderImage> galleryImages = imageRepository.findByStoreIdAndImageTypeOrderByDisplayOrderAsc(
+                store.getId(), SliderImageType.GALLERY);
+        Set<Long> currentIds = galleryImages.stream()
+                .map(StoreSliderImage::getId)
+                .collect(Collectors.toSet());
+        Set<Long> requestedIds = imageIds.stream().collect(Collectors.toSet());
+
+        if (galleryImages.size() != imageIds.size()
+                || currentIds.size() != imageIds.size()
+                || !currentIds.equals(requestedIds)) {
+            throw new IllegalArgumentException("imageIds must contain every gallery image exactly once");
+        }
+
+        for (int i = 0; i < imageIds.size(); i++) {
+            final int order = i;
+            Long imageId = imageIds.get(i);
+            galleryImages.stream()
+                    .filter(image -> image.getId().equals(imageId))
+                    .findFirst()
+                    .ifPresent(image -> image.setDisplayOrder(order));
+        }
+
+        imageRepository.saveAll(galleryImages);
+    }
+
     private StoreSliderSettingsDTO mapSettingsToDTO(StoreSliderSettings settings) {
         StoreSliderSettingsDTO dto = new StoreSliderSettingsDTO();
         dto.setId(settings.getId());
@@ -319,6 +390,7 @@ public class StoreSliderService {
         dto.setDisplayOrder(image.getDisplayOrder());
         dto.setIsActive(image.getIsActive());
         dto.setAltText(image.getAltText());
+        dto.setCaption(image.getAltText());
         return dto;
     }
 
@@ -346,7 +418,7 @@ public class StoreSliderService {
         sliderImage.setMedia(media);
         sliderImage.setImageUrl(imageUrl);
         sliderImage.setImageType(SliderImageType.OWNER_UPLOAD);
-        sliderImage.setAltText(altText != null ? altText : "");
+        sliderImage.setAltText(normalizeCaption(altText));
         sliderImage.setIsActive(true);
         sliderImage.setDisplayOrder((int) ownerImageCount);
 
@@ -425,5 +497,26 @@ public class StoreSliderService {
         // Initialize with full setup
         initializeSliderForNewStore(store, category);
         return getSliderByStoreId(storeId);
+    }
+
+    private StoreSliderImage requireStoreImage(Store store, Long imageId, SliderImageType imageType) {
+        StoreSliderImage image = imageRepository.findById(imageId)
+                .orElseThrow(() -> new RuntimeException("Slider image not found: " + imageId));
+        if (!image.getStore().getId().equals(store.getId()) || image.getImageType() != imageType) {
+            throw new RuntimeException("Slider image not found: " + imageId);
+        }
+        return image;
+    }
+
+    private void normalizeImageOrder(Long storeId, SliderImageType imageType) {
+        List<StoreSliderImage> images = imageRepository.findByStoreIdAndImageTypeOrderByDisplayOrderAsc(storeId, imageType);
+        for (int i = 0; i < images.size(); i++) {
+            images.get(i).setDisplayOrder(i);
+        }
+        imageRepository.saveAll(images);
+    }
+
+    private String normalizeCaption(String caption) {
+        return caption == null ? "" : caption.trim();
     }
 }
