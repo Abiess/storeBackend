@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, HostListener, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { StoreCurrencyPipe } from '@app/core/pipes/store-currency.pipe';
@@ -74,6 +74,13 @@ export class ServiceProfessionalLayoutComponent implements OnInit {
 
   toggleMobileMenu(): void {
     this.mobileMenuOpen = !this.mobileMenuOpen;
+  }
+
+  @HostListener('window:resize')
+  onResize(): void {
+    if (window.innerWidth >= 1024 && this.mobileMenuOpen) {
+      this.closeMobileMenu();
+    }
   }
 
   closeMobileMenu(): void {

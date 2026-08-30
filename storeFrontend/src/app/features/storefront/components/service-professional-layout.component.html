@@ -59,34 +59,35 @@
       </div>
     </div>
 
-    <!-- Mobile Menu Overlay -->
-    <div class="sp-header__mobile-menu" [class.sp-header__mobile-menu--open]="mobileMenuOpen">
-      <nav class="sp-header__mobile-nav">
-        <a href="#services" class="sp-header__mobile-link" (click)="scrollToSection('services'); $event.preventDefault()">
-          {{ 'service.nav.services' | translate }}
-        </a>
-        <a href="#about" class="sp-header__mobile-link" (click)="scrollToSection('about'); $event.preventDefault()">
-          {{ 'service.nav.about' | translate }}
-        </a>
-        <a href="#gallery" class="sp-header__mobile-link" (click)="scrollToSection('gallery'); $event.preventDefault()">
-          {{ 'service.nav.gallery' | translate }}
-        </a>
-        <a href="#contact" class="sp-header__mobile-link" (click)="scrollToSection('contact'); $event.preventDefault()">
-          {{ 'service.nav.contact' | translate }}
-        </a>
-        <a href="#contact"
-           class="sp-header__mobile-cta"
-           (click)="scrollToSection('contact'); $event.preventDefault()">
-          {{ 'service.header.contact' | translate }}
-        </a>
-        
-        <!-- Language Selector in Mobile Menu -->
-        <div class="sp-header__mobile-language">
-          <app-language-selector></app-language-selector>
-        </div>
-      </nav>
-    </div>
   </header>
+
+  <!-- Mobile Menu Overlay -->
+  <div class="sp-header__mobile-menu" [class.sp-header__mobile-menu--open]="mobileMenuOpen">
+    <nav class="sp-header__mobile-nav">
+      <a href="#services" class="sp-header__mobile-link" (click)="scrollToSection('services'); $event.preventDefault()">
+        {{ 'service.nav.services' | translate }}
+      </a>
+      <a href="#about" class="sp-header__mobile-link" (click)="scrollToSection('about'); $event.preventDefault()">
+        {{ 'service.nav.about' | translate }}
+      </a>
+      <a href="#gallery" class="sp-header__mobile-link" (click)="scrollToSection('gallery'); $event.preventDefault()">
+        {{ 'service.nav.gallery' | translate }}
+      </a>
+      <a href="#contact" class="sp-header__mobile-link" (click)="scrollToSection('contact'); $event.preventDefault()">
+        {{ 'service.nav.contact' | translate }}
+      </a>
+      <a href="#contact"
+         class="sp-header__mobile-cta"
+         (click)="scrollToSection('contact'); $event.preventDefault()">
+        {{ 'service.header.contact' | translate }}
+      </a>
+      
+      <!-- Language Selector in Mobile Menu -->
+      <div class="sp-header__mobile-language">
+        <app-language-selector></app-language-selector>
+      </div>
+    </nav>
+  </div>
 
   <!-- ═══════════════════════════════════════════════════════════════
        HERO – Professional Business Hero Section

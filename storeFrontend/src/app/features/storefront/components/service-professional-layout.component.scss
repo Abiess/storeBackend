@@ -228,11 +228,12 @@
   // Mobile Menu Overlay
   &__mobile-menu {
     position: fixed;
-    top: var(--sp-header-height);
+    top: var(--sp-header-height, 70px);
     left: 0;
     right: 0;
     bottom: 0;
-    background: var(--sp-bg);
+    min-height: calc(100dvh - var(--sp-header-height, 70px));
+    background: var(--sp-bg, #ffffff);
     transform: translateX(100%);
     transition: transform 0.3s ease-in-out;
     overflow-y: auto;
@@ -258,7 +259,7 @@
     display: flex;
     align-items: center;
     padding: 1rem;
-    color: var(--sp-text);
+    color: var(--sp-text, #1f2937);
     text-decoration: none;
     font-weight: 500;
     font-size: 1rem;
