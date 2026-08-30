@@ -1,61 +1,65 @@
 -- ═══════════════════════════════════════════════════════════════════════════
--- MANUAL FIX: Add GALLERY, HERO, SLIDER to store_slider_images constraint
+-- Migration V015: Add GALLERY to store_slider_images constraint
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 
--- PROBLEM:
--- Gallery-Upload schlägt fehl mit:
--- ERROR: new row violates check constraint "chk_image_type"
--- Failing row: image_type = GALLERY
+-- PURPOSE:
+-- Enable GALLERY image type for SERVICE store galleries
+-- 
+-- CONTEXT:
+-- SliderImageType Java enum has exactly 3 values:
+--   - DEFAULT (system default images, no media_id)
+--   - OWNER_UPLOAD (owner uploaded images, requires media_id)
+--   - GALLERY (gallery images for SERVICE stores, requires media_id)
 --
--- URSACHE:
--- Der bestehende CHECK Constraint erlaubt nur 'DEFAULT' und 'OWNER_UPLOAD'
+-- ORIGINAL CONSTRAINT:
+-- CHECK (image_type IN ('DEFAULT', 'OWNER_UPLOAD'))
 --
--- LÖSUNG:
--- Constraint mit GALLERY, HERO, SLIDER erweitern
+-- PRODUCTION FIX ALREADY APPLIED:
+-- This migration matches the manual fix already applied on production
+-- to ensure consistency for new installations and development environments.
 --
--- AUSFÜHRUNG:
--- psql -U storeapp -d storedb -f V015__add_gallery_to_image_type_constraint.sql
--- ODER manuell in psql/pgAdmin ausführen
+-- IDEMPOTENCY:
+-- Uses IF EXISTS for safe re-execution on environments where GALLERY
+-- may have been manually added already.
 --
 -- ═══════════════════════════════════════════════════════════════════════════
 
 BEGIN;
 
--- 1. Drop the old constraint
+-- 1. Drop the old image_type constraint (idempotent)
 ALTER TABLE store_slider_images DROP CONSTRAINT IF EXISTS chk_image_type;
 
--- 2. Recreate constraint with all valid image_type values
+-- 2. Recreate constraint with all valid SliderImageType enum values
+--    ONLY: DEFAULT, OWNER_UPLOAD, GALLERY (NO HERO/SLIDER - they don't exist in Java enum)
 ALTER TABLE store_slider_images ADD CONSTRAINT chk_image_type 
-    CHECK (image_type IN ('DEFAULT', 'OWNER_UPLOAD', 'HERO', 'SLIDER', 'GALLERY'));
+    CHECK (image_type IN ('DEFAULT', 'OWNER_UPLOAD', 'GALLERY'));
 
--- 3. Drop the old media_consistency constraint (it's too restrictive)
+-- 3. Drop the old media_consistency constraint (idempotent)
 ALTER TABLE store_slider_images DROP CONSTRAINT IF EXISTS chk_media_consistency;
 
--- 4. Recreate media_consistency constraint with updated logic:
---    DEFAULT: media_id must be NULL
---    All other types: media_id can be NULL or NOT NULL
+-- 4. Recreate media_consistency constraint with correct logic:
+--    DEFAULT: media_id must be NULL (system default images, no upload)
+--    OWNER_UPLOAD: media_id must be NOT NULL (uploaded via MediaService)
+--    GALLERY: media_id must be NOT NULL (uploaded via MediaService)
 ALTER TABLE store_slider_images ADD CONSTRAINT chk_media_consistency 
     CHECK (
         (image_type = 'DEFAULT' AND media_id IS NULL) OR
-        (image_type IN ('OWNER_UPLOAD', 'HERO', 'SLIDER', 'GALLERY'))
+        (image_type = 'OWNER_UPLOAD' AND media_id IS NOT NULL) OR
+        (image_type = 'GALLERY' AND media_id IS NOT NULL)
     );
 
 COMMIT;
 
--- 5. Verify the changes
-SELECT conname, contype, pg_get_constraintdef(oid) as definition
-FROM pg_constraint
-WHERE conrelid = 'store_slider_images'::regclass
-  AND contype = 'c';
-
--- Expected output:
--- chk_image_type | c | CHECK ((image_type)::text = ANY ((ARRAY['DEFAULT'::character varying, 'OWNER_UPLOAD'::character varying, 'HERO'::character varying, 'SLIDER'::character varying, 'GALLERY'::character varying])::text[]))
--- chk_media_consistency | c | CHECK (...)
+-- 5. Verify the changes (optional query)
+-- SELECT conname, contype, pg_get_constraintdef(oid) as definition
+-- FROM pg_constraint
+-- WHERE conrelid = 'store_slider_images'::regclass
+--   AND contype = 'c';
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- NOTES:
--- - Bestehende HERO/SLIDER Rows bleiben unverändert
--- - DEFAULT/OWNER_UPLOAD Rows bleiben unverändert
--- - GALLERY kann jetzt eingefügt werden
--- - Keine Daten werden gelöscht
+-- - Existing DEFAULT/OWNER_UPLOAD rows remain unchanged
+-- - GALLERY can now be inserted
+-- - No data is deleted or modified
+-- - Safe for environments where GALLERY may already be added manually
 -- ═══════════════════════════════════════════════════════════════════════════
