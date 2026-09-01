@@ -279,6 +279,31 @@ export class DhlService {
       {}
     );
   }
+
+  // ════════════════════════════════════════════════════════════════════════
+  // SCHRITT 3 - DHL TRACKING VALIDATION
+  // ════════════════════════════════════════════════════════════════════════
+
+  /**
+   * POST /api/stores/{storeId}/dhl/tracking/validate
+   * 
+   * Validiert einen Tracking-Code gegen DHL Parcel DE Tracking API.
+   * 
+   * Returns:
+   * - VALID: DHL bestätigt Sendung → pieceCode verwenden
+   * - NOT_FOUND: Kein DHL-Code (KEIN Fehler, normaler Fall bei Multi-Barcode)
+   * 
+   * Technische Fehler (Auth, Timeout, etc.) werfen HTTP Errors.
+   * 
+   * @param storeId Store-ID
+   * @param trackingCode Gescannter Barcode
+   */
+  validateTrackingCode(storeId: number, trackingCode: string): Observable<DhlTrackingValidationResponse> {
+    return this.http.post<DhlTrackingValidationResponse>(
+      `${this.baseUrl}/stores/${storeId}/dhl/tracking/validate`,
+      { trackingCode: trackingCode.trim() }
+    );
+  }
 }
 
 // ════════════════════════════════════════════════════════════════════════
@@ -310,4 +335,26 @@ export interface DhlStoreParcelRequestV2 {
   mode: 'auto' | 'manual';
   slotCode?: string;
   notes?: string;
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// SCHRITT 3 - DHL TRACKING VALIDATION TYPES
+// ════════════════════════════════════════════════════════════════════════
+
+/**
+ * Response von DHL Tracking Validation Endpoint
+ * Entspricht backend DhlTrackingValidationResult.java
+ */
+export interface DhlTrackingValidationResponse {
+  status: 'VALID' | 'NOT_FOUND';
+  trackingCode: string;
+  pieceCode?: string;
+  pieceIdentifier?: string;
+  shipmentStatus?: string;
+  standardEventCode?: string;
+  productName?: string;
+  weight?: number;
+  dhlResponseCode: string;
+  dhlErrorMessage?: string;
+  valid: boolean; // convenience field
 }

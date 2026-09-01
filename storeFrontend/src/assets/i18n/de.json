@@ -3432,6 +3432,16 @@
       "currentSlot": "Aktueller Lagerplatz",
       "nextParcel": "Nächstes Paket"
     },
+    "validation": {
+      "checking": "DHL-Sendung wird geprüft...",
+      "validShipment": "✓ DHL-Sendung erkannt",
+      "notAShipment": "Kein DHL-Sendungscode erkannt",
+      "scanAnotherBarcode": "Bitte einen anderen Barcode auf dem Paket scannen",
+      "unavailable": "DHL-Sendungsprüfung momentan nicht verfügbar",
+      "retryLater": "Bitte erneut versuchen.",
+      "configError": "DHL-Sendungsprüfung konnte nicht durchgeführt werden",
+      "configErrorDesc": "Bitte kontaktieren Sie Ihren Administrator."
+    },
     "modes": {
       "manualSlot": "Manuell wählen",
       "selected": "Ausgewählt",

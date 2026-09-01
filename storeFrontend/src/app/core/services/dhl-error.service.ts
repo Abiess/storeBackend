@@ -113,6 +113,19 @@ export class DhlErrorService {
         this.showSlotNotFound();
         return true;
 
+      // SCHRITT 3 - DHL Tracking Validation Errors
+      case 'DHL_AUTHENTICATION_ERROR':
+        this.showDhlAuthError();
+        return true;
+
+      case 'DHL_CONNECTIVITY_ERROR':
+        this.showDhlConnectivityError();
+        return true;
+
+      case 'DHL_TECHNICAL_ERROR':
+        this.showDhlTechnicalError();
+        return true;
+
       // Security-Fehler
       case 'UNAUTHORIZED':
       case '401':
@@ -270,6 +283,40 @@ export class DhlErrorService {
     const title = this.translationService.translate('dhl.slotError.notFound');
     const message = this.translationService.translate('dhl.slotError.notFoundDesc');
     this.toast.error(`${title}\n\n${message}`, 4000);
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  // SCHRITT 3 - DHL TRACKING VALIDATION ERRORS
+  // ════════════════════════════════════════════════════════════════════════
+
+  /**
+   * DHL Auth/Configuration Error (code=5)
+   * Technisches Problem, NICHT vom User verschuldet
+   */
+  private showDhlAuthError(): void {
+    const title = this.translationService.translate('dhl.validation.configError');
+    const message = this.translationService.translate('dhl.validation.configErrorDesc');
+    this.toast.error(`${title}\n\n${message}`, 5000);
+  }
+
+  /**
+   * DHL Connectivity Error (Timeout, Network)
+   * API nicht erreichbar, Retry sinnvoll
+   */
+  private showDhlConnectivityError(): void {
+    const title = this.translationService.translate('dhl.validation.unavailable');
+    const message = this.translationService.translate('dhl.validation.retryLater');
+    this.toast.warning(`${title}\n\n${message}`, 5000);
+  }
+
+  /**
+   * DHL Technical Error (code=-1000, etc.)
+   * DHL-internes Problem
+   */
+  private showDhlTechnicalError(): void {
+    const title = this.translationService.translate('dhl.validation.unavailable');
+    const message = this.translationService.translate('dhl.validation.retryLater');
+    this.toast.warning(`${title}\n\n${message}`, 5000);
   }
 
   // ════════════════════════════════════════════════════════════════════════

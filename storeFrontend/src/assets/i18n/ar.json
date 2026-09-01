@@ -3267,6 +3267,16 @@
       "currentSlot": "الموقع الحالي",
       "nextParcel": "الطرد التالي"
     },
+    "validation": {
+      "checking": "جاري التحقق من شحنة DHL...",
+      "validShipment": "✓ تم التعرف على شحنة DHL",
+      "notAShipment": "ليس رمز تتبع DHL",
+      "scanAnotherBarcode": "يرجى مسح رمز باركود آخر على الطرد",
+      "unavailable": "التحقق من شحنة DHL غير متاح حاليًا",
+      "retryLater": "يرجى المحاولة مرة أخرى.",
+      "configError": "تعذر إجراء التحقق من شحنة DHL",
+      "configErrorDesc": "يرجى الاتصال بالمسؤول."
+    },
     "storeParcel": {
       "title": "تخزين الطرد",
       "scanTracking": "مسح رمز التتبع",

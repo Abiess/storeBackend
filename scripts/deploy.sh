@@ -230,6 +230,15 @@ DHL_PLATFORM_CLIENT_ID=${DHL_PLATFORM_CLIENT_ID:-}
 DHL_PLATFORM_CLIENT_SECRET=${DHL_PLATFORM_CLIENT_SECRET:-}
 DHL_PLATFORM_CREDENTIALS_ALLOWED=${DHL_PLATFORM_CREDENTIALS_ALLOWED:-true}
 
+# ════════════════════════════════════════════════════════════
+# DHL Parcel DE Tracking API (GET-Status for Public User)
+# ════════════════════════════════════════════════════════════
+# Nutzt DIESELBEN Credentials wie Shipping (clientId, clientSecret, username, password)
+# Authentifizierung: Basic Auth + DHL-API-Key Header + XML appname/password
+DHL_TRACKING_SANDBOX_BASE_URL=${DHL_TRACKING_SANDBOX_BASE_URL:-https://api-sandbox.dhl.com/parcel/de/tracking/v0}
+DHL_TRACKING_PRODUCTION_BASE_URL=${DHL_TRACKING_PRODUCTION_BASE_URL:-https://api-eu.dhl.com/parcel/de/tracking/v0}
+DHL_TRACKING_TIMEOUT_MS=${DHL_TRACKING_TIMEOUT_MS:-10000}
+
 # ── PayPal Payment Gateway (Phase 1A: Sandbox MVP) ──
 # PayPal Orders v2 API Credentials
 # Phase 1A: Globale Sandbox-Credentials für Plattform

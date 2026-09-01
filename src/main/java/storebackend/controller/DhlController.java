@@ -17,6 +17,7 @@ import storebackend.util.StoreAccessChecker;
 import storebackend.exception.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.concurrent.TimeUnit;
@@ -54,6 +55,7 @@ public class DhlController {
     private final DhlParcelService parcelService;
     private final DhlActivityLogService activityLogService;
     private final StoreAccessChecker storeAccessChecker;
+    private final storebackend.service.dhl.DhlTrackingClient dhlTrackingClient;
 
     /**
      * POST /api/stores/{storeId}/dhl/parcels/store
@@ -718,6 +720,142 @@ public class DhlController {
             log.warn("⚠️ Parcel cancellation failed: storeId={}, parcelId={}, error={}", 
                 storeId, parcelId, e.getMessage());
             throw e;
+        }
+    }
+    
+    /**
+     * POST /api/stores/{storeId}/dhl/tracking/validate
+     * 
+     * Validiert einen einzelnen Tracking-Code gegen DHL Tracking API
+     * 
+     * Request:
+     * {
+     *   "trackingCode": "00340434664988418341"
+     * }
+     * 
+     * Response (VALID):
+     * {
+     *   "status": "VALID",
+     *   "trackingCode": "00340434664988418341",
+     *   "pieceCode": "00340434664988418341",
+     *   "pieceIdentifier": "340434664988418341",
+     *   "shipmentStatus": "Vsl. am nächsten Werktag in Filiale abholbereit",
+     *   "standardEventCode": "ZF",
+     *   "productName": "DHL PAKET, Filial-Routing, GoGreen Plus",
+     *   "weightKg": 2.5,
+     *   "dhlResponseCode": "0",
+     *   "valid": true
+     * }
+     * 
+     * Response (NOT_FOUND):
+     * {
+     *   "status": "NOT_FOUND",
+     *   "trackingCode": "99999999999999999999",
+     *   "dhlResponseCode": "100",
+     *   "dhlErrorMessage": "Tracking code not found in DHL system",
+     *   "valid": false
+     * }
+     * 
+     * Errors:
+     * - 401: Not authenticated
+     * - 403: No access to store
+     * - 400: Missing tracking code
+     * - 500: DHL auth/technical/timeout errors
+     * 
+     * @since SCHRITT 2 - DHL Tracking Validation
+     */
+    @PostMapping("/tracking/validate")
+    public ResponseEntity<?> validateTrackingCode(
+        @PathVariable Long storeId,
+        @RequestBody Map<String, String> request,
+        @AuthenticationPrincipal User user
+    ) {
+        try {
+            // 1. Authentication Check
+            if (user == null) {
+                log.warn("DHL tracking validation denied: User not authenticated");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Authentication required"));
+            }
+
+            // 2. Store Access Check (Multi-Tenant Security)
+            if (!storeAccessChecker.hasStoreAccess(storeId)) {
+                log.warn("DHL tracking validation denied: user={} has no access to store={}", 
+                    user.getId(), storeId);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Access denied to store"));
+            }
+
+            // 3. Extract tracking code
+            String trackingCode = request.get("trackingCode");
+            if (trackingCode == null || trackingCode.isBlank()) {
+                log.warn("DHL tracking validation: missing trackingCode, store={}, user={}", 
+                    storeId, user.getId());
+                return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Tracking code is required"));
+            }
+
+            log.info("🔍 DHL tracking validation requested: store={}, trackingCode={}, user={}", 
+                storeId, trackingCode.trim(), user.getId());
+
+            // 4. Call DHL Tracking Client
+            storebackend.dto.dhl.DhlTrackingValidationResult result = 
+                dhlTrackingClient.validateTrackingCode(storeId, trackingCode);
+
+            log.info("✅ DHL tracking validation completed: store={}, trackingCode={}, status={}", 
+                storeId, result.getTrackingCode(), result.getStatus());
+
+            // 5. Return result (HTTP 200 for both VALID and NOT_FOUND)
+            return ResponseEntity.ok(result);
+            
+        } catch (IllegalArgumentException e) {
+            // Empty or invalid input
+            log.warn("⚠️ DHL tracking validation: invalid input, store={}, error={}", 
+                storeId, e.getMessage());
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", e.getMessage()));
+            
+        } catch (storebackend.exception.DhlTrackingException e) {
+            // DHL technical/auth/connectivity errors
+            log.error("❌ DHL tracking validation failed: store={}, errorCode={}, message={}", 
+                storeId, e.getErrorCode(), e.getMessage());
+            
+            // Map error codes to HTTP status
+            HttpStatus status;
+            switch (e.getErrorCode()) {
+                case AUTHENTICATION_ERROR:
+                    status = HttpStatus.SERVICE_UNAVAILABLE;
+                    break;
+                case CONNECTIVITY_ERROR:
+                    status = HttpStatus.GATEWAY_TIMEOUT;
+                    break;
+                case DHL_TECHNICAL_ERROR:
+                case UNKNOWN_DHL_ERROR:
+                case XML_PARSING_ERROR:
+                case HTTP_ERROR:
+                default:
+                    status = HttpStatus.INTERNAL_SERVER_ERROR;
+                    break;
+            }
+            
+            return ResponseEntity.status(status)
+                .body(Map.of(
+                    "error", "DHL tracking validation failed",
+                    "errorCode", e.getErrorCode().name(),
+                    "messageKey", e.getMessageKey(),
+                    "message", e.getMessage()
+                ));
+                
+        } catch (storebackend.exception.DhlConfigurationException e) {
+            // DHL not configured for this store
+            log.error("❌ DHL tracking validation: DHL not configured, store={}, messageKey={}", 
+                storeId, e.getMessageKey());
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(Map.of(
+                    "error", "DHL integration not configured",
+                    "messageKey", e.getMessageKey(),
+                    "message", e.getMessage()
+                ));
         }
     }
 }

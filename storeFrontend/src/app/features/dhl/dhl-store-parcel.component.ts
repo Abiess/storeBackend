@@ -1,21 +1,24 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DhlService, DhlStoreParcelRequestV2, DhlParcel, DhlSlot } from '@app/core/services/dhl.service';
 import { DhlErrorService } from '@app/core/services/dhl-error.service';
+import { TranslationService } from '@app/core/services/translation.service';
 import { BarcodeInputComponent } from '@app/shared/components/barcode-input/barcode-input.component';
 import { DhlSlotGridComponent } from './dhl-slot-grid.component';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 /**
- * DHL Store Parcel Component (Phase 2)
+ * DHL Store Parcel Component (Phase 2 + SCHRITT 3)
  * 
- * Flow: Paket einlagern mit Mode-Selection
+ * Flow: Paket einlagern mit Mode-Selection + DHL Tracking Validation
  * 1. Tracking: [Scanner] [Manuell]
- * 2. Lagerplatz: [Automatisch] [Manuell]
- * 3. Speichern
- * 4. Erfolg: Lagerplatz groß anzeigen
+ * 2. DHL API Validation (SCHRITT 3)
+ * 3. Lagerplatz: [Automatisch] [Manuell]
+ * 4. Speichern
+ * 5. Erfolg: Lagerplatz groß anzeigen
  */
 @Component({
   selector: 'app-dhl-store-parcel',
@@ -137,6 +140,11 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
           </textarea>
         </div>
 
+        <!-- SCHRITT 3: Validation Message (Info/Feedback) -->
+        <div *ngIf="validationMessage()" class="validation-message">
+          {{ validationMessage() }}
+        </div>
+
         <!-- Error Message -->
         <div *ngIf="error()" class="error-box">
           {{ error() }}
@@ -146,9 +154,10 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
         <button
           class="btn-submit"
           (click)="storeParcel()"
-          [disabled]="!canSubmit() || loading()">
-          <span *ngIf="!loading()">{{ 'dhl.storeParcel.submit' | translate }}</span>
-          <span *ngIf="loading()">{{ 'common.loading' | translate }}...</span>
+          [disabled]="!canSubmit() || loading() || validating()">
+          <span *ngIf="!loading() && !validating()">{{ 'dhl.storeParcel.submit' | translate }}</span>
+          <span *ngIf="validating()">{{ 'dhl.validation.checking' | translate }}</span>
+          <span *ngIf="loading() && !validating()">{{ 'common.loading' | translate }}...</span>
         </button>
       </div>
     </div>
@@ -328,6 +337,22 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       text-align: center;
     }
 
+    .validation-message {
+      padding: 1rem;
+      background: #e6f3ff;
+      border: 2px solid #667eea;
+      border-radius: 8px;
+      color: #333;
+      font-weight: 500;
+      white-space: pre-line;
+      animation: fadeIn 0.3s;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     .error-box {
       padding: 1rem;
       background: #ffe6e6;
@@ -394,6 +419,8 @@ export class DhlStoreParcelComponent implements OnInit {
   private router = inject(Router);
   private dhlService = inject(DhlService);
   private dhlErrorService = inject(DhlErrorService);
+  private translationService = inject(TranslationService);
+  private destroyRef = inject(DestroyRef);
 
   storeId!: number;
   trackingCode = '';
@@ -410,6 +437,10 @@ export class DhlStoreParcelComponent implements OnInit {
   error = signal<string | null>(null);
   success = signal(false);
   storedParcel = signal<DhlParcel | null>(null);
+
+  // SCHRITT 3: DHL Tracking Validation Signals
+  validating = signal(false);              // Validation läuft gerade
+  validationMessage = signal<string>('');  // User-Feedback für Validation
 
   ngOnInit(): void {
     this.extractStoreId();
@@ -468,11 +499,96 @@ export class DhlStoreParcelComponent implements OnInit {
   }
 
   storeParcel(): void {
-    if (!this.canSubmit() || this.loading()) return;
+    if (!this.canSubmit() || this.loading() || this.validating()) return;
 
+    // SCHRITT 3: Validation vor Einlagerung
+    this.validateAndStoreParcel();
+  }
+
+  /**
+   * SCHRITT 3: DHL Tracking Validation
+   * 
+   * Validiert gescannten Barcode gegen DHL API.
+   * canSubmit() hat bereits Mindestlänge geprüft.
+   * 
+   * VALID → pieceCode übernehmen → weiter mit Einlagerung
+   * NOT_FOUND → Eingabe löschen → User scannt nächsten Barcode
+   * Technische Fehler → verständliche Meldung + Retry
+   */
+  private validateAndStoreParcel(): void {
+    const rawCode = this.trackingCode.trim();
+
+    // Doppelscan-Schutz: validating() ist primäre Sperre
+    if (this.validating()) {
+      return;
+    }
+
+    this.validating.set(true);
     this.loading.set(true);
     this.error.set(null);
+    this.validationMessage.set(this.translationService.translate('dhl.validation.checking'));
 
+    // 3. DHL Tracking Validation
+    this.dhlService.validateTrackingCode(this.storeId, rawCode)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (result) => {
+          this.validating.set(false);
+          
+          if (result.status === 'VALID') {
+            // ✅ DHL bestätigt Sendung
+            
+            // Kanonischen pieceCode verwenden (Fallback: trackingCode)
+            this.trackingCode = result.pieceCode || result.trackingCode;
+            
+            // Positive Rückmeldung
+            this.validationMessage.set(
+              this.translationService.translate('dhl.validation.validShipment')
+            );
+            
+            // Direkt weiter (KEIN setTimeout!)
+            this.proceedWithStorage();
+            
+          } else if (result.status === 'NOT_FOUND') {
+            // ❌ Kein DHL-Code (KEIN technischer Fehler!)
+            
+            this.loading.set(false);
+            
+            // Freundliche Aufforderung, nächsten Code zu scannen
+            this.validationMessage.set(
+              this.translationService.translate('dhl.validation.notAShipment') + '\n' +
+              this.translationService.translate('dhl.validation.scanAnotherBarcode')
+            );
+            
+            // Eingabefeld leeren für nächsten Scan
+            this.trackingCode = '';
+            
+            // Auto-hide nach 5 Sekunden
+            setTimeout(() => {
+              if (this.validationMessage().includes(this.translationService.translate('dhl.validation.notAShipment'))) {
+                this.validationMessage.set('');
+              }
+            }, 5000);
+          }
+        },
+        
+        error: (err) => {
+          this.validating.set(false);
+          this.loading.set(false);
+          
+          // Über DhlErrorService mit benutzerfreundlichen Messages
+          this.dhlErrorService.handleError(err);
+          
+          // Validation Message löschen
+          this.validationMessage.set('');
+        }
+      });
+  }
+
+  /**
+   * Führt die eigentliche Einlagerung durch (NACH erfolgreicher Validation)
+   */
+  private proceedWithStorage(): void {
     const request: DhlStoreParcelRequestV2 = {
       trackingCode: this.trackingCode.trim(),
       mode: this.slotMode(),
@@ -480,29 +596,31 @@ export class DhlStoreParcelComponent implements OnInit {
       notes: this.notes.trim() || undefined
     };
 
-    this.dhlService.storeParcelV2(this.storeId, request).subscribe({
-      next: (parcel) => {
-        console.log('✅ Parcel stored:', parcel);
-        this.storedParcel.set(parcel);
-        this.success.set(true);
-        this.loading.set(false);
-        
-        // Dispatch highlight event for warehouse plan
-        if (parcel.shelfLocation) {
-          window.dispatchEvent(new CustomEvent('dhl-highlight-slot', {
-            detail: { slotCode: parcel.shelfLocation }
-          }));
+    this.dhlService.storeParcelV2(this.storeId, request)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (parcel) => {
+          this.storedParcel.set(parcel);
+          this.success.set(true);
+          this.loading.set(false);
+          this.validationMessage.set('');
+          
+          // Dispatch highlight event for warehouse plan
+          if (parcel.shelfLocation) {
+            window.dispatchEvent(new CustomEvent('dhl-highlight-slot', {
+              detail: { slotCode: parcel.shelfLocation }
+            }));
+          }
+          
+          // Refresh slots for grid
+          this.loadSlots();
+        },
+        error: (err) => {
+          this.loading.set(false);
+          this.validationMessage.set('');
+          this.dhlErrorService.handleError(err);
         }
-        
-        // Refresh slots for grid
-        this.loadSlots();
-      },
-      error: (err) => {
-        console.error('❌ Store parcel failed:', err);
-        this.loading.set(false);
-        this.dhlErrorService.handleError(err); // Auto-refreshes grid on SLOT_FULL
-      }
-    });
+      });
   }
 
   reset(): void {
@@ -514,6 +632,11 @@ export class DhlStoreParcelComponent implements OnInit {
     this.storedParcel.set(null);
     this.trackingMode.set('scanner');
     this.slotMode.set('auto');
+    
+    // SCHRITT 3: Neue Signals zurücksetzen
+    this.validating.set(false);
+    this.validationMessage.set('');
+    
     this.loadSlots();
   }
 

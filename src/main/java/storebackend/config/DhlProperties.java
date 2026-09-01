@@ -79,6 +79,23 @@ public class DhlProperties {
     private int timeout = 30000;
     
     /**
+     * DHL Parcel DE Tracking API Base URL (Sandbox)
+     * Sandbox: https://api-sandbox.dhl.com/parcel/de/tracking/v0
+     */
+    private String trackingSandboxBaseUrl;
+    
+    /**
+     * DHL Parcel DE Tracking API Base URL (Production)
+     * Production: https://api-eu.dhl.com/parcel/de/tracking/v0
+     */
+    private String trackingProductionBaseUrl;
+    
+    /**
+     * DHL Tracking API Timeout in Millisekunden
+     */
+    private int trackingTimeoutMs = 10000;
+    
+    /**
      * Token Cache Duration in Sekunden (Standard: 23 Stunden)
      */
     private int tokenCacheDuration = 82800;

@@ -3383,6 +3383,16 @@
       "currentSlot": "Current slot",
       "nextParcel": "Next Parcel"
     },
+    "validation": {
+      "checking": "Checking DHL shipment...",
+      "validShipment": "✓ DHL shipment recognized",
+      "notAShipment": "Not a DHL tracking code",
+      "scanAnotherBarcode": "Please scan another barcode on the parcel",
+      "unavailable": "DHL shipment check currently unavailable",
+      "retryLater": "Please try again.",
+      "configError": "DHL shipment check could not be performed",
+      "configErrorDesc": "Please contact your administrator."
+    },
     "storeParcel": {
       "trackingHint": "Scan the code from the DHL label or enter manually",
       "shelfPlaceholder": "e.g. Shelf B-12",
