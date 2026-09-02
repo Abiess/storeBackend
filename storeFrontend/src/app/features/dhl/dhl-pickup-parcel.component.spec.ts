@@ -239,16 +239,88 @@ describe('DhlPickupParcelComponent - TEIL C TrackingValidationState', () => {
       expect(mockDhlScanAudioService.playForState).toHaveBeenCalledWith('VALID');
     }));
 
-    it('kein mehrfaches Beepen durch doppelten Trigger desselben Codes (distinctUntilChanged)', fakeAsync(() => {
+    it('EIN physischer HID-Scan (mehrere Zeichen-Events innerhalb des Debounce-Fensters) erzeugt trotzdem nur 1 DHL-Request/1 Beep', fakeAsync(() => {
       mockDhlService.validateTrackingCode.and.returnValue(of(mockValidResponse()));
       // Simuliert einen HID-Scanner, der denselben fertigen Code zweimal
       // "meldet" (z.B. durch ein zusätzliches Change-Event), bevor sich
-      // der Code tatsächlich ändert.
+      // der Code tatsächlich ändert - debounceTime(400) allein buendelt
+      // das zu einem einzigen Request (kein distinctUntilChanged nötig).
       component.onTrackingCodeChange(VALID_CODE);
       component.onTrackingCodeChange(VALID_CODE);
       tick(400);
 
+      expect(mockDhlService.validateTrackingCode).toHaveBeenCalledTimes(1);
       expect(mockDhlScanAudioService.playForState).toHaveBeenCalledTimes(1);
+    }));
+
+    it('EIN physischer HID-Scan, der den Code Zeichen-für-Zeichen aufbaut, erzeugt nur 1 DHL-Request', fakeAsync(() => {
+      mockDhlService.validateTrackingCode.and.returnValue(of(mockValidResponse()));
+      // Realistischere Simulation: HID sendet "0", "00", "003", ... bis zum
+      // vollständigen Code - jedes Zeichen loest onTrackingCodeChange() aus.
+      for (let i = 1; i <= VALID_CODE.length; i++) {
+        component.onTrackingCodeChange(VALID_CODE.substring(0, i));
+      }
+      tick(400);
+
+      expect(mockDhlService.validateTrackingCode).toHaveBeenCalledTimes(1);
+      expect(mockDhlScanAudioService.playForState).toHaveBeenCalledTimes(1);
+    }));
+
+    it('BEWUSSTER Rescan DESSELBEN Barcodes (neuer Scan-Vorgang) → erneuter DHL-Request + erneuter Beep (KEIN Duplicate)', fakeAsync(() => {
+      mockDhlService.validateTrackingCode.and.returnValue(of(mockValidResponse()));
+      triggerValidation(VALID_CODE);
+      expect(mockDhlService.validateTrackingCode).toHaveBeenCalledTimes(1);
+      expect(mockDhlScanAudioService.playForState).toHaveBeenCalledTimes(1);
+
+      // Clear-Guard leert das Feld synchron beim ersten Zeichen des naechsten
+      // Scans (BarcodeInputComponent.onKeyDown -> onChange('')); danach baut
+      // der zweite physische Scan denselben Barcode erneut auf.
+      component.onTrackingCodeChange('');
+      component.onTrackingCodeChange(VALID_CODE);
+      tick(400);
+
+      expect(mockDhlService.validateTrackingCode).toHaveBeenCalledTimes(2);
+      expect(mockDhlScanAudioService.playForState).toHaveBeenCalledTimes(2);
+      expect(mockDhlScanAudioService.playForState.calls.mostRecent().args[0]).toBe('VALID');
+    }));
+
+    it('STALE RESPONSE GUARD: verspätete Antwort von Scan A überschreibt NICHT Status/Beep von Scan B', fakeAsync(() => {
+      let resolveA!: (value: DhlTrackingValidationResponse) => void;
+      const pendingA = new Promise<DhlTrackingValidationResponse>(resolve => { resolveA = resolve; });
+      const CODE_A = 'VDBDBJDJDUD';
+
+      mockDhlService.validateTrackingCode.and.callFake((_storeId: number, code: string) => {
+        if (code === CODE_A) {
+          return new Observable<DhlTrackingValidationResponse>((subscriber) => {
+            pendingA.then(value => { subscriber.next(value); subscriber.complete(); });
+          });
+        }
+        return of(mockValidResponse());
+      });
+
+      // Scan A: Request laeuft noch (nicht aufgeloest)
+      component.onTrackingCodeChange(CODE_A);
+      tick(400);
+      expect(component.validationState()).toBe('VALIDATING');
+
+      // Scan B: neuer, ANDERER Code, waehrend A noch offen ist - loest sofort auf
+      component.onTrackingCodeChange(VALID_CODE);
+      tick(400);
+
+      expect(component.validationState()).toBe('VALID');
+      expect(component.canSearch()).toBe(true);
+      expect(mockDhlScanAudioService.playForState).toHaveBeenCalledWith('VALID');
+      expect(mockDhlScanAudioService.playForState).toHaveBeenCalledTimes(1);
+
+      // Jetzt kommt die veraltete Antwort von Scan A verspaetet zurueck
+      mockDhlScanAudioService.playForState.calls.reset();
+      resolveA(mockNotFoundResponse(CODE_A));
+      tick();
+
+      // Status und Beep DUERFEN NICHT durch die veraltete Antwort A veraendert werden
+      expect(component.validationState()).toBe('VALID');
+      expect(component.canSearch()).toBe(true);
+      expect(mockDhlScanAudioService.playForState).not.toHaveBeenCalled();
     }));
 
     it('neuer Scan ersetzt INVALID-Zustand → alter Ton-Zustand irrelevant, neue DHL-Antwort spielt eigenen Ton', fakeAsync(() => {

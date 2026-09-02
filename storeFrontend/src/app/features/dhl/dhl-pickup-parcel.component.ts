@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject } from 'rxjs';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { debounceTime } from 'rxjs/operators';
 import { DhlService, DhlFindParcelRequest, DhlPickupParcelRequest, DhlParcel, DhlTrackingValidationResponse } from '@app/core/services/dhl.service';
 import { DhlErrorService } from '@app/core/services/dhl-error.service';
 import { DhlScanAudioService } from '@app/core/services/dhl-scan-audio.service';
@@ -523,8 +523,14 @@ export class DhlPickupParcelComponent implements OnInit {
     this.scanSoundsEnabled.set(this.dhlScanAudioService.isEnabled());
     this.trackingCodeChange$
       .pipe(
+        // WICHTIG: KEIN distinctUntilChanged() hier - das würde einen
+        // bewussten Rescan desselben Barcodes (fachlich ein NEUER
+        // Scan-Vorgang) fälschlich als Duplikat unterdrücken. debounceTime
+        // allein reicht, um die Zeichen-für-Zeichen-Events EINES
+        // physischen HID-Scans zu einem einzigen Request zu buendeln -
+        // unabhängig davon, ob der resultierende Code mit dem vorherigen
+        // identisch ist oder nicht.
         debounceTime(400),
-        distinctUntilChanged(),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe((code) => this.runValidation(code));
