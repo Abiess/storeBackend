@@ -21,18 +21,32 @@ import java.util.Optional;
 public interface DhlParcelRepository extends JpaRepository<DhlParcel, Long> {
     
     /**
-     * Findet Paket anhand Store + normalisiertem Tracking-Code
+     * Findet den/die aktiven Datensätze (Status STORED oder PICKED_UP) für
+     * Store + Tracking-Code, neuester zuerst.
      * 
-     * WICHTIG: Hauptmethode für Abholungen
+     * WARUM "List" statt "Optional" auf einer ungeordneten Query:
+     * Historisch kann es für denselben (store_id, tracking_code) mehrere
+     * CANCELLED-Datensätze geben (Tracking-Code-Wiederverwendung nach
+     * Stornierung, siehe V017/DhlParcelStatus.CANCELLED). Der DB-seitige
+     * Partial Unique Index "idx_dhl_parcels_active_tracking" garantiert
+     * zwar, dass zu jedem Zeitpunkt höchstens EIN Datensatz mit Status
+     * STORED/PICKED_UP existiert - trotzdem wird hier defensiv mit
+     * "ORDER BY id DESC" gearbeitet und das erste Element aus der Liste
+     * gelesen (statt eine ungeordnete Query direkt auf Optional zu mappen),
+     * damit unter keinen Umständen eine NonUniqueResultException auftreten
+     * kann, selbst wenn sich die DB-Invariante einmal ändern sollte.
      * 
      * @param storeId Store ID (Multi-Tenant)
      * @param trackingCode Normalisierter Tracking-Code
-     * @return Optional<DhlParcel>
+     * @param statuses Aktive Status (STORED, PICKED_UP)
+     * @return Liste der aktiven Datensätze, neuester (höchste id) zuerst
      */
-    @Query("SELECT p FROM DhlParcel p WHERE p.store.id = :storeId AND p.trackingCode = :trackingCode")
-    Optional<DhlParcel> findByStoreIdAndTrackingCode(
+    @Query("SELECT p FROM DhlParcel p WHERE p.store.id = :storeId AND p.trackingCode = :trackingCode " +
+           "AND p.status IN :statuses ORDER BY p.id DESC")
+    List<DhlParcel> findByStoreIdAndTrackingCodeAndStatusInOrderByIdDesc(
         @Param("storeId") Long storeId,
-        @Param("trackingCode") String trackingCode
+        @Param("trackingCode") String trackingCode,
+        @Param("statuses") List<DhlParcelStatus> statuses
     );
     
     /**

@@ -8,6 +8,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
 import storebackend.dto.dhl.DhlTrackingValidationResult;
 import storebackend.dto.dhl.DhlTrackingValidationResult.DhlTrackingValidationStatus;
 import storebackend.entity.DhlParcel;
@@ -44,6 +46,12 @@ class DhlParcelMetadataAndResetTest {
     @Mock
     private StoreRepository storeRepository;
 
+    @Mock
+    private EntityManager entityManager;
+
+    @Mock
+    private Query nativeInsertQuery;
+
     @InjectMocks
     private DhlParcelService parcelService;
 
@@ -54,6 +62,20 @@ class DhlParcelMetadataAndResetTest {
         testStore = new Store();
         testStore.setId(1L);
         testStore.setName("Test Store");
+
+        // storeParcel() nutzt jetzt einen nativen ON-CONFLICT-Insert via
+        // EntityManager statt parcelRepository.save() (siehe
+        // DhlParcelService.insertViaOnConflict() - kein REQUIRES_NEW mehr,
+        // siehe entsprechende Session-Historie zum FK-Lock-Self-Deadlock-Fix).
+        // Mockitos @InjectMocks nutzt für DhlParcelService ausschließlich
+        // Constructor-Injection (RequiredArgsConstructor-Felder) - das
+        // @PersistenceContext-Feld "entityManager" wird dabei NICHT
+        // automatisch mitgesetzt und muss daher explizit injiziert werden.
+        org.springframework.test.util.ReflectionTestUtils.setField(parcelService, "entityManager", entityManager);
+        lenient().when(entityManager.createNativeQuery(anyString())).thenReturn(nativeInsertQuery);
+        lenient().when(nativeInsertQuery.setParameter(anyInt(), any())).thenReturn(nativeInsertQuery);
+        // Default: Insert erfolgreich, generierte ID = 100
+        lenient().when(nativeInsertQuery.getResultList()).thenReturn(List.of(100L));
     }
 
     // ════════════════════════════════════════════════════════════════════
@@ -67,14 +89,13 @@ class DhlParcelMetadataAndResetTest {
         String trackingCode = "00340434664988418341";
 
         when(storeRepository.findById(storeId)).thenReturn(Optional.of(testStore));
-        when(parcelRepository.findByStoreIdAndTrackingCode(storeId, trackingCode)).thenReturn(Optional.empty());
+        when(parcelRepository.findByStoreIdAndTrackingCodeAndStatusInOrderByIdDesc(eq(storeId), eq(trackingCode), anyList()))
+            .thenReturn(Collections.emptyList());
 
         DhlShelfSlot slot = new DhlShelfSlot();
         slot.setId(10L);
         slot.setCode("A7");
         when(slotRepository.findNextFreeSlotForUpdate(storeId)).thenReturn(Optional.of(slot));
-
-        when(parcelRepository.save(any(DhlParcel.class))).thenAnswer(inv -> inv.getArgument(0));
 
         DhlTrackingValidationResult metadata = DhlTrackingValidationResult.builder()
             .status(DhlTrackingValidationStatus.VALID)
@@ -115,14 +136,13 @@ class DhlParcelMetadataAndResetTest {
         String trackingCode = "JVGL0605379700518040";
 
         when(storeRepository.findById(storeId)).thenReturn(Optional.of(testStore));
-        when(parcelRepository.findByStoreIdAndTrackingCode(storeId, trackingCode)).thenReturn(Optional.empty());
+        when(parcelRepository.findByStoreIdAndTrackingCodeAndStatusInOrderByIdDesc(eq(storeId), eq(trackingCode), anyList()))
+            .thenReturn(Collections.emptyList());
 
         DhlShelfSlot slot = new DhlShelfSlot();
         slot.setId(11L);
         slot.setCode("A1");
         when(slotRepository.findNextFreeSlotForUpdate(storeId)).thenReturn(Optional.of(slot));
-
-        when(parcelRepository.save(any(DhlParcel.class))).thenAnswer(inv -> inv.getArgument(0));
 
         DhlParcel result = parcelService.storeParcel(
             storeId, trackingCode, "auto", null, null, null, null);

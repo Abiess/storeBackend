@@ -15,20 +15,33 @@ import java.time.LocalDateTime;
  * 
  * MULTI-TENANT:
  * - Jedes Paket ist einem Store zugeordnet (storeId)
- * - trackingCode ist pro Store eindeutig
+ * - trackingCode ist pro Store NUR für aktive Pakete (STORED, PICKED_UP)
+ *   eindeutig - siehe unten.
  * 
  * NORMALISIERUNG:
  * - Tracking-Codes werden vor dem Speichern normalisiert:
  *   - uppercase
  *   - Leerzeichen entfernt
  *   - führendes (J) entfernt falls vorhanden
+ * 
+ * WICHTIG - Tracking-Code-Eindeutigkeit ist AUSSCHLIESSLICH DB-seitig geregelt:
+ * - Es gibt bewusst KEIN @UniqueConstraint/@Column(unique=true) für
+ *   (store_id, tracking_code) auf Entity-Ebene mehr.
+ * - Grund: Ein unconditional JPA-Unique-Constraint würde bei ddl-auto:update
+ *   erneut einen globalen, unconditional Unique Constraint in der DB anlegen
+ *   und damit den in V017 bewusst eingeführten PARTIAL Unique Index
+ *   "idx_dhl_parcels_active_tracking" (nur WHERE status IN ('STORED',
+ *   'PICKED_UP')) faktisch aushebeln (siehe V020-Migration: genau das ist in
+ *   Production passiert und hat die Wiederverwendung von Tracking-Codes nach
+ *   CANCELLED mit "duplicate key" Fehlern blockiert).
+ * - Die tatsächliche Unique-Regel (nur aktive Pakete blockieren, CANCELLED
+ *   Pakete geben den Tracking-Code frei) lebt daher ausschließlich in der
+ *   SQL-Migration (V017 legt idx_dhl_parcels_active_tracking an, V020 räumt
+ *   den fälschlich wiederhergestellten unconditional Constraint auf).
  */
 @Entity
 @Table(
     name = "dhl_parcels",
-    uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"store_id", "tracking_code"})
-    },
     indexes = {
         @Index(name = "idx_dhl_store_status", columnList = "store_id, status"),
         @Index(name = "idx_dhl_tracking", columnList = "tracking_code")

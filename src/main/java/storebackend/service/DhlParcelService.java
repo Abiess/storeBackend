@@ -1,5 +1,8 @@
 package storebackend.service;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -40,6 +43,37 @@ public class DhlParcelService {
     private final DhlParcelRepository parcelRepository;
     private final DhlShelfSlotRepository slotRepository;
     private final StoreRepository storeRepository;
+
+    // Für nativen ON-CONFLICT-Insert (siehe insertViaOnConflict()) - läuft
+    // bewusst in DERSELBEN Transaktion/Connection wie der Rest von
+    // storeParcel() (KEIN REQUIRES_NEW, siehe Javadoc dort für die
+    // Begründung: FK-Lock-Self-Deadlock-Risiko mit dem PESSIMISTIC_WRITE
+    // Lock auf dhl_shelf_slots).
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    /**
+     * Status-Werte, die einen Tracking-Code aktuell "belegen" (siehe Partial
+     * Unique Index idx_dhl_parcels_active_tracking, Migration V017/V020).
+     * CANCELLED ist bewusst NICHT enthalten - stornierte Pakete geben den
+     * Tracking-Code für eine erneute Einlagerung frei.
+     */
+    private static final List<DhlParcelStatus> ACTIVE_PARCEL_STATUSES =
+        List.of(DhlParcelStatus.STORED, DhlParcelStatus.PICKED_UP);
+
+    /**
+     * Findet den aktuell aktiven Datensatz (STORED oder PICKED_UP) für Store +
+     * Tracking-Code, falls vorhanden. CANCELLED-Historie wird ignoriert.
+     * 
+     * Sicher gegenüber mehreren historischen CANCELLED-Zeilen: liefert
+     * höchstens einen (den neuesten) Treffer, nie eine Exception wegen
+     * mehrdeutiger Ergebnisse.
+     */
+    private Optional<DhlParcel> findActiveParcel(Long storeId, String trackingCode) {
+        List<DhlParcel> activeParcels = parcelRepository
+            .findByStoreIdAndTrackingCodeAndStatusInOrderByIdDesc(storeId, trackingCode, ACTIVE_PARCEL_STATUSES);
+        return activeParcels.isEmpty() ? Optional.empty() : Optional.of(activeParcels.get(0));
+    }
 
     /**
      * Normalisiert DHL Tracking-Code
@@ -130,10 +164,14 @@ public class DhlParcelService {
         // 2. Tracking-Code normalisieren
         String normalizedCode = normalizeTrackingCode(rawTrackingCode);
         
-        // 3. Dublette prüfen
-        Optional<DhlParcel> existing = parcelRepository.findByStoreIdAndTrackingCode(storeId, normalizedCode);
-        if (existing.isPresent()) {
-            DhlParcel existingParcel = existing.get();
+        // 3. Dublette prüfen - NUR aktive Datensätze (STORED, PICKED_UP)
+        //    blockieren eine erneute Einlagerung. CANCELLED Historie wird
+        //    hier bewusst NICHT gefunden (siehe findActiveParcel) und blockiert
+        //    daher nicht - Tracking-Code-Wiederverwendung nach Stornierung ist
+        //    fachlich erlaubt (siehe DhlParcelStatus.CANCELLED Javadoc, V017).
+        Optional<DhlParcel> existingActive = findActiveParcel(storeId, normalizedCode);
+        if (existingActive.isPresent()) {
+            DhlParcel existingParcel = existingActive.get();
             
             // Fachliche Unterscheidung nach Status
             if (existingParcel.getStatus() == DhlParcelStatus.STORED) {
@@ -156,6 +194,9 @@ public class DhlParcelService {
                 );
             }
         }
+        // CANCELLED: existingActive ist hier leer -> kein Block, es wird ganz
+        // regulär ein NEUER Datensatz angelegt (Schritt 4). Der alte CANCELLED
+        // Datensatz bleibt unverändert als Audit-Historie erhalten.
         
         // 4. Paket erstellen
         DhlParcel parcel = new DhlParcel();
@@ -231,11 +272,140 @@ public class DhlParcelService {
                 storeId, normalizedCode, shelfLocation);
         }
         
-        DhlParcel saved = parcelRepository.save(parcel);
+        DhlParcel saved = insertViaOnConflict(parcel, storeId, normalizedCode);
         log.info("✅ Parcel stored: id={}, store={}, tracking={}, location={}", 
             saved.getId(), storeId, normalizedCode, saved.getShelfLocation());
         
         return saved;
+    }
+
+    /**
+     * Nativer INSERT mit ON CONFLICT DO NOTHING gegen den Partial Unique Index
+     * idx_dhl_parcels_active_tracking (siehe V017/V020).
+     * 
+     * WARUM NATIVER SQL-INSERT STATT parcelRepository.save():
+     * Ein normaler JPA-Insert würde bei einer Unique-Kollision eine
+     * DataIntegrityViolationException werfen und PostgreSQL setzt die
+     * Transaktion danach in den Zustand "aborted" (keine weitere Anweisung
+     * in derselben Transaktion möglich, bis ROLLBACK). Ein Recovery-Insert
+     * in einer separaten REQUIRES_NEW-Transaktion wurde bewusst VERWORFEN:
+     * Der AUTO-Modus hält bereits einen PESSIMISTIC_WRITE (FOR UPDATE) Lock
+     * auf die zugewiesene dhl_shelf_slots-Zeile (siehe
+     * findNextFreeSlotForUpdate()). Ein INSERT in dhl_parcels mit gesetztem
+     * shelf_slot_id fordert wegen des FOREIGN KEY intern einen FOR KEY SHARE
+     * Lock auf genau dieser Slot-Zeile an. Würde dieser Insert in einer
+     * ZWEITEN, parallelen DB-Connection/Transaktion laufen (REQUIRES_NEW),
+     * würde er auf den FOR UPDATE Lock der äußeren (noch offenen!)
+     * Transaktion warten - die aber ihrerseits synchron auf genau diesen
+     * Insert wartet. Das ist ein selbst erzeugter Application-Level-Deadlock
+     * (PostgreS Deadlock-Detector erkennt ihn NICHT, da aus DB-Sicht kein
+     * Zyklus zwischen Backends besteht - nur ein hängender Client).
+     * 
+     * ON CONFLICT DO NOTHING löst beide Probleme:
+     * - Läuft in der EINEN äußeren Transaktion/Connection (kein zweiter
+     *   Lock-Kontext, kein Self-Deadlock möglich).
+     * - Wirft bei einer Kollision NIEMALS eine Exception - die Transaktion
+     *   wird nie "aborted", es werden schlicht 0 Zeilen eingefügt.
+     * 
+     * Verhalten:
+     * - Insert erfolgreich (1 Zeile mit RETURNING id) → generierte ID wird
+     *   auf das übergebene (bereits vollständig befüllte) parcel-Objekt
+     *   gesetzt und dieses zurückgegeben. KEIN weiterer save()/persist()
+     *   auf diesem Objekt - sonst würde JPA einen ZWEITEN Insert auslösen.
+     * - 0 Zeilen (Konflikt mit einem aktiven STORED/PICKED_UP Datensatz)
+     *   → aktiven Datensatz nachladen → ParcelAlreadyStoredException (409)
+     *   inkl. dessen Fach/Slot.
+     * - 0 Zeilen, aber KEIN aktiver Datensatz auffindbar → unerwarteter
+     *   technischer Zustand (z.B. andere Ursache für den Partial-Index
+     *   Konflikt) - NICHT als Erfolg behandeln, mit aussagekräftigem Logging
+     *   als technischer Fehler werfen.
+     * 
+     * CANCELLED-Historie blockiert diesen Insert nicht: Der Partial Unique
+     * Index deckt ausschließlich status IN ('STORED','PICKED_UP') ab - eine
+     * bestehende CANCELLED-Zeile für denselben Tracking-Code bleibt beim
+     * Konflikt-Check unberücksichtigt und unverändert erhalten.
+     */
+    private static final String INSERT_PARCEL_ON_CONFLICT_SQL = """
+        INSERT INTO dhl_parcels (
+            store_id, tracking_code, shelf_location, shelf_slot_id, received_at, picked_up_at, status,
+            notes, piece_identifier, shipment_status, standard_event_code, product_code, product_name,
+            weight_kg, destination_country, origin_country, last_event_timestamp, pslz_number,
+            created_at, updated_at
+        ) VALUES (
+            ?1, ?2, ?3, ?4, ?5, ?6, ?7,
+            ?8, ?9, ?10, ?11, ?12, ?13,
+            ?14, ?15, ?16, ?17, ?18,
+            ?19, ?20
+        )
+        ON CONFLICT (store_id, tracking_code) WHERE status IN ('STORED', 'PICKED_UP') DO NOTHING
+        RETURNING id
+        """;
+
+    private DhlParcel insertViaOnConflict(DhlParcel parcel, Long storeId, String normalizedCode) {
+        // @PrePersist (onCreate()) wird bei nativem SQL NICHT ausgelöst -
+        // createdAt/updatedAt/receivedAt daher hier manuell setzen, analog
+        // zu DhlParcel.onCreate().
+        LocalDateTime now = LocalDateTime.now();
+        if (parcel.getReceivedAt() == null) {
+            parcel.setReceivedAt(now);
+        }
+        parcel.setCreatedAt(now);
+        parcel.setUpdatedAt(now);
+
+        Query insertQuery = entityManager.createNativeQuery(INSERT_PARCEL_ON_CONFLICT_SQL)
+            .setParameter(1, storeId)
+            .setParameter(2, normalizedCode)
+            .setParameter(3, parcel.getShelfLocation())
+            .setParameter(4, parcel.getShelfSlot() != null ? parcel.getShelfSlot().getId() : null)
+            .setParameter(5, parcel.getReceivedAt())
+            .setParameter(6, parcel.getPickedUpAt())
+            .setParameter(7, parcel.getStatus().name())
+            .setParameter(8, parcel.getNotes())
+            .setParameter(9, parcel.getPieceIdentifier())
+            .setParameter(10, parcel.getShipmentStatus())
+            .setParameter(11, parcel.getStandardEventCode())
+            .setParameter(12, parcel.getProductCode())
+            .setParameter(13, parcel.getProductName())
+            .setParameter(14, parcel.getWeightKg())
+            .setParameter(15, parcel.getDestinationCountry())
+            .setParameter(16, parcel.getOriginCountry())
+            .setParameter(17, parcel.getLastEventTimestamp())
+            .setParameter(18, parcel.getPslzNumber())
+            .setParameter(19, parcel.getCreatedAt())
+            .setParameter(20, parcel.getUpdatedAt());
+
+        @SuppressWarnings("unchecked")
+        List<Object> resultRows = insertQuery.getResultList();
+
+        if (!resultRows.isEmpty()) {
+            Number generatedId = (Number) resultRows.get(0);
+            parcel.setId(generatedId.longValue());
+            log.info("✅ Parcel inserted via native ON CONFLICT: id={}, store={}, tracking={}",
+                parcel.getId(), storeId, normalizedCode);
+            return parcel;
+        }
+
+        // 0 Zeilen betroffen - Partial Unique Index hat den Insert verhindert.
+        Optional<DhlParcel> activeAfterConflict = findActiveParcel(storeId, normalizedCode);
+        if (activeAfterConflict.isPresent()) {
+            DhlParcel activeParcel = activeAfterConflict.get();
+            log.warn("⚠️ ON CONFLICT DO NOTHING: store={}, trackingCode={}, slot={} - " +
+                    "Tracking-Code bereits aktiv (STORED/PICKED_UP)",
+                storeId, normalizedCode, activeParcel.getShelfLocation());
+            throw new ParcelAlreadyStoredException(
+                normalizedCode,
+                activeParcel.getShelfLocation(),
+                activeParcel.getReceivedAt()
+            );
+        }
+
+        // Unerwarteter Zustand: 0 Zeilen, aber kein aktiver Datensatz erklärt
+        // den Konflikt. NICHT als Erfolg behandeln - technischen Fehler werfen.
+        log.error("❌ ON CONFLICT DO NOTHING lieferte 0 Zeilen, aber kein aktiver Datensatz gefunden - " +
+                "unerwarteter Zustand: store={}, trackingCode={}", storeId, normalizedCode);
+        throw new IllegalStateException(
+            "DHL parcel insert conflicted but no active parcel found for store=" + storeId +
+            ", trackingCode=" + normalizedCode);
     }
 
     /**
@@ -252,7 +422,11 @@ public class DhlParcelService {
     @Transactional(readOnly = true)
     public Optional<DhlParcel> findParcel(Long storeId, String rawTrackingCode) {
         String normalizedCode = normalizeTrackingCode(rawTrackingCode);
-        return parcelRepository.findByStoreIdAndTrackingCode(storeId, normalizedCode);
+        // NUR aktive Datensätze (STORED, PICKED_UP) gelten als "gefunden" -
+        // eine ältere CANCELLED-Historie zum selben Tracking-Code ist nicht
+        // mehr im aktiven Lagerbestand und wird daher fail-closed als
+        // "nicht gefunden" behandelt (siehe findActiveParcel).
+        return findActiveParcel(storeId, normalizedCode);
     }
 
     /**
@@ -268,7 +442,7 @@ public class DhlParcelService {
     public DhlParcel pickupParcel(Long storeId, String rawTrackingCode) {
         String normalizedCode = normalizeTrackingCode(rawTrackingCode);
         
-        DhlParcel parcel = parcelRepository.findByStoreIdAndTrackingCode(storeId, normalizedCode)
+        DhlParcel parcel = findActiveParcel(storeId, normalizedCode)
             .orElseThrow(() -> new ParcelNotFoundException(normalizedCode));
         
         if (parcel.getStatus() == DhlParcelStatus.PICKED_UP) {
