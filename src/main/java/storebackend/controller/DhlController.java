@@ -133,6 +133,79 @@ public class DhlController {
                 return ResponseEntity.badRequest().body("Tracking code is required");
             }
 
+            // 3b. AUTHORITATIVE DHL VALIDATION (Sicherheits-Fix)
+            //
+            // Das Backend ist die verbindliche Sicherheitsinstanz: Ein Frontend-Aufruf von
+            // /tracking/validate ist reine UX-Vorprüfung und darf NICHT die einzige Kontrolle sein.
+            // Deshalb MUSS hier - VOR jeder irreversiblen Änderung (Slot-Reservierung, DB-Insert,
+            // Aktivitäts-Log "Eingelagert") - erneut gegen die DHL Tracking API validiert werden.
+            // Fail closed: nur status == VALID darf zur Persistierung führen.
+            storebackend.dto.dhl.DhlTrackingValidationResult trackingValidation;
+            try {
+                trackingValidation = dhlTrackingClient.validateTrackingCode(storeId, trackingCode);
+            } catch (storebackend.exception.DhlTrackingException e) {
+                // Technischer/authentifizierungsbedingter DHL-Fehler → NICHT speichern (fail closed)
+                log.error("❌ DHL store parcel denied: DHL validation error, store={}, trackingCode={}, errorCode={}, message={}",
+                    storeId, trackingCode, e.getErrorCode(), e.getMessage());
+                logStoreValidationFailure(storeId, user, trackingCode, "DHL_" + e.getErrorCode().name(), startNanos);
+
+                HttpStatus status;
+                switch (e.getErrorCode()) {
+                    case AUTHENTICATION_ERROR:
+                        status = HttpStatus.SERVICE_UNAVAILABLE;
+                        break;
+                    case CONNECTIVITY_ERROR:
+                        status = HttpStatus.GATEWAY_TIMEOUT;
+                        break;
+                    case DHL_TECHNICAL_ERROR:
+                    case UNKNOWN_DHL_ERROR:
+                    case XML_PARSING_ERROR:
+                    case HTTP_ERROR:
+                    default:
+                        status = HttpStatus.INTERNAL_SERVER_ERROR;
+                        break;
+                }
+
+                return ResponseEntity.status(status).body(Map.of(
+                    "error", "DHL tracking validation failed",
+                    "code", "DHL_" + e.getErrorCode().name(),
+                    "messageKey", e.getMessageKey(),
+                    "message", e.getMessage()
+                ));
+            } catch (storebackend.exception.DhlConfigurationException e) {
+                // DHL nicht konfiguriert → NICHT speichern (fail closed)
+                log.error("❌ DHL store parcel denied: DHL not configured, store={}", storeId);
+                logStoreValidationFailure(storeId, user, trackingCode, "DHL_NOT_CONFIGURED", startNanos);
+
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
+                    "error", "DHL integration not configured",
+                    "code", "DHL_NOT_CONFIGURED",
+                    "messageKey", e.getMessageKey(),
+                    "message", e.getMessage()
+                ));
+            }
+
+            if (trackingValidation.getStatus() != storebackend.dto.dhl.DhlTrackingValidationResult.DhlTrackingValidationStatus.VALID) {
+                // NOT_FOUND: kein technischer Fehler, aber ebenfalls KEINE Einlagerung erlaubt
+                log.warn("⚠️ DHL store parcel denied: tracking code not confirmed by DHL (NOT_FOUND), store={}, trackingCode={}",
+                    storeId, trackingCode);
+                logStoreValidationFailure(storeId, user, trackingCode, "DHL_TRACKING_NOT_FOUND", startNanos);
+
+                return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(Map.of(
+                    "error", "DHL shipment not found",
+                    "code", "DHL_TRACKING_NOT_FOUND",
+                    "message", "Keine gültige DHL-Sendung gefunden."
+                ));
+            }
+
+            // Kanonischen, von DHL bestätigten pieceCode bevorzugen (statt blind dem Client-Wert zu vertrauen)
+            String validatedTrackingCode = (trackingValidation.getPieceCode() != null && !trackingValidation.getPieceCode().isBlank())
+                ? trackingValidation.getPieceCode()
+                : trackingCode;
+
+            log.info("✅ DHL tracking code confirmed VALID by DHL API: store={}, trackingCode={}, pieceCode={}",
+                storeId, trackingCode, validatedTrackingCode);
+
             // 4. Determine request type and validate accordingly
             String mode = (String) rawRequest.get("mode");
             DhlParcel parcel;
@@ -143,7 +216,7 @@ public class DhlController {
                     // AUTO: Backend allocates slot
                     parcel = parcelService.storeParcel(
                         storeId,
-                        trackingCode,
+                        validatedTrackingCode,
                         "auto",
                         null,
                         null, // shelfLocation not needed
@@ -161,7 +234,7 @@ public class DhlController {
                     
                     parcel = parcelService.storeParcel(
                         storeId,
-                        trackingCode,
+                        validatedTrackingCode,
                         "manual",
                         slotCode,
                         null, // shelfLocation derived from slot
@@ -183,7 +256,7 @@ public class DhlController {
                 
                 parcel = parcelService.storeParcel(
                     storeId,
-                    trackingCode,
+                    validatedTrackingCode,
                     null,
                     null,
                     shelfLocation,
@@ -244,6 +317,32 @@ public class DhlController {
         } catch (Exception e) {
             log.error("DHL store parcel error", e);
             return ResponseEntity.internalServerError().body("Internal server error");
+        }
+    }
+
+    /**
+     * Protokolliert einen fehlgeschlagenen Einlagerungsversuch, der bereits an der
+     * (erneuten, backend-seitigen) DHL-Tracking-Validierung gescheitert ist - also
+     * BEVOR ein Slot reserviert oder ein Paket persistiert wurde.
+     *
+     * Best-effort: Ein Fehler beim Logging darf den bereits feststehenden Abbruch
+     * der Einlagerung nicht verändern.
+     */
+    private void logStoreValidationFailure(Long storeId, User user, String rawTrackingCode, String failureReason, long startNanos) {
+        if (user == null || rawTrackingCode == null || rawTrackingCode.isBlank()) {
+            return;
+        }
+        try {
+            long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
+            String loggedCode;
+            try {
+                loggedCode = parcelService.normalizeTrackingCode(rawTrackingCode);
+            } catch (Exception normalizeEx) {
+                loggedCode = rawTrackingCode.trim();
+            }
+            activityLogService.logScanFailedWithReason(storeId, user, loggedCode, failureReason, durationMs);
+        } catch (Exception logEx) {
+            log.debug("Could not log DHL validation failure: {}", logEx.getMessage());
         }
     }
 
