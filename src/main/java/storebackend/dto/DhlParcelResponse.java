@@ -27,6 +27,18 @@ public class DhlParcelResponse {
     private String notes;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    // DHL Tracking Metadaten (nullable - siehe DhlParcel Entity)
+    private String pieceIdentifier;
+    private String shipmentStatus;
+    private String standardEventCode;
+    private String productCode;
+    private String productName;
+    private java.math.BigDecimal weightKg;
+    private String destinationCountry;
+    private String originCountry;
+    private String lastEventTimestamp;
+    private String pslzNumber;
     
     /**
      * Factory: Entity -> DTO
@@ -43,6 +55,16 @@ public class DhlParcelResponse {
         dto.setNotes(entity.getNotes());
         dto.setCreatedAt(entity.getCreatedAt());
         dto.setUpdatedAt(entity.getUpdatedAt());
+        dto.setPieceIdentifier(entity.getPieceIdentifier());
+        dto.setShipmentStatus(entity.getShipmentStatus());
+        dto.setStandardEventCode(entity.getStandardEventCode());
+        dto.setProductCode(entity.getProductCode());
+        dto.setProductName(entity.getProductName());
+        dto.setWeightKg(entity.getWeightKg());
+        dto.setDestinationCountry(entity.getDestinationCountry());
+        dto.setOriginCountry(entity.getOriginCountry());
+        dto.setLastEventTimestamp(entity.getLastEventTimestamp());
+        dto.setPslzNumber(entity.getPslzNumber());
         return dto;
     }
 }

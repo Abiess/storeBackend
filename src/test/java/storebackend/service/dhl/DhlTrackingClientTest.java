@@ -108,6 +108,101 @@ class DhlTrackingClientTest {
         assertEquals(new BigDecimal("2.5"), result.getWeightKg());
         assertEquals("0", result.getDhlResponseCode());
     }
+
+    /**
+     * Test A2: code=0 mit VOLLSTÄNDIGEN optionalen Metadaten (Teil A)
+     * Realistische Production-Response mit allen zusätzlichen Feldern:
+     * product-code, dest-country, origin-country, last-event-timestamp, pslz-nr, ric, ice
+     */
+    @Test
+    void testValidateTrackingCode_Valid_WithFullMetadata() {
+        // Given
+        String trackingCode = "00340434664988418341";
+        String responseXml =
+            "<data request-id=\"abc-123-def\">" +
+            "  <data name=\"piece-status-public-list\" code=\"0\">" +
+            "    <data name=\"piece-status-public\" " +
+            "          searched-piece-code=\"00340434664988418341\" " +
+            "          piece-code=\"00340434664988418341\" " +
+            "          piece-identifier=\"340434664988418341\" " +
+            "          status=\"Vsl. am nächsten Werktag in Filiale abholbereit\" " +
+            "          product-name=\"DHL PAKET, Filial-Routing, GoGreen Plus\" " +
+            "          product-code=\"PROD_PAK\" " +
+            "          standard-event-code=\"ZF\" " +
+            "          shipment-weight=\"1.76\" " +
+            "          dest-country=\"DEU\" " +
+            "          origin-country=\"DEU\" " +
+            "          last-event-timestamp=\"2026-08-29T14:53:00\" " +
+            "          pslz-nr=\"12345\" " +
+            "          ric=\"RIC1\" " +
+            "          ice=\"ICE1\" />" +
+            "  </data>" +
+            "</data>";
+
+        ResponseEntity<String> mockResponse = new ResponseEntity<>(responseXml, HttpStatus.OK);
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class)))
+            .thenReturn(mockResponse);
+
+        // When
+        DhlTrackingValidationResult result = dhlTrackingClient.validateTrackingCode(1L, trackingCode);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(DhlTrackingValidationStatus.VALID, result.getStatus());
+        assertEquals("00340434664988418341", result.getPieceCode());
+        assertEquals("340434664988418341", result.getPieceIdentifier());
+        assertEquals("Vsl. am nächsten Werktag in Filiale abholbereit", result.getShipmentStatus());
+        assertEquals("ZF", result.getStandardEventCode());
+        assertEquals("PROD_PAK", result.getProductCode());
+        assertEquals("DHL PAKET, Filial-Routing, GoGreen Plus", result.getProductName());
+        assertEquals(new BigDecimal("1.76"), result.getWeightKg());
+        assertEquals("DEU", result.getDestinationCountry());
+        assertEquals("DEU", result.getOriginCountry());
+        assertEquals("2026-08-29T14:53:00", result.getLastEventTimestamp());
+        assertEquals("12345", result.getPslzNumber());
+        assertEquals("RIC1", result.getRic());
+        assertEquals("ICE1", result.getIce());
+    }
+
+    /**
+     * Test A3: code=0 OHNE optionale Metadaten - müssen null sein, Status bleibt trotzdem VALID.
+     * Stellt sicher, dass fehlende optionale Felder nicht zu Fehlern führen und
+     * nicht fälschlich als leere Strings ("") statt null geparst werden.
+     */
+    @Test
+    void testValidateTrackingCode_Valid_WithoutOptionalMetadata() {
+        // Given
+        String trackingCode = "00340434664988418341";
+        String responseXml =
+            "<data request-id=\"abc-123-def\">" +
+            "  <data name=\"piece-status-public-list\" code=\"0\">" +
+            "    <data name=\"piece-status-public\" " +
+            "          searched-piece-code=\"00340434664988418341\" " +
+            "          piece-code=\"00340434664988418341\" " +
+            "          status=\"Zugestellt\" />" +
+            "  </data>" +
+            "</data>";
+
+        ResponseEntity<String> mockResponse = new ResponseEntity<>(responseXml, HttpStatus.OK);
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class)))
+            .thenReturn(mockResponse);
+
+        // When
+        DhlTrackingValidationResult result = dhlTrackingClient.validateTrackingCode(1L, trackingCode);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(DhlTrackingValidationStatus.VALID, result.getStatus());
+        assertTrue(result.isValid());
+        assertEquals("00340434664988418341", result.getPieceCode());
+        assertNull(result.getProductCode());
+        assertNull(result.getDestinationCountry());
+        assertNull(result.getOriginCountry());
+        assertNull(result.getLastEventTimestamp());
+        assertNull(result.getPslzNumber());
+        assertNull(result.getRic());
+        assertNull(result.getIce());
+    }
     
     /**
      * Test B: code=100 → NOT_FOUND (kein Fehler!)

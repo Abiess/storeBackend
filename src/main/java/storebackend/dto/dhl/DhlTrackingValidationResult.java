@@ -56,6 +56,11 @@ public class DhlTrackingValidationResult {
     private String standardEventCode;
     
     /**
+     * DHL Produktcode (z.B. "P")
+     */
+    private String productCode;
+    
+    /**
      * DHL Produktname (z.B. "DHL PAKET, Filial-Routing, GoGreen Plus")
      */
     private String productName;
@@ -64,6 +69,41 @@ public class DhlTrackingValidationResult {
      * Gewicht in kg (z.B. 2.5)
      */
     private BigDecimal weightKg;
+    
+    /**
+     * Zielland der Sendung (z.B. "DE")
+     */
+    private String destinationCountry;
+    
+    /**
+     * Ursprungsland der Sendung (z.B. "DE")
+     */
+    private String originCountry;
+    
+    /**
+     * Zeitpunkt des letzten DHL-Ereignisses (roher DHL-Wert, unverändert
+     * durchgereicht - Format wird bislang nicht fest vorausgesetzt).
+     */
+    private String lastEventTimestamp;
+    
+    /**
+     * PSLZ-Nummer (Post-Sortier-Leitzahl, DHL-internes Feld)
+     */
+    private String pslzNumber;
+    
+    /**
+     * DHL "ric"-Attribut (Rohwert, keine bekannte feste Bedeutung -
+     * ausschließlich zur optionalen Anzeige/Diagnose durchgereicht,
+     * NICHT in DhlParcel persistiert).
+     */
+    private String ric;
+    
+    /**
+     * DHL "ice"-Attribut (Rohwert, keine bekannte feste Bedeutung -
+     * ausschließlich zur optionalen Anzeige/Diagnose durchgereicht,
+     * NICHT in DhlParcel persistiert).
+     */
+    private String ice;
     
     /**
      * DHL Response Code (z.B. "0", "100")

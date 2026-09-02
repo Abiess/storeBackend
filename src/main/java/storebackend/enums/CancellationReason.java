@@ -40,6 +40,14 @@ public enum CancellationReason {
     MANUAL_REMOVAL,
 
     /**
+     * Administratives Zurücksetzen des gesamten virtuellen Lagers (Teil B).
+     * Wird für JEDES betroffene Paket einzeln als STORAGE_CANCELLED-Aktivität
+     * protokolliert (siehe DhlParcelService.resetWarehouse()), damit die
+     * Paket-Historie trotz Bulk-Aktion nachvollziehbar bleibt.
+     */
+    WAREHOUSE_RESET,
+
+    /**
      * Sonstige Gründe
      * (Freitext-Note sollte angegeben werden)
      */

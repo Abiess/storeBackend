@@ -113,7 +113,7 @@ export type TrackingValidationState = 'IDLE' | 'VALIDATING' | 'VALID' | 'INVALID
               <div class="status-title">{{ 'dhl.validation.validShipment' | translate }}</div>
               <div class="status-details" *ngIf="validatedResult() as res">
                 <span *ngIf="res.productName">{{ res.productName }}</span>
-                <span *ngIf="res.weight"> · {{ res.weight }} kg</span>
+                <span *ngIf="res.weightKg"> · {{ res.weightKg | number:'1.2-2' }} kg</span>
               </div>
             </div>
             <div *ngSwitchCase="'INVALID'" class="status-box status-invalid">

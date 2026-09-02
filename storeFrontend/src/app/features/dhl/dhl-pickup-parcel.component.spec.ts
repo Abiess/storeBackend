@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { of, throwError, Observable } from 'rxjs';
-import { DhlStoreParcelComponent } from './dhl-store-parcel.component';
+import { DhlPickupParcelComponent } from './dhl-pickup-parcel.component';
 import { DhlService, DhlTrackingValidationResponse, DhlParcel } from '@app/core/services/dhl.service';
 import { DhlErrorService } from '@app/core/services/dhl-error.service';
 import { TranslationService } from '@app/core/services/translation.service';
@@ -8,20 +8,15 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 
 /**
- * TEIL 1 - Einlagerungs-UX: TrackingValidationState-Modell.
+ * TEIL C - Abholung: dieselbe DHL-Validierung wie beim Einlagern.
  *
- * Diese Tests ersetzen die alte "auto-submit-on-click" Testsuite komplett,
- * weil die Komponente jetzt fail-closed ist:
- *
- * - Der "Paket einlagern"-Button ist AUSSCHLIESSLICH bei validationState()
- *   === 'VALID' aktiv.
- * - Validierung läuft automatisch (debounced) im Hintergrund, unabhängig
- *   vom Button-Klick.
- * - Ein Tracking-Code-Wechsel verwirft sofort einen vorherigen VALID-Status.
+ * Ein gescannter/eingegebener Code darf NICHT nur auf Format/Länge geprüft
+ * und dann lokal gesucht werden. Erst nach validationState() === 'VALID'
+ * darf findParcel() aufgerufen werden (fail-closed).
  */
-describe('DhlStoreParcelComponent - TEIL 1 TrackingValidationState', () => {
-  let component: DhlStoreParcelComponent;
-  let fixture: ComponentFixture<DhlStoreParcelComponent>;
+describe('DhlPickupParcelComponent - TEIL C TrackingValidationState', () => {
+  let component: DhlPickupParcelComponent;
+  let fixture: ComponentFixture<DhlPickupParcelComponent>;
   let mockDhlService: jasmine.SpyObj<DhlService>;
   let mockDhlErrorService: jasmine.SpyObj<DhlErrorService>;
   let mockTranslationService: jasmine.SpyObj<TranslationService>;
@@ -49,12 +44,12 @@ describe('DhlStoreParcelComponent - TEIL 1 TrackingValidationState', () => {
     };
   }
 
-  function mockStoredParcel(): DhlParcel {
+  function mockFoundParcel(): DhlParcel {
     return {
       id: 1,
       storeId: 123,
       trackingCode: VALID_CODE,
-      shelfLocation: 'A1',
+      shelfLocation: 'A7',
       receivedAt: '2026-09-01T15:00:00Z',
       status: 'STORED',
       createdAt: '2026-09-01T15:00:00Z',
@@ -65,18 +60,17 @@ describe('DhlStoreParcelComponent - TEIL 1 TrackingValidationState', () => {
   beforeEach(async () => {
     mockDhlService = jasmine.createSpyObj('DhlService', [
       'validateTrackingCode',
-      'storeParcelV2',
-      'getSlots'
+      'findParcel',
+      'pickupParcel'
     ]);
     mockDhlErrorService = jasmine.createSpyObj('DhlErrorService', ['handleError']);
     mockTranslationService = jasmine.createSpyObj('TranslationService', ['translate']);
-    mockRouter = jasmine.createSpyObj('Router', ['navigate'], { url: '/stores/123/dhl/store' });
+    mockRouter = jasmine.createSpyObj('Router', ['navigate'], { url: '/stores/123/dhl/pickup' });
 
     mockTranslationService.translate.and.callFake((key: string) => key);
-    mockDhlService.getSlots.and.returnValue(of([]));
 
     await TestBed.configureTestingModule({
-      imports: [DhlStoreParcelComponent],
+      imports: [DhlPickupParcelComponent],
       providers: [
         { provide: DhlService, useValue: mockDhlService },
         { provide: DhlErrorService, useValue: mockDhlErrorService },
@@ -92,7 +86,7 @@ describe('DhlStoreParcelComponent - TEIL 1 TrackingValidationState', () => {
       ]
     }).compileComponents();
 
-    fixture = TestBed.createComponent(DhlStoreParcelComponent);
+    fixture = TestBed.createComponent(DhlPickupParcelComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
@@ -103,10 +97,10 @@ describe('DhlStoreParcelComponent - TEIL 1 TrackingValidationState', () => {
     tick(400); // debounceTime(400)
   }
 
-  describe('canSubmit() - fail-closed pro Zustand', () => {
+  describe('canSearch() - fail-closed pro Zustand', () => {
     it('IDLE → disabled', () => {
       expect(component.validationState()).toBe('IDLE');
-      expect(component.canSubmit()).toBe(false);
+      expect(component.canSearch()).toBe(false);
     });
 
     it('VALIDATING Zwischenzustand ist disabled (asynchrone DHL-Antwort)', fakeAsync(() => {
@@ -122,28 +116,28 @@ describe('DhlStoreParcelComponent - TEIL 1 TrackingValidationState', () => {
       tick(400);
 
       expect(component.validationState()).toBe('VALIDATING');
-      expect(component.canSubmit()).toBe(false);
+      expect(component.canSearch()).toBe(false);
 
       resolveFn(mockValidResponse());
       tick();
       expect(component.validationState()).toBe('VALID');
-      expect(component.canSubmit()).toBe(true);
+      expect(component.canSearch()).toBe(true);
     }));
 
-    it('VALID → enabled', fakeAsync(() => {
+    it('VALID → enabled (lokale Suche erlaubt)', fakeAsync(() => {
       mockDhlService.validateTrackingCode.and.returnValue(of(mockValidResponse()));
       triggerValidation(VALID_CODE);
 
       expect(component.validationState()).toBe('VALID');
-      expect(component.canSubmit()).toBe(true);
+      expect(component.canSearch()).toBe(true);
     }));
 
     it('INVALID (NOT_FOUND) → disabled', fakeAsync(() => {
-      mockDhlService.validateTrackingCode.and.returnValue(of(mockNotFoundResponse('HDHSJ27373')));
-      triggerValidation('HDHSJ27373');
+      mockDhlService.validateTrackingCode.and.returnValue(of(mockNotFoundResponse('VDBDBJDJDUD')));
+      triggerValidation('VDBDBJDJDUD');
 
       expect(component.validationState()).toBe('INVALID');
-      expect(component.canSubmit()).toBe(false);
+      expect(component.canSearch()).toBe(false);
     }));
 
     it('TECHNICAL_ERROR → disabled', fakeAsync(() => {
@@ -156,14 +150,14 @@ describe('DhlStoreParcelComponent - TEIL 1 TrackingValidationState', () => {
       triggerValidation(VALID_CODE);
 
       expect(component.validationState()).toBe('TECHNICAL_ERROR');
-      expect(component.canSubmit()).toBe(false);
+      expect(component.canSearch()).toBe(false);
       expect(mockDhlErrorService.handleError).toHaveBeenCalledWith(mockError);
     }));
 
-    it('Codelänge >= 10 allein aktiviert den Button NICHT (kein Bypass ohne DHL-Bestätigung)', () => {
-      component.trackingCode = 'HDHSJ27373PADDING'; // >= 10 Zeichen, aber niemals validiert
+    it('Codelänge >= 10 allein aktiviert die Suche NICHT (kein Bypass ohne DHL-Bestätigung)', () => {
+      component.trackingCode = 'VDBDBJDJDUDPADDING'; // >= 10 Zeichen, aber niemals validiert
       expect(component.validationState()).toBe('IDLE');
-      expect(component.canSubmit()).toBe(false);
+      expect(component.canSearch()).toBe(false);
     });
   });
 
@@ -172,18 +166,18 @@ describe('DhlStoreParcelComponent - TEIL 1 TrackingValidationState', () => {
       mockDhlService.validateTrackingCode.and.returnValue(of(mockValidResponse()));
       triggerValidation(VALID_CODE);
       expect(component.validationState()).toBe('VALID');
-      expect(component.canSubmit()).toBe(true);
+      expect(component.canSearch()).toBe(true);
 
       // Benutzer ändert eine Ziffer
       component.onTrackingCodeChange('00340434664988418342');
 
       expect(component.validationState()).toBe('IDLE');
       expect(component.validatedResult()).toBeNull();
-      expect(component.canSubmit()).toBe(false);
+      expect(component.canSearch()).toBe(false);
     }));
   });
 
-  describe('INVALID → nächster Scanner-Code ersetzt alten Code', () => {
+  describe('Scanner kann INVALID-Code durch nächsten Scan ersetzen', () => {
     it('selektiert den abgelehnten Code im Scanner-Feld für Auto-Replace', fakeAsync(() => {
       mockDhlService.validateTrackingCode.and.returnValue(of(mockNotFoundResponse('VDBDBJDJDUD')));
       const selectAllSpy = jasmine.createSpy('selectAll');
@@ -207,7 +201,58 @@ describe('DhlStoreParcelComponent - TEIL 1 TrackingValidationState', () => {
 
       expect(component.trackingCode).toBe(VALID_CODE);
       expect(component.validationState()).toBe('VALID');
-      expect(component.canSubmit()).toBe(true);
+      expect(component.canSearch()).toBe(true);
+    }));
+  });
+
+  describe('Manuelle Eingabe kann Validierung nicht umgehen', () => {
+    it('manuelle Eingabe verwendet denselben Handler/dieselbe DHL-Validierung', fakeAsync(() => {
+      mockDhlService.validateTrackingCode.and.returnValue(of(mockValidResponse()));
+      component.setTrackingMode('manual');
+
+      triggerValidation(VALID_CODE, true);
+
+      expect(mockDhlService.validateTrackingCode).toHaveBeenCalledWith(123, VALID_CODE);
+      expect(component.validationState()).toBe('VALID');
+    }));
+
+    it('findParcel() ohne vorherige VALID-Validierung ruft niemals den Backend-Endpoint auf', () => {
+      component.trackingCode = 'VDBDBJDJDUDPADDING';
+      component.findParcel();
+
+      expect(mockDhlService.findParcel).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('VALID → lokale Suche mit kanonischem pieceCode', () => {
+    it('ruft findParcel mit dem kanonischen pieceCode auf und zeigt den Lagerplatz', fakeAsync(() => {
+      mockDhlService.validateTrackingCode.and.returnValue(of(mockValidResponse()));
+      mockDhlService.findParcel.and.returnValue(of(mockFoundParcel()));
+
+      triggerValidation(VALID_CODE);
+      expect(component.canSearch()).toBe(true);
+
+      component.findParcel();
+      tick();
+
+      expect(mockDhlService.findParcel).toHaveBeenCalledOnceWith(123, jasmine.objectContaining({
+        trackingCode: VALID_CODE
+      }));
+      expect(component.step()).toBe('show-location');
+      expect(component.foundParcel()?.shelfLocation).toBe('A7');
+    }));
+
+    it('lokal nicht vorhanden → bestehende Fehlermeldung über DhlErrorService', fakeAsync(() => {
+      mockDhlService.validateTrackingCode.and.returnValue(of(mockValidResponse()));
+      const notFoundErr = new HttpErrorResponse({ status: 404, statusText: 'Not Found' });
+      mockDhlService.findParcel.and.returnValue(throwError(() => notFoundErr));
+
+      triggerValidation(VALID_CODE);
+      component.findParcel();
+      tick();
+
+      expect(mockDhlErrorService.handleError).toHaveBeenCalledWith(notFoundErr);
+      expect(component.step()).toBe('scan');
     }));
   });
 
@@ -224,41 +269,23 @@ describe('DhlStoreParcelComponent - TEIL 1 TrackingValidationState', () => {
     }));
   });
 
-  describe('Manuelle Eingabe kann Validierung nicht umgehen', () => {
-    it('manuelle Eingabe verwendet denselben Handler/dieselbe DHL-Validierung', fakeAsync(() => {
+  describe('Abholung (nur nach VALID + lokalem Fund möglich)', () => {
+    it('ruft pickupParcel auf und zeigt Erfolg', fakeAsync(() => {
       mockDhlService.validateTrackingCode.and.returnValue(of(mockValidResponse()));
-      component.setTrackingMode('manual');
-
-      triggerValidation(VALID_CODE, true);
-
-      expect(mockDhlService.validateTrackingCode).toHaveBeenCalledWith(123, VALID_CODE);
-      expect(component.validationState()).toBe('VALID');
-    }));
-
-    it('storeParcel() ohne vorherige VALID-Validierung ruft niemals storeParcelV2() auf', () => {
-      component.trackingCode = 'HDHSJ27373PADDING';
-      component.storeParcel();
-
-      expect(mockDhlService.storeParcelV2).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('Erfolgreiche Einlagerung (nur nach VALID möglich)', () => {
-    it('ruft storeParcelV2 mit dem kanonischen pieceCode auf und zeigt Erfolg', fakeAsync(() => {
-      mockDhlService.validateTrackingCode.and.returnValue(of(mockValidResponse()));
-      mockDhlService.storeParcelV2.and.returnValue(of(mockStoredParcel()));
+      mockDhlService.findParcel.and.returnValue(of(mockFoundParcel()));
+      mockDhlService.pickupParcel.and.returnValue(of({ ...mockFoundParcel(), status: 'PICKED_UP' }));
 
       triggerValidation(VALID_CODE);
-      expect(component.canSubmit()).toBe(true);
-
-      component.storeParcel();
+      component.findParcel();
       tick();
 
-      expect(mockDhlService.storeParcelV2).toHaveBeenCalledOnceWith(123, jasmine.objectContaining({
+      component.confirmPickup();
+      tick();
+
+      expect(mockDhlService.pickupParcel).toHaveBeenCalledOnceWith(123, jasmine.objectContaining({
         trackingCode: VALID_CODE
       }));
-      expect(component.success()).toBe(true);
-      expect(component.storedParcel()?.shelfLocation).toBe('A1');
+      expect(component.step()).toBe('success');
     }));
   });
 
@@ -273,6 +300,7 @@ describe('DhlStoreParcelComponent - TEIL 1 TrackingValidationState', () => {
       expect(component.validationState()).toBe('IDLE');
       expect(component.validatedResult()).toBeNull();
       expect(component.trackingCode).toBe('');
+      expect(component.step()).toBe('scan');
     }));
   });
 });

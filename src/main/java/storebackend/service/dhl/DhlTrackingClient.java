@@ -261,9 +261,20 @@ public class DhlTrackingClient {
      *           status="..."
      *           product-name="..."
      *           standard-event-code="..."
-     *           shipment-weight="..." />
+     *           shipment-weight="..."
+     *           product-code="..."
+     *           dest-country="..."
+     *           origin-country="..."
+     *           last-event-timestamp="..."
+     *           pslz-nr="..."
+     *           ric="..."
+     *           ice="..." />
      *   </data>
      * </data>
+     *
+     * Die zusätzlichen Felder (product-code, dest-country, origin-country,
+     * last-event-timestamp, pslz-nr, ric, ice) sind optional - fehlen sie in
+     * der Response, bleiben die entsprechenden DTO-Felder null.
      */
     private DhlTrackingValidationResult parseXmlResponse(String xml, String originalTrackingCode) {
         try {
@@ -321,6 +332,13 @@ public class DhlTrackingClient {
                 }
                 
                 // Felder extrahieren
+                // Bekannte Basis-Felder (immer geprüft/verwendet) + zusätzliche
+                // Metadaten-Felder aus der echten DHL Production-Response
+                // (piece-code, piece-identifier, pslz-nr, status, last-event-timestamp,
+                // standard-event-code, product-code, product-name, shipment-weight,
+                // dest-country, origin-country, ric, ice). Alle zusätzlichen Felder
+                // werden defensiv mit attrOrNull() gelesen: fehlt ein Attribut in der
+                // Response, bleibt das Feld null statt eines leeren Strings.
                 return DhlTrackingValidationResult.builder()
                     .status(DhlTrackingValidationStatus.VALID)
                     .trackingCode(originalTrackingCode)
@@ -328,8 +346,15 @@ public class DhlTrackingClient {
                     .pieceIdentifier(pieceStatusElement.getAttribute("piece-identifier"))
                     .shipmentStatus(pieceStatusElement.getAttribute("status"))
                     .standardEventCode(pieceStatusElement.getAttribute("standard-event-code"))
+                    .productCode(attrOrNull(pieceStatusElement, "product-code"))
                     .productName(pieceStatusElement.getAttribute("product-name"))
                     .weightKg(parseWeight(pieceStatusElement.getAttribute("shipment-weight")))
+                    .destinationCountry(attrOrNull(pieceStatusElement, "dest-country"))
+                    .originCountry(attrOrNull(pieceStatusElement, "origin-country"))
+                    .lastEventTimestamp(attrOrNull(pieceStatusElement, "last-event-timestamp"))
+                    .pslzNumber(attrOrNull(pieceStatusElement, "pslz-nr"))
+                    .ric(attrOrNull(pieceStatusElement, "ric"))
+                    .ice(attrOrNull(pieceStatusElement, "ice"))
                     .dhlResponseCode(code)
                     .build();
                 
@@ -468,6 +493,17 @@ public class DhlTrackingClient {
         return null;
     }
     
+    /**
+     * Liest ein optionales XML-Attribut. Anders als {@link Element#getAttribute(String)}
+     * (welches bei fehlendem Attribut "" statt null liefert) gibt diese Methode
+     * bei fehlendem/leerem Attribut null zurück, damit optionale Metadaten-Felder
+     * im DTO sauber zwischen "nicht vorhanden" und "leerer String" unterscheiden.
+     */
+    private String attrOrNull(Element element, String attributeName) {
+        String value = element.getAttribute(attributeName);
+        return (value == null || value.isBlank()) ? null : value;
+    }
+
     /**
      * Parst Gewicht (z.B. "2.5" → BigDecimal)
      */

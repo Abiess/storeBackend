@@ -47,6 +47,21 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
                   {{ parcel.receivedAt | date:'short' }}
                 </span>
               </div>
+
+              <!-- Teil A: DHL Tracking Metadaten - nur anzeigen wenn vorhanden -->
+              <div class="parcel-dhl-meta" *ngIf="parcel.productName || parcel.weightKg || parcel.shipmentStatus || parcel.lastEventTimestamp">
+                <div *ngIf="parcel.productName || parcel.weightKg" class="dhl-meta-line">
+                  <span *ngIf="parcel.productName">{{ parcel.productName }}</span>
+                  <span *ngIf="parcel.weightKg">{{ parcel.productName ? ' · ' : '' }}{{ parcel.weightKg | number:'1.2-2' }} kg</span>
+                </div>
+                <div *ngIf="parcel.shipmentStatus" class="dhl-meta-line">
+                  <strong>{{ 'dhl.slotDetail.dhlStatusLabel' | translate }}:</strong> {{ parcel.shipmentStatus }}
+                </div>
+                <div *ngIf="parcel.lastEventTimestamp" class="dhl-meta-line">
+                  <strong>{{ 'dhl.slotDetail.lastEventLabel' | translate }}:</strong>
+                  {{ parcel.lastEventTimestamp | date:'dd.MM.yyyy HH:mm' }}
+                </div>
+              </div>
             </div>
             <button
               class="btn-remove"
@@ -180,6 +195,19 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       font-size: 0.8rem;
       color: #666;
       margin-top: 0.15rem;
+    }
+
+    .parcel-dhl-meta {
+      margin-top: 0.35rem;
+      font-size: 0.8rem;
+      color: #444;
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .dhl-meta-line strong {
+      color: #667eea;
     }
 
     .btn-remove {

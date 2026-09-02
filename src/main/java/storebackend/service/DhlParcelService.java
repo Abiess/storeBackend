@@ -100,11 +100,17 @@ public class DhlParcelService {
      * - LEGACY: shelfLocation als Freitext (Phase 1 kompatibel)
      * 
      * @param storeId Store ID
-     * @param rawTrackingCode Roher Tracking-Code vom Scanner
+     * @param rawTrackingCode Roher Tracking-Code vom Scanner (bereits der von DHL
+     *                        bestätigte canonical pieceCode, siehe DhlController.storeParcel())
      * @param mode "auto", "manual" oder null (legacy)
      * @param slotCode Slot-Code bei mode=manual (z.B. "A3")
      * @param shelfLocation Freitext-Location bei legacy mode
      * @param notes Optionale Notizen
+     * @param dhlMetadata Authoritatives DHL-Validierungsergebnis (nullable) - dessen
+     *                    Metadaten-Felder (Produkt, Gewicht, Status, etc.) werden 1:1
+     *                    auf das gespeicherte DhlParcel übernommen. MUSS aus der
+     *                    Backend-seitigen DHL-Tracking-Validierung stammen, NIEMALS
+     *                    aus vom Client mitgesendeten Werten.
      * @return Gespeichertes DhlParcel
      */
     @Transactional
@@ -114,7 +120,8 @@ public class DhlParcelService {
         String mode,
         String slotCode,
         String shelfLocation,
-        String notes
+        String notes,
+        storebackend.dto.dhl.DhlTrackingValidationResult dhlMetadata
     ) {
         // 1. Store validieren
         Store store = storeRepository.findById(storeId)
@@ -157,6 +164,21 @@ public class DhlParcelService {
         parcel.setNotes(notes != null ? notes.trim() : null);
         parcel.setReceivedAt(java.time.LocalDateTime.now());
         parcel.setStatus(DhlParcelStatus.STORED);
+
+        // DHL Metadaten übernehmen (nur aus der authoritativen Backend-Validierung,
+        // niemals aus Client-Werten - siehe DhlController.storeParcel())
+        if (dhlMetadata != null) {
+            parcel.setPieceIdentifier(dhlMetadata.getPieceIdentifier());
+            parcel.setShipmentStatus(dhlMetadata.getShipmentStatus());
+            parcel.setStandardEventCode(dhlMetadata.getStandardEventCode());
+            parcel.setProductCode(dhlMetadata.getProductCode());
+            parcel.setProductName(dhlMetadata.getProductName());
+            parcel.setWeightKg(dhlMetadata.getWeightKg());
+            parcel.setDestinationCountry(dhlMetadata.getDestinationCountry());
+            parcel.setOriginCountry(dhlMetadata.getOriginCountry());
+            parcel.setLastEventTimestamp(dhlMetadata.getLastEventTimestamp());
+            parcel.setPslzNumber(dhlMetadata.getPslzNumber());
+        }
         
         // 5. Slot-Zuweisung basierend auf Modus
         if ("auto".equalsIgnoreCase(mode)) {
@@ -359,6 +381,53 @@ public class DhlParcelService {
             parcel.getId(), parcel.getTrackingCode(), parcel.getShelfLocation(), storeId);
         
         return parcel;
+    }
+
+    /**
+     * Setzt das virtuelle Lager eines Stores zurück (Teil B - Administration).
+     *
+     * Fachliche Bedeutung: ALLE aktuell STORED Pakete dieses Stores werden auf
+     * CANCELLED gesetzt (Reason = WAREHOUSE_RESET). Die Fächer selbst (DhlShelfSlot)
+     * und deren Kapazität bleiben unverändert bestehen - Occupancy zählt ohnehin
+     * nur STORED Pakete und ist danach automatisch 0.
+     *
+     * KEIN hartes DELETE: Historie bleibt vollständig erhalten (Audit-Trail).
+     * Läuft in EINER Transaktion (alle Pakete oder keines) - kein Zwischenzustand,
+     * in dem z.B. nur ein Teil der Pakete storniert wäre.
+     *
+     * SECURITY: Multi-Tenant über storeId - betrifft ausschließlich diesen Store.
+     * Admin-Berechtigung wird vom Controller (StoreAccessChecker.isStoreAdmin)
+     * geprüft, BEVOR diese Methode aufgerufen wird.
+     *
+     * @param storeId Store ID (Multi-Tenant)
+     * @param userId User ID des ausführenden Admins
+     * @param userEmail E-Mail-Snapshot des ausführenden Admins
+     * @return Liste der auf CANCELLED gesetzten Pakete (für Activity-Logging durch den Aufrufer)
+     */
+    @Transactional
+    public List<DhlParcel> resetWarehouse(Long storeId, Long userId, String userEmail) {
+        List<DhlParcel> storedParcels = parcelRepository.findByStoreIdAndStatus(storeId, DhlParcelStatus.STORED);
+
+        if (storedParcels.isEmpty()) {
+            log.info("ℹ️ Warehouse reset: no STORED parcels for store={}, nothing to do", storeId);
+            return storedParcels;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        for (DhlParcel parcel : storedParcels) {
+            parcel.setStatus(DhlParcelStatus.CANCELLED);
+            parcel.setCancelledAt(now);
+            parcel.setCancellationReason(storebackend.enums.CancellationReason.WAREHOUSE_RESET.name());
+            parcel.setCancellationNote(null);
+            parcel.setCancelledByUserId(userId);
+            parcel.setCancelledByEmail(userEmail);
+        }
+
+        List<DhlParcel> saved = parcelRepository.saveAll(storedParcels);
+        log.info("✅ Warehouse reset: store={}, cancelledCount={}, user={}",
+            storeId, saved.size(), userEmail);
+
+        return saved;
     }
 
     /**

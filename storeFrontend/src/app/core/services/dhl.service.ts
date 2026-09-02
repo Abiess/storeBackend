@@ -70,6 +70,18 @@ export interface DhlParcel {
   cancelledAt?: string;
   cancellationReason?: string;
   cancellationNote?: string;
+  // Teil A - DHL Tracking Metadaten (nur gesetzt wenn beim Einlagern von der
+  // authoritativen Backend-DHL-Validierung geliefert; null wenn nicht vorhanden)
+  pieceIdentifier?: string;
+  shipmentStatus?: string;
+  standardEventCode?: string;
+  productCode?: string;
+  productName?: string;
+  weightKg?: number;
+  destinationCountry?: string;
+  originCountry?: string;
+  lastEventTimestamp?: string;
+  pslzNumber?: string;
 }
 
 /**
@@ -109,6 +121,7 @@ export type CancellationReason =
   | 'TEST_SCAN'
   | 'DUPLICATE_ENTRY'
   | 'MANUAL_REMOVAL'
+  | 'WAREHOUSE_RESET'
   | 'OTHER';
 
 /**
@@ -356,6 +369,24 @@ export class DhlService {
       request
     );
   }
+
+  // ════════════════════════════════════════════════════════════════════════
+  // TEIL B - LAGER ZURÜCKSETZEN (Administration)
+  // ════════════════════════════════════════════════════════════════════════
+
+  /**
+   * POST /api/stores/{storeId}/dhl/warehouse/reset
+   *
+   * Setzt ALLE aktuell STORED Pakete dieses Stores auf CANCELLED
+   * (Reason = WAREHOUSE_RESET). KEIN hartes Löschen - Historie bleibt erhalten.
+   * Erfordert Store-Admin-Rechte (Backend prüft dies serverseitig).
+   */
+  resetWarehouse(storeId: number): Observable<{ cancelledCount: number }> {
+    return this.http.post<{ cancelledCount: number }>(
+      `${this.baseUrl}/stores/${storeId}/dhl/warehouse/reset`,
+      {}
+    );
+  }
 }
 
 // ════════════════════════════════════════════════════════════════════════
@@ -404,8 +435,13 @@ export interface DhlTrackingValidationResponse {
   pieceIdentifier?: string;
   shipmentStatus?: string;
   standardEventCode?: string;
+  productCode?: string;
   productName?: string;
-  weight?: number;
+  weightKg?: number;
+  destinationCountry?: string;
+  originCountry?: string;
+  lastEventTimestamp?: string;
+  pslzNumber?: string;
   dhlResponseCode: string;
   dhlErrorMessage?: string;
   valid: boolean; // convenience field

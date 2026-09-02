@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DhlService, DhlSlot, DhlParcel } from '@app/core/services/dhl.service';
 import { DhlSlotGridComponent } from './dhl-slot-grid.component';
@@ -20,7 +21,7 @@ type LayoutMode = 'standard' | 'custom';
 @Component({
   selector: 'app-dhl-warehouse-plan',
   standalone: true,
-  imports: [CommonModule, DhlSlotGridComponent, DhlVisualPlanComponent, DhlSlotDetailDialogComponent, TranslatePipe],
+  imports: [CommonModule, FormsModule, DhlSlotGridComponent, DhlVisualPlanComponent, DhlSlotDetailDialogComponent, TranslatePipe],
   template: `
     <div class="warehouse-plan-container">
       <div class="plan-header">
@@ -121,6 +122,47 @@ type LayoutMode = 'standard' | 'custom';
         (close)="closeSlotDetail()"
         (removeConfirmed)="onRemoveConfirmed($event)">
       </app-dhl-slot-detail-dialog>
+
+      <!-- TEIL B - Administration: Lager zurücksetzen (nicht prominent, unten) -->
+      <div class="admin-section">
+        <h3>{{ 'dhl.plan.administration' | translate }}</h3>
+        <button class="btn-reset-warehouse" type="button" (click)="openResetDialog()">
+          🧹 {{ 'dhl.warehouseReset.button' | translate }}
+        </button>
+      </div>
+
+      <div class="dialog-backdrop" *ngIf="showResetDialog()" (click)="closeResetDialog()">
+        <div class="reset-dialog-box" (click)="$event.stopPropagation()">
+          <h3>{{ 'dhl.warehouseReset.warningTitle' | translate }}</h3>
+          <p>{{ 'dhl.warehouseReset.warningBody' | translate: { count: storedParcelCount() } }}</p>
+
+          <label class="confirm-input-label">
+            {{ 'dhl.warehouseReset.confirmInputLabel' | translate }}
+            <input
+              type="text"
+              class="confirm-input"
+              [ngModel]="resetConfirmText()"
+              (ngModelChange)="resetConfirmText.set($event)"
+              [placeholder]="'dhl.warehouseReset.confirmInputPlaceholder' | translate"
+              [disabled]="resetting()"
+            />
+          </label>
+
+          <div class="reset-dialog-actions">
+            <button class="btn-secondary" type="button" [disabled]="resetting()" (click)="closeResetDialog()">
+              {{ 'dhl.warehouseReset.cancel' | translate }}
+            </button>
+            <button
+              class="btn-danger"
+              type="button"
+              [disabled]="resetConfirmText() !== 'RESET' || resetting()"
+              (click)="confirmReset()">
+              <span *ngIf="!resetting()">{{ 'dhl.warehouseReset.confirmButton' | translate }}</span>
+              <span *ngIf="resetting()">{{ 'dhl.warehouseReset.resetting' | translate }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   `,
   styles: [`
@@ -363,6 +405,119 @@ type LayoutMode = 'standard' | 'custom';
         padding: 1rem;
       }
     }
+
+    /* TEIL B - Administration: Lager zurücksetzen */
+    .admin-section {
+      margin-top: 2.5rem;
+      padding-top: 1.5rem;
+      border-top: 2px dashed #e0e0e0;
+      text-align: right;
+    }
+
+    .admin-section h3 {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: #999;
+      margin: 0 0 0.75rem 0;
+    }
+
+    .btn-reset-warehouse {
+      padding: 0.6rem 1.1rem;
+      background: white;
+      border: 2px solid #dc3545;
+      color: #dc3545;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-reset-warehouse:hover {
+      background: #dc3545;
+      color: white;
+    }
+
+    .dialog-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1rem;
+    }
+
+    .reset-dialog-box {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      max-width: 460px;
+      width: 100%;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+    }
+
+    .reset-dialog-box h3 {
+      margin: 0 0 0.75rem 0;
+      color: #856404;
+    }
+
+    .reset-dialog-box p {
+      color: #333;
+      line-height: 1.5;
+    }
+
+    .confirm-input-label {
+      display: block;
+      margin-top: 1rem;
+      font-weight: 600;
+      color: #333;
+      font-size: 0.9rem;
+    }
+
+    .confirm-input {
+      display: block;
+      width: 100%;
+      margin-top: 0.4rem;
+      padding: 0.6rem 0.75rem;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+
+    .reset-dialog-actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+    }
+
+    .reset-dialog-actions .btn-secondary {
+      flex: 1;
+      padding: 0.75rem;
+      background: white;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .reset-dialog-actions .btn-danger {
+      flex: 1;
+      padding: 0.75rem;
+      background: #dc3545;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .reset-dialog-actions .btn-danger:disabled,
+    .reset-dialog-actions .btn-secondary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
   `]
 })
 export class DhlWarehousePlanComponent implements OnInit {
@@ -381,6 +536,15 @@ export class DhlWarehousePlanComponent implements OnInit {
   storedParcels = signal<DhlParcel[]>([]);
   selectedSlotForDetail = signal<DhlSlot | null>(null);
   removingParcelId = signal<number | null>(null);
+
+  // TEIL B - Administration: Lager zurücksetzen
+  showResetDialog = signal(false);
+  resetConfirmText = signal('');
+  resetting = signal(false);
+
+  storedParcelCount = computed(() =>
+    this.slots().reduce((sum, slot) => sum + (slot.occupiedCount ?? 0), 0)
+  );
 
   selectedSlotParcels = computed<DhlParcel[]>(() => {
     const slot = this.selectedSlotForDetail();
@@ -493,6 +657,48 @@ export class DhlWarehousePlanComponent implements OnInit {
       },
       error: (err) => {
         this.removingParcelId.set(null);
+        this.dhlErrorService.handleError(err);
+      }
+    });
+  }
+
+  /**
+   * TEIL B - Administration: Öffnet den Bestätigungsdialog für das
+   * Zurücksetzen des Lagers. Zeigt die aktuell belegte Paketanzahl
+   * (aus den bereits geladenen Slot-Daten) als Warnhinweis an.
+   */
+  openResetDialog(): void {
+    this.resetConfirmText.set('');
+    this.showResetDialog.set(true);
+  }
+
+  closeResetDialog(): void {
+    if (this.resetting()) return;
+    this.showResetDialog.set(false);
+    this.resetConfirmText.set('');
+  }
+
+  /**
+   * Setzt das virtuelle Lager zurück (POST /dhl/warehouse/reset).
+   * Nur aktivierbar, nachdem der Benutzer exakt "RESET" eingetippt hat
+   * (siehe [disabled] Binding im Template). Nach Erfolg werden Slots +
+   * Pakete neu geladen - kein vollständiger Page-Reload nötig.
+   */
+  confirmReset(): void {
+    if (this.resetConfirmText() !== 'RESET' || this.resetting()) {
+      return;
+    }
+    this.resetting.set(true);
+    this.dhlService.resetWarehouse(this.storeId).subscribe({
+      next: () => {
+        this.resetting.set(false);
+        this.showResetDialog.set(false);
+        this.resetConfirmText.set('');
+        this.loadSlots();
+        this.loadStoredParcels();
+      },
+      error: (err) => {
+        this.resetting.set(false);
         this.dhlErrorService.handleError(err);
       }
     });

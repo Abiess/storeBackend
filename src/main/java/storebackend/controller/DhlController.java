@@ -220,7 +220,8 @@ public class DhlController {
                         "auto",
                         null,
                         null, // shelfLocation not needed
-                        notes
+                        notes,
+                        trackingValidation
                     );
                     log.info("✅ DHL parcel stored (AUTO): user={}, store={}, tracking={}, slot={}", 
                         user.getId(), storeId, parcel.getTrackingCode(), parcel.getShelfLocation());
@@ -238,7 +239,8 @@ public class DhlController {
                         "manual",
                         slotCode,
                         null, // shelfLocation derived from slot
-                        notes
+                        notes,
+                        trackingValidation
                     );
                     log.info("✅ DHL parcel stored (MANUAL): user={}, store={}, tracking={}, slot={}", 
                         user.getId(), storeId, parcel.getTrackingCode(), slotCode);
@@ -260,7 +262,8 @@ public class DhlController {
                     null,
                     null,
                     shelfLocation,
-                    notes
+                    notes,
+                    trackingValidation
                 );
                 log.info("✅ DHL parcel stored (LEGACY): user={}, store={}, tracking={}, location={}", 
                     user.getId(), storeId, parcel.getTrackingCode(), shelfLocation);
@@ -443,10 +446,20 @@ public class DhlController {
      *   "trackingCode": "JVGL0605379700518040"
      * }
      * 
+     * SECURITY (Teil C):
+     * Wie bei /parcels/store ist das Backend die verbindliche Sicherheitsinstanz.
+     * Ein Frontend-Aufruf von /tracking/validate ist reine UX-Vorprüfung. Deshalb
+     * MUSS auch hier - VOR dem irreversiblen Setzen von status=PICKED_UP - erneut
+     * gegen die DHL Tracking API validiert werden. Fail closed: nur status == VALID
+     * darf zur Abholung führen. Ein direkter curl/Postman-Aufruf kann diese Prüfung
+     * NICHT umgehen.
+     * 
      * Response:
      * - 200: Pickup successful (DhlParcelResponse with pickedUpAt + status=PICKED_UP)
      * - 400: Invalid code or already picked up
      * - 404: Parcel not found
+     * - 422: DHL shipment not found (DHL_TRACKING_NOT_FOUND)
+     * - 503/504/500: Technische DHL-Fehler (fail closed, keine Abholung)
      */
     @PostMapping("/parcels/pickup")
     public ResponseEntity<?> pickupParcel(
@@ -475,8 +488,75 @@ public class DhlController {
                 return ResponseEntity.badRequest().body("Tracking code is required");
             }
 
-            // 4. Pickup Parcel
-            DhlParcel parcel = parcelService.pickupParcel(storeId, request.getTrackingCode());
+            String trackingCode = request.getTrackingCode();
+
+            // 3b. AUTHORITATIVE DHL VALIDATION (Teil C - fail closed, wie bei /parcels/store)
+            storebackend.dto.dhl.DhlTrackingValidationResult trackingValidation;
+            try {
+                trackingValidation = dhlTrackingClient.validateTrackingCode(storeId, trackingCode);
+            } catch (storebackend.exception.DhlTrackingException e) {
+                log.error("❌ DHL pickup denied: DHL validation error, store={}, trackingCode={}, errorCode={}, message={}",
+                    storeId, trackingCode, e.getErrorCode(), e.getMessage());
+                logStoreValidationFailure(storeId, user, trackingCode, "DHL_" + e.getErrorCode().name(), startNanos);
+
+                HttpStatus status;
+                switch (e.getErrorCode()) {
+                    case AUTHENTICATION_ERROR:
+                        status = HttpStatus.SERVICE_UNAVAILABLE;
+                        break;
+                    case CONNECTIVITY_ERROR:
+                        status = HttpStatus.GATEWAY_TIMEOUT;
+                        break;
+                    case DHL_TECHNICAL_ERROR:
+                    case UNKNOWN_DHL_ERROR:
+                    case XML_PARSING_ERROR:
+                    case HTTP_ERROR:
+                    default:
+                        status = HttpStatus.INTERNAL_SERVER_ERROR;
+                        break;
+                }
+
+                return ResponseEntity.status(status).body(Map.of(
+                    "error", "DHL tracking validation failed",
+                    "code", "DHL_" + e.getErrorCode().name(),
+                    "messageKey", e.getMessageKey(),
+                    "message", e.getMessage()
+                ));
+            } catch (storebackend.exception.DhlConfigurationException e) {
+                log.error("❌ DHL pickup denied: DHL not configured, store={}", storeId);
+                logStoreValidationFailure(storeId, user, trackingCode, "DHL_NOT_CONFIGURED", startNanos);
+
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
+                    "error", "DHL integration not configured",
+                    "code", "DHL_NOT_CONFIGURED",
+                    "messageKey", e.getMessageKey(),
+                    "message", e.getMessage()
+                ));
+            }
+
+            if (trackingValidation.getStatus() != storebackend.dto.dhl.DhlTrackingValidationResult.DhlTrackingValidationStatus.VALID) {
+                log.warn("⚠️ DHL pickup denied: tracking code not confirmed by DHL (NOT_FOUND), store={}, trackingCode={}",
+                    storeId, trackingCode);
+                logStoreValidationFailure(storeId, user, trackingCode, "DHL_TRACKING_NOT_FOUND", startNanos);
+
+                return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(Map.of(
+                    "error", "DHL shipment not found",
+                    "code", "DHL_TRACKING_NOT_FOUND",
+                    "message", "Keine gültige DHL-Sendung gefunden."
+                ));
+            }
+
+            // Kanonischen, von DHL bestätigten pieceCode bevorzugen für die lokale Suche
+            // (analog zu /parcels/store) - nicht blind dem Client-Wert vertrauen.
+            String validatedTrackingCode = (trackingValidation.getPieceCode() != null && !trackingValidation.getPieceCode().isBlank())
+                ? trackingValidation.getPieceCode()
+                : trackingCode;
+
+            log.info("✅ DHL tracking code confirmed VALID by DHL API for pickup: store={}, trackingCode={}, pieceCode={}",
+                storeId, trackingCode, validatedTrackingCode);
+
+            // 4. Pickup Parcel - lokale Suche mit dem von DHL bestätigten (kanonischen) Code
+            DhlParcel parcel = parcelService.pickupParcel(storeId, validatedTrackingCode);
             DhlParcelResponse response = DhlParcelResponse.fromEntity(parcel);
 
             log.info("✅ DHL parcel picked up: user={}, store={}, tracking={}", 
@@ -821,7 +901,86 @@ public class DhlController {
             throw e;
         }
     }
-    
+
+    /**
+     * POST /api/stores/{storeId}/dhl/warehouse/reset
+     *
+     * Setzt das virtuelle Lager eines Stores zurück (Teil B - Administration).
+     *
+     * Fachliche Bedeutung: ALLE aktuell STORED Pakete werden auf CANCELLED gesetzt
+     * (Reason = WAREHOUSE_RESET). KEIN hartes DELETE - die Paket-Historie bleibt
+     * vollständig erhalten. Die Lagerfächer selbst und deren Kapazität bleiben
+     * unverändert bestehen; Occupancy zählt nur STORED Pakete und ist danach
+     * automatisch 0.
+     *
+     * SECURITY:
+     * - Erfordert Store-ADMIN-Rechte (StoreAccessChecker.isStoreAdmin), nicht nur
+     *   normalen Store-Zugriff, da dies eine destruktiv wirkende Bulk-Aktion ist.
+     * - Multi-Tenant: betrifft ausschließlich den angegebenen Store.
+     * - Läuft in einer Transaktion (DhlParcelService.resetWarehouse).
+     *
+     * AUDIT: Für jedes betroffene Paket wird - wie beim einzelnen manuellen
+     * Entfernen - ein STORAGE_CANCELLED Activity-Log-Eintrag erzeugt (Reason
+     * WAREHOUSE_RESET), damit die Historie trotz Bulk-Aktion nachvollziehbar bleibt.
+     *
+     * Response:
+     * {
+     *   "cancelledCount": 63
+     * }
+     *
+     * Errors:
+     * - 401: Not authenticated
+     * - 403: Kein Store-Admin
+     */
+    @PostMapping("/warehouse/reset")
+    public ResponseEntity<?> resetWarehouse(
+        @PathVariable Long storeId,
+        @AuthenticationPrincipal User user
+    ) {
+        long startNanos = System.nanoTime();
+
+        try {
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication required");
+            }
+
+            if (!storeAccessChecker.isStoreAdmin(storeId)) {
+                log.warn("⚠️ Warehouse reset denied: user={} is not admin of store={}",
+                    user.getId(), storeId);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Store admin access required");
+            }
+
+            Long userId = user.getId();
+            String userEmail = user.getEmail() != null ? user.getEmail() : "unknown";
+
+            List<DhlParcel> cancelledParcels = parcelService.resetWarehouse(storeId, userId, userEmail);
+
+            long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
+            for (DhlParcel parcel : cancelledParcels) {
+                activityLogService.logStorageCancelled(
+                    storeId,
+                    parcel.getId(),
+                    parcel.getTrackingCode(),
+                    parcel.getShelfLocation(),
+                    userId,
+                    userEmail,
+                    storebackend.enums.CancellationReason.WAREHOUSE_RESET.name(),
+                    "Warehouse reset",
+                    durationMs
+                );
+            }
+
+            log.info("✅ Warehouse reset by admin: user={}, store={}, cancelledCount={}",
+                userEmail, storeId, cancelledParcels.size());
+
+            return ResponseEntity.ok(Map.of("cancelledCount", cancelledParcels.size()));
+
+        } catch (Exception e) {
+            log.error("DHL warehouse reset error", e);
+            return ResponseEntity.internalServerError().body("Internal server error");
+        }
+    }
+
     /**
      * POST /api/stores/{storeId}/dhl/tracking/validate
      * 

@@ -44,7 +44,7 @@ describe('DhlService - SCHRITT 3 Tracking Validation', () => {
         shipmentStatus: 'In transit',
         standardEventCode: 'ZF',
         productName: 'DHL PAKET',
-        weight: 2.5,
+        weightKg: 2.5,
         dhlResponseCode: '0',
         valid: true
       };

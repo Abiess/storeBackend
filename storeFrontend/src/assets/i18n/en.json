@@ -3416,7 +3416,22 @@
       "removeErrorNotStoredDesc": "This parcel has already been picked up or is no longer stored.",
       "removeErrorAlreadyCancelled": "Parcel already removed",
       "removeErrorAlreadyCancelledDesc": "This parcel has already been removed from the warehouse.",
+      "dhlStatusLabel": "DHL status",
+      "lastEventLabel": "Last DHL event",
       "close": "Close"
+    },
+    "warehouseReset": {
+      "button": "Reset warehouse content",
+      "warningTitle": "⚠ Really reset the warehouse?",
+      "warningBody": "{{count}} active parcels will be removed from the virtual warehouse. Shelf slots and history remain intact.",
+      "confirmInputLabel": "Type \"RESET\" to confirm:",
+      "confirmInputPlaceholder": "RESET",
+      "cancel": "Cancel",
+      "confirmButton": "Reset warehouse",
+      "resetting": "Resetting...",
+      "success": "Warehouse has been reset ({{count}} parcels removed).",
+      "error": "Warehouse could not be reset.",
+      "forbidden": "Only store administrators may reset the warehouse."
     },
     "storeParcel": {
       "trackingHint": "Scan the code from the DHL label or enter manually",
@@ -3466,6 +3481,7 @@
       "loading": "Loading...",
       "retry": "Retry",
       "unsavedChanges": "You have unsaved changes",
+      "administration": "Administration",
       "empty": {
         "title": "No Warehouse Plan",
         "message": "Create your first storage slots and design your visual warehouse plan."

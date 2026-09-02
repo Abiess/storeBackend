@@ -1,21 +1,36 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, DestroyRef, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { DhlService, DhlFindParcelRequest, DhlPickupParcelRequest, DhlParcel } from '@app/core/services/dhl.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { DhlService, DhlFindParcelRequest, DhlPickupParcelRequest, DhlParcel, DhlTrackingValidationResponse } from '@app/core/services/dhl.service';
 import { DhlErrorService } from '@app/core/services/dhl-error.service';
 import { BarcodeInputComponent } from '@app/shared/components/barcode-input/barcode-input.component';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 /**
+ * Fachlicher Validierungszustand des Tracking-Codes gegen die DHL Tracking API.
+ * Identisches Prinzip wie bei dhl-store-parcel.component.ts (TEIL C):
+ *
+ * IDLE             → noch nicht (erfolgreich) durch DHL bestätigt
+ * VALIDATING       → DHL-Prüfung läuft gerade
+ * VALID            → DHL hat die Sendung bestätigt (lokale Suche erlaubt)
+ * INVALID          → DHL kennt/akzeptiert den Code nicht (NOT_FOUND)
+ * TECHNICAL_ERROR  → Prüfung konnte technisch nicht durchgeführt werden
+ */
+export type TrackingValidationState = 'IDLE' | 'VALIDATING' | 'VALID' | 'INVALID' | 'TECHNICAL_ERROR';
+
+/**
  * DHL Pickup Parcel Component
  * 
- * Flow: Paket abholen
+ * Flow: Paket abholen (TEIL C: DHL-Validierung VOR jeder lokalen Suche)
  * 1. Tracking-Code scannen/eingeben
- * 2. Paket suchen
- * 3. Lagerplatz GROSS anzeigen
- * 4. Optional: Bestätigung (nochmal scannen)
- * 5. Als PICKED_UP markieren
+ * 2. DHL API Validierung (fail-closed - Suche nur bei VALID erlaubt)
+ * 3. Paket im Lager suchen (mit kanonischem pieceCode)
+ * 4. Lagerplatz GROSS anzeigen
+ * 5. Bestätigung → als PICKED_UP markieren (Backend validiert erneut)
  * 6. Erfolg anzeigen
  */
 @Component({
@@ -57,21 +72,45 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
         <div class="form-section">
           <label>{{ 'dhl.pickupParcel.scanTracking' | translate }}</label>
           <app-barcode-input
+            #barcodeInput
             *ngIf="trackingMode() === 'scanner'"
-            [(ngModel)]="trackingCode"
+            [ngModel]="trackingCode"
+            (ngModelChange)="onTrackingCodeChange($event)"
             [placeholder]="'dhl.pickupParcel.trackingPlaceholder' | translate"
-            [disabled]="loading()"
-            (ngModelChange)="onTrackingCodeChange()">
+            [disabled]="loading()">
           </app-barcode-input>
           <input
+            #manualInput
             *ngIf="trackingMode() === 'manual'"
             type="text"
-            [(ngModel)]="trackingCode"
+            [ngModel]="trackingCode"
+            (ngModelChange)="onTrackingCodeChange($event, true)"
             [placeholder]="'dhl.pickupParcel.trackingPlaceholder' | translate"
             [disabled]="loading()"
             class="input-field"
-            (input)="trackingCode = trackingCode.toUpperCase(); onTrackingCodeChange()"
           />
+
+          <!-- TEIL C: DHL Validierungsstatus - dauerhaft sichtbar am Feld -->
+          <div class="tracking-validation-status" [ngSwitch]="validationState()">
+            <div *ngSwitchCase="'VALIDATING'" class="status-box status-validating">
+              {{ 'dhl.validation.validatingTitle' | translate }}
+            </div>
+            <div *ngSwitchCase="'VALID'" class="status-box status-valid">
+              <div class="status-title">{{ 'dhl.validation.validShipment' | translate }}</div>
+              <div class="status-details" *ngIf="validatedResult() as res">
+                <span *ngIf="res.productName">{{ res.productName }}</span>
+                <span *ngIf="res.weightKg"> · {{ res.weightKg | number:'1.2-2' }} kg</span>
+              </div>
+            </div>
+            <div *ngSwitchCase="'INVALID'" class="status-box status-invalid">
+              <div class="status-title">{{ 'dhl.validation.invalidTitle' | translate }}</div>
+              <div class="status-details">{{ 'dhl.validation.invalidHint' | translate }}</div>
+            </div>
+            <div *ngSwitchCase="'TECHNICAL_ERROR'" class="status-box status-technical-error">
+              <div class="status-title">{{ 'dhl.validation.technicalErrorTitle' | translate }}</div>
+              <div class="status-details">{{ 'dhl.validation.technicalErrorHint' | translate }}</div>
+            </div>
+          </div>
         </div>
 
         <button
@@ -303,6 +342,56 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       font-weight: 500;
     }
 
+    .tracking-validation-status {
+      margin-top: 0.5rem;
+    }
+
+    .status-box {
+      padding: 0.85rem 1rem;
+      border-radius: 8px;
+      font-weight: 500;
+      animation: fadeIn 0.3s;
+    }
+
+    .status-title {
+      font-weight: 600;
+    }
+
+    .status-details {
+      font-size: 0.85rem;
+      margin-top: 0.25rem;
+      opacity: 0.85;
+    }
+
+    .status-validating {
+      background: #e6f3ff;
+      border: 2px solid #667eea;
+      color: #333;
+    }
+
+    .status-valid {
+      background: #d4edda;
+      border: 2px solid #28a745;
+      color: #155724;
+    }
+
+    .status-invalid {
+      background: #f8d7da;
+      border: 2px solid #dc3545;
+      color: #721c24;
+    }
+
+    .status-technical-error {
+      background: #fff3cd;
+      border: 2px solid #ffc107;
+      color: #856404;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     .btn-submit, .btn-primary {
       padding: 1rem 2rem;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -359,6 +448,10 @@ export class DhlPickupParcelComponent implements OnInit {
   private router = inject(Router);
   private dhlService = inject(DhlService);
   private dhlErrorService = inject(DhlErrorService);
+  private destroyRef = inject(DestroyRef);
+
+  @ViewChild('barcodeInput') barcodeInputRef?: BarcodeInputComponent;
+  @ViewChild('manualInput') manualInputRef?: ElementRef<HTMLInputElement>;
 
   storeId!: number;
   trackingCode = '';
@@ -370,8 +463,24 @@ export class DhlPickupParcelComponent implements OnInit {
   foundParcel = signal<DhlParcel | null>(null);
   pickedUpParcel = signal<DhlParcel | null>(null);
 
+  // TEIL C: Fachlicher DHL-Validierungszustand (IDLE/VALIDATING/VALID/INVALID/TECHNICAL_ERROR)
+  validationState = signal<TrackingValidationState>('IDLE');
+  // Letztes erfolgreiches DHL-Validierungsergebnis (für kompakte Anzeige: Produkt/Gewicht)
+  validatedResult = signal<DhlTrackingValidationResponse | null>(null);
+
+  // Debounce-Pipeline: verhindert einen DHL-Call pro Tastenanschlag,
+  // triggert aber automatische Validierung sobald der Code sich beruhigt hat.
+  private trackingCodeChange$ = new Subject<string>();
+
   ngOnInit(): void {
     this.extractStoreId();
+    this.trackingCodeChange$
+      .pipe(
+        debounceTime(400),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((code) => this.runValidation(code));
   }
 
   private extractStoreId(): void {
@@ -391,14 +500,105 @@ export class DhlPickupParcelComponent implements OnInit {
     this.error.set(null);
   }
 
-  onTrackingCodeChange(): void {
-    this.error.set(null);
-  }
-
+  /**
+   * TEIL C: Fail-closed - die lokale Suche ist AUSSCHLIESSLICH aktiv wenn
+   * DHL die Sendung bestätigt hat (validationState() === 'VALID'). Eine
+   * Codelänge >= 10 allein reicht NICHT mehr aus.
+   */
   canSearch(): boolean {
-    return this.trackingCode.trim().length >= 10;
+    return this.validationState() === 'VALID';
   }
 
+  /**
+   * Wird bei jeder Änderung des Tracking-Codes aufgerufen (Scanner-Input
+   * UND manuelle Eingabe verwenden denselben Handler - kein Bypass möglich).
+   *
+   * WICHTIG: Ein vorheriger VALID-Zustand wird SOFORT verworfen, sobald sich
+   * der Code ändert. Der alte VALID-Status darf niemals für einen neuen Code
+   * gelten (Suche fällt sofort zurück auf disabled).
+   */
+  onTrackingCodeChange(value: string, isManualInput = false): void {
+    this.trackingCode = isManualInput ? value.toUpperCase() : value;
+    this.error.set(null);
+
+    if (this.validationState() !== 'IDLE') {
+      this.validationState.set('IDLE');
+      this.validatedResult.set(null);
+    }
+
+    const trimmed = this.trackingCode.trim();
+    if (trimmed.length >= 10) {
+      this.trackingCodeChange$.next(trimmed);
+    }
+  }
+
+  /**
+   * TEIL C: Automatische DHL-Validierung (debounced), unabhängig von der
+   * "Suchen"-Aktion. Race-Guard: Ergebnisse eines veralteten Requests (Code
+   * hat sich inzwischen erneut geändert) werden verworfen.
+   */
+  private runValidation(code: string): void {
+    if (this.trackingCode.trim() !== code) {
+      return; // Code hat sich bereits weiterverändert - veralteter Trigger
+    }
+
+    this.validationState.set('VALIDATING');
+    this.validatedResult.set(null);
+
+    this.dhlService.validateTrackingCode(this.storeId, code)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (result) => {
+          if (this.trackingCode.trim() !== code) {
+            return; // veraltete Antwort - Code hat sich zwischenzeitlich geändert
+          }
+
+          if (result.status === 'VALID') {
+            // ✅ DHL bestätigt Sendung - kanonischen pieceCode übernehmen
+            this.validationState.set('VALID');
+            this.validatedResult.set(result);
+            this.trackingCode = result.pieceCode || result.trackingCode;
+          } else {
+            // ❌ NOT_FOUND: fachlicher Fehler, KEIN technisches Problem.
+            // Barcode bleibt sichtbar (Mitarbeiter soll erkennen, was abgelehnt wurde),
+            // aber Input wird für den nächsten Scan vorbereitet (Auto-Replace).
+            this.validationState.set('INVALID');
+            this.validatedResult.set(null);
+            this.prepareForNextScan();
+          }
+        },
+        error: (err) => {
+          if (this.trackingCode.trim() !== code) {
+            return;
+          }
+          this.validationState.set('TECHNICAL_ERROR');
+          this.validatedResult.set(null);
+          this.dhlErrorService.handleError(err);
+        }
+      });
+  }
+
+  /**
+   * SCANNER-UX: Nach INVALID bleibt der abgelehnte Code sichtbar, aber wird
+   * selektiert - der NÄCHSTE Scan (HID-Scanner "tippt" die Zeichen in das
+   * fokussierte Feld) ersetzt die Selektion automatisch. Kein manuelles
+   * Löschen/Markieren durch den Mitarbeiter nötig. Kamera-Scanner-Verhalten
+   * bleibt unverändert (schreibt ohnehin direkt den neuen Wert).
+   */
+  private prepareForNextScan(): void {
+    if (this.trackingMode() === 'scanner') {
+      setTimeout(() => this.barcodeInputRef?.selectAll());
+    } else {
+      setTimeout(() => this.manualInputRef?.nativeElement.select());
+    }
+  }
+
+  /**
+   * Sucht das Paket lokal - wird NUR über die (per canSearch() fail-closed
+   * abgesicherte) Suchen-Aktion ausgelöst, NACHDEM validationState()
+   * bereits VALID ist. Verwendet den kanonischen (von DHL bestätigten)
+   * trackingCode/pieceCode für die lokale Suche.
+   */
   findParcel(): void {
     if (!this.canSearch() || this.loading()) return;
 
@@ -468,6 +668,11 @@ export class DhlPickupParcelComponent implements OnInit {
     this.foundParcel.set(null);
     this.pickedUpParcel.set(null);
     this.loading.set(false);
+    this.trackingMode.set('scanner');
+
+    // TEIL C: Validierungszustand zurücksetzen
+    this.validationState.set('IDLE');
+    this.validatedResult.set(null);
   }
 
   goBack(): void {

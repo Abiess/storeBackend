@@ -3465,7 +3465,22 @@
       "removeErrorNotStoredDesc": "Dieses Paket wurde bereits abgeholt oder ist nicht mehr eingelagert.",
       "removeErrorAlreadyCancelled": "Paket bereits entfernt",
       "removeErrorAlreadyCancelledDesc": "Dieses Paket wurde bereits aus dem Lager entfernt.",
+      "dhlStatusLabel": "DHL Status",
+      "lastEventLabel": "Letztes DHL Ereignis",
       "close": "Schließen"
+    },
+    "warehouseReset": {
+      "button": "Lagerinhalt zurücksetzen",
+      "warningTitle": "⚠ Lager wirklich zurücksetzen?",
+      "warningBody": "{{count}} aktive Pakete werden aus dem virtuellen Lager entfernt. Die Lagerfächer und die Historie bleiben erhalten.",
+      "confirmInputLabel": "Zur Bestätigung bitte \"RESET\" eintippen:",
+      "confirmInputPlaceholder": "RESET",
+      "cancel": "Abbrechen",
+      "confirmButton": "Lager zurücksetzen",
+      "resetting": "Wird zurückgesetzt...",
+      "success": "Lager wurde zurückgesetzt ({{count}} Pakete entfernt).",
+      "error": "Lager konnte nicht zurückgesetzt werden.",
+      "forbidden": "Nur Store-Administratoren dürfen das Lager zurücksetzen."
     },
     "modes": {
       "manualSlot": "Manuell wählen",
@@ -3499,6 +3514,7 @@
       "loading": "Wird geladen...",
       "retry": "Erneut versuchen",
       "unsavedChanges": "Sie haben ungespeicherte Änderungen",
+      "administration": "Administration",
       "empty": {
         "title": "Kein Lagerplan vorhanden",
         "message": "Erstellen Sie Ihre ersten Lagerfächer und gestalten Sie Ihren visuellen Lagerplan."

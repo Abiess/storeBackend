@@ -107,7 +107,7 @@ class DhlControllerStoreParcelTest {
         assertEquals("DHL_TRACKING_NOT_FOUND", body.get("code"));
 
         verify(dhlTrackingClient).validateTrackingCode(storeId, trackingCode);
-        verify(parcelService, never()).storeParcel(anyLong(), anyString(), any(), any(), any(), any());
+        verify(parcelService, never()).storeParcel(anyLong(), anyString(), any(), any(), any(), any(), any());
         verify(activityLogService, never()).logStored(anyLong(), any(), anyString(), anyLong(), anyString(), anyLong());
     }
 
@@ -133,7 +133,7 @@ class DhlControllerStoreParcelTest {
         assertEquals("DHL_TRACKING_NOT_FOUND", body.get("code"));
 
         verify(dhlTrackingClient).validateTrackingCode(storeId, trackingCode);
-        verify(parcelService, never()).storeParcel(anyLong(), anyString(), any(), any(), any(), any());
+        verify(parcelService, never()).storeParcel(anyLong(), anyString(), any(), any(), any(), any(), any());
         verify(activityLogService, never()).logStored(anyLong(), any(), anyString(), anyLong(), anyString(), anyLong());
     }
 
@@ -161,14 +161,14 @@ class DhlControllerStoreParcelTest {
         savedParcel.setTrackingCode(trackingCode);
         savedParcel.setShelfLocation("A1");
         savedParcel.setStatus(DhlParcelStatus.STORED);
-        when(parcelService.storeParcel(eq(storeId), eq(trackingCode), eq("auto"), isNull(), isNull(), any()))
+        when(parcelService.storeParcel(eq(storeId), eq(trackingCode), eq("auto"), isNull(), isNull(), any(), any()))
             .thenReturn(savedParcel);
 
         ResponseEntity<?> response = dhlController.storeParcel(storeId, autoRequest(trackingCode), mockUser);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(dhlTrackingClient).validateTrackingCode(storeId, trackingCode);
-        verify(parcelService).storeParcel(eq(storeId), eq(trackingCode), eq("auto"), isNull(), isNull(), any());
+        verify(parcelService).storeParcel(eq(storeId), eq(trackingCode), eq("auto"), isNull(), isNull(), any(), any());
         verify(activityLogService).logStored(eq(storeId), eq(mockUser), eq(trackingCode), eq(1L), eq("A1"), anyLong());
     }
 
@@ -197,7 +197,7 @@ class DhlControllerStoreParcelTest {
         savedParcel.setTrackingCode(canonicalPieceCode);
         savedParcel.setShelfLocation("A2");
         savedParcel.setStatus(DhlParcelStatus.STORED);
-        when(parcelService.storeParcel(eq(storeId), eq(canonicalPieceCode), eq("auto"), isNull(), isNull(), any()))
+        when(parcelService.storeParcel(eq(storeId), eq(canonicalPieceCode), eq("auto"), isNull(), isNull(), any(), any()))
             .thenReturn(savedParcel);
 
         ResponseEntity<?> response = dhlController.storeParcel(storeId, autoRequest(rawTrackingCode), mockUser);
@@ -207,9 +207,55 @@ class DhlControllerStoreParcelTest {
         // Der Client-Wert (rawTrackingCode) darf NICHT gespeichert werden, sondern der von DHL
         // bestätigte canonical pieceCode.
         ArgumentCaptor<String> trackingCodeCaptor = ArgumentCaptor.forClass(String.class);
-        verify(parcelService).storeParcel(eq(storeId), trackingCodeCaptor.capture(), eq("auto"), isNull(), isNull(), any());
+        verify(parcelService).storeParcel(eq(storeId), trackingCodeCaptor.capture(), eq("auto"), isNull(), isNull(), any(), any());
         assertEquals(canonicalPieceCode, trackingCodeCaptor.getValue());
-        verify(parcelService, never()).storeParcel(eq(storeId), eq(rawTrackingCode), any(), any(), any(), any());
+        verify(parcelService, never()).storeParcel(eq(storeId), eq(rawTrackingCode), any(), any(), any(), any(), any());
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    // 4b: VALID mit DHL-Metadaten → authoritatives ValidationResult wird als
+    // 7. Parameter (dhlMetadata) an den Service durchgereicht (Teil A)
+    // ════════════════════════════════════════════════════════════════════
+
+    @Test
+    void testStoreParcel_ValidCode_PassesDhlMetadataToService() {
+        Long storeId = 1L;
+        String trackingCode = "00340434664988418341";
+        when(storeAccessChecker.hasStoreAccess(storeId)).thenReturn(true);
+
+        DhlTrackingValidationResult valid = DhlTrackingValidationResult.builder()
+            .status(DhlTrackingValidationStatus.VALID)
+            .trackingCode(trackingCode)
+            .pieceCode(trackingCode)
+            .pieceIdentifier("340434664988418341")
+            .shipmentStatus("Vsl. am nächsten Werktag in Filiale abholbereit")
+            .standardEventCode("ZF")
+            .productName("DHL PAKET, Filial-Routing, GoGreen Plus")
+            .weightKg(new java.math.BigDecimal("1.76"))
+            .dhlResponseCode("0")
+            .build();
+        when(dhlTrackingClient.validateTrackingCode(storeId, trackingCode)).thenReturn(valid);
+
+        DhlParcel savedParcel = new DhlParcel();
+        savedParcel.setId(3L);
+        savedParcel.setStore(storeWithId(storeId));
+        savedParcel.setTrackingCode(trackingCode);
+        savedParcel.setShelfLocation("A3");
+        savedParcel.setStatus(DhlParcelStatus.STORED);
+        when(parcelService.storeParcel(eq(storeId), eq(trackingCode), eq("auto"), isNull(), isNull(), any(), any()))
+            .thenReturn(savedParcel);
+
+        ResponseEntity<?> response = dhlController.storeParcel(storeId, autoRequest(trackingCode), mockUser);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+
+        ArgumentCaptor<DhlTrackingValidationResult> metadataCaptor =
+            ArgumentCaptor.forClass(DhlTrackingValidationResult.class);
+        verify(parcelService).storeParcel(eq(storeId), eq(trackingCode), eq("auto"), isNull(), isNull(), any(),
+            metadataCaptor.capture());
+        assertSame(valid, metadataCaptor.getValue());
+        assertEquals("340434664988418341", metadataCaptor.getValue().getPieceIdentifier());
+        assertEquals(new java.math.BigDecimal("1.76"), metadataCaptor.getValue().getWeightKg());
     }
 
     // ════════════════════════════════════════════════════════════════════
@@ -237,7 +283,7 @@ class DhlControllerStoreParcelTest {
         Map<String, Object> body = (Map<String, Object>) response.getBody();
         assertEquals("DHL_AUTHENTICATION_ERROR", body.get("code"));
 
-        verify(parcelService, never()).storeParcel(anyLong(), anyString(), any(), any(), any(), any());
+        verify(parcelService, never()).storeParcel(anyLong(), anyString(), any(), any(), any(), any(), any());
         verify(activityLogService, never()).logStored(anyLong(), any(), anyString(), anyLong(), anyString(), anyLong());
     }
 
@@ -261,7 +307,7 @@ class DhlControllerStoreParcelTest {
         Map<String, Object> body = (Map<String, Object>) response.getBody();
         assertEquals("DHL_CONNECTIVITY_ERROR", body.get("code"));
 
-        verify(parcelService, never()).storeParcel(anyLong(), anyString(), any(), any(), any(), any());
+        verify(parcelService, never()).storeParcel(anyLong(), anyString(), any(), any(), any(), any(), any());
         verify(activityLogService, never()).logStored(anyLong(), any(), anyString(), anyLong(), anyString(), anyLong());
     }
 
@@ -286,7 +332,7 @@ class DhlControllerStoreParcelTest {
         Map<String, Object> body = (Map<String, Object>) response.getBody();
         assertEquals("DHL_DHL_TECHNICAL_ERROR", body.get("code"));
 
-        verify(parcelService, never()).storeParcel(anyLong(), anyString(), any(), any(), any(), any());
+        verify(parcelService, never()).storeParcel(anyLong(), anyString(), any(), any(), any(), any(), any());
         verify(activityLogService, never()).logStored(anyLong(), any(), anyString(), anyLong(), anyString(), anyLong());
     }
 
@@ -317,7 +363,7 @@ class DhlControllerStoreParcelTest {
         ResponseEntity<?> response = dhlController.storeParcel(storeId, request, mockUser);
 
         assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, response.getStatusCode());
-        verify(parcelService, never()).storeParcel(anyLong(), anyString(), any(), any(), any(), any());
+        verify(parcelService, never()).storeParcel(anyLong(), anyString(), any(), any(), any(), any(), any());
         verify(activityLogService, never()).logStored(anyLong(), any(), anyString(), anyLong(), anyString(), anyLong());
     }
 
@@ -342,7 +388,7 @@ class DhlControllerStoreParcelTest {
 
         storebackend.exception.ParcelAlreadyStoredException duplicateEx =
             new storebackend.exception.ParcelAlreadyStoredException(trackingCode, "A1", java.time.LocalDateTime.now());
-        when(parcelService.storeParcel(eq(storeId), eq(trackingCode), eq("auto"), isNull(), isNull(), any()))
+        when(parcelService.storeParcel(eq(storeId), eq(trackingCode), eq("auto"), isNull(), isNull(), any(), any()))
             .thenThrow(duplicateEx);
 
         assertThrows(storebackend.exception.ParcelAlreadyStoredException.class,

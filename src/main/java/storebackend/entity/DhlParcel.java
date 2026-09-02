@@ -143,6 +143,79 @@ public class DhlParcel {
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
 
+    // ════════════════════════════════════════════════════════════════════
+    // DHL TRACKING METADATEN
+    //
+    // Werden AUSSCHLIESSLICH aus der authoritativen Backend-seitigen DHL
+    // Tracking-Validierung (DhlTrackingClient.validateTrackingCode(), aufgerufen
+    // in DhlController.storeParcel() VOR der Persistierung) übernommen - NIEMALS
+    // aus vom Client mitgesendeten Werten. Alle Felder sind nullable, da:
+    // - ältere Pakete (vor dieser Erweiterung) keine Metadaten haben
+    // - nicht jede DHL-Response jedes Feld enthält
+    // ════════════════════════════════════════════════════════════════════
+
+    /**
+     * DHL Piece Identifier (ohne führende Nullen, z.B. "340434664988418341").
+     * trackingCode selbst enthält bereits den canonical pieceCode (mit Nullen).
+     */
+    @Column(name = "piece_identifier", length = 50)
+    private String pieceIdentifier;
+
+    /**
+     * Sendungsstatus im Klartext (z.B. "Vsl. am nächsten Werktag in Filiale abholbereit")
+     */
+    @Column(name = "shipment_status", length = 255)
+    private String shipmentStatus;
+
+    /**
+     * DHL Standard Event Code (z.B. "ZF")
+     */
+    @Column(name = "standard_event_code", length = 20)
+    private String standardEventCode;
+
+    /**
+     * DHL Produktcode (z.B. "P")
+     */
+    @Column(name = "product_code", length = 20)
+    private String productCode;
+
+    /**
+     * DHL Produktname (z.B. "DHL PAKET, Filial-Routing, GoGreen Plus")
+     */
+    @Column(name = "product_name", length = 255)
+    private String productName;
+
+    /**
+     * Gewicht in kg (z.B. 1.76)
+     */
+    @Column(name = "weight_kg", precision = 10, scale = 3)
+    private java.math.BigDecimal weightKg;
+
+    /**
+     * Zielland der Sendung (z.B. "DE")
+     */
+    @Column(name = "destination_country", length = 10)
+    private String destinationCountry;
+
+    /**
+     * Ursprungsland der Sendung (z.B. "DE")
+     */
+    @Column(name = "origin_country", length = 10)
+    private String originCountry;
+
+    /**
+     * Zeitpunkt des letzten DHL-Ereignisses (roher DHL-Wert, unverändert
+     * durchgereicht - Format wird bislang nicht fest vorausgesetzt)
+     */
+    @Column(name = "last_event_timestamp", length = 50)
+    private String lastEventTimestamp;
+
+    /**
+     * PSLZ-Nummer (Post-Sortier-Leitzahl, DHL-internes Feld)
+     */
+    @Column(name = "pslz_number", length = 50)
+    private String pslzNumber;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

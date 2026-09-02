@@ -3300,7 +3300,22 @@
       "removeErrorNotStoredDesc": "تم استلام هذا الطرد بالفعل أو لم يعد مُخزَّنًا.",
       "removeErrorAlreadyCancelled": "تمت إزالة الطرد بالفعل",
       "removeErrorAlreadyCancelledDesc": "تمت إزالة هذا الطرد من المخزن بالفعل.",
+      "dhlStatusLabel": "حالة DHL",
+      "lastEventLabel": "آخر حدث DHL",
       "close": "إغلاق"
+    },
+    "warehouseReset": {
+      "button": "إعادة تعيين محتوى المخزن",
+      "warningTitle": "⚠ هل تريد بالفعل إعادة تعيين المخزن؟",
+      "warningBody": "سيتم إزالة {{count}} طرد نشط من المخزن الافتراضي. ستبقى الأرفف والسجل التاريخي كما هي.",
+      "confirmInputLabel": "للتأكيد، يرجى كتابة \"RESET\":",
+      "confirmInputPlaceholder": "RESET",
+      "cancel": "إلغاء",
+      "confirmButton": "إعادة تعيين المخزن",
+      "resetting": "جارٍ إعادة التعيين...",
+      "success": "تمت إعادة تعيين المخزن ({{count}} طرد تمت إزالته).",
+      "error": "تعذرت إعادة تعيين المخزن.",
+      "forbidden": "فقط مسؤولو المتجر يمكنهم إعادة تعيين المخزن."
     },
     "storeParcel": {
       "title": "تخزين الطرد",
@@ -3374,6 +3389,7 @@
       "loading": "جاري التحميل...",
       "retry": "إعادة المحاولة",
       "unsavedChanges": "لديك تغييرات غير محفوظة",
+      "administration": "الإدارة",
       "empty": {
         "title": "لا توجد خطة مستودع",
         "message": "قم بإنشاء أرفف التخزين الأولى الخاصة بك وصمم خطة المستودع المرئية الخاصة بك."
