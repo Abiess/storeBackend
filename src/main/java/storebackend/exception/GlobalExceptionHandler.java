@@ -7,6 +7,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
@@ -167,6 +168,30 @@ public class GlobalExceptionHandler {
         errorResponse.put("error", "Bad Request");
         errorResponse.put("message", "Validierung fehlgeschlagen");
         errorResponse.put("fieldErrors", fieldErrors);
+
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(errorResponse);
+    }
+
+    /**
+     * Behandelt MethodArgumentTypeMismatchException (z.B. ?userId=abc oder ein
+     * literales "null"/"undefined" als Query-Parameter-Wert) → HTTP 400 statt 500.
+     *
+     * WICHTIG: "null" wird NICHT als gültiger Sonderwert akzeptiert - ein Client
+     * MUSS optionale Filter-Parameter beim Fehlen vollständig weglassen statt
+     * sie mit dem String "null"/"undefined" zu senden. Dieser Handler sorgt
+     * lediglich dafür, dass ein fehlerhafter Client einen sauberen 400 statt
+     * einen 500 erhält.
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, Object>> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now().toString());
+        errorResponse.put("status", HttpStatus.BAD_REQUEST.value());
+        errorResponse.put("error", "Bad Request");
+        errorResponse.put("code", "INVALID_QUERY_PARAMETER");
+        errorResponse.put("message", "Ungültiger Wert für Parameter '" + ex.getName() + "': " + ex.getValue());
 
         return ResponseEntity
             .status(HttpStatus.BAD_REQUEST)

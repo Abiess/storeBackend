@@ -23,8 +23,8 @@
     </select>
     
     <select *ngIf="availableUsers.length > 0" class="filter-select" [(ngModel)]="filterUserId" (change)="onFilterChange()">
-      <option [value]="null">{{ 'dhl.activityLog.allEmployees' | translate }}</option>
-      <option *ngFor="let user of availableUsers" [value]="user.userId">{{ user.email }}</option>
+      <option [ngValue]="null">{{ 'dhl.activityLog.allEmployees' | translate }}</option>
+      <option *ngFor="let user of availableUsers" [ngValue]="user.userId">{{ user.email }}</option>
     </select>
   </div>
 

@@ -41,7 +41,7 @@ export class DhlActivityLogService {
     size: number = 20,
     today?: boolean,
     action?: string,
-    userId?: number
+    userId?: number | null
   ): Observable<DhlActivityLogPage> {
     let params = new HttpParams()
       .set('page', page.toString())
@@ -50,11 +50,21 @@ export class DhlActivityLogService {
     if (today !== undefined) {
       params = params.set('today', today.toString());
     }
-    if (action) {
+    // Defensive: nur setzen wenn wirklich ein nicht-leerer Wert vorhanden ist.
+    // Schützt zusätzlich zur Aufrufer-Seite gegen die Literal-Strings "null"/
+    // "undefined" (z.B. durch einen fehlerhaften <option [value]="null">
+    // Template-Binding, das Angular als DOM-String statt echtem null liefert).
+    if (action && action !== 'null' && action !== 'undefined') {
       params = params.set('action', action);
     }
-    if (userId !== undefined && userId !== null) {
-      params = params.set('userId', userId.toString());
+    if (
+      userId !== undefined &&
+      userId !== null &&
+      String(userId) !== 'null' &&
+      String(userId) !== 'undefined' &&
+      !Number.isNaN(Number(userId))
+    ) {
+      params = params.set('userId', String(userId));
     }
 
     return this.http.get<DhlActivityLogPage>(
