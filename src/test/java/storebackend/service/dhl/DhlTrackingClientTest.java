@@ -377,6 +377,39 @@ class DhlTrackingClientTest {
     }
     
     /**
+     * Test K2: DHL Error Code 40 (bisher unbekannt) → weiterhin UNKNOWN_DHL_ERROR,
+     * aber Diagnose-Logging darf nicht scheitern, auch wenn die Response
+     * zusätzliche Kind-Elemente/Attribute enthält (z.B. ein Detail-Element).
+     * Fail-closed-Verhalten bleibt unverändert: kein Fall-Through zu VALID/NOT_FOUND.
+     */
+    @Test
+    void testValidateTrackingCode_Code40_StillUnknownDhlError_NoLoggingCrash() {
+        // Given
+        String trackingCode = "12345678901234567890";
+        String responseXml =
+            "<data request-id=\"err-40\">" +
+            "  <data name=\"piece-status-public-list\" code=\"40\">" +
+            "    <data name=\"error-detail\" reason=\"invalid-barcode-format\" />" +
+            "  </data>" +
+            "</data>";
+
+        ResponseEntity<String> mockResponse = new ResponseEntity<>(responseXml, HttpStatus.OK);
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class)))
+            .thenReturn(mockResponse);
+
+        // When & Then
+        DhlTrackingException exception = assertThrows(
+            DhlTrackingException.class,
+            () -> dhlTrackingClient.validateTrackingCode(1L, trackingCode)
+        );
+
+        // Bewusst weiterhin UNKNOWN_DHL_ERROR (Code 40 wird NICHT geraten/umklassifiziert)
+        assertEquals(DhlTrackingErrorCode.UNKNOWN_DHL_ERROR, exception.getErrorCode());
+        assertEquals("40", exception.getDhlResponseCode());
+        assertEquals("dhl.tracking.unknownError", exception.getMessageKey());
+    }
+
+    /**
      * Test L: Tracking-Code mit Spaces/Lowercase → Normalisierung
      */
     @Test

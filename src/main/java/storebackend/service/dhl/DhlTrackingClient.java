@@ -365,6 +365,10 @@ public class DhlTrackingClient {
             } else {
                 // UNKNOWN_DHL_ERROR
                 log.error("❌ DHL Tracking Unknown Error Code: {}", code);
+                // Diagnose-Logging (KEINE Credentials!): erfasst rohe Response-Struktur
+                // für bisher unbekannte DHL-Codes (z.B. code=40), damit deren fachliche
+                // Bedeutung ohne Raten anhand echter Produktionsdaten geklärt werden kann.
+                logUnknownCodeDiagnostics(statusListElement, code);
                 throw new DhlTrackingException(
                     DhlTrackingErrorCode.UNKNOWN_DHL_ERROR,
                     "DHL Tracking API returned unknown error code: " + code,
@@ -386,6 +390,69 @@ public class DhlTrackingClient {
         }
     }
     
+    /**
+     * Sicheres Diagnose-Logging für bisher unbekannte DHL Response-Codes (z.B. code=40).
+     *
+     * Ziel: Beim nächsten Auftreten eines unbekannten Codes die tatsächliche
+     * Response-Struktur (Elementnamen + Attribute) protokollieren, damit die fachliche
+     * Bedeutung anhand echter Daten geklärt werden kann, statt geraten zu werden.
+     *
+     * Security: Es werden AUSSCHLIESSLICH Attribute der DHL-*Response* geloggt
+     * (niemals des Requests). Sicherheitsrelevante Attributnamen (appname/password/
+     * secret/auth/token/credential) werden zusätzlich defensiv herausgefiltert,
+     * falls sie wider Erwarten in der Response auftauchen sollten.
+     */
+    private void logUnknownCodeDiagnostics(Element statusListElement, String code) {
+        try {
+            StringBuilder sb = new StringBuilder();
+            sb.append(describeElementSafely(statusListElement));
+
+            NodeList children = statusListElement.getChildNodes();
+            for (int i = 0; i < children.getLength(); i++) {
+                if (children.item(i) instanceof Element child) {
+                    sb.append(" | ").append(describeElementSafely(child));
+                }
+            }
+
+            log.warn("🔎 DHL unknown code diagnostic (code={}): {}", code, sb);
+        } catch (Exception ex) {
+            log.warn("⚠️ Failed to log DHL unknown code diagnostics for code={}: {}", code, ex.getMessage());
+        }
+    }
+
+    /**
+     * Beschreibt ein XML-Element (Tag-Name + Attribute) ohne sicherheitsrelevante Werte.
+     */
+    private String describeElementSafely(Element element) {
+        StringBuilder sb = new StringBuilder(element.getTagName()).append('[');
+        var attributes = element.getAttributes();
+        for (int i = 0; i < attributes.getLength(); i++) {
+            var attr = attributes.item(i);
+            String attrName = attr.getNodeName();
+            if (isSensitiveAttributeName(attrName)) {
+                sb.append(attrName).append("=<redacted>,");
+                continue;
+            }
+            sb.append(attrName).append('=').append(attr.getNodeValue()).append(',');
+        }
+        sb.append(']');
+        return sb.toString();
+    }
+
+    /**
+     * Defensive Prüfung auf sicherheitsrelevante Attributnamen (Credentials dürfen niemals
+     * geloggt werden, auch nicht versehentlich über eine unerwartete DHL-Response).
+     */
+    private boolean isSensitiveAttributeName(String name) {
+        String lower = name.toLowerCase();
+        return lower.contains("password")
+            || lower.contains("secret")
+            || lower.contains("appname")
+            || lower.contains("auth")
+            || lower.contains("token")
+            || lower.contains("credential");
+    }
+
     /**
      * Findet Child-Element anhand 'name' Attribut
      */

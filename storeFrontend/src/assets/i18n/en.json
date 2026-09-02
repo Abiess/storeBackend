@@ -3391,7 +3391,32 @@
       "unavailable": "DHL shipment check currently unavailable",
       "retryLater": "Please try again.",
       "configError": "DHL shipment check could not be performed",
-      "configErrorDesc": "Please contact your administrator."
+      "configErrorDesc": "Please contact your administrator.",
+      "validatingTitle": "⏳ Checking shipment number with DHL …",
+      "invalidTitle": "✕ No valid DHL shipment found.",
+      "invalidHint": "Please check the tracking number or scan a different barcode on the parcel.",
+      "technicalErrorTitle": "⚠ DHL could not be reached at the moment.",
+      "technicalErrorHint": "Please try again."
+    },
+    "slotDetail": {
+      "title": "Shelf slot",
+      "occupancyLabel": "of {{capacity}} spaces occupied",
+      "empty": "This shelf slot is currently empty.",
+      "dhlParcel": "DHL parcel",
+      "storedSince": "Stored since",
+      "removeButton": "Remove from warehouse",
+      "confirmTitle": "Remove parcel from warehouse?",
+      "confirmTrackingLabel": "Tracking number",
+      "confirmSlotLabel": "Shelf slot",
+      "confirmCancel": "Cancel",
+      "confirmRemove": "Remove",
+      "removing": "Removing...",
+      "removeSuccess": "Parcel has been removed from the warehouse.",
+      "removeErrorNotStored": "Parcel cannot be removed",
+      "removeErrorNotStoredDesc": "This parcel has already been picked up or is no longer stored.",
+      "removeErrorAlreadyCancelled": "Parcel already removed",
+      "removeErrorAlreadyCancelledDesc": "This parcel has already been removed from the warehouse.",
+      "close": "Close"
     },
     "storeParcel": {
       "trackingHint": "Scan the code from the DHL label or enter manually",

@@ -196,6 +196,19 @@ export class BarcodeInputComponent implements ControlValueAccessor, OnDestroy {
     this.onTouched();
   }
 
+  /**
+   * Selektiert den gesamten Text im Eingabefeld.
+   *
+   * Wird nach einem ungültigen (INVALID) DHL-Scan aufgerufen: der abgelehnte
+   * Barcode bleibt sichtbar, aber der nächste Scan (HID-Scanner "tippt" die
+   * Zeichen sehr schnell in das fokussierte Feld) ERSETZT automatisch die
+   * Selektion, ohne dass der Mitarbeiter manuell löschen/markieren muss.
+   */
+  selectAll(): void {
+    this.barcodeInputElement?.nativeElement.focus();
+    this.barcodeInputElement?.nativeElement.select();
+  }
+
   async startCameraScanning(): Promise<void> {
     try {
       this.isCameraActive = true;

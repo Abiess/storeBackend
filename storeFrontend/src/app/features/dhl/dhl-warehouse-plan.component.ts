@@ -1,9 +1,11 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { DhlService, DhlSlot } from '@app/core/services/dhl.service';
+import { DhlService, DhlSlot, DhlParcel } from '@app/core/services/dhl.service';
 import { DhlSlotGridComponent } from './dhl-slot-grid.component';
+import { DhlSlotDetailDialogComponent } from './dhl-slot-detail-dialog.component';
 import { DhlVisualPlanComponent } from './dhl-visual-plan.component';
+import { DhlErrorService } from '@app/core/services/dhl-error.service';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
 type LayoutMode = 'standard' | 'custom';
@@ -18,7 +20,7 @@ type LayoutMode = 'standard' | 'custom';
 @Component({
   selector: 'app-dhl-warehouse-plan',
   standalone: true,
-  imports: [CommonModule, DhlSlotGridComponent, DhlVisualPlanComponent, TranslatePipe],
+  imports: [CommonModule, DhlSlotGridComponent, DhlVisualPlanComponent, DhlSlotDetailDialogComponent, TranslatePipe],
   template: `
     <div class="warehouse-plan-container">
       <div class="plan-header">
@@ -93,7 +95,9 @@ type LayoutMode = 'standard' | 'custom';
           *ngIf="!loadingSlots() && slots().length > 0"
           [slots]="slots()" 
           [selectable]="false"
-          [highlightedSlot]="highlightedSlotCode()">
+          [viewMode]="true"
+          [highlightedSlot]="highlightedSlotCode()"
+          (slotClicked)="onSlotClicked($event)">
         </app-dhl-slot-grid>
 
         <div *ngIf="!loadingSlots() && slots().length === 0" class="empty-state">
@@ -107,6 +111,16 @@ type LayoutMode = 'standard' | 'custom';
       <div *ngIf="selectedMode() === 'custom'" class="custom-layout-view">
         <app-dhl-visual-plan></app-dhl-visual-plan>
       </div>
+
+      <!-- TEIL 2 - Lagerverwaltung: Fach-Detail-Dialog -->
+      <app-dhl-slot-detail-dialog
+        *ngIf="selectedSlotForDetail() as slot"
+        [slot]="slot"
+        [parcels]="selectedSlotParcels()"
+        [removingParcelIdInput]="removingParcelId()"
+        (close)="closeSlotDetail()"
+        (removeConfirmed)="onRemoveConfirmed($event)">
+      </app-dhl-slot-detail-dialog>
     </div>
   `,
   styles: [`
@@ -355,12 +369,26 @@ export class DhlWarehousePlanComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private dhlService = inject(DhlService);
+  private dhlErrorService = inject(DhlErrorService);
   
   storeId!: number;
   selectedMode = signal<LayoutMode>('standard');
   slots = signal<DhlSlot[]>([]);
   loadingSlots = signal(false);
   highlightedSlotCode = signal<string | null>(null);
+
+  // TEIL 2 - Lagerverwaltung: Fach-Detail-Dialog State
+  storedParcels = signal<DhlParcel[]>([]);
+  selectedSlotForDetail = signal<DhlSlot | null>(null);
+  removingParcelId = signal<number | null>(null);
+
+  selectedSlotParcels = computed<DhlParcel[]>(() => {
+    const slot = this.selectedSlotForDetail();
+    if (!slot) return [];
+    return this.storedParcels().filter(
+      p => p.shelfLocation === slot.code && p.status === 'STORED'
+    );
+  });
 
   hasCustomLayout = computed(() => {
     // TODO: Check if custom layout exists in backend
@@ -414,6 +442,58 @@ export class DhlWarehousePlanComponent implements OnInit {
       error: (err) => {
         console.error('Failed to load slots:', err);
         this.loadingSlots.set(false);
+      }
+    });
+  }
+
+  /**
+   * TEIL 2 - Lagerverwaltung: Lädt die STORED-Pakete neu (z.B. beim Öffnen
+   * des Fach-Details oder nach erfolgreicher Entfernung) - keine neue
+   * Backend-Route, sondern der bestehende listStoredParcels()-Endpoint,
+   * client-seitig nach shelfLocation gefiltert.
+   */
+  private loadStoredParcels(): void {
+    this.dhlService.listStoredParcels(this.storeId).subscribe({
+      next: (parcels) => this.storedParcels.set(parcels),
+      error: (err) => console.error('Failed to load stored parcels:', err)
+    });
+  }
+
+  /**
+   * Ein belegtes/teilbelegtes Fach wurde im Grid angeklickt (viewMode) -
+   * Pakete laden und Detail-Dialog öffnen.
+   */
+  onSlotClicked(slot: DhlSlot): void {
+    this.selectedSlotForDetail.set(slot);
+    this.loadStoredParcels();
+  }
+
+  closeSlotDetail(): void {
+    this.selectedSlotForDetail.set(null);
+    this.removingParcelId.set(null);
+  }
+
+  /**
+   * Bestätigte Entfernung eines Pakets aus dem Detail-Dialog - ruft den
+   * bestehenden Backend-Endpoint POST /parcels/{parcelId}/cancel auf
+   * (Grund: MANUAL_REMOVAL). Nach Erfolg werden Slots + Pakete neu geladen,
+   * damit Belegung/Zähler ohne vollständigen Page-Reload aktuell bleiben.
+   */
+  onRemoveConfirmed(parcel: DhlParcel): void {
+    this.removingParcelId.set(parcel.id);
+    this.dhlService.cancelParcel(this.storeId, parcel.id, { reason: 'MANUAL_REMOVAL' }).subscribe({
+      next: () => {
+        this.removingParcelId.set(null);
+        this.loadSlots();
+        this.loadStoredParcels();
+        // `selectedSlotParcels` ist ein computed Signal ueber `storedParcels()`
+        // - es aktualisiert sich automatisch, sobald `loadStoredParcels()`
+        // die neuen Daten liefert. Der Dialog zeigt dann den empty-Hinweis,
+        // falls das Fach danach keine STORED-Pakete mehr enthaelt.
+      },
+      error: (err) => {
+        this.removingParcelId.set(null);
+        this.dhlErrorService.handleError(err);
       }
     });
   }

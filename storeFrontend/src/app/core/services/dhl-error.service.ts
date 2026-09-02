@@ -126,6 +126,19 @@ export class DhlErrorService {
         this.showDhlTechnicalError();
         return true;
 
+      case 'DHL_TRACKING_NOT_FOUND':
+        this.showDhlTrackingNotFound();
+        return true;
+
+      // Teil 2 - Lagerverwaltung: Paket entfernen
+      case 'PARCEL_NOT_STORED':
+        this.showParcelNotStored(errorBody.details);
+        return true;
+
+      case 'PARCEL_ALREADY_CANCELLED':
+        this.showParcelAlreadyCancelled();
+        return true;
+
       // Security-Fehler
       case 'UNAUTHORIZED':
       case '401':
@@ -316,6 +329,34 @@ export class DhlErrorService {
   private showDhlTechnicalError(): void {
     const title = this.translationService.translate('dhl.validation.unavailable');
     const message = this.translationService.translate('dhl.validation.retryLater');
+    this.toast.warning(`${title}\n\n${message}`, 5000);
+  }
+
+  /**
+   * DHL bestätigt die Sendung NICHT (NOT_FOUND) - fachlicher Fehler, KEIN
+   * technisches Problem. Wird auch vom autoritativen Backend-Check beim
+   * Speichern zurückgegeben (fail-closed), falls das Frontend-Pre-Check
+   * umgangen wurde oder sich der Status zwischenzeitlich geändert hat.
+   */
+  private showDhlTrackingNotFound(): void {
+    const title = this.translationService.translate('dhl.validation.invalidTitle');
+    const message = this.translationService.translate('dhl.validation.invalidHint');
+    this.toast.error(`${title}\n\n${message}`, 5000);
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  // TEIL 2 - LAGERVERWALTUNG: PAKET ENTFERNEN ERRORS
+  // ════════════════════════════════════════════════════════════════════════
+
+  private showParcelNotStored(details?: DhlErrorResponse['details']): void {
+    const title = this.translationService.translate('dhl.slotDetail.removeErrorNotStored');
+    const message = this.translationService.translate('dhl.slotDetail.removeErrorNotStoredDesc');
+    this.toast.warning(`${title}\n\n${message}`, 5000);
+  }
+
+  private showParcelAlreadyCancelled(): void {
+    const title = this.translationService.translate('dhl.slotDetail.removeErrorAlreadyCancelled');
+    const message = this.translationService.translate('dhl.slotDetail.removeErrorAlreadyCancelledDesc');
     this.toast.warning(`${title}\n\n${message}`, 5000);
   }
 

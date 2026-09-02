@@ -1,14 +1,26 @@
-import { Component, OnInit, inject, signal, DestroyRef } from '@angular/core';
+import { Component, OnInit, inject, signal, DestroyRef, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { DhlService, DhlStoreParcelRequestV2, DhlParcel, DhlSlot } from '@app/core/services/dhl.service';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { DhlService, DhlStoreParcelRequestV2, DhlParcel, DhlSlot, DhlTrackingValidationResponse } from '@app/core/services/dhl.service';
 import { DhlErrorService } from '@app/core/services/dhl-error.service';
-import { TranslationService } from '@app/core/services/translation.service';
 import { BarcodeInputComponent } from '@app/shared/components/barcode-input/barcode-input.component';
 import { DhlSlotGridComponent } from './dhl-slot-grid.component';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+
+/**
+ * Fachlicher Validierungszustand des Tracking-Codes gegen die DHL Tracking API.
+ *
+ * IDLE             → noch nicht (erfolgreich) durch DHL bestätigt
+ * VALIDATING       → DHL-Prüfung läuft gerade
+ * VALID            → DHL hat die Sendung bestätigt (Einlagerung erlaubt)
+ * INVALID          → DHL kennt/akzeptiert den Code nicht (NOT_FOUND)
+ * TECHNICAL_ERROR  → Prüfung konnte technisch nicht durchgeführt werden
+ */
+export type TrackingValidationState = 'IDLE' | 'VALIDATING' | 'VALID' | 'INVALID' | 'TECHNICAL_ERROR';
 
 /**
  * DHL Store Parcel Component (Phase 2 + SCHRITT 3)
@@ -73,21 +85,46 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
         <div class="form-section">
           <label>{{ 'dhl.storeParcel.scanTracking' | translate }}</label>
           <app-barcode-input
+            #barcodeInput
             *ngIf="trackingMode() === 'scanner'"
-            [(ngModel)]="trackingCode"
+            [ngModel]="trackingCode"
+            (ngModelChange)="onTrackingCodeChange($event)"
             [placeholder]="'dhl.storeParcel.trackingPlaceholder' | translate"
             [disabled]="loading()">
           </app-barcode-input>
           <input
+            #manualInput
             *ngIf="trackingMode() === 'manual'"
             type="text"
-            [(ngModel)]="trackingCode"
+            [ngModel]="trackingCode"
+            (ngModelChange)="onTrackingCodeChange($event, true)"
             [placeholder]="'dhl.storeParcel.trackingPlaceholder' | translate"
             [disabled]="loading()"
             class="input-field"
-            (input)="trackingCode = trackingCode.toUpperCase()"
           />
           <p class="hint">{{ 'dhl.storeParcel.trackingHint' | translate }}</p>
+
+          <!-- SCHRITT 3 + TEIL 1: DHL Validierungsstatus - dauerhaft sichtbar am Feld -->
+          <div class="tracking-validation-status" [ngSwitch]="validationState()">
+            <div *ngSwitchCase="'VALIDATING'" class="status-box status-validating">
+              {{ 'dhl.validation.validatingTitle' | translate }}
+            </div>
+            <div *ngSwitchCase="'VALID'" class="status-box status-valid">
+              <div class="status-title">{{ 'dhl.validation.validShipment' | translate }}</div>
+              <div class="status-details" *ngIf="validatedResult() as res">
+                <span *ngIf="res.productName">{{ res.productName }}</span>
+                <span *ngIf="res.weight"> · {{ res.weight }} kg</span>
+              </div>
+            </div>
+            <div *ngSwitchCase="'INVALID'" class="status-box status-invalid">
+              <div class="status-title">{{ 'dhl.validation.invalidTitle' | translate }}</div>
+              <div class="status-details">{{ 'dhl.validation.invalidHint' | translate }}</div>
+            </div>
+            <div *ngSwitchCase="'TECHNICAL_ERROR'" class="status-box status-technical-error">
+              <div class="status-title">{{ 'dhl.validation.technicalErrorTitle' | translate }}</div>
+              <div class="status-details">{{ 'dhl.validation.technicalErrorHint' | translate }}</div>
+            </div>
+          </div>
         </div>
 
         <!-- Mode 2: Lagerplatz-Zuweisung -->
@@ -140,24 +177,18 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
           </textarea>
         </div>
 
-        <!-- SCHRITT 3: Validation Message (Info/Feedback) -->
-        <div *ngIf="validationMessage()" class="validation-message">
-          {{ validationMessage() }}
-        </div>
-
-        <!-- Error Message -->
+        <!-- Error Message (technische Fehler bei der Einlagerung selbst) -->
         <div *ngIf="error()" class="error-box">
           {{ error() }}
         </div>
 
-        <!-- Submit Button -->
+        <!-- Submit Button - TEIL 1: FAIL-CLOSED, nur bei validationState() === 'VALID' enabled -->
         <button
           class="btn-submit"
           (click)="storeParcel()"
-          [disabled]="!canSubmit() || loading() || validating()">
-          <span *ngIf="!loading() && !validating()">{{ 'dhl.storeParcel.submit' | translate }}</span>
-          <span *ngIf="validating()">{{ 'dhl.validation.checking' | translate }}</span>
-          <span *ngIf="loading() && !validating()">{{ 'common.loading' | translate }}...</span>
+          [disabled]="!canSubmit() || loading()">
+          <span *ngIf="!loading()">{{ 'dhl.storeParcel.submit' | translate }}</span>
+          <span *ngIf="loading()">{{ 'common.loading' | translate }}...</span>
         </button>
       </div>
     </div>
@@ -337,15 +368,49 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       text-align: center;
     }
 
-    .validation-message {
-      padding: 1rem;
+    .tracking-validation-status {
+      margin-top: 0.5rem;
+    }
+
+    .status-box {
+      padding: 0.85rem 1rem;
+      border-radius: 8px;
+      font-weight: 500;
+      animation: fadeIn 0.3s;
+    }
+
+    .status-title {
+      font-weight: 600;
+    }
+
+    .status-details {
+      font-size: 0.85rem;
+      margin-top: 0.25rem;
+      opacity: 0.85;
+    }
+
+    .status-validating {
       background: #e6f3ff;
       border: 2px solid #667eea;
-      border-radius: 8px;
       color: #333;
-      font-weight: 500;
-      white-space: pre-line;
-      animation: fadeIn 0.3s;
+    }
+
+    .status-valid {
+      background: #d4edda;
+      border: 2px solid #28a745;
+      color: #155724;
+    }
+
+    .status-invalid {
+      background: #f8d7da;
+      border: 2px solid #dc3545;
+      color: #721c24;
+    }
+
+    .status-technical-error {
+      background: #fff3cd;
+      border: 2px solid #ffc107;
+      color: #856404;
     }
 
     @keyframes fadeIn {
@@ -419,8 +484,10 @@ export class DhlStoreParcelComponent implements OnInit {
   private router = inject(Router);
   private dhlService = inject(DhlService);
   private dhlErrorService = inject(DhlErrorService);
-  private translationService = inject(TranslationService);
   private destroyRef = inject(DestroyRef);
+
+  @ViewChild('barcodeInput') barcodeInputRef?: BarcodeInputComponent;
+  @ViewChild('manualInput') manualInputRef?: ElementRef<HTMLInputElement>;
 
   storeId!: number;
   trackingCode = '';
@@ -438,13 +505,25 @@ export class DhlStoreParcelComponent implements OnInit {
   success = signal(false);
   storedParcel = signal<DhlParcel | null>(null);
 
-  // SCHRITT 3: DHL Tracking Validation Signals
-  validating = signal(false);              // Validation läuft gerade
-  validationMessage = signal<string>('');  // User-Feedback für Validation
+  // TEIL 1: Fachlicher DHL-Validierungszustand (IDLE/VALIDATING/VALID/INVALID/TECHNICAL_ERROR)
+  validationState = signal<TrackingValidationState>('IDLE');
+  // Letztes erfolgreiches DHL-Validierungsergebnis (für kompakte Anzeige: Produkt/Gewicht)
+  validatedResult = signal<DhlTrackingValidationResponse | null>(null);
+
+  // Debounce-Pipeline: verhindert einen DHL-Call pro Tastenanschlag,
+  // triggert aber automatische Validierung sobald der Code sich beruhigt hat.
+  private trackingCodeChange$ = new Subject<string>();
 
   ngOnInit(): void {
     this.extractStoreId();
     this.loadSlots();
+    this.trackingCodeChange$
+      .pipe(
+        debounceTime(400),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((code) => this.runValidation(code));
   }
 
   private extractStoreId(): void {
@@ -490,105 +569,123 @@ export class DhlStoreParcelComponent implements OnInit {
     this.error.set(null);
   }
 
+  /**
+   * TEIL 1: Fail-closed - "Paket einlagern" ist AUSSCHLIESSLICH aktiv wenn
+   * DHL die Sendung bestätigt hat (validationState() === 'VALID') UND alle
+   * bestehenden Slot-/Formbedingungen erfüllt sind. Eine Codelänge >= 10
+   * allein reicht NICHT mehr aus.
+   */
   canSubmit(): boolean {
-    const hasTracking = this.trackingCode.trim().length >= 10;
-    if (this.slotMode() === 'manual') {
-      return hasTracking && this.selectedSlot() !== null;
+    if (this.validationState() !== 'VALID') {
+      return false;
     }
-    return hasTracking;
-  }
-
-  storeParcel(): void {
-    if (!this.canSubmit() || this.loading() || this.validating()) return;
-
-    // SCHRITT 3: Validation vor Einlagerung
-    this.validateAndStoreParcel();
+    if (this.slotMode() === 'manual') {
+      return this.selectedSlot() !== null;
+    }
+    return true;
   }
 
   /**
-   * SCHRITT 3: DHL Tracking Validation
-   * 
-   * Validiert gescannten Barcode gegen DHL API.
-   * canSubmit() hat bereits Mindestlänge geprüft.
-   * 
-   * VALID → pieceCode übernehmen → weiter mit Einlagerung
-   * NOT_FOUND → Eingabe löschen → User scannt nächsten Barcode
-   * Technische Fehler → verständliche Meldung + Retry
+   * Wird bei jeder Änderung des Tracking-Codes aufgerufen (Scanner-Input
+   * UND manuelle Eingabe verwenden denselben Handler - kein Bypass möglich).
+   *
+   * WICHTIG: Ein vorheriger VALID-Zustand wird SOFORT verworfen, sobald sich
+   * der Code ändert. Der alte VALID-Status darf niemals für einen neuen Code
+   * gelten (Button fällt sofort zurück auf disabled).
    */
-  private validateAndStoreParcel(): void {
-    const rawCode = this.trackingCode.trim();
+  onTrackingCodeChange(value: string, isManualInput = false): void {
+    this.trackingCode = isManualInput ? value.toUpperCase() : value;
+    this.error.set(null);
 
-    // Doppelscan-Schutz: validating() ist primäre Sperre
-    if (this.validating()) {
-      return;
+    if (this.validationState() !== 'IDLE') {
+      this.validationState.set('IDLE');
+      this.validatedResult.set(null);
     }
 
-    this.validating.set(true);
-    this.loading.set(true);
-    this.error.set(null);
-    this.validationMessage.set(this.translationService.translate('dhl.validation.checking'));
+    const trimmed = this.trackingCode.trim();
+    if (trimmed.length >= 10) {
+      this.trackingCodeChange$.next(trimmed);
+    }
+  }
 
-    // 3. DHL Tracking Validation
-    this.dhlService.validateTrackingCode(this.storeId, rawCode)
+  /**
+   * TEIL 1: Automatische DHL-Validierung (debounced), unabhängig vom
+   * "Paket einlagern"-Button. Race-Guard: Ergebnisse eines veralteten
+   * Requests (Code hat sich inzwischen erneut geändert) werden verworfen.
+   */
+  private runValidation(code: string): void {
+    if (this.trackingCode.trim() !== code) {
+      return; // Code hat sich bereits weiterverändert - veralteter Trigger
+    }
+
+    this.validationState.set('VALIDATING');
+    this.validatedResult.set(null);
+
+    this.dhlService.validateTrackingCode(this.storeId, code)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (result) => {
-          this.validating.set(false);
-          
+          if (this.trackingCode.trim() !== code) {
+            return; // veraltete Antwort - Code hat sich zwischenzeitlich geändert
+          }
+
           if (result.status === 'VALID') {
-            // ✅ DHL bestätigt Sendung
-            
-            // Kanonischen pieceCode verwenden (Fallback: trackingCode)
+            // ✅ DHL bestätigt Sendung - kanonischen pieceCode übernehmen
+            this.validationState.set('VALID');
+            this.validatedResult.set(result);
             this.trackingCode = result.pieceCode || result.trackingCode;
-            
-            // Positive Rückmeldung
-            this.validationMessage.set(
-              this.translationService.translate('dhl.validation.validShipment')
-            );
-            
-            // Direkt weiter (KEIN setTimeout!)
-            this.proceedWithStorage();
-            
-          } else if (result.status === 'NOT_FOUND') {
-            // ❌ Kein DHL-Code (KEIN technischer Fehler!)
-            
-            this.loading.set(false);
-            
-            // Freundliche Aufforderung, nächsten Code zu scannen
-            this.validationMessage.set(
-              this.translationService.translate('dhl.validation.notAShipment') + '\n' +
-              this.translationService.translate('dhl.validation.scanAnotherBarcode')
-            );
-            
-            // Eingabefeld leeren für nächsten Scan
-            this.trackingCode = '';
-            
-            // Auto-hide nach 5 Sekunden
-            setTimeout(() => {
-              if (this.validationMessage().includes(this.translationService.translate('dhl.validation.notAShipment'))) {
-                this.validationMessage.set('');
-              }
-            }, 5000);
+          } else {
+            // ❌ NOT_FOUND: fachlicher Fehler, KEIN technisches Problem.
+            // Barcode bleibt sichtbar (Mitarbeiter soll erkennen, was abgelehnt wurde),
+            // aber Input wird für den nächsten Scan vorbereitet (Auto-Replace).
+            this.validationState.set('INVALID');
+            this.validatedResult.set(null);
+            this.prepareForNextScan();
           }
         },
-        
         error: (err) => {
-          this.validating.set(false);
-          this.loading.set(false);
-          
-          // Über DhlErrorService mit benutzerfreundlichen Messages
+          if (this.trackingCode.trim() !== code) {
+            return;
+          }
+          this.validationState.set('TECHNICAL_ERROR');
+          this.validatedResult.set(null);
           this.dhlErrorService.handleError(err);
-          
-          // Validation Message löschen
-          this.validationMessage.set('');
         }
       });
   }
 
   /**
-   * Führt die eigentliche Einlagerung durch (NACH erfolgreicher Validation)
+   * SCANNER-UX: Nach INVALID bleibt der abgelehnte Code sichtbar, aber wird
+   * selektiert - der NÄCHSTE Scan (HID-Scanner "tippt" die Zeichen in das
+   * fokussierte Feld) ersetzt die Selektion automatisch. Kein manuelles
+   * Löschen/Markieren durch den Mitarbeiter nötig. Kamera-Scanner-Verhalten
+   * bleibt unverändert (schreibt ohnehin direkt den neuen Wert).
+   */
+  private prepareForNextScan(): void {
+    if (this.trackingMode() === 'scanner') {
+      setTimeout(() => this.barcodeInputRef?.selectAll());
+    } else {
+      setTimeout(() => this.manualInputRef?.nativeElement.select());
+    }
+  }
+
+  storeParcel(): void {
+    if (!this.canSubmit() || this.loading()) return;
+    this.proceedWithStorage();
+  }
+
+  /**
+   * Führt die eigentliche Einlagerung durch.
+   *
+   * Wird NUR über den (per canSubmit() fail-closed abgesicherten) Button
+   * ausgelöst, NACHDEM validationState() bereits VALID ist - keine erneute
+   * Validierung hier nötig (das autoritative Backend validiert beim
+   * Speichern ohnehin nochmals, siehe DhlController.storeParcel()).
    */
   private proceedWithStorage(): void {
+    this.loading.set(true);
+    this.error.set(null);
+
     const request: DhlStoreParcelRequestV2 = {
       trackingCode: this.trackingCode.trim(),
       mode: this.slotMode(),
@@ -603,21 +700,19 @@ export class DhlStoreParcelComponent implements OnInit {
           this.storedParcel.set(parcel);
           this.success.set(true);
           this.loading.set(false);
-          this.validationMessage.set('');
-          
+
           // Dispatch highlight event for warehouse plan
           if (parcel.shelfLocation) {
             window.dispatchEvent(new CustomEvent('dhl-highlight-slot', {
               detail: { slotCode: parcel.shelfLocation }
             }));
           }
-          
+
           // Refresh slots for grid
           this.loadSlots();
         },
         error: (err) => {
           this.loading.set(false);
-          this.validationMessage.set('');
           this.dhlErrorService.handleError(err);
         }
       });
@@ -632,11 +727,11 @@ export class DhlStoreParcelComponent implements OnInit {
     this.storedParcel.set(null);
     this.trackingMode.set('scanner');
     this.slotMode.set('auto');
-    
-    // SCHRITT 3: Neue Signals zurücksetzen
-    this.validating.set(false);
-    this.validationMessage.set('');
-    
+
+    // TEIL 1: Validierungszustand zurücksetzen
+    this.validationState.set('IDLE');
+    this.validatedResult.set(null);
+
     this.loadSlots();
   }
 

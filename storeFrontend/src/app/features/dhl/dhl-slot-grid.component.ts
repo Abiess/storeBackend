@@ -25,7 +25,8 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
             [class.full]="getSlotStatus(slot) === 'full'"
             [class.highlighted]="slot.code === highlightedSlot"
             [class.selectable]="selectable && isSlotSelectable(slot)"
-            [disabled]="!isSlotSelectable(slot) || !slot.active || !selectable"
+            [class.clickable-view]="viewMode && slot.occupiedCount > 0"
+            [disabled]="isSlotDisabled(slot)"
             (click)="onSlotClick(slot)">
             <div class="slot-code">{{ slot.code }}</div>
             <div class="slot-occupancy">{{ slot.occupiedCount }} / {{ slot.capacity }}</div>
@@ -101,6 +102,15 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
     }
 
+    .slot.clickable-view {
+      cursor: pointer;
+    }
+
+    .slot.clickable-view:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
     .slot:disabled {
       opacity: 0.6;
       cursor: not-allowed;
@@ -160,7 +170,16 @@ export class DhlSlotGridComponent {
   @Input() slots: DhlSlot[] = [];
   @Input() selectable = false;
   @Input() highlightedSlot: string | null = null;
+  /**
+   * TEIL 2 - Lagerverwaltung: Wenn true, sind belegte/teilbelegte Fächer
+   * anklickbar (unabhängig von `selectable`), um ein Detail-Panel zu öffnen.
+   * Volle Fächer bleiben in diesem Modus bewusst NICHT disabled (im
+   * Gegensatz zum Storage-Auswahl-Modus `selectable`).
+   */
+  @Input() viewMode = false;
   @Output() slotSelected = new EventEmitter<DhlSlot>();
+  /** Emitted wenn ein Fach im viewMode angeklickt wird (Fach-Detail öffnen) */
+  @Output() slotClicked = new EventEmitter<DhlSlot>();
 
   get rows() {
     const grouped: {[key: string]: DhlSlot[]} = {};
@@ -189,9 +208,24 @@ export class DhlSlotGridComponent {
     return slot.active && slot.occupiedCount < slot.capacity;
   }
 
+  /**
+   * Im viewMode dürfen auch volle Fächer angeklickt werden (Detail-Ansicht),
+   * daher NICHT dieselbe disabled-Logik wie im Storage-Auswahl-Modus.
+   */
+  isSlotDisabled(slot: DhlSlot): boolean {
+    if (this.viewMode) {
+      return slot.occupiedCount === 0;
+    }
+    return !this.isSlotSelectable(slot) || !slot.active || !this.selectable;
+  }
+
   onSlotClick(slot: DhlSlot): void {
     if (this.selectable && this.isSlotSelectable(slot)) {
       this.slotSelected.emit(slot);
+      return;
+    }
+    if (this.viewMode && slot.occupiedCount > 0) {
+      this.slotClicked.emit(slot);
     }
   }
 }

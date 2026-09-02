@@ -47,8 +47,10 @@ export interface DhlLabelResponse {
 
 /**
  * DHL Parcel Status
+ * CANCELLED = Teil 2 (Lagerverwaltung): Paket wurde manuell aus dem aktiven
+ * Lager entfernt (Historie bleibt erhalten, siehe cancelParcel()).
  */
-export type DhlParcelStatus = 'STORED' | 'PICKED_UP';
+export type DhlParcelStatus = 'STORED' | 'PICKED_UP' | 'CANCELLED';
 
 /**
  * DHL Parcel Response
@@ -64,6 +66,10 @@ export interface DhlParcel {
   notes?: string;
   createdAt: string;
   updatedAt: string;
+  // Teil 2 - Lagerverwaltung (nur gesetzt wenn status = CANCELLED)
+  cancelledAt?: string;
+  cancellationReason?: string;
+  cancellationNote?: string;
 }
 
 /**
@@ -87,6 +93,30 @@ export interface DhlFindParcelRequest {
  */
 export interface DhlPickupParcelRequest {
   trackingCode: string;
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// TEIL 2 - LAGERVERWALTUNG: PAKET ENTFERNEN (Phase 3A.4 Backend, jetzt FE)
+// ════════════════════════════════════════════════════════════════════════
+
+/**
+ * Gründe für die Stornierung/Entfernung einer Paket-Einlagerung.
+ * Muss exakt mit backend storebackend.enums.CancellationReason übereinstimmen.
+ */
+export type CancellationReason =
+  | 'WRONG_SCAN'
+  | 'WRONG_PARCEL'
+  | 'TEST_SCAN'
+  | 'DUPLICATE_ENTRY'
+  | 'MANUAL_REMOVAL'
+  | 'OTHER';
+
+/**
+ * Request: Paket aus dem Lager entfernen (POST /parcels/{parcelId}/cancel)
+ */
+export interface CancelParcelRequest {
+  reason: CancellationReason;
+  note?: string;
 }
 
 @Injectable({
@@ -302,6 +332,28 @@ export class DhlService {
     return this.http.post<DhlTrackingValidationResponse>(
       `${this.baseUrl}/stores/${storeId}/dhl/tracking/validate`,
       { trackingCode: trackingCode.trim() }
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  // TEIL 2 - LAGERVERWALTUNG: PAKET ENTFERNEN
+  // ════════════════════════════════════════════════════════════════════════
+
+  /**
+   * POST /api/stores/{storeId}/dhl/parcels/{parcelId}/cancel
+   *
+   * Entfernt ein Paket manuell aus dem aktiven Lager (Status → CANCELLED).
+   * Historie bleibt erhalten, Lagerplatz wird sofort frei (Occupancy zählt
+   * nur STORED-Pakete).
+   *
+   * Backend validiert bereits:
+   * - Paket muss STORED sein (sonst PARCEL_NOT_STORED)
+   * - Paket darf nicht bereits storniert sein (sonst PARCEL_ALREADY_CANCELLED)
+   */
+  cancelParcel(storeId: number, parcelId: number, request: CancelParcelRequest): Observable<DhlParcel> {
+    return this.http.post<DhlParcel>(
+      `${this.baseUrl}/stores/${storeId}/dhl/parcels/${parcelId}/cancel`,
+      request
     );
   }
 }

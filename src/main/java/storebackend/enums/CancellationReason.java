@@ -30,7 +30,15 @@ public enum CancellationReason {
      * Tracking-Code wurde versehentlich doppelt erfasst
      */
     DUPLICATE_ENTRY,
-    
+
+    /**
+     * Manuelle Entfernung über die Lagerverwaltung (Teil 2)
+     * z.B. Bereinigung von Test-/Fehleinlagerungen über das
+     * Lagerfach-Detail-Panel, ohne dass einer der spezifischeren
+     * Gründe (falscher Scan/falsches Paket/Duplikat) zutrifft.
+     */
+    MANUAL_REMOVAL,
+
     /**
      * Sonstige Gründe
      * (Freitext-Note sollte angegeben werden)

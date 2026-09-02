@@ -3440,7 +3440,32 @@
       "unavailable": "DHL-Sendungsprüfung momentan nicht verfügbar",
       "retryLater": "Bitte erneut versuchen.",
       "configError": "DHL-Sendungsprüfung konnte nicht durchgeführt werden",
-      "configErrorDesc": "Bitte kontaktieren Sie Ihren Administrator."
+      "configErrorDesc": "Bitte kontaktieren Sie Ihren Administrator.",
+      "validatingTitle": "⏳ Sendungsnummer wird bei DHL geprüft …",
+      "invalidTitle": "✕ Keine gültige DHL-Sendung gefunden.",
+      "invalidHint": "Bitte prüfen Sie die Sendungsnummer oder scannen Sie einen anderen Barcode auf dem Paket.",
+      "technicalErrorTitle": "⚠ DHL konnte momentan nicht erreicht werden.",
+      "technicalErrorHint": "Bitte versuchen Sie es erneut."
+    },
+    "slotDetail": {
+      "title": "Lagerfach",
+      "occupancyLabel": "von {{capacity}} Plätzen belegt",
+      "empty": "Dieses Lagerfach ist aktuell leer.",
+      "dhlParcel": "DHL Paket",
+      "storedSince": "Eingelagert seit",
+      "removeButton": "Aus Lager entfernen",
+      "confirmTitle": "Paket aus Lager entfernen?",
+      "confirmTrackingLabel": "Trackingnummer",
+      "confirmSlotLabel": "Lagerfach",
+      "confirmCancel": "Abbrechen",
+      "confirmRemove": "Entfernen",
+      "removing": "Wird entfernt...",
+      "removeSuccess": "Paket wurde aus dem Lager entfernt.",
+      "removeErrorNotStored": "Paket kann nicht entfernt werden",
+      "removeErrorNotStoredDesc": "Dieses Paket wurde bereits abgeholt oder ist nicht mehr eingelagert.",
+      "removeErrorAlreadyCancelled": "Paket bereits entfernt",
+      "removeErrorAlreadyCancelledDesc": "Dieses Paket wurde bereits aus dem Lager entfernt.",
+      "close": "Schließen"
     },
     "modes": {
       "manualSlot": "Manuell wählen",

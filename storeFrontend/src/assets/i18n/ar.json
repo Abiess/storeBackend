@@ -3275,7 +3275,32 @@
       "unavailable": "التحقق من شحنة DHL غير متاح حاليًا",
       "retryLater": "يرجى المحاولة مرة أخرى.",
       "configError": "تعذر إجراء التحقق من شحنة DHL",
-      "configErrorDesc": "يرجى الاتصال بالمسؤول."
+      "configErrorDesc": "يرجى الاتصال بالمسؤول.",
+      "validatingTitle": "⏳ جاري التحقق من رقم الشحنة لدى DHL …",
+      "invalidTitle": "✕ لم يتم العثور على شحنة DHL صالحة.",
+      "invalidHint": "يرجى التحقق من رقم التتبع أو مسح باركود آخر على الطرد.",
+      "technicalErrorTitle": "⚠ تعذر الوصول إلى DHL في الوقت الحالي.",
+      "technicalErrorHint": "يرجى المحاولة مرة أخرى."
+    },
+    "slotDetail": {
+      "title": "رف التخزين",
+      "occupancyLabel": "من {{capacity}} أماكن مشغولة",
+      "empty": "هذا الرف فارغ حاليًا.",
+      "dhlParcel": "طرد DHL",
+      "storedSince": "مُخزَّن منذ",
+      "removeButton": "إزالة من المخزن",
+      "confirmTitle": "إزالة الطرد من المخزن؟",
+      "confirmTrackingLabel": "رقم التتبع",
+      "confirmSlotLabel": "رف التخزين",
+      "confirmCancel": "إلغاء",
+      "confirmRemove": "إزالة",
+      "removing": "جاري الإزالة...",
+      "removeSuccess": "تمت إزالة الطرد من المخزن.",
+      "removeErrorNotStored": "لا يمكن إزالة الطرد",
+      "removeErrorNotStoredDesc": "تم استلام هذا الطرد بالفعل أو لم يعد مُخزَّنًا.",
+      "removeErrorAlreadyCancelled": "تمت إزالة الطرد بالفعل",
+      "removeErrorAlreadyCancelledDesc": "تمت إزالة هذا الطرد من المخزن بالفعل.",
+      "close": "إغلاق"
     },
     "storeParcel": {
       "title": "تخزين الطرد",
