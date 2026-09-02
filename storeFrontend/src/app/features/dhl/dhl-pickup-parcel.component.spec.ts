@@ -197,15 +197,14 @@ describe('DhlPickupParcelComponent - TEIL C TrackingValidationState', () => {
   describe('Scanner kann INVALID-Code durch nächsten Scan ersetzen', () => {
     it('selektiert den abgelehnten Code im Scanner-Feld für Auto-Replace', fakeAsync(() => {
       mockDhlService.validateTrackingCode.and.returnValue(of(mockNotFoundResponse('VDBDBJDJDUD')));
-      const selectAllSpy = jasmine.createSpy('selectAll');
-      (component as any).barcodeInputRef = { selectAll: selectAllSpy };
+      const prepareForNextScanSpy = jasmine.createSpy('prepareForNextScan');
+      (component as any).barcodeInputRef = { prepareForNextScan: prepareForNextScanSpy, selectAll: jasmine.createSpy('selectAll'), value: '' };
 
       triggerValidation('VDBDBJDJDUD');
-      tick(); // setTimeout in prepareForNextScan()
 
       expect(component.validationState()).toBe('INVALID');
       expect(component.trackingCode).toBe('VDBDBJDJDUD'); // Code bleibt sichtbar
-      expect(selectAllSpy).toHaveBeenCalled();
+      expect(prepareForNextScanSpy).toHaveBeenCalled();
     }));
 
     it('ein nachfolgender Scan-Wert ersetzt den alten Code und validiert neu', fakeAsync(() => {
@@ -219,6 +218,22 @@ describe('DhlPickupParcelComponent - TEIL C TrackingValidationState', () => {
       expect(component.trackingCode).toBe(VALID_CODE);
       expect(component.validationState()).toBe('VALID');
       expect(component.canSearch()).toBe(true);
+    }));
+
+    it('manueller Modus: alter INVALID-Code wird durch Clear-Guard ersetzt, nicht angehängt', fakeAsync(() => {
+      component.setTrackingMode('manual');
+      mockDhlService.validateTrackingCode.and.returnValue(of(mockNotFoundResponse('VDBDBJDJDUD')));
+      triggerValidation('VDBDBJDJDUD', true);
+      expect(component.validationState()).toBe('INVALID');
+
+      // Erstes Zeichen des nächsten (manuellen) Scans - Guard muss Feld leeren.
+      component.onManualKeyDown(new KeyboardEvent('keydown', { key: '0' }));
+      expect(component.trackingCode).toBe('');
+
+      component.onTrackingCodeChange('00340434664988418341', true);
+      tick(400);
+
+      expect(component.trackingCode).toBe('00340434664988418341');
     }));
   });
 
@@ -303,6 +318,91 @@ describe('DhlPickupParcelComponent - TEIL C TrackingValidationState', () => {
         trackingCode: VALID_CODE
       }));
       expect(component.step()).toBe('success');
+    }));
+  });
+
+  describe('Scanner-UX: neuer Scan ERSETZT alten Code (kein Anhängen)', () => {
+    /** Simuliert das erste Zeichen eines neuen HID-Scans auf dem echten <input>. */
+    function dispatchFirstScanKeydown(key: string): void {
+      const inputEl: HTMLInputElement = fixture.nativeElement.querySelector('.barcode-input-field');
+      inputEl.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+    }
+
+    it('1) alter INVALID-Code ($DS29PADDING) + neuer Scan → trackingCode === neuer Code (kein Anhängen)', fakeAsync(() => {
+      mockDhlService.validateTrackingCode.and.returnValue(of(mockNotFoundResponse('$DS29PADDING')));
+      triggerValidation('$DS29PADDING');
+      expect(component.validationState()).toBe('INVALID');
+
+      // Erstes Zeichen des nächsten Scans trifft auf das (noch $DS29PADDING
+      // enthaltende) Feld - der Clear-Guard muss das Feld VORHER leeren.
+      dispatchFirstScanKeydown('0');
+      expect(component.barcodeInputRef!.value).toBe('');
+
+      // Browser fügt danach Zeichen für Zeichen den neuen Code ein (input-Event).
+      component.barcodeInputRef!.onValueChange('00340434664988418341');
+      tick(400);
+
+      expect(component.trackingCode).toBe('00340434664988418341');
+    }));
+
+    it('2) kein String-Anhängen: alter Code darf NICHT mehr im Feld vorkommen', fakeAsync(() => {
+      mockDhlService.validateTrackingCode.and.returnValue(of(mockNotFoundResponse('$DS29PADDING')));
+      triggerValidation('$DS29PADDING');
+
+      dispatchFirstScanKeydown('0');
+      component.barcodeInputRef!.onValueChange('00340434664988418341');
+      tick(400);
+
+      expect(component.trackingCode).not.toContain('$DS29');
+      expect(component.trackingCode.length).toBe('00340434664988418341'.length);
+    }));
+
+    it('3) alter VALID-Code + neuer Scan → VALID sofort weg, neuer Code ersetzt alten, erneute DHL-Prüfung', fakeAsync(() => {
+      mockDhlService.validateTrackingCode.and.returnValue(of(mockValidResponse()));
+      triggerValidation(VALID_CODE);
+      expect(component.validationState()).toBe('VALID');
+      expect(component.trackingCode).toBe(VALID_CODE);
+
+      const NEW_CODE = '00340434664988418342';
+      dispatchFirstScanKeydown('0');
+      expect(component.barcodeInputRef!.value).toBe('');
+
+      // onValueChange löst denselben Handler wie ein echtes Scan-Event aus.
+      component.barcodeInputRef!.onValueChange(NEW_CODE);
+
+      // Alter VALID-Status ist sofort weg (siehe onTrackingCodeChange)
+      expect(component.validationState()).toBe('IDLE');
+      expect(component.trackingCode).toBe(NEW_CODE);
+
+      mockDhlService.validateTrackingCode.and.returnValue(of(mockValidResponse({ trackingCode: NEW_CODE, pieceCode: NEW_CODE })));
+      tick(400);
+
+      expect(mockDhlService.validateTrackingCode).toHaveBeenCalledWith(123, NEW_CODE);
+      expect(component.validationState()).toBe('VALID');
+    }));
+
+    it('4) TECHNICAL_ERROR → neuer Scan ersetzt alten Code ebenfalls (kein Anhängen)', fakeAsync(() => {
+      const mockError = new HttpErrorResponse({
+        error: { errorCode: 'DHL_CONNECTIVITY_ERROR', message: 'Timeout' },
+        status: 504,
+        statusText: 'Gateway Timeout'
+      });
+      mockDhlErrorService.classifyTrackingValidationError.and.returnValue('TECHNICAL_ERROR');
+      mockDhlService.validateTrackingCode.and.returnValue(throwError(() => mockError));
+      triggerValidation(VALID_CODE);
+      expect(component.validationState()).toBe('TECHNICAL_ERROR');
+
+      const NEW_CODE = '00340434664988418342';
+      dispatchFirstScanKeydown('0');
+      expect(component.barcodeInputRef!.value).toBe('');
+
+      mockDhlErrorService.classifyTrackingValidationError.calls.reset();
+      mockDhlService.validateTrackingCode.and.returnValue(of(mockValidResponse({ trackingCode: NEW_CODE, pieceCode: NEW_CODE })));
+      component.barcodeInputRef!.onValueChange(NEW_CODE);
+      tick(400);
+
+      expect(component.trackingCode).toBe(NEW_CODE);
+      expect(component.validationState()).toBe('VALID');
     }));
   });
 

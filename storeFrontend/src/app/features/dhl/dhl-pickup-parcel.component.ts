@@ -94,6 +94,7 @@ export type TrackingInvalidReason = 'NOT_FOUND' | 'VALIDATION_ERROR';
             type="text"
             [ngModel]="trackingCode"
             (ngModelChange)="onTrackingCodeChange($event, true)"
+            (keydown)="onManualKeyDown($event)"
             [placeholder]="'dhl.pickupParcel.trackingPlaceholder' | translate"
             [disabled]="loading()"
             class="input-field"
@@ -485,6 +486,9 @@ export class DhlPickupParcelComponent implements OnInit {
   // Letztes erfolgreiches DHL-Validierungsergebnis (für kompakte Anzeige: Produkt/Gewicht)
   validatedResult = signal<DhlTrackingValidationResponse | null>(null);
 
+  // Clear-Guard für manuellen Eingabemodus (Scanner-Modus: siehe BarcodeInputComponent)
+  private awaitingNextManualScan = false;
+
   // Debounce-Pipeline: verhindert einen DHL-Call pro Tastenanschlag,
   // triggert aber automatische Validierung sobald der Code sich beruhigt hat.
   private trackingCodeChange$ = new Subject<string>();
@@ -577,6 +581,9 @@ export class DhlPickupParcelComponent implements OnInit {
             this.validationState.set('VALID');
             this.validatedResult.set(result);
             this.trackingCode = result.pieceCode || result.trackingCode;
+            // Auch nach VALID: nächster Scan (z.B. anderes Paket) soll ersetzen,
+            // nicht an den kanonischen Code angehängt werden.
+            this.prepareForNextScan();
           } else {
             // ❌ NOT_FOUND: fachlicher Fehler, KEIN technisches Problem.
             // Barcode bleibt sichtbar (Mitarbeiter soll erkennen, was abgelehnt wurde),
@@ -604,23 +611,52 @@ export class DhlPickupParcelComponent implements OnInit {
             this.prepareForNextScan();
           } else {
             this.dhlErrorService.handleError(err);
+            // Auch bei TECHNICAL_ERROR: nächster Scan soll den alten Code
+            // ersetzen, nicht anhängen.
+            this.prepareForNextScan();
           }
         }
       });
   }
 
   /**
-   * SCANNER-UX: Nach INVALID bleibt der abgelehnte Code sichtbar, aber wird
-   * selektiert - der NÄCHSTE Scan (HID-Scanner "tippt" die Zeichen in das
-   * fokussierte Feld) ersetzt die Selektion automatisch. Kein manuelles
-   * Löschen/Markieren durch den Mitarbeiter nötig. Kamera-Scanner-Verhalten
-   * bleibt unverändert (schreibt ohnehin direkt den neuen Wert).
+   * SCANNER-UX: Nach INVALID/TECHNICAL_ERROR bleibt der abgelehnte Code
+   * sichtbar, das Feld wird aber für den NÄCHSTEN Scan vorbereitet:
+   * - Scanner-Modus: BarcodeInputComponent.prepareForNextScan() - visuelle
+   *   Selektion PLUS deterministischer Clear-Guard (erstes Zeichen des
+   *   nächsten Scans leert das Feld zuerst, statt anzuhängen).
+   * - Manueller Modus: dasselbe Prinzip direkt hier (kein BarcodeInputComponent
+   *   involviert), siehe onManualKeyDown().
+   * Kamera-Scanner-Verhalten bleibt unverändert (schreibt ohnehin direkt den
+   * neuen Wert atomar, kein Zeichen-für-Zeichen keydown).
    */
   private prepareForNextScan(): void {
     if (this.trackingMode() === 'scanner') {
-      setTimeout(() => this.barcodeInputRef?.selectAll());
+      this.barcodeInputRef?.prepareForNextScan();
     } else {
+      this.awaitingNextManualScan = true;
       setTimeout(() => this.manualInputRef?.nativeElement.select());
+    }
+  }
+
+  /**
+   * Manuelles Pendant zu BarcodeInputComponent.onKeyDown(): ohne vorheriges
+   * prepareForNextScan() ein No-Op. Leert trackingCode UND das native
+   * DOM-Value synchron beim ERSTEN Zeichen der nächsten Eingabe, damit der
+   * neue Code den alten (abgelehnten) ersetzt statt daran angehängt zu
+   * werden - unabhängig von native Selection-Replace-Timing.
+   */
+  onManualKeyDown(event: KeyboardEvent): void {
+    if (!this.awaitingNextManualScan) {
+      return;
+    }
+    if (event.key.length !== 1 || event.ctrlKey || event.metaKey || event.altKey) {
+      return;
+    }
+    this.awaitingNextManualScan = false;
+    this.trackingCode = '';
+    if (this.manualInputRef) {
+      this.manualInputRef.nativeElement.value = '';
     }
   }
 
@@ -703,7 +739,9 @@ export class DhlPickupParcelComponent implements OnInit {
 
     // TEIL C: Validierungszustand zurücksetzen
     this.validationState.set('IDLE');
+    this.invalidReason.set(null);
     this.validatedResult.set(null);
+    this.awaitingNextManualScan = false;
   }
 
   goBack(): void {

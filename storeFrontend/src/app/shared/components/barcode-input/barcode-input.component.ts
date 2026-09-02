@@ -22,6 +22,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
         type="text"
         [(ngModel)]="value"
         (ngModelChange)="onValueChange($event)"
+        (keydown)="onKeyDown($event)"
         [placeholder]="placeholder"
         [disabled]="disabled"
         class="barcode-input-field"
@@ -171,6 +172,15 @@ export class BarcodeInputComponent implements ControlValueAccessor, OnDestroy {
   private codeReader: BrowserMultiFormatReader | null = null;
   private preferredBackCameraId: string | null = null;
 
+  /**
+   * "Clear-Guard" für Scanner-UX (opt-in, siehe prepareForNextScan()):
+   * wird von aufrufender Komponente NUR nach einem abgelehnten/technisch
+   * fehlgeschlagenen Scan aktiviert (z.B. DHL INVALID/TECHNICAL_ERROR).
+   * Standardmäßig false → Verhalten für andere Nutzer dieser
+   * Shared-Komponente (POS, Produkt-Formular) bleibt unverändert.
+   */
+  private awaitingNextScan = false;
+
   private onChange: (value: string) => void = () => {};
   private onTouched: () => void = () => {};
 
@@ -207,6 +217,61 @@ export class BarcodeInputComponent implements ControlValueAccessor, OnDestroy {
   selectAll(): void {
     this.barcodeInputElement?.nativeElement.focus();
     this.barcodeInputElement?.nativeElement.select();
+  }
+
+  /**
+   * OPT-IN Scanner-UX (aktuell nur von DHL Einlagern/Abholen genutzt):
+   * bereitet das Feld robust auf den NÄCHSTEN Scan vor, nachdem der aktuelle
+   * Code fachlich abgelehnt wurde (INVALID) oder technisch nicht geprüft
+   * werden konnte (TECHNICAL_ERROR):
+   *
+   * 1. Visuelle Selektion des kompletten (weiterhin sichtbaren) alten Codes
+   *    via selectAll() - hilft bei manueller Korrektur/gewohnter UX.
+   * 2. ZUSÄTZLICH ein deterministischer "Clear-Guard": das ALLERERSTE
+   *    Zeichen der nächsten Eingabe (HID-Scanner tippt Zeichen wie eine
+   *    Tastatur) leert das Feld zuerst komplett, statt an den alten Code
+   *    anzuhängen. Das ist unabhängig davon, ob native
+   *    Selection-Replace-on-Type zuverlässig funktioniert (Fokus-/Timing-
+   *    Eigenheiten je nach Scanner/Browser).
+   *
+   * Ein kompletter Scan wird als EINE Einheit behandelt: nur das erste
+   * Zeichen räumt das Feld, alle weiteren Zeichen desselben Scans werden
+   * normal angehängt (kein Löschen nach jedem einzelnen Zeichen).
+   */
+  prepareForNextScan(): void {
+    this.awaitingNextScan = true;
+    this.selectAll();
+  }
+
+  /**
+   * Wird auf JEDES keydown-Event des nativen Eingabefelds angewendet, ist
+   * aber ohne vorheriges prepareForNextScan() ein No-Op (Standardverhalten
+   * für andere Nutzer dieser Komponente bleibt unverändert).
+   */
+  onKeyDown(event: KeyboardEvent): void {
+    if (!this.awaitingNextScan) {
+      return;
+    }
+
+    // Nur eine "echte" Zeicheneingabe (Ziffer/Buchstabe/Symbol - genau das,
+    // was ein HID-Scanner oder eine manuelle Eingabe für Barcode-Inhalt
+    // sendet) löst das Leeren aus. Modifier-/Navigationstasten (Tab, Shift,
+    // Pfeile, Strg+..., ...) lassen das Feld unangetastet.
+    if (event.key.length !== 1 || event.ctrlKey || event.metaKey || event.altKey) {
+      return;
+    }
+
+    this.awaitingNextScan = false;
+
+    // WICHTIG: Model UND natives DOM-Value synchron leeren, BEVOR der
+    // Browser die Standardaktion (Zeichen einfügen) für dieses keydown
+    // ausführt. Sonst könnte Angulars Change Detection den (noch alten)
+    // gebundenen Wert zurück ins DOM schreiben und unser Clear überschreiben.
+    this.value = '';
+    if (this.barcodeInputElement) {
+      this.barcodeInputElement.nativeElement.value = '';
+    }
+    this.onChange('');
   }
 
   async startCameraScanning(): Promise<void> {
@@ -333,7 +398,12 @@ export class BarcodeInputComponent implements ControlValueAccessor, OnDestroy {
           if (result) {
             const barcode = result.getText();
             console.log('📦 Kamera-Barcode erkannt:', barcode);
-            
+
+            // Kamera schreibt den Wert atomar (kein Zeichen-für-Zeichen
+            // keydown) - Clear-Guard ist hier nicht nötig, defensiv trotzdem
+            // deaktivieren, falls noch von einem vorherigen HID-Scan armiert.
+            this.awaitingNextScan = false;
+
             // Barcode ins Eingabefeld schreiben und FormControl aktualisieren
             this.value = barcode;
             this.onChange(barcode);
