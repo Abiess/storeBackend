@@ -3444,6 +3444,7 @@
       "validatingTitle": "⏳ Sendungsnummer wird bei DHL geprüft …",
       "invalidTitle": "✕ Keine gültige DHL-Sendung gefunden.",
       "invalidHint": "Bitte prüfen Sie die Sendungsnummer oder scannen Sie einen anderen Barcode auf dem Paket.",
+      "validationErrorTitle": "✕ Dieser Code konnte von DHL nicht als Sendungsnummer bestätigt werden.",
       "technicalErrorTitle": "⚠ DHL konnte momentan nicht erreicht werden.",
       "technicalErrorHint": "Bitte versuchen Sie es erneut."
     },

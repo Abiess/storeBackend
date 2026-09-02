@@ -68,7 +68,7 @@ describe('DhlStoreParcelComponent - TEIL 1 TrackingValidationState', () => {
       'storeParcelV2',
       'getSlots'
     ]);
-    mockDhlErrorService = jasmine.createSpyObj('DhlErrorService', ['handleError']);
+    mockDhlErrorService = jasmine.createSpyObj('DhlErrorService', ['handleError', 'classifyTrackingValidationError']);
     mockTranslationService = jasmine.createSpyObj('TranslationService', ['translate']);
     mockRouter = jasmine.createSpyObj('Router', ['navigate'], { url: '/stores/123/dhl/store' });
 
@@ -148,16 +148,33 @@ describe('DhlStoreParcelComponent - TEIL 1 TrackingValidationState', () => {
 
     it('TECHNICAL_ERROR → disabled', fakeAsync(() => {
       const mockError = new HttpErrorResponse({
-        error: { code: 'DHL_CONNECTIVITY_ERROR', message: 'Timeout' },
+        error: { errorCode: 'DHL_CONNECTIVITY_ERROR', message: 'Timeout' },
         status: 504,
         statusText: 'Gateway Timeout'
       });
+      mockDhlErrorService.classifyTrackingValidationError.and.returnValue('TECHNICAL_ERROR');
       mockDhlService.validateTrackingCode.and.returnValue(throwError(() => mockError));
       triggerValidation(VALID_CODE);
 
       expect(component.validationState()).toBe('TECHNICAL_ERROR');
       expect(component.canSubmit()).toBe(false);
       expect(mockDhlErrorService.handleError).toHaveBeenCalledWith(mockError);
+    }));
+
+    it('DHL_VALIDATION_ERROR (unbekannter DHL Response Code, z.B. code=40) → INVALID, NICHT "DHL nicht erreichbar"', fakeAsync(() => {
+      const mockError = new HttpErrorResponse({
+        error: { errorCode: 'DHL_VALIDATION_ERROR', message: 'unrecognized response code' },
+        status: 422,
+        statusText: 'Unprocessable Entity'
+      });
+      mockDhlErrorService.classifyTrackingValidationError.and.returnValue('INVALID');
+      mockDhlService.validateTrackingCode.and.returnValue(throwError(() => mockError));
+      triggerValidation('14411111114');
+
+      expect(component.validationState()).toBe('INVALID');
+      expect(component.canSubmit()).toBe(false);
+      // Fachlicher Fehler: kein zusätzlicher Toast, Inline-Box reicht
+      expect(mockDhlErrorService.handleError).not.toHaveBeenCalled();
     }));
 
     it('Codelänge >= 10 allein aktiviert den Button NICHT (kein Bypass ohne DHL-Bestätigung)', () => {

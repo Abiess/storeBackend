@@ -10,6 +10,11 @@ export interface DhlErrorResponse {
   timestamp: string;
   status: number;
   code: string;
+  /**
+   * Alternativer Feldname, den einige DHL-Endpoints verwenden (z.B.
+   * POST /tracking/validate liefert "errorCode" statt "code").
+   */
+  errorCode?: string;
   message: string;
   details?: {
     trackingCode?: string;
@@ -46,6 +51,46 @@ export class DhlErrorService {
   private toast = inject(ToastService);
 
   /**
+   * Klassifiziert einen HTTP-Fehler der DHL-Tracking-Validierung
+   * (POST /tracking/validate, sowie die serverseitige Re-Validierung bei
+   * /parcels/store und /parcels/pickup) in genau zwei UI-Zustände:
+   *
+   * - 'INVALID'          → fachlicher Fehler (DHL hat geantwortet, Code aber
+   *                        nicht bestätigt bzw. unbekannter Response-Code).
+   *                        Einlagern/Abholen bleibt disabled, aber es ist
+   *                        KEIN technisches "DHL nicht erreichbar"-Problem.
+   * - 'TECHNICAL_ERROR'  → echtes technisches Problem (Connectivity, Auth,
+   *                        DHL-Technikfehler, fehlende Konfiguration, oder
+   *                        ein unbekannter/unerwarteter Serverfehler).
+   *
+   * Einheitliche Klassifizierung für Einlagern UND Abholen - beide Flows
+   * MÜSSEN dieselbe Zuordnung verwenden (siehe dhl-store-parcel.component.ts
+   * und dhl-pickup-parcel.component.ts).
+   */
+  classifyTrackingValidationError(error: HttpErrorResponse): 'INVALID' | 'TECHNICAL_ERROR' {
+    const errorBody = error?.error as DhlErrorResponse | undefined;
+    const code = errorBody?.errorCode || errorBody?.code;
+
+    switch (code) {
+      case 'DHL_TRACKING_NOT_FOUND':
+      case 'DHL_VALIDATION_ERROR':
+        // Fachlicher Fehler: DHL wurde erreicht, Code aber nicht bestätigt
+        // (bekanntes NOT_FOUND) bzw. nicht sicher klassifizierbar (unbekannter
+        // DHL-Response-Code, z.B. code=40).
+        return 'INVALID';
+
+      case 'DHL_CONNECTIVITY_ERROR':
+      case 'DHL_TECHNICAL_ERROR':
+      case 'DHL_AUTHENTICATION_ERROR':
+      case 'DHL_NOT_CONFIGURED':
+      default:
+        // Echtes technisches Problem ODER unbekannter/unerwarteter
+        // Serverfehler - im Zweifel fail-closed als TECHNICAL_ERROR behandeln.
+        return 'TECHNICAL_ERROR';
+    }
+  }
+
+  /**
    * Behandelt HTTP-Fehler von DHL-Endpoints
    * 
    * @param error HttpErrorResponse
@@ -60,7 +105,11 @@ export class DhlErrorService {
     }
 
     const errorBody = error.error as DhlErrorResponse;
-    const code = errorBody.code || error.status.toString();
+    // Bevorzugt "errorCode" (aktueller Feldname aus dem Backend, z.B. DhlController
+    // /tracking/validate), Fallback auf "code" (ältere/andere DHL-Endpoints wie
+    // /parcels/store, /parcels/pickup, sowie generische Fehlercodes wie
+    // PARCEL_NOT_FOUND) und zuletzt der reine HTTP-Status.
+    const code = errorBody.errorCode || errorBody.code || error.status.toString();
 
     // Fachliche DHL-Fehler (Phase 3A.3)
     switch (code) {
@@ -128,6 +177,17 @@ export class DhlErrorService {
 
       case 'DHL_TRACKING_NOT_FOUND':
         this.showDhlTrackingNotFound();
+        return true;
+
+      case 'DHL_VALIDATION_ERROR':
+        // DHL wurde erreicht und hat geantwortet, der Code konnte aber nicht
+        // als gültige Sendung bestätigt werden (unbekannter DHL-Response-Code,
+        // z.B. code=40). KEIN technisches "nicht erreichbar"-Problem.
+        this.showDhlValidationError();
+        return true;
+
+      case 'DHL_NOT_CONFIGURED':
+        this.showDhlAuthError();
         return true;
 
       // Teil 2 - Lagerverwaltung: Paket entfernen
@@ -341,6 +401,19 @@ export class DhlErrorService {
   private showDhlTrackingNotFound(): void {
     const title = this.translationService.translate('dhl.validation.invalidTitle');
     const message = this.translationService.translate('dhl.validation.invalidHint');
+    this.toast.error(`${title}\n\n${message}`, 5000);
+  }
+
+  /**
+   * DHL_VALIDATION_ERROR: DHL wurde erreicht und hat mit einem unbekannten
+   * fachlichen Response-Code geantwortet (z.B. code=40). Die Sendung konnte
+   * NICHT als gültig bestätigt werden - fachlich ähnlich zu NOT_FOUND, aber
+   * bewusst neutraler formuliert, da die genaue DHL-Bedeutung nicht sicher
+   * bekannt ist. Kein "DHL nicht erreichbar" - DHL hat geantwortet!
+   */
+  private showDhlValidationError(): void {
+    const title = this.translationService.translate('dhl.validation.validationErrorTitle');
+    const message = this.translationService.translate('dhl.validation.scanAnotherBarcode');
     this.toast.error(`${title}\n\n${message}`, 5000);
   }
 

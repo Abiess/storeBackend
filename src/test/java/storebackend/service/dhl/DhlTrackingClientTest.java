@@ -442,10 +442,12 @@ class DhlTrackingClientTest {
     }
     
     /**
-     * Test K: Unbekannter DHL Error Code → UNKNOWN_DHL_ERROR
+     * Test K: Unbekannter DHL Error Code → DHL_VALIDATION_ERROR (NICHT mehr
+     * UNKNOWN_DHL_ERROR / HTTP 500 generisch, und NICHT als "DHL nicht
+     * erreichbar" behandelt - DHL hat geantwortet!)
      */
     @Test
-    void testValidateTrackingCode_UnknownErrorCode_UnknownDhlError() {
+    void testValidateTrackingCode_UnknownErrorCode_ValidationError() {
         // Given
         String trackingCode = "12345678901234567890";
         String responseXml = 
@@ -465,20 +467,22 @@ class DhlTrackingClientTest {
             () -> dhlTrackingClient.validateTrackingCode(1L, trackingCode)
         );
         
-        assertEquals(DhlTrackingErrorCode.UNKNOWN_DHL_ERROR, exception.getErrorCode());
+        assertEquals(DhlTrackingErrorCode.DHL_VALIDATION_ERROR, exception.getErrorCode());
         assertEquals("999", exception.getDhlResponseCode());
-        assertEquals("dhl.tracking.unknownError", exception.getMessageKey());
-        assertTrue(exception.getMessage().contains("unknown error code"));
+        assertEquals("dhl.tracking.validationError", exception.getMessageKey());
+        assertTrue(exception.getMessage().contains("unrecognized response code"));
     }
     
     /**
-     * Test K2: DHL Error Code 40 (bisher unbekannt) → weiterhin UNKNOWN_DHL_ERROR,
-     * aber Diagnose-Logging darf nicht scheitern, auch wenn die Response
-     * zusätzliche Kind-Elemente/Attribute enthält (z.B. ein Detail-Element).
+     * Test K2: DHL Error Code 40 (bisher unbekannt) → DHL_VALIDATION_ERROR
+     * (weiterhin NICHT hart als NOT_FOUND umklassifiziert, solange die
+     * genaue Bedeutung nicht sicher bekannt ist), aber Diagnose-Logging darf
+     * nicht scheitern, auch wenn die Response zusätzliche Kind-Elemente/
+     * Attribute enthält (z.B. ein Detail-Element).
      * Fail-closed-Verhalten bleibt unverändert: kein Fall-Through zu VALID/NOT_FOUND.
      */
     @Test
-    void testValidateTrackingCode_Code40_StillUnknownDhlError_NoLoggingCrash() {
+    void testValidateTrackingCode_Code40_ValidationError_NoLoggingCrash() {
         // Given
         String trackingCode = "12345678901234567890";
         String responseXml =
@@ -498,10 +502,10 @@ class DhlTrackingClientTest {
             () -> dhlTrackingClient.validateTrackingCode(1L, trackingCode)
         );
 
-        // Bewusst weiterhin UNKNOWN_DHL_ERROR (Code 40 wird NICHT geraten/umklassifiziert)
-        assertEquals(DhlTrackingErrorCode.UNKNOWN_DHL_ERROR, exception.getErrorCode());
+        // Bewusst DHL_VALIDATION_ERROR statt hart NOT_FOUND (Code 40 wird NICHT geraten/umklassifiziert)
+        assertEquals(DhlTrackingErrorCode.DHL_VALIDATION_ERROR, exception.getErrorCode());
         assertEquals("40", exception.getDhlResponseCode());
-        assertEquals("dhl.tracking.unknownError", exception.getMessageKey());
+        assertEquals("dhl.tracking.validationError", exception.getMessageKey());
     }
 
     /**

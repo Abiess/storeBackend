@@ -23,6 +23,15 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 export type TrackingValidationState = 'IDLE' | 'VALIDATING' | 'VALID' | 'INVALID' | 'TECHNICAL_ERROR';
 
 /**
+ * Feinere Unterscheidung innerhalb von validationState() === 'INVALID':
+ * - NOT_FOUND         → DHL hat den Code klar abgelehnt (dhlResponseCode=100)
+ * - VALIDATION_ERROR  → DHL hat mit einem unbekannten Response-Code
+ *                       geantwortet (z.B. code=40); NICHT geraten, ob
+ *                       fachlich ungültig - daher neutralere UI-Formulierung.
+ */
+export type TrackingInvalidReason = 'NOT_FOUND' | 'VALIDATION_ERROR';
+
+/**
  * DHL Store Parcel Component (Phase 2 + SCHRITT 3)
  * 
  * Flow: Paket einlagern mit Mode-Selection + DHL Tracking Validation
@@ -117,8 +126,14 @@ export type TrackingValidationState = 'IDLE' | 'VALIDATING' | 'VALID' | 'INVALID
               </div>
             </div>
             <div *ngSwitchCase="'INVALID'" class="status-box status-invalid">
-              <div class="status-title">{{ 'dhl.validation.invalidTitle' | translate }}</div>
-              <div class="status-details">{{ 'dhl.validation.invalidHint' | translate }}</div>
+              <ng-container *ngIf="invalidReason() === 'VALIDATION_ERROR'; else notFoundText">
+                <div class="status-title">{{ 'dhl.validation.validationErrorTitle' | translate }}</div>
+                <div class="status-details">{{ 'dhl.validation.scanAnotherBarcode' | translate }}</div>
+              </ng-container>
+              <ng-template #notFoundText>
+                <div class="status-title">{{ 'dhl.validation.invalidTitle' | translate }}</div>
+                <div class="status-details">{{ 'dhl.validation.invalidHint' | translate }}</div>
+              </ng-template>
             </div>
             <div *ngSwitchCase="'TECHNICAL_ERROR'" class="status-box status-technical-error">
               <div class="status-title">{{ 'dhl.validation.technicalErrorTitle' | translate }}</div>
@@ -507,6 +522,8 @@ export class DhlStoreParcelComponent implements OnInit {
 
   // TEIL 1: Fachlicher DHL-Validierungszustand (IDLE/VALIDATING/VALID/INVALID/TECHNICAL_ERROR)
   validationState = signal<TrackingValidationState>('IDLE');
+  // Feinere Unterscheidung bei validationState() === 'INVALID' (NOT_FOUND vs. VALIDATION_ERROR)
+  invalidReason = signal<TrackingInvalidReason | null>(null);
   // Letztes erfolgreiches DHL-Validierungsergebnis (für kompakte Anzeige: Produkt/Gewicht)
   validatedResult = signal<DhlTrackingValidationResponse | null>(null);
 
@@ -600,6 +617,7 @@ export class DhlStoreParcelComponent implements OnInit {
     if (this.validationState() !== 'IDLE') {
       this.validationState.set('IDLE');
       this.validatedResult.set(null);
+      this.invalidReason.set(null);
     }
 
     const trimmed = this.trackingCode.trim();
@@ -620,6 +638,7 @@ export class DhlStoreParcelComponent implements OnInit {
 
     this.validationState.set('VALIDATING');
     this.validatedResult.set(null);
+    this.invalidReason.set(null);
 
     this.dhlService.validateTrackingCode(this.storeId, code)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -639,6 +658,7 @@ export class DhlStoreParcelComponent implements OnInit {
             // Barcode bleibt sichtbar (Mitarbeiter soll erkennen, was abgelehnt wurde),
             // aber Input wird für den nächsten Scan vorbereitet (Auto-Replace).
             this.validationState.set('INVALID');
+            this.invalidReason.set('NOT_FOUND');
             this.validatedResult.set(null);
             this.prepareForNextScan();
           }
@@ -647,9 +667,20 @@ export class DhlStoreParcelComponent implements OnInit {
           if (this.trackingCode.trim() !== code) {
             return;
           }
-          this.validationState.set('TECHNICAL_ERROR');
+          // Fachlicher (INVALID) vs. technischer (TECHNICAL_ERROR) Fehler
+          // einheitlich klassifizieren (siehe DhlErrorService) - NICHT mehr
+          // jeden HTTP-Fehler pauschal als "DHL nicht erreichbar" behandeln.
+          const state = this.dhlErrorService.classifyTrackingValidationError(err);
+          this.validationState.set(state);
           this.validatedResult.set(null);
-          this.dhlErrorService.handleError(err);
+          if (state === 'INVALID') {
+            this.invalidReason.set('VALIDATION_ERROR');
+            // Fachlicher Fehler: Inline-Status-Box zeigt bereits die passende
+            // Meldung - kein zusätzlicher Toast nötig (Barcode-Scan-UX).
+            this.prepareForNextScan();
+          } else {
+            this.dhlErrorService.handleError(err);
+          }
         }
       });
   }

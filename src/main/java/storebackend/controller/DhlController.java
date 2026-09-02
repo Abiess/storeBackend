@@ -157,6 +157,11 @@ public class DhlController {
                     case CONNECTIVITY_ERROR:
                         status = HttpStatus.GATEWAY_TIMEOUT;
                         break;
+                    case DHL_VALIDATION_ERROR:
+                        // DHL wurde erreicht, Code aber nicht als gültige Sendung
+                        // bestätigt - fachlicher 4xx-Fehler, KEIN 5xx-Serverfehler.
+                        status = HttpStatus.UNPROCESSABLE_ENTITY;
+                        break;
                     case DHL_TECHNICAL_ERROR:
                     case UNKNOWN_DHL_ERROR:
                     case XML_PARSING_ERROR:
@@ -506,6 +511,11 @@ public class DhlController {
                         break;
                     case CONNECTIVITY_ERROR:
                         status = HttpStatus.GATEWAY_TIMEOUT;
+                        break;
+                    case DHL_VALIDATION_ERROR:
+                        // DHL wurde erreicht, Code aber nicht als gültige Sendung
+                        // bestätigt - fachlicher 4xx-Fehler, KEIN 5xx-Serverfehler.
+                        status = HttpStatus.UNPROCESSABLE_ENTITY;
                         break;
                     case DHL_TECHNICAL_ERROR:
                     case UNKNOWN_DHL_ERROR:
@@ -1087,6 +1097,11 @@ public class DhlController {
                 case CONNECTIVITY_ERROR:
                     status = HttpStatus.GATEWAY_TIMEOUT;
                     break;
+                case DHL_VALIDATION_ERROR:
+                    // DHL wurde erreicht, Code aber nicht als gültige Sendung
+                    // bestätigt - fachlicher 4xx-Fehler, KEIN 5xx-Serverfehler.
+                    status = HttpStatus.UNPROCESSABLE_ENTITY;
+                    break;
                 case DHL_TECHNICAL_ERROR:
                 case UNKNOWN_DHL_ERROR:
                 case XML_PARSING_ERROR:
@@ -1111,6 +1126,7 @@ public class DhlController {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .body(Map.of(
                     "error", "DHL integration not configured",
+                    "errorCode", "DHL_NOT_CONFIGURED",
                     "messageKey", e.getMessageKey(),
                     "message", e.getMessage()
                 ));

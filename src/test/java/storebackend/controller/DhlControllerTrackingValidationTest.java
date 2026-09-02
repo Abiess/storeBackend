@@ -391,4 +391,44 @@ class DhlControllerTrackingValidationTest {
         
         verify(dhlTrackingClient).validateTrackingCode(storeId, trackingCode);
     }
+
+    /**
+     * Test 11: Unbekannter DHL Response Code (DHL_VALIDATION_ERROR) → HTTP 422
+     * NICHT mehr HTTP 500 / "DHL nicht erreichbar" - DHL hat geantwortet,
+     * der Code konnte nur nicht als gültige Sendung bestätigt werden.
+     */
+    @Test
+    void testValidateTrackingCode_ValidationError_ReturnsUnprocessableEntity() {
+        // Given
+        Long storeId = 1L;
+        String trackingCode = "14411111114";
+        Map<String, String> request = Map.of("trackingCode", trackingCode);
+
+        when(storeAccessChecker.hasStoreAccess(storeId)).thenReturn(true);
+
+        DhlTrackingException validationException = new DhlTrackingException(
+            DhlTrackingErrorCode.DHL_VALIDATION_ERROR,
+            "DHL Tracking API returned an unrecognized response code: 40",
+            "dhl.tracking.validationError",
+            "40"
+        );
+
+        when(dhlTrackingClient.validateTrackingCode(storeId, trackingCode))
+            .thenThrow(validationException);
+
+        // When
+        ResponseEntity<?> response = dhlController.validateTrackingCode(storeId, request, mockUser);
+
+        // Then
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, response.getStatusCode());
+        assertNotNull(response.getBody());
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> errorBody = (Map<String, Object>) response.getBody();
+        assertEquals("DHL tracking validation failed", errorBody.get("error"));
+        assertEquals("DHL_VALIDATION_ERROR", errorBody.get("errorCode"));
+        assertEquals("dhl.tracking.validationError", errorBody.get("messageKey"));
+
+        verify(dhlTrackingClient).validateTrackingCode(storeId, trackingCode);
+    }
 }

@@ -336,6 +336,29 @@ class DhlControllerStoreParcelTest {
         verify(activityLogService, never()).logStored(anyLong(), any(), anyString(), anyLong(), anyString(), anyLong());
     }
 
+    @Test
+    void testStoreParcel_DhlValidationError_DeniesStorageWith422() {
+        Long storeId = 1L;
+        String trackingCode = "14411111114";
+        when(storeAccessChecker.hasStoreAccess(storeId)).thenReturn(true);
+
+        DhlTrackingException validationError = new DhlTrackingException(
+            DhlTrackingErrorCode.DHL_VALIDATION_ERROR,
+            "DHL Tracking API returned an unrecognized response code: 40",
+            "dhl.tracking.validationError",
+            "40"
+        );
+        when(dhlTrackingClient.validateTrackingCode(storeId, trackingCode)).thenThrow(validationError);
+
+        ResponseEntity<?> response = dhlController.storeParcel(storeId, autoRequest(trackingCode), mockUser);
+
+        // DHL_VALIDATION_ERROR ist ein fachlicher 4xx-Fehler, KEIN 500 (DHL hat geantwortet)
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, response.getStatusCode());
+
+        verify(parcelService, never()).storeParcel(anyLong(), anyString(), any(), any(), any(), any(), any());
+        verify(activityLogService, never()).logStored(anyLong(), any(), anyString(), anyLong(), anyString(), anyLong());
+    }
+
     // ════════════════════════════════════════════════════════════════════
     // 8: Keine Aktivität "Eingelagert" bei fehlgeschlagener DHL-Validierung
     // (bereits durch never()-Verifikationen oben abgedeckt, hier explizit

@@ -3395,6 +3395,7 @@
       "validatingTitle": "⏳ Checking shipment number with DHL …",
       "invalidTitle": "✕ No valid DHL shipment found.",
       "invalidHint": "Please check the tracking number or scan a different barcode on the parcel.",
+      "validationErrorTitle": "✕ This code could not be confirmed by DHL as a shipment number.",
       "technicalErrorTitle": "⚠ DHL could not be reached at the moment.",
       "technicalErrorHint": "Please try again."
     },

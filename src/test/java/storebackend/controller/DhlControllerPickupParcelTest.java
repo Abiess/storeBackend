@@ -138,6 +138,24 @@ class DhlControllerPickupParcelTest {
         verify(parcelService, never()).pickupParcel(anyLong(), anyString());
     }
 
+    @Test
+    void testPickupParcel_DhlValidationError_DeniesPickupWith422() {
+        Long storeId = 1L;
+        String trackingCode = "14411111114";
+        when(storeAccessChecker.hasStoreAccess(storeId)).thenReturn(true);
+
+        when(dhlTrackingClient.validateTrackingCode(storeId, trackingCode))
+            .thenThrow(new DhlTrackingException(DhlTrackingErrorCode.DHL_VALIDATION_ERROR,
+                "DHL Tracking API returned an unrecognized response code: 40",
+                "dhl.tracking.validationError", "40"));
+
+        ResponseEntity<?> response = dhlController.pickupParcel(storeId, pickupRequest(trackingCode), mockUser);
+
+        // DHL_VALIDATION_ERROR ist ein fachlicher 4xx-Fehler, KEIN 500 (DHL hat geantwortet)
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, response.getStatusCode());
+        verify(parcelService, never()).pickupParcel(anyLong(), anyString());
+    }
+
     // ════════════════════════════════════════════════════════════════════
     // VALID → lokale Suche mit dem vom Service zurückgegebenen Ergebnis
     // ════════════════════════════════════════════════════════════════════

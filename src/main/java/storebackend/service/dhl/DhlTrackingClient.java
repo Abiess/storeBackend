@@ -388,16 +388,19 @@ public class DhlTrackingClient {
                 );
                 
             } else {
-                // UNKNOWN_DHL_ERROR
-                log.error("❌ DHL Tracking Unknown Error Code: {}", code);
-                // Diagnose-Logging (KEINE Credentials!): erfasst rohe Response-Struktur
-                // für bisher unbekannte DHL-Codes (z.B. code=40), damit deren fachliche
-                // Bedeutung ohne Raten anhand echter Produktionsdaten geklärt werden kann.
+                // DHL_VALIDATION_ERROR: DHL hat geantwortet, aber mit einem
+                // fachlichen Response-Code, dessen Bedeutung wir nicht sicher kennen
+                // (z.B. code=40). Dies ist AUSDRÜCKLICH kein Konnektivitäts-/
+                // Technikfehler (DHL wurde erreicht) und wird auch NICHT als
+                // gesichertes NOT_FOUND (code=100) geraten - der Code wird
+                // unverändert diagnostisch geloggt, damit seine fachliche
+                // Bedeutung anhand echter Produktionsdaten geklärt werden kann.
+                log.error("❌ DHL Tracking: unrecognized response code (validation error): {}", code);
                 logUnknownCodeDiagnostics(statusListElement, code);
                 throw new DhlTrackingException(
-                    DhlTrackingErrorCode.UNKNOWN_DHL_ERROR,
-                    "DHL Tracking API returned unknown error code: " + code,
-                    "dhl.tracking.unknownError",
+                    DhlTrackingErrorCode.DHL_VALIDATION_ERROR,
+                    "DHL Tracking API returned an unrecognized response code: " + code,
+                    "dhl.tracking.validationError",
                     code
                 );
             }

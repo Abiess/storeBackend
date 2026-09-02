@@ -3279,6 +3279,7 @@
       "validatingTitle": "⏳ جاري التحقق من رقم الشحنة لدى DHL …",
       "invalidTitle": "✕ لم يتم العثور على شحنة DHL صالحة.",
       "invalidHint": "يرجى التحقق من رقم التتبع أو مسح باركود آخر على الطرد.",
+      "validationErrorTitle": "✕ تعذر تأكيد هذا الرمز من قبل DHL كرقم شحنة.",
       "technicalErrorTitle": "⚠ تعذر الوصول إلى DHL في الوقت الحالي.",
       "technicalErrorHint": "يرجى المحاولة مرة أخرى."
     },

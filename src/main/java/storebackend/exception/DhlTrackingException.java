@@ -97,6 +97,19 @@ public class DhlTrackingException extends RuntimeException {
          * Unbekannter DHL-Fehlercode
          */
         UNKNOWN_DHL_ERROR,
+
+        /**
+         * DHL wurde erreicht und hat geantwortet, aber der gescannte/eingegebene
+         * Code konnte nicht als gültige DHL-Sendung bestätigt werden - die DHL
+         * Response enthält dabei einen fachlichen Response-Code (z.B. "40"),
+         * dessen genaue Bedeutung (noch) nicht sicher dokumentiert/bekannt ist.
+         *
+         * WICHTIG: Dies ist ausdrücklich KEIN Konnektivitäts-/Technikfehler -
+         * DHL hat geantwortet. Es ist aber auch KEIN gesichertes NOT_FOUND
+         * (code="100"), da die fachliche Bedeutung des Codes nicht geraten
+         * werden soll. Der Code wird weiterhin diagnostisch geloggt.
+         */
+        DHL_VALIDATION_ERROR,
         
         /**
          * XML Parsing Fehler
