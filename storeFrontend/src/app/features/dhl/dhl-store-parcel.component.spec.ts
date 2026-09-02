@@ -3,6 +3,7 @@ import { of, throwError, Observable } from 'rxjs';
 import { DhlStoreParcelComponent } from './dhl-store-parcel.component';
 import { DhlService, DhlTrackingValidationResponse, DhlParcel } from '@app/core/services/dhl.service';
 import { DhlErrorService } from '@app/core/services/dhl-error.service';
+import { DhlScanAudioService } from '@app/core/services/dhl-scan-audio.service';
 import { TranslationService } from '@app/core/services/translation.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -24,6 +25,7 @@ describe('DhlStoreParcelComponent - TEIL 1 TrackingValidationState', () => {
   let fixture: ComponentFixture<DhlStoreParcelComponent>;
   let mockDhlService: jasmine.SpyObj<DhlService>;
   let mockDhlErrorService: jasmine.SpyObj<DhlErrorService>;
+  let mockDhlScanAudioService: jasmine.SpyObj<DhlScanAudioService>;
   let mockTranslationService: jasmine.SpyObj<TranslationService>;
   let mockRouter: jasmine.SpyObj<Router>;
 
@@ -69,6 +71,8 @@ describe('DhlStoreParcelComponent - TEIL 1 TrackingValidationState', () => {
       'getSlots'
     ]);
     mockDhlErrorService = jasmine.createSpyObj('DhlErrorService', ['handleError', 'classifyTrackingValidationError']);
+    mockDhlScanAudioService = jasmine.createSpyObj('DhlScanAudioService', ['playForState', 'isEnabled', 'setEnabled']);
+    mockDhlScanAudioService.isEnabled.and.returnValue(true);
     mockTranslationService = jasmine.createSpyObj('TranslationService', ['translate']);
     mockRouter = jasmine.createSpyObj('Router', ['navigate'], { url: '/stores/123/dhl/store' });
 
@@ -80,6 +84,7 @@ describe('DhlStoreParcelComponent - TEIL 1 TrackingValidationState', () => {
       providers: [
         { provide: DhlService, useValue: mockDhlService },
         { provide: DhlErrorService, useValue: mockDhlErrorService },
+        { provide: DhlScanAudioService, useValue: mockDhlScanAudioService },
         { provide: TranslationService, useValue: mockTranslationService },
         { provide: Router, useValue: mockRouter },
         {
@@ -182,6 +187,85 @@ describe('DhlStoreParcelComponent - TEIL 1 TrackingValidationState', () => {
       expect(component.validationState()).toBe('IDLE');
       expect(component.canSubmit()).toBe(false);
     });
+  });
+
+  describe('Audio-Feedback: Ton ERST NACH der DHL-Antwort, nicht beim Scan selbst', () => {
+    it('VALID → Success-Ton genau einmal', fakeAsync(() => {
+      mockDhlService.validateTrackingCode.and.returnValue(of(mockValidResponse()));
+      triggerValidation(VALID_CODE);
+
+      expect(mockDhlScanAudioService.playForState).toHaveBeenCalledWith('VALID');
+      expect(mockDhlScanAudioService.playForState).toHaveBeenCalledTimes(1);
+    }));
+
+    it('INVALID (NOT_FOUND) → Error-Ton genau einmal', fakeAsync(() => {
+      mockDhlService.validateTrackingCode.and.returnValue(of(mockNotFoundResponse('HDHSJ27373')));
+      triggerValidation('HDHSJ27373');
+
+      expect(mockDhlScanAudioService.playForState).toHaveBeenCalledWith('INVALID');
+      expect(mockDhlScanAudioService.playForState).toHaveBeenCalledTimes(1);
+    }));
+
+    it('DHL_VALIDATION_ERROR (unbekannter Response Code) → Error-Ton genau einmal (dieselbe Kategorie wie NOT_FOUND)', fakeAsync(() => {
+      const mockError = new HttpErrorResponse({
+        error: { errorCode: 'DHL_VALIDATION_ERROR', message: 'unrecognized response code' },
+        status: 422,
+        statusText: 'Unprocessable Entity'
+      });
+      mockDhlErrorService.classifyTrackingValidationError.and.returnValue('INVALID');
+      mockDhlService.validateTrackingCode.and.returnValue(throwError(() => mockError));
+      triggerValidation('14411111114');
+
+      expect(mockDhlScanAudioService.playForState).toHaveBeenCalledWith('INVALID');
+      expect(mockDhlScanAudioService.playForState).toHaveBeenCalledTimes(1);
+    }));
+
+    it('TECHNICAL_ERROR → Warn-Ton genau einmal', fakeAsync(() => {
+      const mockError = new HttpErrorResponse({
+        error: { errorCode: 'DHL_CONNECTIVITY_ERROR', message: 'Timeout' },
+        status: 504,
+        statusText: 'Gateway Timeout'
+      });
+      mockDhlErrorService.classifyTrackingValidationError.and.returnValue('TECHNICAL_ERROR');
+      mockDhlService.validateTrackingCode.and.returnValue(throwError(() => mockError));
+      triggerValidation(VALID_CODE);
+
+      expect(mockDhlScanAudioService.playForState).toHaveBeenCalledWith('TECHNICAL_ERROR');
+      expect(mockDhlScanAudioService.playForState).toHaveBeenCalledTimes(1);
+    }));
+
+    it('Ton kommt NICHT sofort beim Scan, sondern erst nach der (debounced) DHL-Antwort', fakeAsync(() => {
+      mockDhlService.validateTrackingCode.and.returnValue(of(mockValidResponse()));
+      component.onTrackingCodeChange(VALID_CODE);
+
+      // Vor Ablauf des Debounce (kein tick()) darf noch KEIN Ton gespielt worden sein.
+      expect(mockDhlScanAudioService.playForState).not.toHaveBeenCalled();
+
+      tick(400);
+      expect(mockDhlScanAudioService.playForState).toHaveBeenCalledWith('VALID');
+    }));
+
+    it('kein mehrfaches Beepen durch doppelten Trigger desselben Codes (distinctUntilChanged)', fakeAsync(() => {
+      mockDhlService.validateTrackingCode.and.returnValue(of(mockValidResponse()));
+      component.onTrackingCodeChange(VALID_CODE);
+      component.onTrackingCodeChange(VALID_CODE);
+      tick(400);
+
+      expect(mockDhlScanAudioService.playForState).toHaveBeenCalledTimes(1);
+    }));
+
+    it('neuer Scan ersetzt INVALID-Zustand → alter Ton-Zustand irrelevant, neue DHL-Antwort spielt eigenen Ton', fakeAsync(() => {
+      mockDhlService.validateTrackingCode.and.returnValue(of(mockNotFoundResponse('HDHSJ27373')));
+      triggerValidation('HDHSJ27373');
+      expect(mockDhlScanAudioService.playForState).toHaveBeenCalledWith('INVALID');
+
+      mockDhlScanAudioService.playForState.calls.reset();
+      mockDhlService.validateTrackingCode.and.returnValue(of(mockValidResponse()));
+      triggerValidation(VALID_CODE);
+
+      expect(mockDhlScanAudioService.playForState).toHaveBeenCalledWith('VALID');
+      expect(mockDhlScanAudioService.playForState).toHaveBeenCalledTimes(1);
+    }));
   });
 
   describe('VALID → Tracking-Code geändert → sofort IDLE + disabled', () => {

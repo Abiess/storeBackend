@@ -3460,6 +3460,11 @@
       "manualSlot": "Manual Selection",
       "selectSlot": "Select a free storage slot:"
     },
+    "settings": {
+      "scanSounds": "Scan sounds",
+      "scanSoundsOn": "🔊 On",
+      "scanSoundsOff": "🔇 Off"
+    },
     "plan": {
       "title": "Warehouse Plan",
       "layoutMode": "Layout Mode",

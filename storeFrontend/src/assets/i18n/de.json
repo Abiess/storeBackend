@@ -3493,6 +3493,11 @@
       "scanner": "Scanner",
       "tracking": "Tracking-Erfassung"
     },
+    "settings": {
+      "scanSounds": "Scan-Töne",
+      "scanSoundsOn": "🔊 Ein",
+      "scanSoundsOff": "🔇 Aus"
+    },
     "plan": {
       "title": "Lagerplan",
       "layoutMode": "Lagerplan-Art",

@@ -7,6 +7,7 @@ import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { DhlService, DhlStoreParcelRequestV2, DhlParcel, DhlSlot, DhlTrackingValidationResponse } from '@app/core/services/dhl.service';
 import { DhlErrorService } from '@app/core/services/dhl-error.service';
+import { DhlScanAudioService } from '@app/core/services/dhl-scan-audio.service';
 import { BarcodeInputComponent } from '@app/shared/components/barcode-input/barcode-input.component';
 import { DhlSlotGridComponent } from './dhl-slot-grid.component';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
@@ -52,6 +53,9 @@ export type TrackingInvalidReason = 'NOT_FOUND' | 'VALIDATION_ERROR';
           ← {{ 'common.back' | translate }}
         </button>
         <h1>📦 {{ 'dhl.storeParcel.title' | translate }}</h1>
+        <button class="sound-toggle-btn" type="button" (click)="toggleScanSounds()" [attr.aria-pressed]="scanSoundsEnabled()">
+          {{ 'dhl.settings.scanSounds' | translate }}: {{ (scanSoundsEnabled() ? 'dhl.settings.scanSoundsOn' : 'dhl.settings.scanSoundsOff') | translate }}
+        </button>
       </div>
 
       <!-- Success Screen -->
@@ -234,6 +238,23 @@ export type TrackingInvalidReason = 'NOT_FOUND' | 'VALIDATION_ERROR';
       font-size: 1.8rem;
       margin: 0;
       color: #333;
+    }
+
+    .sound-toggle-btn {
+      margin-top: 0.5rem;
+      background: #f3f3f7;
+      border: 1px solid #ddd;
+      border-radius: 999px;
+      padding: 0.35rem 0.9rem;
+      font-size: 0.85rem;
+      color: #555;
+      cursor: pointer;
+    }
+
+    .sound-toggle-btn[aria-pressed="true"] {
+      background: #eef1fd;
+      border-color: #667eea;
+      color: #4a5bc4;
     }
 
     .success-screen {
@@ -500,6 +521,7 @@ export class DhlStoreParcelComponent implements OnInit {
   private router = inject(Router);
   private dhlService = inject(DhlService);
   private dhlErrorService = inject(DhlErrorService);
+  private dhlScanAudioService = inject(DhlScanAudioService);
   private destroyRef = inject(DestroyRef);
 
   @ViewChild('barcodeInput') barcodeInputRef?: BarcodeInputComponent;
@@ -521,6 +543,9 @@ export class DhlStoreParcelComponent implements OnInit {
   success = signal(false);
   storedParcel = signal<DhlParcel | null>(null);
 
+  // Nutzer-Einstellung "Scan-Töne" (localStorage, siehe DhlScanAudioService)
+  scanSoundsEnabled = signal<boolean>(true);
+
   // TEIL 1: Fachlicher DHL-Validierungszustand (IDLE/VALIDATING/VALID/INVALID/TECHNICAL_ERROR)
   validationState = signal<TrackingValidationState>('IDLE');
   // Feinere Unterscheidung bei validationState() === 'INVALID' (NOT_FOUND vs. VALIDATION_ERROR)
@@ -538,6 +563,7 @@ export class DhlStoreParcelComponent implements OnInit {
   ngOnInit(): void {
     this.extractStoreId();
     this.loadSlots();
+    this.scanSoundsEnabled.set(this.dhlScanAudioService.isEnabled());
     this.trackingCodeChange$
       .pipe(
         debounceTime(400),
@@ -577,6 +603,12 @@ export class DhlStoreParcelComponent implements OnInit {
   setTrackingMode(mode: 'scanner' | 'manual'): void {
     this.trackingMode.set(mode);
     this.error.set(null);
+  }
+
+  toggleScanSounds(): void {
+    const next = !this.scanSoundsEnabled();
+    this.scanSoundsEnabled.set(next);
+    this.dhlScanAudioService.setEnabled(next);
   }
 
   setSlotMode(mode: 'auto' | 'manual'): void {
@@ -657,6 +689,8 @@ export class DhlStoreParcelComponent implements OnInit {
             this.validationState.set('VALID');
             this.validatedResult.set(result);
             this.trackingCode = result.pieceCode || result.trackingCode;
+            // Audio-Feedback ERST NACH der DHL-Antwort (nicht beim Scan selbst).
+            this.dhlScanAudioService.playForState('VALID');
             // Auch nach VALID: nächster Scan (z.B. anderes Paket) soll ersetzen,
             // nicht an den kanonischen Code angehängt werden.
             this.prepareForNextScan();
@@ -667,6 +701,7 @@ export class DhlStoreParcelComponent implements OnInit {
             this.validationState.set('INVALID');
             this.invalidReason.set('NOT_FOUND');
             this.validatedResult.set(null);
+            this.dhlScanAudioService.playForState('INVALID');
             this.prepareForNextScan();
           }
         },
@@ -682,10 +717,12 @@ export class DhlStoreParcelComponent implements OnInit {
           this.validatedResult.set(null);
           if (state === 'INVALID') {
             this.invalidReason.set('VALIDATION_ERROR');
+            this.dhlScanAudioService.playForState('INVALID');
             // Fachlicher Fehler: Inline-Status-Box zeigt bereits die passende
             // Meldung - kein zusätzlicher Toast nötig (Barcode-Scan-UX).
             this.prepareForNextScan();
           } else {
+            this.dhlScanAudioService.playForState('TECHNICAL_ERROR');
             this.dhlErrorService.handleError(err);
             // Auch bei TECHNICAL_ERROR: nächster Scan soll den alten Code
             // ersetzen, nicht anhängen.

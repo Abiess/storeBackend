@@ -3368,6 +3368,11 @@
       "selected": "المحدد",
       "tracking": "إدخال رمز التتبع"
     },
+    "settings": {
+      "scanSounds": "أصوات المسح",
+      "scanSoundsOn": "🔊 تشغيل",
+      "scanSoundsOff": "🔇 إيقاف"
+    },
     "plan": {
       "title": "خطة المستودع",
       "layoutMode": "نوع الخطة",
