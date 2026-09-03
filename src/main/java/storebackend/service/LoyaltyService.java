@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import storebackend.dto.LoyaltyAccountDTO;
+import storebackend.dto.LoyaltyAccountListItemDTO;
 import storebackend.dto.LoyaltyCustomerOptionDTO;
 import storebackend.dto.LoyaltyPurchaseResponse;
 import storebackend.entity.*;
@@ -18,7 +19,11 @@ import storebackend.repository.StoreRepository;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Loyalty Service (Bonuspunkte-MVP)
@@ -335,6 +340,51 @@ public class LoyaltyService {
             .toList();
     }
 
+    /**
+     * Lädt alle Loyalty-Accounts eines Stores für die "Bonuskarten"-Übersicht
+     * (ResponsiveDataList auf der Loyalty-Seite).
+     *
+     * Pro Account wird der primäre/erste (bevorzugt aktive) Identifier sowie
+     * der Zeitpunkt der letzten EARN-Transaction ermittelt - beides über
+     * genau je eine zusätzliche Query (kein N+1: 3 Queries insgesamt,
+     * unabhängig von der Anzahl der Accounts).
+     *
+     * @param storeId Store ID
+     * @return Listen-Einträge, neueste Accounts zuerst
+     */
+    @Transactional(readOnly = true)
+    public List<LoyaltyAccountListItemDTO> listAccounts(Long storeId) {
+        List<LoyaltyAccount> accounts = loyaltyAccountRepository.findAllByStoreIdWithCustomer(storeId);
+
+        Map<Long, LoyaltyIdentifier> primaryIdentifierByAccountId = new HashMap<>();
+        for (LoyaltyIdentifier identifier : loyaltyIdentifierRepository.findByStoreIdOrderByCreatedAtAsc(storeId)) {
+            Long accountId = identifier.getLoyaltyAccount().getId();
+            LoyaltyIdentifier current = primaryIdentifierByAccountId.get(accountId);
+            if (current == null
+                || (current.getStatus() != LoyaltyIdentifierStatus.ACTIVE
+                    && identifier.getStatus() == LoyaltyIdentifierStatus.ACTIVE)) {
+                // Erster gefundener Identifier je Account (älteste zuerst), aber ein
+                // AKTIVER Identifier verdrängt einen bereits gemerkten inaktiven.
+                primaryIdentifierByAccountId.put(accountId, identifier);
+            }
+        }
+
+        Map<Long, LocalDateTime> lastEarnByAccountId = loyaltyTransactionRepository
+            .findLastEarnByStoreId(storeId).stream()
+            .collect(Collectors.toMap(
+                LoyaltyTransactionRepository.LastEarnProjection::getLoyaltyAccountId,
+                LoyaltyTransactionRepository.LastEarnProjection::getLastEarnAt
+            ));
+
+        return accounts.stream()
+            .map(account -> toListItemDTO(
+                account,
+                primaryIdentifierByAccountId.get(account.getId()),
+                lastEarnByAccountId.get(account.getId())
+            ))
+            .toList();
+    }
+
     private LoyaltyIdentifier findActiveIdentifier(Long storeId, String identifier) {
         if (identifier == null || identifier.isBlank()) {
             throw new IllegalArgumentException("identifier must not be empty");
@@ -370,6 +420,23 @@ public class LoyaltyService {
         dto.setLifetimePoints(account.getLifetimePoints());
         dto.setCurrencyCode(store.getCurrencyCode() != null ? store.getCurrencyCode().name() : null);
         dto.setAnonymous(profile == null);
+        return dto;
+    }
+
+    private LoyaltyAccountListItemDTO toListItemDTO(
+        LoyaltyAccount account, LoyaltyIdentifier primaryIdentifier, LocalDateTime lastPurchaseAt
+    ) {
+        CustomerProfile profile = account.getCustomerProfile();
+        LoyaltyAccountListItemDTO dto = new LoyaltyAccountListItemDTO();
+        dto.setLoyaltyAccountId(account.getId());
+        dto.setCustomerProfileId(profile != null ? profile.getId() : null);
+        dto.setCustomerName(resolveCustomerName(profile));
+        dto.setAnonymous(profile == null);
+        dto.setIdentifier(primaryIdentifier != null ? primaryIdentifier.getIdentifier() : null);
+        dto.setStatus(primaryIdentifier != null ? primaryIdentifier.getStatus().name() : null);
+        dto.setPointsBalance(account.getPointsBalance());
+        dto.setCreatedAt(account.getCreatedAt());
+        dto.setLastPurchaseAt(lastPurchaseAt);
         return dto;
     }
 

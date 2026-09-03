@@ -26,6 +26,7 @@ import storebackend.util.StoreAccessChecker;
  * - POST /api/stores/{storeId}/loyalty/register                → Code für bestehenden Kunden registrieren (MVP-Hilfsendpoint)
  * - POST /api/stores/{storeId}/loyalty/issue-card               → neue ANONYME Bonuskarte ausgeben (Laufkundschaft ohne Konto)
  * - POST /api/stores/{storeId}/loyalty/link-customer             → anonymen Account nachträglich einem Kunden zuordnen ("Kunde verknüpfen")
+ * - GET  /api/stores/{storeId}/loyalty/accounts                  → alle Loyalty-Accounts des Stores ("Bonuskarten"-Übersicht)
  *
  * WICHTIG: "code" ist heute ein manuell eingegebener Testcode und wird
  * später 1:1 durch die UID einer NFC-Karte ersetzt – ohne API-Änderung.
@@ -166,6 +167,22 @@ public class LoyaltyController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (RuntimeException e) {
             log.error("Loyalty customer linking failed: store={}, error={}", storeId, e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/accounts")
+    public ResponseEntity<?> listAccounts(
+        @PathVariable Long storeId,
+        @AuthenticationPrincipal User user
+    ) {
+        if (!isAuthorized(storeId, user)) {
+            return unauthorizedOrForbidden(user);
+        }
+        try {
+            return ResponseEntity.ok(loyaltyService.listAccounts(storeId));
+        } catch (RuntimeException e) {
+            log.error("Loyalty account listing failed: store={}, error={}", storeId, e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }

@@ -3271,6 +3271,30 @@
       "registerFailed": "تعذّر تسجيل الرمز",
       "issueCardFailed": "تعذّر إصدار بطاقة الولاء",
       "linkFailed": "تعذّر ربط العميل"
+    },
+    "list": {
+      "heading": "بطاقات الولاء",
+      "colCustomer": "العميل",
+      "colCode": "رمز البطاقة",
+      "colPoints": "النقاط",
+      "colSince": "منذ",
+      "colLastPurchase": "آخر عملية شراء",
+      "colStatus": "الحالة",
+      "colActions": "الإجراءات",
+      "notRegistered": "غير مسجّل",
+      "sinceToday": "اليوم",
+      "sinceOneDay": "يوم واحد",
+      "sinceDays": "{{days}} أيام",
+      "statusActive": "نشط",
+      "statusBlocked": "محظور",
+      "statusReplaced": "مستبدل",
+      "filterAll": "الكل",
+      "filterRegistered": "عملاء مسجّلون",
+      "filterAnonymous": "بطاقات غير مسجّلة",
+      "actionOpen": "فتح",
+      "actionLinkCustomer": "ربط العميل",
+      "searchPlaceholder": "ابحث بالاسم أو رمز البطاقة...",
+      "emptyMessage": "لا توجد بطاقات ولاء بعد"
     }
   },
   "dhl": {

@@ -3,8 +3,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
-import { LoyaltyService, LoyaltyAccount, LoyaltyPurchaseResponse, LoyaltyCustomerOption } from '@app/core/services/loyalty.service';
+import { TranslationService } from '@app/core/services/translation.service';
+import { LoyaltyService, LoyaltyAccount, LoyaltyPurchaseResponse, LoyaltyCustomerOption, LoyaltyAccountListItem } from '@app/core/services/loyalty.service';
 import { LucideAngularModule } from 'lucide-angular';
+import { ResponsiveDataListComponent, ColumnConfig, ActionConfig } from '@app/shared/components/responsive-data-list/responsive-data-list.component';
+import { FilterBarComponent, FilterChip } from '@app/shared/components/filter-bar/filter-bar.component';
 
 /**
  * Loyalty Test-Flow (MVP)
@@ -29,7 +32,7 @@ import { LucideAngularModule } from 'lucide-angular';
 @Component({
   selector: 'app-loyalty',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe, LucideAngularModule],
+  imports: [CommonModule, FormsModule, TranslatePipe, LucideAngularModule, ResponsiveDataListComponent, FilterBarComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './loyalty.component.html',
   styleUrls: ['./loyalty.component.scss']
@@ -38,6 +41,7 @@ export class LoyaltyComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private loyaltyService = inject(LoyaltyService);
+  private translationService = inject(TranslationService);
 
   storeId!: number;
 
@@ -68,8 +72,90 @@ export class LoyaltyComponent implements OnInit {
   purchaseError = signal<string | null>(null);
   lastPurchase = signal<LoyaltyPurchaseResponse | null>(null);
 
+  // ─── "Bonuskarten"-Übersicht (ResponsiveDataList, siehe responsive-data-list.component.ts) ───
+  accounts = signal<LoyaltyAccountListItem[]>([]);
+  accountsLoading = signal(false);
+  accountsFilter = signal<'ALL' | 'REGISTERED' | 'ANONYMOUS'>('ALL');
+
+  get filteredAccounts(): LoyaltyAccountListItem[] {
+    const filter = this.accountsFilter();
+    const list = this.accounts();
+    if (filter === 'REGISTERED') {
+      return list.filter(a => !a.anonymous);
+    }
+    if (filter === 'ANONYMOUS') {
+      return list.filter(a => a.anonymous);
+    }
+    return list;
+  }
+
+  get accountFilterChips(): FilterChip[] {
+    return [
+      { value: 'ALL', label: this.translationService.translate('loyalty.list.filterAll') },
+      { value: 'REGISTERED', label: this.translationService.translate('loyalty.list.filterRegistered') },
+      { value: 'ANONYMOUS', label: this.translationService.translate('loyalty.list.filterAnonymous') }
+    ];
+  }
+
+  accountColumns: ColumnConfig[] = [
+    {
+      key: 'customerName',
+      label: this.translationService.translate('loyalty.list.colCustomer'),
+      type: 'text',
+      sortable: true,
+      formatFn: (v, item: LoyaltyAccountListItem) =>
+        item.anonymous ? this.translationService.translate('loyalty.list.notRegistered') : (v || '-')
+    },
+    {
+      key: 'identifier',
+      label: this.translationService.translate('loyalty.list.colCode'),
+      type: 'text',
+      formatFn: (v) => v || '-'
+    },
+    {
+      key: 'pointsBalance',
+      label: this.translationService.translate('loyalty.list.colPoints'),
+      type: 'number',
+      sortable: true
+    },
+    {
+      key: 'createdAt',
+      label: this.translationService.translate('loyalty.list.colSince'),
+      type: 'text',
+      formatFn: (v) => this.formatSince(v)
+    },
+    {
+      key: 'lastPurchaseAt',
+      label: this.translationService.translate('loyalty.list.colLastPurchase'),
+      type: 'date',
+      hideOnMobile: true
+    },
+    {
+      key: 'status',
+      label: this.translationService.translate('loyalty.list.colStatus'),
+      type: 'badge',
+      formatFn: (v) => this.formatIdentifierStatus(v),
+      badgeClass: (v) => v === 'ACTIVE' ? 'status-active' : v === 'BLOCKED' ? 'status-inactive' : 'status-archived'
+    }
+  ];
+
+  accountActions: ActionConfig[] = [
+    {
+      icon: '👁',
+      label: this.translationService.translate('loyalty.list.actionOpen'),
+      handler: (item: LoyaltyAccountListItem) => this.openAccountFromList(item)
+    },
+    {
+      icon: '🔗',
+      label: this.translationService.translate('loyalty.list.actionLinkCustomer'),
+      visible: (item: LoyaltyAccountListItem) => item.anonymous,
+      handler: (item: LoyaltyAccountListItem) => this.linkCustomerFromList(item)
+    }
+  ];
+
   ngOnInit(): void {
     this.extractStoreId();
+    this.loadAccounts();
   }
 
   private extractStoreId(): void {
@@ -140,6 +226,7 @@ export class LoyaltyComponent implements OnInit {
         this.codeNotFound.set(false);
         this.searchError.set(null);
         this.resetAssignFlow();
+        this.loadAccounts();
       },
       error: (error) => {
         this.issuingCard.set(false);
@@ -214,6 +301,7 @@ export class LoyaltyComponent implements OnInit {
           this.registering.set(false);
           this.account.set(updatedAccount);
           this.resetAssignFlow();
+          this.loadAccounts();
         },
         error: (error) => {
           this.registering.set(false);
@@ -241,6 +329,7 @@ export class LoyaltyComponent implements OnInit {
         this.searchError.set(null);
         this.codeNotFound.set(false);
         this.resetAssignFlow();
+        this.loadAccounts();
       },
       error: (error) => {
         this.registering.set(false);
@@ -295,6 +384,7 @@ export class LoyaltyComponent implements OnInit {
           pointsBalance: response.newBalance
         });
         this.purchaseAmount = null;
+        this.loadAccounts();
       },
       error: (error) => {
         this.processingPurchase.set(false);
@@ -318,5 +408,92 @@ export class LoyaltyComponent implements OnInit {
       return error.error;
     }
     return fallbackKey;
+  }
+
+  // ─── "Bonuskarten"-Übersicht ───
+
+  loadAccounts(): void {
+    if (!this.storeId) {
+      return;
+    }
+    this.accountsLoading.set(true);
+    this.loyaltyService.listAccounts(this.storeId).subscribe({
+      next: (list) => {
+        this.accounts.set(list);
+        this.accountsLoading.set(false);
+      },
+      error: () => {
+        this.accounts.set([]);
+        this.accountsLoading.set(false);
+      }
+    });
+  }
+
+  onAccountsFilterChange(value: string): void {
+    this.accountsFilter.set(value as 'ALL' | 'REGISTERED' | 'ANONYMOUS');
+  }
+
+  formatSince(value: string): string {
+    if (!value) {
+      return '-';
+    }
+    const created = new Date(value).getTime();
+    if (isNaN(created)) {
+      return '-';
+    }
+    const days = Math.max(0, Math.floor((Date.now() - created) / (1000 * 60 * 60 * 24)));
+    if (days === 0) {
+      return this.translationService.translate('loyalty.list.sinceToday');
+    }
+    if (days === 1) {
+      return this.translationService.translate('loyalty.list.sinceOneDay');
+    }
+    return this.translationService.translate('loyalty.list.sinceDays', { days: String(days) });
+  }
+
+  private formatIdentifierStatus(status: string | null): string {
+    if (status === 'ACTIVE') {
+      return this.translationService.translate('loyalty.list.statusActive');
+    }
+    if (status === 'BLOCKED') {
+      return this.translationService.translate('loyalty.list.statusBlocked');
+    }
+    if (status === 'REPLACED') {
+      return this.translationService.translate('loyalty.list.statusReplaced');
+    }
+    return '-';
+  }
+
+  openAccountFromList(item: LoyaltyAccountListItem): void {
+    if (!item.identifier) {
+      return;
+    }
+    this.code = item.identifier;
+    this.searchCustomer();
+  }
+
+  linkCustomerFromList(item: LoyaltyAccountListItem): void {
+    if (!item.identifier) {
+      return;
+    }
+    this.code = item.identifier;
+    this.searchError.set(null);
+    this.purchaseError.set(null);
+    this.lastPurchase.set(null);
+    this.resetAssignFlow();
+    this.searching.set(true);
+
+    this.loyaltyService.lookup(this.storeId, item.identifier).subscribe({
+      next: (account) => {
+        this.searching.set(false);
+        this.account.set(account);
+        this.startLinkCustomer();
+      },
+      error: (error) => {
+        this.searching.set(false);
+        this.account.set(null);
+        this.searchError.set(this.extractErrorMessage(error, 'loyalty.errors.notFound'));
+      }
+    });
   }
 }

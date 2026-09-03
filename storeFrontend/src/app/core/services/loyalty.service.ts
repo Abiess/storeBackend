@@ -60,6 +60,25 @@ export interface LoyaltyCustomerOption {
 }
 
 /**
+ * Loyalty Account – Listen-Eintrag ("Bonuskarten"-Übersicht)
+ * Schlanke Projektion für ResponsiveDataList, siehe LoyaltyAccountListItemDTO.
+ */
+export interface LoyaltyAccountListItem {
+  loyaltyAccountId: number;
+  customerProfileId: number | null;
+  customerName: string | null;
+  anonymous: boolean;
+  /** Primärer/erster Karten-/Kundencode, null falls (theoretisch) keiner existiert */
+  identifier: string | null;
+  /** 'ACTIVE' | 'BLOCKED' | 'REPLACED', null falls kein Identifier existiert */
+  status: string | null;
+  pointsBalance: number;
+  createdAt: string;
+  /** ISO-Datum der letzten EARN-Transaction, null falls noch kein Einkauf zugeordnet wurde */
+  lastPurchaseAt: string | null;
+}
+
+/**
  * Loyalty Service
  * API-Kommunikation für das Bonuspunkte-System (MVP: manueller Karten-/Kundencode)
  */
@@ -135,6 +154,16 @@ export class LoyaltyService {
     return this.http.post<LoyaltyAccount>(
       `${this.apiUrl}/stores/${storeId}/loyalty/link-customer`,
       request
+    );
+  }
+
+  /**
+   * Lädt alle Loyalty-Accounts des Stores für die "Bonuskarten"-Übersicht.
+   * GET /api/stores/{storeId}/loyalty/accounts
+   */
+  listAccounts(storeId: number): Observable<LoyaltyAccountListItem[]> {
+    return this.http.get<LoyaltyAccountListItem[]>(
+      `${this.apiUrl}/stores/${storeId}/loyalty/accounts`
     );
   }
 }

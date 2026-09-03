@@ -3363,6 +3363,30 @@
       "registerFailed": "Could not register code",
       "issueCardFailed": "Could not issue loyalty card",
       "linkFailed": "Could not link customer"
+    },
+    "list": {
+      "heading": "Loyalty Cards",
+      "colCustomer": "Customer",
+      "colCode": "Card Code",
+      "colPoints": "Points",
+      "colSince": "Since",
+      "colLastPurchase": "Last Purchase",
+      "colStatus": "Status",
+      "colActions": "Actions",
+      "notRegistered": "Not registered",
+      "sinceToday": "today",
+      "sinceOneDay": "1 day",
+      "sinceDays": "{{days}} days",
+      "statusActive": "Active",
+      "statusBlocked": "Blocked",
+      "statusReplaced": "Replaced",
+      "filterAll": "All",
+      "filterRegistered": "Registered customers",
+      "filterAnonymous": "Anonymous cards",
+      "actionOpen": "Open",
+      "actionLinkCustomer": "Link customer",
+      "searchPlaceholder": "Search name, card code...",
+      "emptyMessage": "No loyalty cards yet"
     }
   },
   "dhl": {

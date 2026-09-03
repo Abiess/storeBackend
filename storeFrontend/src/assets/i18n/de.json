@@ -3396,6 +3396,30 @@
       "registerFailed": "Code konnte nicht registriert werden",
       "issueCardFailed": "Bonuskarte konnte nicht ausgegeben werden",
       "linkFailed": "Kunde konnte nicht verknüpft werden"
+    },
+    "list": {
+      "heading": "Bonuskarten",
+      "colCustomer": "Kunde",
+      "colCode": "Kartencode",
+      "colPoints": "Punkte",
+      "colSince": "Seit",
+      "colLastPurchase": "Letzter Einkauf",
+      "colStatus": "Status",
+      "colActions": "Aktionen",
+      "notRegistered": "Nicht registriert",
+      "sinceToday": "heute",
+      "sinceOneDay": "1 Tag",
+      "sinceDays": "{{days}} Tage",
+      "statusActive": "Aktiv",
+      "statusBlocked": "Gesperrt",
+      "statusReplaced": "Ersetzt",
+      "filterAll": "Alle",
+      "filterRegistered": "Registrierte Kunden",
+      "filterAnonymous": "Anonyme Karten",
+      "actionOpen": "Öffnen",
+      "actionLinkCustomer": "Kunde verknüpfen",
+      "searchPlaceholder": "Name, Kartencode suchen...",
+      "emptyMessage": "Noch keine Bonuskarten vorhanden"
     }
   },
   "dhl": {

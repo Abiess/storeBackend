@@ -235,4 +235,32 @@
       </button>
     </div>
   }
+
+  <!-- ════════ "Bonuskarten"-Übersicht ════════ -->
+  <div class="loyalty-card accounts-section">
+    <h2 class="accounts-heading">
+      <lucide-icon name="credit-card" [size]="20"></lucide-icon>
+      {{ 'loyalty.list.heading' | translate }}
+    </h2>
+
+    <app-filter-bar
+      [chips]="accountFilterChips"
+      [activeValue]="accountsFilter()"
+      (filterChange)="onAccountsFilterChange($event)">
+    </app-filter-bar>
+
+    <app-responsive-data-list
+      [items]="filteredAccounts"
+      [columns]="accountColumns"
+      [actions]="accountActions"
+      [loading]="accountsLoading()"
+      trackBy="loyaltyAccountId"
+      [searchable]="true"
+      [searchPlaceholder]="'loyalty.list.searchPlaceholder' | translate"
+      [emptyMessage]="'loyalty.list.emptyMessage' | translate"
+      emptyIcon="💳"
+      [actionsLabel]="'loyalty.list.colActions' | translate">
+    </app-responsive-data-list>
+  </div>
 </div>
+

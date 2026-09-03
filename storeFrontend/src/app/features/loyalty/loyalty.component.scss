@@ -1,5 +1,5 @@
 .loyalty-container {
-  max-width: 640px;
+  max-width: 960px;
   margin: 0 auto;
   padding: 24px 16px 64px;
 }
@@ -30,6 +30,20 @@
   padding: 20px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
   margin-bottom: 20px;
+}
+
+.accounts-section {
+  margin-top: 32px;
+}
+
+.accounts-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 16px;
+  color: #1f2933;
 }
 
 .loyalty-label {
