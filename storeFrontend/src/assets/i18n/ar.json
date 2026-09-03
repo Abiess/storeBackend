@@ -3237,9 +3237,18 @@
     "pointsEarned": "النقاط المكتسبة",
     "newBalance": "الرصيد الجديد",
     "startOver": "عميل جديد",
+    "registerHint": "لم يتم العثور على عميل بالرمز \"{{code}}\". يرجى اختيار عميل موجود لتسجيل هذا الرمز.",
+    "customerSearchLabel": "بحث عن عميل",
+    "customerSearchPlaceholder": "الاسم أو البريد الإلكتروني أو الهاتف...",
+    "searchingCustomers": "جاري تحميل العملاء...",
+    "noCustomersFound": "لم يتم العثور على عملاء",
+    "alreadyRegistered": "مسجّل بالفعل",
+    "registerButton": "تسجيل الرمز",
+    "cancel": "إلغاء",
     "errors": {
       "notFound": "لم يتم العثور على عميل بهذا الرمز",
-      "purchaseFailed": "تعذّر ربط عملية الشراء"
+      "purchaseFailed": "تعذّر ربط عملية الشراء",
+      "registerFailed": "تعذّر تسجيل الرمز"
     }
   },
   "dhl": {

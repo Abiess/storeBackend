@@ -20,6 +20,7 @@ import storebackend.util.StoreAccessChecker;
  * Endpoints:
  * - GET  /api/stores/{storeId}/loyalty/lookup?code=BONUS-0001   → Kunde + Punktestand
  * - POST /api/stores/{storeId}/loyalty/purchase                → Einkauf zuordnen (manueller Test-Flow)
+ * - GET  /api/stores/{storeId}/loyalty/customers?q=...          → bestehende Store-Kunden suchen (für Registrierung)
  * - POST /api/stores/{storeId}/loyalty/register                → Code für bestehenden Kunden registrieren (MVP-Hilfsendpoint)
  *
  * WICHTIG: "code" ist heute ein manuell eingegebener Testcode und wird
@@ -76,6 +77,23 @@ public class LoyaltyController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (RuntimeException e) {
             log.error("Loyalty purchase failed: store={}, error={}", storeId, e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/customers")
+    public ResponseEntity<?> searchCustomers(
+        @PathVariable Long storeId,
+        @RequestParam(value = "q", required = false) String query,
+        @AuthenticationPrincipal User user
+    ) {
+        if (!isAuthorized(storeId, user)) {
+            return unauthorizedOrForbidden(user);
+        }
+        try {
+            return ResponseEntity.ok(loyaltyService.searchStoreCustomers(storeId, query));
+        } catch (RuntimeException e) {
+            log.error("Loyalty customer search failed: store={}, error={}", storeId, e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }

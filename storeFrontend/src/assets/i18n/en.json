@@ -3329,9 +3329,18 @@
     "pointsEarned": "Points earned",
     "newBalance": "New balance",
     "startOver": "New customer",
+    "registerHint": "No customer found with code \"{{code}}\". Please select an existing customer to register this code.",
+    "customerSearchLabel": "Search customer",
+    "customerSearchPlaceholder": "Name, email or phone...",
+    "searchingCustomers": "Loading customers...",
+    "noCustomersFound": "No customers found",
+    "alreadyRegistered": "already registered",
+    "registerButton": "Register code",
+    "cancel": "Cancel",
     "errors": {
       "notFound": "No customer found with this code",
-      "purchaseFailed": "Could not assign purchase"
+      "purchaseFailed": "Could not assign purchase",
+      "registerFailed": "Could not register code"
     }
   },
   "dhl": {

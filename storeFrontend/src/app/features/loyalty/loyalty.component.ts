@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
-import { LoyaltyService, LoyaltyAccount, LoyaltyPurchaseResponse } from '@app/core/services/loyalty.service';
+import { LoyaltyService, LoyaltyAccount, LoyaltyPurchaseResponse, LoyaltyCustomerOption } from '@app/core/services/loyalty.service';
 import { LucideAngularModule } from 'lucide-angular';
 
 /**
@@ -40,6 +40,15 @@ export class LoyaltyComponent implements OnInit {
   searchError = signal<string | null>(null);
   account = signal<LoyaltyAccount | null>(null);
 
+  // ─── Code-Registrierung (wenn lookupByIdentifier() keinen Treffer liefert) ───
+  codeNotFound = signal(false);
+  customerQuery = '';
+  customerOptions = signal<LoyaltyCustomerOption[]>([]);
+  searchingCustomers = signal(false);
+  selectedCustomer = signal<LoyaltyCustomerOption | null>(null);
+  registering = signal(false);
+  registerError = signal<string | null>(null);
+
   processingPurchase = signal(false);
   purchaseError = signal<string | null>(null);
   lastPurchase = signal<LoyaltyPurchaseResponse | null>(null);
@@ -72,6 +81,7 @@ export class LoyaltyComponent implements OnInit {
     this.account.set(null);
     this.lastPurchase.set(null);
     this.purchaseError.set(null);
+    this.resetRegistration();
     this.searching.set(true);
 
     this.loyaltyService.lookup(this.storeId, trimmedCode).subscribe({
@@ -83,6 +93,11 @@ export class LoyaltyComponent implements OnInit {
         this.searching.set(false);
         this.account.set(null);
         this.searchError.set(this.extractErrorMessage(error, 'loyalty.errors.notFound'));
+        if (error?.status === 404) {
+          // Code existiert nicht → Registrierungsmöglichkeit anbieten
+          this.codeNotFound.set(true);
+          this.loadCustomerOptions('');
+        }
       }
     });
   }
@@ -91,6 +106,72 @@ export class LoyaltyComponent implements OnInit {
     if (event.key === 'Enter') {
       this.searchCustomer();
     }
+  }
+
+  // ─── Code-Registrierung ───
+
+  onCustomerQueryChange(): void {
+    this.loadCustomerOptions(this.customerQuery.trim());
+  }
+
+  private loadCustomerOptions(query: string): void {
+    this.searchingCustomers.set(true);
+    this.loyaltyService.searchCustomers(this.storeId, query).subscribe({
+      next: (options) => {
+        this.customerOptions.set(options);
+        this.searchingCustomers.set(false);
+      },
+      error: () => {
+        this.customerOptions.set([]);
+        this.searchingCustomers.set(false);
+      }
+    });
+  }
+
+  selectCustomer(option: LoyaltyCustomerOption): void {
+    this.selectedCustomer.set(option);
+    this.registerError.set(null);
+  }
+
+  confirmRegister(): void {
+    const customer = this.selectedCustomer();
+    const trimmedCode = this.code.trim();
+    if (!customer || !trimmedCode || this.registering()) {
+      return;
+    }
+
+    this.registerError.set(null);
+    this.registering.set(true);
+
+    this.loyaltyService.register(this.storeId, {
+      customerProfileId: customer.customerProfileId,
+      identifier: trimmedCode
+    }).subscribe({
+      next: (account) => {
+        this.registering.set(false);
+        this.account.set(account);
+        this.searchError.set(null);
+        this.resetRegistration();
+      },
+      error: (error) => {
+        this.registering.set(false);
+        this.registerError.set(this.extractErrorMessage(error, 'loyalty.errors.registerFailed'));
+      }
+    });
+  }
+
+  cancelRegister(): void {
+    this.resetRegistration();
+    this.searchError.set(null);
+  }
+
+  private resetRegistration(): void {
+    this.codeNotFound.set(false);
+    this.customerQuery = '';
+    this.customerOptions.set([]);
+    this.selectedCustomer.set(null);
+    this.registering.set(false);
+    this.registerError.set(null);
   }
 
   canAssignPurchase(): boolean {
@@ -134,6 +215,7 @@ export class LoyaltyComponent implements OnInit {
     this.searchError.set(null);
     this.purchaseError.set(null);
     this.lastPurchase.set(null);
+    this.resetRegistration();
   }
 
   private extractErrorMessage(error: any, fallbackKey: string): string {

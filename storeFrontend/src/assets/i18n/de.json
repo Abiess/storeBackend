@@ -3362,9 +3362,18 @@
     "pointsEarned": "Erhaltene Punkte",
     "newBalance": "Neuer Punktestand",
     "startOver": "Neuer Kunde",
+    "registerHint": "Kein Kunde mit dem Code \"{{code}}\" gefunden. Bitte einen bestehenden Kunden auswählen, um diesen Code neu zu registrieren.",
+    "customerSearchLabel": "Kunde suchen",
+    "customerSearchPlaceholder": "Name, E-Mail oder Telefon...",
+    "searchingCustomers": "Kunden werden geladen...",
+    "noCustomersFound": "Keine Kunden gefunden",
+    "alreadyRegistered": "bereits registriert",
+    "registerButton": "Code registrieren",
+    "cancel": "Abbrechen",
     "errors": {
       "notFound": "Kein Kunde mit diesem Code gefunden",
-      "purchaseFailed": "Einkauf konnte nicht zugeordnet werden"
+      "purchaseFailed": "Einkauf konnte nicht zugeordnet werden",
+      "registerFailed": "Code konnte nicht registriert werden"
     }
   },
   "dhl": {

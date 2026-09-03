@@ -2,6 +2,7 @@ package storebackend.util;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -13,6 +14,9 @@ import storebackend.repository.StoreRepository;
 import storebackend.repository.StoreRoleRepository;
 import storebackend.repository.UserRepository;
 
+import jakarta.persistence.PersistenceException;
+import org.hibernate.HibernateException;
+import java.sql.SQLException;
 import java.util.Objects;
 
 /**
@@ -83,6 +87,7 @@ public class StoreAccessChecker {
             return isOwner;
             
         } catch (Exception e) {
+            rethrowIfTechnicalFailure(e);
             log.error("[ACCESS-ERROR] StoreAccessCheck failed for storeId={}: {}", 
                 storeId, e.getMessage(), e);
             return false;
@@ -142,9 +147,36 @@ public class StoreAccessChecker {
             return false;
             
         } catch (Exception e) {
+            rethrowIfTechnicalFailure(e);
             log.error("[ACCESS-ERROR] hasStoreAccess failed for storeId={}: {}", 
                     storeId, e.getMessage(), e);
             return false;
+        }
+    }
+
+    /**
+     * REGRESSION-FIX: Ein echter "kein Zugriff"-Check darf false liefern.
+     * Ein technischer DB-/SQL-/Hibernate-Fehler ist KEIN Access-Denied und
+     * darf nicht stillschweigend zu false (-> 403) degradiert werden, sonst
+     * werden Schemafehler fälschlich als "Access Denied" dargestellt.
+     *
+     * Prüft, ob die übergebene Exception (oder eine ihrer Ursachen) ein
+     * technischer Datenzugriffsfehler ist, und wirft sie in diesem Fall
+     * unverändert weiter (-> Spring Error Handling -> 500).
+     */
+    private void rethrowIfTechnicalFailure(Exception e) {
+        Throwable current = e;
+        while (current != null) {
+            if (current instanceof DataAccessException
+                || current instanceof PersistenceException
+                || current instanceof HibernateException
+                || current instanceof SQLException) {
+                if (e instanceof RuntimeException re) {
+                    throw re;
+                }
+                throw new IllegalStateException("Technical failure during store access check", e);
+            }
+            current = current.getCause();
         }
     }
 
@@ -253,6 +285,7 @@ public class StoreAccessChecker {
             return hasPermission;
             
         } catch (Exception e) {
+            rethrowIfTechnicalFailure(e);
             log.error("[PERMISSION-ERROR] Permission check failed for storeId={}, permission={}: {}", 
                 storeId, permission, e.getMessage(), e);
             return false;

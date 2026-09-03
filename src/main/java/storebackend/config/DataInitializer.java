@@ -6,6 +6,7 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.env.Environment;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,12 +36,19 @@ public class DataInitializer {
     private final DomainRepository domainRepository;
     private final PasswordEncoder passwordEncoder;
     private final Environment environment;
+    private final JdbcTemplate jdbcTemplate;
 
   @EventListener(ContextRefreshedEvent.class)
     public void initializeData() {
         log.info("Starting data initialization...");
 
         try {
+            // REGRESSION-FIX (Loyalty-MVP): NOT-NULL-Spalten reparieren, die
+            // Hibernate ddl-auto=update auf der befüllten stores-Tabelle nicht
+            // anlegen konnte (siehe V016__add_loyalty_store_settings.sql).
+            // Muss VOR allen anderen Store-Zugriffen laufen.
+            repairLoyaltyStoreColumns();
+
             // Plan-Initialisierung (lokal und production)
             initializePlans();
 
@@ -54,6 +62,44 @@ public class DataInitializer {
             log.error("Failed to initialize data: {}", e.getMessage());
             log.warn("This is normal on first deployment when tables are being created.");
             log.warn("The application will work after tables are created and service is restarted.");
+        }
+    }
+
+    /**
+     * Regression-Fix für den Loyalty-Store-Settings-Bug:
+     *
+     * Hibernate ddl-auto=update kann "ALTER TABLE stores ADD COLUMN ... NOT NULL"
+     * auf einer bereits befüllten Tabelle nicht ausführen (Postgres/H2 verweigern
+     * NOT-NULL-Spalten ohne Default bei existierenden Zeilen). Ohne diesen Fix
+     * fehlen die Spalten dauerhaft und JEDE Hibernate-Query auf Store schlägt fehl
+     * (u.a. StoreAccessChecker -> fälschlich 403 auf bestehenden Endpoints).
+     *
+     * Diese Methode ist bewusst NICHT über Flyway umgesetzt, da Flyway in diesem
+     * Projekt aktuell nicht aktiviert ist (siehe V016__add_loyalty_store_settings.sql
+     * für die äquivalente, dokumentierte SQL-Migration für eine spätere Flyway-Nutzung).
+     *
+     * Idempotent: ADD COLUMN IF NOT EXISTS, UPDATE nur WHERE ... IS NULL (keine
+     * bestehenden Werte werden überschrieben), SET DEFAULT/SET NOT NULL sind
+     * beliebig oft wiederholbar. Läuft bei jedem Start, ist ein No-Op sobald
+     * die Spalten korrekt angelegt sind.
+     */
+    private void repairLoyaltyStoreColumns() {
+        repairNotNullColumn("loyalty_enabled", "BOOLEAN", "FALSE");
+        repairNotNullColumn("loyalty_amount_step", "NUMERIC(15,2)", "10.00");
+        repairNotNullColumn("loyalty_points_per_step", "INTEGER", "1");
+    }
+
+    private void repairNotNullColumn(String column, String sqlType, String defaultLiteral) {
+        try {
+            jdbcTemplate.execute("ALTER TABLE stores ADD COLUMN IF NOT EXISTS " + column + " " + sqlType);
+            jdbcTemplate.update("UPDATE stores SET " + column + " = " + defaultLiteral + " WHERE " + column + " IS NULL");
+            jdbcTemplate.execute("ALTER TABLE stores ALTER COLUMN " + column + " SET DEFAULT " + defaultLiteral);
+            jdbcTemplate.execute("ALTER TABLE stores ALTER COLUMN " + column + " SET NOT NULL");
+            log.info("[SCHEMA-REPAIR] stores.{} OK (default={})", column, defaultLiteral);
+        } catch (Exception e) {
+            // Nicht fatal: Loggen und weitermachen (z.B. wenn Tabelle "stores" beim
+            // allerersten Deployment noch gar nicht existiert).
+            log.warn("[SCHEMA-REPAIR] Could not repair column stores.{}: {}", column, e.getMessage());
         }
     }
 

@@ -40,6 +40,78 @@
     }
   </div>
 
+  <!-- ════════ Code-Registrierung (kein Treffer für den eingegebenen Code) ════════ -->
+  @if (codeNotFound() && !account()) {
+    <div class="loyalty-card register-card">
+      <p class="register-hint">
+        <lucide-icon name="gift" [size]="18"></lucide-icon>
+        {{ 'loyalty.registerHint' | translate: { code: code.trim() } }}
+      </p>
+
+      <label class="loyalty-label">{{ 'loyalty.customerSearchLabel' | translate }}</label>
+      <input
+        type="text"
+        [(ngModel)]="customerQuery"
+        (ngModelChange)="onCustomerQueryChange()"
+        [placeholder]="'loyalty.customerSearchPlaceholder' | translate"
+        class="loyalty-input"
+      />
+
+      @if (searchingCustomers()) {
+        <p class="customer-list-status">
+          <lucide-icon name="loader-2" [size]="16" class="icon-spinning"></lucide-icon>
+          {{ 'loyalty.searchingCustomers' | translate }}
+        </p>
+      } @else if (customerOptions().length === 0) {
+        <p class="customer-list-status">{{ 'loyalty.noCustomersFound' | translate }}</p>
+      } @else {
+        <ul class="customer-options">
+          @for (option of customerOptions(); track option.customerProfileId) {
+            <li
+              class="customer-option"
+              [class.selected]="selectedCustomer()?.customerProfileId === option.customerProfileId"
+              [class.disabled]="option.alreadyRegistered"
+              (click)="!option.alreadyRegistered && selectCustomer(option)">
+              <div>
+                <strong>{{ option.name }}</strong>
+                @if (option.email) {
+                  <span class="customer-option-meta">{{ option.email }}</span>
+                }
+              </div>
+              @if (option.alreadyRegistered) {
+                <span class="badge-registered">{{ 'loyalty.alreadyRegistered' | translate }}</span>
+              }
+            </li>
+          }
+        </ul>
+      }
+
+      @if (registerError()) {
+        <div class="error-banner">
+          <lucide-icon name="alert-circle" [size]="16"></lucide-icon>
+          {{ registerError()! | translate }}
+        </div>
+      }
+
+      <div class="register-actions">
+        <button class="btn-start-over" (click)="cancelRegister()">
+          {{ 'loyalty.cancel' | translate }}
+        </button>
+        <button
+          class="btn-assign"
+          [disabled]="!selectedCustomer() || registering()"
+          (click)="confirmRegister()">
+          @if (registering()) {
+            <lucide-icon name="loader-2" [size]="18" class="icon-spinning"></lucide-icon>
+          } @else {
+            <lucide-icon name="check-circle" [size]="18"></lucide-icon>
+          }
+          {{ 'loyalty.registerButton' | translate }}
+        </button>
+      </div>
+    </div>
+  }
+
   <!-- ════════ SCHRITT 2: Kunde + Punktestand ════════ -->
   @if (account(); as acc) {
     <div class="loyalty-card customer-card">

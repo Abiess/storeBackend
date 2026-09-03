@@ -40,6 +40,14 @@ export interface LoyaltyRegisterRequest {
   identifier: string;
 }
 
+export interface LoyaltyCustomerOption {
+  customerProfileId: number;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  alreadyRegistered: boolean;
+}
+
 /**
  * Loyalty Service
  * API-Kommunikation für das Bonuspunkte-System (MVP: manueller Karten-/Kundencode)
@@ -70,6 +78,17 @@ export class LoyaltyService {
     return this.http.post<LoyaltyPurchaseResponse>(
       `${this.apiUrl}/stores/${storeId}/loyalty/purchase`,
       request
+    );
+  }
+
+  /**
+   * Lädt bestehende Store-Kunden für die Code-Registrierung (Dropdown/Suche).
+   * GET /api/stores/{storeId}/loyalty/customers?q=...
+   */
+  searchCustomers(storeId: number, query: string): Observable<LoyaltyCustomerOption[]> {
+    return this.http.get<LoyaltyCustomerOption[]>(
+      `${this.apiUrl}/stores/${storeId}/loyalty/customers`,
+      { params: query ? { q: query } : {} }
     );
   }
 

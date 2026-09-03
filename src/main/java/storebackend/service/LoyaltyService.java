@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import storebackend.dto.LoyaltyAccountDTO;
+import storebackend.dto.LoyaltyCustomerOptionDTO;
 import storebackend.dto.LoyaltyPurchaseResponse;
 import storebackend.entity.*;
 import storebackend.enums.LoyaltyIdentifierStatus;
@@ -17,6 +18,7 @@ import storebackend.repository.StoreRepository;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.List;
 
 /**
  * Loyalty Service (Bonuspunkte-MVP)
@@ -208,6 +210,34 @@ public class LoyaltyService {
 
         BigDecimal steps = amount.divide(amountStep, 0, RoundingMode.DOWN);
         return steps.multiply(BigDecimal.valueOf(pointsPerStep)).intValue();
+    }
+
+    /**
+     * Lädt bestehende Store-Kunden für die Loyalty-Code-Registrierung
+     * (Dropdown/Suche in der UI, wenn ein Code noch keinem Kunden zugeordnet ist).
+     *
+     * Nutzt ausschließlich das bestehende CustomerProfile – keine neue Customer-Struktur.
+     *
+     * @param storeId Store ID
+     * @param query   optionaler Suchbegriff (Name, E-Mail, Telefon); leer = zuletzt angelegte Kunden
+     * @return bis zu 20 passende Kunden
+     */
+    @Transactional(readOnly = true)
+    public List<LoyaltyCustomerOptionDTO> searchStoreCustomers(Long storeId, String query) {
+        List<CustomerProfile> profiles = (query == null || query.isBlank())
+            ? customerProfileRepository.findRecentByStoreId(storeId)
+            : customerProfileRepository.searchByStoreId(storeId, query.trim());
+
+        return profiles.stream()
+            .limit(20)
+            .map(profile -> new LoyaltyCustomerOptionDTO(
+                profile.getId(),
+                resolveCustomerName(profile),
+                profile.getUser() != null ? profile.getUser().getEmail() : null,
+                profile.getPhone(),
+                loyaltyAccountRepository.findByStoreIdAndCustomerProfileId(storeId, profile.getId()).isPresent()
+            ))
+            .toList();
     }
 
     private LoyaltyIdentifier findActiveIdentifier(Long storeId, String identifier) {
