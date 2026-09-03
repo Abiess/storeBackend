@@ -96,10 +96,17 @@ describe('DhlPickupParcelComponent - TEIL C TrackingValidationState', () => {
     fixture.detectChanges();
   });
 
-  /** Löst die (debounced) automatische Validierung für einen Code aus. */
-  function triggerValidation(code: string, manual = false): void {
-    component.onTrackingCodeChange(code, manual);
+  /** Löst die (debounced) automatische Validierung für einen Code aus (Scanner-Modus). */
+  function triggerValidation(code: string): void {
+    component.onTrackingCodeChange(code);
     tick(400); // debounceTime(400)
+  }
+
+  /** Simuliert manuelle Eingabe + bewusstes Absenden (Klick/Enter). */
+  function submitManualCode(code: string): void {
+    component.setTrackingMode('manual');
+    component.onManualInput(code);
+    component.submitTrackingCode();
   }
 
   describe('canSearch() - fail-closed pro Zustand', () => {

@@ -96,9 +96,10 @@ export type TrackingInvalidReason = 'NOT_FOUND' | 'VALIDATION_ERROR';
             #manualInput
             *ngIf="trackingMode() === 'manual'"
             type="text"
-            [ngModel]="trackingCode"
-            (ngModelChange)="onTrackingCodeChange($event, true)"
+            [value]="trackingCode"
+            (input)="onManualInput($any($event.target).value)"
             (keydown)="onManualKeyDown($event)"
+            (keydown.enter)="submitTrackingCode()"
             [placeholder]="'dhl.pickupParcel.trackingPlaceholder' | translate"
             [disabled]="loading()"
             class="input-field"
@@ -135,8 +136,9 @@ export type TrackingInvalidReason = 'NOT_FOUND' | 'VALIDATION_ERROR';
 
         <button
           class="btn-submit"
-          (click)="findParcel()"
-          [disabled]="!canSearch() || loading()">
+          type="button"
+          (click)="submitTrackingCode()"
+          [disabled]="!isPlausibleTrackingCode(normalizeTrackingCode(trackingCode)) || isValidating() || loading()">
           <span *ngIf="!loading()">{{ 'dhl.pickupParcel.search' | translate }}</span>
           <span *ngIf="loading()">{{ 'common.loading' | translate }}...</span>
         </button>
@@ -511,11 +513,32 @@ export class DhlPickupParcelComponent implements OnInit {
   // Letztes erfolgreiches DHL-Validierungsergebnis (für kompakte Anzeige: Produkt/Gewicht)
   validatedResult = signal<DhlTrackingValidationResponse | null>(null);
 
+  /**
+   * Zentraler Guard gegen doppelte /validate-Requests, unabhängig davon, ob
+   * die Validierung durch den Scanner (debounced) oder durch die manuelle
+   * Eingabe (submitTrackingCode()) ausgelöst wurde. Wird sofort bei
+   * Requeststart gesetzt und beim Empfang der Antwort (Erfolg ODER Fehler)
+   * wieder zurückgesetzt - so verhindert er z.B. einen zweiten Request bei
+   * doppeltem Enter/Klick, während der erste noch läuft.
+   */
+  isValidating = signal(false);
+
+  /**
+   * Wird bei jedem Moduswechsel (setTrackingMode()) hochgezählt, damit eine
+   * noch laufende/ausstehende Validierung (z.B. Debounce-Timer des
+   * Scanner-Modus) verworfen wird, wenn der Nutzer währenddessen in den
+   * manuellen Modus (oder zurück) wechselt.
+   */
+  private validationGeneration = 0;
+
   // Clear-Guard für manuellen Eingabemodus (Scanner-Modus: siehe BarcodeInputComponent)
   private awaitingNextManualScan = false;
 
-  // Debounce-Pipeline: verhindert einen DHL-Call pro Tastenanschlag,
-  // triggert aber automatische Validierung sobald der Code sich beruhigt hat.
+  // Debounce-Pipeline: verhindert einen DHL-Call pro Tastenanschlag, wird
+  // AUSSCHLIESSLICH vom Scanner-Modus gefüttert (siehe onTrackingCodeChange).
+  // Der manuelle Modus darf NIEMALS automatisch validieren - dort löst erst
+  // ein bewusster Klick auf "Paket suchen" oder Enter (submitTrackingCode())
+  // die Validierung aus.
   private trackingCodeChange$ = new Subject<string>();
 
   ngOnInit(): void {
@@ -551,6 +574,18 @@ export class DhlPickupParcelComponent implements OnInit {
   setTrackingMode(mode: 'scanner' | 'manual'): void {
     this.trackingMode.set(mode);
     this.error.set(null);
+
+    // Beim Moduswechsel gilt fachlich eine neue Eingabesession: laufende
+    // Subscriptions/Timer des vorherigen Modus (Debounce-Fenster oder
+    // In-Flight-Request) dürfen das Ergebnis NICHT mehr beeinflussen. Die
+    // Generation wird hochgezählt, damit runValidation() eine evtl. noch
+    // ausstehende Antwort verwirft (siehe runValidation()).
+    this.validationGeneration++;
+    this.isValidating.set(false);
+    this.validationState.set('IDLE');
+    this.validatedResult.set(null);
+    this.invalidReason.set(null);
+    this.awaitingNextManualScan = false;
   }
 
   toggleScanSounds(): void {
@@ -569,15 +604,35 @@ export class DhlPickupParcelComponent implements OnInit {
   }
 
   /**
-   * Wird bei jeder Änderung des Tracking-Codes aufgerufen (Scanner-Input
-   * UND manuelle Eingabe verwenden denselben Handler - kein Bypass möglich).
+   * Entfernt Leerzeichen und Bindestriche (häufig beim Abtippen von
+   * Etiketten/Copy&Paste) und normalisiert auf Großbuchstaben. Reine
+   * Formatierung für die API - KEINE Validierung, kein API-Aufruf.
+   */
+  normalizeTrackingCode(value: string): string {
+    return (value || '').replace(/[\s-]+/g, '').toUpperCase();
+  }
+
+  /**
+   * Rein lokale Format-/Längenprüfung (KEIN API-Aufruf!). Entscheidet nur,
+   * ob der "Paket suchen"-Button aktiviert ist bzw. ob submitTrackingCode()
+   * überhaupt einen Request auslösen darf. Erlaubt sind Ziffern und
+   * Buchstaben (DHL-Codes), Mindestlänge 10 Zeichen.
+   */
+  isPlausibleTrackingCode(code: string): boolean {
+    return /^[A-Z0-9]{10,}$/.test(code);
+  }
+
+  /**
+   * SCANNER-MODUS: Wird bei jeder Änderung des Barcode-Input-Werts
+   * aufgerufen. Triggert (debounced) automatisch die DHL-Validierung -
+   * das bisherige, bereits getestete Verhalten bleibt hier unverändert.
    *
    * WICHTIG: Ein vorheriger VALID-Zustand wird SOFORT verworfen, sobald sich
    * der Code ändert. Der alte VALID-Status darf niemals für einen neuen Code
    * gelten (Suche fällt sofort zurück auf disabled).
    */
-  onTrackingCodeChange(value: string, isManualInput = false): void {
-    this.trackingCode = isManualInput ? value.toUpperCase() : value;
+  onTrackingCodeChange(value: string): void {
+    this.trackingCode = value;
     this.error.set(null);
 
     if (this.validationState() !== 'IDLE') {
@@ -593,15 +648,75 @@ export class DhlPickupParcelComponent implements OnInit {
   }
 
   /**
-   * TEIL C: Automatische DHL-Validierung (debounced), unabhängig von der
-   * "Suchen"-Aktion. Race-Guard: Ergebnisse eines veralteten Requests (Code
-   * hat sich inzwischen erneut geändert) werden verworfen.
+   * MANUELLER MODUS: (input)-Handler für JEDES getippte Zeichen.
+   * Aktualisiert AUSSCHLIESSLICH den lokalen Eingabewert und setzt eine
+   * evtl. zuvor angezeigte Fehlermeldung/Validierungsanzeige zurück.
+   *
+   * Löst NIEMALS automatisch die DHL /validate-Prüfung aus - das passiert
+   * erst bewusst über submitTrackingCode() (Klick auf "Paket suchen" oder
+   * Enter). Dadurch erscheinen während des Tippens keine verfrühten
+   * NOT_FOUND-Fehler mehr.
    */
-  private runValidation(code: string): void {
+  onManualInput(value: string): void {
+    this.trackingCode = value.toUpperCase();
+    this.error.set(null);
+
+    if (this.validationState() !== 'IDLE') {
+      this.validationState.set('IDLE');
+      this.validatedResult.set(null);
+      this.invalidReason.set(null);
+    }
+  }
+
+  /**
+   * EINZIGER Auslöser für eine bewusste DHL-Validierung im manuellen Modus:
+   * Klick auf "Paket suchen" ODER Enter im Eingabefeld. Normalisiert den
+   * Code genau einmal, prüft ihn NUR lokal (Format/Länge, kein API-Aufruf)
+   * und ruft anschließend höchstens einmal den /validate-Endpunkt auf.
+   * isValidating() verhindert einen doppelten Request, z.B. bei doppeltem
+   * Enter/Klick während der erste Request noch läuft.
+   */
+  submitTrackingCode(): void {
+    const code = this.normalizeTrackingCode(this.trackingCode);
+
+    if (!this.isPlausibleTrackingCode(code) || this.isValidating()) {
+      return;
+    }
+
+    this.trackingCode = code;
+    this.error.set(null);
+
+    if (this.validationState() === 'VALID') {
+      // Bereits durch eine vorherige Validierung bestätigt (erneuter
+      // Klick/Enter nach VALID) → direkt lokal suchen, keine erneute
+      // DHL-Anfrage nötig.
+      this.findParcel();
+      return;
+    }
+
+    this.runValidation(code, true);
+  }
+
+  /**
+   * Zentrale DHL-Validierung - genau EIN Aufruf pro Auslöser (debounced
+   * Scanner-Trigger ODER submitTrackingCode()). Race-Guards: Ergebnisse
+   * eines veralteten Requests (Code hat sich inzwischen erneut geändert
+   * ODER der Modus wurde gewechselt) werden verworfen.
+   *
+   * @param autoSearchOnValid Wenn true (submitTrackingCode()), wird nach
+   *   einer erfolgreichen Validierung automatisch die lokale Suche
+   *   (findParcel()) angestoßen - der manuelle "Paket suchen"-Klick soll
+   *   als EINE Aktion Validierung + Suche erledigen. Der debounced
+   *   Scanner-Trigger nutzt weiterhin den Default (false) und verhält sich
+   *   unverändert wie zuvor (separater expliziter Klick auf "Suchen").
+   */
+  private runValidation(code: string, autoSearchOnValid = false): void {
     if (this.trackingCode.trim() !== code) {
       return; // Code hat sich bereits weiterverändert - veralteter Trigger
     }
 
+    const generation = this.validationGeneration;
+    this.isValidating.set(true);
     this.validationState.set('VALIDATING');
     this.validatedResult.set(null);
     this.invalidReason.set(null);
@@ -610,8 +725,9 @@ export class DhlPickupParcelComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (result) => {
-          if (this.trackingCode.trim() !== code) {
-            return; // veraltete Antwort - Code hat sich zwischenzeitlich geändert
+          this.isValidating.set(false);
+          if (generation !== this.validationGeneration || this.trackingCode.trim() !== code) {
+            return; // veraltete Antwort - Code/Modus hat sich zwischenzeitlich geändert
           }
 
           if (result.status === 'VALID') {
@@ -624,6 +740,9 @@ export class DhlPickupParcelComponent implements OnInit {
             // Auch nach VALID: nächster Scan (z.B. anderes Paket) soll ersetzen,
             // nicht an den kanonischen Code angehängt werden.
             this.prepareForNextScan();
+            if (autoSearchOnValid) {
+              this.findParcel();
+            }
           } else {
             // ❌ NOT_FOUND: fachlicher Fehler, KEIN technisches Problem.
             // Barcode bleibt sichtbar (Mitarbeiter soll erkennen, was abgelehnt wurde),
@@ -636,7 +755,8 @@ export class DhlPickupParcelComponent implements OnInit {
           }
         },
         error: (err) => {
-          if (this.trackingCode.trim() !== code) {
+          this.isValidating.set(false);
+          if (generation !== this.validationGeneration || this.trackingCode.trim() !== code) {
             return;
           }
           // Fachlicher (INVALID) vs. technischer (TECHNICAL_ERROR) Fehler
@@ -678,7 +798,10 @@ export class DhlPickupParcelComponent implements OnInit {
       this.barcodeInputRef?.prepareForNextScan();
     } else {
       this.awaitingNextManualScan = true;
-      setTimeout(() => this.manualInputRef?.nativeElement.select());
+      setTimeout(() => {
+        this.manualInputRef?.nativeElement.focus();
+        this.manualInputRef?.nativeElement.select();
+      });
     }
   }
 
@@ -784,6 +907,8 @@ export class DhlPickupParcelComponent implements OnInit {
     this.validationState.set('IDLE');
     this.invalidReason.set(null);
     this.validatedResult.set(null);
+    this.isValidating.set(false);
+    this.validationGeneration++;
     this.awaitingNextManualScan = false;
   }
 
