@@ -386,34 +386,131 @@ describe('DhlPickupParcelComponent - TEIL C TrackingValidationState', () => {
       expect(component.canSearch()).toBe(true);
     }));
 
-    it('manueller Modus: alter INVALID-Code wird durch Clear-Guard ersetzt, nicht angehängt', fakeAsync(() => {
-      component.setTrackingMode('manual');
+    it('manueller Modus: alter INVALID-Code wird durch Clear-Guard ersetzt, nicht angehängt', () => {
       mockDhlService.validateTrackingCode.and.returnValue(of(mockNotFoundResponse('VDBDBJDJDUD')));
-      triggerValidation('VDBDBJDJDUD', true);
+      submitManualCode('VDBDBJDJDUD');
       expect(component.validationState()).toBe('INVALID');
 
       // Erstes Zeichen des nächsten (manuellen) Scans - Guard muss Feld leeren.
       component.onManualKeyDown(new KeyboardEvent('keydown', { key: '0' }));
       expect(component.trackingCode).toBe('');
 
-      component.onTrackingCodeChange('00340434664988418341', true);
-      tick(400);
+      mockDhlService.validateTrackingCode.and.returnValue(of(mockValidResponse()));
+      submitManualCode('00340434664988418341');
 
       expect(component.trackingCode).toBe('00340434664988418341');
+    });
+  });
+
+  describe('Manueller Modus: KEINE automatische Validierung während der Eingabe', () => {
+    it('onManualInput() aktualisiert nur den lokalen Wert - kein API-Aufruf, auch nicht nach Debounce-Zeit', fakeAsync(() => {
+      component.setTrackingMode('manual');
+      component.onManualInput(VALID_CODE);
+      tick(400); // ehemaliges Debounce-Fenster - darf NICHTS mehr auslösen
+
+      expect(mockDhlService.validateTrackingCode).not.toHaveBeenCalled();
+    }));
+
+    it('Tippen einzelner Zeichen (onManualInput) löst niemals /validate aus', () => {
+      component.setTrackingMode('manual');
+      for (let i = 1; i <= VALID_CODE.length; i++) {
+        component.onManualInput(VALID_CODE.substring(0, i));
+      }
+
+      expect(mockDhlService.validateTrackingCode).not.toHaveBeenCalled();
+    });
+
+    it('submitTrackingCode() (Klick/Enter) validiert den eingegebenen Code genau einmal', () => {
+      mockDhlService.validateTrackingCode.and.returnValue(of(mockValidResponse()));
+      submitManualCode(VALID_CODE);
+
+      expect(mockDhlService.validateTrackingCode).toHaveBeenCalledTimes(1);
+      expect(mockDhlService.validateTrackingCode).toHaveBeenCalledWith(123, VALID_CODE);
+      expect(component.validationState()).toBe('VALID');
+    });
+
+    it('Enter im manuellen Feld löst genau einen Request aus (echtes DOM-Event)', () => {
+      mockDhlService.validateTrackingCode.and.returnValue(of(mockValidResponse()));
+      component.setTrackingMode('manual');
+      fixture.detectChanges();
+
+      component.onManualInput(VALID_CODE);
+      const inputEl: HTMLInputElement = fixture.nativeElement.querySelector('.input-field');
+      inputEl.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+      expect(mockDhlService.validateTrackingCode).toHaveBeenCalledTimes(1);
+      expect(mockDhlService.validateTrackingCode).toHaveBeenCalledWith(123, VALID_CODE);
+    });
+
+    it('doppeltes Enter während einer laufenden Validierung erzeugt KEINEN zweiten Request', () => {
+      mockDhlService.validateTrackingCode.and.returnValue(new Observable(() => {
+        // bewusst nie next()/complete() aufrufen - Request bleibt "in-flight".
+      }));
+
+      submitManualCode(VALID_CODE);
+      expect(component.isValidating()).toBe(true);
+
+      // Zweiter Enter/Klick während der erste Request noch offen ist.
+      component.submitTrackingCode();
+
+      expect(mockDhlService.validateTrackingCode).toHaveBeenCalledTimes(1);
+    });
+
+    it('Leerzeichen und Bindestriche werden vor dem Request entfernt', () => {
+      mockDhlService.validateTrackingCode.and.returnValue(of(mockValidResponse()));
+      component.setTrackingMode('manual');
+      component.onManualInput('  0034-0434-6649-88418341 ');
+      component.submitTrackingCode();
+
+      expect(mockDhlService.validateTrackingCode).toHaveBeenCalledWith(123, VALID_CODE);
+    });
+
+    it('vorherige Fehlermeldung/Status verschwindet sofort beim erneuten Tippen', () => {
+      mockDhlService.validateTrackingCode.and.returnValue(of(mockNotFoundResponse(VALID_CODE)));
+      submitManualCode(VALID_CODE);
+      expect(component.validationState()).toBe('INVALID');
+
+      component.onManualInput(VALID_CODE + '9');
+
+      expect(component.validationState()).toBe('IDLE');
+      expect(component.error()).toBeNull();
+    });
+
+    it('NOT_FOUND löscht die Eingabe nicht', () => {
+      mockDhlService.validateTrackingCode.and.returnValue(of(mockNotFoundResponse(VALID_CODE)));
+      submitManualCode(VALID_CODE);
+
+      expect(component.validationState()).toBe('INVALID');
+      expect(component.trackingCode).toBe(VALID_CODE);
+    });
+
+    it('Button-Aktivierung basiert nur auf lokaler Plausibilität, nicht auf validationState()', () => {
+      component.setTrackingMode('manual');
+      expect(component.isPlausibleTrackingCode(component.normalizeTrackingCode(''))).toBe(false);
+
+      component.onManualInput('123');
+      expect(component.isPlausibleTrackingCode(component.normalizeTrackingCode(component.trackingCode))).toBe(false);
+
+      component.onManualInput(VALID_CODE);
+      expect(component.isPlausibleTrackingCode(component.normalizeTrackingCode(component.trackingCode))).toBe(true);
+      // Kein API-Aufruf nötig, um den Button zu aktivieren.
+      expect(mockDhlService.validateTrackingCode).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Scanner-Modus funktioniert weiterhin unverändert (automatische Validierung)', () => {
+    it('scanner-Eingabe validiert weiterhin automatisch (debounced)', fakeAsync(() => {
+      mockDhlService.validateTrackingCode.and.returnValue(of(mockValidResponse()));
+      component.setTrackingMode('scanner');
+
+      triggerValidation(VALID_CODE);
+
+      expect(mockDhlService.validateTrackingCode).toHaveBeenCalledTimes(1);
+      expect(component.validationState()).toBe('VALID');
     }));
   });
 
   describe('Manuelle Eingabe kann Validierung nicht umgehen', () => {
-    it('manuelle Eingabe verwendet denselben Handler/dieselbe DHL-Validierung', fakeAsync(() => {
-      mockDhlService.validateTrackingCode.and.returnValue(of(mockValidResponse()));
-      component.setTrackingMode('manual');
-
-      triggerValidation(VALID_CODE, true);
-
-      expect(mockDhlService.validateTrackingCode).toHaveBeenCalledWith(123, VALID_CODE);
-      expect(component.validationState()).toBe('VALID');
-    }));
-
     it('findParcel() ohne vorherige VALID-Validierung ruft niemals den Backend-Endpoint auf', () => {
       component.trackingCode = 'VDBDBJDJDUDPADDING';
       component.findParcel();

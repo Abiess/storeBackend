@@ -694,7 +694,7 @@ export class DhlPickupParcelComponent implements OnInit {
       return;
     }
 
-    this.runValidation(code, true);
+    this.runValidation(code);
   }
 
   /**
@@ -702,15 +702,8 @@ export class DhlPickupParcelComponent implements OnInit {
    * Scanner-Trigger ODER submitTrackingCode()). Race-Guards: Ergebnisse
    * eines veralteten Requests (Code hat sich inzwischen erneut geändert
    * ODER der Modus wurde gewechselt) werden verworfen.
-   *
-   * @param autoSearchOnValid Wenn true (submitTrackingCode()), wird nach
-   *   einer erfolgreichen Validierung automatisch die lokale Suche
-   *   (findParcel()) angestoßen - der manuelle "Paket suchen"-Klick soll
-   *   als EINE Aktion Validierung + Suche erledigen. Der debounced
-   *   Scanner-Trigger nutzt weiterhin den Default (false) und verhält sich
-   *   unverändert wie zuvor (separater expliziter Klick auf "Suchen").
    */
-  private runValidation(code: string, autoSearchOnValid = false): void {
+  private runValidation(code: string): void {
     if (this.trackingCode.trim() !== code) {
       return; // Code hat sich bereits weiterverändert - veralteter Trigger
     }
@@ -740,9 +733,6 @@ export class DhlPickupParcelComponent implements OnInit {
             // Auch nach VALID: nächster Scan (z.B. anderes Paket) soll ersetzen,
             // nicht an den kanonischen Code angehängt werden.
             this.prepareForNextScan();
-            if (autoSearchOnValid) {
-              this.findParcel();
-            }
           } else {
             // ❌ NOT_FOUND: fachlicher Fehler, KEIN technisches Problem.
             // Barcode bleibt sichtbar (Mitarbeiter soll erkennen, was abgelehnt wurde),
