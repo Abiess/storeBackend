@@ -45,14 +45,18 @@ public class DataInitializer {
         try {
             // REGRESSION-FIX (Loyalty-MVP): NOT-NULL-Spalten reparieren, die
             // Hibernate ddl-auto=update auf der befüllten stores-Tabelle nicht
-            // anlegen konnte (siehe V016__add_loyalty_store_settings.sql).
+            // anlegen konnte (siehe scripts/db/migrations/V021__add_loyalty_store_settings.sql,
+            // dort die maßgebliche Production-Migration).
             // Muss VOR allen anderen Store-Zugriffen laufen.
             repairLoyaltyStoreColumns();
 
             // REGRESSION-FIX (Anonyme Bonuskarte): Hibernate ddl-auto=update
             // entfernt bestehende NOT-NULL-Constraints NICHT automatisch, wenn
             // eine Spalte im Entity nullable gemacht wird (siehe
-            // LoyaltyAccount.customerProfile / V016__loyalty_account_optional_customer_profile.sql).
+            // LoyaltyAccount.customerProfile / scripts/db/migrations/V022__loyalty_account_optional_customer_profile.sql,
+            // dort die maßgebliche Production-Migration - diese Methode hier
+            // ist nur ein Safety-Net für Instanzen, die nicht über
+            // scripts/deploy.sh migriert werden, z.B. lokale Dev-DBs).
             // Ohne diesen Fix schlägt LoyaltyService.issueAnonymousCard() auf
             // bereits existierenden DBs mit einer NOT-NULL-Verletzung fehl.
             repairLoyaltyAccountCustomerProfileNullable();
@@ -83,8 +87,8 @@ public class DataInitializer {
      * (u.a. StoreAccessChecker -> fälschlich 403 auf bestehenden Endpoints).
      *
      * Diese Methode ist bewusst NICHT über Flyway umgesetzt, da Flyway in diesem
-     * Projekt aktuell nicht aktiviert ist (siehe V016__add_loyalty_store_settings.sql
-     * für die äquivalente, dokumentierte SQL-Migration für eine spätere Flyway-Nutzung).
+     * Projekt aktuell nicht aktiviert ist (siehe scripts/db/migrations/V021__add_loyalty_store_settings.sql
+     * für die tatsächlich von scripts/deploy.sh ausgeführte Production-Migration).
      *
      * Idempotent: ADD COLUMN IF NOT EXISTS, UPDATE nur WHERE ... IS NULL (keine
      * bestehenden Werte werden überschrieben), SET DEFAULT/SET NOT NULL sind
