@@ -689,6 +689,19 @@
       "vatExemptionTextHint": "This text is displayed when VAT is disabled",
       "currencyChangeWarning": "⚠️ Warning: Existing prices will not be automatically converted. Please check all product, variant, and shipping prices afterwards."
     },
+    "loyalty": {
+      "title": "Loyalty Points",
+      "description": "Reward your customers with points for purchases in-store and online.",
+      "enabled": "Enable loyalty program",
+      "amountStep": "Amount per step",
+      "amountStepError": "The amount must be greater than 0.",
+      "pointsPerStep": "Points per step",
+      "pointsPerStepError": "Points must be a whole number greater than 0.",
+      "minimumPurchase": "Minimum purchase",
+      "minimumPurchasePlaceholder": "optional",
+      "minimumPurchaseError": "The minimum purchase must not be negative.",
+      "explanation": "The customer earns {{points}} points per {{amount}} {{currency}} spent."
+    },
     "payments": {
       "sectionTitle": "Payments",
       "title": "Payment Providers",

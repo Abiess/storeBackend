@@ -817,6 +817,11 @@ export interface Store {
   shippingTaxRate?: number;
   shippingTaxStrategy?: ShippingTaxStrategy;
   vatExemptionText?: string;
+  // ─── Loyalty-/Bonuspunkte-Konfiguration (MVP) ──────────────────
+  loyaltyEnabled?: boolean;
+  loyaltyAmountStep?: number;
+  loyaltyPointsPerStep?: number;
+  loyaltyMinimumPurchase?: number | null;
   // ─── Legal/Impressum (Admin only) ──────────────────────────────
   legalName?: string;
   legalForm?: string;

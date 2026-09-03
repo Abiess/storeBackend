@@ -924,6 +924,19 @@
       "vatExemptionTextHint": "نص يُعرض للعملاء المعفيين من الضرائب",
       "vatExemptionTextPlaceholder": "معفى من الضريبة حسب §..."
     },
+    "loyalty": {
+      "title": "نقاط الولاء",
+      "description": "كافئ عملاءك بنقاط مقابل مشترياتهم في المتجر وعبر الإنترنت.",
+      "enabled": "تفعيل برنامج نقاط الولاء",
+      "amountStep": "المبلغ لكل خطوة",
+      "amountStepError": "يجب أن يكون المبلغ أكبر من 0.",
+      "pointsPerStep": "النقاط لكل خطوة",
+      "pointsPerStepError": "يجب أن تكون النقاط رقمًا صحيحًا أكبر من 0.",
+      "minimumPurchase": "الحد الأدنى للشراء",
+      "minimumPurchasePlaceholder": "اختياري",
+      "minimumPurchaseError": "لا يمكن أن يكون الحد الأدنى للشراء سالبًا.",
+      "explanation": "يحصل العميل على {{points}} نقطة لكل {{amount}} {{currency}} من قيمة الشراء."
+    },
     "legal": {
       "status": {
         "not_configured": "غير مكوّن",

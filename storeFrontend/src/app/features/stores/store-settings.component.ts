@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule, ValidatorFn, AbstractControl, ValidationErrors } from '@angular/forms';
 import { StoreService } from '../../core/services/store.service';
 import { Store } from '../../core/models';
 import { StoreNavigationComponent } from '../../shared/components/store-navigation.component';
@@ -20,6 +20,13 @@ export interface SettingsTab {
   labelKey: string;
   visible?: boolean;
   beta?: boolean;
+}
+
+/** Validiert, dass ein Wert eine Ganzzahl ist (nur relevant, wenn nicht leer). */
+function integerValidator(control: AbstractControl): ValidationErrors | null {
+  const value = control.value;
+  if (value === null || value === undefined || value === '') return null;
+  return Number.isInteger(Number(value)) ? null : { notInteger: true };
 }
 
 @Component({
@@ -383,6 +390,93 @@ export interface SettingsTab {
                 ></textarea>
                 <small class="form-text">{{ 'settings.tax.vatExemptionTextHint' | translate }}</small>
               </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary" [disabled]="!settingsForm.valid || saving">
+                {{ saving ? ('common.saving' | translate) : ('common.save' | translate) }}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- ─── Loyalty / Bonuspunkte ─── -->
+        <div class="tab-content" *ngIf="activeTab === 'loyalty'">
+          <form [formGroup]="settingsForm" (ngSubmit)="saveSettings()">
+            <div class="settings-section-header">
+              <h3>⭐ {{ 'settings.loyalty.title' | translate }}</h3>
+              <p class="section-hint">{{ 'settings.loyalty.description' | translate }}</p>
+            </div>
+
+            <div class="form-grid">
+              <!-- Enable Toggle -->
+              <div class="form-group full-width">
+                <label class="checkbox-label">
+                  <input type="checkbox" formControlName="loyaltyEnabled">
+                  <span>{{ 'settings.loyalty.enabled' | translate }}</span>
+                </label>
+              </div>
+
+              <ng-container *ngIf="settingsForm.get('loyaltyEnabled')?.value">
+                <!-- Amount Step -->
+                <div class="form-group">
+                  <label for="loyaltyAmountStep">{{ 'settings.loyalty.amountStep' | translate }} *</label>
+                  <input
+                    id="loyaltyAmountStep"
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    formControlName="loyaltyAmountStep"
+                    placeholder="10.00"
+                  />
+                  <small class="form-text" *ngIf="settingsForm.get('loyaltyAmountStep')?.invalid && settingsForm.get('loyaltyAmountStep')?.touched">
+                    {{ 'settings.loyalty.amountStepError' | translate }}
+                  </small>
+                </div>
+
+                <!-- Points Per Step -->
+                <div class="form-group">
+                  <label for="loyaltyPointsPerStep">{{ 'settings.loyalty.pointsPerStep' | translate }} *</label>
+                  <input
+                    id="loyaltyPointsPerStep"
+                    type="number"
+                    step="1"
+                    min="1"
+                    formControlName="loyaltyPointsPerStep"
+                    placeholder="1"
+                  />
+                  <small class="form-text" *ngIf="settingsForm.get('loyaltyPointsPerStep')?.invalid && settingsForm.get('loyaltyPointsPerStep')?.touched">
+                    {{ 'settings.loyalty.pointsPerStepError' | translate }}
+                  </small>
+                </div>
+
+                <!-- Minimum Purchase -->
+                <div class="form-group">
+                  <label for="loyaltyMinimumPurchase">{{ 'settings.loyalty.minimumPurchase' | translate }}</label>
+                  <input
+                    id="loyaltyMinimumPurchase"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    formControlName="loyaltyMinimumPurchase"
+                    [placeholder]="'settings.loyalty.minimumPurchasePlaceholder' | translate"
+                  />
+                  <small class="form-text" *ngIf="settingsForm.get('loyaltyMinimumPurchase')?.invalid && settingsForm.get('loyaltyMinimumPurchase')?.touched">
+                    {{ 'settings.loyalty.minimumPurchaseError' | translate }}
+                  </small>
+                </div>
+
+                <!-- Explanation -->
+                <div class="form-group full-width">
+                  <small class="form-text">
+                    {{ 'settings.loyalty.explanation' | translate: {
+                        points: settingsForm.get('loyaltyPointsPerStep')?.value,
+                        amount: settingsForm.get('loyaltyAmountStep')?.value,
+                        currency: settingsForm.get('currencyCode')?.value
+                      } }}
+                  </small>
+                </div>
+              </ng-container>
             </div>
 
             <div class="form-actions">
@@ -1936,6 +2030,7 @@ export class StoreSettingsComponent implements OnInit {
   settingsTabs: SettingsTab[] = [
     { id: 'general',  icon: '⚙️', labelKey: 'settings.general' },
     { id: 'tax',      icon: '💰', labelKey: 'settings.tax.title' },
+    { id: 'loyalty',  icon: '⭐', labelKey: 'settings.loyalty.title' },
     { id: 'legal',    icon: '📝', labelKey: 'settings.legal.title' },  // ← NEU
     { id: 'payments', icon: '💳', labelKey: 'settings.payments.sectionTitle' },
     { id: 'social',   icon: '🔗', labelKey: 'settings.social.title' },
@@ -2016,7 +2111,12 @@ export class StoreSettingsComponent implements OnInit {
       defaultTaxRate: [19, [Validators.required, Validators.min(0), Validators.max(100)]],
       shippingTaxRate: [19, [Validators.required, Validators.min(0), Validators.max(100)]],
       shippingTaxStrategy: ['STORE_DEFINED', Validators.required],
-      vatExemptionText: ['', [Validators.maxLength(500)]]
+      vatExemptionText: ['', [Validators.maxLength(500)]],
+      // ─── Loyalty-/Bonuspunkte-Konfiguration ─────────────────────
+      loyaltyEnabled: [false],
+      loyaltyAmountStep: [10, [Validators.min(0.01)]],
+      loyaltyPointsPerStep: [1, [Validators.min(1), integerValidator]],
+      loyaltyMinimumPurchase: [null, [Validators.min(0)]]
     });
 
     this.brandingForm = this.fb.group({
@@ -2110,7 +2210,12 @@ export class StoreSettingsComponent implements OnInit {
           defaultTaxRate:      store.defaultTaxRate      ?? 19,
           shippingTaxRate:     store.shippingTaxRate     ?? 19,
           shippingTaxStrategy: store.shippingTaxStrategy ?? 'STORE_DEFINED',
-          vatExemptionText:    store.vatExemptionText    ?? ''
+          vatExemptionText:    store.vatExemptionText    ?? '',
+          // Loyalty
+          loyaltyEnabled:          store.loyaltyEnabled          ?? false,
+          loyaltyAmountStep:       store.loyaltyAmountStep       ?? 10,
+          loyaltyPointsPerStep:    store.loyaltyPointsPerStep    ?? 1,
+          loyaltyMinimumPurchase:  store.loyaltyMinimumPurchase  ?? null
         });
         
         // Track original currency for change warning
@@ -2145,7 +2250,13 @@ export class StoreSettingsComponent implements OnInit {
       this.saving = true;
       this.error = null;
 
-      this.storeService.updateStore(this.storeId, this.settingsForm.value).subscribe({
+      // Leere Mindestkauf-Eingabe als "nicht gesetzt" (null) an das Backend senden
+      const payload = { ...this.settingsForm.value };
+      if (payload.loyaltyMinimumPurchase === '' || payload.loyaltyMinimumPurchase === undefined) {
+        payload.loyaltyMinimumPurchase = null;
+      }
+
+      this.storeService.updateStore(this.storeId, payload).subscribe({
         next: () => {
           this.saving = false;
           alert('Einstellungen erfolgreich gespeichert!');

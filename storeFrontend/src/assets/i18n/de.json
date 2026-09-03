@@ -835,6 +835,19 @@
       "vatExemptionTextHint": "Dieser Text wird angezeigt, wenn die Umsatzsteuer deaktiviert ist",
       "currencyChangeWarning": "⚠️ Achtung: Vorhandene Preisbeträge werden nicht automatisch umgerechnet. Bitte kontrollieren Sie anschließend alle Produkt-, Varianten- und Versandpreise."
     },
+    "loyalty": {
+      "title": "Bonuspunkte",
+      "description": "Belohne deine Kunden mit Punkten für Einkäufe im Store und online.",
+      "enabled": "Bonusprogramm aktivieren",
+      "amountStep": "Betrag pro Schritt",
+      "amountStepError": "Der Betrag muss größer als 0 sein.",
+      "pointsPerStep": "Punkte pro Schritt",
+      "pointsPerStepError": "Die Punktzahl muss eine ganze Zahl größer als 0 sein.",
+      "minimumPurchase": "Mindestkauf",
+      "minimumPurchasePlaceholder": "optional",
+      "minimumPurchaseError": "Der Mindestkauf darf nicht negativ sein.",
+      "explanation": "Der Kunde erhält {{points}} Punkte je {{amount}} {{currency}} Einkaufswert."
+    },
     "payments": {
       "sectionTitle": "Zahlungen",
       "title": "Zahlungsanbieter",
