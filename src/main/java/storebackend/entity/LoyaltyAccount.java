@@ -10,8 +10,14 @@ import java.time.LocalDateTime;
 /**
  * Loyalty Account (Bonuspunkte-Konto)
  *
- * MVP: Ein LoyaltyAccount gehört zu genau einem Store und ist mit einem
- * bestehenden CustomerProfile verknüpft (kein neues Customer-Konzept!).
+ * Ein LoyaltyAccount gehört zu genau einem Store. Er ist ENTWEDER
+ * - einem bestehenden CustomerProfile zugeordnet (registrierter Kunde), ODER
+ * - anonym (customerProfile == null) - ausgegeben als "Neue Bonuskarte" an
+ *   Laufkundschaft OHNE Konto/CustomerProfile.
+ *
+ * Ein anonymer Account kann später über LoyaltyService.linkCustomerProfile()
+ * einem CustomerProfile zugeordnet werden, OHNE dass Punkte verloren gehen
+ * (derselbe Account/dieselbe Zeile bekommt lediglich die FK gesetzt).
  *
  * Die Karte selbst speichert KEINE Punkte - sie identifiziert nur den
  * Account (siehe {@link LoyaltyIdentifier}). Der Punktestand lebt hier.
@@ -36,9 +42,15 @@ public class LoyaltyAccount {
     @JoinColumn(name = "store_id", nullable = false)
     private Store store;
 
-    /** Bestehendes Kunden-Profil (store-spezifisch) - kein neues Customer-Entity */
+    /**
+     * Bestehendes Kunden-Profil (store-spezifisch) - kein neues Customer-Entity.
+     * NULL = anonymer Account (Laufkundschaft ohne Konto, siehe Klassen-Doku).
+     * Hinweis zur unique-Constraint uq_loyalty_account_store_customer:
+     * NULL-Werte gelten in Postgres/H2 als paarweise verschieden, daher können
+     * beliebig viele anonyme Accounts pro Store existieren.
+     */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_profile_id", nullable = false)
+    @JoinColumn(name = "customer_profile_id")
     private CustomerProfile customerProfile;
 
     /** Aktueller Punktestand (kann durch REDEEM/ADJUST auch sinken) */

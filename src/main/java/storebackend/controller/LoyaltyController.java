@@ -7,6 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import storebackend.dto.LoyaltyAccountDTO;
+import storebackend.dto.LoyaltyIssueCardRequest;
+import storebackend.dto.LoyaltyLinkCustomerRequest;
 import storebackend.dto.LoyaltyPurchaseRequest;
 import storebackend.dto.LoyaltyPurchaseResponse;
 import storebackend.dto.LoyaltyRegisterRequest;
@@ -22,6 +24,8 @@ import storebackend.util.StoreAccessChecker;
  * - POST /api/stores/{storeId}/loyalty/purchase                → Einkauf zuordnen (manueller Test-Flow)
  * - GET  /api/stores/{storeId}/loyalty/customers?q=...          → bestehende Store-Kunden suchen (für Registrierung)
  * - POST /api/stores/{storeId}/loyalty/register                → Code für bestehenden Kunden registrieren (MVP-Hilfsendpoint)
+ * - POST /api/stores/{storeId}/loyalty/issue-card               → neue ANONYME Bonuskarte ausgeben (Laufkundschaft ohne Konto)
+ * - POST /api/stores/{storeId}/loyalty/link-customer             → anonymen Account nachträglich einem Kunden zuordnen ("Kunde verknüpfen")
  *
  * WICHTIG: "code" ist heute ein manuell eingegebener Testcode und wird
  * später 1:1 durch die UID einer NFC-Karte ersetzt – ohne API-Änderung.
@@ -118,6 +122,50 @@ public class LoyaltyController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (RuntimeException e) {
             log.error("Loyalty registration failed: store={}, error={}", storeId, e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/issue-card")
+    public ResponseEntity<?> issueCard(
+        @PathVariable Long storeId,
+        @RequestBody LoyaltyIssueCardRequest request,
+        @AuthenticationPrincipal User user
+    ) {
+        if (!isAuthorized(storeId, user)) {
+            return unauthorizedOrForbidden(user);
+        }
+        try {
+            LoyaltyAccountDTO account = loyaltyService.issueAnonymousCard(storeId, request.getIdentifier());
+            return ResponseEntity.status(HttpStatus.CREATED).body(account);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (RuntimeException e) {
+            log.error("Anonymous loyalty card issuance failed: store={}, error={}", storeId, e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/link-customer")
+    public ResponseEntity<?> linkCustomer(
+        @PathVariable Long storeId,
+        @RequestBody LoyaltyLinkCustomerRequest request,
+        @AuthenticationPrincipal User user
+    ) {
+        if (!isAuthorized(storeId, user)) {
+            return unauthorizedOrForbidden(user);
+        }
+        try {
+            LoyaltyAccountDTO account = loyaltyService.linkCustomerProfile(
+                storeId, request.getLoyaltyAccountId(), request.getCustomerProfileId()
+            );
+            return ResponseEntity.ok(account);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (RuntimeException e) {
+            log.error("Loyalty customer linking failed: store={}, error={}", storeId, e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }

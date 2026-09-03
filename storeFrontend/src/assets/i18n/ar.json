@@ -3258,10 +3258,19 @@
     "alreadyRegistered": "مسجّل بالفعل",
     "registerButton": "تسجيل الرمز",
     "cancel": "إلغاء",
+    "codeNotFoundTitle": "هذا الرمز غير مسجّل بعد.",
+    "issueCardButton": "إصدار بطاقة ولاء جديدة",
+    "assignExistingButton": "ربط بعميل موجود",
+    "anonymousCardBadge": "بطاقة ولاء مجهولة",
+    "anonymousCardHint": "هذه البطاقة غير مرتبطة بعميل بعد. يتم الاحتفاظ بالنقاط عند الربط.",
+    "linkCustomerButton": "ربط العميل",
+    "linkCustomerHint": "اربط بطاقة الولاء هذه بعميل موجود. يتم الاحتفاظ برصيد النقاط.",
     "errors": {
       "notFound": "لم يتم العثور على عميل بهذا الرمز",
       "purchaseFailed": "تعذّر ربط عملية الشراء",
-      "registerFailed": "تعذّر تسجيل الرمز"
+      "registerFailed": "تعذّر تسجيل الرمز",
+      "issueCardFailed": "تعذّر إصدار بطاقة الولاء",
+      "linkFailed": "تعذّر ربط العميل"
     }
   },
   "dhl": {

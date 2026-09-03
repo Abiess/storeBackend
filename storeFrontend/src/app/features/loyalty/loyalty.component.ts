@@ -15,6 +15,14 @@ import { LucideAngularModule } from 'lucide-angular';
  * 3. Einkauf zuordnen (Betrag eingeben)
  * 4. Erhaltene Punkte + neuer Punktestand anzeigen
  *
+ * Vor-Ort-Flow für Laufkundschaft OHNE Konto (unbekannter Code):
+ * - "Neue Bonuskarte ausgeben": legt einen ANONYMEN LoyaltyAccount an
+ *   (kein CustomerProfile), Karte ist danach sofort nutzbar.
+ * - "Bestehendem Kunden zuordnen": bisheriger Registrierungs-Flow.
+ * - "Kunde verknüpfen": verknüpft eine bereits ausgegebene anonyme Karte
+ *   nachträglich mit einem bestehenden CustomerProfile, OHNE Punkte zu
+ *   verlieren (derselbe Account bekommt lediglich die Kunden-Referenz).
+ *
  * WICHTIG: Backend, Berechnung und Datenmodell bleiben unverändert,
  * wenn der manuelle Code später durch einen echten NFC-Reader ersetzt wird.
  */
@@ -40,8 +48,15 @@ export class LoyaltyComponent implements OnInit {
   searchError = signal<string | null>(null);
   account = signal<LoyaltyAccount | null>(null);
 
-  // ─── Code-Registrierung (wenn lookupByIdentifier() keinen Treffer liefert) ───
+  // ─── Unbekannter Code: Auswahl "Neue Bonuskarte ausgeben" vs. "Bestehendem Kunden zuordnen" ───
   codeNotFound = signal(false);
+  issuingCard = signal(false);
+  issueCardError = signal<string | null>(null);
+
+  // ─── Kunden-Zuordnung (Registrierung eines neuen Codes ODER Verknüpfung einer bestehenden anonymen Karte) ───
+  assigningExistingCustomer = signal(false);
+  /** 'register' = neuer Code für bestehenden Kunden (bisheriger Flow); 'link' = anonyme Karte nachträglich verknüpfen ("Kunde verknüpfen") */
+  assignMode = signal<'register' | 'link'>('register');
   customerQuery = '';
   customerOptions = signal<LoyaltyCustomerOption[]>([]);
   searchingCustomers = signal(false);
@@ -81,7 +96,7 @@ export class LoyaltyComponent implements OnInit {
     this.account.set(null);
     this.lastPurchase.set(null);
     this.purchaseError.set(null);
-    this.resetRegistration();
+    this.resetAssignFlow();
     this.searching.set(true);
 
     this.loyaltyService.lookup(this.storeId, trimmedCode).subscribe({
@@ -94,9 +109,8 @@ export class LoyaltyComponent implements OnInit {
         this.account.set(null);
         this.searchError.set(this.extractErrorMessage(error, 'loyalty.errors.notFound'));
         if (error?.status === 404) {
-          // Code existiert nicht → Registrierungsmöglichkeit anbieten
+          // Code existiert nicht → Auswahl anbieten: neue Karte ausgeben ODER bestehendem Kunden zuordnen
           this.codeNotFound.set(true);
-          this.loadCustomerOptions('');
         }
       }
     });
@@ -108,7 +122,52 @@ export class LoyaltyComponent implements OnInit {
     }
   }
 
-  // ─── Code-Registrierung ───
+  // ─── "Neue Bonuskarte ausgeben" (anonymer LoyaltyAccount, kein CustomerProfile) ───
+
+  issueNewCard(): void {
+    const trimmedCode = this.code.trim();
+    if (!trimmedCode || this.issuingCard()) {
+      return;
+    }
+
+    this.issueCardError.set(null);
+    this.issuingCard.set(true);
+
+    this.loyaltyService.issueCard(this.storeId, { identifier: trimmedCode }).subscribe({
+      next: (account) => {
+        this.issuingCard.set(false);
+        this.account.set(account);
+        this.codeNotFound.set(false);
+        this.searchError.set(null);
+        this.resetAssignFlow();
+      },
+      error: (error) => {
+        this.issuingCard.set(false);
+        this.issueCardError.set(this.extractErrorMessage(error, 'loyalty.errors.issueCardFailed'));
+      }
+    });
+  }
+
+  // ─── "Bestehendem Kunden zuordnen" (neuer Code registrieren) ───
+
+  startAssignExistingCustomer(): void {
+    this.assignMode.set('register');
+    this.assigningExistingCustomer.set(true);
+    this.registerError.set(null);
+    this.loadCustomerOptions('');
+  }
+
+  // ─── "Kunde verknüpfen" (bestehende anonyme Karte nachträglich zuordnen) ───
+
+  startLinkCustomer(): void {
+    if (!this.account()?.anonymous) {
+      return;
+    }
+    this.assignMode.set('link');
+    this.assigningExistingCustomer.set(true);
+    this.registerError.set(null);
+    this.loadCustomerOptions('');
+  }
 
   onCustomerQueryChange(): void {
     this.loadCustomerOptions(this.customerQuery.trim());
@@ -133,10 +192,39 @@ export class LoyaltyComponent implements OnInit {
     this.registerError.set(null);
   }
 
-  confirmRegister(): void {
+  confirmAssignCustomer(): void {
     const customer = this.selectedCustomer();
+    if (!customer || this.registering()) {
+      return;
+    }
+
+    if (this.assignMode() === 'link') {
+      const account = this.account();
+      if (!account) {
+        return;
+      }
+      this.registerError.set(null);
+      this.registering.set(true);
+
+      this.loyaltyService.linkCustomer(this.storeId, {
+        loyaltyAccountId: account.loyaltyAccountId,
+        customerProfileId: customer.customerProfileId
+      }).subscribe({
+        next: (updatedAccount) => {
+          this.registering.set(false);
+          this.account.set(updatedAccount);
+          this.resetAssignFlow();
+        },
+        error: (error) => {
+          this.registering.set(false);
+          this.registerError.set(this.extractErrorMessage(error, 'loyalty.errors.linkFailed'));
+        }
+      });
+      return;
+    }
+
     const trimmedCode = this.code.trim();
-    if (!customer || !trimmedCode || this.registering()) {
+    if (!trimmedCode) {
       return;
     }
 
@@ -151,7 +239,8 @@ export class LoyaltyComponent implements OnInit {
         this.registering.set(false);
         this.account.set(account);
         this.searchError.set(null);
-        this.resetRegistration();
+        this.codeNotFound.set(false);
+        this.resetAssignFlow();
       },
       error: (error) => {
         this.registering.set(false);
@@ -160,18 +249,24 @@ export class LoyaltyComponent implements OnInit {
     });
   }
 
-  cancelRegister(): void {
-    this.resetRegistration();
-    this.searchError.set(null);
+  cancelAssignCustomer(): void {
+    this.resetAssignFlow();
+    if (this.assignMode() === 'register') {
+      this.searchError.set(null);
+      this.codeNotFound.set(false);
+    }
   }
 
-  private resetRegistration(): void {
+  private resetAssignFlow(): void {
     this.codeNotFound.set(false);
+    this.assigningExistingCustomer.set(false);
+    this.assignMode.set('register');
     this.customerQuery = '';
     this.customerOptions.set([]);
     this.selectedCustomer.set(null);
     this.registering.set(false);
     this.registerError.set(null);
+    this.issueCardError.set(null);
   }
 
   canAssignPurchase(): boolean {
@@ -215,7 +310,7 @@ export class LoyaltyComponent implements OnInit {
     this.searchError.set(null);
     this.purchaseError.set(null);
     this.lastPurchase.set(null);
-    this.resetRegistration();
+    this.resetAssignFlow();
   }
 
   private extractErrorMessage(error: any, fallbackKey: string): string {

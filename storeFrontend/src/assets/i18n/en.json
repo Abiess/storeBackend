@@ -3350,10 +3350,19 @@
     "alreadyRegistered": "already registered",
     "registerButton": "Register code",
     "cancel": "Cancel",
+    "codeNotFoundTitle": "This code is not registered yet.",
+    "issueCardButton": "Issue new loyalty card",
+    "assignExistingButton": "Assign to existing customer",
+    "anonymousCardBadge": "Anonymous loyalty card",
+    "anonymousCardHint": "This card is not yet linked to a customer. Points are kept when linking.",
+    "linkCustomerButton": "Link customer",
+    "linkCustomerHint": "Link this loyalty card to an existing customer. The points balance is preserved.",
     "errors": {
       "notFound": "No customer found with this code",
       "purchaseFailed": "Could not assign purchase",
-      "registerFailed": "Could not register code"
+      "registerFailed": "Could not register code",
+      "issueCardFailed": "Could not issue loyalty card",
+      "linkFailed": "Could not link customer"
     }
   },
   "dhl": {

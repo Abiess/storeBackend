@@ -126,6 +126,101 @@ public class LoyaltyService {
     }
 
     /**
+     * Gibt eine neue anonyme Bonuskarte aus (Laufkundschaft ohne Konto).
+     *
+     * Legt einen LoyaltyAccount OHNE CustomerProfile an und verknüpft ihn
+     * sofort mit dem übergebenen Code. Punktestand startet bei 0. Die Karte
+     * ist danach sofort nutzbar (z.B. für den aktuellen POS-Einkauf).
+     *
+     * @param storeId    Store ID
+     * @param identifier eindeutiger Code (Scan oder manuelle Eingabe)
+     * @return LoyaltyAccountDTO des neuen anonymen Accounts (anonymous=true)
+     */
+    @Transactional
+    public LoyaltyAccountDTO issueAnonymousCard(Long storeId, String identifier) {
+        if (identifier == null || identifier.isBlank()) {
+            throw new IllegalArgumentException("identifier must not be empty");
+        }
+        String normalizedIdentifier = identifier.trim();
+
+        Store store = loadStore(storeId);
+        assertLoyaltyEnabled(store);
+
+        if (loyaltyIdentifierRepository.existsByStoreIdAndIdentifier(storeId, normalizedIdentifier)) {
+            throw new RuntimeException("Identifier already registered: " + normalizedIdentifier);
+        }
+
+        LoyaltyAccount account = new LoyaltyAccount();
+        account.setStore(store);
+        account.setCustomerProfile(null);
+        account.setPointsBalance(0);
+        account.setLifetimePoints(0);
+        account = loyaltyAccountRepository.save(account);
+
+        LoyaltyIdentifier newIdentifier = new LoyaltyIdentifier();
+        newIdentifier.setStore(store);
+        newIdentifier.setLoyaltyAccount(account);
+        newIdentifier.setIdentifier(normalizedIdentifier);
+        newIdentifier.setStatus(LoyaltyIdentifierStatus.ACTIVE);
+        loyaltyIdentifierRepository.save(newIdentifier);
+
+        log.info("Anonymous loyalty card issued: store={}, loyaltyAccount={}, identifier={}",
+            storeId, account.getId(), normalizedIdentifier);
+
+        return toAccountDTO(account, store);
+    }
+
+    /**
+     * Verknüpft einen bestehenden (bisher anonymen) LoyaltyAccount nachträglich
+     * mit einem CustomerProfile ("Kunde verknüpfen"). Die Punkte bleiben
+     * erhalten, da derselbe Account (dieselbe Zeile) wiederverwendet wird -
+     * es wird KEIN neuer Account angelegt und keine Punkte übertragen.
+     *
+     * @param storeId           Store ID
+     * @param loyaltyAccountId  bestehender, bisher anonymer LoyaltyAccount
+     * @param customerProfileId Ziel-CustomerProfile (MUSS zum Store gehören)
+     * @return aktualisiertes LoyaltyAccountDTO (anonymous=false)
+     */
+    @Transactional
+    public LoyaltyAccountDTO linkCustomerProfile(Long storeId, Long loyaltyAccountId, Long customerProfileId) {
+        if (loyaltyAccountId == null || customerProfileId == null) {
+            throw new IllegalArgumentException("loyaltyAccountId and customerProfileId must not be empty");
+        }
+
+        Store store = loadStore(storeId);
+
+        LoyaltyAccount account = loyaltyAccountRepository.findById(loyaltyAccountId)
+            .orElseThrow(() -> new RuntimeException("Loyalty account not found: " + loyaltyAccountId));
+
+        if (account.getStore() == null || !account.getStore().getId().equals(storeId)) {
+            throw new SecurityException("Loyalty account " + loyaltyAccountId + " does not belong to store " + storeId);
+        }
+
+        if (account.getCustomerProfile() != null) {
+            throw new RuntimeException("Loyalty account is already linked to a customer");
+        }
+
+        CustomerProfile customerProfile = customerProfileRepository.findById(customerProfileId)
+            .orElseThrow(() -> new RuntimeException("Customer profile not found: " + customerProfileId));
+
+        if (customerProfile.getStore() == null || !customerProfile.getStore().getId().equals(storeId)) {
+            throw new SecurityException("Customer profile " + customerProfileId + " does not belong to store " + storeId);
+        }
+
+        if (loyaltyAccountRepository.findByStoreIdAndCustomerProfileId(storeId, customerProfileId).isPresent()) {
+            throw new RuntimeException("Customer already has a loyalty account for this store");
+        }
+
+        account.setCustomerProfile(customerProfile);
+        loyaltyAccountRepository.save(account);
+
+        log.info("Loyalty account linked to customer: store={}, loyaltyAccount={}, customerProfile={}",
+            storeId, loyaltyAccountId, customerProfileId);
+
+        return toAccountDTO(account, store);
+    }
+
+    /**
      * Ordnet einen Einkauf einem Loyalty Account zu, berechnet die Punkte
      * anhand der Store-Konfiguration und legt eine EARN-Transaction an.
      *
@@ -266,13 +361,15 @@ public class LoyaltyService {
     }
 
     private LoyaltyAccountDTO toAccountDTO(LoyaltyAccount account, Store store) {
+        CustomerProfile profile = account.getCustomerProfile();
         LoyaltyAccountDTO dto = new LoyaltyAccountDTO();
         dto.setLoyaltyAccountId(account.getId());
-        dto.setCustomerProfileId(account.getCustomerProfile().getId());
-        dto.setCustomerName(resolveCustomerName(account.getCustomerProfile()));
+        dto.setCustomerProfileId(profile != null ? profile.getId() : null);
+        dto.setCustomerName(resolveCustomerName(profile));
         dto.setPointsBalance(account.getPointsBalance());
         dto.setLifetimePoints(account.getLifetimePoints());
         dto.setCurrencyCode(store.getCurrencyCode() != null ? store.getCurrencyCode().name() : null);
+        dto.setAnonymous(profile == null);
         return dto;
     }
 

@@ -3383,10 +3383,19 @@
     "alreadyRegistered": "bereits registriert",
     "registerButton": "Code registrieren",
     "cancel": "Abbrechen",
+    "codeNotFoundTitle": "Dieser Code ist noch nicht registriert.",
+    "issueCardButton": "Neue Bonuskarte ausgeben",
+    "assignExistingButton": "Bestehendem Kunden zuordnen",
+    "anonymousCardBadge": "Anonyme Bonuskarte",
+    "anonymousCardHint": "Diese Karte ist noch keinem Kunden zugeordnet. Die Punkte bleiben beim Verknüpfen erhalten.",
+    "linkCustomerButton": "Kunde verknüpfen",
+    "linkCustomerHint": "Verknüpfe diese Bonuskarte mit einem bestehenden Kunden. Der Punktestand bleibt erhalten.",
     "errors": {
       "notFound": "Kein Kunde mit diesem Code gefunden",
       "purchaseFailed": "Einkauf konnte nicht zugeordnet werden",
-      "registerFailed": "Code konnte nicht registriert werden"
+      "registerFailed": "Code konnte nicht registriert werden",
+      "issueCardFailed": "Bonuskarte konnte nicht ausgegeben werden",
+      "linkFailed": "Kunde konnte nicht verknüpft werden"
     }
   },
   "dhl": {

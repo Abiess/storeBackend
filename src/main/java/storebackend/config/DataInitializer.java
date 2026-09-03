@@ -49,6 +49,14 @@ public class DataInitializer {
             // Muss VOR allen anderen Store-Zugriffen laufen.
             repairLoyaltyStoreColumns();
 
+            // REGRESSION-FIX (Anonyme Bonuskarte): Hibernate ddl-auto=update
+            // entfernt bestehende NOT-NULL-Constraints NICHT automatisch, wenn
+            // eine Spalte im Entity nullable gemacht wird (siehe
+            // LoyaltyAccount.customerProfile / V016__loyalty_account_optional_customer_profile.sql).
+            // Ohne diesen Fix schlägt LoyaltyService.issueAnonymousCard() auf
+            // bereits existierenden DBs mit einer NOT-NULL-Verletzung fehl.
+            repairLoyaltyAccountCustomerProfileNullable();
+
             // Plan-Initialisierung (lokal und production)
             initializePlans();
 
@@ -100,6 +108,22 @@ public class DataInitializer {
             // Nicht fatal: Loggen und weitermachen (z.B. wenn Tabelle "stores" beim
             // allerersten Deployment noch gar nicht existiert).
             log.warn("[SCHEMA-REPAIR] Could not repair column stores.{}: {}", column, e.getMessage());
+        }
+    }
+
+    /**
+     * Regression-Fix für die anonyme Bonuskarte (Loyalty-Erweiterung):
+     * Entfernt die alte NOT-NULL-Constraint auf loyalty_accounts.customer_profile_id
+     * auf bereits existierenden DBs, da Hibernate ddl-auto=update Spalten nicht
+     * rückwirkend "lockert". Idempotent (ALTER COLUMN ... DROP NOT NULL ist auf
+     * bereits nullable Spalten ein No-Op auf H2/Postgres).
+     */
+    private void repairLoyaltyAccountCustomerProfileNullable() {
+        try {
+            jdbcTemplate.execute("ALTER TABLE loyalty_accounts ALTER COLUMN customer_profile_id DROP NOT NULL");
+            log.info("[SCHEMA-REPAIR] loyalty_accounts.customer_profile_id is now nullable");
+        } catch (Exception e) {
+            log.warn("[SCHEMA-REPAIR] Could not relax loyalty_accounts.customer_profile_id: {}", e.getMessage());
         }
     }
 

@@ -40,12 +40,51 @@
     }
   </div>
 
-  <!-- ════════ Code-Registrierung (kein Treffer für den eingegebenen Code) ════════ -->
-  @if (codeNotFound() && !account()) {
+  <!-- ════════ Unbekannter Code: Neue Bonuskarte ausgeben ODER bestehendem Kunden zuordnen ════════ -->
+  @if (codeNotFound() && !account() && !assigningExistingCustomer()) {
+    <div class="loyalty-card register-card">
+      <p class="register-hint">
+        <lucide-icon name="alert-circle" [size]="18"></lucide-icon>
+        {{ 'loyalty.codeNotFoundTitle' | translate }}
+      </p>
+
+      <div class="register-actions code-not-found-actions">
+        <button
+          class="btn-assign"
+          [disabled]="issuingCard()"
+          (click)="issueNewCard()">
+          @if (issuingCard()) {
+            <lucide-icon name="loader-2" [size]="18" class="icon-spinning"></lucide-icon>
+          } @else {
+            <lucide-icon name="gift" [size]="18"></lucide-icon>
+          }
+          {{ 'loyalty.issueCardButton' | translate }}
+        </button>
+        <button class="btn-start-over" (click)="startAssignExistingCustomer()">
+          <lucide-icon name="user" [size]="16"></lucide-icon>
+          {{ 'loyalty.assignExistingButton' | translate }}
+        </button>
+      </div>
+
+      @if (issueCardError()) {
+        <div class="error-banner">
+          <lucide-icon name="alert-circle" [size]="16"></lucide-icon>
+          {{ issueCardError()! | translate }}
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ════════ Kunden-Zuordnung (neuer Code registrieren ODER anonyme Karte verknüpfen) ════════ -->
+  @if (assigningExistingCustomer()) {
     <div class="loyalty-card register-card">
       <p class="register-hint">
         <lucide-icon name="gift" [size]="18"></lucide-icon>
-        {{ 'loyalty.registerHint' | translate: { code: code.trim() } }}
+        @if (assignMode() === 'link') {
+          {{ 'loyalty.linkCustomerHint' | translate }}
+        } @else {
+          {{ 'loyalty.registerHint' | translate: { code: code.trim() } }}
+        }
       </p>
 
       <label class="loyalty-label">{{ 'loyalty.customerSearchLabel' | translate }}</label>
@@ -70,15 +109,15 @@
             <li
               class="customer-option"
               [class.selected]="selectedCustomer()?.customerProfileId === option.customerProfileId"
-              [class.disabled]="option.alreadyRegistered"
-              (click)="!option.alreadyRegistered && selectCustomer(option)">
+              [class.disabled]="assignMode() === 'register' && option.alreadyRegistered"
+              (click)="(assignMode() === 'link' || !option.alreadyRegistered) && selectCustomer(option)">
               <div>
                 <strong>{{ option.name }}</strong>
                 @if (option.email) {
                   <span class="customer-option-meta">{{ option.email }}</span>
                 }
               </div>
-              @if (option.alreadyRegistered) {
+              @if (assignMode() === 'register' && option.alreadyRegistered) {
                 <span class="badge-registered">{{ 'loyalty.alreadyRegistered' | translate }}</span>
               }
             </li>
@@ -94,19 +133,19 @@
       }
 
       <div class="register-actions">
-        <button class="btn-start-over" (click)="cancelRegister()">
+        <button class="btn-start-over" (click)="cancelAssignCustomer()">
           {{ 'loyalty.cancel' | translate }}
         </button>
         <button
           class="btn-assign"
           [disabled]="!selectedCustomer() || registering()"
-          (click)="confirmRegister()">
+          (click)="confirmAssignCustomer()">
           @if (registering()) {
             <lucide-icon name="loader-2" [size]="18" class="icon-spinning"></lucide-icon>
           } @else {
             <lucide-icon name="check-circle" [size]="18"></lucide-icon>
           }
-          {{ 'loyalty.registerButton' | translate }}
+          {{ (assignMode() === 'link' ? 'loyalty.linkCustomerButton' : 'loyalty.registerButton') | translate }}
         </button>
       </div>
     </div>
@@ -118,13 +157,25 @@
       <div class="customer-header">
         <lucide-icon name="user" [size]="32" class="customer-icon"></lucide-icon>
         <div>
-          <h2 class="customer-name">{{ acc.customerName }}</h2>
+          @if (acc.anonymous) {
+            <h2 class="customer-name">{{ 'loyalty.anonymousCardBadge' | translate }}</h2>
+            <p class="anonymous-card-hint">{{ 'loyalty.anonymousCardHint' | translate }}</p>
+          } @else {
+            <h2 class="customer-name">{{ acc.customerName }}</h2>
+          }
           <p class="points-balance">
             {{ 'loyalty.currentBalance' | translate }}:
             <strong>{{ acc.pointsBalance }} {{ 'loyalty.points' | translate }}</strong>
           </p>
         </div>
       </div>
+
+      @if (acc.anonymous && !assigningExistingCustomer()) {
+        <button class="btn-start-over link-customer-btn" (click)="startLinkCustomer()">
+          <lucide-icon name="link-2" [size]="16"></lucide-icon>
+          {{ 'loyalty.linkCustomerButton' | translate }}
+        </button>
+      }
 
       <!-- ════════ SCHRITT 3: Einkauf zuordnen ════════ -->
       <div class="purchase-section">

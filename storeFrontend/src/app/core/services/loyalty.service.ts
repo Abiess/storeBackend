@@ -12,12 +12,14 @@ import { environment } from '@env/environment';
  */
 export interface LoyaltyAccount {
   loyaltyAccountId: number;
-  customerProfileId: number;
-  customerName: string;
+  customerProfileId: number | null;
+  customerName: string | null;
   pointsBalance: number;
   lifetimePoints: number;
   /** Store-Währung (NICHT hardcodiert auf MAD/EUR) */
   currencyCode: string;
+  /** true = Karte ist (noch) keinem CustomerProfile zugeordnet (anonyme Bonuskarte) */
+  anonymous: boolean;
 }
 
 export interface LoyaltyPurchaseRequest {
@@ -27,7 +29,7 @@ export interface LoyaltyPurchaseRequest {
 
 export interface LoyaltyPurchaseResponse {
   loyaltyAccountId: number;
-  customerName: string;
+  customerName: string | null;
   amount: number;
   pointsEarned: number;
   previousBalance: number;
@@ -38,6 +40,15 @@ export interface LoyaltyPurchaseResponse {
 export interface LoyaltyRegisterRequest {
   customerProfileId: number;
   identifier: string;
+}
+
+export interface LoyaltyIssueCardRequest {
+  identifier: string;
+}
+
+export interface LoyaltyLinkCustomerRequest {
+  loyaltyAccountId: number;
+  customerProfileId: number;
 }
 
 export interface LoyaltyCustomerOption {
@@ -99,6 +110,30 @@ export class LoyaltyService {
   register(storeId: number, request: LoyaltyRegisterRequest): Observable<LoyaltyAccount> {
     return this.http.post<LoyaltyAccount>(
       `${this.apiUrl}/stores/${storeId}/loyalty/register`,
+      request
+    );
+  }
+
+  /**
+   * Gibt eine neue ANONYME Bonuskarte aus (Laufkundschaft ohne Konto).
+   * Legt einen LoyaltyAccount OHNE CustomerProfile an (Punktestand 0).
+   * POST /api/stores/{storeId}/loyalty/issue-card
+   */
+  issueCard(storeId: number, request: LoyaltyIssueCardRequest): Observable<LoyaltyAccount> {
+    return this.http.post<LoyaltyAccount>(
+      `${this.apiUrl}/stores/${storeId}/loyalty/issue-card`,
+      request
+    );
+  }
+
+  /**
+   * Verknüpft einen bestehenden (bisher anonymen) LoyaltyAccount nachträglich
+   * mit einem CustomerProfile ("Kunde verknüpfen"). Die Punkte bleiben erhalten.
+   * POST /api/stores/{storeId}/loyalty/link-customer
+   */
+  linkCustomer(storeId: number, request: LoyaltyLinkCustomerRequest): Observable<LoyaltyAccount> {
+    return this.http.post<LoyaltyAccount>(
+      `${this.apiUrl}/stores/${storeId}/loyalty/link-customer`,
       request
     );
   }

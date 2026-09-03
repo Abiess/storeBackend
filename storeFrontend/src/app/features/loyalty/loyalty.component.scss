@@ -124,6 +124,16 @@
     color: #1f2933;
   }
 
+  .anonymous-card-hint {
+    margin: 0 0 8px;
+    font-size: 13px;
+    color: #9a6b00;
+    background: #fff7e6;
+    border: 1px solid #ffe4a3;
+    border-radius: 6px;
+    padding: 6px 10px;
+  }
+
   .points-balance {
     margin: 0;
     font-size: 14px;
@@ -273,6 +283,17 @@
   .btn-start-over {
     margin-top: 0;
   }
+}
+
+.code-not-found-actions {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.link-customer-btn {
+  margin-top: 12px;
+  margin-bottom: 20px;
+  width: fit-content;
 }
 
 .icon-spinning {
