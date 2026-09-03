@@ -328,6 +328,36 @@ public class Store {
     @Column(name = "legal_responsibility_accepted", nullable = false)
     private Boolean legalResponsibilityAccepted = false;
 
+    // ─── Loyalty-/Bonuspunkte-Konfiguration (MVP) ────────────────
+    /**
+     * Loyalty-Programm für diesen Store aktiviert.
+     * Default: false (Feature muss bewusst aktiviert werden)
+     */
+    @Column(name = "loyalty_enabled", nullable = false)
+    private Boolean loyaltyEnabled = false;
+
+    /**
+     * Betrags-Schritt für die Punkteberechnung (währungsunabhängig!).
+     * Beispiel: amountStep=10, pointsPerStep=1 → 220 / 10 = 22 Punkte.
+     * Default: 10
+     */
+    @Column(name = "loyalty_amount_step", precision = 15, scale = 2, nullable = false)
+    private BigDecimal loyaltyAmountStep = new BigDecimal("10.00");
+
+    /**
+     * Anzahl Punkte pro amountStep.
+     * Default: 1
+     */
+    @Column(name = "loyalty_points_per_step", nullable = false)
+    private Integer loyaltyPointsPerStep = 1;
+
+    /**
+     * Mindest-Einkaufswert, ab dem überhaupt Punkte vergeben werden.
+     * Optional (null = keine Mindestsumme).
+     */
+    @Column(name = "loyalty_minimum_purchase", precision = 15, scale = 2)
+    private BigDecimal loyaltyMinimumPurchase;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private StoreStatus status = StoreStatus.ACTIVE;

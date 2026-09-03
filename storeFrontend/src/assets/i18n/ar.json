@@ -1282,6 +1282,7 @@
       "supplierInvoices": "فواتير الموردين",
       "productsExpiry": "المنتجات مع تاريخ الانتهاء",
       "pos": "الكاشير",
+      "loyalty": "نقاط الولاء",
       "dhl": "DHL"
     },
     "noStore": {
@@ -3219,6 +3220,26 @@
       "notFound": "لم يتم العثور على الإيصال",
       "noAccess": "لا يوجد إذن لهذا الإيصال",
       "loadError": "خطأ في تحميل الإيصال"
+    }
+  },
+  "loyalty": {
+    "title": "نقاط الولاء",
+    "subtitle": "أدخل رمز البطاقة/العميل للاطلاع على رصيد النقاط وربط عملية الشراء.",
+    "codeLabel": "رمز البطاقة/العميل",
+    "codePlaceholder": "مثال: BONUS-0001",
+    "searchButton": "بحث عن العميل",
+    "currentBalance": "الرصيد الحالي",
+    "points": "نقطة",
+    "purchaseAmountLabel": "قيمة الشراء",
+    "purchaseAmountPlaceholder": "مثال: 220.00",
+    "assignButton": "ربط عملية الشراء",
+    "purchaseValue": "قيمة الشراء",
+    "pointsEarned": "النقاط المكتسبة",
+    "newBalance": "الرصيد الجديد",
+    "startOver": "عميل جديد",
+    "errors": {
+      "notFound": "لم يتم العثور على عميل بهذا الرمز",
+      "purchaseFailed": "تعذّر ربط عملية الشراء"
     }
   },
   "dhl": {

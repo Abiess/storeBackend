@@ -1,0 +1,197 @@
+.loyalty-container {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+
+.loyalty-header {
+  margin-bottom: 24px;
+
+  h1 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 0 4px;
+    color: #1f2933;
+  }
+
+  .loyalty-subtitle {
+    color: #6b7280;
+    margin: 0;
+    font-size: 14px;
+  }
+}
+
+.loyalty-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  margin-bottom: 20px;
+}
+
+.loyalty-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4b5563;
+  margin-bottom: 8px;
+}
+
+.loyalty-search-bar {
+  display: flex;
+  gap: 10px;
+}
+
+.loyalty-input {
+  flex: 1;
+  padding: 12px 14px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 15px;
+  transition: border-color 0.2s;
+
+  &:focus {
+    outline: none;
+    border-color: #667eea;
+  }
+}
+
+.btn-search,
+.btn-assign {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.2s, transform 0.1s;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: #fef2f2;
+  color: #dc2626;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.customer-card {
+  border: 1.5px solid rgba(102, 126, 234, 0.25);
+}
+
+.customer-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+
+  .customer-icon {
+    width: 56px;
+    height: 56px;
+    padding: 12px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    box-sizing: border-box;
+  }
+
+  .customer-name {
+    margin: 0 0 4px;
+    font-size: 20px;
+    font-weight: 700;
+    color: #1f2933;
+  }
+
+  .points-balance {
+    margin: 0;
+    font-size: 14px;
+    color: #6b7280;
+
+    strong {
+      color: #764ba2;
+    }
+  }
+}
+
+.purchase-section {
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.purchase-result {
+  margin-top: 20px;
+  padding: 20px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.08));
+  text-align: center;
+
+  .success-icon {
+    color: #22c55e;
+    margin-bottom: 8px;
+  }
+
+  .result-line {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 14px;
+
+    strong {
+      font-size: 16px;
+    }
+
+    .points-earned {
+      color: #22c55e;
+    }
+  }
+}
+
+.btn-start-over {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 10px 16px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+  color: #6b7280;
+  font-size: 13px;
+  cursor: pointer;
+
+  &:hover {
+    border-color: #667eea;
+    color: #667eea;
+  }
+}
+
+.icon-spinning {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

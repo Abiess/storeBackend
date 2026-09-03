@@ -23,7 +23,9 @@ import {
   // Invoice Lines Navigation Icons
   ArrowLeft, RefreshCw, List, ListCheck,
   // POS Icons (CRITICAL FIX)
-  Loader2, Calendar, Minus, PackageX, Banknote, CheckCircle, ChevronUp
+  Loader2, Calendar, Minus, PackageX, Banknote, CheckCircle, ChevronUp,
+  // Loyalty Icons (MVP)
+  Gift, RotateCcw
 } from 'lucide-angular';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS, HttpClient } from '@angular/common/http';
@@ -89,7 +91,9 @@ export const appConfig: ApplicationConfig = {
         // Invoice Lines Navigation
         ArrowLeft, RefreshCw, List, ListCheck,
         // POS Icons (CRITICAL FIX)
-        Loader2, Calendar, Minus, PackageX, Banknote, CheckCircle, ChevronUp
+        Loader2, Calendar, Minus, PackageX, Banknote, CheckCircle, ChevronUp,
+        // Loyalty Icons (MVP)
+        Gift, RotateCcw
       })
     },
     // Standard Locale (kann dynamisch überschrieben werden)

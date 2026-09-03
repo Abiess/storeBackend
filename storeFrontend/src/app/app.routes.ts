@@ -227,6 +227,16 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
 
+  // ==================== Loyalty / Bonuspunkte (MVP) ====================
+  {
+    path: 'stores/:storeId/loyalty',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:storeId/loyalty');
+      return import('./features/loyalty/loyalty.component').then(m => m.LoyaltyComponent);
+    },
+    canActivate: [authGuard]
+  },
+
   // ==================== DHL Parcel Management ====================
   {
     path: 'stores/:storeId/dhl',

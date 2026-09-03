@@ -1,0 +1,115 @@
+<div class="loyalty-container">
+  <div class="loyalty-header">
+    <h1>
+      <lucide-icon name="gift" [size]="24"></lucide-icon>
+      {{ 'loyalty.title' | translate }}
+    </h1>
+    <p class="loyalty-subtitle">{{ 'loyalty.subtitle' | translate }}</p>
+  </div>
+
+  <!-- ════════ SCHRITT 1: Code-Eingabe ════════ -->
+  <div class="loyalty-card">
+    <label class="loyalty-label">{{ 'loyalty.codeLabel' | translate }}</label>
+    <div class="loyalty-search-bar">
+      <input
+        type="text"
+        [(ngModel)]="code"
+        (keydown)="onCodeKeydown($event)"
+        [placeholder]="'loyalty.codePlaceholder' | translate"
+        class="loyalty-input"
+        autofocus
+      />
+      <button
+        class="btn-search"
+        [disabled]="!code.trim() || searching()"
+        (click)="searchCustomer()">
+        @if (searching()) {
+          <lucide-icon name="loader-2" [size]="18" class="icon-spinning"></lucide-icon>
+        } @else {
+          <lucide-icon name="search" [size]="18"></lucide-icon>
+        }
+        {{ 'loyalty.searchButton' | translate }}
+      </button>
+    </div>
+
+    @if (searchError()) {
+      <div class="error-banner">
+        <lucide-icon name="alert-circle" [size]="16"></lucide-icon>
+        {{ searchError()! | translate }}
+      </div>
+    }
+  </div>
+
+  <!-- ════════ SCHRITT 2: Kunde + Punktestand ════════ -->
+  @if (account(); as acc) {
+    <div class="loyalty-card customer-card">
+      <div class="customer-header">
+        <lucide-icon name="user" [size]="32" class="customer-icon"></lucide-icon>
+        <div>
+          <h2 class="customer-name">{{ acc.customerName }}</h2>
+          <p class="points-balance">
+            {{ 'loyalty.currentBalance' | translate }}:
+            <strong>{{ acc.pointsBalance }} {{ 'loyalty.points' | translate }}</strong>
+          </p>
+        </div>
+      </div>
+
+      <!-- ════════ SCHRITT 3: Einkauf zuordnen ════════ -->
+      <div class="purchase-section">
+        <label class="loyalty-label">{{ 'loyalty.purchaseAmountLabel' | translate }} ({{ acc.currencyCode }})</label>
+        <div class="loyalty-search-bar">
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            [(ngModel)]="purchaseAmount"
+            [placeholder]="'loyalty.purchaseAmountPlaceholder' | translate"
+            class="loyalty-input"
+          />
+          <button
+            class="btn-assign"
+            [disabled]="!canAssignPurchase()"
+            (click)="assignPurchase()">
+            @if (processingPurchase()) {
+              <lucide-icon name="loader-2" [size]="18" class="icon-spinning"></lucide-icon>
+            } @else {
+              <lucide-icon name="check-circle" [size]="18"></lucide-icon>
+            }
+            {{ 'loyalty.assignButton' | translate }}
+          </button>
+        </div>
+
+        @if (purchaseError()) {
+          <div class="error-banner">
+            <lucide-icon name="alert-circle" [size]="16"></lucide-icon>
+            {{ purchaseError()! | translate }}
+          </div>
+        }
+      </div>
+
+      <!-- ════════ SCHRITT 4: Ergebnis ════════ -->
+      @if (lastPurchase(); as result) {
+        <div class="purchase-result">
+          <lucide-icon name="check-circle" [size]="32" class="success-icon"></lucide-icon>
+          <div class="result-line">
+            <span>{{ 'loyalty.purchaseValue' | translate }}:</span>
+            <strong>{{ result.amount | number:'1.2-2' }} {{ result.currencyCode }}</strong>
+          </div>
+          <div class="result-line">
+            <span>{{ 'loyalty.pointsEarned' | translate }}:</span>
+            <strong class="points-earned">+{{ result.pointsEarned }}</strong>
+          </div>
+          <div class="result-line">
+            <span>{{ 'loyalty.newBalance' | translate }}:</span>
+            <strong>{{ result.newBalance }} {{ 'loyalty.points' | translate }}</strong>
+          </div>
+        </div>
+      }
+
+      <button class="btn-start-over" (click)="startOver()">
+        <lucide-icon name="rotate-ccw" [size]="16"></lucide-icon>
+        {{ 'loyalty.startOver' | translate }}
+      </button>
+    </div>
+  }
+</div>

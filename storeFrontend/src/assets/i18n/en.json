@@ -1670,6 +1670,7 @@
       "supplierInvoices": "Supplier Invoices",
       "productsExpiry": "Products with Expiry Date",
       "pos": "Cashier",
+      "loyalty": "Loyalty Points",
       "dhl": "DHL"
     },
     "noStore": {
@@ -3311,6 +3312,26 @@
       "notFound": "Receipt not found",
       "noAccess": "No permission for this receipt",
       "loadError": "Error loading receipt"
+    }
+  },
+  "loyalty": {
+    "title": "Loyalty Points",
+    "subtitle": "Enter a card/customer code to look up points and assign purchases.",
+    "codeLabel": "Card/Customer Code",
+    "codePlaceholder": "e.g. BONUS-0001",
+    "searchButton": "Search customer",
+    "currentBalance": "Current balance",
+    "points": "points",
+    "purchaseAmountLabel": "Purchase amount",
+    "purchaseAmountPlaceholder": "e.g. 220.00",
+    "assignButton": "Assign purchase",
+    "purchaseValue": "Purchase value",
+    "pointsEarned": "Points earned",
+    "newBalance": "New balance",
+    "startOver": "New customer",
+    "errors": {
+      "notFound": "No customer found with this code",
+      "purchaseFailed": "Could not assign purchase"
     }
   },
   "dhl": {

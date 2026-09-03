@@ -444,6 +444,30 @@ public class StoreService {
             store.setVatExemptionText(request.getVatExemptionText().isBlank() ? null : request.getVatExemptionText().trim());
         }
 
+        // ─── Loyalty-/Bonuspunkte-Konfiguration ────────────────────────
+        if (request.getLoyaltyEnabled() != null) {
+            store.setLoyaltyEnabled(request.getLoyaltyEnabled());
+        }
+        if (request.getLoyaltyAmountStep() != null) {
+            if (request.getLoyaltyAmountStep().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+                throw new RuntimeException("loyaltyAmountStep must be greater than zero");
+            }
+            store.setLoyaltyAmountStep(request.getLoyaltyAmountStep());
+        }
+        if (request.getLoyaltyPointsPerStep() != null) {
+            if (request.getLoyaltyPointsPerStep() < 0) {
+                throw new RuntimeException("loyaltyPointsPerStep must not be negative");
+            }
+            store.setLoyaltyPointsPerStep(request.getLoyaltyPointsPerStep());
+        }
+        if (request.getLoyaltyMinimumPurchase() != null) {
+            store.setLoyaltyMinimumPurchase(
+                request.getLoyaltyMinimumPurchase().compareTo(java.math.BigDecimal.ZERO) < 0
+                    ? java.math.BigDecimal.ZERO
+                    : request.getLoyaltyMinimumPurchase()
+            );
+        }
+
         // ─── Legal/Impressum-Felder ────────────────────────────────
         if (request.getLegalName() != null) {
             store.setLegalName(request.getLegalName().isBlank() ? null : request.getLegalName().trim());
@@ -903,6 +927,11 @@ public class StoreService {
         dto.setShippingTaxRate(store.getShippingTaxRate());
         dto.setShippingTaxStrategy(store.getShippingTaxStrategy());
         dto.setVatExemptionText(store.getVatExemptionText());
+        // ─── Loyalty-/Bonuspunkte-Konfiguration ────────────────────────
+        dto.setLoyaltyEnabled(store.getLoyaltyEnabled());
+        dto.setLoyaltyAmountStep(store.getLoyaltyAmountStep());
+        dto.setLoyaltyPointsPerStep(store.getLoyaltyPointsPerStep());
+        dto.setLoyaltyMinimumPurchase(store.getLoyaltyMinimumPurchase());
         // ─── Legal/Impressum (nur für Admin) ───────────────────────────
         dto.setLegalName(store.getLegalName());
         dto.setLegalForm(store.getLegalForm());

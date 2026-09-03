@@ -123,4 +123,14 @@ public class UpdateStoreRequest {
      * NICHT vom Frontend direkt editierbar
      */
     private Boolean legalResponsibilityAccepted;
+
+    // ─── Loyalty-/Bonuspunkte-Konfiguration – optional, null = nicht ändern ─
+    /** Loyalty-Programm aktiviert/deaktiviert */
+    private Boolean loyaltyEnabled;
+    /** Betrags-Schritt für Punkteberechnung (z.B. 10.00) */
+    private java.math.BigDecimal loyaltyAmountStep;
+    /** Punkte pro amountStep (z.B. 1) */
+    private Integer loyaltyPointsPerStep;
+    /** Mindest-Einkaufswert für Punktevergabe (optional) */
+    private java.math.BigDecimal loyaltyMinimumPurchase;
 }

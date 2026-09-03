@@ -23,6 +23,12 @@ public class PosOrderResponse {
     private BigDecimal cashChange; // NULL für CARD_EXTERNAL
     private OrderStatus status;
     private LocalDateTime createdAt;
+
+    // ─── Loyalty (optional, nur gesetzt wenn loyaltyCode mitgeschickt wurde) ──
+    /** Gutgeschriebene Punkte für diesen Einkauf (NULL wenn kein Loyalty-Code verwendet wurde) */
+    private Integer loyaltyPointsEarned;
+    /** Neuer Punktestand nach diesem Einkauf (NULL wenn kein Loyalty-Code verwendet wurde) */
+    private Integer loyaltyNewBalance;
     
     // Constructor ohne cashChange (für CARD_EXTERNAL)
     public PosOrderResponse(Long orderId, String orderNumber, BigDecimal totalGross, 

@@ -176,6 +176,13 @@ export class AdminSidebarComponent implements OnInit {
                         visibleForBusinessTypes: [BusinessType.SHOP]  // POS nur für SHOP
                     },
                     {
+                        labelKey: 'sidebarAdmin.items.loyalty',
+                        icon: 'gift',
+                        route: `${baseRoute}/loyalty`,
+                        requiresStore: true,
+                        visibleForBusinessTypes: [BusinessType.SHOP]  // Loyalty-MVP nur für SHOP
+                    },
+                    {
                         labelKey: 'sidebarAdmin.items.dhl',
                         icon: 'truck',
                         route: `${baseRoute}/dhl`,

@@ -85,4 +85,10 @@ public class StoreDTO {
     private String shippingPolicyText;
     private String shippingPolicyStatus;
     private Boolean legalResponsibilityAccepted;  // Consent-Flag
+
+    // ─── Loyalty-/Bonuspunkte-Konfiguration (MVP) ──────────────
+    private Boolean loyaltyEnabled;
+    private BigDecimal loyaltyAmountStep;
+    private Integer loyaltyPointsPerStep;
+    private BigDecimal loyaltyMinimumPurchase;
 }

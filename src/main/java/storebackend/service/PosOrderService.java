@@ -38,6 +38,7 @@ public class PosOrderService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final StoreRepository storeRepository;
+    private final LoyaltyService loyaltyService;
 
     /**
      * Erstellt POS-Verkauf (Order mit source = POS)
@@ -228,6 +229,24 @@ public class PosOrderService {
         log.info("POS order created: orderNumber={}, total={}, items={}", 
             savedOrder.getOrderNumber(), savedOrder.getTotalGross(), orderItems.size());
 
+        // 7b. Loyalty: Einkauf zuordnen, falls Code mitgeschickt wurde
+        // Bestehender Kaufprozess ruft LoyaltyService auf - keine zweite Checkout-Logik.
+        Integer loyaltyPointsEarned = null;
+        Integer loyaltyNewBalance = null;
+        if (request.getLoyaltyCode() != null && !request.getLoyaltyCode().isBlank()) {
+            try {
+                var loyaltyResult = loyaltyService.recordPurchase(
+                    storeId, request.getLoyaltyCode(), savedOrder.getTotalGross(), savedOrder
+                );
+                loyaltyPointsEarned = loyaltyResult.getPointsEarned();
+                loyaltyNewBalance = loyaltyResult.getNewBalance();
+            } catch (RuntimeException ex) {
+                // Loyalty-Fehler dürfen den Verkauf NICHT blockieren (Order ist bereits gespeichert)
+                log.warn("Loyalty purchase recording failed for order {}: {}",
+                    savedOrder.getOrderNumber(), ex.getMessage());
+            }
+        }
+
         // 8. Response erstellen
         BigDecimal cashChange = null;
         if (paymentMethod == PaymentMethod.CASH && request.getCashReceived() != null) {
@@ -238,15 +257,17 @@ public class PosOrderService {
             }
         }
 
-        return new PosOrderResponse(
-            savedOrder.getId(),
-            savedOrder.getOrderNumber(),
-            savedOrder.getTotalGross(),
-            savedOrder.getTaxTotal(),
-            cashChange,
-            savedOrder.getStatus(),
-            savedOrder.getCreatedAt()
-        );
+        PosOrderResponse response = new PosOrderResponse();
+        response.setOrderId(savedOrder.getId());
+        response.setOrderNumber(savedOrder.getOrderNumber());
+        response.setTotalGross(savedOrder.getTotalGross());
+        response.setTaxTotal(savedOrder.getTaxTotal());
+        response.setCashChange(cashChange);
+        response.setStatus(savedOrder.getStatus());
+        response.setCreatedAt(savedOrder.getCreatedAt());
+        response.setLoyaltyPointsEarned(loyaltyPointsEarned);
+        response.setLoyaltyNewBalance(loyaltyNewBalance);
+        return response;
     }
 
     /**

@@ -37,6 +37,14 @@ public class PosOrderRequest {
      * Nur productId + quantity, Preis wird serverseitig geladen
      */
     private List<PosOrderItemRequest> items;
+
+    /**
+     * Optionaler Loyalty Karten-/Kundencode (manueller Testcode, später NFC-UID).
+     * Wenn gesetzt und Loyalty für den Store aktiviert ist, werden nach
+     * erfolgreichem Verkauf automatisch Bonuspunkte gutgeschrieben.
+     * NULL = kein Loyalty-Bezug für diesen Verkauf.
+     */
+    private String loyaltyCode;
     
     // Validation
     public boolean isValid() {

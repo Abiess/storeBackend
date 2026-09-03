@@ -3273,6 +3273,7 @@
       "supplierInvoices": "Lieferantenrechnungen",
       "productsExpiry": "Produkte mit Ablaufdatum",
       "pos": "Kasse",
+      "loyalty": "Bonuspunkte",
       "dhl": "DHL"
     },
     "noStore": {
@@ -3344,6 +3345,26 @@
       "notFound": "Beleg nicht gefunden",
       "noAccess": "Keine Berechtigung für diesen Beleg",
       "loadError": "Fehler beim Laden des Belegs"
+    }
+  },
+  "loyalty": {
+    "title": "Bonuspunkte",
+    "subtitle": "Karten-/Kundencode eingeben, um Punktestand und Einkäufe zuzuordnen.",
+    "codeLabel": "Karten-/Kundencode",
+    "codePlaceholder": "z.B. BONUS-0001",
+    "searchButton": "Kunde suchen",
+    "currentBalance": "Aktueller Punktestand",
+    "points": "Punkte",
+    "purchaseAmountLabel": "Einkaufswert",
+    "purchaseAmountPlaceholder": "z.B. 220.00",
+    "assignButton": "Einkauf zuordnen",
+    "purchaseValue": "Einkaufswert",
+    "pointsEarned": "Erhaltene Punkte",
+    "newBalance": "Neuer Punktestand",
+    "startOver": "Neuer Kunde",
+    "errors": {
+      "notFound": "Kein Kunde mit diesem Code gefunden",
+      "purchaseFailed": "Einkauf konnte nicht zugeordnet werden"
     }
   },
   "dhl": {
