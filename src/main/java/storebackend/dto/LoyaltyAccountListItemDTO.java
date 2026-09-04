@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -32,4 +33,8 @@ public class LoyaltyAccountListItemDTO {
     private LocalDateTime createdAt;
     /** Zeitpunkt der letzten EARN-Transaction, null falls noch kein Einkauf zugeordnet wurde */
     private LocalDateTime lastPurchaseAt;
+    /** ID des primären LoyaltyIdentifier (für Sperren/Ersetzen-Aktionen), null falls keiner existiert */
+    private Long loyaltyIdentifierId;
+    /** Offener Credit-Betrag ("Anschreiben"). 0, falls (noch) kein CustomerCreditAccount existiert. */
+    private BigDecimal openAmount;
 }

@@ -9,5 +9,6 @@ public enum PaymentMethod {
     
     // POS Payment Methods
     CASH,           // POS Barzahlung vor Ort
-    CARD_EXTERNAL   // POS Kartenzahlung am externen Terminal
+    CARD_EXTERNAL,  // POS Kartenzahlung am externen Terminal
+    PAY_LATER       // POS "Später bezahlen" (Anschreiben/Credit) - erfordert loyaltyCode, siehe PosOrderService
 }

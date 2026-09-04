@@ -12,6 +12,13 @@ public interface LoyaltyTransactionRepository extends JpaRepository<LoyaltyTrans
     List<LoyaltyTransaction> findByLoyaltyAccountIdOrderByCreatedAtDesc(Long loyaltyAccountId);
 
     /**
+     * Transaktionshistorie eines Accounts, zusätzlich per storeId abgesichert
+     * (Multi-Tenant: verhindert, dass ein Store die Historie eines fremden
+     * Accounts über eine erratene loyaltyAccountId einsehen kann).
+     */
+    List<LoyaltyTransaction> findByLoyaltyAccountIdAndStoreIdOrderByCreatedAtDesc(Long loyaltyAccountId, Long storeId);
+
+    /**
      * Projektion für {@link #findLastEarnByStoreId}: pro Account der
      * Zeitpunkt der letzten EARN-Transaction ("Letzter Einkauf").
      */

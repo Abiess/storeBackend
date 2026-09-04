@@ -29,6 +29,10 @@ public class PosOrderResponse {
     private Integer loyaltyPointsEarned;
     /** Neuer Punktestand nach diesem Einkauf (NULL wenn kein Loyalty-Code verwendet wurde) */
     private Integer loyaltyNewBalance;
+
+    // ─── Credit (optional, nur gesetzt bei paymentMethod=PAY_LATER) ───────────
+    /** Neuer offener Betrag nach dieser PAY_LATER-Buchung (NULL bei CASH/CARD_EXTERNAL) */
+    private BigDecimal creditNewBalance;
     
     // Constructor ohne cashChange (für CARD_EXTERNAL)
     public PosOrderResponse(Long orderId, String orderNumber, BigDecimal totalGross, 

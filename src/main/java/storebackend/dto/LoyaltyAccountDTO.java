@@ -26,4 +26,6 @@ public class LoyaltyAccountDTO {
     private String currencyCode;
     /** true = Account ist (noch) keinem CustomerProfile zugeordnet */
     private boolean anonymous;
+    /** Offener Credit-Betrag ("Anschreiben"). 0, falls (noch) kein CustomerCreditAccount existiert. */
+    private BigDecimal openAmount;
 }

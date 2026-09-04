@@ -3270,7 +3270,11 @@
       "purchaseFailed": "تعذّر ربط عملية الشراء",
       "registerFailed": "تعذّر تسجيل الرمز",
       "issueCardFailed": "تعذّر إصدار بطاقة الولاء",
-      "linkFailed": "تعذّر ربط العميل"
+      "linkFailed": "تعذّر ربط العميل",
+      "blockFailed": "تعذّر حظر البطاقة",
+      "replaceFailed": "تعذّر استبدال البطاقة",
+      "adjustFailed": "تعذّر حفظ تعديل النقاط",
+      "redeemFailed": "تعذّر استبدال النقاط"
     },
     "list": {
       "heading": "بطاقات الولاء",
@@ -3292,9 +3296,41 @@
       "filterRegistered": "عملاء مسجّلون",
       "filterAnonymous": "بطاقات غير مسجّلة",
       "actionOpen": "فتح",
+      "actionHistory": "سجل المعاملات",
+      "actionBlock": "حظر البطاقة",
+      "actionReplace": "استبدال البطاقة",
+      "actionAdjust": "تعديل النقاط",
+      "actionRedeem": "استبدال النقاط",
       "actionLinkCustomer": "ربط العميل",
       "searchPlaceholder": "ابحث بالاسم أو رمز البطاقة...",
-      "emptyMessage": "لا توجد بطاقات ولاء بعد"
+      "emptyMessage": "لا توجد بطاقات ولاء بعد",
+      "confirmBlock": "هل تريد حظر هذه البطاقة فعلاً؟ لن يمكن استخدامها بعد ذلك.",
+      "replaceHint": "أدخل أو امسح رمز بطاقة/عميل جديد لـ \"{{code}}\". يبقى رصيد النقاط كما هو.",
+      "newCodeLabel": "رمز البطاقة/العميل الجديد",
+      "replaceConfirmButton": "استبدال البطاقة",
+      "adjustHint": "الرصيد الحالي: {{balance}}. يمكن تعديل النقاط بالزيادة (مكافأة) أو بالنقصان (خصم).",
+      "adjustPointsLabel": "تغيير النقاط",
+      "adjustPointsPlaceholder": "مثال: 10 أو -10",
+      "adjustReasonLabel": "السبب (إلزامي)",
+      "adjustReasonPlaceholder": "مثال: مجاملة، تصحيح للطلب رقم 123",
+      "adjustConfirmButton": "حفظ التعديل",
+      "redeemHint": "الرصيد الحالي: {{balance}}. الحد الأقصى للنقاط القابلة للاستبدال.",
+      "redeemPointsLabel": "النقاط المراد استبدالها",
+      "redeemPointsPlaceholder": "مثال: 20",
+      "redeemConfirmButton": "استبدال النقاط"
+    },
+    "history": {
+      "heading": "سجل المعاملات",
+      "colDate": "التاريخ",
+      "colType": "النوع",
+      "colPoints": "النقاط",
+      "colAmount": "قيمة الشراء",
+      "colBalance": "الرصيد",
+      "colNote": "ملاحظة",
+      "typeEarn": "اكتساب",
+      "typeRedeem": "استبدال",
+      "typeAdjust": "تعديل",
+      "emptyMessage": "لا توجد معاملات بعد"
     }
   },
   "dhl": {

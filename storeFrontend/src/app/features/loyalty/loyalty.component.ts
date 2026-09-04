@@ -4,10 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { TranslationService } from '@app/core/services/translation.service';
-import { LoyaltyService, LoyaltyAccount, LoyaltyPurchaseResponse, LoyaltyCustomerOption, LoyaltyAccountListItem } from '@app/core/services/loyalty.service';
+import { LoyaltyService, LoyaltyAccount, LoyaltyPurchaseResponse, LoyaltyCustomerOption, LoyaltyAccountListItem, LoyaltyTransaction } from '@app/core/services/loyalty.service';
 import { LucideAngularModule } from 'lucide-angular';
 import { ResponsiveDataListComponent, ColumnConfig, ActionConfig } from '@app/shared/components/responsive-data-list/responsive-data-list.component';
 import { FilterBarComponent, FilterChip } from '@app/shared/components/filter-bar/filter-bar.component';
+import { BarcodeInputComponent } from '@app/shared/components/barcode-input/barcode-input.component';
 
 /**
  * Loyalty Test-Flow (MVP)
@@ -32,7 +33,7 @@ import { FilterBarComponent, FilterChip } from '@app/shared/components/filter-ba
 @Component({
   selector: 'app-loyalty',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe, LucideAngularModule, ResponsiveDataListComponent, FilterBarComponent],
+  imports: [CommonModule, FormsModule, TranslatePipe, LucideAngularModule, ResponsiveDataListComponent, FilterBarComponent, BarcodeInputComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './loyalty.component.html',
   styleUrls: ['./loyalty.component.scss']
@@ -146,12 +147,329 @@ export class LoyaltyComponent implements OnInit {
       handler: (item: LoyaltyAccountListItem) => this.openAccountFromList(item)
     },
     {
+      icon: '📜',
+      label: this.translationService.translate('loyalty.list.actionHistory'),
+      handler: (item: LoyaltyAccountListItem) => this.openHistory(item)
+    },
+    {
+      icon: '🔒',
+      label: this.translationService.translate('loyalty.list.actionBlock'),
+      visible: (item: LoyaltyAccountListItem) => item.status === 'ACTIVE',
+      handler: (item: LoyaltyAccountListItem) => this.blockCard(item)
+    },
+    {
+      icon: '🔄',
+      label: this.translationService.translate('loyalty.list.actionReplace'),
+      visible: (item: LoyaltyAccountListItem) => item.status === 'ACTIVE' || item.status === 'BLOCKED',
+      handler: (item: LoyaltyAccountListItem) => this.startReplaceCard(item)
+    },
+    {
+      icon: '⚖️',
+      label: this.translationService.translate('loyalty.list.actionAdjust'),
+      visible: (item: LoyaltyAccountListItem) => item.status === 'ACTIVE',
+      handler: (item: LoyaltyAccountListItem) => this.startAdjustPoints(item)
+    },
+    {
+      icon: '🎁',
+      label: this.translationService.translate('loyalty.list.actionRedeem'),
+      visible: (item: LoyaltyAccountListItem) => item.status === 'ACTIVE' && item.pointsBalance > 0,
+      handler: (item: LoyaltyAccountListItem) => this.startRedeemPoints(item)
+    },
+    {
       icon: '🔗',
       label: this.translationService.translate('loyalty.list.actionLinkCustomer'),
       visible: (item: LoyaltyAccountListItem) => item.anonymous,
       handler: (item: LoyaltyAccountListItem) => this.linkCustomerFromList(item)
     }
   ];
+
+  // ─── "Punkte korrigieren" (ADJUST, positiv oder negativ, Grund Pflicht) ───
+  adjustingAccount = signal<LoyaltyAccountListItem | null>(null);
+  adjustPointsValue: number | null = null;
+  adjustReason = '';
+  adjustLoading = signal(false);
+  adjustError = signal<string | null>(null);
+
+  startAdjustPoints(item: LoyaltyAccountListItem): void {
+    if (!item.identifier) {
+      return;
+    }
+    this.adjustingAccount.set(item);
+    this.adjustPointsValue = null;
+    this.adjustReason = '';
+    this.adjustError.set(null);
+  }
+
+  cancelAdjustPoints(): void {
+    this.adjustingAccount.set(null);
+    this.adjustPointsValue = null;
+    this.adjustReason = '';
+    this.adjustError.set(null);
+    this.adjustLoading.set(false);
+  }
+
+  canConfirmAdjustPoints(): boolean {
+    return this.adjustPointsValue != null && this.adjustPointsValue !== 0 && !!this.adjustReason.trim() && !this.adjustLoading();
+  }
+
+  confirmAdjustPoints(): void {
+    const item = this.adjustingAccount();
+    if (!item || !item.identifier || !this.canConfirmAdjustPoints()) {
+      return;
+    }
+
+    this.adjustError.set(null);
+    this.adjustLoading.set(true);
+
+    this.loyaltyService.adjustPoints(this.storeId, {
+      identifier: item.identifier,
+      points: this.adjustPointsValue!,
+      reason: this.adjustReason.trim()
+    }).subscribe({
+      next: () => {
+        this.adjustLoading.set(false);
+        this.cancelAdjustPoints();
+        this.loadAccounts();
+      },
+      error: (error) => {
+        this.adjustLoading.set(false);
+        this.adjustError.set(this.extractErrorMessage(error, 'loyalty.errors.adjustFailed'));
+      }
+    });
+  }
+
+  // ─── "Punkte einlösen" (REDEEM, nur wenn genügend Punkte vorhanden) ───
+  redeemingAccount = signal<LoyaltyAccountListItem | null>(null);
+  redeemPointsValue: number | null = null;
+  redeemLoading = signal(false);
+  redeemError = signal<string | null>(null);
+
+  startRedeemPoints(item: LoyaltyAccountListItem): void {
+    if (!item.identifier) {
+      return;
+    }
+    this.redeemingAccount.set(item);
+    this.redeemPointsValue = null;
+    this.redeemError.set(null);
+  }
+
+  cancelRedeemPoints(): void {
+    this.redeemingAccount.set(null);
+    this.redeemPointsValue = null;
+    this.redeemError.set(null);
+    this.redeemLoading.set(false);
+  }
+
+  canConfirmRedeemPoints(): boolean {
+    const account = this.redeemingAccount();
+    return !!account
+      && this.redeemPointsValue != null
+      && this.redeemPointsValue > 0
+      && this.redeemPointsValue <= account.pointsBalance
+      && !this.redeemLoading();
+  }
+
+  confirmRedeemPoints(): void {
+    const item = this.redeemingAccount();
+    if (!item || !item.identifier || !this.canConfirmRedeemPoints()) {
+      return;
+    }
+
+    this.redeemError.set(null);
+    this.redeemLoading.set(true);
+
+    this.loyaltyService.redeemPoints(this.storeId, {
+      identifier: item.identifier,
+      points: this.redeemPointsValue!
+    }).subscribe({
+      next: () => {
+        this.redeemLoading.set(false);
+        this.cancelRedeemPoints();
+        this.loadAccounts();
+      },
+      error: (error) => {
+        this.redeemLoading.set(false);
+        this.redeemError.set(this.extractErrorMessage(error, 'loyalty.errors.redeemFailed'));
+      }
+    });
+  }
+
+  // ─── "Karte sperren" ───
+  blockingCardId = signal<number | null>(null);
+
+  blockCard(item: LoyaltyAccountListItem): void {
+    if (!item.loyaltyIdentifierId || this.blockingCardId()) {
+      return;
+    }
+    const confirmed = window.confirm(this.translationService.translate('loyalty.list.confirmBlock'));
+    if (!confirmed) {
+      return;
+    }
+
+    this.blockingCardId.set(item.loyaltyIdentifierId);
+    this.loyaltyService.blockIdentifier(this.storeId, item.loyaltyIdentifierId).subscribe({
+      next: () => {
+        this.blockingCardId.set(null);
+        this.loadAccounts();
+      },
+      error: (error) => {
+        this.blockingCardId.set(null);
+        alert(this.extractErrorMessage(error, 'loyalty.errors.blockFailed'));
+      }
+    });
+  }
+
+  // ─── "Karte ersetzen" (bestehender Input-/Form-Flow, wiederverwendet BarcodeInputComponent) ───
+  replacingCard = signal<LoyaltyAccountListItem | null>(null);
+  newIdentifierCode = '';
+  replacingCardLoading = signal(false);
+  replaceCardError = signal<string | null>(null);
+
+  startReplaceCard(item: LoyaltyAccountListItem): void {
+    if (!item.loyaltyIdentifierId) {
+      return;
+    }
+    this.replacingCard.set(item);
+    this.newIdentifierCode = '';
+    this.replaceCardError.set(null);
+  }
+
+  cancelReplaceCard(): void {
+    this.replacingCard.set(null);
+    this.newIdentifierCode = '';
+    this.replaceCardError.set(null);
+    this.replacingCardLoading.set(false);
+  }
+
+  confirmReplaceCard(): void {
+    const item = this.replacingCard();
+    const trimmedNewCode = this.newIdentifierCode.trim();
+    if (!item || !item.loyaltyIdentifierId || !trimmedNewCode || this.replacingCardLoading()) {
+      return;
+    }
+
+    this.replaceCardError.set(null);
+    this.replacingCardLoading.set(true);
+
+    this.loyaltyService.replaceIdentifier(this.storeId, item.loyaltyIdentifierId, trimmedNewCode).subscribe({
+      next: () => {
+        this.replacingCardLoading.set(false);
+        this.cancelReplaceCard();
+        this.loadAccounts();
+      },
+      error: (error) => {
+        this.replacingCardLoading.set(false);
+        this.replaceCardError.set(this.extractErrorMessage(error, 'loyalty.errors.replaceFailed'));
+      }
+    });
+  }
+
+  // ─── Transaktionshistorie (ResponsiveDataList + FilterBar, siehe openHistory()) ───
+  historyAccount = signal<LoyaltyAccountListItem | null>(null);
+  historyTransactions = signal<LoyaltyTransaction[]>([]);
+  historyLoading = signal(false);
+  historyFilter = signal<'ALL' | 'EARN' | 'REDEEM' | 'ADJUST'>('ALL');
+
+  get filteredHistoryTransactions(): LoyaltyTransaction[] {
+    const filter = this.historyFilter();
+    const list = this.historyTransactions();
+    return filter === 'ALL' ? list : list.filter(t => t.type === filter);
+  }
+
+  get historyFilterChips(): FilterChip[] {
+    return [
+      { value: 'ALL', label: this.translationService.translate('loyalty.list.filterAll') },
+      { value: 'EARN', label: this.translationService.translate('loyalty.history.typeEarn') },
+      { value: 'REDEEM', label: this.translationService.translate('loyalty.history.typeRedeem') },
+      { value: 'ADJUST', label: this.translationService.translate('loyalty.history.typeAdjust') }
+    ];
+  }
+
+  historyColumns: ColumnConfig[] = [
+    {
+      key: 'createdAt',
+      label: this.translationService.translate('loyalty.history.colDate'),
+      type: 'date',
+      sortable: true
+    },
+    {
+      key: 'type',
+      label: this.translationService.translate('loyalty.history.colType'),
+      type: 'badge',
+      formatFn: (v) => this.formatTransactionType(v),
+      badgeClass: (v) => v === 'EARN' ? 'status-active' : v === 'REDEEM' ? 'status-processing' : 'status-draft'
+    },
+    {
+      key: 'points',
+      label: this.translationService.translate('loyalty.history.colPoints'),
+      type: 'number',
+      sortable: true,
+      formatFn: (v) => (v > 0 ? '+' : '') + v
+    },
+    {
+      key: 'amount',
+      label: this.translationService.translate('loyalty.history.colAmount'),
+      type: 'text',
+      hideOnMobile: true,
+      formatFn: (v) => v != null ? Number(v).toFixed(2) : '-'
+    },
+    {
+      key: 'resultingBalance',
+      label: this.translationService.translate('loyalty.history.colBalance'),
+      type: 'number',
+      sortable: true
+    },
+    {
+      key: 'note',
+      label: this.translationService.translate('loyalty.history.colNote'),
+      type: 'text',
+      hideOnMobile: true,
+      formatFn: (v) => v || '-'
+    }
+  ];
+
+  openHistory(item: LoyaltyAccountListItem): void {
+    if (!item.loyaltyAccountId) {
+      return;
+    }
+    this.historyAccount.set(item);
+    this.historyFilter.set('ALL');
+    this.historyTransactions.set([]);
+    this.historyLoading.set(true);
+
+    this.loyaltyService.getTransactionHistory(this.storeId, item.loyaltyAccountId).subscribe({
+      next: (transactions) => {
+        this.historyTransactions.set(transactions);
+        this.historyLoading.set(false);
+      },
+      error: () => {
+        this.historyTransactions.set([]);
+        this.historyLoading.set(false);
+      }
+    });
+  }
+
+  onHistoryFilterChange(value: string): void {
+    this.historyFilter.set(value as 'ALL' | 'EARN' | 'REDEEM' | 'ADJUST');
+  }
+
+  closeHistory(): void {
+    this.historyAccount.set(null);
+    this.historyTransactions.set([]);
+  }
+
+  private formatTransactionType(type: string): string {
+    if (type === 'EARN') {
+      return this.translationService.translate('loyalty.history.typeEarn');
+    }
+    if (type === 'REDEEM') {
+      return this.translationService.translate('loyalty.history.typeRedeem');
+    }
+    if (type === 'ADJUST') {
+      return this.translationService.translate('loyalty.history.typeAdjust');
+    }
+    return type;
+  }
 
   ngOnInit(): void {
     this.extractStoreId();

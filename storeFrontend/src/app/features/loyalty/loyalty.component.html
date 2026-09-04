@@ -236,6 +236,177 @@
     </div>
   }
 
+  <!-- ════════ "Karte ersetzen" (wiederverwendet BarcodeInputComponent) ════════ -->
+  @if (replacingCard(); as replaceItem) {
+    <div class="loyalty-card register-card">
+      <p class="register-hint">
+        <lucide-icon name="refresh-cw" [size]="18"></lucide-icon>
+        {{ 'loyalty.list.replaceHint' | translate: { code: replaceItem.identifier || '' } }}
+      </p>
+
+      <label class="loyalty-label">{{ 'loyalty.list.newCodeLabel' | translate }}</label>
+      <app-barcode-input
+        [(ngModel)]="newIdentifierCode"
+        [placeholder]="'loyalty.codePlaceholder' | translate">
+      </app-barcode-input>
+
+      @if (replaceCardError()) {
+        <div class="error-banner">
+          <lucide-icon name="alert-circle" [size]="16"></lucide-icon>
+          {{ replaceCardError()! | translate }}
+        </div>
+      }
+
+      <div class="register-actions">
+        <button class="btn-start-over" (click)="cancelReplaceCard()">
+          {{ 'loyalty.cancel' | translate }}
+        </button>
+        <button
+          class="btn-assign"
+          [disabled]="!newIdentifierCode.trim() || replacingCardLoading()"
+          (click)="confirmReplaceCard()">
+          @if (replacingCardLoading()) {
+            <lucide-icon name="loader-2" [size]="18" class="icon-spinning"></lucide-icon>
+          } @else {
+            <lucide-icon name="check-circle" [size]="18"></lucide-icon>
+          }
+          {{ 'loyalty.list.replaceConfirmButton' | translate }}
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- ════════ "Punkte korrigieren" (ADJUST) ════════ -->
+  @if (adjustingAccount(); as adjustItem) {
+    <div class="loyalty-card register-card">
+      <p class="register-hint">
+        <lucide-icon name="scale" [size]="18"></lucide-icon>
+        {{ 'loyalty.list.adjustHint' | translate: { balance: adjustItem.pointsBalance } }}
+      </p>
+
+      <label class="loyalty-label">{{ 'loyalty.list.adjustPointsLabel' | translate }}</label>
+      <input
+        type="number"
+        step="1"
+        [(ngModel)]="adjustPointsValue"
+        [placeholder]="'loyalty.list.adjustPointsPlaceholder' | translate"
+        class="loyalty-input"
+      />
+
+      <label class="loyalty-label">{{ 'loyalty.list.adjustReasonLabel' | translate }}</label>
+      <input
+        type="text"
+        [(ngModel)]="adjustReason"
+        [placeholder]="'loyalty.list.adjustReasonPlaceholder' | translate"
+        class="loyalty-input"
+      />
+
+      @if (adjustError()) {
+        <div class="error-banner">
+          <lucide-icon name="alert-circle" [size]="16"></lucide-icon>
+          {{ adjustError()! | translate }}
+        </div>
+      }
+
+      <div class="register-actions">
+        <button class="btn-start-over" (click)="cancelAdjustPoints()">
+          {{ 'loyalty.cancel' | translate }}
+        </button>
+        <button
+          class="btn-assign"
+          [disabled]="!canConfirmAdjustPoints()"
+          (click)="confirmAdjustPoints()">
+          @if (adjustLoading()) {
+            <lucide-icon name="loader-2" [size]="18" class="icon-spinning"></lucide-icon>
+          } @else {
+            <lucide-icon name="check-circle" [size]="18"></lucide-icon>
+          }
+          {{ 'loyalty.list.adjustConfirmButton' | translate }}
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- ════════ "Punkte einlösen" (REDEEM) ════════ -->
+  @if (redeemingAccount(); as redeemItem) {
+    <div class="loyalty-card register-card">
+      <p class="register-hint">
+        <lucide-icon name="gift" [size]="18"></lucide-icon>
+        {{ 'loyalty.list.redeemHint' | translate: { balance: redeemItem.pointsBalance } }}
+      </p>
+
+      <label class="loyalty-label">{{ 'loyalty.list.redeemPointsLabel' | translate }}</label>
+      <input
+        type="number"
+        min="1"
+        [max]="redeemItem.pointsBalance"
+        step="1"
+        [(ngModel)]="redeemPointsValue"
+        [placeholder]="'loyalty.list.redeemPointsPlaceholder' | translate"
+        class="loyalty-input"
+      />
+
+      @if (redeemError()) {
+        <div class="error-banner">
+          <lucide-icon name="alert-circle" [size]="16"></lucide-icon>
+          {{ redeemError()! | translate }}
+        </div>
+      }
+
+      <div class="register-actions">
+        <button class="btn-start-over" (click)="cancelRedeemPoints()">
+          {{ 'loyalty.cancel' | translate }}
+        </button>
+        <button
+          class="btn-assign"
+          [disabled]="!canConfirmRedeemPoints()"
+          (click)="confirmRedeemPoints()">
+          @if (redeemLoading()) {
+            <lucide-icon name="loader-2" [size]="18" class="icon-spinning"></lucide-icon>
+          } @else {
+            <lucide-icon name="check-circle" [size]="18"></lucide-icon>
+          }
+          {{ 'loyalty.list.redeemConfirmButton' | translate }}
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- ════════ Transaktionshistorie (ResponsiveDataList + FilterBar) ════════ -->
+  @if (historyAccount(); as histAcc) {
+    <div class="loyalty-card accounts-section">
+      <h2 class="accounts-heading">
+        <lucide-icon name="history" [size]="20"></lucide-icon>
+        {{ 'loyalty.history.heading' | translate }}
+        @if (!histAcc.anonymous && histAcc.customerName) {
+          <span class="history-subject">– {{ histAcc.customerName }}</span>
+        } @else if (histAcc.identifier) {
+          <span class="history-subject">– {{ histAcc.identifier }}</span>
+        }
+      </h2>
+
+      <app-filter-bar
+        [chips]="historyFilterChips"
+        [activeValue]="historyFilter()"
+        (filterChange)="onHistoryFilterChange($event)">
+      </app-filter-bar>
+
+      <app-responsive-data-list
+        [items]="filteredHistoryTransactions"
+        [columns]="historyColumns"
+        [loading]="historyLoading()"
+        trackBy="id"
+        [emptyMessage]="'loyalty.history.emptyMessage' | translate"
+        emptyIcon="🧾">
+      </app-responsive-data-list>
+
+      <button class="btn-start-over" (click)="closeHistory()">
+        <lucide-icon name="x" [size]="16"></lucide-icon>
+        {{ 'loyalty.cancel' | translate }}
+      </button>
+    </div>
+  }
+
   <!-- ════════ "Bonuskarten"-Übersicht ════════ -->
   <div class="loyalty-card accounts-section">
     <h2 class="accounts-heading">

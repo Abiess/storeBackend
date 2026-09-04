@@ -3362,7 +3362,11 @@
       "purchaseFailed": "Could not assign purchase",
       "registerFailed": "Could not register code",
       "issueCardFailed": "Could not issue loyalty card",
-      "linkFailed": "Could not link customer"
+      "linkFailed": "Could not link customer",
+      "blockFailed": "Could not block card",
+      "replaceFailed": "Could not replace card",
+      "adjustFailed": "Could not save points adjustment",
+      "redeemFailed": "Could not redeem points"
     },
     "list": {
       "heading": "Loyalty Cards",
@@ -3384,9 +3388,41 @@
       "filterRegistered": "Registered customers",
       "filterAnonymous": "Anonymous cards",
       "actionOpen": "Open",
+      "actionHistory": "Transaction history",
+      "actionBlock": "Block card",
+      "actionReplace": "Replace card",
+      "actionAdjust": "Adjust points",
+      "actionRedeem": "Redeem points",
       "actionLinkCustomer": "Link customer",
       "searchPlaceholder": "Search name, card code...",
-      "emptyMessage": "No loyalty cards yet"
+      "emptyMessage": "No loyalty cards yet",
+      "confirmBlock": "Really block this card? It can no longer be used afterwards.",
+      "replaceHint": "Enter or scan a new card/customer code for \"{{code}}\". The points balance is preserved.",
+      "newCodeLabel": "New card/customer code",
+      "replaceConfirmButton": "Replace card",
+      "adjustHint": "Current balance: {{balance}}. Points can be corrected positively (bonus) or negatively (deduction).",
+      "adjustPointsLabel": "Points change",
+      "adjustPointsPlaceholder": "e.g. 10 or -10",
+      "adjustReasonLabel": "Reason (required)",
+      "adjustReasonPlaceholder": "e.g. Goodwill, correction for order #123",
+      "adjustConfirmButton": "Save adjustment",
+      "redeemHint": "Current balance: {{balance}}. At most this many points can be redeemed.",
+      "redeemPointsLabel": "Points to redeem",
+      "redeemPointsPlaceholder": "e.g. 20",
+      "redeemConfirmButton": "Redeem points"
+    },
+    "history": {
+      "heading": "Transaction history",
+      "colDate": "Date",
+      "colType": "Type",
+      "colPoints": "Points",
+      "colAmount": "Purchase value",
+      "colBalance": "Balance",
+      "colNote": "Note",
+      "typeEarn": "Earned",
+      "typeRedeem": "Redeemed",
+      "typeAdjust": "Adjustment",
+      "emptyMessage": "No transactions yet"
     }
   },
   "dhl": {

@@ -6,11 +6,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import storebackend.dto.LoyaltyAccountDTO;
 import storebackend.dto.LoyaltyAccountListItemDTO;
+import storebackend.dto.LoyaltyAdjustmentResponse;
 import storebackend.dto.LoyaltyCustomerOptionDTO;
 import storebackend.dto.LoyaltyPurchaseResponse;
+import storebackend.dto.LoyaltyTransactionDTO;
 import storebackend.entity.*;
 import storebackend.enums.LoyaltyIdentifierStatus;
 import storebackend.enums.LoyaltyTransactionType;
+import storebackend.repository.CustomerCreditAccountRepository;
 import storebackend.repository.CustomerProfileRepository;
 import storebackend.repository.LoyaltyAccountRepository;
 import storebackend.repository.LoyaltyIdentifierRepository;
@@ -53,6 +56,7 @@ public class LoyaltyService {
     private final LoyaltyTransactionRepository loyaltyTransactionRepository;
     private final CustomerProfileRepository customerProfileRepository;
     private final StoreRepository storeRepository;
+    private final CustomerCreditAccountRepository customerCreditAccountRepository;
 
     /**
      * Sucht einen LoyaltyAccount anhand des Karten-/Kundencodes.
@@ -294,6 +298,132 @@ public class LoyaltyService {
     }
 
     /**
+     * Manuelle Punktekorrektur ("Punkte korrigieren").
+     *
+     * points kann positiv (Bonus/Kulanz) oder negativ (Abzug/Korrektur) sein.
+     * reason ist Pflichtfeld und wird als Note in der LoyaltyTransaction
+     * gespeichert (Audit-Trail). pointsBalance wird AUSSCHLIESSLICH über diese
+     * Methode (bzw. recordPurchase/redeemPoints) verändert, nie direkt.
+     *
+     * @param storeId    Store ID
+     * @param identifier Karten-/Kundencode (muss ein aktiver Identifier sein)
+     * @param points     Punkteänderung, darf nicht 0 sein
+     * @param reason     Pflichtfeld: Grund der Korrektur
+     * @param order      optionale Order-Referenz (meist null bei manueller Korrektur)
+     * @throws IllegalArgumentException wenn reason leer oder points 0 ist
+     * @throws RuntimeException         wenn die Korrektur zu einem negativen Punktestand führen würde
+     */
+    @Transactional
+    public LoyaltyAdjustmentResponse adjustPoints(Long storeId, String identifier, Integer points, String reason, Order order) {
+        if (reason == null || reason.isBlank()) {
+            throw new IllegalArgumentException("reason must not be empty");
+        }
+        if (points == null || points == 0) {
+            throw new IllegalArgumentException("points must not be zero");
+        }
+
+        Store store = loadStore(storeId);
+        assertLoyaltyEnabled(store);
+
+        LoyaltyIdentifier code = findActiveIdentifier(storeId, identifier);
+        LoyaltyAccount account = code.getLoyaltyAccount();
+        String normalizedReason = reason.trim();
+
+        int previousBalance = account.getPointsBalance() != null ? account.getPointsBalance() : 0;
+        int newBalance = previousBalance + points;
+        if (newBalance < 0) {
+            throw new RuntimeException("Korrektur würde zu einem negativen Punktestand führen (aktuell: " + previousBalance + ")");
+        }
+
+        account.setPointsBalance(newBalance);
+        if (points > 0) {
+            int previousLifetime = account.getLifetimePoints() != null ? account.getLifetimePoints() : 0;
+            account.setLifetimePoints(previousLifetime + points);
+        }
+        loyaltyAccountRepository.save(account);
+
+        LoyaltyTransaction transaction = new LoyaltyTransaction();
+        transaction.setLoyaltyAccount(account);
+        transaction.setStore(store);
+        transaction.setOrder(order);
+        transaction.setType(LoyaltyTransactionType.ADJUST);
+        transaction.setPoints(points);
+        transaction.setResultingBalance(newBalance);
+        transaction.setNote(normalizedReason);
+        loyaltyTransactionRepository.save(transaction);
+
+        log.info("Loyalty points adjusted: store={}, identifier={}, points={}, reason={}, newBalance={}",
+            storeId, identifier, points, normalizedReason, newBalance);
+
+        return new LoyaltyAdjustmentResponse(
+            account.getId(),
+            resolveCustomerName(account.getCustomerProfile()),
+            LoyaltyTransactionType.ADJUST.name(),
+            points,
+            previousBalance,
+            newBalance,
+            normalizedReason
+        );
+    }
+
+    /**
+     * Löst Punkte ein ("Punkte einlösen").
+     *
+     * Nur möglich, wenn genügend Punkte vorhanden sind (keine negative Balance).
+     * Bucht intern eine negative LoyaltyTransaction (REDEEM), analog zu EARN/ADJUST.
+     *
+     * @param storeId    Store ID
+     * @param identifier Karten-/Kundencode (muss ein aktiver Identifier sein)
+     * @param points     einzulösende Punkte, MUSS positiv sein
+     * @param order      optionale Order-Referenz (z.B. POS-Checkout mit Punkte-Rabatt)
+     * @throws IllegalArgumentException wenn points nicht positiv ist
+     * @throws RuntimeException         wenn nicht genügend Punkte vorhanden sind
+     */
+    @Transactional
+    public LoyaltyAdjustmentResponse redeemPoints(Long storeId, String identifier, Integer points, Order order) {
+        if (points == null || points <= 0) {
+            throw new IllegalArgumentException("points must be positive");
+        }
+
+        Store store = loadStore(storeId);
+        assertLoyaltyEnabled(store);
+
+        LoyaltyIdentifier code = findActiveIdentifier(storeId, identifier);
+        LoyaltyAccount account = code.getLoyaltyAccount();
+
+        int previousBalance = account.getPointsBalance() != null ? account.getPointsBalance() : 0;
+        if (points > previousBalance) {
+            throw new RuntimeException("Nicht genügend Punkte vorhanden (verfügbar: " + previousBalance + ", angefragt: " + points + ")");
+        }
+        int newBalance = previousBalance - points;
+
+        account.setPointsBalance(newBalance);
+        loyaltyAccountRepository.save(account);
+
+        LoyaltyTransaction transaction = new LoyaltyTransaction();
+        transaction.setLoyaltyAccount(account);
+        transaction.setStore(store);
+        transaction.setOrder(order);
+        transaction.setType(LoyaltyTransactionType.REDEEM);
+        transaction.setPoints(-points);
+        transaction.setResultingBalance(newBalance);
+        loyaltyTransactionRepository.save(transaction);
+
+        log.info("Loyalty points redeemed: store={}, identifier={}, points={}, newBalance={}",
+            storeId, identifier, points, newBalance);
+
+        return new LoyaltyAdjustmentResponse(
+            account.getId(),
+            resolveCustomerName(account.getCustomerProfile()),
+            LoyaltyTransactionType.REDEEM.name(),
+            -points,
+            previousBalance,
+            newBalance,
+            null
+        );
+    }
+
+    /**
      * Punkteberechnung – bewusst währungsunabhängig.
      * points = floor(amount / amountStep) * pointsPerStep
      * Beispiel: amountStep=10, pointsPerStep=1, amount=220 → 22 Punkte.
@@ -376,13 +506,75 @@ public class LoyaltyService {
                 LoyaltyTransactionRepository.LastEarnProjection::getLastEarnAt
             ));
 
+        Map<Long, BigDecimal> openAmountByAccountId = customerCreditAccountRepository.findByStoreId(storeId).stream()
+            .collect(Collectors.toMap(
+                creditAccount -> creditAccount.getLoyaltyAccount().getId(),
+                CustomerCreditAccount::getBalanceOwed
+            ));
+
         return accounts.stream()
             .map(account -> toListItemDTO(
                 account,
                 primaryIdentifierByAccountId.get(account.getId()),
-                lastEarnByAccountId.get(account.getId())
+                lastEarnByAccountId.get(account.getId()),
+                openAmountByAccountId.get(account.getId())
             ))
             .toList();
+    }
+
+    /**
+     * Transaktionshistorie (Punkte-Buchungen) eines LoyaltyAccount, neueste zuerst.
+     *
+     * Nutzt {@link LoyaltyTransaction#getResultingBalance()} (bereits bei jeder
+     * Buchung als Snapshot gespeichert) - keine Neuberechnung nötig.
+     *
+     * @param storeId          Store ID (Multi-Tenant)
+     * @param loyaltyAccountId zu prüfender Account
+     * @throws RuntimeException  wenn der Account nicht existiert
+     * @throws SecurityException wenn der Account einem anderen Store gehört
+     */
+    @Transactional(readOnly = true)
+    public List<LoyaltyTransactionDTO> getTransactionHistory(Long storeId, Long loyaltyAccountId) {
+        LoyaltyAccount account = loyaltyAccountRepository.findById(loyaltyAccountId)
+            .orElseThrow(() -> new RuntimeException("Loyalty account not found: " + loyaltyAccountId));
+
+        if (account.getStore() == null || !account.getStore().getId().equals(storeId)) {
+            throw new SecurityException("Loyalty account " + loyaltyAccountId + " does not belong to store " + storeId);
+        }
+
+        return loyaltyTransactionRepository
+            .findByLoyaltyAccountIdAndStoreIdOrderByCreatedAtDesc(loyaltyAccountId, storeId)
+            .stream()
+            .map(this::toTransactionDTO)
+            .toList();
+    }
+
+    private LoyaltyTransactionDTO toTransactionDTO(LoyaltyTransaction transaction) {
+        return new LoyaltyTransactionDTO(
+            transaction.getId(),
+            transaction.getType().name(),
+            transaction.getPoints(),
+            transaction.getAmount(),
+            transaction.getResultingBalance(),
+            transaction.getNote(),
+            transaction.getOrder() != null ? transaction.getOrder().getId() : null,
+            transaction.getCreatedAt()
+        );
+    }
+
+    /**
+     * Öffentlicher Zugriff auf den bestehenden Identifier-Gatekeeper
+     * ({@link #findActiveIdentifier}) für andere fachlich getrennte Services
+     * (z.B. CreditService), die denselben Karten-/Kundencode verwenden, aber
+     * KEINE eigene BLOCKED/REPLACED-Prüflogik duplizieren sollen.
+     *
+     * @throws IllegalArgumentException wenn identifier leer ist
+     * @throws IllegalStateException    wenn der Identifier BLOCKED/REPLACED ist
+     * @throws RuntimeException         wenn der Identifier nicht existiert
+     */
+    @Transactional(readOnly = true)
+    public LoyaltyAccount findAccountByActiveIdentifier(Long storeId, String identifier) {
+        return findActiveIdentifier(storeId, identifier).getLoyaltyAccount();
     }
 
     private LoyaltyIdentifier findActiveIdentifier(Long storeId, String identifier) {
@@ -393,10 +585,111 @@ public class LoyaltyService {
             .findByStoreIdAndIdentifier(storeId, identifier.trim())
             .orElseThrow(() -> new RuntimeException("Loyalty code not found: " + identifier));
 
-        if (code.getStatus() != LoyaltyIdentifierStatus.ACTIVE) {
-            throw new RuntimeException("Loyalty code is not active: " + identifier);
+        if (code.getStatus() == LoyaltyIdentifierStatus.BLOCKED) {
+            // Bewusst KEIN generisches 404: Identifier existiert, ist aber gesperrt.
+            throw new IllegalStateException("Diese Bonuskarte ist gesperrt.");
+        }
+        if (code.getStatus() == LoyaltyIdentifierStatus.REPLACED) {
+            // Bewusst KEIN generisches 404: Identifier existiert, wurde aber ersetzt.
+            throw new IllegalStateException("Diese Bonuskarte wurde ersetzt.");
         }
         return code;
+    }
+
+    /**
+     * Sperrt einen bestehenden LoyaltyIdentifier ("Karte sperren").
+     *
+     * LoyaltyAccount und Punktestand bleiben UNVERÄNDERT - nur der Identifier
+     * wird auf BLOCKED gesetzt. Danach kann der Code nicht mehr für Lookup,
+     * Punktesammeln oder -einlösen verwendet werden (siehe findActiveIdentifier()).
+     *
+     * @param storeId     Store ID (Multi-Tenant)
+     * @param identifierId zu sperrender LoyaltyIdentifier
+     * @throws RuntimeException  wenn der Identifier nicht existiert
+     * @throws SecurityException wenn der Identifier einem anderen Store gehört
+     */
+    @Transactional
+    public void blockIdentifier(Long storeId, Long identifierId) {
+        LoyaltyIdentifier identifier = loyaltyIdentifierRepository.findById(identifierId)
+            .orElseThrow(() -> new RuntimeException("Loyalty identifier not found: " + identifierId));
+
+        if (identifier.getStore() == null || !identifier.getStore().getId().equals(storeId)) {
+            throw new SecurityException("Loyalty identifier " + identifierId + " does not belong to store " + storeId);
+        }
+
+        if (identifier.getStatus() == LoyaltyIdentifierStatus.REPLACED) {
+            throw new RuntimeException("Loyalty identifier is already replaced and cannot be blocked: " + identifierId);
+        }
+
+        identifier.setStatus(LoyaltyIdentifierStatus.BLOCKED);
+        loyaltyIdentifierRepository.save(identifier);
+
+        log.info("Loyalty identifier blocked: store={}, identifierId={}, loyaltyAccount={}",
+            storeId, identifierId, identifier.getLoyaltyAccount().getId());
+    }
+
+    /**
+     * Ersetzt einen bestehenden LoyaltyIdentifier durch einen neuen ("Karte ersetzen").
+     *
+     * Der ALTE Identifier wird auf REPLACED gesetzt (nicht gelöscht - Audit-Trail
+     * bleibt erhalten), ein NEUER Identifier wird als ACTIVE angelegt und an
+     * DENSELBEN LoyaltyAccount gehängt. pointsBalance/lifetimePoints werden
+     * NICHT angefasst - der Punktestand bleibt exakt erhalten.
+     *
+     * @param storeId       Store ID (Multi-Tenant)
+     * @param identifierId  zu ersetzender (alter) LoyaltyIdentifier
+     * @param newIdentifier neuer, im Store noch nicht existierender Code
+     * @return LoyaltyAccountDTO des unveränderten Accounts (zur Bestätigung in der UI)
+     * @throws IllegalArgumentException wenn newIdentifier leer ist
+     * @throws RuntimeException  wenn der alte Identifier nicht existiert, bereits ersetzt
+     *                           wurde oder newIdentifier im Store bereits vergeben ist
+     * @throws SecurityException wenn der alte Identifier einem anderen Store gehört
+     *
+     * WICHTIG: @Transactional - falls das Anlegen des neuen Identifiers
+     * fehlschlägt, wird das REPLACED-Setzen des alten Identifiers automatisch
+     * zurückgerollt (kein "verwaister" alter Zustand ohne nutzbare Karte).
+     */
+    @Transactional
+    public LoyaltyAccountDTO replaceIdentifier(Long storeId, Long identifierId, String newIdentifier) {
+        if (newIdentifier == null || newIdentifier.isBlank()) {
+            throw new IllegalArgumentException("newIdentifier must not be empty");
+        }
+        String normalizedNewIdentifier = newIdentifier.trim();
+
+        Store store = loadStore(storeId);
+
+        LoyaltyIdentifier oldIdentifier = loyaltyIdentifierRepository.findById(identifierId)
+            .orElseThrow(() -> new RuntimeException("Loyalty identifier not found: " + identifierId));
+
+        if (oldIdentifier.getStore() == null || !oldIdentifier.getStore().getId().equals(storeId)) {
+            throw new SecurityException("Loyalty identifier " + identifierId + " does not belong to store " + storeId);
+        }
+
+        if (oldIdentifier.getStatus() == LoyaltyIdentifierStatus.REPLACED) {
+            throw new RuntimeException("Loyalty identifier is already replaced: " + identifierId);
+        }
+
+        if (loyaltyIdentifierRepository.existsByStoreIdAndIdentifier(storeId, normalizedNewIdentifier)) {
+            throw new RuntimeException("Identifier already registered: " + normalizedNewIdentifier);
+        }
+
+        LoyaltyAccount account = oldIdentifier.getLoyaltyAccount();
+
+        oldIdentifier.setStatus(LoyaltyIdentifierStatus.REPLACED);
+        loyaltyIdentifierRepository.save(oldIdentifier);
+
+        LoyaltyIdentifier newCard = new LoyaltyIdentifier();
+        newCard.setStore(store);
+        newCard.setLoyaltyAccount(account);
+        newCard.setIdentifier(normalizedNewIdentifier);
+        newCard.setStatus(LoyaltyIdentifierStatus.ACTIVE);
+        loyaltyIdentifierRepository.save(newCard);
+
+        log.info("Loyalty identifier replaced: store={}, loyaltyAccount={}, oldIdentifierId={}, newIdentifier={}",
+            storeId, account.getId(), identifierId, normalizedNewIdentifier);
+
+        // pointsBalance/lifetimePoints bewusst NICHT verändert - account wird 1:1 aus DB zurückgegeben.
+        return toAccountDTO(account, store);
     }
 
     private Store loadStore(Long storeId) {
@@ -420,11 +713,14 @@ public class LoyaltyService {
         dto.setLifetimePoints(account.getLifetimePoints());
         dto.setCurrencyCode(store.getCurrencyCode() != null ? store.getCurrencyCode().name() : null);
         dto.setAnonymous(profile == null);
+        dto.setOpenAmount(customerCreditAccountRepository.findByLoyaltyAccountId(account.getId())
+            .map(CustomerCreditAccount::getBalanceOwed)
+            .orElse(BigDecimal.ZERO));
         return dto;
     }
 
     private LoyaltyAccountListItemDTO toListItemDTO(
-        LoyaltyAccount account, LoyaltyIdentifier primaryIdentifier, LocalDateTime lastPurchaseAt
+        LoyaltyAccount account, LoyaltyIdentifier primaryIdentifier, LocalDateTime lastPurchaseAt, BigDecimal openAmount
     ) {
         CustomerProfile profile = account.getCustomerProfile();
         LoyaltyAccountListItemDTO dto = new LoyaltyAccountListItemDTO();
@@ -437,6 +733,8 @@ public class LoyaltyService {
         dto.setPointsBalance(account.getPointsBalance());
         dto.setCreatedAt(account.getCreatedAt());
         dto.setLastPurchaseAt(lastPurchaseAt);
+        dto.setLoyaltyIdentifierId(primaryIdentifier != null ? primaryIdentifier.getId() : null);
+        dto.setOpenAmount(openAmount != null ? openAmount : BigDecimal.ZERO);
         return dto;
     }
 

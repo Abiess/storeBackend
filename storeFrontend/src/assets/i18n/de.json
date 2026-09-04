@@ -3395,7 +3395,11 @@
       "purchaseFailed": "Einkauf konnte nicht zugeordnet werden",
       "registerFailed": "Code konnte nicht registriert werden",
       "issueCardFailed": "Bonuskarte konnte nicht ausgegeben werden",
-      "linkFailed": "Kunde konnte nicht verknüpft werden"
+      "linkFailed": "Kunde konnte nicht verknüpft werden",
+      "blockFailed": "Karte konnte nicht gesperrt werden",
+      "replaceFailed": "Karte konnte nicht ersetzt werden",
+      "adjustFailed": "Punktekorrektur konnte nicht gespeichert werden",
+      "redeemFailed": "Punkte konnten nicht eingelöst werden"
     },
     "list": {
       "heading": "Bonuskarten",
@@ -3417,9 +3421,41 @@
       "filterRegistered": "Registrierte Kunden",
       "filterAnonymous": "Anonyme Karten",
       "actionOpen": "Öffnen",
+      "actionHistory": "Transaktionshistorie",
+      "actionBlock": "Karte sperren",
+      "actionReplace": "Karte ersetzen",
+      "actionAdjust": "Punkte korrigieren",
+      "actionRedeem": "Punkte einlösen",
       "actionLinkCustomer": "Kunde verknüpfen",
       "searchPlaceholder": "Name, Kartencode suchen...",
-      "emptyMessage": "Noch keine Bonuskarten vorhanden"
+      "emptyMessage": "Noch keine Bonuskarten vorhanden",
+      "confirmBlock": "Diese Karte wirklich sperren? Sie kann danach nicht mehr verwendet werden.",
+      "replaceHint": "Neuen Karten-/Kundencode für \"{{code}}\" eingeben oder scannen. Der Punktestand bleibt erhalten.",
+      "newCodeLabel": "Neuer Karten-/Kundencode",
+      "replaceConfirmButton": "Karte ersetzen",
+      "adjustHint": "Aktueller Punktestand: {{balance}}. Punkte können positiv (Bonus) oder negativ (Abzug) korrigiert werden.",
+      "adjustPointsLabel": "Punkteänderung",
+      "adjustPointsPlaceholder": "z.B. 10 oder -10",
+      "adjustReasonLabel": "Grund (Pflichtfeld)",
+      "adjustReasonPlaceholder": "z.B. Kulanz, Korrektur Bestellung #123",
+      "adjustConfirmButton": "Korrektur speichern",
+      "redeemHint": "Aktueller Punktestand: {{balance}}. Es können maximal so viele Punkte eingelöst werden.",
+      "redeemPointsLabel": "Einzulösende Punkte",
+      "redeemPointsPlaceholder": "z.B. 20",
+      "redeemConfirmButton": "Punkte einlösen"
+    },
+    "history": {
+      "heading": "Transaktionshistorie",
+      "colDate": "Datum",
+      "colType": "Typ",
+      "colPoints": "Punkte",
+      "colAmount": "Einkaufswert",
+      "colBalance": "Punktestand",
+      "colNote": "Notiz",
+      "typeEarn": "Gutschrift",
+      "typeRedeem": "Einlösung",
+      "typeAdjust": "Korrektur",
+      "emptyMessage": "Noch keine Transaktionen vorhanden"
     }
   },
   "dhl": {

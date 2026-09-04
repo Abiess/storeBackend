@@ -39,6 +39,7 @@ public class PosOrderService {
     private final ProductRepository productRepository;
     private final StoreRepository storeRepository;
     private final LoyaltyService loyaltyService;
+    private final CreditService creditService;
 
     /**
      * Erstellt POS-Verkauf (Order mit source = POS)
@@ -77,8 +78,22 @@ public class PosOrderService {
             throw new IllegalArgumentException("Invalid payment method: " + request.getPaymentMethod());
         }
 
-        if (paymentMethod != PaymentMethod.CASH && paymentMethod != PaymentMethod.CARD_EXTERNAL) {
-            throw new IllegalArgumentException("POS only supports CASH or CARD_EXTERNAL");
+        if (paymentMethod != PaymentMethod.CASH && paymentMethod != PaymentMethod.CARD_EXTERNAL && paymentMethod != PaymentMethod.PAY_LATER) {
+            throw new IllegalArgumentException("POS only supports CASH, CARD_EXTERNAL or PAY_LATER");
+        }
+
+        // PAY_LATER ("Später bezahlen"): erfordert einen Karten-/Kundencode UND wird
+        // VOR dem Anlegen der Order geprüft (fail-fast, kein Stock-Abzug bei gesperrter/
+        // unbekannter Karte). Der eigentliche CHARGE erfolgt weiter unten NACH dem Order-Save
+        // (Order wird als order_id für den Duplicate-Charge-Schutz benötigt) - schlägt dieser
+        // (seltene Race Condition) fehl, wird die Exception NICHT geschluckt, sondern rollt
+        // die gesamte @Transactional-Order-Erstellung zurück (anders als das rein optionale
+        // Punkte-Sammeln weiter unten: bei PAY_LATER IST die Credit-Buchung die Zahlung selbst).
+        if (paymentMethod == PaymentMethod.PAY_LATER) {
+            if (request.getLoyaltyCode() == null || request.getLoyaltyCode().isBlank()) {
+                throw new IllegalArgumentException("PAY_LATER requires a loyaltyCode (Karten-/Kundencode)");
+            }
+            loyaltyService.findAccountByActiveIdentifier(storeId, request.getLoyaltyCode());
         }
 
         // 4. Order erstellen
@@ -247,6 +262,20 @@ public class PosOrderService {
             }
         }
 
+        // 7c. PAY_LATER: Credit-Buchung (CHARGE) auslösen - bestehende Karte/CreditAccount,
+        // KEIN eigener Checkout-Flow. Anders als das Punkte-Sammeln oben ist dies KEIN
+        // optionaler Nebeneffekt: die Credit-Buchung IST die Zahlung, ein Fehler hier muss
+        // die gesamte Order-Erstellung zurückrollen (siehe @Transactional auf dieser Methode).
+        BigDecimal creditNewBalance = null;
+        if (paymentMethod == PaymentMethod.PAY_LATER) {
+            var creditResult = creditService.charge(
+                storeId, request.getLoyaltyCode(), savedOrder.getTotalGross(), savedOrder, null
+            );
+            creditNewBalance = creditResult.getResultingBalance();
+            log.info("PAY_LATER charged: orderNumber={}, newCreditBalance={}",
+                savedOrder.getOrderNumber(), creditNewBalance);
+        }
+
         // 8. Response erstellen
         BigDecimal cashChange = null;
         if (paymentMethod == PaymentMethod.CASH && request.getCashReceived() != null) {
@@ -267,6 +296,7 @@ public class PosOrderService {
         response.setCreatedAt(savedOrder.getCreatedAt());
         response.setLoyaltyPointsEarned(loyaltyPointsEarned);
         response.setLoyaltyNewBalance(loyaltyNewBalance);
+        response.setCreditNewBalance(creditNewBalance);
         return response;
     }
 
