@@ -13,9 +13,14 @@ export interface PosOrderItemRequest {
 }
 
 export interface PosOrderRequest {
-  paymentMethod: 'CASH' | 'CARD_EXTERNAL';
+  paymentMethod: 'CASH' | 'CARD_EXTERNAL' | 'PAY_LATER';
   cashReceived?: number;
   items: PosOrderItemRequest[];
+  /**
+   * Karten-/Kundencode (Loyalty). Für PAY_LATER PFLICHT (identifiziert den
+   * CustomerCreditAccount), sonst optional (nur für Punkte-Gutschrift).
+   */
+  loyaltyCode?: string;
 }
 
 /**
@@ -29,6 +34,8 @@ export interface PosOrderResponse {
   cashChange?: number;
   status: string;
   createdAt: string;
+  /** Neuer offener Betrag nach PAY_LATER-Buchung, sonst nicht gesetzt */
+  creditNewBalance?: number;
 }
 
 /**

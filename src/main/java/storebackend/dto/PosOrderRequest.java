@@ -49,7 +49,7 @@ public class PosOrderRequest {
     // Validation
     public boolean isValid() {
         return paymentMethod != null && 
-               (paymentMethod.equals("CASH") || paymentMethod.equals("CARD_EXTERNAL")) &&
+               (paymentMethod.equals("CASH") || paymentMethod.equals("CARD_EXTERNAL") || paymentMethod.equals("PAY_LATER")) &&
                items != null && 
                !items.isEmpty() &&
                items.size() <= 100 && // sinnvolle Obergrenze

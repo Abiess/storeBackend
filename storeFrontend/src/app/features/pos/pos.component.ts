@@ -43,8 +43,9 @@ export class PosComponent implements OnInit, OnDestroy {
   
   // Payment State
   showPaymentDialog = signal(false);
-  paymentMethod: 'CASH' | 'CARD_EXTERNAL' | null = null;
+  paymentMethod: 'CASH' | 'CARD_EXTERNAL' | 'PAY_LATER' | null = null;
   cashReceived = 0;
+  payLaterCode = '';
   paymentTotal = 0;
   currentCartTotal = 0; // Track current cart total for checkout button
   
@@ -185,13 +186,17 @@ export class PosComponent implements OnInit, OnDestroy {
     this.paymentTotal = total;
     this.paymentMethod = null;
     this.cashReceived = 0;
+    this.payLaterCode = '';
     this.showPaymentDialog.set(true);
   }
 
-  selectPaymentMethod(method: 'CASH' | 'CARD_EXTERNAL'): void {
+  selectPaymentMethod(method: 'CASH' | 'CARD_EXTERNAL' | 'PAY_LATER'): void {
     this.paymentMethod = method;
     if (method === 'CASH') {
       this.cashReceived = 0;
+    }
+    if (method === 'PAY_LATER') {
+      this.payLaterCode = '';
     }
   }
 
@@ -210,6 +215,9 @@ export class PosComponent implements OnInit, OnDestroy {
     if (this.paymentMethod === 'CASH') {
       return this.cashReceived >= this.paymentTotal;
     }
+    if (this.paymentMethod === 'PAY_LATER') {
+      return !!this.payLaterCode.trim();
+    }
     return true; // CARD_EXTERNAL: always ready
   }
 
@@ -225,6 +233,7 @@ export class PosComponent implements OnInit, OnDestroy {
     const request: PosOrderRequest = {
       paymentMethod: this.paymentMethod!,
       cashReceived: this.paymentMethod === 'CASH' ? this.cashReceived : undefined,
+      loyaltyCode: this.paymentMethod === 'PAY_LATER' ? this.payLaterCode.trim() : undefined,
       items: this.posCart.getCurrentItems().map(item => ({
         productId: item.product.id!,
         quantity: item.quantity
@@ -277,6 +286,7 @@ export class PosComponent implements OnInit, OnDestroy {
     this.showPaymentDialog.set(false);
     this.paymentMethod = null;
     this.cashReceived = 0;
+    this.payLaterCode = '';
     this.paymentTotal = 0;
     this.processingPayment.set(false);
     // saleCompleted und lastSaleResponse bleiben für Receipt
@@ -290,6 +300,7 @@ export class PosComponent implements OnInit, OnDestroy {
     this.showPaymentDialog.set(false);
     this.paymentMethod = null;
     this.cashReceived = 0;
+    this.payLaterCode = '';
     this.paymentTotal = 0;
   }
   

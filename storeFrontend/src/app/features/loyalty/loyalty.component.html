@@ -167,6 +167,12 @@
             {{ 'loyalty.currentBalance' | translate }}:
             <strong>{{ acc.pointsBalance }} {{ 'loyalty.points' | translate }}</strong>
           </p>
+          @if (acc.openAmount > 0) {
+            <p class="points-balance open-amount-line">
+              {{ 'loyalty.openAmountLabel' | translate }}:
+              <strong>{{ acc.openAmount | number:'1.2-2' }} {{ acc.currencyCode }}</strong>
+            </p>
+          }
         </div>
       </div>
 
@@ -176,6 +182,20 @@
           {{ 'loyalty.linkCustomerButton' | translate }}
         </button>
       }
+
+      <!-- ════════ Credit-Kurzaktionen ("Zahlung erfassen" / "Historie"), kein neues Menü ════════ -->
+      <div class="credit-quick-actions">
+        @if (acc.openAmount > 0) {
+          <button class="btn-start-over" (click)="startPayCreditFromAccount()">
+            <lucide-icon name="banknote" [size]="16"></lucide-icon>
+            {{ 'loyalty.list.actionPayCredit' | translate }}
+          </button>
+        }
+        <button class="btn-start-over" (click)="openHistoryFromAccount()">
+          <lucide-icon name="history" [size]="16"></lucide-icon>
+          {{ 'loyalty.list.actionHistory' | translate }}
+        </button>
+      </div>
 
       <!-- ════════ SCHRITT 3: Einkauf zuordnen ════════ -->
       <div class="purchase-section">
@@ -271,6 +291,111 @@
             <lucide-icon name="check-circle" [size]="18"></lucide-icon>
           }
           {{ 'loyalty.list.replaceConfirmButton' | translate }}
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- ════════ "Später bezahlen" (CHARGE) ════════ -->
+  @if (chargingCreditIdentifier(); as chargeIdentifier) {
+    <div class="loyalty-card register-card">
+      <p class="register-hint">
+        <lucide-icon name="banknote" [size]="18"></lucide-icon>
+        {{ 'loyalty.list.chargeHint' | translate: { code: chargeIdentifier } }}
+      </p>
+
+      <label class="loyalty-label">{{ 'loyalty.list.chargeAmountLabel' | translate }}</label>
+      <input
+        type="number"
+        min="0.01"
+        step="0.01"
+        [(ngModel)]="chargeAmountValue"
+        [placeholder]="'loyalty.list.chargeAmountPlaceholder' | translate"
+        class="loyalty-input"
+      />
+
+      <label class="loyalty-label">{{ 'loyalty.list.creditNoteLabel' | translate }}</label>
+      <input
+        type="text"
+        [(ngModel)]="chargeNote"
+        [placeholder]="'loyalty.list.creditNotePlaceholder' | translate"
+        class="loyalty-input"
+      />
+
+      @if (chargeError()) {
+        <div class="error-banner">
+          <lucide-icon name="alert-circle" [size]="16"></lucide-icon>
+          {{ chargeError()! | translate }}
+        </div>
+      }
+
+      <div class="register-actions">
+        <button class="btn-start-over" (click)="cancelChargeCredit()">
+          {{ 'loyalty.cancel' | translate }}
+        </button>
+        <button
+          class="btn-assign"
+          [disabled]="!canConfirmChargeCredit()"
+          (click)="confirmChargeCredit()">
+          @if (chargeLoading()) {
+            <lucide-icon name="loader-2" [size]="18" class="icon-spinning"></lucide-icon>
+          } @else {
+            <lucide-icon name="check-circle" [size]="18"></lucide-icon>
+          }
+          {{ 'loyalty.list.chargeConfirmButton' | translate }}
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- ════════ "Zahlung erfassen" (PAYMENT) ════════ -->
+  @if (payingCreditIdentifier(); as payIdentifier) {
+    <div class="loyalty-card register-card">
+      <p class="register-hint">
+        <lucide-icon name="banknote" [size]="18"></lucide-icon>
+        {{ 'loyalty.list.payHint' | translate: { balance: payingCreditMaxAmount() } }}
+      </p>
+
+      <label class="loyalty-label">{{ 'loyalty.list.payAmountLabel' | translate }}</label>
+      <input
+        type="number"
+        min="0.01"
+        [max]="payingCreditMaxAmount()"
+        step="0.01"
+        [(ngModel)]="paymentAmountValue"
+        [placeholder]="'loyalty.list.payAmountPlaceholder' | translate"
+        class="loyalty-input"
+      />
+
+      <label class="loyalty-label">{{ 'loyalty.list.creditNoteLabel' | translate }}</label>
+      <input
+        type="text"
+        [(ngModel)]="paymentNote"
+        [placeholder]="'loyalty.list.creditNotePlaceholder' | translate"
+        class="loyalty-input"
+      />
+
+      @if (paymentError()) {
+        <div class="error-banner">
+          <lucide-icon name="alert-circle" [size]="16"></lucide-icon>
+          {{ paymentError()! | translate }}
+        </div>
+      }
+
+      <div class="register-actions">
+        <button class="btn-start-over" (click)="cancelPayCredit()">
+          {{ 'loyalty.cancel' | translate }}
+        </button>
+        <button
+          class="btn-assign"
+          [disabled]="!canConfirmPayCredit()"
+          (click)="confirmPayCredit()">
+          @if (paymentLoading()) {
+            <lucide-icon name="loader-2" [size]="18" class="icon-spinning"></lucide-icon>
+          } @else {
+            <lucide-icon name="check-circle" [size]="18"></lucide-icon>
+          }
+          {{ 'loyalty.list.payConfirmButton' | translate }}
         </button>
       </div>
     </div>
@@ -386,19 +511,36 @@
       </h2>
 
       <app-filter-bar
-        [chips]="historyFilterChips"
-        [activeValue]="historyFilter()"
-        (filterChange)="onHistoryFilterChange($event)">
+        [chips]="historyModeChips"
+        [activeValue]="historyMode()"
+        (filterChange)="onHistoryModeChange($event)">
       </app-filter-bar>
 
-      <app-responsive-data-list
-        [items]="filteredHistoryTransactions"
-        [columns]="historyColumns"
-        [loading]="historyLoading()"
-        trackBy="id"
-        [emptyMessage]="'loyalty.history.emptyMessage' | translate"
-        emptyIcon="🧾">
-      </app-responsive-data-list>
+      @if (historyMode() === 'points') {
+        <app-filter-bar
+          [chips]="historyFilterChips"
+          [activeValue]="historyFilter()"
+          (filterChange)="onHistoryFilterChange($event)">
+        </app-filter-bar>
+
+        <app-responsive-data-list
+          [items]="filteredHistoryTransactions"
+          [columns]="historyColumns"
+          [loading]="historyLoading()"
+          trackBy="id"
+          [emptyMessage]="'loyalty.history.emptyMessage' | translate"
+          emptyIcon="🧾">
+        </app-responsive-data-list>
+      } @else {
+        <app-responsive-data-list
+          [items]="creditHistoryTransactions()"
+          [columns]="creditHistoryColumns"
+          [loading]="creditHistoryLoading()"
+          trackBy="id"
+          [emptyMessage]="'loyalty.history.emptyMessageCredit' | translate"
+          emptyIcon="🧾">
+        </app-responsive-data-list>
+      }
 
       <button class="btn-start-over" (click)="closeHistory()">
         <lucide-icon name="x" [size]="16"></lucide-icon>

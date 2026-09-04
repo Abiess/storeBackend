@@ -3325,6 +3325,9 @@
       "change": "Rückgeld",
       "quickAmounts": "Schnellbeträge",
       "cardExternalText": "Zahlung am externen Kartenterminal durchführen. Danach bestätigen.",
+      "payLater": "Später bezahlen",
+      "payLaterCodeLabel": "Karten-/Kundencode",
+      "payLaterCodePlaceholder": "z.B. BONUS-0001",
       "back": "Zurück"
     },
     "sale": {
@@ -3390,6 +3393,7 @@
     "anonymousCardHint": "Diese Karte ist noch keinem Kunden zugeordnet. Die Punkte bleiben beim Verknüpfen erhalten.",
     "linkCustomerButton": "Kunde verknüpfen",
     "linkCustomerHint": "Verknüpfe diese Bonuskarte mit einem bestehenden Kunden. Der Punktestand bleibt erhalten.",
+    "openAmountLabel": "Offener Betrag",
     "errors": {
       "notFound": "Kein Kunde mit diesem Code gefunden",
       "purchaseFailed": "Einkauf konnte nicht zugeordnet werden",
@@ -3399,7 +3403,9 @@
       "blockFailed": "Karte konnte nicht gesperrt werden",
       "replaceFailed": "Karte konnte nicht ersetzt werden",
       "adjustFailed": "Punktekorrektur konnte nicht gespeichert werden",
-      "redeemFailed": "Punkte konnten nicht eingelöst werden"
+      "redeemFailed": "Punkte konnten nicht eingelöst werden",
+      "chargeFailed": "Betrag konnte nicht angeschrieben werden",
+      "payFailed": "Zahlung konnte nicht erfasst werden"
     },
     "list": {
       "heading": "Bonuskarten",
@@ -3410,6 +3416,7 @@
       "colLastPurchase": "Letzter Einkauf",
       "colStatus": "Status",
       "colActions": "Aktionen",
+      "colOpenAmount": "Offen",
       "notRegistered": "Nicht registriert",
       "sinceToday": "heute",
       "sinceOneDay": "1 Tag",
@@ -3427,6 +3434,9 @@
       "actionAdjust": "Punkte korrigieren",
       "actionRedeem": "Punkte einlösen",
       "actionLinkCustomer": "Kunde verknüpfen",
+      "actionChargeCredit": "Später bezahlen",
+      "actionPayCredit": "Zahlung erfassen",
+      "actionCreditHistory": "Credit-Historie",
       "searchPlaceholder": "Name, Kartencode suchen...",
       "emptyMessage": "Noch keine Bonuskarten vorhanden",
       "confirmBlock": "Diese Karte wirklich sperren? Sie kann danach nicht mehr verwendet werden.",
@@ -3442,7 +3452,17 @@
       "redeemHint": "Aktueller Punktestand: {{balance}}. Es können maximal so viele Punkte eingelöst werden.",
       "redeemPointsLabel": "Einzulösende Punkte",
       "redeemPointsPlaceholder": "z.B. 20",
-      "redeemConfirmButton": "Punkte einlösen"
+      "redeemConfirmButton": "Punkte einlösen",
+      "chargeHint": "Betrag für \"{{code}}\" auf Rechnung setzen (\"Später bezahlen\").",
+      "chargeAmountLabel": "Betrag",
+      "chargeAmountPlaceholder": "z.B. 420.00",
+      "chargeConfirmButton": "Anschreiben",
+      "creditNoteLabel": "Notiz (optional)",
+      "creditNotePlaceholder": "z.B. Bezug zu Bestellung",
+      "payHint": "Offener Betrag: {{balance}}. Es kann maximal dieser Betrag erfasst werden.",
+      "payAmountLabel": "Gezahlter Betrag",
+      "payAmountPlaceholder": "z.B. 100.00",
+      "payConfirmButton": "Zahlung erfassen"
     },
     "history": {
       "heading": "Transaktionshistorie",
@@ -3451,11 +3471,19 @@
       "colPoints": "Punkte",
       "colAmount": "Einkaufswert",
       "colBalance": "Punktestand",
+      "colOpenAmountAfter": "Offen danach",
       "colNote": "Notiz",
       "typeEarn": "Gutschrift",
       "typeRedeem": "Einlösung",
       "typeAdjust": "Korrektur",
-      "emptyMessage": "Noch keine Transaktionen vorhanden"
+      "typeCharge": "Angeschrieben",
+      "typePayment": "Zahlung",
+      "typeAdjustment": "Korrektur",
+      "typeReversal": "Storno",
+      "tabPoints": "Bonuspunkte",
+      "tabCredit": "Offene Beträge",
+      "emptyMessage": "Noch keine Transaktionen vorhanden",
+      "emptyMessageCredit": "Noch keine Credit-Buchungen vorhanden"
     }
   },
   "dhl": {

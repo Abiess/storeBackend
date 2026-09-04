@@ -3292,6 +3292,9 @@
       "change": "Change",
       "quickAmounts": "Quick Amounts",
       "cardExternalText": "Process payment on external card terminal. Confirm afterwards.",
+      "payLater": "Pay later",
+      "payLaterCodeLabel": "Card/Customer Code",
+      "payLaterCodePlaceholder": "e.g. BONUS-0001",
       "back": "Back"
     },
     "sale": {
@@ -3357,6 +3360,7 @@
     "anonymousCardHint": "This card is not yet linked to a customer. Points are kept when linking.",
     "linkCustomerButton": "Link customer",
     "linkCustomerHint": "Link this loyalty card to an existing customer. The points balance is preserved.",
+    "openAmountLabel": "Open balance",
     "errors": {
       "notFound": "No customer found with this code",
       "purchaseFailed": "Could not assign purchase",
@@ -3366,7 +3370,9 @@
       "blockFailed": "Could not block card",
       "replaceFailed": "Could not replace card",
       "adjustFailed": "Could not save points adjustment",
-      "redeemFailed": "Could not redeem points"
+      "redeemFailed": "Could not redeem points",
+      "chargeFailed": "Could not charge the account",
+      "payFailed": "Could not record payment"
     },
     "list": {
       "heading": "Loyalty Cards",
@@ -3377,6 +3383,7 @@
       "colLastPurchase": "Last Purchase",
       "colStatus": "Status",
       "colActions": "Actions",
+      "colOpenAmount": "Open",
       "notRegistered": "Not registered",
       "sinceToday": "today",
       "sinceOneDay": "1 day",
@@ -3394,6 +3401,9 @@
       "actionAdjust": "Adjust points",
       "actionRedeem": "Redeem points",
       "actionLinkCustomer": "Link customer",
+      "actionChargeCredit": "Pay later",
+      "actionPayCredit": "Record payment",
+      "actionCreditHistory": "Credit history",
       "searchPlaceholder": "Search name, card code...",
       "emptyMessage": "No loyalty cards yet",
       "confirmBlock": "Really block this card? It can no longer be used afterwards.",
@@ -3409,7 +3419,17 @@
       "redeemHint": "Current balance: {{balance}}. At most this many points can be redeemed.",
       "redeemPointsLabel": "Points to redeem",
       "redeemPointsPlaceholder": "e.g. 20",
-      "redeemConfirmButton": "Redeem points"
+      "redeemConfirmButton": "Redeem points",
+      "chargeHint": "Charge an amount to \"{{code}}\" (\"Pay later\").",
+      "chargeAmountLabel": "Amount",
+      "chargeAmountPlaceholder": "e.g. 420.00",
+      "chargeConfirmButton": "Charge",
+      "creditNoteLabel": "Note (optional)",
+      "creditNotePlaceholder": "e.g. reference to order",
+      "payHint": "Open balance: {{balance}}. At most this amount can be recorded.",
+      "payAmountLabel": "Amount paid",
+      "payAmountPlaceholder": "e.g. 100.00",
+      "payConfirmButton": "Record payment"
     },
     "history": {
       "heading": "Transaction history",
@@ -3418,11 +3438,19 @@
       "colPoints": "Points",
       "colAmount": "Purchase value",
       "colBalance": "Balance",
+      "colOpenAmountAfter": "Open after",
       "colNote": "Note",
       "typeEarn": "Earned",
       "typeRedeem": "Redeemed",
       "typeAdjust": "Adjustment",
-      "emptyMessage": "No transactions yet"
+      "typeCharge": "Charged",
+      "typePayment": "Payment",
+      "typeAdjustment": "Adjustment",
+      "typeReversal": "Reversal",
+      "tabPoints": "Loyalty Points",
+      "tabCredit": "Open Balances",
+      "emptyMessage": "No transactions yet",
+      "emptyMessageCredit": "No credit transactions yet"
     }
   },
   "dhl": {

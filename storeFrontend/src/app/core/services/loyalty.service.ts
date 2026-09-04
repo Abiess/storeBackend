@@ -20,6 +20,12 @@ export interface LoyaltyAccount {
   currencyCode: string;
   /** true = Karte ist (noch) keinem CustomerProfile zugeordnet (anonyme Bonuskarte) */
   anonymous: boolean;
+  /**
+   * Offener Betrag ("Anschreiben"/Credit), 0 falls kein CustomerCreditAccount existiert.
+   * Fachlich getrennt vom Loyalty-Punktesystem, aber UX-seitig hier mitgeliefert
+   * (kein eigenes Credit-Menü/keine eigene Seite, siehe CreditController).
+   */
+  openAmount: number;
 }
 
 export interface LoyaltyPurchaseRequest {
@@ -108,6 +114,46 @@ export interface LoyaltyAccountListItem {
   lastPurchaseAt: string | null;
   /** ID des primären LoyaltyIdentifier (für Sperren/Ersetzen-Aktionen), null falls keiner existiert */
   loyaltyIdentifierId: number | null;
+  /** Offener Betrag ("Anschreiben"/Credit), 0 falls kein CustomerCreditAccount existiert */
+  openAmount: number;
+}
+
+/**
+ * Credit ("Anschreiben"/"Später bezahlen") – fachlich getrennt vom Loyalty-Punktesystem,
+ * aber 1:1 an denselben LoyaltyAccount gebunden und UX-seitig in dieselbe Loyalty-Seite
+ * integriert (siehe CreditController, CustomerCreditAccount).
+ */
+export interface CreditAccount {
+  loyaltyAccountId: number;
+  openAmount: number;
+  /** NULL = kein Kreditlimit gesetzt */
+  creditLimit: number | null;
+}
+
+/**
+ * Credit Transaction – Historie-Eintrag (analog zu LoyaltyTransaction).
+ */
+export interface CreditTransaction {
+  id: number;
+  /** 'CHARGE' | 'PAYMENT' | 'ADJUSTMENT' | 'REVERSAL' */
+  type: string;
+  amount: number;
+  resultingBalance: number;
+  note: string | null;
+  orderId: number | null;
+  createdAt: string;
+}
+
+export interface CreditChargeRequest {
+  identifier: string;
+  amount: number;
+  note?: string | null;
+}
+
+export interface CreditPaymentRequest {
+  identifier: string;
+  amount: number;
+  note?: string | null;
 }
 
 /**
@@ -270,6 +316,51 @@ export class LoyaltyService {
     return this.http.post<LoyaltyAdjustmentResponse>(
       `${this.apiUrl}/stores/${storeId}/loyalty/redeem`,
       request
+    );
+  }
+
+  // ─── Credit ("Anschreiben"/"Später bezahlen") – nested unter /loyalty, keine neue Navigation ───
+
+  /**
+   * Lädt den offenen Betrag zu einer Karte/Code.
+   * GET /api/stores/{storeId}/loyalty/credit?code=...
+   */
+  getCreditInfo(storeId: number, code: string): Observable<CreditAccount> {
+    return this.http.get<CreditAccount>(
+      `${this.apiUrl}/stores/${storeId}/loyalty/credit`,
+      { params: { code } }
+    );
+  }
+
+  /**
+   * "Später bezahlen" – erhöht den offenen Betrag (CHARGE).
+   * POST /api/stores/{storeId}/loyalty/credit/charge
+   */
+  chargeCredit(storeId: number, request: CreditChargeRequest): Observable<CreditTransaction> {
+    return this.http.post<CreditTransaction>(
+      `${this.apiUrl}/stores/${storeId}/loyalty/credit/charge`,
+      request
+    );
+  }
+
+  /**
+   * "Zahlung erfassen" – reduziert den offenen Betrag (PAYMENT).
+   * POST /api/stores/{storeId}/loyalty/credit/payment
+   */
+  payCredit(storeId: number, request: CreditPaymentRequest): Observable<CreditTransaction> {
+    return this.http.post<CreditTransaction>(
+      `${this.apiUrl}/stores/${storeId}/loyalty/credit/payment`,
+      request
+    );
+  }
+
+  /**
+   * Lädt die Credit-Historie (CHARGE/PAYMENT/ADJUSTMENT/REVERSAL), neueste zuerst.
+   * GET /api/stores/{storeId}/loyalty/credit/accounts/{loyaltyAccountId}/transactions
+   */
+  getCreditHistory(storeId: number, loyaltyAccountId: number): Observable<CreditTransaction[]> {
+    return this.http.get<CreditTransaction[]>(
+      `${this.apiUrl}/stores/${storeId}/loyalty/credit/accounts/${loyaltyAccountId}/transactions`
     );
   }
 }

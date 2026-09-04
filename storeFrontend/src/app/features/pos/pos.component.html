@@ -190,6 +190,10 @@
               <lucide-icon name="credit-card" [size]="32"></lucide-icon>
               <span>{{ 'pos.payment.cardExternal' | translate }}</span>
             </button>
+            <button class="payment-method-btn" (click)="selectPaymentMethod('PAY_LATER')">
+              <lucide-icon name="clock" [size]="32"></lucide-icon>
+              <span>{{ 'pos.payment.payLater' | translate }}</span>
+            </button>
           </div>
         }
 
@@ -244,6 +248,24 @@
             <div class="card-external-info">
               <lucide-icon name="credit-card" [size]="48"></lucide-icon>
               <p>{{ 'pos.payment.cardExternalText' | translate }}</p>
+            </div>
+          </div>
+        }
+
+        <!-- PAY_LATER Flow ("Später bezahlen" - bestehender Loyalty-/Kartencode) -->
+        @if (paymentMethod === 'PAY_LATER') {
+          <div class="payment-card">
+            <button class="btn-back" (click)="paymentMethod = null">
+              <lucide-icon name="arrow-left" [size]="16"></lucide-icon>
+              {{ 'pos.payment.back' | translate }}
+            </button>
+
+            <div class="cash-input-group">
+              <label>{{ 'pos.payment.payLaterCodeLabel' | translate }}</label>
+              <app-barcode-input
+                [(ngModel)]="payLaterCode"
+                [placeholder]="'pos.payment.payLaterCodePlaceholder' | translate">
+              </app-barcode-input>
             </div>
           </div>
         }

@@ -3200,6 +3200,9 @@
       "change": "الباقي",
       "quickAmounts": "مبالغ سريعة",
       "cardExternalText": "إجراء الدفع على جهاز البطاقة الخارجي. ثم تأكيد.",
+      "payLater": "الدفع لاحقاً",
+      "payLaterCodeLabel": "رمز البطاقة/العميل",
+      "payLaterCodePlaceholder": "مثال: BONUS-0001",
       "back": "رجوع"
     },
     "sale": {
@@ -3265,6 +3268,7 @@
     "anonymousCardHint": "هذه البطاقة غير مرتبطة بعميل بعد. يتم الاحتفاظ بالنقاط عند الربط.",
     "linkCustomerButton": "ربط العميل",
     "linkCustomerHint": "اربط بطاقة الولاء هذه بعميل موجود. يتم الاحتفاظ برصيد النقاط.",
+    "openAmountLabel": "الرصيد المستحق",
     "errors": {
       "notFound": "لم يتم العثور على عميل بهذا الرمز",
       "purchaseFailed": "تعذّر ربط عملية الشراء",
@@ -3274,7 +3278,9 @@
       "blockFailed": "تعذّر حظر البطاقة",
       "replaceFailed": "تعذّر استبدال البطاقة",
       "adjustFailed": "تعذّر حفظ تعديل النقاط",
-      "redeemFailed": "تعذّر استبدال النقاط"
+      "redeemFailed": "تعذّر استبدال النقاط",
+      "chargeFailed": "تعذّر تسجيل المبلغ المستحق",
+      "payFailed": "تعذّر تسجيل الدفعة"
     },
     "list": {
       "heading": "بطاقات الولاء",
@@ -3285,6 +3291,7 @@
       "colLastPurchase": "آخر عملية شراء",
       "colStatus": "الحالة",
       "colActions": "الإجراءات",
+      "colOpenAmount": "المستحق",
       "notRegistered": "غير مسجّل",
       "sinceToday": "اليوم",
       "sinceOneDay": "يوم واحد",
@@ -3302,6 +3309,9 @@
       "actionAdjust": "تعديل النقاط",
       "actionRedeem": "استبدال النقاط",
       "actionLinkCustomer": "ربط العميل",
+      "actionChargeCredit": "الدفع لاحقاً",
+      "actionPayCredit": "تسجيل دفعة",
+      "actionCreditHistory": "سجل المستحقات",
       "searchPlaceholder": "ابحث بالاسم أو رمز البطاقة...",
       "emptyMessage": "لا توجد بطاقات ولاء بعد",
       "confirmBlock": "هل تريد حظر هذه البطاقة فعلاً؟ لن يمكن استخدامها بعد ذلك.",
@@ -3317,7 +3327,17 @@
       "redeemHint": "الرصيد الحالي: {{balance}}. الحد الأقصى للنقاط القابلة للاستبدال.",
       "redeemPointsLabel": "النقاط المراد استبدالها",
       "redeemPointsPlaceholder": "مثال: 20",
-      "redeemConfirmButton": "استبدال النقاط"
+      "redeemConfirmButton": "استبدال النقاط",
+      "chargeHint": "تسجيل مبلغ مستحق على \"{{code}}\" (\"الدفع لاحقاً\").",
+      "chargeAmountLabel": "المبلغ",
+      "chargeAmountPlaceholder": "مثال: 420.00",
+      "chargeConfirmButton": "تسجيل كمستحق",
+      "creditNoteLabel": "ملاحظة (اختياري)",
+      "creditNotePlaceholder": "مثال: مرجع الطلب",
+      "payHint": "الرصيد المستحق: {{balance}}. لا يمكن تسجيل أكثر من هذا المبلغ.",
+      "payAmountLabel": "المبلغ المدفوع",
+      "payAmountPlaceholder": "مثال: 100.00",
+      "payConfirmButton": "تسجيل دفعة"
     },
     "history": {
       "heading": "سجل المعاملات",
@@ -3326,11 +3346,19 @@
       "colPoints": "النقاط",
       "colAmount": "قيمة الشراء",
       "colBalance": "الرصيد",
+      "colOpenAmountAfter": "المستحق بعد",
       "colNote": "ملاحظة",
       "typeEarn": "اكتساب",
       "typeRedeem": "استبدال",
       "typeAdjust": "تعديل",
-      "emptyMessage": "لا توجد معاملات بعد"
+      "typeCharge": "تسجيل كمستحق",
+      "typePayment": "دفعة",
+      "typeAdjustment": "تعديل",
+      "typeReversal": "إلغاء",
+      "tabPoints": "نقاط الولاء",
+      "tabCredit": "المبالغ المستحقة",
+      "emptyMessage": "لا توجد معاملات بعد",
+      "emptyMessageCredit": "لا توجد معاملات مستحقة بعد"
     }
   },
   "dhl": {

@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { TranslationService } from '@app/core/services/translation.service';
-import { LoyaltyService, LoyaltyAccount, LoyaltyPurchaseResponse, LoyaltyCustomerOption, LoyaltyAccountListItem, LoyaltyTransaction } from '@app/core/services/loyalty.service';
+import { LoyaltyService, LoyaltyAccount, LoyaltyPurchaseResponse, LoyaltyCustomerOption, LoyaltyAccountListItem, LoyaltyTransaction, CreditTransaction } from '@app/core/services/loyalty.service';
 import { LucideAngularModule } from 'lucide-angular';
 import { ResponsiveDataListComponent, ColumnConfig, ActionConfig } from '@app/shared/components/responsive-data-list/responsive-data-list.component';
 import { FilterBarComponent, FilterChip } from '@app/shared/components/filter-bar/filter-bar.component';
@@ -137,6 +137,14 @@ export class LoyaltyComponent implements OnInit {
       type: 'badge',
       formatFn: (v) => this.formatIdentifierStatus(v),
       badgeClass: (v) => v === 'ACTIVE' ? 'status-active' : v === 'BLOCKED' ? 'status-inactive' : 'status-archived'
+    },
+    {
+      key: 'openAmount',
+      label: this.translationService.translate('loyalty.list.colOpenAmount'),
+      type: 'text',
+      sortable: true,
+      hideOnMobile: true,
+      formatFn: (v) => v != null && v > 0 ? Number(v).toFixed(2) : '-'
     }
   ];
 
@@ -180,6 +188,23 @@ export class LoyaltyComponent implements OnInit {
       label: this.translationService.translate('loyalty.list.actionLinkCustomer'),
       visible: (item: LoyaltyAccountListItem) => item.anonymous,
       handler: (item: LoyaltyAccountListItem) => this.linkCustomerFromList(item)
+    },
+    {
+      icon: '⏳',
+      label: this.translationService.translate('loyalty.list.actionChargeCredit'),
+      visible: (item: LoyaltyAccountListItem) => item.status === 'ACTIVE',
+      handler: (item: LoyaltyAccountListItem) => this.startChargeCredit(item.identifier!)
+    },
+    {
+      icon: '💶',
+      label: this.translationService.translate('loyalty.list.actionPayCredit'),
+      visible: (item: LoyaltyAccountListItem) => (item.openAmount ?? 0) > 0,
+      handler: (item: LoyaltyAccountListItem) => this.startPayCredit(item.identifier!, item.openAmount ?? 0)
+    },
+    {
+      icon: '🧾',
+      label: this.translationService.translate('loyalty.list.actionCreditHistory'),
+      handler: (item: LoyaltyAccountListItem) => this.openHistory(item, 'credit')
     }
   ];
 
@@ -364,11 +389,175 @@ export class LoyaltyComponent implements OnInit {
     });
   }
 
+  // ─── "Später bezahlen" (CHARGE) ───
+  chargingCreditIdentifier = signal<string | null>(null);
+  chargeAmountValue: number | null = null;
+  chargeNote = '';
+  chargeLoading = signal(false);
+  chargeError = signal<string | null>(null);
+
+  startChargeCredit(identifier: string): void {
+    if (!identifier) {
+      return;
+    }
+    this.chargingCreditIdentifier.set(identifier);
+    this.chargeAmountValue = null;
+    this.chargeNote = '';
+    this.chargeError.set(null);
+  }
+
+  cancelChargeCredit(): void {
+    this.chargingCreditIdentifier.set(null);
+    this.chargeAmountValue = null;
+    this.chargeNote = '';
+    this.chargeError.set(null);
+    this.chargeLoading.set(false);
+  }
+
+  canConfirmChargeCredit(): boolean {
+    return this.chargeAmountValue != null && this.chargeAmountValue > 0 && !this.chargeLoading();
+  }
+
+  confirmChargeCredit(): void {
+    const identifier = this.chargingCreditIdentifier();
+    if (!identifier || !this.canConfirmChargeCredit()) {
+      return;
+    }
+
+    this.chargeError.set(null);
+    this.chargeLoading.set(true);
+
+    this.loyaltyService.chargeCredit(this.storeId, {
+      identifier,
+      amount: this.chargeAmountValue!,
+      note: this.chargeNote.trim() || null
+    }).subscribe({
+      next: () => {
+        this.chargeLoading.set(false);
+        this.cancelChargeCredit();
+        this.loadAccounts();
+        this.refreshCurrentAccountDisplay();
+      },
+      error: (error) => {
+        this.chargeLoading.set(false);
+        this.chargeError.set(this.extractErrorMessage(error, 'loyalty.errors.chargeFailed'));
+      }
+    });
+  }
+
+  // ─── "Zahlung erfassen" (PAYMENT) ───
+  payingCreditIdentifier = signal<string | null>(null);
+  payingCreditMaxAmount = signal<number>(0);
+  paymentAmountValue: number | null = null;
+  paymentNote = '';
+  paymentLoading = signal(false);
+  paymentError = signal<string | null>(null);
+
+  startPayCredit(identifier: string, openAmount: number): void {
+    if (!identifier) {
+      return;
+    }
+    this.payingCreditIdentifier.set(identifier);
+    this.payingCreditMaxAmount.set(openAmount);
+    this.paymentAmountValue = null;
+    this.paymentNote = '';
+    this.paymentError.set(null);
+  }
+
+  cancelPayCredit(): void {
+    this.payingCreditIdentifier.set(null);
+    this.paymentAmountValue = null;
+    this.paymentNote = '';
+    this.paymentError.set(null);
+    this.paymentLoading.set(false);
+  }
+
+  canConfirmPayCredit(): boolean {
+    return this.paymentAmountValue != null
+      && this.paymentAmountValue > 0
+      && this.paymentAmountValue <= this.payingCreditMaxAmount()
+      && !this.paymentLoading();
+  }
+
+  confirmPayCredit(): void {
+    const identifier = this.payingCreditIdentifier();
+    if (!identifier || !this.canConfirmPayCredit()) {
+      return;
+    }
+
+    this.paymentError.set(null);
+    this.paymentLoading.set(true);
+
+    this.loyaltyService.payCredit(this.storeId, {
+      identifier,
+      amount: this.paymentAmountValue!,
+      note: this.paymentNote.trim() || null
+    }).subscribe({
+      next: () => {
+        this.paymentLoading.set(false);
+        this.cancelPayCredit();
+        this.loadAccounts();
+        this.refreshCurrentAccountDisplay();
+      },
+      error: (error) => {
+        this.paymentLoading.set(false);
+        this.paymentError.set(this.extractErrorMessage(error, 'loyalty.errors.payFailed'));
+      }
+    });
+  }
+
+  /** Aktualisiert die geöffnete Detailansicht (falls vorhanden), z.B. nach Credit-Buchungen */
+  private refreshCurrentAccountDisplay(): void {
+    const trimmedCode = this.code.trim();
+    if (!this.account() || !trimmedCode) {
+      return;
+    }
+    this.loyaltyService.lookup(this.storeId, trimmedCode).subscribe({
+      next: (updated) => this.account.set(updated),
+      error: () => { /* Detailansicht bleibt auf altem Stand, Liste ist bereits aktuell */ }
+    });
+  }
+
+  startPayCreditFromAccount(): void {
+    const acc = this.account();
+    const trimmedCode = this.code.trim();
+    if (!acc || !trimmedCode) {
+      return;
+    }
+    this.startPayCredit(trimmedCode, acc.openAmount ?? 0);
+  }
+
+  openHistoryFromAccount(mode: 'points' | 'credit' = 'points'): void {
+    const acc = this.account();
+    const trimmedCode = this.code.trim();
+    if (!acc) {
+      return;
+    }
+    const pseudoItem: LoyaltyAccountListItem = {
+      loyaltyAccountId: acc.loyaltyAccountId,
+      customerProfileId: acc.customerProfileId,
+      customerName: acc.customerName,
+      anonymous: acc.anonymous,
+      identifier: trimmedCode || null,
+      status: null,
+      pointsBalance: acc.pointsBalance,
+      createdAt: '',
+      lastPurchaseAt: null,
+      loyaltyIdentifierId: null,
+      openAmount: acc.openAmount
+    };
+    this.openHistory(pseudoItem, mode);
+  }
+
   // ─── Transaktionshistorie (ResponsiveDataList + FilterBar, siehe openHistory()) ───
   historyAccount = signal<LoyaltyAccountListItem | null>(null);
   historyTransactions = signal<LoyaltyTransaction[]>([]);
   historyLoading = signal(false);
   historyFilter = signal<'ALL' | 'EARN' | 'REDEEM' | 'ADJUST'>('ALL');
+  /** Tab innerhalb derselben Historie-Ansicht - KEINE zweite Seite/Navigation, siehe UX-Vorgabe */
+  historyMode = signal<'points' | 'credit'>('points');
+  creditHistoryTransactions = signal<CreditTransaction[]>([]);
+  creditHistoryLoading = signal(false);
 
   get filteredHistoryTransactions(): LoyaltyTransaction[] {
     const filter = this.historyFilter();
@@ -382,6 +571,13 @@ export class LoyaltyComponent implements OnInit {
       { value: 'EARN', label: this.translationService.translate('loyalty.history.typeEarn') },
       { value: 'REDEEM', label: this.translationService.translate('loyalty.history.typeRedeem') },
       { value: 'ADJUST', label: this.translationService.translate('loyalty.history.typeAdjust') }
+    ];
+  }
+
+  get historyModeChips(): FilterChip[] {
+    return [
+      { value: 'points', label: this.translationService.translate('loyalty.history.tabPoints') },
+      { value: 'credit', label: this.translationService.translate('loyalty.history.tabCredit') }
     ];
   }
 
@@ -428,15 +624,75 @@ export class LoyaltyComponent implements OnInit {
     }
   ];
 
-  openHistory(item: LoyaltyAccountListItem): void {
+  creditHistoryColumns: ColumnConfig[] = [
+    {
+      key: 'createdAt',
+      label: this.translationService.translate('loyalty.history.colDate'),
+      type: 'date',
+      sortable: true
+    },
+    {
+      key: 'type',
+      label: this.translationService.translate('loyalty.history.colType'),
+      type: 'badge',
+      formatFn: (v) => this.formatCreditTransactionType(v),
+      badgeClass: (v) => v === 'PAYMENT' ? 'status-active' : v === 'CHARGE' ? 'status-processing' : 'status-draft'
+    },
+    {
+      key: 'amount',
+      label: this.translationService.translate('loyalty.history.colAmount'),
+      type: 'text',
+      formatFn: (v) => v != null ? Number(v).toFixed(2) : '-'
+    },
+    {
+      key: 'resultingBalance',
+      label: this.translationService.translate('loyalty.history.colOpenAmountAfter'),
+      type: 'text',
+      sortable: true,
+      formatFn: (v) => v != null ? Number(v).toFixed(2) : '-'
+    },
+    {
+      key: 'note',
+      label: this.translationService.translate('loyalty.history.colNote'),
+      type: 'text',
+      hideOnMobile: true,
+      formatFn: (v) => v || '-'
+    }
+  ];
+
+  openHistory(item: LoyaltyAccountListItem, mode: 'points' | 'credit' = 'points'): void {
     if (!item.loyaltyAccountId) {
       return;
     }
     this.historyAccount.set(item);
+    this.historyMode.set(mode);
     this.historyFilter.set('ALL');
     this.historyTransactions.set([]);
-    this.historyLoading.set(true);
+    this.creditHistoryTransactions.set([]);
+    if (mode === 'credit') {
+      this.loadCreditHistory(item);
+    } else {
+      this.loadPointsHistory(item);
+    }
+  }
 
+  onHistoryModeChange(mode: string): void {
+    const historyMode = mode as 'points' | 'credit';
+    this.historyMode.set(historyMode);
+    const item = this.historyAccount();
+    if (!item) {
+      return;
+    }
+    if (historyMode === 'credit' && this.creditHistoryTransactions().length === 0 && !this.creditHistoryLoading()) {
+      this.loadCreditHistory(item);
+    }
+    if (historyMode === 'points' && this.historyTransactions().length === 0 && !this.historyLoading()) {
+      this.loadPointsHistory(item);
+    }
+  }
+
+  private loadPointsHistory(item: LoyaltyAccountListItem): void {
+    this.historyLoading.set(true);
     this.loyaltyService.getTransactionHistory(this.storeId, item.loyaltyAccountId).subscribe({
       next: (transactions) => {
         this.historyTransactions.set(transactions);
@@ -449,6 +705,20 @@ export class LoyaltyComponent implements OnInit {
     });
   }
 
+  private loadCreditHistory(item: LoyaltyAccountListItem): void {
+    this.creditHistoryLoading.set(true);
+    this.loyaltyService.getCreditHistory(this.storeId, item.loyaltyAccountId).subscribe({
+      next: (transactions) => {
+        this.creditHistoryTransactions.set(transactions);
+        this.creditHistoryLoading.set(false);
+      },
+      error: () => {
+        this.creditHistoryTransactions.set([]);
+        this.creditHistoryLoading.set(false);
+      }
+    });
+  }
+
   onHistoryFilterChange(value: string): void {
     this.historyFilter.set(value as 'ALL' | 'EARN' | 'REDEEM' | 'ADJUST');
   }
@@ -456,6 +726,8 @@ export class LoyaltyComponent implements OnInit {
   closeHistory(): void {
     this.historyAccount.set(null);
     this.historyTransactions.set([]);
+    this.creditHistoryTransactions.set([]);
+    this.historyMode.set('points');
   }
 
   private formatTransactionType(type: string): string {
@@ -467,6 +739,22 @@ export class LoyaltyComponent implements OnInit {
     }
     if (type === 'ADJUST') {
       return this.translationService.translate('loyalty.history.typeAdjust');
+    }
+    return type;
+  }
+
+  private formatCreditTransactionType(type: string): string {
+    if (type === 'CHARGE') {
+      return this.translationService.translate('loyalty.history.typeCharge');
+    }
+    if (type === 'PAYMENT') {
+      return this.translationService.translate('loyalty.history.typePayment');
+    }
+    if (type === 'ADJUSTMENT') {
+      return this.translationService.translate('loyalty.history.typeAdjustment');
+    }
+    if (type === 'REVERSAL') {
+      return this.translationService.translate('loyalty.history.typeReversal');
     }
     return type;
   }
