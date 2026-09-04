@@ -25,7 +25,7 @@ import {
   // POS Icons (CRITICAL FIX)
   Loader2, Calendar, Minus, PackageX, Banknote, CheckCircle, ChevronUp,
   // Loyalty Icons (MVP)
-  Gift, RotateCcw
+  Gift, RotateCcw, History, Scale
 } from 'lucide-angular';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS, HttpClient } from '@angular/common/http';
@@ -93,7 +93,7 @@ export const appConfig: ApplicationConfig = {
         // POS Icons (CRITICAL FIX)
         Loader2, Calendar, Minus, PackageX, Banknote, CheckCircle, ChevronUp,
         // Loyalty Icons (MVP)
-        Gift, RotateCcw
+        Gift, RotateCcw, History, Scale
       })
     },
     // Standard Locale (kann dynamisch überschrieben werden)

@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, ElementRef, ViewChild, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -45,6 +45,15 @@ export class LoyaltyComponent implements OnInit {
   private translationService = inject(TranslationService);
 
   storeId!: number;
+
+  /**
+   * Anker ganz oben im Template (vor "SCHRITT 1: Code-Eingabe"). Alle Aktions-Panels
+   * (Kartendetails, Historie, Ersetzen, Anpassen, Credit-Buchung, ...) werden dort
+   * gerendert, während die Bonuskarten-Liste am Seitenende steht. Ohne aktives
+   * Scrollen wirkt ein Klick auf eine Listen-Aktion so, als würde nichts passieren,
+   * weil das Ergebnis weit oberhalb des sichtbaren Bereichs erscheint.
+   */
+  @ViewChild('actionResultAnchor') private actionResultAnchor?: ElementRef<HTMLElement>;
 
   code = '';
   purchaseAmount: number | null = null;
@@ -223,6 +232,7 @@ export class LoyaltyComponent implements OnInit {
     this.adjustPointsValue = null;
     this.adjustReason = '';
     this.adjustError.set(null);
+    this.scrollToActionResult();
   }
 
   cancelAdjustPoints(): void {
@@ -276,6 +286,7 @@ export class LoyaltyComponent implements OnInit {
     this.redeemingAccount.set(item);
     this.redeemPointsValue = null;
     this.redeemError.set(null);
+    this.scrollToActionResult();
   }
 
   cancelRedeemPoints(): void {
@@ -357,6 +368,7 @@ export class LoyaltyComponent implements OnInit {
     this.replacingCard.set(item);
     this.newIdentifierCode = '';
     this.replaceCardError.set(null);
+    this.scrollToActionResult();
   }
 
   cancelReplaceCard(): void {
@@ -404,6 +416,7 @@ export class LoyaltyComponent implements OnInit {
     this.chargeAmountValue = null;
     this.chargeNote = '';
     this.chargeError.set(null);
+    this.scrollToActionResult();
   }
 
   cancelChargeCredit(): void {
@@ -462,6 +475,7 @@ export class LoyaltyComponent implements OnInit {
     this.paymentAmountValue = null;
     this.paymentNote = '';
     this.paymentError.set(null);
+    this.scrollToActionResult();
   }
 
   cancelPayCredit(): void {
@@ -674,6 +688,7 @@ export class LoyaltyComponent implements OnInit {
     } else {
       this.loadPointsHistory(item);
     }
+    this.scrollToActionResult();
   }
 
   onHistoryModeChange(mode: string): void {
@@ -1018,6 +1033,17 @@ export class LoyaltyComponent implements OnInit {
 
   // ─── "Bonuskarten"-Übersicht ───
 
+  /**
+   * Scrollt zum Seitenanfang, wo Aktions-Panels (Kartendetails, Historie, Ersetzen,
+   * Anpassen, Credit-Buchung) gerendert werden. Wird nach jeder Listen-Aktion
+   * aufgerufen, die ein solches Panel öffnet - siehe Kommentar bei `actionResultAnchor`.
+   */
+  private scrollToActionResult(): void {
+    setTimeout(() => {
+      this.actionResultAnchor?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+
   loadAccounts(): void {
     if (!this.storeId) {
       return;
@@ -1076,6 +1102,7 @@ export class LoyaltyComponent implements OnInit {
     }
     this.code = item.identifier;
     this.searchCustomer();
+    this.scrollToActionResult();
   }
 
   linkCustomerFromList(item: LoyaltyAccountListItem): void {
@@ -1088,6 +1115,7 @@ export class LoyaltyComponent implements OnInit {
     this.lastPurchase.set(null);
     this.resetAssignFlow();
     this.searching.set(true);
+    this.scrollToActionResult();
 
     this.loyaltyService.lookup(this.storeId, item.identifier).subscribe({
       next: (account) => {
