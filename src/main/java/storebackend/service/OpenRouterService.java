@@ -8,6 +8,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import storebackend.dto.IssueImageAnalysisDTO;
 import storebackend.exception.AiServiceException;
@@ -273,6 +274,7 @@ public class OpenRouterService {
     }
 
     private String callApi(Map<String, Object> requestBody) {
+        Object model = requestBody.get("model");
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("Authorization", "Bearer " + apiKey);
@@ -289,7 +291,7 @@ public class OpenRouterService {
             return extractContent(response.getBody());
 
         } catch (HttpClientErrorException e) {
-            log.error("OpenRouter HTTP {} – {}", e.getStatusCode(), e.getResponseBodyAsString());
+            logHttpStatusError(e, model);
             int status = e.getStatusCode().value();
             String msg = switch (status) {
                 case 401 -> "Invalid OpenRouter API key. Check OPENROUTER_API_KEY.";
@@ -301,7 +303,7 @@ public class OpenRouterService {
             throw new AiServiceException(msg);
 
         } catch (HttpServerErrorException e) {
-            log.error("OpenRouter server error: {}", e.getStatusCode());
+            logHttpStatusError(e, model);
             throw new AiServiceException("OpenRouter server error (5xx). Try again later.");
 
         } catch (AiServiceException e) {
@@ -311,6 +313,73 @@ public class OpenRouterService {
             log.error("OpenRouter call failed: {}", e.getMessage(), e);
             throw new AiServiceException("OpenRouter call failed: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Diagnose-Logging für fehlgeschlagene OpenRouter-Aufrufe (4xx/5xx).
+     * Loggt Status, Request-URL, verwendetes Modell, Response-Body und unkritische
+     * Response-Header (z. B. request-id/cf-ray für den Support-Abgleich mit OpenRouter).
+     *
+     * WICHTIG: Loggt NIEMALS den API-Key oder den vollständigen Authorization-Header –
+     * nur Response-Header (die den Key ohnehin nie enthalten) und auch dort werden
+     * bekannte sensible Header-Namen sicherheitshalber herausgefiltert.
+     */
+    private void logHttpStatusError(HttpStatusCodeException e, Object model) {
+        String body = e.getResponseBodyAsString();
+        String safeHeaders = formatSafeHeaders(e.getResponseHeaders());
+
+        log.error("❌ OpenRouter HTTP {} – url={}, model={}, headers=[{}], body={}",
+                e.getStatusCode(), API_URL, model, safeHeaders,
+                (body == null || body.isBlank()) ? "<empty>" : body);
+
+        // Falls OpenRouter keinen Body liefert, helfen Tracing-Header (request-id, cf-ray, ...)
+        // beim Support-Abgleich mit OpenRouter, ob/welcher Request überhaupt ankam.
+        if (body == null || body.isBlank()) {
+            String traceHeaders = formatTraceHeaders(e.getResponseHeaders());
+            log.error("ℹ️ OpenRouter response body was empty – trace headers: [{}]", traceHeaders);
+        }
+    }
+
+    /** Header-Namen, die niemals geloggt werden dürfen (auch nicht aus der Response). */
+    private static final List<String> SENSITIVE_HEADER_NAMES = List.of(
+            "authorization", "set-cookie", "cookie", "proxy-authorization", "x-api-key"
+    );
+
+    /** Formatiert Response-Header als "name=value" Liste, ohne sensible Header. */
+    private String formatSafeHeaders(HttpHeaders responseHeaders) {
+        if (responseHeaders == null || responseHeaders.isEmpty()) {
+            return "<none>";
+        }
+        StringBuilder sb = new StringBuilder();
+        responseHeaders.forEach((name, values) -> {
+            if (SENSITIVE_HEADER_NAMES.contains(name.toLowerCase())) {
+                return;
+            }
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(name).append("=").append(String.join("|", values));
+        });
+        return sb.length() > 0 ? sb.toString() : "<none>";
+    }
+
+    /** Namen typischer Tracing/Request-ID-Header, wie sie OpenRouter (Cloudflare-basiert) setzt. */
+    private static final List<String> TRACE_HEADER_NAMES = List.of(
+            "request-id", "x-request-id", "cf-ray", "cf-cache-status", "x-openrouter-request-id"
+    );
+
+    /** Extrahiert nur bekannte Tracing/Request-ID-Header (für Support-Abgleich, falls Body leer ist). */
+    private String formatTraceHeaders(HttpHeaders responseHeaders) {
+        if (responseHeaders == null || responseHeaders.isEmpty()) {
+            return "<none>";
+        }
+        StringBuilder sb = new StringBuilder();
+        responseHeaders.forEach((name, values) -> {
+            if (!TRACE_HEADER_NAMES.contains(name.toLowerCase())) {
+                return;
+            }
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(name).append("=").append(String.join("|", values));
+        });
+        return sb.length() > 0 ? sb.toString() : "<none>";
     }
 
     private String extractContent(String jsonResponse) {
