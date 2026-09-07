@@ -48,12 +48,42 @@ public class OpenRouterService {
     public static final String MODEL_TEXT            = "meta-llama/llama-3.1-8b-instruct:free";
 
     /**
-     * TEMP: Vision-Modelle für den isolierten Issue-Analysis-Test (Bild → Reparaturproblem als JSON).
-     * Aktuell identisch zu MODEL_VISION/MODEL_VISION_FALLBACK (beide seit dem Modell-Update aktuell verfügbar),
-     * bewusst als eigene Konstanten gehalten, um den Test-Pfad von der Produktanalyse zu entkoppeln.
+     * TEMP: Free-only Vision-Modell-Pool für den isolierten Issue-Analysis-Test
+     * (Bild → Reparaturproblem als JSON). Nur Issue-Analysis – Produkt-Vision
+     * (MODEL_VISION/MODEL_VISION_FALLBACK) bleibt unverändert.
+     *
+     * Quelle: GET https://openrouter.ai/api/v1/models (live geprüft am 07.09.2026).
+     * Aufnahmekriterien: pricing.prompt == 0 UND pricing.image == 0 (":free"-Suffix)
+     * UND architecture.input_modalities enthält "image". Kein Paid-Modell erlaubt.
+     *
+     * Reihenfolge – bevorzugt unterschiedliche Provider, Google zuletzt (aktuell
+     * wiederholt Upstream-429 bei beiden Gemma-Free-Modellen beobachtet):
+     *  1) thinkingmachines/inkling:free                              – Thinking Machines, free, image+text+audio
+     *  2) nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free         – NVIDIA, free, image+text+audio+video
+     *  3) openrouter/free                                            – OpenRouter-eigener Free-Router, image+text
+     *  4) dots-studio/dots-3-note-preview:free                       – Dots Studio, free, image+text
+     *     (Preview mit OpenRouter-Ablaufanzeige 30.09.2026 – bewusst NICHT als
+     *      Haupt-Fallback vorne platziert, nur als vorletzte Option)
+     *  5) google/gemma-4-31b-it:free                                 – Google, zuletzt wegen häufigem 429
+     *  6) google/gemma-4-26b-a4b-it:free                             – Google, zuletzt wegen häufigem 429
+     *
+     * HINWEIS: "MiniMax M3 free" existiert bei OpenRouter NICHT als kostenloses
+     * Vision-Modell (nur "minimax/minimax-m3", kostenpflichtig) – daher nicht im Pool.
      */
-    public static final String MODEL_VISION_ISSUE          = "google/gemma-4-31b-it:free";
-    public static final String MODEL_VISION_ISSUE_FALLBACK = "google/gemma-4-26b-a4b-it:free";
+    private static final List<String> ISSUE_VISION_MODEL_POOL = List.of(
+            "thinkingmachines/inkling:free",
+            "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+            "openrouter/free",
+            "dots-studio/dots-3-note-preview:free",
+            "google/gemma-4-31b-it:free",
+            "google/gemma-4-26b-a4b-it:free"
+    );
+
+    /** Maximale Gesamtzahl an Modellversuchen pro Issue-Analysis-Aufruf (Pool wird ggf. nicht komplett ausgeschöpft). */
+    private static final int ISSUE_VISION_MAX_ATTEMPTS = 4;
+
+    /** HTTP-Status-Codes, bei denen zum nächsten Modell im Pool rotiert wird. 401 rotiert NICHT (Abbruch). */
+    private static final List<Integer> ISSUE_VISION_RETRYABLE_STATUS = List.of(429, 502, 503);
 
     @Value("${openrouter.api.key:}")
     private String apiKey;
@@ -147,25 +177,69 @@ public class OpenRouterService {
     public IssueImageAnalysisDTO analyzeIssueImage(byte[] imageBytes, String language) {
         ensureConfigured();
         String base64 = Base64.getEncoder().encodeToString(imageBytes);
-        Map<String, Object> body = buildVisionBody(MODEL_VISION_ISSUE, base64, buildIssuePrompt(language), 500);
-        log.info("🤖 OpenRouter Vision Issue-Analysis (TEST) – model={}, lang={}, imageSize={}KB",
-                MODEL_VISION_ISSUE, language, imageBytes.length / 1024);
+        String prompt = buildIssuePrompt(language);
 
-        String raw;
-        try {
-            raw = callApi(body);
-        } catch (AiServiceException e) {
-            if (isRetryable(e.getMessage())) {
-                log.warn("⚠️ Primary issue-vision model failed ({}), retrying with fallback: {}",
-                        e.getMessage(), MODEL_VISION_ISSUE_FALLBACK);
-                Map<String, Object> fallbackBody = buildVisionBody(
-                        MODEL_VISION_ISSUE_FALLBACK, base64, buildIssuePrompt(language), 500);
-                raw = callApi(fallbackBody);
-            } else {
+        int attempts = Math.min(ISSUE_VISION_MAX_ATTEMPTS, ISSUE_VISION_MODEL_POOL.size());
+        AiServiceException lastError = null;
+
+        for (int i = 0; i < attempts; i++) {
+            String model = ISSUE_VISION_MODEL_POOL.get(i);
+            String provider = model.contains("/") ? model.substring(0, model.indexOf('/')) : model;
+            int attemptNumber = i + 1;
+
+            try {
+                Map<String, Object> body = buildVisionBody(model, base64, prompt, 500);
+                String raw = callApi(body);
+                log.info("✅ OpenRouter Issue-Analysis (TEST) – attempt={}, model={}, status=200, provider={}",
+                        attemptNumber, model, provider);
+                return parseIssueJson(raw);
+
+            } catch (OpenRouterCallException e) {
+                lastError = e;
+                log.warn("⚠️ OpenRouter Issue-Analysis (TEST) – attempt={}, model={}, status={}, provider={}",
+                        attemptNumber, model, e.getStatusCode(), provider);
+
+                if (e.getStatusCode() == 401) {
+                    // Kein Rotieren bei Auth-Fehlern – Key-Problem betrifft alle Modelle gleichermaßen.
+                    throw e;
+                }
+                if (!ISSUE_VISION_RETRYABLE_STATUS.contains(e.getStatusCode())) {
+                    // Nicht-retryable Fehler (z. B. 400, 404) – Pool-Rotation bringt nichts.
+                    throw e;
+                }
+                // sonst: nächstes Modell im Pool versuchen
+
+            } catch (AiServiceException e) {
+                // Nicht-HTTP-Fehler (z. B. Parsing) – nicht retryable, sofort abbrechen.
+                log.warn("⚠️ OpenRouter Issue-Analysis (TEST) – attempt={}, model={}, status=n/a, provider={}",
+                        attemptNumber, model, provider);
                 throw e;
             }
         }
-        return parseIssueJson(raw);
+
+        throw lastError != null ? lastError
+                : new AiServiceException("OpenRouter issue-analysis failed: no vision model in pool responded.");
+    }
+
+    /**
+     * {@link AiServiceException}-Subklasse, die zusätzlich den echten HTTP-Statuscode trägt –
+     * wird nur intern in {@link #callApi(Map)} geworfen, damit der Free-Vision-Pool in
+     * {@link #analyzeIssueImage(byte[], String)} anhand des Statuscodes entscheiden kann,
+     * ob rotiert wird (429/502/503) oder abgebrochen wird (401 und alle anderen).
+     * Bestehende catch(AiServiceException)-Stellen (Produkt-Vision, Chatbot) bleiben
+     * unverändert funktionsfähig, da diese Klasse eine Subklasse ist.
+     */
+    private static final class OpenRouterCallException extends AiServiceException {
+        private final int statusCode;
+
+        OpenRouterCallException(String message, int statusCode) {
+            super(message);
+            this.statusCode = statusCode;
+        }
+
+        int getStatusCode() {
+            return statusCode;
+        }
     }
 
     /**
@@ -300,11 +374,12 @@ public class OpenRouterService {
                 case 503 -> "OpenRouter model unavailable. Try again later.";
                 default  -> "OpenRouter HTTP " + status + ": " + e.getStatusText();
             };
-            throw new AiServiceException(msg);
+            throw new OpenRouterCallException(msg, status);
 
         } catch (HttpServerErrorException e) {
             logHttpStatusError(e, model);
-            throw new AiServiceException("OpenRouter server error (5xx). Try again later.");
+            int status = e.getStatusCode().value();
+            throw new OpenRouterCallException("OpenRouter server error (5xx). Try again later.", status);
 
         } catch (AiServiceException e) {
             throw e;
@@ -317,26 +392,27 @@ public class OpenRouterService {
 
     /**
      * Diagnose-Logging für fehlgeschlagene OpenRouter-Aufrufe (4xx/5xx).
-     * Loggt Status, Request-URL, verwendetes Modell, Response-Body und unkritische
+     * Loggt Status(+Text), Request-URL, verwendetes Modell, Response-Body und unkritische
      * Response-Header (z. B. request-id/cf-ray für den Support-Abgleich mit OpenRouter).
      *
-     * WICHTIG: Loggt NIEMALS den API-Key oder den vollständigen Authorization-Header –
-     * nur Response-Header (die den Key ohnehin nie enthalten) und auch dort werden
-     * bekannte sensible Header-Namen sicherheitshalber herausgefiltert.
+     * WICHTIG: Loggt NIEMALS den API-Key, den Authorization-Header, Cookies oder den
+     * vollständigen Request-Body (der Base64-Bilddaten enthalten kann) – nur Status,
+     * URL, Modellname sowie gefilterte Response-Header/Response-Body.
      */
     private void logHttpStatusError(HttpStatusCodeException e, Object model) {
         String body = e.getResponseBodyAsString();
         String safeHeaders = formatSafeHeaders(e.getResponseHeaders());
 
-        log.error("❌ OpenRouter HTTP {} – url={}, model={}, headers=[{}], body={}",
-                e.getStatusCode(), API_URL, model, safeHeaders,
+        log.error("❌ OpenRouter HTTP {} {} – url={}, model={}, headers=[{}], body={}",
+                e.getStatusCode().value(), e.getStatusText(), API_URL, model, safeHeaders,
                 (body == null || body.isBlank()) ? "<empty>" : body);
 
-        // Falls OpenRouter keinen Body liefert, helfen Tracing-Header (request-id, cf-ray, ...)
-        // beim Support-Abgleich mit OpenRouter, ob/welcher Request überhaupt ankam.
-        if (body == null || body.isBlank()) {
-            String traceHeaders = formatTraceHeaders(e.getResponseHeaders());
-            log.error("ℹ️ OpenRouter response body was empty – trace headers: [{}]", traceHeaders);
+        // Gezielt bekannte Tracing/Request-ID-Header prüfen (request-id, cf-ray, x-request-id,
+        // openrouter-*, ...) – hilfreich für den Support-Abgleich mit OpenRouter, insbesondere
+        // wenn der Response-Body leer ist.
+        String traceHeaders = formatTraceHeaders(e.getResponseHeaders());
+        if (!"<none>".equals(traceHeaders)) {
+            log.error("ℹ️ OpenRouter trace headers: [{}]", traceHeaders);
         }
     }
 
@@ -366,14 +442,20 @@ public class OpenRouterService {
             "request-id", "x-request-id", "cf-ray", "cf-cache-status", "x-openrouter-request-id"
     );
 
-    /** Extrahiert nur bekannte Tracing/Request-ID-Header (für Support-Abgleich, falls Body leer ist). */
+    /**
+     * Extrahiert nur bekannte Tracing/Request-ID-Header (request-id, cf-ray, x-request-id,
+     * openrouter-* per Prefix) – für Support-Abgleich mit OpenRouter, insbesondere falls
+     * der Response-Body leer ist.
+     */
     private String formatTraceHeaders(HttpHeaders responseHeaders) {
         if (responseHeaders == null || responseHeaders.isEmpty()) {
             return "<none>";
         }
         StringBuilder sb = new StringBuilder();
         responseHeaders.forEach((name, values) -> {
-            if (!TRACE_HEADER_NAMES.contains(name.toLowerCase())) {
+            String lower = name.toLowerCase();
+            boolean isTraceHeader = TRACE_HEADER_NAMES.contains(lower) || lower.startsWith("openrouter-");
+            if (!isTraceHeader) {
                 return;
             }
             if (sb.length() > 0) sb.append(", ");
