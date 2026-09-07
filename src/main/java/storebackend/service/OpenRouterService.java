@@ -9,8 +9,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
+import storebackend.dto.IssueImageAnalysisDTO;
 import storebackend.exception.AiServiceException;
 
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +25,7 @@ import java.util.Map;
  *  - Text   : Chatbot-Fallback für unbekannte Kundenfragen
  *
  * Modelle (alle kostenlos):
- *  - Vision : google/gemini-2.0-flash-exp:free  (Fallback: meta-llama/llama-3.2-11b-vision-instruct:free)
+ *  - Vision : google/gemma-4-31b-it:free  (Fallback: google/gemma-4-26b-a4b-it:free)
  *  - Text   : meta-llama/llama-3.1-8b-instruct:free
  *
  * Konfiguration: openrouter.api.key (Format: sk-or-v1-...)
@@ -37,12 +39,20 @@ public class OpenRouterService {
     private static final String SITE_URL  = "https://markt.ma";
     private static final String SITE_NAME = "markt.ma";
 
-    /** Kostenloses Vision-Modell – Gemini 2.0 Flash (multimodal, sehr gut) */
-    public static final String MODEL_VISION          = "google/gemini-2.0-flash-exp:free";
-    /** Fallback-Vision wenn Hauptmodell überlastet */
-    public static final String MODEL_VISION_FALLBACK = "meta-llama/llama-3.2-11b-vision-instruct:free";
+    /** Kostenloses Vision-Modell (multimodal). Aktualisiert, da google/gemini-2.0-flash-exp:free bei OpenRouter nicht mehr verfügbar ist. */
+    public static final String MODEL_VISION          = "google/gemma-4-31b-it:free";
+    /** Fallback-Vision wenn Hauptmodell überlastet. Aktualisiert, da meta-llama/llama-3.2-11b-vision-instruct:free bei OpenRouter nicht mehr verfügbar ist. */
+    public static final String MODEL_VISION_FALLBACK = "google/gemma-4-26b-a4b-it:free";
     /** Kostenloses Text-Modell für Chatbot-Fallback */
     public static final String MODEL_TEXT            = "meta-llama/llama-3.1-8b-instruct:free";
+
+    /**
+     * TEMP: Vision-Modelle für den isolierten Issue-Analysis-Test (Bild → Reparaturproblem als JSON).
+     * Aktuell identisch zu MODEL_VISION/MODEL_VISION_FALLBACK (beide seit dem Modell-Update aktuell verfügbar),
+     * bewusst als eigene Konstanten gehalten, um den Test-Pfad von der Produktanalyse zu entkoppeln.
+     */
+    public static final String MODEL_VISION_ISSUE          = "google/gemma-4-31b-it:free";
+    public static final String MODEL_VISION_ISSUE_FALLBACK = "google/gemma-4-26b-a4b-it:free";
 
     @Value("${openrouter.api.key:}")
     private String apiKey;
@@ -116,6 +126,104 @@ public class OpenRouterService {
             }
             throw e;
         }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    //  VISION – TEMP TEST: Reparatur-/Schadensbild → strukturiertes Issue-JSON
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * TEMP/isoliert: Analysiert ein Foto einer möglichen Reparatur-/Schadenssituation
+     * (z. B. Sanitär, Elektrik, Heizung) und liefert ein strukturiertes {@link IssueImageAnalysisDTO}.
+     * Nutzt dieselbe Vision-Infrastruktur wie {@link #analyzeProductImage}.
+     *
+     * Keine Businesslogik, keine Handwerker-Zuordnung, keine Persistenz – nur Bildanalyse.
+     *
+     * @param imageBytes JPEG-komprimierte Bildbytes
+     * @param language   "de", "en" oder "ar"
+     * @return geparste Issue-Analyse (category, problem, urgency, confidence, questions)
+     */
+    public IssueImageAnalysisDTO analyzeIssueImage(byte[] imageBytes, String language) {
+        ensureConfigured();
+        String base64 = Base64.getEncoder().encodeToString(imageBytes);
+        Map<String, Object> body = buildVisionBody(MODEL_VISION_ISSUE, base64, buildIssuePrompt(language), 500);
+        log.info("🤖 OpenRouter Vision Issue-Analysis (TEST) – model={}, lang={}, imageSize={}KB",
+                MODEL_VISION_ISSUE, language, imageBytes.length / 1024);
+
+        String raw;
+        try {
+            raw = callApi(body);
+        } catch (AiServiceException e) {
+            if (isRetryable(e.getMessage())) {
+                log.warn("⚠️ Primary issue-vision model failed ({}), retrying with fallback: {}",
+                        e.getMessage(), MODEL_VISION_ISSUE_FALLBACK);
+                Map<String, Object> fallbackBody = buildVisionBody(
+                        MODEL_VISION_ISSUE_FALLBACK, base64, buildIssuePrompt(language), 500);
+                raw = callApi(fallbackBody);
+            } else {
+                throw e;
+            }
+        }
+        return parseIssueJson(raw);
+    }
+
+    /**
+     * Parst die Issue-JSON-Antwort. Wiederverwendet die bestehende Markdown-Cleanup-Logik
+     * aus {@link AiImageCaptioningService#cleanJsonResponse(String)}.
+     */
+    private IssueImageAnalysisDTO parseIssueJson(String jsonText) {
+        try {
+            String cleanedJson = AiImageCaptioningService.cleanJsonResponse(jsonText);
+            JsonNode node = objectMapper.readTree(cleanedJson);
+
+            IssueImageAnalysisDTO dto = new IssueImageAnalysisDTO();
+            dto.setCategory(node.path("category").asText("OTHER"));
+            dto.setProblem(node.path("problem").asText(""));
+            dto.setUrgency(node.path("urgency").asText("MEDIUM"));
+            dto.setConfidence(node.has("confidence") && !node.get("confidence").isNull()
+                    ? node.get("confidence").asDouble() : null);
+
+            List<String> questions = new ArrayList<>();
+            if (node.has("questions") && node.get("questions").isArray()) {
+                node.get("questions").forEach(q -> questions.add(q.asText()));
+            }
+            dto.setQuestions(questions);
+
+            return dto;
+        } catch (AiServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AiServiceException("Failed to parse OpenRouter issue-analysis response: " + e.getMessage(), e);
+        }
+    }
+
+    private String buildIssuePrompt(String language) {
+        String langName = switch (language != null ? language.toLowerCase() : "de") {
+            case "en" -> "English";
+            case "ar" -> "Arabic";
+            default   -> "German";
+        };
+
+        return "You are analyzing a photo that may show a household repair or damage situation " +
+               "(e.g. plumbing, electrical, heating, appliance, door/window, wall/ceiling, floor, roof).\n\n" +
+               "IMPORTANT RULES:\n" +
+               "- Only describe what is VISIBLY plausible in the image. Never invent or state a diagnosis as a certain fact.\n" +
+               "- If the image is unclear, ambiguous, or does not clearly show a problem, set \"confidence\" LOW (below 0.5) " +
+               "and add clarifying questions to \"questions\".\n" +
+               "- If no relevant issue is visible at all, still return the JSON structure, using category \"OTHER\", " +
+               "a short neutral \"problem\" text, \"urgency\": \"LOW\" and a low \"confidence\".\n\n" +
+               "Allowed \"category\" values (choose exactly one): " +
+               "SANITARY, ELECTRICAL, HEATING, APPLIANCE, DOOR_WINDOW, WALL_CEILING, FLOOR, ROOF, OTHER\n" +
+               "Allowed \"urgency\" values (choose exactly one): LOW, MEDIUM, HIGH, EMERGENCY\n\n" +
+               "Respond with ONLY a valid JSON object, all text fields in " + langName + ", using exactly this structure:\n" +
+               "{\n" +
+               "  \"category\": \"SANITARY\",\n" +
+               "  \"problem\": \"Short factual description of the visible issue\",\n" +
+               "  \"urgency\": \"MEDIUM\",\n" +
+               "  \"confidence\": 0.88,\n" +
+               "  \"questions\": [\"One or more clarifying questions if needed, otherwise an empty array\"]\n" +
+               "}\n" +
+               "Return ONLY the JSON object. No markdown code fences. No extra text.";
     }
 
     // ─────────────────────────────────────────────────────────────

@@ -125,6 +125,9 @@ public class SecurityConfig {
                 .requestMatchers("/v3/api-docs/**", "/v3/api-docs").permitAll()
                 .requestMatchers("/swagger-resources/**").permitAll()
                 .requestMatchers("/webjars/**").permitAll()
+                // TEMP: Isolierter Test-Endpoint für OpenRouter Vision-Analyse (Bild-Problem-Erkennung).
+                // Kein Business-Feature, keine Persistenz – nach dem Test wieder entfernen.
+                .requestMatchers("/api/test/**").permitAll()
                 // Alle anderen Anfragen benötigen Authentifizierung
                 // POST/PUT/DELETE zu /api/stores/*/products erfordert Authentifizierung (wird im Controller geprüft)
                 .anyRequest().authenticated()

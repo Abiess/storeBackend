@@ -704,7 +704,7 @@ public class AiImageCaptioningService {
      * Compresses and resizes image to reduce base64 size
      * Converts to JPEG format with quality optimization
      */
-    private byte[] compressAndResizeImage(byte[] originalImageBytes) throws IOException {
+    public static byte[] compressAndResizeImage(byte[] originalImageBytes) throws IOException {
         try {
             // Read original image
             BufferedImage originalImage = ImageIO.read(new ByteArrayInputStream(originalImageBytes));
@@ -843,7 +843,7 @@ public class AiImageCaptioningService {
     /**
      * Cleans JSON response by removing markdown code blocks and extra text
      */
-    private String cleanJsonResponse(String response) {
+    public static String cleanJsonResponse(String response) {
         // Remove markdown code blocks
         String cleaned = response.trim();
         if (cleaned.startsWith("```json")) {
