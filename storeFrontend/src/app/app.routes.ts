@@ -407,6 +407,13 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
 
+  // ==================== TEMP: Issue Image Analysis (OpenRouter Vision Test) ====================
+  {
+    path: 'tools/issue-analysis',
+    loadComponent: () => import('./features/tools/issue-analysis/issue-analysis.component').then(m => m.IssueAnalysisComponent),
+    canActivate: [authGuard]
+  },
+
   // ==================== SEO & Brand Management ====================
   {
     path: 'stores/:id/seo/redirects',

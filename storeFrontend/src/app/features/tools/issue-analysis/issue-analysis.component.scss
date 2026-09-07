@@ -1,0 +1,218 @@
+.issue-analysis-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 1rem 2rem;
+}
+
+.issue-analysis-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 12px rgba(102, 126, 234, 0.08);
+  border: 1px solid rgba(102, 126, 234, 0.12);
+  margin-bottom: 1.5rem;
+
+  h3 {
+    margin: 0 0 1rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #4b3b8f;
+  }
+}
+
+.issue-analysis-hint {
+  margin: 1rem 0 0;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.ai-error {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  color: #b91c1c;
+  font-size: 0.875rem;
+}
+
+.issue-analysis-results {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.issue-result-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.25rem;
+  box-shadow: 0 2px 12px rgba(102, 126, 234, 0.08);
+  border: 1px solid rgba(102, 126, 234, 0.12);
+}
+
+.issue-result-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.issue-result-thumb {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.issue-result-filename {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  word-break: break-all;
+}
+
+.issue-result-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #667eea;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.issue-result-error {
+  color: #b91c1c;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.spinner-small {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(102, 126, 234, 0.25);
+  border-top-color: #667eea;
+  border-radius: 50%;
+  display: inline-block;
+  animation: issue-spin 0.7s linear infinite;
+}
+
+@keyframes issue-spin {
+  to { transform: rotate(360deg); }
+}
+
+.issue-result-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.issue-result-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+
+  &.full-width {
+    grid-column: 1 / -1;
+  }
+
+  label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: #9333ea;
+  }
+}
+
+.issue-result-value {
+  font-size: 0.95rem;
+  color: #1f2937;
+  line-height: 1.4;
+}
+
+.issue-badge {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.category-badge {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+}
+
+.urgency-low {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.urgency-medium {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.urgency-high {
+  background: #ffedd5;
+  color: #9a3412;
+}
+
+.urgency-emergency {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.confidence-bar-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.confidence-bar {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: #ede9fe;
+  overflow: hidden;
+}
+
+.confidence-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.confidence-text {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #4b3b8f;
+  min-width: 2.5rem;
+  text-align: right;
+}
+
+.issue-questions-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: #374151;
+  font-size: 0.9rem;
+  line-height: 1.5;
+
+  li {
+    margin-bottom: 0.25rem;
+  }
+}
+
+// ── Responsive ──────────────────────────────────────────────
+@media (max-width: 640px) {
+  .issue-result-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .issue-analysis-page {
+    padding: 0 0.5rem 1.5rem;
+  }
+}

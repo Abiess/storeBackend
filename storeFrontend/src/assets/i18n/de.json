@@ -3261,7 +3261,8 @@
       "team": "Team & Rollen",
       "account": "Account",
       "platform": "Plattform-Admin",
-      "purchasing": "Einkauf"
+      "purchasing": "Einkauf",
+      "aiTools": "KI-Tools"
     },
     "items": {
       "dashboard": "Dashboard",
@@ -3287,7 +3288,8 @@
       "productsExpiry": "Produkte mit Ablaufdatum",
       "pos": "Kasse",
       "loyalty": "Bonuspunkte",
-      "dhl": "DHL"
+      "dhl": "DHL",
+      "issueAnalysis": "Problem erkennen"
     },
     "noStore": {
       "hint": "Kein Store ausgewählt",
@@ -3296,6 +3298,20 @@
     },
     "collapse": "Sidebar einklappen",
     "expand": "Sidebar aufklappen"
+  },
+  "issueAnalysis": {
+    "title": "Problem erkennen (Test)",
+    "subtitle": "Bild hochladen → KI erkennt mögliches Reparatur-/Schadensproblem",
+    "uploadHeading": "Foto hochladen",
+    "uploadLabel": "📷 Foto auswählen",
+    "emptyLabel": "Noch kein Foto ausgewählt",
+    "hint": "Klicken Sie nach der Auswahl auf das 🤖-Symbol beim Bild, um die Analyse zu starten. Isolierter Test – keine Speicherung, keine Handwerker-Zuordnung.",
+    "analyzing": "Analysiere...",
+    "category": "Kategorie",
+    "urgency": "Dringlichkeit",
+    "problem": "Erkanntes Problem",
+    "confidence": "Konfidenz",
+    "questions": "Rückfragen"
   },
   "pos": {
     "noProducts": "Keine Produkte gefunden",

@@ -1658,7 +1658,8 @@
       "account": "Account",
       "team": "Team & Roles",
       "platform": "Platform Admin",
-      "purchasing": "Purchasing"
+      "purchasing": "Purchasing",
+      "aiTools": "AI Tools"
     },
     "items": {
       "dashboard": "Dashboard",
@@ -1684,7 +1685,8 @@
       "productsExpiry": "Products with Expiry Date",
       "pos": "Cashier",
       "loyalty": "Loyalty Points",
-      "dhl": "DHL"
+      "dhl": "DHL",
+      "issueAnalysis": "Detect Problem"
     },
     "noStore": {
       "hint": "No store selected",
@@ -1693,6 +1695,20 @@
     },
     "collapse": "Collapse sidebar",
     "expand": "Expand sidebar"
+  },
+  "issueAnalysis": {
+    "title": "Detect Problem (Test)",
+    "subtitle": "Upload a photo → AI detects a possible repair/damage issue",
+    "uploadHeading": "Upload photo",
+    "uploadLabel": "📷 Select photo",
+    "emptyLabel": "No photo selected yet",
+    "hint": "After selecting a photo, click the 🤖 icon on it to start the analysis. Isolated test – no storage, no contractor matching.",
+    "analyzing": "Analyzing...",
+    "category": "Category",
+    "urgency": "Urgency",
+    "problem": "Detected Problem",
+    "confidence": "Confidence",
+    "questions": "Clarifying Questions"
   },
   "wizard": {
     "skip": "Skip",

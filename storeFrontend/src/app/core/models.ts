@@ -70,6 +70,21 @@ export interface AiProductSuggestionV2 {
   suggestedPrice: number;
 }
 
+/**
+ * TEMP: Ergebnis der isolierten OpenRouter-Vision Issue-Analyse
+ * (Bild → mögliches Reparatur-/Schadensproblem als JSON).
+ * Erlaubte category: SANITARY, ELECTRICAL, HEATING, APPLIANCE, DOOR_WINDOW,
+ *                     WALL_CEILING, FLOOR, ROOF, OTHER
+ * Erlaubte urgency:   LOW, MEDIUM, HIGH, EMERGENCY
+ */
+export interface IssueImageAnalysisResult {
+  category: string;
+  problem: string;
+  urgency: string;
+  confidence: number | null;
+  questions: string[];
+}
+
 // ============================================
 // ADDRESS
 // ============================================

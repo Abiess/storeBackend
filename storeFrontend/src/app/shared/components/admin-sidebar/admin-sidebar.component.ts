@@ -166,6 +166,18 @@ export class AdminSidebarComponent implements OnInit {
                 ]
             },
             {
+                // TEMP: isolierter Test-Bereich für die OpenRouter-Vision Issue-Analyse.
+                // Kein Business-Feature, kein Store-Bezug (requiresStore bewusst weggelassen).
+                titleKey: 'sidebarAdmin.groups.aiTools',
+                items: [
+                    {
+                        labelKey: 'sidebarAdmin.items.issueAnalysis',
+                        icon: 'wrench',
+                        route: '/tools/issue-analysis'
+                    }
+                ]
+            },
+            {
                 titleKey: 'sidebarAdmin.groups.commerce',
                 items: [
                     {

@@ -236,7 +236,8 @@ export class AppComponent implements OnInit {
     '/login',
     '/register',
     '/store-onboarding',
-    '/store-success'
+    '/store-success',
+    '/tools' // TEMP: Issue-Analysis Test-Seite (Sidebar-Shell aktivieren)
   ];
 
   /** Öffentliche Seiten, auf denen das WhatsApp-Widget ausgeblendet wird */
