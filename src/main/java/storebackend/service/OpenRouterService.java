@@ -58,20 +58,23 @@ public class OpenRouterService {
      *
      * Reihenfolge – bevorzugt unterschiedliche Provider, Google zuletzt (aktuell
      * wiederholt Upstream-429 bei beiden Gemma-Free-Modellen beobachtet):
-     *  1) thinkingmachines/inkling:free                              – Thinking Machines, free, image+text+audio
-     *  2) nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free         – NVIDIA, free, image+text+audio+video
-     *  3) openrouter/free                                            – OpenRouter-eigener Free-Router, image+text
-     *  4) dots-studio/dots-3-note-preview:free                       – Dots Studio, free, image+text
+     *  1) nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free         – NVIDIA, free, image+text+audio+video
+     *  2) openrouter/free                                            – OpenRouter-eigener Free-Router, image+text
+     *  3) dots-studio/dots-3-note-preview:free                       – Dots Studio, free, image+text
      *     (Preview mit OpenRouter-Ablaufanzeige 30.09.2026 – bewusst NICHT als
      *      Haupt-Fallback vorne platziert, nur als vorletzte Option)
-     *  5) google/gemma-4-31b-it:free                                 – Google, zuletzt wegen häufigem 429
-     *  6) google/gemma-4-26b-a4b-it:free                             – Google, zuletzt wegen häufigem 429
+     *  4) google/gemma-4-31b-it:free                                 – Google, zuletzt wegen häufigem 429
+     *  5) google/gemma-4-26b-a4b-it:free                             – Google, zuletzt wegen häufigem 429
      *
      * HINWEIS: "MiniMax M3 free" existiert bei OpenRouter NICHT als kostenloses
      * Vision-Modell (nur "minimax/minimax-m3", kostenpflichtig) – daher nicht im Pool.
+     *
+     * ENTFERNT: "thinkingmachines/inkling:free" liefert bei normalen API-Aufrufen
+     * HTTP 403 "only available on agentic harnesses" – kein normaler chat/completions-Zugriff
+     * möglich, daher raus aus dem Pool. 403 wird bewusst NICHT generell als retryable behandelt
+     * (siehe ISSUE_VISION_RETRYABLE_STATUS – nur 429/502/503 rotieren).
      */
     private static final List<String> ISSUE_VISION_MODEL_POOL = List.of(
-            "thinkingmachines/inkling:free",
             "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
             "openrouter/free",
             "dots-studio/dots-3-note-preview:free",
