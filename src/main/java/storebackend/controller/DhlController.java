@@ -1132,5 +1132,82 @@ public class DhlController {
                 ));
         }
     }
+
+    /**
+     * ⚠️⚠️⚠️ TEMPORÄRER TEST-ENDPOINT - NICHT PRODUKTIV VERWENDEN ⚠️⚠️⚠️
+     *
+     * POST /api/stores/{storeId}/dhl/tracking/test-piece-detail
+     *
+     * Kontrollierter Test des DHL Geschäftskunden-Requests "d-get-piece-detail"
+     * (inkl. Empfänger-PLZ / zip-code), um zu prüfen, ob DHL dadurch
+     * zusätzliche Daten (z.B. Empfängername) zurückliefert.
+     *
+     * Verwendet die bestehenden DHL-/GKP-Zugangsdaten (unverändert).
+     * Wird keine "zipCode" übergeben, wird TEMPORÄR der Test-Default
+     * "90409" verwendet - dies ist AUSDRÜCKLICH kein dauerhafter fachlicher
+     * Default für reale Sendungen.
+     *
+     * Der bestehende produktive Aufruf {@code /tracking/validate}
+     * ("get-status-for-public-user") bleibt davon unberührt und dient
+     * weiterhin als Fallback.
+     */
+    @PostMapping("/tracking/test-piece-detail")
+    public ResponseEntity<?> testPieceDetailWithZip(
+        @PathVariable Long storeId,
+        @RequestBody Map<String, String> request,
+        @AuthenticationPrincipal User user
+    ) {
+        try {
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Authentication required"));
+            }
+
+            if (!storeAccessChecker.hasStoreAccess(storeId)) {
+                log.warn("DHL d-get-piece-detail test denied: user={} has no access to store={}",
+                    user.getId(), storeId);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Access denied to store"));
+            }
+
+            String trackingCode = request.get("trackingCode");
+            if (trackingCode == null || trackingCode.isBlank()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Tracking code is required"));
+            }
+
+            // Optional - fehlt sie, wird TEMPORÄR der Test-Default 90409 verwendet
+            String zipCode = request.get("zipCode");
+
+            log.info("🧪 [TEST-ONLY] DHL d-get-piece-detail test requested: store={}, trackingCode={}, zipCode={}, user={}",
+                storeId, trackingCode.trim(), zipCode, user.getId());
+
+            storebackend.dto.dhl.DhlPieceDetailTestResult result =
+                dhlTrackingClient.testPieceDetailWithZip(storeId, trackingCode, zipCode);
+
+            return ResponseEntity.ok(result);
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+
+        } catch (storebackend.exception.DhlTrackingException e) {
+            log.error("❌ [TEST-ONLY] DHL d-get-piece-detail test failed: store={}, errorCode={}, message={}",
+                storeId, e.getErrorCode(), e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of(
+                    "error", "DHL d-get-piece-detail test failed",
+                    "errorCode", e.getErrorCode().name(),
+                    "message", e.getMessage()
+                ));
+
+        } catch (storebackend.exception.DhlConfigurationException e) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(Map.of(
+                    "error", "DHL integration not configured",
+                    "messageKey", e.getMessageKey(),
+                    "message", e.getMessage()
+                ));
+        }
+    }
 }
 

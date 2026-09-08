@@ -47,6 +47,12 @@ import java.util.Base64;
  * - Kein XML loggen (enthält Passwort)
  * - XXE deaktiviert
  * - Nur maskierte clientId + trackingCode loggen
+ *
+ * ⚠️ TEMPORÄRER TEST-CODE: {@link #testPieceDetailWithZip(Long, String, String)}
+ * ist ein zusätzlicher, klar gekennzeichneter Testpfad für den
+ * Geschäftskunden-Request "d-get-piece-detail" (inkl. zip-code), um zu prüfen,
+ * ob DHL dadurch Empfängerdaten liefert. Er ändert NICHTS an der bestehenden
+ * Authentifizierung/Konfiguration und ersetzt NICHT {@link #validateTrackingCode}.
  */
 @Service
 @RequiredArgsConstructor
@@ -185,6 +191,262 @@ public class DhlTrackingClient {
         }
     }
     
+    /**
+     * ⚠️⚠️⚠️ TEMPORÄRER TEST-CODE - NICHT PRODUKTIV VERWENDEN ⚠️⚠️⚠️
+     *
+     * Kontrollierter Test-Aufruf des DHL Geschäftskunden-Requests
+     * "d-get-piece-detail" (im Unterschied zum öffentlichen, bereits
+     * produktiv genutzten "get-status-for-public-user"-Aufruf oben).
+     *
+     * Ziel: Prüfen, ob DHL bei zusätzlicher Übergabe der Empfänger-PLZ
+     * (zip-code) weitere Daten liefert, insbesondere den Empfängernamen.
+     *
+     * Verwendet die bereits vorhandenen DHL-/GKP-Zugangsdaten (username,
+     * appname und password aus {@link DhlSettingsResolver}) - es werden
+     * KEINE neuen Zugangsdaten benötigt und die bestehende Authentifizierung
+     * wird NICHT verändert.
+     *
+     * TEMPORÄRER TEST-DEFAULT: Wird keine zip-code übergeben, wird
+     * ausschließlich für diesen Test "90409" verwendet (siehe
+     * {@link #TEST_DEFAULT_ZIP_CODE}). Dies ist AUSDRÜCKLICH KEIN
+     * dauerhafter fachlicher Default für reale Sendungen.
+     *
+     * Der bestehende {@link #validateTrackingCode(Long, String)} Aufruf
+     * bleibt unverändert als produktiver Fallback bestehen.
+     *
+     * @param storeId Store ID (für Credential-Resolution)
+     * @param trackingCode Tracking-Code/Barcode
+     * @param zipCode Empfänger-PLZ (optional - Test-Default wird verwendet, wenn leer)
+     * @return DhlPieceDetailTestResult mit kompakter Testauswertung
+     */
+    public storebackend.dto.dhl.DhlPieceDetailTestResult testPieceDetailWithZip(
+            Long storeId, String trackingCode, String zipCode) {
+
+        if (trackingCode == null || trackingCode.isBlank()) {
+            throw new IllegalArgumentException("Tracking code cannot be empty");
+        }
+
+        String normalizedCode = normalizeTrackingCode(trackingCode);
+
+        boolean zipIsTestDefault = (zipCode == null || zipCode.isBlank());
+        String effectiveZip = zipIsTestDefault ? TEST_DEFAULT_ZIP_CODE : zipCode.trim();
+
+        if (zipIsTestDefault) {
+            log.warn("⚠️ [TEST-ONLY] Keine zip-code übergeben - verwende TEMPORÄREN Test-Default " +
+                "zip-code={} für d-get-piece-detail. NICHT für Produktivbetrieb gedacht!", TEST_DEFAULT_ZIP_CODE);
+        }
+
+        DhlSettingsResolver.ResolvedDhlConfig config = dhlSettingsResolver.resolve(storeId);
+        String trackingBaseUrl = getTrackingBaseUrl(config.getEnvironment());
+
+        log.info("🧪 [TEST-ONLY] DHL d-get-piece-detail test: store={}, trackingCode={}, zipCodeSent={} (isTestDefault={})",
+            storeId, normalizedCode, effectiveZip, zipIsTestDefault);
+
+        String xmlRequest = buildPieceDetailTestXmlRequest(config, normalizedCode, effectiveZip);
+
+        // Maskiertes XML unmittelbar vor dem DHL-Aufruf loggen (Passwort/Zugangsdaten NIEMALS im Klartext!)
+        log.info("🧪 [TEST-ONLY] DHL d-get-piece-detail Request-XML (maskiert): {}", maskXmlSecrets(xmlRequest));
+
+        String encodedXml = URLEncoder.encode(xmlRequest, StandardCharsets.UTF_8);
+        String url = trackingBaseUrl + "/shipments?xml=" + encodedXml;
+
+        HttpHeaders headers = createHeaders(config);
+        HttpEntity<Void> request = new HttpEntity<>(headers);
+
+        ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, request, String.class);
+        String responseBody = response.getBody();
+
+        // Vollständige Response TEMPORÄR auf DEBUG-Ebene loggen, um Empfängerfelder zu prüfen.
+        // Enthält KEINE Zugangsdaten (Response kommt von DHL, nicht vom Request).
+        log.debug("🧪 [TEST-ONLY] DHL d-get-piece-detail Response-XML (voll, DEBUG): {}", responseBody);
+
+        storebackend.dto.dhl.DhlPieceDetailTestResult result =
+            parsePieceDetailTestResponse(responseBody, normalizedCode, effectiveZip, zipIsTestDefault);
+
+        // Kompakte Testauswertung auf der Serverkonsole ausgeben
+        log.info("DHL tracking test\ntrackingCode: {}\nzipCodeSent: {}\nrecipientNamePresent: {}\nrecipientName: {}",
+            result.getTrackingCode(), result.getZipCodeSent(), result.isRecipientNamePresent(), result.getRecipientName());
+
+        return result;
+    }
+
+    /**
+     * ⚠️ TEMPORÄRER TEST-DEFAULT - AUSSCHLIESSLICH für den d-get-piece-detail Test!
+     * KEIN dauerhafter fachlicher Default für reale Sendungen.
+     */
+    private static final String TEST_DEFAULT_ZIP_CODE = "90409";
+
+    /**
+     * ⚠️ TEMPORÄRER TEST-CODE. Baut das XML für den Geschäftskunden-Request
+     * "d-get-piece-detail" inkl. zip-code Attribut. Verwendet dieselben
+     * appname/password wie der bestehende produktive Request - KEINE neuen
+     * Zugangsdaten, KEINE Änderung an der bestehenden Authentifizierung.
+     *
+     * WICHTIG: Anders als beim öffentlichen "get-status-for-public-user"
+     * Request (verschachteltes &lt;data&gt;&lt;data .../&gt;&lt;/data&gt;)
+     * müssen laut DHL-Dokumentation für "d-get-piece-detail" SÄMTLICHE
+     * Parameter (inkl. appname/password/request/piece-code/zip-code) als
+     * Attribute EINES EINZIGEN, flachen &lt;data .../&gt;-Elements übergeben
+     * werden - KEINE Verschachtelung.
+     */
+    private String buildPieceDetailTestXmlRequest(
+            DhlSettingsResolver.ResolvedDhlConfig config, String trackingCode, String zipCode) {
+        return String.format(
+            "<data appname=\"%s\" password=\"%s\" request=\"d-get-piece-detail\" " +
+            "language-code=\"de\" piece-code=\"%s\" zip-code=\"%s\" />",
+            escapeXml(config.getUsername()),
+            escapeXml(config.getPassword()),
+            escapeXml(trackingCode),
+            escapeXml(zipCode)
+        );
+    }
+
+    /**
+     * ⚠️ TEMPORÄRER TEST-CODE. Maskiert sicherheitsrelevante Attributwerte
+     * (appname/password/secret/token/credential/auth) in einem bereits
+     * fertig gebauten Request-XML-String für Logging-Zwecke.
+     */
+    private String maskXmlSecrets(String xml) {
+        if (xml == null) {
+            return null;
+        }
+        return xml.replaceAll(
+            "(?i)(appname|password|secret|token|credential|auth)=\"[^\"]*\"",
+            "$1=\"***\""
+        );
+    }
+
+    /**
+     * ⚠️ TEMPORÄRER TEST-CODE. Parst die d-get-piece-detail Test-Response.
+     *
+     * Empfängername wird AUSSCHLIESSLICH aus "recipient-name" oder
+     * (falls nicht vorhanden) "pan-recipient-name" übernommen (in dieser
+     * Reihenfolge). Das generische "name"-Attribut wird NICHT ausgewertet,
+     * da es bei DHL den Elementtyp bezeichnet (z.B. "piece-shipment").
+     *
+     * Optional werden zusätzlich diese informativen Adressfelder gelesen
+     * (kein Einfluss auf recipientNamePresent): recipient-street,
+     * recipient-city, pan-recipient-street, pan-recipient-city,
+     * pan-recipient-address.
+     */
+    private storebackend.dto.dhl.DhlPieceDetailTestResult parsePieceDetailTestResponse(
+            String xml, String originalTrackingCode, String zipCodeSent, boolean zipIsTestDefault) {
+
+        storebackend.dto.dhl.DhlPieceDetailTestResult.DhlPieceDetailTestResultBuilder resultBuilder =
+            storebackend.dto.dhl.DhlPieceDetailTestResult.builder()
+                .trackingCode(originalTrackingCode)
+                .zipCodeSent(zipCodeSent)
+                .zipCodeIsTestDefault(zipIsTestDefault)
+                .recipientNamePresent(false);
+
+        if (xml == null || xml.isBlank()) {
+            return resultBuilder.build();
+        }
+
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            factory.setExpandEntityReferences(false);
+
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document doc = builder.parse(new InputSource(new StringReader(xml)));
+            Element root = doc.getDocumentElement();
+
+            // Response-Code + Status best effort ermitteln (rein informativ für die Testauswertung)
+            NodeList allDataElements = root.getElementsByTagName("data");
+            String dhlResponseCode = null;
+            String shipmentStatus = null;
+            for (int i = 0; i < allDataElements.getLength(); i++) {
+                Element elem = (Element) allDataElements.item(i);
+                if (dhlResponseCode == null && !elem.getAttribute("code").isBlank()) {
+                    dhlResponseCode = elem.getAttribute("code");
+                }
+                if (shipmentStatus == null && !elem.getAttribute("status").isBlank()) {
+                    shipmentStatus = elem.getAttribute("status");
+                }
+            }
+            resultBuilder.dhlResponseCode(dhlResponseCode).shipmentStatus(shipmentStatus);
+
+            // Empfängername AUSSCHLIESSLICH aus recipient-name oder pan-recipient-name
+            // (in dieser Prioritätsreihenfolge). Das generische "name"-Attribut wird
+            // bewusst NICHT durchsucht, da es bei DHL den Elementtyp bezeichnet
+            // (z.B. "piece-shipment") und keinen Empfängernamen darstellt.
+            String[] recipientNameFieldsInPriorityOrder = { "recipient-name", "pan-recipient-name" };
+            for (String fieldName : recipientNameFieldsInPriorityOrder) {
+                RecipientFieldMatch match = findAttributeRecursive(root, fieldName);
+                if (match != null) {
+                    resultBuilder
+                        .recipientNamePresent(true)
+                        .recipientName(match.value())
+                        .recipientNameSourceField(match.fieldName());
+                    break;
+                }
+            }
+
+            // Optionale zusätzliche Empfängerfelder (rein informativ, kein Einfluss
+            // auf recipientNamePresent/recipientName)
+            resultBuilder.recipientStreet(firstAttributeValue(root, "recipient-street"));
+            resultBuilder.recipientCity(firstAttributeValue(root, "recipient-city"));
+            resultBuilder.panRecipientStreet(firstAttributeValue(root, "pan-recipient-street"));
+            resultBuilder.panRecipientCity(firstAttributeValue(root, "pan-recipient-city"));
+            resultBuilder.panRecipientAddress(firstAttributeValue(root, "pan-recipient-address"));
+
+        } catch (Exception e) {
+            log.warn("⚠️ [TEST-ONLY] Failed to parse DHL d-get-piece-detail test response: {}", e.getMessage());
+        }
+
+        return resultBuilder.build();
+    }
+
+    /**
+     * ⚠️ TEMPORÄRER TEST-CODE. Convenience-Wrapper um {@link #findAttributeRecursive}
+     * für optionale (rein informative) Empfängerfelder.
+     */
+    private String firstAttributeValue(Element root, String attributeName) {
+        RecipientFieldMatch match = findAttributeRecursive(root, attributeName);
+        return match != null ? match.value() : null;
+    }
+
+    /**
+     * ⚠️ TEMPORÄRER TEST-CODE. Sucht rekursiv über alle Elemente des Dokuments
+     * nach einem Attribut mit EXAKT diesem Namen (case-insensitive).
+     */
+    private RecipientFieldMatch findAttributeRecursive(Element element, String attributeName) {
+        var attributes = element.getAttributes();
+        for (int i = 0; i < attributes.getLength(); i++) {
+            var attr = attributes.item(i);
+            String attrName = attr.getNodeName();
+            String attrValue = attr.getNodeValue();
+            if (attrValue == null || attrValue.isBlank()) {
+                continue;
+            }
+            if (attributeName.equalsIgnoreCase(attrName)) {
+                return new RecipientFieldMatch(attrName, attrValue);
+            }
+        }
+
+        NodeList children = element.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            if (children.item(i) instanceof Element child) {
+                RecipientFieldMatch childMatch = findAttributeRecursive(child, attributeName);
+                if (childMatch != null) {
+                    return childMatch;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * ⚠️ TEMPORÄRER TEST-CODE. Kleiner Container für ein gefundenes
+     * Empfängername-Feld (Attributname + Wert).
+     */
+    private record RecipientFieldMatch(String fieldName, String value) {
+    }
+
     /**
      * Normalisiert Tracking-Code
      * - trim
