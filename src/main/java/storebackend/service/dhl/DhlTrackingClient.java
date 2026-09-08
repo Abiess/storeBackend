@@ -256,9 +256,21 @@ public class DhlTrackingClient {
         ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, request, String.class);
         String responseBody = response.getBody();
 
-        // Vollständige Response TEMPORÄR auf DEBUG-Ebene loggen, um Empfängerfelder zu prüfen.
-        // Enthält KEINE Zugangsdaten (Response kommt von DHL, nicht vom Request).
-        log.debug("🧪 [TEST-ONLY] DHL d-get-piece-detail Response-XML (voll, DEBUG): {}", responseBody);
+        // ⚠️⚠️⚠️ TEMPORÄRES DIAGNOSE-LOGGING - NACH ABSCHLUSS DES TESTS ENTFERNEN/AUF DEBUG SETZEN! ⚠️⚠️⚠️
+        // Die volle Rohantwort kann personenbezogene Empfängerdaten (Name, Adresse) enthalten
+        // und darf daher NUR für diesen kontrollierten Test auf INFO protokolliert werden.
+        // Sobald die Feldnamen verifiziert sind: LOG_RAW_RESPONSE_AT_INFO auf false setzen
+        // oder log.info hier durch log.debug ersetzen.
+        // Enthält KEINE von uns gesendeten Zugangsdaten (Response kommt von DHL, nicht vom
+        // Request) - API-Key/API-Secret/GKP-Benutzername/GKP-Passwort stehen NICHT hier,
+        // sondern nur im (bereits maskiert geloggten) Request.
+        if (LOG_RAW_RESPONSE_AT_INFO) {
+            log.info("DHL piece-detail HTTP status: {}", response.getStatusCode());
+            log.info("DHL piece-detail raw response: {}", responseBody);
+        } else {
+            log.debug("DHL piece-detail HTTP status: {}", response.getStatusCode());
+            log.debug("DHL piece-detail raw response: {}", responseBody);
+        }
 
         storebackend.dto.dhl.DhlPieceDetailTestResult result =
             parsePieceDetailTestResponse(responseBody, normalizedCode, effectiveZip, zipIsTestDefault);
@@ -269,6 +281,15 @@ public class DhlTrackingClient {
 
         return result;
     }
+
+    /**
+     * ⚠️⚠️⚠️ TEMPORÄRER TEST-SCHALTER - NACH ABSCHLUSS DER LIVE-TEST-DIAGNOSE AUF
+     * false SETZEN (oder das Logging in {@link #testPieceDetailWithZip} komplett
+     * entfernen)! Die volle DHL-Rohantwort kann personenbezogene Empfängerdaten
+     * enthalten und darf nur für die Dauer dieses kontrollierten Tests auf
+     * INFO-Ebene sichtbar sein.
+     */
+    private static final boolean LOG_RAW_RESPONSE_AT_INFO = true;
 
     /**
      * ⚠️ TEMPORÄRER TEST-DEFAULT - AUSSCHLIESSLICH für den d-get-piece-detail Test!
@@ -319,15 +340,27 @@ public class DhlTrackingClient {
     /**
      * ⚠️ TEMPORÄRER TEST-CODE. Parst die d-get-piece-detail Test-Response.
      *
-     * Empfängername wird AUSSCHLIESSLICH aus "recipient-name" oder
-     * (falls nicht vorhanden) "pan-recipient-name" übernommen (in dieser
-     * Reihenfolge). Das generische "name"-Attribut wird NICHT ausgewertet,
-     * da es bei DHL den Elementtyp bezeichnet (z.B. "piece-shipment").
+     * WICHTIG - nachweislich korrekte DHL-Struktur (KEINE unbeschränkte
+     * Rekursion über das gesamte Dokument, da z.B. Event-Elemente ebenfalls
+     * eigene "status"-Attribute enthalten können und sonst fälschlich
+     * getroffen würden):
      *
-     * Optional werden zusätzlich diese informativen Adressfelder gelesen
-     * (kein Einfluss auf recipientNamePresent): recipient-street,
-     * recipient-city, pan-recipient-street, pan-recipient-city,
-     * pan-recipient-address.
+     * 1. Auf dem äußeren Root-Element werden DIREKT (nicht rekursiv)
+     *    gelesen: name, code, error, request-id.
+     * 2. Anschließend wird GEZIELT das eine &lt;data name="piece-shipment"&gt;
+     *    Element gesucht. NUR aus diesem Element werden gelesen:
+     *    error-status, piece-status, piece-status-desc, status,
+     *    short-status, recipient-name, pan-recipient-name, recipient-street,
+     *    recipient-city, pan-recipient-address.
+     *
+     * Empfängername wird AUSSCHLIESSLICH aus "recipient-name" (Priorität 1)
+     * oder "pan-recipient-name" (Priorität 2) des piece-shipment-Elements
+     * übernommen - NICHT aus irgendeinem anderen Element im Dokument.
+     *
+     * Scheitert das Parsing, wird die Exception NICHT stillschweigend
+     * verschluckt: sie wird auf ERROR-Ebene protokolliert (inkl.
+     * Stacktrace) und das Test-DTO wird mit parseSuccessful=false
+     * zurückgegeben.
      */
     private storebackend.dto.dhl.DhlPieceDetailTestResult parsePieceDetailTestResponse(
             String xml, String originalTrackingCode, String zipCodeSent, boolean zipIsTestDefault) {
@@ -337,10 +370,12 @@ public class DhlTrackingClient {
                 .trackingCode(originalTrackingCode)
                 .zipCodeSent(zipCodeSent)
                 .zipCodeIsTestDefault(zipIsTestDefault)
-                .recipientNamePresent(false);
+                .recipientNamePresent(false)
+                .parseSuccessful(true);
 
         if (xml == null || xml.isBlank()) {
-            return resultBuilder.build();
+            log.error("❌ [TEST-ONLY] DHL d-get-piece-detail: response body is empty, cannot parse");
+            return resultBuilder.parseSuccessful(false).build();
         }
 
         try {
@@ -354,97 +389,102 @@ public class DhlTrackingClient {
             DocumentBuilder builder = factory.newDocumentBuilder();
             Document doc = builder.parse(new InputSource(new StringReader(xml)));
             Element root = doc.getDocumentElement();
+            String responseRootName = root.getTagName();
 
-            // Response-Code + Status best effort ermitteln (rein informativ für die Testauswertung)
-            NodeList allDataElements = root.getElementsByTagName("data");
-            String dhlResponseCode = null;
-            String shipmentStatus = null;
-            for (int i = 0; i < allDataElements.getLength(); i++) {
-                Element elem = (Element) allDataElements.item(i);
-                if (dhlResponseCode == null && !elem.getAttribute("code").isBlank()) {
-                    dhlResponseCode = elem.getAttribute("code");
-                }
-                if (shipmentStatus == null && !elem.getAttribute("status").isBlank()) {
-                    shipmentStatus = elem.getAttribute("status");
-                }
+            // 1. Root-Element: DIREKTE (nicht rekursive) Attribute
+            String rootName = attrOrNull(root, "name");
+            String dhlResponseCode = attrOrNull(root, "code");
+            String dhlError = attrOrNull(root, "error");
+            String dhlRequestId = attrOrNull(root, "request-id");
+
+            resultBuilder
+                .rootName(rootName)
+                .dhlResponseCode(dhlResponseCode)
+                .dhlError(dhlError)
+                .dhlRequestId(dhlRequestId);
+
+            // 2. Gezielt das EINE <data name="piece-shipment"> Element suchen.
+            // KEINE unbeschränkte Rekursion über das gesamte Dokument - Event-Elemente
+            // können ebenfalls "status" o.ä. Attribute enthalten und dürfen NICHT
+            // fälschlich als Empfänger-/Sendungsdaten interpretiert werden.
+            Element pieceShipmentElement = findChildElementByName(root, "piece-shipment");
+
+            String errorStatus = null;
+            String pieceStatus = null;
+            String pieceStatusDesc = null;
+            String status = null;
+            String shortStatus = null;
+            String recipientName = null;
+            String panRecipientName = null;
+            String recipientStreet = null;
+            String recipientCity = null;
+            String panRecipientAddress = null;
+
+            if (pieceShipmentElement == null) {
+                log.warn("⚠️ [TEST-ONLY] DHL d-get-piece-detail: kein <data name=\"piece-shipment\"> Element in der Response gefunden");
+            } else {
+                errorStatus = attrOrNull(pieceShipmentElement, "error-status");
+                pieceStatus = attrOrNull(pieceShipmentElement, "piece-status");
+                pieceStatusDesc = attrOrNull(pieceShipmentElement, "piece-status-desc");
+                status = attrOrNull(pieceShipmentElement, "status");
+                shortStatus = attrOrNull(pieceShipmentElement, "short-status");
+                recipientName = attrOrNull(pieceShipmentElement, "recipient-name");
+                panRecipientName = attrOrNull(pieceShipmentElement, "pan-recipient-name");
+                recipientStreet = attrOrNull(pieceShipmentElement, "recipient-street");
+                recipientCity = attrOrNull(pieceShipmentElement, "recipient-city");
+                panRecipientAddress = attrOrNull(pieceShipmentElement, "pan-recipient-address");
             }
-            resultBuilder.dhlResponseCode(dhlResponseCode).shipmentStatus(shipmentStatus);
 
-            // Empfängername AUSSCHLIESSLICH aus recipient-name oder pan-recipient-name
-            // (in dieser Prioritätsreihenfolge). Das generische "name"-Attribut wird
-            // bewusst NICHT durchsucht, da es bei DHL den Elementtyp bezeichnet
-            // (z.B. "piece-shipment") und keinen Empfängernamen darstellt.
-            String[] recipientNameFieldsInPriorityOrder = { "recipient-name", "pan-recipient-name" };
-            for (String fieldName : recipientNameFieldsInPriorityOrder) {
-                RecipientFieldMatch match = findAttributeRecursive(root, fieldName);
-                if (match != null) {
-                    resultBuilder
-                        .recipientNamePresent(true)
-                        .recipientName(match.value())
-                        .recipientNameSourceField(match.fieldName());
-                    break;
-                }
+            resultBuilder
+                .errorStatus(errorStatus)
+                .pieceStatus(pieceStatus)
+                .pieceStatusDesc(pieceStatusDesc)
+                .shipmentStatus(status)
+                .shortStatus(shortStatus)
+                .panRecipientName(panRecipientName)
+                .recipientStreet(recipientStreet)
+                .recipientCity(recipientCity)
+                .panRecipientAddress(panRecipientAddress);
+
+            // Empfängername AUSSCHLIESSLICH aus recipient-name (Prio 1) oder
+            // pan-recipient-name (Prio 2) des piece-shipment-Elements.
+            if (recipientName != null) {
+                resultBuilder.recipientNamePresent(true).recipientName(recipientName)
+                    .recipientNameSourceField("recipient-name");
+            } else if (panRecipientName != null) {
+                resultBuilder.recipientNamePresent(true).recipientName(panRecipientName)
+                    .recipientNameSourceField("pan-recipient-name");
             }
 
-            // Optionale zusätzliche Empfängerfelder (rein informativ, kein Einfluss
-            // auf recipientNamePresent/recipientName)
-            resultBuilder.recipientStreet(firstAttributeValue(root, "recipient-street"));
-            resultBuilder.recipientCity(firstAttributeValue(root, "recipient-city"));
-            resultBuilder.panRecipientStreet(firstAttributeValue(root, "pan-recipient-street"));
-            resultBuilder.panRecipientCity(firstAttributeValue(root, "pan-recipient-city"));
-            resultBuilder.panRecipientAddress(firstAttributeValue(root, "pan-recipient-address"));
+            storebackend.dto.dhl.DhlPieceDetailTestResult partialResult = resultBuilder.build();
+
+            // TEMPORÄRE Diagnose-Ausgabe auf INFO-Ebene (KEINE Zugangsdaten enthalten -
+            // ausschließlich Werte aus der DHL-Response).
+            log.info(
+                "responseRootName: {}\nrootName: {}\ndhlResponseCode: {}\ndhlError: {}\ndhlRequestId: {}\n" +
+                "errorStatus: {}\npieceStatus: {}\npieceStatusDesc: {}\nstatus: {}\nshortStatus: {}\n" +
+                "recipientName: {}\npanRecipientName: {}",
+                responseRootName,
+                rootName,
+                dhlResponseCode,
+                dhlError,
+                dhlRequestId,
+                errorStatus,
+                pieceStatus,
+                pieceStatusDesc,
+                status,
+                shortStatus,
+                partialResult.getRecipientName(),
+                panRecipientName
+            );
+
+            return partialResult;
 
         } catch (Exception e) {
-            log.warn("⚠️ [TEST-ONLY] Failed to parse DHL d-get-piece-detail test response: {}", e.getMessage());
+            // Fehler NICHT stillschweigend verschlucken: voller Stacktrace auf ERROR-Ebene.
+            log.error("❌ [TEST-ONLY] Failed to parse DHL d-get-piece-detail test response", e);
+            return resultBuilder.parseSuccessful(false).build();
         }
-
-        return resultBuilder.build();
-    }
-
-    /**
-     * ⚠️ TEMPORÄRER TEST-CODE. Convenience-Wrapper um {@link #findAttributeRecursive}
-     * für optionale (rein informative) Empfängerfelder.
-     */
-    private String firstAttributeValue(Element root, String attributeName) {
-        RecipientFieldMatch match = findAttributeRecursive(root, attributeName);
-        return match != null ? match.value() : null;
-    }
-
-    /**
-     * ⚠️ TEMPORÄRER TEST-CODE. Sucht rekursiv über alle Elemente des Dokuments
-     * nach einem Attribut mit EXAKT diesem Namen (case-insensitive).
-     */
-    private RecipientFieldMatch findAttributeRecursive(Element element, String attributeName) {
-        var attributes = element.getAttributes();
-        for (int i = 0; i < attributes.getLength(); i++) {
-            var attr = attributes.item(i);
-            String attrName = attr.getNodeName();
-            String attrValue = attr.getNodeValue();
-            if (attrValue == null || attrValue.isBlank()) {
-                continue;
-            }
-            if (attributeName.equalsIgnoreCase(attrName)) {
-                return new RecipientFieldMatch(attrName, attrValue);
-            }
-        }
-
-        NodeList children = element.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            if (children.item(i) instanceof Element child) {
-                RecipientFieldMatch childMatch = findAttributeRecursive(child, attributeName);
-                if (childMatch != null) {
-                    return childMatch;
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * ⚠️ TEMPORÄRER TEST-CODE. Kleiner Container für ein gefundenes
-     * Empfängername-Feld (Attributname + Wert).
-     */
-    private record RecipientFieldMatch(String fieldName, String value) {
     }
 
     /**
