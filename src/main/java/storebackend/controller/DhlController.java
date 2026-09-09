@@ -1138,14 +1138,13 @@ public class DhlController {
      *
      * POST /api/stores/{storeId}/dhl/tracking/test-piece-detail
      *
-     * Kontrollierter Test des DHL Geschäftskunden-Requests "d-get-piece-detail"
-     * (inkl. Empfänger-PLZ / zip-code), um zu prüfen, ob DHL dadurch
-     * zusätzliche Daten (z.B. Empfängername) zurückliefert.
+     * Zweistufiger DHL-Support-Test gemäß Ticket #311719:
+     * - Test A: exakte, von DHL Support vorgegebene XML-Vorlage für
+     *   "d-get-piece-detail" OHNE zip-code
+     * - Test B: dieselbe Vorlage MIT zusätzlichem Attribut zip-code="90409"
+     *   (Vergleichstest, wird nur ausgeführt, wenn Test A erfolgreich war)
      *
      * Verwendet die bestehenden DHL-/GKP-Zugangsdaten (unverändert).
-     * Wird keine "zipCode" übergeben, wird TEMPORÄR der Test-Default
-     * "90409" verwendet - dies ist AUSDRÜCKLICH kein dauerhafter fachlicher
-     * Default für reale Sendungen.
      *
      * Der bestehende produktive Aufruf {@code /tracking/validate}
      * ("get-status-for-public-user") bleibt davon unberührt und dient
@@ -1176,14 +1175,11 @@ public class DhlController {
                     .body(Map.of("error", "Tracking code is required"));
             }
 
-            // Optional - fehlt sie, wird TEMPORÄR der Test-Default 90409 verwendet
-            String zipCode = request.get("zipCode");
+            log.info("🧪 [TEST-ONLY] DHL d-get-piece-detail Ticket #311719 test requested: store={}, trackingCode={}, user={}",
+                storeId, trackingCode.trim(), user.getId());
 
-            log.info("🧪 [TEST-ONLY] DHL d-get-piece-detail test requested: store={}, trackingCode={}, zipCode={}, user={}",
-                storeId, trackingCode.trim(), zipCode, user.getId());
-
-            storebackend.dto.dhl.DhlPieceDetailTestResult result =
-                dhlTrackingClient.testPieceDetailWithZip(storeId, trackingCode, zipCode);
+            storebackend.dto.dhl.DhlPieceDetailComparisonResult result =
+                dhlTrackingClient.testPieceDetailTemplate(storeId, trackingCode);
 
             return ResponseEntity.ok(result);
 

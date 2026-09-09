@@ -48,11 +48,13 @@ import java.util.Base64;
  * - XXE deaktiviert
  * - Nur maskierte clientId + trackingCode loggen
  *
- * ⚠️ TEMPORÄRER TEST-CODE: {@link #testPieceDetailWithZip(Long, String, String)}
+ * ⚠️ TEMPORÄRER TEST-CODE: {@link #testPieceDetailTemplate(Long, String)}
  * ist ein zusätzlicher, klar gekennzeichneter Testpfad für den
- * Geschäftskunden-Request "d-get-piece-detail" (inkl. zip-code), um zu prüfen,
- * ob DHL dadurch Empfängerdaten liefert. Er ändert NICHTS an der bestehenden
- * Authentifizierung/Konfiguration und ersetzt NICHT {@link #validateTrackingCode}.
+ * Geschäftskunden-Request "d-get-piece-detail" gemäß der von DHL Support
+ * für Ticket #311719 vorgegebenen exakten XML-Vorlage (Test A ohne
+ * zip-code, Test B mit zip-code="90409" als Vergleichstest). Er ändert
+ * NICHTS an der bestehenden Authentifizierung/Konfiguration und ersetzt
+ * NICHT {@link #validateTrackingCode}.
  */
 @Service
 @RequiredArgsConstructor
@@ -194,33 +196,40 @@ public class DhlTrackingClient {
     /**
      * ⚠️⚠️⚠️ TEMPORÄRER TEST-CODE - NICHT PRODUKTIV VERWENDEN ⚠️⚠️⚠️
      *
-     * Kontrollierter Test-Aufruf des DHL Geschäftskunden-Requests
-     * "d-get-piece-detail" (im Unterschied zum öffentlichen, bereits
-     * produktiv genutzten "get-status-for-public-user"-Aufruf oben).
+     * Zweistufiger DHL-Support-Test gemäß Ticket #311719: DHL Support hat
+     * exakt folgende XML-Struktur für den Geschäftskunden-Request
+     * "d-get-piece-detail" vorgegeben:
      *
-     * Ziel: Prüfen, ob DHL bei zusätzlicher Übergabe der Empfänger-PLZ
-     * (zip-code) weitere Daten liefert, insbesondere den Empfängernamen.
+     * <pre>{@code
+     * <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+     * <data
+     *   appname="GKP_USERNAME"
+     *   language-code="de"
+     *   password="GKP_PASSWORD"
+     *   piece-code="TRACKING_CODE"
+     *   request="d-get-piece-detail"/>
+     * }</pre>
+     *
+     * Test A: exakt diese Vorlage OHNE zip-code.
+     * Test B: dieselbe Vorlage MIT zusätzlichem Attribut zip-code="90409" -
+     * wird NUR ausgeführt, wenn Test A erfolgreich war (HTTP 2xx, Response
+     * parsebar, kein DHL-Fehler).
      *
      * Verwendet die bereits vorhandenen DHL-/GKP-Zugangsdaten (username,
      * appname und password aus {@link DhlSettingsResolver}) - es werden
      * KEINE neuen Zugangsdaten benötigt und die bestehende Authentifizierung
      * wird NICHT verändert.
      *
-     * TEMPORÄRER TEST-DEFAULT: Wird keine zip-code übergeben, wird
-     * ausschließlich für diesen Test "90409" verwendet (siehe
-     * {@link #TEST_DEFAULT_ZIP_CODE}). Dies ist AUSDRÜCKLICH KEIN
-     * dauerhafter fachlicher Default für reale Sendungen.
-     *
      * Der bestehende {@link #validateTrackingCode(Long, String)} Aufruf
      * bleibt unverändert als produktiver Fallback bestehen.
      *
      * @param storeId Store ID (für Credential-Resolution)
      * @param trackingCode Tracking-Code/Barcode
-     * @param zipCode Empfänger-PLZ (optional - Test-Default wird verwendet, wenn leer)
-     * @return DhlPieceDetailTestResult mit kompakter Testauswertung
+     * @return DhlPieceDetailComparisonResult mit Test A (ohne zip-code) und
+     *         optional Test B (mit zip-code="90409")
      */
-    public storebackend.dto.dhl.DhlPieceDetailTestResult testPieceDetailWithZip(
-            Long storeId, String trackingCode, String zipCode) {
+    public storebackend.dto.dhl.DhlPieceDetailComparisonResult testPieceDetailTemplate(
+            Long storeId, String trackingCode) {
 
         if (trackingCode == null || trackingCode.isBlank()) {
             throw new IllegalArgumentException("Tracking code cannot be empty");
@@ -228,24 +237,71 @@ public class DhlTrackingClient {
 
         String normalizedCode = normalizeTrackingCode(trackingCode);
 
-        boolean zipIsTestDefault = (zipCode == null || zipCode.isBlank());
-        String effectiveZip = zipIsTestDefault ? TEST_DEFAULT_ZIP_CODE : zipCode.trim();
-
-        if (zipIsTestDefault) {
-            log.warn("⚠️ [TEST-ONLY] Keine zip-code übergeben - verwende TEMPORÄREN Test-Default " +
-                "zip-code={} für d-get-piece-detail. NICHT für Produktivbetrieb gedacht!", TEST_DEFAULT_ZIP_CODE);
-        }
-
         DhlSettingsResolver.ResolvedDhlConfig config = dhlSettingsResolver.resolve(storeId);
         String trackingBaseUrl = getTrackingBaseUrl(config.getEnvironment());
 
-        log.info("🧪 [TEST-ONLY] DHL d-get-piece-detail test: store={}, trackingCode={}, zipCodeSent={} (isTestDefault={})",
-            storeId, normalizedCode, effectiveZip, zipIsTestDefault);
+        // --- Test A: exakte DHL-Support-Vorlage OHNE zip-code ---
+        log.info("🧪 [TEST-ONLY] Test A - DHL d-get-piece-detail (exakte DHL-Vorlage, KEIN zip-code): " +
+            "store={}, trackingCode={}", storeId, normalizedCode);
 
-        String xmlRequest = buildPieceDetailTestXmlRequest(config, normalizedCode, effectiveZip);
+        PieceDetailRawCallResult rawA = executePieceDetailRequest(config, trackingBaseUrl, normalizedCode, null, "A");
+        storebackend.dto.dhl.DhlPieceDetailTestResult resultA =
+            parsePieceDetailTestResponse(rawA.responseBody, normalizedCode, null, false);
+
+        log.info("DHL tracking Test A (ohne zip-code)\ntrackingCode: {}\ndhlResponseCode: {}\ndhlError: {}\n" +
+            "dhlRequestId: {}\nrecipientNamePresent: {}\nrecipientName: {}",
+            resultA.getTrackingCode(), resultA.getDhlResponseCode(), resultA.getDhlError(),
+            resultA.getDhlRequestId(), resultA.isRecipientNamePresent(), resultA.getRecipientName());
+
+        storebackend.dto.dhl.DhlPieceDetailComparisonResult.DhlPieceDetailComparisonResultBuilder comparisonBuilder =
+            storebackend.dto.dhl.DhlPieceDetailComparisonResult.builder().testA(resultA);
+
+        boolean testASuccessful = rawA.httpStatus.is2xxSuccessful()
+            && resultA.isParseSuccessful()
+            && (resultA.getDhlError() == null || resultA.getDhlError().isBlank());
+
+        if (!testASuccessful) {
+            String reason = String.format(
+                "Test B übersprungen: Test A nicht erfolgreich (httpStatus=%s, parseSuccessful=%s, dhlError=%s)",
+                rawA.httpStatus, resultA.isParseSuccessful(), resultA.getDhlError());
+            log.warn("⚠️ [TEST-ONLY] {}", reason);
+            return comparisonBuilder.testBExecuted(false).testBSkippedReason(reason).build();
+        }
+
+        // --- Test B: gleiche Vorlage MIT zip-code="90409" (Vergleichstest) ---
+        log.info("🧪 [TEST-ONLY] Test B - DHL d-get-piece-detail (Vergleichstest MIT zip-code={}): " +
+            "store={}, trackingCode={}", TEST_DEFAULT_ZIP_CODE, storeId, normalizedCode);
+
+        PieceDetailRawCallResult rawB =
+            executePieceDetailRequest(config, trackingBaseUrl, normalizedCode, TEST_DEFAULT_ZIP_CODE, "B");
+        storebackend.dto.dhl.DhlPieceDetailTestResult resultB =
+            parsePieceDetailTestResponse(rawB.responseBody, normalizedCode, TEST_DEFAULT_ZIP_CODE, false);
+
+        log.info("DHL tracking Test B (mit zip-code={})\ntrackingCode: {}\ndhlResponseCode: {}\ndhlError: {}\n" +
+            "dhlRequestId: {}\nrecipientNamePresent: {}\nrecipientName: {}",
+            TEST_DEFAULT_ZIP_CODE, resultB.getTrackingCode(), resultB.getDhlResponseCode(), resultB.getDhlError(),
+            resultB.getDhlRequestId(), resultB.isRecipientNamePresent(), resultB.getRecipientName());
+
+        return comparisonBuilder.testB(resultB).testBExecuted(true).build();
+    }
+
+    /**
+     * ⚠️ TEMPORÄRER TEST-CODE. Führt genau einen HTTP-Aufruf des
+     * "d-get-piece-detail" Requests aus (mit oder ohne zip-code) und
+     * protokolliert maskiertes Request-XML, HTTP-Status und vollständige
+     * DHL-Rohantwort.
+     *
+     * @param zipCode optional - wenn null/blank, wird KEIN zip-code Attribut gesendet
+     */
+    private PieceDetailRawCallResult executePieceDetailRequest(
+            DhlSettingsResolver.ResolvedDhlConfig config, String trackingBaseUrl,
+            String trackingCode, String zipCode, String testLabel) {
+
+        String xmlRequest = buildPieceDetailTestXmlRequest(config, trackingCode, zipCode);
 
         // Maskiertes XML unmittelbar vor dem DHL-Aufruf loggen (Passwort/Zugangsdaten NIEMALS im Klartext!)
-        log.info("🧪 [TEST-ONLY] DHL d-get-piece-detail Request-XML (maskiert): {}", maskXmlSecrets(xmlRequest));
+        log.info("🧪 [TEST-ONLY] Test {} - DHL d-get-piece-detail Request-XML (maskiert): {}",
+            testLabel, maskXmlSecrets(xmlRequest));
 
         String encodedXml = URLEncoder.encode(xmlRequest, StandardCharsets.UTF_8);
         String url = trackingBaseUrl + "/shipments?xml=" + encodedXml;
@@ -265,21 +321,28 @@ public class DhlTrackingClient {
         // Request) - API-Key/API-Secret/GKP-Benutzername/GKP-Passwort stehen NICHT hier,
         // sondern nur im (bereits maskiert geloggten) Request.
         if (LOG_RAW_RESPONSE_AT_INFO) {
-            log.info("DHL piece-detail HTTP status: {}", response.getStatusCode());
-            log.info("DHL piece-detail raw response: {}", responseBody);
+            log.info("DHL piece-detail Test {} HTTP status: {}", testLabel, response.getStatusCode());
+            log.info("DHL piece-detail Test {} raw response: {}", testLabel, responseBody);
         } else {
-            log.debug("DHL piece-detail HTTP status: {}", response.getStatusCode());
-            log.debug("DHL piece-detail raw response: {}", responseBody);
+            log.debug("DHL piece-detail Test {} HTTP status: {}", testLabel, response.getStatusCode());
+            log.debug("DHL piece-detail Test {} raw response: {}", testLabel, responseBody);
         }
 
-        storebackend.dto.dhl.DhlPieceDetailTestResult result =
-            parsePieceDetailTestResponse(responseBody, normalizedCode, effectiveZip, zipIsTestDefault);
+        return new PieceDetailRawCallResult(response.getStatusCode(), responseBody);
+    }
 
-        // Kompakte Testauswertung auf der Serverkonsole ausgeben
-        log.info("DHL tracking test\ntrackingCode: {}\nzipCodeSent: {}\nrecipientNamePresent: {}\nrecipientName: {}",
-            result.getTrackingCode(), result.getZipCodeSent(), result.isRecipientNamePresent(), result.getRecipientName());
+    /**
+     * ⚠️ TEMPORÄRER TEST-CODE. Einfacher interner Träger für HTTP-Status und
+     * Rohantwort eines einzelnen "d-get-piece-detail" Testaufrufs.
+     */
+    private static final class PieceDetailRawCallResult {
+        final HttpStatusCode httpStatus;
+        final String responseBody;
 
-        return result;
+        PieceDetailRawCallResult(HttpStatusCode httpStatus, String responseBody) {
+            this.httpStatus = httpStatus;
+            this.responseBody = responseBody;
+        }
     }
 
     /**
@@ -298,28 +361,47 @@ public class DhlTrackingClient {
     private static final String TEST_DEFAULT_ZIP_CODE = "90409";
 
     /**
-     * ⚠️ TEMPORÄRER TEST-CODE. Baut das XML für den Geschäftskunden-Request
-     * "d-get-piece-detail" inkl. zip-code Attribut. Verwendet dieselben
-     * appname/password wie der bestehende produktive Request - KEINE neuen
-     * Zugangsdaten, KEINE Änderung an der bestehenden Authentifizierung.
-     *
-     * WICHTIG: Anders als beim öffentlichen "get-status-for-public-user"
-     * Request (verschachteltes &lt;data&gt;&lt;data .../&gt;&lt;/data&gt;)
-     * müssen laut DHL-Dokumentation für "d-get-piece-detail" SÄMTLICHE
-     * Parameter (inkl. appname/password/request/piece-code/zip-code) als
-     * Attribute EINES EINZIGEN, flachen &lt;data .../&gt;-Elements übergeben
-     * werden - KEINE Verschachtelung.
-     */
+ *  TEMPORAERER TEST-CODE. Baut das XML fuer den Geschaeftskunden-Request
+ * "d-get-piece-detail" EXAKT nach der von DHL Support fuer Ticket #311719
+ * vorgegebenen Vorlage:
+ *
+ * <pre>{@code
+ * <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+ * <data
+ *   appname="GKP_USERNAME"
+ *   language-code="de"
+ *   password="GKP_PASSWORD"
+ *   piece-code="TRACKING_CODE"
+ *   request="d-get-piece-detail"/>
+ * }</pre>
+ *
+ * Verwendet dieselben appname/password wie der bestehende produktive
+ * Request - KEINE neuen Zugangsdaten, KEINE Aenderung an der bestehenden
+ * Authentifizierung.
+ *
+ * Das Attribut zip-code wird NUR angehaengt, wenn zipCode nicht
+ * null/blank ist (Test A: ohne zip-code, Test B: mit zip-code).
+ *
+ * WICHTIG: Anders als beim oeffentlichen "get-status-for-public-user"
+ * Request (verschachteltes <data><data .../></data>)
+ * muessen laut DHL-Dokumentation fuer "d-get-piece-detail" SAEMTLICHE
+ * Parameter als Attribute EINES EINZIGEN, flachen <data .../>-
+ * Elements uebergeben werden - KEINE Verschachtelung.
+ */
     private String buildPieceDetailTestXmlRequest(
             DhlSettingsResolver.ResolvedDhlConfig config, String trackingCode, String zipCode) {
-        return String.format(
-            "<data appname=\"%s\" password=\"%s\" request=\"d-get-piece-detail\" " +
-            "language-code=\"de\" piece-code=\"%s\" zip-code=\"%s\" />",
-            escapeXml(config.getUsername()),
-            escapeXml(config.getPassword()),
-            escapeXml(trackingCode),
-            escapeXml(zipCode)
-        );
+        StringBuilder xml = new StringBuilder();
+        xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
+        xml.append("<data\n");
+        xml.append("  appname=\"").append(escapeXml(config.getUsername())).append("\"\n");
+        xml.append("  language-code=\"de\"\n");
+        xml.append("  password=\"").append(escapeXml(config.getPassword())).append("\"\n");
+        xml.append("  piece-code=\"").append(escapeXml(trackingCode)).append("\"\n");
+        if (zipCode != null && !zipCode.isBlank()) {
+            xml.append("  zip-code=\"").append(escapeXml(zipCode)).append("\"\n");
+        }
+        xml.append("  request=\"d-get-piece-detail\"/>");
+        return xml.toString();
     }
 
     /**
