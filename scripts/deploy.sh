@@ -435,9 +435,9 @@ Group=storebackend
 # (HUGGINGFACE_API_KEY, OPENROUTER_API_KEY, AISSTREAM_API_KEY,
 # TELEGRAM_AUTH_BOT_TOKEN, TELEGRAM_AUTH_BOT_USERNAME, DHL_*, PAYPAL_*, ...).
 #
-# WICHTIG: Es darf hier KEINE zusätzliche "Environment=\"X=\${X}\""-Zeile für
+# WICHTIG: Es darf hier KEINE zusätzliche Environment=\"X=\${X}\"-Zeile für
 # eine dieser Variablen ergänzt werden. Der Heredoc unten ist quoted (<<'EOF'),
-# daher wird "\${X}" NICHT expandiert – es würde der LITERALE String "${X}"
+# daher wird \${X} NICHT expandiert – es würde der LITERALE String \${X}
 # in die Unit-Datei geschrieben und (weil Environment= NACH EnvironmentFile=
 # verarbeitet wird und damit gewinnt) den korrekten Wert aus
 # /etc/storebackend.env überschreiben. Empirisch bestätigt (siehe Review).
