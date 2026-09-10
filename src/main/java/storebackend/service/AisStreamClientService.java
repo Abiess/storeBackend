@@ -296,23 +296,36 @@ public class AisStreamClientService {
 
     private void sendSubscription(WebSocket webSocket) {
         try {
-            Map<String, Object> subscription = Map.of(
-                    "APIKey", apiKey,
-                    "BoundingBoxes", List.of(TANGER_MED_BBOX),
-                    "FilterMessageTypes", List.of("PositionReport", "ShipStaticData")
-            );
-            String json = objectMapper.writeValueAsString(subscription);
-            // WICHTIG: Niemals das komplette Subscription-JSON loggen (enthält den API-Key)!
+            // TEMPORÄRER A/B-TEST (siehe Klassen-Javadoc "Troubleshooting"): Payload wird bewusst als
+            // literaler String und NICHT über Map+Jackson gebaut, um jede denkbare Serialisierungs-
+            // Abweichung (Feld-Reihenfolge, Zahlenformat, Escaping) gegenüber dem bestätigt funktionierenden
+            // Referenz-Client (Python) auszuschließen. "ShipStaticData" ist für diesen Test bewusst aus
+            // FilterMessageTypes entfernt (nur PositionReport, wie im Referenz-Payload). Sobald der Verbindungsabbruch
+            // (code=1006 ~0.5s nach onOpen) empirisch behoben ist, kann hier wieder auf das reguläre
+            // Map+Jackson-Pattern inkl. ShipStaticData zurückgebaut werden.
+            String json = "{"
+                    + "\"APIKey\":\"" + escapeJson(apiKey) + "\","
+                    + "\"BoundingBoxes\":[[["
+                    + TANGER_MED_BBOX[0][0] + "," + TANGER_MED_BBOX[0][1] + "],["
+                    + TANGER_MED_BBOX[1][0] + "," + TANGER_MED_BBOX[1][1] + "]]],"
+                    + "\"FilterMessageTypes\":[\"PositionReport\"]"
+                    + "}";
+            // WICHTIG: Niemals das komplette Subscription-JSON loggen (enthält den API-Key)! Nur die Länge.
+            log.info("AIS subscription send started (payloadLength={})", json.length());
             webSocket.sendText(json, true).whenComplete((ws, err) -> {
                 if (err != null) {
-                    log.warn("Failed to send AIS subscription request: {}", err.getMessage());
+                    log.warn("AIS subscription send FAILED: {}: {}", err.getClass().getSimpleName(), err.getMessage());
                 } else {
-                    log.debug("AIS subscription sent successfully");
+                    log.info("AIS subscription send completed successfully");
                 }
             });
         } catch (Exception e) {
             log.warn("Failed to build AIS subscription request: {}", e.getMessage());
         }
+    }
+
+    private static String escapeJson(String s) {
+        return s == null ? "" : s.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -333,6 +346,8 @@ public class AisStreamClientService {
             markConnectionHealthy();
 
             switch (messageType) {
+                case "SubscriptionConfirmation" ->
+                        log.info("AIS SubscriptionConfirmation received (parsed successfully)");
                 case "PositionReport" -> handlePositionReport(message.path("PositionReport"), metaData);
                 case "ShipStaticData" -> handleStaticData(message.path("ShipStaticData"), metaData);
                 default -> {
@@ -480,6 +495,7 @@ public class AisStreamClientService {
         private final StringBuilder textBuffer = new StringBuilder();
         private final ByteArrayOutputStream binaryBuffer = new ByteArrayOutputStream();
         private boolean firstMessageLogged = false;
+        private boolean firstFrameLogged = false;
 
         @Override
         public void onOpen(WebSocket webSocket) {
@@ -488,12 +504,19 @@ public class AisStreamClientService {
             connectedSince.set(Instant.now());
             boolean firstConnect = everConnected.compareAndSet(false, true);
             log.info(firstConnect ? "AIS connection established" : "AIS connection restored");
-            sendSubscription(webSocket);
+            // Flow-Control zuerst freigeben (webSocket.request), danach senden – Reihenfolge hat auf
+            // das Senden selbst keinen Einfluss (request() steuert nur eingehende Frames), macht die
+            // Absicht aber klarer und entspricht der defensiven Vorgabe.
             webSocket.request(1);
+            sendSubscription(webSocket);
         }
 
         @Override
         public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
+            if (!firstFrameLogged) {
+                firstFrameLogged = true;
+                log.info("AIS first frame received: type=TEXT, last={}, length={}", last, data.length());
+            }
             if (textBuffer.length() + data.length() <= MAX_FRAGMENT_BYTES) {
                 textBuffer.append(data);
             } else if (textBuffer.length() <= MAX_FRAGMENT_BYTES) {
@@ -511,6 +534,10 @@ public class AisStreamClientService {
 
         @Override
         public CompletionStage<?> onBinary(WebSocket webSocket, ByteBuffer data, boolean last) {
+            if (!firstFrameLogged) {
+                firstFrameLogged = true;
+                log.info("AIS first frame received: type=BINARY, last={}, length={}", last, data.remaining());
+            }
             byte[] chunk = new byte[data.remaining()];
             data.get(chunk);
             if (binaryBuffer.size() + chunk.length <= MAX_FRAGMENT_BYTES) {
