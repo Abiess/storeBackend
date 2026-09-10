@@ -131,6 +131,35 @@ export interface MaritimePort {
   name: string;
 }
 
+/**
+ * Marine-Wetter-/Ozean-Modelldaten (Open-Meteo Marine API) für den aktuell ausgewählten Hafen.
+ * WICHTIG: Modell-/Forecast-Daten, keine amtlichen Hafenmessungen/Navigationsdaten
+ * (siehe maritime.weather.disclaimer). Alle Werte nullable.
+ */
+export interface MarineWeatherDto {
+  port: string;
+  latitude: number;
+  longitude: number;
+  forecastTime?: string | null;
+  waveHeightM?: number | null;
+  waveDirectionDeg?: number | null;
+  wavePeriodS?: number | null;
+  swellHeightM?: number | null;
+  swellDirectionDeg?: number | null;
+  swellPeriodS?: number | null;
+  seaSurfaceTemperatureC?: number | null;
+  currentVelocityMs?: number | null;
+  currentDirectionDeg?: number | null;
+  seaLevelHeightM?: number | null;
+  source?: string;
+  modelBased: boolean;
+  available: boolean;
+  /** Zeitpunkt des letzten erfolgreichen Ladens vom Provider (für "Last updated"-Anzeige im Frontend). */
+  fetchedAt?: string | null;
+  /** true = Refresh ist gerade fehlgeschlagen, es wird ein älterer (über-TTL) Cache-Stand angezeigt. */
+  stale?: boolean;
+}
+
 // ============================================
 // ADDRESS
 // ============================================

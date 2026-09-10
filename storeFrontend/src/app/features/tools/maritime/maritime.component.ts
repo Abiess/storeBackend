@@ -7,7 +7,7 @@ import { PageHeaderComponent } from '@app/shared/components/page-header.componen
 import { ResponsiveDataListComponent, ColumnConfig } from '@app/shared/components/responsive-data-list/responsive-data-list.component';
 import { MaritimeService } from '@app/core/services/maritime.service';
 import { TranslationService } from '@app/core/services/translation.service';
-import { VesselDto, MaritimeVesselsResponse, MaritimePort } from '@app/core/models';
+import { VesselDto, MaritimeVesselsResponse, MaritimePort, MarineWeatherDto } from '@app/core/models';
 
 /**
  * Maritime / Live-AIS-Schiffsdaten (MVP: Tanger Med, Nador, Casablanca).
@@ -52,7 +52,17 @@ export class MaritimeComponent implements OnInit, OnDestroy {
   /** Aktuell für die Detailansicht ausgewähltes Schiff (Klick auf eine Tabellenzeile). */
   selectedVessel: VesselDto | null = null;
 
+  /**
+   * Marine-Wetter (Open-Meteo, Modell-/Forecast-Daten – siehe maritime.weather.disclaimer).
+   * Separater REST-Call, NICHT Teil des 8s-AIS-Pollings: initial load, Portwechsel, alle 15 Min.
+   * Ein Fehler hier darf den AIS-Teil der Seite nie beeinflussen (eigener Error-State).
+   */
+  weather: MarineWeatherDto | null = null;
+  weatherError = false;
+  weatherLoading = true;
+
   private pollSub?: Subscription;
+  private weatherSub?: Subscription;
 
   /** Betriebsstatus (Backend-Enum-Name) -> i18n-Key, für die Anzeige in der Tabelle. */
   private readonly statusLabelKeys: Record<string, string> = {
@@ -128,6 +138,25 @@ export class MaritimeComponent implements OnInit, OnDestroy {
       this.error = '';
       this.updateKpis();
     });
+
+    // Marine-Wetter: eigener, deutlich selteneren Poll-Zyklus (15 Min) – Backend cached ohnehin
+    // 20 Min pro Hafen, hier geht es nur darum, nicht ewig denselben Stand anzuzeigen.
+    // Fehler stoppen NICHT das AIS-Polling oben (komplett unabhängiger Subscription-Stream).
+    this.weatherSub = interval(15 * 60 * 1000).pipe(
+      startWith(0),
+      switchMap(() => this.maritimeService.getWeather().pipe(catchError(() => of(null))))
+    ).subscribe((weather) => this.applyWeather(weather));
+  }
+
+  private applyWeather(weather: MarineWeatherDto | null): void {
+    this.weatherLoading = false;
+    if (!weather || !weather.available) {
+      this.weatherError = true;
+      this.weather = null;
+      return;
+    }
+    this.weatherError = false;
+    this.weather = weather;
   }
 
   private updateKpis(): void {
@@ -150,6 +179,11 @@ export class MaritimeComponent implements OnInit, OnDestroy {
     return status ? (this.statusLabelKeys[status] || 'maritime.status.unknown') : 'maritime.status.unknown';
   }
 
+  /** Anzeigename des aktuell gewählten Hafens (aus der bereits geladenen Port-Liste), Fallback: Port-ID. */
+  selectedPortName(): string {
+    return this.ports.find((p) => p.id === this.selectedPort)?.name || this.selectedPort;
+  }
+
   onVesselClick(vessel: VesselDto): void {
     this.selectedVessel = this.selectedVessel?.mmsi === vessel.mmsi ? null : vessel;
   }
@@ -169,6 +203,9 @@ export class MaritimeComponent implements OnInit, OnDestroy {
     this.selectedVessel = null;
     this.updateKpis();
     this.loading = true;
+    // Wetter ist ein separater REST-Call (kein WebSocket) – bei Portwechsel sofort neu laden,
+    // die AISStream-Subscription selbst wird ausschließlich im Backend über switchPort() umgestellt.
+    this.weatherLoading = true;
     this.maritimeService.switchPort(portId).pipe(
       catchError(() => of(null))
     ).subscribe((status) => {
@@ -182,9 +219,13 @@ export class MaritimeComponent implements OnInit, OnDestroy {
       this.vesselCount = status.vesselCount;
       this.lastMessageAt = status.lastMessageAt;
     });
+    this.maritimeService.getWeather().pipe(
+      catchError(() => of(null))
+    ).subscribe((weather) => this.applyWeather(weather));
   }
 
   ngOnDestroy(): void {
     this.pollSub?.unsubscribe();
+    this.weatherSub?.unsubscribe();
   }
 }

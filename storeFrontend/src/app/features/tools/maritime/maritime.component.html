@@ -63,6 +63,53 @@
     </div>
   </div>
 
+  <div class="maritime-weather-card">
+    <div class="maritime-weather-header">
+      <strong>{{ 'maritime.weather.title' | translate }} — {{ selectedPortName() }}</strong>
+      <span class="maritime-weather-badge">{{ 'maritime.weather.modelBased' | translate }}</span>
+    </div>
+
+    <div class="maritime-weather-unavailable" *ngIf="weatherError">
+      ⚠️ {{ 'maritime.weather.unavailable' | translate }}
+    </div>
+
+    <div class="maritime-weather-meta" *ngIf="!weatherError && weather as w">
+      <span *ngIf="w.forecastTime">{{ 'maritime.weather.modelTime' | translate }}: {{ w.forecastTime }} UTC</span>
+      <span *ngIf="w.fetchedAt">{{ 'maritime.weather.lastUpdated' | translate }}: {{ w.fetchedAt | date:'short' }}</span>
+      <span class="maritime-weather-stale" *ngIf="w.stale">⚠️ {{ 'maritime.weather.stale' | translate }}</span>
+    </div>
+
+    <div class="maritime-weather-grid" *ngIf="!weatherError && weather as w">
+      <div class="maritime-weather-item">
+        <span class="maritime-weather-label">{{ 'maritime.weather.waves' | translate }}</span>
+        <strong>{{ w.waveHeightM != null ? (w.waveHeightM + ' m') : '—' }}</strong>
+        <span>{{ w.waveDirectionDeg != null ? (w.waveDirectionDeg + '°') : '—' }}</span>
+        <span>{{ w.wavePeriodS != null ? (w.wavePeriodS + ' s') : '—' }}</span>
+      </div>
+      <div class="maritime-weather-item">
+        <span class="maritime-weather-label">{{ 'maritime.weather.swell' | translate }}</span>
+        <strong>{{ w.swellHeightM != null ? (w.swellHeightM + ' m') : '—' }}</strong>
+        <span>{{ w.swellDirectionDeg != null ? (w.swellDirectionDeg + '°') : '—' }}</span>
+        <span>{{ w.swellPeriodS != null ? (w.swellPeriodS + ' s') : '—' }}</span>
+      </div>
+      <div class="maritime-weather-item">
+        <span class="maritime-weather-label">{{ 'maritime.weather.sea' | translate }}</span>
+        <strong>{{ w.seaSurfaceTemperatureC != null ? (w.seaSurfaceTemperatureC + ' °C') : '—' }}</strong>
+      </div>
+      <div class="maritime-weather-item">
+        <span class="maritime-weather-label">{{ 'maritime.weather.current' | translate }}</span>
+        <strong>{{ w.currentVelocityMs != null ? (w.currentVelocityMs + ' m/s') : '—' }}</strong>
+        <span>{{ w.currentDirectionDeg != null ? (w.currentDirectionDeg + '°') : '—' }}</span>
+      </div>
+      <div class="maritime-weather-item">
+        <span class="maritime-weather-label">{{ 'maritime.weather.seaLevel' | translate }}</span>
+        <strong>{{ w.seaLevelHeightM != null ? ((w.seaLevelHeightM > 0 ? '+' : '') + w.seaLevelHeightM + ' m') : '—' }}</strong>
+      </div>
+    </div>
+
+    <p class="maritime-weather-disclaimer">{{ 'maritime.weather.disclaimer' | translate }}</p>
+  </div>
+
   <div class="maritime-vessel-detail" *ngIf="selectedVessel as v">
     <div class="maritime-vessel-detail__header">
       <strong>{{ v.shipName || ('maritime.detail.title' | translate) }}</strong>

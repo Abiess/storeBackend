@@ -7,12 +7,14 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import storebackend.dto.MarineWeatherDTO;
 import storebackend.dto.MaritimePortDto;
 import storebackend.dto.MaritimePortSwitchRequest;
 import storebackend.dto.MaritimeStatusResponse;
 import storebackend.dto.MaritimeVesselsResponse;
 import storebackend.enums.MaritimePort;
 import storebackend.service.AisStreamClientService;
+import storebackend.service.MarineWeatherService;
 
 import java.util.Arrays;
 import java.util.List;
@@ -35,9 +37,11 @@ import java.util.List;
 public class MaritimeController {
 
     private final AisStreamClientService aisStreamClientService;
+    private final MarineWeatherService marineWeatherService;
 
-    public MaritimeController(AisStreamClientService aisStreamClientService) {
+    public MaritimeController(AisStreamClientService aisStreamClientService, MarineWeatherService marineWeatherService) {
         this.aisStreamClientService = aisStreamClientService;
+        this.marineWeatherService = marineWeatherService;
     }
 
     /** Aktuelle Schiffe (Live-State, keine Historie) + Verbindungsstatus. */
@@ -68,6 +72,16 @@ public class MaritimeController {
                 .map(p -> new MaritimePortDto(p.name(), p.getDisplayName()))
                 .toList();
         return ResponseEntity.ok(ports);
+    }
+
+    /**
+     * Marine-Wetter-/Ozean-Modelldaten (Open-Meteo, siehe {@link MarineWeatherService}) für den
+     * aktuell ausgewählten Hafen. Komplett unabhängig von der AISStream-Verbindung – ein Ausfall
+     * hier hat keinen Einfluss auf /vessels, /status etc. Kein API-Key im Spiel (öffentliche API).
+     */
+    @GetMapping("/weather")
+    public ResponseEntity<MarineWeatherDTO> getWeather() {
+        return ResponseEntity.ok(marineWeatherService.getWeather(aisStreamClientService.getCurrentPort()));
     }
 
     /**

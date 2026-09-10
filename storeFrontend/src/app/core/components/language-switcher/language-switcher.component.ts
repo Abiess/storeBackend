@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LanguageService } from '../../services/language.service';
 
-type AppLanguage = 'de' | 'en' | 'ar';
+type AppLanguage = 'de' | 'en' | 'ar' | 'fr';
 
 @Component({
     selector: 'app-language-switcher',
@@ -79,7 +79,8 @@ export class LanguageSwitcherComponent {
   languages: { code: AppLanguage; label: string }[] = [
     { code: 'de', label: 'Deutsch' },
     { code: 'en', label: 'English' },
-    { code: 'ar', label: 'العربية' }
+    { code: 'ar', label: 'العربية' },
+    { code: 'fr', label: 'Français' }
   ];
 
   constructor(public languageService: LanguageService) {}

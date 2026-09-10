@@ -1752,6 +1752,20 @@
       "position": "Position",
       "inPortSince": "In port since",
       "close": "Close"
+    },
+    "weather": {
+      "title": "Marine Weather",
+      "modelBased": "Model-based forecast",
+      "waves": "Waves",
+      "swell": "Swell",
+      "sea": "Sea surface temp.",
+      "current": "Current",
+      "seaLevel": "Sea level (model)",
+      "modelTime": "Model time",
+      "lastUpdated": "Last updated",
+      "stale": "Showing last known data, refresh failed",
+      "unavailable": "Marine weather temporarily unavailable",
+      "disclaimer": "Marine weather data is model-based and may differ from local measurements, especially near ports. Not for navigation or safety-critical decisions."
     }
   },
   "wizard": {

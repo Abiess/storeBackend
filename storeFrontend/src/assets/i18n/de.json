@@ -3355,6 +3355,20 @@
       "position": "Position",
       "inPortSince": "Im Hafen seit",
       "close": "Schließen"
+    },
+    "weather": {
+      "title": "Marine-Wetter",
+      "modelBased": "Modellbasierte Vorhersage",
+      "waves": "Wellen",
+      "swell": "Dünung",
+      "sea": "Wassertemperatur",
+      "current": "Strömung",
+      "seaLevel": "Meeresspiegel (Modell)",
+      "modelTime": "Modellzeit",
+      "lastUpdated": "Zuletzt aktualisiert",
+      "stale": "Zeigt letzten bekannten Stand, Aktualisierung fehlgeschlagen",
+      "unavailable": "Marine-Wetterdaten vorübergehend nicht verfügbar",
+      "disclaimer": "Marine-Wetterdaten basieren auf Wetter-/Ozeanmodellen und können insbesondere in Hafennähe von lokalen Messwerten abweichen. Nicht für Navigation oder sicherheitskritische Entscheidungen verwenden."
     }
   },
   "pos": {
