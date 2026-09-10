@@ -398,6 +398,7 @@ jobs:
             export JWT_SECRET="${{ secrets.JWT_SECRET }}"
             export HUGGINGFACE_API_KEY="${{ secrets.HUGGINGFACE_API_KEY }}"
             export OPENROUTER_API_KEY="${{ secrets.OPENROUTER_API_KEY }}"
+            export AISSTREAM_API_KEY="${{ secrets.AISSTREAM_API_KEY }}"
             export TELEGRAM_AUTH_BOT_TOKEN="${{ secrets.TELEGRAM_AUTH_BOT_TOKEN }}"
             export CLARITY_ID="${{ secrets.CLARITY_ID }}"
             export UNSPLASH_ACCESS_KEY="${{ secrets.UNSPLASH_ACCESS_KEY }}"

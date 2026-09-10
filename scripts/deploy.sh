@@ -168,6 +168,12 @@ HUGGINGFACE_API_KEY=${HUGGINGFACE_API_KEY:-}
 # OpenRouter API Key (AI Product Creation – bevorzugt, OpenAI-kompatibel)
 OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
 
+# AISStream API Key (Maritime-Feature MVP – Live-AIS-Schiffsdaten Tanger Med)
+# Key anlegen: https://aisstream.io/apikeys
+# WICHTIG: Ausschließlich serverseitig, NIEMALS ins Frontend/Git! Ohne Key ist
+# das Feature deaktiviert (Backend startet normal, Status NOT_CONFIGURED).
+AISSTREAM_API_KEY=${AISSTREAM_API_KEY:-}
+
 # Telegram Bot Auth
 TELEGRAM_AUTH_BOT_TOKEN=${TELEGRAM_AUTH_BOT_TOKEN:-}
 TELEGRAM_AUTH_BOT_USERNAME=${TELEGRAM_AUTH_BOT_USERNAME:-marktma_verify_bot}
@@ -425,15 +431,17 @@ Type=simple
 User=storebackend
 Group=storebackend
 
-# Environment-Datei laden
+# Environment-Datei laden – EINZIGE Quelle für alle Secrets/API-Keys
+# (HUGGINGFACE_API_KEY, OPENROUTER_API_KEY, AISSTREAM_API_KEY,
+# TELEGRAM_AUTH_BOT_TOKEN, TELEGRAM_AUTH_BOT_USERNAME, DHL_*, PAYPAL_*, ...).
+#
+# WICHTIG: Es darf hier KEINE zusätzliche "Environment=\"X=\${X}\""-Zeile für
+# eine dieser Variablen ergänzt werden. Der Heredoc unten ist quoted (<<'EOF'),
+# daher wird "\${X}" NICHT expandiert – es würde der LITERALE String "${X}"
+# in die Unit-Datei geschrieben und (weil Environment= NACH EnvironmentFile=
+# verarbeitet wird und damit gewinnt) den korrekten Wert aus
+# /etc/storebackend.env überschreiben. Empirisch bestätigt (siehe Review).
 EnvironmentFile=/etc/storebackend.env
-
-# CRITICAL FIX: API Keys direkt als Environment Variables
-# (systemd liest manchmal EnvironmentFile nicht korrekt)
-Environment="HUGGINGFACE_API_KEY=\${HUGGINGFACE_API_KEY}"
-Environment="OPENROUTER_API_KEY=\${OPENROUTER_API_KEY}"
-Environment="TELEGRAM_AUTH_BOT_TOKEN=\${TELEGRAM_AUTH_BOT_TOKEN}"
-Environment="TELEGRAM_AUTH_BOT_USERNAME=\${TELEGRAM_AUTH_BOT_USERNAME}"
 
 # JAR ausführen
 ExecStart=/usr/bin/java \$JAVA_OPTS -jar /opt/storebackend/app.jar

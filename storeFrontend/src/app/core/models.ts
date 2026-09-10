@@ -86,6 +86,37 @@ export interface IssueImageAnalysisResult {
 }
 
 // ============================================
+// MARITIME (AIS Live-Schiffsdaten – MVP: Tanger Med)
+// ============================================
+/** Aktueller Live-Zustand eines Schiffs, siehe GET /api/maritime/vessels */
+export interface VesselDto {
+  mmsi: number;
+  shipName?: string;
+  latitude: number;
+  longitude: number;
+  speed?: number | null;
+  course?: number | null;
+  heading?: number | null;
+  lastSeen: string;
+  callSign?: string;
+  imo?: number;
+  shipType?: number;
+  destination?: string;
+  draught?: number;
+}
+
+export interface MaritimeStatus {
+  connected: boolean;
+  configured: boolean;
+  lastMessageAt: string | null;
+  vesselCount: number;
+}
+
+export interface MaritimeVesselsResponse extends MaritimeStatus {
+  vessels: VesselDto[];
+}
+
+// ============================================
 // ADDRESS
 // ============================================
 export interface Address {

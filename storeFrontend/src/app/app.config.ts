@@ -27,7 +27,9 @@ import {
   // Loyalty Icons (MVP)
   Gift, RotateCcw, History, Scale,
   // TEMP: Issue-Analysis Test-Seite (Sidebar-Icon)
-  Wrench
+  Wrench,
+  // Maritime (AIS Live-Schiffsdaten MVP, Tanger Med)
+  Anchor
 } from 'lucide-angular';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS, HttpClient } from '@angular/common/http';
@@ -97,7 +99,9 @@ export const appConfig: ApplicationConfig = {
         // Loyalty Icons (MVP)
         Gift, RotateCcw, History, Scale,
         // TEMP: Issue-Analysis Test-Seite
-        Wrench
+        Wrench,
+        // Maritime (AIS Live-Schiffsdaten MVP, Tanger Med)
+        Anchor
       })
     },
     // Standard Locale (kann dynamisch überschrieben werden)

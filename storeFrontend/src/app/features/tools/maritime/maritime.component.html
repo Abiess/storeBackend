@@ -1,0 +1,43 @@
+<div class="maritime-page">
+  <app-page-header
+    [title]="'maritime.title' | translate"
+    [subtitle]="'maritime.subtitle' | translate"
+    [showBackButton]="true"
+  ></app-page-header>
+
+  <div class="maritime-status-card">
+    <div class="maritime-status-row">
+      <span class="maritime-status-badge" [class.connected]="connected" [class.disconnected]="!connected">
+        <span class="maritime-status-dot"></span>
+        {{ (connected ? 'maritime.connected' : 'maritime.disconnected') | translate }}
+      </span>
+
+      <span class="maritime-status-item" *ngIf="lastMessageAt">
+        {{ 'maritime.lastMessage' | translate }}: {{ lastMessageAt | date:'short' }}
+      </span>
+
+      <span class="maritime-status-item">
+        {{ 'maritime.vesselCount' | translate }}: {{ vesselCount }}
+      </span>
+    </div>
+
+    <div class="maritime-not-configured" *ngIf="!configured">
+      ⚠️ {{ 'maritime.notConfigured' | translate }}
+    </div>
+
+    <div class="maritime-unavailable" *ngIf="error && configured">
+      ⚠️ {{ 'maritime.unavailable' | translate }}
+    </div>
+  </div>
+
+  <app-responsive-data-list
+    [items]="vessels"
+    [columns]="columns"
+    [loading]="loading"
+    [searchable]="true"
+    searchPlaceholder="{{ 'maritime.searchPlaceholder' | translate }}"
+    emptyIcon="🚢"
+    [emptyMessage]="'maritime.emptyMessage' | translate"
+    trackBy="mmsi">
+  </app-responsive-data-list>
+</div>

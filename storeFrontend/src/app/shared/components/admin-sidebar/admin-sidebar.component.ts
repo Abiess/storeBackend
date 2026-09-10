@@ -174,6 +174,13 @@ export class AdminSidebarComponent implements OnInit {
                         labelKey: 'sidebarAdmin.items.issueAnalysis',
                         icon: 'wrench',
                         route: '/tools/issue-analysis'
+                    },
+                    {
+                        // Maritime (AIS Live-Schiffsdaten MVP, Tanger Med) – globales Admin-Tool,
+                        // kein Store-Bezug (requiresStore bewusst weggelassen), analog issue-analysis.
+                        labelKey: 'sidebarAdmin.items.maritime',
+                        icon: 'anchor',
+                        route: '/tools/maritime'
                     }
                 ]
             },

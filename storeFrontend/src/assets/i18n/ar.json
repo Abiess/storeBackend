@@ -1298,7 +1298,8 @@
       "pos": "الكاشير",
       "loyalty": "نقاط الولاء",
       "dhl": "DHL",
-      "issueAnalysis": "تحديد المشكلة"
+      "issueAnalysis": "تحديد المشكلة",
+      "maritime": "الملاحة البحرية"
     },
     "noStore": {
       "hint": "لم يتم اختيار متجر",
@@ -1321,6 +1322,18 @@
     "problem": "المشكلة المكتشفة",
     "confidence": "درجة الثقة",
     "questions": "أسئلة توضيحية"
+  },
+  "maritime": {
+    "title": "الملاحة البحرية / طنجة المتوسط مباشر",
+    "subtitle": "بيانات AIS مباشرة للسفن في طنجة المتوسط (نسخة أولية)",
+    "connected": "متصل",
+    "disconnected": "غير متصل",
+    "lastMessage": "آخر رسالة",
+    "vesselCount": "عدد السفن المرئية",
+    "notConfigured": "لم يتم تهيئة AIS حالياً (AISSTREAM_API_KEY غير موجود).",
+    "unavailable": "AIS غير متاح حالياً.",
+    "searchPlaceholder": "ابحث عن سفينة أو رقم MMSI...",
+    "emptyMessage": "لا توجد سفن مرئية حالياً"
   },
   "wizard": {
     "skip": "تخطي",

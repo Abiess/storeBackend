@@ -171,6 +171,13 @@ openrouter:
   api:
     key: ${OPENROUTER_API_KEY:}
 
+# AISStream – Live-AIS-Schiffsdaten (Maritime-Feature MVP, Tanger Med)
+# Key anlegen: https://aisstream.io/apikeys
+# SICHERHEIT: Key ausschließlich serverseitig, NIEMALS ins Frontend, Log oder Git!
+# Ohne Key ist das Feature deaktiviert (Backend startet normal, Status NOT_CONFIGURED).
+aisstream:
+  api-key: ${AISSTREAM_API_KEY:}
+
 # Unsplash API – Freie Bildvorschläge im Create-Store-Wizard (nur serverseitig!)
 # Key anlegen: https://unsplash.com/developers
 # NIEMALS in Angular-Frontend oder Git speichern!

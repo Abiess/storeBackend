@@ -414,6 +414,13 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
 
+  // ==================== Maritime (AIS Live-Schiffsdaten, MVP: Tanger Med) ====================
+  {
+    path: 'tools/maritime',
+    loadComponent: () => import('./features/tools/maritime/maritime.component').then(m => m.MaritimeComponent),
+    canActivate: [authGuard]
+  },
+
   // ==================== SEO & Brand Management ====================
   {
     path: 'stores/:id/seo/redirects',

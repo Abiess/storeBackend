@@ -227,6 +227,13 @@ telegram:
     bot-token: ${TELEGRAM_AUTH_BOT_TOKEN:}
     bot-username: ${TELEGRAM_AUTH_BOT_USERNAME:marktma_verify_bot}
 
+# AISStream – Live-AIS-Schiffsdaten (Maritime-Feature MVP, Tanger Med)
+# Key anlegen: https://aisstream.io/apikeys
+# SICHERHEIT: Key ausschließlich serverseitig, NIEMALS ins Frontend, Log oder Git!
+# Ohne Key ist das Feature deaktiviert (Backend startet normal, Status NOT_CONFIGURED).
+aisstream:
+  api-key: ${AISSTREAM_API_KEY:}
+
 # Invoice OCR Configuration (Tesseract)
 # WICHTIG: Tesseract muss auf dem Server installiert sein!
 # Installation: sudo apt-get install tesseract-ocr tesseract-ocr-deu tesseract-ocr-eng
