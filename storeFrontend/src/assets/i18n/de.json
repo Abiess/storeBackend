@@ -3325,7 +3325,37 @@
     "unavailable": "AIS derzeit nicht verfügbar.",
     "searchPlaceholder": "Schiff oder MMSI suchen...",
     "emptyMessage": "Keine Schiffe für diesen Hafen gefunden",
-    "selectPort": "Hafen auswählen"
+    "selectPort": "Hafen auswählen",
+    "kpi": {
+      "inPort": "Im Hafen",
+      "approaching": "Ankommend",
+      "departing": "Auslaufend",
+      "moored": "Vor Anker / Festgemacht",
+      "total": "Gesamt im Gebiet"
+    },
+    "status": {
+      "approaching": "Ankommend",
+      "inPort": "Im Hafen",
+      "moored": "Festgemacht",
+      "departing": "Auslaufend",
+      "nearPort": "In Hafennähe",
+      "unknown": "Unbekannt"
+    },
+    "detail": {
+      "title": "Schiffsdetails",
+      "mmsi": "MMSI",
+      "imo": "IMO",
+      "callSign": "Rufzeichen",
+      "shipType": "Schiffstyp",
+      "destination": "Ziel",
+      "eta": "ETA",
+      "draught": "Tiefgang",
+      "dimensions": "Abmessungen (L×B)",
+      "navigationStatus": "Navigationsstatus",
+      "position": "Position",
+      "inPortSince": "Im Hafen seit",
+      "close": "Schließen"
+    }
   },
   "pos": {
     "noProducts": "Keine Produkte gefunden",

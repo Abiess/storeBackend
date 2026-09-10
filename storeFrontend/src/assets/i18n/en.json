@@ -1722,7 +1722,37 @@
     "unavailable": "AIS currently unavailable.",
     "searchPlaceholder": "Search vessel or MMSI...",
     "emptyMessage": "No vessels found for this port",
-    "selectPort": "Select port"
+    "selectPort": "Select port",
+    "kpi": {
+      "inPort": "In port",
+      "approaching": "Approaching",
+      "departing": "Departing",
+      "moored": "Moored / at anchor",
+      "total": "Total in area"
+    },
+    "status": {
+      "approaching": "Approaching",
+      "inPort": "In port",
+      "moored": "Moored",
+      "departing": "Departing",
+      "nearPort": "Near port",
+      "unknown": "Unknown"
+    },
+    "detail": {
+      "title": "Vessel details",
+      "mmsi": "MMSI",
+      "imo": "IMO",
+      "callSign": "Call sign",
+      "shipType": "Ship type",
+      "destination": "Destination",
+      "eta": "ETA",
+      "draught": "Draught",
+      "dimensions": "Dimensions (L×W)",
+      "navigationStatus": "Navigation status",
+      "position": "Position",
+      "inPortSince": "In port since",
+      "close": "Close"
+    }
   },
   "wizard": {
     "skip": "Skip",

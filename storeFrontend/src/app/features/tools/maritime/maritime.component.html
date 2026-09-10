@@ -44,14 +44,56 @@
     </div>
   </div>
 
+  <div class="maritime-kpi-row">
+    <div class="maritime-kpi-card">
+      <span class="maritime-kpi-value">{{ kpiInPort }}</span>
+      <span class="maritime-kpi-label">{{ 'maritime.kpi.inPort' | translate }}</span>
+    </div>
+    <div class="maritime-kpi-card">
+      <span class="maritime-kpi-value">{{ kpiApproaching }}</span>
+      <span class="maritime-kpi-label">{{ 'maritime.kpi.approaching' | translate }}</span>
+    </div>
+    <div class="maritime-kpi-card">
+      <span class="maritime-kpi-value">{{ kpiDeparting }}</span>
+      <span class="maritime-kpi-label">{{ 'maritime.kpi.departing' | translate }}</span>
+    </div>
+    <div class="maritime-kpi-card">
+      <span class="maritime-kpi-value">{{ kpiMoored }}</span>
+      <span class="maritime-kpi-label">{{ 'maritime.kpi.moored' | translate }}</span>
+    </div>
+  </div>
+
+  <div class="maritime-vessel-detail" *ngIf="selectedVessel as v">
+    <div class="maritime-vessel-detail__header">
+      <strong>{{ v.shipName || ('maritime.detail.title' | translate) }}</strong>
+      <button type="button" class="maritime-vessel-detail__close" (click)="closeDetail()">
+        {{ 'maritime.detail.close' | translate }} ✕
+      </button>
+    </div>
+    <div class="maritime-vessel-detail__grid">
+      <div><span>{{ 'maritime.detail.mmsi' | translate }}</span><strong>{{ v.mmsi }}</strong></div>
+      <div><span>{{ 'maritime.detail.imo' | translate }}</span><strong>{{ v.imo || '—' }}</strong></div>
+      <div><span>{{ 'maritime.detail.callSign' | translate }}</span><strong>{{ v.callSign || '—' }}</strong></div>
+      <div><span>{{ 'maritime.detail.shipType' | translate }}</span><strong>{{ v.shipType ?? '—' }}</strong></div>
+      <div><span>{{ 'maritime.detail.destination' | translate }}</span><strong>{{ v.destination || '—' }}</strong></div>
+      <div><span>{{ 'maritime.detail.eta' | translate }}</span><strong>{{ v.eta || '—' }}</strong></div>
+      <div><span>{{ 'maritime.detail.draught' | translate }}</span><strong>{{ v.draught != null ? (v.draught + ' m') : '—' }}</strong></div>
+      <div><span>{{ 'maritime.detail.dimensions' | translate }}</span><strong>{{ (v.length && v.width) ? (v.length + '×' + v.width + ' m') : '—' }}</strong></div>
+      <div><span>{{ 'maritime.detail.navigationStatus' | translate }}</span><strong>{{ v.navigationStatus ?? '—' }}</strong></div>
+      <div><span>{{ 'maritime.detail.position' | translate }}</span><strong>{{ v.latitude | number:'1.4-4' }}, {{ v.longitude | number:'1.4-4' }}</strong></div>
+    </div>
+  </div>
+
   <app-responsive-data-list
     [items]="vessels"
     [columns]="columns"
     [loading]="loading"
     [searchable]="true"
+    [rowClickable]="true"
     searchPlaceholder="{{ 'maritime.searchPlaceholder' | translate }}"
     emptyIcon="🚢"
     [emptyMessage]="'maritime.emptyMessage' | translate"
-    trackBy="mmsi">
+    trackBy="mmsi"
+    (rowClick)="onVesselClick($event)">
   </app-responsive-data-list>
 </div>

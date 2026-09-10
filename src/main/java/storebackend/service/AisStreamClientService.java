@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import storebackend.dto.VesselDTO;
 import storebackend.enums.MaritimePort;
+import storebackend.enums.VesselPortStatus;
 
 import java.io.ByteArrayOutputStream;
 import java.net.URI;
@@ -172,6 +173,12 @@ public class AisStreamClientService {
      * Hafenwechsel) zurückgesetzt – siehe Klassen-Javadoc "Stabilität".
      */
     private final AtomicBoolean subscriptionHealthy = new AtomicBoolean(false);
+    /**
+     * TEMPORÄR (Deployment-Diagnose): zählt PositionReports seit der letzten gesendeten Subscription
+     * (neuer Connect ODER Hafenwechsel) – hilft zu erkennen, ob AISStream für einen Hafen überhaupt
+     * Daten liefert, unabhängig vom Vessel-Cache-Stand. Kein Rohdaten-/Message-Puffer, nur ein Zähler.
+     */
+    private final AtomicInteger positionReportsSinceSubscription = new AtomicInteger(0);
 
     public AisStreamClientService(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
@@ -234,10 +241,12 @@ public class AisStreamClientService {
         }
         vessels.clear();
         subscriptionHealthy.set(false);
-        log.info("Maritime port switched: {} -> {}", previous, newPort);
+        log.info("Maritime port switched: {} -> {} (vessel cache cleared)", previous, newPort);
         WebSocket ws = currentWebSocket.get();
         if (ws != null) {
             sendSubscription(ws);
+        } else {
+            log.info("Maritime port switch to {} stored, currently disconnected – subscription will be sent on next connect", newPort);
         }
         // Falls ws == null (aktuell getrennt): nichts weiter zu tun, der nächste onOpen()
         // sendet die Subscription automatisch für den jetzt gespeicherten currentPort.
@@ -370,13 +379,18 @@ public class AisStreamClientService {
                     + bbox[1][0] + "," + bbox[1][1] + "]]],"
                     + "\"FilterMessageTypes\":[\"PositionReport\"]"
                     + "}";
-            // WICHTIG: Niemals das komplette Subscription-JSON loggen (enthält den API-Key)! Nur die Länge.
-            log.info("AIS subscription send started (port={}, payloadLength={})", currentPort.get(), json.length());
+            // TEMPORÄR (Deployment-Diagnose): Zähler für "PositionReports seit letzter Subscription"
+            // zurücksetzen – erlaubt zu beobachten, ob AISStream für DIESEN Hafen überhaupt Daten liefert.
+            positionReportsSinceSubscription.set(0);
+            // WICHTIG: Niemals das komplette Subscription-JSON loggen (enthält den API-Key)! Nur die
+            // BoundingBox-Koordinaten (unkritisch, öffentlich bekannte Geo-Region) und die Länge.
+            log.info("AIS subscription send started (port={}, boundingBox=[[{},{}],[{},{}]], payloadLength={})",
+                    currentPort.get(), bbox[0][0], bbox[0][1], bbox[1][0], bbox[1][1], json.length());
             webSocket.sendText(json, true).whenComplete((ws, err) -> {
                 if (err != null) {
                     log.warn("AIS subscription send FAILED: {}: {}", err.getClass().getSimpleName(), err.getMessage());
                 } else {
-                    log.info("AIS subscription send completed successfully");
+                    log.info("AIS subscription send completed successfully (port={})", currentPort.get());
                 }
             });
         } catch (Exception e) {
@@ -429,6 +443,14 @@ public class AisStreamClientService {
         if (mmsi <= 0) {
             return;
         }
+        // TEMPORÄR (Deployment-Diagnose): zählt PositionReports seit der letzten Subscription (siehe
+        // sendSubscription/positionReportsSinceSubscription) – nur ein Zähler, keine Rohdaten-Speicherung.
+        // Log nur bei den ersten paar Nachrichten sowie danach nur noch selten, um Log-Flut zu vermeiden.
+        int reportCount = positionReportsSinceSubscription.incrementAndGet();
+        if (reportCount <= 3 || reportCount % 50 == 0) {
+            log.info("AIS PositionReport #{} received for port={} since last subscription", reportCount, currentPort.get());
+        }
+
         // Message.PositionReport.Latitude/Longitude ist laut AISStream-Schema ein Pflichtfeld;
         // MetaData.Latitude/Longitude (Großschreibung!) dient nur als defensiver Fallback.
         double lat = pos.has("Latitude") ? pos.path("Latitude").asDouble() : metaData.path("Latitude").asDouble();
@@ -437,14 +459,21 @@ public class AisStreamClientService {
         VesselDTO existing = vessels.get(mmsi);
         VesselDTO.VesselDTOBuilder builder = existing != null ? copyOf(existing) : VesselDTO.builder().mmsi(mmsi);
 
+        Double speed = pos.has("Sog") ? pos.path("Sog").asDouble() : null;
+        Double course = pos.has("Cog") ? pos.path("Cog").asDouble() : null;
+
         builder.latitude(lat)
                 .longitude(lon)
-                .speed(pos.has("Sog") ? pos.path("Sog").asDouble() : null)
-                .course(pos.has("Cog") ? pos.path("Cog").asDouble() : null)
+                .speed(speed)
+                .course(course)
                 .lastSeen(Instant.now());
 
         int heading = pos.path("TrueHeading").asInt(511);
         builder.heading(heading != 511 ? heading : (existing != null ? existing.getHeading() : null));
+
+        // NavigationalStatus (ITU-R M.1371, 0-15): 15 = "nicht definiert" -> wie fehlend behandeln.
+        int navStatus = pos.path("NavigationalStatus").asInt(15);
+        builder.navigationStatus(navStatus != 15 ? navStatus : null);
 
         String shipName = metaData.path("ShipName").asText("").trim();
         if (!shipName.isEmpty()) {
@@ -452,6 +481,11 @@ public class AisStreamClientService {
         } else if (existing != null) {
             builder.shipName(existing.getShipName());
         }
+
+        // Port-Status IMMER relativ zum aktuell ausgewählten Hafen neu ableiten (einfache Regeln,
+        // keine Historie/Trajektorie – siehe PortStatusCalculator).
+        VesselPortStatus status = PortStatusCalculator.compute(lat, lon, speed, course, currentPort.get());
+        builder.portStatus(status.name());
 
         putVessel(mmsi, builder.build());
     }
@@ -491,6 +525,32 @@ public class AisStreamClientService {
             builder.shipName(shipName);
         }
 
+        // Dimension (A=Bug->Referenzpunkt, B=Referenzpunkt->Heck, C=Backbord->Ref, D=Ref->Steuerbord),
+        // laut AISStream-Schema alle vier Pflichtfelder INNERHALB von Dimension, wenn Dimension gesendet wird.
+        JsonNode dimension = staticData.path("Dimension");
+        if (dimension.has("A") && dimension.has("B")) {
+            int length = dimension.path("A").asInt(0) + dimension.path("B").asInt(0);
+            if (length > 0) {
+                builder.length(length);
+            }
+        }
+        if (dimension.has("C") && dimension.has("D")) {
+            int width = dimension.path("C").asInt(0) + dimension.path("D").asInt(0);
+            if (width > 0) {
+                builder.width(width);
+            }
+        }
+
+        // Eta enthält laut AISStream-Schema nur Month/Day/Hour/Minute (KEIN Jahr) – Month=0 & Day=0
+        // bedeutet "nicht verfügbar" und wird bewusst nicht als Datum dargestellt.
+        JsonNode eta = staticData.path("Eta");
+        int etaMonth = eta.path("Month").asInt(0);
+        int etaDay = eta.path("Day").asInt(0);
+        if (etaMonth > 0 && etaDay > 0) {
+            builder.eta(String.format("%02d-%02d %02d:%02d",
+                    etaMonth, etaDay, eta.path("Hour").asInt(0), eta.path("Minute").asInt(0)));
+        }
+
         putVessel(mmsi, builder.build());
     }
 
@@ -508,7 +568,12 @@ public class AisStreamClientService {
                 .imo(v.getImo())
                 .shipType(v.getShipType())
                 .destination(v.getDestination())
-                .draught(v.getDraught());
+                .draught(v.getDraught())
+                .navigationStatus(v.getNavigationStatus())
+                .eta(v.getEta())
+                .length(v.getLength())
+                .width(v.getWidth())
+                .portStatus(v.getPortStatus());
     }
 
     /** Aktualisiert/ergänzt den Cache-Eintrag für eine MMSI, mit harter Obergrenze (MAX_VESSELS). */

@@ -38,4 +38,17 @@ public class VesselDTO {
     private Integer shipType;
     private String destination;
     private Double draught;
+
+    // Phase 2A (Port Operations) – ebenfalls optional/nullable, niemals erfunden:
+
+    /** Rohe AIS-Navigationalstatus-Codes (ITU-R M.1371, 0-15). 15 = "nicht definiert" wird als null behandelt. */
+    private Integer navigationStatus;
+    /** Aus ShipStaticData.Eta (nur Monat/Tag/Stunde/Minute, KEIN Jahr in AIS enthalten), z.B. "12-25 14:30". */
+    private String eta;
+    /** Schiffslänge in Metern (Dimension.A + Dimension.B), nur wenn beide Werte vorhanden/plausibel. */
+    private Integer length;
+    /** Schiffsbreite in Metern (Dimension.C + Dimension.D), nur wenn beide Werte vorhanden/plausibel. */
+    private Integer width;
+    /** Einfacher, aus Position/Speed/Course abgeleiteter Betriebsstatus – siehe {@link storebackend.enums.VesselPortStatus}. */
+    private String portStatus;
 }

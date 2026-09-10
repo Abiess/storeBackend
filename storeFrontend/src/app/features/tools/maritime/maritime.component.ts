@@ -6,6 +6,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { PageHeaderComponent } from '@app/shared/components/page-header.component';
 import { ResponsiveDataListComponent, ColumnConfig } from '@app/shared/components/responsive-data-list/responsive-data-list.component';
 import { MaritimeService } from '@app/core/services/maritime.service';
+import { TranslationService } from '@app/core/services/translation.service';
 import { VesselDto, MaritimeVesselsResponse, MaritimePort } from '@app/core/models';
 
 /**
@@ -41,19 +42,53 @@ export class MaritimeComponent implements OnInit, OnDestroy {
   ports: MaritimePort[] = [];
   switchingPort = false;
 
+  /** Phase 2A KPIs – rein clientseitig aus dem vorhandenen /vessels-Response abgeleitet
+   *  (bewusst KEIN separater REST-Aufruf pro Poll-Tick, siehe Aufgabenstellung "Performance"). */
+  kpiInPort = 0;
+  kpiApproaching = 0;
+  kpiDeparting = 0;
+  kpiMoored = 0;
+
+  /** Aktuell für die Detailansicht ausgewähltes Schiff (Klick auf eine Tabellenzeile). */
+  selectedVessel: VesselDto | null = null;
+
   private pollSub?: Subscription;
+
+  /** Betriebsstatus (Backend-Enum-Name) -> i18n-Key, für die Anzeige in der Tabelle. */
+  private readonly statusLabelKeys: Record<string, string> = {
+    APPROACHING: 'maritime.status.approaching',
+    IN_PORT: 'maritime.status.inPort',
+    MOORED: 'maritime.status.moored',
+    DEPARTING: 'maritime.status.departing',
+    NEAR_PORT: 'maritime.status.nearPort',
+    UNKNOWN: 'maritime.status.unknown'
+  };
+
+  /** Betriebsstatus -> bestehende, projektweite Badge-CSS-Klassen (keine neuen Badge-Farben eingeführt). */
+  private readonly statusBadgeClasses: Record<string, string> = {
+    APPROACHING: 'status-processing',
+    IN_PORT: 'status-active',
+    MOORED: 'status-shipped',
+    DEPARTING: 'status-draft',
+    NEAR_PORT: 'status-inactive',
+    UNKNOWN: 'status-archived'
+  };
 
   columns: ColumnConfig[] = [
     { key: 'shipName', label: 'Schiff', type: 'text', mobileLabel: 'Schiff', formatFn: (v) => v || '—' },
+    {
+      key: 'portStatus', label: 'Status', type: 'badge', mobileLabel: 'Status',
+      formatFn: (v) => this.translationService.translate(this.statusLabel(v)),
+      badgeClass: (v) => this.statusBadgeClasses[v] || 'status-inactive'
+    },
+    { key: 'destination', label: 'Ziel', type: 'text', mobileLabel: 'Ziel', formatFn: (v) => v || '—', hideOnMobile: true },
     { key: 'mmsi', label: 'MMSI', type: 'text', mobileLabel: 'MMSI' },
     { key: 'speed', label: 'Geschwindigkeit', type: 'text', mobileLabel: 'Geschwindigkeit', formatFn: (v) => v != null ? `${v} kn` : '—' },
     { key: 'course', label: 'Kurs', type: 'text', mobileLabel: 'Kurs', formatFn: (v) => v != null ? `${v}°` : '—', hideOnMobile: true },
-    { key: 'latitude', label: 'Latitude', type: 'text', mobileLabel: 'Latitude', formatFn: (v) => v?.toFixed(4), hideOnMobile: true },
-    { key: 'longitude', label: 'Longitude', type: 'text', mobileLabel: 'Longitude', formatFn: (v) => v?.toFixed(4), hideOnMobile: true },
     { key: 'lastSeen', label: 'Letzte Meldung', type: 'date', mobileLabel: 'Letzte Meldung' }
   ];
 
-  constructor(private maritimeService: MaritimeService) {}
+  constructor(private maritimeService: MaritimeService, private translationService: TranslationService) {}
 
   ngOnInit(): void {
     // Liste der Häfen für das Segmented-Control laden (defensiv: Fehler hier dürfen die Seite nicht blockieren).
@@ -91,7 +126,36 @@ export class MaritimeComponent implements OnInit, OnDestroy {
       this.vessels = res.vessels || [];
       this.loading = false;
       this.error = '';
+      this.updateKpis();
     });
+  }
+
+  private updateKpis(): void {
+    let inPort = 0, approaching = 0, departing = 0, moored = 0;
+    for (const v of this.vessels) {
+      switch (v.portStatus) {
+        case 'IN_PORT': inPort++; break;
+        case 'APPROACHING': approaching++; break;
+        case 'DEPARTING': departing++; break;
+        case 'MOORED': moored++; break;
+      }
+    }
+    this.kpiInPort = inPort;
+    this.kpiApproaching = approaching;
+    this.kpiDeparting = departing;
+    this.kpiMoored = moored;
+  }
+
+  statusLabel(status?: string | null): string {
+    return status ? (this.statusLabelKeys[status] || 'maritime.status.unknown') : 'maritime.status.unknown';
+  }
+
+  onVesselClick(vessel: VesselDto): void {
+    this.selectedVessel = this.selectedVessel?.mmsi === vessel.mmsi ? null : vessel;
+  }
+
+  closeDetail(): void {
+    this.selectedVessel = null;
   }
 
   selectPort(portId: string): void {
@@ -102,6 +166,8 @@ export class MaritimeComponent implements OnInit, OnDestroy {
     // Vessel-Liste sofort leeren/auf "loading" setzen – das bestehende 8s-Polling
     // holt die neuen Schiffe des gewählten Hafens beim nächsten Tick automatisch nach.
     this.vessels = [];
+    this.selectedVessel = null;
+    this.updateKpis();
     this.loading = true;
     this.maritimeService.switchPort(portId).pipe(
       catchError(() => of(null))

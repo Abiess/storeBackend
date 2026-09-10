@@ -1334,7 +1334,37 @@
     "unavailable": "AIS غير متاح حالياً.",
     "searchPlaceholder": "ابحث عن سفينة أو رقم MMSI...",
     "emptyMessage": "لا توجد سفن لهذا الميناء",
-    "selectPort": "اختر الميناء"
+    "selectPort": "اختر الميناء",
+    "kpi": {
+      "inPort": "داخل الميناء",
+      "approaching": "قادمة",
+      "departing": "مغادرة",
+      "moored": "راسية / على المرساة",
+      "total": "الإجمالي في المنطقة"
+    },
+    "status": {
+      "approaching": "قادمة",
+      "inPort": "داخل الميناء",
+      "moored": "راسية",
+      "departing": "مغادرة",
+      "nearPort": "بالقرب من الميناء",
+      "unknown": "غير معروف"
+    },
+    "detail": {
+      "title": "تفاصيل السفينة",
+      "mmsi": "MMSI",
+      "imo": "IMO",
+      "callSign": "إشارة النداء",
+      "shipType": "نوع السفينة",
+      "destination": "الوجهة",
+      "eta": "الوصول المتوقع",
+      "draught": "الغاطس",
+      "dimensions": "الأبعاد (طول×عرض)",
+      "navigationStatus": "حالة الملاحة",
+      "position": "الموقع",
+      "inPortSince": "في الميناء منذ",
+      "close": "إغلاق"
+    }
   },
   "wizard": {
     "skip": "تخطي",

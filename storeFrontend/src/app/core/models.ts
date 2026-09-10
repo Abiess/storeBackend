@@ -103,6 +103,14 @@ export interface VesselDto {
   shipType?: number;
   destination?: string;
   draught?: number;
+  // Phase 2A (Port Operations) – ebenfalls optional, nur befüllt wenn vom Backend abgeleitet/geliefert.
+  navigationStatus?: number | null;
+  /** Nur Monat/Tag/Stunde/Minute (kein Jahr in AIS enthalten), z.B. "12-25 14:30". */
+  eta?: string | null;
+  length?: number | null;
+  width?: number | null;
+  /** Einfacher, vom Backend abgeleiteter Betriebsstatus, siehe VesselPortStatus (Backend-Enum). */
+  portStatus?: string | null;
 }
 
 export interface MaritimeStatus {
