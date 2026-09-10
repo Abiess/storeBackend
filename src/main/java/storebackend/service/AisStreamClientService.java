@@ -4,20 +4,25 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-import jakarta.websocket.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import storebackend.dto.VesselDTO;
 
+import java.io.ByteArrayOutputStream;
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.WebSocket;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -35,6 +40,19 @@ import java.util.concurrent.atomic.AtomicReference;
  *     → aktueller Vessel-State im Speicher (ConcurrentHashMap, Key = MMSI)
  *     → REST-Endpoints ({@link storebackend.controller.MaritimeController}) lesen nur den Cache
  *
+ * WICHTIG (WebSocket-Transport):
+ *  - Nutzt {@code java.net.http.WebSocket} (JDK-eigener Client, seit Java 11), NICHT
+ *    jakarta.websocket/Tomcat. Grund: In Produktion zeigte Tomcats
+ *    {@code WsWebSocketContainer}-Client ein reproduzierbares TLS/SSLEngine-Problem
+ *    ("Unexpected Status of SSLEngineResult after an unwrap() operation") direkt nach
+ *    dem Verbindungsaufbau zu AISStream, das die Verbindung nach &lt;1s wieder abbaute
+ *    (Endlos-Reconnect-Loop). Dies ist ein bekanntes Muster bei Tomcats
+ *    Non-Blocking-SSL-Implementierung im reinen Client-Betrieb (außerhalb eines
+ *    laufenden Tomcat-Servers), u. a. in Kombination mit permessage-deflate, das
+ *    AISStream standardmäßig aushandelt. java.net.http.WebSocket ist Teil des JDK,
+ *    erfordert KEINE zusätzliche Maven-Dependency und verwendet einen separaten,
+ *    ausgereiften TLS-Stack.
+ *
  * WICHTIG (Memory/OOM):
  *  - Es wird NIEMALS eine Historie gehalten – jede neue Position überschreibt
  *    den vorherigen Zustand desselben Schiffes (MMSI).
@@ -43,16 +61,22 @@ import java.util.concurrent.atomic.AtomicReference;
  *  - Regelmäßiger Cleanup entfernt Schiffe, die länger als
  *    {@link #STALE_AFTER_MINUTES} Minuten nicht mehr gemeldet wurden
  *    (aufgerufen durch {@link storebackend.scheduler.MaritimeCleanupScheduler}).
+ *  - Fragmentierte Text-/Binary-Frames werden nur bis zu einer kleinen Sicherheitsgrenze
+ *    ({@link #MAX_FRAGMENT_BYTES}) gepuffert – kein unbegrenzter Puffer.
  *
  * WICHTIG (Security):
  *  - Der API-Key wird NIEMALS geloggt und NIEMALS über REST zurückgegeben.
  *  - Es wird KEIN neuer öffentlicher WebSocket-Endpoint auf markt.ma geöffnet –
  *    die Verbindung ist ausschließlich ausgehend vom Backend zu AISStream.
- *  - TLS-Zertifikatsprüfung wird nicht deaktiviert (Standard-jakarta.websocket/JVM-Truststore).
+ *  - TLS-Zertifikatsprüfung wird nicht deaktiviert (Standard-JDK-Truststore).
  *
  * WICHTIG (Stabilität):
- *  - Reconnect mit exponentiellem Backoff (1s, 2s, 5s, 10s, 30s-Cap), Reset nach
- *    erfolgreichem Connect.
+ *  - Reconnect mit exponentiellem Backoff (1s, 2s, 5s, 10s, 30s-Cap).
+ *  - Der Backoff wird NICHT bei jedem bloßen Verbindungsaufbau zurückgesetzt, sondern
+ *    erst wenn entweder die erste gültige AIS-Message empfangen wurde ODER die
+ *    Verbindung mindestens {@link #STABLE_CONNECTION_SECONDS} Sekunden stand – so wird
+ *    verhindert, dass eine Verbindung, die nach Millisekunden sofort wieder abbricht
+ *    (z. B. bei TLS-Problemen), den Reconnect-Loop unnötig verschärft.
  *  - Parserfehler bei einzelnen AIS-Messages beenden den Listener nicht.
  *  - Ein AISStream-Ausfall darf markt.ma nicht destabilisieren – bei fehlendem
  *    Key oder Verbindungsproblemen liefert die REST-API einfach connected=false.
@@ -81,6 +105,15 @@ public class AisStreamClientService {
     /** Nur jede Nte fehlerhafte Message wird geloggt – verhindert Log-Flut bei Massenfehlern */
     private static final int MALFORMED_LOG_EVERY_N = 50;
 
+    /**
+     * Backoff wird nur zurückgesetzt, wenn entweder eine gültige Message empfangen wurde
+     * ODER die Verbindung mindestens so lange stand (Sekunden) – siehe Klassen-Javadoc.
+     */
+    private static final int STABLE_CONNECTION_SECONDS = 10;
+
+    /** Sicherheitsgrenze für fragmentierte Text-/Binary-Frames (AIS-Messages sind klein, das ist nur ein Schutz). */
+    private static final int MAX_FRAGMENT_BYTES = 1_000_000;
+
     @Value("${aisstream.api-key:}")
     private String apiKey;
 
@@ -89,6 +122,7 @@ public class AisStreamClientService {
     /** Aktueller Live-Zustand pro Schiff – Key = MMSI. KEINE Historie! */
     private final Map<Long, VesselDTO> vessels = new ConcurrentHashMap<>();
 
+    /** Für Reconnect-Scheduling (Backoff-Timer) – ein einzelner Daemon-Thread. */
     private final ScheduledExecutorService executor =
             Executors.newSingleThreadScheduledExecutor(r -> {
                 Thread t = new Thread(r, "aisstream-client");
@@ -96,16 +130,32 @@ public class AisStreamClientService {
                 return t;
             });
 
+    /** Kleiner, bounded Daemon-Pool für die asynchronen Callbacks des JDK-WebSocket-Clients. */
+    private final ExecutorService wsExecutor = Executors.newFixedThreadPool(2, r -> {
+        Thread t = new Thread(r, "aisstream-ws-io");
+        t.setDaemon(true);
+        return t;
+    });
+
+    private final HttpClient httpClient = HttpClient.newBuilder()
+            .executor(wsExecutor)
+            .connectTimeout(Duration.ofSeconds(10))
+            .build();
+
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
     private final AtomicBoolean connected = new AtomicBoolean(false);
     private final AtomicReference<Instant> lastMessageAt = new AtomicReference<>();
     private final AtomicInteger backoffIndex = new AtomicInteger(0);
     private final AtomicInteger malformedMessageCount = new AtomicInteger(0);
-    private final AtomicReference<Session> currentSession = new AtomicReference<>();
+    private final AtomicReference<WebSocket> currentWebSocket = new AtomicReference<>();
     private final AtomicLong evictionCounter = new AtomicLong(0);
     private final AtomicBoolean everConnected = new AtomicBoolean(false);
     /** Verhindert doppelte Reconnect-Scheduling, falls onClose/onError unerwartet mehrfach feuern. */
     private final AtomicBoolean reconnectScheduled = new AtomicBoolean(false);
+    /** Zeitpunkt des letzten Verbindungsaufbaus – zur Beurteilung, ob die Verbindung "stabil" stand. */
+    private final AtomicReference<Instant> connectedSince = new AtomicReference<>();
+    /** Verhindert, dass der Backoff mehrfach pro Verbindung zurückgesetzt wird. */
+    private final AtomicBoolean healthyResetDone = new AtomicBoolean(false);
 
     public AisStreamClientService(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
@@ -147,15 +197,24 @@ public class AisStreamClientService {
     @PreDestroy
     void shutdown() {
         shuttingDown.set(true);
-        Session session = currentSession.get();
-        if (session != null && session.isOpen()) {
+        WebSocket ws = currentWebSocket.get();
+        if (ws != null) {
             try {
-                session.close();
+                ws.sendClose(WebSocket.NORMAL_CLOSURE, "shutdown")
+                        .orTimeout(2, TimeUnit.SECONDS)
+                        .join();
             } catch (Exception e) {
-                log.debug("Error while closing AIS WebSocket session on shutdown: {}", e.getMessage());
+                log.debug("Error while closing AIS WebSocket on shutdown: {}", e.getMessage());
+                ws.abort();
             }
         }
         executor.shutdownNow();
+        wsExecutor.shutdownNow();
+        try {
+            httpClient.close();
+        } catch (Exception e) {
+            log.debug("Error while closing AIS HttpClient on shutdown: {}", e.getMessage());
+        }
     }
 
     /** Regelmäßiger Cleanup – entfernt Schiffe, die länger als STALE_AFTER_MINUTES nicht gesehen wurden. */
@@ -178,13 +237,20 @@ public class AisStreamClientService {
         if (shuttingDown.get() || !isConfigured()) {
             return;
         }
-        try {
-            WebSocketContainer container = ContainerProvider.getWebSocketContainer();
-            container.connectToServer(new AisEndpoint(), URI.create(AISSTREAM_URL));
-        } catch (Exception e) {
-            log.warn("AIS connection attempt failed: {}", e.getMessage());
-            scheduleReconnect();
-        }
+        healthyResetDone.set(false);
+        httpClient.newWebSocketBuilder()
+                .connectTimeout(Duration.ofSeconds(10))
+                .buildAsync(URI.create(AISSTREAM_URL), new AisWebSocketListener())
+                .whenComplete((webSocket, error) -> {
+                    if (error != null) {
+                        Throwable root = rootCause(error);
+                        log.warn("AIS connection attempt failed: {} (root cause: {}: {})",
+                                error.getClass().getSimpleName(), root.getClass().getSimpleName(), root.getMessage());
+                        scheduleReconnect();
+                    }
+                    // Erfolgsfall: onOpen() des Listeners übernimmt bereits das Setzen von
+                    // currentWebSocket/connected – hier ist nichts weiter zu tun.
+                });
     }
 
     private void scheduleReconnect() {
@@ -201,17 +267,51 @@ public class AisStreamClientService {
         executor.schedule(this::connect, delaySeconds, TimeUnit.SECONDS);
     }
 
-    private void sendSubscription(Session session) {
+    /**
+     * Setzt den Backoff nur EINMAL pro Verbindung zurück – entweder sobald die erste gültige
+     * Message empfangen wurde, oder wenn die Verbindung bereits {@link #STABLE_CONNECTION_SECONDS}s
+     * stand. Verhindert, dass eine Verbindung, die sofort wieder abbricht (z. B. TLS-Problem),
+     * den Reconnect-Loop auf die minimale 1s-Stufe zurücksetzt und AISStream "hämmert".
+     */
+    private void markConnectionHealthy() {
+        if (healthyResetDone.compareAndSet(false, true)) {
+            backoffIndex.set(0);
+        }
+    }
+
+    private void maybeResetBackoffOnStableClose() {
+        Instant since = connectedSince.get();
+        if (since != null && Duration.between(since, Instant.now()).getSeconds() >= STABLE_CONNECTION_SECONDS) {
+            markConnectionHealthy();
+        }
+    }
+
+    private static Throwable rootCause(Throwable t) {
+        Throwable cause = t;
+        while (cause.getCause() != null && cause.getCause() != cause) {
+            cause = cause.getCause();
+        }
+        return cause;
+    }
+
+    private void sendSubscription(WebSocket webSocket) {
         try {
             Map<String, Object> subscription = Map.of(
                     "APIKey", apiKey,
                     "BoundingBoxes", List.of(TANGER_MED_BBOX),
                     "FilterMessageTypes", List.of("PositionReport", "ShipStaticData")
             );
+            String json = objectMapper.writeValueAsString(subscription);
             // WICHTIG: Niemals das komplette Subscription-JSON loggen (enthält den API-Key)!
-            session.getBasicRemote().sendText(objectMapper.writeValueAsString(subscription));
+            webSocket.sendText(json, true).whenComplete((ws, err) -> {
+                if (err != null) {
+                    log.warn("Failed to send AIS subscription request: {}", err.getMessage());
+                } else {
+                    log.debug("AIS subscription sent successfully");
+                }
+            });
         } catch (Exception e) {
-            log.warn("Failed to send AIS subscription request: {}", e.getMessage());
+            log.warn("Failed to build AIS subscription request: {}", e.getMessage());
         }
     }
 
@@ -226,6 +326,11 @@ public class AisStreamClientService {
             String messageType = root.path("MessageType").asText("");
             JsonNode message = root.path("Message");
             JsonNode metaData = root.path("MetaData");
+
+            // Erste erfolgreich geparste Message auf dieser Verbindung => Verbindung ist funktional
+            // gesund, nicht nur TCP/TLS-technisch offen. Erst jetzt den Backoff zurücksetzen (siehe
+            // Klassen-Javadoc "Reconnect-Backoff").
+            markConnectionHealthy();
 
             switch (messageType) {
                 case "PositionReport" -> handlePositionReport(message.path("PositionReport"), metaData);
@@ -361,51 +466,102 @@ public class AisStreamClientService {
     }
 
     // ─────────────────────────────────────────────────────────────
-    //  jakarta.websocket Client-Endpoint
-    //  AISStream kann Payloads als Binary-Frame senden, obwohl der Inhalt
-    //  UTF-8 JSON ist – daher werden beide Frame-Typen behandelt.
+    //  java.net.http.WebSocket Listener
+    //  AISStream liefert Binary-Frames mit UTF-8-JSON-Payload (permessage-deflate) –
+    //  daher werden Text- UND Binary-Frames behandelt. Fragmentierte Frames werden bis
+    //  zu einer kleinen Sicherheitsgrenze gepuffert (siehe MAX_FRAGMENT_BYTES), niemals
+    //  unbegrenzt. Ping-Frames werden vom JDK automatisch mit Pong beantwortet
+    //  (Default-Implementierung von WebSocket.Listener#onPing) – kein manuelles
+    //  Text-"Ping" nötig.
     // ─────────────────────────────────────────────────────────────
 
-    @ClientEndpoint
-    public class AisEndpoint {
+    private final class AisWebSocketListener implements WebSocket.Listener {
 
-        @OnOpen
-        public void onOpen(Session session) {
-            currentSession.set(session);
+        private final StringBuilder textBuffer = new StringBuilder();
+        private final ByteArrayOutputStream binaryBuffer = new ByteArrayOutputStream();
+        private boolean firstMessageLogged = false;
+
+        @Override
+        public void onOpen(WebSocket webSocket) {
+            currentWebSocket.set(webSocket);
             connected.set(true);
-            backoffIndex.set(0);
+            connectedSince.set(Instant.now());
             boolean firstConnect = everConnected.compareAndSet(false, true);
             log.info(firstConnect ? "AIS connection established" : "AIS connection restored");
-            sendSubscription(session);
+            sendSubscription(webSocket);
+            webSocket.request(1);
         }
 
-        @OnMessage
-        public void onText(String message) {
-            handleMessage(message);
+        @Override
+        public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
+            if (textBuffer.length() + data.length() <= MAX_FRAGMENT_BYTES) {
+                textBuffer.append(data);
+            } else if (textBuffer.length() <= MAX_FRAGMENT_BYTES) {
+                log.warn("AIS text message exceeded fragment safety limit, discarding");
+                textBuffer.setLength(0);
+            }
+            webSocket.request(1);
+            if (last) {
+                String payload = textBuffer.toString();
+                textBuffer.setLength(0);
+                onFullMessage(payload);
+            }
+            return null;
         }
 
-        @OnMessage
-        public void onBinary(ByteBuffer buffer) {
-            // AISStream liefert gelegentlich Binary-Frames mit UTF-8-JSON-Payload
-            byte[] bytes = new byte[buffer.remaining()];
-            buffer.get(bytes);
-            handleMessage(new String(bytes, StandardCharsets.UTF_8));
+        @Override
+        public CompletionStage<?> onBinary(WebSocket webSocket, ByteBuffer data, boolean last) {
+            byte[] chunk = new byte[data.remaining()];
+            data.get(chunk);
+            if (binaryBuffer.size() + chunk.length <= MAX_FRAGMENT_BYTES) {
+                binaryBuffer.write(chunk, 0, chunk.length);
+            } else if (binaryBuffer.size() <= MAX_FRAGMENT_BYTES) {
+                log.warn("AIS binary message exceeded fragment safety limit, discarding");
+                binaryBuffer.reset();
+            }
+            webSocket.request(1);
+            if (last) {
+                byte[] bytes = binaryBuffer.toByteArray();
+                binaryBuffer.reset();
+                onFullMessage(new String(bytes, StandardCharsets.UTF_8));
+            }
+            return null;
         }
 
-        @OnClose
-        public void onClose(Session session, CloseReason reason) {
+        private void onFullMessage(String payload) {
+            if (!firstMessageLogged) {
+                firstMessageLogged = true;
+                log.info("AIS first message received after connect");
+            }
+            handleMessage(payload);
+        }
+
+        @Override
+        public CompletionStage<?> onClose(WebSocket webSocket, int statusCode, String reason) {
             connected.set(false);
-            currentSession.set(null);
+            currentWebSocket.set(null);
             if (!shuttingDown.get()) {
-                log.info("AIS connection lost ({}), scheduling reconnect", reason.getReasonPhrase());
+                log.info("AIS connection lost (code={}, reason={}), scheduling reconnect", statusCode, reason);
+                maybeResetBackoffOnStableClose();
                 scheduleReconnect();
             }
+            return null;
         }
 
-        @OnError
-        public void onError(Session session, Throwable throwable) {
-            log.warn("AIS connection error: {}", throwable.getMessage());
-            // Reconnect wird von onClose ausgelöst, das der Container danach aufruft
+        @Override
+        public void onError(WebSocket webSocket, Throwable error) {
+            Throwable root = rootCause(error);
+            log.warn("AIS connection error: {} (root cause: {}: {})",
+                    error.getClass().getSimpleName(), root.getClass().getSimpleName(), root.getMessage());
+            connected.set(false);
+            currentWebSocket.set(null);
+            // java.net.http.WebSocket garantiert NICHT zwingend einen zusätzlichen onClose-Aufruf nach
+            // onError – daher hier ebenfalls Reconnect anstoßen (reconnectScheduled-Guard verhindert
+            // doppeltes Scheduling, falls der Client doch beides aufruft).
+            if (!shuttingDown.get()) {
+                maybeResetBackoffOnStableClose();
+                scheduleReconnect();
+            }
         }
     }
 }
