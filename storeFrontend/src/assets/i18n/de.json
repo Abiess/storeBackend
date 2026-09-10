@@ -3341,6 +3341,15 @@
       "nearPort": "In Hafennähe",
       "unknown": "Unbekannt"
     },
+    "table": {
+      "shipName": "Schiff",
+      "status": "Status",
+      "destination": "Ziel",
+      "mmsi": "MMSI",
+      "speed": "Geschwindigkeit",
+      "course": "Kurs",
+      "lastSeen": "Letzte Meldung"
+    },
     "detail": {
       "title": "Schiffsdetails",
       "mmsi": "MMSI",
@@ -3365,7 +3374,7 @@
       "current": "Strömung",
       "seaLevel": "Meeresspiegel (Modell)",
       "modelTime": "Modellzeit",
-      "lastUpdated": "Zuletzt aktualisiert",
+      "lastUpdated": "Daten geladen um",
       "stale": "Zeigt letzten bekannten Stand, Aktualisierung fehlgeschlagen",
       "unavailable": "Marine-Wetterdaten vorübergehend nicht verfügbar",
       "disclaimer": "Marine-Wetterdaten basieren auf Wetter-/Ozeanmodellen und können insbesondere in Hafennähe von lokalen Messwerten abweichen. Nicht für Navigation oder sicherheitskritische Entscheidungen verwenden."

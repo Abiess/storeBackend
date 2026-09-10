@@ -483,8 +483,11 @@ public class AisStreamClientService {
         }
 
         // Port-Status IMMER relativ zum aktuell ausgewählten Hafen neu ableiten (einfache Regeln,
-        // keine Historie/Trajektorie – siehe PortStatusCalculator).
-        VesselPortStatus status = PortStatusCalculator.compute(lat, lon, speed, course, currentPort.get());
+        // keine Historie/Trajektorie – siehe PortStatusCalculator). NavigationalStatus wird mit
+        // berücksichtigt (z.B. um "vor Anker außerhalb der Port-Zone" nicht fälschlich als MOORED
+        // zu klassifizieren, siehe PortStatusCalculator-Javadoc).
+        Integer navStatusForStatusCalc = navStatus != 15 ? navStatus : null;
+        VesselPortStatus status = PortStatusCalculator.compute(lat, lon, speed, course, navStatusForStatusCalc, currentPort.get());
         builder.portStatus(status.name());
 
         putVessel(mmsi, builder.build());

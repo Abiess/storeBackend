@@ -84,21 +84,28 @@ export class MaritimeComponent implements OnInit, OnDestroy {
     UNKNOWN: 'status-archived'
   };
 
-  columns: ColumnConfig[] = [
-    { key: 'shipName', label: 'Schiff', type: 'text', mobileLabel: 'Schiff', formatFn: (v) => v || '—' },
-    {
-      key: 'portStatus', label: 'Status', type: 'badge', mobileLabel: 'Status',
-      formatFn: (v) => this.translationService.translate(this.statusLabel(v)),
-      badgeClass: (v) => this.statusBadgeClasses[v] || 'status-inactive'
-    },
-    { key: 'destination', label: 'Ziel', type: 'text', mobileLabel: 'Ziel', formatFn: (v) => v || '—', hideOnMobile: true },
-    { key: 'mmsi', label: 'MMSI', type: 'text', mobileLabel: 'MMSI' },
-    { key: 'speed', label: 'Geschwindigkeit', type: 'text', mobileLabel: 'Geschwindigkeit', formatFn: (v) => v != null ? `${v} kn` : '—' },
-    { key: 'course', label: 'Kurs', type: 'text', mobileLabel: 'Kurs', formatFn: (v) => v != null ? `${v}°` : '—', hideOnMobile: true },
-    { key: 'lastSeen', label: 'Letzte Meldung', type: 'date', mobileLabel: 'Letzte Meldung' }
-  ];
+  /** Spalten der Vessel-Tabelle. Wird im Konstruktor (nicht als Feld-Literal) aufgebaut, da
+   *  ResponsiveDataListComponent `col.label`/`col.mobileLabel` als reinen Text rendert (keine
+   *  `translate`-Pipe) – Labels müssen daher zum Konstruktionszeitpunkt übersetzt werden, analog
+   *  zum bestehenden Projekt-Pattern (siehe z.B. supplier-invoices.component.ts). */
+  columns: ColumnConfig[];
 
-  constructor(private maritimeService: MaritimeService, private translationService: TranslationService) {}
+  constructor(private maritimeService: MaritimeService, private translationService: TranslationService) {
+    const t = (key: string) => this.translationService.translate(key);
+    this.columns = [
+      { key: 'shipName', label: t('maritime.table.shipName'), type: 'text', mobileLabel: t('maritime.table.shipName'), formatFn: (v) => v || '—' },
+      {
+        key: 'portStatus', label: t('maritime.table.status'), type: 'badge', mobileLabel: t('maritime.table.status'),
+        formatFn: (v) => this.translationService.translate(this.statusLabel(v)),
+        badgeClass: (v) => this.statusBadgeClasses[v] || 'status-inactive'
+      },
+      { key: 'destination', label: t('maritime.table.destination'), type: 'text', mobileLabel: t('maritime.table.destination'), formatFn: (v) => v || '—', hideOnMobile: true },
+      { key: 'mmsi', label: t('maritime.table.mmsi'), type: 'text', mobileLabel: t('maritime.table.mmsi') },
+      { key: 'speed', label: t('maritime.table.speed'), type: 'text', mobileLabel: t('maritime.table.speed'), formatFn: (v) => v != null ? `${v} kn` : '—' },
+      { key: 'course', label: t('maritime.table.course'), type: 'text', mobileLabel: t('maritime.table.course'), formatFn: (v) => v != null ? `${v}°` : '—', hideOnMobile: true },
+      { key: 'lastSeen', label: t('maritime.table.lastSeen'), type: 'date', mobileLabel: t('maritime.table.lastSeen') }
+    ];
+  }
 
   ngOnInit(): void {
     // Liste der Häfen für das Segmented-Control laden (defensiv: Fehler hier dürfen die Seite nicht blockieren).

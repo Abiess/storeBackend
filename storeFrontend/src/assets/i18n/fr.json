@@ -1662,6 +1662,15 @@
       "nearPort": "À proximité du port",
       "unknown": "Inconnu"
     },
+    "table": {
+      "shipName": "Navire",
+      "status": "Statut",
+      "destination": "Destination",
+      "mmsi": "MMSI",
+      "speed": "Vitesse",
+      "course": "Cap",
+      "lastSeen": "Dernier signal"
+    },
     "detail": {
       "title": "Détails du navire",
       "mmsi": "MMSI",
@@ -1686,7 +1695,7 @@
       "current": "Courant",
       "seaLevel": "Niveau de la mer (modèle)",
       "modelTime": "Heure du modèle",
-      "lastUpdated": "Dernière mise à jour",
+      "lastUpdated": "Données chargées à",
       "stale": "Dernières données connues affichées, la mise à jour a échoué",
       "unavailable": "Données météo marines temporairement indisponibles",
       "disclaimer": "Les données météo marines sont basées sur des modèles météo/océaniques et peuvent différer des mesures locales, en particulier près des ports. Ne pas utiliser pour la navigation ou des décisions critiques pour la sécurité."

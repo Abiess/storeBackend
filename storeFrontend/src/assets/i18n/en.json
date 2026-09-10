@@ -1738,6 +1738,15 @@
       "nearPort": "Near port",
       "unknown": "Unknown"
     },
+    "table": {
+      "shipName": "Ship",
+      "status": "Status",
+      "destination": "Destination",
+      "mmsi": "MMSI",
+      "speed": "Speed",
+      "course": "Course",
+      "lastSeen": "Last seen"
+    },
     "detail": {
       "title": "Vessel details",
       "mmsi": "MMSI",
@@ -1762,7 +1771,7 @@
       "current": "Current",
       "seaLevel": "Sea level (model)",
       "modelTime": "Model time",
-      "lastUpdated": "Last updated",
+      "lastUpdated": "Data fetched at",
       "stale": "Showing last known data, refresh failed",
       "unavailable": "Marine weather temporarily unavailable",
       "disclaimer": "Marine weather data is model-based and may differ from local measurements, especially near ports. Not for navigation or safety-critical decisions."

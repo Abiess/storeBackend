@@ -8,12 +8,21 @@ import storebackend.enums.VesselPortStatus;
  * Schiff ab – Phase 2A des Maritime-Features ("Port Operations").
  *
  * MVP-Regeln (bewusst einfach gehalten, siehe Aufgabenstellung):
- *  - Position INNERHALB der Port-Zone + sehr niedrige Geschwindigkeit  => MOORED
- *  - Position INNERHALB der Port-Zone + höhere Geschwindigkeit, Kurs vom Zentrum WEG => DEPARTING
- *  - Position INNERHALB der Port-Zone, sonst (langsam bewegend/manövrierend) => IN_PORT
- *  - Position AUSSERHALB der Port-Zone (aber im AISStream-Empfangsbereich), Kurs zum Zentrum HIN => APPROACHING
- *  - Position AUSSERHALB der Port-Zone, sonst => NEAR_PORT
- *  - Fehlende Position => UNKNOWN
+ *  - Position INNERHALB der Port-Zone + AIS-NavigationalStatus meldet explizit "moored"/"at anchor" => MOORED
+ *  - Position INNERHALB der Port-Zone + sehr niedrige Geschwindigkeit (und NavigationalStatus
+ *    widerspricht nicht "underway")                                                            => MOORED
+ *  - Position INNERHALB der Port-Zone + höhere Geschwindigkeit, Kurs vom Zentrum WEG            => DEPARTING
+ *  - Position INNERHALB der Port-Zone, sonst (langsam bewegend/manövrierend)                    => IN_PORT
+ *  - Position AUSSERHALB der Port-Zone, AIS-NavigationalStatus meldet explizit "moored"          => MOORED
+ *    (eindeutiges Schiffs-Signal überstimmt die – notwendigerweise grobe – Zonen-Box)
+ *  - Position AUSSERHALB der Port-Zone, Kurs zum Zentrum HIN                                    => APPROACHING
+ *  - Position AUSSERHALB der Port-Zone, sonst (auch SOG~0, z.B. vor Anker liegend)               => NEAR_PORT
+ *  - Fehlende Position                                                                          => UNKNOWN
+ *
+ * WICHTIG: SOG~0 AUSSERHALB der Port-Zone bedeutet für sich genommen NICHT "festgemacht" – das
+ * würde z.B. vor der Reede ankernde Schiffe fälschlich als MOORED zeigen. MOORED wird daher nur
+ * innerhalb der Port-Zone (Speed-Heuristik) oder unabhängig von der Zone bei eindeutigem
+ * NavigationalStatus (AIS-Code 5 = "moored") vergeben.
  *
  * Es wird bewusst NUR die (einfache) Peilung Schiff↔Hafenzentrum verwendet, keine Routenprognose,
  * keine Historie/Trajektorie – siehe Klassen-Javadoc von {@link AisStreamClientService}
@@ -33,11 +42,17 @@ final class PortStatusCalculator {
     /** Maximale Abweichung (Grad) zwischen Peilung und Kurs, um "Richtung Hafen"/"Richtung Ausgang" zu erkennen. */
     private static final double BEARING_TOLERANCE_DEG = 60.0;
 
+    /** AIS NavigationalStatus-Codes (ITU-R M.1371) – nur die für die Status-Ableitung relevanten. */
+    private static final int NAV_STATUS_UNDERWAY_ENGINE = 0;
+    private static final int NAV_STATUS_AT_ANCHOR = 1;
+    private static final int NAV_STATUS_MOORED = 5;
+    private static final int NAV_STATUS_UNDERWAY_SAILING = 8;
+
     private PortStatusCalculator() {
     }
 
     static VesselPortStatus compute(Double latitude, Double longitude, Double speedKn, Double courseDeg,
-                                     MaritimePort port) {
+                                     Integer navStatus, MaritimePort port) {
         if (latitude == null || longitude == null || port == null) {
             return VesselPortStatus.UNKNOWN;
         }
@@ -45,11 +60,19 @@ final class PortStatusCalculator {
         double[] center = port.getCenter();
 
         if (inPortZone) {
+            // Eindeutiges Schiffs-Signal zuerst: "moored"/"at anchor" innerhalb der Port-Zone => MOORED.
+            if (navStatus != null && (navStatus == NAV_STATUS_MOORED || navStatus == NAV_STATUS_AT_ANCHOR)) {
+                return VesselPortStatus.MOORED;
+            }
             if (speedKn == null) {
                 return VesselPortStatus.IN_PORT;
             }
             if (speedKn < MOORED_SPEED_KN) {
-                return VesselPortStatus.MOORED;
+                // Widerspricht der NavigationalStatus explizit "underway" (Maschine/Segel), dann eher
+                // ein kurzer Stopp/Manöver als "festgemacht" – konservativ IN_PORT statt MOORED.
+                boolean explicitlyUnderway = navStatus != null
+                        && (navStatus == NAV_STATUS_UNDERWAY_ENGINE || navStatus == NAV_STATUS_UNDERWAY_SAILING);
+                return explicitlyUnderway ? VesselPortStatus.IN_PORT : VesselPortStatus.MOORED;
             }
             if (speedKn >= DEPARTING_MIN_SPEED_KN && courseDeg != null) {
                 // Peilung VOM Zentrum ZUM Schiff – bewegt sich das Schiff in diese Richtung, entfernt es sich.
@@ -62,12 +85,19 @@ final class PortStatusCalculator {
         }
 
         // Außerhalb der Port-Zone, aber (per Subscription) innerhalb der größeren AISStream-BoundingBox.
+        // MOORED nur noch bei eindeutigem AIS-Signal (z.B. Zonen-Box etwas zu eng geschnitten) – SOG~0
+        // allein darf hier NIEMALS zu MOORED führen (siehe Klassen-Doku).
+        if (navStatus != null && navStatus == NAV_STATUS_MOORED) {
+            return VesselPortStatus.MOORED;
+        }
         if (speedKn != null && speedKn >= APPROACH_MIN_SPEED_KN && courseDeg != null) {
             double bearingToCenter = bearingDegrees(latitude, longitude, center[0], center[1]);
             if (angularDifference(bearingToCenter, courseDeg) <= BEARING_TOLERANCE_DEG) {
                 return VesselPortStatus.APPROACHING;
             }
         }
+        // Deckt auch "vor Anker außerhalb der Port-Zone" (NavigationalStatus=AT_ANCHOR, SOG~0) ab –
+        // bewusst NEAR_PORT statt MOORED, siehe Klassen-Doku.
         return VesselPortStatus.NEAR_PORT;
     }
 
@@ -96,3 +126,4 @@ final class PortStatusCalculator {
         return diff > 180 ? 360 - diff : diff;
     }
 }
+
