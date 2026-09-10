@@ -1582,11 +1582,13 @@
       "account": "Compte",
       "team": "Équipe et rôles",
       "platform": "Administration de la plateforme",
-      "purchasing": "Achats"
+      "purchasing": "Achats",
+      "aiTools": "Outils IA"
     },
     "items": {
       "dashboard": "Tableau de bord",
       "products": "Produits",
+      "services": "Services",
       "reviews": "Avis",
       "chatbot": "Assistant conversationnel",
       "storeSettings": "Paramètres de la boutique",
@@ -1601,8 +1603,14 @@
       "roles": "Rôles",
       "teamRoles": "Équipe et rôles",
       "telegram": "Telegram",
+      "woocommerce": "Import WooCommerce",
       "platformDelivery": "🚚 Options de livraison",
       "supplierInvoices": "Factures fournisseurs",
+      "productsExpiry": "Produits avec date d'expiration",
+      "pos": "Caisse",
+      "loyalty": "Points de fidélité",
+      "dhl": "DHL",
+      "issueAnalysis": "Détecter un problème",
       "maritime": "Maritime"
     },
     "noStore": {
@@ -1612,6 +1620,20 @@
     },
     "collapse": "Réduire la barre latérale",
     "expand": "Développer la barre latérale"
+  },
+  "issueAnalysis": {
+    "title": "Détecter un problème (Test)",
+    "subtitle": "Téléchargez une photo → l'IA détecte un possible problème de réparation/dommage",
+    "uploadHeading": "Télécharger une photo",
+    "uploadLabel": "📷 Sélectionner une photo",
+    "emptyLabel": "Aucune photo sélectionnée pour l'instant",
+    "hint": "Après avoir sélectionné une photo, cliquez sur l'icône 🤖 pour lancer l'analyse. Test isolé – pas de stockage, pas de mise en relation avec un prestataire.",
+    "analyzing": "Analyse en cours...",
+    "category": "Catégorie",
+    "urgency": "Urgence",
+    "problem": "Problème détecté",
+    "confidence": "Confiance",
+    "questions": "Questions de clarification"
   },
   "maritime": {
     "title": "Maritime / Données navires en direct",
