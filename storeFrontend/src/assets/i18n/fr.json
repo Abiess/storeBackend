@@ -1602,7 +1602,8 @@
       "teamRoles": "Équipe et rôles",
       "telegram": "Telegram",
       "platformDelivery": "🚚 Options de livraison",
-      "supplierInvoices": "Factures fournisseurs"
+      "supplierInvoices": "Factures fournisseurs",
+      "maritime": "Maritime"
     },
     "noStore": {
       "hint": "Aucune boutique sélectionnée",
@@ -1611,6 +1612,49 @@
     },
     "collapse": "Réduire la barre latérale",
     "expand": "Développer la barre latérale"
+  },
+  "maritime": {
+    "title": "Maritime / Données navires en direct",
+    "subtitle": "Données AIS en direct pour les ports marocains (MVP)",
+    "connected": "Connecté",
+    "disconnected": "Déconnecté",
+    "lastMessage": "Dernier message",
+    "vesselCount": "Navires visibles",
+    "notConfigured": "AIS n'est actuellement pas configuré (AISSTREAM_API_KEY manquant).",
+    "unavailable": "AIS actuellement indisponible.",
+    "searchPlaceholder": "Rechercher un navire ou un MMSI...",
+    "emptyMessage": "Aucun navire trouvé pour ce port",
+    "selectPort": "Choisir un port",
+    "kpi": {
+      "inPort": "Au port",
+      "approaching": "À l'approche",
+      "departing": "En partance",
+      "moored": "Amarré / à l'ancre",
+      "total": "Total dans la zone"
+    },
+    "status": {
+      "approaching": "À l'approche",
+      "inPort": "Au port",
+      "moored": "Amarré",
+      "departing": "En partance",
+      "nearPort": "À proximité du port",
+      "unknown": "Inconnu"
+    },
+    "detail": {
+      "title": "Détails du navire",
+      "mmsi": "MMSI",
+      "imo": "IMO",
+      "callSign": "Indicatif d'appel",
+      "shipType": "Type de navire",
+      "destination": "Destination",
+      "eta": "ETA",
+      "draught": "Tirant d'eau",
+      "dimensions": "Dimensions (L×l)",
+      "navigationStatus": "Statut de navigation",
+      "position": "Position",
+      "inPortSince": "Au port depuis",
+      "close": "Fermer"
+    }
   },
   "wizard": {
     "skip": "Ignorer",
