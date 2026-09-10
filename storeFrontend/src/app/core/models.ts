@@ -108,12 +108,19 @@ export interface VesselDto {
 export interface MaritimeStatus {
   connected: boolean;
   configured: boolean;
+  healthy: boolean;
+  selectedPort: string;
   lastMessageAt: string | null;
   vesselCount: number;
 }
 
 export interface MaritimeVesselsResponse extends MaritimeStatus {
   vessels: VesselDto[];
+}
+
+export interface MaritimePort {
+  id: string;
+  name: string;
 }
 
 // ============================================

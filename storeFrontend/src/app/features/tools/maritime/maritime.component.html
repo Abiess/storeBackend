@@ -5,6 +5,20 @@
     [showBackButton]="true"
   ></app-page-header>
 
+  <div class="maritime-port-switch" role="tablist" [attr.aria-label]="'maritime.selectPort' | translate">
+    <button
+      *ngFor="let port of ports"
+      type="button"
+      role="tab"
+      [class.active]="port.id === selectedPort"
+      [attr.aria-selected]="port.id === selectedPort"
+      [disabled]="switchingPort"
+      (click)="selectPort(port.id)"
+      class="maritime-port-tab">
+      {{ port.name }}
+    </button>
+  </div>
+
   <div class="maritime-status-card">
     <div class="maritime-status-row">
       <span class="maritime-status-badge" [class.connected]="connected" [class.disconnected]="!connected">

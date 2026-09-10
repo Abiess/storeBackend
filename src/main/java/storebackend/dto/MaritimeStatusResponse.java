@@ -20,6 +20,13 @@ public class MaritimeStatusResponse {
     private boolean connected;
     /** true = AISSTREAM_API_KEY ist konfiguriert (unabhängig vom aktuellen Verbindungsstatus) */
     private boolean configured;
+    /**
+     * true = verbunden UND die Subscription für den aktuell ausgewählten Hafen wurde bereits von
+     * AISStream per SubscriptionConfirmation bestätigt (siehe AisStreamClientService#isHealthy()).
+     */
+    private boolean healthy;
+    /** Aktuell ausgewählter Hafen, z. B. "TANGER_MED" (siehe {@link storebackend.enums.MaritimePort}) */
+    private String selectedPort;
     private Instant lastMessageAt;
     private int vesselCount;
 }

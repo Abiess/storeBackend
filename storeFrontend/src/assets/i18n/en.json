@@ -1712,8 +1712,8 @@
     "questions": "Clarifying Questions"
   },
   "maritime": {
-    "title": "Maritime / Tanger Med Live",
-    "subtitle": "Live AIS vessel data for Tanger Med (MVP)",
+    "title": "Maritime / Live vessel data",
+    "subtitle": "Live AIS vessel data for Moroccan ports (MVP)",
     "connected": "Connected",
     "disconnected": "Disconnected",
     "lastMessage": "Last message",
@@ -1721,7 +1721,8 @@
     "notConfigured": "AIS is currently not configured (AISSTREAM_API_KEY missing).",
     "unavailable": "AIS currently unavailable.",
     "searchPlaceholder": "Search vessel or MMSI...",
-    "emptyMessage": "No vessels currently in view"
+    "emptyMessage": "No vessels found for this port",
+    "selectPort": "Select port"
   },
   "wizard": {
     "skip": "Skip",

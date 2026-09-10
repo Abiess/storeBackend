@@ -3315,8 +3315,8 @@
     "questions": "Rückfragen"
   },
   "maritime": {
-    "title": "Maritime / Tanger Med Live",
-    "subtitle": "Live-AIS-Schiffsdaten für Tanger Med (MVP)",
+    "title": "Maritime / Live-Schiffsdaten",
+    "subtitle": "Live-AIS-Schiffsdaten für marokkanische Häfen (MVP)",
     "connected": "Verbunden",
     "disconnected": "Getrennt",
     "lastMessage": "Letzte Nachricht",
@@ -3324,7 +3324,8 @@
     "notConfigured": "AIS ist derzeit nicht konfiguriert (AISSTREAM_API_KEY fehlt).",
     "unavailable": "AIS derzeit nicht verfügbar.",
     "searchPlaceholder": "Schiff oder MMSI suchen...",
-    "emptyMessage": "Aktuell keine Schiffe sichtbar"
+    "emptyMessage": "Keine Schiffe für diesen Hafen gefunden",
+    "selectPort": "Hafen auswählen"
   },
   "pos": {
     "noProducts": "Keine Produkte gefunden",

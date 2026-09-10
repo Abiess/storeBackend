@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import storebackend.dto.VesselDTO;
+import storebackend.enums.MaritimePort;
 
 import java.io.ByteArrayOutputStream;
 import java.net.URI;
@@ -32,13 +33,23 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Live-AIS-Integration für das Maritime-Feature (MVP: Tanger Med, Marokko).
+ * Live-AIS-Integration für das Maritime-Feature (Tanger Med, Nador, Casablanca – siehe {@link storebackend.enums.MaritimePort}).
  *
  * Architektur (bewusst so gehalten, siehe Aufgabenstellung):
  *   AISStream (wss://stream.aisstream.io/v0/stream)
  *     → GENAU EINE dauerhafte, ausgehende WebSocket-Verbindung pro Backend-Instanz
  *     → aktueller Vessel-State im Speicher (ConcurrentHashMap, Key = MMSI)
  *     → REST-Endpoints ({@link storebackend.controller.MaritimeController}) lesen nur den Cache
+ *
+ * WICHTIG (Mehrere Häfen, EINE Verbindung):
+ *  - Der ausgewählte Hafen ({@link #currentPort}) bestimmt nur die BoundingBox der Subscription.
+ *  - Beim Hafenwechsel ({@link #switchPort(storebackend.enums.MaritimePort)}) wird KEINE neue
+ *    WebSocket-Verbindung aufgebaut, sondern über die bestehende (falls verbunden) eine neue
+ *    Subscription-Nachricht gesendet ("ein Update pro Klick", kein Polling-Resend).
+ *  - Ist die Verbindung gerade getrennt, wird nur {@link #currentPort} gemerkt – der nächste
+ *    erfolgreiche {@code onOpen} sendet automatisch die Subscription für den zuletzt gewählten Hafen.
+ *  - Der Vessel-Cache wird bei einem echten Hafenwechsel geleert (sonst blieben alte Schiffe
+ *    des vorherigen Hafens sichtbar, bis der stale-Cleanup sie irgendwann entfernt).
  *
  * WICHTIG (WebSocket-Transport):
  *  - Nutzt {@code java.net.http.WebSocket} (JDK-eigener Client, seit Java 11), NICHT
@@ -80,18 +91,15 @@ import java.util.concurrent.atomic.AtomicReference;
  *  - Parserfehler bei einzelnen AIS-Messages beenden den Listener nicht.
  *  - Ein AISStream-Ausfall darf markt.ma nicht destabilisieren – bei fehlendem
  *    Key oder Verbindungsproblemen liefert die REST-API einfach connected=false.
+ *  - "Healthy" (siehe {@link #isHealthy()}) ist bewusst von "connected" getrennt: Nach einem
+ *    Hafenwechsel gilt die Subscription erst als gesund, sobald AISStream eine
+ *    SubscriptionConfirmation für den NEUEN Hafen bestätigt hat.
  */
 @Service
 @Slf4j
 public class AisStreamClientService {
 
     private static final String AISSTREAM_URL = "wss://stream.aisstream.io/v0/stream";
-
-    /** Bounding Box Tanger Med, Marokko (MVP – weitere Häfen später möglich) */
-    private static final double[][] TANGER_MED_BBOX = {
-            {35.75, -5.65},
-            {36.05, -5.20}
-    };
 
     /** Absolute Obergrenze für den Vessel-Cache – verhindert unbegrenztes Wachstum (OOM-Schutz) */
     private static final int MAX_VESSELS = 5000;
@@ -156,6 +164,14 @@ public class AisStreamClientService {
     private final AtomicReference<Instant> connectedSince = new AtomicReference<>();
     /** Verhindert, dass der Backoff mehrfach pro Verbindung zurückgesetzt wird. */
     private final AtomicBoolean healthyResetDone = new AtomicBoolean(false);
+    /** Aktuell ausgewählter Hafen (bestimmt die BoundingBox der Subscription). Default: Tanger Med (MVP-Startwert). */
+    private final AtomicReference<MaritimePort> currentPort = new AtomicReference<>(MaritimePort.TANGER_MED);
+    /**
+     * true = AISStream hat die Subscription für den AKTUELL ausgewählten Hafen per
+     * SubscriptionConfirmation bestätigt. Wird bei jeder neuen Subscription (neuer Connect ODER
+     * Hafenwechsel) zurückgesetzt – siehe Klassen-Javadoc "Stabilität".
+     */
+    private final AtomicBoolean subscriptionHealthy = new AtomicBoolean(false);
 
     public AisStreamClientService(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
@@ -183,6 +199,48 @@ public class AisStreamClientService {
 
     public int getVesselCount() {
         return vessels.size();
+    }
+
+    /** Aktuell ausgewählter Hafen. */
+    public MaritimePort getCurrentPort() {
+        return currentPort.get();
+    }
+
+    /**
+     * "Gesund" = verbunden UND AISStream hat die Subscription für den aktuellen Hafen bereits
+     * per SubscriptionConfirmation bestätigt. Getrennt von {@link #isConnected()}, damit das Frontend
+     * nach einem Hafenwechsel kurz erkennen kann, dass die neue Subscription noch nicht bestätigt ist.
+     */
+    public boolean isHealthy() {
+        return connected.get() && subscriptionHealthy.get();
+    }
+
+    /**
+     * Wechselt den aktiven Hafen. Baut KEINE neue AISStream-Verbindung auf – aktualisiert stattdessen
+     * die Subscription über die bestehende Verbindung (falls verbunden). Leert den Vessel-Cache bei
+     * einem echten Wechsel (sonst blieben Schiffe des vorherigen Hafens sichtbar). Ist die Verbindung
+     * gerade getrennt, wird nur der gewünschte Hafen gemerkt – der nächste erfolgreiche Connect sendet
+     * automatisch die Subscription für diesen Hafen (siehe {@link #sendSubscription(WebSocket)}).
+     */
+    public synchronized void switchPort(MaritimePort newPort) {
+        if (newPort == null) {
+            return;
+        }
+        MaritimePort previous = currentPort.getAndSet(newPort);
+        if (previous == newPort) {
+            // Kein echter Wechsel (z.B. Doppel-Klick auf denselben Hafen) – kein Cache-Clear,
+            // kein erneutes Subscription-Update ("ein Klick = ein Update").
+            return;
+        }
+        vessels.clear();
+        subscriptionHealthy.set(false);
+        log.info("Maritime port switched: {} -> {}", previous, newPort);
+        WebSocket ws = currentWebSocket.get();
+        if (ws != null) {
+            sendSubscription(ws);
+        }
+        // Falls ws == null (aktuell getrennt): nichts weiter zu tun, der nächste onOpen()
+        // sendet die Subscription automatisch für den jetzt gespeicherten currentPort.
     }
 
     @PostConstruct
@@ -238,6 +296,7 @@ public class AisStreamClientService {
             return;
         }
         healthyResetDone.set(false);
+        subscriptionHealthy.set(false);
         httpClient.newWebSocketBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
                 .buildAsync(URI.create(AISSTREAM_URL), new AisWebSocketListener())
@@ -303,15 +362,16 @@ public class AisStreamClientService {
             // FilterMessageTypes entfernt (nur PositionReport, wie im Referenz-Payload). Sobald der Verbindungsabbruch
             // (code=1006 ~0.5s nach onOpen) empirisch behoben ist, kann hier wieder auf das reguläre
             // Map+Jackson-Pattern inkl. ShipStaticData zurückgebaut werden.
+            double[][] bbox = currentPort.get().getBoundingBox();
             String json = "{"
                     + "\"APIKey\":\"" + escapeJson(apiKey) + "\","
                     + "\"BoundingBoxes\":[[["
-                    + TANGER_MED_BBOX[0][0] + "," + TANGER_MED_BBOX[0][1] + "],["
-                    + TANGER_MED_BBOX[1][0] + "," + TANGER_MED_BBOX[1][1] + "]]],"
+                    + bbox[0][0] + "," + bbox[0][1] + "],["
+                    + bbox[1][0] + "," + bbox[1][1] + "]]],"
                     + "\"FilterMessageTypes\":[\"PositionReport\"]"
                     + "}";
             // WICHTIG: Niemals das komplette Subscription-JSON loggen (enthält den API-Key)! Nur die Länge.
-            log.info("AIS subscription send started (payloadLength={})", json.length());
+            log.info("AIS subscription send started (port={}, payloadLength={})", currentPort.get(), json.length());
             webSocket.sendText(json, true).whenComplete((ws, err) -> {
                 if (err != null) {
                     log.warn("AIS subscription send FAILED: {}: {}", err.getClass().getSimpleName(), err.getMessage());
@@ -346,8 +406,10 @@ public class AisStreamClientService {
             markConnectionHealthy();
 
             switch (messageType) {
-                case "SubscriptionConfirmation" ->
-                        log.info("AIS SubscriptionConfirmation received (parsed successfully)");
+                case "SubscriptionConfirmation" -> {
+                    subscriptionHealthy.set(true);
+                    log.info("AIS SubscriptionConfirmation received for port={} (parsed successfully)", currentPort.get());
+                }
                 case "PositionReport" -> handlePositionReport(message.path("PositionReport"), metaData);
                 case "ShipStaticData" -> handleStaticData(message.path("ShipStaticData"), metaData);
                 default -> {

@@ -1324,8 +1324,8 @@
     "questions": "أسئلة توضيحية"
   },
   "maritime": {
-    "title": "الملاحة البحرية / طنجة المتوسط مباشر",
-    "subtitle": "بيانات AIS مباشرة للسفن في طنجة المتوسط (نسخة أولية)",
+    "title": "الملاحة البحرية / بيانات السفن المباشرة",
+    "subtitle": "بيانات AIS مباشرة للسفن في الموانئ المغربية (نسخة أولية)",
     "connected": "متصل",
     "disconnected": "غير متصل",
     "lastMessage": "آخر رسالة",
@@ -1333,7 +1333,8 @@
     "notConfigured": "لم يتم تهيئة AIS حالياً (AISSTREAM_API_KEY غير موجود).",
     "unavailable": "AIS غير متاح حالياً.",
     "searchPlaceholder": "ابحث عن سفينة أو رقم MMSI...",
-    "emptyMessage": "لا توجد سفن مرئية حالياً"
+    "emptyMessage": "لا توجد سفن لهذا الميناء",
+    "selectPort": "اختر الميناء"
   },
   "wizard": {
     "skip": "تخطي",

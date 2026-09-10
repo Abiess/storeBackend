@@ -2,10 +2,10 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@env/environment';
-import { MaritimeVesselsResponse, MaritimeStatus } from '../models';
+import { MaritimeVesselsResponse, MaritimeStatus, MaritimePort } from '../models';
 
 /**
- * Maritime-Feature (MVP): Live-AIS-Schiffsdaten für Tanger Med.
+ * Maritime-Feature: Live-AIS-Schiffsdaten für Tanger Med, Nador, Casablanca.
  *
  * Liest ausschließlich die REST-Endpoints des Backends – der AISStream-API-Key
  * bleibt vollständig serverseitig, es gibt keine direkte Frontend↔AISStream-Verbindung.
@@ -22,5 +22,13 @@ export class MaritimeService {
 
   getStatus(): Observable<MaritimeStatus> {
     return this.http.get<MaritimeStatus>(`${environment.apiUrl}/maritime/status`);
+  }
+
+  getPorts(): Observable<MaritimePort[]> {
+    return this.http.get<MaritimePort[]>(`${environment.apiUrl}/maritime/ports`);
+  }
+
+  switchPort(port: string): Observable<MaritimeStatus> {
+    return this.http.put<MaritimeStatus>(`${environment.apiUrl}/maritime/port`, { port });
   }
 }

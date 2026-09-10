@@ -20,6 +20,8 @@ import java.util.List;
 public class MaritimeVesselsResponse {
     private boolean connected;
     private boolean configured;
+    private boolean healthy;
+    private String selectedPort;
     private Instant lastMessageAt;
     private int vesselCount;
     private List<VesselDTO> vessels;
