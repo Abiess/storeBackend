@@ -17,6 +17,14 @@ package storebackend.enums;
  * (Port-Status-Ableitung, siehe {@code storebackend.service.PortStatusCalculator}) verwendet –
  * AISStream selbst bekommt weiterhin ausschließlich die größere {@link #boundingBox}.
  *
+ * Live-Data-Review (nach erstem Produktiv-Deploy): Tanger Meds ursprüngliche {@link #portZoneBox}
+ * ({@code [[35.85,-5.55],[35.95,-5.30]]}, ca. 11km x 22.5km) reichte weit in die allgemeine
+ * Verkehrstrennungszone der Straße von Gibraltar hinein. Schiffe, die dort mit 6-9 kn durchfuhren
+ * (kein Anlauf/Ablauf-Kurs relativ zum Hafenzentrum, siehe PortStatusCalculator-Bearing-Check),
+ * fielen mangels engerer Geometrie in den IN_PORT-Default-Fall. Die Zone wurde auf das eigentliche
+ * Hafenbecken inkl. unmittelbarer Zufahrt verkleinert (ca. 5.5km x 6.3km). Die AISStream-
+ * {@link #boundingBox} bleibt unverändert groß (reine Empfangs-/Subscription-Box).
+ *
  * TEMPORÄR (Deployment-Diagnose, vor Phase-2A-Livetest): NADOR und CASABLANCA verwenden bewusst
  * größere Test-BoundingBoxes als eigentlich für den Hafen nötig, um zunächst zu verifizieren, dass
  * AISStream in diesen Regionen überhaupt PositionReports liefert (Tanger Med lieferte bereits Daten,
@@ -29,7 +37,7 @@ public enum MaritimePort {
 
     TANGER_MED("Tanger Med",
             new double[][]{{35.75, -5.65}, {36.05, -5.20}},
-            new double[][]{{35.85, -5.55}, {35.95, -5.30}},
+            new double[][]{{35.865, -5.535}, {35.915, -5.465}},
             new double[]{35.89, -5.41}),
     // TEMPORÄR: Test-Box lt. Vorgabe (größer als [[35.15,-3.05],[35.38,-2.75]]), um AISStream-Abdeckung zu prüfen.
     NADOR("Nador",

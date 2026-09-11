@@ -180,6 +180,13 @@ public class AisStreamClientService {
      */
     private final AtomicInteger positionReportsSinceSubscription = new AtomicInteger(0);
 
+    /**
+     * TEMPORÄR (Deployment-Diagnose, Live-Data-Review): zählt ShipStaticData-Messages seit der
+     * letzten Subscription – erlaubt zu verifizieren, dass ShipStaticData (Destination/Name/ETA/...)
+     * tatsächlich vom AISStream-Server ankommt. Kein Rohdaten-Puffer, nur ein Zähler.
+     */
+    private final AtomicInteger staticDataReceivedSinceSubscription = new AtomicInteger(0);
+
     /** Phase 2B: leitet fachliche Port Events aus Statuswechseln ab (siehe {@link #handlePositionReport}). */
     private final VesselPortEventService portEventService;
 
@@ -368,24 +375,25 @@ public class AisStreamClientService {
 
     private void sendSubscription(WebSocket webSocket) {
         try {
-            // TEMPORÄRER A/B-TEST (siehe Klassen-Javadoc "Troubleshooting"): Payload wird bewusst als
-            // literaler String und NICHT über Map+Jackson gebaut, um jede denkbare Serialisierungs-
-            // Abweichung (Feld-Reihenfolge, Zahlenformat, Escaping) gegenüber dem bestätigt funktionierenden
-            // Referenz-Client (Python) auszuschließen. "ShipStaticData" ist für diesen Test bewusst aus
-            // FilterMessageTypes entfernt (nur PositionReport, wie im Referenz-Payload). Sobald der Verbindungsabbruch
-            // (code=1006 ~0.5s nach onOpen) empirisch behoben ist, kann hier wieder auf das reguläre
-            // Map+Jackson-Pattern inkl. ShipStaticData zurückgebaut werden.
+            // Payload wird bewusst als literaler String und NICHT über Map+Jackson gebaut (siehe
+            // Klassen-Javadoc "Troubleshooting" zur ursprünglichen A/B-Test-Diagnose des
+            // Verbindungsabbruchs code=1006 ~0.5s nach onOpen). Der Verbindungsabbruch ist seither
+            // im Live-Betrieb nicht mehr aufgetreten; ShipStaticData wurde daher wieder in
+            // FilterMessageTypes aufgenommen (Live-Data-Review: Destination/Name/ETA/CallSign/IMO
+            // werden sonst nie empfangen – siehe handleStaticData).
             double[][] bbox = currentPort.get().getBoundingBox();
             String json = "{"
                     + "\"APIKey\":\"" + escapeJson(apiKey) + "\","
                     + "\"BoundingBoxes\":[[["
                     + bbox[0][0] + "," + bbox[0][1] + "],["
                     + bbox[1][0] + "," + bbox[1][1] + "]]],"
-                    + "\"FilterMessageTypes\":[\"PositionReport\"]"
+                    + "\"FilterMessageTypes\":[\"PositionReport\",\"ShipStaticData\"]"
                     + "}";
-            // TEMPORÄR (Deployment-Diagnose): Zähler für "PositionReports seit letzter Subscription"
-            // zurücksetzen – erlaubt zu beobachten, ob AISStream für DIESEN Hafen überhaupt Daten liefert.
+            // TEMPORÄR (Deployment-Diagnose): Zähler für "PositionReports/ShipStaticData seit letzter
+            // Subscription" zurücksetzen – erlaubt zu beobachten, ob AISStream für DIESEN Hafen
+            // überhaupt Daten (inkl. Static Data) liefert.
             positionReportsSinceSubscription.set(0);
+            staticDataReceivedSinceSubscription.set(0);
             // WICHTIG: Niemals das komplette Subscription-JSON loggen (enthält den API-Key)! Nur die
             // BoundingBox-Koordinaten (unkritisch, öffentlich bekannte Geo-Region) und die Länge.
             log.info("AIS subscription send started (port={}, boundingBox=[[{},{}],[{},{}]], payloadLength={})",
@@ -563,6 +571,15 @@ public class AisStreamClientService {
         if (etaMonth > 0 && etaDay > 0) {
             builder.eta(String.format("%02d-%02d %02d:%02d",
                     etaMonth, etaDay, eta.path("Hour").asInt(0), eta.path("Minute").asInt(0)));
+        }
+
+        // TEMPORÄR (Deployment-Diagnose, Live-Data-Review): bestätigt, dass ShipStaticData ankommt und
+        // welche Felder gefüllt sind. NUR MMSI + Boolean-Flags, KEINE Rohdaten/Namen im Log, KEIN API-Key.
+        int staticDataCount = staticDataReceivedSinceSubscription.incrementAndGet();
+        if (staticDataCount <= 3 || staticDataCount % 50 == 0) {
+            log.info("AIS ShipStaticData #{} received for port={} (mmsi={}, hasDestination={}, hasName={}, hasEta={}, hasCallSign={})",
+                    staticDataCount, currentPort.get(), mmsi, !destination.isEmpty(), !shipName.isEmpty(),
+                    etaMonth > 0 && etaDay > 0, !callSign.isEmpty());
         }
 
         putVessel(mmsi, builder.build());
