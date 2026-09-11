@@ -1760,7 +1760,22 @@
       "navigationStatus": "Navigation status",
       "position": "Position",
       "inPortSince": "In port since",
+      "dwellTime": "Dwell time",
       "close": "Close"
+    },
+    "events": {
+      "title": "Recent port events",
+      "vesselRecent": "Recent events",
+      "noEvents": "No events available",
+      "columnType": "Event",
+      "columnTime": "Time",
+      "type": {
+        "approaching": "Approaching",
+        "enteredPort": "Entered port",
+        "moored": "Moored",
+        "departing": "Departing",
+        "leftPort": "Left port"
+      }
     },
     "weather": {
       "title": "Marine Weather",

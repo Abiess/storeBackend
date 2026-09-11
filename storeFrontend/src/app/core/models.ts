@@ -131,6 +131,31 @@ export interface MaritimePort {
   name: string;
 }
 
+/** Phase 2B: ein fachliches Port Event (Statuswechsel), siehe GET /api/maritime/vessels/{mmsi}/events. */
+export interface VesselPortEventDto {
+  mmsi: number;
+  port: string;
+  /** APPROACHING | ENTERED_PORT | MOORED | DEPARTING | LEFT_PORT */
+  eventType: string;
+  eventTime: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  sog?: number | null;
+  shipName?: string | null;
+  destination?: string | null;
+}
+
+/** Phase 2B: kleine Historie + serverseitig abgeleitete Liegezeit-Ankerpunkte eines Schiffs. */
+export interface VesselPortEventsResponse {
+  mmsi: number;
+  events: VesselPortEventDto[];
+  /** Beginn des aktuellen Hafenaufenthalts, oder null (kein laufender Aufenthalt bekannt). */
+  enteredAt?: string | null;
+  mooredAt?: string | null;
+  /** Letztes bekanntes "Hafen verlassen" - falls gesetzt, ist das Schiff aktuell NICHT im Hafen. */
+  leftAt?: string | null;
+}
+
 /**
  * Marine-Wetter-/Ozean-Modelldaten (Open-Meteo Marine API) für den aktuell ausgewählten Hafen.
  * WICHTIG: Modell-/Forecast-Daten, keine amtlichen Hafenmessungen/Navigationsdaten

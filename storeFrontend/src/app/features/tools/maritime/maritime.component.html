@@ -129,6 +129,27 @@
       <div><span>{{ 'maritime.detail.navigationStatus' | translate }}</span><strong>{{ v.navigationStatus ?? '—' }}</strong></div>
       <div><span>{{ 'maritime.detail.position' | translate }}</span><strong>{{ v.latitude | number:'1.4-4' }}, {{ v.longitude | number:'1.4-4' }}</strong></div>
     </div>
+
+    <!-- Phase 2B: Liegezeit + kleine Hafen-Historie – reines Reuse von ResponsiveDataList, keine neue Tabellenkomponente. -->
+    <div class="maritime-vessel-detail__dwell" *ngIf="!vesselLeftAt && (vesselEnteredAt || vesselMooredAt)">
+      <span>{{ 'maritime.detail.inPortSince' | translate }}</span>
+      <strong>{{ formatDwell(vesselEnteredAt || vesselMooredAt) || '—' }}</strong>
+      <span class="maritime-vessel-detail__dwell-label">({{ 'maritime.detail.dwellTime' | translate }})</span>
+    </div>
+
+    <div class="maritime-vessel-detail__events">
+      <strong class="maritime-vessel-detail__events-title">{{ 'maritime.events.vesselRecent' | translate }}</strong>
+      <app-responsive-data-list
+        [items]="vesselEvents"
+        [columns]="eventColumns"
+        [loading]="vesselEventsLoading"
+        [searchable]="false"
+        [showToolbar]="false"
+        emptyIcon="🕓"
+        [emptyMessage]="'maritime.events.noEvents' | translate"
+        trackBy="id">
+      </app-responsive-data-list>
+    </div>
   </div>
 
   <app-responsive-data-list
@@ -143,4 +164,19 @@
     trackBy="mmsi"
     (rowClick)="onVesselClick($event)">
   </app-responsive-data-list>
+
+  <!-- Phase 2B: "Letzte Hafenereignisse" – kleiner, begrenzter Bereich (kein Auto-Refresh-Polling). -->
+  <div class="maritime-recent-events">
+    <strong class="maritime-recent-events__title">{{ 'maritime.events.title' | translate }}</strong>
+    <app-responsive-data-list
+      [items]="portEvents"
+      [columns]="eventColumns"
+      [loading]="portEventsLoading"
+      [searchable]="false"
+      [showToolbar]="false"
+      emptyIcon="🕓"
+      [emptyMessage]="'maritime.events.noEvents' | translate"
+      trackBy="id">
+    </app-responsive-data-list>
+  </div>
 </div>

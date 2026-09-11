@@ -1684,7 +1684,22 @@
       "navigationStatus": "Statut de navigation",
       "position": "Position",
       "inPortSince": "Au port depuis",
+      "dwellTime": "Durée d'escale",
       "close": "Fermer"
+    },
+    "events": {
+      "title": "Derniers événements portuaires",
+      "vesselRecent": "Derniers événements",
+      "noEvents": "Aucun événement disponible",
+      "columnType": "Événement",
+      "columnTime": "Heure",
+      "type": {
+        "approaching": "À l'approche",
+        "enteredPort": "Entré au port",
+        "moored": "Amarré",
+        "departing": "En partance",
+        "leftPort": "A quitté le port"
+      }
     },
     "weather": {
       "title": "Météo marine",

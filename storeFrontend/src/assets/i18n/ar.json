@@ -1372,7 +1372,22 @@
       "navigationStatus": "حالة الملاحة",
       "position": "الموقع",
       "inPortSince": "في الميناء منذ",
+      "dwellTime": "مدة الرسو",
       "close": "إغلاق"
+    },
+    "events": {
+      "title": "أحدث أحداث الميناء",
+      "vesselRecent": "أحدث الأحداث",
+      "noEvents": "لا توجد أحداث",
+      "columnType": "الحدث",
+      "columnTime": "الوقت",
+      "type": {
+        "approaching": "قادمة",
+        "enteredPort": "دخلت الميناء",
+        "moored": "راسية",
+        "departing": "مغادرة",
+        "leftPort": "غادرت الميناء"
+      }
     },
     "weather": {
       "title": "الطقس البحري",

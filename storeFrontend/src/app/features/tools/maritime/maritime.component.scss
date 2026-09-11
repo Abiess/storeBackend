@@ -285,3 +285,51 @@
     font-size: 0.75rem;
   }
 }
+
+// Phase 2B: Liegezeit + kleine Hafen-Historie – mobile-first, keine feste Breite/kein horizontaler Overflow.
+.maritime-vessel-detail__dwell {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin-top: 1rem;
+  padding: 0.6rem 0.9rem;
+  background: #f9fafb;
+  border-radius: 10px;
+  font-size: 0.85rem;
+
+  span:first-child {
+    color: #6b7280;
+  }
+
+  strong {
+    font-size: 1rem;
+    color: #374151;
+  }
+}
+
+.maritime-vessel-detail__dwell-label {
+  color: #9ca3af !important;
+  font-size: 0.75rem !important;
+}
+
+.maritime-vessel-detail__events {
+  margin-top: 1.25rem;
+}
+
+.maritime-vessel-detail__events-title,
+.maritime-recent-events__title {
+  display: block;
+  font-size: 0.85rem;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.maritime-recent-events {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 2px 12px rgba(102, 126, 234, 0.08);
+  border: 1px solid rgba(102, 126, 234, 0.12);
+  margin-top: 1.5rem;
+}

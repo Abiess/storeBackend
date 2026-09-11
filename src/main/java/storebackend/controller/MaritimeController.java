@@ -3,18 +3,23 @@ package storebackend.controller;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import storebackend.dto.MarineWeatherDTO;
 import storebackend.dto.MaritimePortDto;
 import storebackend.dto.MaritimePortSwitchRequest;
 import storebackend.dto.MaritimeStatusResponse;
 import storebackend.dto.MaritimeVesselsResponse;
+import storebackend.dto.VesselPortEventDTO;
+import storebackend.dto.VesselPortEventsResponse;
 import storebackend.enums.MaritimePort;
 import storebackend.service.AisStreamClientService;
 import storebackend.service.MarineWeatherService;
+import storebackend.service.VesselPortEventService;
 
 import java.util.Arrays;
 import java.util.List;
@@ -38,10 +43,13 @@ public class MaritimeController {
 
     private final AisStreamClientService aisStreamClientService;
     private final MarineWeatherService marineWeatherService;
+    private final VesselPortEventService vesselPortEventService;
 
-    public MaritimeController(AisStreamClientService aisStreamClientService, MarineWeatherService marineWeatherService) {
+    public MaritimeController(AisStreamClientService aisStreamClientService, MarineWeatherService marineWeatherService,
+                               VesselPortEventService vesselPortEventService) {
         this.aisStreamClientService = aisStreamClientService;
         this.marineWeatherService = marineWeatherService;
+        this.vesselPortEventService = vesselPortEventService;
     }
 
     /** Aktuelle Schiffe (Live-State, keine Historie) + Verbindungsstatus. */
@@ -97,6 +105,29 @@ public class MaritimeController {
         }
         aisStreamClientService.switchPort(port);
         return ResponseEntity.ok(buildStatus());
+    }
+
+    /**
+     * Kleine Historie eines Schiffs (Phase 2B) – NUR bei explizitem Öffnen der Detailansicht
+     * geladen (nicht Teil des 8s-Vessel-Pollings, siehe MaritimeComponent).
+     */
+    @GetMapping("/vessels/{mmsi}/events")
+    public ResponseEntity<VesselPortEventsResponse> getVesselEvents(@PathVariable long mmsi) {
+        return ResponseEntity.ok(vesselPortEventService.getVesselEventsResponse(mmsi));
+    }
+
+    /**
+     * "Letzte Hafenereignisse" für einen Hafen (Phase 2B), Default: aktuell ausgewählter Hafen.
+     * Begrenzte, kleine Anzahl (siehe Repository) – kein Auto-Refresh-Polling nötig, wird bei
+     * Bedarf (initial/Portwechsel) vom Frontend neu geladen.
+     */
+    @GetMapping("/events")
+    public ResponseEntity<List<VesselPortEventDTO>> getPortEvents(@RequestParam(required = false) String port) {
+        MaritimePort resolvedPort = port != null ? MaritimePort.fromId(port) : aisStreamClientService.getCurrentPort();
+        if (resolvedPort == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok(vesselPortEventService.getRecentEventsForPort(resolvedPort));
     }
 
     private MaritimeStatusResponse buildStatus() {

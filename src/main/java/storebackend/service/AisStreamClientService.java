@@ -180,8 +180,12 @@ public class AisStreamClientService {
      */
     private final AtomicInteger positionReportsSinceSubscription = new AtomicInteger(0);
 
-    public AisStreamClientService(ObjectMapper objectMapper) {
+    /** Phase 2B: leitet fachliche Port Events aus Statuswechseln ab (siehe {@link #handlePositionReport}). */
+    private final VesselPortEventService portEventService;
+
+    public AisStreamClientService(ObjectMapper objectMapper, VesselPortEventService portEventService) {
         this.objectMapper = objectMapper;
+        this.portEventService = portEventService;
     }
 
     /** true wenn AISSTREAM_API_KEY gesetzt ist (unabhängig vom aktuellen Verbindungsstatus) */
@@ -487,10 +491,17 @@ public class AisStreamClientService {
         // berücksichtigt (z.B. um "vor Anker außerhalb der Port-Zone" nicht fälschlich als MOORED
         // zu klassifizieren, siehe PortStatusCalculator-Javadoc).
         Integer navStatusForStatusCalc = navStatus != 15 ? navStatus : null;
+        VesselPortStatus previousStatus = existing != null && existing.getPortStatus() != null
+                ? VesselPortStatus.valueOf(existing.getPortStatus())
+                : null;
         VesselPortStatus status = PortStatusCalculator.compute(lat, lon, speed, course, navStatusForStatusCalc, currentPort.get());
         builder.portStatus(status.name());
 
-        putVessel(mmsi, builder.build());
+        VesselDTO vessel = builder.build();
+        // Phase 2B: nur bei echtem Statuswechsel wird ein fachliches Port Event persistiert
+        // (kein Positions-/AIS-Rohdaten-Historie im Sekundentakt, siehe VesselPortEventService).
+        portEventService.recordTransitionIfAny(previousStatus, status, currentPort.get(), vessel);
+        putVessel(mmsi, vessel);
     }
 
     private void handleStaticData(JsonNode staticData, JsonNode metaData) {

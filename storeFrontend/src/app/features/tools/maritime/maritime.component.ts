@@ -7,7 +7,7 @@ import { PageHeaderComponent } from '@app/shared/components/page-header.componen
 import { ResponsiveDataListComponent, ColumnConfig } from '@app/shared/components/responsive-data-list/responsive-data-list.component';
 import { MaritimeService } from '@app/core/services/maritime.service';
 import { TranslationService } from '@app/core/services/translation.service';
-import { VesselDto, MaritimeVesselsResponse, MaritimePort, MarineWeatherDto } from '@app/core/models';
+import { VesselDto, MaritimeVesselsResponse, MaritimePort, MarineWeatherDto, VesselPortEventDto } from '@app/core/models';
 
 /**
  * Maritime / Live-AIS-Schiffsdaten (MVP: Tanger Med, Nador, Casablanca).
@@ -53,6 +53,25 @@ export class MaritimeComponent implements OnInit, OnDestroy {
   selectedVessel: VesselDto | null = null;
 
   /**
+   * Phase 2B: kleine Hafen-Historie des aktuell ausgewählten Schiffs. Wird NUR beim Öffnen der
+   * Detailansicht (Klick auf ein Schiff) geladen – bewusst NICHT Teil des 8s-Vessel-Pollings
+   * (siehe Aufgabenstellung "keine unnötigen Requests im Polling").
+   */
+  vesselEvents: VesselPortEventDto[] = [];
+  vesselEventsLoading = false;
+  vesselEventsError = false;
+  vesselEnteredAt: string | null = null;
+  vesselMooredAt: string | null = null;
+  vesselLeftAt: string | null = null;
+
+  /** Phase 2B: "Letzte Hafenereignisse" für den ausgewählten Hafen – kleine, begrenzte Liste. */
+  portEvents: VesselPortEventDto[] = [];
+  portEventsLoading = true;
+
+  /** Spalten der kleinen Event-Historie (Vessel-Detail + "Letzte Hafenereignisse"), reines Reuse von ResponsiveDataList. */
+  eventColumns: ColumnConfig[];
+
+  /**
    * Marine-Wetter (Open-Meteo, Modell-/Forecast-Daten – siehe maritime.weather.disclaimer).
    * Separater REST-Call, NICHT Teil des 8s-AIS-Pollings: initial load, Portwechsel, alle 15 Min.
    * Ein Fehler hier darf den AIS-Teil der Seite nie beeinflussen (eigener Error-State).
@@ -90,6 +109,24 @@ export class MaritimeComponent implements OnInit, OnDestroy {
    *  zum bestehenden Projekt-Pattern (siehe z.B. supplier-invoices.component.ts). */
   columns: ColumnConfig[];
 
+  /** Event-Typ (Backend-Enum-Name) -> i18n-Key. */
+  private readonly eventTypeLabelKeys: Record<string, string> = {
+    APPROACHING: 'maritime.events.type.approaching',
+    ENTERED_PORT: 'maritime.events.type.enteredPort',
+    MOORED: 'maritime.events.type.moored',
+    DEPARTING: 'maritime.events.type.departing',
+    LEFT_PORT: 'maritime.events.type.leftPort'
+  };
+
+  /** Event-Typ -> bestehende, projektweite Badge-CSS-Klassen (keine neuen Badge-Farben eingeführt). */
+  private readonly eventTypeBadgeClasses: Record<string, string> = {
+    APPROACHING: 'status-processing',
+    ENTERED_PORT: 'status-active',
+    MOORED: 'status-shipped',
+    DEPARTING: 'status-draft',
+    LEFT_PORT: 'status-inactive'
+  };
+
   constructor(private maritimeService: MaritimeService, private translationService: TranslationService) {
     const t = (key: string) => this.translationService.translate(key);
     this.columns = [
@@ -104,6 +141,17 @@ export class MaritimeComponent implements OnInit, OnDestroy {
       { key: 'speed', label: t('maritime.table.speed'), type: 'text', mobileLabel: t('maritime.table.speed'), formatFn: (v) => v != null ? `${v} kn` : '—' },
       { key: 'course', label: t('maritime.table.course'), type: 'text', mobileLabel: t('maritime.table.course'), formatFn: (v) => v != null ? `${v}°` : '—', hideOnMobile: true },
       { key: 'lastSeen', label: t('maritime.table.lastSeen'), type: 'date', mobileLabel: t('maritime.table.lastSeen') }
+    ];
+    // Phase 2B: kleine Spaltenkonfiguration für Event-Historie (Vessel-Detail + "Letzte Hafenereignisse"),
+    // volle Wiederverwendung von ResponsiveDataListComponent (kein neues UI-Muster).
+    this.eventColumns = [
+      { key: 'shipName', label: t('maritime.table.shipName'), type: 'text', mobileLabel: t('maritime.table.shipName'), formatFn: (v) => v || '—' },
+      {
+        key: 'eventType', label: t('maritime.events.columnType'), type: 'badge', mobileLabel: t('maritime.events.columnType'),
+        formatFn: (v) => this.translationService.translate(this.eventTypeLabel(v)),
+        badgeClass: (v) => this.eventTypeBadgeClasses[v] || 'status-inactive'
+      },
+      { key: 'eventTime', label: t('maritime.events.columnTime'), type: 'date', mobileLabel: t('maritime.events.columnTime') }
     ];
   }
 
@@ -153,6 +201,10 @@ export class MaritimeComponent implements OnInit, OnDestroy {
       startWith(0),
       switchMap(() => this.maritimeService.getWeather().pipe(catchError(() => of(null))))
     ).subscribe((weather) => this.applyWeather(weather));
+
+    // Phase 2B: "Letzte Hafenereignisse" – NUR initial + bei Portwechsel geladen (kein separates
+    // Auto-Refresh-Polling, siehe Aufgabenstellung "Performance").
+    this.loadPortEvents();
   }
 
   private applyWeather(weather: MarineWeatherDto | null): void {
@@ -186,13 +238,71 @@ export class MaritimeComponent implements OnInit, OnDestroy {
     return status ? (this.statusLabelKeys[status] || 'maritime.status.unknown') : 'maritime.status.unknown';
   }
 
+  eventTypeLabel(type?: string | null): string {
+    return type ? (this.eventTypeLabelKeys[type] || 'maritime.status.unknown') : 'maritime.status.unknown';
+  }
+
+  /** Phase 2B: "Letzte Hafenereignisse" für den aktuell ausgewählten Hafen laden (kleine, begrenzte Liste). */
+  private loadPortEvents(): void {
+    this.portEventsLoading = true;
+    this.maritimeService.getPortEvents(this.selectedPort).pipe(
+      catchError(() => of([]))
+    ).subscribe((events) => {
+      this.portEventsLoading = false;
+      this.portEvents = events || [];
+    });
+  }
+
+  /**
+   * "Im Hafen seit"-Dauer, clientseitig aus dem serverseitig gelieferten Zeitpunkt berechnet
+   * (siehe Aufgabenstellung: keine Sekundentakt-Updates in der DB). Format z.B. "2h 34m".
+   */
+  formatDwell(sinceIso: string | null): string | null {
+    if (!sinceIso) {
+      return null;
+    }
+    const since = new Date(sinceIso).getTime();
+    const diffMs = Date.now() - since;
+    if (!isFinite(diffMs) || diffMs < 0) {
+      return null;
+    }
+    const totalMinutes = Math.floor(diffMs / 60000);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+  }
+
   /** Anzeigename des aktuell gewählten Hafens (aus der bereits geladenen Port-Liste), Fallback: Port-ID. */
   selectedPortName(): string {
     return this.ports.find((p) => p.id === this.selectedPort)?.name || this.selectedPort;
   }
 
   onVesselClick(vessel: VesselDto): void {
-    this.selectedVessel = this.selectedVessel?.mmsi === vessel.mmsi ? null : vessel;
+    if (this.selectedVessel?.mmsi === vessel.mmsi) {
+      this.selectedVessel = null;
+      return;
+    }
+    this.selectedVessel = vessel;
+    // Phase 2B: Historie NUR beim expliziten Öffnen laden (nicht Teil des 8s-Vessel-Pollings).
+    this.vesselEvents = [];
+    this.vesselEnteredAt = null;
+    this.vesselMooredAt = null;
+    this.vesselLeftAt = null;
+    this.vesselEventsError = false;
+    this.vesselEventsLoading = true;
+    this.maritimeService.getVesselEvents(vessel.mmsi).pipe(
+      catchError(() => of(null))
+    ).subscribe((res) => {
+      this.vesselEventsLoading = false;
+      if (!res) {
+        this.vesselEventsError = true;
+        return;
+      }
+      this.vesselEvents = res.events || [];
+      this.vesselEnteredAt = res.enteredAt || null;
+      this.vesselMooredAt = res.mooredAt || null;
+      this.vesselLeftAt = res.leftAt || null;
+    });
   }
 
   closeDetail(): void {
@@ -225,6 +335,8 @@ export class MaritimeComponent implements OnInit, OnDestroy {
       this.healthy = status.healthy;
       this.vesselCount = status.vesselCount;
       this.lastMessageAt = status.lastMessageAt;
+      // Phase 2B: Portwechsel bestätigt -> "Letzte Hafenereignisse" für den neuen Hafen nachladen.
+      this.loadPortEvents();
     });
     this.maritimeService.getWeather().pipe(
       catchError(() => of(null))
