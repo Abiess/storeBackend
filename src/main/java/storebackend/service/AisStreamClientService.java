@@ -577,9 +577,9 @@ public class AisStreamClientService {
         // welche Felder gefüllt sind. NUR MMSI + Boolean-Flags, KEINE Rohdaten/Namen im Log, KEIN API-Key.
         int staticDataCount = staticDataReceivedSinceSubscription.incrementAndGet();
         if (staticDataCount <= 3 || staticDataCount % 50 == 0) {
-            log.info("AIS ShipStaticData #{} received for port={} (mmsi={}, hasDestination={}, hasName={}, hasEta={}, hasCallSign={})",
+            log.info("AIS ShipStaticData #{} received for port={} (mmsi={}, hasDestination={}, hasName={}, hasEta={}, hasCallSign={}, hasImo={})",
                     staticDataCount, currentPort.get(), mmsi, !destination.isEmpty(), !shipName.isEmpty(),
-                    etaMonth > 0 && etaDay > 0, !callSign.isEmpty());
+                    etaMonth > 0 && etaDay > 0, !callSign.isEmpty(), imo > 0);
         }
 
         putVessel(mmsi, builder.build());
