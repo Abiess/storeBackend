@@ -1714,6 +1714,78 @@
       "stale": "Dernières données connues affichées, la mise à jour a échoué",
       "unavailable": "Données météo marines temporairement indisponibles",
       "disclaimer": "Les données météo marines sont basées sur des modèles météo/océaniques et peuvent différer des mesures locales, en particulier près des ports. Ne pas utiliser pour la navigation ou des décisions critiques pour la sécurité."
+    },
+    "faq": {
+      "sectionTitle": "Comment le statut est-il calculé ? (Aide)",
+      "intro": "Ces explications décrivent précisément comment markt.ma calcule le statut et les événements des navires dans cette zone portuaire.",
+      "statusCalculation": {
+        "question": "Comment le statut d'un navire est-il calculé ?",
+        "answer": "Le statut est recalculé à chaque position reçue, il n'est pas stocké de façon permanente. Il repose sur : la position (latitude/longitude), la vitesse fond (SOG), la route fond (COG) et le statut de navigation transmis par le navire. Le système vérifie également si le navire se trouve dans la Port Zone (bassin portuaire restreint), dans l'Approach Zone (zone d'approche autour du port) ou en dehors des deux zones. Le centre du port sert de point de référence pour déterminer la direction du mouvement (relèvement) par rapport au port."
+      },
+      "moored": {
+        "question": "Que signifie MOORED / Amarré ?",
+        "answer": "Le navire se trouve dans la Port Zone et sa vitesse est très faible (seuil actuel : SOG < 0.5 nd). Un statut de navigation transmis par le navire comme « at anchor » ou « moored » entraîne également immédiatement MOORED, quelle que soit la vitesse. Un statut transmis « under way using engine » (0) n'empêche volontairement pas MOORED à faible vitesse, car cette valeur est souvent obsolète en pratique."
+      },
+      "inPort": {
+        "question": "Que signifie IN_PORT / Au port ?",
+        "answer": "Le navire se trouve dans la Port Zone, mais n'est ni clairement amarré (MOORED) ni visiblement en partance (DEPARTING). C'est le cas par exemple à vitesse modérée sans cap de départ identifiable, ou lorsque le statut de navigation transmis « under way sailing » (8) contredit une vitesse très faible."
+      },
+      "approaching": {
+        "question": "Que signifie APPROACHING / À l'approche ?",
+        "answer": "Le navire se trouve en dehors de la Port Zone mais à l'intérieur de l'Approach Zone, se déplace à au moins 1.0 nd et son cap pointe (avec une tolérance angulaire de 60°) vers le centre du port."
+      },
+      "departing": {
+        "question": "Que signifie DEPARTING / En partance ?",
+        "answer": "Le navire se trouve dans la Port Zone, se déplace à au moins 3.0 nd et son cap pointe (avec une tolérance angulaire de 60°) en s'éloignant du centre du port."
+      },
+      "nearPort": {
+        "question": "Que signifie NEAR_PORT / À proximité du port ?",
+        "answer": "Le navire se trouve dans la zone surveillée autour du port, mais ni dans la Port Zone ni dans une manœuvre d'arrivée ou de départ identifiable au sein de l'Approach Zone – par exemple, un simple trafic de transit."
+      },
+      "unknown": {
+        "question": "Que signifie UNKNOWN ?",
+        "answer": "Les données disponibles ne sont pas suffisantes pour déterminer un statut – par exemple lorsque la position est manquante."
+      },
+      "sog": {
+        "question": "Qu'est-ce que le SOG ?",
+        "answer": "SOG signifie Speed Over Ground – la vitesse fond du navire en nœuds (nd). Exemples : 0.0 nd = pratiquement immobile, 0.3 nd = très lent, 5 nd = en route de façon nette."
+      },
+      "cog": {
+        "question": "Qu'est-ce que le COG ?",
+        "answer": "COG signifie Course Over Ground – la direction réelle du déplacement du navire, en degrés. 0° = Nord, 90° = Est, 180° = Sud, 270° = Ouest."
+      },
+      "navStatus": {
+        "question": "Qu'est-ce que le statut de navigation (Navigational Status) ?",
+        "answer": "Le statut de navigation est transmis par le navire lui-même via l'AIS. Valeurs importantes : 0 = Under way using engine, 1 = At anchor, 5 = Moored, 8 = Under way sailing, 15 = Undefined. Ce statut est souvent entretenu manuellement à bord et peut donc être obsolète ou contradictoire. markt.ma combine donc plusieurs signaux AIS plutôt que de se fier uniquement à cette valeur."
+      },
+      "conflictingData": {
+        "question": "Pourquoi les données AIS peuvent-elles être contradictoires ?",
+        "answer": "Exemple : le statut de navigation indique « under way using engine », mais la vitesse réelle (SOG) est de 0.1 nd à l'intérieur de la Port Zone. Dans ce cas, markt.ma applique une heuristique et privilégie le mouvement réellement mesuré (SOG/position) par rapport au statut transmis, potentiellement obsolète."
+      },
+      "geometries": {
+        "question": "Pourquoi y a-t-il trois géométries différentes par port ?",
+        "answer": "AIS BoundingBox : sert uniquement à la réception des données en direct, sans logique de statut. Approach Zone : détecte une approche du port. Port Zone : la zone portuaire réelle (bassin portuaire). Center : le point de référence pour le calcul du relèvement/de la direction entre le navire et le port."
+      },
+      "statusVsEvent": {
+        "question": "Quelle est la différence entre statut et événement ?",
+        "answer": "Le statut actuel (APPROACHING, IN_PORT, MOORED, DEPARTING, NEAR_PORT, UNKNOWN) est recalculé en continu à chaque nouvelle position. Un événement (APPROACHING, ENTERED_PORT, MOORED, DEPARTING, LEFT_PORT), en revanche, n'est enregistré que lorsque le statut d'un navire change réellement – pas à chaque mise à jour de position."
+      },
+      "restartEvent": {
+        "question": "Pourquoi aucun événement n'est-il créé après un redémarrage ?",
+        "answer": "La première observation d'un navire après un redémarrage ou un changement de port n'est volontairement pas considérée comme un changement de statut. Cela évite de créer des événements d'arrivée ou MOORED fictifs pour des navires déjà présents au port auparavant."
+      },
+      "dedup": {
+        "question": "Pourquoi les événements sont-ils dédupliqués ?",
+        "answer": "Si un événement identique pour le même navire dans le même port a déjà été enregistré au cours des 5 dernières minutes, il n'est pas enregistré à nouveau. Cela protège contre les « oscillations » dues à des variations de courte durée des données AIS."
+      },
+      "destination": {
+        "question": "Pourquoi la destination est-elle parfois vide ?",
+        "answer": "La destination est transmise par le navire via l'AIS, mais sa présence n'est pas garantie. Si aucune destination n'est transmise, l'affichage indique « — » – aucune valeur n'est inventée."
+      },
+      "safety": {
+        "question": "Ce tableau de bord est-il adapté à la navigation ?",
+        "answer": "Non. Ce tableau de bord sert à donner une vue d'ensemble des opérations portuaires (Port Operations) et ne remplace aucun système officiel de navigation, de VTS ou de sécurité."
+      }
     }
   },
   "wizard": {

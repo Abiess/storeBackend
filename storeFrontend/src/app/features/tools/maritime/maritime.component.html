@@ -110,6 +110,25 @@
     <p class="maritime-weather-disclaimer">{{ 'maritime.weather.disclaimer' | translate }}</p>
   </div>
 
+  <!-- Inline Hilfe/FAQ zur Statuslogik: gut sichtbar (immer offener Titel + Intro), aber nicht
+       störend (Fragen selbst standardmäßig geschlossen). Natives <details>/<summary> statt einer
+       neuen Accordion-Komponente/Dependency (siehe Analyse: kein Accordion-Pattern im Projekt). -->
+  <section class="maritime-faq-card" aria-labelledby="maritime-faq-heading">
+    <div class="maritime-faq-header">
+      <span class="maritime-faq-icon" aria-hidden="true">❓</span>
+      <h2 id="maritime-faq-heading" class="maritime-faq-title">{{ 'maritime.faq.sectionTitle' | translate }}</h2>
+    </div>
+    <p class="maritime-faq-intro">{{ 'maritime.faq.intro' | translate }}</p>
+
+    <details class="maritime-faq-item" *ngFor="let item of faqItems">
+      <summary class="maritime-faq-summary">
+        <span>{{ 'maritime.faq.' + item + '.question' | translate }}</span>
+        <span class="maritime-faq-chevron" aria-hidden="true"></span>
+      </summary>
+      <p class="maritime-faq-answer">{{ 'maritime.faq.' + item + '.answer' | translate }}</p>
+    </details>
+  </section>
+
   <div class="maritime-vessel-detail" *ngIf="selectedVessel as v">
     <div class="maritime-vessel-detail__header">
       <strong>{{ v.shipName || ('maritime.detail.title' | translate) }}</strong>

@@ -1790,6 +1790,78 @@
       "stale": "Showing last known data, refresh failed",
       "unavailable": "Marine weather temporarily unavailable",
       "disclaimer": "Marine weather data is model-based and may differ from local measurements, especially near ports. Not for navigation or safety-critical decisions."
+    },
+    "faq": {
+      "sectionTitle": "How is the status calculated? (Help)",
+      "intro": "These explanations describe exactly how markt.ma calculates vessel status and events for this port area.",
+      "statusCalculation": {
+        "question": "How is a vessel's status calculated?",
+        "answer": "The status is recalculated on every received position, not stored permanently. It is based on: position (latitude/longitude), speed over ground (SOG), course over ground (COG), and the navigational status reported by the vessel. The system also checks whether the vessel is inside the Port Zone (the tight port basin), inside the Approach Zone (the wider area around the port), or outside both zones. The port center point serves as the reference for determining direction of movement (bearing) relative to the port."
+      },
+      "moored": {
+        "question": "What does MOORED mean?",
+        "answer": "The vessel is inside the Port Zone and has a very low speed (current threshold: SOG < 0.5 kn). A navigational status of \"at anchor\" or \"moored\" reported by the vessel also immediately results in MOORED, regardless of speed. A reported status of \"under way using engine\" (0) deliberately does NOT prevent MOORED at low speed, because this value is often outdated in practice."
+      },
+      "inPort": {
+        "question": "What does IN_PORT mean?",
+        "answer": "The vessel is inside the Port Zone, but neither clearly moored (MOORED) nor recognizably departing (DEPARTING). This applies, for example, at moderate speed without a recognizable departing course, or when the reported navigational status \"under way sailing\" (8) contradicts a very low speed."
+      },
+      "approaching": {
+        "question": "What does APPROACHING mean?",
+        "answer": "The vessel is outside the Port Zone but inside the Approach Zone, moving at least 1.0 kn, and its course points (within a bearing tolerance of 60°) toward the port center."
+      },
+      "departing": {
+        "question": "What does DEPARTING mean?",
+        "answer": "The vessel is inside the Port Zone, moving at least 3.0 kn, and its course points (within a bearing tolerance of 60°) away from the port center."
+      },
+      "nearPort": {
+        "question": "What does NEAR_PORT mean?",
+        "answer": "The vessel is within the monitored area around the port, but neither in the Port Zone nor showing a recognizable arrival/departure maneuver within the Approach Zone – for example, pure transit traffic."
+      },
+      "unknown": {
+        "question": "What does UNKNOWN mean?",
+        "answer": "There is not enough usable data to derive a status – for example, when the position is missing."
+      },
+      "sog": {
+        "question": "What is SOG?",
+        "answer": "SOG stands for Speed Over Ground – the vessel's speed over ground in knots (kn). Examples: 0.0 kn = practically stationary, 0.3 kn = very slow, 5 kn = clearly under way."
+      },
+      "cog": {
+        "question": "What is COG?",
+        "answer": "COG stands for Course Over Ground – the vessel's actual direction of movement in degrees. 0° = North, 90° = East, 180° = South, 270° = West."
+      },
+      "navStatus": {
+        "question": "What is the navigational status?",
+        "answer": "The navigational status is reported by the vessel itself via AIS. Key values: 0 = Under way using engine, 1 = At anchor, 5 = Moored, 8 = Under way sailing, 15 = Undefined. This status is often maintained manually on board and can therefore be outdated or contradictory. markt.ma therefore combines multiple AIS signals instead of relying on this value alone."
+      },
+      "conflictingData": {
+        "question": "Why can AIS data be contradictory?",
+        "answer": "Example: the navigational status reports \"under way using engine\", but the actual speed (SOG) is 0.1 kn inside the Port Zone. In this case, markt.ma applies a heuristic and weighs the actually measured movement (SOG/position) more heavily than the potentially outdated reported status."
+      },
+      "geometries": {
+        "question": "Why are there three different geometries per port?",
+        "answer": "AIS BoundingBox: only used to receive live data, no status logic. Approach Zone: detects an approach toward the port. Port Zone: the actual port area (port basin). Center: the reference point for calculating bearing/direction between vessel and port."
+      },
+      "statusVsEvent": {
+        "question": "What is the difference between status and event?",
+        "answer": "The current status (APPROACHING, IN_PORT, MOORED, DEPARTING, NEAR_PORT, UNKNOWN) is continuously recalculated on every new position. An event (APPROACHING, ENTERED_PORT, MOORED, DEPARTING, LEFT_PORT), on the other hand, is only stored when a vessel's status actually changes – not on every single position update."
+      },
+      "restartEvent": {
+        "question": "Why is no event created after a restart?",
+        "answer": "The first sighting of a vessel after a restart or port switch is deliberately not treated as a status change. This prevents fabricated arrival or MOORED events for vessels that were already in port beforehand."
+      },
+      "dedup": {
+        "question": "Why are events deduplicated?",
+        "answer": "If an identical event for the same vessel at the same port was already stored within the last 5 minutes, it is not stored again. This protects against \"flapping\" caused by short-term fluctuations in AIS data."
+      },
+      "destination": {
+        "question": "Why is the destination sometimes empty?",
+        "answer": "The destination is reported by the vessel via AIS, but it is not guaranteed to be present. If no destination is transmitted, the display shows \"—\" – no value is invented."
+      },
+      "safety": {
+        "question": "Is this dashboard suitable for navigation?",
+        "answer": "No. This dashboard is intended for an overview of port operations and does not replace official navigation, VTS, or safety systems."
+      }
     }
   },
   "wizard": {

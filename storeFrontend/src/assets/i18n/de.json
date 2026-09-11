@@ -3393,6 +3393,78 @@
       "stale": "Zeigt letzten bekannten Stand, Aktualisierung fehlgeschlagen",
       "unavailable": "Marine-Wetterdaten vorübergehend nicht verfügbar",
       "disclaimer": "Marine-Wetterdaten basieren auf Wetter-/Ozeanmodellen und können insbesondere in Hafennähe von lokalen Messwerten abweichen. Nicht für Navigation oder sicherheitskritische Entscheidungen verwenden."
+    },
+    "faq": {
+      "sectionTitle": "Wie werden die Status berechnet? (Hilfe)",
+      "intro": "Diese Erklärungen beschreiben genau, wie markt.ma den Status und die Ereignisse für Schiffe in diesem Hafengebiet berechnet.",
+      "statusCalculation": {
+        "question": "Wie wird der Status eines Schiffs berechnet?",
+        "answer": "Der Status wird bei jeder empfangenen Position neu berechnet, nicht dauerhaft gespeichert. Grundlage sind: Position (Breite/Länge), Geschwindigkeit über Grund (SOG), Kurs über Grund (COG) und der vom Schiff gemeldete Navigational Status. Zusätzlich prüft das System, ob sich das Schiff innerhalb der Port Zone (enges Hafenbecken), innerhalb der Approach Zone (Anfahrtsbereich um den Hafen) oder außerhalb beider Zonen befindet. Der Hafen-Center-Punkt dient als Referenz, um die Bewegungsrichtung relativ zum Hafen (Peilung) zu bestimmen."
+      },
+      "moored": {
+        "question": "Was bedeutet MOORED / Festgemacht?",
+        "answer": "Das Schiff befindet sich innerhalb der Port Zone und hat eine sehr geringe Geschwindigkeit (aktuelle Schwelle: SOG < 0.5 kn). Ein vom Schiff gemeldeter Navigational Status wie „at anchor“ oder „moored“ führt zusätzlich sofort zu MOORED, unabhängig von der Geschwindigkeit. Ein gemeldeter Status „under way using engine“ (0) verhindert MOORED bei niedriger Geschwindigkeit bewusst nicht, da dieser Wert in der Praxis oft veraltet ist."
+      },
+      "inPort": {
+        "question": "Was bedeutet IN_PORT / Im Hafen?",
+        "answer": "Das Schiff befindet sich innerhalb der Port Zone, ist aber weder eindeutig festgemacht (MOORED) noch erkennbar auslaufend (DEPARTING). Das ist z. B. der Fall bei moderater Geschwindigkeit ohne erkennbaren Auslaufkurs, oder wenn der gemeldete Navigational Status „under way sailing“ (8) eine sehr niedrige Geschwindigkeit als Gegensignal widerlegt."
+      },
+      "approaching": {
+        "question": "Was bedeutet APPROACHING / Nähert sich?",
+        "answer": "Das Schiff befindet sich außerhalb der Port Zone, aber innerhalb der Approach Zone, bewegt sich mit mindestens 1.0 kn und sein Kurs zeigt (mit einer Winkeltoleranz von 60°) in Richtung Hafen-Center."
+      },
+      "departing": {
+        "question": "Was bedeutet DEPARTING / Auslaufend?",
+        "answer": "Das Schiff befindet sich innerhalb der Port Zone, bewegt sich mit mindestens 3.0 kn und sein Kurs zeigt (mit einer Winkeltoleranz von 60°) vom Hafen-Center weg."
+      },
+      "nearPort": {
+        "question": "Was bedeutet NEAR_PORT / In Hafennähe?",
+        "answer": "Das Schiff befindet sich im überwachten Gebiet um den Hafen, aber weder in der Port Zone noch in einem erkennbaren An- oder Ablegemanöver innerhalb der Approach Zone – zum Beispiel bei reinem Durchgangsverkehr."
+      },
+      "unknown": {
+        "question": "Was bedeutet UNKNOWN?",
+        "answer": "Es liegen nicht genügend verwertbare Daten vor, um einen Status abzuleiten – zum Beispiel, wenn die Position fehlt."
+      },
+      "sog": {
+        "question": "Was ist SOG?",
+        "answer": "SOG steht für Speed Over Ground – die Geschwindigkeit über Grund in Knoten (kn). Beispiele: 0.0 kn = praktisch still, 0.3 kn = sehr langsam, 5 kn = deutliche Fahrt."
+      },
+      "cog": {
+        "question": "Was ist COG?",
+        "answer": "COG steht für Course Over Ground – die tatsächliche Bewegungsrichtung des Schiffs in Grad. 0° = Norden, 90° = Osten, 180° = Süden, 270° = Westen."
+      },
+      "navStatus": {
+        "question": "Was ist der Navigational Status?",
+        "answer": "Der Navigational Status wird vom Schiff selbst per AIS gemeldet. Wichtige Werte: 0 = Under way using engine, 1 = At anchor, 5 = Moored, 8 = Under way sailing, 15 = Undefined. Dieser Status wird an Bord oft manuell gepflegt und kann daher veraltet oder widersprüchlich sein. markt.ma verwendet deshalb mehrere AIS-Signale gemeinsam, statt sich allein auf diesen Wert zu verlassen."
+      },
+      "conflictingData": {
+        "question": "Warum können AIS-Daten widersprüchlich sein?",
+        "answer": "Beispiel: Der Navigational Status meldet „under way using engine“, die tatsächliche Geschwindigkeit (SOG) liegt aber bei 0.1 kn innerhalb der Port Zone. In diesem Fall verwendet markt.ma eine Heuristik und gewichtet die real gemessene Bewegung (SOG/Position) stärker als den möglicherweise veralteten gemeldeten Status."
+      },
+      "geometries": {
+        "question": "Warum gibt es drei verschiedene Geometrien pro Hafen?",
+        "answer": "AIS BoundingBox: dient nur dem Empfang der Live-Daten, keine Statuslogik. Approach Zone: erkennt eine Annäherung an den Hafen. Port Zone: der tatsächliche Hafenbereich (Hafenbecken). Center: der Referenzpunkt für die Berechnung der Peilung/Richtung zwischen Schiff und Hafen."
+      },
+      "statusVsEvent": {
+        "question": "Was ist der Unterschied zwischen Status und Ereignis (Event)?",
+        "answer": "Der aktuelle Status (APPROACHING, IN_PORT, MOORED, DEPARTING, NEAR_PORT, UNKNOWN) wird laufend bei jeder neuen Position neu berechnet. Ein Ereignis (APPROACHING, ENTERED_PORT, MOORED, DEPARTING, LEFT_PORT) wird dagegen nur gespeichert, wenn sich der Status eines Schiffs tatsächlich ändert – nicht bei jeder einzelnen Positionsmeldung."
+      },
+      "restartEvent": {
+        "question": "Warum entsteht nach einem Neustart kein Ereignis?",
+        "answer": "Die erste Sichtung eines Schiffs nach einem Neustart oder Hafenwechsel wird bewusst nicht als Statuswechsel gewertet. Das verhindert erfundene Ankunfts- oder MOORED-Ereignisse für Schiffe, die schon vorher im Hafen lagen."
+      },
+      "dedup": {
+        "question": "Warum werden Ereignisse dedupliziert?",
+        "answer": "Wenn für dasselbe Schiff im selben Hafen innerhalb von 5 Minuten bereits ein identisches Ereignis gespeichert wurde, wird es nicht erneut gespeichert. Das schützt vor „Flattern“ durch kurzfristig schwankende AIS-Daten."
+      },
+      "destination": {
+        "question": "Warum ist das Ziel (Destination) manchmal leer?",
+        "answer": "Die Destination wird vom Schiff per AIS gemeldet, ist aber nicht garantiert vorhanden. Wenn keine Destination übermittelt wird, zeigt die Anzeige „—“ – es wird kein Wert erfunden."
+      },
+      "safety": {
+        "question": "Ist dieses Dashboard für die Navigation geeignet?",
+        "answer": "Nein. Das Dashboard dient der Übersicht über den Hafenbetrieb (Port Operations) und ersetzt keine offiziellen Navigations-, VTS- oder Sicherheitssysteme."
+      }
     }
   },
   "pos": {

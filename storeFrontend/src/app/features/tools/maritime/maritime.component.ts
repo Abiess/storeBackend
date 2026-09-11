@@ -109,6 +109,21 @@ export class MaritimeComponent implements OnInit, OnDestroy {
    *  zum bestehenden Projekt-Pattern (siehe z.B. supplier-invoices.component.ts). */
   columns: ColumnConfig[];
 
+  /**
+   * Statuslogik-FAQ (reines Inline-Hilfe-Modul, keine neue Route/Komponente): jeder Eintrag ist ein
+   * i18n-Key-Suffix unter `maritime.faq.<id>.question` / `maritime.faq.<id>.answer`. Der Text selbst
+   * bleibt vollständig in den i18n-Dateien (kein Hardcoding) und wird per `translate`-Pipe direkt im
+   * Template aufgelöst (reaktiv bei Sprachwechsel), anders als `columns` oben, die von
+   * ResponsiveDataList als reiner Text (ohne Pipe-Unterstützung) konsumiert werden.
+   * UI-Pattern: natives `<details>/<summary>` (im Projekt bereits an mehreren Stellen genutzt),
+   * bewusst KEINE neue Accordion-Komponente/Dependency, siehe maritime.component.html.
+   */
+  readonly faqItems: string[] = [
+    'statusCalculation', 'moored', 'inPort', 'approaching', 'departing', 'nearPort', 'unknown',
+    'sog', 'cog', 'navStatus', 'conflictingData', 'geometries', 'statusVsEvent', 'restartEvent',
+    'dedup', 'destination', 'safety'
+  ];
+
   /** Event-Typ (Backend-Enum-Name) -> i18n-Key. */
   private readonly eventTypeLabelKeys: Record<string, string> = {
     APPROACHING: 'maritime.events.type.approaching',
