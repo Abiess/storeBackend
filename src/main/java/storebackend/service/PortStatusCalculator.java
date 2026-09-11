@@ -9,8 +9,11 @@ import storebackend.enums.VesselPortStatus;
  *
  * MVP-Regeln (bewusst einfach gehalten, siehe Aufgabenstellung):
  *  - Position INNERHALB der Port-Zone + AIS-NavigationalStatus meldet explizit "moored"/"at anchor" => MOORED
- *  - Position INNERHALB der Port-Zone + sehr niedrige Geschwindigkeit (und NavigationalStatus
- *    widerspricht nicht "underway")                                                            => MOORED
+ *  - Position INNERHALB der Port-Zone + sehr niedrige Geschwindigkeit + NavigationalStatus fehlt,
+ *    ist "undefined"(15) oder meldet "underway using engine"(0)                                  => MOORED
+ *    (heuristischer Fallback bei widersprüchlichen AIS-Daten, siehe Hinweis unten)
+ *  - Position INNERHALB der Port-Zone + sehr niedrige Geschwindigkeit + NavigationalStatus
+ *    explizit "underway sailing"(8)                                                              => IN_PORT
  *  - Position INNERHALB der Port-Zone + höhere Geschwindigkeit, Kurs vom Zentrum WEG            => DEPARTING
  *  - Position INNERHALB der Port-Zone, sonst (langsam bewegend/manövrierend)                    => IN_PORT
  *  - Position AUSSERHALB der Port-Zone, AIS-NavigationalStatus meldet explizit "moored"          => MOORED
@@ -25,6 +28,22 @@ import storebackend.enums.VesselPortStatus;
  * WICHTIG: IN_PORT/MOORED/DEPARTING werden AUSSCHLIESSLICH anhand der engen {@code portZoneBox}
  * abgeleitet, APPROACHING zusätzlich anhand der {@code approachZone} + Bearing/SOG. Die große
  * AISStream-{@code boundingBox} (reine Empfangs-/Subscription-Box) wird hier NIE verwendet.
+ *
+ * WICHTIG (AIS-NavigationalStatus, ITU-R M.1371 – korrekte Bedeutung, NICHT "0=Default"!):
+ * {@code 0}="under way using engine", {@code 1}="at anchor", {@code 5}="moored",
+ * {@code 8}="under way sailing", {@code 15}="undefined" (DAS ist der tatsächliche
+ * Default-/Unset-Wert, nicht {@code 0}). {@code 0} ist ein gültiger, aktiv gemeldeter Status.
+ *
+ * Live-Data-Review zeigte aber real Schiffe im Hafenbecken bei SOG~0 kn mit gemeldetem
+ * NavigationalStatus=0 ("underway using engine"), obwohl sie faktisch festgemacht waren – ein
+ * bekanntes Datenqualitätsproblem: Besatzungen aktualisieren den NavigationalStatus häufig nicht
+ * zeitnah beim Anlegen (manuelles Umschalten, kein automatisches Feld). Bei SOG < 0.5 kn INNERHALB
+ * der Port-Zone wird {@code navStatus=0} (ebenso wie ein fehlender oder {@code 15}="undefined"
+ * gemeldeter Status) daher bewusst NICHT als zuverlässiges Gegensignal behandelt und MOORED trotzdem
+ * heuristisch vergeben ("conflicting AIS data / heuristic fallback" – SOG hat hier Vorrang vor einem
+ * NavigationalStatus, der erfahrungsgemäß veraltet sein kann). {@code navStatus=8} ("underway
+ * sailing") bleibt dagegen ein echtes Gegensignal (aktiv gemeldeter, selten veralteter Sonderstatus
+ * für Segelschiffe) und führt weiterhin zu IN_PORT statt MOORED.
  *
  * WICHTIG: SOG~0 AUSSERHALB der Port-Zone bedeutet für sich genommen NICHT "festgemacht" – das
  * würde z.B. vor der Reede ankernde Schiffe fälschlich als MOORED zeigen. MOORED wird daher nur
@@ -49,8 +68,12 @@ final class PortStatusCalculator {
     /** Maximale Abweichung (Grad) zwischen Peilung und Kurs, um "Richtung Hafen"/"Richtung Ausgang" zu erkennen. */
     private static final double BEARING_TOLERANCE_DEG = 60.0;
 
-    /** AIS NavigationalStatus-Codes (ITU-R M.1371) – nur die für die Status-Ableitung relevanten. */
-    private static final int NAV_STATUS_UNDERWAY_ENGINE = 0;
+    /**
+     * AIS NavigationalStatus-Codes (ITU-R M.1371) – nur die für die Status-Ableitung relevanten.
+     * Korrekte Bedeutung lt. Standard: 0="under way using engine" (GÜLTIGER, aktiv gemeldeter Status,
+     * KEIN Default!), 1="at anchor", 5="moored", 8="under way sailing", 15="undefined" (das ist der
+     * tatsächliche Default-/Unset-Wert). Siehe Klassen-Javadoc für die Heuristik bei navStatus=0.
+     */
     private static final int NAV_STATUS_AT_ANCHOR = 1;
     private static final int NAV_STATUS_MOORED = 5;
     private static final int NAV_STATUS_UNDERWAY_SAILING = 8;
@@ -75,10 +98,14 @@ final class PortStatusCalculator {
                 return VesselPortStatus.IN_PORT;
             }
             if (speedKn < MOORED_SPEED_KN) {
-                // Widerspricht der NavigationalStatus explizit "underway" (Maschine/Segel), dann eher
-                // ein kurzer Stopp/Manöver als "festgemacht" – konservativ IN_PORT statt MOORED.
-                boolean explicitlyUnderway = navStatus != null
-                        && (navStatus == NAV_STATUS_UNDERWAY_ENGINE || navStatus == NAV_STATUS_UNDERWAY_SAILING);
+                // Heuristischer Fallback bei widersprüchlichen AIS-Daten (siehe Klassen-Javadoc):
+                // NavigationalStatus=0 ("under way using engine") ist laut Standard ein gültiger,
+                // aktiv gemeldeter Status - aber in der Praxis häufig veraltet, weil er beim Anlegen
+                // nicht manuell umgeschaltet wird. Bei SOG < 0.5 kn innerhalb der Port-Zone wird er
+                // (ebenso wie ein fehlender oder "undefined"(15) gemeldeter Status) daher NICHT als
+                // zuverlässiges Gegensignal gewertet - SOG hat hier Vorrang. NavigationalStatus=8
+                // ("under way sailing") bleibt ein echtes, selten veraltetes Gegensignal.
+                boolean explicitlyUnderway = navStatus != null && navStatus == NAV_STATUS_UNDERWAY_SAILING;
                 return explicitlyUnderway ? VesselPortStatus.IN_PORT : VesselPortStatus.MOORED;
             }
             if (speedKn >= DEPARTING_MIN_SPEED_KN && courseDeg != null) {

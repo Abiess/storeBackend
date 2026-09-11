@@ -30,6 +30,35 @@ class PortStatusCalculatorTest {
     }
 
     @Test
+    void withinPortZone_zeroSpeedWithConflictingUnderwayEngineNavStatus_heuristicFallbackReturnsMoored() {
+        // Regression test for the Live-Data-Review fix: NavigationalStatus=0 ("under way using engine")
+        // is a VALID, actively reported status per ITU-R M.1371 - NOT a default/uninitialized value
+        // (that is navStatus=15, "undefined"). In practice it is nonetheless frequently stale, because
+        // crews often do not manually switch it when coming alongside. At SOG < 0.5 kn inside the port
+        // zone this is therefore treated as conflicting AIS data: a heuristic fallback favors SOG over
+        // the (potentially outdated) navStatus and still classifies MOORED (observed live: VB AMSA,
+        // MAERSK MEMPHIS were shown as IN_PORT despite SOG=0 before this fix).
+        VesselPortStatus status = PortStatusCalculator.compute(35.89, -5.50, 0.0, null, 0, PORT);
+        assertEquals(VesselPortStatus.MOORED, status);
+    }
+
+    @Test
+    void withinPortZone_zeroSpeedWithUndefinedNavStatus_heuristicFallbackReturnsMoored() {
+        // navStatus=15 ("undefined") is the actual AIS default/unset value - same heuristic fallback
+        // as a missing navStatus: SOG < 0.5 kn inside the port zone => MOORED.
+        VesselPortStatus status = PortStatusCalculator.compute(35.89, -5.50, 0.0, null, 15, PORT);
+        assertEquals(VesselPortStatus.MOORED, status);
+    }
+
+    @Test
+    void withinPortZone_zeroSpeedWithExplicitSailingNavStatus_returnsInPort() {
+        // NavigationalStatus=8 ("under way sailing") is a deliberately-set, rarely-stale status and
+        // remains a genuine contradicting signal - conservatively kept as IN_PORT, not MOORED.
+        VesselPortStatus status = PortStatusCalculator.compute(35.89, -5.50, 0.0, null, 8, PORT);
+        assertEquals(VesselPortStatus.IN_PORT, status);
+    }
+
+    @Test
     void withinPortZone_moderateSpeedNoDepartBearing_returnsInPort() {
         VesselPortStatus status = PortStatusCalculator.compute(35.89, -5.50, 2.0, null, null, PORT);
         assertEquals(VesselPortStatus.IN_PORT, status);
