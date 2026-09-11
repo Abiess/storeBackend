@@ -129,6 +129,12 @@ export interface MaritimeVesselsResponse extends MaritimeStatus {
 export interface MaritimePort {
   id: string;
   name: string;
+  /** Phase 3A (Live Map) – vom Backend als Source-of-Truth gelieferte Geometrie, siehe MaritimePortDto. */
+  center?: [number, number];
+  /** Enge interne Port-Zone {{minLat,minLon},{maxLat,maxLon}}. */
+  portZoneBox?: [[number, number], [number, number]];
+  /** Mittelgroße Anfahrtszone um den Hafen. */
+  approachZone?: [[number, number], [number, number]];
 }
 
 /** Phase 2B: ein fachliches Port Event (Statuswechsel), siehe GET /api/maritime/vessels/{mmsi}/events. */

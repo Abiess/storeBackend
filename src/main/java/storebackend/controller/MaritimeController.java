@@ -77,7 +77,7 @@ public class MaritimeController {
     @GetMapping("/ports")
     public ResponseEntity<List<MaritimePortDto>> getPorts() {
         List<MaritimePortDto> ports = Arrays.stream(MaritimePort.values())
-                .map(p -> new MaritimePortDto(p.name(), p.getDisplayName()))
+                .map(p -> new MaritimePortDto(p.name(), p.getDisplayName(), p.getCenter(), p.getPortZoneBox(), p.getApproachZone()))
                 .toList();
         return ResponseEntity.ok(ports);
     }

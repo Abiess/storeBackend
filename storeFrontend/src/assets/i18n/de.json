@@ -3394,6 +3394,18 @@
       "unavailable": "Marine-Wetterdaten vorübergehend nicht verfügbar",
       "disclaimer": "Marine-Wetterdaten basieren auf Wetter-/Ozeanmodellen und können insbesondere in Hafennähe von lokalen Messwerten abweichen. Nicht für Navigation oder sicherheitskritische Entscheidungen verwenden."
     },
+    "help": {
+      "title": "Hilfe: Status & AIS-Daten",
+      "sog": "Geschwindigkeit über Grund in Knoten.",
+      "cog": "Tatsächlicher Kurs über Grund.",
+      "moored": "Schiff liegt/festgemacht im Hafen.",
+      "inPort": "Schiff befindet sich im Hafenbecken, weder eindeutig festgemacht noch auslaufend.",
+      "approaching": "Schiff befindet sich in der Anfahrtszone und bewegt sich in Richtung Hafen.",
+      "departing": "Schiff verlässt den Hafen erkennbar in Richtung offenes Wasser.",
+      "nearPort": "Schiff befindet sich in der Nähe des Hafens, aber außerhalb der Anfahrtszone.",
+      "destination": "Vom Schiff über AIS gemeldetes Ziel. Kann fehlen oder veraltet sein.",
+      "dataNotice": "AIS-Daten sind Live-Daten und können unvollständig sein. Destination/ETA werden nicht von jedem Schiff gepflegt, der Navigational Status kann manuell gepflegt und veraltet sein. Die Statusanzeige kombiniert Position, Geschwindigkeit, Kurs, AIS-Navigationsstatus und Port-Zonen."
+    },
     "faq": {
       "sectionTitle": "Wie werden die Status berechnet? (Hilfe)",
       "intro": "Diese Erklärungen beschreiben genau, wie markt.ma den Status und die Ereignisse für Schiffe in diesem Hafengebiet berechnet.",

@@ -2,12 +2,16 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subscription, interval, of } from 'rxjs';
 import { startWith, switchMap, catchError } from 'rxjs/operators';
+import { MatDialog } from '@angular/material/dialog';
+import { LucideAngularModule } from 'lucide-angular';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { PageHeaderComponent } from '@app/shared/components/page-header.component';
 import { ResponsiveDataListComponent, ColumnConfig } from '@app/shared/components/responsive-data-list/responsive-data-list.component';
 import { MaritimeService } from '@app/core/services/maritime.service';
 import { TranslationService } from '@app/core/services/translation.service';
 import { VesselDto, MaritimeVesselsResponse, MaritimePort, MarineWeatherDto, VesselPortEventDto } from '@app/core/models';
+import { MaritimeMapComponent } from './maritime-map.component';
+import { MaritimeHelpDialogComponent } from './maritime-help-dialog.component';
 
 /**
  * Maritime / Live-AIS-Schiffsdaten (MVP: Tanger Med, Nador, Casablanca).
@@ -25,7 +29,7 @@ import { VesselDto, MaritimeVesselsResponse, MaritimePort, MarineWeatherDto, Ves
 @Component({
   selector: 'app-maritime',
   standalone: true,
-  imports: [CommonModule, TranslatePipe, PageHeaderComponent, ResponsiveDataListComponent],
+  imports: [CommonModule, TranslatePipe, PageHeaderComponent, ResponsiveDataListComponent, LucideAngularModule, MaritimeMapComponent],
   templateUrl: './maritime.component.html',
   styleUrls: ['./maritime.component.scss']
 })
@@ -110,19 +114,11 @@ export class MaritimeComponent implements OnInit, OnDestroy {
   columns: ColumnConfig[];
 
   /**
-   * Statuslogik-FAQ (reines Inline-Hilfe-Modul, keine neue Route/Komponente): jeder Eintrag ist ein
-   * i18n-Key-Suffix unter `maritime.faq.<id>.question` / `maritime.faq.<id>.answer`. Der Text selbst
-   * bleibt vollständig in den i18n-Dateien (kein Hardcoding) und wird per `translate`-Pipe direkt im
-   * Template aufgelöst (reaktiv bei Sprachwechsel), anders als `columns` oben, die von
-   * ResponsiveDataList als reiner Text (ohne Pipe-Unterstützung) konsumiert werden.
-   * UI-Pattern: natives `<details>/<summary>` (im Projekt bereits an mehreren Stellen genutzt),
-   * bewusst KEINE neue Accordion-Komponente/Dependency, siehe maritime.component.html.
+   * Phase 3A: Live-Karte für den aktuell ausgewählten Hafen. Die vorherige, große FAQ-Card
+   * (mit `<details>` je Statusfrage) wurde entfernt und durch ein dezentes "?"-Icon ersetzt,
+   * das den bestehenden Angular-Material-Dialog öffnet (siehe openHelp()) – kein Platzverbrauch
+   * mehr vor der Vessel-Liste.
    */
-  readonly faqItems: string[] = [
-    'statusCalculation', 'moored', 'inPort', 'approaching', 'departing', 'nearPort', 'unknown',
-    'sog', 'cog', 'navStatus', 'conflictingData', 'geometries', 'statusVsEvent', 'restartEvent',
-    'dedup', 'destination', 'safety'
-  ];
 
   /** Event-Typ (Backend-Enum-Name) -> i18n-Key. */
   private readonly eventTypeLabelKeys: Record<string, string> = {
@@ -142,7 +138,11 @@ export class MaritimeComponent implements OnInit, OnDestroy {
     LEFT_PORT: 'status-inactive'
   };
 
-  constructor(private maritimeService: MaritimeService, private translationService: TranslationService) {
+  constructor(
+    private maritimeService: MaritimeService,
+    private translationService: TranslationService,
+    private dialog: MatDialog
+  ) {
     const t = (key: string) => this.translationService.translate(key);
     this.columns = [
       { key: 'shipName', label: t('maritime.table.shipName'), type: 'text', mobileLabel: t('maritime.table.shipName'), formatFn: (v) => v || '—' },
@@ -290,6 +290,32 @@ export class MaritimeComponent implements OnInit, OnDestroy {
   /** Anzeigename des aktuell gewählten Hafens (aus der bereits geladenen Port-Liste), Fallback: Port-ID. */
   selectedPortName(): string {
     return this.ports.find((p) => p.id === this.selectedPort)?.name || this.selectedPort;
+  }
+
+  /**
+   * Phase 3A: vollständiger Port-Eintrag (inkl. Geometrie: center/portZoneBox/approachZone) für
+   * die Live-Karte des aktuell ausgewählten Hafens. Kommt vollständig aus GET /api/maritime/ports
+   * (Source-of-Truth = Backend-Enum MaritimePort), kein Hardcoding im Frontend.
+   */
+  currentPort(): MaritimePort | undefined {
+    return this.ports.find((p) => p.id === this.selectedPort);
+  }
+
+  /** Öffnet den bestehenden Angular-Material-Dialog mit der kurzen Status-/AIS-Hilfe (ersetzt die frühere große FAQ-Card). */
+  openHelp(): void {
+    this.dialog.open(MaritimeHelpDialogComponent, {
+      width: '480px',
+      maxWidth: '92vw',
+      autoFocus: false
+    });
+  }
+
+  /** Klick auf einen Marker in der Live-Karte -> bestehende Detail-Logik der Tabelle wiederverwenden. */
+  onVesselSelectFromMap(mmsi: number): void {
+    const vessel = this.vessels.find((v) => v.mmsi === mmsi);
+    if (vessel) {
+      this.onVesselClick(vessel);
+    }
   }
 
   onVesselClick(vessel: VesselDto): void {

@@ -1,6 +1,9 @@
 /* Import Angular Material Theme */
 @import '@angular/material/prebuilt-themes/indigo-pink.css';
 
+/* Leaflet (Maritime Live Map, Phase 3A) – OpenStreetMap-Tiles, kein API-Key nötig */
+@import 'leaflet/dist/leaflet.css';
+
 /* ============================================================
    SAFE-AREA – iPhone Notch / Dynamic Island / Home-Indicator
    Alle Komponenten nutzen diese CSS-Variablen statt direktem env()

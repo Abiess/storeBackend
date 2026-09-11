@@ -29,7 +29,9 @@ import {
   // TEMP: Issue-Analysis Test-Seite (Sidebar-Icon)
   Wrench,
   // Maritime (AIS Live-Schiffsdaten MVP, Tanger Med)
-  Anchor
+  Anchor,
+  // Maritime Phase 3A: dezentes Hilfe-Icon (Live Map + Statuslogik-FAQ-Dialog)
+  CircleQuestionMark
 } from 'lucide-angular';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS, HttpClient } from '@angular/common/http';
@@ -101,7 +103,9 @@ export const appConfig: ApplicationConfig = {
         // TEMP: Issue-Analysis Test-Seite
         Wrench,
         // Maritime (AIS Live-Schiffsdaten MVP, Tanger Med)
-        Anchor
+        Anchor,
+        // Maritime Phase 3A: dezentes Hilfe-Icon
+        CircleQuestionMark
       })
     },
     // Standard Locale (kann dynamisch überschrieben werden)

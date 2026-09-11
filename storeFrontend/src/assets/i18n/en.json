@@ -1791,6 +1791,18 @@
       "unavailable": "Marine weather temporarily unavailable",
       "disclaimer": "Marine weather data is model-based and may differ from local measurements, especially near ports. Not for navigation or safety-critical decisions."
     },
+    "help": {
+      "title": "Help: Status & AIS data",
+      "sog": "Speed over ground, in knots.",
+      "cog": "Actual course over ground.",
+      "moored": "Ship is moored/tied up in the port.",
+      "inPort": "Ship is inside the port basin, neither clearly moored nor departing.",
+      "approaching": "Ship is in the approach zone and moving towards the port.",
+      "departing": "Ship is visibly leaving the port towards open water.",
+      "nearPort": "Ship is near the port but outside the approach zone.",
+      "destination": "Destination reported by the ship via AIS. May be missing or outdated.",
+      "dataNotice": "AIS data is live data and can be incomplete. Destination/ETA are not maintained by every ship, and the navigational status may be manually set and outdated. The status shown combines position, speed, course, AIS navigational status and port zones."
+    },
     "faq": {
       "sectionTitle": "How is the status calculated? (Help)",
       "intro": "These explanations describe exactly how markt.ma calculates vessel status and events for this port area.",

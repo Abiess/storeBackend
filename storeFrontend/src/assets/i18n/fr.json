@@ -1715,6 +1715,18 @@
       "unavailable": "Données météo marines temporairement indisponibles",
       "disclaimer": "Les données météo marines sont basées sur des modèles météo/océaniques et peuvent différer des mesures locales, en particulier près des ports. Ne pas utiliser pour la navigation ou des décisions critiques pour la sécurité."
     },
+    "help": {
+      "title": "Aide : Statut & données AIS",
+      "sog": "Vitesse sur le fond, en nœuds.",
+      "cog": "Cap réel sur le fond.",
+      "moored": "Le navire est amarré au port.",
+      "inPort": "Le navire est dans le bassin portuaire, ni clairement amarré ni en train de partir.",
+      "approaching": "Le navire est dans la zone d'approche et se dirige vers le port.",
+      "departing": "Le navire quitte visiblement le port vers le large.",
+      "nearPort": "Le navire est proche du port mais hors de la zone d'approche.",
+      "destination": "Destination communiquée par le navire via AIS. Peut être manquante ou obsolète.",
+      "dataNotice": "Les données AIS sont des données en direct et peuvent être incomplètes. La destination/l'ETA ne sont pas toujours renseignées, et le statut de navigation peut être défini manuellement et obsolète. Le statut affiché combine position, vitesse, cap, statut de navigation AIS et zones portuaires."
+    },
     "faq": {
       "sectionTitle": "Comment le statut est-il calculé ? (Aide)",
       "intro": "Ces explications décrivent précisément comment markt.ma calcule le statut et les événements des navires dans cette zone portuaire.",
