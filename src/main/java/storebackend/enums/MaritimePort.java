@@ -11,11 +11,17 @@ package storebackend.enums;
  * Format der BoundingBox exakt wie vom AISStream-Payload erwartet:
  * {@code [[lat1, lon1], [lat2, lon2]]} (Eckpunkte, Reihenfolge für AISStream selbst nicht relevant).
  *
- * Phase 2A (Port Operations): zusätzlich zur AISStream-BoundingBox ("Approach"-Bereich)
- * hat jeder Hafen eine kleinere interne {@link #portZoneBox} ("PORT"-Zone, z.B. Hafenbecken)
- * und einen {@link #center} Punkt. Beides wird NUR für die eigene Business-Logik
- * (Port-Status-Ableitung, siehe {@code storebackend.service.PortStatusCalculator}) verwendet –
- * AISStream selbst bekommt weiterhin ausschließlich die größere {@link #boundingBox}.
+ * Es gibt DREI unabhängige Geometrien pro Hafen, bewusst getrennt und NIE untereinander vertauscht:
+ *  - {@link #boundingBox}: NUR die AISStream-Empfangs-/Subscription-Box (Format: min-Ecke, max-Ecke,
+ *    d.h. {@code {{minLat,minLon},{maxLat,maxLon}}} – siehe Ausnahme unten für Nador/Casablanca-Testboxen).
+ *    Darf groß bleiben, wird von {@code PortStatusCalculator} NIEMALS für die Status-Ableitung verwendet.
+ *  - {@link #portZoneBox}: enge interne "PORT"-Zone (Hafenbecken) – einzige Grundlage für IN_PORT/MOORED/
+ *    DEPARTING (siehe {@code storebackend.service.PortStatusCalculator}).
+ *  - {@link #approachZone}: mittelgroße interne Zone um den Hafen herum (umschließt die {@link #portZoneBox})
+ *    – Voraussetzung dafür, dass ein Schiff außerhalb der Port-Zone überhaupt als APPROACHING gilt
+ *    (zusätzlich zu Bearing/COG + Mindest-SOG). Schiffe außerhalb dieser Zone (z.B. reiner Durchgangsverkehr
+ *    in der Straße von Gibraltar) werden nicht als "Richtung Hafen" gewertet, selbst bei passendem Kurs.
+ * Alle drei Geometrien nutzen intern konsistent das Format {@code {{minLat,minLon},{maxLat,maxLon}}}.
  *
  * Live-Data-Review (nach erstem Produktiv-Deploy): Tanger Meds ursprüngliche {@link #portZoneBox}
  * ({@code [[35.85,-5.55],[35.95,-5.30]]}, ca. 11km x 22.5km) reichte weit in die allgemeine
@@ -25,40 +31,54 @@ package storebackend.enums;
  * Hafenbecken inkl. unmittelbarer Zufahrt verkleinert (ca. 5.5km x 6.3km). Die AISStream-
  * {@link #boundingBox} bleibt unverändert groß (reine Empfangs-/Subscription-Box).
  *
+ * Geometrie-Vereinheitlichung (verifizierte Referenzpunkte): {@link #center} wurde für Tanger Med von
+ * {@code -5.41} auf {@code -5.4945} korrigiert – der alte Wert lag außerhalb der {@link #portZoneBox}
+ * (ca. 9km östlich) und hätte Peilungen für An-/Abfahrterkennung verfälscht. {@link #approachZone} wurde
+ * für alle drei Häfen neu eingeführt (vorher gab es für "APPROACHING" keine eigene Geometrie, nur
+ * Bearing/SOG relativ zum Zentrum – dadurch konnte theoretisch auch weit entfernter Durchgangsverkehr
+ * mit zufällig passendem Kurs als APPROACHING gelten).
+ *
  * TEMPORÄR (Deployment-Diagnose, vor Phase-2A-Livetest): NADOR und CASABLANCA verwenden bewusst
  * größere Test-BoundingBoxes als eigentlich für den Hafen nötig, um zunächst zu verifizieren, dass
  * AISStream in diesen Regionen überhaupt PositionReports liefert (Tanger Med lieferte bereits Daten,
- * Nador/Casablanca bisher nicht). Die kleinere interne {@link #portZoneBox} (Statuslogik) bleibt davon
- * unberührt. Sobald AISStream-Abdeckung bestätigt ist, können die BoundingBoxes wieder auf die engeren,
- * ursprünglich spezifizierten Werte ({@code NADOR: [[35.15,-3.05],[35.38,-2.75]]},
- * {@code CASABLANCA: [[33.48,-7.78],[33.72,-7.42]]}) zurückgesetzt werden.
+ * Nador/Casablanca bisher nicht). Die kleinere interne {@link #portZoneBox}/{@link #approachZone}
+ * (Statuslogik) bleiben davon unberührt. Sobald AISStream-Abdeckung bestätigt ist, können die
+ * BoundingBoxes wieder auf die engeren, ursprünglich spezifizierten Werte
+ * ({@code NADOR: [[35.15,-3.05],[35.38,-2.75]]}, {@code CASABLANCA: [[33.48,-7.78],[33.72,-7.42]]})
+ * zurückgesetzt werden.
  */
 public enum MaritimePort {
 
     TANGER_MED("Tanger Med",
             new double[][]{{35.75, -5.65}, {36.05, -5.20}},
             new double[][]{{35.865, -5.535}, {35.915, -5.465}},
-            new double[]{35.89, -5.41}),
+            new double[][]{{35.82, -5.60}, {35.97, -5.39}},
+            new double[]{35.895, -5.4945}),
     // TEMPORÄR: Test-Box lt. Vorgabe (größer als [[35.15,-3.05],[35.38,-2.75]]), um AISStream-Abdeckung zu prüfen.
     NADOR("Nador",
             new double[][]{{35.6, -3.4}, {34.9, -2.4}},
             new double[][]{{35.22, -2.98}, {35.30, -2.87}},
-            new double[]{35.263, -2.924}),
+            new double[][]{{35.14, -3.09}, {35.38, -2.76}},
+            new double[]{35.26, -2.92}),
     // TEMPORÄR: Test-Box lt. Vorgabe (größer als [[33.48,-7.78],[33.72,-7.42]]), um AISStream-Abdeckung zu prüfen.
     CASABLANCA("Casablanca",
             new double[][]{{34.0, -8.2}, {33.2, -7.0}},
-            new double[][]{{33.57, -7.65}, {33.63, -7.57}},
-            new double[]{33.60, -7.61});
+            new double[][]{{33.57, -7.67}, {33.64, -7.56}},
+            new double[][]{{33.50, -7.80}, {33.70, -7.45}},
+            new double[]{33.6014, -7.6145});
 
     private final String displayName;
     private final double[][] boundingBox;
     private final double[][] portZoneBox;
+    private final double[][] approachZone;
     private final double[] center;
 
-    MaritimePort(String displayName, double[][] boundingBox, double[][] portZoneBox, double[] center) {
+    MaritimePort(String displayName, double[][] boundingBox, double[][] portZoneBox,
+                 double[][] approachZone, double[] center) {
         this.displayName = displayName;
         this.boundingBox = boundingBox;
         this.portZoneBox = portZoneBox;
+        this.approachZone = approachZone;
         this.center = center;
     }
 
@@ -73,6 +93,15 @@ public enum MaritimePort {
     /** Kleinere interne Zone (z.B. Hafenbecken) für die Port-Status-Ableitung – NICHT an AISStream gesendet. */
     public double[][] getPortZoneBox() {
         return portZoneBox;
+    }
+
+    /**
+     * Mittelgroße interne Zone um den Hafen (umschließt {@link #portZoneBox}) – Voraussetzung für
+     * APPROACHING außerhalb der Port-Zone (zusätzlich zu Bearing/SOG). NICHT an AISStream gesendet,
+     * unabhängig von {@link #boundingBox}.
+     */
+    public double[][] getApproachZone() {
+        return approachZone;
     }
 
     /** Hafenzentrum {lat, lon} – Referenzpunkt für die Richtungserkennung (An-/Abfahrt). */

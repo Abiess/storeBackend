@@ -15,9 +15,16 @@ import storebackend.enums.VesselPortStatus;
  *  - Position INNERHALB der Port-Zone, sonst (langsam bewegend/manövrierend)                    => IN_PORT
  *  - Position AUSSERHALB der Port-Zone, AIS-NavigationalStatus meldet explizit "moored"          => MOORED
  *    (eindeutiges Schiffs-Signal überstimmt die – notwendigerweise grobe – Zonen-Box)
- *  - Position AUSSERHALB der Port-Zone, Kurs zum Zentrum HIN                                    => APPROACHING
+ *  - Position AUSSERHALB der Port-Zone, aber innerhalb der Approach-Zone, Kurs zum Zentrum HIN       => APPROACHING
+ *  - Position AUSSERHALB der Approach-Zone                                                          => NEAR_PORT
+ *    (auch bei zufällig passendem Kurs – reiner Durchgangsverkehr weit außerhalb des Hafens gilt
+ *    nicht als "Richtung Hafen", siehe MaritimePort-Klassendoku)
  *  - Position AUSSERHALB der Port-Zone, sonst (auch SOG~0, z.B. vor Anker liegend)               => NEAR_PORT
  *  - Fehlende Position                                                                          => UNKNOWN
+ *
+ * WICHTIG: IN_PORT/MOORED/DEPARTING werden AUSSCHLIESSLICH anhand der engen {@code portZoneBox}
+ * abgeleitet, APPROACHING zusätzlich anhand der {@code approachZone} + Bearing/SOG. Die große
+ * AISStream-{@code boundingBox} (reine Empfangs-/Subscription-Box) wird hier NIE verwendet.
  *
  * WICHTIG: SOG~0 AUSSERHALB der Port-Zone bedeutet für sich genommen NICHT "festgemacht" – das
  * würde z.B. vor der Reede ankernde Schiffe fälschlich als MOORED zeigen. MOORED wird daher nur
@@ -90,14 +97,19 @@ final class PortStatusCalculator {
         if (navStatus != null && navStatus == NAV_STATUS_MOORED) {
             return VesselPortStatus.MOORED;
         }
-        if (speedKn != null && speedKn >= APPROACH_MIN_SPEED_KN && courseDeg != null) {
+        // APPROACHING setzt zusätzlich zu Bearing/SOG voraus, dass sich das Schiff innerhalb der
+        // (gegenüber der AISStream-BoundingBox deutlich engeren) Approach-Zone befindet – reiner
+        // Durchgangsverkehr weit außerhalb des Hafens mit zufällig passendem Kurs gilt NICHT als
+        // "Richtung Hafen" (siehe MaritimePort-Klassendoku "Geometrie-Vereinheitlichung").
+        boolean inApproachZone = withinBox(latitude, longitude, port.getApproachZone());
+        if (inApproachZone && speedKn != null && speedKn >= APPROACH_MIN_SPEED_KN && courseDeg != null) {
             double bearingToCenter = bearingDegrees(latitude, longitude, center[0], center[1]);
             if (angularDifference(bearingToCenter, courseDeg) <= BEARING_TOLERANCE_DEG) {
                 return VesselPortStatus.APPROACHING;
             }
         }
-        // Deckt auch "vor Anker außerhalb der Port-Zone" (NavigationalStatus=AT_ANCHOR, SOG~0) ab –
-        // bewusst NEAR_PORT statt MOORED, siehe Klassen-Doku.
+        // Deckt auch "vor Anker außerhalb der Port-Zone" (NavigationalStatus=AT_ANCHOR, SOG~0) sowie
+        // Positionen außerhalb der Approach-Zone ab – bewusst NEAR_PORT statt MOORED, siehe Klassen-Doku.
         return VesselPortStatus.NEAR_PORT;
     }
 
