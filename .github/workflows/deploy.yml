@@ -28,6 +28,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # ── Node.js Version pinnen ──────────────────────────────────────
+      # WICHTIG: OHNE dieses Setup nutzt der Job das jeweils vorinstallierte
+      # Node/npm des ubuntu-latest-Runner-Images. Das ist NICHT gepinnt und
+      # kann sich bei einem GitHub-Runner-Image-Update ändern, was zu genau
+      # der Art von "npm ci" Fehlern führen kann, die ohne jede Code-Änderung
+      # im Repo plötzlich auftreten (z.B. npm-Version kann die vorhandene
+      # package-lock.json/lockfileVersion nicht mehr sauber laden). Pinnen auf
+      # Node 20 (identisch zu deploy-frontend.yml) macht den Build reproduzierbar.
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       # ── Microsoft Clarity ID injizieren ────────────────────────────
       # Ersetzt den Platzhalter __CLARITY_ID__ in environment.prod.ts
       # mit dem echten Wert aus dem GitHub Secret CLARITY_ID.
