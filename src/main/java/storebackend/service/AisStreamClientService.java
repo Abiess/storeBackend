@@ -187,12 +187,51 @@ public class AisStreamClientService {
      */
     private final AtomicInteger staticDataReceivedSinceSubscription = new AtomicInteger(0);
 
+    // ── TEMPORÄR (AIS-Empfangsproblem-Untersuchung NADOR/CASABLANCA) ──────────────────────────
+    // Zusätzliche, feingranulare Zähler seit der letzten Subscription. Zweck: unterscheiden, ob
+    // "WebSocket empfängt 0 Nachrichten" (Coverage-/Subscription-Problem) oder "WebSocket empfängt
+    // Nachrichten, aber unser Code verwirft sie" (interne Filterung) vorliegt. Kein Rohdaten-Puffer,
+    // nur Zähler - werden bei jeder neuen Subscription (Connect ODER Portwechsel) zurückgesetzt.
+    private final AtomicInteger messagesReceivedSinceSubscription = new AtomicInteger(0);
+    private final AtomicInteger positionsAcceptedSinceSubscription = new AtomicInteger(0);
+    private final AtomicInteger positionsRejectedSinceSubscription = new AtomicInteger(0);
+
     /** Phase 2B: leitet fachliche Port Events aus Statuswechseln ab (siehe {@link #handlePositionReport}). */
     private final VesselPortEventService portEventService;
 
     public AisStreamClientService(ObjectMapper objectMapper, VesselPortEventService portEventService) {
         this.objectMapper = objectMapper;
         this.portEventService = portEventService;
+    }
+
+    /**
+     * TEMPORÄR (Deployment-Diagnose): unveränderlicher Schnappschuss der Empfangs-Zähler seit der
+     * letzten Subscription, für Diagnose-Logs/Tests. Kein Rohdaten-Inhalt, keine Secrets.
+     */
+    public record DiagnosticsSnapshot(
+            String port,
+            boolean connected,
+            boolean healthy,
+            int messagesReceived,
+            int positionReportsReceived,
+            int staticReportsReceived,
+            int positionsAccepted,
+            int positionsRejected,
+            int vesselCount) {
+    }
+
+    /** Aktueller Diagnose-Zähler-Stand (siehe {@link DiagnosticsSnapshot}) für den aktuell ausgewählten Hafen. */
+    public DiagnosticsSnapshot getDiagnostics() {
+        return new DiagnosticsSnapshot(
+                currentPort.get().name(),
+                connected.get(),
+                isHealthy(),
+                messagesReceivedSinceSubscription.get(),
+                positionReportsSinceSubscription.get(),
+                staticDataReceivedSinceSubscription.get(),
+                positionsAcceptedSinceSubscription.get(),
+                positionsRejectedSinceSubscription.get(),
+                vessels.size());
     }
 
     /** true wenn AISSTREAM_API_KEY gesetzt ist (unabhängig vom aktuellen Verbindungsstatus) */
@@ -381,23 +420,22 @@ public class AisStreamClientService {
             // im Live-Betrieb nicht mehr aufgetreten; ShipStaticData wurde daher wieder in
             // FilterMessageTypes aufgenommen (Live-Data-Review: Destination/Name/ETA/CallSign/IMO
             // werden sonst nie empfangen – siehe handleStaticData).
-            double[][] bbox = currentPort.get().getBoundingBox();
-            String json = "{"
-                    + "\"APIKey\":\"" + escapeJson(apiKey) + "\","
-                    + "\"BoundingBoxes\":[[["
-                    + bbox[0][0] + "," + bbox[0][1] + "],["
-                    + bbox[1][0] + "," + bbox[1][1] + "]]],"
-                    + "\"FilterMessageTypes\":[\"PositionReport\",\"ShipStaticData\"]"
-                    + "}";
-            // TEMPORÄR (Deployment-Diagnose): Zähler für "PositionReports/ShipStaticData seit letzter
-            // Subscription" zurücksetzen – erlaubt zu beobachten, ob AISStream für DIESEN Hafen
-            // überhaupt Daten (inkl. Static Data) liefert.
+            MaritimePort port = currentPort.get();
+            double[][] bbox = port.getBoundingBox();
+            String json = buildSubscriptionJson(apiKey, port);
+            // TEMPORÄR (Deployment-Diagnose): alle Empfangs-Zähler seit der letzten Subscription
+            // zurücksetzen (neuer Connect ODER Hafenwechsel) – erlaubt, PRO Hafen sauber zu
+            // beobachten, ob AISStream überhaupt Daten liefert (siehe DiagnosticsSnapshot).
             positionReportsSinceSubscription.set(0);
             staticDataReceivedSinceSubscription.set(0);
-            // WICHTIG: Niemals das komplette Subscription-JSON loggen (enthält den API-Key)! Nur die
-            // BoundingBox-Koordinaten (unkritisch, öffentlich bekannte Geo-Region) und die Länge.
-            log.info("AIS subscription send started (port={}, boundingBox=[[{},{}],[{},{}]], payloadLength={})",
-                    currentPort.get(), bbox[0][0], bbox[0][1], bbox[1][0], bbox[1][1], json.length());
+            messagesReceivedSinceSubscription.set(0);
+            positionsAcceptedSinceSubscription.set(0);
+            positionsRejectedSinceSubscription.set(0);
+            // WICHTIG: Niemals das komplette Subscription-JSON mit echtem API-Key loggen! Der
+            // geloggte "payload" ist eine redigierte Kopie (API-Key durch *** ersetzt) - Struktur/
+            // BoundingBox bleiben sichtbar (unkritisch, öffentlich bekannte Geo-Region), der Key nie.
+            log.info("AIS SUBSCRIBE port={} boundingBox=[[{},{}],[{},{}]] payload={}",
+                    port, bbox[0][0], bbox[0][1], bbox[1][0], bbox[1][1], redactApiKey(json));
             webSocket.sendText(json, true).whenComplete((ws, err) -> {
                 if (err != null) {
                     log.warn("AIS subscription send FAILED: {}: {}", err.getClass().getSimpleName(), err.getMessage());
@@ -410,6 +448,30 @@ public class AisStreamClientService {
         }
     }
 
+    /**
+     * Baut das exakte AISStream-Subscription-JSON (siehe AISStream-Dokumentation: APIKey,
+     * BoundingBoxes als {@code [[[lat1,lon1],[lat2,lon2]]]}, optional FilterMessageTypes/
+     * FilterShipMMSI - letzteres wird von uns bewusst NICHT gesendet, da kein MMSI-Filter genutzt
+     * wird). Package-private + statisch (kein Instanzzustand außer den Parametern) ausschließlich
+     * damit dies ohne echte WebSocket-Verbindung/Spring-Kontext unit-testbar ist (siehe
+     * AisStreamClientServiceSubscriptionTest) - keine zweite/parallele AIS-Implementierung.
+     */
+    static String buildSubscriptionJson(String apiKey, MaritimePort port) {
+        double[][] bbox = port.getBoundingBox();
+        return "{"
+                + "\"APIKey\":\"" + escapeJson(apiKey) + "\","
+                + "\"BoundingBoxes\":[[["
+                + bbox[0][0] + "," + bbox[0][1] + "],["
+                + bbox[1][0] + "," + bbox[1][1] + "]]],"
+                + "\"FilterMessageTypes\":[\"PositionReport\",\"ShipStaticData\"]"
+                + "}";
+    }
+
+    /** Ersetzt den APIKey-Wert durch *** für Logs - niemals den echten Key ausgeben. */
+    private static String redactApiKey(String json) {
+        return json.replaceAll("\"APIKey\":\"[^\"]*\"", "\"APIKey\":\"***\"");
+    }
+
     private static String escapeJson(String s) {
         return s == null ? "" : s.replace("\\", "\\\\").replace("\"", "\\\"");
     }
@@ -420,6 +482,11 @@ public class AisStreamClientService {
 
     private void handleMessage(String payload) {
         lastMessageAt.set(Instant.now());
+        // TEMPORÄR (Deployment-Diagnose): zählt JEDE erfolgreich zugestellte AIS-Nachricht (jeden
+        // Typ, inkl. SubscriptionConfirmation) seit der letzten Subscription - unterscheidet
+        // "WebSocket empfängt 0 Nachrichten" von "WebSocket empfängt Nachrichten, unser Code
+        // verwirft sie" (siehe DiagnosticsSnapshot).
+        messagesReceivedSinceSubscription.incrementAndGet();
         try {
             JsonNode root = objectMapper.readTree(payload);
             String messageType = root.path("MessageType").asText("");
@@ -453,6 +520,11 @@ public class AisStreamClientService {
     private void handlePositionReport(JsonNode pos, JsonNode metaData) {
         long mmsi = metaData.path("MMSI").asLong(0);
         if (mmsi <= 0) {
+            // TEMPORÄR (Deployment-Diagnose): fehlende/ungültige MMSI ist die einzige interne
+            // Verwerfung von PositionReports in diesem Service - separat gezählt, damit ein
+            // niedriger positionsAccepted-Wert trotz hoher positionReportsReceived NICHT fälschlich
+            // als "AISStream liefert nichts" missverstanden wird.
+            positionsRejectedSinceSubscription.incrementAndGet();
             return;
         }
         // TEMPORÄR (Deployment-Diagnose): zählt PositionReports seit der letzten Subscription (siehe
@@ -473,6 +545,15 @@ public class AisStreamClientService {
 
         Double speed = pos.has("Sog") ? pos.path("Sog").asDouble() : null;
         Double course = pos.has("Cog") ? pos.path("Cog").asDouble() : null;
+
+        // TEMPORÄR (Deployment-Diagnose): "AIS POSITION"-Log, wie akzeptierte PositionReports
+        // konkret aussehen (mmsi/lat/lon/sog) - gleiche Drossel wie oben (erste 3 + jede 50.),
+        // damit dies auch für Häfen mit wenig Traffic (z.B. NADOR/CASABLANCA-Diagnose) sichtbar
+        // ist, ohne bei TANGER_MED-Traffic-Volumen die Logs zu fluten.
+        if (reportCount <= 3 || reportCount % 50 == 0) {
+            log.info("AIS POSITION port={} mmsi={} lat={} lon={} sog={}", currentPort.get(), mmsi, lat, lon, speed);
+        }
+        positionsAcceptedSinceSubscription.incrementAndGet();
 
         builder.latitude(lat)
                 .longitude(lon)

@@ -38,12 +38,16 @@ package storebackend.enums;
  * Bearing/SOG relativ zum Zentrum – dadurch konnte theoretisch auch weit entfernter Durchgangsverkehr
  * mit zufällig passendem Kurs als APPROACHING gelten).
  *
- * TEMPORÄR (Deployment-Diagnose, vor Phase-2A-Livetest): NADOR und CASABLANCA verwenden bewusst
- * größere Test-BoundingBoxes als eigentlich für den Hafen nötig, um zunächst zu verifizieren, dass
- * AISStream in diesen Regionen überhaupt PositionReports liefert (Tanger Med lieferte bereits Daten,
- * Nador/Casablanca bisher nicht). Die kleinere interne {@link #portZoneBox}/{@link #approachZone}
- * (Statuslogik) bleiben davon unberührt. Sobald AISStream-Abdeckung bestätigt ist, können die
- * BoundingBoxes wieder auf die engeren, ursprünglich spezifizierten Werte
+ * TEMPORÄR (Deployment-Diagnose, AIS-Empfangsproblem-Untersuchung NADOR/CASABLANCA):
+ * NADOR und CASABLANCA verwenden bewusst noch größere Diagnose-BoundingBoxes als der vorherige
+ * Test-Stand, um auszuschließen, dass eine zu enge AIS-Empfangsbox (statt fehlender AISStream-
+ * Abdeckung) die Ursache für vesselCount=0 ist. NUR die AISStream-Subscription-BoundingBox wurde
+ * vergrößert - {@link #portZoneBox}, {@link #approachZone} und {@link #center} (Status-Ableitung,
+ * siehe PortStatusCalculator) bleiben UNVERÄNDERT. Referenzpunkt NADOR: "GOLDEN BRIDGE"
+ * (MMSI 209410000) real bei 35.27228 N / 2.92535 W beobachtet - liegt innerhalb dieser Box UND
+ * bereits innerhalb der bestehenden {@link #portZoneBox} (siehe PortStatusCalculatorTest).
+ * Sobald AISStream-Abdeckung für beide Häfen bestätigt ist, können die BoundingBoxes wieder auf
+ * die engeren, ursprünglich spezifizierten Werte
  * ({@code NADOR: [[35.15,-3.05],[35.38,-2.75]]}, {@code CASABLANCA: [[33.48,-7.78],[33.72,-7.42]]})
  * zurückgesetzt werden.
  */
@@ -54,15 +58,15 @@ public enum MaritimePort {
             new double[][]{{35.865, -5.535}, {35.915, -5.465}},
             new double[][]{{35.82, -5.60}, {35.97, -5.39}},
             new double[]{35.895, -5.4945}),
-    // TEMPORÄR: Test-Box lt. Vorgabe (größer als [[35.15,-3.05],[35.38,-2.75]]), um AISStream-Abdeckung zu prüfen.
+    // TEMPORÄR (Diagnose-Box #2, siehe Klassen-Javadoc): lat 34.8-36.0, lon -4.0..-1.5.
     NADOR("Nador",
-            new double[][]{{35.6, -3.4}, {34.9, -2.4}},
+            new double[][]{{34.8, -4.0}, {36.0, -1.5}},
             new double[][]{{35.22, -2.98}, {35.30, -2.87}},
             new double[][]{{35.14, -3.09}, {35.38, -2.76}},
             new double[]{35.26, -2.92}),
-    // TEMPORÄR: Test-Box lt. Vorgabe (größer als [[33.48,-7.78],[33.72,-7.42]]), um AISStream-Abdeckung zu prüfen.
+    // TEMPORÄR (Diagnose-Box #2, siehe Klassen-Javadoc): lat 32.9-34.3, lon -8.5..-6.5.
     CASABLANCA("Casablanca",
-            new double[][]{{34.0, -8.2}, {33.2, -7.0}},
+            new double[][]{{32.9, -8.5}, {34.3, -6.5}},
             new double[][]{{33.57, -7.67}, {33.64, -7.56}},
             new double[][]{{33.50, -7.80}, {33.70, -7.45}},
             new double[]{33.6014, -7.6145});
@@ -107,6 +111,25 @@ public enum MaritimePort {
     /** Hafenzentrum {lat, lon} – Referenzpunkt für die Richtungserkennung (An-/Abfahrt). */
     public double[] getCenter() {
         return center;
+    }
+
+    /**
+     * Diagnose-Hilfsmethode (AIS-Empfangsproblem-Untersuchung NADOR/CASABLANCA): prüft, ob ein
+     * Punkt innerhalb der AISStream-{@link #boundingBox} liegt (also grundsätzlich empfangen werden
+     * SOLLTE, unabhängig von portZoneBox/approachZone/PortStatusCalculator). Bewusst als eigene,
+     * kleine Methode statt Wiederverwendung von PortStatusCalculator (dessen withinBox privat und
+     * für die enge Port-Zone gedacht ist) - hier geht es nur um die große Empfangsbox.
+     */
+    public boolean isWithinBoundingBox(double lat, double lon) {
+        return withinBox(lat, lon, boundingBox);
+    }
+
+    private static boolean withinBox(double lat, double lon, double[][] box) {
+        double minLat = Math.min(box[0][0], box[1][0]);
+        double maxLat = Math.max(box[0][0], box[1][0]);
+        double minLon = Math.min(box[0][1], box[1][1]);
+        double maxLon = Math.max(box[0][1], box[1][1]);
+        return lat >= minLat && lat <= maxLat && lon >= minLon && lon <= maxLon;
     }
 
     /** Defensiv: liefert null statt Exception bei unbekannter/ungültiger Port-ID (z. B. aus REST-Request). */
