@@ -166,7 +166,7 @@ export class MaritimeComponent implements OnInit, OnDestroy {
         formatFn: (v) => this.translationService.translate(this.eventTypeLabel(v)),
         badgeClass: (v) => this.eventTypeBadgeClasses[v] || 'status-inactive'
       },
-      { key: 'eventTime', label: t('maritime.events.columnTime'), type: 'date', mobileLabel: t('maritime.events.columnTime') }
+      { key: 'eventTime', label: t('maritime.events.columnTime'), type: 'text', mobileLabel: t('maritime.events.columnTime'), formatFn: (v) => this.formatEventTime(v) }
     ];
   }
 
@@ -260,6 +260,32 @@ export class MaritimeComponent implements OnInit, OnDestroy {
 
   eventTypeLabel(type?: string | null): string {
     return type ? (this.eventTypeLabelKeys[type] || 'maritime.status.unknown') : 'maritime.status.unknown';
+  }
+
+  /**
+   * Datum + Uhrzeit für die Event-Historie (Phase 2B), z.B. "12.09.2026, 15:42".
+   *
+   * WICHTIG: Nur Darstellung/Formatierung, keine Filterung/Deduplizierung im Frontend – die
+   * Reihenfolge (neueste zuerst) und die Vermeidung doppelter Events kommen bereits sortiert/bereinigt
+   * vom Backend (siehe VesselPortEventService#recordTransitionIfAny + Repository ...OrderByEventTimeDesc).
+   * Gleiches Format wie das bestehende Projekt-Muster in audit-log.component.ts (toLocaleString('de-DE')
+   * statt des generischen ResponsiveDataList-'date'-Spaltentyps, der nur 'dd.MM.yyyy' ohne Uhrzeit zeigt).
+   */
+  formatEventTime(value?: string | null): string {
+    if (!value) {
+      return '—';
+    }
+    const date = new Date(value);
+    if (isNaN(date.getTime())) {
+      return '—';
+    }
+    return date.toLocaleString('de-DE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   }
 
   /** Phase 2B: "Letzte Hafenereignisse" für den aktuell ausgewählten Hafen laden (kleine, begrenzte Liste). */

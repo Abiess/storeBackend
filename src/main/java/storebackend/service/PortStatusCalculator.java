@@ -8,7 +8,8 @@ import storebackend.enums.VesselPortStatus;
  * Schiff ab – Phase 2A des Maritime-Features ("Port Operations").
  *
  * MVP-Regeln (bewusst einfach gehalten, siehe Aufgabenstellung):
- *  - Position INNERHALB der Port-Zone + AIS-NavigationalStatus meldet explizit "moored"/"at anchor" => MOORED
+ *  - Position INNERHALB der Port-Zone + AIS-NavigationalStatus meldet explizit "moored"/"at anchor",
+ *    UND Geschwindigkeit ist NICHT deutlich hoch (siehe Hinweis unten zu navStatus=5/1)           => MOORED
  *  - Position INNERHALB der Port-Zone + sehr niedrige Geschwindigkeit + NavigationalStatus fehlt,
  *    ist "undefined"(15) oder meldet "underway using engine"(0)                                  => MOORED
  *    (heuristischer Fallback bei widersprüchlichen AIS-Daten, siehe Hinweis unten)
@@ -49,6 +50,14 @@ import storebackend.enums.VesselPortStatus;
  * würde z.B. vor der Reede ankernde Schiffe fälschlich als MOORED zeigen. MOORED wird daher nur
  * innerhalb der Port-Zone (Speed-Heuristik) oder unabhängig von der Zone bei eindeutigem
  * NavigationalStatus (AIS-Code 5 = "moored") vergeben.
+ *
+ * WICHTIG (Live-Data-Review, "MARS"-Fall: navStatus=5 + SOG=4.6 kn): NavigationalStatus=5/1
+ * ("moored"/"at anchor") wird von der Besatzung manuell umgeschaltet und kann daher – genau wie
+ * navStatus=0 oben – veraltet sein, wenn das Schiff bereits wieder unterwegs ist. INNERHALB der
+ * Port-Zone gilt dieses Signal deshalb nur noch als zuverlässig, solange die Geschwindigkeit NICHT
+ * deutlich (>= {@code DEPARTING_MIN_SPEED_KN}) über der Moored-Schwelle liegt. Bei klar erkennbarer
+ * Fahrt überstimmt SOG/Kurs den (mutmaßlich veralteten) navStatus, und die Ableitung fällt auf die
+ * normale Speed-/Bearing-Heuristik zurück (Ergebnis dann DEPARTING oder IN_PORT statt MOORED).
  *
  * Es wird bewusst NUR die (einfache) Peilung Schiff↔Hafenzentrum verwendet, keine Routenprognose,
  * keine Historie/Trajektorie – siehe Klassen-Javadoc von {@link AisStreamClientService}
@@ -91,7 +100,16 @@ final class PortStatusCalculator {
 
         if (inPortZone) {
             // Eindeutiges Schiffs-Signal zuerst: "moored"/"at anchor" innerhalb der Port-Zone => MOORED.
-            if (navStatus != null && (navStatus == NAV_STATUS_MOORED || navStatus == NAV_STATUS_AT_ANCHOR)) {
+            // ABER (Live-Data-Review, "MARS"-Fall: navStatus=5/"moored" bei SOG=4.6 kn): NavigationalStatus
+            // wird von der Besatzung manuell umgeschaltet und regelmäßig NICHT zeitnah aktualisiert - ein
+            // Schiff kann also bereits wieder unterwegs sein, obwohl noch "moored"/"at anchor" gemeldet wird.
+            // Bei DEUTLICHER Fahrt (>= DEPARTING_MIN_SPEED_KN, derselbe Schwellwert wie für die
+            // Auslaufen-Erkennung unten) gilt dieses Signal daher als veraltet/unzuverlässig und wird NICHT
+            // blind übernommen - stattdessen fällt die Ableitung durch auf die SOG-/Kurs-Heuristik weiter
+            // unten (Ergebnis dann i.d.R. DEPARTING oder IN_PORT, je nach Peilung).
+            boolean navSaysStationary = navStatus != null && (navStatus == NAV_STATUS_MOORED || navStatus == NAV_STATUS_AT_ANCHOR);
+            boolean clearlyMoving = speedKn != null && speedKn >= DEPARTING_MIN_SPEED_KN;
+            if (navSaysStationary && !clearlyMoving) {
                 return VesselPortStatus.MOORED;
             }
             if (speedKn == null) {

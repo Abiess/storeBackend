@@ -11,7 +11,6 @@ import storebackend.enums.PortEventType;
 import storebackend.enums.VesselPortStatus;
 import storebackend.repository.VesselPortEventRepository;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -44,13 +43,6 @@ import java.util.Optional;
 @Slf4j
 public class VesselPortEventService {
 
-    /**
-     * Minimales Cooldown-Fenster gegen Status-"Flattern" (z.B. MOORED -> IN_PORT -> MOORED durch
-     * schwankende SOG/Position innerhalb weniger AIS-Messages). Verhindert unnötige Event-Ketten,
-     * ohne eine eigene State Machine einzuführen – siehe {@link #recordTransitionIfAny}.
-     */
-    private static final Duration DEDUP_WINDOW = Duration.ofMinutes(5);
-
     /** Zustände "innerhalb der Port-Zone" – Grundlage für die Transition-Regeln (siehe Klassen-Javadoc PortEventType). */
     private static boolean isInZone(VesselPortStatus status) {
         return status == VesselPortStatus.IN_PORT
@@ -75,10 +67,20 @@ public class VesselPortEventService {
      *    Regel würde z.B. nach jedem Neustart für jedes bereits im Hafen liegende Schiff sofort ein
      *    "ENTERED_PORT"/"MOORED" erfunden, obwohl real keine Bewegung stattfand.
      *  - Zusätzlich zur In-Memory-Transitionserkennung (siehe AisStreamClientService, vergleicht
-     *    Cache-Status vor/nach) wird defensiv der zuletzt gespeicherte Event-Typ desselben
-     *    Schiffs+Hafens aus der DB geprüft: liegt ein identisches Event innerhalb von
-     *    {@link #DEDUP_WINDOW} bereits vor, wird NICHT erneut gespeichert (Schutz gegen
-     *    Status-Flattern und mögliche Doppel-Events, z.B. durch kurzzeitige Neustarts/Races).
+     *    Cache-Status vor/nach) wird defensiv der zuletzt GESPEICHERTE Event-Typ desselben
+     *    Schiffs+Hafens aus der DB geprüft (siehe {@link #isDuplicateOfLastPersistedEvent}):
+     *    Ist er identisch zum neuen Event-Typ, wird NICHT erneut gespeichert.
+     *  - BUGFIX (mehrfache MOORED-Events, z.B. "DALIA"/"VB AMSA" in Produktion): Die vorherige
+     *    Implementierung deduplizierte nur INNERHALB eines festen Zeitfensters (5 Minuten). AIS-
+     *    Statuswerte können aber über deutlich längere Zeiträume "flattern" (z.B. MOORED -> IN_PORT
+     *    -> MOORED durch kurze SOG-/NavigationalStatus-Schwankungen, mit mehr als 5 Minuten zwischen
+     *    den beiden MOORED-Ableitungen) – dann wurde fälschlich ein zweites MOORED-Event gespeichert,
+     *    obwohl real kein neuer Hafenbesuch stattfand. Die Deduplizierung ist daher jetzt NICHT mehr
+     *    zeitbasiert, sondern rein sequenzbasiert: ein Event wird nur gespeichert, wenn sein Typ vom
+     *    zuletzt PERSISTIERTEN Event-Typ desselben Schiffs+Hafens abweicht. Ein echter neuer
+     *    Hafenbesuch (MOORED -> DEPARTING -> LEFT_PORT -> ... -> APPROACHING -> ENTERED_PORT ->
+     *    MOORED) bleibt dabei vollständig erhalten, weil jede Zwischenstufe den "zuletzt
+     *    persistierten Typ" ändert, bevor das neue MOORED geprüft wird.
      */
     public void recordTransitionIfAny(VesselPortStatus previousStatus, VesselPortStatus newStatus,
                                        MaritimePort port, VesselDTO vessel) {
@@ -90,8 +92,8 @@ public class VesselPortEventService {
             return;
         }
         try {
-            if (isDuplicateWithinCooldown(vessel.getMmsi(), port, eventType)) {
-                log.debug("Skipping vessel port event (flatter/duplicate guard): mmsi={}, port={}, type={}",
+            if (isDuplicateOfLastPersistedEvent(vessel.getMmsi(), port, eventType)) {
+                log.debug("Skipping vessel port event (same as last persisted event/flatter guard): mmsi={}, port={}, type={}",
                         vessel.getMmsi(), port, eventType);
                 return;
             }
@@ -116,16 +118,16 @@ public class VesselPortEventService {
 
     /**
      * Ein einzelner, indexgestützter Lookup (siehe idx_vessel_port_events_mmsi_time, V024) –
-     * kein {@code findAll()}, kein Scan. Nur wenn dasselbe Event für dasselbe Schiff+Hafen bereits
-     * innerhalb von {@link #DEDUP_WINDOW} existiert, gilt es als Duplikat/Flattern.
+     * kein {@code findAll()}, kein Scan. Sequenzbasiert statt zeitbasiert (siehe Klassen-/Methoden-
+     * Javadoc {@link #recordTransitionIfAny}): ein Event gilt als Duplikat/Flattern, wenn das
+     * zuletzt für dieses Schiff+Hafen PERSISTIERTE Event denselben Typ hat – unabhängig davon, wie
+     * viel Zeit seitdem vergangen ist. Jede fachlich unterschiedliche Zwischenstufe (z.B. DEPARTING,
+     * LEFT_PORT, ENTERED_PORT) durchbricht diese Kette automatisch, sodass ein echter neuer
+     * Hafenbesuch niemals weggefiltert wird.
      */
-    private boolean isDuplicateWithinCooldown(long mmsi, MaritimePort port, PortEventType eventType) {
+    private boolean isDuplicateOfLastPersistedEvent(long mmsi, MaritimePort port, PortEventType eventType) {
         Optional<VesselPortEvent> lastEvent = repository.findFirstByMmsiAndPortOrderByEventTimeDesc(mmsi, port.name());
-        if (lastEvent.isEmpty() || lastEvent.get().getEventType() != eventType) {
-            return false;
-        }
-        Instant lastEventTime = lastEvent.get().getEventTime();
-        return lastEventTime != null && Duration.between(lastEventTime, Instant.now()).compareTo(DEDUP_WINDOW) < 0;
+        return lastEvent.isPresent() && lastEvent.get().getEventType() == eventType;
     }
 
     /** MVP-Regeln für Statuswechsel -> Event, siehe {@link PortEventType} Javadoc für Details. */

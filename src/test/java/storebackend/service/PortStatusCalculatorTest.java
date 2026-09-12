@@ -19,7 +19,7 @@ class PortStatusCalculatorTest {
 
     @Test
     void withinPortZone_explicitMooredNavStatus_returnsMoored() {
-        VesselPortStatus status = PortStatusCalculator.compute(35.89, -5.50, 5.0, 90.0, 5, PORT);
+        VesselPortStatus status = PortStatusCalculator.compute(35.89, -5.50, 0.2, 90.0, 5, PORT);
         assertEquals(VesselPortStatus.MOORED, status);
     }
 
@@ -93,6 +93,34 @@ class PortStatusCalculatorTest {
         // Explicit AIS signal overrides zone geometry entirely (unchanged behavior).
         VesselPortStatus status = PortStatusCalculator.compute(35.70, -5.4945, 0.2, null, 5, PORT);
         assertEquals(VesselPortStatus.MOORED, status);
+    }
+
+    /**
+     * Regression test (production observation, "MARS"): navStatus=5 ("moored") reported together
+     * with SOG=4.6 kn - a clearly non-zero, non-negligible speed. NavigationalStatus is set manually
+     * by the crew and is a known-stale field in practice (see class Javadoc); a vessel that is
+     * genuinely moving must NOT be classified as MOORED just because of this single stale AIS field.
+     * Vessel position here is exactly the port center, course=180 (i.e. pointing directly AWAY from
+     * the "away from center" bearing of 0/undefined at the center point itself, so the DEPARTING
+     * bearing check does not match) => falls through to IN_PORT instead of the previous (incorrect)
+     * unconditional MOORED.
+     */
+    @Test
+    void withinPortZone_explicitMooredNavStatusButClearlyMoving_marsCase_doesNotReturnMoored() {
+        VesselPortStatus status = PortStatusCalculator.compute(
+                PORT.getCenter()[0], PORT.getCenter()[1], 4.6, 180.0, 5, PORT);
+        assertEquals(VesselPortStatus.IN_PORT, status);
+    }
+
+    /**
+     * Same conflicting-data situation as above, but the course DOES match "moving away from center"
+     * (see {@link #withinPortZone_highSpeedAwayFromCenter_returnsDeparting}) - the stale navStatus=5
+     * must not suppress a genuine DEPARTING detection either.
+     */
+    @Test
+    void withinPortZone_explicitMooredNavStatusButClearlyMovingAwayFromCenter_returnsDeparting() {
+        VesselPortStatus status = PortStatusCalculator.compute(35.91, -5.4945, 5.0, 0.0, 5, PORT);
+        assertEquals(VesselPortStatus.DEPARTING, status);
     }
 
     @Test
